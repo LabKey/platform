@@ -51,6 +51,7 @@ public abstract class SasDialect extends SimpleSqlDialect
         return Collections.emptySet();
     }
 
+    @Override
     protected String getProductName()
     {
         return "SAS";
@@ -62,10 +63,12 @@ public abstract class SasDialect extends SimpleSqlDialect
         return false;
     }
 
+    @Override
     protected void addSqlTypeNames(Map<String, Integer> sqlTypeNameMap)
     {
     }
 
+    @Override
     protected void addSqlTypeInts(Map<Integer, String> sqlTypeIntMap)
     {
         sqlTypeIntMap.put(Types.VARCHAR, "VARCHAR");
@@ -73,16 +76,19 @@ public abstract class SasDialect extends SimpleSqlDialect
         sqlTypeIntMap.put(Types.DOUBLE, "DOUBLE");
     }
 
+    @Override
     public boolean requiresStatementMaxRows()
     {
         return true;
     }
 
+    @Override
     public SQLFragment limitRows(SQLFragment frag, int rowCount)
     {
         return frag;
     }
 
+    @Override
     public SQLFragment limitRows(SQLFragment select, SQLFragment from, SQLFragment filter, String order, String groupBy, int rowCount, long offset)
     {
         if (select == null)
@@ -100,6 +106,7 @@ public abstract class SasDialect extends SimpleSqlDialect
         return sql;
     }
 
+    @Override
     public boolean supportsOffset()
     {
         return false;
@@ -126,6 +133,7 @@ public abstract class SasDialect extends SimpleSqlDialect
     }
 
 
+    @Override
     public boolean supportsComments()
     {
         return false;
@@ -137,6 +145,7 @@ public abstract class SasDialect extends SimpleSqlDialect
         return 0;  // TODO: Implement?
     }
 
+    @Override
     protected String getSIDQuery()
     {
         throw new UnsupportedOperationException();
@@ -166,6 +175,7 @@ public abstract class SasDialect extends SimpleSqlDialect
 
     // SAS has no database name, so no need to parse the URL.  Overrides above ensure this is never called.
 
+    @Override
     public JdbcHelper getJdbcHelper()
     {
         throw new IllegalStateException();
@@ -192,12 +202,12 @@ public abstract class SasDialect extends SimpleSqlDialect
     // SAS driver doesn't support setting java.sql.Timestamp parameters, so convert to java.sql.Date
     private static class SasStatementWrapper extends StatementWrapper
     {
-        protected SasStatementWrapper(ConnectionWrapper conn, Statement stmt)
+        private SasStatementWrapper(ConnectionWrapper conn, Statement stmt)
         {
             super(conn, stmt);
         }
 
-        protected SasStatementWrapper(ConnectionWrapper conn, Statement stmt, String sql)
+        private SasStatementWrapper(ConnectionWrapper conn, Statement stmt, String sql)
         {
             super(conn, stmt, sql);
         }

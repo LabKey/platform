@@ -16,8 +16,8 @@
 package org.labkey.announcements.api;
 
 import org.labkey.announcements.AnnouncementsController;
-import org.labkey.announcements.model.AnnouncementModel;
 import org.labkey.announcements.model.AnnouncementManager;
+import org.labkey.announcements.model.AnnouncementModel;
 import org.labkey.announcements.model.Permissions;
 import org.labkey.api.announcements.DiscussionService;
 import org.labkey.api.announcements.api.Announcement;
@@ -29,7 +29,6 @@ import org.labkey.api.data.RuntimeSQLException;
 import org.labkey.api.security.User;
 import org.labkey.api.view.HttpView;
 import org.labkey.api.view.UnauthorizedException;
-import org.springframework.web.servlet.ModelAndView;
 
 import java.io.IOException;
 import java.sql.SQLException;

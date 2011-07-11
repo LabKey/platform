@@ -343,6 +343,7 @@ public class SimpleSpecimenImporter extends SpecimenImporter
         List<Map<String, Object>> toMaps()
         {
             List<Map<String, Object>> maps = new ArrayList<Map<String, Object>>(keyMap.size());
+
             for (Map.Entry<String, Integer> entry : keyMap.entrySet())
             {
                 Map<String, Object> m = new HashMap<String, Object>();
@@ -350,6 +351,7 @@ public class SimpleSpecimenImporter extends SpecimenImporter
                 m.put(tsvIdCol, entry.getValue());
                 maps.add(m);
             }
+
             Collections.sort(maps, new Comparator<Map<String, Object>>()
             {
                 @Override
@@ -360,6 +362,7 @@ public class SimpleSpecimenImporter extends SpecimenImporter
                     return aId.compareTo(bId);
                 }
             });
+
             return maps;
         }
 
@@ -416,6 +419,7 @@ public class SimpleSpecimenImporter extends SpecimenImporter
     }
 
     private Map<String,SpecimenColumn> specimenColumnMap;
+
     private SpecimenColumn findSpecimenColumn(String name)
     {
         if (null == specimenColumnMap)

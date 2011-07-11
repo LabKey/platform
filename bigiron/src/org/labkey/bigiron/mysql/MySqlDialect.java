@@ -241,7 +241,7 @@ public class MySqlDialect extends SimpleSqlDialect
 
     @Override
     // Escape quotes and quote the identifier -- standard MySQL quote character is back tick (`)
-    protected String quoteIdentifier(String id)
+    public String quoteIdentifier(String id)
     {
         return "`" + id.replaceAll("`", "``") + "`";
     }

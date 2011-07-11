@@ -47,7 +47,6 @@ import org.labkey.study.model.DataSetDefinition;
 import org.labkey.study.model.StudyImpl;
 import org.labkey.study.model.StudyManager;
 import org.labkey.study.query.StudyQuerySchema;
-import org.springframework.web.servlet.ModelAndView;
 
 import javax.servlet.ServletException;
 import java.util.Map;

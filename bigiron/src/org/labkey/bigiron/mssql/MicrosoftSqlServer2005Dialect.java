@@ -84,6 +84,7 @@ public class MicrosoftSqlServer2005Dialect extends SqlDialect
         ));
     }
 
+    @Override
     protected void addSqlTypeNames(Map<String, Integer> sqlTypeNameMap)
     {
         sqlTypeNameMap.put("FLOAT", Types.DOUBLE);
@@ -96,6 +97,7 @@ public class MicrosoftSqlServer2005Dialect extends SqlDialect
         sqlTypeNameMap.put("TIMESTAMP", Types.BINARY);
     }
 
+    @Override
     protected void addSqlTypeInts(Map<Integer, String> sqlTypeIntMap)
     {
         sqlTypeIntMap.put(Types.BIT, "BIT");
@@ -129,31 +131,37 @@ public class MicrosoftSqlServer2005Dialect extends SqlDialect
         }
     }
 
+    @Override
     public boolean isSqlServer()
     {
         return true;
     }
 
+    @Override
     public boolean isPostgreSQL()
     {
         return false;
     }
 
+    @Override
     protected String getProductName()
     {
         return "Sql Server";
     }
 
+    @Override
     public String getSQLScriptPath()
     {
         return "sqlserver";
     }
 
+    @Override
     public String getDefaultDateTimeDataType()
     {
         return "DATETIME";
     }
 
+    @Override
     public String getUniqueIdentType()
     {
         return "INT IDENTITY (1,1)";
@@ -173,6 +181,7 @@ public class MicrosoftSqlServer2005Dialect extends SqlDialect
     }
 
 
+    @Override
     protected void checkSqlScript(String lower, String lowerNoWhiteSpace, Collection<String> errors)
     {
     }
@@ -185,6 +194,7 @@ public class MicrosoftSqlServer2005Dialect extends SqlDialect
     }
 
 
+    @Override
     public boolean requiresStatementMaxRows()
     {
         return false;
@@ -232,7 +242,7 @@ public class MicrosoftSqlServer2005Dialect extends SqlDialect
         }
     }
 
-    protected SQLFragment _limitRows(SQLFragment select, SQLFragment from, SQLFragment filter, String order, String groupBy, int rowCount, long offset)
+    private SQLFragment _limitRows(SQLFragment select, SQLFragment from, SQLFragment filter, String order, String groupBy, int rowCount, long offset)
     {
         if (order == null || order.trim().length() == 0)
             throw new IllegalArgumentException("ERROR: ORDER BY clause required to limit");
@@ -254,6 +264,7 @@ public class MicrosoftSqlServer2005Dialect extends SqlDialect
         return sql;
     }
 
+    @Override
     public boolean supportsComments()
     {
         return true;
@@ -261,6 +272,7 @@ public class MicrosoftSqlServer2005Dialect extends SqlDialect
 
     // Execute a stored procedure/function with the specified parameters
 
+    @Override
     public String execute(DbSchema schema, String procedureName, String parameters)
     {
         return "EXEC " + schema.getName() + "." + procedureName + " " + parameters;
@@ -295,6 +307,7 @@ public class MicrosoftSqlServer2005Dialect extends SqlDialect
     }
 
 
+    @Override
     public String getCharClassLikeOperator()
     {
         return "LIKE";
@@ -306,26 +319,31 @@ public class MicrosoftSqlServer2005Dialect extends SqlDialect
         return "LIKE";
     }
 
+    @Override
     public String getVarcharLengthFunction()
     {
         return "len";
     }
 
+    @Override
     public String getStdDevFunction()
     {
         return "stdev";
     }
 
+    @Override
     public String getClobLengthFunction()
     {
         return "datalength";
     }
 
+    @Override
     public String getStringIndexOfFunction(String stringToFind, String stringToSearch)
     {
         return "patindex('%' + " + stringToFind + " + '%', " + stringToSearch + ")";
     }
 
+    @Override
     public String getSubstringFunction(String s, String start, String length)
     {
         return "substring(" + s + ", " + start + ", " + length + ")";
@@ -376,23 +394,27 @@ public class MicrosoftSqlServer2005Dialect extends SqlDialect
 
     // UNDONE: why ## instead of #?
 
+    @Override
     public String getTempTablePrefix()
     {
         return "##";
     }
 
 
+    @Override
     public String getGlobalTempTablePrefix()
     {
         return "tempdb..";
     }
 
 
+    @Override
     public boolean isNoDatabaseException(SQLException e)
     {
         return "S1000".equals(e.getSQLState());
     }
 
+    @Override
     public boolean isSortableDataType(String sqlDataTypeName)
     {
         return !("text".equalsIgnoreCase(sqlDataTypeName) ||
@@ -400,11 +422,13 @@ public class MicrosoftSqlServer2005Dialect extends SqlDialect
                 "image".equalsIgnoreCase(sqlDataTypeName));
     }
 
+    @Override
     public String getDropIndexCommand(String tableName, String indexName)
     {
         return "DROP INDEX " + tableName + "." + indexName;
     }
 
+    @Override
     public String getCreateDatabaseSql(String dbName)
     {
         return "CREATE DATABASE " + dbName;
@@ -412,6 +436,7 @@ public class MicrosoftSqlServer2005Dialect extends SqlDialect
 
     // Do nothing
 
+    @Override
     public String getCreateSchemaSql(String schemaName)
     {
         return "EXEC sp_addapprole '" + schemaName + "', 'password'";
@@ -424,27 +449,32 @@ public class MicrosoftSqlServer2005Dialect extends SqlDialect
         return "DATEPART(" + partName + ", " + value + ")";
     }
 
+    @Override
     public String getDateDiff(int part, String value1, String value2)
     {
         String partName = getDatePartName(part);
         return "DATEDIFF(" + partName + ", " + value2 + ", " + value1 + ")";
     }
 
+    @Override
     public String getDateTimeToDateCast(String expression)
     {
         return "convert(datetime, convert(varchar, (" + expression + "), 101))";
     }
 
+    @Override
     public String getRoundFunction(String valueToRound)
     {
         return "ROUND(" + valueToRound + ", 0)";
     }
 
+    @Override
     public boolean supportsRoundDouble()
     {
         return true;
     }
 
+    @Override
     protected String getSystemTableNames()
     {
         return "dtproperties,sysconstraints,syssegments";
@@ -460,6 +490,7 @@ public class MicrosoftSqlServer2005Dialect extends SqlDialect
         return SYSTEM_SCHEMAS.contains(schemaName);
     }
 
+    @Override
     public String sanitizeException(SQLException ex)
     {
         if ("01004".equals(ex.getSQLState()))
@@ -469,6 +500,7 @@ public class MicrosoftSqlServer2005Dialect extends SqlDialect
         return GENERIC_ERROR_MESSAGE;
     }
 
+    @Override
     public String getAnalyzeCommandForTable(String tableName)
     {
         return "UPDATE STATISTICS " + tableName + ";";
@@ -480,11 +512,13 @@ public class MicrosoftSqlServer2005Dialect extends SqlDialect
         return false;
     }
 
+    @Override
     protected String getSIDQuery()
     {
         return "SELECT @@spid";
     }
 
+    @Override
     public String getBooleanDataType()
     {
         return "BIT";
@@ -506,6 +540,7 @@ public class MicrosoftSqlServer2005Dialect extends SqlDialect
      *                   and must all refer to the same table.
      * @param tinfo      table used in the insert(s)
      */
+    @Override
     public void overrideAutoIncrement(StringBuilder statements, TableInfo tinfo)
     {
         statements.insert(0, "SET IDENTITY_INSERT " + tinfo + " ON\n");
@@ -515,18 +550,21 @@ public class MicrosoftSqlServer2005Dialect extends SqlDialect
     private static final Pattern GO_PATTERN = Pattern.compile("^\\s*GO\\s*$", Pattern.CASE_INSENSITIVE | Pattern.MULTILINE);
     private static final Pattern JAVA_CODE_PATTERN = Pattern.compile("^\\s*EXEC(?:UTE)*\\s+core\\.executeJavaUpgradeCode\\s*'(.+)'\\s*;?\\s*$", Pattern.CASE_INSENSITIVE | Pattern.MULTILINE);
 
+    @Override
     public void runSql(DbSchema schema, String sql, UpgradeCode upgradeCode, ModuleContext moduleContext) throws SQLException
     {
         SqlScriptParser parser = new SqlScriptParser(sql, GO_PATTERN, JAVA_CODE_PATTERN, schema, upgradeCode, moduleContext);
         parser.execute();
     }
 
+    @Override
     public String getMasterDataBaseName()
     {
         return "master";
     }
 
 
+    @Override
     public JdbcHelper getJdbcHelper()
     {
         return new JtdsJdbcHelper();
@@ -558,6 +596,7 @@ public class MicrosoftSqlServer2005Dialect extends SqlDialect
         }
     }
 
+    @Override
     public SQLFragment sqlLocate(SQLFragment littleString, SQLFragment bigString)
     {
         SQLFragment ret = new SQLFragment("(CHARINDEX(");
@@ -568,6 +607,7 @@ public class MicrosoftSqlServer2005Dialect extends SqlDialect
         return ret;
     }
 
+    @Override
     public SQLFragment sqlLocate(SQLFragment littleString, SQLFragment bigString, SQLFragment startIndex)
     {
         SQLFragment ret = new SQLFragment("(CHARINDEX(");
@@ -580,6 +620,7 @@ public class MicrosoftSqlServer2005Dialect extends SqlDialect
         return ret;
     }
 
+    @Override
     public boolean allowSortOnSubqueryWithoutLimit()
     {
         return false;
@@ -713,6 +754,7 @@ public class MicrosoftSqlServer2005Dialect extends SqlDialect
         return StringUtils.join(colSpec, ' ');
     }
 
+    @Override
     public void initializeConnection(Connection conn) throws SQLException
     {
         Statement stmt = conn.createStatement();
@@ -720,21 +762,25 @@ public class MicrosoftSqlServer2005Dialect extends SqlDialect
         stmt.close();
     }
 
+    @Override
     public void purgeTempSchema(Map<String, TempTableTracker> createdTableNames)
     {
         // Do nothing -- SQL Server cleans up temp tables automatically
     }
 
+    @Override
     public boolean isCaseSensitive()
     {
         return false;
     }
 
+    @Override
     public boolean isEditable()
     {
         return true;
     }
 
+    @Override
     public ColumnMetaDataReader getColumnMetaDataReader(ResultSet rsCols, DbSchema schema)
     {
         return new SqlServerColumnMetaDataReader(rsCols);
@@ -754,6 +800,7 @@ public class MicrosoftSqlServer2005Dialect extends SqlDialect
             _postionKey = "ORDINAL_POSITION";
         }
 
+        @Override
         public boolean isAutoIncrement() throws SQLException
         {
             return getSqlTypeName().equalsIgnoreCase("int identity");
@@ -761,6 +808,7 @@ public class MicrosoftSqlServer2005Dialect extends SqlDialect
     }
 
 
+    @Override
     public PkMetaDataReader getPkMetaDataReader(ResultSet rs)
     {
         return new PkMetaDataReader(rs, "COLUMN_NAME", "KEY_SEQ");
@@ -769,6 +817,7 @@ public class MicrosoftSqlServer2005Dialect extends SqlDialect
     /**
      * @return any additional information that should be sent to the mothership in the case of a SQLException
      */
+    @Override
     public String getExtraInfo(SQLException e)
     {
         // Deadlock between two different DB connections

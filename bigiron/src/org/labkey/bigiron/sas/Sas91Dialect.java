@@ -33,6 +33,7 @@ import java.sql.SQLException;
 // Supports the SAS 9.1 SAS/SHARE JDBC driver
 public class Sas91Dialect extends SasDialect
 {
+    @Override
     public ColumnMetaDataReader getColumnMetaDataReader(ResultSet rsCols, DbSchema schema)
     {
         return new Sas91ColumnMetaDataReader(rsCols);
@@ -57,6 +58,7 @@ public class Sas91Dialect extends SasDialect
             return sqlTypeNameFromSqlType(getSqlType());
         }
 
+        @Override
         public boolean isAutoIncrement() throws SQLException
         {
             return false;

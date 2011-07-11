@@ -113,6 +113,7 @@ class PostgreSql83Dialect extends SqlDialect
         return statementWrapper;
     }
 
+    @Override
     protected void addSqlTypeNames(Map<String, Integer> sqlTypeNameMap)
     {
         //Added for PostgreSQL, which returns type names like "userid," not underlying type name
@@ -130,6 +131,7 @@ class PostgreSql83Dialect extends SqlDialect
         sqlTypeNameMap.put("TIMESTAMP", Types.TIMESTAMP);
     }
 
+    @Override
     protected void addSqlTypeInts(Map<Integer, String> sqlTypeIntMap)
     {
         sqlTypeIntMap.put(Types.BIT, "BOOLEAN");
@@ -143,36 +145,43 @@ class PostgreSql83Dialect extends SqlDialect
         sqlTypeIntMap.put(Types.FLOAT, "DOUBLE PRECISION");
     }
 
+    @Override
     public boolean isSqlServer()
     {
         return false;
     }
 
+    @Override
     public boolean isPostgreSQL()
     {
         return true;
     }
 
+    @Override
     protected String getProductName()
     {
         return "PostgreSQL";
     }
 
+    @Override
     public String getSQLScriptPath()
     {
         return "postgresql";
     }
 
+    @Override
     public String getDefaultDateTimeDataType()
     {
         return "TIMESTAMP";
     }
 
+    @Override
     public String getUniqueIdentType()
     {
         return "SERIAL";
     }
 
+    @Override
     public String getGuidType()
     {
         return "VARCHAR";
@@ -252,16 +261,19 @@ class PostgreSql83Dialect extends SqlDialect
         return true;
     }
 
+    @Override
     public boolean supportsComments()
     {
         return true;
     }
 
+    @Override
     public String execute(DbSchema schema, String procedureName, String parameters)
     {
         return "SELECT " + schema.getName() + "." + procedureName + "(" + parameters + ")";
     }
 
+    @Override
     public SQLFragment execute(DbSchema schema, String procedureName, SQLFragment parameters)
     {
         SQLFragment select = new SQLFragment("SELECT " + schema.getName() + "." + procedureName + "(");
@@ -291,36 +303,43 @@ class PostgreSql83Dialect extends SqlDialect
     }
 
 
+    @Override
     public String getCharClassLikeOperator()
     {
         return "SIMILAR TO";
     }
 
+    @Override
     public String getCaseInsensitiveLikeOperator()
     {
         return "ILIKE";
     }
 
+    @Override
     public String getVarcharLengthFunction()
     {
         return "length";
     }
 
+    @Override
     public String getStdDevFunction()
     {
         return "stddev";
     }
 
+    @Override
     public String getClobLengthFunction()
     {
         return "length";
     }
 
+    @Override
     public String getStringIndexOfFunction(String stringToFind, String stringToSearch)
     {
         return "position(" + stringToFind + " in " + stringToSearch + ")";
     }
 
+    @Override
     public String getSubstringFunction(String s, String start, String length)
     {
         return "substr(" + s + ", " + start + ", " + length + ")";
@@ -371,6 +390,7 @@ class PostgreSql83Dialect extends SqlDialect
         return result;
     }
 
+    @Override
     protected String getSystemTableNames()
     {
         return "pg_logdir_ls";
@@ -382,6 +402,7 @@ class PostgreSql83Dialect extends SqlDialect
         return schemaName.equals("information_schema") || schemaName.equals("pg_catalog") || schemaName.startsWith("pg_toast_temp_");
     }
 
+    @Override
     public String sanitizeException(SQLException ex)
     {
         if ("22001".equals(ex.getSQLState()))
@@ -391,16 +412,19 @@ class PostgreSql83Dialect extends SqlDialect
         return GENERIC_ERROR_MESSAGE;
     }
 
+    @Override
     public String getAnalyzeCommandForTable(String tableName)
     {
         return "ANALYZE " + tableName;
     }
 
+    @Override
     protected String getSIDQuery()
     {
         return "SELECT pg_backend_pid();";
     }
 
+    @Override
     public String getBooleanDataType()
     {
         return "BOOLEAN";
@@ -442,27 +466,32 @@ class PostgreSql83Dialect extends SqlDialect
         return "temp.";
     }
 
+    @Override
     public boolean isNoDatabaseException(SQLException e)
     {
         return "3D000".equals(e.getSQLState());
     }
 
+    @Override
     public boolean isSortableDataType(String sqlDataTypeName)
     {
         return true;
     }
 
+    @Override
     public String getDropIndexCommand(String tableName, String indexName)
     {
         return "DROP INDEX " + indexName;
     }
 
+    @Override
     public String getCreateDatabaseSql(String dbName)
     {
         return "CREATE DATABASE \"" + dbName + "\" WITH ENCODING 'UTF8';\n" +
                 "ALTER DATABASE \"" + dbName + "\" SET default_with_oids TO OFF";
     }
 
+    @Override
     public String getCreateSchemaSql(String schemaName)
     {
         if (!AliasManager.isLegalName(schemaName) || isReserved(schemaName))
@@ -472,6 +501,7 @@ class PostgreSql83Dialect extends SqlDialect
         return "CREATE SCHEMA " + schemaName;
     }
 
+    @Override
     public String getDateDiff(int part, String value1, String value2)
     {
         int divideBy;
@@ -511,21 +541,25 @@ class PostgreSql83Dialect extends SqlDialect
         return "EXTRACT(" + getDatePartName(part) + " FROM " + value + ")";
     }
 
+    @Override
     public String getDateTimeToDateCast(String columnName)
     {
         return "DATE(" + columnName + ")";
     }
 
+    @Override
     public String getRoundFunction(String valueToRound)
     {
         return "ROUND(" + valueToRound + "::double precision)";
     }
 
+    @Override
     public boolean supportsRoundDouble()
     {
         return false;
     }
 
+    @Override
     public void handleCreateDatabaseException(SQLException e) throws ServletException
     {
         if ("55006".equals(e.getSQLState()))
@@ -545,6 +579,7 @@ class PostgreSql83Dialect extends SqlDialect
     // creating call handlers and other complexities.  It looks like PostgreSQL 8.1 has a simpler form of CREATE LANGUAGE...
     // once we require 8.1 we should consider using it here.
 
+    @Override
     public void prepareNewDatabase(DbSchema schema) throws ServletException
     {
         ResultSet rs = null;
@@ -635,6 +670,7 @@ class PostgreSql83Dialect extends SqlDialect
      *                   and must all refer to the same table.
      * @param tinfo      table used in the insert(s)
      */
+    @Override
     public void overrideAutoIncrement(StringBuilder statements, TableInfo tinfo)
     {
         // Nothing special to do for the PostgreSQL dialect
@@ -649,26 +685,20 @@ class PostgreSql83Dialect extends SqlDialect
         // In addition to quoting keywords and ids with special characters, quote any id with an upper case character
         // on PostgreSQL. PostgreSQL normally stores column/table names in all lower case, so an upper case character
         // means the identifier must have been quoted at creation time. #11181
-        return super.shouldQuoteIdentifier(id) || hasUpperCase(id);
+        return super.shouldQuoteIdentifier(id) || StringUtilsLabKey.containsUpperCase(id);
     }
 
-    private boolean hasUpperCase(String id)
-    {
-        for (int i = 0; i < id.length(); i++)
-            if (Character.isUpperCase(id.charAt(i)))
-                return true;
-
-        return false;
-    }
 */
     private static final Pattern JAVA_CODE_PATTERN = Pattern.compile("^\\s*SELECT\\s+core\\.executeJavaUpgradeCode\\s*\\(\\s*'(.+)'\\s*\\)\\s*;\\s*$", Pattern.CASE_INSENSITIVE | Pattern.MULTILINE);
 
+    @Override
     public void runSql(DbSchema schema, String sql, UpgradeCode upgradeCode, ModuleContext moduleContext) throws SQLException
     {
         SqlScriptParser parser = new SqlScriptParser(sql, null, JAVA_CODE_PATTERN, schema, upgradeCode, moduleContext);
         parser.execute();
     }
 
+    @Override
     protected void checkSqlScript(String lower, String lowerNoWhiteSpace, Collection<String> errors)
     {
         if (lowerNoWhiteSpace.contains("setsearch_pathto"))
@@ -679,12 +709,14 @@ class PostgreSql83Dialect extends SqlDialect
     }
 
 
+    @Override
     public String getMasterDataBaseName()
     {
         return "template1";
     }
 
 
+    @Override
     public JdbcHelper getJdbcHelper()
     {
         return new PostgreSQLJdbcHelper();
@@ -710,11 +742,13 @@ class PostgreSql83Dialect extends SqlDialect
         }
     }
 
+    @Override
     protected String getDatabaseMaintenanceSql()
     {
         return "VACUUM ANALYZE;";
     }
 
+    @Override
     public SQLFragment sqlLocate(SQLFragment littleString, SQLFragment bigString)
     {
         SQLFragment ret = new SQLFragment(" POSITION(");
@@ -725,6 +759,7 @@ class PostgreSql83Dialect extends SqlDialect
         return ret;
     }
 
+    @Override
     public SQLFragment sqlLocate(SQLFragment littleString, SQLFragment bigString, SQLFragment startIndex)
     {
         SQLFragment tmp = new SQLFragment("position(");
@@ -746,6 +781,7 @@ class PostgreSql83Dialect extends SqlDialect
         return ret;
     }
 
+    @Override
     public boolean allowSortOnSubqueryWithoutLimit()
     {
         return true;
@@ -753,11 +789,13 @@ class PostgreSql83Dialect extends SqlDialect
 
     private static final Pattern s_patStringLiteral = Pattern.compile("\\'([^\\\\\\']|(\\'\\')|(\\\\.))*\\'");
 
+    @Override
     protected Pattern patStringLiteral()
     {
         return s_patStringLiteral;
     }
 
+    @Override
     protected String quoteStringLiteral(String str)
     {
         return "'" + StringUtils.replace(StringUtils.replace(str, "\\", "\\\\"), "'", "''") + "'";
@@ -910,10 +948,12 @@ class PostgreSql83Dialect extends SqlDialect
     }
 
 
+    @Override
     public void initializeConnection(Connection conn) throws SQLException
     {
     }
 
+    @Override
     public void purgeTempSchema(Map<String, TempTableTracker> createdTableNames)
     {
         try
@@ -980,16 +1020,19 @@ class PostgreSql83Dialect extends SqlDialect
         }
     }
 
+    @Override
     public boolean isCaseSensitive()
     {
         return true;
     }
 
+    @Override
     public boolean isEditable()
     {
         return true;
     }
 
+    @Override
     public ColumnMetaDataReader getColumnMetaDataReader(ResultSet rsCols, DbSchema schema)
     {
         // Retrieve and pass in the previously queried scale values for this scope.
@@ -1015,6 +1058,7 @@ class PostgreSql83Dialect extends SqlDialect
             _postionKey = "ORDINAL_POSITION";
         }
 
+        @Override
         public boolean isAutoIncrement() throws SQLException
         {
             String typeName = getSqlTypeName();
@@ -1080,12 +1124,14 @@ class PostgreSql83Dialect extends SqlDialect
         }
     }
 
+    @Override
     public PkMetaDataReader getPkMetaDataReader(ResultSet rs)
     {
         return new PkMetaDataReader(rs, "COLUMN_NAME", "KEY_SEQ");
     }
 
 
+    @Override
     public String getExtraInfo(SQLException e)
     {
         // Deadlock between two different DB connections
