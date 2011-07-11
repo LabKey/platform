@@ -28,19 +28,18 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 /**
- * Created by IntelliJ IDEA.
  * User: Karl Lum
  * Date: May 5, 2008
  */
 public class ParamReplacementSvc
 {
-    private static Logger _log = Logger.getLogger(ParamReplacementSvc.class);
+    private static final Logger _log = Logger.getLogger(ParamReplacementSvc.class);
     private static final ParamReplacementSvc _instance = new ParamReplacementSvc();
-    private static Map<String, String> _outputSubstitutions = new HashMap<String, String>();
+    private static final Map<String, String> _outputSubstitutions = new HashMap<String, String>();
 
     // the default param replacement pattern : ${}
     public static final String REPLACEMENT_PARAM = "\\$\\{(.*?)\\}";
-    public static Pattern defaultScriptPattern = Pattern.compile(REPLACEMENT_PARAM);
+    public static final Pattern defaultScriptPattern = Pattern.compile(REPLACEMENT_PARAM);
 
     private ParamReplacementSvc(){}
 
@@ -281,5 +280,3 @@ public class ParamReplacementSvc
          return outputSubst;
      }
 }
-
-
