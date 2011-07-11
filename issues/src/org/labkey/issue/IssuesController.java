@@ -1356,6 +1356,14 @@ public class IssuesController extends SpringActionController
         {
             int type = form.getType();
             HString keyword = form.getKeyword();
+            IssueManager.Keyword[] keywords = IssueManager.getKeywords(getContainer().getId(), type);
+
+            for(IssueManager.Keyword word : keywords)
+            {
+                if(word.getKeyword().compareToIgnoreCase(keyword)== 0){
+                    errors.reject(ERROR_MSG, "\"" + word.getKeyword() + "\" already exists");
+                }
+            }
 
             if (null == keyword || StringUtils.isBlank(keyword.getSource()))
             {
@@ -1505,6 +1513,20 @@ public class IssuesController extends SpringActionController
 
         public void validateCommand(ConfigureIssuesForm form, Errors errors)
         {
+            HString[] requiredFields = form.getRequiredFields();
+
+            for(HString required : requiredFields){
+                if(required.toString().equals("Type") && IssueManager.getKeywords(getContainer().getId(), 2).length < 1){
+                    errors.reject(ERROR_MSG, "In order to require a Type you must specify at least one below.");
+                } else if(required.toString().equals("Area") && IssueManager.getKeywords(getContainer().getId(), 1).length < 1){
+                    errors.reject(ERROR_MSG, "In order to require an Area you must specify at least one below.");
+                } else if(required.toString().equals("Priority") && IssueManager.getKeywords(getContainer().getId(), 6).length < 1){
+                    errors.reject(ERROR_MSG, "In order to require a Priority you must specify at least one below.");
+                } else if(required.toString().equals("Milestone") && IssueManager.getKeywords(getContainer().getId(), 3).length < 1){
+                    errors.reject(ERROR_MSG, "In order to require a Milestone you must specify at least one below.");
+                }
+            }
+
             if (form.getAssignedToMethod().equals("ProjectUsers"))
             {
                 if (form.getAssignedToGroup() != 0)
