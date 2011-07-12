@@ -120,6 +120,7 @@ public class RReportJob extends PipelineJob implements Serializable
     {
         setStatus(PROCESSING_STATUS, "Job started at: " + DateUtil.nowISO());
         RReport report = getReport();
+        info("Running R report job '" + report.getDescriptor().getReportName() + "'");
 
         int stackSize = -1;
         try
