@@ -121,9 +121,20 @@ public class RReportJob extends PipelineJob implements Serializable
         setStatus(PROCESSING_STATUS, "Job started at: " + DateUtil.nowISO());
         RReport report = getReport();
 
+        int stackSize = -1;
         try
         {
-            ViewContext context = getViewContext();
+            ViewContext context;
+            if (HttpView.hasCurrentView())
+            {
+                context = HttpView.currentContext();
+            }
+            else
+            {
+                // Horrible nasty.  Push a fake ViewContext on the HttpView stack if necessary so HttpView.currentContext() succeeds.
+                stackSize = HttpView.getStackSize();
+                context = ViewContext.getMockViewContext(getUser(), getContainer(), getActionURL(), true);
+            }
 
             // get the input file which should have been previously created
             File inputFile = inputFile(report, context);
@@ -150,15 +161,11 @@ public class RReportJob extends PipelineJob implements Serializable
             error("Error occurred running the report background job", e);
             setStatus(PipelineJob.ERROR_STATUS, "Job finished at: " + DateUtil.nowISO());
         }
-    }
-
-    // Horrible nasty.  Push a ViewContext on the stack if necessary so HttpView.currentContext() succeeds.
-    private ViewContext getViewContext()
-    {
-        if (HttpView.hasCurrentView())
-            return HttpView.currentContext();
-        else
-            return ViewContext.getMockViewContext(getUser(), getContainer(), getActionURL(), true);
+        finally
+        {
+            if (stackSize > -1)
+                HttpView.resetStackSize(stackSize);
+        }
     }
 
     protected File inputFile(RReport report, ViewContext context) throws Exception
