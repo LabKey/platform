@@ -77,6 +77,7 @@ public class ExternalScriptEngineReport extends ScriptEngineReport implements At
     public HttpView renderReport(ViewContext context) throws Exception
     {
         VBox view = new VBox();
+        String script = getDescriptor().getProperty(ScriptReportDescriptor.Prop.script);
 
 /*
         if (validateConfiguration(getRExe(), getRCmd(), getTempFolder(), getRScriptHandler()) != null)
@@ -87,42 +88,40 @@ public class ExternalScriptEngineReport extends ScriptEngineReport implements At
         }
 */
 
+        List<String> errors = new ArrayList<String>();
+
+        if (!validateScript(script, errors))
+        {
+            for (String error : errors)
+                view.addView(new HtmlView("<span class=\"labkey-error\">" + error + "</span>"));
+            return view;
+        }
+
         List<ParamReplacement> outputSubst = new ArrayList<ParamReplacement>();
-        try
+
+        if (!getCachedReport(context, outputSubst))
         {
-            List<String> errors = new ArrayList<String>();
-            executeReport(context, errors, outputSubst);
-        }
-        catch (ScriptException e)
-        {
-            view.addView(handleException(e));
-        }
-        catch (Exception e)
-        {
-            ExceptionUtil.logExceptionToMothership(context.getRequest(), e);
-            view.addView(handleException(e));
+            try
+            {
+                runScript(context, outputSubst, createInputDataFile(context));
+            }
+            catch (ScriptException e)
+            {
+                view.addView(handleException(e));
+            }
+            catch (Exception e)
+            {
+                ExceptionUtil.logExceptionToMothership(context.getRequest(), e);
+                
+                view.addView(handleException(e));
+            }
+
+            cacheResults(context, outputSubst);
         }
 
         renderViews(this, view, outputSubst, false);
 
         return view;
-    }
-
-    protected void executeReport(ViewContext context, List<String> errors, List<ParamReplacement> outputSubst)
-            throws Exception
-    {
-        String script = getDescriptor().getProperty(ScriptReportDescriptor.Prop.script);
-
-        if (!validateScript(script, errors))
-            return;
-
-        if (!getCachedReport(context, outputSubst))
-        {
-            File inputDataFile = createInputDataFile(context);
-            runScript(context, outputSubst, inputDataFile);
-
-            cacheResults(context, outputSubst);
-        }
     }
 
     private HttpView handleException(Exception e)
