@@ -53,7 +53,6 @@ import org.labkey.experiment.controllers.property.PropertyController;
 
 import java.sql.SQLException;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 
@@ -254,7 +253,7 @@ public class DomainImpl implements Domain
         {
             ExperimentService.get().ensureTransaction();
 
-            boolean keyColumnsChanged = false;
+            List<DomainProperty> newlyRequiredProps = new ArrayList<DomainProperty>();
             if (isNew())
             {
                 _dd = Table.insert(user, OntologyManager.getTinfoDomainDescriptor(), _dd);
@@ -292,7 +291,7 @@ public class DomainImpl implements Domain
                     if (impl.isNew())
                     {
                         if (impl._pd.isRequired())
-                            keyColumnsChanged = true;
+                            newlyRequiredProps.add(impl);
                         impl.save(user, _dd, sortOrder++);
                         propsAdded.add(impl);
                         propChanged = true;
@@ -302,7 +301,7 @@ public class DomainImpl implements Domain
                         propChanged |= impl.isDirty();
 
                         if ((impl._pdOld != null && !impl._pdOld.isRequired()) && impl._pd.isRequired())
-                            keyColumnsChanged = true;
+                            newlyRequiredProps.add(impl);
                         impl.save(user, _dd, sortOrder++);
                     }
                 }
@@ -328,12 +327,15 @@ public class DomainImpl implements Domain
                 addAuditEvent(user, String.format("The column(s) of domain %s were modified", _dd.getName()));
             }
 
-            if (keyColumnsChanged && null != kind)
+            if (!newlyRequiredProps.isEmpty() && null != kind)
             {
-                boolean hasRows = kind.hasRows(this);
-                if (hasRows)
+                for (DomainProperty prop : newlyRequiredProps)
                 {
-                    throw new IllegalStateException("The required property cannot be changed when rows already exist.");
+                    boolean hasRows = kind.hasNullValues(this, prop);
+                    if (hasRows)
+                    {
+                        throw new IllegalStateException("The required property cannot be changed when rows already exist.");
+                    }
                 }
             }
 
