@@ -88,7 +88,7 @@ class PostgreSql83Dialect extends SqlDialect
             "primary, references, returning, right, select, session_user, similar, some, symmetric, table, then, to, " +
             "trailing, union, unique, user, using, variadic, verbose, when, where, window, with" +
 
-            // for <= PostgreSQL 8.4
+            // For <= PostgreSQL 8.4
             ", between, new, off, old" +
 
             // For = PostgreSQL 8.3

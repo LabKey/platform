@@ -80,7 +80,10 @@ public class MicrosoftSqlServer2005Dialect extends SqlDialect
             "restrict, return, revert, revoke, right, rollback, rowcount, rowguidcol, rule, save, schema, select, " +
             "session_user, set, setuser, shutdown, some, statistics, system_user, table, tablesample, textsize, then, to, " +
             "top, tran, transaction, trigger, truncate, tsequal, union, unique, unpivot, update, updatetext, use, user, " +
-            "values, varying, view, waitfor, when, where, while, with, writetext"
+            "values, varying, view, waitfor, when, where, while, with, writetext" +
+
+            // SQL Server 2005 only
+            ", dump, load"
         ));
     }
 

@@ -16,10 +16,23 @@
 
 package org.labkey.bigiron.mssql;
 
+import org.jetbrains.annotations.NotNull;
+import org.labkey.api.collections.CsvSet;
+
+import java.util.Set;
+
 /**
  * User: kevink
  * Date: Jan 28, 2008 2:56:27 PM
  */
 public class MicrosoftSqlServer2008Dialect extends MicrosoftSqlServer2005Dialect
 {
+    @NotNull
+    @Override
+    protected Set<String> getReservedWords()
+    {
+        Set<String> words = super.getReservedWords();
+        words.removeAll(new CsvSet("dump, load"));
+        return words;
+    }
 }
