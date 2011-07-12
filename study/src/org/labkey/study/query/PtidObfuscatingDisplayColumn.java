@@ -36,8 +36,7 @@ public class PtidObfuscatingDisplayColumn extends DataColumn
     @Override
     public String getValue(RenderContext ctx)
     {
-        String value = super.getValue(ctx).toString();
-        return DemoMode.obfuscate(value);
+        return DemoMode.obfuscate(super.getValue(ctx));
     }
 
     @Override
