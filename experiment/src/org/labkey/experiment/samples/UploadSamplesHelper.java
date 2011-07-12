@@ -188,6 +188,9 @@ public class UploadSamplesHelper
             else
             {
                 idColPropertyURIs = new ArrayList<String>();
+                if (_form.getIdColumn1() < 0 || _form.getIdColumn1() >= columns.length)
+                    throw new ExperimentException("An id column must be be selected to uniquely identify each sample (idColumn1 was " + _form.getIdColumn1() + ")");
+
                 if (isNameHeader(columns[_form.getIdColumn1()].name))
                 {
                     idColPropertyURIs.add(columns[_form.getIdColumn1()].name);
@@ -198,10 +201,14 @@ public class UploadSamplesHelper
                     idColPropertyURIs.add(columns[_form.getIdColumn1()].name);
                     if (_form.getIdColumn2() >= 0)
                     {
+                        if (_form.getIdColumn2() >= columns.length)
+                            throw new ExperimentException("idColumn2 out of bounds: " + _form.getIdColumn2());
                         idColPropertyURIs.add(columns[_form.getIdColumn2()].name);
                     }
                     if (_form.getIdColumn3() >= 0)
                     {
+                        if (_form.getIdColumn3() >= columns.length)
+                            throw new ExperimentException("idColumn3 out of bounds: " + _form.getIdColumn3());
                         idColPropertyURIs.add(columns[_form.getIdColumn3()].name);
                     }
                 }
