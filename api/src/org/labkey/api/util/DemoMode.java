@@ -17,6 +17,7 @@
 package org.labkey.api.util;
 
 import org.apache.commons.lang.StringUtils;
+import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.Container;
 import org.labkey.api.security.User;
 
@@ -33,13 +34,18 @@ public class DemoMode
     private final static Set<Pair<Container, User>> SET = new HashSet<Pair<Container, User>>();
 
     // Return an obfuscated version of the id.  This is the choke point for all obfuscation... currently returns
-    // a string of astericks the same length as the input.
-    public static String obfuscate(String id)
+    // a string of astericks the same length as the input.  Null results in an empty string.
+    public static String obfuscate(@Nullable String id)
     {
-        return StringUtils.repeat("*", id.length());
+        return StringUtils.repeat("*", null == id ? 0 : id.length());
     }
 
-    public static String id(String id, Container c, User user)
+    public static String obfuscate(@Nullable Object o)
+    {
+        return obfuscate(null == o ? null : o.toString());
+    }
+
+    public static String id(@Nullable String id, Container c, User user)
     {
         if (isDemoMode(c, user))
             return obfuscate(id);
