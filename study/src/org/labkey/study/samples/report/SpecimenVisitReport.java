@@ -214,7 +214,10 @@ public abstract class SpecimenVisitReport<CELLDATA extends SpecimenReportCellDat
         }
 
         String baseParams = geBaseViewFilter().toQueryString("SpecimenDetail");
-        return baseParams + "&" + url.getQueryString();
+        if (baseParams != null && baseParams.length() > 0)
+            return baseParams + "&" + url.getQueryString();
+        else
+            return url.getQueryString();
     }
 
     public int getLabelDepth()

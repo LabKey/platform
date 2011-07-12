@@ -50,7 +50,7 @@ public class TypeParticipantReportFactory extends TypeReportFactory
     public String getLabel()
     {
         String subjectNoun = StudyService.get().getSubjectNounSingular(getContainer());
-        return _participantId == null ? "By " + subjectNoun : subjectNoun + " " + _participantId;
+        return _participantId == null || ALL_SUBJECTS_OPTION.equals(_participantId) ? "By " + subjectNoun : subjectNoun + " " + _participantId;
     }
 
     public boolean allowsCohortFilter()
@@ -66,12 +66,15 @@ public class TypeParticipantReportFactory extends TypeReportFactory
     protected List<? extends SpecimenVisitReport> createReports()
     {
         String[] participantIds;
-        if (_participantId != null && _participantId.trim().length() > 0)
+        if (!ALL_SUBJECTS_OPTION.equals(_participantId) && _participantId != null && _participantId.trim().length() > 0)
             participantIds = new String[] { _participantId };
         else
         {
             Study study = StudyManager.getInstance().getStudy(getContainer());
-            participantIds = StudyManager.getInstance().getParticipantIds(study);
+            if (getParticipantGroupFilter() >= 0)
+                participantIds = StudyManager.getInstance().getParticipantIdsForGroup(study, getParticipantGroupFilter());
+            else
+                participantIds = StudyManager.getInstance().getParticipantIds(study);
             if (participantIds == null)
                 return Collections.<SpecimenVisitReport>emptyList();
         }

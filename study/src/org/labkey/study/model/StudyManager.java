@@ -2200,13 +2200,29 @@ public class StudyManager
         return getParticipantIds(study, -1);
     }
 
+    public String[] getParticipantIdsForGroup(Study study, int groupId)
+    {
+        return getParticipantIds(study, groupId, -1);
+    }
+
     public String[] getParticipantIds(Study study, int rowLimit)
+    {
+        return getParticipantIds(study, -1, rowLimit);
+    }
+
+    private String[] getParticipantIds(Study study, int participantGroupId, int rowLimit)
     {
         try
         {
             DbSchema schema = StudySchema.getInstance().getSchema();
-            TableInfo table = _tableInfoParticipant;
-            SQLFragment sql = new SQLFragment("SELECT ParticipantId FROM " + table + " WHERE Container = ? ORDER BY ParticipantId", study.getContainer().getId());
+            SQLFragment sql;
+            if (participantGroupId == -1)
+                sql = new SQLFragment("SELECT ParticipantId FROM " + _tableInfoParticipant + " WHERE Container = ? ORDER BY ParticipantId", study.getContainer().getId());
+            else
+            {
+                TableInfo table = StudySchema.getInstance().getTableInfoParticipantGroupMap();
+                sql = new SQLFragment("SELECT ParticipantId FROM " + table + " WHERE Container = ? AND GroupId = ? ORDER BY ParticipantId", study.getContainer().getId(), participantGroupId);
+            }
             if (rowLimit > 0)
                 sql = schema.getSqlDialect().limitRows(sql, rowLimit);
             return Table.executeArray(schema, sql, String.class);

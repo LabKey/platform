@@ -370,6 +370,7 @@ public abstract class SpecimenVisitReportParameters extends ViewForm
         return builder.toString();
     }
 
+    protected static final String ALL_SUBJECTS_OPTION = "~all~";
     protected Pair<String, String> getParticipantPicker(String inputName, String selectedParticipantId)
     {
         try
@@ -377,7 +378,10 @@ public abstract class SpecimenVisitReportParameters extends ViewForm
             Study study = StudyManager.getInstance().getStudy(getContainer());
             StringBuilder builder = new StringBuilder();
             builder.append("<select name=\"").append(inputName).append("\">\n");
-            builder.append("<option value=\"\">All ").append(PageFlowUtil.filter(StudyService.get().getSubjectNounPlural(getContainer()))).append(" (Large Report)</option>\n");
+            builder.append("<option value=\"").append(ALL_SUBJECTS_OPTION).append("\"");
+            if (ALL_SUBJECTS_OPTION.equals(selectedParticipantId))
+                builder.append(" SELECTED");
+            builder.append(">All ").append(PageFlowUtil.filter(StudyService.get().getSubjectNounPlural(getContainer()))).append(" (Large Report)</option>\n");
             boolean first = true;
             for (Participant participant : StudyManager.getInstance().getParticipants(study))
             {

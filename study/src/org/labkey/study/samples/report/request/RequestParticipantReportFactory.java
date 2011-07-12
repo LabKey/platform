@@ -80,12 +80,15 @@ public class RequestParticipantReportFactory extends BaseRequestReportFactory
     protected List<? extends SpecimenVisitReport> createReports()
     {
         String[] participantIds;
-        if (_participantId != null && _participantId.trim().length() > 0)
+        if (!ALL_SUBJECTS_OPTION.equals(_participantId) && _participantId != null && _participantId.trim().length() > 0)
             participantIds = new String[] { _participantId };
         else
         {
             Study study = StudyManager.getInstance().getStudy(getContainer());
-            participantIds = StudyManager.getInstance().getParticipantIds(study);
+            if (getParticipantGroupFilter() >= 0)
+                participantIds = StudyManager.getInstance().getParticipantIdsForGroup(study, getParticipantGroupFilter());
+            else
+                participantIds = StudyManager.getInstance().getParticipantIds(study);
             if (participantIds == null)
                 return Collections.<SpecimenVisitReport>emptyList();
         }
