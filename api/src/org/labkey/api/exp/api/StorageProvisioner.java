@@ -500,6 +500,9 @@ public class StorageProvisioner
                     {
                         c.setMvColumnName(mvColumn.getName());
                         mvColumn.setMvIndicatorColumn(true);
+                        // The UI for the main column will include MV input as well, so no need for another column in insert/update views
+                        mvColumn.setShownInUpdateView(false);
+                        mvColumn.setShownInInsertView(false);
                     }
                 }
                 c.setScale(p.getScale());

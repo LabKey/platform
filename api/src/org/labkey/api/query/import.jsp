@@ -237,6 +237,7 @@
             bodyStyle:'padding:5px',
             width: 600,
             defaultType: 'textfield',
+            timeout: Ext.Ajax.timeout,
 
             items: [
                 {
@@ -269,6 +270,7 @@
             bodyStyle:'padding:5px',
             width: 600,
             defaultType: 'textfield',
+            timeout: Ext.Ajax.timeout,
 
             items: [
                 {
@@ -288,7 +290,6 @@
         uploadFileForm.render(uploadFileDiv);
     }
 
-    Ext.Ajax.timeout = 5*60*1000;
     Ext.onReady(onReady);
 
 })(); </script>

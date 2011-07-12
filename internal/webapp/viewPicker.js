@@ -161,6 +161,7 @@ function chooseView(title, helpText, sep, submitFunction)
 
     var formPanel = new Ext.form.FormPanel({
         padding: 5,
+        timeout: Ext.Ajax.timeout,
         items: [queryLabel, schemaCombo, queryCombo, viewCombo]});
 
     var win = new Ext.Window({

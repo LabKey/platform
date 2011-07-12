@@ -100,5 +100,5 @@ abstract public class DomainKind implements Handler<String>
      * Need to be able to tell if a domain has rows.
      * Perhaps DomainKind should have getTableInfo() method.
      */
-    abstract public boolean hasRows(Domain domain);
+    abstract public boolean hasNullValues(Domain domain, DomainProperty prop);
 }

@@ -16,6 +16,8 @@
 
 package org.labkey.api.data;
 
+import org.labkey.api.util.PageFlowUtil;
+
 import java.sql.ResultSet;
 import java.sql.SQLException;
 
@@ -110,7 +112,7 @@ public class GroupedResultSet extends Table.ResultSetImpl
         while (rs.next())
         {
             // Look for the group number changing
-            if (!getObject(_columnIndex).equals(value))
+            if (!PageFlowUtil.nullSafeEquals(getObject(_columnIndex), value))
             {
                 _groupCount++;
                 value = getObject(_columnIndex);

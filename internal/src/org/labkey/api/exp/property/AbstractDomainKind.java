@@ -16,10 +16,12 @@
 package org.labkey.api.exp.property;
 
 import org.labkey.api.data.Container;
+import org.labkey.api.data.CoreSchema;
 import org.labkey.api.data.DbScope;
 import org.labkey.api.data.PropertyStorageSpec;
 import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.Table;
+import org.labkey.api.data.dialect.SqlDialect;
 import org.labkey.api.exp.ChangePropertyDescriptorException;
 import org.labkey.api.exp.PropertyDescriptor;
 import org.labkey.api.exp.api.ExperimentService;
@@ -130,31 +132,49 @@ public abstract class AbstractDomainKind extends DomainKind
     }
 
     @Override
-    public boolean hasRows(Domain domain)
+    public boolean hasNullValues(Domain domain, DomainProperty prop)
     {
         try
         {
             // CONSIDER changing to EXISTS test or LIMIT 1 for performance
-            SQLFragment sqlCount;
+            SQLFragment totalRowCountSQL;
+            SQLFragment nonBlankRowCountSQL;
             if (getStorageSchemaName() == null)
             {
                 SQLFragment sqlObjectIds = sqlObjectIdsInDomain(domain);
-                sqlCount = new SQLFragment("SELECT COUNT(exp.object.objectId) AS value FROM exp.object WHERE exp.object.objectid IN (");
-                sqlCount.append(sqlObjectIds);
-                sqlCount.append(")");
+                totalRowCountSQL = new SQLFragment("SELECT COUNT(exp.object.objectId) AS value FROM exp.object WHERE exp.object.objectid IN (");
+                totalRowCountSQL.append(sqlObjectIds);
+                totalRowCountSQL.append(")");
+
+                nonBlankRowCountSQL = new SQLFragment("SELECT COUNT(op.objectId) AS value FROM exp.objectproperty op WHERE ");
+                nonBlankRowCountSQL.append("(op.StringValue IS NOT NULL OR op.FloatValue IS NOT NULL OR ");
+                nonBlankRowCountSQL.append("op.DateTimeValue IS NOT NULL OR op.MVIndicator IS NULL) AND op.objectid IN (");
+                nonBlankRowCountSQL.append(sqlObjectIds);
+                nonBlankRowCountSQL.append(") AND op.PropertyId = ?");
+                nonBlankRowCountSQL.add(prop.getPropertyId());
             }
             else if (domain.getStorageTableName() != null)
             {
                 String table = domain.getStorageTableName();
-                sqlCount = new SQLFragment("SELECT COUNT(*) AS value FROM " + getStorageSchemaName() + "." + table);
+                totalRowCountSQL = new SQLFragment("SELECT COUNT(*) AS value FROM " + getStorageSchemaName() + "." + table);
+                nonBlankRowCountSQL = new SQLFragment("SELECT COUNT(*) AS value FROM " + getStorageSchemaName() + "." + table + " x WHERE ");
+                SqlDialect dialect = CoreSchema.getInstance().getSqlDialect();
+                nonBlankRowCountSQL.append("x." + dialect.makeLegalIdentifier(prop.getName()) + " IS NOT NULL");
+                if (prop.isMvEnabled())
+                {
+                    nonBlankRowCountSQL.append(" OR x." + dialect.makeLegalIdentifier(PropertyStorageSpec.getMvIndicatorColumnName(prop.getName())) + " IS NOT NULL");
+                }
             }
             else
             {
                 return false;
             }
 
-            Map[] maps = Table.executeQuery(ExperimentService.get().getSchema(), sqlCount, Map.class);
-            return ((Number) maps[0].get("value")).intValue() != 0;
+            Map[] maps = Table.executeQuery(ExperimentService.get().getSchema(), totalRowCountSQL, Map.class);
+            int totalRows = ((Number) maps[0].get("value")).intValue();
+            maps = Table.executeQuery(ExperimentService.get().getSchema(), nonBlankRowCountSQL, Map.class);
+            int nonBlankRows = ((Number) maps[0].get("value")).intValue();
+            return totalRows != nonBlankRows;
         }
         catch (SQLException x)
         {

@@ -15,6 +15,7 @@
  */
 package org.labkey.api.util;
 
+import org.apache.commons.io.IOCase;
 import org.junit.Assert;
 import org.junit.Test;
 import org.labkey.api.pipeline.file.FileAnalysisJobSupport;
@@ -71,6 +72,7 @@ public class FileType implements Serializable
     private Boolean _preferGZ;
     /** If _supportGZ is true, accept .suffix.gz as the equivalent of .suffix **/ 
     private Boolean _supportGZ;
+    private boolean _caseSensitiveOnCaseSensitiveFileSystems = false;
 
     /**
      * true if the different file extensions are just transformed versions of the same data (such as .raw and .mzXML)
@@ -310,13 +312,13 @@ public class FileType implements Serializable
         {
             for (int i = 0; i < _suffixes.size(); i++)
             {
-                String s = _suffixes.get(i).toLowerCase();
-                if (file.getName().toLowerCase().endsWith(s))
+                String s = toLowerIfCaseInsensitive(_suffixes.get(i));
+                if (toLowerIfCaseInsensitive(file.getName()).endsWith(s))
                 {
                     return i;
                 }
                 // TPP treats .xml.gz as a native format
-                if (_supportGZ.booleanValue() && file.getName().toLowerCase().endsWith(s + ".gz"))
+                if (_supportGZ.booleanValue() && toLowerIfCaseInsensitive(file.getName()).endsWith(s + ".gz"))
                 {
                     return i;
                 }
@@ -324,6 +326,19 @@ public class FileType implements Serializable
         }
 
         throw new IllegalArgumentException("No match found for " + file + " with " + toString());
+    }
+
+    private String toLowerIfCaseInsensitive(String s)
+    {
+        if (s == null)
+        {
+            return null;
+        }
+        if (_caseSensitiveOnCaseSensitiveFileSystems && IOCase.SYSTEM.isCaseSensitive())
+        {
+            return s;
+        }
+        return s.toLowerCase();
     }
 
     /**
@@ -339,7 +354,7 @@ public class FileType implements Serializable
         {
             // run the entire list in order to assure strongest match
             // consider .msprefix.mzxml vs .mzxml for example
-            if (file.getName().toLowerCase().endsWith(s.toLowerCase()))
+            if (toLowerIfCaseInsensitive(file.getName()).endsWith(toLowerIfCaseInsensitive(s)))
             {
                 if ((null==suffix) || (s.length()>suffix.length()))
                 {
@@ -387,12 +402,12 @@ public class FileType implements Serializable
         }
         for (String suffix : _suffixes)
         {
-            if (filePath.toLowerCase().endsWith(suffix.toLowerCase()))
+            if (toLowerIfCaseInsensitive(filePath).endsWith(toLowerIfCaseInsensitive(suffix)))
             {
                 return true;
             }
             // TPP treats .xml.gz as a native format
-            if (_supportGZ.booleanValue() && filePath.toLowerCase().endsWith(suffix.toLowerCase()+".gz"))
+            if (_supportGZ.booleanValue() && toLowerIfCaseInsensitive(filePath).endsWith(toLowerIfCaseInsensitive(suffix) + ".gz"))
             {
                 return true;
             }
@@ -519,6 +534,16 @@ public class FileType implements Serializable
             return _defaultSuffix.substring(_defaultSuffix.indexOf(".") + 1);
         }
         return _defaultSuffix;
+    }
+
+    public boolean isCaseSensitiveOnCaseSensitiveFileSystems()
+    {
+        return _caseSensitiveOnCaseSensitiveFileSystems;
+    }
+
+    public void setCaseSensitiveOnCaseSensitiveFileSystems(boolean caseSensitiveOnCaseSensitiveFileSystems)
+    {
+        _caseSensitiveOnCaseSensitiveFileSystems = caseSensitiveOnCaseSensitiveFileSystems;
     }
 
     public static class TestCase extends Assert

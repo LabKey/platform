@@ -709,7 +709,6 @@ public class OntologyManager
                 for (int s = 0; s < objectIds.length; s += lenBatch)
                 {
                     int end = Math.min(s + lenBatch, objectIds.length);
-                    System.err.println("delete " + s + "-" + end);
                     sub.clear();
                     sub.addAll(Arrays.asList(objectIds).subList(s, end));
                     deleteOntologyObjects(sub.toArray(new Integer[sub.size()]), c, deleteOwnedObjects, deleteObjects);

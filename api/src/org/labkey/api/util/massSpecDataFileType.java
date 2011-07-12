@@ -39,6 +39,7 @@ public class massSpecDataFileType extends FileType
     {
         super(".mzXML", gzSupportLevel.SUPPORT_GZ);
         addMzmlIfAvailable(); // shall we add mzml to the list?
+        setCaseSensitiveOnCaseSensitiveFileSystems(true);
     }
 
     /**
@@ -49,6 +50,7 @@ public class massSpecDataFileType extends FileType
     {
         super(suffixes, defaultSuffix, false, gzSupportLevel.SUPPORT_GZ);
         addMzmlIfAvailable(); // shall we add mzml to the list?
+        setCaseSensitiveOnCaseSensitiveFileSystems(true);
     }
 
     // use this to investigate availability of DLL that

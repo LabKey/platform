@@ -66,12 +66,15 @@ public class FileLinkDisplayColumn extends DataColumn
         Map<FieldKey, ColumnInfo> cols = QueryService.get().getColumns(getColumnInfo().getParentTable(), keys);
 
          _objectIdColumn = cols.get(lsidFieldKey);
-        columns.add(_objectIdColumn);
+        if (_objectIdColumn != null)
+        {
+            columns.add(_objectIdColumn);
+        }
     }
 
     public void renderGridCellContents(RenderContext ctx, Writer out) throws IOException
     {
-        if (_url == null)
+        if (_url == null && _objectIdColumn != null)
         {
             ActionURL url = _baseURL.clone();
             url.addParameter("propertyId", _pd.getPropertyId());
@@ -82,7 +85,7 @@ public class FileLinkDisplayColumn extends DataColumn
         if (path != null)
         {
             File file = new File(path);
-            if (file.exists())
+            if (file.exists() && _url != null)
             {
                 out.write("<a href=\"" + _url.eval(ctx) + "\" title=\"Download attached file\">" +
                     PageFlowUtil.filter(file.getName()) + "</a>");

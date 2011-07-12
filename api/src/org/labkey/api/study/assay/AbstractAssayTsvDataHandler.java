@@ -17,6 +17,7 @@
 package org.labkey.api.study.assay;
 
 import org.apache.log4j.Logger;
+import org.labkey.api.collections.CaseInsensitiveHashSet;
 import org.labkey.api.data.*;
 import org.labkey.api.exp.*;
 import org.labkey.api.exp.api.*;
@@ -237,20 +238,19 @@ public abstract class AbstractAssayTsvDataHandler extends AbstractExperimentData
 
     private void checkColumns(Domain dataDomain, Set<String> actual, List<String> missing, List<String> unexpected, List<Map<String, Object>> rawData, boolean strict)
     {
-        Set<String> checkSet = new HashSet<String>();
+        Set<String> checkSet = new CaseInsensitiveHashSet();
         DomainProperty[] expected = dataDomain.getProperties();
         for (DomainProperty pd : expected)
         {
-            checkSet.add(pd.getName().toLowerCase());
+            checkSet.add(pd.getName());
             if (pd.isMvEnabled())
-                checkSet.add((pd.getName() + MvColumn.MV_INDICATOR_SUFFIX).toLowerCase());
+                checkSet.add((pd.getName() + MvColumn.MV_INDICATOR_SUFFIX));
         }
         for (String col : actual)
         {
-            if (!checkSet.contains(col.toLowerCase()))
+            if (!checkSet.contains(col))
                 unexpected.add(col);
         }
-        checkSet.clear();
         if (!strict)
         {
             if (unexpected.size() > 0)
@@ -258,12 +258,26 @@ public abstract class AbstractAssayTsvDataHandler extends AbstractExperimentData
             unexpected.clear();
         }
 
-        for (String col : actual)
-            checkSet.add(col.toLowerCase());
+        // Now figure out what's missing but required
+        Map<String, DomainProperty> importMap = dataDomain.createImportMap(true);
+        // Consider all of them initially
+        LinkedHashSet<DomainProperty> missingProps = new LinkedHashSet<DomainProperty>(Arrays.asList(expected));
 
-        for (DomainProperty pd : expected)
+        // Iterate through the ones we got
+        for (String col : actual)
         {
-            if ((pd.isRequired() || strict) && !checkSet.contains(pd.getName().toLowerCase()))
+            // Find the property that it maps to (via name, label, import alias, etc)
+            DomainProperty prop = importMap.get(col);
+            if (prop != null)
+            {
+                // If there's a match, don't consider it missing any more
+                missingProps.remove(prop);
+            }
+        }
+
+        for (DomainProperty pd : missingProps)
+        {
+            if ((pd.isRequired() || strict))
                 missing.add(pd.getName());
         }
     }
