@@ -142,6 +142,16 @@ public class IssuesController extends SpringActionController
     public static final int ISSUE_STRING4 = 9;
     public static final int ISSUE_STRING5 = 10;
 
+    public static final String TYPE_STRING = "type";
+    public static final String AREA_STRING = "area";
+    public static final String PRIORITY_STRING = "priority";
+    public static final String MILESTONE_STRING = "milestone";
+    public static final String RESOLUTION_STRING = "resolution";
+    public static final String STRING_1_STRING = "string1";
+    public static final String STRING_2_STRING = "string2";
+    public static final String STRING_3_STRING = "string3";
+    public static final String STRING_4_STRING = "string4";
+    public static final String STRING_5_STRING = "string5";
 
     private static final DefaultActionResolver _actionResolver = new DefaultActionResolver(IssuesController.class);
 
@@ -1356,28 +1366,31 @@ public class IssuesController extends SpringActionController
         {
             int type = form.getType();
             HString keyword = form.getKeyword();
-            IssueManager.Keyword[] keywords = IssueManager.getKeywords(getContainer().getId(), type);
-
-            for(IssueManager.Keyword word : keywords)
-            {
-                if(word.getKeyword().compareToIgnoreCase(keyword)== 0){
-                    errors.reject(ERROR_MSG, "\"" + word.getKeyword() + "\" already exists");
-                }
-            }
-
             if (null == keyword || StringUtils.isBlank(keyword.getSource()))
             {
                 errors.reject(ERROR_MSG, "Enter a value in the text box before clicking any of the \"Add <Keyword>\" buttons");
             }
-            else if (ISSUE_PRIORITY == type)
+            else
             {
-                try
+                if (ISSUE_PRIORITY == type)
                 {
-                    Integer.parseInt(keyword.getSource());
+                    try
+                    {
+                        Integer.parseInt(keyword.getSource());
+                    }
+                    catch (NumberFormatException e)
+                    {
+                        errors.reject(ERROR_MSG, "Priority must be an integer");
+                    }
                 }
-                catch (NumberFormatException e)
+                else
                 {
-                    errors.reject(ERROR_MSG, "Priority must be an integer");
+                    IssueManager.Keyword[] keywords = IssueManager.getKeywords(getContainer().getId(), type);
+                    for (IssueManager.Keyword word : keywords)
+                    {
+                        if (word.getKeyword().compareToIgnoreCase(keyword)== 0)
+                            errors.reject(ERROR_MSG, "\"" + word.getKeyword() + "\" already exists");
+                    }
                 }
             }
         }
@@ -1515,14 +1528,21 @@ public class IssuesController extends SpringActionController
         {
             HString[] requiredFields = form.getRequiredFields();
 
-            for(HString required : requiredFields){
-                if(required.toString().equals("Type") && IssueManager.getKeywords(getContainer().getId(), 2).length < 1){
+            for (HString required : requiredFields){
+                if (required.toString().equalsIgnoreCase(TYPE_STRING) && IssueManager.getKeywords(getContainer().getId(), ISSUE_TYPE).length < 1)
+                {
                     errors.reject(ERROR_MSG, "In order to require a Type you must specify at least one below.");
-                } else if(required.toString().equals("Area") && IssueManager.getKeywords(getContainer().getId(), 1).length < 1){
+                }
+                else if (required.toString().equalsIgnoreCase(AREA_STRING) && IssueManager.getKeywords(getContainer().getId(), ISSUE_AREA).length < 1)
+                {
                     errors.reject(ERROR_MSG, "In order to require an Area you must specify at least one below.");
-                } else if(required.toString().equals("Priority") && IssueManager.getKeywords(getContainer().getId(), 6).length < 1){
+                }
+                else if (required.toString().equalsIgnoreCase(PRIORITY_STRING) && IssueManager.getKeywords(getContainer().getId(), ISSUE_PRIORITY).length < 1)
+                {
                     errors.reject(ERROR_MSG, "In order to require a Priority you must specify at least one below.");
-                } else if(required.toString().equals("Milestone") && IssueManager.getKeywords(getContainer().getId(), 3).length < 1){
+                }
+                else if (required.toString().equalsIgnoreCase(MILESTONE_STRING) && IssueManager.getKeywords(getContainer().getId(), ISSUE_MILESTONE).length < 1)
+                {
                     errors.reject(ERROR_MSG, "In order to require a Milestone you must specify at least one below.");
                 }
             }
@@ -1578,19 +1598,7 @@ public class IssuesController extends SpringActionController
             IssueManager.CustomColumnConfiguration ccc = new IssueManager.CustomColumnConfiguration(getViewContext());
             IssueManager.saveCustomColumnConfiguration(getContainer(), ccc);
 
-            final StringBuilder sb = new StringBuilder();
-            if (form.getRequiredFields().length > 0)
-            {
-                String sep = "";
-                for (HString field : form.getRequiredFields())
-                {
-                    sb.append(sep);
-                    sb.append(field);
-                    sep = ";";
-                }
-            }
-            IssueManager.setRequiredIssueFields(getContainer(), sb.toString());
-
+            IssueManager.setRequiredIssueFields(getContainer(), form.getRequiredFields());
             return true;
         }
 

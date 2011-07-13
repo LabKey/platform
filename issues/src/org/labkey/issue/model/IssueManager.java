@@ -330,8 +330,59 @@ public class IssueManager
         {
             _log.error("deleteKeyword", x);
         }
-    }
 
+        //Check to see if the last keyword of a required field was deleted, if so no longer make the field required.
+        if (getKeywords(c.getId(), type).length == 0)
+        {
+            String stringType ="";
+            if (type == IssuesController.ISSUE_AREA)
+            {
+                stringType = IssuesController.AREA_STRING;
+            }
+            else if (type == IssuesController.ISSUE_TYPE)
+            {
+                stringType = IssuesController.TYPE_STRING;
+            }
+            else if (type == IssuesController.ISSUE_MILESTONE)
+            {
+                stringType = IssuesController.MILESTONE_STRING;
+            }
+            else if (type == IssuesController.ISSUE_PRIORITY)
+            {
+                stringType = IssuesController.PRIORITY_STRING;
+            }
+
+            HString requiredFields = getRequiredIssueFields(c);
+            if (requiredFields.contains(stringType) && !stringType.equals(""))
+            {
+                //Here we want to remove the type from the required fields.
+                requiredFields = requiredFields.replace(stringType, "");
+                if (requiredFields.length() > 0)
+                {
+                    if (requiredFields.charAt(0) == ';')
+                    {
+                       requiredFields = requiredFields.substring(1);
+                    }
+                    else if (requiredFields.charAt(requiredFields.length()-1) == ';')
+                    {
+                       requiredFields = requiredFields.substring(0, requiredFields.length()-1);
+                    }
+                    else
+                    {
+                       requiredFields = requiredFields.replace(";;", ";");
+                    }
+                }
+                try
+                {
+                    setRequiredIssueFields(c, requiredFields.toString());
+                }
+                catch (SQLException x)
+                {
+                    _log.error("deleteKeyword", x);
+                }
+            }
+        }
+    }
 
     private static final String CUSTOM_COLUMN_CONFIGURATION = "IssuesCaptions";
 
@@ -729,6 +780,21 @@ public class IssueManager
         PropertyManager.saveProperties(map);
     }
 
+    public static void setRequiredIssueFields(Container container, HString[] requiredFields) throws SQLException
+    {
+        final StringBuilder sb = new StringBuilder();
+        if (requiredFields.length > 0)
+        {
+            String sep = "";
+            for (HString field : requiredFields)
+            {
+                sb.append(sep);
+                sb.append(field);
+                sep = ";";
+            }
+        }
+        setRequiredIssueFields(container, sb.toString());
+    }
 
     public static void setLastIndexed(String containerId, int issueId, long ms)
     {
