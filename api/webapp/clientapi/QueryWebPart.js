@@ -474,13 +474,6 @@ LABKEY.QueryWebPart = Ext.extend(Ext.util.Observable, {
                             // for the webpart itself (as opposed to the webpart's contents)?
 
                             this.dataRegion = null;
-                            // TODO : 12470: Query Editor: bad query never dismisses loading dialog. Reenable the follow code
-                            // once this issue has been resolved.
-//                            if (this._failure)
-//                            {
-//                                response.statusText = 'The dataregion failed to be rendered to the page.';
-//                                this._failure.call(this.scope || this, response, options);
-//                            }
                         }
 
                         this.fireEvent("render");
@@ -669,7 +662,7 @@ LABKEY.QueryWebPart = Ext.extend(Ext.util.Observable, {
         {
             if (view.type == 'report')
                 this.reportId = view.reportId;
-            else
+            else if (view.viewName)
                 this.viewName = view.viewName;
         }
         else

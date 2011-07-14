@@ -99,12 +99,23 @@ public class ExcelFactory
                 }
                 return cell.getStringCellValue();
             }
-            else if (DateUtil.isCellDateFormatted(cell))
+            else if (isCellNumeric(cell) && DateUtil.isCellDateFormatted(cell))
                 return formatter.format(cell.getDateCellValue());
             else
                 return CellFormat.getInstance(cell.getCellStyle().getDataFormatString()).apply(cell).text;
         }
         return "";
+    }
+
+    public static boolean isCellNumeric(Cell cell)
+    {
+        if (cell != null)
+        {
+            int type = cell.getCellType();
+
+            return type == Cell.CELL_TYPE_BLANK || type == Cell.CELL_TYPE_NUMERIC || type == Cell.CELL_TYPE_FORMULA;
+        }
+        return false;
     }
 
     public static FormulaEvaluator createFormulaEvaluator(Workbook workbook)

@@ -1296,7 +1296,7 @@ public class QueryView extends WebPartView<Object>
             renderDataRegion(response.getWriter());
     }
 
-    protected void renderReportView(Object model, HttpServletRequest request, HttpServletResponse response) throws Exception
+    protected final void renderReportView(Object model, HttpServletRequest request, HttpServletResponse response) throws Exception
     {
         if (_report != null)
         {

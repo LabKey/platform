@@ -71,33 +71,27 @@ public class QueryParseException extends QueryException
     }
 
     /**
-     * Serializes a list of QueryParseExceptions into a JSON object.
+     * Serializes a QueryParseException into a JSON object.
      *
      * @param sql - the sql that the parse exceptions originated from
      */
-    public static JSONArray toJSON(String sql, List<QueryParseException> parseErrors)
+    public JSONObject toJSON(String sql)
     {
-        JSONArray errors = new JSONArray();
-
         String lines[] = null;
         if (sql != null)
             lines = sql.split("\n");
 
-        for (QueryParseException e : parseErrors)
+        JSONObject error = new JSONObject();
+
+        error.put("msg", getMessage());
+        error.put("line",getLine());
+        error.put("col", getColumn());
+
+        if (lines != null && getLine() <= lines.length && getLine() >= 1)
         {
-            JSONObject error = new JSONObject();
-
-            error.put("msg", e.getMessage());
-            error.put("line", e.getLine());
-            error.put("col", e.getColumn());
-
-            if (lines != null && e.getLine() <= lines.length && e.getLine() >= 1)
-            {
-                String errorStr = lines[e.getLine() - 1];
-                error.put("errorStr", errorStr.substring(e.getColumn()));
-            }
-            errors.put(error);
+            String errorStr = lines[getLine() - 1];
+            error.put("errorStr", errorStr.substring(getColumn()));
         }
-        return errors;
+        return error;
     }
 }

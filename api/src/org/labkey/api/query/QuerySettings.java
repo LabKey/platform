@@ -334,7 +334,7 @@ public class QuerySettings
 
     public void setViewName(String viewName)
     {
-        _viewName = viewName;
+        _viewName = StringUtils.trimToNull(viewName);
     }
 
     public String getViewName()

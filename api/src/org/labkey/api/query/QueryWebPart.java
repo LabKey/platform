@@ -18,6 +18,7 @@ package org.labkey.api.query;
 
 import org.apache.commons.beanutils.ConvertingWrapDynaBean;
 import org.apache.commons.lang.StringUtils;
+import org.json.JSONArray;
 import org.json.JSONObject;
 import org.labkey.api.action.ApiJsonWriter;
 import org.labkey.api.action.ApiSimpleResponse;
@@ -38,6 +39,7 @@ import org.labkey.api.view.WebPartView;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
+import java.io.IOException;
 import java.io.PrintWriter;
 import java.util.ArrayList;
 import java.util.List;
@@ -179,18 +181,38 @@ public class QueryWebPart extends WebPartView
             List<QueryParseException> parseErrors = queryDef.getParseErrors(_schema);
             if (!parseErrors.isEmpty())
             {
-                ApiSimpleResponse simpleResp = new ApiSimpleResponse();
-                simpleResp.put("parseErrors", QueryParseException.toJSON(queryDef.getSql(), parseErrors));
-                simpleResp.put("success", false);
+                createErrorResponse(response, queryDef, parseErrors);
+                return;
+            }
 
-                response.setStatus(500);
-                ApiJsonWriter jsonOut = new ApiJsonWriter(response);
-
-                jsonOut.write(simpleResp);
+            // additionally, check for any render time errors not caught at parse time
+            List<QueryException> queryErrors = new ArrayList<QueryException>();
+            queryDef.getTable(_schema, queryErrors, true);
+            if (!queryErrors.isEmpty())
+            {
+                createErrorResponse(response, queryDef, queryErrors);
                 return;
             }
         }
         super.render(request, response);
+    }
+
+    private void createErrorResponse(HttpServletResponse response, QueryDefinition queryDef, List<? extends QueryException> errors) throws IOException
+    {
+        ApiSimpleResponse errorResponse = new ApiSimpleResponse();
+        JSONArray errorArray = new JSONArray();
+
+        for (QueryException e : errors)
+        {
+            errorArray.put(e.toJSON(queryDef.getSql()));
+        }
+        errorResponse.put("parseErrors", errorArray);
+        errorResponse.put("success", false);
+
+        response.setStatus(500);
+        ApiJsonWriter jsonOut = new ApiJsonWriter(response);
+
+        jsonOut.write(errorResponse);
     }
 
     @Override

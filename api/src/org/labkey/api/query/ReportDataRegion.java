@@ -48,6 +48,7 @@ public class ReportDataRegion extends AbstractDataRegion
         setSettings(settings);
 
         try {
+            // subtle, but we always want to use the data region specified from the enclosing query
             report.getDescriptor().setProperty(ReportDescriptor.Prop.dataRegionName, settings.getDataRegionName());
             _report = report;
             _reportView = report.getRunReportView(context);

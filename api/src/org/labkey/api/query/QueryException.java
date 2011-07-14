@@ -16,6 +16,8 @@
 
 package org.labkey.api.query;
 
+import org.json.JSONObject;
+
 public class QueryException extends RuntimeException
 {
     public QueryException(String message)
@@ -26,5 +28,19 @@ public class QueryException extends RuntimeException
     public QueryException(String message, Throwable cause)
     {
         super(message, cause);
+    }
+
+    /**
+     * Serializes a QueryException into a JSON object.
+     *
+     * @param sql - the sql that the parse exceptions originated from
+     */
+    public JSONObject toJSON(String sql)
+    {
+        JSONObject error = new JSONObject();
+
+        error.put("msg", getMessage());
+
+        return error;
     }
 }
