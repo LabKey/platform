@@ -18,6 +18,7 @@ package org.labkey.study;
 import org.apache.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.labkey.api.data.ColumnInfo;
+import org.labkey.api.data.JdbcType;
 import org.labkey.api.data.NullColumnInfo;
 import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.TableInfo;
@@ -89,9 +90,9 @@ public class StudyUnionTableInfo extends VirtualTable
 
             String visitPropertyName = def.getVisitDatePropertyName();
             ColumnInfo visitColumn = null==visitPropertyName ? null : ti.getColumn(visitPropertyName);
-            if (null != visitPropertyName && (null == visitColumn || visitColumn.getSqlTypeInt() != Types.TIMESTAMP))
+            if (null != visitPropertyName && (null == visitColumn || visitColumn.getJdbcType() != JdbcType.TIMESTAMP))
                 Logger.getLogger(StudySchema.class).info("Could not find visit column of correct type '" + visitPropertyName + "' in dataset '" + def.getName() + "'");
-            if (null != visitColumn && visitColumn.getSqlTypeInt() == Types.TIMESTAMP)
+            if (null != visitColumn && visitColumn.getJdbcType() == JdbcType.TIMESTAMP)
                 sqlf.append(", ").append(visitColumn.getValueSql("D")).append(" AS _visitdate");
             else
                 sqlf.append(", ").append(NullColumnInfo.nullValue(getSqlDialect().getDefaultDateTimeDataType())).append(" AS _visitdate");
@@ -208,7 +209,7 @@ public class StudyUnionTableInfo extends VirtualTable
             ColumnInfo ci = new ColumnInfo(pd.getName(), this);
             PropertyColumn.copyAttributes(_user, ci, pd);
             ci.setSqlTypeName(StudySchema.getInstance().getSqlDialect().sqlTypeNameFromSqlType(pd.getSqlTypeInt()));
-            addColumn(ci);
+            safeAddColumn(ci);
         }
 
         ColumnInfo datasetColumn = new ColumnInfo("dataset", this);

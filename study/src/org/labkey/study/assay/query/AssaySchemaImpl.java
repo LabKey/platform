@@ -412,7 +412,7 @@ public class AssaySchemaImpl extends AssaySchema
                             Object value = getDisplayColumn().getValue(ctx);
                             if (value == null)
                             {
-                                return "[None]";
+                                return "";
                             }
                             return super.getFormattedValue(ctx);
                         }

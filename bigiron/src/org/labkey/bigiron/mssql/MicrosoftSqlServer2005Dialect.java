@@ -373,13 +373,26 @@ public class MicrosoftSqlServer2005Dialect extends SqlDialect
     @Override
     public SQLFragment getSelectConcat(SQLFragment selectSql)
     {
-        String sql = selectSql.getSQL();
-        int fromIndex = sql.indexOf("FROM");
+        String sql = selectSql.getSQL().toUpperCase();
 
+        // Use SQLServer's FOR XML syntax to concat multiple values together
+        // We want the separated by commas, so prefix each value with a comma and then use SUBSTRING to strip
+        // of the leading comma - this is easier than stripping a trailing comma because we don't have to determine
+        // the length of the string
+
+        // The goal is to get something of the form:
+        // SUBSTRING((SELECT ',' + c$Titration$.Name AS [data()] FROM luminex.AnalyteTitration c
+        // INNER JOIN luminex.Titration c$Titration$ ON (c.TitrationId = c$Titration$.RowId) WHERE child.AnalyteId = c.AnalyteId FOR XML PATH ('')), 2, 2147483647) AS Titration$Name
+
+        // TODO - There is still an issue if the individual input values contain commas. We need to escape or otherwise handle that
         SQLFragment ret = new SQLFragment(selectSql);
-        ret.insert(fromIndex, "AS [data()] ");
-        ret.insert(0, "REPLACE ((");
-        ret.append(" FOR XML PATH ('')), ' ', ',')");
+        int fromIndex = sql.indexOf("FROM");
+        ret.insert(fromIndex, "AS NVARCHAR) AS [text()] ");
+        int selectIndex = sql.indexOf("SELECT");
+        ret.insert(selectIndex + "SELECT".length(), "',' + CAST(");
+        ret.insert(0, "SUBSTRING ((");
+        // We want all the characters, so use a ridiculously long value to ensure that we don't truncate
+        ret.append(" FOR XML PATH ('')), 2, 2147483647)");
 
         return ret;
     }
