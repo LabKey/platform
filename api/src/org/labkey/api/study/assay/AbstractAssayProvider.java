@@ -249,7 +249,7 @@ public abstract class AbstractAssayProvider implements AssayProvider
             }
             finally
             {
-                if (rs != null) { try { rs.close(); } catch (SQLException e) {} }
+                if (rs != null) { try { rs.close(); } catch (SQLException ignored) {} }
             }
         }
         catch (SQLException e)
@@ -929,19 +929,25 @@ public abstract class AbstractAssayProvider implements AssayProvider
 
     protected void savePropertyObject(String parentLSID, Map<DomainProperty, String> properties, Container container) throws ExperimentException
     {
-        try {
-            ObjectProperty[] objProperties = new ObjectProperty[properties.size()];
-            int i = 0;
+        try
+        {
+            List<ObjectProperty> objProperties = new ArrayList<ObjectProperty>(properties.size());
             for (Map.Entry<DomainProperty, String> entry : properties.entrySet())
             {
-                DomainProperty pd = entry.getKey();
-                ObjectProperty property = new ObjectProperty(parentLSID,
-                        container, pd.getPropertyURI(),
-                        entry.getValue(), pd.getPropertyDescriptor().getPropertyType());
-                property.setName(pd.getName());
-                objProperties[i++] = property;
+                // Treat the empty string as a null in the database, which is our normal behavior when receiving data
+                // from HTML forms.
+                String value = entry.getValue();
+                if (value != null && !value.equals(""))
+                {
+                    DomainProperty pd = entry.getKey();
+                    ObjectProperty property = new ObjectProperty(parentLSID,
+                            container, pd.getPropertyURI(),
+                            value, pd.getPropertyDescriptor().getPropertyType());
+                    property.setName(pd.getName());
+                    objProperties.add(property);
+                }
             }
-            OntologyManager.insertProperties(container, parentLSID, objProperties);
+            OntologyManager.insertProperties(container, parentLSID, objProperties.toArray(new ObjectProperty[objProperties.size()]));
         }
         catch (ValidationException ve)
         {
