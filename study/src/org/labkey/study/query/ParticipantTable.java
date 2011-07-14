@@ -168,7 +168,7 @@ public class ParticipantTable extends FilteredTable
 
             SQLFragment sql = new SQLFragment();
 
-            sql.append(" LEFT OUTER JOIN (SELECT * FROM ");
+            sql.append(" LEFT OUTER JOIN (SELECT ParticipantId, Label FROM ");
             sql.append(" (SELECT * FROM ").append(ParticipantGroupManager.getInstance().getTableInfoParticipantGroup(), "");
             sql.append(" WHERE CategoryId = ? ) ").append(groupAlias).append(" JOIN ").append(ParticipantGroupManager.getInstance().getTableInfoParticipantGroupMap(), "");
             sql.append(" ON GroupId = ").append(groupAlias).append(".RowId )").append(groupJoinAlias);

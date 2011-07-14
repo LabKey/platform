@@ -790,7 +790,13 @@ public class QueryController extends SpringActionController
                     List<QueryParseException> parseErrors = query.getParseErrors(form.getSchema());
                     if (!parseErrors.isEmpty())
                     {
-                        response.put("parseErrors", QueryParseException.toJSON(form.ff_queryText, parseErrors));
+                        JSONArray errorArray = new JSONArray();
+
+                        for (QueryException e : parseErrors)
+                        {
+                            errorArray.put(e.toJSON(form.ff_queryText));
+                        }
+                        response.put("parseErrors", errorArray);
                     }
                 }
             }
