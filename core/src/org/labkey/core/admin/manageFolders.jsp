@@ -71,24 +71,6 @@ function init() {
 
     var debug = <%= AppProps.getInstance().isDevMode() %>;
     function r(m){ if (debug) { console.info(m); }}
-    /*
-     LABKEY.ext.FMTreeNodeUI = Ext.extend(Ext.tree.TreeNodeUI, {
-     appendDDGhost : function(ghostNode) {
-     var ghostEl = document.createElement('div');
-     ghostEl.innerHTML = "<p>CREATE ME GHOST</p>";
-     ghostNode.appendChild(ghostEl);
-     }
-     });
-
-     var loader = new Ext.tree.TreeLoader({
-     createNode : function(attr) {
-     attr.uiProvider = LABKEY.ext.FMTreeNodeUI;
-     return Ext.tree.TreeLoader.prototype.createNode.call(this, attr);
-     },
-     dataUrl    : LABKEY.ActionURL.buildURL('core', 'getExtContainerAdminTree.api'),
-     baseParams : {requiredPermission : <%=PageFlowUtil.jsString(RoleManager.getPermission(AdminPermission.class).getUniqueName())%>}
-     });
-     */
 
     var folderTree = new Ext.ux.MultiSelectTreePanel({
         loader : new Ext.tree.TreeLoader({
@@ -295,6 +277,31 @@ function init() {
         var exeSet = [];
         var isMove = false;
 
+        function getOrder(node, dropNode, e) {
+            var eTarget = e.target;
+            var order = "";
+            var sep = "";
+
+            // The event contains the above/below nodes so that should give correct order
+            for (var j = 0; j < node.childNodes.length; j++) {
+                if (node.childNodes[j] == dropNode) { continue; }
+                if (node.childNodes[j] == eTarget) {
+                    if (e.point == 'above') {
+                        order += sep + dropNode.text + ";" + eTarget.text;
+                    }
+                    else if (e.point == 'below') {
+                        order += sep + eTarget.text + ";" + dropNode.text;
+                    }
+                    else { return false; /* shouldn't ever get here. */ }
+                }
+                else { order += sep + node.childNodes[j].text; }
+                sep = ";";
+            }
+
+            r('order: ' + order);
+            return order;
+        }
+
         for (var n=0; n < e.dropNode.length; n++) {
 
             exeSet.push(function(f) {
@@ -312,28 +319,10 @@ function init() {
 
                 // Reorder
                 if (target == s.parentNode && !isMove) {
-
-                    var eTarget = e.target;
-                    var order = "";
-                    var sep = "";
-
-                    // The event contains the above/below nodes so that should give correct order
-                    for (var j = 0; j < target.childNodes.length; j++) {
-                        if (target.childNodes[j] == s) { continue; }
-                        if (target.childNodes[j] == eTarget) {
-                            if (e.point == 'above') {
-                                order += sep + s.text + ";" + eTarget.text;
-                            }
-                            else if (e.point == 'below') {
-                                order += sep + eTarget.text + ";" + s.text;
-                            }
-                            else { return false; /* shouldn't ever get here. */ }
-                        }
-                        else { order += sep + target.childNodes[j].text; }
-                        sep = ";";
-                    }
-
-                    reorderFolders(s, order, false, null, successHandler);
+                    reorderFolders(s, getOrder(target, s, e), false, null, successHandler);
+                }
+                else if (target.attributes.isProject && s.attributes.isProject) {
+                    reorderFolders(s, getOrder(target.parentNode, s, e), false, null, successHandler);
                 }
                 else {
 
@@ -501,11 +490,6 @@ function init() {
 
         function nodeDragOver(node, target, point) {
 
-            if (node.attributes.isProject || node.attributes.notModifiable) {
-                folderTree.r('');
-                return true;
-            }
-
             var t = calculateTarget(node, target, point);
             if (t.cancel) return true;
 
@@ -551,24 +535,39 @@ function init() {
     // Returns an object containing the target node and whether to cancel the event
     function calculateTarget(node, target, point) {
 
-        if (!target)
+        if (!target) {
+            r('Target is undefined.');
             return {target: undefined, cancel: true};
+        }
 
+        if (target.attributes.containerPath === undefined) {
+            r('target containerPath is undefined.');
+            return {target: target, cancel: true};
+        }
+        
         folderTree.r('Move to ' + target.attributes.containerPath);
 
         // Use event.point to determine correct target node
         if (point) {
             if (point == 'above' || point == 'below'){
                 // check if same parent, check if root node -- cannot elevate to project
-                if (target.parentNode) {
+                if (target.parentNode && target.parentNode.attributes.containerPath != undefined) {
                     target = target.parentNode;
-                    folderTree.r('Move to ' + target.attributes.containerPath);
                     if (target.attributes.containerPath === undefined) {
                         folderTree.r('');
                         return {target: target, cancel: true};
                     }
+                    folderTree.r('Move to ' + target.attributes.containerPath);
                 }
-                // different parent equates to move (and reorder?)
+                else {
+                    if (node.attributes.isProject) {
+                        folderTree.r('Reorder Projects');
+                    }
+                }
+            }
+            else if (node.attributes.isProject) {
+                // Not allowed to move projects
+                return {target: target, cancel: true};
             }
         }
 
