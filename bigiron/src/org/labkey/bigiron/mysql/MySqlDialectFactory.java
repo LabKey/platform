@@ -47,12 +47,13 @@ public class MySqlDialectFactory extends SqlDialectFactory
     }
 
     @Override
-    public @Nullable SqlDialect createFromProductNameAndVersion(String dataBaseProductName, VersionNumber databaseProductVersion, String jdbcDriverVersion, boolean logWarnings) throws DatabaseNotSupportedException
+    public @Nullable SqlDialect createFromProductNameAndVersion(String dataBaseProductName, String databaseProductVersion, String jdbcDriverVersion, boolean logWarnings) throws DatabaseNotSupportedException
     {
         if (!getProductName().equals(dataBaseProductName))
             return null;
 
-        int version = databaseProductVersion.getVersionInt();
+        VersionNumber versionNumber = new VersionNumber(databaseProductVersion);
+        int version = versionNumber.getVersionInt();
 
         // Version 5.1 or greater is allowed...
         if (version >= 51)

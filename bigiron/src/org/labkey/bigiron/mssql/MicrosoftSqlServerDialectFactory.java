@@ -57,12 +57,13 @@ public class MicrosoftSqlServerDialectFactory extends SqlDialectFactory
     }
 
     @Override
-    public @Nullable SqlDialect createFromProductNameAndVersion(String dataBaseProductName, VersionNumber databaseProductVersion, String jdbcDriverVersion, boolean logWarnings) throws DatabaseNotSupportedException
+    public @Nullable SqlDialect createFromProductNameAndVersion(String dataBaseProductName, String databaseProductVersion, String jdbcDriverVersion, boolean logWarnings) throws DatabaseNotSupportedException
     {
         if (!dataBaseProductName.equals(getProductName()))
             return null;
 
-        int version = databaseProductVersion.getVersionInt();
+        VersionNumber versionNumber = new VersionNumber(databaseProductVersion);
+        int version = versionNumber.getVersionInt();
 
         // TODO: Verify this version number
         if (version >= 105)

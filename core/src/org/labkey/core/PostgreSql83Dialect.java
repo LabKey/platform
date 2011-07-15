@@ -158,6 +158,12 @@ class PostgreSql83Dialect extends SqlDialect
     }
 
     @Override
+    public boolean isOracle()
+    {
+        return false;
+    }
+
+    @Override
     protected String getProductName()
     {
         return "PostgreSQL";
@@ -716,13 +722,6 @@ class PostgreSql83Dialect extends SqlDialect
     }
 
 
-    @Override
-    public JdbcHelper getJdbcHelper()
-    {
-        return new PostgreSQLJdbcHelper();
-    }
-
-
     /*
         PostgreSQL example connection URLs we need to parse:
 
@@ -734,12 +733,10 @@ class PostgreSql83Dialect extends SqlDialect
         jdbc:postgresql://host:port/database?user=fred&password=secret&ssl=true
     */
 
-    public static class PostgreSQLJdbcHelper extends StandardJdbcHelper
+    @Override
+    public JdbcHelper getJdbcHelper()
     {
-        protected PostgreSQLJdbcHelper()
-        {
-            super("jdbc:postgresql:");
-        }
+        return new StandardJdbcHelper("jdbc:postgresql:");
     }
 
     @Override

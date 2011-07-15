@@ -58,12 +58,6 @@ public abstract class SasDialect extends SimpleSqlDialect
     }
 
     @Override
-    public boolean treatCatalogsAsSchemas()
-    {
-        return false;
-    }
-
-    @Override
     protected void addSqlTypeNames(Map<String, Integer> sqlTypeNameMap)
     {
     }

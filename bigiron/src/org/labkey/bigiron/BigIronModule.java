@@ -25,6 +25,7 @@ import org.labkey.bigiron.mssql.MicrosoftSqlServerDialectFactory;
 import org.labkey.bigiron.mysql.MySqlDialectFactory;
 import org.labkey.bigiron.sas.SasDialectFactory;
 import org.labkey.bigiron.sas.SasExportScriptFactory;
+import org.labkey.bigiron.oracle.OracleDialectFactory;
 
 import java.util.Collection;
 import java.util.Collections;
@@ -56,6 +57,7 @@ public class BigIronModule extends DefaultModule
         SqlDialectManager.register(new MicrosoftSqlServerDialectFactory());
         SqlDialectManager.register(new MySqlDialectFactory());
         SqlDialectManager.register(new SasDialectFactory());
+        SqlDialectManager.register(new OracleDialectFactory());
 
         QueryView.register(new SasExportScriptFactory());
     }

@@ -1,0 +1,219 @@
+/*
+ * Copyright (c) 2010-2011 LabKey Corporation
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+package org.labkey.bigiron.oracle;
+
+import org.labkey.api.data.DbSchema;
+import org.labkey.api.data.SQLFragment;
+import org.labkey.api.data.dialect.ColumnMetaDataReader;
+import org.labkey.api.data.dialect.JdbcHelper;
+import org.labkey.api.data.dialect.PkMetaDataReader;
+import org.labkey.api.data.dialect.SimpleSqlDialect;
+import org.labkey.api.data.dialect.StandardJdbcHelper;
+
+import java.io.IOException;
+import java.sql.Connection;
+import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.util.Set;
+
+
+/**
+ * User: trent
+ * Date: 6/10/11
+ * Time: 3:40 PM
+ */
+public abstract class OracleDialect extends SimpleSqlDialect
+{
+    @Override
+    protected String getProductName()
+    {
+        return "Oracle";
+    }
+
+    @Override
+    public ColumnMetaDataReader getColumnMetaDataReader(ResultSet rsCols, DbSchema schema)
+    {
+        return new OracleColumnMetaDataReader(rsCols);
+    }
+
+    @Override
+    public JdbcHelper getJdbcHelper()
+    {
+        return new StandardJdbcHelper("jdbc:oracle:thin:");
+    }
+
+    @Override
+    public void testDialectKeywords(Connection conn)
+    {
+        // TODO: Create queries to test keywords on Oracle
+        // Don't test keywords on Oracle
+    }
+
+    @Override
+    protected Set<String> getJdbcKeywords(Connection conn) throws SQLException, IOException
+    {
+        // Remove goofy "keyword" that Orcale includes in JDBC call
+        Set<String> keywords = super.getJdbcKeywords(conn);
+        keywords.remove("all_PL_SQL_reserved_ words");
+        return keywords;
+    }
+
+    @Override
+    protected String getSIDQuery()
+    {
+        return "select userenv('SESSIONID') from dual";
+    }
+
+    @Override
+    public PkMetaDataReader getPkMetaDataReader(ResultSet rs)
+    {
+        return new PkMetaDataReader(rs, "COLUMN_NAME", "KEY_SEQ");
+    }
+
+    private SQLFragment limitRows(SQLFragment frag, int rowCount, long offset)
+    {
+        // TODO: Oracle doesn't support offset and limit clauses. Implement by using rownum >= offset or some similar trickery
+        // TODO: Below functionality has been taken from PostgreSql83Dialect
+        /*if (rowCount != Table.ALL_ROWS)
+        {
+            frag.append("\nLIMIT ");
+            frag.append(Integer.toString(Table.NO_ROWS == rowCount ? 0 : rowCount));
+
+            if (offset > 0)
+            {
+                frag.append(" OFFSET ");
+                frag.append(Long.toString(offset));
+            }
+        } */
+        return frag;
+    }
+
+    @Override
+    public SQLFragment limitRows(SQLFragment frag, int rowCount)
+    {
+        return limitRows(frag, rowCount, 0);
+    }
+
+    @Override
+    public SQLFragment limitRows(SQLFragment select, SQLFragment from, SQLFragment filter, String order, String groupBy, int rowCount, long offset)
+    {
+        if (select == null)
+            throw new IllegalArgumentException("select");
+        if (from == null)
+            throw new IllegalArgumentException("from");
+
+        return _limitRows(select, from, filter, order, groupBy, rowCount, offset);
+        /*if (1 == 1) return sf;
+        if (rowCount == Table.ALL_ROWS || rowCount == Table.NO_ROWS || (rowCount > 0 && offset == 0))
+        {
+            SQLFragment sql = new SQLFragment();
+            sql.append(select);
+            sql.append("\n").append(from);
+
+            if (filter != null) sql.append("\n").append(filter);
+            if (groupBy != null) sql.append("\n").append(groupBy);
+            if (order != null) sql.append("\n").append(order);
+            return sql;
+        }
+        else
+        {
+            return _limitRows(select, from, filter, order, groupBy, rowCount, offset);
+
+        } */
+
+    }
+
+    /* Construct the query by adding rownum as one of the columns, defined as _row_num. (I didn't use camel case as to follow oracles naming conventions)
+
+       Tom Kyte discusses alternative techniques: http://www.oracle.com/technetwork/issue-archive/2007/07-jan/o17asktom-093877.html
+
+       Also, someone on the labkey forum suggested: http://stackoverflow.com/questions/241622/paging-with-oracle
+
+     */
+    private SQLFragment _limitRows(SQLFragment select, SQLFragment from, SQLFragment filter, String order, String groupBy, int rowCount, long offset)
+    {
+        SQLFragment sql = new SQLFragment();
+
+        sql.append("select * from (\n");
+        // sql.append(select).append(", rownum row_num").append("\n");
+        //sql.append(select);
+        int aliasOffset = 7;
+        if (select.getSQL().length() >= 16 && select.getSQL().substring(0, 16).equalsIgnoreCase("SELECT DISTINCT"))
+            aliasOffset = 16;
+        //x seems to be the alias assigned to the result set, so hardcoding x. before the * (otherwise rownum doesnt work)
+        select.insert(aliasOffset, " x.");
+        // The MSSQL Server Dialect uses _RowNum - but starting with _ is not supported in Oracle, so left it as default
+        // rownum and to avoid duplicate col's (as rownum is a reserved word, so it should be possible to add to the query)
+        select.append(", rownum ");
+        sql.append(select);
+        sql.append(from);
+        if (filter != null) sql.append("\n").append(filter);
+        if (groupBy != null) sql.append("\n").append(groupBy);
+        sql.append("\n)\n");
+        sql.append("where rownum > ").append(offset);
+        sql.append(" and rownum <= ").append(rowCount + offset);
+
+        return sql;
+    }
+
+
+    @Override
+    public boolean shouldCacheMetaData()
+    {
+        return true;
+    }
+
+    @Override
+    public boolean allowSortOnSubqueryWithoutLimit()
+    {
+        return true;
+    }
+
+    public boolean isOracle()
+    {
+        return true;
+    }
+
+    @Override
+    public boolean supportsRoundDouble()
+    {
+        return true;
+    }
+
+    private class OracleColumnMetaDataReader extends ColumnMetaDataReader
+    {
+        private OracleColumnMetaDataReader(ResultSet rsCols)
+        {
+            super(rsCols);
+
+            _nameKey = "COLUMN_NAME";
+            _sqlTypeKey = "DATA_TYPE";
+            _sqlTypeNameKey = "TYPE_NAME";
+            _scaleKey = "COLUMN_SIZE";
+            _nullableKey = "NULLABLE";
+            _postionKey = "ORDINAL_POSITION";
+        }
+
+        // Since there is no autoincrement field in oracle, I have set this to false
+        // Auto incrementing in Oracle is usually done through combination of a sequence and a before insert trigger
+
+        public boolean isAutoIncrement() throws SQLException
+        {
+            return false;
+        }
+    }
+}

@@ -59,12 +59,13 @@ public class PostgreSqlDialectFactory extends SqlDialectFactory
     private final String _recommended = getProductName() + " 9.0 is the recommended version.";
 
     @Override
-    public @Nullable SqlDialect createFromProductNameAndVersion(String dataBaseProductName, VersionNumber databaseProductVersion, String jdbcDriverVersion, boolean logWarnings) throws DatabaseNotSupportedException
+    public @Nullable SqlDialect createFromProductNameAndVersion(String dataBaseProductName, String databaseProductVersion, String jdbcDriverVersion, boolean logWarnings) throws DatabaseNotSupportedException
     {
         if (!getProductName().equals(dataBaseProductName))
             return null;
 
-        int version = databaseProductVersion.getVersionInt();
+        VersionNumber versionNumber = new VersionNumber(databaseProductVersion);
+        int version = versionNumber.getVersionInt();
 
         // Version 8.3 or greater is allowed...
         if (version >= 83)
@@ -72,7 +73,7 @@ public class PostgreSqlDialectFactory extends SqlDialectFactory
             if (83 == version)
             {
                 // ...but warn for anything less than 8.3.7
-                if (logWarnings && databaseProductVersion.getRevisionAsInt() < 7)
+                if (logWarnings && versionNumber.getRevisionAsInt() < 7)
                     _log.warn("LabKey Server has known issues with " + getProductName() + " version " + databaseProductVersion + ".  " + _recommended);
 
                 return new PostgreSql83Dialect();

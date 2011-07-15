@@ -147,6 +147,12 @@ public class MicrosoftSqlServer2005Dialect extends SqlDialect
     }
 
     @Override
+    public boolean isOracle()
+    {
+        return false;
+    }
+
+    @Override
     protected String getProductName()
     {
         return "Sql Server";
