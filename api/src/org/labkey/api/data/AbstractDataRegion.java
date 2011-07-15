@@ -261,14 +261,17 @@ public abstract class AbstractDataRegion extends DisplayElement
         out.write("<td align=\"right\" valign=\"top\" nowrap>\n");
         renderPagination(ctx, out, PaginationLocation.TOP);
         out.write("</td></tr>\n");
-
-        renderRibbon(ctx, out);
-        renderMessageBox(ctx, out, colCount);
-
+        
         // end table.labkey-data-region-header
         out.write("</table>\n");
 
         out.write("\n</td></tr>");
+
+        // 12475: UI problems with bad query -- make messagebox render independent of ButtonBar
+        out.write("<tr><td>");
+        renderRibbon(ctx, out);
+        renderMessageBox(ctx, out, colCount);
+        out.write("</td></tr>");
     }
 
     protected void renderRibbon(RenderContext ctx, Writer out) throws IOException
