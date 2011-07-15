@@ -210,7 +210,7 @@ public class DatasetImportRunnable implements Runnable
             scope.closeConnection();
             needToClose = false;
 
-            _task.logError("Exception while importing file: " + _tsv, x);
+            _task.logError("Exception while importing dataset " + _datasetDefinition.getName() + " from " + _tsv, x);
         }
         finally
         {

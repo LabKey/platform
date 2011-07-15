@@ -2378,7 +2378,7 @@ public class StudyManager
                 return false;
             }
 
-            if (pds != null && pds.length > 0)
+            if (pds.length > 0)
             {
                 Map<Integer, SchemaReader.DataSetImportInfo> datasetInfoMap = reader.getDatasetInfo();
                 StudyManager manager = StudyManager.getInstance();
@@ -2403,13 +2403,18 @@ public class StudyManager
                     SchemaReader.DataSetImportInfo info = entry.getValue();
                     String name = info.name;
                     String label = info.label;
+                    if (label == null)
+                    {
+                        // Default to using the name as the label if none was explicitly specified
+                        label = name;
+                    }
 
                     // Check for name conflicts
                     DataSet existingDef = manager.getDataSetDefinition(study, label);
 
                     if (existingDef != null && existingDef.getDataSetId() != id)
                     {
-                        errors.reject("importDatasetSchemas", "A different dataset already exists with the label " + label);
+                        errors.reject("importDatasetSchemas", "Dataset '" + existingDef.getName() + "' is already using the label '" + label + "'");
                         return false;
                     }
 

@@ -26,7 +26,7 @@
     StudyController.StudyPropertiesForm form = (StudyController.StudyPropertiesForm) getModelBean();
     if (!getViewContext().hasPermission(AdminPermission.class))
     {%>
-        A study has not been created in this folder. Please contact an administrator.
+        This folder does not contain a study. Please contact an administrator.
 <%  } else { %>
 <labkey:errors/>
 <form action="createStudy.post" method="POST">

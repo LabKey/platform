@@ -36,7 +36,7 @@
 
     if (null == getStudy())
     {
-        out.println("A study has not yet been created in this folder.<br>");
+        out.println("<p>This folder does not contain a study.</p>");
         if (c.hasPermission(user, AdminPermission.class))
         {
             ActionURL createURL = new ActionURL(StudyController.ManageStudyPropertiesAction.class, c);
