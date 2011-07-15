@@ -56,6 +56,10 @@ public class ExcelFactory
         {
             return new JxlWorkbook(dataFile);
         }
+        catch (IllegalArgumentException e)
+        {
+            throw new InvalidFormatException("Unable to open file as an Excel document. " + e.getMessage() == null ? "" : e.getMessage());
+        }
 /*
         DefaultDetector detector = new DefaultDetector();
         MediaType type = detector.detect(TikaInputStream.get(dataFile), new Metadata());

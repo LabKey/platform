@@ -431,7 +431,9 @@ public class QueryView extends WebPartView<Object>
                     break;
                 }
                 ActionURL expandedURL = getViewContext().cloneActionURL();
-                addParamsByPrefix(ret, expandedURL, getDataRegionName() + ".", DATAREGIONNAME_DEFAULT +  ".");
+                addParamsByPrefix(ret, expandedURL, getDataRegionName() + ".", DATAREGIONNAME_DEFAULT + ".");
+                ret.deleteParameter(DATAREGIONNAME_DEFAULT + ".maxRows");
+                ret.replaceParameter(DATAREGIONNAME_DEFAULT + ".showRows", ShowRows.ALL.toString());
                 break;
             }
             case excelWebQueryDefinition:

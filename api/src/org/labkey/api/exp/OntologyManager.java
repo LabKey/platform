@@ -2365,7 +2365,11 @@ public class OntologyManager
                     pdNewMap = new LinkedHashMap<String, PropertyDescriptor>();
                     newPropsByDomain.put(dd.getDomainURI(), pdNewMap);
                 }
-                pdNewMap.put(pd.getPropertyURI(), pd);
+                PropertyDescriptor existingPD = pdNewMap.put(pd.getPropertyURI(), pd);
+                if (existingPD != null)
+                {
+                    errors.add("'" + dd.getName() + "' has multiple fields named '" + pd.getName() + "'");
+                }
             }
             else
             {
