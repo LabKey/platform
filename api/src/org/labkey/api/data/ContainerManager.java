@@ -203,7 +203,8 @@ public class ContainerManager
 
         Path path = makePath(parent, name);
         SQLException sqlx = null;
-
+        Map<String, Object> _insertMap = null;
+        
         try
         {
             HashMap<String, Object> m = new HashMap<String, Object>();
@@ -214,7 +215,7 @@ public class ContainerManager
             if (null != description)
                 m.put("Description", description);
             m.put("Workbook", workbook);
-            Table.insert(user, CORE.getTableInfoContainers(), m);
+            _insertMap = Table.insert(user, CORE.getTableInfoContainers(), m);
         }
         catch (SQLException x)
         {
@@ -224,10 +225,15 @@ public class ContainerManager
         }
 
         _clearChildrenFromCache(parent);
-        
-        Container c = getForPath(path);
-        if (null == c && null != sqlx)
-            throw new RuntimeSQLException(sqlx);
+
+        Container c = getForId((String) _insertMap.get("EntityId"));
+        if (null == c)
+        {
+            if (null != sqlx)
+                throw new RuntimeSQLException(sqlx);
+            else
+                throw new RuntimeException("Container for path '" + path + "' was not created properly.");
+        }
 
         if (createWorkbookName)
         {
