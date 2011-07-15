@@ -261,7 +261,16 @@ public class DbSchema
         List<Module> modules = ModuleLoader.getInstance().getModules();
 
         for (Module module : modules)
-            schemas.addAll(module.getSchemasToTest());
+        {
+            try
+            {
+                schemas.addAll(module.getSchemasToTest());
+            }
+            catch (Exception e)
+            {
+                _log.error("Exception retrieving schemas for module \"" + module + "\"", e);
+            }
+        }
 
         return schemas;
     }

@@ -21,6 +21,7 @@ import org.apache.commons.lang.StringUtils;
 import org.apache.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
+import org.labkey.api.collections.CaseInsensitiveHashSet;
 import org.labkey.api.collections.CsvSet;
 import org.labkey.api.collections.Sets;
 import org.labkey.api.data.ConnectionWrapper;
@@ -269,7 +270,7 @@ public abstract class SqlDialect
     // Set of keywords returned by DatabaseMetaData.getMetaData() plus the SQL 2003 keywords
     protected Set<String> getJdbcKeywords(Connection conn) throws SQLException, IOException
     {
-        Set<String> keywordSet = Sets.newCaseInsensitiveHashSet();
+        Set<String> keywordSet = new CaseInsensitiveHashSet();
         keywordSet.addAll(KeywordCandidates.get().getSql2003Keywords());
         String keywords = conn.getMetaData().getSQLKeywords();
         keywordSet.addAll(new CsvSet(keywords));
@@ -922,6 +923,7 @@ public abstract class SqlDialect
     public abstract boolean isEditable();
     public abstract boolean isSqlServer();
     public abstract boolean isPostgreSQL();
+    public abstract boolean isOracle();
     public abstract ColumnMetaDataReader getColumnMetaDataReader(ResultSet rsCols, DbSchema schema);
     public abstract PkMetaDataReader getPkMetaDataReader(ResultSet rs);
 }

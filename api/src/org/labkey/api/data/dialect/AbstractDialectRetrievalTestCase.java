@@ -20,7 +20,6 @@ import org.jetbrains.annotations.Nullable;
 import org.junit.Assert;
 import org.junit.Test;
 import org.labkey.api.util.ConfigurationException;
-import org.labkey.api.util.VersionNumber;
 
 public abstract class AbstractDialectRetrievalTestCase extends Assert
 {
@@ -56,9 +55,7 @@ public abstract class AbstractDialectRetrievalTestCase extends Assert
 
             try
             {
-                // If either major or minor is negative then use int constructor... otherwise, test string parsing
-                VersionNumber version = (majorVersion < 0 || minorVersion < 0 ? new VersionNumber(majorVersion, minorVersion) : new VersionNumber(majorVersion + "." + minorVersion));
-                SqlDialect dialect = SqlDialectManager.getFromProductName(databaseName, version, jdbcDriverVersion, false);
+                SqlDialect dialect = SqlDialectManager.getFromProductName(databaseName, majorVersion + "." + minorVersion, jdbcDriverVersion, false);
                 assertNotNull(description + " returned " + dialect.getClass().getSimpleName() + "; expected failure", expectedDialectClass);
                 assertEquals(description + " returned " + dialect.getClass().getSimpleName() + "; expected " + expectedDialectClass.getSimpleName(), dialect.getClass(), expectedDialectClass);
             }

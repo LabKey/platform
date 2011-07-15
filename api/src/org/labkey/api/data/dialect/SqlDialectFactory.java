@@ -17,7 +17,6 @@
 package org.labkey.api.data.dialect;
 
 import org.jetbrains.annotations.Nullable;
-import org.labkey.api.util.VersionNumber;
 
 import java.util.Collection;
 
@@ -32,7 +31,7 @@ public abstract class SqlDialectFactory
 
     // Returns null if this factory is not responsible for the specified database server.  Otherwise, if the version is
     // supported, returns the matching implementation; if the version is not supported, throws DatabaseNotSupportedException.
-    public abstract @Nullable SqlDialect createFromProductNameAndVersion(String dataBaseProductName, VersionNumber databaseProductVersion, String jdbcDriverVersion, boolean logWarnings) throws DatabaseNotSupportedException;
+    public abstract @Nullable SqlDialect createFromProductNameAndVersion(String dataBaseProductName, String databaseProductVersion, String jdbcDriverVersion, boolean logWarnings) throws DatabaseNotSupportedException;
 
     // These tests must be safe to invoke when LabKey Server can't connect to any datasources matching the dialect and
     // even when the JDBC driver isn't present.

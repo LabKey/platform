@@ -63,11 +63,10 @@ public class SqlDialectManager
 
     public static SqlDialect getFromMetaData(DatabaseMetaData md) throws SQLException, SqlDialectNotSupportedException, DatabaseNotSupportedException
     {
-        return getFromProductName(md.getDatabaseProductName(), new VersionNumber(md.getDatabaseProductVersion()), md.getDriverVersion(), true);
+        return getFromProductName(md.getDatabaseProductName(), md.getDatabaseProductVersion(), md.getDriverVersion(), true);
     }
 
-
-    public static SqlDialect getFromProductName(String dataBaseProductName, VersionNumber databaseProductVersion, String jdbcDriverVersion, boolean logWarnings) throws SqlDialectNotSupportedException, DatabaseNotSupportedException
+    public static SqlDialect getFromProductName(String dataBaseProductName, String databaseProductVersion, String jdbcDriverVersion, boolean logWarnings) throws SqlDialectNotSupportedException, DatabaseNotSupportedException
     {
         for (SqlDialectFactory factory : _factories)
         {

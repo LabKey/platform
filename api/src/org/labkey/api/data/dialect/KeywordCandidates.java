@@ -16,7 +16,7 @@
 package org.labkey.api.data.dialect;
 
 import org.apache.log4j.Logger;
-import org.labkey.api.collections.Sets;
+import org.labkey.api.collections.CaseInsensitiveHashSet;
 import org.labkey.api.util.PageFlowUtil;
 
 import java.io.IOException;
@@ -42,10 +42,10 @@ public class KeywordCandidates
         try
         {
             List<String> sql2003 = PageFlowUtil.getStreamContentsAsList(KeywordCandidates.class.getResourceAsStream("sql2003Keywords.txt"), true);
-            SQL_2003_KEYWORDS = Sets.newCaseInsensitiveHashSet(sql2003);
+            SQL_2003_KEYWORDS = new CaseInsensitiveHashSet(sql2003);
 
             List<String> candidates = PageFlowUtil.getStreamContentsAsList(KeywordCandidates.class.getResourceAsStream("sqlKeywords.txt"), true);
-            CANDIDATES = Sets.newCaseInsensitiveHashSet(candidates);
+            CANDIDATES = new CaseInsensitiveHashSet(candidates);
             CANDIDATES.addAll(SQL_2003_KEYWORDS);
         }
         catch (IOException e)
