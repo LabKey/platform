@@ -221,6 +221,8 @@ LABKEY.query.SourceEditorPanel = Ext.extend(Ext.Panel, {
             this.cachedSql = sql;
             var el = Ext.get(this.display);
             if (el) { el.update(''); }
+
+            // QueryWebPart Configuration
             var config = {
                 renderTo     : this.display,
                 schemaName   : schema,
@@ -231,6 +233,7 @@ LABKEY.query.SourceEditorPanel = Ext.extend(Ext.Panel, {
                 title     : '',
                 masking   : false,
                 timeout   : Ext.Ajax.timeout, // 12451 -- control the timeout
+                buttonBarPosition : 'top',    // 12644 -- only have a top toolbar
                 success   : function(response) {
                     console.info('have success');
                     this.showErrors();
