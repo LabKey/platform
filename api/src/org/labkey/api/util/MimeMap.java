@@ -73,7 +73,8 @@ public class MimeMap implements FileNameMap
         mimeTypeMap.put("image/gif", new MimeType("image/gif", true));
         mimeTypeMap.put("image/jpeg", new MimeType("image/jpeg", true));
         mimeTypeMap.put("image/png", new MimeType("image/png", true));
-        
+        mimeTypeMap.put("image/svg+xml", new MimeType("image/svg+xml", true));
+
         try
         {
             // tab delimited file is easier to edit in a spreadsheet
@@ -213,6 +214,7 @@ public class MimeMap implements FileNameMap
             assertEquals(m.getContentTypeFor("file.htm"), "text/html");
             assertEquals(m.getContentTypeFor("file.html"), "text/html");
             assertTrue(m.isInlineImageFor("photo.jpg"));
+            assertTrue(m.isInlineImageFor("photo.svg"));
             assertFalse(m.isInlineImageFor("file.html"));
         }
     }
