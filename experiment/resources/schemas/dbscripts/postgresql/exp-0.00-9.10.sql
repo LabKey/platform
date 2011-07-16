@@ -512,7 +512,7 @@ ALTER TABLE exp.ProtocolApplicationParameter ADD
     );
 
 
-CREATE OR REPLACE FUNCTION exp.ensureObject(ENTITYID, LSIDType, INTEGER) RETURNS INTEGER AS '
+CREATE OR REPLACE FUNCTION exp.ensureObject(ENTITYID, LSIDType, INTEGER) RETURNS INTEGER AS $$
 DECLARE
     _container ALIAS FOR $1;
     _lsid ALIAS FOR $2;
@@ -523,12 +523,12 @@ BEGIN
         _objectid := (SELECT ObjectId FROM exp.Object WHERE Container=_container AND ObjectURI=_lsid);
         IF (_objectid IS NULL) THEN
             INSERT INTO exp.Object (Container, ObjectURI, OwnerObjectId) VALUES (_container, _lsid, _ownerObjectId);
-            _objectid := currval(\'exp.object_objectid_seq\');
+            _objectid := currval('exp.object_objectid_seq');
         END IF;
 -- COMMIT;
     RETURN _objectid;
 END;
-' LANGUAGE plpgsql;
+$$ LANGUAGE plpgsql;
 
 -- SELECT exp.ensureObject('00000000-0000-0000-0000-000000000000', 'lsidA', NULL)
 -- SELECT * FROM exp.ObjectPropertiesView
@@ -565,7 +565,7 @@ END;
 --
 
 
-CREATE OR REPLACE FUNCTION exp.setProperty(INTEGER, LSIDType, LSIDType, CHAR(1), FLOAT, varchar(400), timestamp, TEXT) RETURNS void AS '
+CREATE OR REPLACE FUNCTION exp.setProperty(INTEGER, LSIDType, LSIDType, CHAR(1), FLOAT, varchar(400), timestamp, TEXT) RETURNS void AS $$
 DECLARE
     _objectid ALIAS FOR $1;
     _propertyuri ALIAS FOR $2;
@@ -581,7 +581,7 @@ BEGIN
         _propertyid := (SELECT RowId FROM exp.PropertyDescriptor WHERE PropertyURI=_propertyuri);
         IF (1=1 OR _propertyid IS NULL) THEN
             INSERT INTO exp.PropertyDescriptor (PropertyURI, DatatypeURI) VALUES (_propertyuri, _datatypeuri);
-            _propertyid := currval(\'exp.propertydescriptor_rowid_seq\');
+            _propertyid := currval('exp.propertydescriptor_rowid_seq');
         END IF;
         DELETE FROM exp.ObjectProperty WHERE ObjectId=_objectid AND PropertyId=_propertyid;
         INSERT INTO exp.ObjectProperty (ObjectId, PropertyID, TypeTag, FloatValue, StringValue, DateTimeValue, TextValue)
@@ -589,7 +589,7 @@ BEGIN
 --    COMMIT;
     RETURN;
 END;
-' LANGUAGE plpgsql;
+$$ LANGUAGE plpgsql;
 
 
 -- SELECT exp.setProperty(13, 'lsidPROP', 'lsidTYPE', 'f', 1.0, NULL, NULL, NULL)
@@ -598,7 +598,7 @@ END;
 -- internal methods
 
 
-CREATE OR REPLACE FUNCTION exp._insertFloatProperty(INTEGER, INTEGER, FLOAT) RETURNS void AS '
+CREATE OR REPLACE FUNCTION exp._insertFloatProperty(INTEGER, INTEGER, FLOAT) RETURNS void AS $$
 DECLARE
     _objectid ALIAS FOR $1;
     _propid ALIAS FOR $2;
@@ -608,15 +608,15 @@ BEGIN
         RETURN;
     END IF;
     INSERT INTO exp.ObjectProperty (ObjectId, PropertyId, TypeTag, FloatValue)
-    VALUES (_objectid, _propid, \'f\', _float);
+    VALUES (_objectid, _propid, 'f', _float);
     RETURN;
 END;
-' LANGUAGE plpgsql;
+$$ LANGUAGE plpgsql;
 
 -- SELECT exp._insertFloatProperty(13, 5, 101.0)
 
 
-CREATE OR REPLACE FUNCTION exp._insertDateTimeProperty(INTEGER, INTEGER, TIMESTAMP) RETURNS void AS '
+CREATE OR REPLACE FUNCTION exp._insertDateTimeProperty(INTEGER, INTEGER, TIMESTAMP) RETURNS void AS $$
 DECLARE
     _objectid ALIAS FOR $1;
     _propid ALIAS FOR $2;
@@ -626,14 +626,14 @@ BEGIN
         RETURN;
     END IF;
     INSERT INTO exp.ObjectProperty (ObjectId, PropertyId, TypeTag, DateTimeValue)
-    VALUES (_objectid, _propid, \'d\', _datetime);
+    VALUES (_objectid, _propid, 'd', _datetime);
     RETURN;
 END;
-' LANGUAGE plpgsql;
+$$ LANGUAGE plpgsql;
 
 
 
-CREATE OR REPLACE FUNCTION exp._insertStringProperty(INTEGER, INTEGER, VARCHAR(400)) RETURNS void AS '
+CREATE OR REPLACE FUNCTION exp._insertStringProperty(INTEGER, INTEGER, VARCHAR(400)) RETURNS void AS $$
 DECLARE
     _objectid ALIAS FOR $1;
     _propid ALIAS FOR $2;
@@ -643,10 +643,10 @@ BEGIN
         RETURN;
     END IF;
     INSERT INTO exp.ObjectProperty (ObjectId, PropertyId, TypeTag, StringValue)
-    VALUES (_objectid, _propid, \'s\', _string);
+    VALUES (_objectid, _propid, 's', _string);
     RETURN;
 END;
-' LANGUAGE plpgsql;
+$$ LANGUAGE plpgsql;
 
 
 
@@ -698,7 +698,9 @@ END;
 -- SELECT exp.ensureObject('00000000-0000-0000-0000-000000000000', 'lsidE', NULL)
 
 
-CREATE OR REPLACE FUNCTION exp.setStringProperties(_propertyid INTEGER,
+CREATE OR REPLACE FUNCTION exp.setStringProperties
+(
+    _propertyid INTEGER,
     _objectid1 INTEGER, _string1 VARCHAR(400),
     _objectid2 INTEGER, _string2 VARCHAR(400),
     _objectid3 INTEGER, _string3 VARCHAR(400),
@@ -709,7 +711,7 @@ CREATE OR REPLACE FUNCTION exp.setStringProperties(_propertyid INTEGER,
     _objectid8 INTEGER, _string8 VARCHAR(400),
     _objectid9 INTEGER, _string9 VARCHAR(400),
     _objectid10 INTEGER, _string10 VARCHAR(400)
-    ) RETURNS void AS '
+) RETURNS void AS $$
 BEGIN
 --    BEGIN TRANSACTION
         DELETE FROM exp.ObjectProperty WHERE PropertyId=_propertyid AND ObjectId IN (_objectid1, _objectid2, _objectid3, _objectid4, _objectid5, _objectid6, _objectid7, _objectid8, _objectid9, _objectid10);
@@ -726,7 +728,7 @@ BEGIN
 --    COMMIT
     RETURN;
 END;
-' LANGUAGE plpgsql;
+$$ LANGUAGE plpgsql;
 
 
 CREATE OR REPLACE FUNCTION exp.setDateTimeProperties(_propertyid INTEGER,
