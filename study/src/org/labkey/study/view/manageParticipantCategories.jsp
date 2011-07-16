@@ -19,7 +19,6 @@
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.api.view.JspView"%>
 <%@ page import="org.labkey.study.model.StudyManager" %>
-<%@ page import="org.labkey.api.security.permissions.AdminPermission" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
     JspView<Object> me = (JspView<Object>) HttpView.currentView();
@@ -36,13 +35,13 @@
 <div id="participantCategoriesGrid" class="extContainer"></div>
 
 <script type="text/javascript">
-    Ext.QuickTips.init();
-
     var $h = Ext.util.Format.htmlEncode;
     var _grid;
 
     function renderParticipantCategoriesGrid()
     {
+        Ext.QuickTips.init();
+        
         var store = new Ext.data.JsonStore({
             proxy: new Ext.data.HttpProxy({
                 url : LABKEY.ActionURL.buildURL("participant-group", "getParticipantCategories"),
@@ -302,10 +301,15 @@
             this.sharedfield = new Ext.form.Checkbox({
                 fieldLabel     : 'Shared',
                 labelSeparator : '',
-                disabled       : !this.isAdmin || !this.canEdit,
-                hidden         : !this.canEdit
+                labelStyle     : 'width: 150px;',
+                disabled       : !this.isAdmin || !this.canEdit
             });
 
+            Ext.QuickTips.register({
+                target : this.sharedfield,
+                text   : 'Share this <%= subjectNounSingular %> group with all users'
+            });
+            
             if (!this.categoryShared || this.categoryShared == "false")
                 this.sharedfield.setValue(false);
             else
@@ -315,20 +319,17 @@
                 this.categoryPanel,
                 {
                     border : false, frame: false,
+                    style  : 'margin-top: -22px;',
+                    width  : 450,
                     items  : [{
                         layout : 'column',
                         border : false, frame : false,
                         defeaults : { border: false, frame: false },
                         items  : [{
                             layout      : 'form',
-                            columnWidth : .5,
+                            columnWidth : 1,
                             border : false, frame : false,
-                            items       : [this.demoCombobox]
-                        },{
-                            layout      : 'form',                            
-                            columnWidth : .2,
-                            border : false, frame : false,
-                            items       : [this.sharedfield]
+                            items       : [this.sharedfield, this.demoCombobox]
                         }]
                     }]
                 },{

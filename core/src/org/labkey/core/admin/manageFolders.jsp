@@ -563,6 +563,10 @@ function init() {
                     if (node.attributes.isProject) {
                         folderTree.r('Reorder Projects');
                     }
+                    else if (target.attributes.isProject && !node.attributes.isProject) {
+                        folderTree.r('');
+                        return {target: target, cancel: true};
+                    }
                 }
             }
             else if (node.attributes.isProject) {
