@@ -53,6 +53,7 @@ public abstract class OracleDialect extends SimpleSqlDialect
     @Override
     public JdbcHelper getJdbcHelper()
     {
+        // TODO: Need custom parsing for Oracle URLs
         return new StandardJdbcHelper("jdbc:oracle:thin:");
     }
 

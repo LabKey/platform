@@ -17,21 +17,23 @@
 package org.labkey.core;
 
 import org.apache.log4j.Logger;
+import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.junit.Assert;
 import org.junit.Test;
+import org.labkey.api.collections.CsvSet;
 import org.labkey.api.data.dialect.AbstractDialectRetrievalTestCase;
 import org.labkey.api.data.dialect.DatabaseNotSupportedException;
-import org.labkey.api.data.dialect.JdbcHelper;
+import org.labkey.api.data.dialect.JdbcHelperTest;
 import org.labkey.api.data.dialect.SqlDialect;
 import org.labkey.api.data.dialect.SqlDialectFactory;
 import org.labkey.api.data.dialect.TestUpgradeCode;
 import org.labkey.api.util.VersionNumber;
 
-import javax.servlet.ServletException;
 import java.sql.SQLException;
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.Set;
 
 /*
 * User: adam
@@ -169,46 +171,41 @@ public class PostgreSqlDialectFactory extends SqlDialectFactory
         @Test
         public void testJdbcHelper()
         {
-            SqlDialect dialect = new PostgreSql83Dialect();
-            JdbcHelper helper = dialect.getJdbcHelper();
-
-            try
-            {
-                String goodUrls = "jdbc:postgresql:database\n" +
-                        "jdbc:postgresql://localhost/database\n" +
-                        "jdbc:postgresql://localhost:8300/database\n" +
-                        "jdbc:postgresql://www.host.com/database\n" +
-                        "jdbc:postgresql://www.host.com:8499/database\n" +
-                        "jdbc:postgresql:database?user=fred&password=secret&ssl=true\n" +
-                        "jdbc:postgresql://localhost/database?user=fred&password=secret&ssl=true\n" +
-                        "jdbc:postgresql://localhost:8672/database?user=fred&password=secret&ssl=true\n" +
-                        "jdbc:postgresql://www.host.com/database?user=fred&password=secret&ssl=true\n" +
-                        "jdbc:postgresql://www.host.com:8992/database?user=fred&password=secret&ssl=true";
-
-                for (String url : goodUrls.split("\n"))
-                    assertEquals(helper.getDatabase(url), "database");
-            }
-            catch (Exception e)
-            {
-                fail("Exception running JdbcHelper test: " + e.getMessage());
-            }
-
-            String badUrls = "jddc:postgresql:database\n" +
-                    "jdbc:postgres://localhost/database\n" +
-                    "jdbc:postgresql://www.host.comdatabase";
-
-            for (String url : badUrls.split("\n"))
-            {
-                try
+            JdbcHelperTest test = new JdbcHelperTest() {
+                @NotNull
+                @Override
+                protected SqlDialect getDialect()
                 {
-                    if (helper.getDatabase(url).equals("database"))
-                        fail("JdbcHelper test failed: database in " + url + " should not have resolved to 'database'");
+                    return new PostgreSql83Dialect();
                 }
-                catch (ServletException e)
+
+                @NotNull
+                @Override
+                protected Set<String> getGoodUrls()
                 {
-                    // Skip -- we expect to fail on these
+                    return new CsvSet("jdbc:postgresql:database," +
+                        "jdbc:postgresql://localhost/database," +
+                        "jdbc:postgresql://localhost:8300/database," +
+                        "jdbc:postgresql://www.host.com/database," +
+                        "jdbc:postgresql://www.host.com:8499/database," +
+                        "jdbc:postgresql:database?user=fred&password=secret&ssl=true," +
+                        "jdbc:postgresql://localhost/database?user=fred&password=secret&ssl=true," +
+                        "jdbc:postgresql://localhost:8672/database?user=fred&password=secret&ssl=true," +
+                        "jdbc:postgresql://www.host.com/database?user=fred&password=secret&ssl=true," +
+                        "jdbc:postgresql://www.host.com:8992/database?user=fred&password=secret&ssl=true");
                 }
-            }
+
+                @NotNull
+                @Override
+                protected Set<String> getBadUrls()
+                {
+                    return new CsvSet("jddc:postgresql:database," +
+                            "jdbc:postgres://localhost/database," +
+                            "jdbc:postgresql://www.host.comdatabase");
+                }
+            };
+
+            test.test();
         }
     }
 }

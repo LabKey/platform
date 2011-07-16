@@ -1,13 +1,19 @@
 package org.labkey.bigiron.oracle;
 
 import org.apache.log4j.Logger;
+import org.jetbrains.annotations.NotNull;
+import org.junit.Assert;
+import org.junit.Test;
+import org.labkey.api.collections.CsvSet;
 import org.labkey.api.data.dialect.DatabaseNotSupportedException;
+import org.labkey.api.data.dialect.JdbcHelperTest;
 import org.labkey.api.data.dialect.SqlDialect;
 import org.labkey.api.data.dialect.SqlDialectFactory;
 import org.labkey.api.util.VersionNumber;
 
 import java.util.Collection;
 import java.util.Collections;
+import java.util.Set;
 
 /**
  * User: trent
@@ -67,6 +73,74 @@ public class OracleDialectFactory extends SqlDialectFactory
     @Override
     public Collection<? extends Class> getJUnitTests()
     {
-        return Collections.emptyList();
+        return Collections.singleton(JdbcHelperTestCase.class);
+    }
+
+    public static class JdbcHelperTestCase extends Assert
+    {
+        @Test
+        public void testJdbcHelper()
+        {
+            JdbcHelperTest test = new JdbcHelperTest() {
+                @NotNull
+                @Override
+                protected SqlDialect getDialect()
+                {
+                    return new Oracle11gR1Dialect();
+                }
+
+                @NotNull
+                @Override
+                protected Set<String> getGoodUrls()
+                {
+                    return new CsvSet(
+                        // New syntax without id/password
+                        "jdbc:oracle:thin:@//myhost:1521/database," +
+                        "jdbc:oracle:thin:@//127.0.0.1:1521/database," +
+                        "jdbc:oracle:thin:@//localhost:8300/database," +
+                        "jdbc:oracle:thin:@//127.0.0.1/database," +
+                        "jdbc:oracle:thin:@//localhost/database," +
+
+                        // New syntax with id/password
+                        "jdbc:oracle:thin:LabKey/TopSecrect@//myhost:1521/database," +
+                        "jdbc:oracle:thin:LabKey/TopSecrect@//127.0.0.1:1521/database," +
+                        "jdbc:oracle:thin:LabKey/TopSecrect@//localhost:8300/database," +
+                        "jdbc:oracle:thin:LabKey/TopSecrect@//127.0.0.1/database," +
+                        "jdbc:oracle:thin:LabKey/TopSecrect@//localhost/database," +
+
+                        // Old syntax without id/password
+                        "jdbc:oracle:thin:@myhost:1521:database," +
+                        "jdbc:oracle:thin:@127.0.0.1:1521:database," +
+                        "jdbc:oracle:thin:@localhost:8300:database," +
+                        "jdbc:oracle:thin:@127.0.0.1:database," +
+                        "jdbc:oracle:thin:@localhost:database," +
+
+                        // Old syntax with id/password
+                        "jdbc:oracle:thin:LabKey/TopSecrect@myhost:1521:database," +
+                        "jdbc:oracle:thin:LabKey/TopSecrect@127.0.0.1:1521:database," +
+                        "jdbc:oracle:thin:LabKey/TopSecrect@localhost:8300:database," +
+                        "jdbc:oracle:thin:LabKey/TopSecrect@127.0.0.1:database," +
+                        "jdbc:oracle:thin:LabKey/TopSecrect@localhost:database," +
+
+                        // Others (from http://www.herongyang.com/JDBC/Oracle-JDBC-Driver-Connection-URL.html)
+                        "jdbc:oracle:thin:LabKey/TopSecret@localhost:1521:database," +
+                        "jdbc:oracle:thin:LabKey/TopSecret@:1521:database," +
+                        "jdbc:oracle:thin:LabKey/TopSecret@//localhost:1521/database," +
+                        "jdbc:oracle:thin:LabKey/TopSecret@//:1521/database," +
+                        "jdbc:oracle:thin:LabKey/TopSecret@//localhost/database," +
+                        "jdbc:oracle:thin:LabKey/TopSecret@///database");
+                }
+
+                @NotNull
+                @Override
+                protected Set<String> getBadUrls()
+                {
+                    return new CsvSet("jddc:oracle:thin:@database," +
+                            "jdbc:oracle:thin://www.host.comdatabase");
+                }
+            };
+
+            test.test();
+        }
     }
 }

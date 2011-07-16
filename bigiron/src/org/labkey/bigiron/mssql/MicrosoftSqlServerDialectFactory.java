@@ -17,21 +17,23 @@
 package org.labkey.bigiron.mssql;
 
 import org.apache.log4j.Logger;
+import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.junit.Assert;
 import org.junit.Test;
+import org.labkey.api.collections.CsvSet;
 import org.labkey.api.data.dialect.AbstractDialectRetrievalTestCase;
 import org.labkey.api.data.dialect.DatabaseNotSupportedException;
-import org.labkey.api.data.dialect.JdbcHelper;
+import org.labkey.api.data.dialect.JdbcHelperTest;
 import org.labkey.api.data.dialect.SqlDialect;
 import org.labkey.api.data.dialect.SqlDialectFactory;
 import org.labkey.api.data.dialect.TestUpgradeCode;
 import org.labkey.api.util.VersionNumber;
 
-import javax.servlet.ServletException;
 import java.sql.SQLException;
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.Set;
 
 /*
 * User: adam
@@ -159,46 +161,41 @@ public class MicrosoftSqlServerDialectFactory extends SqlDialectFactory
         @Test
         public void testJdbcHelper()
         {
-            SqlDialect dialect = new MicrosoftSqlServer2005Dialect();
-            JdbcHelper helper = dialect.getJdbcHelper();
-
-            try
-            {
-                String goodUrls = "jdbc:jtds:sqlserver://localhost/database\n" +
-                        "jdbc:jtds:sqlserver://localhost:1433/database\n" +
-                        "jdbc:jtds:sqlserver://localhost/database;SelectMethod=cursor\n" +
-                        "jdbc:jtds:sqlserver://localhost:1433/database;SelectMethod=cursor\n" +
-                        "jdbc:jtds:sqlserver://www.host.com/database\n" +
-                        "jdbc:jtds:sqlserver://www.host.com:1433/database\n" +
-                        "jdbc:jtds:sqlserver://www.host.com/database;SelectMethod=cursor\n" +
-                        "jdbc:jtds:sqlserver://www.host.com:1433/database;SelectMethod=cursor";
-
-                for (String url : goodUrls.split("\n"))
-                    assertEquals(helper.getDatabase(url), "database");
-            }
-            catch (Exception e)
-            {
-                fail("Exception running JdbcHelper test: " + e.getMessage());
-            }
-
-            String badUrls = "jdb:jtds:sqlserver://localhost/database\n" +
-                    "jdbc:jts:sqlserver://localhost/database\n" +
-                    "jdbc:jtds:sqlerver://localhost/database\n" +
-                    "jdbc:jtds:sqlserver://localhostdatabase\n" +
-                    "jdbc:jtds:sqlserver:database";
-
-            for (String url : badUrls.split("\n"))
-            {
-                try
+            JdbcHelperTest test = new JdbcHelperTest() {
+                @NotNull
+                @Override
+                protected SqlDialect getDialect()
                 {
-                    if (helper.getDatabase(url).equals("database"))
-                        fail("JdbcHelper test failed: database in " + url + " should not have resolved to 'database'");
+                    return new MicrosoftSqlServer2005Dialect();
                 }
-                catch (ServletException e)
+
+                @NotNull
+                @Override
+                protected Set<String> getGoodUrls()
                 {
-                    // Skip -- we expect to fail on some of these
+                    return new CsvSet("jdbc:jtds:sqlserver://localhost/database," +
+                        "jdbc:jtds:sqlserver://localhost:1433/database," +
+                        "jdbc:jtds:sqlserver://localhost/database;SelectMethod=cursor," +
+                        "jdbc:jtds:sqlserver://localhost:1433/database;SelectMethod=cursor," +
+                        "jdbc:jtds:sqlserver://www.host.com/database," +
+                        "jdbc:jtds:sqlserver://www.host.com:1433/database," +
+                        "jdbc:jtds:sqlserver://www.host.com/database;SelectMethod=cursor," +
+                        "jdbc:jtds:sqlserver://www.host.com:1433/database;SelectMethod=cursor");
                 }
-            }
+
+                @NotNull
+                @Override
+                protected Set<String> getBadUrls()
+                {
+                    return new CsvSet("jdb:jtds:sqlserver://localhost/database," +
+                        "jdbc:jts:sqlserver://localhost/database," +
+                        "jdbc:jtds:sqlerver://localhost/database," +
+                        "jdbc:jtds:sqlserver://localhostdatabase," +
+                        "jdbc:jtds:sqlserver:database");
+                }
+            };
+
+            test.test();
         }
     }
 }
