@@ -17,6 +17,7 @@ package org.labkey.api.data;
 
 import org.apache.commons.lang.StringUtils;
 import org.apache.log4j.Logger;
+import org.jetbrains.annotations.Nullable;
 import org.junit.Assert;
 import org.junit.Test;
 import org.labkey.api.cache.StringKeyCache;
@@ -64,7 +65,7 @@ public class DbScope
     private String _dsName;
     private DataSource _dataSource;
     private SqlDialect _dialect;
-    private String _databaseName;          // Possibly null, e.g., for SAS datasources
+    private @Nullable String _databaseName;    // Possibly null, e.g., for SAS datasources
     private String _URL;
     private String _databaseProductName;
     private String _databaseProductVersion;

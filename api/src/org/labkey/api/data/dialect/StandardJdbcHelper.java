@@ -30,48 +30,26 @@ public class StandardJdbcHelper implements JdbcHelper
     @Override
     public String getDatabase(String url) throws ServletException
     {
-/*
-        int dbEnd = url.indexOf('?');
-        int oraCredsSepIndex = url.indexOf("@");
-        int dbDelimiter = -1;
-
-        if (-1 == dbEnd) {
-            dbEnd = url.length();
-        }
-
-        // To get the oracle db name and avoid reading the labkey.xml file,
-        // set the delimiter to be the last index of ':' before the @ seperator
-        // and the end being the forward slash (where the password appears after)
-
-        // Oracle JDBC URL syntax can be seen here: http://www.orafaq.com/wiki/JDBC
-
-        if (oraCredsSepIndex != -1 && url.indexOf(":@") == -1) {
-            dbEnd = url.indexOf("/");
-            dbDelimiter = url.substring(0, oraCredsSepIndex).lastIndexOf(":");
-
-        } else {
-            dbDelimiter = url.lastIndexOf('/', dbEnd);
-        }
-
-
-        if (-1 == dbDelimiter) {
-            dbDelimiter = url.lastIndexOf(':', dbEnd);
-        }
-
-
-        return url.substring(dbDelimiter + 1, dbEnd);
-
-        // Old Code left incase my code is no good
-*/
         if (!url.startsWith(_prefix))
             throw new ServletException("Unsupported connection url: " + url);
 
+        return parseDatabase(url.substring(_prefix.length()));
+    }
+
+    protected String parseDatabase(String url)
+    {
+        // Database name ends with '?' or end of the URL
         int dbEnd = url.indexOf('?');
+
         if (-1 == dbEnd)
             dbEnd = url.length();
-        int dbDelimiter = url.lastIndexOf('/', dbEnd);
-        if (-1 == dbDelimiter)
-            dbDelimiter = url.lastIndexOf(':', dbEnd);
+
+        // Database name starts after the last '/' or ':' 
+        int slash = url.lastIndexOf('/', dbEnd);
+        int colon = url.lastIndexOf(':', dbEnd);
+
+        int dbDelimiter = Math.max(slash, colon);
+
         return url.substring(dbDelimiter + 1, dbEnd);
     }
 }
