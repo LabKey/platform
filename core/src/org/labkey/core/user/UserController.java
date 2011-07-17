@@ -1427,6 +1427,7 @@ public class UserController extends SpringActionController
             return _newEmail;
         }
 
+        @SuppressWarnings({"UnusedDeclaration"})
         public void setNewEmail(String newEmail)
         {
             _newEmail = newEmail;
@@ -1443,9 +1444,15 @@ public class UserController extends SpringActionController
             _userId = userId;
         }
 
-        public void setRenderInHomeTemplate(boolean renderInHomeTemplate){_renderInHomeTemplate = renderInHomeTemplate;}
-        public boolean getRenderInHomeTemplate(){return _renderInHomeTemplate;}
+        public boolean getRenderInHomeTemplate()
+        {
+            return _renderInHomeTemplate;
+        }
 
+        public void setRenderInHomeTemplate(boolean renderInHomeTemplate)
+        {
+            _renderInHomeTemplate = renderInHomeTemplate;
+        }
 
         public String getMessage()
         {

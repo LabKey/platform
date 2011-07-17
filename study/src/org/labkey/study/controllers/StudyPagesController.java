@@ -20,7 +20,6 @@ import org.labkey.api.data.Container;
 import org.labkey.api.data.PropertyManager;
 import org.labkey.api.security.RequiresPermissionClass;
 import org.labkey.api.security.permissions.ReadPermission;
-import org.labkey.api.study.Study;
 import org.labkey.api.util.GUID;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.HttpView;
@@ -60,7 +59,7 @@ public class StudyPagesController extends BaseStudyController
         private final String _caption;
         Page(String caption)
         {
-            this._caption = caption;
+            _caption = caption;
         }
 
         public String getCaption()
@@ -114,6 +113,7 @@ public class StudyPagesController extends BaseStudyController
             String containerId = c.getId();
             Map<String, String> properties = PropertyManager.getProperties(containerId, STUDY_PAGES);
             String pageGuid = properties.get(pageForm.getPageName());
+
             if (null == pageGuid)
             {
                 properties = PropertyManager.getWritableProperties(containerId, STUDY_PAGES, true);
@@ -149,5 +149,4 @@ public class StudyPagesController extends BaseStudyController
             return root;
         }
     }
-
 }

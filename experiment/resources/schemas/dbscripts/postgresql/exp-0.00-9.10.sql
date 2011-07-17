@@ -14,13 +14,11 @@
  * limitations under the License.
  */
 
-/* exp-0.00-8.30.sql */
-
-/*  Creates experiment annotation tables in the exp schema base on FuGE-OM types
+/*
+ * Creates experiment annotation tables in the exp schema based on FuGE-OM types
  *
- *  Author Peter Hussey
- *  LabKey Software
- *
+ * Author Peter Hussey
+ * LabKey Software
  */
 
 CREATE SCHEMA exp;
@@ -494,7 +492,6 @@ CREATE INDEX IDX_CL_ProtocolApplication_RunId ON exp.ProtocolApplication(RunId);
 
 CREATE INDEX IDX_ProtocolApplication_ProtocolLSID ON exp.ProtocolApplication(ProtocolLSID);
 
-
 ALTER TABLE exp.ProtocolParameter ADD
     CONSTRAINT FK_ProtocolParameter_Protocol FOREIGN KEY
     (
@@ -765,26 +762,29 @@ END;
 
 ALTER TABLE exp.BioSource DROP CONSTRAINT FK_BioSource_Material;
 ALTER TABLE exp.Fraction DROP CONSTRAINT FK_Fraction_Material;
+
 DROP TABLE exp.BioSource;
 DROP TABLE exp.Fraction;
 DROP FUNCTION exp.setProperty(INTEGER, LSIDType, LSIDType, CHAR(1), FLOAT, varchar(400), timestamp, TEXT);
-
 
 ALTER TABLE exp.MaterialSource
    DROP CONSTRAINT UQ_MaterialSource_Name;
 
 ALTER TABLE exp.ProtocolParameter ALTER COLUMN StringValue TYPE VARCHAR(4000);
+
 UPDATE exp.ProtocolParameter
     SET StringValue = FileLinkValue WHERE ValueType='FileLink';
+
 ALTER TABLE exp.ProtocolParameter DROP COLUMN FileLinkValue;
 ALTER TABLE exp.ProtocolParameter DROP COLUMN XmlTextValue;
 
 ALTER TABLE exp.ProtocolApplicationParameter ALTER COLUMN StringValue TYPE VARCHAR(4000);
+
 UPDATE exp.ProtocolApplicationParameter
     SET StringValue = FileLinkValue WHERE ValueType='FileLink';
+
 ALTER TABLE exp.ProtocolApplicationParameter DROP COLUMN FileLinkValue;
 ALTER TABLE exp.ProtocolApplicationParameter DROP COLUMN XmlTextValue;
-
 
 
 --This update makes the PropertyDescriptor more consistent with OWL terms, and also work for storing NCI_Thesaurus concepts
@@ -793,7 +793,6 @@ ALTER TABLE exp.ProtocolApplicationParameter DROP COLUMN XmlTextValue;
 
 --A PropertyDescriptor with no Domain is a concept (or a Class in OWL).
 --A PropertyDescriptor with a Domain describes a member of a type (or an ObjectProperty in OWL)
-
 
 ALTER TABLE exp.ObjectProperty DROP CONSTRAINT FK_ObjectProperty_PropertyDescriptor;
 
@@ -817,7 +816,8 @@ CREATE TABLE exp.PropertyDescriptor
     SemanticType VARCHAR (200) NULL,
     Format VARCHAR (50) NULL,
     Container ENTITYID NOT NULL,
-    Project ENTITYID NOT NULL);
+    Project ENTITYID NOT NULL
+);
 
 INSERT INTO exp.PropertyDescriptor(PropertyId, PropertyURI, OntologyURI, DomainURI, Name,
     Description, RangeURI, Container)
@@ -1082,6 +1082,7 @@ CREATE TABLE exp.list
     CONSTRAINT UQ_LIST UNIQUE(Container, Name),
     CONSTRAINT FK_List_DomainId FOREIGN KEY(DomainId) REFERENCES exp.DomainDescriptor(DomainId)
 );
+
 CREATE INDEX IDX_List_DomainId ON exp.List(DomainId);
 
 CREATE TABLE exp.IndexInteger
@@ -1198,7 +1199,6 @@ DELETE FROM exp.DomainDescriptor WHERE DomainId IN
 AND DomainId NOT IN
     (SELECT MAX(DomainId) AS m FROM exp.DomainDescriptor WHERE DomainURI LIKE '%:DataInputRole' OR DomainURI LIKE '%:MaterialInputRole' GROUP BY DomainURI);
 
-
 -- Add the contraints
 ALTER TABLE exp.PropertyDescriptor ADD CONSTRAINT UQ_PropertyURIContainer UNIQUE (PropertyURI, Container);
 ALTER TABLE exp.DomainDescriptor ADD CONSTRAINT UQ_DomainURIContainer UNIQUE (DomainURI, Container);
@@ -1237,8 +1237,6 @@ UPDATE exp.protocolapplication SET cpastype = 'ProtocolApplication' WHERE
 
 /* exp-8.30-9.10.sql */
 
-/* exp-8.30-8.31.sql */
-
 -- Migrate from storing roles as property descriptors to storing them as strings on the MaterialInput
 ALTER TABLE exp.MaterialInput ADD COLUMN Role VARCHAR(50);
 UPDATE exp.MaterialInput SET Role =
@@ -1248,7 +1246,6 @@ ALTER TABLE exp.MaterialInput ALTER COLUMN Role SET NOT NULL;
 CREATE INDEX IDX_MaterialInput_Role ON exp.MaterialInput(Role);
 
 ALTER TABLE exp.MaterialInput DROP COLUMN PropertyId;
-
 
 -- Migrate from storing roles as property descriptors to storing them as strings on the DataInput
 ALTER TABLE exp.DataInput ADD COLUMN Role VARCHAR(50);
@@ -1277,21 +1274,13 @@ DELETE FROM exp.PropertyDescriptor WHERE
     PropertyURI LIKE '%:Domain.Folder-%:MaterialInputRole#%' OR
     PropertyURI LIKE '%:Domain.Folder-%:DataInputRole#%';
 
-/* exp-8.31-8.32.sql */
-
 ALTER TABLE exp.Experiment ADD COLUMN Hidden BOOLEAN NOT NULL DEFAULT '0';
-
-/* exp-8.32-8.33.sql */
 
 ALTER TABLE exp.ObjectProperty ADD COLUMN QcValue VARCHAR(50);
 
 ALTER TABLE exp.PropertyDescriptor ADD COLUMN QcEnabled BOOLEAN NOT NULL DEFAULT '0';
 
-/* exp-8.34-8.35.sql */
-
 ALTER TABLE exp.materialsource ADD COLUMN ParentCol VARCHAR(200) NULL;
-
-/* exp-8.35-8.36.sql */
 
 ALTER TABLE exp.Experiment ADD COLUMN
     BatchProtocolId int NULL;
@@ -1300,8 +1289,6 @@ ALTER TABLE exp.Experiment ADD CONSTRAINT
     FK_Experiment_BatchProtocolId FOREIGN KEY (BatchProtocolId) REFERENCES exp.Protocol (RowId);
 
 CREATE INDEX IDX_Experiment_BatchProtocolId ON exp.Experiment(BatchProtocolId);
-
-/* exp-8.36-8.37.sql */
 
 ALTER TABLE exp.PropertyDescriptor ADD DefaultValueType VARCHAR(50);
 
@@ -1342,7 +1329,5 @@ UPDATE exp.PropertyDescriptor SET DefaultValueType = 'FIXED_EDITABLE' WHERE Prop
         exp.PropertyDescriptor.PropertyURI LIKE '%#ParticipantID' OR
         exp.PropertyDescriptor.PropertyURI LIKE '%#Date')
 );
-
-/* exp-8.37-8.38.sql */
 
 ALTER TABLE exp.PropertyDescriptor ADD COLUMN Hidden BOOLEAN NOT NULL DEFAULT '0';

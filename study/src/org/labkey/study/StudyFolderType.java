@@ -16,23 +16,27 @@
 
 package org.labkey.study;
 
+import org.labkey.api.data.Container;
+import org.labkey.api.exp.list.ListService;
 import org.labkey.api.module.DefaultFolderType;
 import org.labkey.api.module.Module;
 import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.portal.ProjectUrls;
 import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.AdminPermission;
-import org.labkey.api.study.StudyService;
-import org.labkey.api.util.HelpTopic;
-import org.labkey.api.view.ViewContext;
-import org.labkey.api.view.NavTree;
-import org.labkey.api.view.ActionURL;
-import org.labkey.api.view.template.AppBar;
-import org.labkey.api.data.Container;
-import org.labkey.api.util.PageFlowUtil;
-import org.labkey.api.study.assay.AssayUrls;
 import org.labkey.api.study.Study;
-import org.labkey.api.exp.list.ListService;
+import org.labkey.api.study.StudyService;
+import org.labkey.api.study.assay.AssayUrls;
+import org.labkey.api.util.HelpTopic;
+import org.labkey.api.util.PageFlowUtil;
+import org.labkey.api.view.ActionURL;
+import org.labkey.api.view.NavTree;
+import org.labkey.api.view.ViewContext;
+import org.labkey.api.view.template.AppBar;
+import org.labkey.study.controllers.StudyController;
+import org.labkey.study.controllers.StudyPagesController;
+import org.labkey.study.controllers.reports.ReportsController;
+import org.labkey.study.model.StudyManager;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -40,14 +44,7 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Set;
 
-import org.labkey.study.controllers.StudyPagesController;
-import org.labkey.study.controllers.samples.SpecimenController;
-import org.labkey.study.model.StudyManager;
-import org.labkey.study.controllers.StudyController;
-import org.labkey.study.controllers.reports.ReportsController;
-
 /**
- * Created by IntelliJ IDEA.
  * User: Mark Igra
  * Date: Aug 8, 2006
  * Time: 4:21:56 PM
