@@ -19,12 +19,20 @@ package org.labkey.api.data;
 import org.apache.commons.collections15.MultiMap;
 import org.apache.commons.collections15.multimap.MultiHashMap;
 import org.apache.log4j.Logger;
-import org.labkey.api.security.User;
+import org.jetbrains.annotations.Nullable;
 import org.labkey.api.module.Module;
 import org.labkey.api.module.ModuleLoader;
+import org.labkey.api.security.User;
 
 import java.sql.SQLException;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 
 /**
  * User: arauch
@@ -57,11 +65,11 @@ public class SqlScriptRunner
     }
 
 
-    public static List<SqlScript> getRunningScripts(String moduleName)
+    public static List<SqlScript> getRunningScripts(@Nullable String moduleName)
     {
         synchronized (SCRIPT_LOCK)
         {
-            if (moduleName.equals(_currentModuleName))
+            if (null != moduleName && moduleName.equals(_currentModuleName))
                 return new ArrayList<SqlScript>(_remainingScripts);
             else
                 return Collections.emptyList();

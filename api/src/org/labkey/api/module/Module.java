@@ -13,6 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package org.labkey.api.module;
 
 import org.jetbrains.annotations.NotNull;
@@ -158,6 +159,7 @@ public interface Module extends Comparable<Module>
      * VM. These tests will be executed as part of the DRT.
      * @return the unit tests that this module provides
      */
+    @NotNull
     public Set<Class> getJUnitTests();
 
     /**
@@ -167,6 +169,7 @@ public interface Module extends Comparable<Module>
      * those in the database metadata.
      * @return the schemas associated with this module that should be tested
      */
+    @NotNull
     public Set<DbSchema> getSchemasToTest();
 
     /**
@@ -174,6 +177,7 @@ public interface Module extends Comparable<Module>
      * should load the related resources.
      * @return the schema names owned by this module
      */
+    @NotNull
     public Set<String> getSchemaNames();
 
     public Resolver getModuleResolver();
