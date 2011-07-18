@@ -24,6 +24,7 @@ import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.portal.ProjectUrls;
 import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.AdminPermission;
+import org.labkey.api.settings.AppProps;
 import org.labkey.api.study.Study;
 import org.labkey.api.study.StudyService;
 import org.labkey.api.study.assay.AssayUrls;
@@ -104,12 +105,13 @@ public class StudyFolderType extends DefaultFolderType
             String action = actionURL.getAction();
 
             List<NavTree> buttons = new ArrayList<NavTree>();
+            buttons.add(new NavTree("Dashboard", AppProps.getInstance().getHomePageActionURL()));
             buttons.add(new NavTree("Shortcuts", StudyPagesController.Page.SHORTCUTS.getURL(c)));
-            buttons.add(new NavTree("Specimens", StudyPagesController.Page.SPECIMENS.getURL(c)));
             buttons.add(new NavTree("Clinical and Assay Data", StudyPagesController.Page.DATA_ANALYSIS.getURL(c)));
+            buttons.add(new NavTree("Study Info", PageFlowUtil.urlProvider(ProjectUrls.class).getBeginURL(c)));
+            buttons.add(new NavTree("Specimens", StudyPagesController.Page.SPECIMENS.getURL(c)));
             if (c.hasPermission(u, AdminPermission.class))
                 buttons.add(new NavTree("Manage", new ActionURL(StudyController.ManageStudyAction.class, c)));
-            buttons.add(new NavTree("Overview", PageFlowUtil.urlProvider(ProjectUrls.class).getBeginURL(c)));
 
             //TODO: Develop some rules (regexp??) for highlighting.
             //AppBar should try based on navTrail if one is provided
@@ -117,9 +119,9 @@ public class StudyFolderType extends DefaultFolderType
             {
                 String pageName = actionURL.getParameter("pageName");
                 if (StudyPagesController.Page.SHORTCUTS.name().equals(pageName))
-                    buttons.get(0).setSelected(true);
-                else if (StudyPagesController.Page.SPECIMENS.name().equals(pageName))
                     buttons.get(1).setSelected(true);
+                else if (StudyPagesController.Page.SPECIMENS.name().equals(pageName))
+                    buttons.get(4).setSelected(true);
                 else if (StudyPagesController.Page.DATA_ANALYSIS.name().equals(pageName))
                     buttons.get(2).setSelected(true);
             }
