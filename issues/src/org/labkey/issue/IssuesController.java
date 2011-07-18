@@ -100,7 +100,6 @@ import org.labkey.issue.query.IssuesQuerySchema;
 import org.labkey.issue.query.IssuesQueryView;
 import org.springframework.validation.BindException;
 import org.springframework.validation.Errors;
-import org.springframework.validation.FieldError;
 import org.springframework.validation.MapBindingResult;
 import org.springframework.validation.ObjectError;
 import org.springframework.web.servlet.ModelAndView;
@@ -1526,26 +1525,7 @@ public class IssuesController extends SpringActionController
 
         public void validateCommand(ConfigureIssuesForm form, Errors errors)
         {
-            HString[] requiredFields = form.getRequiredFields();
-
-            for (HString required : requiredFields){
-                if (required.toString().equalsIgnoreCase(TYPE_STRING) && IssueManager.getKeywords(getContainer().getId(), ISSUE_TYPE).length < 1)
-                {
-                    errors.reject(ERROR_MSG, "In order to require a Type you must specify at least one below.");
-                }
-                else if (required.toString().equalsIgnoreCase(AREA_STRING) && IssueManager.getKeywords(getContainer().getId(), ISSUE_AREA).length < 1)
-                {
-                    errors.reject(ERROR_MSG, "In order to require an Area you must specify at least one below.");
-                }
-                else if (required.toString().equalsIgnoreCase(PRIORITY_STRING) && IssueManager.getKeywords(getContainer().getId(), ISSUE_PRIORITY).length < 1)
-                {
-                    errors.reject(ERROR_MSG, "In order to require a Priority you must specify at least one below.");
-                }
-                else if (required.toString().equalsIgnoreCase(MILESTONE_STRING) && IssueManager.getKeywords(getContainer().getId(), ISSUE_MILESTONE).length < 1)
-                {
-                    errors.reject(ERROR_MSG, "In order to require a Milestone you must specify at least one below.");
-                }
-            }
+            checkPickLists(form, errors);
 
             if (form.getAssignedToMethod().equals("ProjectUsers"))
             {
@@ -1576,7 +1556,7 @@ public class IssuesController extends SpringActionController
                 {
                     errors.reject(ConfigureIssuesForm.ParamNames.direction.name(), "You must specify a comment sort direction!");
                 }
-                _direction = Sort.SortDirection.valueOf(form.getDirection()); 
+                _direction = Sort.SortDirection.valueOf(form.getDirection());
             }
             catch (IllegalArgumentException e)
             {
@@ -1584,10 +1564,57 @@ public class IssuesController extends SpringActionController
             }
         }
 
+        private void checkPickLists(ConfigureIssuesForm form, Errors errors)
+        {
+            ArrayList<HString> newRequiredFields = new ArrayList<HString>();
+             /**
+             * You have to make the required fields all lower case to compare them to the STRING_#_STRING constants.
+             * I made the mistake of trying to make the field use lowercase names but it ruins the camelcasing when
+             * you ouput the form on the JSP, which then breaks the tests.
+             */
+            for(HString required : form.getRequiredFields())
+            {
+                newRequiredFields.add(required.toLowerCase());
+            }
+            Set<String> newPickLists = new IssueManager.CustomColumnConfiguration(getViewContext()).getPickListColumns();
+            Set<String> oldPickLists = IssueManager.getCustomColumnConfiguration(getContainer()).getPickListColumns();
+
+            for (HString required : form.getRequiredFields())
+            {
+                /**
+                 * If the required field is one of the custom string fields, and it has no keywords, and it has just been
+                 * selected (in the new picklist, but not old), then we remove it from the required fields. This way you
+                 * don't have a required field with no keywords.
+                 */
+               if (required.toString().equalsIgnoreCase(STRING_1_STRING) && IssueManager.getKeywords(getContainer().getId(), ISSUE_STRING1).length < 1 && newPickLists.contains(STRING_1_STRING) && !oldPickLists.contains(STRING_1_STRING))
+                {
+                        newRequiredFields.remove(new HString(STRING_1_STRING));
+                }
+                else if (required.toString().equalsIgnoreCase(STRING_2_STRING) && IssueManager.getKeywords(getContainer().getId(), ISSUE_STRING2).length < 1 && newPickLists.contains(STRING_2_STRING)&& !oldPickLists.contains(STRING_2_STRING))
+                {
+                        newRequiredFields.remove(new HString(STRING_2_STRING));
+                }
+                else if (required.toString().equalsIgnoreCase(STRING_3_STRING) && IssueManager.getKeywords(getContainer().getId(), ISSUE_STRING3).length < 1 && newPickLists.contains(STRING_3_STRING) && !oldPickLists.contains(STRING_3_STRING))
+                {
+                        newRequiredFields.remove(new HString(STRING_3_STRING));
+                }
+                else if (required.toString().equalsIgnoreCase(STRING_4_STRING) && IssueManager.getKeywords(getContainer().getId(), ISSUE_STRING4).length < 1 && newPickLists.contains(STRING_4_STRING) && !oldPickLists.contains(STRING_4_STRING))
+                {
+                        newRequiredFields.remove(new HString(STRING_4_STRING));
+                }
+                else if (required.toString().equalsIgnoreCase(STRING_5_STRING) && IssueManager.getKeywords(getContainer().getId(), ISSUE_STRING5).length < 1 && newPickLists.contains(STRING_5_STRING) && !oldPickLists.contains(STRING_5_STRING))
+                {
+                        newRequiredFields.remove(new HString(STRING_5_STRING));
+                }
+            }
+
+            form.setRequiredFields((HString[])newRequiredFields.toArray(new HString[newRequiredFields.size()]));
+        }
+
         public boolean handlePost(ConfigureIssuesForm form, BindException errors) throws Exception
         {
             IssueManager.EntryTypeNames names = new IssueManager.EntryTypeNames();
-            
+
             names.singularName = form.getEntrySingularName();
             names.pluralName = form.getEntryPluralName();
 

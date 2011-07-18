@@ -200,13 +200,20 @@ public class IssueManager
         issue._added = null;
     }
 
+    public static final Object KEYWORD_LOCK = new Object();
 
-    public static void addKeyword(Container c, int type, HString keyword) throws SQLException
+    public static void addKeyword(Container c, int type, HString... keywords) throws SQLException
     {
-        Table.execute(_issuesSchema.getSchema(),
-                "INSERT INTO " + _issuesSchema.getTableInfoIssueKeywords() + " (Container, Type, Keyword) VALUES (?, ?, ?)",
-                c.getId(), type, keyword);
-        DbCache.clear(_issuesSchema.getTableInfoIssueKeywords());
+        synchronized (KEYWORD_LOCK)
+        {
+            for (HString keyword : keywords)
+            {
+                Table.execute(_issuesSchema.getSchema(),
+                        "INSERT INTO " + _issuesSchema.getTableInfoIssueKeywords() + " (Container, Type, Keyword) VALUES (?, ?, ?)",
+                        c.getId(), type, keyword);
+            }
+            DbCache.clear(_issuesSchema.getTableInfoIssueKeywords());
+        }
     }
 
 
@@ -319,20 +326,25 @@ public class IssueManager
 
     public static void deleteKeyword(Container c, int type, HString keyword)
     {
-        try
+        Keyword[] keywords = null;
+        synchronized (KEYWORD_LOCK)
         {
-            Table.execute(_issuesSchema.getSchema(),
-                    "DELETE FROM " + _issuesSchema.getTableInfoIssueKeywords() + " WHERE Container=? AND Type=? AND Keyword=?",
-                    c.getId(), type, keyword);
-            DbCache.clear(_issuesSchema.getTableInfoIssueKeywords());
-        }
-        catch (SQLException x)
-        {
-            _log.error("deleteKeyword", x);
+            try
+            {
+                Table.execute(_issuesSchema.getSchema(),
+                        "DELETE FROM " + _issuesSchema.getTableInfoIssueKeywords() + " WHERE Container=? AND Type=? AND Keyword=?",
+                        c.getId(), type, keyword);
+                DbCache.clear(_issuesSchema.getTableInfoIssueKeywords());
+                keywords = getKeywords(c.getId(), type);
+            }
+            catch (SQLException x)
+            {
+                _log.error("deleteKeyword", x);
+            }
         }
 
         //Check to see if the last keyword of a required field was deleted, if so no longer make the field required.
-        if (getKeywords(c.getId(), type).length == 0)
+        if (keywords == null || keywords.length == 0)
         {
             String stringType ="";
             if (type == IssuesController.ISSUE_AREA)
@@ -350,6 +362,26 @@ public class IssueManager
             else if (type == IssuesController.ISSUE_PRIORITY)
             {
                 stringType = IssuesController.PRIORITY_STRING;
+            }
+            else if (type == IssuesController.ISSUE_STRING1)
+            {
+                stringType = IssuesController.STRING_1_STRING;
+            }
+            else if (type == IssuesController.ISSUE_STRING2)
+            {
+                stringType = IssuesController.STRING_2_STRING;
+            }
+            else if (type == IssuesController.ISSUE_STRING3)
+            {
+                stringType = IssuesController.STRING_3_STRING;
+            }
+            else if (type == IssuesController.ISSUE_STRING4)
+            {
+                stringType = IssuesController.STRING_4_STRING;
+            }
+            else if (type == IssuesController.ISSUE_STRING5)
+            {
+                stringType = IssuesController.STRING_5_STRING;
             }
 
             HString requiredFields = getRequiredIssueFields(c);

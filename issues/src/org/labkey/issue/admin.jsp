@@ -66,7 +66,7 @@
         <%
                 }
         %>
-                <td><input type="checkbox" name="requiredFields" <%=isRequired(info.getName(), bean.getRequiredFields()) ? "checked " : ""%> value="<%=info.getName()%>"><%=getCaption(info)%></td>
+                <td><input type="checkbox" name="requiredFields" <%=isRequired(info.getName(), bean.getRequiredFields()) ? "checked " : ""%> <%=isPickList(info) && !hasKeywords(info) ? "disabled" : "" %> value="<%=info.getName()%>"><%=getCaption(info)%></td>
         <%
                 if (!startNewRow)
                 {
@@ -181,6 +181,71 @@
             return ccc.getColumnCaptions().get(col.getName());
         }
         return col.getLabel();
+    }
+
+    public boolean hasKeywords(ColumnInfo col){
+        //IssueManager.getKeywords(getContainer().getId(), ISSUE_AREA).length < 1
+        Container c = HttpView.getRootContext().getContainer();
+        if (col.getColumnName().equalsIgnoreCase(IssuesController.STRING_1_STRING) && IssueManager.getKeywords(c.getId(), IssuesController.ISSUE_STRING1).length < 1)
+        {
+                return false;
+        }
+        else if (col.getColumnName().equalsIgnoreCase(IssuesController.STRING_2_STRING) && IssueManager.getKeywords(c.getId(), IssuesController.ISSUE_STRING2).length < 1)
+        {
+                return false;
+        }
+        else if (col.getColumnName().equalsIgnoreCase(IssuesController.STRING_3_STRING)&& IssueManager.getKeywords(c.getId(), IssuesController.ISSUE_STRING3).length < 1)
+        {
+                return false;
+        }
+        else if (col.getColumnName().equalsIgnoreCase(IssuesController.STRING_4_STRING)&& IssueManager.getKeywords(c.getId(), IssuesController.ISSUE_STRING4).length < 1)
+        {
+                return false;
+        }
+        else if (col.getColumnName().equalsIgnoreCase(IssuesController.STRING_5_STRING)&& IssueManager.getKeywords(c.getId(), IssuesController.ISSUE_STRING5).length < 1)
+        {
+                return false;
+        }
+        else if (col.getColumnName().equalsIgnoreCase(IssuesController.TYPE_STRING)&& IssueManager.getKeywords(c.getId(), IssuesController.ISSUE_TYPE).length < 1)
+        {
+                return false;
+        }
+        else if (col.getColumnName().equalsIgnoreCase(IssuesController.AREA_STRING)&& IssueManager.getKeywords(c.getId(), IssuesController.ISSUE_AREA).length < 1)
+        {
+                return false;
+        }
+        else if (col.getColumnName().equalsIgnoreCase(IssuesController.PRIORITY_STRING)&& IssueManager.getKeywords(c.getId(), IssuesController.ISSUE_PRIORITY).length < 1)
+        {
+                return false;
+        }
+        else if (col.getColumnName().equalsIgnoreCase(IssuesController.MILESTONE_STRING)&& IssueManager.getKeywords(c.getId(), IssuesController.ISSUE_MILESTONE).length < 1)
+        {
+                return false;
+        }
+
+        return true;
+    }
+
+    public boolean isPickList(ColumnInfo col){
+        final IssueManager.CustomColumnConfiguration ccc = IssueManager.getCustomColumnConfiguration(HttpView.getRootContext().getContainer());
+        String name = col.getColumnName();
+        if (ccc.getPickListColumns().contains(col.getColumnName().toLowerCase()))
+        {
+            //If the column actually is a pick list return true.
+            return true;
+        }
+        else if(col.getColumnName().equalsIgnoreCase(IssuesController.TYPE_STRING) || col.getColumnName().equalsIgnoreCase(IssuesController.AREA_STRING)
+                || col.getColumnName().equalsIgnoreCase(IssuesController.PRIORITY_STRING) || col.getColumnName().equalsIgnoreCase(IssuesController.MILESTONE_STRING))
+        {
+            //If the column is Type, Area, Priority, or Milestone also return true
+            // this way if they don't have keywords they are also greyed out.
+            return true;
+        }
+        else
+        {
+            return false;
+        }
+
     }
 %>
 <br>

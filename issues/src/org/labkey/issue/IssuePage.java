@@ -316,43 +316,47 @@ public class IssuePage implements DataRegionSelection.DataSelectionKeyForm
     {
         assert type != IssuesController.ISSUE_NONE;
 
-        String cacheKey = container + "/" + type;
-        String s = (String) DbCache.get(IssuesSchema.getInstance().getTableInfoIssueKeywords(), cacheKey);
-
-        if (null != s)
-            return new HString(s);
-
-        Keyword[] keywords = IssueManager.getKeywords(container.getId(), type);
-        StringBuilder sb = new StringBuilder(keywords.length * 30);
-        if (allowBlank)
-            sb.append("<option></option>\n");
-        for (Keyword keyword : keywords)
+        synchronized (IssueManager.KEYWORD_LOCK)
         {
-            sb.append("<option>");
-            sb.append(PageFlowUtil.filter(keyword.getKeyword()));
-            sb.append("</option>\n");
+            String cacheKey = container + "/" + type;
+            String s = (String) DbCache.get(IssuesSchema.getInstance().getTableInfoIssueKeywords(), cacheKey);
+
+            if (null != s)
+                return new HString(s);
+
+            Keyword[] keywords = IssueManager.getKeywords(container.getId(), type);
+            StringBuilder sb = new StringBuilder(keywords.length * 30);
+            if (allowBlank)
+                sb.append("<option></option>\n");
+            for (Keyword keyword : keywords)
+            {
+                sb.append("<option>");
+                sb.append(PageFlowUtil.filter(keyword.getKeyword()));
+                sb.append("</option>\n");
+            }
+            s = sb.toString();
+            DbCache.put(IssuesSchema.getInstance().getTableInfoIssueKeywords(), cacheKey, s, 10 * CacheManager.MINUTE);
+            return new HString(s);
         }
-        s = sb.toString();
-        DbCache.put(IssuesSchema.getInstance().getTableInfoIssueKeywords(), cacheKey, s, 10 * CacheManager.MINUTE);
-        return new HString(s);
     }
 
     protected HString getKeywordOptionsWithDefault(Container c, int type, HString[] standardValues, HString def) throws SQLException
     {
-        HString options = getKeywordOptions(c, type, false);
-
-        if (0 == options.length())
+        synchronized (IssueManager.KEYWORD_LOCK)
         {
-            // First reference in this container... save away standard values
-            for (HString value : standardValues)
-                IssueManager.addKeyword(c, type, value);
+            HString options = getKeywordOptions(c, type, false);
 
-            IssueManager.setKeywordDefault(c, type, def);
+            if (0 == options.length())
+            {
+                // First reference in this container... save away standard values
+                IssueManager.addKeyword(c, type, standardValues);
+                IssueManager.setKeywordDefault(c, type, def);
 
-            options = getKeywordOptions(c, type, false);
+                options = getKeywordOptions(c, type, false);
+            }
+
+            return options;
         }
-
-        return options;
     }
 
     public HString getTypeOptions(Container container)
