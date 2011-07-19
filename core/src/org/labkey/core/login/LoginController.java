@@ -419,7 +419,10 @@ public class LoginController extends SpringActionController
         Container c = (null == current || current.isRoot() ? ContainerManager.getHomeContainer() : getContainer());
 
         // Default redirect if returnURL is not specified
-        ActionURL defaultURL = null != user ? c.getStartURL(user) : AppProps.getInstance().getHomePageActionURL();
+        URLHelper defaultURL =
+                null==current || current.isRoot() ? getWelcomeURL() :
+                null != user ? c.getStartURL(user) :
+                AppProps.getInstance().getHomePageActionURL();
 
         // After successful login (and possibly profile update) we'll end up here
         URLHelper returnURL = form.getReturnURLHelper(defaultURL);
@@ -692,6 +695,13 @@ public class LoginController extends SpringActionController
     }
 
 
+    private static URLHelper getWelcomeURL()
+    {
+        // goto "/" and let the default redirect happen
+        return new URLHelper(true);
+    }
+
+
     @RequiresNoPermission
     @IgnoresTermsOfUse
     @AllowedDuringUpgrade
@@ -705,7 +715,7 @@ public class LoginController extends SpringActionController
 
         public URLHelper getSuccessURL(ReturnUrlForm form)
         {
-            return form.getReturnURLHelper(AppProps.getInstance().getHomePageActionURL());
+            return getWelcomeURL();
         }
 
         public boolean doAction(ReturnUrlForm form, BindException errors) throws Exception
