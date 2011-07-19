@@ -278,28 +278,72 @@ function init() {
         var isMove = false;
 
         function getOrder(node, dropNode, e) {
-            var eTarget = e.target;
-            var order = "";
-            var sep = "";
 
-            // The event contains the above/below nodes so that should give correct order
-            for (var j = 0; j < node.childNodes.length; j++) {
-                if (node.childNodes[j] == dropNode) { continue; }
-                if (node.childNodes[j] == eTarget) {
-                    if (e.point == 'above') {
-                        order += sep + dropNode.text + ";" + eTarget.text;
+            function getOrderHelper(node, dropNode, e) {
+                var eTarget = e.target;
+                var order = "";
+                var sep = "";
+
+                // The event contains the above/below nodes so that should give correct order
+                for (var j = 0; j < node.childNodes.length; j++) {
+                    if (node.childNodes[j] == dropNode) { continue; }
+                    if (node.childNodes[j] == eTarget) {
+                        if (e.point == 'above') {
+                            order += sep + dropNode.text + ";" + eTarget.text;
+                        }
+                        else if (e.point == 'below') {
+                            order += sep + eTarget.text + ";" + dropNode.text;
+                        }
+                        else { return false; /* shouldn't ever get here. */ }
                     }
-                    else if (e.point == 'below') {
-                        order += sep + eTarget.text + ";" + dropNode.text;
+                    else {
+                        if (node.childNodes[j].text)
+                            order += sep + node.childNodes[j].text;
                     }
-                    else { return false; /* shouldn't ever get here. */ }
+                    sep = ";";
                 }
-                else { order += sep + node.childNodes[j].text; }
-                sep = ";";
+
+                r('order: ' + order);
+                return order;
             }
 
-            r('order: ' + order);
-            return order;
+            var eTarget = e.target;
+            var order   = "";
+            var sep     = "";
+
+            if (dropNode.length && dropNode.length > 0) {
+
+                var _order = "";
+                var _sep   = "";
+                var marked = {};
+                
+                for (var x = 0; x < dropNode.length; x++) {
+                    if (dropNode[x].text) {
+                        _order += _sep + dropNode[x].text;
+                        _sep = ";";
+                        marked[dropNode[x].id] = true;
+                    }
+                }
+
+                for (var j = 0; j < node.childNodes.length; j++) {
+
+                    if (node.childNodes[j] == eTarget) {
+                        if (e.point == 'above') {
+                            order += sep + _order + ";" + eTarget.text;
+                        }
+                        else if (e.point == 'below') {
+                            order += sep + eTarget.text + ";" + _order;
+                        }
+                    }
+                    else if (marked[node.childNodes[j].id]) { continue; }
+                    else {
+                        order += sep + node.childNodes[j].text;
+                    }
+                    sep = ";";
+                }
+                return order;
+            }
+            else { return getOrderHelper(node, dropNode, e); }
         }
 
         for (var n=0; n < e.dropNode.length; n++) {
@@ -322,7 +366,10 @@ function init() {
                     reorderFolders(s, getOrder(target, s, e), false, null, successHandler);
                 }
                 else if (target.attributes.isProject && s.attributes.isProject) {
-                    reorderFolders(s, getOrder(target.parentNode, s, e), false, null, successHandler);
+                    if (c == e.dropNode.length)
+                        reorderFolders(s, getOrder(target.parentNode, e.dropNode, e), false, null, successHandler);
+                    else
+                        successHandler();
                 }
                 else {
 
@@ -536,12 +583,10 @@ function init() {
     function calculateTarget(node, target, point) {
 
         if (!target) {
-            r('Target is undefined.');
             return {target: undefined, cancel: true};
         }
 
         if (target.attributes.containerPath === undefined) {
-            r('target containerPath is undefined.');
             return {target: target, cancel: true};
         }
         
@@ -552,6 +597,10 @@ function init() {
             if (point == 'above' || point == 'below'){
                 // check if same parent, check if root node -- cannot elevate to project
                 if (target.parentNode && target.parentNode.attributes.containerPath != undefined) {
+                    if (node.attributes.isProject && target.parentNode.attributes.isProject) {
+                        folderTree.r('Cannot move one Project into another.', true);
+                        return {target: target, cancel: true};
+                    }
                     target = target.parentNode;
                     if (target.attributes.containerPath === undefined) {
                         folderTree.r('');
@@ -571,6 +620,7 @@ function init() {
             }
             else if (node.attributes.isProject) {
                 // Not allowed to move projects
+                folderTree.r('Cannot move one Project into another.', true);
                 return {target: target, cancel: true};
             }
         }

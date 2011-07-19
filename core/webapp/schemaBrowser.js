@@ -287,7 +287,8 @@ LABKEY.ext.QueryDetailsPanel = Ext.extend(Ext.Panel, {
         var params = {schemaName: queryDetails.schemaName};
         params["query.queryName"] = queryDetails.name;
 
-        container.children.push(this.formatQueryLink("executeQuery", params, "view data", undefined, queryDetails.viewDataUrl));
+        if (!queryDetails.exception)
+            container.children.push(this.formatQueryLink("executeQuery", params, "view data", undefined, queryDetails.viewDataUrl));
 
         if (queryDetails.isUserDefined)
         {
@@ -309,9 +310,9 @@ LABKEY.ext.QueryDetailsPanel = Ext.extend(Ext.Panel, {
             if (LABKEY.Security.currentUser.isAdmin)
             {
                 if (queryDetails.createDefinitionUrl)
-                    container.children.push(this.formatQueryLink(null, null, "create definition", "_blank", queryDetails.createDefinitionUrl));
+                    container.children.push(this.formatQueryLink(null, null, "create definition", undefined, queryDetails.createDefinitionUrl));
                 else if (queryDetails.editDefinitionUrl)
-                    container.children.push(this.formatQueryLink(null, null, "edit definition", "_blank", queryDetails.editDefinitionUrl));
+                    container.children.push(this.formatQueryLink(null, null, "edit definition", undefined, queryDetails.editDefinitionUrl));
 
                 if (queryDetails.isMetadataOverrideable)
                     container.children.push(this.formatQueryLink("metadataQuery", params, "edit metadata"));
@@ -344,7 +345,10 @@ LABKEY.ext.QueryDetailsPanel = Ext.extend(Ext.Panel, {
     },
 
     formatQueryInfo : function(queryDetails) {
-        var viewDataUrl = LABKEY.ActionURL.buildURL("query", "executeQuery", undefined, {schemaName:queryDetails.schemaName,"query.queryName":queryDetails.name});
+        var _qd = queryDetails;
+        var viewDataUrl = LABKEY.ActionURL.buildURL("query", "executeQuery", undefined, {schemaName:_qd.schemaName,"query.queryName":_qd.name});
+        if (queryDetails.exception)
+            viewDataUrl = LABKEY.ActionURL.buildURL('query', 'sourceQuery', null, {schemaName : _qd.schemaName, 'query.queryName' : _qd.name});
         return {
             tag: 'div',
             children: [
