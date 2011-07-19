@@ -1426,33 +1426,29 @@ public class DataSetDefinition extends AbstractStudyEntity<DataSetDefinition> im
 
             _DatasetColumnsIterator it = new _DatasetColumnsIterator(input, errors);
 
-            //it.selectAll();
-            for (int i=1 ; i<=input.getColumnCount() ; i++)
+            ArrayList<ColumnInfo> inputMatches = DataIteratorUtil.matchColumns(input,table);
+
+            // select all columns except those we explicity calculate (e.g. lsid)
+            for (int in=1 ; in<=input.getColumnCount() ; in++)
             {
-                ColumnInfo ci = input.getColumnInfo(i);
-                if (ci.getName().equalsIgnoreCase("lsid"))
+                ColumnInfo match = inputMatches.get(in);
+                if (null != match && (match.getName().equalsIgnoreCase("lsid")))
                     continue;
-                it.addColumn(i);
-            }
-
-
-            Map<String,Integer> fromMap = new CaseInsensitiveHashMap<Integer>(input.getColumnCount()*2);
-            ArrayList<ColumnInfo> matches = DataIteratorUtil.matchColumns(input,table);
-            for (int i=1 ; i<matches.size() ; i++)
-            {
-                ColumnInfo from=input.getColumnInfo(i);
-                ColumnInfo match=matches.get(i);
                 if (null != match)
                 {
-                    fromMap.put(match.getPropertyURI(), i);
-                    fromMap.put(match.getColumnName(), i);
+                    // to simplify a little, use matched name/propertyuri here (even though StandardETL would rematch using the same logic)
+                    int out = it.addColumn(match.getName(),in);
+                    it.getColumnInfo(out).setPropertyURI(match.getPropertyURI());
                 }
-                else if (!from.getName().toLowerCase().endsWith(MvColumn.MV_INDICATOR_SUFFIX.toLowerCase()))
+                else
                 {
-                    // we want some non-matched columns in here too, like "replace" and "QCStateLabel"
-                    fromMap.put(from.getName(), i);
+                    it.addColumn(in);
                 }
             }
+
+
+            // like createColumnAndPropertyMap, but we want to add
+            Map<String,Integer> fromMap = DataIteratorUtil.createColumnAndPropertyMap(it);
 
             String keyColumnName = getKeyPropertyName();
             ColumnInfo keyColumn = null;
@@ -1640,7 +1636,7 @@ public class DataSetDefinition extends AbstractStudyEntity<DataSetDefinition> im
         User user;
 
         // these columns are used to compute derived columns, should occur early in the output list
-        Integer indexPTID, indexSequenceNumOutput, indexVisitDateOutput, indexKeyPropertyOutput;
+        Integer indexPtidOutput, indexSequenceNumOutput, indexVisitDateOutput, indexKeyPropertyOutput;
         // for returning lsid list
         Integer indexLSIDOutput;
 
@@ -1653,7 +1649,7 @@ public class DataSetDefinition extends AbstractStudyEntity<DataSetDefinition> im
 
         void setSpecialInputColumns(Integer indexPTID, Integer indexSequenceNum, Integer indexVisitDate, Integer indexKeyProperty)
         {
-            this.indexPTID = indexPTID;
+            this.indexPtidOutput = indexPTID;
             this.indexSequenceNumOutput = indexSequenceNum;
             this.indexVisitDateOutput = indexVisitDate;
             this.indexKeyPropertyOutput = indexKeyProperty;
@@ -1731,9 +1727,15 @@ public class DataSetDefinition extends AbstractStudyEntity<DataSetDefinition> im
             return date;
         }
 
-        String getString(int i)
+        String getInputString(int i)
         {
             Object o = getInput().get(i);
+            return null==o ? "" : o.toString();
+        }
+
+        String getOutputString(int i)
+        {
+            Object o = this.get(i);
             return null==o ? "" : o.toString();
         }
 
@@ -1804,9 +1806,9 @@ public class DataSetDefinition extends AbstractStudyEntity<DataSetDefinition> im
             public Object call() throws Exception
             {
                 StringBuilder sb = new StringBuilder(_urnPrefix);
-                assert null!=indexPTID || hasErrors();
+                assert null!=indexPtidOutput || hasErrors();
 
-                String ptid = null==indexPTID ? "" : getString(indexPTID);
+                String ptid = null==indexPtidOutput ? "" : getOutputString(indexPtidOutput);
                 sb.append(ptid);
 
                 if (!isDemographicData())
@@ -1830,8 +1832,8 @@ public class DataSetDefinition extends AbstractStudyEntity<DataSetDefinition> im
             @Override
             public Object call() throws Exception
             {
-                assert null!=indexPTID || hasErrors();
-                String ptid = null==indexPTID ? "" : getString(indexPTID);
+                assert null!=indexPtidOutput || hasErrors();
+                String ptid = null==indexPtidOutput ? "" : getOutputString(indexPtidOutput);
                 String seqnum = getFormattedSequenceNum();
                 return ptid + "|" + seqnum;
             }
