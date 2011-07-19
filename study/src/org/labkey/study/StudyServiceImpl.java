@@ -27,6 +27,7 @@ import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.collections.CaseInsensitiveHashSet;
 import org.labkey.api.collections.CsvSet;
 import org.labkey.api.data.*;
+import org.labkey.api.etl.DataIteratorUtil;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.QueryService;
 import org.labkey.api.security.SecurableResource;
@@ -94,6 +95,8 @@ public class StudyServiceImpl implements StudyService.Service
     public String updateDatasetRow(User u, Container c, int datasetId, String lsid, Map<String, Object> data, List<String> errors)
             throws SQLException
     {
+        boolean allowAliasesInImport = false; // SEE https://www.labkey.org/issues/home/Developer/issues/details.view?issueId=12592
+        
         StudyImpl study = StudyManager.getInstance().getStudy(c);
         DataSetDefinition def = StudyManager.getInstance().getDataSetDefinition(study, datasetId);
 
@@ -114,23 +117,33 @@ public class StudyServiceImpl implements StudyService.Service
                 return null;
             }
 
-            Map<String,Object> newData = new CaseInsensitiveHashMap<Object>(data);
-            // If any fields aren't included, use the old values
-            for (Map.Entry<String,Object> oldField : oldData.entrySet())
-            {
-                if (oldField.getKey().equals("lsid"))
-                    continue;
-                if (!newData.containsKey(oldField.getKey()))
-                {
-                    // if the new incoming data doesn't explicitly set a QC state, and 'assignDefaultQCState' is true,
-                    // then we don't want to use the old QC state- we want to use the default instead.  This will be
-                    // handled at a lower level by leaving QC state null here:
-                    if (oldField.getKey().equals("QCState"))
-                        continue;
 
-                    newData.put(oldField.getKey(), oldField.getValue());
+            Map<String,Object> newData = new CaseInsensitiveHashMap<Object>(oldData);
+            // don't default to using old qcstate
+            newData.remove("qcstate");
+
+            if (allowAliasesInImport)
+            {
+                TableInfo target = def.getTableInfo(u);
+                Map<String,ColumnInfo> colMap = DataIteratorUtil.createAllAliasesMap(target);
+
+                // If any fields aren't included, use the old values
+                for (Map.Entry<String,Object> entry : data.entrySet())
+                {
+                    ColumnInfo col = colMap.get(entry.getKey());
+                    String name = null==col ? entry.getKey() : col.getName();
+                    newData.put(name,entry.getValue());
                 }
             }
+            else
+            {
+                newData.putAll(data);
+            }
+
+            // these columns are always recalculated
+            newData.remove("lsid");
+            newData.remove("participantsequencekey");
+
 
             def.deleteRows(u, Collections.singletonList(lsid));
 
