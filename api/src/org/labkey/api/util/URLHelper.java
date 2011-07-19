@@ -22,6 +22,7 @@ import org.apache.commons.lang.StringUtils;
 import org.apache.log4j.Logger;
 import org.labkey.api.data.CompareType;
 import org.labkey.api.query.FieldKey;
+import org.labkey.api.settings.AppProps;
 import org.springframework.beans.MutablePropertyValues;
 import org.springframework.beans.PropertyValue;
 import org.springframework.beans.PropertyValues;
@@ -52,6 +53,16 @@ public class URLHelper implements Cloneable, Serializable, Taintable
 
     protected URLHelper()
     {
+    }
+
+
+    public URLHelper(boolean useContextPath)
+    {
+        if (useContextPath)
+        {
+            setPath(AppProps.getInstance().getParsedContextPath());
+            assert isDirectory();
+        }
     }
 
 

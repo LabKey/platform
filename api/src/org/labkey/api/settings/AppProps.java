@@ -126,7 +126,8 @@ public class AppProps extends AbstractWriteableSettingsGroup
             if (StringUtils.isEmpty(getContextPath()))
                 _contextPath = Path.rootPath;
             else
-                _contextPath = Path.parse(getContextPath());
+                _contextPath = Path.parse(getContextPath() + "/");
+            assert _contextPath.isDirectory();
         }
         return _contextPath;
     }
