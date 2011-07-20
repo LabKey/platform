@@ -972,7 +972,7 @@ LABKEY.DataRegion.ColumnsTab = Ext.extend(LABKEY.DataRegion.Tab, {
                                         return fieldMeta.data.caption;
                                     return fieldMeta.data.name;
                                 }
-                                return values.name + " (not found)";
+                                return values.name + " <span class='labkey-error'>(not found)</span>";
                             }
                         }
                     )

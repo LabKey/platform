@@ -1604,6 +1604,7 @@ public class QueryView extends WebPartView<Object>
     {
         DataView view = createDataView();
         DataRegion rgn = view.getDataRegion();
+        getSettings().setShowRows(ShowRows.PAGINATED);
         getSettings().setMaxRows(ExcelWriter.MAX_ROWS);
         getSettings().setOffset(Table.ALL_ROWS);
         rgn.setAllowAsync(false);
@@ -1767,6 +1768,7 @@ public class QueryView extends WebPartView<Object>
 
         DataView view = createDataView();
         DataRegion rgn = view.getDataRegion();
+        getSettings().setShowRows(ShowRows.PAGINATED);
         getSettings().setMaxRows(ExcelWriter.MAX_ROWS);
         getSettings().setOffset(Table.ALL_ROWS);
         view.getRenderContext().setCache(false);
