@@ -38,7 +38,6 @@ import org.labkey.api.util.GUID;
 import org.labkey.api.util.Pair;
 
 import java.io.IOException;
-import java.io.InterruptedIOException;
 import java.sql.Timestamp;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -89,7 +88,7 @@ public class SimpleTranslator extends AbstractDataIterator implements DataIterat
     public SimpleTranslator(DataIterator source, BatchValidationException errors)
     {
         super(errors);
-        this._data = source;
+        _data = source;
         _outputColumns.add(new Pair(new ColumnInfo(source.getColumnInfo(0)), new PassthroughColumn(0)));
     }
 
@@ -334,13 +333,15 @@ public class SimpleTranslator extends AbstractDataIterator implements DataIterat
     }
 
 
-    private class RemapColumn implements Callable
+    protected class RemapColumn implements Callable
     {
         final int _index;
-        final Map<Object,Object> _map;
+        final Map<?, ?> _map;
         final boolean _strict;
 
-        RemapColumn(int index, Map<Object,Object> map, boolean strict)
+        // strict == true means every incoming value must have an entry in the map
+        // string == false means incoming values without a map entry will pass through
+        public RemapColumn(int index, Map<?, ?> map, boolean strict)
         {
             _index = index;
             _map = map;
@@ -354,9 +355,11 @@ public class SimpleTranslator extends AbstractDataIterator implements DataIterat
             if (null == k)
                 return null;
             Object v = _map.get(k);
-            if (null != v || !_strict || _map.containsKey(k))
+            if (null != v || _map.containsKey(k))
                 return v;
-            addFieldError(_data.getColumnInfo(_index).getName(), "Couldn't not transalte value: " + String.valueOf(k));
+            if (!_strict)
+                return k;
+            addFieldError(_data.getColumnInfo(_index).getName(), "Couldn't not translate value: " + String.valueOf(k));
             return null;
         }
     }
