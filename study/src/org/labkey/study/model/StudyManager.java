@@ -688,13 +688,14 @@ public class StudyManager
     }
 
 
-    // Return the custom import mapping (optinally provided by the admin), ordered by sequence num.
+    // Return the custom import mapping (optinally provided by the admin), ordered by sequence num then row id (which
+    // maintains import order in case where multiple names map to the same sequence number).
     public Collection<VisitAlias> getCustomVisitImportMapping(Study study) throws SQLException
     {
         SimpleFilter containerFilter = new SimpleFilter("Container", study.getContainer());
         TableInfo tinfo = StudySchema.getInstance().getTableInfoVisitAliases();
 
-        return Arrays.asList(Table.select(tinfo, tinfo.getColumns("Name, SequenceNum"), containerFilter, new Sort("SequenceNum"), VisitAlias.class));
+        return Arrays.asList(Table.select(tinfo, tinfo.getColumns("Name, SequenceNum"), containerFilter, new Sort("SequenceNum,RowId"), VisitAlias.class));
     }
 
 
