@@ -337,6 +337,11 @@ var SecurityCache = Ext.extend(Ext.util.Observable,{
             successCallback : function(user,response)
             {
                 // make user match the Principals query
+                var jsonResponse = Ext.util.JSON.decode(response.responseText);
+                if(jsonResponse.message)
+                {
+                    Ext.Msg.alert("Success", jsonResponse.message);
+                }
                 var data = {UserId:user.userId, Name:user.email, Type:'u', Container:null};
                 var record = me._addPrincipal(data);
                 if (callback)
@@ -345,10 +350,7 @@ var SecurityCache = Ext.extend(Ext.util.Observable,{
 
             errorCallback: function(json,response)
             {
-                var exception = json.exception || json.exceptionClass;
-                if (-1 != exception.indexOf('$InvalidEmailException'))
-                    exception = "Invalid email: " + email;
-                Ext.Msg.alert("Error", $h(exception) || "Unknown error");
+                LABKEY.Utils.displayAjaxErrorResponse(response, json.exception);
             }
         });
     },
@@ -862,14 +864,45 @@ var UserInfoPopup = Ext.extend(Ext.Window,{
     {
         if (!email)
             return;
-        this.cache.createNewUser(email, true, function(user)
-        {
-            var groupid = this.user.UserId;
-            var userid = user.UserId;
-            this.cache.addMembership(groupid,userid,this._redraw.createDelegate(this));
-        }, this);
-        combo.selectText();
-        combo.clearValue();
+
+        var config = {
+            name : email,
+            success : function(info, response) {
+                if (info && info.users && info.users.length == 1) {
+                    var user = info.users[0];
+                    if(user.email.toLowerCase() == email.toLowerCase()) {
+                        this.cache.addMembership(this.user.UserId, user.userId,this._redraw.createDelegate(this));
+                    }
+                }
+                else if(info && info.users && info.users.length == 0){
+                    Ext.Msg.show({
+                        title: 'Create New User',
+                        msg : 'User was not found. Would you like to create the user for \'' + email + '\'?',
+                        buttons : Ext.Msg.YESNO,
+                        fn : function(btn, text){
+                            if(btn == 'yes'){
+                                console.info("creating a new user");
+                                this.cache.createNewUser(email, true, function(user)
+                                {
+                                    var groupid = this.user.UserId;
+                                    var userid = user.UserId;
+                                    this.cache.addMembership(groupid,userid,this._redraw.createDelegate(this));
+                                }, this);
+                                combo.selectText();
+                                combo.clearValue();
+                            }
+                        },
+                        scope: this
+                    });
+
+                }
+            },
+            failure : function(errorinfo, response) {
+                alert("Failed");
+            },
+            scope : this
+        };
+        S.getUsers(config);
     },
 
     Combo_onKeyPress : function(combo, e)
