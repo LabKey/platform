@@ -45,6 +45,10 @@ div.message-container
 {
     display:none;
 }
+.message-more a, .message-less a
+{
+    background-color:#eeeeee; opacity:1;
+}
 /* long message collapsed */
 td.message-collapsed div.message-container
 {
@@ -84,6 +88,7 @@ td.message-expanded .message-more
 td.message-expanded .message-less
 {
     display:inline-block;
+    background-color:#00ff00; opacity:1;
 }
 /* short message */
 td.message-short div.message-container
@@ -172,9 +177,9 @@ Ext.EventManager.onWindowResize(function(){messageOnResize(<%=q(tableId)%>);});
     <tr><td colspan=3 class="labkey-force-word-break message-collapsed">
         <div class="message-container">
             <div class="message-text"><%=a.translateBody(c)%></div>
-            <div class="message-overflow"><div style="position:absolute; bottom:0; right:0" class="labkey-wp-text-buttons"><a href="#more" onclick="messageMore(this)">more...</a></div></div>
+            <div class="message-overflow"><div class="message-more"><div style="position:absolute; bottom:0; right:0" class="labkey-wp-text-buttons"><a href="#more" onclick="messageMore(this)">more&gt;&gt;</a></div></div></div>
+            <div class="message-less"><div style="position:absolute; bottom:0; right:0" class="labkey-wp-text-buttons"><a href="#less" onclick="messageLess(this)">&lt;&lt;less</a></div></div>
         </div>
-        <span class="message-less"><%=textLink("less", "#less", "messageLess(this)", null)%></span></td></tr>
 <%
     if (a.getAttachments().size() > 0)
         { %>
