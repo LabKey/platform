@@ -59,6 +59,23 @@
             }
             else
             {
+                boolean gray = false;
+
+                for (VisitAlias alias : bean.getStandardMapping())
+                {
+                    if (alias.isOverridden())
+                    {
+                        gray = true;
+                        break;
+                    }
+                }
+
+                if (gray)
+                {
+                    out.print("<tr><td colspan=\"3\">Grayed out rows below represent mappings that are overridden by custom mappings or previous standard mappings.</td></tr>");
+                    out.print("<tr><td colspan=\"3\">&nbsp;</td></tr>");
+                }
+
                 out.print("<tr><th align=\"left\">Label</th><th align=\"left\">Sequence Number Mapping</th><th align=\"left\">Sequence Number Range</th></tr>");
 
                 for (VisitAlias alias : bean.getStandardMapping())

@@ -1446,7 +1446,6 @@ public class DataSetDefinition extends AbstractStudyEntity<DataSetDefinition> im
                 }
             }
 
-
             // like createColumnAndPropertyMap, but we want to add
             Map<String,Integer> fromMap = DataIteratorUtil.createColumnAndPropertyMap(it);
 
@@ -1457,14 +1456,14 @@ public class DataSetDefinition extends AbstractStudyEntity<DataSetDefinition> im
 
             // find important columns in the input (CONSIDER: use standard etl alt
             Integer indexPTID = fromMap.get(DataSetDefinition.getParticipantIdURI());
-            Integer indexSequenceNum = fromMap.get(DataSetDefinition.getSequenceNumURI());
             Integer indexKeyProperty = null==keyColumn ? null : fromMap.get(keyColumn.getPropertyURI());
             Integer indexVisitDate = fromMap.get(DataSetDefinition.getVisitDateURI());
             Integer indexReplace = fromMap.get("replace");
 
-            it.setSpecialInputColumns(indexPTID, indexSequenceNum, indexVisitDate, indexKeyProperty);
+            // For now, just specify null for sequence num index... we'll add it below
+            // TODO: clean this up
+            it.setSpecialInputColumns(indexPTID, null, indexVisitDate, indexKeyProperty);
             it.setTimepointType(timetype);
-
 
             /* NOTE: these columns must be added in dependency order
              *
@@ -1480,7 +1479,7 @@ public class DataSetDefinition extends AbstractStudyEntity<DataSetDefinition> im
             if (timetype != TimepointType.VISIT && null == indexVisitDate && isDemographicData())
             {
                 final Date start = _study.getStartDate();
-                indexVisitDate = it.addColumn(new ColumnInfo("Date",JdbcType.TIMESTAMP), new Callable(){
+                indexVisitDate = it.addColumn(new ColumnInfo("Date", JdbcType.TIMESTAMP), new Callable(){
                     @Override
                     public Object call() throws Exception
                     {
@@ -1494,25 +1493,43 @@ public class DataSetDefinition extends AbstractStudyEntity<DataSetDefinition> im
             // SequenceNum
             //
 
+            Integer indexSequenceNum = fromMap.get(DataSetDefinition.getSequenceNumURI());
+
             if (null == indexSequenceNum)
             {
                 if (timetype != TimepointType.VISIT && null != indexVisitDate)
                 {
-                    indexSequenceNum = it.addSequenceNumFromDateColumn();
+                    it.indexSequenceNumOutput = it.addSequenceNumFromDateColumn();
                 }
                 else if (isDemographicData())
                 {
-                    indexSequenceNum = it.addColumn(new ColumnInfo("SequenceNum", JdbcType.DOUBLE),
-                            new Callable()
+                    it.indexSequenceNumOutput = it.addColumn(new ColumnInfo("SequenceNum", JdbcType.DOUBLE),
+                        new Callable()
+                        {
+                            @Override
+                            public Object call() throws Exception
                             {
-                                @Override
-                                public Object call() throws Exception
-                                {
-                                    return VisitImpl.DEMOGRAPHICS_VISIT;
-                                }
-                            });
+                                return VisitImpl.DEMOGRAPHICS_VISIT;
+                            }
+                        });
                 }
-                it.indexSequenceNumOutput = indexSequenceNum;
+            }
+            else
+            {
+                try
+                {
+                    Map<String, Double> map = StudyManager.getInstance().getVisitImportMap(getStudy(), true);
+                    Map<String, String> translateMap = new HashMap<String, String>(map.size() * 2);
+
+                    for (Map.Entry<String, Double> entry : map.entrySet())
+                        translateMap.put(entry.getKey(), String.valueOf(entry.getValue()));
+
+                    it.indexSequenceNumOutput = it.mapColumn(indexSequenceNum, translateMap, false);
+                }
+                catch (SQLException e)
+                {
+                    throw new RuntimeSQLException(e);
+                }
             }
 
             //
@@ -1529,7 +1546,7 @@ public class DataSetDefinition extends AbstractStudyEntity<DataSetDefinition> im
                     {
                         try
                         {
-                        return getMaxKeyValue();
+                            return getMaxKeyValue();
                         }
                         catch (SQLException x)
                         {
@@ -1601,7 +1618,7 @@ public class DataSetDefinition extends AbstractStudyEntity<DataSetDefinition> im
             if (timetype != TimepointType.VISIT && null == indexVisitDate)
                 setupError("All dataset rows must include a value for Date");
 
-            if (timetype == TimepointType.VISIT && null == indexSequenceNum)
+            if (timetype == TimepointType.VISIT && null == it.indexSequenceNumOutput)
                 setupError("All dataset rows must include a value for SequenceNum");
 
             it.setInput(ErrorIterator.wrap(input, errors, false, setupError));
@@ -1609,7 +1626,7 @@ public class DataSetDefinition extends AbstractStudyEntity<DataSetDefinition> im
 
             if (checkDuplicates && null == setupError)
             {
-                Integer indexVisit = timetype == TimepointType.VISIT ? indexSequenceNum : indexVisitDate;
+                Integer indexVisit = timetype == TimepointType.VISIT ? it.indexSequenceNumOutput : indexVisitDate;
                 // no point if required columns are missing
                 if (null != indexPTID && null != indexVisit)
                 {
@@ -1750,6 +1767,13 @@ public class DataSetDefinition extends AbstractStudyEntity<DataSetDefinition> im
         int addSequenceNumFromDateColumn()
         {
             return addColumn(new ColumnInfo("SequenceNum", JdbcType.DOUBLE), new SequenceNumFromDateColumn());
+        }
+
+        int mapColumn(int index, Map<?, ?> map, boolean strict)
+        {
+            ColumnInfo existing = getInput().getColumnInfo(index);
+            RemapColumn remapColumn = new RemapColumn(index, map, strict);
+            return replaceOrAddColumn(index, existing, remapColumn);
         }
 
         int addLSID()
