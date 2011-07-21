@@ -71,8 +71,8 @@
             columns: [
                 {header:'Label', dataIndex:'label', sortable: true, width: 300, renderer: $h},
                 {header:'Type', dataIndex:'type', width: 100},
-                {header:'Created By', dataIndex:'createdBy'},
-                {header:'Shared', dataIndex:'shared'}
+                {header:'Shared', dataIndex:'shared'},
+                {header:'Created By', dataIndex:'createdBy'}
             ]
         });
 
@@ -136,7 +136,12 @@
         if (_grid.getSelectionModel().getCount() == 1)
         {
             topTB.findById('editSelectedButton').enable();
-            topTB.findById('deleteSelectedButton').enable();
+
+            var row = _grid.getSelectionModel().getSelected();
+            if (row.get("canEdit"))
+                topTB.findById('deleteSelectedButton').enable();
+            else
+                topTB.findById('deleteSelectedButton').disable();
         }
         else
         {
@@ -422,11 +427,12 @@
                 showRecordSelectors: true,
                 showUpdateColumn: false,
                 maskEl: ptidCategoryPanel.getEl(),
-                buttonBarPosition: 'top',
                 buttonBar: {
+                    position: (this.canEdit ? 'top' : 'none'),
                     includeStandardButtons: false,
                     items:[{
                         text: 'Add Selected',
+                        requiresSelection: true,
                         handler: function(){
                             ptidCategoryPanel.getSelectedDemoParticipants(queryName, "selected");
                         }
