@@ -103,7 +103,7 @@ public class ExcelFactory
                 }
                 return cell.getStringCellValue();
             }
-            else if (isCellNumeric(cell) && DateUtil.isCellDateFormatted(cell))
+            else if (isCellNumeric(cell) && DateUtil.isCellDateFormatted(cell) && cell.getDateCellValue() != null)
                 return formatter.format(cell.getDateCellValue());
             else
                 return CellFormat.getInstance(cell.getCellStyle().getDataFormatString()).apply(cell).text;
