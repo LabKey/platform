@@ -164,6 +164,7 @@ public abstract class OracleDialect extends SimpleSqlDialect
         sql.append(from);
         if (filter != null) sql.append("\n").append(filter);
         if (groupBy != null) sql.append("\n").append(groupBy);
+        if (order != null) sql.append("\n").append(order);
         sql.append("\n)\n");
         sql.append("where rownum > ").append(offset);
         sql.append(" and rownum <= ").append(rowCount + offset);
