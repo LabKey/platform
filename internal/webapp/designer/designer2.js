@@ -348,7 +348,7 @@ LABKEY.DataRegion.ViewDesigner = Ext.extend(LABKEY.ext.SplitGroupTabPanel, {
         this.on('tabchange', this.onTabChange, this);
 
         if (!customViewExists)
-            this.showMessage("Custom View '" + Ext.util.Format.htmlEncode(this.viewName) + "' not found.");
+            this.addMessage("Custom View '" + Ext.util.Format.htmlEncode(this.viewName) + "' not found.");
     },
 
     initComponent : function () {

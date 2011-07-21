@@ -390,21 +390,19 @@ var f_scope<%=uid%> = new (function() {
 
             // show any filter messages on the enclosing dataregion's msg area
             var outerRegion = LABKEY.DataRegions[dataRegionName];
-            if (outerRegion && dr.getMessage())
+            var msgbox = dr.getMessageArea();
+
+            if (outerRegion)
             {
-                var html = dr.getMessage();
-                var oldScript = 'LABKEY.DataRegions[\'' + dataTabRegionName + '\'].clearAllFilters();'
-                var newScript = 'LABKEY.DataRegions[\'' + dataRegionName + '\'].clearAllFilters();';
-
-                var idx = html.indexOf(oldScript)
-
-                if (idx != -1)
+                if (msgbox.getMessage('filter'))
                 {
-                    html = html.substring(0, idx) + newScript + html.substring(idx + oldScript.length);
-                    outerRegion.clearMessage();
-                    outerRegion.showMessage(html);
+                    var filter = msgbox.getMessage('filter');
+                    outerRegion.addMessage(filter, 'filter');
                 }
-                dr.clearMessage();
+                else
+                {
+                    outerRegion.getMessageArea().removeMessage('filter');
+                }
             }
         }
     }

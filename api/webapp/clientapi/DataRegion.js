@@ -305,7 +305,7 @@ LABKEY.DataRegion = function (config)
         config.selectionKey = this.selectionKey;
         config.scope = config.scope || this;
 
-        function failureCb(response, options) { this.showMessage("Error sending selection."); }
+        function failureCb(response, options) { this.addMessage("Error sending selection."); }
         config.failure = LABKEY.Utils.getCallbackWrapper(LABKEY.Utils.getOnFailure(config) || failureCb, this, true);
 
         this.selectionModified = true;
@@ -601,56 +601,55 @@ LABKEY.DataRegion = function (config)
         return userSort;
     };
 
+    this.addMessage = function(msg, part)
+    {
+        this.msgbox.addMessage(msg, part);
+    };
+
     /**
      * Show a message in the header of this DataRegion.
      * @param html the HTML source of the message to be shown
      * @return The Ext.Element of the newly created message div.
+     * @deprecated use addMessage(part, msg) instead.
      */
     this.showMessage = function (html)
     {
-        this.message = html;
-        var div = this.msgbox.child("div");
-        if (div.first())
-            div.createChild({tag: 'hr'});
-        var el = div.createChild({tag: 'div', cls: 'labkey-dataregion-msg', html: html});
-        this.msgbox.setVisible(true);
-        return el;
+        this.msgbox.addMessage(html);
+    };
+
+    this.showMessageArea = function()
+    {
+        this.msgbox.render();
     };
 
     /**
      * Show a message in the header of this DataRegion with a loading indicator.
      * @param html the HTML source of the message to be shown
-     * @return The Ext.Element of the newly created message div.
      */
     this.showLoadingMessage = function (html)
     {
         html = html || "Loading...";
-        this.clearMessage();
-        return this.showMessage("<div><span class='loading-indicator'>&nbsp;</span><em>" + html + "</em></div>");
+        this.addMessage("<div><span class='loading-indicator'>&nbsp;</span><em>" + html + "</em></div>");
     };
 
     /**
      * Show a success message in the header of this DataRegion.
      * @param html the HTML source of the message to be shown
-     * @return The Ext.Element of the newly created message div.
      */
     this.showSuccessMessage = function (html)
     {
         html = html || "Completed successfully.";
-        this.clearMessage();
-        return this.showMessage("<div class='labkey-message'>" + html + "</div>");
+        this.addMessage("<div class='labkey-message'>" + html + "</div>");
     };
 
     /**
      * Show an error message in the header of this DataRegion.
      * @param html the HTML source of the message to be shown
-     * @return The Ext.Element of the newly created message div.
      */
     this.showErrorMessage = function (html)
     {
         html = html || "An error occurred.";
-        this.clearMessage();
-        return this.showMessage("<div class='labkey-error'>" + html + "</div>");
+        this.addMessage("<div class='labkey-error'>" + html + "</div>");
     };
 
     /** Returns true if a message is currently being shown for this DataRegion. Messages are shown as a header. */
@@ -662,22 +661,20 @@ LABKEY.DataRegion = function (config)
     /** If a message is currently showing, hide it and clear out its contents */
     this.hideMessage = function ()
     {
-        this.msgbox.setVisible(false, false);
-        this.clearMessage();
+        this.msgbox.setVisible(false);
+        this.msgbox.clear();
     };
 
     /** Clear the message box contents. */
     this.clearMessage = function ()
     {
-        this.message = undefined;
-        var div = this.msgbox.child("div");
-        div.dom.innerHTML = "";
+        this.msgbox.clear();
     };
 
-    this.getMessage = function ()
+    this.getMessageArea = function()
     {
-        return this.message;
-    }
+        return this.msgbox;
+    };
 
     this.alterSortString = function(currentSortString, columnName, direction)
     {
@@ -790,18 +787,8 @@ LABKEY.DataRegion = function (config)
             msg += "<span class='labkey-link unsavedview-edit'>Edit</span>";
         }
 
-        var el = this.showMessage(msg);
-        var revertEl = el.child(".labkey-link.unsavedview-revert");
-        if (revertEl)
-            revertEl.on('click', this.revertCustomView, this);
-
-        var showCustomizeViewEl = el.child(".labkey-link.unsavedview-edit");
-        if (showCustomizeViewEl)
-            showCustomizeViewEl.on('click', function () { this.showCustomizeView(undefined, true); }, this);
-
-        var saveEl = el.child(".labkey-link.unsavedview-save");
-        if (saveEl)
-            saveEl.on('click', this.saveSessionCustomView, this);
+        // add the customize view message, the link handlers will get added after render in _onRenderMessageArea
+        var el = this.addMessage(msg, 'customizeview');
     }
 
     if (this.showInitialSelectMessage)
@@ -827,9 +814,12 @@ Ext.extend(LABKEY.DataRegion, Ext.Component, {
     {
         this.form = document.forms[this.name];
         this.table = Ext.get("dataregion_" + this.name);
-        this.msgbox = Ext.get("dataregion_msgbox_" + this.name);
-        if (this.msgbox)
-            this.msgbox.enableDisplayMode();
+        var msgEl = Ext.get("dataregion_msgbox_" + this.name);
+        if (msgEl)
+        {
+            this.msgbox = new LABKEY.MessageArea({parent: msgEl});
+            this.msgbox.on('rendermsg', this._onRenderMessageArea, this);
+        }
         this.header = Ext.get("dataregion_header_" + this.name);
         this.footer = Ext.get("dataregion_footer_" + this.name);
 
@@ -971,23 +961,48 @@ Ext.extend(LABKEY.DataRegion, Ext.Component, {
             msg += "&nbsp; Show: " + showOpts.join(", ");
         }
 
-        var el = this.showMessage(msg);
-        var selectNoneEl = el.child(".labkey-link.select-none");
-        if (selectNoneEl)
-            selectNoneEl.on('click', this.selectNone, this);
+        // add the record selector message, the link handlers will get added after render in _onRenderMessageArea
+        var el = this.addMessage(msg, 'selection');
+    },
 
-        var showAllEl = el.child(".labkey-link.show-all");
-        if (showAllEl)
-            showAllEl.on('click', this.showAll, this);
+    // private
+    /**
+     * render listener for the message area, to add handlers for the link targets.
+     */
+    _onRenderMessageArea : function (cmp, partName, el)
+    {
+        if (this.showRecordSelectors && partName == 'selection' && el)
+        {
+            var selectNoneEl = el.child(".labkey-link.select-none");
+            if (selectNoneEl)
+                selectNoneEl.on('click', this.selectNone, this);
 
-        var showSelectedEl = el.child(".labkey-link.show-selected");
-        if (showSelectedEl)
-            showSelectedEl.on('click', this.showSelected, this);
+            var showAllEl = el.child(".labkey-link.show-all");
+            if (showAllEl)
+                showAllEl.on('click', this.showAll, this);
 
-        var showUnselectedEl = el.child(".labkey-link.show-unselected");
-        if (showUnselectedEl)
-            showUnselectedEl.on('click', this.showUnselected, this);
+            var showSelectedEl = el.child(".labkey-link.show-selected");
+            if (showSelectedEl)
+                showSelectedEl.on('click', this.showSelected, this);
 
+            var showUnselectedEl = el.child(".labkey-link.show-unselected");
+            if (showUnselectedEl)
+                showUnselectedEl.on('click', this.showUnselected, this);
+        }
+        else if (partName == 'customizeview' && el)
+        {
+            var revertEl = el.child(".labkey-link.unsavedview-revert");
+            if (revertEl)
+                revertEl.on('click', this.revertCustomView, this);
+
+            var showCustomizeViewEl = el.child(".labkey-link.unsavedview-edit");
+            if (showCustomizeViewEl)
+                showCustomizeViewEl.on('click', function () { this.showCustomizeView(undefined, true); }, this);
+
+            var saveEl = el.child(".labkey-link.unsavedview-save");
+            if (saveEl)
+                saveEl.on('click', this.saveSessionCustomView, this);
+        }
     },
 
     // private
@@ -2562,3 +2577,105 @@ function doSort(tableName, columnName, sortDirection)
         return;
     dr.changeSort(columnName, sortDirection);
 }
+
+LABKEY.MessageArea = Ext.extend(Ext.util.Observable, {
+
+    constructor : function(config)
+    {
+        this.parentEl = config.parent;
+        this.parentEl.enableDisplayMode();
+
+        this.parts = {};
+
+        LABKEY.MessageArea.superclass.constructor.call(this, config);
+
+        this.addEvents(
+            /**
+             * @event rendermsg
+             * Fires after an individual message part is rendered.
+             * @param {LABKEY.MessageArea} this
+             * @param {String} the name of the message part
+             * @param {Ext.Element} the rendered element
+             */
+            'rendermsg'
+        );
+    },
+
+    addMessage : function(msg, part) {
+
+        part = part || 'info';
+        this.parts[part] = msg;
+        this._refresh();
+    },
+
+    getMessage : function(part) {
+
+        return this.parts[part];
+    },
+
+    removeMessage : function(part) {
+
+        delete this.parts[part];
+        this._refresh();
+    },
+
+    /**
+     * Deletes all stored messages and clears the rendered area
+     */
+    removeAll : function() {
+
+        this.parts = {};
+        this._refresh();
+    },
+
+    render : function() {
+
+        this.clear();
+        for (var name in this.parts)
+        {
+            var msg = this.parts[name];
+            if (msg)
+            {
+                var div = this.parentEl.child("div");
+                if (div.first())
+                    div.createChild({tag: 'hr'});
+                var el = div.createChild({tag: 'div', cls: 'labkey-dataregion-msg', html: msg});
+
+                this.fireEvent('rendermsg', this, name, el);
+            }
+        }
+        this.setVisible(true);
+    },
+
+    setVisible : function(visible) {
+
+        this.parentEl.setVisible(visible, false);
+    },
+    
+    isVisible : function() {
+
+        return this.parentEl.isVisible();
+    },
+
+    /**
+     * Clears the rendered DOM elements.
+     */
+    clear : function() {
+
+        var div = this.parentEl.child("div");
+        if (div)
+            div.dom.innerHTML = "";
+    },
+
+    /**
+     * private
+     */
+    _refresh : function() {
+
+        if (this.isVisible())
+        {
+            this.clear();
+            this.render();
+        }
+    }
+});

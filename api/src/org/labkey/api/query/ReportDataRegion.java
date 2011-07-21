@@ -30,6 +30,8 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.io.Writer;
+import java.util.LinkedHashMap;
+import java.util.Map;
 
 /**
  * Created by IntelliJ IDEA.
@@ -63,12 +65,20 @@ public class ReportDataRegion extends AbstractDataRegion
     public void render(RenderContext ctx, HttpServletRequest request, HttpServletResponse response) throws IOException
     {
         try {
-            StringBuilder sb = new StringBuilder();
-            Writer out = response.getWriter();
+            StringBuilder viewmsg = new StringBuilder();
+            StringBuilder filter = new StringBuilder();
 
-            addViewMessage(sb, ctx);
-            addFilterMessage(sb, ctx, true);
-            renderHeaderScript(ctx, out, sb.toString());
+            Writer out = response.getWriter();
+            Map<String, String> messages = new LinkedHashMap<String, String>();
+
+            addViewMessage(viewmsg, ctx);
+            addFilterMessage(filter, ctx, true);
+
+            messages.put(MessagePart.view.name(), viewmsg.toString());
+            if (filter.length() > 0)
+                messages.put(MessagePart.filter.name(), filter.toString());
+
+            renderHeaderScript(ctx, out, messages);
 
             // for now set the width to 100%, but we want to be smarter about calculating the viewport width less scroll
             out.write("\n<table width=\"100%\" class=\"labkey-data-region");
@@ -140,9 +150,16 @@ public class ReportDataRegion extends AbstractDataRegion
 
     protected void addViewMessage(StringBuilder headerMessage, RenderContext ctx) throws IOException
     {
+        // the name of the report
         headerMessage.append("<span class='labkey-strong'>View:</span>&nbsp;");
-        headerMessage.append("<span style='padding:5px 45px 5px 0;'>");
-        headerMessage.append(_report.getDescriptor().getReportName());
+        headerMessage.append("<span style='padding:5px 10px 5px 0;'>");
+        headerMessage.append(PageFlowUtil.filter(_report.getDescriptor().getReportName()));
+        headerMessage.append("</span>&nbsp;");
+
+        // the name of the view this report is built over
+        headerMessage.append("<span class='labkey-strong'>Source:</span>&nbsp;");
+        headerMessage.append("<span style='padding:5px 45px 5px 5px;'>");
+        headerMessage.append(PageFlowUtil.filter(StringUtils.defaultIfEmpty(_report.getDescriptor().getProperty(ReportDescriptor.Prop.viewName), "default")));
         headerMessage.append("</span>&nbsp;");
     }
 }

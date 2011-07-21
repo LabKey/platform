@@ -779,13 +779,21 @@ public class DataRegion extends AbstractDataRegion
             StringBuilder viewMsg = new StringBuilder();
             StringBuilder filterMsg = new StringBuilder();
 
+            Map<String, String> messages = new LinkedHashMap<String, String>();
+
             addFilterMessage(filterMsg, ctx, isShowFilterDescription());
             // don't generate a view message if this is the default view and the filter is empty
             if (!isDefaultView(ctx) || filterMsg.length() > 0)
                 addViewMessage(viewMsg, ctx);
 
-            headerMessage.append(viewMsg).append(filterMsg);
-            renderHeaderScript(ctx, out, headerMessage.toString(), showRecordSelectors);
+            if (headerMessage.length() > 0)
+                messages.put(MessagePart.header.name(), headerMessage.toString());
+            if (viewMsg.length() > 0)
+                messages.put(MessagePart.view.name(), viewMsg.toString());
+            if (filterMsg.length() > 0)
+                messages.put(MessagePart.filter.name(), filterMsg.toString());
+
+            renderHeaderScript(ctx, out, messages, showRecordSelectors);
 
             if (!_showPagination && rs instanceof Table.TableResultSet)
             {
@@ -897,11 +905,11 @@ public class DataRegion extends AbstractDataRegion
             _gridButtonBar.render(ctx, out);
     }
 
-    protected void renderHeaderScript(RenderContext ctx, Writer out, String headerMessage, boolean showRecordSelectors) throws IOException
+    protected void renderHeaderScript(RenderContext ctx, Writer out, Map<String, String> messages, boolean showRecordSelectors) throws IOException
     {
         StringBuilder sb = new StringBuilder();
 
-        getHeaderScriptStart(sb, headerMessage);
+        getHeaderScriptStart(sb, messages);
 
         if (ctx.getView() != null)
         {
@@ -953,7 +961,7 @@ public class DataRegion extends AbstractDataRegion
             }
             sb.append("]\n");
         }
-        getHeaderScriptEnd(sb, headerMessage);
+        getHeaderScriptEnd(sb, messages);
 
         out.write(sb.toString());
     }

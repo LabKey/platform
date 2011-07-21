@@ -26,6 +26,7 @@ import org.labkey.api.view.DisplayElement;
 import java.io.IOException;
 import java.io.Writer;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
 /**
@@ -44,6 +45,12 @@ public abstract class AbstractDataRegion extends DisplayElement
     {
         TOP,
         BOTTOM,
+    }
+
+    public enum MessagePart {
+        view,
+        filter,
+        header,
     }
 
     public String getName()
@@ -82,7 +89,7 @@ public abstract class AbstractDataRegion extends DisplayElement
         return _settings;
     }
 
-    protected final void getHeaderScriptStart(StringBuilder sb, String headerMessage)
+    protected final void getHeaderScriptStart(StringBuilder sb, Map<String, String> messages)
     {
         sb.append("<script type=\"text/javascript\">\n");
         sb.append("Ext.onReady(\n");
@@ -98,25 +105,30 @@ public abstract class AbstractDataRegion extends DisplayElement
         }
     }
 
-    protected final void getHeaderScriptEnd(StringBuilder sb, String headerMessage)
+    protected final void getHeaderScriptEnd(StringBuilder sb, Map<String, String> messages)
     {
         sb.append("});\n");
-        if (headerMessage != null && headerMessage.length() > 0)
+        if (messages != null && !messages.isEmpty())
         {
-            sb.append("LABKEY.DataRegions[" + PageFlowUtil.jsString(getName()) + "].showMessage(" +
-                    PageFlowUtil.jsString(headerMessage) + ");\n");
+            for (Map.Entry<String, String> entry : messages.entrySet())
+            {
+                sb.append("LABKEY.DataRegions[" + PageFlowUtil.jsString(getName()) + "].addMessage(" +
+                        PageFlowUtil.jsString(entry.getValue()) + "," +
+                        PageFlowUtil.jsString(entry.getKey())+ ");\n");
+            }
+            sb.append("LABKEY.DataRegions[" + PageFlowUtil.jsString(getName()) + "].showMessageArea();\n");
         }
 
         sb.append("});\n");
         sb.append("</script>\n");
     }
 
-    protected void renderHeaderScript(RenderContext ctx, Writer out, String headerMessage) throws IOException
+    protected void renderHeaderScript(RenderContext ctx, Writer out, Map<String, String> messages) throws IOException
     {
         StringBuilder sb = new StringBuilder();
 
-        getHeaderScriptStart(sb, headerMessage);
-        getHeaderScriptEnd(sb, headerMessage);
+        getHeaderScriptStart(sb, messages);
+        getHeaderScriptEnd(sb, messages);
 
         out.write(sb.toString());
     }
@@ -230,7 +242,7 @@ public abstract class AbstractDataRegion extends DisplayElement
         {
             headerMessage.append("<span class='labkey-strong'>Filter:</span>&nbsp;");
             headerMessage.append(PageFlowUtil.filter(filterDescription)).append("&nbsp;&nbsp;");
-            headerMessage.append(PageFlowUtil.generateButtonHtml("Clear", "#", "LABKEY.DataRegions['" +
+            headerMessage.append(PageFlowUtil.generateButtonHtml("Clear All", "#", "LABKEY.DataRegions['" +
                     PageFlowUtil.filter(getName()) + "'].clearAllFilters(); return false;", null));
         }
     }

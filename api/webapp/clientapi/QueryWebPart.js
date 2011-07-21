@@ -610,7 +610,10 @@ LABKEY.QueryWebPart = Ext.extend(Ext.util.Observable, {
 
     beforeFilterChange : function(dataRegion, newFilterPairs) {
         this.offset = 0;
-        this.userFilters = this.userFilters || {};
+
+        // reset the user filters, the newFilterPairs should contain all non-repeating filters that
+        // the dataregion knows about
+        this.userFilters = {};
         for (var idx = 0; idx < newFilterPairs.length; ++idx)
         {
             this.userFilters[newFilterPairs[idx][0]] = newFilterPairs[idx][1];
