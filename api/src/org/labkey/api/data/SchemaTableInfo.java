@@ -103,9 +103,9 @@ public class SchemaTableInfo implements TableInfo, UpdateableTableInfo
     }
 
 
-    public SchemaTableInfo(DbSchema parentSchema, DatabaseTableType tableType, String tableName)
+    public SchemaTableInfo(DbSchema parentSchema, DatabaseTableType tableType, String tableMetaDataName)
     {
-        this(parentSchema, tableType, tableName, tableName, parentSchema.getSqlDialect().makeLegalIdentifier(parentSchema.getName()) + "." + parentSchema.getSqlDialect().makeLegalIdentifier(tableName));
+        this(parentSchema, tableType, tableMetaDataName, tableMetaDataName, parentSchema.getSqlDialect().makeLegalIdentifier(parentSchema.getName()) + "." + parentSchema.getSqlDialect().getSelectNameFromMetaDataName(tableMetaDataName));
     }
 
 

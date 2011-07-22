@@ -313,7 +313,7 @@ public abstract class SqlDialect
      * @param filter may be null
      * @param order may be null
      * @param groupBy may be null
-     *@param rowCount 0 means all rows, >0 limits result set
+     * @param rowCount 0 means all rows, > 0 limits result set
      * @param offset 0 based   @return the query
      */
     public abstract SQLFragment limitRows(SQLFragment select, SQLFragment from, SQLFragment filter, String order, String groupBy, int rowCount, long offset);
@@ -455,6 +455,14 @@ public abstract class SqlDialect
             return columnName;
         else
             return makeLegalIdentifier(columnName);
+    }
+
+
+    // Translates database metadata name into a name that can be used in a select.  Most dialects simply turn them into
+    // legal identifiers (e.g., adding quotes if special symbols are present).
+    public String getSelectNameFromMetaDataName(String metaDataName)
+    {
+        return makeLegalIdentifier(metaDataName);
     }
 
 

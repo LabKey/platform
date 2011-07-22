@@ -318,20 +318,30 @@ public class QueryView extends WebPartView<Object>
         {
             button.addMenuItem("Edit Query", false, true);
         }
+
         button.addSeparator();
 
-        for (QueryDefinition query : getSchema().getTablesAndQueries(true))
+        if (getSchema().shouldRenderTableList())
         {
-            String name = query.getName();
-            NavTree item = new NavTree(name, target.clone().replaceParameter(param(QueryParam.queryName), name).getLocalURIString());
-            item.setId(getDataRegionName() + ":" + label + ":" + name);
-            if (query.getDescription() != null)
-                item.setDescription(query.getDescription());
-            if (name.equals(current))
-                item.setStrong(true);
-            item.setImageSrc(getViewContext().getContextPath() + "/reports/grid.gif");
-            button.addMenuItem(item);
+            for (QueryDefinition query : getSchema().getTablesAndQueries(true))
+            {
+                String name = query.getName();
+                NavTree item = new NavTree(name, target.clone().replaceParameter(param(QueryParam.queryName), name).getLocalURIString());
+                item.setId(getDataRegionName() + ":" + label + ":" + name);
+                if (query.getDescription() != null)
+                    item.setDescription(query.getDescription());
+                if (name.equals(current))
+                    item.setStrong(true);
+                item.setImageSrc(getViewContext().getContextPath() + "/reports/grid.gif");
+                button.addMenuItem(item);
+            }
         }
+        else
+        {
+            ActionURL schemaBrowserURL = PageFlowUtil.urlProvider(QueryUrls.class).urlSchemaBrowser(getContainer(), getSchema().getName());
+            button.addMenuItem("Schema Browser", schemaBrowserURL);
+        }
+
         return button;
     }
 

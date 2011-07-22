@@ -285,6 +285,14 @@ abstract public class UserSchema extends AbstractSchema
         return queryDef.urlExpr(action, getContainer());
     }
 
+    // Bit of a hack... by default, we include a list of all tables/queries in the current schema on the "Query" button.
+    // This method lets a schema override this behavior.  In particular, external schemas may have thousands of tables
+    // and need to adjust the default behavior for performance and UI sanity
+    public boolean shouldRenderTableList()
+    {
+        return true;
+    }
+
     public QueryDefinition getQueryDefForTable(String name)
     {                                                
         return QueryService.get().createQueryDefForTable(this, name);

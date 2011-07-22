@@ -35,7 +35,6 @@ import org.labkey.api.util.DateUtil;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.StringExpression;
 import org.labkey.api.util.StringExpressionFactory;
-import org.labkey.api.util.StringUtilsLabKey;
 import org.labkey.data.xml.ColumnType;
 
 import java.beans.Introspector;
@@ -1151,8 +1150,7 @@ public class ColumnInfo extends ColumnRenderProperties implements SqlColumn
             ColumnInfo col = new ColumnInfo(metaDataName, parentTable);
 
             col.metaDataName = metaDataName;
-            // TODO: Move to PostgreSQL dialect. #11181
-            col.selectName = dialect.isPostgreSQL() && StringUtilsLabKey.containsUpperCase(metaDataName) ? dialect.quoteIdentifier(metaDataName) : dialect.getColumnSelectName(metaDataName);
+            col.selectName = dialect.getSelectNameFromMetaDataName(metaDataName);
             col.sqlTypeName = reader.getSqlTypeName();
             col.jdbcType = JdbcType.valueOf(reader.getSqlType());
             col.isAutoIncrement = reader.isAutoIncrement();
