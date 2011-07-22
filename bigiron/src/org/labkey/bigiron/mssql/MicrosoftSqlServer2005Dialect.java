@@ -409,12 +409,11 @@ public class MicrosoftSqlServer2005Dialect extends SqlDialect
         throw new UnsupportedOperationException(getClass().getSimpleName() + " does not implement");
     }
 
+    @Override
     public String getTempTableKeyword()
     {
         return "";
     }
-
-    // UNDONE: why ## instead of #?
 
     @Override
     public String getTempTablePrefix()
@@ -426,7 +425,7 @@ public class MicrosoftSqlServer2005Dialect extends SqlDialect
     @Override
     public String getGlobalTempTablePrefix()
     {
-        return "tempdb..";
+        return "##";
     }
 
 
