@@ -2062,9 +2062,15 @@ public class Table
             }
             finally
             {
-                PreparedStatement cleanup = conn.prepareStatement("DROP TABLE " + name);
-                cleanup.execute();
-                conn.close();
+                try
+                {
+                    PreparedStatement cleanup = conn.prepareStatement("DROP TABLE " + name);
+                    cleanup.execute();
+                }
+                finally
+                {
+                    conn.close();
+                }
             }
         }
 
