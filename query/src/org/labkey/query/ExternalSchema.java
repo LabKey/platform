@@ -151,4 +151,11 @@ public class ExternalSchema extends SimpleUserSchema
     {
         return _def.isIndexable();
     }
+
+    @Override
+    public boolean shouldRenderTableList()
+    {
+        // If more than 100 tables then don't try to render the list in the Query menu
+        return getTableNames().size() <= 100;
+    }
 }

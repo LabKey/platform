@@ -44,6 +44,7 @@ import org.labkey.api.module.ModuleContext;
 import org.labkey.api.query.AliasManager;
 import org.labkey.api.util.ConfigurationException;
 import org.labkey.api.util.ResultSetUtil;
+import org.labkey.api.util.StringUtilsLabKey;
 
 import javax.servlet.ServletException;
 import java.io.IOException;
@@ -682,19 +683,18 @@ class PostgreSql83Dialect extends SqlDialect
         // Nothing special to do for the PostgreSQL dialect
     }
 
-
-/*  Comment out for now -- too many cases where we hard-code mixed case column names in hand-coded SQL TODO: enable
-
     @Override
-    protected boolean shouldQuoteIdentifier(String id)
+    public String getSelectNameFromMetaDataName(String metaDataName)
     {
-        // In addition to quoting keywords and ids with special characters, quote any id with an upper case character
-        // on PostgreSQL. PostgreSQL normally stores column/table names in all lower case, so an upper case character
-        // means the identifier must have been quoted at creation time. #11181
-        return super.shouldQuoteIdentifier(id) || StringUtilsLabKey.containsUpperCase(id);
+        // In addition to quoting keywords and names with special characters, quote any name with an upper case
+        // character. PostgreSQL normally stores column/table names in all lower case, so an upper case character
+        // coming out of metadata means the name must have been quoted at creation time and needs to be quoted. #11181
+        if (StringUtilsLabKey.containsUpperCase(metaDataName))
+            return quoteIdentifier(metaDataName);
+        else
+            return super.getSelectNameFromMetaDataName(metaDataName);
     }
 
-*/
     private static final Pattern JAVA_CODE_PATTERN = Pattern.compile("^\\s*SELECT\\s+core\\.executeJavaUpgradeCode\\s*\\(\\s*'(.+)'\\s*\\)\\s*;\\s*$", Pattern.CASE_INSENSITIVE | Pattern.MULTILINE);
 
     @Override
