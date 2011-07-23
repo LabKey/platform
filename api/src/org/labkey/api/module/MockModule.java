@@ -153,19 +153,23 @@ public class MockModule implements Module
         return TabDisplayMode.DISPLAY_NEVER;
     }
 
+    @NotNull
     public Set<Class> getJUnitTests()
     {
-        return null;
+        return Collections.emptySet();
     }
 
+    @Override
+    @NotNull
     public Set<DbSchema> getSchemasToTest()
     {
-        return null;
+        return Collections.emptySet();
     }
 
+    @NotNull
     public Set<String> getSchemaNames()
     {
-        return null;
+        return Collections.emptySet();
     }
 
     public Resolver getModuleResolver()

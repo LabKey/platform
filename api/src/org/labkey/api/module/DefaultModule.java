@@ -368,16 +368,22 @@ public abstract class DefaultModule implements Module, ApplicationContextAware
         }
     }
 
+    @Override
+    @NotNull
     public Set<Class> getJUnitTests()
     {
         return Collections.emptySet();
     }
 
+    @Override
+    @NotNull
     public Set<DbSchema> getSchemasToTest()
     {
         return Collections.emptySet();
     }
 
+    @Override
+    @NotNull
     public Set<String> getSchemaNames()
     {
         return Collections.emptySet();

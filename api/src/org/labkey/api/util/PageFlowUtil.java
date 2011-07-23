@@ -27,7 +27,6 @@ import org.json.JSONArray;
 import org.json.JSONObject;
 import org.junit.Assert;
 import org.junit.Test;
-import org.labkey.api.action.SpringActionController;
 import org.labkey.api.action.UrlProvider;
 import org.labkey.api.admin.CoreUrls;
 import org.labkey.api.data.ColumnInfo;

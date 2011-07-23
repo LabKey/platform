@@ -104,6 +104,7 @@ public class SimpleModule extends SpringModule implements ContainerManager.Conta
     }
 
     @Override
+    @NotNull
     public Set<String> getSchemaNames()
     {
         if (_schemaNames == null)
