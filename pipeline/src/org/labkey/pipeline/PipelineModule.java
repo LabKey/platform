@@ -16,6 +16,7 @@
 package org.labkey.pipeline;
 
 import org.apache.log4j.Logger;
+import org.jetbrains.annotations.NotNull;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.DbSchema;
@@ -179,6 +180,7 @@ public class PipelineModule extends SpringModule implements ContainerManager.Con
 
 
     @Override
+    @NotNull
     public Set<Class> getJUnitTests()
     {
         return new HashSet<Class>(Arrays.asList(
@@ -186,12 +188,14 @@ public class PipelineModule extends SpringModule implements ContainerManager.Con
     }
 
     @Override
+    @NotNull
     public Set<String> getSchemaNames()
     {
         return PageFlowUtil.set(PipelineSchema.getInstance().getSchemaName());
     }
 
     @Override
+    @NotNull
     public Set<DbSchema> getSchemasToTest()
     {
         return PageFlowUtil.set(PipelineSchema.getInstance().getSchema());

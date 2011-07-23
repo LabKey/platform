@@ -16,6 +16,7 @@
 
 package org.labkey.biotrue;
 
+import org.jetbrains.annotations.NotNull;
 import org.labkey.api.data.DbSchema;
 import org.labkey.api.module.DefaultModule;
 import org.labkey.api.module.ModuleContext;
@@ -59,11 +60,15 @@ public class BtModule extends DefaultModule
         DefaultSchema.registerProvider("biotrue", BtSchema.PROVIDER);
     }
 
+    @Override
+    @NotNull
     public Set<String> getSchemaNames()
     {
         return Collections.singleton("biotrue");
     }
 
+    @Override
+    @NotNull
     public Set<DbSchema> getSchemasToTest()
     {
         return PageFlowUtil.set(BtManager.get().getSchema());

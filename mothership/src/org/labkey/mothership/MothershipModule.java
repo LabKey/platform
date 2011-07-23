@@ -16,6 +16,7 @@
 
 package org.labkey.mothership;
 
+import org.jetbrains.annotations.NotNull;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.DbSchema;
@@ -112,23 +113,25 @@ public class MothershipModule extends DefaultModule
         }
     }
 
+    @Override
+    @NotNull
     public Set<String> getSchemaNames()
     {
         return PageFlowUtil.set(MothershipManager.get().getSchemaName());
     }
 
+    @Override
+    @NotNull
     public Set<DbSchema> getSchemasToTest()
     {
-        Set<DbSchema> result = new HashSet<DbSchema>();
-        result.add(MothershipManager.get().getSchema());
-        return result;
+        return PageFlowUtil.set(MothershipManager.get().getSchema());
     }
 
+    @Override
+    @NotNull
     public Set<Class> getJUnitTests()
     {
-        Set<Class> result = new HashSet<Class>();
-        result.add(ExceptionStackTrace.TestCase.class);
-        return result;
+        return PageFlowUtil.<Class>set(ExceptionStackTrace.TestCase.class);
     }
 
     public void startup(ModuleContext moduleContext)

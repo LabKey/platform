@@ -17,6 +17,7 @@
 package org.labkey.cabig;
 
 import org.apache.log4j.Logger;
+import org.jetbrains.annotations.NotNull;
 import org.labkey.api.data.DbSchema;
 import org.labkey.api.module.DefaultModule;
 import org.labkey.api.module.ModuleContext;
@@ -62,11 +63,15 @@ public class caBIGModule extends DefaultModule
         SecurityManager.addViewFactory(new caBIGController.caBIGPermissionsViewFactory());
     }
 
+    @Override
+    @NotNull
     public Set<String> getSchemaNames()
     {
         return Collections.singleton("cabig");
     }
 
+    @Override
+    @NotNull
     public Set<DbSchema> getSchemasToTest()
     {
         return PageFlowUtil.set(caBIGSchema.getInstance().getSchema());

@@ -17,6 +17,7 @@
 package org.labkey.filecontent;
 
 import org.apache.log4j.Logger;
+import org.jetbrains.annotations.NotNull;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.DbSchema;
 import org.labkey.api.exp.property.PropertyService;
@@ -93,11 +94,15 @@ public class FileContentModule extends DefaultModule
         MessageConfigService.getInstance().registerConfigType(new FileEmailConfig());
     }
 
+    @Override
+    @NotNull
     public Set<DbSchema> getSchemasToTest()
     {
         return PageFlowUtil.set(FileRootManager.getFileContentSchema());
     }
 
+    @Override
+    @NotNull
     public Set<String> getSchemaNames()
     {
         return PageFlowUtil.set(FileRootManager.FILECONTENT_SCHEMA_NAME);

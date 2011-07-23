@@ -16,6 +16,7 @@
 package org.labkey.announcements;
 
 import org.apache.log4j.Logger;
+import org.jetbrains.annotations.NotNull;
 import org.labkey.announcements.api.AnnouncementServiceImpl;
 import org.labkey.announcements.config.AnnouncementEmailConfig;
 import org.labkey.announcements.config.MessageConfigServiceImpl;
@@ -211,6 +212,7 @@ public class AnnouncementModule extends DefaultModule implements SearchService.D
     }
 
     @Override
+    @NotNull
     public Set<Class> getJUnitTests()
     {
         return new HashSet<Class>(Arrays.asList(
@@ -218,12 +220,14 @@ public class AnnouncementModule extends DefaultModule implements SearchService.D
     }
 
     @Override
+    @NotNull
     public Set<DbSchema> getSchemasToTest()
     {
         return PageFlowUtil.set(CommSchema.getInstance().getSchema());
     }
 
     @Override
+    @NotNull
     public Set<String> getSchemaNames()
     {
         return PageFlowUtil.set(CommSchema.getInstance().getSchemaName());

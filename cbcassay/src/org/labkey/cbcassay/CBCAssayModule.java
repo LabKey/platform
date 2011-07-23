@@ -16,6 +16,7 @@
 
 package org.labkey.cbcassay;
 
+import org.jetbrains.annotations.NotNull;
 import org.labkey.api.data.Container;
 import org.labkey.api.module.DefaultModule;
 import org.labkey.api.module.ModuleContext;
@@ -57,12 +58,14 @@ public class CBCAssayModule extends DefaultModule
     }
 
     @Override
+    @NotNull
     protected Collection<WebPartFactory> createWebPartFactories()
     {
         return Collections.emptyList();
     }
 
     @Override
+    @NotNull
     public Collection<String> getSummary(Container c)
     {
         return Collections.emptyList();

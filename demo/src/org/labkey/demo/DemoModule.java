@@ -17,6 +17,7 @@
 package org.labkey.demo;
 
 import org.apache.log4j.Logger;
+import org.jetbrains.annotations.NotNull;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.DbSchema;
@@ -102,12 +103,16 @@ public class DemoModule extends DefaultModule
         ContainerManager.addContainerListener(new DemoContainerListener());
     }
 
+    @Override
+    @NotNull
     public Set<DbSchema> getSchemasToTest()
     {
         return PageFlowUtil.set(DemoSchema.getInstance().getSchema());
     }
 
 
+    @Override
+    @NotNull
     public Set<String> getSchemaNames()
     {
         return PageFlowUtil.set(DemoSchema.getInstance().getSchemaName());

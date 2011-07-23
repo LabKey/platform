@@ -16,6 +16,7 @@
 package org.labkey.wiki;
 
 import org.apache.log4j.Logger;
+import org.jetbrains.annotations.NotNull;
 import org.labkey.api.announcements.CommSchema;
 import org.labkey.api.attachments.AttachmentService;
 import org.labkey.api.data.Container;
@@ -209,6 +210,8 @@ public class WikiModule extends DefaultModule implements SearchService.DocumentP
     }
 
 
+    @Override
+    @NotNull
     public Set<Class> getJUnitTests()
     {
         return new HashSet<Class>(Arrays.asList(

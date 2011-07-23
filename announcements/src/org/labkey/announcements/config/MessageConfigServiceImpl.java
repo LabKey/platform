@@ -105,5 +105,4 @@ public class MessageConfigServiceImpl implements MessageConfigService.I
             return _providers.get(identifier);
         }
     }
-
 }

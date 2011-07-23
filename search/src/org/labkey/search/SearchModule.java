@@ -67,6 +67,7 @@ public class SearchModule extends DefaultModule
 
 
     @Override
+    @NotNull
     public Set<String> getSchemaNames()
     {
         return PageFlowUtil.set("search", "umls");
@@ -74,6 +75,7 @@ public class SearchModule extends DefaultModule
 
 
     @Override
+    @NotNull
     public Set<DbSchema> getSchemasToTest()
     {
         // Should test the "search" schema, but it differs between SQL Server & PostgreSQL

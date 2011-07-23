@@ -16,6 +16,7 @@
 
 package org.labkey.query;
 
+import org.jetbrains.annotations.NotNull;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.DbSchema;
@@ -147,17 +148,22 @@ public class QueryModule extends DefaultModule
         PropertyService.get().registerDomainKind(new SimpleTableDomainKind());
     }
 
+    @Override
+    @NotNull
     public Set<String> getSchemaNames()
     {
         return PageFlowUtil.set(QueryManager.get().getDbSchemaName());
     }
 
     @Override
+    @NotNull
     public Set<DbSchema> getSchemasToTest()
     {
         return Collections.singleton(QueryManager.get().getDbSchema());
     }
 
+    @Override
+    @NotNull
     public Set<Class> getJUnitTests()
     {
         return new HashSet<Class>(Arrays.asList(

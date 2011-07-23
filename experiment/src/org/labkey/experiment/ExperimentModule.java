@@ -290,6 +290,7 @@ public class ExperimentModule extends SpringModule implements SearchService.Docu
 
 
     @Override
+    @NotNull
     public Set<Class> getJUnitTests()
     {
         return new HashSet<Class>(Arrays.asList(
@@ -300,6 +301,7 @@ public class ExperimentModule extends SpringModule implements SearchService.Docu
 
 
     @Override
+    @NotNull
     public Set<String> getSchemaNames()
     {
         return PageFlowUtil.set(ExpSchema.SCHEMA_NAME);
@@ -307,6 +309,7 @@ public class ExperimentModule extends SpringModule implements SearchService.Docu
 
 
     @Override
+    @NotNull
     public Set<DbSchema> getSchemasToTest()
     {
         return PageFlowUtil.set(ExperimentService.get().getSchema());

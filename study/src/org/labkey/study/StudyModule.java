@@ -337,11 +337,15 @@ public class StudyModule extends SpringModule implements SearchService.DocumentP
     }
 
 
+    @Override
+    @NotNull
     public Set<String> getSchemaNames()
     {
         return PageFlowUtil.set(StudyManager.getSchemaName(), "studydataset");
     }
 
+    @Override
+    @NotNull
     public Set<DbSchema> getSchemasToTest()
     {
         return PageFlowUtil.set(StudySchema.getInstance().getSchema());
@@ -517,6 +521,7 @@ public class StudyModule extends SpringModule implements SearchService.DocumentP
     }
 
     @Override
+    @NotNull
     public Set<Class> getJUnitTests()
     {
         Set<Class> set = new HashSet<Class>();

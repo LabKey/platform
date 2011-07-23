@@ -501,6 +501,7 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
 
 
     @Override
+    @NotNull
     public Set<Class> getJUnitTests()
     {
         Set<Class> testClasses = new HashSet<Class>(Arrays.asList(
@@ -556,6 +557,7 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
 
 
     @Override
+    @NotNull
     public Set<DbSchema> getSchemasToTest()
     {
         return PageFlowUtil.set
@@ -567,6 +569,8 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
             );
     }
 
+    @Override
+    @NotNull
     public Set<String> getSchemaNames()
     {
         return PageFlowUtil.set

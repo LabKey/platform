@@ -17,6 +17,7 @@
 package org.labkey.audit;
 
 import org.apache.log4j.Logger;
+import org.jetbrains.annotations.NotNull;
 import org.labkey.api.audit.AuditLogEvent;
 import org.labkey.api.audit.AuditLogService;
 import org.labkey.api.audit.SimpleAuditViewFactory;
@@ -79,11 +80,15 @@ public class AuditModule extends DefaultModule
             convertAuditDataMaps();
     }
 
+    @Override
+    @NotNull
     public Set<String> getSchemaNames()
     {
         return Collections.singleton("audit");
     }
 
+    @Override
+    @NotNull
     public Set<DbSchema> getSchemasToTest()
     {
         return PageFlowUtil.set(AuditSchema.getInstance().getSchema());

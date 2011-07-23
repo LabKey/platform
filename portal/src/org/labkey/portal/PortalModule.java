@@ -16,6 +16,7 @@
 package org.labkey.portal;
 
 import org.apache.log4j.Logger;
+import org.jetbrains.annotations.NotNull;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.module.DefaultModule;
@@ -45,6 +46,7 @@ public class PortalModule extends DefaultModule
     }
 
     @Override
+    @NotNull
     public Set<Class> getJUnitTests()
     {
         return Collections.singleton((Class) PortalJUnitTest.class);
