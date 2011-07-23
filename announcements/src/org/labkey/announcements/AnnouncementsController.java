@@ -124,7 +124,6 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.io.PrintWriter;
-import java.net.URISyntaxException;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -1652,7 +1651,7 @@ public class AnnouncementsController extends SpringActionController
 
     public static class NotifyOptionsForm
     {
-        String _type;
+        private String _type;
 
         public String getType()
         {
@@ -1666,7 +1665,7 @@ public class AnnouncementsController extends SpringActionController
 
         public MessageConfigService.ConfigTypeProvider getProvider()
         {
-            return MessageConfigService.getInstance().getConfigType(_type);
+            return MessageConfigService.getInstance().getConfigType(getType());
         }
     }
 

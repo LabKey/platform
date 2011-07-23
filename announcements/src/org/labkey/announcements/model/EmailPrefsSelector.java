@@ -48,7 +48,8 @@ public abstract class EmailPrefsSelector
     // Initialize list of email preferences: get all settings from the database, add the default values, and remove NONE.
     private void initEmailPrefs(Container c) throws SQLException
     {
-        try {
+        try
+        {
             int defaultOption = AnnouncementManager.getDefaultEmailOption(c);
             MessageConfigService.UserPreference[] epArray = AnnouncementManager.getAnnouncementConfigProvider().getPreferences(c);
             _emailPrefs = new ArrayList<MessageConfigService.UserPreference>(epArray.length);
@@ -76,7 +77,7 @@ public abstract class EmailPrefsSelector
     }
 
 
-    // All users with an email preference plus project users who get the default email preference -- they have not been authorized!
+    // All users with an email preference that was allowed by includeEmailPrefs() -- they have not been authorized!
     public Collection<User> getUsers()
     {
         Set<User> users = new HashSet<User>(_emailPrefs.size());

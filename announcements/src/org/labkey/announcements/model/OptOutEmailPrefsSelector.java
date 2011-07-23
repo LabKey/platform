@@ -22,7 +22,6 @@ import org.labkey.api.message.settings.MessageConfigService;
 import java.sql.SQLException;
 
 /**
- * Created by IntelliJ IDEA.
  * User: dave
  * Date: Feb 23, 2010
  * Time: 1:35:35 PM
