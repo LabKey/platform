@@ -701,7 +701,21 @@ class PostgreSql83Dialect extends SqlDialect
     public void runSql(DbSchema schema, String sql, UpgradeCode upgradeCode, ModuleContext moduleContext) throws SQLException
     {
         SqlScriptParser parser = new SqlScriptParser(sql, null, JAVA_CODE_PATTERN, schema, upgradeCode, moduleContext);
-        parser.execute();
+
+        try
+        {
+            parser.execute();
+        }
+        catch (SQLException e)
+        {
+            if ("55000".equals(e.getSQLState()))
+                //noinspection ThrowableInstanceNeverThrown
+                throw new RuntimeException(new ConfigurationException("", "See https://www.labkey.org/issues/home/Developer/issues/details.view?issueId=12401 " +
+                    "for information about this error and possible work-arounds. Once the configuration problem is fixed, you can restart the server and " +
+                    "the upgrade will continue.", e));
+            else
+                throw e;
+        }
     }
 
     @Override
