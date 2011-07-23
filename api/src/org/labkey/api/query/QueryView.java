@@ -1200,7 +1200,21 @@ public class QueryView extends WebPartView<Object>
 
         for (Map.Entry<String, List<Report>> entry : views.entrySet())
         {
-            for (Report report : entry.getValue())
+            List<Report> reports = entry.getValue();
+
+            // sort the list of reports within each type grouping
+            Collections.sort(reports, new Comparator<Report>() {
+                @Override
+                public int compare(Report o1, Report o2)
+                {
+                    String n1 = StringUtils.defaultString(o1.getDescriptor().getReportName(), "");
+                    String n2 = StringUtils.defaultString(o2.getDescriptor().getReportName(), "");
+
+                    return n1.compareToIgnoreCase(n2);
+                }
+            });
+
+            for (Report report : reports)
             {
                 String reportId = report.getDescriptor().getReportId().toString();
                 NavTree item = new NavTree(report.getDescriptor().getReportName(), (String) null);

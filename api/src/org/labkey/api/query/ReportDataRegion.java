@@ -130,7 +130,8 @@ public class ReportDataRegion extends AbstractDataRegion
     @Override
     protected void renderButtons(RenderContext ctx, Writer out) throws IOException
     {
-        _buttonBar.render(ctx, out);
+        if (_buttonBar != null)
+            _buttonBar.render(ctx, out);
     }
 
     @Override

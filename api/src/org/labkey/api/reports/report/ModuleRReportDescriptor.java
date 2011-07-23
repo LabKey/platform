@@ -177,7 +177,9 @@ public class ModuleRReportDescriptor extends RReportDescriptor
     @Override
     public String getResourceId()
     {
-        return getReportId().toString();
+        // default the module reports to container security, the report service guarantees that
+        // all module reports added will have it's container set.
+        return getContainerId();
     }
 
     @Override
