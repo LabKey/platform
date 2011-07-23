@@ -78,9 +78,13 @@ public class ReportQueryViewFactory
             settings.setViewName(viewName);
             // need to reset the report id since we want to render the data grid, not the report
             settings.setReportId(null);
+            // by default we want all rows since the data may be used for a chart, grid based reports will ask for paging
+            // at the report level.
             settings.setMaxRows(Table.ALL_ROWS);
 
+
             ReportQueryView view = new StudyReportQueryView(schema, settings);
+            view.setButtonBarPosition(DataRegion.ButtonBarPosition.BOTH);
             final String filterParam = descriptor.getProperty("filterParam");
 
             if (!StringUtils.isEmpty(filterParam))

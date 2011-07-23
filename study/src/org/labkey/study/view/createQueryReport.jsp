@@ -26,11 +26,14 @@
 <%@ page import="org.labkey.study.reports.StudyQueryReport" %>
 <%@ page import="java.util.Map" %>
 <%@ page import="org.labkey.api.study.DataSet" %>
+<%@ page import="org.labkey.api.data.Container" %>
+<%@ page import="org.labkey.api.view.ActionURL" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 
 <%
     JspView<ReportsController.CreateQueryReportBean> me = (JspView<org.labkey.study.controllers.reports.ReportsController.CreateQueryReportBean>) HttpView.currentView();
     ReportsController.CreateQueryReportBean bean = me.getModelBean();
+    Container container = HttpView.currentContext().getContainer();
 
     String paramStart = QueryParam.schemaName.toString() + "=" + StudyManager.getSchemaName();
 %>
@@ -85,7 +88,7 @@
 
 </script>
 
-<form action="saveReportView.post" method="POST">
+<form action="<%=new ActionURL(ReportsController.SaveReportAction.class, container)%>" method="POST">
 <input type="hidden" name="<%=ReportDescriptor.Prop.reportType%>" value="<%=StudyQueryReport.TYPE%>">
 <input type="hidden" id="redirectToReport" name="redirectToReport" value="true">
 <input type="hidden" id="redirectToDataset" name="redirectToDataset" value="-1">

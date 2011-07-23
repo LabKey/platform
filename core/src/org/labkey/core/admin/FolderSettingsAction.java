@@ -500,7 +500,6 @@ public class FolderSettingsAction extends FormViewAction<FolderSettingsAction.Fo
                     }
                 }
             };
-            queryView.setUseQueryViewActionExportURLs(true);
             queryView.setShadeAlternatingRows(true);
             queryView.setShowBorders(true);
             queryView.setShowDetailsColumn(false);

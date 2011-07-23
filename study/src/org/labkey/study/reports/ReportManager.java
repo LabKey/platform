@@ -181,24 +181,6 @@ public class ReportManager implements StudyManager.DataSetListener
         return labels;
     }
 
-    /**
-     * @deprecated
-     */
-    public static String getReportViewKey(Integer datasetId, String label)
-    {
-        if (datasetId != null && !datasetId.equals(0))
-            return getDatasetReportKeyPrefix(datasetId) + label;
-        return label;
-    }
-
-    /**
-     * @deprecated
-     */
-    public static String getDatasetReportKeyPrefix(int datasetId)
-    {
-        return DATASET_CHART_PREFIX + "/" + datasetId + "/";
-    }
-
     public Report getReport(Container c, int reportId) throws Exception
     {
         return ReportService.get().getReport(reportId);

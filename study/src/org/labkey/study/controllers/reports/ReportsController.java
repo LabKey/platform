@@ -577,7 +577,7 @@ public class ReportsController extends BaseStudyController
         public ModelAndView getView(SaveReportForm form, BindException errors) throws Exception
         {
             Report report = form.getReport();
-            final String key = ReportManager.getReportViewKey(form.getShowWithDataset(), form.getLabel());
+            final String key = ReportUtil.getReportQueryKey(report.getDescriptor());
 
             int reportId = ReportService.get().saveReport(getViewContext(), key, report);
 

@@ -204,6 +204,7 @@ public class ParticipantCategory extends Entity
         json.put("type", getType());
         json.put("autoUpdate", isAutoUpdate());
         json.put("created", getCreated());
+        json.put("modified", getModified());
 
         if (context != null)
         {
@@ -212,6 +213,9 @@ public class ParticipantCategory extends Entity
         }
         User user = UserManager.getUser(getCreatedBy());
         json.put("createdBy", createDisplayValue(getCreatedBy(), user != null ? user.getDisplayName(currentUser) : getCreatedBy()));
+
+        User modifiedBy = UserManager.getUser(getModifiedBy());
+        json.put("modifiedBy", createDisplayValue(getModifiedBy(), modifiedBy != null ? modifiedBy.getDisplayName(currentUser) : getModifiedBy()));
 
         if (Type.query.equals(Type.valueOf(getType())))
         {

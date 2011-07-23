@@ -41,6 +41,7 @@
 <%@ page import="org.labkey.study.visitmanager.VisitManager.VisitStatistics" %>
 <%@ page import="java.util.List" %>
 <%@ page import="java.util.Map" %>
+<%@ page import="org.labkey.study.model.CohortManager" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
     JspView<StudyController.OverviewBean> me = (JspView<StudyController.OverviewBean>) HttpView.currentView();
@@ -51,7 +52,7 @@
     User user = (User) request.getUserPrincipal();
     StudyManager manager = StudyManager.getInstance();
 
-    boolean showCohorts = manager.showCohorts(container, user);
+    boolean showCohorts = CohortManager.getInstance().hasCohortMenu(container, user);
     CohortImpl selectedCohort = null;
     CohortImpl[] cohorts = null;
 
@@ -99,11 +100,11 @@
 %>
 <form action="overview.view" name="changeFilterForm" method="GET">
     <input type="hidden" name="showAll" value="<%= bean.showAll ? "1" : "0" %>">
+    <br><br>
 <%
     if (showCohorts)
     {
 %>
-<br><br>
     <input type="hidden" name="<%= CohortFilter.Params.cohortFilterType.name() %>" value="<%= CohortFilter.Type.PTID_CURRENT.name() %>">
     <%= h(StudyService.get().getSubjectNounSingular(container)) %>'s current cohort: <select name="<%= CohortFilter.Params.cohortId.name() %>" onchange="document.changeFilterForm.submit()">
     <option value="">All</option>

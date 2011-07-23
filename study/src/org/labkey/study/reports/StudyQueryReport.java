@@ -144,6 +144,7 @@ public class StudyQueryReport extends QueryReport
                 view.setButtonBarPosition(DataRegion.ButtonBarPosition.BOTH);
                 view.setUseQueryViewActionExportURLs(true);
                 view.getSettings().setAllowChooseQuery(false);
+                view.getSettings().setMaxRows(100);
 
                 int datasetId = NumberUtils.toInt(getDescriptor().getProperty("showWithDataset"), -1);
                 Study study = StudyManager.getInstance().getStudy(context.getContainer());
