@@ -2305,7 +2305,6 @@ public class WikiController extends SpringActionController
             properties.put(PROP_DEFAULT_FORMAT, wikiversion.getRendererType());
             PropertyManager.saveProperties(properties);
 
-
             //return an API response containing the current wiki and version data
             ApiSimpleResponse resp = new ApiSimpleResponse("success", true);
             resp.put("wikiProps", getWikiProps(wiki, wikiversion));
