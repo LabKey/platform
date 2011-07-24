@@ -267,7 +267,8 @@ public class GroupManager
         private void addAuditEvent(Group group, UserPrincipal principal, String message)
         {
             User user = UserManager.getGuestUser();
-            try {
+            try
+            {
                 ViewContext context = HttpView.currentContext();
                 if (context != null)
                 {
