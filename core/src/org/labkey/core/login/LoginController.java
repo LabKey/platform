@@ -18,25 +18,62 @@ package org.labkey.core.login;
 
 import org.apache.log4j.Logger;
 import org.jetbrains.annotations.Nullable;
-import org.labkey.api.action.*;
+import org.labkey.api.action.ApiResponse;
+import org.labkey.api.action.ApiSimpleResponse;
+import org.labkey.api.action.FormViewAction;
+import org.labkey.api.action.MutatingApiAction;
+import org.labkey.api.action.RedirectAction;
+import org.labkey.api.action.ReturnUrlForm;
+import org.labkey.api.action.SimpleViewAction;
+import org.labkey.api.action.SpringActionController;
 import org.labkey.api.collections.NamedObjectList;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
+import org.labkey.api.data.CoreSchema;
+import org.labkey.api.data.DbScope;
 import org.labkey.api.data.Project;
 import org.labkey.api.data.RuntimeSQLException;
 import org.labkey.api.module.AllowedBeforeInitialUserIsSet;
 import org.labkey.api.module.AllowedDuringUpgrade;
 import org.labkey.api.module.Module;
 import org.labkey.api.module.ModuleLoader;
-import org.labkey.api.security.*;
+import org.labkey.api.security.ActionNames;
+import org.labkey.api.security.AdminConsoleAction;
+import org.labkey.api.security.AuthenticationManager;
+import org.labkey.api.security.AuthenticationProvider;
+import org.labkey.api.security.CSRF;
+import org.labkey.api.security.Group;
+import org.labkey.api.security.IgnoresTermsOfUse;
+import org.labkey.api.security.LoginUrls;
+import org.labkey.api.security.PasswordExpiration;
+import org.labkey.api.security.RequiresLogin;
+import org.labkey.api.security.RequiresNoPermission;
+import org.labkey.api.security.RequiresSiteAdmin;
 import org.labkey.api.security.SecurityManager;
+import org.labkey.api.security.SecurityMessage;
+import org.labkey.api.security.TokenAuthentication;
+import org.labkey.api.security.User;
+import org.labkey.api.security.UserManager;
+import org.labkey.api.security.UserUrls;
+import org.labkey.api.security.ValidEmail;
 import org.labkey.api.services.ServiceRegistry;
 import org.labkey.api.settings.AppProps;
 import org.labkey.api.settings.LookAndFeelProperties;
 import org.labkey.api.settings.WriteableAppProps;
 import org.labkey.api.settings.WriteableLookAndFeelProperties;
-import org.labkey.api.util.*;
-import org.labkey.api.view.*;
+import org.labkey.api.util.HelpTopic;
+import org.labkey.api.util.PageFlowUtil;
+import org.labkey.api.util.Pair;
+import org.labkey.api.util.ReturnURLString;
+import org.labkey.api.util.SimpleNamedObject;
+import org.labkey.api.util.URLHelper;
+import org.labkey.api.view.ActionURL;
+import org.labkey.api.view.HtmlView;
+import org.labkey.api.view.HttpView;
+import org.labkey.api.view.JspView;
+import org.labkey.api.view.NavTree;
+import org.labkey.api.view.UnauthorizedException;
+import org.labkey.api.view.VBox;
 import org.labkey.api.view.template.PageConfig;
 import org.labkey.api.wiki.WikiRenderer;
 import org.labkey.api.wiki.WikiRendererType;
@@ -757,7 +794,7 @@ public class LoginController extends SpringActionController
             }
             catch (ValidEmail.InvalidEmailException e)
             {
-                errors.reject("setPassword", "Invalid email address: " + rawEmail);
+                errors.reject("setPassword", "Invalid email address: " + (null == rawEmail ? "" : rawEmail));
                 _unrecoverableError = true;
                 return;
             }
@@ -765,7 +802,7 @@ public class LoginController extends SpringActionController
             verify(form, email, errors);
         }
 
-        public ModelAndView getView(SetPasswordForm form, boolean reshow, BindException errors) throws Exception
+        protected void verifyBeforeView(SetPasswordForm form, boolean reshow, BindException errors)
         {
             if (!reshow)
                 validateCommand(form, errors);
@@ -777,19 +814,34 @@ public class LoginController extends SpringActionController
                 else
                     _log.warn("Password entry error: " + form.getEmail());
             }
+        }
 
+        protected String getEmailForForm(SetPasswordForm form)
+        {
+            return null != _email ? _email.getEmailAddress() : form.getEmail();
+        }
+
+        public ModelAndView getView(SetPasswordForm form, boolean reshow, BindException errors) throws Exception
+        {
+            verifyBeforeView(form, reshow, errors);
+
+            NamedObjectList nonPasswordInputs = getNonPasswordInputs();
             NamedObjectList passwordInputs = getPasswordInputs();
-            SetPasswordBean bean = new SetPasswordBean(_email, form, _unrecoverableError, getMessage(form), passwordInputs, getClass(), isCancellable(form));
+            String buttonText = getButtonText();
+            SetPasswordBean bean = new SetPasswordBean(form, getEmailForForm(form), _unrecoverableError, getMessage(form), nonPasswordInputs, passwordInputs, getClass(), isCancellable(form), buttonText);
             HttpView view = new JspView<SetPasswordBean>("/org/labkey/core/login/setPassword.jsp", bean, errors);
 
             PageConfig page = getPageConfig();
             page.setTemplate(PageConfig.Template.Dialog);
-            page.setTitle("Choose a Password");
+            page.setTitle(getTitle());
             page.setIncludeLoginLink(false);
 
-            // If no error, then set focus on the first input.
+            // If we're going to display the form, then set focus on the first input.
             if (!_unrecoverableError)
-                page.setFocusId((String)(passwordInputs.get(0)));
+            {
+                String firstInput = (String)(nonPasswordInputs.isEmpty() ? passwordInputs.get(0) : nonPasswordInputs.get(0));
+                page.setFocusId(firstInput);
+            }
 
             return view;
         }
@@ -823,7 +875,7 @@ public class LoginController extends SpringActionController
                 return false;
             }
 
-            afterPasswordSet(errors);
+            afterPasswordSet(errors, user);
 
             if (errors.hasErrors())
                 return false;
@@ -857,10 +909,25 @@ public class LoginController extends SpringActionController
             return null;
         }
 
+        protected NamedObjectList getNonPasswordInputs()
+        {
+            return new NamedObjectList();
+        }
+
+        protected String getTitle()
+        {
+            return "Choose a Password";
+        }
+
+        protected String getButtonText()
+        {
+            return "Set Password";
+        }
+
         protected abstract void verify(SetPasswordForm form, ValidEmail email, Errors errors);
         protected abstract String getMessage(SetPasswordForm form);
         protected abstract NamedObjectList getPasswordInputs();
-        protected abstract void afterPasswordSet(BindException errors) throws SQLException;
+        protected abstract void afterPasswordSet(BindException errors, User user) throws SQLException;
         protected abstract boolean isCancellable(SetPasswordForm form);
     }
 
@@ -902,6 +969,7 @@ public class LoginController extends SpringActionController
             }
         }
 
+        @Override
         protected String getMessage(SetPasswordForm form)
         {
             return "Choose a password you'll use to access this server.";
@@ -913,6 +981,7 @@ public class LoginController extends SpringActionController
             return false;
         }
 
+        @Override
         protected NamedObjectList getPasswordInputs()
         {
             NamedObjectList list = new NamedObjectList();
@@ -923,17 +992,276 @@ public class LoginController extends SpringActionController
         }
 
         @Override
-        public void afterPasswordSet(BindException errors) throws SQLException
+        public void afterPasswordSet(BindException errors, User user) throws SQLException
         {
             try
             {
                 SecurityManager.setVerification(_email, null);
-                UserManager.addToUserHistory(UserManager.getUser(_email), "Verified and chose a password.");
+                UserManager.addToUserHistory(user, "Verified and chose a password.");
             }
             catch (SecurityManager.UserManagementException e)
             {
                 errors.reject("password", "Resetting verification failed.  Contact the " + LookAndFeelProperties.getInstance(ContainerManager.getRoot()).getShortName() + " team.");
             }
+        }
+    }
+
+
+    @RequiresNoPermission
+    @AllowedDuringUpgrade
+    @AllowedBeforeInitialUserIsSet
+    public class InitialUserAction extends AbstractSetPasswordAction
+    {
+        @Override
+        protected void verify(SetPasswordForm form, ValidEmail email, Errors errors)
+        {
+            if (!UserManager.hasNoUsers())
+                errors.reject(ERROR_MSG, "Initial user has already been created.");
+
+            _email = email;
+            _unrecoverableError = false;
+        }
+
+        @Override
+        protected void verifyBeforeView(SetPasswordForm form, boolean reshow, BindException errors)
+        {
+            verify(form, null, errors);
+        }
+
+        @Override
+        protected String getMessage(SetPasswordForm form)
+        {
+            return "You are the first user of this LabKey Server installation.  Enter a valid email address to use as " +
+                "your id for logging into the system.  This email address will be added to the Site Administrators " +
+                "group, which will give you permission to add users to the system, add users to groups, assign permissions, " +
+                "create projects and folders, etc.";
+        }
+
+        @Override
+        protected NamedObjectList getNonPasswordInputs()
+        {
+            NamedObjectList list = new NamedObjectList();
+            list.put(new SimpleNamedObject("Email", "email"));
+
+            return list;
+        }
+
+        @Override
+        protected NamedObjectList getPasswordInputs()
+        {
+            NamedObjectList list = new NamedObjectList();
+            list.put(new SimpleNamedObject("Password", "password"));
+            list.put(new SimpleNamedObject("Retype Password", "password2"));
+
+            return list;
+        }
+
+        @Override
+        protected void afterPasswordSet(BindException errors, User user) throws SQLException
+        {
+            // Put it here to get ordering right... "Added to the system" gets logged before first login
+            UserManager.addToUserHistory(user, "Added to the system via the initial user page.");
+        }
+
+        @Override
+        public boolean handlePost(SetPasswordForm form, BindException errors) throws Exception
+        {
+            boolean success = false;
+            DbScope scope = CoreSchema.getInstance().getSchema().getScope();
+
+            try
+            {
+                ValidEmail email = new ValidEmail(form.getEmail());
+
+                // All initial user creation steps need to be transacted
+                scope.beginTransaction();
+
+                // Add the initial user
+                SecurityManager.NewUserStatus newUserBean = SecurityManager.addUser(email);
+                // Set the password
+                success = super.handlePost(form, errors);
+
+                // If successful, add audit event, make site admin, set some properties based on email domain, and commit
+                if (success)
+                {
+                    SecurityManager.addMember(Group.groupAdministrators, newUserBean.getUser());
+
+                    //set default "from" address for system emails to first registered user
+                    WriteableLookAndFeelProperties laf = WriteableLookAndFeelProperties.getWriteableInstance(ContainerManager.getRoot());
+                    laf.setSystemEmailAddress(newUserBean.getEmail());
+                    laf.save();
+
+                    //set default domain and default LSID authority to user email domain
+                    String userEmailAddress = newUserBean.getEmail().getEmailAddress();
+                    int atSign = userEmailAddress.indexOf("@");
+
+                    //did user most likely enter a valid email address? if so, set default domain
+                    if (atSign > 0 && atSign < userEmailAddress.length() - 1)
+                    {
+                        String defaultDomain = userEmailAddress.substring(atSign + 1, userEmailAddress.length());
+                        WriteableAppProps appProps = AppProps.getWriteableInstance();
+                        appProps.setDefaultDomain(defaultDomain);
+                        appProps.setDefaultLsidAuthority(defaultDomain);
+                        appProps.save();
+                    }
+
+                    scope.commitTransaction();
+                }
+            }
+            catch (SecurityManager.UserManagementException e)
+            {
+                errors.reject(ERROR_MSG, "Unable to create user '" + PageFlowUtil.filter(e.getEmail()) + "': " + e.getMessage());
+            }
+            catch (ValidEmail.InvalidEmailException e)
+            {
+                errors.rejectValue("email", ERROR_MSG, "The string '" + PageFlowUtil.filter(form.getEmail()) + "' is not a valid email address.  Please enter an email address in this form: user@domain.tld");
+            }
+            finally
+            {
+                scope.closeConnection();
+            }
+
+            return success;
+        }
+
+        @Override
+        protected boolean isCancellable(SetPasswordForm form)
+        {
+            return false;
+        }
+
+        @Override
+        protected String getTitle()
+        {
+            return "Register First User";
+        }
+
+        @Override
+        protected String getButtonText()
+        {
+            return "Register";
+        }
+
+        @Override
+        protected String getEmailForForm(SetPasswordForm form)
+        {
+            return null;
+        }
+    }
+
+
+    @RequiresNoPermission
+    @AllowedDuringUpgrade
+    @AllowedBeforeInitialUserIsSet
+    public class InitialUser2Action extends FormViewAction<InitialUserForm>
+    {
+        private ActionURL _verificationURL = null;
+
+        public void validateCommand(InitialUserForm target, Errors errors)
+        {
+            if (!UserManager.hasNoUsers())
+                errors.reject(ERROR_MSG, "Initial user has already been created.");
+        }
+
+        public ModelAndView getView(InitialUserForm form, boolean reshow, BindException errors) throws Exception
+        {
+            if (!reshow)
+                validateCommand(form, errors);
+
+            HttpView view = new JspView<String>("/org/labkey/core/login/initialUser.jsp", form.getEmail(), errors);
+
+            PageConfig page = getPageConfig();
+            page.setTemplate(PageConfig.Template.Dialog);
+            page.setTitle("Register First User");
+            page.setIncludeLoginLink(false);
+
+            if (!errors.hasErrors())
+            {
+                page.setFocusId("email");
+
+                List<String> attributions = new ArrayList<String>();
+                for (Module module : ModuleLoader.getInstance().getModules())
+                {
+                    attributions.addAll(module.getAttributions());
+                }
+
+                JspView<List<String>> view_attrib = new JspView<List<String>>("/org/labkey/core/login/attribution.jsp", attributions);
+                view = new VBox(view, view_attrib);
+            }
+
+            return view;
+        }
+
+        public boolean handlePost(InitialUserForm form, BindException errors) throws Exception
+        {
+            try
+            {
+                ValidEmail email = new ValidEmail(form.getEmail());
+
+                SecurityManager.NewUserStatus newUserBean = SecurityManager.addUser(email);
+                UserManager.addToUserHistory(newUserBean.getUser(), "Added to the system via the initial user page.");
+
+                SecurityManager.addMember(Group.groupAdministrators, newUserBean.getUser());
+
+                //set default "from" address for system emails to first registered user
+                WriteableLookAndFeelProperties laf = WriteableLookAndFeelProperties.getWriteableInstance(ContainerManager.getRoot());
+                laf.setSystemEmailAddress(newUserBean.getEmail());
+                laf.save();
+
+                //set default domain and default LSID authority to user email domain
+                String userEmailAddress = newUserBean.getEmail().getEmailAddress();
+                int atSign = userEmailAddress.indexOf("@");
+
+                //did user most likely enter a valid email address? if so, set default domain
+                if (atSign > 0 && atSign < userEmailAddress.length() - 1)
+                {
+                    String defaultDomain = userEmailAddress.substring(atSign + 1, userEmailAddress.length());
+                    WriteableAppProps appProps = AppProps.getWriteableInstance();
+                    appProps.setDefaultDomain(defaultDomain);
+                    appProps.setDefaultLsidAuthority(defaultDomain);
+                    appProps.save();
+                }
+
+                _verificationURL = SecurityManager.createVerificationURL(getContainer(), newUserBean.getEmail(), newUserBean.getVerification(), null);
+
+                return true;
+            }
+            catch (SecurityManager.UserManagementException e)
+            {
+                errors.reject(ERROR_MSG, "Unable to create user '" + PageFlowUtil.filter(e.getEmail()) + "': " + e.getMessage());
+            }
+            catch (ValidEmail.InvalidEmailException e)
+            {
+                errors.rejectValue("email", ERROR_MSG, "The string '" + PageFlowUtil.filter(form.getEmail()) + "' is not a valid email address.  Please enter an email address in this form: user@domain.tld");
+            }
+
+            return false;
+        }
+
+        public ActionURL getSuccessURL(InitialUserForm registerForm)
+        {
+            return _verificationURL;
+        }
+
+        public NavTree appendNavTrail(NavTree root)
+        {
+            return null;
+        }
+    }
+
+
+    public static class InitialUserForm
+    {
+        private String email;
+
+        public void setEmail(String email)
+        {
+            this.email = email;
+        }
+
+        public String getEmail()
+        {
+            return email;
         }
     }
 
@@ -957,6 +1285,7 @@ public class LoginController extends SpringActionController
             }
         }
 
+        @Override
         protected String getMessage(SetPasswordForm form)
         {
             return null != form.getMessage() ? form.getMessage() : "Choose a new password.";
@@ -969,6 +1298,7 @@ public class LoginController extends SpringActionController
             return null == form.getMessage();
         }
 
+        @Override
         protected NamedObjectList getPasswordInputs()
         {
             NamedObjectList list = new NamedObjectList();
@@ -998,9 +1328,9 @@ public class LoginController extends SpringActionController
         }
 
         @Override
-        public void afterPasswordSet(BindException errors) throws SQLException
+        public void afterPasswordSet(BindException errors, User user) throws SQLException
         {
-            UserManager.addToUserHistory(UserManager.getUser(_email), "Changed password.");
+            UserManager.addToUserHistory(user, "Changed password.");
         }
     }
 
@@ -1011,19 +1341,23 @@ public class LoginController extends SpringActionController
         public final SetPasswordForm form;
         public final boolean unrecoverableError;
         public final String message;
+        public final NamedObjectList nonPasswordInputs;
         public final NamedObjectList passwordInputs;
         public final String actionName;
         public final boolean cancellable;
+        public final String buttonText;
 
-        private SetPasswordBean(ValidEmail email, SetPasswordForm form, boolean unrecoverableError, String message, NamedObjectList passwordInputs, Class<? extends AbstractSetPasswordAction> clazz, boolean cancellable)
+        private SetPasswordBean(SetPasswordForm form, @Nullable String emailForForm, boolean unrecoverableError, String message, NamedObjectList nonPasswordInputs, NamedObjectList passwordInputs, Class<? extends AbstractSetPasswordAction> clazz, boolean cancellable, String buttonText)
         {
-            this.email = (null != email ? email.getEmailAddress() : form.getEmail());
             this.form = form;
+            this.email = emailForForm;
             this.unrecoverableError = unrecoverableError;
             this.message = message;
+            this.nonPasswordInputs = nonPasswordInputs;
             this.passwordInputs = passwordInputs;
             this.actionName = getActionName(clazz);
             this.cancellable = cancellable;
+            this.buttonText = buttonText;
         }
     }
 
@@ -1184,121 +1518,6 @@ public class LoginController extends SpringActionController
         public NavTree appendNavTrail(NavTree root)
         {
             return null;
-        }
-    }
-
-
-    @RequiresNoPermission
-    @AllowedDuringUpgrade
-    @AllowedBeforeInitialUserIsSet
-    public class InitialUserAction extends FormViewAction<InitialUserForm>
-    {
-        private ActionURL _verificationURL = null;
-
-        public void validateCommand(InitialUserForm target, Errors errors)
-        {
-            if (!UserManager.hasNoUsers())
-                errors.reject(ERROR_MSG, "Initial user has already been created.");
-        }
-
-        public ModelAndView getView(InitialUserForm form, boolean reshow, BindException errors) throws Exception
-        {
-            if (!reshow)
-                validateCommand(form, errors);
-
-            HttpView view = new JspView<String>("/org/labkey/core/login/initialUser.jsp", form.getEmail(), errors);
-
-            PageConfig page = getPageConfig();
-            page.setTemplate(PageConfig.Template.Dialog);
-            page.setTitle("Register First User");
-            page.setIncludeLoginLink(false);
-
-            if (!errors.hasErrors())
-            {
-                page.setFocusId("email");
-
-                List<String> attributions = new ArrayList<String>();
-                for (Module module : ModuleLoader.getInstance().getModules())
-                {
-                    attributions.addAll(module.getAttributions());
-                }
-
-                JspView<List<String>> view_attrib = new JspView<List<String>>("/org/labkey/core/login/attribution.jsp", attributions);
-                view = new VBox(view, view_attrib);
-            }
-
-            return view;
-        }
-
-        public boolean handlePost(InitialUserForm form, BindException errors) throws Exception
-        {
-            try
-            {
-                ValidEmail email = new ValidEmail(form.getEmail());
-
-                SecurityManager.NewUserStatus newUserBean = SecurityManager.addUser(email);
-                UserManager.addToUserHistory(newUserBean.getUser(), "Added to the system via the initial user page.");
-
-                SecurityManager.addMember(Group.groupAdministrators, newUserBean.getUser());
-
-                //set default "from" address for system emails to first registered user
-                WriteableLookAndFeelProperties laf = WriteableLookAndFeelProperties.getWriteableInstance(ContainerManager.getRoot());
-                laf.setSystemEmailAddress(newUserBean.getEmail());
-                laf.save();
-
-                //set default domain and default LSID authority to user email domain
-                String userEmailAddress = newUserBean.getEmail().getEmailAddress();
-                int atSign = userEmailAddress.indexOf("@");
-                //did user most likely enter a valid email address? if so, set default domain
-                if (atSign > 0 && atSign < userEmailAddress.length() - 1)
-                {
-                    String defaultDomain = userEmailAddress.substring(atSign + 1, userEmailAddress.length());
-                    WriteableAppProps appProps = AppProps.getWriteableInstance();
-                    appProps.setDefaultDomain(defaultDomain);
-                    appProps.setDefaultLsidAuthority(defaultDomain);
-                    appProps.save();
-                }
-
-                _verificationURL = SecurityManager.createVerificationURL(getContainer(), newUserBean.getEmail(), newUserBean.getVerification(), null);
-
-                return true;
-            }
-            catch (SecurityManager.UserManagementException e)
-            {
-                errors.reject(ERROR_MSG, "Unable to create user '" + PageFlowUtil.filter(e.getEmail()) + "': " + e.getMessage());
-            }
-            catch (ValidEmail.InvalidEmailException e)
-            {
-                errors.rejectValue("email", ERROR_MSG, "The string '" + PageFlowUtil.filter(form.getEmail()) + "' is not a valid email address.  Please enter an email address in this form: user@domain.tld");
-            }
-
-            return false;
-        }
-
-        public ActionURL getSuccessURL(InitialUserForm registerForm)
-        {
-            return _verificationURL;
-        }
-
-        public NavTree appendNavTrail(NavTree root)
-        {
-            return null;
-        }
-    }
-
-
-    public static class InitialUserForm
-    {
-        private String email;
-
-        public void setEmail(String email)
-        {
-            this.email = email;
-        }
-
-        public String getEmail()
-        {
-            return email;
         }
     }
 

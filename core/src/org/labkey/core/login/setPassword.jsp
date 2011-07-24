@@ -16,12 +16,12 @@
  */
 %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
+<%@ page import="org.labkey.api.collections.NamedObject" %>
 <%@ page import="org.labkey.api.util.PageFlowUtil" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.api.view.JspView" %>
-<%@ page import="org.labkey.core.login.LoginController" %>
 <%@ page import="org.labkey.core.login.DbLoginManager" %>
-<%@ page import="org.labkey.api.collections.NamedObject" %>
+<%@ page import="org.labkey.core.login.LoginController" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
     LoginController.SetPasswordBean bean = ((JspView<LoginController.SetPasswordBean>)HttpView.currentView()).getModelBean();
@@ -36,21 +36,32 @@
     }
 
     if (!bean.unrecoverableError)
-    { %>
-    <tr><td colspan=2><%=h(bean.email)%>:</td></tr>
+    {
+        if (null != bean.email)
+        { %>
+    <tr><td colspan=2><%=h(bean.email)%>:</td></tr><%
+        } %>
     <tr><td colspan=2><%=h(bean.message)%></td></tr>
     <tr><td colspan=2>&nbsp;</td></tr>
     <tr><td colspan=2><%=DbLoginManager.getPasswordRule().getRuleHTML()%></td></tr>
     <tr><td colspan=2>&nbsp;</td></tr><%
 
-    for (NamedObject passwordInput : bean.passwordInputs)
+    for (NamedObject input : bean.nonPasswordInputs)
     { %>
-    <tr><td width=150px><%=h(passwordInput.getName())%></td><td><input id="<%=passwordInput.getObject()%>" type="password" name="<%=passwordInput.getObject()%>" style="width:150px;"></td></tr><%
+    <tr><td width=150px><%=h(input.getName())%></td><td><input id="<%=input.getObject()%>" type="text" name="<%=input.getObject()%>" style="width:150px;"></td></tr><%
+    }
+
+    for (NamedObject input : bean.passwordInputs)
+    { %>
+    <tr><td width=150px><%=h(input.getName())%></td><td><input id="<%=input.getObject()%>" type="password" name="<%=input.getObject()%>" style="width:150px;"></td></tr><%
     }
     %>
     <tr>
-        <td>
+        <td><%
+            if (null != bean.email)
+            { %>
             <input type="hidden" name="email" value="<%=h(bean.email)%>"><%
+            }
 
             if (null != bean.form.getVerification())
             { %>
@@ -74,7 +85,7 @@
         %>
         </td>
     </tr>
-    <tr><td></td><td height="50"><%=PageFlowUtil.generateSubmitButton("Set Password", "", "name=\"set\"")%><%=bean.cancellable ? generateButton("Cancel", bean.form.getReturnURLHelper()) : ""%></td></tr><%
+    <tr><td></td><td height="50"><%=PageFlowUtil.generateSubmitButton(bean.buttonText, "", "name=\"set\"")%><%=bean.cancellable ? generateButton("Cancel", bean.form.getReturnURLHelper()) : ""%></td></tr><%
     } %>
 </table>
 </form>
