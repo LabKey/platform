@@ -16,6 +16,9 @@
 package org.labkey.api.reader.jxl;
 
 import jxl.CellType;
+import jxl.DateCell;
+import jxl.NumberCell;
+import org.apache.commons.lang.StringUtils;
 import org.apache.poi.ss.formula.FormulaParseException;
 import org.apache.poi.ss.usermodel.Cell;
 import org.apache.poi.ss.usermodel.CellStyle;
@@ -25,9 +28,14 @@ import org.apache.poi.ss.usermodel.RichTextString;
 import org.apache.poi.ss.usermodel.Row;
 import org.apache.poi.ss.usermodel.Sheet;
 import org.apache.poi.ss.util.CellRangeAddress;
+import org.labkey.api.util.DateUtil;
 
+import java.text.DateFormat;
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
 import java.util.Calendar;
 import java.util.Date;
+import java.util.TimeZone;
 
 /**
  * Created by IntelliJ IDEA.
@@ -92,7 +100,7 @@ public class JxlCell implements Cell
         else if (type.equals(CellType.BOOLEAN_FORMULA) || type.equals(CellType.DATE_FORMULA) ||
                 type.equals(CellType.NUMBER_FORMULA) || type.equals(CellType.STRING_FORMULA))
             return Cell.CELL_TYPE_FORMULA;
-        else if (type.equals(CellType.NUMBER))
+        else if (type.equals(CellType.NUMBER) || type.equals(CellType.DATE))
             return Cell.CELL_TYPE_NUMERIC;
         else if (type.equals(CellType.LABEL))
             return Cell.CELL_TYPE_STRING;
@@ -151,12 +159,40 @@ public class JxlCell implements Cell
     @Override
     public double getNumericCellValue()
     {
-        return Double.parseDouble(_cell.getContents());
+        if (_cell.getType() == CellType.NUMBER)
+            return ((NumberCell)_cell).getValue();
+        if (_cell.getType() == CellType.DATE)
+            return ((DateCell)_cell).getDate().getTime();
+
+        return Double.parseDouble(StringUtils.defaultIfBlank(_cell.getContents(), "0.0"));
     }
 
     @Override
     public Date getDateCellValue()
     {
+        if (_cell.getType() == CellType.EMPTY)
+            return null;
+        
+        if (_cell.getType() == CellType.DATE)
+        {
+            Date date = ((DateCell)_cell).getDate();
+
+            // JXL date cells have a default time zone of GMT/UTC, for excel import we are adopting
+            // the POI standard of java default zones for date fields. Convert the existing date from
+            // UTC to the default time zone.
+            DateFormat format = new SimpleDateFormat(DateUtil.getStandardDateTimeFormatString());
+            format.setTimeZone(TimeZone.getTimeZone("UTC"));
+            String formatString = format.format(date);
+            format.setTimeZone(TimeZone.getDefault());
+
+            try {
+                return format.parse(formatString);
+            }
+            catch (ParseException e)
+            {
+                throw new RuntimeException(e);
+            }
+        }
         return new Date(_cell.getContents());
     }
 

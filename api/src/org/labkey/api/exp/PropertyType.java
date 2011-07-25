@@ -165,9 +165,8 @@ public enum PropertyType
             if (date != null)
             {
                 DateFormat format = new SimpleDateFormat("MM/dd/yyyy GG HH:mm:ss.SSS");
-                format.setTimeZone(TimeZone.getTimeZone("UTC"));
-                String s = format.format(date);
                 format.setTimeZone(TimeZone.getDefault());
+                String s = format.format(date);
                 try
                 {
                     date = format.parse(s);

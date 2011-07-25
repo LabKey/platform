@@ -43,6 +43,23 @@
  * @param {Mixed} [config.renderTo] The element id, DOM element, or Ext element inside of which the part should be rendered. This is typically a &lt;div&gt;.
  * If not supplied in the configuration, you must call the render() method to render the part into the page.
  * @param {Mixed} [config.maskEl] An optional element id, DOM element, or Ext element that should be masked while the part is rendered. (default renderTo).
+ * @param {Object} [config.metadata] Optional metadata that can be applied to the properties of the table fields. For full documentation on
+ * available properties, see <a href="https://www.labkey.org/download/schema-docs/xml-schemas/">LabKey XML Schema Reference</a>.
+ * This object may contain the following properties:
+ * <ul>
+ *  <li><b>type</b>: The type of metadata being specified. Currently, only 'xml' is supported.</li>
+ *  <li><b>value</b>: The metadata value.</li>
+ * </ul>
+ * @param {String} config.errorType An optional parameter to specify how query parse errors are returned. (default 'html'). Valid
+ * values are either 'html' or 'json'. If 'html' is specified the error will be rendered to an HTML view, if 'json' is specified
+ * the errors will be returned to the callback handlers as an array of objects named 'parseErrors' with the following properties:
+ * <ul>
+ *  <li><b>msg</b>: The error message.</li>
+ *  <li><b>line</b>: The line number the error occurred at (optional).</li>
+ *  <li><b>col</b>: The column number the error occurred at (optional).</li>
+ *  <li><b>errorStr</b>: The line from the source query that caused the error (optional).</li>
+ * </ul>
+ * @param {String} config.sql An optional SQL query that can be used instead of an existing schema name/query name combination.
  * @param {String} [config.title] An optional title for the web part. If not supplied, the query name will be used as the title.
  * @param {String} [config.titleHref] If supplied, the title will be rendered as a hyperlink with this value as the href attribute.
  * @param {String} [config.buttonBarPosition] DEPRECATED--see config.buttonBar.position
