@@ -19,6 +19,7 @@ LABKEY.vis.ChartEditorOverviewPanel = Ext.extend(Ext.Panel, {
         });
 
         this.addEvents(
+            'initialMeasuresStoreLoaded',
             'initialMeasureSelected',
             'saveChart'
         );
@@ -222,6 +223,7 @@ LABKEY.vis.ChartEditorOverviewPanel = Ext.extend(Ext.Panel, {
                     name: "y-axis",
                     label: "Choose a data measure"
                 }],
+                measuresStoreData: this.measuresStoreData,
                 listeners: {
                     scope: this,
                     'measureChanged': function (axisId, data) {
@@ -229,6 +231,11 @@ LABKEY.vis.ChartEditorOverviewPanel = Ext.extend(Ext.Panel, {
                         this.changeMeasureSelection = data;
 
                         Ext.getCmp('measure-selection-button').setDisabled(false);
+                    },
+                    'measuresStoreLoaded': function (data) {
+                        // store the measure store JSON object for later use
+                        this.measuresStoreData = data;
+                        this.fireEvent('initialMeasuresStoreLoaded', data);
                     }
                 }
             })],

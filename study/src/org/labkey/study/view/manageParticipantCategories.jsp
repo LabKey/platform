@@ -54,6 +54,7 @@
                 {name: 'label', type: 'string'},
                 {name: 'type', type: 'string'},
                 {name: 'createdBy', type: 'string', convert: function(v, record){return (v.displayValue ? v.displayValue : v.value)}},
+                {name: 'modifiedBy', type: 'string', convert: function(v, record){return (v.displayValue ? v.displayValue : v.value)}},
                 {name: 'shared', type: 'string'},
                 {name: 'participantIds', type: 'string', convert: function(v, record){return v.toString().replace(/,/g,", ");}},
                 {name: 'canEdit', type: 'boolean'},
@@ -72,7 +73,8 @@
                 {header:'Label', dataIndex:'label', sortable: true, width: 300, renderer: $h},
                 {header:'Type', dataIndex:'type', width: 100},
                 {header:'Shared', dataIndex:'shared'},
-                {header:'Created By', dataIndex:'createdBy'}
+                {header:'Created By', dataIndex:'createdBy'},
+                {header:'Modified By', dataIndex:'modifiedBy'},
             ]
         });
 
@@ -138,7 +140,7 @@
             topTB.findById('editSelectedButton').enable();
 
             var row = _grid.getSelectionModel().getSelected();
-            if (row.get("canEdit"))
+            if (row.get("canDelete"))
                 topTB.findById('deleteSelectedButton').enable();
             else
                 topTB.findById('deleteSelectedButton').disable();

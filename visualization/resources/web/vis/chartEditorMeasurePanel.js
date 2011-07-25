@@ -120,24 +120,6 @@ LABKEY.vis.ChartEditorMeasurePanel = Ext.extend(Ext.FormPanel, {
             scope: this
         });
 
-        this.dataFilterUrl = this.filterUrl;
-        this.dataFilterWarning = new Ext.form.Label({
-            // No text by default
-        });
-        this.dataFilterRemoveButton = new Ext.Button({
-            hidden: true,
-            text: 'Remove',
-            listeners: {
-                scope: this,
-                'click' : function()
-                {
-                    this.removeFilterWarning();
-                }
-            }
-        });
-        columnOneItems.push(this.dataFilterWarning);
-        columnOneItems.push(this.dataFilterRemoveButton);
-
         // add a label and radio buttons for allowing user to divide data into series (subject and dimension options)
         columnTwoItems.push({
             xtype: 'label',
@@ -299,6 +281,24 @@ LABKEY.vis.ChartEditorMeasurePanel = Ext.extend(Ext.FormPanel, {
             ]
         });
 
+        this.dataFilterUrl = this.filterUrl;
+        this.dataFilterWarning = new Ext.form.Label({
+            // No text by default
+        });
+        this.dataFilterRemoveButton = new Ext.Button({
+            hidden: true,
+            text: 'Remove',
+            listeners: {
+                scope: this,
+                'click' : function()
+                {
+                    this.removeFilterWarning();
+                }
+            }
+        });
+        columnTwoItems.push(this.dataFilterWarning);
+        columnTwoItems.push(this.dataFilterRemoveButton);
+
         this.items = [{
             border: false,
             layout: 'column',
@@ -365,6 +365,7 @@ LABKEY.vis.ChartEditorMeasurePanel = Ext.extend(Ext.FormPanel, {
                     name: "y-axis",
                     label: "Choose a data measure"
                 }],
+                measuresStoreData: this.measuresStoreData,
                 listeners: {
                     scope: this,
                     'measureChanged': function (axisId, data) {
@@ -372,6 +373,10 @@ LABKEY.vis.ChartEditorMeasurePanel = Ext.extend(Ext.FormPanel, {
                         this.changeMeasureSelection = data;
 
                         Ext.getCmp('measure-selection-button').setDisabled(false);
+                    },
+                    'measuresStoreLoaded': function (data) {
+                        // store the measure store JSON object for later use
+                        this.measuresStoreData = data;
                     }
                 }
             }),
@@ -745,5 +750,9 @@ LABKEY.vis.ChartEditorMeasurePanel = Ext.extend(Ext.FormPanel, {
             id = this.measures[this.measures.length -1].id + 1;
         }
         return id;
+    },
+
+    setMeasuresStoreData: function(data){
+        this.measuresStoreData = data;
     }
 });

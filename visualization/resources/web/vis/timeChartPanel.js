@@ -62,6 +62,10 @@ LABKEY.vis.TimeChartPanel = Ext.extend(Ext.Panel, {
                 reportInfo: this.saveReportInfo,
                 listeners: {
                     scope: this,
+                    'initialMeasuresStoreLoaded': function(data) {
+                        // pass the measure store JSON data object to the measures panel
+                        this.editorMeasurePanel.setMeasuresStoreData(data);
+                    },
                     'initialMeasureSelected': function(initMeasure) {
                         Ext.getCmp('chart-editor-tabpanel').activate(this.editorMeasurePanel.getId());
                         this.measureSelected(initMeasure, true);
@@ -171,7 +175,7 @@ LABKEY.vis.TimeChartPanel = Ext.extend(Ext.Panel, {
                 items: [
                     new Ext.TabPanel({
                         id: 'chart-editor-tabpanel',
-                        padding: 4,
+                        autoScroll: true,
                         activeTab: 0,
                         items: [
                             this.editorOverviewPanel,
@@ -257,6 +261,7 @@ LABKEY.vis.TimeChartPanel = Ext.extend(Ext.Panel, {
             items.push(this.seriesSelector);
 
             this.loader = this.renderLineChart;  // default is to show the chart
+            this.loaderName = 'renderLineChart';
             this.viewGridBtn = new Ext.Button({text: "View Data", handler: this.viewDataGrid, scope: this, disabled: true});
             this.viewChartBtn = new Ext.Button({text: "View Chart(s)", handler: this.renderLineChart, scope: this, hidden: true});
 
@@ -287,8 +292,8 @@ LABKEY.vis.TimeChartPanel = Ext.extend(Ext.Panel, {
                 listeners: {
                     scope: this,
                     'resize': function(cmp){
-                        // only call loader if the data object is available
-                        if(this.chartSubjectData) {
+                        // only call loader if the data object is available and the loader equals renderLineChart
+                        if(this.chartSubjectData && this.loaderName == 'renderLineChart') {
                             this.loader();
                         }
                     }
@@ -453,8 +458,8 @@ LABKEY.vis.TimeChartPanel = Ext.extend(Ext.Panel, {
                 this.viewGridBtn.setDisabled(false);
                 this.viewChartBtn.hide();
 
-                // ready to render the chart
-                this.loader();              
+                // ready to render the chart or grid
+                this.loader();
             },
             failure : function(info, response, options) {LABKEY.Utils.displayAjaxErrorResponse(response, options);},
             measures: this.chartInfo.measures,
@@ -493,6 +498,7 @@ LABKEY.vis.TimeChartPanel = Ext.extend(Ext.Panel, {
         this.viewChartBtn.hide();
         this.viewGridBtn.show();
         this.loader = this.renderLineChart;
+        this.loaderName = 'renderLineChart';
 
         // todo: fix this to check all measures if > 1 measure selected
         if (force !== true) {
@@ -736,6 +742,7 @@ LABKEY.vis.TimeChartPanel = Ext.extend(Ext.Panel, {
             // mask panel and remove the chart(s)
             this.maskChartPanel();
             this.loader = this.viewDataGrid;
+            this.loaderName = 'viewDataGrid';
 
             // hide the viewGrid button and show the viewCharts button
             this.viewChartBtn.show();

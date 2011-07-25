@@ -15,9 +15,10 @@ LABKEY.vis.MeasuresPanel = Ext.extend(Ext.Panel, {
         this.tbarActions = [];
         this.axisMap = {};              // map of name to axis info
         this.addEvents(
+            'measuresStoreLoaded',
             'measureChanged'
         );
-        Ext.apply(this, config, {storeUrl : LABKEY.ActionURL.buildURL('visualization', 'getMeasures'), isDateAxis : false});
+        Ext.apply(this, config, {isDateAxis : false});
 
         LABKEY.vis.MeasuresPanel.superclass.constructor.call(this, config);
 
@@ -59,7 +60,27 @@ LABKEY.vis.MeasuresPanel = Ext.extend(Ext.Panel, {
                 filter = [LABKEY.Visualization.Filter.create({schemaName: this.selectedMeasure.schemaName,
                         queryName: this.selectedMeasure.queryName})];
             }
-            this.measuresStore.load({params:{filters: filter, dateMeasures: this.isDateAxis}});
+
+            // if the measure store data is not already loaded, get it. otherwise, use the cached data object
+            if (!this.measuresStoreData)
+            {
+                Ext.Ajax.request({
+                    url : LABKEY.ActionURL.buildURL('visualization', 'getMeasures', LABKEY.ActionURL.getContainer(),
+                            {filters: filter, dateMeasures: this.isDateAxis}),
+                    method:'GET',
+                    success : function(response){
+                        this.measuresStoreData = Ext.util.JSON.decode(response.responseText);
+                        this.fireEvent('measuresStoreLoaded', this.measuresStoreData);
+                        this.measuresStore.loadData(this.measuresStoreData);
+                    },
+                    failure: function(info, response, options) {LABKEY.Utils.displayAjaxErrorResponse(response, options);},
+                    scope: this
+                });
+            }
+            else
+            {
+                this.measuresStore.loadData(this.measuresStoreData);
+            }
         }, this);
 
         // Show the mask after the component size has been determined, as long as the
@@ -81,9 +102,6 @@ LABKEY.vis.MeasuresPanel = Ext.extend(Ext.Panel, {
                 root:'measures', idProperty:'id'},
                 [{name: 'id'}, {name:'name'},{name:'label'},{name:'description'}, {name:'isUserDefined'}, {name:'queryName'}, {name:'schemaName'}, {name:'type'}]
             ),
-            proxy: new Ext.data.HttpProxy({
-                method: 'GET',
-                url : this.storeUrl}),
             remoteSort: false,
             sortInfo: {
                 field: 'queryName',
