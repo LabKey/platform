@@ -1150,118 +1150,25 @@ public class LoginController extends SpringActionController
     }
 
 
-    @RequiresNoPermission
-    @AllowedDuringUpgrade
-    @AllowedBeforeInitialUserIsSet
-    public class InitialUser2Action extends FormViewAction<InitialUserForm>
+    // Attributions to Spring and Apache used to be displayed on the initial user page... not sure why.  If we actually
+    // need them, throw this view onto the appropriate page.
+    private static class AttributionView extends JspView<List<String>>
     {
-        private ActionURL _verificationURL = null;
-
-        public void validateCommand(InitialUserForm target, Errors errors)
+        private AttributionView()
         {
-            if (!UserManager.hasNoUsers())
-                errors.reject(ERROR_MSG, "Initial user has already been created.");
+            super("/org/labkey/core/login/attribution.jsp", getAttributions());
         }
 
-        public ModelAndView getView(InitialUserForm form, boolean reshow, BindException errors) throws Exception
+        private static List<String> getAttributions()
         {
-            if (!reshow)
-                validateCommand(form, errors);
+            List<String> attributions = new ArrayList<String>();
 
-            HttpView view = new JspView<String>("/org/labkey/core/login/initialUser.jsp", form.getEmail(), errors);
-
-            PageConfig page = getPageConfig();
-            page.setTemplate(PageConfig.Template.Dialog);
-            page.setTitle("Register First User");
-            page.setIncludeLoginLink(false);
-
-            if (!errors.hasErrors())
+            for (Module module : ModuleLoader.getInstance().getModules())
             {
-                page.setFocusId("email");
-
-                List<String> attributions = new ArrayList<String>();
-                for (Module module : ModuleLoader.getInstance().getModules())
-                {
-                    attributions.addAll(module.getAttributions());
-                }
-
-                JspView<List<String>> view_attrib = new JspView<List<String>>("/org/labkey/core/login/attribution.jsp", attributions);
-                view = new VBox(view, view_attrib);
+                attributions.addAll(module.getAttributions());
             }
 
-            return view;
-        }
-
-        public boolean handlePost(InitialUserForm form, BindException errors) throws Exception
-        {
-            try
-            {
-                ValidEmail email = new ValidEmail(form.getEmail());
-
-                SecurityManager.NewUserStatus newUserBean = SecurityManager.addUser(email);
-                UserManager.addToUserHistory(newUserBean.getUser(), "Added to the system via the initial user page.");
-
-                SecurityManager.addMember(Group.groupAdministrators, newUserBean.getUser());
-
-                //set default "from" address for system emails to first registered user
-                WriteableLookAndFeelProperties laf = WriteableLookAndFeelProperties.getWriteableInstance(ContainerManager.getRoot());
-                laf.setSystemEmailAddress(newUserBean.getEmail());
-                laf.save();
-
-                //set default domain and default LSID authority to user email domain
-                String userEmailAddress = newUserBean.getEmail().getEmailAddress();
-                int atSign = userEmailAddress.indexOf("@");
-
-                //did user most likely enter a valid email address? if so, set default domain
-                if (atSign > 0 && atSign < userEmailAddress.length() - 1)
-                {
-                    String defaultDomain = userEmailAddress.substring(atSign + 1, userEmailAddress.length());
-                    WriteableAppProps appProps = AppProps.getWriteableInstance();
-                    appProps.setDefaultDomain(defaultDomain);
-                    appProps.setDefaultLsidAuthority(defaultDomain);
-                    appProps.save();
-                }
-
-                _verificationURL = SecurityManager.createVerificationURL(getContainer(), newUserBean.getEmail(), newUserBean.getVerification(), null);
-
-                return true;
-            }
-            catch (SecurityManager.UserManagementException e)
-            {
-                errors.reject(ERROR_MSG, "Unable to create user '" + PageFlowUtil.filter(e.getEmail()) + "': " + e.getMessage());
-            }
-            catch (ValidEmail.InvalidEmailException e)
-            {
-                errors.rejectValue("email", ERROR_MSG, "The string '" + PageFlowUtil.filter(form.getEmail()) + "' is not a valid email address.  Please enter an email address in this form: user@domain.tld");
-            }
-
-            return false;
-        }
-
-        public ActionURL getSuccessURL(InitialUserForm registerForm)
-        {
-            return _verificationURL;
-        }
-
-        public NavTree appendNavTrail(NavTree root)
-        {
-            return null;
-        }
-    }
-
-
-    public static class InitialUserForm
-    {
-        private String email;
-
-        public void setEmail(String email)
-        {
-            this.email = email;
-        }
-
-        public String getEmail()
-        {
-            return email;
+            return attributions;
         }
     }
 
