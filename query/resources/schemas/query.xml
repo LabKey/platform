@@ -37,6 +37,7 @@
     </ns:columns>
   </ns:table>
     <ns:table tableName="CustomView" tableDbType="TABLE">
+      <ns:cacheSize>10000</ns:cacheSize>
       <ns:columns>
         <ns:column columnName="CustomViewId"/>
         <ns:column columnName="EntityId"/>
