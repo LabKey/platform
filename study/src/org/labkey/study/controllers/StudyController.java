@@ -2210,12 +2210,12 @@ public class StudyController extends BaseStudyController
                 columnMap.put("qcstate", DataSetDefinition.getQCStateURI());
                 columnMap.put("dfcreate", DataSetDefinition.getCreatedURI());     // datafax field name
                 columnMap.put("dfmodify", DataSetDefinition.getModifiedURI());    // datafax field name
-                List<String> errorList = new LinkedList<String>();
+                BatchValidationException validationErrors = new BatchValidationException();
 
                 DataSetDefinition dsd = StudyManager.getInstance().getDataSetDefinition(getStudy(), form.getDatasetId());
                 DataLoader dl = new TabLoader(tsvData, true);
                 FileStream f = new FileStream.StringFileStream(tsvData);
-                Pair<List<String>, UploadLog> result = AssayPublishManager.getInstance().importDatasetTSV(getUser(), getStudy(), dsd, dl, f, columnMap, errorList);
+                Pair<List<String>, UploadLog> result = AssayPublishManager.getInstance().importDatasetTSV(getUser(), getStudy(), dsd, dl, f, columnMap, validationErrors);
 
                 if (!result.getKey().isEmpty())
                 {
@@ -2225,12 +2225,9 @@ public class StudyController extends BaseStudyController
                             getUser(), getContainer(), dsd, comment, result.getValue());
                 }
 
-                for (String error : errorList)
-                {
-                    errors.reject("showImportDataset", error);
-                }
+                validationErrors.addToErrors(errors);
 
-                return errorList.isEmpty();
+                return !errors.hasErrors();
             }
             return false;
         }
@@ -2327,13 +2324,11 @@ public class StudyController extends BaseStudyController
             columnMap.put("qcstate", DataSetDefinition.getQCStateURI());
             columnMap.put("dfcreate", DataSetDefinition.getCreatedURI());     // datafax field name
             columnMap.put("dfmodify", DataSetDefinition.getModifiedURI());    // datafax field name
-            List<String> errorList = new LinkedList<String>();
-
 
             Pair<List<String>, UploadLog> result;
             try
             {
-                result = AssayPublishManager.getInstance().importDatasetTSV(getUser(), (StudyImpl)_study, _def, dl, file, columnMap, errorList);
+                result = AssayPublishManager.getInstance().importDatasetTSV(getUser(), (StudyImpl)_study, _def, dl, file, columnMap, errors);
             }
             catch (ServletException x)
             {
@@ -2351,11 +2346,6 @@ public class StudyController extends BaseStudyController
                 String comment = "Dataset data imported. " + result.getKey().size() + " rows imported";
                 StudyServiceImpl.addDatasetAuditEvent(
                         getUser(), getContainer(), _def, comment, result.getValue());
-            }
-
-            for (String error : errorList)
-            {
-                errors.addRowError(new ValidationException(error));
             }
 
             return result.getKey().size();

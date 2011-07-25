@@ -175,7 +175,7 @@ public class DatasetSnapshotProvider extends AbstractSnapshotProvider implements
                 // import the data
                 List<String> err = new ArrayList<String>();
                 StudyManager.getInstance().importDatasetData(study, form.getViewContext().getUser(), def, new TabLoader(sb, true),
-                        System.currentTimeMillis(), columnMap, err, true, true, null, null);
+                        columnMap, err, true, null, null);
                 for (String e : err)
                     errors.reject(SpringActionController.ERROR_MSG, e);
 
@@ -283,7 +283,7 @@ public class DatasetSnapshotProvider extends AbstractSnapshotProvider implements
                     Map<String, String> columnMap = getColumnMap(d, view, def.getColumns(), tsvWriter.getFieldMap());
 
                     // import the new data
-                    newRows = StudyManager.getInstance().importDatasetData(study, form.getViewContext().getUser(), dsDef, new TabLoader(sb, true), System.currentTimeMillis(), columnMap, importErrors, true, true, null, null);
+                    newRows = StudyManager.getInstance().importDatasetData(study, form.getViewContext().getUser(), dsDef, new TabLoader(sb, true), columnMap, importErrors, true, null, null);
 
                     for (String error : importErrors)
                         errors.reject(SpringActionController.ERROR_MSG, error);

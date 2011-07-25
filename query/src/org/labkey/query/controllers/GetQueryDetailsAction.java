@@ -163,7 +163,7 @@ public class GetQueryDetailsAction extends ApiAction<GetQueryDetailsAction.Form>
             if (tinfo instanceof ContainerFilterable)
             {
                 Container c = container.getParent();
-                while (!c.equals(ContainerManager.getRoot()))
+                while (c != null && !c.equals(ContainerManager.getRoot()))
                 {
                     targetContainer = new JSONObject(c.toJSON(getViewContext().getUser()));
                     targetContainer.put("canEditSharedViews", c.hasPermission(user, EditSharedViewPermission.class));

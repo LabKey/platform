@@ -31,8 +31,10 @@ import org.labkey.api.exp.property.DomainProperty;
 import org.labkey.api.exp.property.PropertyService;
 import org.labkey.api.pipeline.PipeRoot;
 import org.labkey.api.pipeline.PipelineService;
+import org.labkey.api.query.BatchValidationException;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.QueryService;
+import org.labkey.api.query.ValidationException;
 import org.labkey.api.reader.DataLoader;
 import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.InsertPermission;
@@ -690,7 +692,7 @@ public class AssayPublishManager implements AssayPublishService.Service
      * Return an array of LSIDs from the newly created dataset entries,
      * along with the upload log.
      */
-    public Pair<List<String>, UploadLog> importDatasetTSV(User user, StudyImpl study, DataSetDefinition dsd, DataLoader dl, FileStream in, Map<String, String> columnMap, List<String> errors) throws SQLException, ServletException
+    public Pair<List<String>, UploadLog> importDatasetTSV(User user, StudyImpl study, DataSetDefinition dsd, DataLoader dl, FileStream in, Map<String, String> columnMap, BatchValidationException errors) throws SQLException, ServletException
     {
         UploadLog ul = null;
         List<String> lsids = Collections.emptyList();
@@ -702,13 +704,13 @@ public class AssayPublishManager implements AssayPublishService.Service
             QCState defaultQCState = null;
             if (defaultQCStateId != null)
                 defaultQCState = StudyManager.getInstance().getQCStateForRowId(study.getContainer(), defaultQCStateId.intValue());
-            lsids = StudyManager.getInstance().importDatasetData(study, user, dsd, dl, ul.getCreated().getTime(), columnMap, errors, true, true, defaultQCState, null);
-            if (errors.size() == 0)
+            lsids = StudyManager.getInstance().importDatasetData(study, user, dsd, dl, columnMap, errors, true, defaultQCState, null);
+            if (!errors.hasErrors())
                 StudyManager.getInstance().getVisitManager(study).updateParticipantVisits(user, Collections.singleton(dsd));
         }
         catch (IOException x)
         {
-            errors.add("Exception: " + x.getMessage());
+            errors.addRowError(new ValidationException("Exception: " + x.getMessage()));
             if (ul != null)
             {
                 ul.setStatus("ERROR");
@@ -726,7 +728,7 @@ public class AssayPublishManager implements AssayPublishService.Service
             }
         }
 
-        if (errors.size() == 0)
+        if (!errors.hasErrors())
         {
             //Update the status
             assert ul != null : "Upload log should always exist if no errors have occurred.";
@@ -736,11 +738,11 @@ public class AssayPublishManager implements AssayPublishService.Service
         else if (ul != null)
         {
             ul.setStatus("ERROR");
-            StringBuffer sb = new StringBuffer();
+            StringBuilder sb = new StringBuilder();
             String sep = "";
-            for (String s : errors)
+            for (ValidationException e : errors.getRowErrors())
             {
-                sb.append(sep).append(s);
+                sb.append(sep).append(e.getMessage());
                 sep = "\n";
             }
             ul.setDescription(sb.toString());

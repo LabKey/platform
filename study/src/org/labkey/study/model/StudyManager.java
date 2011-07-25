@@ -2303,7 +2303,7 @@ public class StudyManager
     
     /** @Deprecated pass in a BatchValidationException, not List<String>  */
     @Deprecated
-    public List<String> importDatasetData(Study study, User user, DataSetDefinition def, DataLoader loader, long lastModified, Map<String, String> columnMap, List<String> errors, boolean checkDuplicates, boolean ensureObjects, QCState defaultQCState, Logger logger)
+    public List<String> importDatasetData(Study study, User user, DataSetDefinition def, DataLoader loader, Map<String, String> columnMap, List<String> errors, boolean checkDuplicates, QCState defaultQCState, Logger logger)
             throws IOException, ServletException, SQLException
     {
         parseData(user, def, loader, columnMap);
@@ -2317,8 +2317,7 @@ public class StudyManager
             throws IOException, ServletException, SQLException
     {
         parseData(user, def, loader, columnMap);
-        List<String> lsids = def.importDatasetData(study, user, loader, errors, checkDuplicates, defaultQCState, logger);
-        return lsids;
+        return def.importDatasetData(study, user, loader, errors, checkDuplicates, defaultQCState, logger);
     }
     
 
@@ -3520,8 +3519,8 @@ public class StudyManager
 
             StudyManager.getInstance().importDatasetData(
                     _studyDateBased, _context.getUser(),
-                    (DataSetDefinition)def, dl, 0, columnMap,
-                    errors, true, false, null, null);
+                    (DataSetDefinition)def, dl, columnMap,
+                    errors, true, null, null);
         }
 
 

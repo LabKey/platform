@@ -83,10 +83,8 @@ public class DatasetImportServiceImpl extends DomainImporterServiceBase
                 getUser(),
                 def,
                 loader,
-                System.currentTimeMillis(),
                 columnMap,
                 errors,
-                true,
                 true,
                 StudyManager.getInstance().getDefaultQCState(study),
                 null

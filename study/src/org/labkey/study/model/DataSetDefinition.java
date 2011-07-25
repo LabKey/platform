@@ -1347,7 +1347,7 @@ public class DataSetDefinition extends AbstractStudyEntity<DataSetDefinition> im
                 if (!isDemographicData())
                 {
                     if (_study.getTimepointType() != TimepointType.VISIT)
-                        err = err + "Date = " + keys[1];
+                        err = err + ", Date = " + keys[1];
                     else
                         err = err + ", VisitSequenceNum = " + keys[1];
                 }

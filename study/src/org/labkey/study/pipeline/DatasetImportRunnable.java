@@ -169,11 +169,10 @@ public class DatasetImportRunnable implements Runnable
                         pj.getUser(),
                         _datasetDefinition,
                         loader,
-                        _tsv.lastModified(),
                         _columnMap,
                         errors,
                         false, //Set to TRUE if/when MERGE is implemented
-                        false, //Set to TRUE if MERGEing
+                        //Set to TRUE if MERGEing
                         defaultQCState,
                         pj.getLogger()
                 );
