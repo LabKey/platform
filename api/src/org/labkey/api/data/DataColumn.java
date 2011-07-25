@@ -675,12 +675,15 @@ public class DataColumn extends DisplayColumn
                             sb.append("Validator: ").append(validator).append("\n");
                     }
                 }
+                if (renderRequiredIndicators() && !_boundColumn.isNullable())
+                {
+                    out.write(" *");
+                    sb.append("This field is required.\n");
+                }
                 if (sb.length() > 0)
                 {
                     out.write(PageFlowUtil.helpPopup(_boundColumn.getLabel(), sb.toString()));
                 }
-                if (renderRequiredIndicators() && !_boundColumn.isNullable())
-                    out.write(" *");
             }
         }
         out.write("</td>");

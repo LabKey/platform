@@ -159,6 +159,7 @@ public class AssayFileWriter
     public Map<String, File> savePostedFiles(AssayRunUploadContext context, PostedFileSaveFilter filter) throws ExperimentException, IOException
     {
         Map<String, File> files = new TreeMap<String, File>();
+        Set<String> originalFileNames = new HashSet<String>();
         if (context.getRequest() instanceof MultipartHttpServletRequest)
         {
             MultipartHttpServletRequest multipartRequest = (MultipartHttpServletRequest)context.getRequest();
@@ -171,6 +172,10 @@ public class AssayFileWriter
                 {
                     MultipartFile multipartFile = entry.getValue();
                     String fileName = multipartFile.getOriginalFilename();
+                    if (!originalFileNames.add(fileName))
+                    {
+                        throw new ExperimentException("The same file was uploaded twice - all files must be unique");
+                    }
                     if (!multipartFile.isEmpty())
                     {
                         File file = findUniqueFileName(fileName, dir);

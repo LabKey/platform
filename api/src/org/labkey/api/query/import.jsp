@@ -38,7 +38,7 @@
 </div>
 <table class="labkey-wp" style="background-color:#ffffff;">
 <tr class="labkey-wp-header" style="min-width:600px;">
-    <th class="labkey-wp-title-left\" style="padding:5px;"><span class="labkey-header" style="font-weight:normal;">Copy/paste text (tab delimited)</span></th>
+    <th class="labkey-wp-title-left\" style="padding:5px;"><span class="labkey-header" style="font-weight:normal;">Copy/paste text</span></th>
     <th class="labkey-wp-title-right"><%=PageFlowUtil.generateButtonHtml("&ndash;","#",null,"id='"+copyPasteDivId+"Expando'")%></th>
 </tr>
 <tr><td colspan=2 style="display:inline;"><div id="<%=copyPasteDivId%>"></div></td></tr>
@@ -235,18 +235,37 @@
             title: false, // 'Import text',
             border: false,
             bodyStyle:'padding:5px',
-            width: 600,
-            defaultType: 'textfield',
+            width: 700,
             timeout: Ext.Ajax.timeout,
 
             items: [
                 {
                     id: <%=q(tsvId)%>,
                     xtype: 'textarea',
-                    hideLabel: true, //fieldLabel: 'Text',
+                    fieldLabel: 'Data',
                     name: 'text',
                     width:580,
                     height:500
+                },
+                {
+                    fieldLabel: 'Format',
+                    xtype: 'combo',
+                    store: new Ext.data.ArrayStore({
+                        fields: ['id', 'value'],
+                        data:
+                        [
+                            ['tsv', 'Tab-separated text (tsv)'],
+                            ['csv', 'Comma-separated text (csv)']
+                        ]
+                    }),
+                    mode: 'local',
+                    hiddenName: 'format',
+                    name: 'format',
+                    valueField: 'id',
+                    displayField: 'value',
+                    triggerAction: 'all',
+                    value: 'tsv',
+                    width: 250
                 }
             ],
             buttons: [{

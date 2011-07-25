@@ -146,7 +146,12 @@ public abstract class AbstractQueryImportAction<FORM> extends FormApiAction<FORM
         if (null != StringUtils.trimToNull(text))
         {
             hasPostData = true;
-            loader = new TabLoader(text, true);
+            TabLoader tabLoader = new TabLoader(text, true);
+            if ("csv".equals(getViewContext().getRequest().getParameter("format")))
+            {
+                tabLoader.setDelimiterCharacter(',');
+            }
+            loader = tabLoader;
             file = new FileStream.ByteArrayFileStream(text.getBytes("UTF-8"));
             // di = loader.getDataIterator(ve);
         }

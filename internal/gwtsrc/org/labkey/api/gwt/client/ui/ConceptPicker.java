@@ -39,7 +39,7 @@ import java.util.Map;
  * Time: 5:16:30 PM
  *
  *
- * Concept picker is a UI for editing a subset of PropertyURI fiinitelds.
+ * Concept picker is a UI for editing a subset of PropertyURI fields.
  *
  *    RangeURI      (roughly the storage type of the field, file/attachment are oddities)
  *    ConceptURI    Marker type e.g. Subject or VisitDate (may imply storage type)
