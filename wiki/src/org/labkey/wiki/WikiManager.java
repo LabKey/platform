@@ -90,6 +90,7 @@ import java.util.Map;
  */
 public class WikiManager implements WikiService
 {
+    private static final Logger LOG = Logger.getLogger(WikiManager.class);
     private static final WikiManager _instance = new WikiManager();
 
     public static WikiManager get()
@@ -97,8 +98,6 @@ public class WikiManager implements WikiService
         return _instance;
     }
 
-
-    private static final Logger LOG = Logger.getLogger(WikiManager.class);
 
     public static final SearchService.SearchCategory searchCategory = new SearchService.SearchCategory("wiki", "Wiki Pages");
 
@@ -113,6 +112,19 @@ public class WikiManager implements WikiService
 
     private WikiManager()
     {
+        LOG.debug("WikiManager instantiated");
+
+        if (null == _attachmentService)
+            LOG.warn("AttachmentService is null!");
+
+        if (null == _searchService)
+            LOG.warn("SearchService is null!");
+
+        if (null == _discussionService)
+            LOG.warn("DiscussionService is null!");
+
+        if (null == _containerService)
+            LOG.warn("ContainerService is null!");
     }
 
     AttachmentService.Service getAttachmentService()
