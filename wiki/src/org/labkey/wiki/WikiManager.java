@@ -98,53 +98,35 @@ public class WikiManager implements WikiService
         return _instance;
     }
 
-
     public static final SearchService.SearchCategory searchCategory = new SearchService.SearchCategory("wiki", "Wiki Pages");
 
     /* service/schema dependencies */
     private CommSchema comm = CommSchema.getInstance();
     private CoreSchema core = CoreSchema.getInstance();
 
-    private final AttachmentService.Service _attachmentService = ServiceRegistry.get(AttachmentService.Service.class);
-    private final SearchService _searchService = ServiceRegistry.get(SearchService.class);
-    private final DiscussionService.Service _discussionService = ServiceRegistry.get(DiscussionService.Service.class);
-    private final ContainerService _containerService = ServiceRegistry.get(ContainerService.class);
-
     private WikiManager()
     {
         LOG.debug("WikiManager instantiated");
-
-        if (null == _attachmentService)
-            LOG.warn("AttachmentService is null!");
-
-        if (null == _searchService)
-            LOG.warn("SearchService is null!");
-
-        if (null == _discussionService)
-            LOG.warn("DiscussionService is null!");
-
-        if (null == _containerService)
-            LOG.warn("ContainerService is null!");
     }
 
     AttachmentService.Service getAttachmentService()
     {
-        return _attachmentService;
+        return ServiceRegistry.get(AttachmentService.Service.class);
     }
 
     SearchService getSearchService()
     {
-        return _searchService;
+        return ServiceRegistry.get(SearchService.class);
     }
 
     DiscussionService.Service getDiscussionService()
     {
-        return _discussionService;
+        return ServiceRegistry.get(DiscussionService.Service.class);
     }
 
     ContainerService getContainerService()
     {
-        return _containerService;
+        return ServiceRegistry.get(ContainerService.class);
     }
 
     // Used to verify that entityId is a wiki and belongs in the specified container
