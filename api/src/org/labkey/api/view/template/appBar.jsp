@@ -19,17 +19,23 @@
 <%@ page import="org.labkey.api.view.NavTree" %>
 <%@ page import="org.labkey.api.view.template.AppBar" %>
 <%@ page import="org.labkey.api.view.template.AppBarView" %>
+<%@ page import="org.labkey.api.view.ViewContext" %>
+<%@ page import="org.labkey.api.data.Container" %>
+<%@ page import="org.labkey.api.view.ActionURL" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 
 <%
     AppBar bean = ((AppBarView) HttpView.currentView()).getModelBean();
     if (null == bean)
         return;
+    ViewContext context = HttpView.currentContext();
+    Container c = context.getContainer();
+    ActionURL startUrl = c.getStartURL(context.getUser());
 %>
 <div class="labkey-app-bar">
 <table class="folder-header">
     <tr>
-        <td class="folder-title"><%=h(bean.getFolderTitle())%></td>
+        <td class="folder-title"><a href="<%=h(startUrl.getLocalURIString())%>"><%=h(bean.getFolderTitle())%></a></td>
         <td class="button-bar">
             <ul class="labkey-tab-strip">
                 <%
