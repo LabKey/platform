@@ -1367,8 +1367,12 @@ public class ContainerManager
         if (null != c)
         {
             _removeFromCache(c);
-            ContainerPropertyChangeEvent evt = new ContainerPropertyChangeEvent(c, Property.Policy, null, null);
-            firePropertyChangeEvent(evt);
+            c = getForId(id);  // load a fresh container since the original might be stale.
+            if (null != c)
+            {
+                ContainerPropertyChangeEvent evt = new ContainerPropertyChangeEvent(c, Property.Policy, null, null);
+                firePropertyChangeEvent(evt);
+            }
         }
     }
 
