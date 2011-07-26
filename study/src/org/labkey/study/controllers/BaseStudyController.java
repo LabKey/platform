@@ -16,30 +16,25 @@
 
 package org.labkey.study.controllers;
 
-import org.apache.log4j.Logger;
 import org.labkey.api.action.BaseViewAction;
 import org.labkey.api.action.HasPageConfig;
 import org.labkey.api.action.NavTrailAction;
 import org.labkey.api.action.SpringActionController;
 import org.labkey.api.data.Container;
-import org.labkey.api.portal.ProjectUrls;
-import org.labkey.api.security.permissions.AdminPermission;
 import org.labkey.api.study.DataSet;
 import org.labkey.api.study.Study;
+import org.labkey.api.study.StudyUrls;
 import org.labkey.api.study.TimepointType;
 import org.labkey.api.study.Visit;
-import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.HttpView;
 import org.labkey.api.view.JspView;
 import org.labkey.api.view.NavTree;
 import org.labkey.api.view.RedirectException;
 import org.labkey.api.view.ViewContext;
-import org.labkey.api.view.template.AppBar;
 import org.labkey.api.view.template.HomeTemplate;
 import org.labkey.api.view.template.PageConfig;
 import org.labkey.study.CohortFilter;
-import org.labkey.study.controllers.samples.SpecimenController;
 import org.labkey.study.controllers.samples.SpecimenUtils;
 import org.labkey.study.model.DataSetDefinition;
 import org.labkey.study.model.StudyImpl;
@@ -52,10 +47,7 @@ import org.springframework.web.servlet.mvc.Controller;
 
 import javax.servlet.ServletException;
 import java.io.PrintWriter;
-import java.util.ArrayList;
 import java.util.Collection;
-import java.util.Collections;
-import java.util.List;
 
 import static org.labkey.api.util.PageFlowUtil.jsString;
 
@@ -71,6 +63,27 @@ public abstract class BaseStudyController extends SpringActionController
     }
 
     static final boolean extprototype = false;
+
+    public static class StudyUrlsImpl implements StudyUrls
+    {
+        @Override
+        public ActionURL getCreateStudyURL(Container container)
+        {
+            return new ActionURL(StudyController.CreateStudyAction.class, container);
+        }
+
+        @Override
+        public ActionURL getManageStudyURL(Container container)
+        {
+            return new ActionURL(StudyController.ManageStudyAction.class, container);
+        }
+
+        @Override
+        public ActionURL getStudyOverviewURL(Container container)
+        {
+            return getStudyOverviewURL(container);
+        }
+    }
 
     public static ActionURL getStudyOverviewURL(Container c)
     {
