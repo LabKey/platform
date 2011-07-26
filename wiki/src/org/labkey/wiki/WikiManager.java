@@ -663,6 +663,7 @@ public class WikiManager implements WikiService
 
     public void indexWikiContainerFast(@NotNull SearchService.IndexTask task, @NotNull Container c, @Nullable Date modifiedSince, String name)
     {
+        LOG.info("indexWikiContainerFast(" + name + ")");
         ResultSet rs = null;
         try
         {
@@ -701,6 +702,9 @@ public class WikiManager implements WikiService
 
                 String entityId = rs.getString("entityid");
                 assert null != entityId;
+
+                LOG.info("Indexing wiki " + name + ":" + entityId);
+
                 String wikiTitle = rs.getString("title");
                 String searchTitle;
                 if (null == wikiTitle)
@@ -719,7 +723,10 @@ public class WikiManager implements WikiService
                 WikiWebdavProvider.WikiPageResource r = new RenderedWikiResource(c, name, entityId, body, rendererType, props);
                 task.addResource(r, SearchService.PRIORITY.item);
                 if (Thread.interrupted())
+                {
+                    LOG.info("Wiki indexing interrupted");
                     return;
+                }
                 Wiki parent = new Wiki();
                 parent.setContainer(c.getId());
                 parent.setEntityId(entityId);
