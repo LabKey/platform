@@ -43,10 +43,12 @@ import org.labkey.api.security.RequiresSiteAdmin;
 import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.AdminPermission;
 import org.labkey.api.security.permissions.ReadPermission;
+import org.labkey.api.settings.AppProps;
 import org.labkey.api.settings.LookAndFeelProperties;
 import org.labkey.api.util.HeartBeat;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.Path;
+import org.labkey.api.util.ReturnURLString;
 import org.labkey.api.util.URLHelper;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.HtmlView;
@@ -56,6 +58,7 @@ import org.labkey.api.view.NavTree;
 import org.labkey.api.view.NavTreeManager;
 import org.labkey.api.view.NotFoundException;
 import org.labkey.api.view.Portal;
+import org.labkey.api.view.RedirectException;
 import org.labkey.api.view.UnauthorizedException;
 import org.labkey.api.view.VBox;
 import org.labkey.api.view.ViewContext;
@@ -63,6 +66,7 @@ import org.labkey.api.view.WebPartFactory;
 import org.labkey.api.view.WebPartView;
 import org.labkey.api.view.template.HomeTemplate;
 import org.labkey.api.view.template.PageConfig;
+import org.labkey.api.view.template.PrintTemplate;
 import org.labkey.api.webdav.WebdavService;
 import org.springframework.validation.BindException;
 import org.springframework.validation.Errors;
@@ -260,7 +264,11 @@ public class ProjectController extends SpringActionController
                 page.setTitle(title, appendPath);
             page.setHelpTopic(folderType.getHelpTopic());
 
-            HttpView template = new HomeTemplate(getViewContext(), c, new VBox(), page, new NavTree[0]);
+            HttpView template;
+            if (!isPrint())
+                template = new HomeTemplate(getViewContext(), c, new VBox(), page, new NavTree[0]);
+            else
+                template = new PrintTemplate(new VBox());
 
             Portal.populatePortalView(getViewContext(), null != form.getPageId() ? form.getPageId() : c.getId(), template);
 
@@ -298,7 +306,7 @@ public class ProjectController extends SpringActionController
     static final Path files = new Path("@files");
 
     @RequiresNoPermission
-    public class FileBrowserAction extends RedirectAction
+    public class FileBrowserAction extends org.labkey.api.action.RedirectAction
     {
         ActionURL _redirect;
 
@@ -1084,6 +1092,26 @@ public class ProjectController extends SpringActionController
         public NavTree appendNavTrail(NavTree root)
         {
             return null;
+        }
+    }
+
+
+    @RequiresNoPermission
+    public class RedirectAction extends SimpleViewAction<ReturnUrlForm>
+    {
+        @Override
+        public ModelAndView getView(ReturnUrlForm returnUrlForm, BindException errors) throws Exception
+        {
+            ReturnURLString r = returnUrlForm.getReturnUrl();
+            if (null != r && !r.isEmpty())
+                throw new RedirectException(r);
+            throw new RedirectException(AppProps.getInstance().getHomePageUrl());
+        }
+
+        @Override
+        public NavTree appendNavTrail(NavTree root)
+        {
+            return root;
         }
     }
 }
