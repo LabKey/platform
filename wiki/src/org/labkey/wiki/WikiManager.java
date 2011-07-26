@@ -90,7 +90,8 @@ import java.util.Map;
  */
 public class WikiManager implements WikiService
 {
-    static final WikiManager _instance = new WikiManager();
+    private static final WikiManager _instance = new WikiManager();
+
     public static WikiManager get()
     {
         return _instance;
@@ -164,6 +165,7 @@ public class WikiManager implements WikiService
             //transact insert of wiki page, new version, and any attachments
             wikiInsert.beforeInsert(user, c.getId());
             wikiInsert.setPageVersionId(null);
+            LOG.debug("Table.insert() for wiki " + wikiInsert.getName());
             Table.insert(user, comm.getTableInfoPages(), wikiInsert);
             String entityId = wikiInsert.getEntityId();
 
@@ -172,6 +174,7 @@ public class WikiManager implements WikiService
             wikiversion.setCreated(wikiInsert.getCreated());
             wikiversion.setCreatedBy(wikiInsert.getCreatedBy());
             wikiversion.setVersion(1);
+            LOG.debug("Table.insert() for wiki version " + wikiInsert.getName());
             Table.insert(user, comm.getTableInfoPageVersions(), wikiversion);
 
             //get rowid for newly inserted version
@@ -192,6 +195,7 @@ public class WikiManager implements WikiService
 
             WikiCache.uncache(c, wikiInsert, true);
 
+            LOG.debug("indexWiki() for " + wikiInsert.getName());
             indexWiki(wikiInsert);
         }
 
@@ -581,6 +585,7 @@ public class WikiManager implements WikiService
     void indexWiki(Wiki page)
     {
         SearchService ss = getSearchService();
+        assert null != ss : "getSearchService() should not return null!";
         Container c = getContainerService().getForId(page.getContainerId());
         if (null != ss && null != c)
             indexWikiContainerFast(ss.defaultTask(), c, null, page.getName().getSource());
@@ -663,7 +668,7 @@ public class WikiManager implements WikiService
 
     public void indexWikiContainerFast(@NotNull SearchService.IndexTask task, @NotNull Container c, @Nullable Date modifiedSince, String name)
     {
-        LOG.info("indexWikiContainerFast(" + name + ")");
+        LOG.debug("indexWikiContainerFast(" + name + ")");
         ResultSet rs = null;
         try
         {
@@ -703,7 +708,7 @@ public class WikiManager implements WikiService
                 String entityId = rs.getString("entityid");
                 assert null != entityId;
 
-                LOG.info("Indexing wiki " + name + ":" + entityId);
+                LOG.debug("Indexing wiki " + name + ":" + entityId);
 
                 String wikiTitle = rs.getString("title");
                 String searchTitle;
@@ -724,7 +729,7 @@ public class WikiManager implements WikiService
                 task.addResource(r, SearchService.PRIORITY.item);
                 if (Thread.interrupted())
                 {
-                    LOG.info("Wiki indexing interrupted");
+                    LOG.debug("Wiki indexing interrupted");
                     return;
                 }
                 Wiki parent = new Wiki();

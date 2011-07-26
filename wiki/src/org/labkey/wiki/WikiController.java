@@ -18,6 +18,7 @@ package org.labkey.wiki;
 
 import org.apache.commons.collections15.MultiMap;
 import org.apache.commons.lang.StringUtils;
+import org.apache.log4j.Logger;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.action.ApiAction;
 import org.labkey.api.action.ApiResponse;
@@ -123,6 +124,7 @@ import java.util.Set;
 
 public class WikiController extends SpringActionController
 {
+    private static final Logger LOG = Logger.getLogger(WikiController.class);
     private static final DefaultActionResolver _actionResolver = new DefaultActionResolver(WikiController.class);
     private static final boolean SHOW_CHILD_REORDERING = false;
 
@@ -2267,6 +2269,7 @@ public class WikiController extends SpringActionController
                 throw new UnauthorizedException("You do not have permissions to create a new wiki page in this folder!");
 
             HString wikiname = form.getName();
+            LOG.debug("Inserting wiki " + wikiname);
 
             Wiki wiki = new Wiki(c, wikiname);
             wiki.setParent(form.getParentId());
@@ -2335,6 +2338,8 @@ public class WikiController extends SpringActionController
             Wiki wikiUpdate = getWikiManager().getWikiByEntityId(getViewContext().getContainer(), form.getEntityId().toString());
             if (wikiUpdate == null)
                 throw new NotFoundException("Could not find the wiki page matching the passed id; if it was a valid page, it may have been deleted by another user.");
+
+            LOG.debug("Updating wiki " + wikiUpdate.getName());
 
             SecurityPolicy policy = SecurityManager.getPolicy(getViewContext().getContainer());
             Set<Role> contextualRoles = new HashSet<Role>();
