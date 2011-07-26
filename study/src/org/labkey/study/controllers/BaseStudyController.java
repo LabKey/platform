@@ -23,7 +23,6 @@ import org.labkey.api.action.SpringActionController;
 import org.labkey.api.data.Container;
 import org.labkey.api.study.DataSet;
 import org.labkey.api.study.Study;
-import org.labkey.api.study.StudyUrls;
 import org.labkey.api.study.TimepointType;
 import org.labkey.api.study.Visit;
 import org.labkey.api.view.ActionURL;
@@ -64,6 +63,7 @@ public abstract class BaseStudyController extends SpringActionController
 
     static final boolean extprototype = false;
 
+/*
     public static class StudyUrlsImpl implements StudyUrls
     {
         @Override
@@ -84,7 +84,7 @@ public abstract class BaseStudyController extends SpringActionController
             return getStudyOverviewURL(container);
         }
     }
-
+*/
     public static ActionURL getStudyOverviewURL(Container c)
     {
         return new ActionURL(StudyController.OverviewAction.class, c);
