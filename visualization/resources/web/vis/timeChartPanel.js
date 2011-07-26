@@ -745,6 +745,7 @@ LABKEY.vis.TimeChartPanel = Ext.extend(Ext.Panel, {
             this.loaderName = 'viewDataGrid';
 
             // hide the viewGrid button and show the viewCharts button
+            this.viewChartBtn.disable();
             this.viewChartBtn.show();
             this.viewGridBtn.hide();
 
@@ -775,6 +776,11 @@ LABKEY.vis.TimeChartPanel = Ext.extend(Ext.Panel, {
                 title: "",
                 frame: "none"
             });
+
+            // re-enable the View Charts button once the QWP has rendered
+            chartQueryWebPart.on('render', function(){
+                this.viewChartBtn.enable();
+            }, this);
 
             this.chart.removeAll();
             this.chart.doLayout();
