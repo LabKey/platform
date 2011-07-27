@@ -235,7 +235,7 @@
             title: false, // 'Import text',
             border: false,
             bodyStyle:'padding:5px',
-            width: 700,
+            minWidth:600,
             timeout: Ext.Ajax.timeout,
 
             items: [
@@ -245,7 +245,7 @@
                     fieldLabel: 'Data',
                     name: 'text',
                     width:580,
-                    height:500
+                    height:300
                 },
                 {
                     fieldLabel: 'Format',
@@ -275,6 +275,13 @@
             }]
         });
         importTsvForm.render(importTsvDiv);
+        var resizer = new Ext.Resizable(<%=q(tsvId)%>, {
+            wrap:true,
+            handles: 'se',
+            minWidth: 200,
+            minHeight: 100,
+            pinned: true
+        });
         tsvTextarea = Ext.get(<%=q(tsvId)%>);
         Ext.EventManager.on(tsvTextarea, 'keydown', handleTabsInTextArea);
 
@@ -287,7 +294,7 @@
             title: false, // 'Import text',
             border: false,
             bodyStyle:'padding:5px',
-            width: 600,
+            minWidth:600,
             defaultType: 'textfield',
             timeout: Ext.Ajax.timeout,
 
