@@ -73,11 +73,11 @@
 
     function toggleExpanded(toggleButton, toggleDiv, collapseButton, collapseDiv)
     {
-        var collapsed = toggleButton.dom.innerText == "+";
+        var collapsed = -1!=toggleButton.dom.innerHTML.indexOf("+");
         toggleButton.dom.innerHTML = collapsed ? "&ndash;" : "+";
         toggleDiv.parent().setStyle("display",collapsed?"inline":"none");
 
-        collapseButton.dom.innerText = "+";
+        collapseButton.dom.innerHTML = "+";
         collapseDiv.parent().setStyle("display","none");
     }
 
