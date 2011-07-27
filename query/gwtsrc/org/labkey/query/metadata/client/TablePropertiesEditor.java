@@ -193,4 +193,11 @@ public class TablePropertiesEditor extends PropertiesEditor<GWTTableInfo, GWTCol
     {
         return true;
     }
+
+    /** Don't bother enforcing particular column names - we have to support whatever the underlying table supports */
+    @Override
+    protected String validateFieldName(String value)
+    {
+        return null;
+    }
 }
