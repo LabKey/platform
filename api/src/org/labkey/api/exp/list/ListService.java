@@ -16,6 +16,7 @@
 
 package org.labkey.api.exp.list;
 
+import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.Container;
 import org.labkey.api.exp.property.Domain;
 import org.labkey.api.view.ActionURL;
@@ -24,14 +25,14 @@ import java.util.Map;
 
 public class ListService
 {
-    static private Interface instance;
+    private static Interface instance;
 
-    static public Interface get()
+    public static Interface get()
     {
         return instance;
     }
 
-    static public void setInstance(Interface i)
+    public static void setInstance(Interface i)
     {
         instance = i;
     }
@@ -42,6 +43,7 @@ public class ListService
         boolean hasLists(Container container);
         ListDefinition createList(Container container, String name);
         ListDefinition getList(Container container, int id);
+        @Nullable ListDefinition getList(Container container, String name);
         ListDefinition getList(Domain domain);
         ActionURL getManageListsURL(Container container);
     }
