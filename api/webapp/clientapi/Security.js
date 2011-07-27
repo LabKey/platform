@@ -64,6 +64,30 @@ LABKEY.Security = new function()
         },
 
         /**
+         * A map commonly used effective permissions supported in the LabKey Server.
+         * You can use these values with the hasEffectivePermission() method to test if
+         * a user or group has a particular permission. The values in this map
+         * are as follows:
+         * <ul>
+         * <li>read</li>
+         * <li>insert</li>
+         * <li>update</li>
+         * <li>del</li>
+         * <li>readOwn</li>
+         * </ul>
+         * For example, to refer to the update permission, the syntax would be:<br/>
+         * <pre><code>LABKEY.Security.effectivePermissions.update</code></pre>
+         */
+        effectivePermissions : {
+            insert: "org.labkey.api.security.permissions.InsertPermission",
+            read: "org.labkey.api.security.permissions.ReadPermission",
+            admin: "org.labkey.api.security.permissions.AdminPermission",
+            del: "org.labkey.api.security.permissions.DeletePermission",
+            readOwn: "org.labkey.api.security.permissions.ReadSomePermission",
+            update: "org.labkey.api.security.permissions.UpdatePermission"
+        },
+
+        /**
          * A map of the various permission roles exposed in the user interface.
          * The members are as follows:
          * <ul>
@@ -191,6 +215,22 @@ LABKEY.Security = new function()
         hasPermission : function(perms, perm)
         {
             return perms & perm;
+        },
+
+        /**
+         * Returns true if the permission passed in 'desiredPermission' is in the permissions
+         * array passed as 'effectivePermissions'. This is a local function and does not make a call to the server.
+         * @param {Array} effectivePermissions The permission set, typically retrieved for a given user or group.
+         * @param {String} desiredPermission A specific permission bit to check for.
+         */
+        hasEffectivePermission : function(effectivePermissions, desiredPermission)
+        {
+            for (var i = 0; i < effectivePermissions.length; i++)
+            {
+                if (effectivePermissions[i] == desiredPermission)
+                    return true;
+            }
+            return false;
         },
 
         /**
