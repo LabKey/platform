@@ -47,7 +47,7 @@ import java.util.List;
  */
 public class StudyReportUIProvider extends DefaultReportUIProvider
 {
-    private static ReportService.ItemFilter _filter = new ReportService.ItemFilter(){
+    private static final ReportService.ItemFilter _filter = new ReportService.ItemFilter(){
             public boolean accept(String reportType, String label)
             {
                 if (StudyCrosstabReport.TYPE.equals(reportType)) return true;
@@ -58,6 +58,7 @@ public class StudyReportUIProvider extends DefaultReportUIProvider
                 if (QuerySnapshotService.TYPE.equals(reportType)) return true;
                 if (StudyQueryReport.TYPE.equals(reportType)) return true;
                 if (TimeChartReport.TYPE.equals(reportType)) return true;
+                if (JavaScriptReport.TYPE.equals(reportType)) return true;
                 return false;
             }
         };

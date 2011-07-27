@@ -579,7 +579,6 @@ public class WikiManager implements WikiService
     void indexWiki(Wiki page)
     {
         SearchService ss = getSearchService();
-        assert null != ss : "getSearchService() should not return null!";
         Container c = getContainerService().getForId(page.getContainerId());
         if (null != ss && null != c)
             indexWikiContainerFast(ss.defaultTask(), c, null, page.getName().getSource());

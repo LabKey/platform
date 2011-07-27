@@ -725,6 +725,7 @@ public class LoginController extends SpringActionController
             return approvedTermsOfUse;
         }
 
+        @SuppressWarnings({"UnusedDeclaration"})
         public void setApprovedTermsOfUse(boolean approvedTermsOfUse)
         {
             this.approvedTermsOfUse = approvedTermsOfUse;
