@@ -41,15 +41,23 @@ public class ListQueryForm extends QueryForm
         _def = getListDef(listId);
     }
 
+    // Set by spring binding reflection
+    @SuppressWarnings({"UnusedDeclaration"})
     public void setListId(int listId)
     {
         _def = getListDef(listId);
     }
 
+    // Set by spring binding reflection
+    @SuppressWarnings({"UnusedDeclaration"})
+    public void setName(String name)
+    {
+        _def = ListService.get().getList(getContainer(), name);
+    }
+
     private ListDefinition getListDef(int listId)
     {
-        ListDefinition listDef = ListService.get().getList(getContainer(), listId);
-        return listDef;
+        return ListService.get().getList(getContainer(), listId);
     }
 
     protected QuerySettings createQuerySettings(UserSchema schema)

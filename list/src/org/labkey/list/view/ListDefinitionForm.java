@@ -34,15 +34,24 @@ public class ListDefinitionForm extends ViewForm
     private String[] _deletedAttachments;
     private boolean _showHistory = false;
     private Integer _listId = null;
+    private String _name = null;
 
     public ListDefinition getList()
     {
         if (null == _listDef)
         {
-            if (null == getListId())
-                throw new NotFoundException("Missing listId parameter");
-
-            _listDef = ListService.get().getList(getContainer(), getListId().intValue());
+            if (null != getListId())
+            {
+                _listDef = ListService.get().getList(getContainer(), getListId());
+            }
+            else if (null != getName())
+            {
+                _listDef = ListService.get().getList(getContainer(), getName());
+            }
+            else
+            {
+                throw new NotFoundException("ListId or Name parameter is required");
+            }
 
             if (null == _listDef)
                 throw new NotFoundException("List does not exist in this container");
@@ -114,5 +123,15 @@ public class ListDefinitionForm extends ViewForm
     public void setListId(Integer listId)
     {
         _listId = listId;
+    }
+
+    public String getName()
+    {
+        return _name;
+    }
+
+    public void setName(String name)
+    {
+        _name = name;
     }
 }

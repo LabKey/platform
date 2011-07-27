@@ -16,6 +16,7 @@
 
 package org.labkey.list.model;
 
+import org.jetbrains.annotations.Nullable;
 import org.labkey.api.exp.list.ListService;
 import org.labkey.api.exp.list.ListDefinition;
 import org.labkey.api.exp.property.Domain;
@@ -74,6 +75,12 @@ public class ListServiceImpl implements ListService.Interface
     {
         ListDef def = ListManager.get().getList(container, id);
         return ListDefinitionImpl.of(def);
+    }
+
+    @Override
+    public @Nullable ListDefinition getList(Container container, String name)
+    {
+        return getLists(container).get(name);
     }
 
     public ListDefinition getList(Domain domain)
