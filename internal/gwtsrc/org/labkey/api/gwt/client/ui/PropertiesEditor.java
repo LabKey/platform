@@ -651,11 +651,9 @@ public class PropertiesEditor<DomainType extends GWTDomain<FieldType>, FieldType
     {
         public String validate(Field<?> field, String value)
         {
-            if (value == null || PropertiesEditorUtil.isLegalName(value))
-                return null;
-            return BAD_NAME_ERROR_MESSAGE;
-
+            return validateFieldName(value);
         }
+
         public String warning(Field<?> field, String text)
         {
             if (text != null && text.contains(" "))
@@ -666,6 +664,13 @@ public class PropertiesEditor<DomainType extends GWTDomain<FieldType>, FieldType
         }
     }
 
+    /** @return null if the field name is OK, the error string otherwise. */
+    protected String validateFieldName(String value)
+    {
+        if (value == null || PropertiesEditorUtil.isLegalName(value))
+            return null;
+        return BAD_NAME_ERROR_MESSAGE;
+    }
 
     public void refreshRow(final int index, final Row rowObject)
     {
@@ -814,7 +819,6 @@ public class PropertiesEditor<DomainType extends GWTDomain<FieldType>, FieldType
             nameTextBox.setValidator(new ColumnNameValidator());
             nameTextBox.addListener(Events.Focus, listener);
             nameTextBox.addListener(Events.KeyPress, listener);
-            //nameTextBox.setEnabled(isNameEditable(rowObject));
             name = nameTextBox;
         }
         _table.setWidget(tableRow, col, name);
@@ -1106,9 +1110,11 @@ public class PropertiesEditor<DomainType extends GWTDomain<FieldType>, FieldType
                 continue;
             }
 
-            if (!PropertiesEditorUtil.isLegalName(name))
+            String nameError = validateFieldName(name);
+
+            if (nameError != null)
             {
-                errors.add(BAD_NAME_ERROR_MESSAGE);
+                errors.add(nameError);
                 continue;
             }
 
@@ -1386,9 +1392,7 @@ public class PropertiesEditor<DomainType extends GWTDomain<FieldType>, FieldType
         }
     }
 
-
-
-    private class BoundTextBox extends _TextField<String> implements BoundWidget
+    protected class BoundTextBox extends _TextField<String> implements BoundWidget
     {
         FieldType _pd = null;
         IPropertyWrapper _prop;

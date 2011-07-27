@@ -462,7 +462,7 @@ public class DataColumn extends DisplayColumn
     public void renderInputHtml(RenderContext ctx, Writer out, Object value) throws IOException
     {
         boolean disabledInput = isDisabledInput();
-        String formFieldName = ctx.getForm().getFormFieldName(_boundColumn);
+        String formFieldName = getFormFieldName(ctx);
 
         String strVal = "";
         //UNDONE: Should use output format here.

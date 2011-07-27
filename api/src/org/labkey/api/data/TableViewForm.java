@@ -572,6 +572,11 @@ public class TableViewForm extends ViewForm implements DynaBean, HasBindParamete
         return _stringValues.containsKey(getFormFieldName(col));
     }
 
+    public boolean contains(DisplayColumn col, RenderContext ctx)
+    {
+        return _stringValues.containsKey(col.getFormFieldName(ctx));
+    }
+
     public Object get(String arg0)
     {
         return _stringValues.get(arg0);

@@ -790,9 +790,9 @@ public abstract class DisplayColumn extends RenderColumn
 
         if (col != null)
         {
-            if (null != viewForm && viewForm.contains(col))
+            if (null != viewForm && viewForm.contains(this, ctx))
             {
-                String formFieldName = viewForm.getFormFieldName(col);
+                String formFieldName = getFormFieldName(ctx);
                 if (viewForm.hasTypedValue(formFieldName))
                     val = viewForm.getTypedValue(formFieldName);
                 else

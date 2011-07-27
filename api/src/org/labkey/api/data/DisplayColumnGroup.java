@@ -66,7 +66,7 @@ public class DisplayColumnGroup
                 ColumnInfo colInfo = col.getColumnInfo();
                 if (colInfo != null)
                 {
-                    out.write("document.getElementsByName('" + ctx.getForm().getFormFieldName(colInfo) + "')[0].style.display = b ? 'none' : 'block';\n");
+                    out.write("document.getElementsByName('" + col.getFormFieldName(ctx) + "')[0].style.display = b ? 'none' : 'block';\n");
                 }
             }
             out.write(" if (b) { " + getGroupFormFieldName(ctx) + "Updated(); }\">");
@@ -76,7 +76,7 @@ public class DisplayColumnGroup
 
     private String getGroupFormFieldName(RenderContext ctx)
     {
-        return getColumns().get(0).getFormFieldName(ctx);
+        return ColumnInfo.propNameFromName(getColumns().get(0).getFormFieldName(ctx));
     }
     
     public void writeCopyableJavaScript(RenderContext ctx, Writer out) throws IOException
@@ -102,15 +102,15 @@ public class DisplayColumnGroup
             {
                 valueProperty = "checked";
             }
-            out.write("    var v = document.getElementsByName('" + groupName + "')[0]." + valueProperty + ";\n");
+            out.write("    var v = document.getElementsByName('" + getColumns().get(0).getFormFieldName(ctx) + "')[0]." + valueProperty + ";\n");
             for (int i = 1; i < getColumns().size(); i++)
             {
-                out.write("    document.getElementsByName('" + ctx.getForm().getFormFieldName(getColumns().get(i).getColumnInfo()) + "')[0]." + valueProperty + " = v;\n");
+                out.write("    document.getElementsByName('" + getColumns().get(i).getFormFieldName(ctx) + "')[0]." + valueProperty + " = v;\n");
             }
         }
         out.write("  }\n");
         out.write("}\n");
-        out.write("var e = document.getElementsByName('" + groupName + "')[0];\n");
+        out.write("var e = document.getElementsByName('" + getColumns().get(0).getFormFieldName(ctx) + "')[0];\n");
         out.write("e.onchange=" + groupName + "Updated;\n");
         out.write("e.onkeyup=" + groupName + "Updated;\n");
         out.write("\n");
@@ -131,13 +131,13 @@ public class DisplayColumnGroup
             String groupFormFieldName = getGroupFormFieldName(ctx);
             out.write("function " + groupFormFieldName + "Updated()\n{");
             out.write("if (document.getElementById('" + groupFormFieldName + "CheckBox') != null && document.getElementById('" + groupFormFieldName + "CheckBox').checked) {");
-            out.write("v = document.getElementsByName('" + groupFormFieldName + "')[0].value;");
+            out.write("v = document.getElementsByName('" + getColumns().get(0).getFormFieldName(ctx) + "')[0].value;");
             for (int i = 1; i < getColumns().size(); i++)
             {
-                out.write("document.getElementsByName('" + ctx.getForm().getFormFieldName(getColumns().get(i).getColumnInfo()) + "')[0].value = v;");
+                out.write("document.getElementsByName('" + getColumns().get(i).getFormFieldName(ctx) + "')[0].value = v;");
             }
             out.write("}}\n");
-            out.write("e = document.getElementsByName('" + groupFormFieldName + "')[0];\n");
+            out.write("e = document.getElementsByName('" + getColumns().get(0).getFormFieldName(ctx) + "')[0];\n");
             out.write("e.onchange=" + groupFormFieldName + "Updated;");
             out.write("e.onkeyup=" + groupFormFieldName + "Updated;");
         }
