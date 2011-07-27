@@ -31,6 +31,7 @@ import org.labkey.api.exp.property.DomainProperty;
 import org.labkey.api.lists.permissions.DesignListPermission;
 import org.labkey.api.security.User;
 import org.labkey.api.settings.AppProps;
+import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.NavTree;
 import org.labkey.list.view.ListController;
@@ -85,7 +86,7 @@ public class ListDomainType extends AbstractDomainKind
 
     public static Lsid generateDomainURI(String name, Container c)
     {
-        String typeURI = "urn:lsid:" + AppProps.getInstance().getDefaultLsidAuthority() + ":" + ListDefinitionImpl.NAMESPACE_PREFIX + ".Folder-" + c.getRowId() + ":" + name;
+        String typeURI = "urn:lsid:" + PageFlowUtil.encode(AppProps.getInstance().getDefaultLsidAuthority()) + ":" + ListDefinitionImpl.NAMESPACE_PREFIX + ".Folder-" + c.getRowId() + ":" + PageFlowUtil.encode(name);
         return new Lsid(typeURI);
     }
 
