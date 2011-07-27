@@ -87,7 +87,8 @@ LABKEY.pipeline.StatusUpdate = function(controller, action)
 
     var onUpdateSuccess = function (response)
     {
-        if (isSelectionModified())
+        // LABKEY.disablePipelineRefresh is a secret value set through Selenium to make IE testing more reliable
+        if (isSelectionModified() || LABKEY.disablePipelineRefresh)
         {
             return;
         }
