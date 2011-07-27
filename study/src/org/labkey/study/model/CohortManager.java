@@ -17,6 +17,7 @@ package org.labkey.study.model;
 
 import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.AdminPermission;
+import org.labkey.api.study.Cohort;
 import org.labkey.api.study.Study;
 import org.labkey.api.data.*;
 import org.labkey.api.study.TimepointType;
@@ -129,6 +130,14 @@ public class CohortManager
         return cohort;
     }
 
+    public CohortImpl ensureCohort(Study study, User user, String newLabel) throws ServletException, SQLException
+    {
+        CohortImpl existingCohort = StudyManager.getInstance().getCohortByLabel(study.getContainer(), user, newLabel);
+        if (existingCohort != null)
+            return existingCohort;
+        else
+            return createCohort(study, user, newLabel);
+    }
 
     public ActionButton createCohortButton(ViewContext context, CohortFilter currentCohortFilter) throws ServletException
     {

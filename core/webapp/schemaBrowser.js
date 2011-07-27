@@ -862,7 +862,8 @@ LABKEY.ext.ValidateQueriesPanel = Ext.extend(Ext.Panel, {
     },
 
     recurseContainers : function(containersInfo, containerArray) {
-        containerArray[containerArray.length] = containersInfo.path;
+        if (LABKEY.Security.hasEffectivePermission(containersInfo.effectivePermissions, LABKEY.Security.effectivePermissions.read))
+            containerArray[containerArray.length] = containersInfo.path;
         for (var child = 0; child < containersInfo.children.length; child++)
             this.recurseContainers(containersInfo.children[child], containerArray);
     },
@@ -879,11 +880,13 @@ LABKEY.ext.ValidateQueriesPanel = Ext.extend(Ext.Panel, {
             Ext.get("lk-vq-stop").focus();
             this.numErrors = 0;
             this.numValid = 0;
+            this.containerCount = containerList.length;
             this.stop = false;
         }
 
         this.currentContainer = containerList[0];
         containerList.splice(0,1);
+        this.currentContainerNumber = this.containerCount - containerList.length;
         this.remainingContainers = containerList;
         LABKEY.Query.getSchemas({
             successCallback: this.onSchemas,
@@ -906,6 +909,11 @@ LABKEY.ext.ValidateQueriesPanel = Ext.extend(Ext.Panel, {
         this.currentContainer = undefined;
     },
 
+    getStatusPrefix : function()
+    {
+        return Ext.util.Format.htmlEncode(this.currentContainer) + " (" + this.currentContainerNumber + "/" + this.containerCount + ")";
+    },
+
     onSchemas : function(schemasInfo) {
         this.schemaNames = schemasInfo.schemas;
         this.curSchemaIdx = 0;
@@ -914,7 +922,7 @@ LABKEY.ext.ValidateQueriesPanel = Ext.extend(Ext.Panel, {
 
     validateSchema : function() {
         var schemaName = this.schemaNames[this.curSchemaIdx];
-        this.setStatus(Ext.util.Format.htmlEncode(this.currentContainer) + ": Validating queries in schema '" + Ext.util.Format.htmlEncode(schemaName) + "'...");
+        this.setStatus(this.getStatusPrefix.call(this) + ": Validating queries in schema '" + Ext.util.Format.htmlEncode(schemaName) + "'...");
         LABKEY.Query.getQueries({
             schemaName: schemaName,
             successCallback: this.onQueries,
@@ -936,7 +944,7 @@ LABKEY.ext.ValidateQueriesPanel = Ext.extend(Ext.Panel, {
     },
 
     validateQuery : function() {
-        this.setStatus(Ext.util.Format.htmlEncode(this.currentContainer) + ": Validating '" + this.getCurrentQueryLabel() + "'...");
+        this.setStatus(this.getStatusPrefix.call(this) + ": Validating '" + this.getCurrentQueryLabel() + "'...");
         LABKEY.Query.validateQuery({
             schemaName: this.schemaNames[this.curSchemaIdx],
             queryName: this.queries[this.curQueryIdx].name,
@@ -950,7 +958,7 @@ LABKEY.ext.ValidateQueriesPanel = Ext.extend(Ext.Panel, {
 
     onValidQuery : function() {
         ++this.numValid;
-        this.setStatus(Ext.util.Format.htmlEncode(this.currentContainer)  + ": Validating '" + this.getCurrentQueryLabel() + "'...OK");
+        this.setStatus(this.getStatusPrefix.call(this)  + ": Validating '" + this.getCurrentQueryLabel() + "'...OK");
         this.advance();
     },
 
@@ -958,7 +966,7 @@ LABKEY.ext.ValidateQueriesPanel = Ext.extend(Ext.Panel, {
         ++this.numErrors;
         //add to errors list
         var queryLabel = this.getCurrentQueryLabel();
-        this.setStatus(Ext.util.Format.htmlEncode(this.currentContainer) + ": Validating '" + queryLabel + "'...FAILED: " + errorInfo.exception);
+        this.setStatus(this.getStatusPrefix.call(this) + ": Validating '" + queryLabel + "'...FAILED: " + errorInfo.exception);
         this.setStatusIcon("iconAjaxLoadingRed");
         this.addValidationError(this.schemaNames[this.curSchemaIdx], this.queries[this.curQueryIdx].name, errorInfo);
         this.advance();

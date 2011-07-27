@@ -253,6 +253,9 @@
 <%
         if (SampleManager.getInstance().hasEditRequestPermissions(context.getUser(), bean.getSampleRequest()))
         {
+%>
+            <div style="padding-bottom: 0.5em">
+<%
             Specimen[] specimens = bean.getSampleRequest().getSpecimens();
             if (specimens != null && specimens.length > 0)
             {
@@ -281,6 +284,7 @@
 <%
             }
 %>
+                </div>
             </td>
         </tr>
 <%

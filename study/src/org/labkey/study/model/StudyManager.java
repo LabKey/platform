@@ -962,9 +962,10 @@ public class StudyManager
         }
     }
 
-    public void clearVisitCache(Study study)
+    public void clearParticipantVisitCaches(Study study)
     {
         _visitHelper.clearCache(study.getContainer());
+        DbCache.clear(StudySchema.getInstance().getTableInfoParticipant());
     }
 
 
@@ -1311,16 +1312,18 @@ public class StudyManager
                 if (!SecurityManager.getPolicy(container).hasPermission(user, ReadPermission.class))
                     throw new UnauthorizedException("User does not have permission to view cohort information");
             }
-
-            // Automatic cohort assignment -- check the source dataset for permissions
-            Integer cohortDatasetId = study.getParticipantCohortDataSetId();
-            if (cohortDatasetId != null)
+            else
             {
-                DataSetDefinition def = getDataSetDefinition(study, cohortDatasetId);
-                if (def != null)
+                // Automatic cohort assignment -- check the source dataset for permissions
+                Integer cohortDatasetId = study.getParticipantCohortDataSetId();
+                if (cohortDatasetId != null)
                 {
-                    if (!def.canRead(user))
-                        throw new UnauthorizedException("User does not have permissions to view cohort information.");
+                    DataSetDefinition def = getDataSetDefinition(study, cohortDatasetId);
+                    if (def != null)
+                    {
+                        if (!def.canRead(user))
+                            throw new UnauthorizedException("User does not have permissions to view cohort information.");
+                    }
                 }
             }
         }
@@ -1644,6 +1647,9 @@ public class StudyManager
         String uri = def.getTypeURI();
         if (null != uri)
             domainCache.remove(uri);
+
+        // Also clear caches of subjects and visits- changes to this dataset may have affected this data:
+        clearParticipantVisitCaches(def.getStudy());
     }
 
 
@@ -1869,6 +1875,12 @@ public class StudyManager
 
         if (safeIntegersEqual(ds.getDataSetId(), study.getParticipantCohortDataSetId()))
             CohortManager.getInstance().setManualCohortAssignment(study, user, Collections.<String, Integer>emptyMap());
+
+        // This dataset may have contained the only references to some subjects or visits; as a result, we need
+        // to re-sync the participant and participant/visit tables.  (Issue 12447)
+        // Don't provide the deleted dataset in the list of modified datasets- deletion doesn't count as a modification
+        // within VisitManager, and passing in the empty set ensures that all subject/visit info will be recalculated.
+        getVisitManager(study).updateParticipantVisits(user, Collections.<DataSetDefinition>emptySet());
 
         unindexDataset(ds);
     }

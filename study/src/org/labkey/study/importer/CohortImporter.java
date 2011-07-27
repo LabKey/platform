@@ -90,7 +90,7 @@ public class CohortImporter implements InternalStudyImporter
                 for (CohortsDocument.Cohorts.Cohort cohortXml : cohortXmls)
                 {
                     String label = cohortXml.getLabel();
-                    CohortImpl cohort = CohortManager.getInstance().createCohort(study, ctx.getUser(), label);
+                    CohortImpl cohort = CohortManager.getInstance().ensureCohort(study, ctx.getUser(), label);
 
                     for (String ptid : cohortXml.getIdArray())
                         p2c.put(ptid, cohort.getRowId());

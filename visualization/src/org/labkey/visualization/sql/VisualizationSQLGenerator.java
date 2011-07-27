@@ -101,7 +101,7 @@ public class VisualizationSQLGenerator implements CustomApiForm, HasViewContext
                 {
                     Map<String, Object> dateOptions = (Map<String, Object>) measureInfo.get("dateOptions");
                     Map<String, Object> zeroDateProperties = (Map<String, Object>) dateOptions.get("zeroDateCol");
-                    if (zeroDateProperties != null)
+                    if (zeroDateProperties != null && !zeroDateProperties.isEmpty())
                     {
                         VisualizationSourceColumn zeroDateMeasure = _columnFactory.create(getViewContext(), zeroDateProperties);
                         zeroDateMeasure.setAllowNullResults(false);

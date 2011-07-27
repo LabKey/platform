@@ -95,7 +95,8 @@ public class SpecimenRequestQueryView extends BaseStudyQueryView
         public void renderGridCellContents(RenderContext ctx, Writer out) throws IOException
         {
             StringBuilder content = new StringBuilder();
-
+            // Use a div to set spacing around the buttons- otherwise they overlap the edges of their data grid cells:
+            content.append("<div style=\"padding: 0.4em\">");
             if (_extraLinks != null)
             {
                 for (NavTree link : _extraLinks)
@@ -139,7 +140,7 @@ public class SpecimenRequestQueryView extends BaseStudyQueryView
                 String detailsLink = (new ActionURL(SpecimenController.ManageRequestAction.class, ctx.getContainer())).toString() + "id=${requestId}";
                 content.append(PageFlowUtil.generateButton("Details", detailsLink));
             }
-
+            content.append("</div>");
             setDisplayHtml(content.toString());
             super.renderGridCellContents(ctx, out);
         }

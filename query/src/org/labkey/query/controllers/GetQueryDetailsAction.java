@@ -105,34 +105,43 @@ public class GetQueryDetailsAction extends ApiAction<GetQueryDetailsAction.Form>
                 resp.put("viewDataUrl", viewDataUrl);
         }
 
-        //if the caller asked us to chase a foreign key, do that
-        FieldKey fk = null;
-        if (null != form.getFk())
+        //if the caller asked us to chase a foreign key, do that.  Note that any call to get a lookup table can throw a
+        // QueryParseException, so we wrap all FK accesses in a try/catch.
+        try
         {
-            fk = FieldKey.fromString(form.getFk());
-            Map<FieldKey,ColumnInfo> colMap = QueryService.get().getColumns(tinfo, Collections.singletonList(fk));
-            ColumnInfo cinfo = colMap.get(fk);
-            if (null == cinfo)
-                throw new IllegalArgumentException("Could not find the column '" + form.getFk() + "' starting from the query " + form.getSchemaName() + "." + form.getQueryName() + "!");
-            if (null == cinfo.getFk() || null == cinfo.getFkTableInfo())
-                throw new IllegalArgumentException("The column '" + form.getFk() + "' is not a foreign key!");
-            tinfo = cinfo.getFkTableInfo();
-        }
-        
-        if (null != tinfo.getDescription())
-            resp.put("description", tinfo.getDescription());
+            FieldKey fk = null;
+            if (null != form.getFk())
+            {
+                fk = FieldKey.fromString(form.getFk());
+                Map<FieldKey,ColumnInfo> colMap = QueryService.get().getColumns(tinfo, Collections.singletonList(fk));
+                ColumnInfo cinfo = colMap.get(fk);
+                if (null == cinfo)
+                    throw new IllegalArgumentException("Could not find the column '" + form.getFk() + "' starting from the query " + form.getSchemaName() + "." + form.getQueryName() + "!");
+                if (null == cinfo.getFk() || null == cinfo.getFkTableInfo())
+                    throw new IllegalArgumentException("The column '" + form.getFk() + "' is not a foreign key!");
+                tinfo = cinfo.getFkTableInfo();
+            }
 
-        Collection<FieldKey> fields = Collections.emptyList();
-        if (null != form.getAdditionalFields() && form.getAdditionalFields().length > 0)
+            if (null != tinfo.getDescription())
+                resp.put("description", tinfo.getDescription());
+
+            Collection<FieldKey> fields = Collections.emptyList();
+            if (null != form.getAdditionalFields() && form.getAdditionalFields().length > 0)
+            {
+                String[] additionalFields = form.getAdditionalFields();
+                fields = new ArrayList<FieldKey>(additionalFields.length);
+                for (String additionalField : additionalFields)
+                    fields.add(FieldKey.fromString(additionalField));
+            }
+
+            //now the native columns plus any additional fields requested
+            resp.put("columns", JsonWriter.getNativeColProps(tinfo, fields, fk));
+        }
+        catch (QueryParseException e)
         {
-            String[] additionalFields = form.getAdditionalFields();
-            fields = new ArrayList<FieldKey>(additionalFields.length);
-            for (String additionalField : additionalFields)
-                fields.add(FieldKey.fromString(additionalField));
+            resp.put("exception", e.getMessage());
+            return resp;
         }
-
-        //now the native columns plus any additional fields requested
-        resp.put("columns", JsonWriter.getNativeColProps(tinfo, fields, fk));
 
         if (schema instanceof UserSchema && null == form.getFk())
         {

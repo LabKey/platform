@@ -163,7 +163,16 @@ public abstract class VisualizationProvider
                 {
                     // ignore hidden columns
                     if (columnMatchType.match(col))
+                    {
+                        if (col.getFk() != null)
+                        {
+                            ColumnInfo lookupCol = col.getFk().createLookupColumn(col, null);
+                            if (lookupCol != null)
+                                col = lookupCol;
+                        }
+                        
                         matches.put(col, view);
+                    }
                 }
             }
         }

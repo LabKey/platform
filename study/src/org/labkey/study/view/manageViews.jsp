@@ -68,6 +68,7 @@
 
     Study study = StudyManager.getInstance().getStudy(context.getContainer());
     ActionURL customizeParticipantURL = new ActionURL(StudyController.CustomizeParticipantViewAction.class, study.getContainer());
+    boolean showCustomizeParticipant = context.getUser().isAdministrator() || (context.hasPermission(AdminPermission.class) && context.getUser().isDeveloper());
 
     // add a sample participant to our URL so that users can see the results of their customization.  This needs to be on the URL
     // since the default custom script reads the participant ID parameter from the URL:
@@ -102,7 +103,7 @@
                 var buttons = StudyViewsPanel.superclass.getButtons.call(this);
                 buttons.push({
                     text:'Customize <%= h(StudyService.get().getSubjectNounSingular(study.getContainer())) %> View',
-                    disabled: <%=!context.hasPermission(AdminPermission.class)%>,
+                    disabled: <%= !showCustomizeParticipant %>,
                     listeners:{click:function(button, event) {window.location = '<%=customizeParticipantURL%>';}}
                 });
                 return buttons;

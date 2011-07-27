@@ -109,7 +109,7 @@ public abstract class VisitManager
             }
         }
 
-        StudyManager.getInstance().clearVisitCache(getStudy());
+        StudyManager.getInstance().clearParticipantVisitCaches(getStudy());
     }
 
 
