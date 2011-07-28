@@ -8,6 +8,13 @@ var _newAttachmentIndex = 0;
 var _doingSave = false;
 var _editor = "source";
 var _tocTree;
+var _tinyMCEInitialized = false;
+
+// TinyMCE returns true from isDirty() if it's not done initializing, so keep track of whether it's safe to ask or not
+function onInitCallback()
+{
+    _tinyMCEInitialized = true;
+}
 
 //you must init the tinyMCE before the page finishes loading
 //if you don't, you'll get a blank page an an error
@@ -56,10 +63,10 @@ tinyMCE.init({
     pdw_toggle_toolbars : "2,3",
 
     // labkey specific
-    handle_event_callback : "tinyMceHandleEvent"
+    handle_event_callback : "tinyMceHandleEvent",
 
+    init_instance_callback: onInitCallback
 });
-
 
 
 //the onReady function will execute after all elements
@@ -797,8 +804,15 @@ function setClean()
 
 function isDirty()
 {
-    return _wikiProps.isDirty || _attachments.isDirty ||
-    (tinyMCE.get(_idPrefix + "body") && tinyMCE.get(_idPrefix + "body").isDirty());
+    if (_wikiProps.isDirty || _attachments.isDirty)
+    {
+        return true;
+    }
+    if (_tinyMCEInitialized && tinyMCE.get(_idPrefix + "body") && tinyMCE.get(_idPrefix + "body").isDirty())
+    {
+        return true;
+    }
+    return false;
 }
 
 var _convertWin;
