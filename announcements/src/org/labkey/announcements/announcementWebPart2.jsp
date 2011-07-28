@@ -24,47 +24,51 @@
 <%@ page import="org.labkey.api.security.User" %>
 <%@ page import="org.labkey.api.util.DateUtil" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
-<%@ page import="java.util.Collections" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
     AnnouncementWebPart me = (AnnouncementWebPart) HttpView.currentView();
     MessagesBean bean = me.getModelBean();
     Container c = me.getViewContext().getContainer();
     User user = me.getViewContext().getUser();
-    String contextPath = me.getViewContext().getContextPath();
     String tableId = "table" + getRequestScopedUID();
-    int maxHeight=200;
-
+    int maxHeight=120;
 %>
 <style type="text/css">
-div.message-container
+DIV.message-container
 {
     position:relative;
 }
-.message-overflow
+DIV.message-overflow
 {
     display:none;
 }
-.message-more a, .message-less a
+DIV.message-more
 {
-    background-color:#eeeeee; opacity:1;
+    position:absolute; bottom:0; right:0
+}
+DIV.message-less
+{
+    text-align:right;
+}
+.message-more A, .message-less A, .message-more A:hover, .message-less A:hover
+{
+    background-color:#e0e0e0; opacity:0.8;
 }
 /* long message collapsed */
-td.message-collapsed div.message-container
+TD.message-collapsed DIV.message-container
 {
     max-height:<%=maxHeight%>px;
     overflow-y:hidden;
-/*    border:solid 1px red; */
 }
-td.message-collapsed .message-more
+TD.message-collapsed .message-more
 {
     display:inline-block;
 }
-td.message-collapsed .message-less
+TD.message-collapsed .message-less
 {
     display:none;
 }
-td.message-collapsed div.message-overflow
+TD.message-collapsed DIV.message-overflow
 {
     display:inline-block;
     -ms-filter: progid:DXImageTransform.Microsoft.gradient(gradientType=0,startColor=0,endColoStr=white);
@@ -77,50 +81,74 @@ td.message-collapsed div.message-overflow
     width: 100%;
 }
 /* long message expanded */
-td.message-collapsed div.message-container
+TD.message-collapsed div.message-container
 {
-/*    border:solid 1px blue; */
 }
-td.message-expanded .message-more
+TD.message-expanded .message-more
 {
     display:none;
 }
-td.message-expanded .message-less
+TD.message-expanded .message-less
 {
     display:inline-block;
-    background-color:#00ff00; opacity:1;
+}
+/* animated expanding... */
+TD.message-expanding DIV.message-container
+{
+    overflow-y:hidden;
 }
 /* short message */
-td.message-short div.message-container
+TD.message-short div.message-container
 {
-/*    border:solid 1px green; */
 }
-td.message-short .message-less, td.message-short .message-more
+TD.message-short .message-less, TD.message-short .message-more
 {
     display:none;    
 }
 </style>
 <script type="text/javascript">
-function messageMore(elem)
+function messageMoreSlide(elem)
 {
     var more=Ext.get(elem);
-    var parent = more.parent("TD");
+    var parent = more.parent("TD.message");
+    parent.removeClass("message-collapsed");
+    parent.addClass("message-expanding");
+    var text = Ext.fly(Ext.query("DIV.message-text", parent.dom)[0]);
+    parent.scale(null, text.dom.scrollHeight,
+    {
+        easing: 'easeOut',
+        duration: 4.0,
+        callback:function(){
+            parent.applyStyles({height:''});
+            parent.removeClass("message-expanding");
+            parent.addClass("message-expanded");
+        }
+    });
+    return false;
+}
+function messageMoreSimple(elem)
+{
+    var more=Ext.get(elem);
+    var parent = more.parent("TD.message");
     parent.removeClass("message-collapsed");
     parent.addClass("message-expanded");
+    return false;
 }
+var messageMore = messageMoreSimple;
 function messageLess(elem)
 {
     var more=Ext.get(elem);
-    var parent = more.parent("TD");
+    var parent = more.parent("TD.message");
     parent.removeClass("message-expanded");
     parent.addClass("message-collapsed");
+    return false;
 }
 function messageFixup(e)
 {
     var container = Ext.get(e);
-    var parent = container.parent("TD");
-    var text = Ext.fly(Ext.query("DIV.message-text", container.dom)[0]);
-    console.debug("fixup " + parent.getHeight() + " " + container.getHeight() + " " + text.dom.scrollHeight + " " + text.getHeight());
+    var parent = container.parent("TD.message");
+    var text = Ext.fly(Ext.query("DIV.message-text", parent.dom)[0]);
+    //console.debug("fixup " + parent.getHeight() + " " + container.getHeight() + " " + text.dom.scrollHeight + " " + text.getHeight());
     if (parent.hasClass("message-expanded"))
         return;
     if (text.dom.scrollHeight <= <%=maxHeight%>)
@@ -156,13 +184,15 @@ Ext.EventManager.onWindowResize(function(){messageOnResize(<%=q(tableId)%>);});
             <div style="padding-top: 5px;">Showing: <%=bean.filterText.replace(" ", "&nbsp;")%></div>
         </td>
     </tr><%
-    if (0 == bean.announcementModels.length)
-    {%>
-    <tr><td colspan=3 style="padding-top:4px;">No <%=bean.filterText.replace("all ", "")%></td></tr><%
-    }
-    for (AnnouncementModel a : bean.announcementModels)
-    { %>
-    <tr>
+
+if (0 == bean.announcementModels.length)
+{
+    %><tr><td colspan=3 style="padding-top:4px;">No <%=bean.filterText.replace("all ", "")%></td></tr><%
+}
+
+for (AnnouncementModel a : bean.announcementModels)
+{
+    %><tr>
         <td class="labkey-announcement-title labkey-force-word-break" colspan=3 align="left"><span><a href="<%=h(a.getThreadURL(c))%>rowId=<%=a.getRowId()%>"><%=h(a.getTitle())%></a></span></td>
     </tr>
     <tr>
@@ -174,25 +204,30 @@ Ext.EventManager.onWindowResize(function(){messageOnResize(<%=q(tableId)%>);});
         <td width="40%" align="right" nowrap><%=DateUtil.formatDateTime(a.getCreated())%></td>
     </tr>
     <tr><td colspan=3 class="labkey-title-area-line"></td></tr>
-    <tr><td colspan=3 class="labkey-force-word-break message-collapsed">
+    <tr><td colspan=3 class="message labkey-force-word-break <%=bean.isPrint?"message-expanded":"message-collapsed"%>">
         <div class="message-container">
-            <div class="message-text"><%=a.translateBody(c)%></div>
-            <div class="message-overflow"><div class="message-more"><div style="position:absolute; bottom:0; right:0" class="labkey-wp-text-buttons"><a href="#more" onclick="messageMore(this)">more&gt;&gt;</a></div></div></div>
-            <div class="message-less"><div style="position:absolute; bottom:0; right:0" class="labkey-wp-text-buttons"><a href="#less" onclick="messageLess(this)">&lt;&lt;less</a></div></div>
-        </div>
-<%
+            <div class="message-text"><%=a.translateBody(c)%></div><%
+            if (!bean.isPrint)
+            {
+                %><div class="message-overflow"><div class="message-more"><div class="labkey-wp-text-buttons"><a href="#more" onclick="return messageMore(this);">more&gt;&gt;</a></div></div></div><%
+                %><table width="100%"><tr><td align="right"><div class="message-less"><div class="labkey-wp-text-buttons"><a href="#less" onclick="return messageLess(this);">&lt;&lt;less</a></div></div></td></tr></table><%
+            }            
+        %></div>
+    </tr><%
+
     if (a.getAttachments().size() > 0)
-        { %>
-    <tr><td colspan=3><%
+    {
+        %><tr><td colspan=3><%
         for (Attachment d : a.getAttachments())
         {
-    %>
-        <a href="<%=h(d.getDownloadUrl(DownloadAction.class))%>"><img src="<%=request.getContextPath()%><%=d.getFileIcon()%>">&nbsp;<%=d.getName()%></a>&nbsp;<%
-            }
-        %>
-    </td></tr>
-<%      } %>    <tr><td style="padding-bottom:4px;" colspan=3 align="left"><%=textLink("view " + bean.settings.getConversationName().toLowerCase() + (null != bean.insertURL ? " or respond" : ""), a.getThreadURL(c) + "rowId=" + a.getRowId())%></td></tr>
-<%
+            %><a href="<%=h(d.getDownloadUrl(DownloadAction.class))%>"><img src="<%=request.getContextPath()%><%=d.getFileIcon()%>">&nbsp;<%=d.getName()%></a>&nbsp;<%
+        }
+        %></td></tr><%
     }
+    if (!bean.isPrint)
+    {
+        %><tr><td style="padding-bottom:4px;" colspan=3 align="left"><%=textLink("view " + bean.settings.getConversationName().toLowerCase() + (null != bean.insertURL ? " or respond" : ""), a.getThreadURL(c) + "rowId=" + a.getRowId())%></td></tr><%
+    }
+}
 %></table>
 <!--/ANNOUNCEMENTS-->

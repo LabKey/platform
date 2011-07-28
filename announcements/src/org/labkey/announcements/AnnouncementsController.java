@@ -221,8 +221,12 @@ public class AnnouncementsController extends SpringActionController
         {
             Settings settings = getSettings();
             boolean displayAll = getActionURL().getPageFlow().equalsIgnoreCase("announcements");
-            WebPartView v = new AnnouncementWebPart(getContainer(), getActionURL(), getUser(), settings, displayAll, false);
-            v.setFrame(WebPartView.FrameType.PORTAL);
+            AnnouncementWebPart v = new AnnouncementWebPart(getContainer(), getActionURL(), getUser(), settings, displayAll, false);
+            v.getModelBean().isPrint = isPrint();
+            if (isPrint())
+                v.setFrame(WebPartView.FrameType.NONE);
+            else
+                v.setFrame(WebPartView.FrameType.PORTAL);
             v.setShowTitle(false);
             getPageConfig().setRssProperties(new RssAction().getURL(), settings.getBoardName());
 
@@ -2290,6 +2294,7 @@ public class AnnouncementsController extends SpringActionController
         {
             public AnnouncementModel[] announcementModels;
             public ActionURL listURL;
+            public boolean isPrint=false;
 
             private MessagesBean(Container c, ActionURL url, User user, Settings settings, boolean displayAll)
             {
