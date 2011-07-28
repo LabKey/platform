@@ -30,7 +30,7 @@
     Container proj = ctx.getContainer().getProject();
 
     Study[] studies = StudyManager.getInstance().getAllStudies(proj, ctx.getUser());
-    if (null == studies || studies.length == 0)
+    if (studies.length == 0)
     {
         out.print("No Studies found in project " + proj.getName());
     }

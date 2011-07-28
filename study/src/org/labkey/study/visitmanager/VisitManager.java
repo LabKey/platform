@@ -17,9 +17,13 @@
 package org.labkey.study.visitmanager;
 
 import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang.time.DateUtils;
+import org.apache.jasper.tagplugins.jstl.core.Catch;
+import org.apache.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.ColumnInfo;
+import org.labkey.api.data.Container;
 import org.labkey.api.data.DbSchema;
 import org.labkey.api.data.JdbcType;
 import org.labkey.api.data.Parameter;
@@ -33,8 +37,11 @@ import org.labkey.api.security.User;
 import org.labkey.api.services.ServiceRegistry;
 import org.labkey.api.study.Study;
 import org.labkey.api.study.Visit;
+import org.labkey.api.util.ContextListener;
+import org.labkey.api.util.ExceptionUtil;
 import org.labkey.api.util.Pair;
 import org.labkey.api.util.ResultSetUtil;
+import org.labkey.api.util.ShutdownListener;
 import org.labkey.study.CohortFilter;
 import org.labkey.study.StudySchema;
 import org.labkey.study.model.CohortManager;
@@ -45,6 +52,7 @@ import org.labkey.study.model.StudyManager;
 import org.labkey.study.model.VisitImpl;
 import org.labkey.study.model.VisitMapKey;
 
+import javax.servlet.ServletContextEvent;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Types;
@@ -52,10 +60,14 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.EnumMap;
 import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.SortedMap;
+import java.util.Timer;
+import java.util.TimerTask;
 import java.util.TreeMap;
 
 /**
@@ -64,6 +76,8 @@ import java.util.TreeMap;
  */
 public abstract class VisitManager
 {
+    private static final Logger LOGGER = Logger.getLogger(VisitManager.class);
+
     protected StudyImpl _study;
     private TreeMap<Double, VisitImpl> _sequenceMap;
 
@@ -74,7 +88,7 @@ public abstract class VisitManager
 
     public void updateParticipantVisits(User user, Collection<DataSetDefinition> changedDatasets)
     {
-        updateParticipantVisits(user, changedDatasets, null, null);
+        updateParticipantVisits(user, changedDatasets, null, null, true);
     }
 
     /**
@@ -86,10 +100,13 @@ public abstract class VisitManager
      * @param potentiallyDeletedParticipants optionally, the specific participants that may have been removed from the
      * study. If null, all participants will be checked to see if they are still in the study.
      */
-    public void updateParticipantVisits(User user, Collection<DataSetDefinition> changedDatasets, @Nullable Set<String> potentiallyAddedParticipants, @Nullable Set<String> potentiallyDeletedParticipants)
+    public void updateParticipantVisits(User user, Collection<DataSetDefinition> changedDatasets, @Nullable Set<String> potentiallyAddedParticipants, @Nullable Set<String> potentiallyDeletedParticipants, boolean participantVisitResyncRequired)
     {
         updateParticipants(user, changedDatasets, potentiallyAddedParticipants, potentiallyDeletedParticipants);
-        updateParticipantVisitTable(user);
+        if (participantVisitResyncRequired)
+        {
+            updateParticipantVisitTable(user);
+        }
         updateVisitTable(user);
 
         Integer cohortDatasetId = _study.getParticipantCohortDataSetId();
@@ -203,6 +220,14 @@ public abstract class VisitManager
         finally
         {
             ResultSetUtil.close(rows);
+        }
+    }
+
+    public static void cancelParticipantPurge(Container c)
+    {
+        synchronized (POTENTIALLY_DELETED_PARTICIPANTS)
+        {
+            POTENTIALLY_DELETED_PARTICIPANTS.remove(c);
         }
     }
 
@@ -406,7 +431,7 @@ public abstract class VisitManager
             // keep the participant list up to date
             if (potentiallyDeletedParticipants == null || !potentiallyDeletedParticipants.isEmpty())
             {
-                purgeParticipants(potentiallyDeletedParticipants);
+                scheduleParticipantPurge(potentiallyDeletedParticipants);
             }
 
             updateStartDates(user);
@@ -470,52 +495,70 @@ public abstract class VisitManager
         }
     }
 
-    public void purgeParticipants(Set<String> potentiallyDeletedParticipants)
+    /**
+     * Queue up cleanup of unused participants to be processed by a background thread. We can get away without
+     * persisting these requests in the event that the server is shut down before the request has been processed
+     * because there's a scheduled maintenance task that does a full resync on a daily basis.
+     *
+     * @param potentiallyDeletedParticipants null if all participants in the study should be checked to see if they're
+     * still referenced, or the specific set if we can only look at some of them for perf reasons
+     */
+    public void scheduleParticipantPurge(@Nullable Set<String> potentiallyDeletedParticipants)
     {
-        try
+        assert potentiallyDeletedParticipants == null || !potentiallyDeletedParticipants.isEmpty() : "Shouldn't be called with an empty set of participant ids";
+        Container container = getStudy().getContainer();
+        synchronized (POTENTIALLY_DELETED_PARTICIPANTS)
         {
-            String c = getStudy().getContainer().getId();
-
-            DbSchema schema = StudySchema.getInstance().getSchema();
-            TableInfo tableParticipant = StudySchema.getInstance().getTableInfoParticipant();
-            TableInfo tableSpecimen = StudySchema.getInstance().getTableInfoSpecimen();
-
-            SQLFragment ptids = new SQLFragment();
-            SQLFragment studyDataPtids = studyDataPtids(getStudy().getDataSets());
-            if (null != studyDataPtids)
+            Set<String> mergedPTIDs;
+            if (potentiallyDeletedParticipants == null)
             {
-                ptids.append(studyDataPtids);
-                ptids.append(" UNION\n");
+                // We are being asked to check all participants, so it doesn't matter if there are specific participants
+                // that are queued
+                mergedPTIDs = null;
             }
-            ptids.append("SELECT ptid FROM " + tableSpecimen.getFromSQL("spec") + " WHERE spec.container=?");
-            ptids.add(c);
-
-            SQLFragment del = new SQLFragment();
-            del.append("DELETE FROM " + tableParticipant + " WHERE container=? ");
-            del.add(c);
-            del.append(" AND participantid NOT IN (\n");
-            del.append(ptids);
-            del.append(")");
-
-            // Databases limit the size of IN clauses, so check that we won't blow the cap
-            if (potentiallyDeletedParticipants != null && potentiallyDeletedParticipants.size() < 450)
+            else if (POTENTIALLY_DELETED_PARTICIPANTS.containsKey(container))
             {
-                // We have an explicit list of potentially deleted participants, so filter to only look at them
-                del.append(" AND participantid IN (");
-                del.append(StringUtils.repeat("?", ", ", potentiallyDeletedParticipants.size()));
-                del.addAll(potentiallyDeletedParticipants);
-                del.append(")");
+                // We already have a set of participants queued to be potentially purged
+                Set<String> existingPTIDs = POTENTIALLY_DELETED_PARTICIPANTS.get(container);
+                if (existingPTIDs == null)
+                {
+                    // The existing request is for all participants, so respect that
+                    mergedPTIDs = null;
+                }
+                else
+                {
+                    // Add the subset that are now being requested to the existing set
+                    mergedPTIDs = existingPTIDs;
+                    mergedPTIDs.addAll(potentiallyDeletedParticipants);
+                }
             }
-            
-            Table.execute(schema, del);
-        }
-        catch (SQLException x)
-        {
-            throw new RuntimeSQLException(x);
+            else
+            {
+                // This is the only request for this study in the queue, so copy the set of participants
+                mergedPTIDs = new HashSet<String>(potentiallyDeletedParticipants);
+            }
+            POTENTIALLY_DELETED_PARTICIPANTS.put(container, mergedPTIDs);
+
+            if (TIMER == null)
+            {
+                // This is the first request, so start the timer
+                TIMER = new Timer("Participant purge", true);
+                TimerTask task = new PurgeParticipantsTask();
+                TIMER.scheduleAtFixedRate(task, PURGE_PARTICIPANT_INTERVAL, PURGE_PARTICIPANT_INTERVAL);
+                ShutdownListener listener = new ParticipantPurgeContextListener();
+                // Add a shutdown listener to stop the worker thread if the webapp is shut down
+                ContextListener.addShutdownListener(listener);
+            }
         }
     }
 
-    private SQLFragment studyDataPtids(Collection<DataSetDefinition> defs)
+    /** Study container -> set of participants that may no longer be referenced. Set is null if we don't know specific PTIDs. */
+    private static final Map<Container, Set<String>> POTENTIALLY_DELETED_PARTICIPANTS = new HashMap<Container, Set<String>>();
+    private static Timer TIMER;
+    /** Number of milliseconds to wait between batches of participant purges */
+    private static final long PURGE_PARTICIPANT_INTERVAL = DateUtils.MILLIS_PER_MINUTE * 5;
+
+    private static SQLFragment studyDataPtids(Collection<DataSetDefinition> defs)
     {
         SQLFragment f = new SQLFragment();
         String union = "";
@@ -565,8 +608,115 @@ public abstract class VisitManager
         Table.execute(schema, sqlUpdateStartDates, startDateParam, getStudy().getContainer());
     }
 
+    /** @param potentiallyDeletedParticipants null if all participants should be examined,
+     * or the subset of all participants that might have been deleted and should be checked */
+    public static void performParticipantPurge(@NotNull StudyImpl study, @Nullable Set<String> potentiallyDeletedParticipants)
+    {
+        if (potentiallyDeletedParticipants != null && potentiallyDeletedParticipants.isEmpty())
+        {
+            return;
+        }
+        
+        try
+        {
+            DbSchema schema = StudySchema.getInstance().getSchema();
+            TableInfo tableParticipant = StudySchema.getInstance().getTableInfoParticipant();
+            TableInfo tableSpecimen = StudySchema.getInstance().getTableInfoSpecimen();
+
+            SQLFragment ptids = new SQLFragment();
+            SQLFragment studyDataPtids = studyDataPtids(study.getDataSets());
+            if (null != studyDataPtids)
+            {
+                ptids.append(studyDataPtids);
+                ptids.append(" UNION\n");
+            }
+            ptids.append("SELECT ptid FROM " + tableSpecimen.getFromSQL("spec") + " WHERE spec.container=?");
+            ptids.add(study.getContainer().getId());
+
+            SQLFragment del = new SQLFragment();
+            del.append("DELETE FROM " + tableParticipant + " WHERE container=? ");
+            del.add(study.getContainer().getId());
+            del.append(" AND participantid NOT IN (\n");
+            del.append(ptids);
+            del.append(")");
+
+            // Databases limit the size of IN clauses, so check that we won't blow the cap
+            if (potentiallyDeletedParticipants != null && potentiallyDeletedParticipants.size() < 450)
+            {
+                // We have an explicit list of potentially deleted participants, so filter to only look at them
+                del.append(" AND participantid IN (");
+                del.append(StringUtils.repeat("?", ", ", potentiallyDeletedParticipants.size()));
+                del.addAll(potentiallyDeletedParticipants);
+                del.append(")");
+            }
+
+            Table.execute(schema, del);
+        }
+        catch (SQLException x)
+        {
+            throw new RuntimeSQLException(x);
+        }
+    }
+
     StudyImpl getStudy()
     {
         return _study;
+    }
+
+    private static class PurgeParticipantsTask extends TimerTask
+    {
+        @Override
+        public void run()
+        {
+            try
+            {
+                while (true)
+                {
+                    Container container;
+                    Set<String> potentiallyDeletedParticipants;
+
+                    synchronized (POTENTIALLY_DELETED_PARTICIPANTS)
+                    {
+                        if (POTENTIALLY_DELETED_PARTICIPANTS.isEmpty())
+                        {
+                            return;
+                        }
+                        // Grab the first study to be purged, and exit the synchronized block quickly
+                        Iterator<Map.Entry<Container, Set<String>>> i = POTENTIALLY_DELETED_PARTICIPANTS.entrySet().iterator();
+                        Map.Entry<Container, Set<String>> entry = i.next();
+                        i.remove();
+                        container = entry.getKey();
+                        potentiallyDeletedParticipants = entry.getValue();
+                    }
+
+                    // Now, outside the synchronization, do the actual purge
+                    StudyImpl study = StudyManager.getInstance().getStudy(container);
+                    if (study != null)
+                    {
+                        performParticipantPurge(study, potentiallyDeletedParticipants);
+                    }
+                }
+            }
+            catch (Exception e)
+            {
+                LOGGER.error("Failed to purge participants", e);
+                ExceptionUtil.logExceptionToMothership(null, e);
+            }
+        }
+    }
+
+    private static class ParticipantPurgeContextListener implements ShutdownListener
+    {
+        @Override
+        public void shutdownPre(ServletContextEvent servletContextEvent) {}
+
+        @Override
+        public void shutdownStarted(ServletContextEvent servletContextEvent)
+        {
+            if (TIMER != null)
+            {
+                TIMER.cancel();
+            }
+        }
     }
 }

@@ -94,26 +94,19 @@ public class AssayPublishManager implements AssayPublishService.Service
      */
     public Set<Study> getValidPublishTargets(User user, Class<? extends Permission> permission)
     {
-        try
-        {
-            Study[] studies = StudyManager.getInstance().getAllStudies(ContainerManager.getRoot(), user, permission);
+        Study[] studies = StudyManager.getInstance().getAllStudies(ContainerManager.getRoot(), user, permission);
 
-            // Sort based on full container path
-            Set<Study> result = new TreeSet<Study>(new Comparator<Study>()
-            {
-                @Override
-                public int compare(Study s1, Study s2)
-                {
-                    return s1.getContainer().compareTo(s2.getContainer());
-                }
-            });
-            result.addAll(Arrays.asList(studies));
-            return result;
-        }
-        catch (SQLException e)
+        // Sort based on full container path
+        Set<Study> result = new TreeSet<Study>(new Comparator<Study>()
         {
-            throw UnexpectedException.wrap(e);
-        }
+            @Override
+            public int compare(Study s1, Study s2)
+            {
+                return s1.getContainer().compareTo(s2.getContainer());
+            }
+        });
+        result.addAll(Arrays.asList(studies));
+        return result;
     }
 
     public ActionURL publishAssayData(User user, Container sourceContainer, Container targetContainer, String assayName, ExpProtocol protocol,

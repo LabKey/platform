@@ -57,6 +57,7 @@ import org.labkey.api.study.assay.AssayService;
 import org.labkey.api.study.reports.CrosstabReport;
 import org.labkey.api.study.reports.CrosstabReportDescriptor;
 import org.labkey.api.util.PageFlowUtil;
+import org.labkey.api.util.SystemMaintenance;
 import org.labkey.api.view.BaseWebPartFactory;
 import org.labkey.api.view.DefaultWebPartFactory;
 import org.labkey.api.view.HtmlView;
@@ -334,6 +335,8 @@ public class StudyModule extends SpringModule implements SearchService.DocumentP
             ss.addSearchCategory(StudyManager.assayCategory);
             ss.addDocumentProvider(this);
         }
+
+        SystemMaintenance.addTask(new PurgeParticipantsMaintenanceTask());
     }
 
 

@@ -20,6 +20,7 @@ import org.labkey.api.data.*;
 import org.labkey.api.query.*;
 import org.labkey.api.security.User;
 import org.labkey.api.study.StudyService;
+import org.labkey.api.util.PageFlowUtil;
 import org.labkey.study.model.DataSetDefinition;
 import org.labkey.study.model.StudyImpl;
 import org.labkey.study.model.StudyManager;
@@ -45,6 +46,7 @@ public class DatasetUpdateService extends AbstractQueryUpdateService
     private final DataSetDefinition _dataset;
     private Set<String> _potentiallyNewParticipants = new HashSet<String>();
     private Set<String> _potentiallyDeletedParticipants = new HashSet<String>();
+    private boolean _participantVisitResyncRequired = false;
 
     public DatasetUpdateService(DataSetTable table)
     {
@@ -87,6 +89,7 @@ public class DatasetUpdateService extends AbstractQueryUpdateService
         //update the lsid
         row.put("lsid", newLsid);
         _potentiallyNewParticipants.add(getParticipant(row, user, container));
+        _participantVisitResyncRequired = true;
 
         return row;
     }
@@ -137,7 +140,8 @@ public class DatasetUpdateService extends AbstractQueryUpdateService
     {
         StudyImpl study = StudyManager.getInstance().getStudy(container);
 
-        StudyManager.getInstance().getVisitManager(study).updateParticipantVisits(user, Collections.singletonList(_dataset), _potentiallyNewParticipants, _potentiallyDeletedParticipants);
+        StudyManager.getInstance().getVisitManager(study).updateParticipantVisits(user, Collections.singletonList(_dataset), _potentiallyNewParticipants, _potentiallyDeletedParticipants, _participantVisitResyncRequired);
+        _participantVisitResyncRequired = false;
         _potentiallyNewParticipants.clear();
         _potentiallyDeletedParticipants.clear();
     }
@@ -161,6 +165,8 @@ public class DatasetUpdateService extends AbstractQueryUpdateService
             throw e;
         }
 
+        row = getRow(user, container, row);
+
         String newParticipant = getParticipant(row, user, container);
         if (!oldParticipant.equals(newParticipant))
         {
@@ -168,6 +174,19 @@ public class DatasetUpdateService extends AbstractQueryUpdateService
             // the old participant
             _potentiallyNewParticipants.add(newParticipant);
             _potentiallyDeletedParticipants.add(oldParticipant);
+
+            // Need to resync the ParticipantVisit table too
+            _participantVisitResyncRequired = true;
+        }
+        else if (!_participantVisitResyncRequired)
+        {
+            // Check if the visit has changed, but only if we don't already know we need to resync
+            Object oldSequenceNum = oldRow.get("SequenceNum");
+            Object newSequenceNum = row.get("SequenceNum");
+            if (!PageFlowUtil.nullSafeEquals(oldSequenceNum, newSequenceNum))
+            {
+                _participantVisitResyncRequired = true;
+            }
         }
 
         return row;
@@ -190,6 +209,7 @@ public class DatasetUpdateService extends AbstractQueryUpdateService
         String participant = getParticipant(oldRow, user, container);
         StudyService.get().deleteDatasetRow(user, container, _dataset.getDataSetId(), keyFromMap(oldRow));
         _potentiallyDeletedParticipants.add(participant);
+        _participantVisitResyncRequired = true;
         return oldRow;
     }
 

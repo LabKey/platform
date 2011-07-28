@@ -391,23 +391,38 @@ public class StudyManager
         }
     }
 
-    public StudyImpl[] getAllStudies() throws SQLException
+    @NotNull
+    public StudyImpl[] getAllStudies()
     {
-        return Table.select(StudySchema.getInstance().getTableInfoStudy(), Table.ALL_COLUMNS, null, null, StudyImpl.class);
+        try
+        {
+            return Table.select(StudySchema.getInstance().getTableInfoStudy(), Table.ALL_COLUMNS, null, null, StudyImpl.class);
+        }
+        catch (SQLException e)
+        {
+            throw new RuntimeSQLException(e);
+        }
     }
 
     @NotNull
-    public Study[] getAllStudies(Container root, User user) throws SQLException
+    public Study[] getAllStudies(Container root, User user)
     {
         return getAllStudies(root, user, ReadPermission.class);
     }
 
     @NotNull
-    public Study[] getAllStudies(Container root, User user, Class<? extends Permission> perm) throws SQLException
+    public Study[] getAllStudies(Container root, User user, Class<? extends Permission> perm)
     {
-        FilteredTable t = new FilteredTable(StudySchema.getInstance().getTableInfoStudy(), root, new ContainerFilter.CurrentAndSubfolders(user, perm));
-        t.wrapAllColumns(true);
-        return Table.select(t, Table.ALL_COLUMNS, null, null, StudyImpl.class);
+        try
+        {
+            FilteredTable t = new FilteredTable(StudySchema.getInstance().getTableInfoStudy(), root, new ContainerFilter.CurrentAndSubfolders(user, perm));
+            t.wrapAllColumns(true);
+            return Table.select(t, Table.ALL_COLUMNS, null, null, StudyImpl.class);
+        }
+        catch (SQLException e)
+        {
+            throw new RuntimeSQLException(e);
+        }
     }
 
     public StudyImpl createStudy(User user, StudyImpl study) throws SQLException
@@ -1937,6 +1952,9 @@ public class StudyManager
     {
         // Cancel any reload timer
         StudyReload.cancelTimer(c);
+
+        // No need to delete individual participants if the whole study is going away
+        VisitManager.cancelParticipantPurge(c);
 
         // Before we delete any data, we need to go fetch the Dataset definitions.
         StudyImpl study = StudyManager.getInstance().getStudy(c);

@@ -569,22 +569,15 @@ public class StudyServiceImpl implements StudyService.Service
         if (studyReference instanceof String)
         {
             String studyRef = (String)studyReference;
-            try
-            {
-                // look for study by label
-                Study[] studies = user == null ?
-                        StudyManager.getInstance().getAllStudies() :
-                        StudyManager.getInstance().getAllStudies(ContainerManager.getRoot(), user, ReadPermission.class);
+            // look for study by label
+            Study[] studies = user == null ?
+                    StudyManager.getInstance().getAllStudies() :
+                    StudyManager.getInstance().getAllStudies(ContainerManager.getRoot(), user, ReadPermission.class);
 
-                for (Study study : studies)
-                {
-                    if (studyRef.equals(study.getLabel()))
-                        result.add(study);
-                }
-            }
-            catch (SQLException e)
+            for (Study study : studies)
             {
-                UnexpectedException.rethrow(e);
+                if (studyRef.equals(study.getLabel()))
+                    result.add(study);
             }
         }
 

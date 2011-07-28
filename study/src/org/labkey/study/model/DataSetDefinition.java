@@ -441,7 +441,8 @@ public class DataSetDefinition extends AbstractStudyEntity<DataSetDefinition> im
         {
             ColumnInfo c = ti.getColumn(pss.getName());
             ColumnInfo t = template.getColumn(pss.getName());
-            if (null != t)
+            // The column may be null if the dataset is being deleted in the background
+            if (null != t && c != null)
                 c.setExtraAttributesFrom(t);
         }
 
