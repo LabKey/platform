@@ -1518,7 +1518,7 @@ public class StudyController extends BaseStudyController
 
         public boolean handlePost(DeleteStudyForm form, BindException errors) throws Exception
         {
-            StudyManager.getInstance().deleteAllStudyData(getContainer(), getUser(), true, false);
+            StudyManager.getInstance().deleteAllStudyData(getContainer(), getUser(), false);
             return true;
         }
 
@@ -4899,7 +4899,7 @@ public class StudyController extends BaseStudyController
             try
             {
                 scope.ensureTransaction();
-                StudyManager.getInstance().deleteDataset(getStudy(), getUser(), ds);
+                StudyManager.getInstance().deleteDataset(getStudy(), getUser(), ds, true);
                 scope.commitTransaction();
                 throw new RedirectException(new ActionURL(ManageTypesAction.class, getContainer()));
             }
@@ -5366,7 +5366,7 @@ public class StudyController extends BaseStudyController
                 DataSetDefinition dsDef = StudyManager.getInstance().getDataSetDefinition(study, form.getSnapshotDatasetId());
                 if (dsDef != null)
                 {
-                    StudyManager.getInstance().deleteDataset(study, getUser(), dsDef);
+                    StudyManager.getInstance().deleteDataset(study, getUser(), dsDef, true);
                     form.setSnapshotDatasetId(-1);
                 }
             }

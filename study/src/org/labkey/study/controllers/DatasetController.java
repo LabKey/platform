@@ -455,7 +455,7 @@ public class DatasetController extends BaseStudyController
                 try
                 {
                     scope.ensureTransaction();
-                    StudyManager.getInstance().deleteDataset(getStudy(), getUser(), def);
+                    StudyManager.getInstance().deleteDataset(getStudy(), getUser(), def, true);
                     scope.commitTransaction();
                 }
                 finally

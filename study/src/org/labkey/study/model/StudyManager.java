@@ -1861,8 +1861,12 @@ public class StudyManager
 
 
 
-    /** delete a dataset definition along with associated type, data, visitmap entries */
-    public void deleteDataset(StudyImpl study, User user, DataSetDefinition ds) throws SQLException
+    /**
+     * delete a dataset definition along with associated type, data, visitmap entries
+     * @param performStudyResync whether or not to kick off our normal bookkeeping. If the whole study is being deleted,
+     * we don't need to bother doing this, for example.
+     */
+    public void deleteDataset(StudyImpl study, User user, DataSetDefinition ds, boolean performStudyResync) throws SQLException
     {
         assert StudySchema.getInstance().getSchema().getScope().isTransactionActive();
 
@@ -1891,11 +1895,14 @@ public class StudyManager
         if (safeIntegersEqual(ds.getDataSetId(), study.getParticipantCohortDataSetId()))
             CohortManager.getInstance().setManualCohortAssignment(study, user, Collections.<String, Integer>emptyMap());
 
-        // This dataset may have contained the only references to some subjects or visits; as a result, we need
-        // to re-sync the participant and participant/visit tables.  (Issue 12447)
-        // Don't provide the deleted dataset in the list of modified datasets- deletion doesn't count as a modification
-        // within VisitManager, and passing in the empty set ensures that all subject/visit info will be recalculated.
-        getVisitManager(study).updateParticipantVisits(user, Collections.<DataSetDefinition>emptySet());
+        if (performStudyResync)
+        {
+            // This dataset may have contained the only references to some subjects or visits; as a result, we need
+            // to re-sync the participant and participant/visit tables.  (Issue 12447)
+            // Don't provide the deleted dataset in the list of modified datasets- deletion doesn't count as a modification
+            // within VisitManager, and passing in the empty set ensures that all subject/visit info will be recalculated.
+            getVisitManager(study).updateParticipantVisits(user, Collections.<DataSetDefinition>emptySet());
+        }
 
         unindexDataset(ds);
     }
@@ -1945,10 +1952,10 @@ public class StudyManager
 
     public void deleteAllStudyData(Container c) throws SQLException
     {
-        deleteAllStudyData(c, null, true, true);
+        deleteAllStudyData(c, null, true);
     }
 
-    public void deleteAllStudyData(Container c, User user, boolean deleteDatasetData, boolean deleteStudyDesigns) throws SQLException
+    public void deleteAllStudyData(Container c, User user, boolean deleteStudyDesigns) throws SQLException
     {
         // Cancel any reload timer
         StudyReload.cancelTimer(c);
@@ -1978,10 +1985,9 @@ public class StudyManager
             else            //If study design came from another folder, move it back to where it came from
                 StudyDesignManager.get().inactivateStudyDesign(c);
 
-            //If deleteDatasetData is false, OntologyManager will clean up on folder delete
-            if (deleteDatasetData)
-                for (DataSetDefinition dsd : dsds)
-                    deleteDataset(study, user, dsd);
+            for (DataSetDefinition dsd : dsds)
+                deleteDataset(study, user, dsd, false);
+
             //
             // samples
             //
@@ -2057,7 +2063,6 @@ public class StudyManager
             }
 
             scope.commitTransaction();
-
         }
         finally
         {
