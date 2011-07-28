@@ -319,7 +319,7 @@ LABKEY.vis.ChartEditorXAxisPanel = Ext.extend(Ext.FormPanel, {
                 })
             }),
             sortInfo: {
-                field: 'label',
+                field: 'longlabel',
                 direction: 'ASC'
             },
             listeners: {

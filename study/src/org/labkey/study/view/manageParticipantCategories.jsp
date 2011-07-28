@@ -74,7 +74,7 @@
                 {header:'Type', dataIndex:'type', width: 100},
                 {header:'Shared', dataIndex:'shared'},
                 {header:'Created By', dataIndex:'createdBy'},
-                {header:'Modified By', dataIndex:'modifiedBy'},
+                {header:'Modified By', dataIndex:'modifiedBy'}
             ]
         });
 
@@ -133,6 +133,10 @@
 
     // enable/disable the edit and delete buttons based on selection
     function toggleEditDeleteButtons(){
+        // exit if the grid has not yet been created
+        if (!_grid)
+            return;
+
         var topTB = _grid.getTopToolbar();
 
         if (_grid.getSelectionModel().getCount() == 1)

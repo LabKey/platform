@@ -26,7 +26,8 @@ LABKEY.vis.ChartEditorMeasurePanel = Ext.extend(Ext.FormPanel, {
             'chartDefinitionChanged',
             'measureMetadataRequestPending',
             'measureMetadataRequestComplete',
-            'filterCleared'
+            'filterCleared',
+            'measureRemoved'
         );
 
         // add any y-axis measures from the origMeasures object (for saved chart)
@@ -37,6 +38,7 @@ LABKEY.vis.ChartEditorMeasurePanel = Ext.extend(Ext.FormPanel, {
                         id: i,
                         name: config.origMeasures[i].measure.name,
                         queryName: config.origMeasures[i].measure.queryName,
+                        origLabel: config.origMeasures[i].measure.label,
                         label: config.origMeasures[i].measure.label + " from " + config.origMeasures[i].measure.queryName,
                         measure: Ext.apply({}, config.origMeasures[i].measure),
                         dimension: Ext.apply({}, config.origMeasures[i].dimension)
@@ -411,6 +413,7 @@ LABKEY.vis.ChartEditorMeasurePanel = Ext.extend(Ext.FormPanel, {
             id: this.getNextMeasureId(),
             name: newMeasure.name,
             queryName: newMeasure.queryName,
+            origLabel: newMeasure.label,
             label: newMeasure.label + " from " + newMeasure.queryName,
             measure: Ext.apply({}, newMeasure), 
             dimension: {}
@@ -450,8 +453,8 @@ LABKEY.vis.ChartEditorMeasurePanel = Ext.extend(Ext.FormPanel, {
                 this.removeMeasureButton.disable();
             }
 
-            // fire the defn changed event to redraw
-            this.fireEvent('chartDefinitionChanged', true);
+            // fire the measureRemoved event to update label/title/etc. and redraw
+            this.fireEvent('measureRemoved');
         }
     },
 
@@ -754,5 +757,23 @@ LABKEY.vis.ChartEditorMeasurePanel = Ext.extend(Ext.FormPanel, {
 
     setMeasuresStoreData: function(data){
         this.measuresStoreData = data;
+    },
+
+    getDefaultLabel: function(){
+        var label = "";
+        Ext.each(this.measures, function(m){
+            if (label.indexOf(m.origLabel) == -1)
+                label += (label.length > 0 ? ", " : "") + m.origLabel;
+        });
+        return label;
+    },
+
+    getDefaultTitle: function(){
+        var title = "";
+        Ext.each(this.measures, function(m){
+            if (title.indexOf(m.queryName) == -1)
+                title += (title.length > 0 ? ", " : "") + m.queryName;
+        });
+        return title;
     }
 });

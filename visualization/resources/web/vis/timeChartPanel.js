@@ -93,6 +93,21 @@ LABKEY.vis.TimeChartPanel = Ext.extend(Ext.Panel, {
                             this.loader();
                         }
                     },
+                    'measureRemoved': function(){
+                        this.editorYAxisPanel.setLabel(this.editorMeasurePanel.getDefaultLabel());
+                        this.editorChartsPanel.setMainTitle(this.editorMeasurePanel.getDefaultTitle());
+                        this.getChartData();
+
+                        // if all of the measures have been removed, disable any non-relevant elements
+                        if (this.editorMeasurePanel.getNumMeasures() == 0)
+                        {
+                            this.disableNonMeasureTabPanels();
+                            this.exportPdfMenuBtn.disable();
+                            this.exportPdfSingleBtn.disable();
+                            this.viewGridBtn.disable();
+                            this.viewChartBtn.disable();
+                        }
+                    },
                     'filterCleared': function () {
                         //measureMetadataRequestComplete should ensure full refresh after subject list is regenerated.
                         if(this.editorMeasurePanel.measures[0]){
@@ -340,21 +355,30 @@ LABKEY.vis.TimeChartPanel = Ext.extend(Ext.Panel, {
             this.editorXAxisPanel.setMeasureDateStore(measure.schemaName, measure.queryName); // todo: should this be for each measure selection?
 
             if(userSelectedMeasure){
-                this.editorYAxisPanel.setLabel(measure.label);
                 this.editorOverviewPanel.updateOverview(this.saveReportInfo);
-                this.editorChartsPanel.setMainTitle(measure.queryName);
             }
         }
+
+        // these method calls should be made for all measure selections
+        this.editorYAxisPanel.setLabel(this.editorMeasurePanel.getDefaultLabel());
+        this.editorChartsPanel.setMainTitle(this.editorMeasurePanel.getDefaultTitle());
 
         this.enableTabPanels();
     },
 
     enableTabPanels: function(){
-        // enable the charteditor tabs in the tabPanel
+        this.editorOverviewPanel.enable();
         this.editorMeasurePanel.enable();
         this.editorXAxisPanel.enable();
         this.editorYAxisPanel.enable();
         this.editorChartsPanel.enable();
+    },
+
+    disableNonMeasureTabPanels: function(){
+        this.editorOverviewPanel.disable();
+        this.editorXAxisPanel.disable();
+        this.editorYAxisPanel.disable();
+        this.editorChartsPanel.disable();
     },
 
     isDirty : function() {
@@ -398,7 +422,7 @@ LABKEY.vis.TimeChartPanel = Ext.extend(Ext.Panel, {
 
         var xAxisMeasureIndex = this.getFirstMeasureIndex(this.chartInfo.measures, "x-axis");
         if(xAxisMeasureIndex == -1){
-           Ext.Msg.alert("Error", "Could not find x-axis in chart measure information.");
+           this.maskChartPanel("Error: Could not find x-axis in chart measure information.");
            return;
         }
 
@@ -461,7 +485,10 @@ LABKEY.vis.TimeChartPanel = Ext.extend(Ext.Panel, {
                 // ready to render the chart or grid
                 this.loader();
             },
-            failure : function(info, response, options) {LABKEY.Utils.displayAjaxErrorResponse(response, options);},
+            failure : function(info, response, options) {
+                LABKEY.Utils.displayAjaxErrorResponse(response, options);
+                this.maskChartPanel("Error: " + info.exception);
+            },
             measures: this.chartInfo.measures,
             viewInfo: this.viewInfo,
             sorts: [this.chartInfo.subject, this.chartInfo.measures[xAxisMeasureIndex].measure],

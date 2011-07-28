@@ -26,6 +26,9 @@ LABKEY.vis.ChartEditorYAxisPanel = Ext.extend(Ext.FormPanel, {
             range: {type: "automatic"}
         });
 
+        // track if the axis label is something other than the default
+        config.userEditedLabel = (config.axis.label ? true : false);
+
         this.addEvents('chartDefinitionChanged');
 
         LABKEY.vis.ChartEditorYAxisPanel.superclass.constructor.call(this, config);
@@ -67,12 +70,14 @@ LABKEY.vis.ChartEditorYAxisPanel = Ext.extend(Ext.FormPanel, {
             listeners: {
                 scope: this,
                 'change': function(cmp, newVal, oldVal) {
+                    this.userEditedLabel = true;
                     this.axis.label = newVal;
                     this.fireEvent('chartDefinitionChanged', false);
                 }
             }
         });
         this.labelTextField.addListener('keyUp', function(){
+                this.userEditedLabel = true;
                 this.axis.label = this.labelTextField.getValue();
                 this.fireEvent('chartDefinitionChanged', false);
             }, this, {buffer: 500});
@@ -206,8 +211,11 @@ LABKEY.vis.ChartEditorYAxisPanel = Ext.extend(Ext.FormPanel, {
     },
 
     setLabel: function(newLabel){
-        this.axis.label = newLabel;
-        this.labelTextField.setValue(this.axis.label);
+        if (!this.userEditedLabel)
+        {
+            this.axis.label = newLabel;
+            this.labelTextField.setValue(this.axis.label);
+        }
     },
 
     setScale: function(newScale){

@@ -19,6 +19,9 @@ LABKEY.vis.ChartEditorChartsPanel = Ext.extend(Ext.FormPanel, {
             items: []
         });
 
+        // track if the axis label is something other than the default
+        config.userEditedTitle = (config.mainTitle ? true : false);
+
         this.addEvents('chartDefinitionChanged');
 
         LABKEY.vis.ChartEditorChartsPanel.superclass.constructor.call(this, config);
@@ -99,12 +102,14 @@ LABKEY.vis.ChartEditorChartsPanel = Ext.extend(Ext.FormPanel, {
             listeners: {
                 scope: this,
                 'change': function(cmp, newVal, oldVal) {
+                    this.userEditedTitle = true;
                     this.mainTitle = newVal;
                     this.fireEvent('chartDefinitionChanged', false);
                 }
             }
         });
         this.chartTitleTextField.addListener('keyUp', function(){
+                this.userEditedTitle = true;
                 this.mainTitle = this.chartTitleTextField.getValue();
                 this.fireEvent('chartDefinitionChanged', false);
             }, this, {buffer: 500});
@@ -183,8 +188,11 @@ LABKEY.vis.ChartEditorChartsPanel = Ext.extend(Ext.FormPanel, {
     },
 
     setMainTitle: function(newMainTitle){
-        this.mainTitle = newMainTitle;
-        this.chartTitleTextField.setValue(newMainTitle);
+        if (!this.userEditedTitle)
+        {
+            this.mainTitle = newMainTitle;
+            this.chartTitleTextField.setValue(this.mainTitle);
+        }
     },
 
     setChartLayout: function(newChartLayout){
