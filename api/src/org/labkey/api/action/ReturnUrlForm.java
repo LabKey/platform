@@ -71,6 +71,21 @@ public class ReturnUrlForm
     }
 
     // Return the passed-in default URL if returnURL param is missing or unparseable
+    public ActionURL getReturnActionURL(ActionURL defaultURL)
+    {
+        try
+        {
+            ActionURL url = getReturnActionURL();
+            if (null != url)
+                return url;
+        }
+        catch (URLException e)
+        {
+        }
+        return defaultURL;
+    }
+
+    // Return the passed-in default URL if returnURL param is missing or unparseable
     public URLHelper getReturnURLHelper(URLHelper defaultURL)
     {
         try

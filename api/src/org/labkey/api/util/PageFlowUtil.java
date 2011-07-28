@@ -1152,7 +1152,7 @@ public class PageFlowUtil
     /* Renders text and a drop down arrow image wrapped in a link not of type labkey-button */
     public static String generateDropDownTextLink(String text, String href, String onClick, boolean bold, String offset)
     {
-        return "<a  style=\"" + (bold ? "font-weight: bold;" : "") + "\" href=\"" + filter(href) + "\"" +
+        return "<a class=\"labkey-menu-text-link\" style=\"" + (bold ? "font-weight: bold;" : "") + "\" href=\"" + filter(href) + "\"" +
                 " onClick=\"if (this.className.indexOf('labkey-disabled-button') != -1) return false; " + (onClick == null ? "" : filter(onClick)) + "\"" +
                 "><span>" + text + "</span>&nbsp;<img src=\"" + HttpView.currentView().getViewContext().getContextPath() +
                 "/_images/text_link_arrow.gif\" style=\"position:relative; background-color:transparent; width:10px; height:auto; top:" + offset +"px; right:0;\"></a>";
@@ -1711,11 +1711,33 @@ public class PageFlowUtil
         return extJsRoot;
     }
 
+    private static void explodedExtPaths(Map<String, JSONObject> packages, String pkgDep, Set<String> scripts)
+    {
+        JSONObject dependency = packages.get(pkgDep);
+        if (dependency == null)
+            return;
+
+        // Remove package so it won't be included twice.
+        packages.put(pkgDep, null);
+
+        if (dependency.has("pkgDeps"))
+        {
+            JSONArray array = dependency.getJSONArray("pkgDeps");
+            for (int i = 0; i < array.length(); i++)
+                explodedExtPaths(packages, array.getString(i), scripts);
+        }
+
+        for (JSONObject fileInclude : dependency.getJSONArray("fileIncludes").toJSONObjectArray())
+        {
+            scripts.add(extJsRoot + "/" + fileInclude.getString("path") + fileInclude.getString("text"));
+        }
+    }
+
     /** scripts are the explicitly included scripts,
      * @param scripts   the scripts that should be explicitly included
      * @param included  the scripts that are implicitly included
      */
-    public static void getJavaScriptPaths(List<String> scripts, Set<String> included)
+    public static void getJavaScriptPaths(Set<String> scripts, Set<String> included)
     {
         boolean explodedExt = AppProps.getInstance().isDevMode() && false;
         boolean explodedClient = AppProps.getInstance().isDevMode();
@@ -1731,16 +1753,7 @@ public class PageFlowUtil
             {
                 packages.put(pkgObject.getString("file"), pkgObject);
             }
-            JSONObject allPackage = packages.get("ext-all.js");
-            JSONArray allPackageDeps = allPackage.getJSONArray("pkgDeps");
-            for (int i = 0; i < allPackageDeps.length(); i++)
-            {
-                JSONObject dependency = packages.get(allPackageDeps.getString(i));
-                for (JSONObject fileInclude : dependency.getJSONArray("fileIncludes").toJSONObjectArray())
-                {
-                    scripts.add(extJsRoot + "/" + fileInclude.getString("path") + fileInclude.getString("text"));
-                }
-            }
+            explodedExtPaths(packages, "ext-all.js", scripts);
         }
         else
             scripts.add(AppProps.getInstance().isDevMode() ? extDebug : extMin);
@@ -1788,7 +1801,7 @@ public class PageFlowUtil
         String contextPath = AppProps.getInstance().getContextPath();
         String serverHash = getServerSessionHash();
 
-        List<String> scripts = new ArrayList<String>();
+        LinkedHashSet<String> scripts = new LinkedHashSet<String>();
         LinkedHashSet<String> includes = new LinkedHashSet<String>();
         getJavaScriptPaths(scripts, includes);
 

@@ -143,9 +143,15 @@ public class ReportDescriptor extends Entity implements SecurableResource
     }
 
     public void setProperty(String key, String value){_props.put(key, value);}
+
     public void setProperties(List<Pair<String,String>> props)
     {
         init(props.toArray(new Pair[props.size()]));
+    }
+
+    public void setProperties(Map<String, Object> props)
+    {
+        _props.putAll(props);
     }
 
     public String getProperty(String key){return (String)_props.get(key);}

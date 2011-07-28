@@ -88,7 +88,7 @@ public class RReportJob extends PipelineJob implements Serializable
 
     public String getDescription()
     {
-        String description = getReport().getDescriptor().getProperty("reportName");
+        String description = getReport().getDescriptor().getProperty(ReportDescriptor.Prop.reportName);
 
         if (StringUtils.isEmpty(description))
             description = "Unknown R Report";
