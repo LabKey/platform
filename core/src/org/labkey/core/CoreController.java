@@ -455,8 +455,8 @@ public class CoreController extends SpringActionController
                 // get the root resolver
                 WebdavResolver r = ModuleStaticResolverImpl.get();
                 
-                List<String> scripts = new ArrayList<String>();
-                LinkedHashSet<String> includes = new LinkedHashSet<String>();
+                Set<String> scripts = new LinkedHashSet<String>();
+                Set<String> includes = new LinkedHashSet<String>();
                 PageFlowUtil.getJavaScriptPaths(scripts, includes);
                 List<String> concat = new ArrayList<String>();
                 for (String path : scripts)
