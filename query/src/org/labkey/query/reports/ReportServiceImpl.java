@@ -110,6 +110,11 @@ public class ReportServiceImpl implements ReportService.I, ContainerManager.Cont
 
     public ReportDescriptor createDescriptorInstance(String typeName)
     {
+        if (typeName == null)
+        {
+            _log.error("createDescriptorInstace : typeName cannot be null");
+            return null;
+        }
         Class clazz = _descriptors.get(typeName);
 
         if (null == clazz)

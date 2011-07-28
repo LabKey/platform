@@ -19,6 +19,8 @@
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.api.view.JspView"%>
 <%@ page import="org.labkey.study.model.StudyManager" %>
+<%@ page import="org.labkey.api.study.permissions.SharedParticipantGroupPermission" %>
+<%@ page import="org.labkey.api.security.permissions.AdminPermission" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
     JspView<Object> me = (JspView<Object>) HttpView.currentView();
@@ -27,7 +29,7 @@
     String subjectNounSingular = s.getSubjectNounSingular();
     String subjectNounPlural = s.getSubjectNounPlural();
     String subjectNounColName = s.getSubjectColumnName();
-    boolean isAdmin = c.hasPermission(getViewContext().getUser(), org.labkey.api.security.permissions.AdminPermission.class);
+    boolean isAdmin = c.hasPermission(getViewContext().getUser(), SharedParticipantGroupPermission.class) || c.hasPermission(getViewContext().getUser(), AdminPermission.class);
 %>
 
 <p><%= subjectNounSingular %> groups allow you to quickly filter data in a study to groups of <%= subjectNounPlural.toLowerCase() %> you define.

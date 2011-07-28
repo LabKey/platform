@@ -157,7 +157,7 @@ public class ParticipantGroupController extends BaseStudyController
                 SimpleFilter filter = new SimpleFilter("RowId", form.getRowId());
                 ParticipantCategory[] defs = ParticipantGroupManager.getInstance().getParticipantCategories(getContainer(), getUser(), filter);
                 if (defs.length == 1)
-                    category.copySpecialFields(defs[0]);
+                    category = defs[0];
             }
 
             ParticipantGroupManager.getInstance().deleteParticipantCategory(getContainer(), getUser(), category);

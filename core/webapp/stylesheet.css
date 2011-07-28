@@ -452,6 +452,19 @@ a.labkey-menu-button:hover span
 	color: #000000;
 }
 
+/* classes to toggle the display state of buttons displayed in the dataregion message area
+   on hover.
+*/
+.labkey-dataregion-msg .labkey-button
+{
+    display: none;
+}
+
+.labkey-dataregion-msg:hover .labkey-button
+{
+    display: inline;
+}
+
 /* This is the class for the down arrow that can be included in a button.
  The images src should be ./_images/button_arrow.gif */
 img.labkey-button-arrow

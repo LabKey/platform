@@ -372,9 +372,11 @@ LABKEY.ActionsAdminPanel = Ext.extend(Ext.util.Observable, {
                 autoHeight: true,
                 layout: 'fit',
                 border: false,
-                html: 'There is a Pipeline Override for this folder and actions are not available for the ' +
-                      'default file location.<br/><br/>Customize this web part to use the pipeline location by clicking on the ' +
-                      '"more" button in the web part title area and selecting the "customize" option.<br>' +
+                html: 'File Actions are only available for files in the pipeline directory. An administrator has defined ' +
+                      'a "pipeline override" for this folder, so actions are not available in the default file location.' +
+                      '<br/><br/>Customize this web part to use the pipeline directory by clicking on the ' +
+                      '"more" button in the web part title area and selecting the "customize" option. You can then set this ' +
+                      'web part to show files from the pipeline directory.<br>' +
                       '<img src="' + LABKEY.contextPath + '/_images/customize-example.png"/>'
             });
         }

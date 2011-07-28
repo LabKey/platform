@@ -503,7 +503,7 @@ public class ParticipantGroupManager
             throw new IllegalArgumentException("Participant category has not been saved to the database yet");
 
         if (!def.canDelete(c, user))
-            throw new RuntimeException("You must either be an administrator or the owner to delete a participant group");
+            throw new RuntimeException("You must either be an administrator, editor or the owner to delete a participant group");
 
         DbScope scope = StudySchema.getInstance().getSchema().getScope();
 

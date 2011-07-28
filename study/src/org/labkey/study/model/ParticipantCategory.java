@@ -22,6 +22,7 @@ import org.labkey.api.data.Entity;
 import org.labkey.api.security.User;
 import org.labkey.api.security.UserManager;
 import org.labkey.api.security.permissions.AdminPermission;
+import org.labkey.api.study.permissions.SharedParticipantGroupPermission;
 import org.labkey.api.view.HttpView;
 import org.labkey.api.view.ViewContext;
 
@@ -288,7 +289,8 @@ public class ParticipantCategory extends Entity
     public boolean canEdit(Container container, User user)
     {
         if (isShared())
-            return container.hasPermission(user, AdminPermission.class);
+            return container.hasPermission(user, SharedParticipantGroupPermission.class) || 
+                    container.hasPermission(user, AdminPermission.class);
         else
         {
             User owner = UserManager.getUser(getCreatedBy());
