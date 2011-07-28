@@ -20,6 +20,7 @@ import org.labkey.api.security.SecurableResource;
 import org.labkey.api.security.SecurityPolicy;
 import org.labkey.api.security.permissions.*;
 import org.labkey.api.study.DataSet;
+import org.labkey.api.study.permissions.SharedParticipantGroupPermission;
 
 /*
 * User: Dave
@@ -33,7 +34,7 @@ public class EditorRole extends AbstractRole
         super("Editor", "Editors may read, add, update and delete information.",
                 ReadPermission.class, ReadSomePermission.class, 
                 InsertPermission.class, UpdatePermission.class,
-                DeletePermission.class);
+                DeletePermission.class, SharedParticipantGroupPermission.class);
     }
 
     @Override

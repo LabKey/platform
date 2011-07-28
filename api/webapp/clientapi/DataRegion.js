@@ -772,19 +772,19 @@ LABKEY.DataRegion = function (config)
         {
             msg = (this.viewName ? "The current view '<em>" + Ext.util.Format.htmlEncode(this.viewName) + "</em>'" : "The current <em>&lt;default&gt;</em> view") + " is unsaved.";
             msg += " &nbsp;";
-            msg += "<span class='labkey-link unsavedview-revert'>Revert</span>";
-            msg += ", &nbsp;";
-            msg += "<span class='labkey-link unsavedview-edit'>Edit</span>";
-            msg += ", &nbsp;";
-            msg += "<span class='labkey-link unsavedview-save'>Save</span>";
+            msg += "<span class='labkey-button unsavedview-revert'>Revert</span>";
+            msg += "&nbsp;";
+            msg += "<span class='labkey-button unsavedview-edit'>Edit</span>";
+            msg += "&nbsp;";
+            msg += "<span class='labkey-button unsavedview-save'>Save</span>";
         }
         else
         {
             msg = ("The current view has been customized.");
             msg += " &nbsp;";
-            msg += "<span class='labkey-link unsavedview-revert' title='Revert'>Revert</span>";
+            msg += "<span class='labkey-button unsavedview-revert' title='Revert'>Revert</span>";
             msg += ", &nbsp;";
-            msg += "<span class='labkey-link unsavedview-edit'>Edit</span>";
+            msg += "<span class='labkey-button unsavedview-edit'>Edit</span>";
         }
 
         // add the customize view message, the link handlers will get added after render in _onRenderMessageArea
@@ -950,15 +950,15 @@ Ext.extend(LABKEY.DataRegion, Ext.Component, {
     {
         if (this.showRecordSelectors)
         {
-            msg += "&nbsp; Select: <span class='labkey-link select-none'>None</span>";
+            msg += "&nbsp;<span class='labkey-button select-none'>Select None</span>";
             var showOpts = new Array();
             if (this.showRows != "all")
-                showOpts.push("<span class='labkey-link show-all'>All</span>");
+                showOpts.push("<span class='labkey-button show-all'>Show All</span>");
             if (this.showRows != "selected")
-               showOpts.push("<span class='labkey-link show-selected'>Selected</span>");
+               showOpts.push("<span class='labkey-button show-selected'>Show Selected</span>");
             if (this.showRows != "unselected")
-               showOpts.push("<span class='labkey-link show-unselected'>Unselected</span>");
-            msg += "&nbsp; Show: " + showOpts.join(", ");
+               showOpts.push("<span class='labkey-button show-unselected'>Show Unselected</span>");
+            msg += "&nbsp;" + showOpts.join(" ");
         }
 
         // add the record selector message, the link handlers will get added after render in _onRenderMessageArea
@@ -973,33 +973,33 @@ Ext.extend(LABKEY.DataRegion, Ext.Component, {
     {
         if (this.showRecordSelectors && partName == 'selection' && el)
         {
-            var selectNoneEl = el.child(".labkey-link.select-none");
+            var selectNoneEl = el.child(".labkey-button.select-none");
             if (selectNoneEl)
                 selectNoneEl.on('click', this.selectNone, this);
 
-            var showAllEl = el.child(".labkey-link.show-all");
+            var showAllEl = el.child(".labkey-button.show-all");
             if (showAllEl)
                 showAllEl.on('click', this.showAll, this);
 
-            var showSelectedEl = el.child(".labkey-link.show-selected");
+            var showSelectedEl = el.child(".labkey-button.show-selected");
             if (showSelectedEl)
                 showSelectedEl.on('click', this.showSelected, this);
 
-            var showUnselectedEl = el.child(".labkey-link.show-unselected");
+            var showUnselectedEl = el.child(".labkey-button.show-unselected");
             if (showUnselectedEl)
                 showUnselectedEl.on('click', this.showUnselected, this);
         }
         else if (partName == 'customizeview' && el)
         {
-            var revertEl = el.child(".labkey-link.unsavedview-revert");
+            var revertEl = el.child(".labkey-button.unsavedview-revert");
             if (revertEl)
                 revertEl.on('click', this.revertCustomView, this);
 
-            var showCustomizeViewEl = el.child(".labkey-link.unsavedview-edit");
+            var showCustomizeViewEl = el.child(".labkey-button.unsavedview-edit");
             if (showCustomizeViewEl)
                 showCustomizeViewEl.on('click', function () { this.showCustomizeView(undefined, true); }, this);
 
-            var saveEl = el.child(".labkey-link.unsavedview-save");
+            var saveEl = el.child(".labkey-button.unsavedview-save");
             if (saveEl)
                 saveEl.on('click', this.saveSessionCustomView, this);
         }
