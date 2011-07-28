@@ -141,9 +141,16 @@
 
         if (_grid.getSelectionModel().getCount() == 1)
         {
-            topTB.findById('editSelectedButton').enable();
-
             var row = _grid.getSelectionModel().getSelected();
+
+            // enable the view/edit button and set the text based on the user's perms for the given selection
+            topTB.findById('editSelectedButton').enable();
+            if (row.get("canEdit"))
+                topTB.findById('editSelectedButton').setText("Edit Selected");
+            else
+                topTB.findById('editSelectedButton').setText("View Selected");
+
+            // enable/disable the delete button based on the user's perms for the given selection
             if (row.get("canDelete"))
                 topTB.findById('deleteSelectedButton').enable();
             else
