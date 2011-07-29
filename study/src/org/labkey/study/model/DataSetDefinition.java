@@ -2012,7 +2012,7 @@ public class DataSetDefinition extends AbstractStudyEntity<DataSetDefinition> im
                     // It's possible for the key value to be null. In SQL, NULL concatenated with any other value is NULL,
                     // so use COALESCE to get rid of NULLs
                     parts.add(new SQLFragment("'.'"));
-                    parts.add(new SQLFragment("COALESCE(CAST(\"" + key.getSelectName() + "\" AS VARCHAR), '')"));
+                    parts.add(new SQLFragment("COALESCE(CAST(" + key.getSelectName() + " AS VARCHAR), '')"));
                 }
             }
         }

@@ -251,7 +251,7 @@
             // get the data for this dataset and group rows by SequenceNum/Key
             TableInfo table = new org.labkey.study.query.DataSetTable(querySchema, dataset);
             Map<Double,Map<Object,Map>> seqKeyRowMap = new HashMap();
-            String keyCol = dataset.getKeyPropertyName();
+            FieldKey keyColumnName = null==dataset.getKeyPropertyName() ? null : new FieldKey(null, dataset.getKeyPropertyName());
 
             if (!datasetSet.contains(datasetId))
                 continue;
@@ -262,7 +262,7 @@
             while (dsResults.next())
             {
                 double sequenceNum = dsResults.getDouble("SequenceNum");
-                Object key = null==keyCol ? "" : dsResults.getObject(keyCol);
+                Object key = null==keyColumnName ? "" : dsResults.getObject(keyColumnName);
 
                 Map keyMap = seqKeyRowMap.get(sequenceNum);
                 if (null == keyMap)

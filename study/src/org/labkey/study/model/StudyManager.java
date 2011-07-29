@@ -856,7 +856,14 @@ public class StudyManager
             Table.execute(schema.getSchema(), "DELETE FROM " + schema.getTableInfoVisitMap() + "\n" +
                     "WHERE Container=? AND VisitRowId=?", study.getContainer().getId(), visit.getRowId());
             // UNDONE broken _visitHelper.delete(visit);
-            Table.delete(schema.getTableInfoVisit(), new Object[] {study.getContainer(), visit.getRowId()});
+            try
+            {
+                Table.delete(schema.getTableInfoVisit(), new Object[] {study.getContainer(), visit.getRowId()});
+            }
+            catch (Table.OptimisticConflictException  x)
+            {
+                /* ignore */
+            }
             _visitHelper.clearCache(visit);
 
             SampleManager.getInstance().deleteSamplesForVisit(visit);
