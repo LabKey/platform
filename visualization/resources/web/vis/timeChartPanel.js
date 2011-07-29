@@ -15,6 +15,7 @@ LABKEY.requiresCss("_images/icons.css");
 
 
 Ext.QuickTips.init();
+$h = Ext.util.Format.htmlEncode;
 
 LABKEY.vis.TimeChartPanel = Ext.extend(Ext.Panel, {
 
@@ -126,6 +127,7 @@ LABKEY.vis.TimeChartPanel = Ext.extend(Ext.Panel, {
                 axis: this.chartInfo.measures[xAxisMeasureIndex] ? this.chartInfo.measures[xAxisMeasureIndex].axis : {},
                 dateOptions: this.chartInfo.measures[xAxisMeasureIndex] ? this.chartInfo.measures[xAxisMeasureIndex].dateOptions : {},
                 measure: this.chartInfo.measures[xAxisMeasureIndex] ? this.chartInfo.measures[xAxisMeasureIndex].measure : {},
+                subjectNounSingular: this.viewInfo.subjectNounSingular,
                 listeners: {
                     scope: this,
                     'chartDefinitionChanged': function(requiresDataRefresh){
@@ -352,7 +354,7 @@ LABKEY.vis.TimeChartPanel = Ext.extend(Ext.Panel, {
         if(!userSelectedMeasure || numMeasures == 1){
             this.subjectSelector.getSubjectValues(measure.schemaName, measure.queryName, this.chartInfo.filterUrl);
             this.editorXAxisPanel.setZeroDateStore(measure.schemaName);
-            this.editorXAxisPanel.setMeasureDateStore(measure.schemaName, measure.queryName); // todo: should this be for each measure selection?
+            this.editorXAxisPanel.setMeasureDateStore(measure.schemaName, measure.queryName);
 
             if(userSelectedMeasure){
                 this.editorOverviewPanel.updateOverview(this.saveReportInfo);
@@ -914,7 +916,7 @@ LABKEY.vis.TimeChartPanel = Ext.extend(Ext.Panel, {
                     value: reportName || null,
                     width: 300,
                     allowBlank: false,
-                    maxLength: 50
+                    maxLength: 200
                 },
                 {
                     xtype: 'textarea',
@@ -953,14 +955,14 @@ LABKEY.vis.TimeChartPanel = Ext.extend(Ext.Panel, {
                             schema: schema
                         });
 
-                        win.hide();
+                        win.close();
                     },
                     scope: this
                 },
                 {
                     text: 'Cancel',
                     handler: function(){
-                        win.hide();
+                        win.close();
                     }
                 }]
             });
@@ -970,7 +972,7 @@ LABKEY.vis.TimeChartPanel = Ext.extend(Ext.Panel, {
                 layout:'fit',
                 width:475,
                 height:230,
-                closeAction:'hide',
+                closeAction:'close',
                 modal: true,
                 padding: 15,
                 title: saveBtnName,
@@ -989,7 +991,7 @@ LABKEY.vis.TimeChartPanel = Ext.extend(Ext.Panel, {
                 if(this.editorOverviewPanel.canSaveChanges()){
                     Ext.Msg.show({
                         title:'Warning',
-                        msg: 'A report by the name \'' + config.reportName + '\' already exists. Would you like to replace it?',
+                        msg: 'A report by the name \'' + $h(config.reportName) + '\' already exists. Would you like to replace it?',
                         buttons: Ext.Msg.YESNO,
                         fn: function(btnId, text, opt){
                             if(btnId == 'yes'){
@@ -1004,7 +1006,7 @@ LABKEY.vis.TimeChartPanel = Ext.extend(Ext.Panel, {
                 else{
                     Ext.Msg.show({
                         title:'Error',
-                        msg: 'A report by the name \'' + config.reportName + '\' already exists.  Please choose a different name.',
+                        msg: 'A report by the name \'' + $h(config.reportName) + '\' already exists.  Please choose a different name.',
                         buttons: Ext.Msg.OK,
                         icon: Ext.MessageBox.ERROR
                     });
@@ -1026,7 +1028,8 @@ LABKEY.vis.TimeChartPanel = Ext.extend(Ext.Panel, {
             visualizationConfig: this.chartInfo,
             replace: config.replace,
             type: LABKEY.Visualization.Type.TimeChart,
-            success: this.saveChartSuccess(config.reportName,
+            success: this.saveChartSuccess(config.replace,
+                                           config.reportName,
                                            config.reportDescription,
                                            config.reportShared,
                                            config.reportShared ? undefined : LABKEY.Security.currentUser.id,
@@ -1037,11 +1040,20 @@ LABKEY.vis.TimeChartPanel = Ext.extend(Ext.Panel, {
         });
     },
 
-    saveChartSuccess: function (reportName, reportDescription, reportShared, ownerId, createdBy){
+    saveChartSuccess: function (replace, reportName, reportDescription, reportShared, ownerId, createdBy){
         return function(result, request, options) {
             this.markDirty(false);
-            this.editorOverviewPanel.updateOverview({name: reportName, description: reportDescription, shared: reportShared, ownerId: ownerId, createdBy: createdBy});
             Ext.Msg.alert("Success", "The chart has been successfully saved.");
+
+            // if a new chart was created (no replacing), we need to refresh the page with the correct report name on the URL
+            if (!replace)
+            {
+                window.location = LABKEY.ActionURL.buildURL("visualization", "timeChartWizard", LABKEY.ActionURL.getContainer(), {edit: true, name: reportName}); 
+            }
+            else
+            {
+                this.editorOverviewPanel.updateOverview({name: reportName, description: reportDescription, shared: reportShared, ownerId: ownerId, createdBy: createdBy});
+            }
         }
     },
 

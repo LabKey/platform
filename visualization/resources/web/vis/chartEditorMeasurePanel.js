@@ -117,7 +117,7 @@ LABKEY.vis.ChartEditorMeasurePanel = Ext.extend(Ext.FormPanel, {
        // add a button for the user to remove the selected measure
         this.removeMeasureButton = new Ext.Button({
             text: 'Remove Measure',
-            disabled: this.measures.length <= 1,
+            disabled: this.measures.length == 0,
             handler: this.removeSelectedMeasure,
             scope: this
         });

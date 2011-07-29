@@ -389,17 +389,30 @@ LABKEY.vis.ChartEditorXAxisPanel = Ext.extend(Ext.FormPanel, {
             listeners: {
                 scope: this,
                 'load': function(store, records, options){
+                    // since the ParticipantVisit/VisitDate will almost always be the date the users wants for multiple measures,
+                    // always make sure that it is added to the store
+                    var visitDateStr = this.subjectNounSingular + "Visit/VisitDate";
+                    if (store.find('name', visitDateStr) == -1)
+                    {
+                        var newDateRecordData = {
+                            schemaName: schemaName,
+                            queryName: queryName,
+                            name: visitDateStr,
+                            label: "Visit Date",
+                            type: "TIMESTAMP"
+                        };
+                        var newRecord = new store.recordType(newDateRecordData, store.getTotalCount() + 1);
+                        store.add([newRecord]);
+                    }
+
                         // if this is a saved report, we will have a measure date to select
                         var index = 0;
                         if(this.measure.name){
                             index = store.find('name', this.measure.name);
                         }
                         // otherwise, try a few hard-coded options
-                        else if(store.find('name', 'ParticipantVisit/VisitDate') > -1) {
-                            index = store.find('name', 'ParticipantVisit/VisitDate');
-                        }
-                        else if(store.find('name', 'Date') > -1) {
-                            index = store.find('name', 'Date');
+                        else if(store.find('name', visitDateStr) > -1) {
+                            index = store.find('name', visitDateStr);
                         }
 
                         if(store.getAt(index)){

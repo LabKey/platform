@@ -6,6 +6,7 @@
 Ext.namespace("LABKEY.vis");
 
 Ext.QuickTips.init();
+$h = Ext.util.Format.htmlEncode;
 
 LABKEY.vis.ChartEditorOverviewPanel = Ext.extend(Ext.Panel, {
     constructor : function(config){
@@ -64,7 +65,7 @@ LABKEY.vis.ChartEditorOverviewPanel = Ext.extend(Ext.Panel, {
         // a report by that name already exists within the container, if the user can update, ask if they would like to replace
         this.saveBtn = new Ext.Button({
             text: "Save",
-            hidden: false, // hide if user can't update a saved report
+            hidden: !this.canSaveChanges(), 
             disabled: !canSaveChanges,
             handler: function() {
                 var formVals = this.saveChartFormPanel.getForm().getValues();
@@ -73,7 +74,7 @@ LABKEY.vis.ChartEditorOverviewPanel = Ext.extend(Ext.Panel, {
                 if(!formVals.reportName){
                    Ext.Msg.show({
                         title: "Error",
-                        msg: "Name must be specified when saving a report.",
+                        msg: "Report name must be specified when saving a chart.",
                         buttons: Ext.MessageBox.OK,
                         icon: Ext.MessageBox.ERROR
                    });
@@ -100,8 +101,7 @@ LABKEY.vis.ChartEditorOverviewPanel = Ext.extend(Ext.Panel, {
                 var shared = typeof formVals.reportShared == "string" ? 'true' == formVals.reportShared : (new Boolean(formVals.reportShared)).valueOf();
                 this.fireEvent('saveChart', 'Save As', false, formVals.reportName, formVals.reportDescription, shared, canSaveSharedCharts, createdBy);
             },
-            scope: this,
-            formBind: true
+            scope: this
         });
 
         this.saveChartFormPanel = new Ext.FormPanel({
@@ -111,25 +111,39 @@ LABKEY.vis.ChartEditorOverviewPanel = Ext.extend(Ext.Panel, {
             buttonAlign: 'right',
             border: false,
             labelWidth: 125,
+            monitorValid: true,
             items: [
                 new Ext.form.TextField({
                     name: 'reportName',
                     fieldLabel: 'Report Name',
-                    readOnly: savedReport || !canSaveChanges, // disabled for saved report
+                    hidden: savedReport || !canSaveChanges,
                     value: (savedReport ? this.reportInfo.name : null),
-                    allowBlank: false,
-                    preventMark: true,
+                    allowBlank: true,
                     anchor: '100%',
-                    maxLength: 50
+                    maxLength: 200
+                }),
+                new Ext.form.DisplayField({
+                    name: 'reportNameDisplay',
+                    fieldLabel: 'Report Name',
+                    hidden: !savedReport && canSaveChanges, 
+                    value: $h(savedReport ? this.reportInfo.name : null),
+                    anchor: '100%'
                 }),
                 new Ext.form.TextArea({
                     name: 'reportDescription',
                     fieldLabel: 'Report Description',
-                    readOnly: !canSaveChanges,
+                    hidden: !canSaveChanges,
                     value: (savedReport ? this.reportInfo.description : null),
                     allowBlank: true,
                     anchor: '100%',
                     height: 35
+                }),
+                new Ext.form.DisplayField({
+                    name: 'reportDescriptionDisplay',
+                    fieldLabel: 'Report Description',
+                    hidden: canSaveChanges,
+                    value: $h(savedReport ? this.reportInfo.description : null),
+                    anchor: '100%'
                 }),
                 new Ext.form.RadioGroup({
                     name: 'reportShared',
@@ -216,7 +230,7 @@ LABKEY.vis.ChartEditorOverviewPanel = Ext.extend(Ext.Panel, {
             width:800,
             height:550,
             modal: true,
-            closeAction:'hide',
+            closeAction:'close',
             items: [new LABKEY.vis.MeasuresPanel({
                 axis: [{
                     multiSelect: false,
@@ -246,7 +260,7 @@ LABKEY.vis.ChartEditorOverviewPanel = Ext.extend(Ext.Panel, {
                 handler: function(){
                     if(this.changeMeasureSelection) {
                         this.fireEvent('initialMeasureSelected', this.changeMeasureSelection);
-                        win.hide();
+                        win.close();
                     }
                 },
                 scope: this
@@ -254,7 +268,7 @@ LABKEY.vis.ChartEditorOverviewPanel = Ext.extend(Ext.Panel, {
                 text: 'Cancel',
                 handler: function(){
                     delete this.changeMeasureSelection;
-                    win.hide();
+                    win.close();
                 },
                 scope: this
             }]
@@ -267,10 +281,11 @@ LABKEY.vis.ChartEditorOverviewPanel = Ext.extend(Ext.Panel, {
 
         // update the name/description field values accordingly
         if(typeof this.reportInfo == 'object'){
-            this.saveChartFormPanel.getComponent(0).setValue(this.reportInfo.name);
-            this.saveChartFormPanel.getComponent(0).setReadOnly(true); // disabled for saved report
-            this.saveChartFormPanel.getComponent(1).setValue(this.reportInfo.description);
-            this.saveChartFormPanel.getComponent(2).setValue(this.reportInfo.shared);
+            this.saveChartFormPanel.getComponent(0).hide();
+            this.saveChartFormPanel.getComponent(1).setValue($h(this.reportInfo.name));
+            this.saveChartFormPanel.getComponent(1).show();
+            this.saveChartFormPanel.getComponent(2).setValue(this.reportInfo.description);
+            this.saveChartFormPanel.getComponent(4).setValue(this.reportInfo.shared);
 
             // if the user can update, show save button (which is now for replacing the saved report)
             (this.canSaveChanges() ? this.saveBtn.show() : this.saveBtn.hide());
