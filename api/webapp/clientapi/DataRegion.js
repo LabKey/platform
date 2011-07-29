@@ -1738,181 +1738,440 @@ LABKEY.DataRegion._filterUI =
     _tableName : "",
     _fieldName : "",
     _fieldCaption : "",
-    _fieldType : "text",
-    _filterDiv : null,
     _filterWin : null,
-    _filterQueryString : "",
-    _valueComponent1 : null,
-    _valueComponent2 : null,
-
-    setFilterQueryString : function(s)
-    {
-        this._filterQueryString = s;
-    },
-
-
-    getFilterDiv : function ()
-    {
-        if (!this._filterDiv)
-        {
-            LABKEY.addMarkup('<div id="filterDiv" style="display:none;">' +
-            '  <table onkeypress="LABKEY.DataRegion._filterUI.handleKey(event);">' +
-            '    <tr>' +
-            '      <td colspan=2 style="padding: 5px" nowrap>' +
-            '        <select id="compare_1" name="compare_1" onchange="LABKEY.DataRegion._filterUI.doChange(this)">' +
-            '            <option value="">&lt;has any value></option>' +
-            '        </select><br>' +
-            '        <div id="filterDivInput1"></div><br>' +
-            '        <div id="compareDiv_2" style="visibility:hidden">and<br>' +
-            '        <select id="compare_2" name="compare_2" onchange="LABKEY.DataRegion._filterUI.doChange(this)">' +
-            '            <option value="">&lt;no other filter></option>' +
-            '        </select><br>' +
-            '        <div id="filterDivInput2"></div><br><br>' +
-            '        </div>' +
-            '        <a class="labkey-button" id="filterPanelOKButton" href="#" onclick="LABKEY.DataRegion._filterUI.doFilter();return false;"><span>OK</span> ' +
-            '        <a class="labkey-button" id="filterPanelCancelButton" href="#" onclick="LABKEY.DataRegion._filterUI.hideFilterDiv();return false;"><span>Cancel</span> ' +
-            '        <a class="labkey-button" id="filterPanelClearFilterButton" href="#" onclick="LABKEY.DataRegion._filterUI.clearFilter();return false;"><span>Clear Filter</span> ' +
-            '        <a class="labkey-button" id="filterPanelClearAllFiltersButton" href="#" onclick="LABKEY.DataRegion._filterUI.clearAllFilters();return false;"><span>Clear All Filters</span> ' +
-            '      </td>' +
-            '    </tr>' +
-            '  </table>' +
-            '</div>');
-            this._filterDiv = document.getElementById("filterDiv");
-        }
-        return this._filterDiv;
-    },
-
-
-    doChange : function(obj)
-    {
-        var index = obj.name.split("_")[1];
-
-        var valueComponent = index == "1" ? this._valueComponent1 : this._valueComponent2;
-
-        var compare = obj.options[obj.selectedIndex].value;
-        if (compare == "" || compare == "isblank" || compare == "isnonblank" || compare == "nomvvalue" || compare == "hasmvvalue")
-        {
-            if (index == "1")
-                document.getElementById("compareDiv_2").style.visibility = "hidden";
-            if (valueComponent)
-            {
-                valueComponent.setVisible(false);
-                valueComponent.setDisabled(true);
-            }
-        }
-        else
-        {
-            if (index == "1")
-                document.getElementById("compareDiv_2").style.visibility = "visible";
-            if (valueComponent)
-            {
-                valueComponent.setDisabled(false);
-                valueComponent.setVisible(true);
-                valueComponent.focus();
-                //TODO valueInput.select();
-            }
-        }
-    },
-
 
     showFilterPanel : function(dataRegionName, colName, caption, dataType, mvEnabled, queryString, dialogTitle, confirmCallback)
     {
         this._fieldName = colName;
         this._fieldCaption = caption;
         this._tableName = dataRegionName;
-
-        this.fillOptions(dataType, mvEnabled);
-        this.createInputs(dataType);
+        this._mappedType = this.getMappedType(dataType);
+        var paramValPairs = this.getParamValPairs(queryString, null);
 
         if (!queryString)
         {
             queryString = LABKEY.DataRegions[dataRegionName] ? LABKEY.DataRegions[dataRegionName].requestURL : null;
         }
-
+    
         if (!confirmCallback)
         {
             // Invoked as part of a regular filter dialog on a grid
             this.changeFilterCallback = this.changeFilter;
-            document.getElementById("filterPanelClearAllFiltersButton").style.display="";
-            document.getElementById("filterPanelClearFilterButton").style.display="";
         }
         else
         {
             // Invoked from GWT, which will handle the commit itself
             this.changeFilterCallback = confirmCallback;
-            document.getElementById("filterPanelClearAllFiltersButton").style.display="none";
-            document.getElementById("filterPanelClearFilterButton").style.display="none";
         }
 
-        var paramValPairs = this.getParamValPairs(queryString, null);
-        //Fill in existing filters...
-        var filterIndex = 1;
-        for (var i = 0; i < paramValPairs.length; i++)
-        {
-            var pair = paramValPairs[i];
-            var key = pair[0];
-            var value = pair.length > 1 ? pair[1] : "";
+       /* var comboStore1 = new Ext.data.ArrayStore({
+            fields: ['text', 'value', 'DECIMAL', 'INT', 'LONGTEXT', 'TEXT', 'DATE', 'BOOL'],
+            data: [
+                //LONGTEXT or TEXT
+                ['Starts With', 'startswith','f', 'f', 't', 't', 'f', 'f'],
+                ['Does Not Start With', 'doesnotstartwith','f', 'f', 't', 't', 'f', 'f'],
+                ['Contains', 'contains','f', 'f', 't', 't', 'f', 'f'],
+                ['Does not Contain', 'doesnotcontain','f', 'f', 't', 't', 'f', 'f'],
+                //!LONGTEXT
+                ['Equals', 'eq', 't', 't', 'f', 't', 'f', 't'],
+                ['Does Not Equal', 'neqornull', 't', 't', 'f', 't', 'f', 't'],
+                //!LONGTEXT && !BOOL && !DATE
+                ["Equals One Of (e.g. 'a;b;c')", 'in', 't', 't', 'f', 't', 'f', 'f'],
+                ['Is Greater Than', 'gt', 't', 't', 'f', 't', 'f', 'f'],
+                ['Is Less Than', 'lt', 't', 't', 'f', 't', 'f', 'f'],
+                ['Is Greater Than or Equal To', 'gte', 't', 't', 'f', 't', 'f', 'f'],
+                ['Is Less Than or Equal To', 'lte', 't', 't', 'f', 't', 'f', 'f'],
+                //DATE only
+                ['Equals', 'dateeq','f', 'f', 'f', 'f', 't', 'f'],
+                ['Does Not Equal', 'dateneq','f', 'f', 'f', 'f', 't', 'f'],
+                ['Is Greater Than', 'dategt','f', 'f', 'f', 'f', 't', 'f'],
+                ['Is Less Than', 'datelt','f', 'f', 'f', 'f', 't', 'f'],
+                ['Is Greater Than or Equal To', 'dategte','f', 'f', 'f', 'f', 't', 'f'],
+                ['Is Less Than or Equal To', 'datelte','f', 'f', 'f', 'f', 't', 'f'],
+                //EVERYTHING
+                ['Is Blank', 'isblank', 't', 't', 't', 't', 't', 't'],
+                ['Is Not Blank', 'isnonblank', 't', 't', 't', 't', 't', 't']
+            ],
+            scope : this
+        });
 
-            if (key.indexOf(this._tableName + "." + this._fieldName + "~") != 0)
-                continue;
+        var comboStore2 = new Ext.data.ArrayStore({
+            fields: ['text', 'value', 'DECIMAL', 'INT', 'LONGTEXT', 'TEXT', 'DATE', 'BOOL'],
+            data: [
+                ['No Other Filter', '', 't', 't', 't', 't', 't', 't'],
+                //LONGTEXT or TEXT
+                ['Starts With', 'startswith','f', 'f', 't', 't', 'f', 'f'],
+                ['Does Not Start With', 'doesnotstartwith','f', 'f', 't', 't', 'f', 'f'],
+                ['Contains', 'contains','f', 'f', 't', 't', 'f', 'f'],
+                ['Does not Contain', 'doesnotcontain','f', 'f', 't', 't', 'f', 'f'],
+                //!LONGTEXT
+                ['Equals', 'eq', 't', 't', 'f', 't', 'f', 't'],
+                ['Does Not Equal', 'neqornull', 't', 't', 'f', 't', 'f', 't'],
+                //!LONGTEXT && !BOOL && !DATE
+                ["Equals One Of (e.g. 'a;b;c')", 'in', 't', 't', 'f', 't', 'f', 'f'],
+                ['Is Greater Than', 'gt', 't', 't', 'f', 't', 'f', 'f'],
+                ['Is Less Than', 'lt', 't', 't', 'f', 't', 'f', 'f'],
+                ['Is Greater Than or Equal To', 'gte', 't', 't', 'f', 't', 'f', 'f'],
+                ['Is Less Than or Equal To', 'lte', 't', 't', 'f', 't', 'f', 'f'],
+                //DATE only
+                ['Equals', 'dateeq','f', 'f', 'f', 'f', 't', 'f'],
+                ['Does Not Equal', 'dateneq','f', 'f', 'f', 'f', 't', 'f'],
+                ['Is Greater Than', 'dategt','f', 'f', 'f', 'f', 't', 'f'],
+                ['Is Less Than', 'datelt','f', 'f', 'f', 'f', 't', 'f'],
+                ['Is Greater Than or Equal To', 'dategte','f', 'f', 'f', 'f', 't', 'f'],
+                ['Is Less Than or Equal To', 'datelte','f', 'f', 'f', 'f', 't', 'f'],
+                //EVERYTHING
+                ['Is Blank', 'isblank', 't', 't', 't', 't', 't', 't'],
+                ['Is Not Blank', 'isnonblank', 't', 't', 't', 't', 't', 't']
+            ],
+            scope : this
+        });
 
-            // set dropdown
-            var comparison = (key.split("~"))[1];
-            var select = document.getElementById("compare_" + filterIndex);
-            for (var opt = 0; opt < select.options.length; opt++)
-            {
-                if (select.options[opt].value == comparison)
-                {
-                    select.selectedIndex = opt;
-                    break;
+        if(mvEnabled){
+            var comboRecord = Ext.data.Record.create([
+               'text', 'value', 'DECIMAL', 'INT', 'LONGTEXT', 'TEXT', 'DATE', 'BOOL'//, 'mvEnabled'
+            ]);
+            var mvRecord1 = new comboRecord({
+                text:'Has a missing value indicator',
+                value:'hasmvvalue',
+                DECIMAL:'t',
+                INT:'t',
+                LONGTEXT:'t',
+                TEXT:'t',
+                DATE:'t',
+                BOOL:'t'//,
+            });
+            var mvRecord2 = new comboRecord({
+                text:'Does not have a missing value indicator',
+                value:'nomvvalue',
+                DECIMAL:'t',
+                INT:'t',
+                LONGTEXT:'t',
+                TEXT:'t',
+                DATE:'t',
+                BOOL:'t'//,
+            });
+            comboStore1.add([mvRecord1, mvRecord2]);
+            comboStore2.add([mvRecord1, mvRecord2]);
+        }*/
+        //fillOptions : function(mvEnabled, mappedType, storeNum)
+        //var store = new Ext.data.ArrayStore({fields: ['text', 'value']});
+
+        var comboStore1 = new Ext.data.ArrayStore({fields: ['text', 'value']});
+        comboStore1 = this.fillOptions(mvEnabled, this._mappedType, 0);
+        var comboStore2 = new Ext.data.ArrayStore({fields: ['text', 'value']});
+        comboStore2 = this.fillOptions(mvEnabled, this._mappedType, 1);
+
+        var self = this; //Used so we can get _mappedType within Ext component configs (comboBoxes && validators).
+
+        var filterComboBox1 = new Ext.form.ComboBox({
+            emptyText: 'Choose a filter:',
+            autoSelect: false,
+            width: 250,
+            allowBlank: 'false',
+            triggerAction: 'all',
+            fieldLabel: 'Filter Type',
+            store: comboStore1,
+            displayField: 'text',
+            typeAhead: 'false',
+            forceSelection: true,
+            mode: 'local',
+            clearFilterOnReset: false,
+            editable: false,
+            listeners:{
+                scope: this,
+                select:setField1,
+                afterRender: function(combo){
+                    //afterRender of combobox we set the default value.
+                    if(this._mappedType == 'LONGTEXT' || this._mappedType == 'TEXT'){
+                        //Starts With
+                        combo.setValue(combo.getStore().getAt(8).data.text);
+                    } else{
+                        //Equals
+                        combo.setValue(combo.getStore().getAt(1).data.text);
+                    }
                 }
+            },
+            scope: this });
+
+        var filterComboBox2 = new Ext.form.ComboBox({
+            emptyText: 'Choose a filter:',
+            width: 250,
+            allowBlank: 'false',
+            triggerAction: 'all',
+            fieldLabel: 'and',
+            store: comboStore2,
+            displayField: 'text',
+            typeAhead: 'false',
+            forceSelection: true,
+            mode: 'local',
+            clearFilterOnReset: false,
+            editable: false,
+            listeners:{
+                scope: this,
+                disable: function(combo){
+                    inputField2.disable(); //If this combobox is disabled then so is the input field.
+                },
+                enable: setField2, //When this combobox gets re-enabled we want to re-enable the input box as well, but only if we're supposed to.
+                select:setField2,
+                afterRender: function(combo){
+                    //Set the default field to "No Other Filter"
+                    combo.setValue(combo.getStore().getAt(0).data.text);
+                    inputField2.disable();
+                }
+            },
+            scope: this
+        });
+
+        function setField1(combo){
+            var selectedValue = combo.getStore().getAt(combo.getStore().find('text', combo.getValue())).data.value;
+            if(selectedValue == 'isblank' || selectedValue == 'isnonblank'|| selectedValue == 'hasmvvalue'|| selectedValue == 'nomvvalue' || selectedValue == ''){
+                //Disable filterComboBox2.
+                filterComboBox2.disable();
+                //Disable the field and allow it to be blank for values 'isblank' and 'isnonblank'.
+                inputField1.disable();
+            } else{
+                //enable filterComboBox2.
+                filterComboBox2.enable();
+                inputField1.enable();
             }
-
-            // set input
-            var valueComponent = filterIndex==1 ? this._valueComponent1 : this._valueComponent2;
-            valueComponent.setValue(value);
-
-            filterIndex++;
-            if (filterIndex > 2)
-                break;
         }
-        var div = this.getFilterDiv();
-        div.style.display = "block";
-        div.style.visibility = "visible";
+        function setField2(combo){
+            //Get the 'value' field of the selected item in the combo box.
+            var selectedValue = combo.getStore().getAt(combo.getStore().find('text', combo.getValue())).data.value;
+            if(selectedValue == 'isblank' || selectedValue == 'isnonblank'|| selectedValue == 'hasmvvalue'|| selectedValue == 'nomvvalue'|| selectedValue == ''){
+                //Disable the field and allow it to be blank for values 'isblank' and 'isnonblank'.
+                inputField2.disable();
+            } else{
+                inputField2.enable();
+            }
+        }
 
-        if (!this._filterWin)
-        {
-            this._filterWin = new Ext.Window({
-                contentEl: div,
-                width: 350,
-                autoHeight: true,
-                modal: true,
-                resizable: false,
-                closeAction: 'hide'
+        var inputField1;
+        var inputField2;
+
+        if(this._mappedType == "DATE"){
+            inputField1 = new Ext.form.DateField({
+                allowBlank: false,
+                width: 250,
+                blankText: 'You must enter a value.',
+                altFormats: "m/d/Y|n/j/Y|n/j/y|m/j/y|n/d/y|m/j/Y|n/d/Y|m-d-y|m-d-Y|m/d|m-d|md|mdy|mdY|d|Y-m-d|j-M-Y|j M Y|j-M-y|j M y",
+                validator: inputFieldValidator1,
+                listeners: {
+                    disable: function(field){
+                        //Call validate after we disable so any pre-existing validation errors go away.
+                        this.validate();
+                    }
+                }
             });
 
-            // 5975: Override focus behavior. Keeps Ext.Window from stealing focus after showing.
-            this._filterWin.focus = function () {
-                LABKEY.DataRegion._filterUI.doChange(document.getElementById("compare_1"));
-                LABKEY.DataRegion._filterUI.doChange(document.getElementById("compare_2"));
-            };
-        }
-        else
-        {
-            this._filterWin.center();
+            inputField2 = new Ext.form.DateField({
+                allowBlank: false,
+                width: 250,
+                blankText: 'You must enter a value.',
+                altFormats: "m/d/Y|n/j/Y|n/j/y|m/j/y|n/d/y|m/j/Y|n/d/Y|m-d-y|m-d-Y|m/d|m-d|md|mdy|mdY|d|Y-m-d|j-M-Y|j M Y|j-M-y|j M y",
+                validator: inputFieldValidator2,
+                listeners: {
+                    disable: function(field){
+                        //Call validate after we disable so any pre-existing validation errors go away.
+                        this.validate();
+                    }
+                }
+            });
+        } else {
+            inputField1 = new Ext.form.TextField({
+                name: 'value_1',
+                id: 'value_1',
+                allowBlank: false,
+                width: 250,
+                blankText: 'You must enter a value.',
+                validator: inputFieldValidator1,
+                listeners: {
+                    disable: function(field){
+                        //Call validate after disable so any pre-existing validation errors go away.
+                        this.validate();
+                    }
+                }
+            });
+
+            inputField2 = new Ext.form.TextField({
+                name: 'value_2',
+                id: 'value_2',
+                allowBlank: false,
+                width: 250,
+                blankText: 'You must enter a value.',
+                validator: inputFieldValidator2,
+                listeners: {
+                    disable: function(field){
+                        //Call validate after we disable so any pre-existing validation errors go away.
+                        this.validate();
+                    }
+                }
+            });
         }
 
-        if (filterIndex == 2)
-            document.getElementById("compare_2").selectedIndex = 0;
+
+        function inputFieldValidator1(input){
+            //Helper function for validateInputField
+            var test = filterComboBox1.getValue();
+            if(filterComboBox1.getStore().getAt(filterComboBox1.getStore().find('text', filterComboBox1.getValue())).data.value == 'in'){
+                return validateEqOneOf(input, self._mappedType)
+            } else {
+                return validateInputField(input, self._mappedType);
+            }
+
+        }
+
+        function inputFieldValidator2(input){
+            //Helper function for validateInputField
+            if(filterComboBox2.getStore().getAt(filterComboBox2.getStore().find('text', filterComboBox2.getValue())).data.value == 'in'){
+                return validateEqOneOf(input, self._mappedType)
+            } else {
+                return validateInputField(input, self._mappedType);
+            }
+
+        }
+
+        function validateInputField(input, mappedType){
+            if(input){
+                    if(mappedType == "INT" && !isFinite(input)){
+                        return "You must enter an integer.";
+                    } else if(mappedType == "DECIMAL" && !isFinite(input)){
+                        return "You must enter a decimal.";
+                    } else if(mappedType == "DATE"){
+                        //Javascript does not parse ISO dates, but if date matches we're done
+                        if (input.match(/^\s*(\d\d\d\d)-(\d\d)-(\d\d)\s*$/) ||
+                                input.match(/^\s*(\d\d\d\d)-(\d\d)-(\d\d)\s*(\d\d):(\d\d)\s*$/))
+                        {
+                            return true;
+                        } else{
+                            var dateVal = new Date(input);
+                            if (isNaN(dateVal))
+                            {
+                                //If the user entered something other than numbers.
+                                return input + " is not a valid date - it must be in the format m/d/Y";
+                            } else {
+                                //If the user entered part of a date we'll try to filter by it.
+                                return true;
+                            }
+                        }
+                    } else if(mappedType == "BOOL"){
+                        var upperVal = input.toUpperCase();
+                        if (upperVal == "TRUE" || value == "1" || upperVal == "Y" || upperVal == "YES" || upperVal == "ON" || upperVal == "T"
+                                || upperVal == "FALSE" || value == "0" || upperVal == "N" || upperVal == "NO" || upperVal == "OFF" || upperVal == "F"){
+                            return true;
+                        } else {
+                            return input + " is not a valid boolean. Try true,false; yes,no; on,off; or 1,0.";
+                        }
+                    } else {
+                        //If it's not a DECIMAL, INT, DATE, or BOOL, then it's a string, and in that case the characters
+                        //do not matter, so return true.
+                        return true;
+                    }
+                } else{
+                //If for some reason the input or mappedType are null then return false.
+                //Generally happens when doing Equals One Of
+                return "You must enter a value.";
+            }
+        }
+
+        function validateEqOneOf(input, mappedType){
+            // Used when "Equals One Of.." is selected. Calls validateInputField on each value entered.
+            var values = input.split(';');
+            var isValid = "";
+            for(var i = 0; i < values.length; i++){
+                isValid = validateInputField(values[i], mappedType);
+                if(isValid === false){
+                    return isValid;
+                }
+            }
+            //If we make it out of the for loop we had no errors.
+            return true;
+        }
+        
+        var okHandler = function(){
+            //Step 1: validate
+            if(inputField1.isValid() && inputField2.isValid()){
+                var filterType1 = filterComboBox1.getStore().getAt(filterComboBox1.getStore().find('text', filterComboBox1.getValue())).data.value;
+                var filterType2 = filterComboBox2.getStore().getAt(filterComboBox2.getStore().find('text', filterComboBox2.getValue())).data.value;
+                LABKEY.DataRegion._filterUI.setFilter(inputField1.getValue(), inputField2.getValue(), filterType1, filterType2);
+                self._filterWin.close();
+            }
+        };
+
+        var cancelHandler = function(){
+            self._filterWin.close();
+        };
+
+        var clearFilterHandler = function(){
+            LABKEY.DataRegion._filterUI.clearFilter();
+        };
+
+        var clearAllFiltersHandler = function(){
+            LABKEY.DataRegion._filterUI.clearAllFilters();
+        };
+
+        var filterPanel = new Ext.form.FormPanel({
+            //Here we set up the Form Panel for the filter window.
+            autoWidth: true,
+            autoHeight: true,
+            resizable: false,
+            bodyStyle: 'padding: 6px',
+            defaults:{
+                msgTarget: 'under'
+            },
+            items: [filterComboBox1, inputField1, filterComboBox2, inputField2],
+            buttons: [
+                {text: 'OK', handler: okHandler},
+                {text: 'CANCEL', handler: cancelHandler},
+                {text: 'CLEAR FILTER', handler: clearFilterHandler},
+                {text: 'CLEAR ALL FILTERS', handler: clearAllFiltersHandler}
+            ]
+        });
+
+         this._filterWin = new Ext.Window({
+            //contentEl: div,
+            //id: 'filterWinId',
+            width: 400,
+            autoHeight: true,
+            modal: true,
+            resizable: false,
+            closeAction: 'close',
+            items: filterPanel
+        });
 
         this._filterWin.setTitle(dialogTitle ? dialogTitle : "Show Rows Where " + caption);
         this._filterWin.show();
-    },
 
-    hideFilterDiv : function()
-    {
-        if (this._filterWin)
-            this._filterWin.hide();
+        //Fill in existing filters...
+        var setCombo1 = true; //true if we have not filled in the existing filter for filterComboBox1
+        for (var i = 0; i < paramValPairs.length; i++)
+        {
+            var pair = paramValPairs[i]; // Filter 1 or 2.
+            var key = pair[0]; // Something like: "Issues.Title~startswith"
+            var comparison = (key.split("~"))[1]; // combobox value (eq, neqornull, gte, etc.)
+            var value = pair.length > 1 ? pair[1] : ""; //The user input.
+            //If no filter is set then we will skip.
+            if (key.indexOf(this._tableName + "." + this._fieldName + "~") != 0)
+                continue;
+
+            if(setCombo1){
+                //Find the text of the comparison (ex: in = "Equals One Of") && set the text of the combobox.
+                filterComboBox1.setValue(comboStore1.getAt(comboStore1.find('value', comparison)).get('text'));
+                //set the value of the input field.
+                inputField1.setValue(value);
+                //Call setField so the textfield/datefield is properly disabled/enabled.
+                setField1(filterComboBox1);
+                setCombo1 = false;
+            } else {
+                //Find the text of the comparison (ex: in = "Equals One Of") && set the text of the combobox.
+                filterComboBox2.setValue(comboStore2.getAt(comboStore2.find('value', comparison)).get('text'));
+                //set the value of the input field.
+                inputField2.setValue(value);
+                //Call setField so the textfield/datefield is properly disabled/enabled.
+                setField2(filterComboBox2);
+            }
+        }
     },
 
     _typeMap : {
@@ -1963,169 +2222,106 @@ LABKEY.DataRegion._filterUI =
         return mappedType;
     },
 
-
-    createInputs : function(dataType)
+    fillOptions : function(mvEnabled, mappedType, storeNum)
     {
-        this.getFilterDiv();
-        var mappedType = this.getMappedType(dataType);
-        if (this._valueComponent1)
-            this._valueComponent1.destroy();
-        if (this._valueComponent2)
-            this._valueComponent2.destroy();
-        for (var i=1 ; i<=2 ; i++)
-        {
-            var id = "value_" + i; // still used by automated tests
-            var inputDiv = Ext.get("filterDivInput" + i);
-            var c;
-            if ("DATE" == mappedType)
-            {
-                c = new Ext.form.DateField({id: id, width:180, renderTo:inputDiv, altFormats: "m/d/Y|n/j/Y|n/j/y|m/j/y|n/d/y|m/j/Y|n/d/Y|m-d-y|m-d-Y|m/d|m-d|md|mdy|mdY|d|Y-m-d|j-M-Y|j M Y|j-M-y|j M y"});
-            }
-//            else if ("INT" == mappedType)
-//            {
-//                c = new Ext.form.NumberField({id: id, width:180, renderTo:inputDiv, allowDecimals:false});
-//            }
-//            else if ("DECIMAL" == mappedType)
-//            {
-//                c = new Ext.form.NumberField({id: id, width:180, renderTo:inputDiv, decimalPrecision:15});
-//            }
-            else
-            {
-                c = new Ext.form.TextField({id: id, width:180, renderTo:inputDiv});
-            }
-            if (i==1)
-                this._valueComponent1 = c;
-            else
-                this._valueComponent2 = c;
-        }
-    },
+        var store = new Ext.data.ArrayStore({fields: ['text', 'value']});
+        var comboRecord = Ext.data.Record.create(['text', 'value']);
+        var rec;
 
-
-    fillOptions : function(dataType, mvEnabled)
-    {
-        this.getFilterDiv();
-        var mappedType = this.getMappedType(dataType);
-
-        for (var i = 1; i <= 2; i++)
-        {
-            var select = document.getElementById("compare_" + i);
-            var opt;
-            select.options.length = 1;
-
-            if (mappedType != "LONGTEXT")
-            {
-                opt = document.createElement("OPTION");
-                opt.value = (mappedType == "DATE") ? "dateeq" : "eq";
-                opt.text = "Equals";
-                this.appendOption(select, opt);
-                if (mappedType != "BOOL" && mappedType != "DATE")
-                {
-                    opt = document.createElement("OPTION");
-                    opt.value = "in";
-                    opt.text = "Equals One Of (e.g. 'a;b;c')";
-                    this.appendOption(select, opt);
-                }
-                opt = document.createElement("OPTION");
-                opt.value = (mappedType == "DATE") ? "dateneq" : "neqornull";
-                opt.text = "Does not Equal";
-                this.appendOption(select, opt);
-            }
-
-            opt = document.createElement("OPTION");
-            opt.value = "isblank";
-            opt.text = "Is Blank";
-            this.appendOption(select, opt);
-
-            opt = document.createElement("OPTION");
-            opt.value = "isnonblank";
-            opt.text = "Is Not Blank";
-            this.appendOption(select, opt);
-
-            if (mappedType != "LONGTEXT" && mappedType != "BOOL")
-            {
-                opt = document.createElement("OPTION");
-                opt.value = (mappedType == "DATE") ? "dategt" : "gt";
-                opt.text = "Is Greater Than";
-                this.appendOption(select, opt);
-                opt = document.createElement("OPTION");
-                opt.value = (mappedType == "DATE") ? "datelt" : "lt";
-                opt.text = "Is Less Than";
-                this.appendOption(select, opt);
-                opt = document.createElement("OPTION");
-                opt.value = (mappedType == "DATE") ? "dategte" : "gte";
-                opt.text = "Is Greater Than or Equal To";
-                this.appendOption(select, opt);
-                opt = document.createElement("OPTION");
-                opt.value = (mappedType == "DATE") ? "datelte" : "lte";
-                opt.text = "Is Less Than or Equal To";
-                this.appendOption(select, opt);
-            }
-
-            if (mappedType == "TEXT" || mappedType == "LONGTEXT")
-            {
-                opt = document.createElement("OPTION");
-                opt.value = "startswith";
-                opt.text = "Starts With";
-                this.appendOption(select, opt);
-                opt = document.createElement("OPTION");
-                opt.value = "doesnotstartwith";
-                opt.text = "Does Not Start With";
-                this.appendOption(select, opt);
-                opt = document.createElement("OPTION");
-                opt.value = "contains";
-                opt.text = "Contains";
-                this.appendOption(select, opt);
-                opt = document.createElement("OPTION");
-                opt.value = "doesnotcontain";
-                opt.text = "Does Not Contain";
-                this.appendOption(select, opt);
-            }
-
-            if (mvEnabled)
-            {
-                opt = document.createElement("OPTION");
-                opt.value = "hasmvvalue";
-                opt.text = "Has a missing value indicator";
-                this.appendOption(select, opt);
-
-                opt = document.createElement("OPTION");
-                opt.value = "nomvvalue";
-                opt.text = "Does not have a missing value indicator";
-                this.appendOption(select, opt);
-            }
-
-            if (i == 1)
-                this.selectDefault(select, mappedType);
+        if(storeNum == 1){
+            rec = new comboRecord({text:'No Other Filter', value: ''});
+            store.add(rec);
+        } else{
+            rec = new comboRecord({text:'Has Any Value', value: ''});
+            store.add(rec);
         }
 
-        _mappedType = mappedType;
-    },
-
-    appendOption : function(select, opt)
-    {
-        select.options[select.options.length] = opt;
-    },
-
-    selectDefault : function(select, mappedType)
-    {
-        if (mappedType == "LONGTEXT")
-            this.selectByValue(select, "contains");
-        else if (mappedType == "DECIMAL")
-            this.selectByValue(select, "gte");
-        else if (mappedType == "TEXT")
-            this.selectByValue(select, "startswith");
-        else if (select.options.length > 1)
-            select.selectedIndex = 1;
-    },
-
-    selectByValue : function(select, value)
-    {
-        for (var i = 0; i < select.options.length; i++)
-            if (select.options[i].value == value)
-            {
-                select.selectedIndex = i;
-                return;
+        if (mappedType != "LONGTEXT")
+        {
+            if(mappedType == "DATE"){
+                rec = new comboRecord({text:'Equals', value: 'dateeq'});
+            } else {
+                rec = new comboRecord({text:'Equals', value: 'eq'});
             }
+            store.add(rec);
+
+            if (mappedType != "BOOL" && mappedType != "DATE")
+            {
+                rec = new comboRecord({text:"Equals One Of (e.g. 'a;b;c')", value: 'in'});
+                store.add(rec);
+            }
+
+            if(mappedType == "DATE"){
+                rec = new comboRecord({text:'Does Not Equal', value: 'dateneq'});
+            } else {
+                rec = new comboRecord({text:'Does Not Equal', value: 'neqornull'});
+            }
+            store.add(rec);
+        }
+
+        if (mappedType != "LONGTEXT" && mappedType != "BOOL")
+        {
+            if(mappedType == "DATE"){
+                rec = new comboRecord({text:'Is Greater Than', value: 'dategt'});
+            } else {
+                rec = new comboRecord({text:'Is Greater Than', value: 'gt'});
+            }
+            store.add(rec);
+
+            if(mappedType == "DATE"){
+                rec = new comboRecord({text:'Is Less Than', value: 'datelt'});
+            } else {
+                rec = new comboRecord({text:'Is Less Than', value: 'lt'});
+            }
+            store.add(rec);
+
+            if(mappedType == "DATE"){
+                rec = new comboRecord({text:'Is Greater Than or Equal To', value: 'dategte'});
+            } else {
+                rec = new comboRecord({text:'Is Greater Than or Equal To', value: 'gte'});
+            }
+            store.add(rec);
+
+            if(mappedType == "DATE"){
+                rec = new comboRecord({text:'Is Less Than or Equal To', value: 'datelte'});
+            } else {
+                rec = new comboRecord({text:'Is Less Than or Equal To', value: 'lte'});
+            }
+            store.add(rec);
+        }
+
+        if (mappedType == "TEXT" || mappedType == "LONGTEXT")
+        {
+            rec = new comboRecord({text:'Starts With', value: 'startswith'});
+            store.add(rec);
+
+            rec = new comboRecord({text:'Does Not Start With', value: 'doesnotstartwith'});
+            store.add(rec);
+
+            rec = new comboRecord({text:'Contains', value: 'contains'});
+            store.add(rec);
+
+            rec = new comboRecord({text:'Does Not Contain', value: 'doesnotcontain'});
+            store.add(rec);
+        }
+
+        //All mappedTypes will have these:
+        rec = new comboRecord({text:'Is Blank', value: 'isblank'});
+        store.add(rec);
+
+        rec = new comboRecord({text:'Is Not Blank', value: 'isnonblank'});
+        store.add(rec);
+
+        if (mvEnabled)
+        {
+            rec = new comboRecord({text:'Has a missing value indicator', value: 'hasmvvalue'});
+            store.add(rec);
+
+            rec = new comboRecord({text:'Does not have a missing value indicator', value: 'nomvvalue'});
+            store.add(rec);
+        }
+
+        return store;
     },
 
     savedSearchString : null,
@@ -2145,16 +2341,7 @@ LABKEY.DataRegion._filterUI =
 
     setSearchString : function(tableName, search)
     {
-        this.hideFilterDiv();
         this.savedSearchString = search || "";
-        for (var i=0; i < this.filterListeners.length; i++)
-        {
-            if (this.filterListeners[i](tableName, search))
-            {
-                this.hideFilterDiv();
-                return;
-            }
-        }
         // If the search string doesn't change and there is a hash on the url, the page won't reload.
         // Remove the hash by setting the full path plus search string.
         window.location.assign(window.location.pathname + "?" + this.savedSearchString);
@@ -2265,7 +2452,6 @@ LABKEY.DataRegion._filterUI =
 
     clearFilter : function()
     {
-        this.hideFilterDiv();
         var dr = LABKEY.DataRegions[this._tableName];
         if (!dr)
             return;
@@ -2274,7 +2460,6 @@ LABKEY.DataRegion._filterUI =
 
     clearAllFilters : function()
     {
-        this.hideFilterDiv();
         var dr = LABKEY.DataRegions[this._tableName];
         if (!dr)
             return;
@@ -2289,18 +2474,23 @@ LABKEY.DataRegion._filterUI =
         dr.changeFilter(newParamValPairs, newQueryString);
     },
 
-    doFilter : function()
-    {
+    setFilter: function(input1, input2, comparison1, comparison2){
+        //This is a replacement for doFilter. Will probably be renamed to doFilter.
+        //input1 and input2 have already been validated, no need to do that here.
+        //We do however need to modify the date if it's not in the proper format, and parse ints/floats.
+        
         var queryString = LABKEY.DataRegions[this._tableName] ? LABKEY.DataRegions[this._tableName].requestURL : null;
         var newParamValPairs = this.getParamValPairs(queryString, [this._tableName + "." + this._fieldName + "~", this._tableName + ".offset"]);
         var iNew = newParamValPairs.length;
+        var comparisons = new Array(0);
 
-        var comparisons = this.getValidCompares();
-        if (null == comparisons)
-            return;
-
-        this.hideFilterDiv();
-
+        if(comparison1 !=''){
+            comparisons[comparisons.length] = this.getCompares(input1, comparison1);
+        }
+        if(comparison2 != ''){
+            comparisons[comparisons.length] = this.getCompares(input2, comparison2);
+        }
+        console.info("setfilter() - comparisons: " + comparisons);
         for (var i = 0; i < comparisons.length; i++)
         {
             newParamValPairs[iNew] = comparisons[i];
@@ -2309,190 +2499,24 @@ LABKEY.DataRegion._filterUI =
 
         var newQueryString = this.buildQueryString(newParamValPairs);
         var filterParamsString = this.buildQueryString(comparisons);
-
+        console.info("setFilter() - newQueryString: " + newQueryString);
+        console.info("setFilter() - filterParamString: " + filterParamsString);
         this.changeFilterCallback.call(this, newParamValPairs, newQueryString, filterParamsString);
     },
 
+    getCompares: function(input,comparison){
+        //Used to be getValidComparesFromForm, but since we validate before setting a filter we got rid of the validation here.
+        var pair;
+        if (comparison == "isblank" || comparison == "isnonblank" || comparison == "nomvvalue" || comparison == "hasmvvalue")
+        {
+            pair = [this._tableName + "." + this._fieldName + "~" + comparison];
+        } else{
+            pair = [this._tableName + "." + this._fieldName + "~" + comparison, input];
+        }
+        return pair;
+    },
+
     changeFilterCallback : null,
-
-    getValidComparesFromForm : function(formIndex, newParamValPairs)
-    {
-        var obj = document.getElementById("compare_" + formIndex);
-        var comparison = obj.options[obj.selectedIndex].value;
-        var component = formIndex==1 ? this._valueComponent1 : this._valueComponent2;
-        var compareTo = component.getValue();
-        //alert("comparison: " + comparison + ", compareTo: " + compareTo);
-        if (comparison != "")
-        {
-            var pair;
-            if (comparison == "isblank" || comparison == "isnonblank" || comparison == "nomvvalue" || comparison == "hasmvvalue")
-            {
-                pair = [this._tableName + "." + this._fieldName + "~" + comparison];
-            }
-            else
-            {
-                var validCompareTo;
-                if (comparison == 'in')
-                {
-                    validCompareTo = this.validateMultiple(compareTo);
-                }
-                else
-                {
-                    validCompareTo = this.validate(compareTo);
-                }
-
-                if (validCompareTo == undefined)
-                    return false;
-                pair = [this._tableName + "." + this._fieldName + "~" + comparison, validCompareTo];
-            }
-            newParamValPairs[newParamValPairs.length] = pair;
-        }
-        return true;
-    },
-
-    getValidCompares : function()
-    {
-        var newParamValPairs = new Array(0);
-
-        var success = this.getValidComparesFromForm(1, newParamValPairs);
-        if (!success)
-        {
-            return null;
-        }
-        success = this.getValidComparesFromForm(2, newParamValPairs);
-        if (!success)
-        {
-            return null;
-        }
-        return newParamValPairs;
-    },
-
-    validateMultiple : function(allValues, mappedType, fieldName)
-    {
-        if (!mappedType) mappedType = _mappedType;
-        if (!fieldName) fieldName = this._fieldCaption || this._fieldName;
-
-        if (Ext.isEmpty(allValues))
-        {
-            // We'll get an empty value if the Ext field can't validate the input, it doesn't necessarily mean
-            // that the user left it blank
-            alert("Filter value for field '" + fieldName + "' is not valid.");
-            return undefined;
-        }
-        var values = allValues.split(";");
-        var result = '';
-        var separator = '';
-        for (var i = 0; i < values.length; i++)
-        {
-            var value = this.validate(values[i].trim(), mappedType, fieldName);
-            if (value == undefined)
-                return undefined;
-
-            result = result + separator + value;
-            separator = ";";
-        }
-        return result;
-    },
-
-    validate : function(value, mappedType, fieldName)
-    {
-        if (!mappedType) mappedType = this._mappedType;
-        if (!fieldName) fieldName = this._fieldCaption || this._fieldName;
-
-        if (Ext.isEmpty(value))
-        {
-            // We'll get an empty value if the Ext field can't validate the input, it doesn't necessarily mean
-            // that the user left it blank
-            alert("Filter value for field '" + fieldName + "' is not valid.");
-            return undefined
-        }
-
-        if (mappedType == "INT")
-        {
-            var intVal = parseInt(value);
-            if (isNaN(intVal))
-            {
-                alert(value + " is not a valid integer for field '" + fieldName + "'.");
-                return undefined;
-            }
-            else
-                return "" + intVal;
-        }
-        else if (mappedType == "DECIMAL")
-        {
-            var decVal = parseFloat(value);
-            if (isNaN(decVal))
-            {
-                alert(value + " is not a valid decimal number for field '" + fieldName + "'.");
-                return undefined;
-            }
-            else
-                return "" + decVal;
-        }
-        else if (mappedType == "DATE")
-        {
-            var year, month, day, hour, minute;
-            hour = 0;
-            minute = 0;
-
-            //Javascript does not parse ISO dates, but if date matches we're done
-            if (value.match(/^\s*(\d\d\d\d)-(\d\d)-(\d\d)\s*$/) ||
-                value.match(/^\s*(\d\d\d\d)-(\d\d)-(\d\d)\s*(\d\d):(\d\d)\s*$/))
-            {
-                return value;
-            }
-            else
-            {
-                var dateVal = new Date(value);
-                if (isNaN(dateVal))
-                {
-                    alert(value + " is not a valid date for field '" + fieldName + "'.");
-                    return undefined;
-                }
-                //Try to do something decent with 2 digit years!
-                //if we have mm/dd/yy (but not mm/dd/yyyy) in the date
-                //fix the broken date parsing
-                if (value.match(/\d+\/\d+\/\d{2}(\D|$)/))
-                {
-                    if (dateVal.getFullYear() < new Date().getFullYear() - 80)
-                        dateVal.setFullYear(dateVal.getFullYear() + 100);
-                }
-                year = dateVal.getFullYear();
-                month = dateVal.getMonth() + 1;
-                day = dateVal.getDate();
-                hour = dateVal.getHours();
-                minute = dateVal.getMinutes();
-            }
-            var str = "" + year + "-" + twoDigit(month) + "-" + twoDigit(day);
-            if (hour != 0 || minute != 0)
-                str += " " + twoDigit(hour) + ":" + twoDigit(minute);
-
-            return str;
-        }
-        else if (mappedType == "BOOL")
-        {
-            var upperVal = value.toUpperCase();
-            if (upperVal == "TRUE" || value == "1" || upperVal == "Y" || upperVal == "YES" || upperVal == "ON" || upperVal == "T")
-                return "1";
-            if (upperVal == "FALSE" || value == "0" || upperVal == "N" || upperVal == "NO" || upperVal == "OFF" || upperVal == "F")
-                return "0";
-            else
-            {
-                alert(value + " is not a valid boolean for field '" + fieldName + "'. Try true,false; yes,no; on,off; or 1,0.");
-                return undefined
-            }
-        }
-        else
-            return value;
-    },
-
-    twoDigit : function(num)
-    {
-        if (num < 10)
-            return "0" + num;
-        else
-            return "" + num;
-    },
 
     clearSort : function(tableName, columnName)
     {
@@ -2503,21 +2527,6 @@ LABKEY.DataRegion._filterUI =
         if (!dr)
             return;
         dr.clearSort(columnName);
-    },
-
-
-    handleKey : function(event)
-    {
-        switch (event.keyCode)
-        {
-            case 13: // enter
-                this.doFilter();
-                break;
-
-            case 27: // esc
-                this.hideFilterDiv();
-                break;
-        }
     }
 };
 
