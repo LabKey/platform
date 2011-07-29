@@ -214,13 +214,10 @@ public class ConvertHelper implements PropertyEditorRegistrar
 
         public Object convert(Class clss, Object o)
         {
-            if (null == o)
-                return null;
-
             if (o instanceof Timestamp)
                 return o;
-
-            return new Timestamp(((Date) _dateConverter.convert(Date.class, o)).getTime());
+            Date date = (Date) _dateConverter.convert(Date.class, o);
+            return null==date ? null : new Timestamp(date.getTime());
         }
     }
 
