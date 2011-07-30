@@ -1960,9 +1960,9 @@ public class PageFlowUtil
         {
             JSONObject projectProps = new JSONObject();
 
-            projectProps.put("id", container.getId());
-            projectProps.put("path", container.getPath());
-            projectProps.put("name", container.getName());
+            projectProps.put("id", project.getId());
+            projectProps.put("path", project.getPath());
+            projectProps.put("name", project.getName());
             json.put("project", projectProps);
         }
 
