@@ -85,6 +85,7 @@ import javax.servlet.ServletException;
 import javax.servlet.ServletOutputStream;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
+import javax.servlet.http.HttpSession;
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.ParserConfigurationException;
@@ -106,7 +107,9 @@ import java.io.OutputStream;
 import java.io.RandomAccessFile;
 import java.io.Reader;
 import java.io.Writer;
+import java.lang.reflect.Field;
 import java.lang.reflect.InvocationHandler;
+import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.lang.reflect.Proxy;
 import java.util.ArrayList;
@@ -2072,9 +2075,28 @@ public class DavController extends SpringActionController
             return _resource;
         }
 
-        protected void setFileStream(FileStream fis)
+        protected void setFileStream(final FileStream fis)
         {
-            _fis = fis;
+            _fis = new FileStream()
+            {
+                @Override
+                public long getSize() throws IOException
+                {
+                    return fis.getSize();
+                }
+
+                @Override
+                public InputStream openInputStream() throws IOException
+                {
+                    return SessionKeepAliveFilter.wrap(fis.openInputStream(), getRequest());
+                }
+
+                @Override
+                public void closeInputStream() throws IOException
+                {
+                    fis.closeInputStream();
+                }
+            };
         }
 
         FileStream getFileStream() throws DavException, IOException
@@ -2094,7 +2116,7 @@ public class DavController extends SpringActionController
                     
                 }
                 final long _size = size;
-                _fis = new FileStream()
+                FileStream fis = new FileStream()
                 {
                     public long getSize()
                     {
@@ -2109,6 +2131,7 @@ public class DavController extends SpringActionController
                         /* */
                     }
                 };
+                setFileStream(fis);
             }
             return _fis;
         }
@@ -4645,5 +4668,106 @@ public class DavController extends SpringActionController
         SearchService ss = ServiceRegistry.get(SearchService.class);
         if (null != ss)
             ss.deleteResource(r.getDocumentId());
+    }
+
+
+    /**
+     * There seems to be no 'legal' way to update the lastAccessedTime for a session
+     * However, catalina.Session has an access() endAccess() method used when a request starts/ends
+     */
+    public static class SessionKeepAliveFilter extends FilterInputStream
+    {
+        static InputStream wrap(InputStream in, HttpServletRequest request)
+        {
+            HttpSession facade = request.getSession(true);
+            HttpSession inner = null;
+            try
+            {
+                // org.apache.catalina.Session inner = ((org.apache.catalina.session.StandardSessionFacade)facade).session;
+                Field f = facade.getClass().getDeclaredField("session");
+                f.setAccessible(true);
+                inner = (HttpSession)f.get(facade);
+            }
+            catch (NoSuchFieldException x)
+            {
+            }
+            catch (IllegalAccessException x)
+            {
+            }
+            if (null == inner)
+                inner = facade;
+            Method access = null;
+            Method endAccess = null;
+            try
+            {
+                access = inner.getClass().getMethod("access");
+                endAccess = inner.getClass().getMethod("endAccess");
+            }
+            catch (NoSuchMethodException x)
+            {
+            }
+            if (null == access || null == endAccess)
+                return in;
+            return new SessionKeepAliveFilter(in, inner, access, endAccess);
+        }
+
+        final HttpSession session;
+        final Method accessMethod;
+        final Method endAccessMethod;
+        long time;
+
+        SessionKeepAliveFilter(InputStream in, HttpSession session, Method access, Method endAccess)
+        {
+            super(in);
+            this.session = session;
+            this.accessMethod = access;
+            this.endAccessMethod = endAccess;
+            // set up so that access() gets called immediately, for easier testing
+            this.time = 0; // HeartBeat.currentTimeMillis();
+            access();
+        }
+
+        private void access()
+        {
+            long now = HeartBeat.currentTimeMillis();
+            if (now - time >= 60*1000)
+            {
+                time = now;
+                try
+                {
+                    accessMethod.invoke(session);
+                    endAccessMethod.invoke(session);
+                }
+                catch (IllegalAccessException x)
+                {
+
+                }
+                catch (InvocationTargetException x)
+                {
+
+                }
+            }
+        }
+
+        @Override
+        public int read() throws IOException
+        {
+            access();
+            return super.read();
+        }
+
+        @Override
+        public int read(byte[] bytes) throws IOException
+        {
+            access();
+            return super.read(bytes);
+        }
+
+        @Override
+         public int read(byte[] bytes, int i, int i1) throws IOException
+        {
+            access();
+            return super.read(bytes, i, i1);
+        }
     }
 }
