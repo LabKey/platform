@@ -490,7 +490,10 @@ LABKEY.DataRegion.ViewDesigner = Ext.extend(LABKEY.ext.SplitGroupTabPanel, {
             text = fieldMeta.caption;
 
         var attrs = {
-            id: fieldMeta.fieldKey,
+            // NOTE: Don't use the fieldKey as id since it will be rendered into the dom without being html escaped.
+            // NOTE: Escaping the value here breaks the TreePanel.nodeHash collection.
+            // Instead we use the LABKEY.ext.FieldTreeNodeUI to add an htmlEscaped fieldKey attribute.
+            //id: fieldMeta.fieldKey,
             fieldKey: fieldMeta.fieldKey,
             text: text,
             leaf: !fieldMeta.lookup,
@@ -499,7 +502,8 @@ LABKEY.DataRegion.ViewDesigner = Ext.extend(LABKEY.ext.SplitGroupTabPanel, {
             disabled: !fieldMeta.selectable,
             hidden: fieldMeta.hidden && !this.showHiddenFields,
             qtip: LABKEY.ext.FieldMetaRecord.getToolTipHtml(fieldMetaRecord),
-            iconCls: "x-hide-display"
+            iconCls: "x-hide-display",
+            uiProvider: LABKEY.ext.FieldTreeNodeUI
         };
 
         return attrs;
@@ -526,9 +530,9 @@ LABKEY.DataRegion.ViewDesigner = Ext.extend(LABKEY.ext.SplitGroupTabPanel, {
 
     onCheckChange : function (node, checked) {
         if (checked)
-            this.addRecord(node.id);
+            this.addRecord(node.attributes.fieldKey);
         else
-            this.removeRecord(node.id);
+            this.removeRecord(node.attributes.fieldKey);
     },
 
     onTabChange : function () {
@@ -544,7 +548,7 @@ LABKEY.DataRegion.ViewDesigner = Ext.extend(LABKEY.ext.SplitGroupTabPanel, {
             // suspend check events so checked items aren't re-added to the tab's store
             this.fieldsTree.suspendEvents();
             this.fieldsTree.root.cascade(function () {
-                var fieldKey = this.id;
+                var fieldKey = this.attributes.fieldKey;
                 this.getUI().toggleCheck(fieldKey in checkedFieldKeys);
             });
             this.fieldsTree.resumeEvents();
@@ -874,7 +878,7 @@ LABKEY.DataRegion.Tab = Ext.extend(Ext.Panel, {
 
             // uncheck the field tree
             var fieldKey = record.data.fieldKey;
-            var treeNode = this.designer.fieldsTree.getNodeById(fieldKey);
+            var treeNode = this.designer.fieldsTree.getRootNode().findChild("fieldKey", fieldKey, true);
             if (treeNode)
                 treeNode.getUI().toggleCheck(false);
         }
@@ -952,10 +956,10 @@ LABKEY.DataRegion.ColumnsTab = Ext.extend(LABKEY.DataRegion.Tab, {
                     itemSelector: ".labkey-customview-item",
                     tpl: new Ext.XTemplate(
                             '<tpl for=".">',
-                            '<table width="100%" cellspacing="0" cellpadding="0" class="labkey-customview-item labkey-customview-columns-item" fieldKey="{fieldKey}">',
+                            '<table width="100%" cellspacing="0" cellpadding="0" class="labkey-customview-item labkey-customview-columns-item" fieldKey="{fieldKey:htmlEncode}">',
                             '  <tr>',
                             '    <td class="labkey-grab"></td>',
-                            '    <td><div class="item-caption">{[values.title || this.getFieldCaption(values)]}</div></td>',
+                            '    <td><div class="item-caption">{[this.getFieldCaption(values)]}</div></td>',
                             '    <td><div class="item-aggregate">{[values.aggregate || ""]}</div></td>',
                             '    <td width="15px" valign="top"><div class="labkey-tool labkey-tool-gear" title="Edit Title"></div></td>',
                             '    <td width="15px" valign="top"><span class="labkey-tool labkey-tool-close" title="Remove column"></span></td>',
@@ -964,15 +968,19 @@ LABKEY.DataRegion.ColumnsTab = Ext.extend(LABKEY.DataRegion.Tab, {
                             '</tpl>',
                         {
                             getFieldCaption : function (values) {
+                                if (values.title)
+                                    return Ext.util.Format.htmlEncode(values.title);
+
                                 var fieldKey = values.fieldKey;
                                 var fieldMeta = fieldMetaStore.getById(fieldKey.toUpperCase());
                                 if (fieldMeta)
                                 {
+                                    // caption is already htmlEncoded
                                     if (fieldMeta.data.caption && fieldMeta.data.caption != "&nbsp;")
                                         return fieldMeta.data.caption;
-                                    return fieldMeta.data.name;
+                                    return Ext.util.Format.htmlEncode(fieldMeta.data.name);
                                 }
-                                return values.name + " <span class='labkey-error'>(not found)</span>";
+                                return Ext.util.Format.htmlEncode(values.name) + " <span class='labkey-error'>(not found)</span>";
                             }
                         }
                     )
@@ -1205,7 +1213,7 @@ LABKEY.DataRegion.FilterTab = Ext.extend(LABKEY.DataRegion.Tab, {
                     itemSelector: '.labkey-customview-item',
                     tpl: new Ext.XTemplate(
                             '<tpl for=".">',
-                            '<table width="100%" cellpadding=0 cellspacing=0 class="labkey-customview-item labkey-customview-filter-item" fieldKey="{fieldKey}">',
+                            '<table width="100%" cellpadding=0 cellspacing=0 class="labkey-customview-item labkey-customview-filter-item" fieldKey="{fieldKey:htmlEncode}">',
                             '  <tr>',
                             '    <td rowspan="{[values.items.length+2]}" class="labkey-grab" width="8px">&nbsp;</td>',
                             '    <td colspan="3"><div class="item-caption">{[this.getFieldCaption(values)]}</div></td>',
@@ -1236,11 +1244,12 @@ LABKEY.DataRegion.FilterTab = Ext.extend(LABKEY.DataRegion.Tab, {
                                 var fieldMeta = fieldMetaStore.getById(fieldKey.toUpperCase());
                                 if (fieldMeta)
                                 {
+                                    // caption is already htmlEncoded
                                     if (fieldMeta.data.caption && fieldMeta.data.caption != "&nbsp;")
                                         return fieldMeta.data.caption;
-                                    return fieldMeta.data.name;
+                                    return Ext.util.Format.htmlEncode(fieldMeta.data.name);
                                 }
-                                return values.fieldKey + " (not found)";
+                                return Ext.util.Format.htmlEncode(values.fieldKey) + " <span class='labkey-error>(not found)</span>";
                             }
                         }
                     ),
@@ -1462,11 +1471,18 @@ LABKEY.DataRegion.FilterTab = Ext.extend(LABKEY.DataRegion.Tab, {
     },
 
     createDefaultRecordData : function (fieldKey) {
+        // Issue 12334: initialize with default filter based on the field's type.
+        var defaultFilter = LABKEY.Filter.Types.EQUAL;
+
+        var fieldMetaRecord = this.fieldMetaStore.getById(fieldKey.toUpperCase());
+        if (fieldMetaRecord)
+            defaultFilter = LABKEY.Filter.getDefaultFilterForType(fieldMetaRecord.data.jsonType);
+
         return {
             fieldKey: fieldKey,
             items: [{
                 fieldKey: fieldKey,
-                op: "eq",
+                op: defaultFilter.getURLSuffix(),
                 value: ""
             }]
         };
@@ -1611,7 +1627,7 @@ LABKEY.DataRegion.SortTab = Ext.extend(LABKEY.DataRegion.Tab, {
                     itemSelector: '.labkey-customview-item',
                     tpl: new Ext.XTemplate(
                             '<tpl for=".">',
-                            '<table width="100%" cellpadding=0 cellspacing=0 class="labkey-customview-item labkey-customview-sort-item" fieldKey="{fieldKey}">',
+                            '<table width="100%" cellpadding=0 cellspacing=0 class="labkey-customview-item labkey-customview-sort-item" fieldKey="{fieldKey:htmlEncode}">',
                             '  <tr>',
                             '    <td rowspan="2" class="labkey-grab"></td>',
                             '    <td colspan="3"><div class="item-caption">{[this.getFieldCaption(values)]}</div></td>',
@@ -1629,11 +1645,12 @@ LABKEY.DataRegion.SortTab = Ext.extend(LABKEY.DataRegion.Tab, {
                                 var fieldMeta = fieldMetaStore.getById(fieldKey.toUpperCase());
                                 if (fieldMeta)
                                 {
+                                    // caption is already htmlEncoded
                                     if (fieldMeta.data.caption && fieldMeta.data.caption != "&nbsp;")
                                         return fieldMeta.data.caption;
-                                    return fieldMeta.data.name;
+                                    return Ext.util.Format.htmlEncode(fieldMeta.data.name);
                                 }
-                                return values.fieldKey + " (not found)";
+                                return Ext.util.Format.htmlEncode(values.fieldKey) + " <span class='labkey-error'>(not found)</span>";
                             }
                         }
                     ),
@@ -2068,8 +2085,8 @@ LABKEY.ext.FieldMetaStore = Ext.extend(Ext.data.Store, {
     queryLookup : function (fieldKey)
     {
         var prefixMatch = fieldKey == "<ROOT>" ? "" : (fieldKey + "/");
-        var collection = this.queryBy(function (r, id) {
-            var recordFieldKey = id;
+        var collection = this.queryBy(function (record, id) {
+            var recordFieldKey = record.get("fieldKey");
             var idx = recordFieldKey.indexOf(prefixMatch);
             if (idx == 0 && recordFieldKey.substring(prefixMatch.length).indexOf("/") == -1)
                 return true;
@@ -2210,6 +2227,16 @@ LABKEY.ext.FilterTextValue = Ext.extend(Ext.form.TextField, {
 Ext.reg("labkey-filterValue", LABKEY.ext.FilterTextValue);
 
 
+// Adds a 'fieldKey' attribute to the available fields tree used by the test framework
+LABKEY.ext.FieldTreeNodeUI = Ext.extend(Ext.tree.TreeNodeUI, {
+    renderElements : function () {
+        LABKEY.ext.FieldTreeNodeUI.superclass.renderElements.apply(this, arguments);
+        var node = this.node;
+        var fieldKey = node.attributes.fieldKey;
+        this.elNode.setAttribute("fieldKey", fieldKey);
+    }
+});
+
 // This TreeLoader returns TreeNodes for field metadata and is backed by a FieldMetaStore.
 LABKEY.ext.FieldTreeLoader = Ext.extend(Ext.tree.TreeLoader, {
     constructor : function (config) {
@@ -2232,7 +2259,7 @@ LABKEY.ext.FieldTreeLoader = Ext.extend(Ext.tree.TreeLoader, {
         //console.log(node);
         if (this.fireEvent("beforeload", this, node, callback) !== false) {
             this.store.loadLookup({
-                fieldKey: node.id || "<ROOT>",
+                fieldKey: node.attributes.fieldKey || "<ROOT>",
                 callback: function (r, options, success) {
                     this.handleResponse({
                         records: r,

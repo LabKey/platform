@@ -290,7 +290,15 @@ LABKEY.Filter = new function()
         "date":[ft.HAS_ANY_VALUE, ft.DATE_EQUAL, ft.DATE_NOT_EQUAL, ft.ISBLANK, ft.NONBLANK, ft.DATE_GREATER_THAN, ft.DATE_LESS_THAN, ft.DATE_GREATER_THAN_OR_EQUAL, ft.DATE_LESS_THAN_OR_EQUAL, ft.IN]
     };
 
-    /** @private Returns an Array of filter types that can be used with the given type ("int", "double", "string", "boolean", "date") */
+    var defaultFilter = {
+        "int": ft.EQUAL,
+        "string": ft.STARTS_WITH,
+        "boolean": ft.EQUAL,
+        "float": ft.EQUAL,
+        "date": ft.DATE_EQUAL
+    };
+
+    /** @private Returns an Array of filter types that can be used with the given json type ("int", "double", "string", "boolean", "date") */
     ret.getFilterTypesForType = function (type, mvEnabled)
     {
         var types = [];
@@ -304,6 +312,15 @@ LABKEY.Filter = new function()
         }
 
         return types;
+    };
+
+    /** @private Return the default LABKEY.Filter.Type for a json type ("int", "double", "string", "boolean", "date"). */
+    ret.getDefaultFilterForType = function (type)
+    {
+        if (defaultFilter[type])
+            return defaultFilter[type];
+
+        return ft.EQUAL;
     };
 
     return ret;
