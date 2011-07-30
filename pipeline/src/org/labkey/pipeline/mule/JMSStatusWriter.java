@@ -32,6 +32,13 @@ public class JMSStatusWriter implements PipelineStatusFile.StatusWriter
 
     public boolean setStatus(PipelineJob job, String status, String statusInfo, boolean allowInsert) throws Exception
     {
+        if (job.getActiveTaskStatus() == PipelineJob.TaskStatus.complete)
+        {
+            // Don't bother setting the status, since the job will be immediately going onto the standard job queue
+            // to determine if there's another task.
+            return true;
+        }
+
         final StatusChangeRequest s = new StatusChangeRequest(job, status, statusInfo);
 
         // Mule uses ThreadLocals to store the current event. Writing this status to the JMS queue will replace the

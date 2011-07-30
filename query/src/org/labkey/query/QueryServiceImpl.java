@@ -34,6 +34,7 @@ import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.DbSchema;
 import org.labkey.api.data.DisplayColumn;
 import org.labkey.api.data.Filter;
+import org.labkey.api.data.Parameter;
 import org.labkey.api.data.Results;
 import org.labkey.api.data.ResultsImpl;
 import org.labkey.api.data.RuntimeSQLException;
@@ -1183,7 +1184,7 @@ public class QueryServiceImpl extends QueryService
             }
 
             Object converted = p.getType().convert(value);
-            list.set(i, converted);
+            list.set(i, new Parameter.TypedValue(converted, p.getType()));
         }
     }
 

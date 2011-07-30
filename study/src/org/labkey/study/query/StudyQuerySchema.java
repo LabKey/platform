@@ -200,6 +200,11 @@ public class StudyQuerySchema extends UserSchema
         {
             return new VialTable(this);
         }
+        if ("Site".equalsIgnoreCase(name))
+        {
+            SiteTable ret = new SiteTable(this);
+            return ret;
+        }
 
         if (_study == null)
             return null;
@@ -232,11 +237,6 @@ public class StudyQuerySchema extends UserSchema
         if (StudyService.get().getSubjectGroupMapTableName(getContainer()).equalsIgnoreCase(name))
         {
             ParticipantGroupMapTable ret = new ParticipantGroupMapTable(this); 
-            return ret;
-        }
-        if ("Site".equalsIgnoreCase(name))
-        {
-            SiteTable ret = new SiteTable(this);
             return ret;
         }
         if ("SpecimenSummary".equalsIgnoreCase(name))
