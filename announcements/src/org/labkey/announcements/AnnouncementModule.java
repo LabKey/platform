@@ -89,7 +89,7 @@ public class AnnouncementModule extends DefaultModule implements SearchService.D
 
     public double getVersion()
     {
-        return 11.11;
+        return 11.19;
     }
 
     protected void init()
