@@ -135,6 +135,15 @@
  * @param {Array} [config.aggregates] An array of aggregate definitions. The objects in this array should have two
  * properties: 'column' and 'type'. The column property is the column name, and the type property may be one of the
  * the {@link LABKEY.AggregateTypes} values.
+ * @param {String} [config.showRows] Either 'paginated' (the default) 'selected', 'unselected' or 'all'.
+ *        When 'paginated', the maxRows and offset parameters can be used to page through the query's result set rows.
+ *        When 'selected' or 'unselected' the set of rows selected or unselected by the user in the grid view will be returned.
+ *        You can programatically get and set the selection using the {@link LABKEY.DataRegion.setSelected} APIs.
+ *        Setting <code>config.maxRows</code> to -1 is the same as setting <code>config.showRows</code> to 'all'.
+ * @param {Integer} [config.maxRows] The maximum number of rows to return from the server (defaults to 100).
+ *        If you want to return all possible rows, set this config property to -1.
+ * @param {Integer} [config.offset] The index of the first row to return from the server (defaults to 0).
+ *        Use this along with the maxRows config property to request pages of data.
  * @param {String} [config.dataRegionName] The name to be used for the data region. This should be unique within
  * the set of query views on the page. If not supplied, a unique name is generated for you.
  * @param {String} [config.linkTarget] The name of a browser window/tab in which to open URLs rendered in the
@@ -250,6 +259,7 @@ LABKEY.QueryWebPart = Ext.extend(Ext.util.Observable, {
         userSort: false,
         qsParamsToIgnore: false,
         buttonBar: false,
+        showRows: false,
         maxRows: false,
         offset: false,
         scope: false,
@@ -336,6 +346,8 @@ LABKEY.QueryWebPart = Ext.extend(Ext.util.Observable, {
             params[this.dataRegionName + ".reportId"] = this.reportId;
         if (this.containerFilter)
             params[this.dataRegionName + ".containerFilterName"] = this.containerFilter;
+        if (this.showRows)
+            params[this.dataRegionName + ".showRows"] = this.showRows;
         if (this.maxRows)
             params[this.dataRegionName + ".maxRows"] = this.maxRows;
         if (this.offset)

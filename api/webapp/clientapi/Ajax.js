@@ -32,7 +32,7 @@ LABKEY.Ajax = new function ()
          * @param config See the config object documented in
          * <a href="http://dev.sencha.com/deploy/dev/docs/?class=Ext.data.Connection&member=request" target="_blank">Ext.Ajax.request</a>.
          * 
-         * @returns Mixed In client-side scripts, this method will return a transaction id
+         * @returns {Mixed} In client-side scripts, this method will return a transaction id
          * for the async request that can be used to cancel the request
          * (see <a href="http://dev.sencha.com/deploy/dev/docs/?class=Ext.data.Connection&member=abort" target="_blank">Ext.data.Connection.abort</a>).
          * In server-side scripts, this method will return the response JSON (for "application/json" responses),
