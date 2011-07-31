@@ -405,13 +405,28 @@ public class QueryView extends WebPartView<Object>
             return null;
         }
 
+        // Issue 11280: Export URLs don't include the query's base sort/filter.
+        // The solution is to expand the custom view's saved sort/filter before adding the base sort/filter.
+        // NOTE: This is a temporary solution.
+        //
+        // We won't need to expand the saved custom view filters or aggregates.  Filters can be applied
+        // in any order and the aggregates don't make much sense in the exported xls or tsv files.
+        //
+        // The correct long term solution is to (a) create proper QueryView subclasses using UserSchema.createView()
+        // and (b) use POST instead of GET for the export actions (or others) to match the QueryWebPart.js config behavior.
+        // Using POST is necessary since the QueryWebPart.js config expresses other options (column lists, grid rendering options, etc) that can't be expressed on URLs.
+        if (_customView != null && _customView.hasFilterOrSort())
+        {
+            _customView.applyFilterAndSortToURL(ret, DATAREGIONNAME_DEFAULT);
+        }
+
         // Applying the base sort/filter to the url is lossy in that anyone consuming the url can't
         // determine if the sort/filter originated from QuerySettings or from a user applied sort/filter.
         if (getSettings().getBaseFilter() != null)
             (getSettings().getBaseFilter()).applyToURL(ret, DATAREGIONNAME_DEFAULT);
 
         if (getSettings().getBaseSort() != null && getSettings().getBaseSort().getSortList().size()>0)
-            getSettings().getBaseSort().applyToURL(ret, DATAREGIONNAME_DEFAULT);
+            getSettings().getBaseSort().applyToURL(ret, DATAREGIONNAME_DEFAULT, true);
 
         switch (action)
         {
@@ -568,10 +583,22 @@ public class QueryView extends WebPartView<Object>
     {
         for (String key : source.getKeysByPrefix(oldPrefix))
         {
-            String newKey = newPrefix + key.substring(oldPrefix.length());
+            String suffix = key.substring(oldPrefix.length());
+            String newKey = newPrefix + suffix;
             for (String value : source.getParameters(key))
             {
-                target.addParameter(newKey, value);
+                if (suffix.equals("sort"))
+                {
+                    // Append sort parameter onto target's existing sort
+                    String existingSort = target.getParameter(newKey);
+                    if (existingSort != null && existingSort.length() > 0)
+                        value = value + "," + existingSort;
+                    target.replaceParameter(newKey, value);
+                }
+                else
+                {
+                    target.addParameter(newKey, value);
+                }
             }
         }
     }

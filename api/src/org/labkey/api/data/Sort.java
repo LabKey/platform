@@ -374,11 +374,20 @@ public class Sort
      * Replace the sort parameter on the url with this Sort scoped by the region name prefix.
      * @param url The url to be modified.
      * @param regionName The dataRegion used to scope the sort.
+     * @param merge If true, the sort parameters will be added to the end of any existing sort parameter.  If false, any existing sort parameters will be replaced.
      */
-    public void applyToURL(URLHelper url, String regionName)
+    public void applyToURL(URLHelper url, String regionName, boolean merge)
     {
         String key = (regionName == null ? "" : regionName) + SORT_KEY;
-        url.replaceParameter(key, getURLParamValue());
+        String value = getURLParamValue();
+        if (merge)
+        {
+            String existingSort = url.getParameter(key);
+            if (existingSort != null && existingSort.length() > 0)
+                value = existingSort + "," + value;
+        }
+
+        url.replaceParameter(key, value);
     }
 
     static public Sort fromURLParamValue(String str)
