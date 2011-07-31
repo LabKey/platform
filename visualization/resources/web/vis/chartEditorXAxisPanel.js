@@ -325,6 +325,13 @@ LABKEY.vis.ChartEditorXAxisPanel = Ext.extend(Ext.FormPanel, {
             listeners: {
                 scope: this,
                 'load': function(store, records, options) {
+                    // if there are no zero date option for this study, warn the user
+                    if (store.getTotalCount() == 0)
+                    {
+                        Ext.Msg.alert("Error", "There are no demographic date options available in this study. "
+                            + "Please contact an administrator to have them configure the study to work with the Time Chart wizard.");
+                    }
+
                     // if this is a saved report, we will have a zero date to select
                     var index = 0;
                     if(this.dateOptions.zeroDateCol.name){
