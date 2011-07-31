@@ -2210,11 +2210,14 @@ public class QueryController extends SpringActionController
 
             ensureQueryExists(form);
 
-            //show all rows by default
+            // Issue 12233: add implicit maxRows=100k when using client API
             if (null == form.getLimit()
                     && null == getViewContext().getRequest().getParameter(form.getDataRegionName() + "." + QueryParam.maxRows)
                     && null == getViewContext().getRequest().getParameter(form.getDataRegionName() + "." + QueryParam.showRows))
-                form.getQuerySettings().setShowRows(ShowRows.ALL);
+            {
+                form.getQuerySettings().setShowRows(ShowRows.PAGINATED);
+                form.getQuerySettings().setMaxRows(100000);
+            }
 
             if (form.getLimit() != null)
                 form.getQuerySettings().setMaxRows(form.getLimit().intValue());
@@ -2388,8 +2391,9 @@ public class QueryController extends SpringActionController
             settings.setAllowChooseView(false);
             settings.setAllowCustomizeView(false);
 
-            //by default, return all rows
-            settings.setShowRows(ShowRows.ALL);
+            // Issue 12233: add implicit maxRows=100k when using client API
+            settings.setShowRows(ShowRows.PAGINATED);
+            settings.setMaxRows(100000);
 
             //apply optional settings (maxRows, offset)
             boolean metaDataOnly = false;

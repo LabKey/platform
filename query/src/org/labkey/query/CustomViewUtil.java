@@ -116,7 +116,7 @@ public class CustomViewUtil
                 String columnName = ((dir != null && dir.length() == 1) ? dir : "") + fieldKey;
                 sort.appendSortColumn(columnName, true);
             }
-            sort.applyToURL(url, FILTER_PARAM_PREFIX);
+            sort.applyToURL(url, FILTER_PARAM_PREFIX, false);
         }
 
         JSONArray jsonAggregates = jsonView.optJSONArray("aggregates");
