@@ -16,6 +16,8 @@
 
 package org.labkey.study.importer;
 
+import org.apache.commons.beanutils.ConvertUtils;
+import org.apache.commons.beanutils.Converter;
 import org.apache.commons.beanutils.PropertyUtils;
 import org.apache.commons.lang.StringUtils;
 import org.apache.log4j.Logger;
@@ -428,6 +430,7 @@ public class SpecimenImporter
     private static final String LAB_ID_TSV_COL = "lab_id";
     private static final String SPEC_NUMBER_TSV_COL = "specimen_number";
     private static final String EVENT_ID_COL = "record_id";
+    private static final String VISIT_COL = "visit_value";
 
     // SpecimenEvent columns that form a psuedo-unqiue constraint
     private static final SpecimenColumn GLOBAL_UNIQUE_ID, LAB_ID, SHIP_DATE, STORAGE_DATE, LAB_RECEIPT_DATE;
@@ -447,7 +450,7 @@ public class SpecimenImporter
             new SpecimenColumn("sal_receipt_date", "SalReceiptDate", DATETIME_TYPE, TargetTable.SPECIMENS_AND_SPECIMEN_EVENTS),
             new SpecimenColumn(SPEC_NUMBER_TSV_COL, "SpecimenNumber", "VARCHAR(50)", TargetTable.SPECIMEN_EVENTS),
             new SpecimenColumn("class_id", "ClassId", "VARCHAR(4)", TargetTable.SPECIMENS_AND_SPECIMEN_EVENTS),
-            new SpecimenColumn("visit_value", "VisitValue", NUMERIC_TYPE, TargetTable.SPECIMENS_AND_SPECIMEN_EVENTS),
+            new SpecimenColumn(VISIT_COL, "VisitValue", NUMERIC_TYPE, TargetTable.SPECIMENS_AND_SPECIMEN_EVENTS),
             new SpecimenColumn("protocol_number", "ProtocolNumber", "VARCHAR(10)", TargetTable.SPECIMENS_AND_SPECIMEN_EVENTS),
             new SpecimenColumn("visit_description", "VisitDescription", "VARCHAR(3)", TargetTable.SPECIMENS_AND_SPECIMEN_EVENTS),
             new SpecimenColumn("other_specimen_id", "OtherSpecimenId", "VARCHAR(20)", TargetTable.SPECIMEN_EVENTS),
@@ -543,11 +546,11 @@ public class SpecimenImporter
 
         // Create a map of Tables->TabLoaders
         Map<String, Iterable<Map<String, Object>>> iterMap = new HashMap<String, Iterable<Map<String, Object>>>();
-        iterMap.put("labs", loadTsv(SITE_COLUMNS, fileMap.get("labs"), "study.Site"));
-        iterMap.put("additives", loadTsv(ADDITIVE_COLUMNS, fileMap.get("additives"), "study.SpecimenAdditive"));
-        iterMap.put("derivatives", loadTsv(DERIVATIVE_COLUMNS, fileMap.get("derivatives"), "study.SpecimenDerivative"));
-        iterMap.put("primary_types", loadTsv(PRIMARYTYPE_COLUMNS, fileMap.get("primary_types"), "study.SpecimenPrimaryType"));
-        iterMap.put("specimens", loadTsv(SPECIMEN_COLUMNS, fileMap.get("specimens"), "study.Specimen"));
+        iterMap.put("labs", loadTsv(container, SITE_COLUMNS, fileMap.get("labs"), "study.Site"));
+        iterMap.put("additives", loadTsv(container, ADDITIVE_COLUMNS, fileMap.get("additives"), "study.SpecimenAdditive"));
+        iterMap.put("derivatives", loadTsv(container, DERIVATIVE_COLUMNS, fileMap.get("derivatives"), "study.SpecimenDerivative"));
+        iterMap.put("primary_types", loadTsv(container, PRIMARYTYPE_COLUMNS, fileMap.get("primary_types"), "study.SpecimenPrimaryType"));
+        iterMap.put("specimens", loadTsv(container, SPECIMEN_COLUMNS, fileMap.get("specimens"), "study.Specimen"));
 
         process(user, container, iterMap, merge, logger);
     }
@@ -1963,7 +1966,7 @@ public class SpecimenImporter
         return new Pair<List<T>, Integer>(availableColumns, rowCount);
     }
 
-    private Iterable<Map<String, Object>> loadTsv(Collection<? extends ImportableColumn> columns, File tsvFile, String tableName) throws IOException
+    private Iterable<Map<String, Object>> loadTsv(Container container, Collection<? extends ImportableColumn> columns, File tsvFile, String tableName) throws IOException, SQLException
     {
         if (tsvFile == null || !NetworkDrive.exists(tsvFile))
         {
@@ -1973,18 +1976,55 @@ public class SpecimenImporter
 
         info(tableName + ": Parsing data file for table...");
         Map<String, ColumnDescriptor> expectedColumns = new HashMap<String, ColumnDescriptor>(columns.size());
+
         for (ImportableColumn col : columns)
             expectedColumns.put(col.getTsvColumnName().toLowerCase(), col.getColumnDescriptor());
 
         TabLoader loader = new TabLoader(tsvFile, true);
+
         for (ColumnDescriptor column : loader.getColumns())
         {
             ColumnDescriptor expectedColumnDescriptor = expectedColumns.get(column.name.toLowerCase());
+
             if (expectedColumnDescriptor != null)
+            {
                 column.clazz = expectedColumnDescriptor.clazz;
+
+                if (VISIT_COL.equals(column.name))
+                {
+                    // Map visit names to sequence numbers using poor man's ETL
+                    // TODO: convert this pipeline to new ETL framework
+                    final Converter conv = ConvertUtils.lookup(column.clazz);
+                    final Study study = StudyManager.getInstance().getStudy(container);
+
+                    column.converter = new Converter() {
+                        private final Map<String, Double> map = StudyManager.getInstance().getVisitImportMap(study, true);
+
+                        @Override
+                        public Object convert(Class type, Object value)
+                        {
+                            if (value instanceof String)
+                            {
+                                String key = (String)value;
+                                Double mapValue = map.get(key);
+
+                                if (null != mapValue)
+                                    return mapValue;
+                            }
+
+                            return conv.convert(type, value);
+                        }
+                    };
+
+                    ConvertUtils.lookup(column.clazz);
+                }
+            }
             else
+            {
                 column.load = false;
+            }
         }
+
         info(tableName + ": Parsing complete.");
         return loader;
     }
