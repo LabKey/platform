@@ -48,7 +48,7 @@
 <body>
 <table width=100%>
     <tr class="labkey-alternate-row"><td colspan="2" class="labkey-bordered" style="border-right: 0 none">
-    <td><%=announcementModel.getCreatedByName(includeGroups, user) + (announcementModel.getParent() != null ? " responded" : " created a new " + settings.getConversationName().toLowerCase()) + "."%></td>
+    <%=announcementModel.getCreatedByName(includeGroups, user) + (announcementModel.getParent() != null ? " responded" : " created a new " + settings.getConversationName().toLowerCase()) + "."%></td>
     <td align="right" class="labkey-bordered" style="border-left: 0 none"><%=formatDateTime(announcementModel.getCreated())%></td></tr><%
 
     if (null != body)
