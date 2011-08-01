@@ -27,6 +27,7 @@ import org.labkey.api.view.TermsOfUseException;
 import org.labkey.api.view.UnauthorizedException;
 import org.labkey.api.view.ViewServlet;
 import org.springframework.beans.MutablePropertyValues;
+import org.springframework.mock.web.MockHttpServletRequest;
 import org.springframework.validation.BindException;
 import org.springframework.validation.Errors;
 import org.springframework.web.servlet.ModelAndView;
@@ -345,7 +346,7 @@ public abstract class ApiAction<FORM> extends BaseViewAction<FORM>
      */
     public boolean isServerSideRequest()
     {
-        return getViewContext().getRequest().getHeader(ViewServlet.MOCK_REQUEST_HEADER) != null;
+        return getViewContext().getRequest() instanceof MockHttpServletRequest;
     }
 
     public abstract ApiResponse execute(FORM form, BindException errors) throws Exception;

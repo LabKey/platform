@@ -23,6 +23,7 @@ import org.labkey.api.query.ValidationException;
 import org.labkey.api.services.ServiceRegistry;
 import org.labkey.api.util.FileUtil;
 import org.labkey.api.reports.ExternalScriptEngine;
+import org.labkey.api.util.PageFlowUtil;
 
 import javax.script.ScriptEngine;
 import javax.script.ScriptEngineManager;
@@ -44,6 +45,7 @@ public class DefaultDataTransformer implements DataTransformer, DataValidator
 {
     public static final String RUN_INFO_REPLACEMENT = "runInfo";
     public static final String SRC_DIR_REPLACEMENT = "srcDirectory";
+    public static final String R_JESSIONID_REPLACEMENT = "rLabkeySessionId";
 
     public void validate(AssayRunUploadContext context, ExpRun run) throws ValidationException
     {
@@ -93,6 +95,8 @@ public class DefaultDataTransformer implements DataTransformer, DataValidator
                             File srcDir = scriptFile.getParentFile();
                             if (srcDir != null && srcDir.exists())
                                 paramMap.put(SRC_DIR_REPLACEMENT, srcDir.getAbsolutePath().replaceAll("\\\\", "/"));
+                            paramMap.put(R_JESSIONID_REPLACEMENT, getSessionInfo(context));
+
                             bindings.put(ExternalScriptEngine.PARAM_REPLACEMENT_MAP, paramMap);
 
                             Object output = engine.eval(script);
@@ -184,10 +188,12 @@ public class DefaultDataTransformer implements DataTransformer, DataValidator
                             Map<String, String> paramMap = new HashMap<String, String>();
 
                             paramMap.put(RUN_INFO_REPLACEMENT, runInfo.getAbsolutePath().replaceAll("\\\\", "/"));
-                            bindings.put(ExternalScriptEngine.PARAM_REPLACEMENT_MAP, paramMap);
                             File srcDir = scriptFile.getParentFile();
                             if (srcDir != null && srcDir.exists())
                                 paramMap.put(SRC_DIR_REPLACEMENT, srcDir.getAbsolutePath().replaceAll("\\\\", "/"));
+                            paramMap.put(R_JESSIONID_REPLACEMENT, getSessionInfo(context));
+
+                            bindings.put(ExternalScriptEngine.PARAM_REPLACEMENT_MAP, paramMap);
 
                             Object output = engine.eval(script);
 
@@ -270,5 +276,21 @@ public class DefaultDataTransformer implements DataTransformer, DataValidator
         if (provider != null)
             return provider.isSaveScriptFiles(protocol);
         return false;
+    }
+
+    /**
+     * Creates the session information string
+     */
+    private String getSessionInfo(AssayRunUploadContext context)
+    {
+        StringBuilder sb = new StringBuilder();
+        if (context.getRequest() != null)
+        {
+            sb.append("labkey.sessionCookieName = \"JSESSIONID\"\n");
+            sb.append("labkey.sessionCookieContents = \"");
+            sb.append(PageFlowUtil.getCookieValue(context.getRequest().getCookies(), "JSESSIONID", ""));
+            sb.append("\"\n");
+        }
+        return sb.toString();
     }
 }
