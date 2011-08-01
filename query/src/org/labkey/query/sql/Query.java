@@ -18,6 +18,7 @@ package org.labkey.query.sql;
 
 import org.apache.commons.lang.StringUtils;
 import org.apache.log4j.Logger;
+import org.jetbrains.annotations.NotNull;
 import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
@@ -91,7 +92,7 @@ import static org.labkey.api.util.ExceptionUtil.ExceptionInfo.QuerySchema;
 public class Query
 {
     String _name = null;
-    private QuerySchema _schema;
+    private final QuerySchema _schema;
 	String _querySource;
 	private ArrayList<QueryException> _parseErrors = new ArrayList<QueryException>();
 
@@ -105,13 +106,13 @@ public class Query
     private int _aliasCounter = 0;
 
 
-    public Query(QuerySchema schema)
+    public Query(@NotNull QuerySchema schema)
     {
         _schema = schema;
         assert MemTracker.put(this);
     }
 
-    public Query(QuerySchema schema, Query parent)
+    public Query(@NotNull QuerySchema schema, Query parent)
     {
         _schema = schema;
         _parent = parent;
@@ -120,7 +121,7 @@ public class Query
         assert MemTracker.put(this);
     }
 
-    public Query(QuerySchema schema, String sql)
+    public Query(@NotNull QuerySchema schema, String sql)
     {
         _schema = schema;
         _querySource = sql;
@@ -138,6 +139,8 @@ public class Query
 
 	QuerySchema getSchema()
 	{
+        if (null == _schema)
+            throw new IllegalStateException("Schema must be set");
 		return _schema;
 	}
 
@@ -264,7 +267,7 @@ public class Query
 		SourceBuilder builder = new SourceBuilder();
 		builder.append("SELECT ");
 		builder.pushPrefix("");
-		QueryRelation relation = resolveTable(_schema, null, key, key.getName());
+		QueryRelation relation = resolveTable(getSchema(), null, key, key.getName());
 		if (relation == null)
 		{
 			builder.append("'Table not found' AS message");

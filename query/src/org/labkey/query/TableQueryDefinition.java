@@ -216,9 +216,12 @@ public class TableQueryDefinition extends QueryDefinitionImpl
 
     public String getSql()
     {
-        if (_sql == null)
+        if (_sql != null)
+            return _sql;
+        UserSchema schema = getSchema();
+        if (null != schema)
         {
-            Query query = new Query(_schema);
+            Query query = new Query(schema);
             query.setRootTable(FieldKey.fromParts(getName()));
             _sql = query.getQueryText();
         }

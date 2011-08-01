@@ -21,6 +21,7 @@ import org.apache.log4j.Logger;
 import org.apache.xmlbeans.XmlError;
 import org.apache.xmlbeans.XmlException;
 import org.apache.xmlbeans.XmlOptions;
+import org.jetbrains.annotations.NotNull;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerFilter;
@@ -250,7 +251,7 @@ public abstract class QueryDefinitionImpl implements QueryDefinition
         return new QueryParseException("Unexpected exception", e, 0, 0);
     }
 
-    public Query getQuery(QuerySchema schema)
+    public Query getQuery(@NotNull QuerySchema schema)
     {
         Query query = new Query(schema);
         String sql = getSql();
@@ -263,7 +264,7 @@ public abstract class QueryDefinitionImpl implements QueryDefinition
     }
 
 
-    public Query getQuery(QuerySchema schema, List<QueryException> errors)
+    public Query getQuery(@NotNull QuerySchema schema, List<QueryException> errors)
     {
         return getQuery(schema, errors, null);
     }
@@ -272,7 +273,7 @@ public abstract class QueryDefinitionImpl implements QueryDefinition
      * I find it very strange that only the xml errors get added to the "errors" list, while
      * the parse errors remain in the getParseErrors() list
      */
-    public Query getQuery(QuerySchema schema, List<QueryException> errors, Query parent)
+    public Query getQuery(@NotNull QuerySchema schema, List<QueryException> errors, Query parent)
     {
         Query query = new Query(schema, parent);
         query.setName(getSchemaName() + "." + getName());
@@ -325,7 +326,7 @@ public abstract class QueryDefinitionImpl implements QueryDefinition
         return getTable(getSchema(), errors, includeMetadata);
     }
 
-    public TableInfo getTable(UserSchema schema, List<QueryException> errors, boolean includeMetadata)
+    public TableInfo getTable(@NotNull UserSchema schema, List<QueryException> errors, boolean includeMetadata)
     {
         if (errors == null)
         {

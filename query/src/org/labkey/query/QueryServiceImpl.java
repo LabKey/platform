@@ -1134,7 +1134,7 @@ public class QueryServiceImpl extends QueryService
     }
 
 
-    public ResultSet select(QuerySchema schema, String sql) throws SQLException
+    public ResultSet select(@NotNull QuerySchema schema, String sql) throws SQLException
 	{
 		Query q = new Query(schema);
 		q.parse(sql);

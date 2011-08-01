@@ -17,7 +17,6 @@ package org.labkey.list.model;
 
 import org.apache.axis.utils.StringUtils;
 import org.labkey.api.data.DbScope;
-import org.labkey.api.data.RuntimeSQLException;
 import org.labkey.api.data.dialect.SqlDialect;
 import org.labkey.api.exp.ChangePropertyDescriptorException;
 import org.labkey.api.exp.DomainDescriptor;
@@ -38,7 +37,6 @@ import org.labkey.list.client.ListEditorService;
 
 import java.sql.SQLException;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 
@@ -72,7 +70,7 @@ public class ListEditorServiceImpl extends DomainEditorServiceBase implements Li
         {
             if (SqlDialect.isConstraintException(x))
                 throw new DuplicateNameException(list.getName());
-            throw new RuntimeSQLException(x);
+            throw new RuntimeException(x);
         }
         catch (RuntimeException x)
         {
@@ -188,7 +186,7 @@ public class ListEditorServiceImpl extends DomainEditorServiceBase implements Li
         }
         catch (SQLException x)
         {
-            throw new RuntimeSQLException(x);
+            throw new RuntimeException(x);
         }
 
         try
