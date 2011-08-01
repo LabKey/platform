@@ -26,7 +26,7 @@
  *              <ul>
  *                  <li><a href= "https://www.labkey.org/wiki/home/Documentation/page.view?name=webPartConfig">
 					        Web Part Configuration Properties</a></li>
- *                  <li><a href= "https://www.labkey.org/wiki/home/Documentation/page.view?name=webPartInventoryWiki">
+ *                  <li><a href= "https://www.labkey.org/wiki/home/Documentation/page.view?name=webPartInventoryWikiSimple">
 					        List of LabKey Web Parts</a></li>
  *                  <li><a href="https://www.labkey.org/wiki/home/Documentation/page.view?name=javascriptTutorial">LabKey JavaScript API Tutorial</a> and
  *                      <a href="https://www.labkey.org/wiki/home/Study/demo/page.view?name=reagentRequest">Demo</a></li>
