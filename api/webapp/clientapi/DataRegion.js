@@ -315,7 +315,7 @@ LABKEY.DataRegion = function (config)
     /**
      * Set the selection state for all checkboxes on the current page of the DataRegion.
      * @param checked whether all of the rows on the current page should be selected or unselected
-     * @returns Array Array of ids that were selected or unselected.
+     * @returns {Array} Array of ids that were selected or unselected.
      *
      * @see LABKEY.DataRegion#setSelected to set selected items on the current page of the DataRegion.
      * @see LABKEY.DataRegion#clearSelected to clear all selected.
@@ -359,7 +359,7 @@ LABKEY.DataRegion = function (config)
 
     /**
      * Returns true if any row is checked on the current page of the DataRegion. Selected items may exist on other pages.
-     * @returns Boolean true if any row is checked on the current page of the DataRegion.
+     * @returns {Boolean} true if any row is checked on the current page of the DataRegion.
      * @see LABKEY.DataRegion#getSelected to get all selected rows.
      */
     this.hasSelected = function ()
@@ -381,7 +381,7 @@ LABKEY.DataRegion = function (config)
 
     /**
      * Returns true if all rows are checked on the current page of the DataRegion and at least one row is present.
-     * @returns Boolean true if all rows are checked on the current page of the DataRegion and at least one row is present.
+     * @returns {Boolean} true if all rows are checked on the current page of the DataRegion and at least one row is present.
      * @see LABKEY.DataRegion#getSelected to get all selected rows.
      */
     this.isPageSelected = function ()
@@ -519,12 +519,13 @@ LABKEY.DataRegion = function (config)
     };
 
     /**
-     * Returns user filters from the URL as an Array of objects of the form:
+     * Returns the user filter from the URL. The filter is represented as an Array of objects of the form:
      * <ul>
      *   <li><b>fieldKey</b>: {String} The field key of the filter.
      *   <li><b>op</b>: {String} The filter operator (eg. "eq" or "in")
      *   <li><b>value</b>: {String} Optional value to filter by.
-     * </ul>.
+     * </ul>
+     * @returns {Object} Object representing the user filter.
      */
     this.getUserFilter = function ()
     {
@@ -549,17 +550,7 @@ LABKEY.DataRegion = function (config)
 
     /**
      * Returns the user {@link LABKEY.Query.containerFilter} parameter from the URL.
-     * Supported values include:
-     * <ul>
-     *   <li>"Current": Include the current folder only</li>
-     *   <li>"CurrentAndSubfolders": Include the current folder and all subfolders</li>
-     *   <li>"CurrentPlusProject": Include the current folder and the project that contains it</li>
-     *   <li>"CurrentAndParents": Include the current folder and its parent folders</li>
-     *   <li>"CurrentPlusProjectAndShared": Include the current folder plus its project plus any shared folders</li>
-     *   <li>"AllFolders": Include all folders for which the user has read permission</li>
-     * </ul>
-     *
-     * @see LABKEY.Query.containerFilter
+     * @returns {LABKEY.Query.containerFilter} The user container filter.
      */
     this.getUserContainerFilter = function ()
     {
@@ -567,11 +558,12 @@ LABKEY.DataRegion = function (config)
     };
 
     /**
-     * Returns user sorts from the URL as an Array of objects of the form:
+     * Returns the user sort from the URL. The sort is represented as an Array of objects of the form:
      * <ul>
      *   <li><b>fieldKey</b>: {String} The field key of the sort.
      *   <li><b>dir</b>: {String} The sort direction, either "+" or "-".
-     * </ul>.
+     * </ul>
+     * @returns {Object} Object representing the user sort.
      */
     this.getUserSort = function ()
     {
@@ -609,7 +601,7 @@ LABKEY.DataRegion = function (config)
     /**
      * Show a message in the header of this DataRegion.
      * @param html the HTML source of the message to be shown
-     * @return The Ext.Element of the newly created message div.
+     * @return {Ext.Element} The Ext.Element of the newly created message div.
      * @deprecated use addMessage(part, msg) instead.
      */
     this.showMessage = function (html)
@@ -652,7 +644,10 @@ LABKEY.DataRegion = function (config)
         this.addMessage("<div class='labkey-error'>" + html + "</div>");
     };
 
-    /** Returns true if a message is currently being shown for this DataRegion. Messages are shown as a header. */
+    /**
+     * Returns true if a message is currently being shown for this DataRegion. Messages are shown as a header.
+     * @return {Boolean} true if a message is showing.
+     */
     this.isMessageShowing = function()
     {
         return this.msgbox.isVisible();
