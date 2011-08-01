@@ -17,9 +17,10 @@
 CREATE OR REPLACE FUNCTION exp.deleteObjectById(ENTITYID, INTEGER) RETURNS void AS '
 DECLARE
     _container ALIAS FOR $1;
-    _objectid ALIAS FOR $2;
+    _inputObjectId ALIAS FOR $2;
+    _objectid INTEGER;
 BEGIN
-        _objectid := (SELECT ObjectId FROM exp.Object WHERE Container=_container AND ObjectId=_objectid);
+        _objectid := (SELECT ObjectId FROM exp.Object WHERE Container=_container AND ObjectId=_inputObjectid);
         IF (_objectid IS NULL) THEN
             RETURN;
         END IF;
@@ -33,3 +34,4 @@ BEGIN
     RETURN;
 END;
 ' LANGUAGE plpgsql;
+
