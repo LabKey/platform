@@ -256,13 +256,12 @@ that points back to the current page:
 
 
         /**
-         * Turn the parameter object into a query string
-         * e.g. {x:'fred'} -> "x=fred"
-         * the returned query string is not prepended with a question mark ('?')
+         * Turn the parameter object into a query string (e.g. {x:'fred'} -> "x=fred").
+         * The returned query string is not prepended by a question mark ('?').
          * 
          * @param {Object} [parameters] An object with properties corresponding to GET parameters to append to the URL.
          * Parameters will be encoded automatically. Parameter values that are arrays will be appended as multiple parameters
-          * with the same name. (Defaults to no parameters)
+          * with the same name. (Defaults to no parameters.)
          */
         queryString : function(parameters)
         {
