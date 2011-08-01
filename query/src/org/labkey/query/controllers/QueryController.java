@@ -565,7 +565,23 @@ public class QueryController extends SpringActionController
                 Query query = new Query(schema);
                 query.setRootTable(FieldKey.fromParts(form.ff_baseTableName));
                 newDef.setSql(query.getQueryText());
-                newDef.save(getUser(), getContainer());
+
+                try
+                {
+                    newDef.save(getUser(), getContainer());
+                }
+                catch (SQLException x)
+                {
+                    if (SqlDialect.isConstraintException(x))
+                    {
+                        errors.reject(ERROR_MSG, "The query '" + newQueryName + "' already exists.");
+                        return false;
+                    }
+                    else
+                    {
+                        throw x;
+                    }
+                }
 
                 _successUrl = newDef.urlFor(form.ff_redirect);
                 return true;
