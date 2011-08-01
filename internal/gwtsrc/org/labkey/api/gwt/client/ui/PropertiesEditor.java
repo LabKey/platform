@@ -152,6 +152,8 @@ public class PropertiesEditor<DomainType extends GWTDomain<FieldType>, FieldType
             public void onClick(ClickEvent event)
             {
                 HTMLTable.Cell cell = _table.getCellForEvent(event);
+                if (null == cell)
+                    return;
                 int row = cell.getRowIndex();
                 int i = row-1;
                 if (i >= 0 && i < _rows.size())
@@ -679,11 +681,14 @@ public class PropertiesEditor<DomainType extends GWTDomain<FieldType>, FieldType
     public void refreshRow(final int index, final Row rowObject)
     {
         HTMLTable.CellFormatter formatter = _table.getCellFormatter();
-
-        final FieldType pd = rowObject.edit;
         int tableRow = index+1;
-        int col = 0;
 
+        int cellCount = _table.getCellCount(0);
+        for (int c=0 ; c<cellCount ; c++)
+            formatter.setHeight(tableRow, c, "23");
+        
+        int col = 0;
+        final FieldType pd = rowObject.edit;
         FieldStatus status = getStatus(rowObject);
         boolean readOnly = isReadOnly(rowObject);
 
@@ -701,10 +706,15 @@ public class PropertiesEditor<DomainType extends GWTDomain<FieldType>, FieldType
             {
                 public void onClick(ClickEvent event)
                 {
-                    _rows.set(index, _rows.get(index - 1));
-                    _rows.set(index - 1, rowObject);
+                    if (index < 1)
+                        return;
+                    Row moveUp = rowObject;
+                    Row moveDown = _rows.get(index - 1);
+                    _rows.set(index, moveDown);
+                    _rows.set(index - 1, moveUp);
                     fireChangeEvent();
-                    refresh();
+                    refreshRow(index, moveDown);
+                    refreshRow(index-1, moveUp);
                 }
             });
             upButton.setEnabled(index > 0);
@@ -716,10 +726,15 @@ public class PropertiesEditor<DomainType extends GWTDomain<FieldType>, FieldType
             {
                 public void onClick(ClickEvent event)
                 {
-                    _rows.set(index, _rows.get(index + 1));
-                    _rows.set(index + 1, rowObject);
+                    if (index > _rows.size()-2)
+                        return;
+                    Row moveDown = rowObject;
+                    Row moveUp = _rows.get(index+1);
+                    _rows.set(index, moveUp);
+                    _rows.set(index + 1, moveDown);
                     fireChangeEvent();
-                    refresh();
+                    refreshRow(index, moveUp);
+                    refreshRow(index + 1, moveDown);
                 }
             });
             downButton.setEnabled(index < _rows.size() - 1);
@@ -920,7 +935,7 @@ public class PropertiesEditor<DomainType extends GWTDomain<FieldType>, FieldType
         // blank cell
         _table.setHTML(tableRow, col,"&nbsp");
         formatter.setWidth(tableRow, col, "900");
-        formatter.setHeight(tableRow, col, "22");
+        formatter.setHeight(tableRow, col, "23");
     }
 
     static PushButton getImageButton(String action, Object idSuffix, ClickHandler h)
@@ -1360,22 +1375,28 @@ public class PropertiesEditor<DomainType extends GWTDomain<FieldType>, FieldType
     {
         public _TextField()
         {
-            // adjustSize==true causes getComputesStyle, SLOW ON FIREFOX
-            this.adjustSize = !isFirefox;
+            setHeight(22);
+            // adjustSize==true causes getComputesStyle(), SLOW ON FIREFOX
+            this.adjustSize = false;
             sinkEvents(Event.ONCHANGE);
+        }
+
+        @Override
+        protected Size adjustInputSize()
+        {
+            // trying to make TextField look like the ConceptPicker (TriggerField)
+            return new Size(0, isFirefox?4:2);
         }
 
         @Override
         protected void onResize(int width, int height)
         {
-//            super.onResize(width, height);
             if (errorIcon != null && errorIcon.isAttached())
             {
               alignErrorIcon();
             }
             Size asize = adjustInputSize();
-            boolean adjust = !isFirefox;    // adjust==true causes getComputedStyle(), SLOW ON FIREFOX
-            getInputEl().setSize(width - asize.width, height - asize.height, adjust);
+            getInputEl().setSize(width - asize.width, height - asize.height, false);
         }
 
         public void onComponentEvent(ComponentEvent ce)

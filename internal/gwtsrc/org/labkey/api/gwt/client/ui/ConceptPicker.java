@@ -25,7 +25,6 @@ import com.extjs.gxt.ui.client.widget.form.*;
 import com.extjs.gxt.ui.client.widget.layout.RowLayout;
 import com.google.gwt.user.client.Event;
 import com.google.gwt.user.client.Window;
-import com.google.gwt.user.client.rpc.AsyncCallback;
 import org.labkey.api.gwt.client.model.GWTPropertyDescriptor;
 import org.labkey.api.gwt.client.util.ErrorDialogAsyncCallback;
 
@@ -79,6 +78,9 @@ public class ConceptPicker extends TriggerField<ConceptPicker.ConceptType>
         _lookupService = lookupService;
         setEditable(true);
         setName(name);
+        // adjustSize==true causes getComputesStyle(), SLOW ON FIREFOX
+        this.adjustSize = false;
+        setHeight(22);
     }
 
 
@@ -663,4 +665,7 @@ public class ConceptPicker extends TriggerField<ConceptPicker.ConceptType>
     private static boolean _empty(String s) {return null==s || s.length()==0;}
 //    private static String _string(Object o) {return null==o ? "" : o.toString();}
     private static String _default(String a, String b) {return _empty(a) ? b : a;}
+    private static native void _log(String s) /*-{
+        if ('console' in window) window.console.log(s);
+    }-*/;    
 }
