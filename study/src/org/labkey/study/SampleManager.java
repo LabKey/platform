@@ -1410,7 +1410,7 @@ public class SampleManager
             SpecimenTypeSummaryRow[] rows = Table.executeQuery(StudySchema.getInstance().getSchema(), SPECIMEN_TYPE_SUMMARY_SQL,
                     new Object[] { container.getId(), container.getId() }, SpecimenTypeSummaryRow.class);
 
-            summary = new SpecimenTypeSummary(rows);
+            summary = new SpecimenTypeSummary(container, rows);
             DbCache.put(StudySchema.getInstance().getTableInfoVial(), cacheKey, summary, 8 * CacheManager.HOUR);
             return summary;
         }

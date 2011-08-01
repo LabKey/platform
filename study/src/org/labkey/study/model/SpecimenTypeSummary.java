@@ -16,6 +16,10 @@
 
 package org.labkey.study.model;
 
+import org.labkey.api.data.Container;
+import org.labkey.api.view.ActionURL;
+import org.labkey.study.controllers.samples.SpecimenController;
+
 import java.util.*;
 
 /**
@@ -25,15 +29,17 @@ import java.util.*;
  */
 public class SpecimenTypeSummary
 {
-    public abstract class TypeCount
+    public static abstract class TypeCount
     {
+        private Container _container;
         private TypeCount _parent;
         private String _label;
         private Integer _rowId;
         private int _vialCount = 0;
 
-        private TypeCount(SpecimenTypeSummary.TypeCount parent, Integer rowId, String label)
+        private TypeCount(Container container, SpecimenTypeSummary.TypeCount parent, Integer rowId, String label)
         {
+            _container = container;
             _parent = parent;
             _rowId = rowId;
             _label = label;
@@ -81,6 +87,21 @@ public class SpecimenTypeSummary
             label.append(getLabel());
         }
 
+        public ActionURL getURL()
+        {
+            ActionURL url = new ActionURL(SpecimenController.SamplesAction.class, _container);
+            addFilterParameters("SpecimenDetail", url);
+            url.addParameter("showVials", "true");
+            return url;
+        }
+
+        private void addFilterParameters(String dataRegionName, ActionURL url)
+        {
+            url.addParameter(dataRegionName + "." + getSpecimenViewFilterColumn() + "/Description~eq", getLabel());
+            if (_parent != null)
+                _parent.addFilterParameters(dataRegionName, url);
+        }
+
         public abstract List<? extends TypeCount> getChildren();
 
         public abstract String getSpecimenViewFilterColumn();
@@ -88,9 +109,9 @@ public class SpecimenTypeSummary
 
     private class PrimaryTypeCount extends TypeCount
     {
-        private PrimaryTypeCount(Integer rowId, String label)
+        private PrimaryTypeCount(Container container, Integer rowId, String label)
         {
-            super(null, rowId, label);
+            super(container, null, rowId, label);
         }
 
         public List<? extends TypeCount> getChildren()
@@ -107,9 +128,9 @@ public class SpecimenTypeSummary
     private class DerivativeTypeCount extends TypeCount
     {
         private PrimaryTypeCount _parent;
-        private DerivativeTypeCount(SpecimenTypeSummary.PrimaryTypeCount parent, Integer rowId, String label)
+        private DerivativeTypeCount(Container container, SpecimenTypeSummary.PrimaryTypeCount parent, Integer rowId, String label)
         {
-            super(parent, rowId, label);
+            super(container, parent, rowId, label);
             _parent = parent;
         }
 
@@ -126,9 +147,9 @@ public class SpecimenTypeSummary
 
     private class AdditiveTypeCount extends TypeCount
     {
-        private AdditiveTypeCount(SpecimenTypeSummary.DerivativeTypeCount parent, Integer rowId, String label)
+        private AdditiveTypeCount(Container container, SpecimenTypeSummary.DerivativeTypeCount parent, Integer rowId, String label)
         {
-            super(parent, rowId, label);
+            super(container, parent, rowId, label);
         }
 
         public List<TypeCount> getChildren()
@@ -142,10 +163,12 @@ public class SpecimenTypeSummary
         }
     }
 
+    private Container _container;
     private SpecimenTypeSummaryRow[] _rows;
 
-    public SpecimenTypeSummary(SpecimenTypeSummaryRow[] rows)
+    public SpecimenTypeSummary(Container container, SpecimenTypeSummaryRow[] rows)
     {
+        _container = container;
         _rows = rows;
     }
 
@@ -166,7 +189,7 @@ public class SpecimenTypeSummary
         {
             if (current == null || !integersEqual(row.getPrimaryTypeId(), current.getRowId()))
             {
-                current = new PrimaryTypeCount(row.getPrimaryTypeId(), row.getPrimaryType());
+                current = new PrimaryTypeCount(_container, row.getPrimaryTypeId(), row.getPrimaryType());
                 counts.add(current);
             }
             current.setVialCount(current.getVialCount() + row.getVialCount().intValue());
@@ -191,7 +214,7 @@ public class SpecimenTypeSummary
                 current = counts.get(key);
                 if (current == null)
                 {
-                    current = new DerivativeTypeCount(primaryType, row.getDerivativeTypeId(), row.getDerivative());
+                    current = new DerivativeTypeCount(_container, primaryType, row.getDerivativeTypeId(), row.getDerivative());
                     counts.put(key, current);
                 }
                 current.setVialCount(current.getVialCount() + row.getVialCount().intValue());
@@ -225,7 +248,7 @@ public class SpecimenTypeSummary
                 current = counts.get(key);
                 if (current == null)
                 {
-                    current = new AdditiveTypeCount(derivativeType, row.getAdditiveTypeId(), row.getAdditive());
+                    current = new AdditiveTypeCount(_container, derivativeType, row.getAdditiveTypeId(), row.getAdditive());
                     counts.put(key, current);
                 }
                 current.setVialCount(current.getVialCount() + row.getVialCount().intValue());

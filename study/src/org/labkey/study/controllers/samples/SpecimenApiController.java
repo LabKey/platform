@@ -614,4 +614,56 @@ public class SpecimenApiController extends BaseStudyController
         }
     }
 
+    private void buildTypeSummary(List<Map<String, Object>> summary, List<? extends SpecimenTypeSummary.TypeCount> types)
+    {
+        // Recursively decend through the vial type hierarchy, adding a count property and a list of children for each type.
+        for (SpecimenTypeSummary.TypeCount count : types)
+        {
+            Map<String, Object> countProperties = new TreeMap<String, Object>();
+            summary.add(countProperties);
+            countProperties.put("label", count.getLabel() != null ? count.getLabel() : "[unknown]");
+            countProperties.put("count", count.getVialCount());
+            countProperties.put("url", count.getURL());
+            List<? extends SpecimenTypeSummary.TypeCount> childCounts = count.getChildren();
+            if (childCounts != null && !childCounts.isEmpty())
+            {
+                List<Map<String, Object>> childList = new ArrayList<Map<String, Object>>();
+                buildTypeSummary(childList, childCounts);
+                if (!childList.isEmpty())
+                    countProperties.put("children", childList);
+            }
+        }
+    }
+
+    @RequiresPermissionClass(ReadPermission.class)
+    @ApiVersion(11.2)
+    public class GetVialTypeSummaryAction extends ApiAction<SampleApiForm>
+    {
+        public ApiResponse execute(SampleApiForm form, BindException errors) throws Exception
+        {
+            Container container = form.getViewContext().getContainer();
+            SpecimenTypeSummary summary = SampleManager.getInstance().getSpecimenTypeSummary(container);
+            final Map<String, Object> response = new HashMap<String, Object>();
+
+            List<Map<String, Object>> primaryTypes = new ArrayList<Map<String, Object>>();
+            buildTypeSummary(primaryTypes, summary.getPrimaryTypes());
+            response.put("primaryTypes", primaryTypes);
+
+            List<Map<String, Object>> derivativeTypes = new ArrayList<Map<String, Object>>();
+            buildTypeSummary(derivativeTypes, summary.getDerivatives());
+            response.put("derivativeTypes", derivativeTypes);
+
+            List<Map<String, Object>> additiveTypes = new ArrayList<Map<String, Object>>();
+            buildTypeSummary(additiveTypes, summary.getAdditives());
+            response.put("additiveTypes", additiveTypes);
+
+            return new ApiResponse()
+            {
+                public Map<String, Object> getProperties()
+                {
+                    return response;
+                }
+            };
+        }
+    }
 }

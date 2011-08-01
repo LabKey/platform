@@ -83,59 +83,6 @@ public class StudyFolderType extends DefaultFolderType
         return new HelpTopic("study");
     }
 
-    @Override
-    public AppBar getAppBar(ViewContext ctx)
-    {
-        Container c = ctx.getContainer();
-        User u = ctx.getUser();
-        Study study = StudyService.get().getStudy(ctx.getContainer());
-        if (study == null)
-        {
-            List<NavTree> buttons;
-            if (ctx.hasPermission(AdminPermission.class))
-                buttons = Collections.singletonList(new NavTree("Create Study", new ActionURL(StudyController.CreateStudyAction.class, c)));
-            else
-                buttons = Collections.emptyList();
-            return new AppBar("Study: None", buttons);
-        }
-        else
-        {
-            ActionURL actionURL = ctx.getActionURL();
-            String controller = actionURL.getPageFlow();
-            String action = actionURL.getAction();
-
-            List<NavTree> buttons = new ArrayList<NavTree>();
-            buttons.add(new NavTree("Dashboard", AppProps.getInstance().getHomePageActionURL()));
-            buttons.add(new NavTree("Shortcuts", StudyPagesController.Page.SHORTCUTS.getURL(c)));
-            buttons.add(new NavTree("Clinical and Assay Data", StudyPagesController.Page.DATA_ANALYSIS.getURL(c)));
-            buttons.add(new NavTree("Study Info", PageFlowUtil.urlProvider(ProjectUrls.class).getBeginURL(c)));
-            buttons.add(new NavTree("Specimens", StudyPagesController.Page.SPECIMENS.getURL(c)));
-            if (c.hasPermission(u, AdminPermission.class))
-                buttons.add(new NavTree("Manage", new ActionURL(StudyController.ManageStudyAction.class, c)));
-
-            //TODO: Develop some rules (regexp??) for highlighting.
-            //AppBar should try based on navTrail if one is provided
-            if (controller.equals("study-pages"))
-            {
-                String pageName = actionURL.getParameter("pageName");
-                if (StudyPagesController.Page.SHORTCUTS.name().equals(pageName))
-                    buttons.get(1).setSelected(true);
-                else if (StudyPagesController.Page.SPECIMENS.name().equals(pageName))
-                    buttons.get(4).setSelected(true);
-                else if (StudyPagesController.Page.DATA_ANALYSIS.name().equals(pageName))
-                    buttons.get(2).setSelected(true);
-            }
-            else if(controller.equals("study-samples"))
-                buttons.get(1).setSelected(true);
-            else if (controller.equals("study-reports") || controller.equals("dataset") || action.equals("dataset") || action.equals("participant"))
-                buttons.get(2).setSelected(true);
-            else if (controller.equals("study-definition") || controller.equals("cohort") || controller.equals("study-properties"))
-                buttons.get(3).setSelected(true);
-
-            return new AppBar(study.getLabel(), buttons);
-        }
-    }
-
     private static Set<Module> _activeModulesForOwnedFolder = null;
     private synchronized static Set<Module> getActiveModulesForOwnedFolder(StudyModule module)
     {

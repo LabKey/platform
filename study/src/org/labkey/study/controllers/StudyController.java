@@ -120,6 +120,7 @@ import org.labkey.api.study.DataSet;
 import org.labkey.api.study.Study;
 import org.labkey.api.study.StudyImportException;
 import org.labkey.api.study.StudyService;
+import org.labkey.api.study.StudyUrls;
 import org.labkey.api.study.TimepointType;
 import org.labkey.api.study.Visit;
 import org.labkey.api.study.assay.AssayPublishService;
@@ -261,6 +262,27 @@ public class StudyController extends BaseStudyController
     private static final String DATASET_DATAREGION_NAME = "Dataset";
     public static final String DATASET_REPORT_ID_PARAMETER_NAME = "Dataset.reportId";
     public static final String DATASET_VIEW_NAME_PARAMETER_NAME = "Dataset.viewName";
+
+    public static class StudyUrlsImpl implements StudyUrls
+    {
+        @Override
+        public ActionURL getCreateStudyURL(Container container)
+        {
+            return new ActionURL(CreateStudyAction.class,  container);
+        }
+
+        @Override
+        public ActionURL getManageStudyURL(Container container)
+        {
+            return new ActionURL(ManageStudyAction.class,  container);
+        }
+
+        @Override
+        public ActionURL getStudyOverviewURL(Container container)
+        {
+            return new ActionURL(OverviewAction.class,  container);
+        }
+    }
 
     public StudyController()
     {
