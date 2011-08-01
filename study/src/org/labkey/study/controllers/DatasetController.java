@@ -523,8 +523,8 @@ public class DatasetController extends BaseStudyController
             try
             {
                 Study study = getStudy();
-                root.addChild(study.getLabel(), new ActionURL(StudyController.BeginAction.class, getContainer()));
-                root.addChild("Study Overview", getStudyOverviewURL());
+                _appendManageStudy(root);
+                root.addChild("Manage Datasets", new ActionURL(StudyController.ManageTypesAction.class, getContainer()));
                 root.addChild("Define Dataset from File");
                 return root;
             }

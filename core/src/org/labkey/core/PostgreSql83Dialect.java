@@ -955,7 +955,7 @@ class PostgreSql83Dialect extends SqlDialect
 
     private String makePropertyIdentifier(String name)
     {
-        return "\"" + name.toLowerCase() + "\"";
+        return quoteIdentifier(name.toLowerCase());
     }
 
 
