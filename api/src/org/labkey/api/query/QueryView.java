@@ -589,10 +589,10 @@ public class QueryView extends WebPartView<Object>
             {
                 if (suffix.equals("sort"))
                 {
-                    // Append sort parameter onto target's existing sort
-                    String existingSort = target.getParameter(newKey);
-                    if (existingSort != null && existingSort.length() > 0)
-                        value = value + "," + existingSort;
+                    // Prepend source sort parameter before target's existing sort
+                    String targetSort = target.getParameter(newKey);
+                    if (targetSort != null && targetSort.length() > 0)
+                        value = value + "," + targetSort;
                     target.replaceParameter(newKey, value);
                 }
                 else
