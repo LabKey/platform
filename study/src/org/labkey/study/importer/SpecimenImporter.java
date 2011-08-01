@@ -2222,7 +2222,7 @@ public class SpecimenImporter
             _logger.error(sb);
 
             // If conflicts are found, stop the import.
-            throw new IllegalStateException("Conflicting specimens found for GlobalUniqueId(s): " + StringUtils.join(duplicateGUIDs, ","));
+            throw new IllegalStateException(sb.toString());
         }
     }
 

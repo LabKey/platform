@@ -206,6 +206,10 @@ public class ShowUploadSpecimensAction extends FormViewAction<ShowUploadSpecimen
             if (!errors.hasErrors())
                 importer.process(getViewContext().getUser(), study.getContainer(), specimenRows, form.isMerge());
         }
+        catch (IllegalStateException e)
+        {
+            errors.reject(SpringActionController.ERROR_MSG, e.getMessage());
+        }
         catch (SQLException e)
         {
             errors.reject(SpringActionController.ERROR_MSG, "A database error was reported during import: " + e.getMessage());
