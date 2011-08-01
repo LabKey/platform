@@ -574,7 +574,11 @@ public class SecurityApiActions
                 for (RoleAssignment ra : policy.getAssignments())
                 {
                     if (ra.getRole().equals(projAdminRole))
-                        mpolicy.addRoleAssignment(SecurityManager.getPrincipal(ra.getUserId()), fldrAdminRole);
+                    {
+                        UserPrincipal principal = SecurityManager.getPrincipal(ra.getUserId());
+                        if (null != principal)
+                            mpolicy.addRoleAssignment(principal, fldrAdminRole);
+                    }
                 }
                 resp.put("policy", mpolicy.toMap());
             }
