@@ -262,6 +262,16 @@ public abstract class SqlDialect
         return sqlState.equals("23000") || sqlState.equals("23505") || sqlState.equals("23503");
     }
 
+
+    public static boolean isCancelException(SQLException x)
+    {
+        String sqlState = x.getSQLState();
+        if (null == sqlState || !sqlState.startsWith("57"))
+            return false;
+        return sqlState.equals("57014"); // TODO verify SQL Server
+    }
+
+
     // Do dialect-specific work for this data source (nothing by default)
     public void prepareNewDbScope(DbScope scope) throws SQLException, IOException
     {

@@ -317,8 +317,10 @@ public class ExceptionUtil
     {
         if (ex != null)
         {
-            if (ex.getClass().getName().endsWith("ClientAbortException") ||
-                ex.getClass().getName().endsWith("FileUploadException"))
+            String className = ex.getClass().getName();
+            if (className.endsWith("CancelledException") ||
+                className.endsWith("ClientAbortException") ||
+                className.endsWith("FileUploadException"))
             {
                 return true;
             }

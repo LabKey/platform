@@ -329,9 +329,7 @@ public class Table
         }
         catch(SQLException e)
         {
-            // For every SQLException log error, query SQL, and params, then throw
-            _log.error("internalExecuteQuery", e);
-            _logQuery(Level.ERROR, sql, parameters, conn);
+            _doCatch(sql, parameters, conn, e);
             queryFailed = true;
             throw(e);
         }
@@ -571,7 +569,11 @@ public class Table
     // Standard SQLException catch block: log exception, query SQL, and params
     private static void _doCatch(String sql, Object[] parameters, Connection conn, SQLException e)
     {
-        if (sql.startsWith("INSERT") && SqlDialect.isConstraintException(e))
+        if (SqlDialect.isCancelException(e))
+        {
+            return;
+        }
+        else if (sql.startsWith("INSERT") && SqlDialect.isConstraintException(e))
         {
             _log.warn("SQL Exception", e);
             _logQuery(Level.WARN, sql, parameters, conn);

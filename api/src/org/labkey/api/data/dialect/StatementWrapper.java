@@ -62,6 +62,7 @@ public class StatementWrapper implements Statement, PreparedStatement, CallableS
     private final Logger _log;
     private String _debugSql = "";
     private long _msStart = 0;
+    private boolean userCancelled = false;
     // NOTE: CallableStatement supports getObject(), but PreparedStatement doesn't
     private ArrayList<Object> _parameters = null;
 
@@ -946,6 +947,7 @@ public class StatementWrapper implements Statement, PreparedStatement, CallableS
     public void cancel()
             throws SQLException
     {
+        userCancelled = true;
         _stmt.cancel();
     }
 
@@ -1579,6 +1581,8 @@ public class StatementWrapper implements Statement, PreparedStatement, CallableS
         }
         _parameters = null;
 
+        if (userCancelled)
+            logEntry.append("\n    cancelled by user");
         if (null != x)
             logEntry.append("\n    ").append(x);
         _appendTableStackTrace(logEntry, 5);
