@@ -57,14 +57,9 @@
     </tr>
 </table>
 <table class="">
-    <tr>
-        <td><form name="moveAddAlias" action="showMoveFolderTree.view">
-        <input type="checkbox" onchange="document.forms.moveAddAlias.submit()" name="addAlias" <% if (form.isAddAlias()) { %>checked<% } %>> Add a folder alias for the folder's current location. This will make links that still target the old folder location continue to work.
-        <% if (form.isShowAll()) { %>
-            <input type="hidden" name="showAll" value="1" />
-        <% } %>
-    </form></td>
-    </tr>
+    <tr><td>
+        <input type="checkbox" id='cb_move_folder_alias' name="addAlias" <% if (form.isAddAlias()) { %>checked<% } %>> Add a folder alias for the folder's current location. This will make links that still target the old folder location continue to work.
+    </td></tr>
 </table>
 <div id="folderdiv" class="extContainer"></div>
 <script type="text/javascript">
@@ -140,6 +135,9 @@
             if (actionMap[actionType]) {
                 var params = {};
                 if (actionType == 'confirmmove'){
+                    var addAlias = Ext.getDom('cb_move_folder_alias');
+                    if (addAlias)
+                        params['addAlias'] = addAlias.checked;
                     params['target'] = selectedNode.attributes.containerPath;
                 }
                 var url = LABKEY.ActionURL.buildURL('admin', actionMap[actionType], LABKEY.ActionURL.containerPath, params);

@@ -16,6 +16,7 @@
 
 package org.labkey.audit.model;
 
+import org.apache.log4j.Logger;
 import org.labkey.api.audit.AuditLogEvent;
 import org.labkey.api.data.*;
 import org.labkey.api.security.User;
@@ -30,7 +31,10 @@ import java.sql.SQLException;
  */
 public class LogManager
 {
+    private static final Logger _log = Logger.getLogger(LogManager.class);
     static private final LogManager _instance = new LogManager();
+    static final int COMMENT_MAX = 500;
+    static final int STRING_KEY_MAX = 200;
 
     private LogManager(){}
     static public LogManager get()
@@ -50,6 +54,7 @@ public class LogManager
 
     public AuditLogEvent insertEvent(User user, AuditLogEvent event) throws SQLException
     {
+        validateFields(event);
         return Table.insert(user, getTinfoAuditLog(), event);
     }
 
@@ -62,5 +67,27 @@ public class LogManager
     public AuditLogEvent[] getEvents(Filter filter, Sort sort) throws SQLException
     {
         return Table.select(getTinfoAuditLog(), Table.ALL_COLUMNS, filter, sort, AuditLogEvent.class);
+    }
+
+    /**
+     * Ensure that the string key fields don't exceed the length specified in the schema
+     */
+    private void validateFields(AuditLogEvent event)
+    {
+        event.setKey1(ensureMaxLength(event.getKey1(), STRING_KEY_MAX));
+        event.setKey2(ensureMaxLength(event.getKey2(), STRING_KEY_MAX));
+        event.setKey3(ensureMaxLength(event.getKey3(), STRING_KEY_MAX));
+
+        event.setComment(ensureMaxLength(event.getComment(), COMMENT_MAX));
+    }
+
+    private String ensureMaxLength(String input, int max)
+    {
+        if (input != null && input.length() > max)
+        {
+            _log.error("Audit field input : \n" + input + "\nexceeded the maximum length : " + max);
+            return input.substring(0, max-3) + "...";
+        }
+        return input;
     }
 }
