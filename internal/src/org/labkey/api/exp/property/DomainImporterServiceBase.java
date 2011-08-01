@@ -149,7 +149,10 @@ public abstract class DomainImporterServiceBase extends DomainEditorServiceBase 
             {
                 ColumnDescriptor column = columns[colIndex];
                 GWTPropertyDescriptor prop = new GWTPropertyDescriptor();
-                prop.setName(column.name);
+                String name = column.name;
+                if (name.length() > 2 && name.startsWith("\"") && name.endsWith("\""))
+                    name = name.substring(1, name.length()-1);
+                prop.setName(name);
                 prop.setRangeURI(column.getRangeURI());
                 prop.setMvEnabled(column.isMvEnabled());
 

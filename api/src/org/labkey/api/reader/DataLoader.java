@@ -30,6 +30,7 @@ import org.labkey.api.data.JdbcType;
 import org.labkey.api.data.MvUtil;
 import org.labkey.api.etl.DataIteratorBuilder;
 import org.labkey.api.etl.DataIterator;
+import org.labkey.api.etl.LoggingDataIterator;
 import org.labkey.api.exp.MvColumn;
 import org.labkey.api.exp.MvFieldWrapper;
 import org.labkey.api.iterator.CloseableIterator;
@@ -772,7 +773,7 @@ public abstract class DataLoader implements Iterable<Map<String, Object>>, Loade
     @Override
     public DataIterator getDataIterator(final BatchValidationException errors)
     {
-        return new _DataIterator(errors);
+        return LoggingDataIterator.wrap(new _DataIterator(errors));
     }
 
 

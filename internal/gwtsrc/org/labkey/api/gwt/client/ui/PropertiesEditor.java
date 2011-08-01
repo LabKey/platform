@@ -66,7 +66,7 @@ public class PropertiesEditor<DomainType extends GWTDomain<FieldType>, FieldType
     private com.extjs.gxt.ui.client.widget.TabPanel _extraPropertiesTabPanel = new com.extjs.gxt.ui.client.widget.TabPanel();
     private Image _spacerImage;
     protected boolean _warnAboutDelete = true;
-    private static final String BAD_NAME_ERROR_MESSAGE = "Name may only contain letters, numbers, spaces, and underscores (_), and must start with a letter or underscore.";
+    private static final String BAD_NAME_ERROR_MESSAGE = "We recommend that names only contain letters, numbers, spaces, and underscores (_), and start with a letter or underscore.";
 
     public enum FieldStatus
     {
@@ -651,15 +651,19 @@ public class PropertiesEditor<DomainType extends GWTDomain<FieldType>, FieldType
     {
         public String validate(Field<?> field, String value)
         {
-            return validateFieldName(value);
+            return null;
+//            return validateFieldName(value);
         }
 
         public String warning(Field<?> field, String text)
         {
-            if (text != null && text.contains(" "))
-            {
+            if (text == null || text.isEmpty())
+                return null;
+            String error = validateFieldName(text);
+            if (null != error)
+                return error;
+            if (text.contains(" "))
                 return "Name should not contain spaces.";
-            }
             return null;
         }
     }
@@ -1110,13 +1114,13 @@ public class PropertiesEditor<DomainType extends GWTDomain<FieldType>, FieldType
                 continue;
             }
 
-            String nameError = validateFieldName(name);
-
-            if (nameError != null)
-            {
-                errors.add(nameError);
-                continue;
-            }
+//            String nameError = validateFieldName(name);
+//
+//            if (nameError != null)
+//            {
+//                errors.add(nameError);
+//                continue;
+//            }
 
             names.add(name.toLowerCase());
         }
