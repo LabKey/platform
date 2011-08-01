@@ -551,7 +551,7 @@ span.labkey-button:hover
 
 .labkey-disabled-button,
 .labkey-disabled-button:visited,
-.labkey-disabled-button:active,    
+.labkey-disabled-button:active,
 a.labkey-disabled-button {
     padding: 3px 5px;
     border: 1px solid #b4b4b4;
@@ -673,12 +673,18 @@ regions on mouseover */
 div.labkey-pagination
 {
     white-space: nowrap;
-    margin: 4px;
+    margin: 8px 5px 0 5px;
+	font-size: 11px;
 }
 
 .labkey-pagination em
 {
     font-weight: normal;
+	font-style: normal;
+}
+
+.labkey-pagination a {
+	padding-left: 5px;
 }
 
 /* Used for checkboxes in Data Regions */
@@ -961,7 +967,7 @@ table.wiki-table {
 table.wiki-table td, table.wiki-table th
 {
     margin: 0;
-    padding: 7px;
+    padding: 4px;
     border-width: 1px 1px 0 0;
     text-align: left;
 }
@@ -1379,48 +1385,8 @@ table.labkey-main
     height: 26px;
 }
 
-/* The side panel with the navigation and admin expandable menus */
-td.labkey-site-nav-panel {
-    background-color: #f8f8f8;
-    padding-top: 10px;
-    padding-left: 5px;
-    border-top: 0;
-    border-bottom: 0;
-    border-left: 0;
-    border-right: 1px solid #e0e6ea;
-    border-collapse: separate;
-	border-spacing: 2px;
-    vertical-align: top;
-    width: 120px;
-	overflow: auto;
-}
 
-div.menu-wrapper {
-    width: auto;
-    overflow: hidden;
-    *overflow: visible;
-}
-
-/* The project area (the rest of the page besides the side and top panels) */
-table.labkey-proj
-{
-    width: 100%;
-    height: 100%;
-    vertical-align: top;
-    border-spacing: 0;
-    padding: 0 30px 30px 30px;
-    *border-collapse: collapse;
-    *width: 95%;
-    *margin: 0 30px 30px 30px;
-}
-
-td.labkey-proj
-{
-    vertical-align: top;
-    height: 100%;
-}
-
-/* The icon in the header panel */
+/* The icon (logo) in the header panel */
 td.labkey-main-icon
 {
     vertical-align: middle;
@@ -1434,6 +1400,7 @@ td.labkey-main-icon img
 {
     display: block;
 }
+
 
 /* The middle of the header panel */
 td.labkey-main-title-area
@@ -1487,6 +1454,7 @@ td.labkey-main-menu a.selected
     z-index:1000
 }
 
+
 /* The site title */
 #labkey-main-title
 {
@@ -1505,6 +1473,8 @@ a.labkey-main-title
 .labkey-main-title:hover {
     text-decoration: underline;
 }
+
+
 
 /* The right side links and username on the header panel */
 td.labkey-main-nav
@@ -1542,6 +1512,28 @@ table.labkey-main-search img {
     width: 200px;
     padding; 0;
 }
+
+
+/* The project area (the rest of the page besides the side and top panels) */
+table.labkey-proj
+{
+    width: 100%;
+    height: 100%;
+    vertical-align: top;
+    border-spacing: 0;
+    padding: 0 20px 20px 20px;
+    *border-collapse: collapse;
+    *width: 95%;
+    *margin: 0 20px 20px 20px;
+}
+
+td.labkey-proj
+{
+    vertical-align: top;
+    height: 100%;
+}
+
+
 
 /* search results page */
 .labkey-search-filter
@@ -1589,6 +1581,31 @@ form.labkey-search-form
 }
 
 
+
+/* The  td that holds the side panel with the navigation and admin expandable menus */
+/* there's lots of levels of divs and tables under this, including menu-wrapper, labkey-expandable-nav-panel, labkey-expandable-nav, and labkey-nav-tree */
+td.labkey-site-nav-panel {
+    background-color: #f8f8f8;
+    padding-top: 10px;
+    padding-left: 5px;
+    border-top: 0;
+    border-bottom: 0;
+    border-left: 0;
+    border-right: 1px solid #e0e6ea;
+    border-collapse: separate;
+	border-spacing: 2px;
+    vertical-align: top;
+    width: 120px;
+	overflow: auto;
+}
+
+div.menu-wrapper {
+    width: auto;
+    overflow: hidden;
+    *overflow: visible;
+}
+
+
 /* The strip at the top of the left side panel that is used to set its minimum width */
 .labkey-site-nav-expander
 {
@@ -1596,7 +1613,7 @@ form.labkey-search-form
     height: 0;
 }
 
-/* The table that contains the expandable nav panels */
+/* The table that contains the expandable sidenav panel */
 table.labkey-expandable-nav
 {
     background-color: #F8F8F8;
@@ -1631,6 +1648,8 @@ table.labkey-expandable-nav
     width: 100%;
 }
 
+
+
 /* The top of the project area where there are tabs, the crumb trail, and the project title */
 .labkey-proj-nav-panel
 {
@@ -1657,7 +1676,12 @@ table.labkey-expandable-nav
     vertical-align: top;
 }
 
+
+
+
+
 /* The cell that contains the expand/collapse image */
+/* are we sure about this - side nav and study seem to be using labkey-nav-tree-node et al below */
 td.labkey-expand-collapse-area
 {
     border-bottom: 1px solid #e5e5e5;
@@ -1678,7 +1702,13 @@ td.labkey-expand-collapse-area img {
 	margin-right: 3px;
 }
 
+
+
+
+
+
 /* The table that contains all the expandable nodes in the expandable menus */
+/* this is what sidenav and Pages are using - kc 07-29-11 */
 table.labkey-nav-tree
 {
     border-spacing: 0; *border-collapse: collapse;
@@ -1690,7 +1720,11 @@ span.labkey-nav-tree-selected
     font-weight:bold;
 }
 
+
+
+
 /* Each line of the expandable nav menus */
+/* this is what sidenav, Pages, and Study are using - kc 07-29-11 */
 tr.labkey-nav-tree-row
 {
     color: #126495;
@@ -1708,8 +1742,8 @@ tr.labkey-nav-tree-row:hover
 /* The area on the left of a nav tree row which can be blank or have an expand/collapse button */
 td.labkey-nav-tree-node
 {
-    padding: 0;
-    vertical-align: middle;
+    padding: .25em 0 0 0;
+    vertical-align: top;
 }
 
 td.labkey-nav-tree-node img
@@ -1720,7 +1754,7 @@ td.labkey-nav-tree-node img
 /* The link in an expandable nav menu */
 td.labkey-nav-tree-text
 {
-    padding: 5px 0;
+    padding: 4px 0;
     width: 100%;
     vertical-align: top;
 	line-height: 1.2em;
@@ -1779,7 +1813,7 @@ td.labkey-crumb-trail {
 }
 .labkey-nav-page-header
 {
-    font-size: 30px;
+    font-size: 26px;
     font-weight: normal;
     font-family: Arial, Helvetica, sans-serif;
     color: #000000;
@@ -1814,19 +1848,20 @@ tr.labkey-wp-header
     border: 0;
 }
 
-.labkey-wp-header th, .labkey-wp-header td, .labkey-wp-title
+.labkey-wp-header th, .labkey-wp-header td
 {
     font-weight: bold;
-    padding-left: 0;
+    padding-left: 4px;
     padding-right: 0;
     padding-top: 0;
-	padding-bottom: 0;
+	padding-bottom: 4px;
     text-align: left;
     white-space:nowrap;
     color:#000000;
-    font-size: 18px;
+    font-size: 17px;
 	border: 0;
 }
+
 
 /* .labkey-wp-header a:link, .labkey-wp-header a:visited
 {
@@ -1866,12 +1901,12 @@ tr.labkey-wp-header
 
 
 /* This is used for the left side of the wp header and often contains the title */
-td.labkey-wp-title-left, th.labkey-wp-title-left {
+td.labkey-wp-title-left, th.labkey-wp-title-left, .labkey-wp-title {
     border-right: 0 none;
     font-family: Arial, Helvetica, sans serif;
     color: #000000;
-	padding-left: 5px;
-	padding-bottom: 5px;
+	padding-left: 4px;
+	padding-bottom: 4px;
 }
 
 th.labkey-wp-title-left a:link, th.labkey-wp-title-left a:visited {
@@ -1884,7 +1919,7 @@ th.labkey-wp-title-left a:hover {
 	text-decoration: none;
 }
 
-th.labkey-wp-title-left img {
+th.labkey-wp-title-left img, .labkey-wp-title img {
 	margin-top: 4px;
 }
 
@@ -2146,7 +2181,8 @@ table.labkey-study-expandable-nav
 
 .labkey-study-expandable-nav .labkey-nav-tree-node
 {
-    padding-top: 0.3em;
+    padding-top: 0;
+	vertical-align: top;
 }
 
 table.labkey-request-warnings
