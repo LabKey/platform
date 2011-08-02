@@ -16,7 +16,6 @@
 
 package org.labkey.api.etl;
 
-import org.apache.xmlbeans.impl.jam.internal.elements.ParameterImpl;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
@@ -25,20 +24,15 @@ import org.labkey.api.data.Container;
 import org.labkey.api.data.DbScope;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.UpdateableTableInfo;
-import org.labkey.api.exp.MvColumn;
-import org.labkey.api.exp.PropertyDescriptor;
 import org.labkey.api.exp.property.Domain;
 import org.labkey.api.exp.property.DomainProperty;
 import org.labkey.api.query.BatchValidationException;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.ValidationException;
 import org.labkey.api.security.User;
-import org.labkey.api.util.MultiPhaseCPUTimer;
-import org.labkey.api.util.Pair;
 
 import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.IdentityHashMap;
 import java.util.List;
 import java.util.Map;
 
