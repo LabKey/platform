@@ -1854,6 +1854,8 @@ LABKEY.DataRegion._filterUI =
 
         if(this._mappedType == "DATE"){
             inputField1 = new Ext.form.DateField({
+                name: 'value_1',
+                id: 'value_1',
                 allowBlank: false,
                 width: 250,
                 blankText: 'You must enter a value.',
@@ -1871,6 +1873,8 @@ LABKEY.DataRegion._filterUI =
             });
 
             inputField2 = new Ext.form.DateField({
+                name: 'value_2',
+                id: 'value_2',
                 allowBlank: false,
                 width: 250,
                 blankText: 'You must enter a value.',
