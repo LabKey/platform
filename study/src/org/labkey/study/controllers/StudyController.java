@@ -6827,6 +6827,14 @@ public class StudyController extends BaseStudyController
 
             try
             {
+                String tsv = form.getTsv();
+
+                if (null == tsv)
+                {
+                    errors.reject(ERROR_MSG, "Please insert tab-seperated data with two columns, Name and SequenceNum");
+                    return false;
+                }
+
                 StudyManager.getInstance().importVisitAliases(getStudy(), getUser(), new TabLoader(form.getTsv(), true));
             }
             catch (SQLException e)
@@ -6840,6 +6848,11 @@ public class StudyController extends BaseStudyController
                 {
                     throw e;
                 }
+            }
+            catch (ValidationException e)
+            {
+                errors.reject(ERROR_MSG, e.getMessage());
+                return false;
             }
 
             // TODO: Change to audit log

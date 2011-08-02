@@ -648,24 +648,22 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
             searchTitle = study.getSearchKeywords();
             body = study.getSearchBody();
         }
-        else if (c.isProject())
-        {
-            displayTitle = "Project -- " + c.getName();
-            body = StringUtils.trimToEmpty(c.getDescription());
-            searchTitle = c.getName() + " " + body + " project";
-        }
-        else if (c.isWorkbook())
-        {
-            displayTitle = "Workbook -- " + c.getName();
-            searchTitle = c.getName() + " " + StringUtils.trimToEmpty(c.getDescription()) + " workbook";
-            body = "Workbook " + c.getName() + " in Project " + p.getName();
-        }
         else
         {
-            displayTitle = "Folder -- " + c.getName();
-            searchTitle = c.getName() + " " + c.getDescription() + " folder";
-            body = "Folder " + c.getName() + " in Project " + p.getName();
-            body += "\n" + StringUtils.trimToEmpty(c.getDescription());
+            String type;
+
+            if (c.isProject())
+                type = "Project";
+            else if (c.isWorkbook())
+                type = "Workbook";
+            else
+                type = "Folder";
+
+            String description = StringUtils.trimToEmpty(c.getDescription());
+            displayTitle = type + " -- " + c.getName();
+            searchTitle = c.getName() + " " + description + " " + type;
+            body = type + " " + c.getName() + (c.isProject() ? "" : " in Project " + p.getName());
+            body += "\n" + description;
         }
 
         Map<String, Object> properties = new HashMap<String, Object>();
