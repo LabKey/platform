@@ -2427,7 +2427,7 @@ public class SecurityManager
             message.append(" was added successfully, but could not be emailed due to a failure:<br><pre>");
             message.append(e.getMessage());
             message.append("</pre>");
-            appendMailHelpText(message, messageContentsURL);
+            appendMailHelpText(message, messageContentsURL, currentUser.isAdministrator());
 
             User newUser = UserManager.getUser(email);
 
@@ -2448,19 +2448,23 @@ public class SecurityManager
         return message.toString();
     }
 
-    private static void appendMailHelpText(StringBuilder sb, ActionURL messageContentsURL)
+    private static void appendMailHelpText(StringBuilder sb, ActionURL messageContentsURL, boolean isAdmin)
     {
-        sb.append("You can attempt to resend this mail later by going to the Site Users link, clicking on the appropriate user from the list, and resetting their password.");
-        if (messageContentsURL != null)
-        {
-            sb.append(" Alternatively, you can copy the <a href=\"");
-            sb.append(PageFlowUtil.filter(messageContentsURL));
-            sb.append("\" target=\"_blank\">contents of the message</a> into an email client and send it to the user manually.");
+        if(isAdmin){
+            sb.append("You can attempt to resend this mail later by going to the Site Users link, clicking on the appropriate user from the list, and resetting their password.");
+            if (messageContentsURL != null)
+            {
+                sb.append(" Alternatively, you can copy the <a href=\"");
+                sb.append(PageFlowUtil.filter(messageContentsURL));
+                sb.append("\" target=\"_blank\">contents of the message</a> into an email client and send it to the user manually.");
+            }
+            sb.append("</p>");
+            sb.append("<p>For help on fixing your mail server settings, please consult the SMTP section of the <a href=\"");
+            sb.append((new HelpTopic("cpasxml")).getHelpTopicLink());
+            sb.append("\" target=\"_new\">LabKey documentation on modifying your configuration file</a>.<br>");
+        } else {
+            sb.append("Please contact your site administrator.");
         }
-        sb.append("</p>");
-        sb.append("<p>For help on fixing your mail server settings, please consult the SMTP section of the <a href=\"");
-        sb.append((new HelpTopic("cpasxml")).getHelpTopicLink());
-        sb.append("\" target=\"_new\">LabKey documentation on modifying your configuration file</a>.<br>");
     }
 
 
