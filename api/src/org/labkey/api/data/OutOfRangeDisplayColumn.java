@@ -67,7 +67,10 @@ public class OutOfRangeDisplayColumn extends DataColumn
             Object oorValue = _oorIndicatorColumn.getValue(ctx);
             if (oorValue != null)
             {
-                result.append(oorValue);
+                if (isHtmlFiltered())
+                    result.append(h(oorValue));
+                else
+                    result.append(oorValue);
             }
         }
         else
@@ -84,10 +87,11 @@ public class OutOfRangeDisplayColumn extends DataColumn
             }
             if (row == 1)
             {
-                result.append("<missing column ");
-                result.append(getColumnInfo().getName());
-                result.append(OORDisplayColumnFactory.OORINDICATOR_COLUMN_SUFFIX);
-                result.append("> ");
+                String msg = "<missing column " + getColumnInfo().getName() + OORDisplayColumnFactory.OORINDICATOR_COLUMN_SUFFIX + ">";
+                if (isHtmlFiltered())
+                    result.append(h(msg));
+                else
+                    result.append(msg);
             }
         }
         result.append(super.getFormattedValue(ctx));
@@ -114,7 +118,7 @@ public class OutOfRangeDisplayColumn extends DataColumn
         }
         else
         {
-            out.write(h(value));
+            out.write(value);
         }
     }
 
