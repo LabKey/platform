@@ -16,15 +16,13 @@
  */
 %>
 <%@ page import="org.labkey.api.data.Container"%>
-<%@ page import="org.labkey.api.view.ActionURL" %>
+<%@ page import="org.labkey.api.security.permissions.AdminPermission" %>
+<%@ page import="org.labkey.api.security.roles.RoleManager" %>
+<%@ page import="org.labkey.api.util.PageFlowUtil" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.api.view.ViewContext" %>
-<%@ page import="org.labkey.core.admin.AdminController" %>
 <%@ page import="org.labkey.core.admin.AdminController.ManageFoldersForm" %>
 <%@ page import="org.labkey.core.admin.AdminController.MoveFolderTreeView" %>
-<%@ page import="org.labkey.api.util.PageFlowUtil" %>
-<%@ page import="org.labkey.api.security.roles.RoleManager" %>
-<%@ page import="org.labkey.api.security.permissions.AdminPermission" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
     MoveFolderTreeView me = (MoveFolderTreeView) HttpView.currentView();
@@ -58,7 +56,7 @@
 </table>
 <table class="">
     <tr><td>
-        <input type="checkbox" id='cb_move_folder_alias' name="addAlias" <% if (form.isAddAlias()) { %>checked<% } %>> Add a folder alias for the folder's current location. This will make links that still target the old folder location continue to work.
+        <input type="checkbox" id='cb_move_folder_alias' name="addAlias" checked> Add a folder alias for the folder's current location. This ensures that links targeting the old folder location continue to work.
     </td></tr>
 </table>
 <div id="folderdiv" class="extContainer"></div>
