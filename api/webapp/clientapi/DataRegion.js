@@ -1836,6 +1836,7 @@ LABKEY.DataRegion._filterUI =
                 //enable filterComboBox2.
                 filterComboBox2.enable();
                 inputField1.enable();
+                inputField1.focus('', 50);
             }
         }
         function setField2(combo){
@@ -1846,6 +1847,7 @@ LABKEY.DataRegion._filterUI =
                 inputField2.disable();
             } else{
                 inputField2.enable();
+                inputField2.focus('', 50);
             }
         }
 
@@ -1867,7 +1869,7 @@ LABKEY.DataRegion._filterUI =
                         this.validate();
                     },
                     afterRender: function(field){
-                        this.focus('', 50);
+                        this.focus('', 250);
                     }
                 }
             });
@@ -1901,7 +1903,7 @@ LABKEY.DataRegion._filterUI =
                         this.validate();
                     },
                     afterRender: function(field){
-                        this.focus('', 50);
+                        this.focus('', 250);
                     }
                 }
             });
@@ -2061,7 +2063,7 @@ LABKEY.DataRegion._filterUI =
              items: filterPanel
          });
 
-        this._filterWin.setTitle(dialogTitle ? dialogTitle : "Show Rows Where " + caption);
+        this._filterWin.setTitle(dialogTitle ? dialogTitle : "Show Rows Where " + caption + "...");
         this._filterWin.show();
 
         //Fill in existing filters...
@@ -2235,10 +2237,10 @@ LABKEY.DataRegion._filterUI =
 
         if (mvEnabled)
         {
-            rec = new comboRecord({text:'Has a missing value indicator', value: 'hasmvvalue'});
+            rec = new comboRecord({text:'Has a Missing Value Indicator', value: 'hasmvvalue'});
             store.add(rec);
 
-            rec = new comboRecord({text:'Does not have a missing value indicator', value: 'nomvvalue'});
+            rec = new comboRecord({text:'Does Not Have a Missing Value Indicator', value: 'nomvvalue'});
             store.add(rec);
         }
 
