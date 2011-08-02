@@ -1863,6 +1863,9 @@ LABKEY.DataRegion._filterUI =
                     disable: function(field){
                         //Call validate after we disable so any pre-existing validation errors go away.
                         this.validate();
+                    },
+                    afterRender: function(field){
+                        this.focus('', 50);
                     }
                 }
             });
@@ -1892,6 +1895,9 @@ LABKEY.DataRegion._filterUI =
                     disable: function(field){
                         //Call validate after disable so any pre-existing validation errors go away.
                         this.validate();
+                    },
+                    afterRender: function(field){
+                        this.focus('', 50);
                     }
                 }
             });
@@ -2033,14 +2039,23 @@ LABKEY.DataRegion._filterUI =
 
          this._filterWin = new Ext.Window({
             //contentEl: div,
-            //id: 'filterWinId',
-            width: 400,
-            autoHeight: true,
-            modal: true,
-            resizable: false,
-            closeAction: 'close',
-            items: filterPanel
-        });
+             //id: 'filterWinId',
+             width: 400,
+             autoHeight: true,
+             modal: true,
+             resizable: false,
+             closeAction: 'close',
+             keys:[{
+                 key:Ext.EventObject.ENTER,
+                 scope: this,
+                 handler: okHandler
+             },{
+                 key:Ext.EventObject.ESC,
+                 scope: this,
+                 handler: cancelHandler
+             }],
+             items: filterPanel
+         });
 
         this._filterWin.setTitle(dialogTitle ? dialogTitle : "Show Rows Where " + caption);
         this._filterWin.show();
@@ -2149,7 +2164,7 @@ LABKEY.DataRegion._filterUI =
 
             if (mappedType != "BOOL" && mappedType != "DATE")
             {
-                rec = new comboRecord({text:"Equals One Of (e.g. 'a;b;c')", value: 'in'});
+                rec = new comboRecord({text:"Equals One Of (e.g. \"a;b;c\")", value: 'in'});
                 store.add(rec);
             }
 

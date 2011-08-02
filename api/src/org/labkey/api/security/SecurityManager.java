@@ -2390,7 +2390,7 @@ public class SecurityManager
                     msg.setTo(email.getEmailAddress());
                     SecurityManager.sendEmail(c, currentUser, msg, currentUser.getEmail(), verificationURL);
                 }
-                appendClickToSeeMail = true;
+                appendClickToSeeMail = currentUser.isAdministrator();
             }
 
             User newUser = newUserStatus.getUser();
@@ -2407,10 +2407,16 @@ public class SecurityManager
             }
             else
             {
-                String href = "<a href=\"" + PageFlowUtil.filter(createVerificationURL(context.getContainer(),
-                        email, newUserStatus.getVerification(), extraParameters)) + "\" target=\"" + email.getEmailAddress() + "\">here</a>";
-                message.append(email.getEmailAddress()).append(" added as a new user to the system, but no email was sent.  Click ");
-                message.append(href).append(" to change the password from the random one that was assigned.");
+                message.append(email.getEmailAddress()).append(" added as a new user to the system, but no email was sent.");
+
+                if (appendClickToSeeMail)
+                {
+                    message.append("  Click ");
+                    String href = "<a href=\"" + PageFlowUtil.filter(createVerificationURL(context.getContainer(),
+                            email, newUserStatus.getVerification(), extraParameters)) + "\" target=\"" + email.getEmailAddress() + "\">here</a>";
+                    message.append(href).append(" to change the password from the random one that was assigned.");
+                }
+
                 UserManager.addToUserHistory(newUser, newUser.getEmail() + " was added to the system and the administrator chose not to send a verification email.");
             }
         }
