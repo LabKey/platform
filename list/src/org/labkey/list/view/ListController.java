@@ -386,6 +386,8 @@ public class ListController extends SpringActionController
                 else
                 {
                     item = list.getListItem(tableForm.getPkVal());
+                    if (item == null)
+                        throw new NotFoundException("The existing list item was not found.");
                     oldValues = ListQueryUpdateService.toMap(list, item);
                     triggerType = UPDATE;
                 }
