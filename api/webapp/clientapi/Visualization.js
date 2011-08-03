@@ -161,12 +161,12 @@ LABKEY.Visualization = new function() {
          *              <li><b>aggregate</b>: See {@link LABKEY.Visualization.Aggregate}.  Required if a 'dimension' property is specified, ignored otherwise.  Indicates
          *                                    what data should be returned if pivoting by dimension results in multiple underlying values
          *                                    per series data point.</li>
-         *              <li><b>dateOptions</b>: Optional if this measure's axis.timeAxis property is true, ignored otherwise.  Has two valid child properties:
-         *                  <ul>
-         *                      <li><b>zeroDateCol</b>: A measure object (with properties for name, queryName, and
+         *          </ul>
+         *      <li><b>dateOptions</b>: Optional if this measure's axis.timeAxis property is true, ignored otherwise.  Has two valid child properties:
+         *          <ul>
+         *              <li><b>zeroDateCol</b>: A measure object (with properties for name, queryName, and
          *                                              schemaName) of type date that will be used to align data points in terms of days, weeks, or months.</li>
-         *                      <li><b>interval</b>: See {@link LABKEY.Visualization.Interval}.  The type of interval that should be calculated between the measure date and the zero date.
-         *                  </ul>
+         *              <li><b>interval</b>: See {@link LABKEY.Visualization.Interval}.  The type of interval that should be calculated between the measure date and the zero date.
          *          </ul>
          *      </li>
          *      <li><b>axis</b>:
