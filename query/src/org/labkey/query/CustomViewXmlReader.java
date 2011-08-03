@@ -191,7 +191,7 @@ public class CustomViewXmlReader
         return _customIconUrl;
     }
 
-    public static CustomViewXmlReader loadDefinition(Resource r) throws XmlValidationException
+    public static CustomViewXmlReader loadDefinition(Resource r)
     {
         InputStream is = null;
         try
@@ -209,7 +209,7 @@ public class CustomViewXmlReader
         }
     }
 
-    public static CustomViewXmlReader loadDefinition(File f) throws XmlValidationException
+    public static CustomViewXmlReader loadDefinition(File f)
     {
         InputStream is = null;
         try
@@ -227,7 +227,7 @@ public class CustomViewXmlReader
         }
     }
 
-    private static CustomViewXmlReader loadDefinition(InputStream is, String path) throws XmlValidationException
+    private static CustomViewXmlReader loadDefinition(InputStream is, String path)
     {
         try
         {
@@ -251,16 +251,10 @@ public class CustomViewXmlReader
 
             return reader;
         }
-        catch (XmlValidationException e)
-        {
-            throw e;
-        }
         catch (Exception e)
         {
-            LOG.warn("Unable to load custom view definition from file " + path, e);
+            throw new UnexpectedException(e);
         }
-
-        return null;
     }
 
     protected static List<Map.Entry<FieldKey, Map<CustomView.ColumnProperty, String>>> loadColumns(ColumnsType columns)

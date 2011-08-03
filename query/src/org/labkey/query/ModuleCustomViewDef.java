@@ -21,7 +21,6 @@ import org.labkey.api.query.FieldKey;
 import org.labkey.api.resource.Resource;
 import org.labkey.api.resource.ResourceRef;
 import org.labkey.api.util.Pair;
-import org.labkey.api.util.XmlValidationException;
 
 import java.util.Date;
 import java.util.List;
@@ -46,7 +45,7 @@ public class ModuleCustomViewDef extends ResourceRef
     private CustomViewXmlReader _customView;
     private long _lastModified;
 
-    public ModuleCustomViewDef(Resource r, String schema, String query) throws XmlValidationException
+    public ModuleCustomViewDef(Resource r, String schema, String query)
     {
         super(r);
         _schema = schema;

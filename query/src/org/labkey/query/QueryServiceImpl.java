@@ -71,6 +71,7 @@ import org.labkey.api.util.Pair;
 import org.labkey.api.util.Path;
 import org.labkey.api.util.ResultSetUtil;
 import org.labkey.api.util.StringExpression;
+import org.labkey.api.util.UnexpectedException;
 import org.labkey.api.util.UniqueID;
 import org.labkey.api.util.XmlBeansUtil;
 import org.labkey.api.util.XmlValidationException;
@@ -465,9 +466,10 @@ public class QueryServiceImpl extends QueryService
                             moduleCustomViewDef = new ModuleCustomViewDef(view, schema, query);
                             MODULE_RESOURCES_CACHE.put(cacheKey, moduleCustomViewDef);
                         }
-                        catch (XmlValidationException ex)
+                        catch (UnexpectedException ex)
                         {
                             // XXX: log or throw?
+                            Logger.getLogger(QueryServiceImpl.class).warn("Failed to load module custom view " + view, ex);
                         }
                     }
 
