@@ -1741,13 +1741,13 @@ LABKEY.DataRegion._filterUI =
         this._fieldCaption = caption;
         this._tableName = dataRegionName;
         this._mappedType = this.getMappedType(dataType);
-        var paramValPairs = this.getParamValPairs(queryString, null);
 
         if (!queryString)
         {
             queryString = LABKEY.DataRegions[dataRegionName] ? LABKEY.DataRegions[dataRegionName].requestURL : null;
         }
-    
+        var paramValPairs = this.getParamValPairs(queryString, null);
+        
         if (!confirmCallback)
         {
             // Invoked as part of a regular filter dialog on a grid
@@ -1855,13 +1855,26 @@ LABKEY.DataRegion._filterUI =
         var inputField2;
 
         if(this._mappedType == "DATE"){
+            var dateAltFormat = Date.patterns.ISO8601Short +
+                                    'n/j/y g:i:s a|n/j/Y g:i:s a|n/j/y G:i:s|n/j/Y G:i:s|' + 'n-j-y g:i:s a|n-j-Y g:i:s a|n-j-y G:i:s|n-j-Y G:i:s|' +
+                                    'n/j/y g:i a|n/j/Y g:i a|n/j/y G:i|n/j/Y G:i|' +
+                                    'n-j-y g:i a|n-j-Y g:i a|n-j-y G:i|n-j-Y G:i|' +
+                                    'j-M-y g:i a|j-M-Y g:i a|j-M-y G:i|j-M-Y G:i|' +
+                                    'n/j/y|n/j/Y|' +
+                                    'n-j-y|n-j-Y|' +
+                                    'j-M-y|j-M-Y|' +
+                                    'Y-n-d H:i:s|Y-n-d|' +
+                                    'j M Y G:i:s O|' + // 10 Sep 2009 11:24:12 -0700
+                                    'j M Y H:i:s|c';
+
             inputField1 = new Ext.form.DateField({
                 name: 'value_1',
                 id: 'value_1',
                 allowBlank: false,
                 width: 250,
                 blankText: 'You must enter a value.',
-                altFormats: "m/d/Y|n/j/Y|n/j/y|m/j/y|n/d/y|m/j/Y|n/d/Y|m-d-y|m-d-Y|m/d|m-d|md|mdy|mdY|d|Y-m-d|j-M-Y|j M Y|j-M-y|j M y",
+                altFormats: dateAltFormat,
+                validateOnBlur: false,
                 validator: inputFieldValidator1,
                 listeners: {
                     disable: function(field){
@@ -1880,7 +1893,8 @@ LABKEY.DataRegion._filterUI =
                 allowBlank: false,
                 width: 250,
                 blankText: 'You must enter a value.',
-                altFormats: "m/d/Y|n/j/Y|n/j/y|m/j/y|n/d/y|m/j/Y|n/d/Y|m-d-y|m-d-Y|m/d|m-d|md|mdy|mdY|d|Y-m-d|j-M-Y|j M Y|j-M-y|j M y",
+                altFormats: dateAltFormat,
+                validateOnBlur: false,
                 validator: inputFieldValidator2,
                 listeners: {
                     disable: function(field){
@@ -1896,6 +1910,7 @@ LABKEY.DataRegion._filterUI =
                 allowBlank: false,
                 width: 250,
                 blankText: 'You must enter a value.',
+                validateOnBlur: false,
                 validator: inputFieldValidator1,
                 listeners: {
                     disable: function(field){
@@ -1915,6 +1930,7 @@ LABKEY.DataRegion._filterUI =
                 width: 250,
                 blankText: 'You must enter a value.',
                 validator: inputFieldValidator2,
+                validateOnBlur: false,
                 listeners: {
                     disable: function(field){
                         //Call validate after we disable so any pre-existing validation errors go away.
@@ -1949,9 +1965,9 @@ LABKEY.DataRegion._filterUI =
         function validateInputField(input, mappedType){
             if(input){
                     if(mappedType == "INT" && !isFinite(input)){
-                        return "You must enter an integer.";
+                        return input + " is not a valid integer.";
                     } else if(mappedType == "DECIMAL" && !isFinite(input)){
-                        return "You must enter a decimal.";
+                        return input + " is not a valid decimal.";
                     } else if(mappedType == "DATE"){
                         //Javascript does not parse ISO dates, but if date matches we're done
                         if (input.match(/^\s*(\d\d\d\d)-(\d\d)-(\d\d)\s*$/) ||
