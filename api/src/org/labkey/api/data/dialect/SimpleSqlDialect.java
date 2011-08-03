@@ -199,18 +199,6 @@ public abstract class SimpleSqlDialect extends SqlDialect
     }
 
     @Override
-    public String concatenate(String... args)
-    {
-        return null;  //To change body of implemented methods use File | Settings | File Templates.
-    }
-
-    @Override
-    public SQLFragment concatenate(SQLFragment... args)
-    {
-        return null;  //To change body of implemented methods use File | Settings | File Templates.
-    }
-
-    @Override
     public boolean isSystemSchema(String schemaName)
     {
         return false;  //To change body of implemented methods use File | Settings | File Templates.

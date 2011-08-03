@@ -64,11 +64,26 @@ public class MailHelper
                 InitialContext ctx = new InitialContext();
                 Context envCtx = (Context) ctx.lookup("java:comp/env");
                 _session = (Session) envCtx.lookup("mail/Session");
+
+                if ("true".equalsIgnoreCase(_session.getProperty("mail.smtp.ssl.enable")) ||
+                    "true".equalsIgnoreCase(_session.getProperty("mail.smtp.starttls.enable")))
+                {
+                    setSession(Session.getInstance(_session.getProperties(), new Authenticator() {
+                        @Override
+                        protected PasswordAuthentication getPasswordAuthentication()
+                        {
+                            String username = _session.getProperty("mail.smtp.user");
+                            String password = _session.getProperty("mail.smtp.password");
+
+                            return new PasswordAuthentication(username, password);
+                        }
+                    }));
+                }
             }
             catch (Exception e)
             {
                 _log.log(Level.ERROR, "Exception loading mail session", e);
-            }            
+            }
         }
     }
 
@@ -147,9 +162,10 @@ public class MailHelper
      * the caller.  The caller should avoid double-logging the failure, but may want
      * to handle the exception in some other way, e.g. displaying a message to the
      * user.
-     * @param m the message to send
+     *
+     * @param m    the message to send
      * @param user for auditing purposes, the user who originated the message
-     * @param c for auditing purposes, the container in which this message originated
+     * @param c    for auditing purposes, the container in which this message originated
      */
     public static void send(Message m, User user, Container c) throws MessagingException
     {
@@ -178,7 +194,8 @@ public class MailHelper
     {
         AuditLogEvent event = new AuditLogEvent();
 
-        try {
+        try
+        {
             event.setEventType(MESSAGE_AUDIT_EVENT);
             if (user != null)
                 event.setCreatedBy(user);
@@ -238,8 +255,8 @@ public class MailHelper
             Object content = m.getContent();
             if (content instanceof Multipart)
             {
-                final Multipart mp = (Multipart)content;
-                for (int i=0; i < mp.getCount(); i++)
+                final Multipart mp = (Multipart) content;
+                for (int i = 0; i < mp.getCount(); i++)
                 {
                     BodyPart part = mp.getBodyPart(i);
                     if ("text/html".equalsIgnoreCase(part.getContentType()))
@@ -249,7 +266,7 @@ public class MailHelper
                     }
                 }
                 if (body == null)
-                    body = mp.getBodyPart(mp.getCount()-1).getContent().toString();
+                    body = mp.getBodyPart(mp.getCount() - 1).getContent().toString();
             }
             else
                 body = m.getContent().toString();
@@ -272,7 +289,7 @@ public class MailHelper
             _log.error("renderHtml", e);
         }
     }
-    
+
     /**
      * Message with support for a view for message body.
      */
@@ -300,7 +317,7 @@ public class MailHelper
         {
             // set the frame type to none to remove the extra div that gets added otherwise.
             if (view instanceof JspView)
-                ((JspView)view).setFrame(WebPartView.FrameType.NONE);
+                ((JspView) view).setFrame(WebPartView.FrameType.NONE);
 
             MockHttpServletResponse response = new MockHttpServletResponse();
             HttpView.include(view, request, response);
@@ -308,10 +325,12 @@ public class MailHelper
             if (_isMultipart)
             {
                 Object content;
-                try {
+                try
+                {
                     content = getContent();
                 }
-                catch (Exception e) {
+                catch (Exception e)
+                {
                     // will get an IOException or MessagingException if no content exists
                     content = null;
                 }
@@ -319,13 +338,13 @@ public class MailHelper
                 if (content == null)
                 {
                     content = new MimeMultipart("alternative");
-                    setContent((Multipart)content);
+                    setContent((Multipart) content);
                 }
                 BodyPart body = new MimeBodyPart();
                 body.setContent(response.getContentAsString(), type);
 
                 if (content instanceof Multipart)
-                    ((Multipart)content).addBodyPart(body);
+                    ((Multipart) content).addBodyPart(body);
             }
             else
                 setContent(response.getContentAsString(), type);
@@ -342,10 +361,12 @@ public class MailHelper
         public void setBodyContent(String message, String type) throws Exception
         {
             Object content;
-            try {
+            try
+            {
                 content = getContent();
             }
-            catch (Exception e) {
+            catch (Exception e)
+            {
                 // will get an IOException or MessagingException if no content exists
                 content = null;
             }
@@ -353,13 +374,13 @@ public class MailHelper
             if (content == null)
             {
                 content = new MimeMultipart("alternative");
-                setContent((Multipart)content);
+                setContent((Multipart) content);
             }
             BodyPart body = new MimeBodyPart();
             body.setContent(message, type);
 
             if (content instanceof Multipart)
-                ((Multipart)content).addBodyPart(body);
+                ((Multipart) content).addBodyPart(body);
         }
     }
 
@@ -405,7 +426,7 @@ public class MailHelper
                         m.setRecipient(Message.RecipientType.TO, new InternetAddress(email));
                         MailHelper.send(m, _user, null);
                     }
-                    catch(MessagingException e)
+                    catch (MessagingException e)
                     {
                         _log.error("Failed to send message to " + email, e);
                     }

@@ -2131,7 +2131,8 @@ LABKEY.DataRegion._filterUI =
         "FLOAT4":"DECIMAL",
         "FLOAT8":"DECIMAL",
         "SERIAL":"INT",
-        "USERID":"INT"
+        "USERID":"INT",
+        "VARCHAR2":"TEXT" // Oracle
     },
 
     _mappedType : "TEXT",
