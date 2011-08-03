@@ -6831,7 +6831,7 @@ public class StudyController extends BaseStudyController
 
                 if (null == tsv)
                 {
-                    errors.reject(ERROR_MSG, "Please insert tab-seperated data with two columns, Name and SequenceNum");
+                    errors.reject(ERROR_MSG, "Please insert tab-separated data with two columns, Name and SequenceNum");
                     return false;
                 }
 

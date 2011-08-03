@@ -16,8 +16,10 @@
 
 package org.labkey.bigiron.oracle;
 
+import org.apache.commons.lang.StringUtils;
 import org.labkey.api.data.DbSchema;
 import org.labkey.api.data.SQLFragment;
+import org.labkey.api.data.Table;
 import org.labkey.api.data.dialect.ColumnMetaDataReader;
 import org.labkey.api.data.dialect.JdbcHelper;
 import org.labkey.api.data.dialect.PkMetaDataReader;
@@ -28,6 +30,7 @@ import java.io.IOException;
 import java.sql.Connection;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.sql.Types;
 import java.util.Set;
 
 
@@ -53,7 +56,6 @@ public abstract class OracleDialect extends SimpleSqlDialect
     @Override
     public JdbcHelper getJdbcHelper()
     {
-        // TODO: Need custom parsing for Oracle URLs
         return new StandardJdbcHelper("jdbc:oracle:thin:");
     }
 
@@ -84,6 +86,27 @@ public abstract class OracleDialect extends SimpleSqlDialect
     {
         return new PkMetaDataReader(rs, "COLUMN_NAME", "KEY_SEQ");
     }
+
+    @Override
+    public String concatenate(String... args)
+    {
+        return StringUtils.join(args, " || ");
+    }
+
+
+    @Override
+    public SQLFragment concatenate(SQLFragment... args)
+    {
+        SQLFragment ret = new SQLFragment();
+        String op = "";
+        for (SQLFragment arg : args)
+        {
+            ret.append(op).append(arg);
+            op = " || ";
+        }
+        return ret;
+    }
+
 
     private SQLFragment limitRows(SQLFragment frag, int rowCount, long offset)
     {
@@ -117,8 +140,6 @@ public abstract class OracleDialect extends SimpleSqlDialect
         if (from == null)
             throw new IllegalArgumentException("from");
 
-        return _limitRows(select, from, filter, order, groupBy, rowCount, offset);
-        /*if (1 == 1) return sf;
         if (rowCount == Table.ALL_ROWS || rowCount == Table.NO_ROWS || (rowCount > 0 && offset == 0))
         {
             SQLFragment sql = new SQLFragment();
@@ -133,9 +154,7 @@ public abstract class OracleDialect extends SimpleSqlDialect
         else
         {
             return _limitRows(select, from, filter, order, groupBy, rowCount, offset);
-
-        } */
-
+        }
     }
 
     /* Construct the query by adding rownum as one of the columns, defined as _row_num. (I didn't use camel case as to follow oracles naming conventions)
@@ -149,7 +168,7 @@ public abstract class OracleDialect extends SimpleSqlDialect
     {
         SQLFragment sql = new SQLFragment();
 
-        sql.append("select * from (\n");
+        sql.append("SELECT * FROM (\n");
         // sql.append(select).append(", rownum row_num").append("\n");
         //sql.append(select);
         int aliasOffset = 7;
@@ -166,8 +185,8 @@ public abstract class OracleDialect extends SimpleSqlDialect
         if (groupBy != null) sql.append("\n").append(groupBy);
         if (order != null) sql.append("\n").append(order);
         sql.append("\n)\n");
-        sql.append("where rownum > ").append(offset);
-        sql.append(" and rownum <= ").append(rowCount + offset);
+        sql.append("WHERE rownum > ").append(offset);
+        sql.append(" AND rownum <= ").append(rowCount + offset);
 
         return sql;
     }
@@ -216,6 +235,29 @@ public abstract class OracleDialect extends SimpleSqlDialect
         public boolean isAutoIncrement() throws SQLException
         {
             return false;
+        }
+
+        @Override
+        public int getSqlType() throws SQLException
+        {
+            int sqlType = super.getSqlType();
+
+            // Oracle claims all numbers are NUMBER... convert to INTEGER if decimal digits == 0
+            if (3 == sqlType && 0 == _rsCols.getInt("DECIMAL_DIGITS"))
+                return Types.INTEGER;
+
+            return sqlType;
+        }
+
+        @Override
+        public String getSqlTypeName() throws SQLException
+        {
+            String typeName = super.getSqlTypeName();
+
+            if ("NUMBER".equals(typeName) && 0 == _rsCols.getInt("DECIMAL_DIGITS"))
+                return "INTEGER";
+
+            return typeName;
         }
     }
 }

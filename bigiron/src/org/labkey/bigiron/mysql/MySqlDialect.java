@@ -207,12 +207,6 @@ public class MySqlDialect extends SimpleSqlDialect
     }
 
     @Override
-    public String getCaseInsensitiveLikeOperator()
-    {
-        return "LIKE";
-    }
-
-    @Override
     public String concatenate(String... args)
     {
         return "CONCAT(" + StringUtils.join(args, ", ") + ")";
