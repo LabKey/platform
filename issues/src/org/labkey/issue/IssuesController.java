@@ -991,7 +991,7 @@ public class IssuesController extends SpringActionController
             User user = getUser();
             requiresUpdatePermission(user, _issue);
 
-            _issue.beforeReOpen();
+            _issue.beforeReOpen(true);
             _issue.open(getContainer(), user);
 
             IssuePage page = new IssuePage();

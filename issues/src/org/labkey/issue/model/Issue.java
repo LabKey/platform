@@ -101,11 +101,22 @@ public class Issue extends Entity implements Serializable, Cloneable
 
     public void beforeReOpen()
     {
+        beforeReOpen(false);
+    }
+
+    /**
+     * Sets resolution, resolved, duplicate, and resolvedBy to null, also assigns a value to assignedTo.
+     * @param beforeView This is necessary because beforeReOpen gets called twice. Once before we display the view
+     * and once during handlePost. If we change assignedTo during handlePost then we overwrite the user's choice,
+     * beforeView prevents that from happening.
+     */
+    public void beforeReOpen(boolean beforeView)
+    {
         resolution = null;
         resolved = null;
         duplicate = null;
 
-        if (assignedTo == null && resolvedBy != null)
+        if (resolvedBy != null && beforeView)
             assignedTo = resolvedBy;
 
         resolvedBy = null;
