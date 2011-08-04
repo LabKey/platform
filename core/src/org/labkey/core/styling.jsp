@@ -163,7 +163,7 @@
     <tr>
         <td>
             <div class="labkey-button-bar">
-                <span><%= PageFlowUtil.generateDropDownButton("labkey-disabled-button", "#", "", "id=\"dis-drop-1\"")%></span>
+                <span><%= PageFlowUtil.generateDropDownButton("labkey-disabled-button", "#", "", java.util.Collections.singletonMap("id", "dis-drop-1"))%></span>
                 <span><%= PageFlowUtil.generateDropDownButton("Enabled Drop", "#", "")%></span>
                 <span><%= PageFlowUtil.generateButton("Button", "#")%></span>
             </div>
