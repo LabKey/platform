@@ -144,7 +144,7 @@ public class SampleSearchBean
         participantColInfo.setOrderBy("PTID");
         _defaultDetailCols.put(StudyService.get().getSubjectColumnName(context.getContainer()), participantColInfo);
         _defaultDetailCols.put("Available", new DisplayColumnInfo(true, true));
-        _defaultDetailCols.put("SiteLdmsCode", new DisplayColumnInfo(true, true));
+        _defaultDetailCols.put("SiteLdmsCode", new DisplayColumnInfo(true, true, true));
         _defaultDetailCols.put("DerivativeType", new DisplayColumnInfo(true, true));
         _defaultDetailCols.put("VolumeUnits", new DisplayColumnInfo(false, true, false, simpleSpecimenTable));
         _defaultDetailCols.put("GlobalUniqueId", new DisplayColumnInfo(true, false));

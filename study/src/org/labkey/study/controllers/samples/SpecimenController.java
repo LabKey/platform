@@ -4164,13 +4164,21 @@ public class SpecimenController extends BaseStudyController
                 inputs[i] = new SampleManager.SpecimenRequestInput(title, helpText, i);
             }
 
-            for (int index : form.getMultiline())
-                inputs[index].setMultiLine(true);
-            for (int index : form.getRequired())
-                inputs[index].setRequired(true);
-            for (int index : form.getRememberSiteValue())
-                inputs[index].setRememberSiteValue(true);
-
+            if (form.getMultiline() != null)
+            {
+                for (int index : form.getMultiline())
+                    inputs[index].setMultiLine(true);
+            }
+            if (form.getRequired() != null)
+            {
+                for (int index : form.getRequired())
+                    inputs[index].setRequired(true);
+            }
+            if (form.getRememberSiteValue() != null)
+            {
+                for (int index : form.getRememberSiteValue())
+                    inputs[index].setRememberSiteValue(true);
+            }
             SampleManager.getInstance().saveNewSpecimenRequestInputs(getContainer(), inputs);
             return true;
         }
