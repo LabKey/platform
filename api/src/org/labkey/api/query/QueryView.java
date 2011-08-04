@@ -855,7 +855,7 @@ public class QueryView extends WebPartView<Object>
         final boolean showingSelected = getShowRows() == ShowRows.SELECTED;
         final boolean showingUnselected = getShowRows() == ShowRows.UNSELECTED;
 
-        MenuButton pageSizeMenu = new MenuButton("Page Size", getDataRegionName() + ".Menu.PageSize")
+        MenuButton pageSizeMenu = new MenuButton("Page Size", getBaseMenuId() + ".Menu.PageSize")
         {
             @Override
             public void render(RenderContext ctx, Writer out) throws IOException
@@ -943,7 +943,7 @@ public class QueryView extends WebPartView<Object>
         URLHelper target = urlChangeView();
         NavTreeMenuButton button = new NavTreeMenuButton("Views");
         NavTree menu = button.getNavTree();
-        menu.setId(getDataRegionName() + ".Menu.Views");
+        menu.setId(getBaseMenuId() + ".Menu.Views");
 
         // existing views
         if (!getQueryDef().isTemporary())
@@ -978,11 +978,11 @@ public class QueryView extends WebPartView<Object>
                     if (submenu == null)
                     {
                         submenu = menu.addChild("Create");
-                        submenu.setId(getDataRegionName() + ":Views:Create");
+                        submenu.setId(getBaseMenuId() + ":Views:Create");
                     }
 
                     NavTree item = new NavTree(designer.getLabel(), designer.getDesignerURL().getLocalURIString());
-                    item.setId(getDataRegionName() + ":Views:Create:" + designer.getLabel());
+                    item.setId(getBaseMenuId() + ":Views:Create:" + designer.getLabel());
                     item.setImageSrc(ReportService.get().getReportIcon(getViewContext(), designer.getReportType()));
 
                     submenu.addChild(item);
@@ -1072,7 +1072,7 @@ public class QueryView extends WebPartView<Object>
                 item = new NavTree(label, url.toString());
                 item.setSelected(true);
             }
-            item.setId(getDataRegionName() + ":Views:" + label);
+            item.setId(getBaseMenuId() + ":Views:" + label);
             button.addMenuItem(item);
         }
 
@@ -1080,7 +1080,7 @@ public class QueryView extends WebPartView<Object>
         {
             button.addSeparator();
             NavTree containerFilterItem = new NavTree("Folder Filter");
-            containerFilterItem.setId(getDataRegionName() + ":Views:Folder Filter");
+            containerFilterItem.setId(getBaseMenuId() + ":Views:Folder Filter");
             button.addMenuItem(containerFilterItem);
 
             ContainerFilterable table = (ContainerFilterable)getTable();
@@ -1096,7 +1096,7 @@ public class QueryView extends WebPartView<Object>
                 url.replaceParameter(propName, filterType.name());
                 NavTree filterItem = new NavTree(filterType.toString(), url);
 
-                filterItem.setId(getDataRegionName() + ":Views:Folder Filter:" + filterType.toString());
+                filterItem.setId(getBaseMenuId() + ":Views:Folder Filter:" + filterType.toString());
 
                 if(selectedFilter.getType() == filterType)
                 {
@@ -1123,7 +1123,7 @@ public class QueryView extends WebPartView<Object>
         NavTree item = new NavTree("default", (String)null);
         item.setScript(getChangeViewScript(""));
 
-        item.setId(getDataRegionName() + ":Views:default");
+        item.setId(getBaseMenuId() + ":Views:default");
         if ("".equals(currentView))
             item.setStrong(true);
         if ( _customView != null)
@@ -1170,7 +1170,7 @@ public class QueryView extends WebPartView<Object>
 
             item = new NavTree(label, (String)null);
             item.setScript(getChangeViewScript(label));
-            item.setId(getDataRegionName() + ":Views:" + label);
+            item.setId(getBaseMenuId() + ":Views:" + PageFlowUtil.filter(label));
             if (label.equals(currentView))
                 item.setStrong(true);
 
@@ -1245,7 +1245,7 @@ public class QueryView extends WebPartView<Object>
             {
                 String reportId = report.getDescriptor().getReportId().toString();
                 NavTree item = new NavTree(report.getDescriptor().getReportName(), (String) null);
-                item.setId(getDataRegionName() + ":Views:" + report.getDescriptor().getReportName());
+                item.setId(getBaseMenuId() + ":Views:" + PageFlowUtil.filter(report.getDescriptor().getReportName()));
                 if (report.getDescriptor().getReportId().equals(getSettings().getReportId()))
                     item.setStrong(true);
                 item.setImageSrc(ReportService.get().getReportIcon(getViewContext(), report.getType()));
@@ -1280,7 +1280,7 @@ public class QueryView extends WebPartView<Object>
             urlTableInfo.addParameter(QueryParam.queryName.toString(), getQueryDef().getName());
 
             NavTree customizeView = new NavTree("Customize View");
-            customizeView.setId(getDataRegionName() + ":Views:Customize View");
+            customizeView.setId(getBaseMenuId() + ":Views:Customize View");
             customizeView.setScript("LABKEY.DataRegions[" + PageFlowUtil.jsString(getDataRegionName()) + "]" +
                     ".toggleShowCustomizeView();");
             button.addMenuItem(customizeView);
@@ -1292,7 +1292,7 @@ public class QueryView extends WebPartView<Object>
             if (provider != null)
             {
                 NavTree item = button.addMenuItem("Edit Snapshot", provider.getEditSnapshotURL(getSettings(), getViewContext()));
-                item.setId(getDataRegionName() + ":Views:Edit Snapshot");
+                item.setId(getBaseMenuId() + ":Views:Edit Snapshot");
             }
         }
     }
@@ -1304,12 +1304,22 @@ public class QueryView extends WebPartView<Object>
             url.addParameter(entry.getKey(), entry.getValue());
 
         NavTree item = button.addMenuItem("Manage Views", url);
-        item.setId(getDataRegionName() + ":Views:Manage Views");
+        item.setId(getBaseMenuId() + ":Views:Manage Views");
     }
 
     public String getDataRegionName()
     {
         return getSettings().getDataRegionName();
+    }
+
+    private String _baseId = null;
+
+    /** Use this html encoded dataRegionName as the base id for menus and attribute values that need to be rendered into the DOM. */
+    protected String getBaseMenuId()
+    {
+        if (_baseId == null)
+            _baseId = PageFlowUtil.filter(getDataRegionName());
+        return _baseId;
     }
 
     protected String h(Object o)

@@ -582,7 +582,11 @@ function handleTabsInTextArea(event)
 function showMenu(parent, menuElementId, align) {
     if (!align)
         align = "tl-bl?";
-    Ext.menu.MenuMgr.get(menuElementId).show(parent, align);
+    var menu = Ext.menu.MenuMgr.get(menuElementId);
+    if (menu)
+        menu.show(parent, align);
+    else
+        console.error("No menu registered :" + menuElementId);
 }
 
 

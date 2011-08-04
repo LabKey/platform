@@ -409,6 +409,7 @@ public abstract class DisplayColumn extends RenderColumn
         Sort.SortField sortField = getSortColumn(sort);
         boolean filtered = isFiltered(ctx);
         String baseId = ctx.getCurrentRegion().getName() + ":" + (getColumnInfo() != null ? getColumnInfo().getName() : super.getName());
+        baseId = PageFlowUtil.filter(baseId);
 
         out.write("\n<td class='labkey-column-header ");
         out.write(getGridHeaderClass());
@@ -461,17 +462,12 @@ public abstract class DisplayColumn extends RenderColumn
             out.write("\"");
         }
 
+        // Issue 11392: id is double html filtered: once for the baseId of the popupmenu and again for rendering into the attribute value.
         out.write(" id='");
-        out.write(PageFlowUtil.filter(baseId + ":header"));
+        String id = baseId + ":header";
+        out.write(PageFlowUtil.filter(id));
         out.write("'");
 
-        NavTree navtree = getPopupNavTree(ctx, baseId, sort, filtered);
-        if (navtree != null)
-        {
-            out.write(" onclick=\"showMenu(this, ");
-            out.write(PageFlowUtil.filter(PageFlowUtil.jsString(navtree.getId())));
-            out.write(", null);\"");
-        }
         out.write(">\n");
         out.write("<div>");
 
@@ -482,10 +478,26 @@ public abstract class DisplayColumn extends RenderColumn
 
         out.write("</div>");
 
+        NavTree navtree = getPopupNavTree(ctx, baseId, sort, filtered);
         if (navtree != null)
         {
             PopupMenu popup = new PopupMenu(navtree, PopupMenu.Align.LEFT, PopupMenu.ButtonStyle.TEXTBUTTON);
             popup.renderMenuScript(out, null);
+
+            out.write("<script type='text/javascript'>\n");
+            out.write("Ext.onReady(function () {\n");
+            out.write("var header = Ext.get(");
+            out.write(PageFlowUtil.jsString(id));
+            out.write(");\n");
+            out.write("if (header) {\n");
+            out.write("  header.on('click', function (evt, el, o) {\n");
+            out.write("    showMenu(el, ");
+            out.write(PageFlowUtil.qh(navtree.getId()));
+            out.write(", null);\n");
+            out.write("  });\n");
+            out.write("}\n");
+            out.write("});\n");
+            out.write("</script>\n");
         }
 
         out.write("</td>");
@@ -555,7 +567,7 @@ public abstract class DisplayColumn extends RenderColumn
         if (addSortItems || addFilterItems)
         {
             navtree = new NavTree();
-            navtree.setId(baseId + ":menu"); //PageFlowUtil.filter(baseId + ":menu"));
+            navtree.setId(baseId + ":menu");
 
             if (addSortItems)
             {
@@ -571,7 +583,7 @@ public abstract class DisplayColumn extends RenderColumn
 
                 boolean selected = sortField != null && sortField.getSortDirection() == Sort.SortDirection.ASC;
                 NavTree asc = new NavTree("Sort Ascending");
-                asc.setId(baseId + ":asc"); //PageFlowUtil.filter(baseId + ":asc"));
+                asc.setId(baseId + ":asc");
                 asc.setScript(getSortHandler(ctx, Sort.SortDirection.ASC));
                 asc.setSelected(selected);
                 asc.setDisabled(primarySort && selected);
@@ -579,7 +591,7 @@ public abstract class DisplayColumn extends RenderColumn
 
                 selected = sortField != null && sortField.getSortDirection() == Sort.SortDirection.DESC;
                 NavTree desc = new NavTree("Sort Descending");
-                desc.setId(baseId + ":desc"); //PageFlowUtil.filter(baseId + ":desc"));
+                desc.setId(baseId + ":desc");
                 desc.setScript(getSortHandler(ctx, Sort.SortDirection.DESC));
                 desc.setSelected(selected);
                 desc.setDisabled(primarySort && selected);

@@ -2309,7 +2309,7 @@ LABKEY.DataRegion._filterUI =
             var paramValPairs = queryString.split("&");
             PARAM_LOOP: for (var i = 0; i < paramValPairs.length; i++)
             {
-                var paramPair = paramValPairs[i].split("=");
+                var paramPair = paramValPairs[i].split("=", 2);
                 paramPair[0] = decodeURIComponent(paramPair[0]);
 
                 if (paramPair[0] == ".lastFilter")

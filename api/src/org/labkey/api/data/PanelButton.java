@@ -21,6 +21,7 @@ import org.labkey.api.view.HttpView;
 
 import java.io.Writer;
 import java.io.IOException;
+import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.Map;
 
@@ -51,9 +52,10 @@ public class PanelButton extends ActionButton
     {
         String requiresSelectionDataRegion = _requiresSelection ? ctx.getCurrentRegion().getName() : null;
         String id = getId();
-        String attributes = "panelId=\"" + id + "\"";
+        Map<String, String> attributes = new HashMap<String, String>();
+        attributes.put("panelId", id);
         if (requiresSelectionDataRegion != null)
-            attributes += " labkey-requires-selection=\"" + PageFlowUtil.filter(requiresSelectionDataRegion) + "\"";
+            attributes.put("labkey-requires-selection", PageFlowUtil.filter(requiresSelectionDataRegion));
 
         boolean includeContent = !ctx.containsKey(id);
         // Remember that we've already rendered the content once

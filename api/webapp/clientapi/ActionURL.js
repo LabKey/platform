@@ -50,7 +50,7 @@ LABKEY.ActionURL = new function()
         var parameters = {};
         for (var i = 0; i < paramArray.length; i++)
         {
-            var nameValue = paramArray[i].split('=');
+            var nameValue = paramArray[i].split('=', 2);
             if (nameValue.length == 1 && nameValue[0] != '')
             {
                 // Handle URL parameters with a name but no value or =

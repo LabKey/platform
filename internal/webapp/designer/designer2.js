@@ -817,7 +817,7 @@ LABKEY.DataRegion.Tab = Ext.extend(Ext.Panel, {
             if (fieldMetaRecord)
                 var html = LABKEY.ext.FieldMetaRecord.getToolTipHtml(fieldMetaRecord);
             else
-                var html = "<strong>Field not found:</strong> " + fieldKey;
+                var html = "<strong>Field not found:</strong> " + Ext.util.Format.htmlEncode(fieldKey);
             qt.body.update(html);
         }
         else
@@ -1968,9 +1968,9 @@ LABKEY.ext.FieldMetaRecord.getToolTipHtml = function (fieldMetaRecord) {
     var body = "<table>";
     if (field.description)
     {
-        body += "<tr><td valign='top'><strong>Description:</strong></td><td>" + field.description + "</td></tr>";
+        body += "<tr><td valign='top'><strong>Description:</strong></td><td>" + Ext.util.Format.htmlEncode(field.description) + "</td></tr>";
     }
-    body += "<tr><td valign='top'><strong>Field&nbsp;key:</strong></td><td>" + FieldKey.fromString(field.fieldKey).toDisplayString() + "</td></tr>";
+    body += "<tr><td valign='top'><strong>Field&nbsp;key:</strong></td><td>" + Ext.util.Format.htmlEncode(FieldKey.fromString(field.fieldKey).toDisplayString()) + "</td></tr>";
     if (field.friendlyType)
     {
         body += "<tr><td valign='top'><strong>Data&nbsp;type:</strong></td><td>" + field.friendlyType + "</td></tr>";

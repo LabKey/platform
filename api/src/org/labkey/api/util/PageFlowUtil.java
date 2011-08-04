@@ -417,13 +417,23 @@ public class PageFlowUtil
             {
                 if (0 == term.length())
                     continue;
-                // NOTE: faster to decode all at once, just can't allow keys to have '=' char
-                term = URLDecoder.decode(term, encoding);
+
+                // NOTE: faster to decode entire term all at once, but key may contain '=' char
                 int ind = term.indexOf('=');
+                String key;
+                String val;
                 if (ind == -1)
-                    parameters.add(new Pair<String,String>(term.trim(), ""));
+                {
+                    key = URLDecoder.decode(term.trim(), encoding);
+                    val = "";
+                }
                 else
-                    parameters.add(new Pair<String,String>(term.substring(0, ind).trim(), term.substring(ind + 1).trim()));
+                {
+                    key = URLDecoder.decode(term.substring(0, ind).trim(), encoding);
+                    val = URLDecoder.decode(term.substring(ind + 1).trim(), encoding);
+                }
+
+                parameters.add(new Pair<String,String>(key, val));
             }
         }
         catch (UnsupportedEncodingException x)
@@ -1135,12 +1145,24 @@ public class PageFlowUtil
     }
 
     /* Renders a span and a drop down arrow image wrapped in a link */
-    public static String generateDropDownButton(String text, String href, String onClick, @Nullable String attributes)
+    public static String generateDropDownButton(String text, String href, String onClick, @Nullable Map<String, String> attributes)
     {
-        return "<a class=\"labkey-menu-button\" href=\"" + filter(href) + "\"" +
-                " onClick=\"if (this.className.indexOf('labkey-disabled-button') != -1) return false; " + (onClick == null ? "" : filter(onClick)) + "\"" +
-                (attributes != null ? " " + attributes : "") +
-                "><span>" + filter(text) + "</span>&nbsp;<span class=\"css-arrow-down\"></span></a>";
+        StringBuilder sb = new StringBuilder();
+        sb.append("<a class=\"labkey-menu-button\" href=\"").append(filter(href)).append("\"");
+        sb.append(" onClick=\"if (this.className.indexOf('labkey-disabled-button') != -1) return false; ").append(onClick == null ? "" : filter(onClick)).append("\"");
+        if (attributes != null)
+        {
+            for (String attribute : attributes.keySet())
+            {
+                String value = attributes.get(attribute);
+                sb.append(filter(attribute)).append(" \"").append(filter(value)).append("\"");
+            }
+        }
+        sb.append("><span>");
+        sb.append(filter(text));
+        sb.append("</span>&nbsp;<span class=\"css-arrow-down\"></span></a>");
+
+        return sb.toString();
     }
 
     /* Renders a span and a drop down arrow image wrapped in a link */

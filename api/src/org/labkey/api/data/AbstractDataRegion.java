@@ -216,7 +216,7 @@ public abstract class AbstractDataRegion extends DisplayElement
         if (isDefaultView(ctx))
             headerMessage.append("default");
         else
-            headerMessage.append(ctx.getView().getName());
+            headerMessage.append(PageFlowUtil.filter(ctx.getView().getName()));
 
         headerMessage.append("</span>&nbsp;");
     }

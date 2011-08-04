@@ -21,6 +21,8 @@ import org.apache.commons.lang.StringUtils;
 
 import java.io.Writer;
 import java.io.IOException;
+import java.util.Collections;
+import java.util.Map;
 
 /**
  * User: Mark Igra
@@ -109,32 +111,35 @@ public class PopupMenu extends DisplayElement
         if (null == _navTree.getKey())
             return;
 
+        // Issue 11392: DataRegion name escaping in button menus.  Menu id is double-escaped.  Once here, once when rendering.
+        String jsStringFilteredMenuId = PageFlowUtil.qh(getId(dataRegionName));
+
         if (_buttonStyle == ButtonStyle.TEXTBUTTON)
         {
             assert !requiresSelection : "Only button-style popups can require selection.";
-            String link = PageFlowUtil.textLink(_navTree.getKey(), "javascript:void(0)", "showMenu(this, " + PageFlowUtil.jsString(getId(dataRegionName)) + ",'" + _align.getExtPosition() + "');", "");
+            String link = PageFlowUtil.textLink(_navTree.getKey(), "javascript:void(0)", "showMenu(this, " + jsStringFilteredMenuId + ",'" + _align.getExtPosition() + "');", "");
             out.append(link);
         }
         else if (_buttonStyle == ButtonStyle.MENUBUTTON)
         {
-            String attributes = null;
+            Map<String, String> attributes = null;
             if (requiresSelection)
-                attributes = "labkey-requires-selection=\"" + PageFlowUtil.filter(dataRegionName) + "\"";
+                attributes = Collections.singletonMap("labkey-requires-selection", PageFlowUtil.filter(dataRegionName));
             out.append(PageFlowUtil.generateDropDownButton(_navTree.getKey(), "javascript:void(0)",
-                    "showMenu(this, " + PageFlowUtil.jsString(getId(dataRegionName)) + ",'" + _align.getExtPosition() + "');", attributes));
+                    "showMenu(this, " + jsStringFilteredMenuId + ",'" + _align.getExtPosition() + "');", attributes));
         }
         else if (_buttonStyle == ButtonStyle.TEXT || _buttonStyle == ButtonStyle.BOLDTEXT)
         {
             assert !requiresSelection : "Only button-style popups can require selection.";
             out.append(PageFlowUtil.generateDropDownTextLink(_navTree.getKey(), "javascript:void(0)",
-                    "showMenu(this, " + PageFlowUtil.jsString(getId(dataRegionName)) + ",'" + _align.getExtPosition() + "');", _buttonStyle == ButtonStyle.BOLDTEXT, _offset));
+                    "showMenu(this, " + jsStringFilteredMenuId + ",'" + _align.getExtPosition() + "');", _buttonStyle == ButtonStyle.BOLDTEXT, _offset));
         }
         else if (_buttonStyle == ButtonStyle.IMAGE)
         {
             assert !requiresSelection : "Only button-style popups can require selection.";
             assert _imageSrc.length() > 0 : "Must provide an image source for image based popups.";
             out.append(PageFlowUtil.generateDropDownImage(_navTree.getKey(),  "javascript:void(0)",
-                    "showMenu(this, " + PageFlowUtil.jsString(getId(dataRegionName)) + ",'" + _align.getExtPosition() + "');", _imageSrc, _imageId));
+                    "showMenu(this, " + jsStringFilteredMenuId + ",'" + _align.getExtPosition() + "');", _imageSrc, _imageId));
         }
     }
 
@@ -152,7 +157,7 @@ public class PopupMenu extends DisplayElement
     {
         StringBuilder sb = new StringBuilder();
         sb.append("    var oldMenu = Ext.menu.MenuMgr.get(");
-        sb.append(PageFlowUtil.jsString(id));
+        sb.append(PageFlowUtil.qh(id));
         sb.append(");\n");
         sb.append("    if(oldMenu)\n");
         sb.append("    {\n");
@@ -169,7 +174,7 @@ public class PopupMenu extends DisplayElement
         StringBuilder sb = new StringBuilder();
 
         sb.append("{cls:'extContainer',");
-        sb.append("id:").append(PageFlowUtil.jsString(id)).append(",\n");
+        sb.append("id:").append(PageFlowUtil.qh(id)).append(",\n");
         sb.append("items:[");
         for (NavTree tree : trees)
         {
