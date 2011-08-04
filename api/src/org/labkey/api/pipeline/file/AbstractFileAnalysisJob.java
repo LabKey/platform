@@ -309,8 +309,9 @@ abstract public class AbstractFileAnalysisJob extends PipelineJob implements Fil
         if (dirData != null)
         {
             dataName = dirData.getName();
-            // Can't remember why we would ever need this.
-            if ("xml".equals(dataName))
+            // Can't remember why we would ever need the "xml" check. We may get an extra "." in the path,
+            // so check for that and remove it.
+            if (".".equals(dataName) || "xml".equals(dataName))
             {
                 dirData = dirData.getParentFile();
                 if (dirData != null)
@@ -318,7 +319,7 @@ abstract public class AbstractFileAnalysisJob extends PipelineJob implements Fil
             }
         }
 
-        StringBuffer description = new StringBuffer(dataName);
+        StringBuilder description = new StringBuilder(dataName);
         if (baseName != null && !baseName.equals(dataName) &&
                 !"all".equals(baseName))   // For cluster
         {
