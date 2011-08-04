@@ -19,6 +19,7 @@ package org.labkey.issue.query;
 import org.labkey.api.data.*;
 import org.labkey.api.query.*;
 import org.labkey.api.security.permissions.*;
+import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.DataView;
 import org.labkey.api.view.NavTree;
@@ -106,7 +107,7 @@ public class IssuesQueryView extends QueryView
         Sort sort = new Sort("AssignedTo/DisplayName");
         sort.insertSortColumn("Milestone", true);
         sort.addURLSort(url, getDataRegionName());
-        url.addParameter(getDataRegionName() + ".sort", sort.getSortParamValue());        
+        url.addParameter(getDataRegionName() + ".sort", sort.getSortParamValue());
         item = new NavTree("open", url);
         if ("".equals(currentView))
             item.setStrong(target.toString().equals(url.toString()));
@@ -172,7 +173,7 @@ public class IssuesQueryView extends QueryView
                 addSep = false;
             }
             item = new NavTree(label, target.clone().replaceParameter(param(QueryParam.viewName), label).getLocalURIString());
-            item.setId("Views:" + label);
+            item.setId("Views:" + PageFlowUtil.filter(label));
             if (label.equals(currentView))
                 item.setStrong(true);
 

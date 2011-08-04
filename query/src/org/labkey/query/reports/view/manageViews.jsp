@@ -54,9 +54,9 @@
             renderTo: 'viewsGrid',
             <% if (form.getSchemaName() != null && form.getQueryName() != null) { %>
                 baseQuery: {
-                    schemaName: '<%=form.getSchemaName()%>',
-                    queryName: '<%=form.getQueryName()%>',
-                    baseFilterItems: '<%=form.getBaseFilterItems()%>'
+                    schemaName: <%=PageFlowUtil.jsString(form.getSchemaName())%>,
+                    queryName: <%=PageFlowUtil.jsString(form.getQueryName())%>,
+                    baseFilterItems: <%=PageFlowUtil.jsString(form.getBaseFilterItems())%>
                 },
                 filterDiv: 'filterMsg',
             <% } %>
@@ -65,9 +65,9 @@
             ,createMenu :[{
                 id: 'create_rView',
                 text:'R View',
-                icon: '<%=ReportService.get().getReportIcon(getViewContext(), RReport.TYPE)%>',
+                icon: <%=PageFlowUtil.jsString(ReportService.get().getReportIcon(getViewContext(), RReport.TYPE))%>,
                 disabled: <%=!ReportUtil.canCreateScript(context)%>,
-                listeners:{click:function(button, event) {window.location = '<%=newRView.getLocalURIString()%>';}}}]
+                listeners:{click:function(button, event) {window.location = <%=PageFlowUtil.jsString(newRView.getLocalURIString())%>;}}}]
             <% } %>
         };
         var panel = new LABKEY.ViewsPanel(gridConfig);

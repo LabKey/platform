@@ -164,7 +164,7 @@ public class ReportQueryViewFactory
         public void addCustomizeViewItems(MenuButton button)
         {
             NavTree customizeView = new NavTree("Customize View");
-            customizeView.setId(getDataRegionName() + ":Views:Customize View");
+            customizeView.setId(getBaseMenuId() + ":Views:Customize View");
             customizeView.setScript("LABKEY.DataRegions[" + PageFlowUtil.jsString(getDataRegionName()) + "]" +
                     ".toggleShowCustomizeView();");
 

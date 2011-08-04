@@ -355,7 +355,7 @@ LABKEY.ViewsPanel.prototype = {
                             this.renderFilterMsg(true);
                             this.dataConnection.extraParams = undefined;
                             this.grid.store.load();}, scope:this}},
-                        {text:'Show views only from the ' + this.baseQuery.queryName + ' query', listeners:{click:function(button, event) {
+                        {text:'Show views only from the ' + Ext.util.Format.htmlEncode(this.baseQuery.queryName) + ' query', listeners:{click:function(button, event) {
                             this.renderFilterMsg(false);
                             this.dataConnection.extraParams = this.baseQuery;
                             this.grid.store.load();}, scope:this}}
@@ -405,7 +405,7 @@ LABKEY.ViewsPanel.prototype = {
             if (allViews)
                 Ext.get(this.filterDiv).dom.innerHTML = 'Showing all views in this container';
             else
-                Ext.get(this.filterDiv).dom.innerHTML = 'Showing only the views from the query: ' + this.baseQuery.queryName;
+                Ext.get(this.filterDiv).dom.innerHTML = 'Showing only the views from the query: ' + Ext.util.Format.htmlEncode(this.baseQuery.queryName);
         }
     },
 
