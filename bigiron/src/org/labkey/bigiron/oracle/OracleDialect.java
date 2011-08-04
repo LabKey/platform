@@ -17,7 +17,9 @@
 package org.labkey.bigiron.oracle;
 
 import org.apache.commons.lang.StringUtils;
+import org.labkey.api.data.ConnectionWrapper;
 import org.labkey.api.data.DbSchema;
+import org.labkey.api.data.ResultSetWrapper;
 import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.Table;
 import org.labkey.api.data.dialect.ColumnMetaDataReader;
@@ -25,12 +27,17 @@ import org.labkey.api.data.dialect.JdbcHelper;
 import org.labkey.api.data.dialect.PkMetaDataReader;
 import org.labkey.api.data.dialect.SimpleSqlDialect;
 import org.labkey.api.data.dialect.StandardJdbcHelper;
+import org.labkey.api.data.dialect.StatementWrapper;
 
 import java.io.IOException;
+import java.math.BigDecimal;
 import java.sql.Connection;
 import java.sql.ResultSet;
+import java.sql.ResultSetMetaData;
 import java.sql.SQLException;
+import java.sql.Statement;
 import java.sql.Types;
+import java.util.Map;
 import java.util.Set;
 
 
@@ -57,6 +64,18 @@ public abstract class OracleDialect extends SimpleSqlDialect
     public JdbcHelper getJdbcHelper()
     {
         return new StandardJdbcHelper("jdbc:oracle:thin:");
+    }
+
+    @Override
+    public StatementWrapper getStatementWrapper(ConnectionWrapper conn, Statement stmt)
+    {
+        return new OracleStatementWrapper(conn, stmt);
+    }
+
+    @Override
+    public StatementWrapper getStatementWrapper(ConnectionWrapper conn, Statement stmt, String sql)
+    {
+        return new OracleStatementWrapper(conn, stmt, sql);
     }
 
     @Override
@@ -258,6 +277,82 @@ public abstract class OracleDialect extends SimpleSqlDialect
                 return "INTEGER";
 
             return typeName;
+        }
+    }
+
+
+    private static class OracleStatementWrapper extends StatementWrapper
+    {
+        private OracleStatementWrapper(ConnectionWrapper conn, Statement stmt)
+        {
+            super(conn, stmt);
+        }
+
+        private OracleStatementWrapper(ConnectionWrapper conn, Statement stmt, String sql)
+        {
+            super(conn, stmt, sql);
+        }
+
+        @Override
+        public ResultSet getResultSet() throws SQLException
+        {
+            return new OracleResultSetWrapper(super.getResultSet());
+        }
+
+        @Override
+        public ResultSet executeQuery() throws SQLException
+        {
+            return new OracleResultSetWrapper(super.executeQuery());
+        }
+
+        @Override
+        public ResultSet executeQuery(String sql) throws SQLException
+        {
+            return new OracleResultSetWrapper(super.executeQuery(sql));
+        }
+    }
+
+
+    private static class OracleResultSetWrapper extends ResultSetWrapper
+    {
+        public OracleResultSetWrapper(ResultSet rs)
+        {
+            super(rs);
+        }
+
+        private Object translateValue(int i, Object value) throws SQLException
+        {
+            ResultSetMetaData rsmd = resultset.getMetaData();
+
+            // Oracle always returns BigDecimal.  Use scale to determine if this is really an Integer.
+            if (Types.NUMERIC == rsmd.getColumnType(i) && 0 == rsmd.getScale(i) && value instanceof BigDecimal)
+                return ((BigDecimal)value).intValue();
+            else
+                return value;
+        }
+
+        @Override
+        public Object getObject(int i) throws SQLException
+        {
+            return translateValue(i, super.getObject(i));
+        }
+
+        @Override
+        public Object getObject(int i, Map<String, Class<?>> map) throws SQLException
+        {
+            return translateValue(i, super.getObject(i, map));
+        }
+
+        @Override
+        public Object getObject(String s) throws SQLException
+        {
+            return translateValue(findColumn(s), super.getObject(s));
+        }
+
+        @Override
+        public Object getObject(String s, Map<String, Class<?>> map) throws SQLException
+        {
+            return translateValue(findColumn(s), super.getObject(s, map));
         }
     }
 }

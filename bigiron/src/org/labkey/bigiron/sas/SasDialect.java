@@ -47,7 +47,7 @@ public abstract class SasDialect extends SimpleSqlDialect
     @Override
     protected @NotNull Set<String> getReservedWords()
     {
-        // SAS doesn't seem to have a way to escape reserved words, so we'll just claim we don't have any.
+        // SAS doesn't seem to have a way to escape reserved words, so we'll just claim we don't have any for now.
         return Collections.emptySet();
     }
 
