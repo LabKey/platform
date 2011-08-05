@@ -860,11 +860,17 @@ var UserInfoPopup = Ext.extend(Ext.Window,{
         combo.clearValue();
     },
 
-    Combo_onChange : function(combo,email)
+    Combo_onKeyPress : function(combo, e)
     {
+        if (e.ENTER != e.getKey())
+            return;
+        var email = combo.getValue();
+
         if (!email)
             return;
 
+        email = email.trim();
+        
         var config = {
             name : email,
             success : function(info, response) {
@@ -898,18 +904,11 @@ var UserInfoPopup = Ext.extend(Ext.Window,{
                 }
             },
             failure : function(errorinfo, response) {
-                alert("Failed");
+                LABKEY.Utils.displayAjaxErrorResponse(errorinfo.exception, response);
             },
             scope : this
         };
         S.getUsers(config);
-    },
-
-    Combo_onKeyPress : function(combo, e)
-    {
-        if (e.ENTER != e.getKey())
-            return;
-        this.Combo_onChange(combo,combo.getValue());
     }
 });
 
