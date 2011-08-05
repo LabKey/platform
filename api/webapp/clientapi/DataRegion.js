@@ -1855,25 +1855,13 @@ LABKEY.DataRegion._filterUI =
         var inputField2;
 
         if(this._mappedType == "DATE"){
-            var dateAltFormat = Date.patterns.ISO8601Short +
-                                    'n/j/y g:i:s a|n/j/Y g:i:s a|n/j/y G:i:s|n/j/Y G:i:s|' + 'n-j-y g:i:s a|n-j-Y g:i:s a|n-j-y G:i:s|n-j-Y G:i:s|' +
-                                    'n/j/y g:i a|n/j/Y g:i a|n/j/y G:i|n/j/Y G:i|' +
-                                    'n-j-y g:i a|n-j-Y g:i a|n-j-y G:i|n-j-Y G:i|' +
-                                    'j-M-y g:i a|j-M-Y g:i a|j-M-y G:i|j-M-Y G:i|' +
-                                    'n/j/y|n/j/Y|' +
-                                    'n-j-y|n-j-Y|' +
-                                    'j-M-y|j-M-Y|' +
-                                    'Y-n-d H:i:s|Y-n-d|' +
-                                    'j M Y G:i:s O|' + // 10 Sep 2009 11:24:12 -0700
-                                    'j M Y H:i:s|c';
-
             inputField1 = new Ext.form.DateField({
                 name: 'value_1',
                 id: 'value_1',
                 allowBlank: false,
                 width: 250,
                 blankText: 'You must enter a value.',
-                altFormats: dateAltFormat,
+                altFormats: LABKEY.Utils.getDateAltFormats(),
                 validateOnBlur: false,
                 validator: inputFieldValidator1,
                 listeners: {
@@ -1893,7 +1881,7 @@ LABKEY.DataRegion._filterUI =
                 allowBlank: false,
                 width: 250,
                 blankText: 'You must enter a value.',
-                altFormats: dateAltFormat,
+                altFormats: LABKEY.Utils.getDateAltFormats(),
                 validateOnBlur: false,
                 validator: inputFieldValidator2,
                 listeners: {
@@ -2216,16 +2204,16 @@ LABKEY.DataRegion._filterUI =
             store.add(rec);
 
             if(mappedType == "DATE"){
-                rec = new comboRecord({text:'Is Greater Than or Equal To', value: 'dategte'});
+                rec = new comboRecord({text:'Is Greater Than Or Equal To', value: 'dategte'});
             } else {
-                rec = new comboRecord({text:'Is Greater Than or Equal To', value: 'gte'});
+                rec = new comboRecord({text:'Is Greater Than Or Equal To', value: 'gte'});
             }
             store.add(rec);
 
             if(mappedType == "DATE"){
-                rec = new comboRecord({text:'Is Less Than or Equal To', value: 'datelte'});
+                rec = new comboRecord({text:'Is Less Than Or Equal To', value: 'datelte'});
             } else {
-                rec = new comboRecord({text:'Is Less Than or Equal To', value: 'lte'});
+                rec = new comboRecord({text:'Is Less Than Or Equal To', value: 'lte'});
             }
             store.add(rec);
         }
@@ -2254,10 +2242,10 @@ LABKEY.DataRegion._filterUI =
 
         if (mvEnabled)
         {
-            rec = new comboRecord({text:'Has a Missing Value Indicator', value: 'hasmvvalue'});
+            rec = new comboRecord({text:'Has A Missing Value Indicator', value: 'hasmvvalue'});
             store.add(rec);
 
-            rec = new comboRecord({text:'Does Not Have a Missing Value Indicator', value: 'nomvvalue'});
+            rec = new comboRecord({text:'Does Not Have A Missing Value Indicator', value: 'nomvvalue'});
             store.add(rec);
         }
 
@@ -2430,7 +2418,6 @@ LABKEY.DataRegion._filterUI =
         if(comparison2 != ''){
             comparisons[comparisons.length] = this.getCompares(input2, comparison2);
         }
-        console.info("setfilter() - comparisons: " + comparisons);
         for (var i = 0; i < comparisons.length; i++)
         {
             newParamValPairs[iNew] = comparisons[i];
@@ -2439,8 +2426,6 @@ LABKEY.DataRegion._filterUI =
 
         var newQueryString = this.buildQueryString(newParamValPairs);
         var filterParamsString = this.buildQueryString(comparisons);
-        console.info("setFilter() - newQueryString: " + newQueryString);
-        console.info("setFilter() - filterParamString: " + filterParamsString);
         this.changeFilterCallback.call(this, newParamValPairs, newQueryString, filterParamsString);
     },
 

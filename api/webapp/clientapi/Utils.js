@@ -33,6 +33,18 @@ LABKEY.Utils = new function()
     // Private array of chars to use for UUID generation
     var CHARS = '0123456789abcdefghijklmnopqrstuvwxyz'.split('');
 
+    //When using Ext dateFields you can use DATEALTFORMATS for the altFormat: config option.
+    var DATEALTFORMATS= 'n/j/y g:i:s a|n/j/Y g:i:s a|n/j/y G:i:s|n/j/Y G:i:s|' +
+                        'n-j-y g:i:s a|n-j-Y g:i:s a|n-j-y G:i:s|n-j-Y G:i:s|' +
+                        'n/j/y g:i a|n/j/Y g:i a|n/j/y G:i|n/j/Y G:i|' +
+                        'n-j-y g:i a|n-j-Y g:i a|n-j-y G:i|n-j-Y G:i|' +
+                        'j-M-y g:i a|j-M-Y g:i a|j-M-y G:i|j-M-Y G:i|' +
+                        'n/j/y|n/j/Y|' +
+                        'n-j-y|n-j-Y|' +
+                        'j-M-y|j-M-Y|' +
+                        'Y-n-d H:i:s|Y-n-d|' +
+                        'j M Y G:i:s O|' + // 10 Sep 2009 11:24:12 -0700
+                        'j M Y H:i:s|c';
     // private functions
     function handleLoadError(This, o, arg, e)
     {
@@ -128,6 +140,15 @@ LABKEY.Utils = new function()
             var text = document.createTextNode(html);
             div.appendChild(text);
             return div.innerHTML;
+        },
+
+        /**
+         * Returns date formats for use in an Ext.form.DateField. Useful when using a DateField in an Ext object,
+         * it contains a very large set of date formats, which helps make a DateField more robust. For example, a
+         * user would be allowed to enter dates like 6/1/2011, 06/01/2011, 6/1/11, etc.
+         */
+        getDateAltFormats : function(){
+            return DATEALTFORMATS;
         },
 
         /**
