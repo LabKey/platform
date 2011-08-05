@@ -52,6 +52,7 @@
 <table class="button-bar">
     <tr>
         <td><%=generateButton("Confirm Move", "#", "action('confirmmove');")%></td>
+        <td><%=generateBackButton("Cancel")%></td>
     </tr>
 </table>
 <table class="">
