@@ -232,10 +232,15 @@ public abstract class AbstractAssayProvider implements AssayProvider
                     }
 
                     dataMap.put(AssayPublishService.PARTICIPANTID_PROPERTY_NAME, publishKey.getParticipantId());
-                    dataMap.put(AssayPublishService.SEQUENCENUM_PROPERTY_NAME, publishKey.getVisitId());
                     if (TimepointType.DATE == studyType)
                     {
                         dataMap.put(AssayPublishService.DATE_PROPERTY_NAME, publishKey.getDate());
+                    }
+                    else
+                    {
+                        // add the sequencenum only for visit-based studies, a date based sequencenum will get calculated
+                        // for date-based studies in the ETL layer
+                        dataMap.put(AssayPublishService.SEQUENCENUM_PROPERTY_NAME, publishKey.getVisitId());
                     }
                     dataMap.put(AssayPublishService.SOURCE_LSID_PROPERTY_NAME, sourceLSID);
                     dataMap.put(getTableMetadata().getDatasetRowIdPropertyName(), publishKey.getDataId());
