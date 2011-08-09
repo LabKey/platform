@@ -61,6 +61,7 @@ public abstract class InsertUpdateAction<Form extends DatasetController.EditData
     protected abstract boolean isInsert();
     protected abstract NavTree appendExtraNavTrail(NavTree root);
     private QueryUpdateForm _updateForm;
+    protected DataSetDefinition _ds = null;
 
     protected InsertUpdateAction(Class<? extends Form> formClass)
     {
@@ -79,22 +80,22 @@ public abstract class InsertUpdateAction<Form extends DatasetController.EditData
     public ModelAndView getView(Form form, boolean reshow, BindException errors) throws Exception
     {
         StudyImpl study = getStudy();
-        DataSetDefinition ds = StudyManager.getInstance().getDataSetDefinition(getStudy(), form.getDatasetId());
-        if (null == ds)
+        _ds = StudyManager.getInstance().getDataSetDefinition(getStudy(), form.getDatasetId());
+        if (null == _ds)
         {
             redirectTypeNotFound(form.getDatasetId());
             return null;
         }
-        if (!ds.canRead(getViewContext().getUser()))
+        if (!_ds.canRead(getViewContext().getUser()))
         {
             throw new UnauthorizedException("User does not have permission to view this dataset");
         }
 
-        TableInfo datasetTable = ds.getTableInfo(getViewContext().getUser());
+        TableInfo datasetTable = _ds.getTableInfo(getViewContext().getUser());
 
         // if this is our cohort assignment dataset, we may want to display drop-downs for cohort, rather
         // than a text entry box:
-        if (!study.isManualCohortAssignment() && PageFlowUtil.nullSafeEquals(ds.getDataSetId(), study.getParticipantCohortDataSetId()))
+        if (!study.isManualCohortAssignment() && PageFlowUtil.nullSafeEquals(_ds.getDataSetId(), study.getParticipantCohortDataSetId()))
         {
             final Cohort[] cohorts = StudyManager.getInstance().getCohorts(study.getContainer(), getViewContext().getUser());
             ColumnInfo cohortCol = datasetTable.getColumn(study.getParticipantCohortProperty());
@@ -136,7 +137,7 @@ public abstract class InsertUpdateAction<Form extends DatasetController.EditData
         {
             if (!reshow)
             {
-                Domain domain = PropertyService.get().getDomain(getViewContext().getContainer(), ds.getTypeURI());
+                Domain domain = PropertyService.get().getDomain(getViewContext().getContainer(), _ds.getTypeURI());
                 if (domain != null)
                 {
                     Map<DomainProperty, Object> defaults = DefaultValueService.get().getDefaultValues(getViewContext().getContainer(), domain, getViewContext().getUser());
@@ -192,6 +193,10 @@ public abstract class InsertUpdateAction<Form extends DatasetController.EditData
             Study study = getStudy();
             root.addChild(study.getLabel(), new ActionURL(StudyController.BeginAction.class, getViewContext().getContainer()));
             root.addChild("Study Overview", BaseStudyController.getStudyOverviewURL(getViewContext().getContainer()));
+            ActionURL grid = new ActionURL(StudyController.DatasetAction.class, getViewContext().getContainer());
+            grid.addParameter(DataSetDefinition.DATASETKEY, _ds.getDataSetId());
+            grid.addParameter(DataRegion.LAST_FILTER_PARAM, "true");
+            root.addChild(_ds.getLabel(), grid);
             appendExtraNavTrail(root);
         }
         catch (ServletException e) {}

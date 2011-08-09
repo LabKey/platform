@@ -2237,7 +2237,7 @@ public class StudyController extends BaseStudyController
                 DataSetDefinition dsd = StudyManager.getInstance().getDataSetDefinition(getStudy(), form.getDatasetId());
                 DataLoader dl = new TabLoader(tsvData, true);
                 FileStream f = new FileStream.StringFileStream(tsvData);
-                Pair<List<String>, UploadLog> result = AssayPublishManager.getInstance().importDatasetTSV(getUser(), getStudy(), dsd, dl, f, columnMap, validationErrors);
+                Pair<List<String>, UploadLog> result = AssayPublishManager.getInstance().importDatasetTSV(getUser(), getStudy(), dsd, dl, f, "upload.tsv", columnMap, validationErrors);
 
                 if (!result.getKey().isEmpty())
                 {
@@ -2327,7 +2327,7 @@ public class StudyController extends BaseStudyController
 
 
         @Override
-        protected int importData(DataLoader dl, FileStream file, BatchValidationException errors) throws IOException
+        protected int importData(DataLoader dl, FileStream file, String originalName, BatchValidationException errors) throws IOException
         {
             if (null == PipelineService.get().findPipelineRoot(getContainer()))
             {
@@ -2350,7 +2350,7 @@ public class StudyController extends BaseStudyController
             Pair<List<String>, UploadLog> result;
             try
             {
-                result = AssayPublishManager.getInstance().importDatasetTSV(getUser(), (StudyImpl)_study, _def, dl, file, columnMap, errors);
+                result = AssayPublishManager.getInstance().importDatasetTSV(getUser(), (StudyImpl)_study, _def, dl, file, originalName, columnMap, errors);
             }
             catch (ServletException x)
             {

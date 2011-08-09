@@ -168,8 +168,8 @@ Ext.onReady(function(){
                 id: '<%=project.getRowId()%>',
                 expanded: true,
                 expandable: false,
-                text: <%=PageFlowUtil.jsString(project.getName())%>,
-                href: <%=PageFlowUtil.jsString(new ActionURL(SecurityController.ProjectAction.class, project).getLocalURIString())%>,
+                text: <%=PageFlowUtil.qh(project.getName())%>,
+                href: <%=PageFlowUtil.qh(new ActionURL(SecurityController.ProjectAction.class, project).getLocalURIString())%>,
                 cls: '<%=project.equals(c) ? "x-tree-node-current" : ""%>'
             }),
             enableDrag: false,
@@ -302,7 +302,7 @@ Ext.onReady(function(){
     }
 
     if (<%=c.isRoot() ? "false" : "true"%>)
-        tabItems.push({contentEl:'groupsFrame', title:<%=PageFlowUtil.jsString("Groups for project " + (null != c.getProject() ? c.getProject().getName() : ""))%>, autoScroll:autoScroll, autoHeight: !autoScroll});
+        tabItems.push({contentEl:'groupsFrame', title:<%=PageFlowUtil.qh("Groups for project " + (null != c.getProject() ? c.getProject().getName() : ""))%>, autoScroll:autoScroll, autoHeight: !autoScroll});
     if (isSiteAdmin)
         tabItems.push({contentEl:'siteGroupsFrame', title:'Site Groups', autoScroll:autoScroll, autoHeight: !autoScroll});
 

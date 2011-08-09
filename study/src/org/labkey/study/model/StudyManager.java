@@ -2350,7 +2350,7 @@ public class StudyManager
     {
         parseData(user, def, loader, columnMap);
         BatchValidationException ve = new BatchValidationException();
-        List<String> lsids = def.importDatasetData(study, user, loader, ve, checkDuplicates, defaultQCState, logger);
+        List<String> lsids = def.importDatasetData(study, user, loader, ve, checkDuplicates, defaultQCState, logger, false);
         batchValidateExceptionToList(ve,errors);
         return lsids;
     }
@@ -2359,13 +2359,14 @@ public class StudyManager
             throws IOException, ServletException, SQLException
     {
         parseData(user, def, loader, columnMap);
-        return def.importDatasetData(study, user, loader, errors, checkDuplicates, defaultQCState, logger);
+        return def.importDatasetData(study, user, loader, errors, checkDuplicates, defaultQCState, logger, false);
     }
     
 
     /** @Deprecated pass in a BatchValidationException, not List<String>  */
     @Deprecated
-    public List<String> importDatasetData(Study study, User user, DataSetDefinition def, List<Map<String,Object>> data, long lastModified, List<String> errors, boolean checkDuplicates, boolean ensureObjects, QCState defaultQCState, Logger logger)
+    public List<String> importDatasetData(Study study, User user, DataSetDefinition def, List<Map<String,Object>> data, long lastModified, List<String> errors, boolean checkDuplicates, boolean ensureObjects, QCState defaultQCState, Logger logger,
+        boolean forUpdate)
             throws SQLException
     {
         if (data.isEmpty())
@@ -2373,7 +2374,7 @@ public class StudyManager
 
         DataIteratorBuilder it = new MapDataIterator.Builder(data.get(0).keySet(), data);
         BatchValidationException ve = new BatchValidationException();
-        List<String> lsids = def.importDatasetData(study, user, it, ve, checkDuplicates, defaultQCState, logger);
+        List<String> lsids = def.importDatasetData(study, user, it, ve, checkDuplicates, defaultQCState, logger, forUpdate);
         batchValidateExceptionToList(ve,errors);
         return lsids;
     }
@@ -2387,7 +2388,7 @@ public class StudyManager
 
         DataIteratorBuilder it = new MapDataIterator.Builder(data.get(0).keySet(), data);
 
-        return def.importDatasetData(study, user, it, errors, checkDuplicates, defaultQCState, logger);
+        return def.importDatasetData(study, user, it, errors, checkDuplicates, defaultQCState, logger, false);
     }
 
 

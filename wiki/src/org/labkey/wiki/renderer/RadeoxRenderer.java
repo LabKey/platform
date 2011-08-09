@@ -16,7 +16,6 @@
 package org.labkey.wiki.renderer;
 
 import junit.framework.Assert;
-import junit.framework.TestCase;
 import org.apache.log4j.Logger;
 import org.jetbrains.annotations.Nullable;
 import org.junit.Before;
@@ -46,6 +45,7 @@ import org.radeox.engine.BaseRenderEngine;
 import org.radeox.engine.context.BaseInitialRenderContext;
 import org.radeox.engine.context.BaseRenderContext;
 import org.radeox.filter.CacheFilter;
+import org.radeox.filter.MacroFilter;
 import org.radeox.filter.context.FilterContext;
 import org.radeox.filter.interwiki.InterWiki;
 import org.radeox.filter.regex.LocaleRegexReplaceFilter;
@@ -314,7 +314,7 @@ public class RadeoxRenderer extends BaseRenderEngine implements WikiRenderEngine
             if (name != null)
             {
                 StringBuilder buf = new StringBuilder();
-                buf.append("<a name=\"").append(PageFlowUtil.filter(name)).append("\">");
+                buf.append("<a name=\"").append(PageFlowUtil.filter(name)).append("\"></a>");
                 writer.write(buf.toString());
             }
         }
@@ -529,6 +529,16 @@ public class RadeoxRenderer extends BaseRenderEngine implements WikiRenderEngine
             urlFormatter.applyPattern(outputTemplate);
         }
 
+        /**
+         * LinkTestFilter needs to execute before MacroFilter because TableMacro messes up anything with "|"
+         * see issue 12764
+         */
+        @Override
+        public String[] before()
+        {
+            return new String[] {MacroFilter.class.getName()};
+        }
+        
 
         public String[] replaces()
         {

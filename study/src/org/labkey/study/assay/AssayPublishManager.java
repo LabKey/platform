@@ -17,6 +17,7 @@
 package org.labkey.study.assay;
 
 import org.apache.commons.io.IOUtils;
+import org.apache.commons.lang.StringUtils;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.audit.AuditLogEvent;
@@ -292,7 +293,7 @@ public class AssayPublishManager implements AssayPublishService.Service
 
             // unfortunately, the actual import cannot happen within our transaction: we eventually hit the
             // IllegalStateException in ContainerManager.ensureContainer.
-            List<String> lsids = StudyManager.getInstance().importDatasetData(targetStudy, user, dataset, convertedDataMaps, new Date().getTime(), errors, true, true, defaultQCState, null);
+            List<String> lsids = StudyManager.getInstance().importDatasetData(targetStudy, user, dataset, convertedDataMaps, new Date().getTime(), errors, true, true, defaultQCState, null, false);
             if (lsids.size() > 0 && protocol != null)
             {
                 for (Map.Entry<String, int[]> entry : getSourceLSID(dataMaps).entrySet())
@@ -615,7 +616,7 @@ public class AssayPublishManager implements AssayPublishService.Service
     }
 
     static final String DIR_NAME = "assaydata";
-    public UploadLog saveUploadData(User user, DataSet dsd, FileStream tsv) throws IOException
+    public UploadLog saveUploadData(User user, DataSet dsd, FileStream tsv, String filename) throws IOException
     {
         PipeRoot pipelineRoot = PipelineService.get().findPipelineRoot(dsd.getContainer());
         if (null == pipelineRoot || !pipelineRoot.isValid())
@@ -636,8 +637,9 @@ public class AssayPublishManager implements AssayPublishService.Service
         File file;
         do
         {
+            String extension = StringUtils.defaultString(filename==null ? "tsv" : FileUtil.getExtension(filename), "tsv");
             String extra = id++ == 0 ? "" : String.valueOf(id);
-            String fileName = dsd.getStudy().getLabel() + "-" + dsd.getLabel() + "-" + dateString + extra + ".tsv";
+            String fileName = dsd.getStudy().getLabel() + "-" + dsd.getLabel() + "-" + dateString + extra + "." + extension;
             fileName = fileName.replace('\\', '_').replace('/','_').replace(':','_');
             file = new File(dir, fileName);
         }
@@ -685,14 +687,14 @@ public class AssayPublishManager implements AssayPublishService.Service
      * Return an array of LSIDs from the newly created dataset entries,
      * along with the upload log.
      */
-    public Pair<List<String>, UploadLog> importDatasetTSV(User user, StudyImpl study, DataSetDefinition dsd, DataLoader dl, FileStream in, Map<String, String> columnMap, BatchValidationException errors) throws SQLException, ServletException
+    public Pair<List<String>, UploadLog> importDatasetTSV(User user, StudyImpl study, DataSetDefinition dsd, DataLoader dl, FileStream in, String originalFileName, Map<String, String> columnMap, BatchValidationException errors) throws SQLException, ServletException
     {
         UploadLog ul = null;
         List<String> lsids = Collections.emptyList();
         try
         {
             if (null != in)
-                ul = saveUploadData(user, dsd, in);
+                ul = saveUploadData(user, dsd, in, originalFileName);
             Integer defaultQCStateId = study.getDefaultDirectEntryQCState();
             QCState defaultQCState = null;
             if (defaultQCStateId != null)

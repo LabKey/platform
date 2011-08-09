@@ -1285,7 +1285,8 @@ public class DataSetDefinition extends AbstractStudyEntity<DataSetDefinition> im
     /**
      * dataMaps have keys which are property URIs, and values which have already been converted.
      */
-    public List<String> importDatasetData(Study study, User user, DataIteratorBuilder in, BatchValidationException errors, boolean checkDuplicates, QCState defaultQCState, Logger logger)
+    public List<String> importDatasetData(Study study, User user, DataIteratorBuilder in, BatchValidationException errors, boolean checkDuplicates, QCState defaultQCState, Logger logger
+            , boolean forUpdate)
             throws SQLException
     {
         TableInfo tinfo = getTableInfo(user, false);
@@ -1298,12 +1299,12 @@ public class DataSetDefinition extends AbstractStudyEntity<DataSetDefinition> im
             // increments, as we're imitating a sequence.
             synchronized (MANAGED_KEY_LOCK)
             {
-                return insertData(user, in, checkDuplicates, errors, defaultQCState, logger, needToHandleQCState);
+                return insertData(user, in, checkDuplicates, errors, defaultQCState, logger, needToHandleQCState, forUpdate);
             }
         }
         else
         {
-            return insertData(user, in, checkDuplicates, errors, defaultQCState, logger, needToHandleQCState);
+            return insertData(user, in, checkDuplicates, errors, defaultQCState, logger, needToHandleQCState, forUpdate);
         }
     }
 
@@ -1369,6 +1370,7 @@ public class DataSetDefinition extends AbstractStudyEntity<DataSetDefinition> im
         QCState defaultQC;
         List<String> lsids = null;
         boolean checkDuplicates = false;
+        boolean isForUpdate = false;
         Logger logger = null;
 
         DataIteratorBuilder builder = null;
@@ -1383,6 +1385,17 @@ public class DataSetDefinition extends AbstractStudyEntity<DataSetDefinition> im
             this.defaultQC = defaultQC;
         }
 
+        /**
+         * StudyServiceImpl.updateDatasetRow() is implemented as a delete followed by insert.
+         * This is very gross, and it causes a special case here, as we want to re-use any server
+         * managed keys, instead of regenerating them.
+         * 
+         * @param update
+         */
+        void setForUpdate(boolean update)
+        {
+            this.isForUpdate = update;
+        }
 
         void setCheckDuplicates(boolean check)
         {
@@ -1419,8 +1432,16 @@ public class DataSetDefinition extends AbstractStudyEntity<DataSetDefinition> im
         @Override
         public DataIterator getDataIterator(BatchValidationException errors)
         {
+            // might want to make allow importManagedKey an explicit option, for now allow for GUID
+            boolean allowImportManagedKey = isForUpdate || getKeyManagementType() == KeyManagementType.GUID;
+            boolean isManagedKey = getKeyType() == KeyType.SUBJECT_VISIT_OTHER && getKeyManagementType() != KeyManagementType.None;
+                    
             TimepointType timetype = getStudy().getTimepointType();
             TableInfo table = getTableInfo(user, false);
+
+            String keyColumnName = getKeyPropertyName();
+            ColumnInfo keyColumn = null == keyColumnName ? null : table.getColumn(keyColumnName);
+            ColumnInfo lsidColumn = table.getColumn("lsid");
 
             if (null == input && null != builder)
                 input = builder.getDataIterator(errors);
@@ -1433,8 +1454,18 @@ public class DataSetDefinition extends AbstractStudyEntity<DataSetDefinition> im
             for (int in=1 ; in<=input.getColumnCount() ; in++)
             {
                 ColumnInfo match = inputMatches.get(in);
-                if (null != match && (match.getName().equalsIgnoreCase("lsid")))
-                    continue;
+
+                if (null != match)
+                {
+                    if (match == lsidColumn)
+                        continue;
+                    if (match == keyColumn && isManagedKey && !allowImportManagedKey)
+                    {
+                        // TODO silently ignore or add error?
+                        continue;
+                    }
+                }
+
                 if (null != match)
                 {
                     // to simplify a little, use matched name/propertyuri here (even though StandardETL would rematch using the same logic)
@@ -1449,11 +1480,6 @@ public class DataSetDefinition extends AbstractStudyEntity<DataSetDefinition> im
 
             // like createColumnAndPropertyMap, but we want to add
             Map<String,Integer> fromMap = DataIteratorUtil.createColumnAndPropertyMap(it);
-
-            String keyColumnName = getKeyPropertyName();
-            ColumnInfo keyColumn = null;
-            if (null != keyColumnName)
-                keyColumn = table.getColumn(keyColumnName);
 
             // find important columns in the input (CONSIDER: use standard etl alt
             Integer indexPTID = fromMap.get(DataSetDefinition.getParticipantIdURI());
@@ -1533,40 +1559,45 @@ public class DataSetDefinition extends AbstractStudyEntity<DataSetDefinition> im
                 }
             }
 
-            //
-            // ROWID
-            //
 
-            if (getKeyManagementType() == KeyManagementType.RowId)
+            if (null == indexKeyProperty)
             {
-                ColumnInfo key = new ColumnInfo(keyColumn);
-                Callable call = new SimpleTranslator.AutoIncrementColumn()
+                //
+                // ROWID
+                //
+
+                if (getKeyManagementType() == KeyManagementType.RowId && null == null)
                 {
-                    @Override
-                    protected int getFirstValue()
+                    ColumnInfo key = new ColumnInfo(keyColumn);
+                    Callable call = new SimpleTranslator.AutoIncrementColumn()
                     {
-                        try
+                        @Override
+                        protected int getFirstValue()
                         {
-                            return getMaxKeyValue();
+                            try
+                            {
+                                return getMaxKeyValue();
+                            }
+                            catch (SQLException x)
+                            {
+                                throw new RuntimeSQLException(x);
+                            }
                         }
-                        catch (SQLException x)
-                        {
-                            throw new RuntimeSQLException(x);
-                        }
-                    }
-                };
-                indexKeyProperty = it.addColumn(key, call);
+                    };
+                    indexKeyProperty = it.addColumn(key, call);
+                }
+
+                //
+                // GUID
+                //
+
+                else if (getKeyManagementType() == KeyManagementType.GUID)
+                {
+                    ColumnInfo key = new ColumnInfo(keyColumn);
+                    indexKeyProperty = it.addColumn(key, new SimpleTranslator.GuidColumn());
+                }
             }
 
-            //
-            // GUID
-            //
-
-            else if (getKeyManagementType() == KeyManagementType.GUID)
-            {
-                ColumnInfo key = new ColumnInfo(keyColumn);
-                indexKeyProperty = it.addColumn(key, new SimpleTranslator.GuidColumn());
-            }
 
             //
             // _key
@@ -1927,7 +1958,7 @@ public class DataSetDefinition extends AbstractStudyEntity<DataSetDefinition> im
 
     private List<String> insertData(User user, DataIteratorBuilder in,
             boolean checkDuplicates, BatchValidationException errors, QCState defaultQCState,
-            Logger logger, boolean needToHandleQCState)
+            Logger logger, boolean needToHandleQCState, boolean forUpdate)
             throws SQLException
     {
 //        if (dataMaps.size() == 0)
@@ -1945,6 +1976,7 @@ public class DataSetDefinition extends AbstractStudyEntity<DataSetDefinition> im
                     defaultQCState);
             b.setInput(in);
             b.setCheckDuplicates(checkDuplicates);
+            b.setForUpdate(forUpdate);
 
             ArrayList<String> lsids = new ArrayList<String>();
             b.setKeyList(lsids);

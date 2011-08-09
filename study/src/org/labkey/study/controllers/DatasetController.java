@@ -95,7 +95,7 @@ public class DatasetController extends BaseStudyController
 
         protected NavTree appendExtraNavTrail(NavTree root)
         {
-            return root.addChild("Insert new Dataset Entry");
+            return root.addChild("Insert new entry: " + _ds.getLabel());
         }
     }
 

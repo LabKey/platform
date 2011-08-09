@@ -105,6 +105,10 @@ public class StudyServiceImpl implements StudyService.Service
         if (defaultQcStateId != null)
              defaultQCState = StudyManager.getInstance().getQCStateForRowId(c, defaultQcStateId.intValue());
 
+        String managedKey = null;
+        if (def.getKeyType()== DataSet.KeyType.SUBJECT_VISIT_OTHER && def.getKeyManagementType() != DataSet.KeyManagementType.None)
+            managedKey = def.getKeyPropertyName();
+
         ensureTransaction();
         try
         {
@@ -118,9 +122,9 @@ public class StudyServiceImpl implements StudyService.Service
             }
 
 
-            Map<String,Object> newData = new CaseInsensitiveHashMap<Object>(oldData);
+            Map<String,Object> mergeData = new CaseInsensitiveHashMap<Object>(oldData);
             // don't default to using old qcstate
-            newData.remove("qcstate");
+            mergeData.remove("qcstate");
 
             if (allowAliasesInImport)
             {
@@ -132,26 +136,34 @@ public class StudyServiceImpl implements StudyService.Service
                 {
                     ColumnInfo col = colMap.get(entry.getKey());
                     String name = null==col ? entry.getKey() : col.getName();
-                    newData.put(name,entry.getValue());
+                    if (name.equalsIgnoreCase(managedKey))
+                        continue;
+                    mergeData.put(name,entry.getValue());
                 }
             }
             else
             {
-                newData.putAll(data);
+                for (Map.Entry<String,Object> entry : data.entrySet())
+                {
+                    String name = entry.getKey();
+                    if (null != managedKey && name.equalsIgnoreCase(managedKey))
+                        continue;
+                    mergeData.put(name,entry.getValue());
+                }
             }
 
             // these columns are always recalculated
-            newData.remove("lsid");
-            newData.remove("participantsequencekey");
+            mergeData.remove("lsid");
+            mergeData.remove("participantsequencekey");
 
 
             def.deleteRows(u, Collections.singletonList(lsid));
 
             List<Map<String,Object>> dataMap = new ArrayList<Map<String, Object>>();
-            dataMap.add(newData);
+            dataMap.add(mergeData);
 
             List<String> result = StudyManager.getInstance().importDatasetData(
-                study, u, def, dataMap, System.currentTimeMillis(), errors, true, true, defaultQCState, null);
+                study, u, def, dataMap, System.currentTimeMillis(), errors, true, true, defaultQCState, null, true);
 
             if (errors.size() > 0)
             {
@@ -162,9 +174,9 @@ public class StudyServiceImpl implements StudyService.Service
             // lsid is not in the updated map by default since it is not editable,
             // however it can be changed by the update
             String newLSID = result.get(0);
-            newData.put("lsid", newLSID);
+            mergeData.put("lsid", newLSID);
 
-            addDatasetAuditEvent(u, c, def, oldData, newData);
+            addDatasetAuditEvent(u, c, def, oldData, mergeData);
 
             // Successfully updated
             commitTransaction();
@@ -283,7 +295,7 @@ public class StudyServiceImpl implements StudyService.Service
             List<Map<String,Object>> dataMap = new ArrayList<Map<String, Object>>();//convertMapToPropertyMapArray(u, data, def);
             dataMap.add(data);
 
-            List<String> result = StudyManager.getInstance().importDatasetData(study, u, def, dataMap, System.currentTimeMillis(), errors, true, true, defaultQCState, null);
+            List<String> result = StudyManager.getInstance().importDatasetData(study, u, def, dataMap, System.currentTimeMillis(), errors, true, true, defaultQCState, null, false);
 
             if (result.size() > 0)
             {

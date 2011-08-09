@@ -130,7 +130,7 @@ function toggleItemSelector()
                 for (Container container : containers)
                 {
                     %>
-                    <option value="<%= container.getName() %>"><%= container.getName() %></option>
+                    <option value="<%= h(container.getName()) %>"><%= h(container.getName()) %></option>
                     <%
                 }
                 %>

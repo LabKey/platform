@@ -1092,7 +1092,7 @@ public class CoreController extends SpringActionController
         {
             JSONObject props = new JSONObject();
             props.put("id", c.getRowId());
-            props.put("text", c.getName());
+            props.put("text", PageFlowUtil.filter(c.getName()));
             props.put("containerPath", c.getPath());
             //props.put("leaf", !c.hasChildren());
             return props;

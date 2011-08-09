@@ -777,7 +777,7 @@ public class ListController extends SpringActionController
         }
 
         @Override
-        protected int importData(DataLoader dl, FileStream file, BatchValidationException errors) throws IOException
+        protected int importData(DataLoader dl, FileStream file, String originalName, BatchValidationException errors) throws IOException
         {
             final int[] totalRows = new int[1];
             ListImportProgress p = new ListImportProgress()
