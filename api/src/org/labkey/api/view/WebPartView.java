@@ -858,7 +858,7 @@ public abstract class WebPartView<ModelBean> extends HttpView<ModelBean>
             menu.setKey("More");
             PopupMenu more = new PopupMenu(menu, PopupMenu.Align.RIGHT, PopupMenu.ButtonStyle.IMAGE);
             more.setImageSrc(imageSrc);
-            more.setImageId("more-" + getTitle().toLowerCase());
+            more.setImageId("more-" + PageFlowUtil.filter(getTitle().toLowerCase()));
             out.print("<span class=\"labkey-wp-icon-button-active\">");
             more.render(out);
             out.print("</span>");

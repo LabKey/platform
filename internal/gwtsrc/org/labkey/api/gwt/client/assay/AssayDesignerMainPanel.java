@@ -367,7 +367,7 @@ public class AssayDesignerMainPanel extends VerticalPanel implements Saveable<GW
         }
         else
         {
-            table.setHTML(row, 1, assayName);
+            table.setWidget(row, 1, new Label(assayName));
             table.setHTML(row++, 0, "Name");
         }
 
@@ -611,7 +611,7 @@ public class AssayDesignerMainPanel extends VerticalPanel implements Saveable<GW
 
         if (_isPlateBased && _assay.getSelectedPlateTemplate() == null)
             errors.add("You must select a plate template from the list, or create one first.");
-        
+
         if (errors.size() > 0)
         {
             String errorString = "";

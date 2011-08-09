@@ -464,7 +464,7 @@
     <orderEntry type="module-library" exported="">
       <library>
         <CLASSES>
-          <root url="jar://$CATALINA_HOME$/bin/bootstrap.jar!/" />
+          <root url="jar://$TOMCAT_HOME$/bin/bootstrap.jar!/" />
         </CLASSES>
         <JAVADOC />
         <SOURCES />
@@ -473,7 +473,7 @@
     <orderEntry type="module-library" exported="">
       <library>
         <CLASSES>
-          <root url="jar://$CATALINA_HOME$/common/lib/commons-el.jar!/" />
+          <root url="jar://$TOMCAT_HOME$/common/lib/commons-el.jar!/" />
         </CLASSES>
         <JAVADOC />
         <SOURCES />
@@ -482,7 +482,7 @@
     <orderEntry type="module-library" exported="">
       <library>
         <CLASSES>
-          <root url="jar://$CATALINA_HOME$/common/lib/jasper-compiler.jar!/" />
+          <root url="jar://$TOMCAT_HOME$/common/lib/jasper-compiler.jar!/" />
         </CLASSES>
         <JAVADOC />
         <SOURCES />
@@ -491,7 +491,7 @@
     <orderEntry type="module-library" exported="">
       <library>
         <CLASSES>
-          <root url="jar://$CATALINA_HOME$/common/lib/jasper-runtime.jar!/" />
+          <root url="jar://$TOMCAT_HOME$/common/lib/jasper-runtime.jar!/" />
         </CLASSES>
         <JAVADOC />
         <SOURCES />
@@ -500,7 +500,7 @@
     <orderEntry type="module-library" exported="">
       <library>
         <CLASSES>
-          <root url="jar://$CATALINA_HOME$/common/lib/jasper-compiler-jdt.jar!/" />
+          <root url="jar://$TOMCAT_HOME$/common/lib/jasper-compiler-jdt.jar!/" />
         </CLASSES>
         <JAVADOC />
         <SOURCES />
@@ -509,7 +509,7 @@
     <orderEntry type="module-library" exported="">
       <library>
         <CLASSES>
-          <root url="jar://$CATALINA_HOME$/common/lib/naming-factory.jar!/" />
+          <root url="jar://$TOMCAT_HOME$/common/lib/naming-factory.jar!/" />
         </CLASSES>
         <JAVADOC />
         <SOURCES />
@@ -518,7 +518,7 @@
     <orderEntry type="module-library" exported="">
       <library>
         <CLASSES>
-          <root url="jar://$CATALINA_HOME$/common/lib/naming-resources.jar!/" />
+          <root url="jar://$TOMCAT_HOME$/common/lib/naming-resources.jar!/" />
         </CLASSES>
         <JAVADOC />
         <SOURCES />

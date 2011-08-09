@@ -137,7 +137,17 @@ public class FileUtil
      */
     public static String getExtension(File file)
     {
-        String name = file.getName();
+        return getExtension(file.getName());
+    }
+
+    /**
+     * Returns the file name extension without the dot, null if there
+     * isn't one.
+     * @param name
+     * @return
+     */
+    public static String getExtension(String name)
+    {
         if (name.lastIndexOf('.') != -1)
         {
             return name.substring(name.lastIndexOf('.') + 1, name.length());

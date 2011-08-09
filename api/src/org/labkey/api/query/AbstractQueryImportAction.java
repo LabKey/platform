@@ -22,7 +22,7 @@ import org.labkey.api.action.ApiSimpleResponse;
 import org.labkey.api.action.ExtFormResponseWriter;
 import org.labkey.api.action.FormApiAction;
 import org.labkey.api.action.SpringActionController;
-import org.labkey.api.attachments.SpringAttachmentFile;
+import org.labkey.api.attachments.FileAttachmentFile;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.DbScope;
 import org.labkey.api.data.ExcelWriter;
@@ -49,6 +49,7 @@ import org.springframework.web.multipart.MultipartHttpServletRequest;
 import org.springframework.web.servlet.ModelAndView;
 
 import javax.servlet.ServletException;
+import java.io.File;
 import java.io.IOException;
 import java.sql.SQLException;
 import java.util.HashMap;
@@ -136,66 +137,85 @@ public abstract class AbstractQueryImportAction<FORM> extends FormApiAction<FORM
         if (errors.hasErrors())
             throw errors;
 
+        File tempFile = null;
         boolean hasPostData = false;
         FileStream file = null;
+        String originalName = null;
         DataLoader loader = null;
 
         String text = getViewContext().getRequest().getParameter("text");
         String path = getViewContext().getRequest().getParameter("path");
 
-        if (null != StringUtils.trimToNull(text))
+        try
         {
-            hasPostData = true;
-            TabLoader tabLoader = new TabLoader(text, true);
-            if ("csv".equals(getViewContext().getRequest().getParameter("format")))
-            {
-                tabLoader.setDelimiterCharacter(',');
-            }
-            loader = tabLoader;
-            file = new FileStream.ByteArrayFileStream(text.getBytes("UTF-8"));
-            // di = loader.getDataIterator(ve);
-        }
-        else if (null != StringUtils.trimToNull(path))
-        {
-            WebdavResource resource = WebdavService.get().getResolver().lookup(Path.parse(path));
-            if (null == resource || !resource.isFile())
-                errors.reject(SpringActionController.ERROR_MSG, "File not found: " + path);
-            else
+            if (null != StringUtils.trimToNull(text))
             {
                 hasPostData = true;
-                loader = DataLoader.getDataLoaderForFile(resource);
-                file = resource.getFileStream(user);
+                originalName = "upload.tsv";
+                TabLoader tabLoader = new TabLoader(text, true);
+                if ("csv".equals(getViewContext().getRequest().getParameter("format")))
+                {
+                    tabLoader.setDelimiterCharacter(',');
+                    originalName = "upload.csv";
+                }
+                loader = tabLoader;
+                file = new FileStream.ByteArrayFileStream(text.getBytes("UTF-8"));
+                // di = loader.getDataIterator(ve);
             }
-        }
-        else if (getViewContext().getRequest() instanceof MultipartHttpServletRequest)
-        {
-            Map<String, MultipartFile> files = ((MultipartHttpServletRequest)getViewContext().getRequest()).getFileMap();
-            MultipartFile multipartfile = null==files ? null : files.get("file");
-            if (null != multipartfile && multipartfile.getSize() > 0)
+            else if (null != StringUtils.trimToNull(path))
             {
-                hasPostData = true;
-                loader = DataLoader.getDataLoaderForFile(multipartfile);
-                file = new SpringAttachmentFile(multipartfile);
+                WebdavResource resource = WebdavService.get().getResolver().lookup(Path.parse(path));
+                if (null == resource || !resource.isFile())
+                {
+                    errors.reject(SpringActionController.ERROR_MSG, "File not found: " + path);
+                }
+                else
+                {
+                    hasPostData = true;
+                    loader = DataLoader.getDataLoaderForFile(resource);
+                    file = resource.getFileStream(user);
+                    originalName = resource.getName();
+                }
             }
+            else if (getViewContext().getRequest() instanceof MultipartHttpServletRequest)
+            {
+                Map<String, MultipartFile> files = ((MultipartHttpServletRequest)getViewContext().getRequest()).getFileMap();
+                MultipartFile multipartfile = null==files ? null : files.get("file");
+                if (null != multipartfile && multipartfile.getSize() > 0)
+                {
+                    hasPostData = true;
+                    originalName = multipartfile.getOriginalFilename();
+                    // can't read the multipart file twice so create temp file (12800)
+                    tempFile = File.createTempFile("~upload", multipartfile.getOriginalFilename());
+                    multipartfile.transferTo(tempFile);
+                    loader = DataLoader.getDataLoaderForFile(tempFile);
+                    file = new FileAttachmentFile(tempFile, multipartfile.getOriginalFilename());
+                }
+            }
+
+            if (!hasPostData)
+                errors.reject(SpringActionController.ERROR_MSG, "Form contains no data");
+            if (errors.hasErrors())
+                throw errors;
+
+            BatchValidationException ve = new BatchValidationException();
+            //di = wrap(di, ve);
+            //importData(di, ve);
+            int rowCount = importData(loader, file, originalName, ve);
+
+            if (ve.hasErrors())
+                throw ve;
+
+            JSONObject response = new JSONObject();
+            response.put("success", true);
+            response.put("rowCount", rowCount);
+            return new ApiSimpleResponse(response);
         }
-
-        if (!hasPostData)
-            errors.reject(SpringActionController.ERROR_MSG, "Form contains no data");
-        if (errors.hasErrors())
-            throw errors;
-
-        BatchValidationException ve = new BatchValidationException();
-        //di = wrap(di, ve);
-        //importData(di, ve);
-        int rowCount = importData(loader, file, ve);
-
-        if (ve.hasErrors())
-            throw ve;
-
-        JSONObject response = new JSONObject();
-        response.put("success", true);
-        response.put("rowCount", rowCount);
-        return new ApiSimpleResponse(response);
+        finally
+        {
+            if (null != tempFile)
+                tempFile.delete();
+        }
     }
 
     @Override
@@ -241,7 +261,7 @@ public abstract class AbstractQueryImportAction<FORM> extends FormApiAction<FORM
 
 
     /* TODO change prototype if/when QueryUpdateServie supports DataIterator */
-    protected int importData(DataLoader dl, FileStream file, BatchValidationException errors) throws IOException
+    protected int importData(DataLoader dl, FileStream file, String originalName, BatchValidationException errors) throws IOException
     {
         DbScope scope = _target.getSchema().getScope();
         try

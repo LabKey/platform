@@ -17,6 +17,7 @@ package org.labkey.api.data;
 
 import junit.framework.Assert;
 import org.apache.log4j.Logger;
+import org.jetbrains.annotations.Nullable;
 import org.junit.Test;
 import org.labkey.api.cache.DbCache;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
@@ -191,13 +192,14 @@ public class DbSchema
     }
 
 
-    SchemaTableInfo loadTable(String tableName) throws SQLException
+    @Nullable SchemaTableInfo loadTable(String tableName) throws SQLException
     {
         // When querying table metadata we must use the name from the database
         String metaDataTableName = _metaDataTableNames.get(tableName);
 
+        // Didn't find a hard table with that name... maybe it's a query.  See #12822
         if (null == metaDataTableName)
-            throw new IllegalStateException("Expected to find metaDataTableName for " + tableName + " in schema " + getName());
+            return null;
 
         SchemaTableInfo ti = createTableFromDatabaseMetaData(metaDataTableName);
         TableType xmlTable = _tableXmlMap.get(tableName);

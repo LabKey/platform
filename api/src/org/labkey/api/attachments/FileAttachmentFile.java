@@ -40,6 +40,12 @@ public class FileAttachmentFile implements AttachmentFile
         _filename = file.getName();
     }
 
+    public FileAttachmentFile(File file, String originalName)
+    {
+        _file = file;
+        _filename = null != originalName ? originalName : file.getName();
+    }
+
     public byte[] getBytes() throws IOException
     {
         throw new UnsupportedOperationException();
