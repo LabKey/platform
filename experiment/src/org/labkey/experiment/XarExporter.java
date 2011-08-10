@@ -828,6 +828,10 @@ public class XarExporter
                         simpleValue.setValueType(SimpleTypeNames.INTEGER);
                         simpleValue.setStringValue(Long.toString(value.getFloatValue().longValue()));
                         break;
+                    case BOOLEAN:
+                        simpleValue.setValueType(SimpleTypeNames.BOOLEAN);
+                        simpleValue.setStringValue(value.getBooleanValue() == null ? null : value.getBooleanValue().toString());
+                        break;
                     case STRING:
                     case MULTI_LINE:
                     case XML_TEXT:

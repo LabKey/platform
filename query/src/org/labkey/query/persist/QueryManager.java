@@ -25,6 +25,7 @@ import org.labkey.api.util.UnexpectedException;
 import org.labkey.api.util.ResultSetUtil;
 import org.labkey.query.ExternalSchema;
 import org.labkey.query.ExternalSchemaDocumentProvider;
+import org.labkey.query.sql.Query;
 
 import java.beans.PropertyChangeEvent;
 import java.sql.SQLException;

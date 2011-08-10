@@ -223,6 +223,9 @@ function init() {
                 folderTree.rename.setDisabled(selectedFolder.attributes.notModifiable);
                 folderTree.move.setDisabled(selectedFolder.attributes.notModifiable);
                 folderTree.remove.setDisabled(selectedFolder.attributes.notModifiable);
+                if (node.attributes.isProject) {
+                    folderTree.move.setDisabled(true);
+                }
             }
         }
 
@@ -509,22 +512,25 @@ function init() {
         }
 
         function failureHandler(response, opts, s, d){
+            var _msg = "Failed to complete move";
             if (response && response.errors) {
                 var errors = response.errors;
-                var _msg = "";
+                _msg = "";
                 for (var i=0; i < errors.length; i++) {
                     _msg += errors[i].msg + "\n";
                 }
-                Ext.Msg.alert('Failed to Move', _msg);
-            }
-            else {
-                Ext.Msg.alert('Operation Failed', 'Failed to complete move.');
             }
             if (s && d && s.parentNode && d.parentNode) {
-                folderTree.getLoader().load(s.parentNode);
-                folderTree.getLoader().load(d.parentNode);
+                folderTree.getLoader().load(folderTree.root);
+                folderTree.root.expand();
             }
             unmask();
+            Ext.Msg.show({
+                title : 'Operation Failed',
+                msg   : _msg,
+                icon  : Ext.MessageBox.ERROR,
+                buttons: Ext.Msg.OK
+            });
         }
 
         function successHandler(data, response, opts) { executeNext(); }
@@ -604,6 +610,11 @@ function init() {
                     target = target.parentNode;
                     if (target.attributes.containerPath === undefined) {
                         folderTree.r('');
+                        return {target: target, cancel: true};
+                    }
+                    if (node.attributes.isProject) {
+                        // Not allowed to move projects
+                        folderTree.r('Cannot move one Project into another.', true);
                         return {target: target, cancel: true};
                     }
                     folderTree.r('Move to ' + target.attributes.containerPath);

@@ -61,7 +61,7 @@ public class AssayListQueryView extends QueryView
         }
 
         Container project = getContainer().getProject();
-        if (!project.equals(getContainer()) && project.hasPermission(getUser(), DesignAssayPermission.class))
+        if (project != null && !project.equals(getContainer()) && project.hasPermission(getUser(), DesignAssayPermission.class))
         {
             ActionURL manageProjectAssays = new ActionURL(AssayController.BeginAction.class, project);
             ActionButton sharedButton = new ActionButton("Manage Project Assays", manageProjectAssays);
