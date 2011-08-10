@@ -3084,6 +3084,15 @@ public class OntologyManager
 			return floatValue;
 		}
 
+        public Boolean getBooleanValue()
+        {
+            if (floatValue == null)
+            {
+                return null;
+            }
+            return floatValue.doubleValue() == 1.0;
+        }
+
 		public void setFloatValue(Double floatValue)
 		{
 			this.floatValue = floatValue;

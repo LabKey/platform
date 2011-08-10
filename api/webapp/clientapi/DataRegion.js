@@ -1008,8 +1008,8 @@ Ext.extend(LABKEY.DataRegion, Ext.Component, {
         // 10566: for javascript perf on IE stash the requires selection buttons
         if (!this._requiresSelectionButtons)
         {
-            // escape ' and \
-            var escaped = this.name.replace(/('|\\)/g, "\\$1");
+            // escape ', ", and \
+            var escaped = this.name.replace(/('|"|\\)/g, "\\$1");
             this._requiresSelectionButtons = Ext.DomQuery.select("a[labkey-requires-selection='" + escaped + "']");
         }
         Ext.each(this._requiresSelectionButtons, fn);

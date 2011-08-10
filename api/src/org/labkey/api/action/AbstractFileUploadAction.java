@@ -15,6 +15,7 @@
  */
 package org.labkey.api.action;
 
+import org.labkey.api.util.FileUtil;
 import org.labkey.api.util.PageFlowUtil;
 import org.springframework.validation.BindException;
 import org.springframework.web.multipart.MultipartHttpServletRequest;
@@ -76,7 +77,9 @@ public abstract class AbstractFileUploadAction<FORM> extends ExportAction<FORM>
         File targetFile;
         try
         {
-            targetFile = getTargetFile(filename);
+            // Issue 12845: clean the upload filename before trying to create the file
+            String legalName = FileUtil.makeLegalName(filename);
+            targetFile = getTargetFile(legalName);
 
             OutputStream output = new FileOutputStream(targetFile);
             try

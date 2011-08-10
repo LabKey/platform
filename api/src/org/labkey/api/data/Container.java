@@ -229,7 +229,11 @@ public class Container implements Serializable, Comparable<Container>, Securable
         _description = description;
     }
 
-    public Container getProject()
+    /**
+     * Get the project Container or null if isRoot().
+     * @return The project Container or null if isRoot().
+     */
+    public @Nullable Container getProject()
     {
         // Root has no project
         if (isRoot())
