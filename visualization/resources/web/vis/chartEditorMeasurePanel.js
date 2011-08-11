@@ -34,6 +34,9 @@ LABKEY.vis.ChartEditorMeasurePanel = Ext.extend(Ext.FormPanel, {
         if(typeof config.origMeasures == "object"){
             for(var i = 0; i < config.origMeasures.length; i++){
                 if(config.origMeasures[i].axis.name == 'y-axis'){
+                    // backwards compatible, charts saved before addition of right axis will default to left
+                    Ext.applyIf(config.origMeasures[i].measure, {yAxis: "left"});
+
                     config.measures.push({
                         id: i,
                         name: config.origMeasures[i].measure.name,
@@ -309,6 +312,7 @@ LABKEY.vis.ChartEditorMeasurePanel = Ext.extend(Ext.FormPanel, {
         });
 
         this.dataFilterUrl = this.filterUrl;
+        this.dataFilterQuery = this.filterQuery;
         this.dataFilterWarning = new Ext.form.Label({
             // No text by default
         });
@@ -366,6 +370,7 @@ LABKEY.vis.ChartEditorMeasurePanel = Ext.extend(Ext.FormPanel, {
     removeFilterWarning: function()
     {
         this.dataFilterUrl = undefined;
+        this.dataFilterQuery = undefined;
         this.dataFilterWarning.setText('');
         this.dataFilterRemoveButton.hide();
         this.fireEvent('filterCleared');
@@ -374,6 +379,11 @@ LABKEY.vis.ChartEditorMeasurePanel = Ext.extend(Ext.FormPanel, {
     getDataFilterUrl: function()
     {
         return this.dataFilterUrl;
+    },
+
+    getDataFilterQuery: function()
+    {
+        return this.dataFilterQuery;
     },
 
     showMeasureSelectionWindow: function() {

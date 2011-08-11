@@ -28,23 +28,18 @@ LABKEY.vis.SubjectSeriesSelector = Ext.extend(Ext.Panel, {
         LABKEY.vis.SubjectSeriesSelector.superclass.constructor.call(this, config);
     },
 
-    getSubjectValues: function(schema, query, filterUrl) {
-        // if there was a previous gridPanel showing (i.e. user is now changing measure),
-        // remove it and delete the subject values array
+    getSubjectValues: function() {
+        // if the subjects gridpanel is already available, then return
         if(this.items && this.getComponent('subject-list-view')){
-            this.removeAll();
-            delete this.subject.values;
+            return;
         }
 
         // store the subject info for use in the getDimensionValues call
         var subjectInfo = {
             name: this.subjectColumn,
-            schemaName: schema,
-            queryName: query
+            schemaName: 'study',
+            queryName: this.subjectNounSingular
         };
-        if (filterUrl) //Don't add param if it is null
-            subjectInfo.filterUrl = filterUrl;
-        Ext.apply(this.subject, subjectInfo);
 
         // this is the query/column we need to get the subject IDs for the selected measure
         this.fireEvent('measureMetadataRequestPending');
@@ -65,9 +60,9 @@ LABKEY.vis.SubjectSeriesSelector = Ext.extend(Ext.Panel, {
         var subjectValues = Ext.util.JSON.decode(response.responseText);
 
         // if this is not a saved chart with pre-selected values, initially select the first 5 values (after sorting)
-        var selectDefault = false;
+        this.selectDefault = false;
         if(!this.subject.values){
-            selectDefault = true;
+            this.selectDefault = true;
 
             // sort the subject values
             function compareValue(a, b) {
@@ -75,11 +70,12 @@ LABKEY.vis.SubjectSeriesSelector = Ext.extend(Ext.Panel, {
                 if (a.value > b.value) {return 1}
                 return 0;
             }
-            subjectValues.values.sort(compareValue)
+            subjectValues.values.sort(compareValue);
 
             // select the first 5 values, or all if the length is less than 5
             this.subject.values = [];
-            for(var i = 0; i < (subjectValues.values.length < 5 ? subjectValues.values.length : 5); i++) {
+            for (var i = 0; i < (subjectValues.values.length < 5 ? subjectValues.values.length : 5); i++)
+            {
                 this.subject.values.push(subjectValues.values[i].value);
             }
         }
@@ -135,8 +131,8 @@ LABKEY.vis.SubjectSeriesSelector = Ext.extend(Ext.Panel, {
                 scope: this,
                 'viewready': function(grid){
                     // show the selecting default text if necessary
-                    if(grid.getStore().getCount() > 5 && selectDefault){
-                        // show the display for 3 seconds before hiding it again
+                    if(grid.getStore().getCount() > 5 && this.selectDefault){
+                        // show the display for 5 seconds before hiding it again
                         var refThis = this;
                         refThis.defaultDisplayField.show();
                         refThis.doLayout();
@@ -144,6 +140,7 @@ LABKEY.vis.SubjectSeriesSelector = Ext.extend(Ext.Panel, {
                             refThis.defaultDisplayField.hide();
                             refThis.doLayout();
                         },5000);
+                        this.selectDefault = false;
                     }
 
                     // check selected subject values in grid panel (but suspend events during selection)

@@ -11,6 +11,7 @@ LABKEY.requiresScript("vis/chartEditorYAxisPanel.js");
 LABKEY.requiresScript("vis/chartEditorXAxisPanel.js");
 LABKEY.requiresScript("vis/chartEditorChartsPanel.js");
 LABKEY.requiresScript("vis/subjectSeriesSelector.js");
+LABKEY.requiresScript("vis/groupSelector.js");
 LABKEY.requiresCss("_images/icons.css");
 
 
@@ -79,6 +80,7 @@ LABKEY.vis.TimeChartPanel = Ext.extend(Ext.Panel, {
                 disabled: true,
                 origMeasures: this.chartInfo.measures, 
                 filterUrl: this.chartInfo.filterUrl ? this.chartInfo.filterUrl : LABKEY.Visualization.getDataFilterFromURL(),
+                filterQuery: this.chartInfo.filterQuery ? this.chartInfo.filterQuery : this.getFilterQuery(),
                 viewInfo: this.viewInfo,
                 listeners: {
                     scope: this,
@@ -110,12 +112,10 @@ LABKEY.vis.TimeChartPanel = Ext.extend(Ext.Panel, {
                         }
                     },
                     'filterCleared': function () {
-                        //measureMetadataRequestComplete should ensure full refresh after subject list is regenerated.
-                        if(this.editorMeasurePanel.measures[0]){
-                            var measure = this.editorMeasurePanel.measures[0].measure;
-                            this.chartInfo.filterUrl = null;
-                            this.subjectSelector.getSubjectValues(measure.schemaName, measure.queryName, this.chartInfo.filterUrl);
-                        }
+                        // remove the filter and refresh the data
+                        this.chartInfo.filterUrl = null;
+                        this.chartInfo.filterQuery = null;
+                        this.getChartData();
                     },
                     'measureMetadataRequestPending': this.measureMetadataRequestPending,
                     'measureMetadataRequestComplete': this.measureMetadataRequestComplete
@@ -213,6 +213,22 @@ LABKEY.vis.TimeChartPanel = Ext.extend(Ext.Panel, {
                         else{
                             this.loader();
                         }
+                    },
+                    'groupLayoutSelectionChanged': function(groupLayoutSelected){
+                        if (groupLayoutSelected)
+                        {
+                            this.groupsSelector.enable();
+                            this.subjectSelector.disable();
+                            Ext.getCmp('series-selector-tabpanel').activate(this.groupsSelector.getId());
+                        }
+                        else
+                        {
+                            this.groupsSelector.disable();
+                            this.subjectSelector.enable();
+                            Ext.getCmp('series-selector-tabpanel').activate(this.subjectSelector.getId());
+                        }
+
+                        this.getChartData();
                     }
                 }
             });
@@ -262,8 +278,10 @@ LABKEY.vis.TimeChartPanel = Ext.extend(Ext.Panel, {
             items.push(this.chartEditor);
 
             this.subjectSelector = new LABKEY.vis.SubjectSeriesSelector({
-                subject: this.chartInfo.subject,
+                disabled: (this.chartInfo.chartLayout == "per_group"), // disabled by default if showing saved chart with per_group layout
+                subject: (this.chartInfo.chartLayout != "per_group" ? this.chartInfo.subject : {}),
                 subjectNounPlural: this.viewInfo.subjectNounPlural,
+                subjectNounSingular: this.viewInfo.subjectNounSingular,
                 subjectColumn: this.viewInfo.subjectColumn,
                 listeners: {
                     scope: this,
@@ -280,6 +298,22 @@ LABKEY.vis.TimeChartPanel = Ext.extend(Ext.Panel, {
                 }
             });
 
+            this.groupsSelector = new LABKEY.vis.GroupSelector({
+                disabled: (this.chartInfo.chartLayout != "per_group"), // disabled by default if NOT showing saved chart with per_group layout,
+                subject: (this.chartInfo.chartLayout == "per_group" ? this.chartInfo.subject : {}),
+                listeners: {
+                    scope: this,
+                    'chartDefinitionChanged': function(requiresDataRefresh){
+                        if(requiresDataRefresh){
+                            this.getChartData();
+                        }
+                        else{
+                            this.loader();
+                        }
+                    }
+                }
+            });
+
             this.seriesSelector = new Ext.Panel({
                 region: 'east',
                 layout: 'fit',
@@ -293,10 +327,14 @@ LABKEY.vis.TimeChartPanel = Ext.extend(Ext.Panel, {
                 items: [
                     new Ext.TabPanel({
                         id: 'series-selector-tabpanel',
-                        activeTab: 0,
+                        activeTab: (this.chartInfo.chartLayout != "per_group" ? 0 : 1),
                         padding: 5,
                         enablePanelScroll: true,
-                        items: [this.subjectSelector]
+                        enableTabScroll: true,
+                        items: [
+                            this.subjectSelector,
+                            this.groupsSelector
+                        ]
                     })
                 ],
                 tbar: {
@@ -392,7 +430,7 @@ LABKEY.vis.TimeChartPanel = Ext.extend(Ext.Panel, {
         // (i.e. showing saved chart or first measure selected for new chart)
         var numMeasures = this.editorMeasurePanel.getNumMeasures();
         if(!userSelectedMeasure || numMeasures == 1){
-            this.subjectSelector.getSubjectValues(measure.schemaName, measure.queryName, this.chartInfo.filterUrl);
+            this.subjectSelector.getSubjectValues();
             this.editorXAxisPanel.setZeroDateStore(measure.schemaName);
             this.editorXAxisPanel.setMeasureDateStore(measure.schemaName, measure.queryName);
 
@@ -472,6 +510,13 @@ LABKEY.vis.TimeChartPanel = Ext.extend(Ext.Panel, {
            return;
         }
 
+        // the subject column is used in the sort, so it needs to be applied to one of the measures
+        Ext.apply(this.chartInfo.subject, {
+            name: this.viewInfo.subjectColumn,
+            schemaName: this.chartInfo.measures[firstYAxisMeasureIndex].measure.schemaName,
+            queryName: this.chartInfo.measures[firstYAxisMeasureIndex].measure.queryName 
+        });
+
         LABKEY.Visualization.getData({
             success: function(data){
                 // store the data in an object by subject for use later when it comes time to render the line chart
@@ -539,7 +584,7 @@ LABKEY.vis.TimeChartPanel = Ext.extend(Ext.Panel, {
             viewInfo: this.viewInfo,
             sorts: [this.chartInfo.subject, this.chartInfo.measures[xAxisMeasureIndex].measure],
             filterUrl: this.chartInfo.filterUrl,
-            filterQuery: this.getFilterQuery(),
+            filterQuery: this.chartInfo.filterQuery,
             scope: this
         });
     },
@@ -675,39 +720,75 @@ LABKEY.vis.TimeChartPanel = Ext.extend(Ext.Panel, {
         this.exportPdfSingleBtn.purgeListeners();
         this.exportPdfMenu.removeAll();
 
-	    // three options: all series on one chart, one chart per subject, or one chart per measure/dimension
+	    // four options: all series on one chart, one chart per subject, one chart per group, or one chart per measure/dimension
         var charts = [];
         var warningText = null;
-        if(this.chartInfo.chartLayout == "per_subject") {
-        	for(var i = 0; i < (this.chartInfo.subject.values.length > this.maxCharts ? this.maxCharts : this.chartInfo.subject.values.length); i++){
-        	    var subject = this.chartInfo.subject.values[i];
-        		charts.push(this.newLineChart(size, series, {parameter: "subject", value: subject}, subject));
-        	}
-
-            // warn if user doesn't have an subjects selected or if the max number has been exceeded
-            if(this.chartInfo.subject.values.length == 0){
+        if (this.chartInfo.chartLayout == "per_subject")
+        {
+            // warn if user doesn't have an subjects selected
+            if (this.chartInfo.subject.values.length == 0)
+            {
                 warningText = "Please select at least one subject.";
             }
-        	else if(this.chartInfo.subject.values.length > this.maxCharts){
-        	    warningText = "Only showing the first " + this.maxCharts + " charts.";
-        	}
+            else
+            {
+                // warn if the max number of charts has been exceeded
+                if (this.chartInfo.subject.values.length > this.maxCharts)
+                {
+                    warningText = "Only showing the first " + this.maxCharts + " charts.";
+                }
+
+                for (var i = 0; i < (this.chartInfo.subject.values.length > this.maxCharts ? this.maxCharts : this.chartInfo.subject.values.length); i++)
+                {
+                    var subject = this.chartInfo.subject.values[i];
+                    charts.push(this.newLineChart(size, series, {parameter: "subject", value: subject}, subject));
+                }
+            }
         }
-        else if(this.chartInfo.chartLayout == "per_dimension") {
-        	for(var i = 0; i < (seriesList.length > this.maxCharts ? this.maxCharts : seriesList.length); i++){
+        else if (this.chartInfo.chartLayout == "per_group")
+        {
+            // warn if use doesn't have any groups selected
+            if (this.chartInfo.subject.groups.length == 0)
+            {
+                warningText = "Please select at least one group.";
+            }
+            else
+            {
+                // warn if the max number of charts has been exceeded
+                if (this.chartInfo.subject.groups.length > this.maxCharts)
+                {
+                    warningText = "Only showing the first " + this.maxCharts + " charts.";
+                }
+
+                for (var i = 0; i < (this.chartInfo.subject.groups.length > this.maxCharts ? this.maxCharts : this.chartInfo.subject.groups.length); i++)
+                {
+                    var group = this.chartInfo.subject.groups[i];
+                    charts.push(this.newLineChart(size, series, {parameter: "subject", value: group.participantIds}, group.label));
+                }
+            }
+        }
+        else if (this.chartInfo.chartLayout == "per_dimension")
+        {
+        	for (var i = 0; i < (seriesList.length > this.maxCharts ? this.maxCharts : seriesList.length); i++)
+            {
         	    var md = seriesList[i].name;
         		charts.push(this.newLineChart(size, series, {parameter: "yAxisSeries", value: md}, md));
         	}
 
             // warn if user doesn't have an dimension values selected or if the max number has been exceeded
-            if(seriesList.length == 0){
+            if (seriesList.length == 0)
+            {
                 warningText = "Please select at least one dimension value.";
             }
-        	else if(seriesList.length > this.maxCharts){
+        	else if (seriesList.length > this.maxCharts)
+            {
         	    warningText = "Only showing the first " + this.maxCharts + " charts";
         	}
         }
-        else if(this.chartInfo.chartLayout == "single")
+        else if (this.chartInfo.chartLayout == "single")
+        {
             charts.push(this.newLineChart(size, series, null, null));
+        }
 
         // if the user has selected more charts than the max allowed, show warning
         if(warningText){
@@ -734,7 +815,12 @@ LABKEY.vis.TimeChartPanel = Ext.extend(Ext.Panel, {
     	var tempSeries = [];
     	if(seriesFilter) {
             for(var i = 0; i < series.length; i++) {
-                if(series[i][seriesFilter.parameter] == seriesFilter.value) {
+                if (Ext.isArray(seriesFilter.value) && seriesFilter.value.indexOf(series[i][seriesFilter.parameter]) > -1)
+                {
+                    tempSeries.push(series[i]);
+                }
+                else if (series[i][seriesFilter.parameter] == seriesFilter.value)
+                {
                     series[i].caption = series[i].caption.replace(seriesFilter.value, "");
                     tempSeries.push(series[i]);
                 }
@@ -900,11 +986,16 @@ LABKEY.vis.TimeChartPanel = Ext.extend(Ext.Panel, {
             chartLayout: this.editorChartsPanel.getChartLayout(),
             lineWidth: this.editorChartsPanel.getLineWidth(),
             hideDataPoints: this.editorChartsPanel.getHideDataPoints(),
-            subject: this.subjectSelector.getSubject(),
             measures: [],
             filterUrl: this.editorMeasurePanel.getDataFilterUrl(),
-            filterQuery: this.getFilterQuery()
+            filterQuery: this.editorMeasurePanel.getDataFilterQuery()
         };
+
+        // get the subject info based on the selected chart layout
+        if (config.chartLayout == 'per_group')
+            config.subject = this.groupsSelector.getSubject();
+        else
+            config.subject = this.subjectSelector.getSubject();
 
         // get the measure information for the x-axis
         config.measures.push({

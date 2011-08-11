@@ -22,7 +22,10 @@ LABKEY.vis.ChartEditorChartsPanel = Ext.extend(Ext.FormPanel, {
         // track if the axis label is something other than the default
         config.userEditedTitle = (config.mainTitle ? true : false);
 
-        this.addEvents('chartDefinitionChanged');
+        this.addEvents(
+                'chartDefinitionChanged',
+                'groupLayoutSelectionChanged'
+        );
 
         LABKEY.vis.ChartEditorChartsPanel.superclass.constructor.call(this, config);
     },
@@ -37,6 +40,7 @@ LABKEY.vis.ChartEditorChartsPanel = Ext.extend(Ext.FormPanel, {
             boxLabel: 'One Chart',
             inputValue: 'single',
             checked: this.chartLayout == 'single',
+            height: 10,
             listeners: {
                 scope: this,
                 'check': function(field, checked) {
@@ -53,6 +57,7 @@ LABKEY.vis.ChartEditorChartsPanel = Ext.extend(Ext.FormPanel, {
             boxLabel: 'One Chart for Each ' + this.subjectNounSingular,
             inputValue: 'per_subject',
             checked: this.chartLayout == 'per_subject',
+            height: 10,
             listeners: {
                 scope: this,
                 'check': function(field, checked) {
@@ -64,11 +69,34 @@ LABKEY.vis.ChartEditorChartsPanel = Ext.extend(Ext.FormPanel, {
             }
         });
 
+        this.chartLayoutPerGroupRadio = new Ext.form.Radio({
+            name: 'chart_layout',
+            boxLabel: 'One Chart for Each ' + this.subjectNounSingular + ' Group',
+            inputValue: 'per_group',
+            checked: this.chartLayout == 'per_group',
+            height: 10,
+            listeners: {
+                scope: this,
+                'check': function(field, checked) {
+                    if (checked)
+                    {
+                        this.chartLayout = 'per_group';
+                        this.fireEvent('groupLayoutSelectionChanged', true);
+                    }
+                    else
+                    {
+                        this.fireEvent('groupLayoutSelectionChanged', false);
+                    }
+                }
+            }
+        });
+
         this.chartLayoutPerDimensionRadio = new Ext.form.Radio({
             name: 'chart_layout',
             boxLabel: 'One Chart for Each Dimension',
             inputValue: 'per_dimension',
             checked: this.chartLayout == 'per_dimension',
+            height: 10,
             listeners: {
                 scope: this,
                 'check': function(field, checked) {
@@ -88,6 +116,7 @@ LABKEY.vis.ChartEditorChartsPanel = Ext.extend(Ext.FormPanel, {
             items: [
                 this.chartLayoutSingleRadio,
                 this.chartLayoutPerSubjectRadio,
+                this.chartLayoutPerGroupRadio,
                 this.chartLayoutPerDimensionRadio
             ]
         });
@@ -202,6 +231,7 @@ LABKEY.vis.ChartEditorChartsPanel = Ext.extend(Ext.FormPanel, {
             this.chartLayoutSingleRadio.suspendEvents(false);
             this.chartLayoutSingleRadio.setValue(true);
             this.chartLayoutPerSubjectRadio.setValue(false);
+            this.chartLayoutPerGroupRadio.setValue(false);
             this.chartLayoutPerDimensionRadio.setValue(false);
             this.chartLayoutSingleRadio.resumeEvents();
         }
@@ -209,13 +239,23 @@ LABKEY.vis.ChartEditorChartsPanel = Ext.extend(Ext.FormPanel, {
             this.chartLayoutPerSubjectRadio.suspendEvents(false);
             this.chartLayoutSingleRadio.setValue(false);
             this.chartLayoutPerSubjectRadio.setValue(true);
+            this.chartLayoutPerGroupRadio.setValue(false);
             this.chartLayoutPerDimensionRadio.setValue(false);
             this.chartLayoutPerSubjectRadio.resumeEvents();
+        }
+        else if(this.chartLayout == 'per_group'){
+            this.chartLayoutPerGroupRadio.suspendEvents(false);
+            this.chartLayoutSingleRadio.setValue(false);
+            this.chartLayoutPerSubjectRadio.setValue(false);
+            this.chartLayoutPerGroupRadio.setValue(true);
+            this.chartLayoutPerDimensionRadio.setValue(false);
+            this.chartLayoutPerGroupRadio.resumeEvents();
         }
         else if(this.chartLayout == 'per_dimension'){
             this.chartLayoutPerDimensionRadio.suspendEvents(false);
             this.chartLayoutSingleRadio.setValue(false);
             this.chartLayoutPerSubjectRadio.setValue(false);
+            this.chartLayoutPerGroupRadio.setValue(false);
             this.chartLayoutPerDimensionRadio.setValue(true);
             this.chartLayoutPerDimensionRadio.resumeEvents();
         }

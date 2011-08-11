@@ -69,10 +69,10 @@
         var columnModel = new Ext.grid.ColumnModel({
             defaults: {
                 width: 200,
-                sortable: false
+                sortable: true
             },
             columns: [
-                {header:'Label', dataIndex:'label', sortable: true, width: 300, renderer: $h},
+                {header:'Label', dataIndex:'label', width: 300, renderer: $h},
                 {header:'Type', dataIndex:'type', width: 100},
                 {header:'Shared', dataIndex:'shared'},
                 {header:'Created By', dataIndex:'createdBy'},
