@@ -118,7 +118,7 @@ LABKEY.vis.GroupSelector = Ext.extend(Ext.Panel, {
                         {
                             for (var i = 0; i < this.subject.groups.length; i++)
                             {
-                                var index = this.groupGridPanel.getStore().find('label', this.subject.groups[i].label);
+                                var index = store.find('label', this.subject.groups[i].label);
                                 if (index == -1)
                                 {
                                     this.subject.groups.splice(i, 1);
@@ -127,9 +127,17 @@ LABKEY.vis.GroupSelector = Ext.extend(Ext.Panel, {
                             }
                         }
 
-                        // if the grid is already rendered, call the 'viewready' event for it
-                        if (this.groupGridPanel.isVisible())
+                        // if there are no groups in the given study, hide the gridPanel and add some text
+                        if (store.getCount() == 0)
+                        {
+                            this.groupGridPanel.hide();
+                            this.noGroupsDisplayField.show();
+                        }
+                        // else if the grid is already rendered, call the 'viewready' event for it
+                        else if (this.groupGridPanel.isVisible())
+                        {
                             this.groupGridPanel.fireEvent('viewready', this.groupGridPanel);
+                        }
                     }
                 }
             }),
@@ -166,7 +174,23 @@ LABKEY.vis.GroupSelector = Ext.extend(Ext.Panel, {
             }
         });
 
+        // add a text link to the manage participant groups page
+        this.manageGroupsLink = new Ext.form.DisplayField({
+            hideLabel: true,
+            html: LABKEY.Utils.textLink({href: LABKEY.ActionURL.buildURL("study", "manageParticipantCategories"), text: 'Manage Groups'}) 
+        });
+
+        // add a hidden display field that will be shown if there are no groups in the gridPanel
+        this.noGroupsDisplayField = new Ext.form.DisplayField({
+            hideLabel: true,
+            hidden: true,
+            html: 'No participant groups have been configured or shared in this study.<BR/><BR/>Click the \'Manage Groups\' link below to begin configuring groups.',
+            style: 'font-size:90%;font-style:italic;'
+        });
+
         this.items = [
+            this.noGroupsDisplayField,
+            this.manageGroupsLink,
             this.defaultDisplayField,
             this.groupGridPanel
         ];
