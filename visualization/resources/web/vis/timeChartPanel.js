@@ -143,8 +143,10 @@ LABKEY.vis.TimeChartPanel = Ext.extend(Ext.Panel, {
                 }
             });
 
+            //This is the "Y-Axis" tab, this will be removed in favor of "Left-Axis" and "Right-Axis" tabs.
             this.editorYAxisPanel = new LABKEY.vis.ChartEditorYAxisPanel({
                 disabled: true,
+                title: "Y-Axis",
                 axis: this.chartInfo.measures[firstYAxisMeasureIndex] ? this.chartInfo.measures[firstYAxisMeasureIndex].axis : {},
                 listeners: {
                     scope: this,
@@ -158,7 +160,43 @@ LABKEY.vis.TimeChartPanel = Ext.extend(Ext.Panel, {
                     }
                 }
             });
+/*
+            this.editorYAxisLeftPanel = new LABKEY.vis.ChartEditorYAxisPanel({
+                disabled: true,
+                title: "Left-Axis",
+                axis: this.chartInfo.measures[firstYAxisMeasureIndex] ? this.chartInfo.measures[firstYAxisMeasureIndex].axis : {},
+                listeners: {
+                    scope: this,
+                    'chartDefinitionChanged': function(requiresDataRefresh){
+                        if(requiresDataRefresh){
+                            this.getChartData();
+                        }
+                        else{
+                            this.loader();
+                        }
+                    }
+                }
+            });
+*/
 
+/*
+            this.editorYAxisRightPanel = new LABKEY.vis.ChartEditorYAxisPanel({
+                disabled: true,
+                title: "Right-Axis",
+                axis: this.chartInfo.measures[firstYAxisMeasureIndex] ? this.chartInfo.measures[firstYAxisMeasureIndex].axis : {},
+                listeners: {
+                    scope: this,
+                    'chartDefinitionChanged': function(requiresDataRefresh){
+                        if(requiresDataRefresh){
+                            this.getChartData();
+                        }
+                        else{
+                            this.loader();
+                        }
+                    }
+                }
+            });
+*/
             this.editorChartsPanel = new LABKEY.vis.ChartEditorChartsPanel({
                 disabled: true,
                 chartLayout: this.chartInfo.chartLayout,
@@ -199,6 +237,8 @@ LABKEY.vis.TimeChartPanel = Ext.extend(Ext.Panel, {
                             this.editorMeasurePanel,
                             this.editorXAxisPanel,
                             this.editorYAxisPanel,
+//                            this.editorYAxisLeftPanel,
+//                            this.editorYAxisRightPanel,
                             this.editorChartsPanel
                         ]
                     })
@@ -373,6 +413,8 @@ LABKEY.vis.TimeChartPanel = Ext.extend(Ext.Panel, {
         this.editorMeasurePanel.enable();
         this.editorXAxisPanel.enable();
         this.editorYAxisPanel.enable();
+//        this.editorYAxisRightPanel.enable();
+//        this.editorYAxisLeftPanel.enable();
         this.editorChartsPanel.enable();
     },
 
@@ -380,6 +422,8 @@ LABKEY.vis.TimeChartPanel = Ext.extend(Ext.Panel, {
         this.editorOverviewPanel.disable();
         this.editorXAxisPanel.disable();
         this.editorYAxisPanel.disable();
+//        this.editorYAxisRightPanel.disable();
+//        this.editorYAxisLeftPanel.disable();
         this.editorChartsPanel.disable();
     },
 
@@ -554,11 +598,11 @@ LABKEY.vis.TimeChartPanel = Ext.extend(Ext.Panel, {
             if(md.axis.name == "y-axis"){
                 if(md.dimension && md.dimension.values) {
                     Ext.each(md.dimension.values, function(val) {
-                        seriesList.push(val);
+                        seriesList.push({name: val, yAxisSide: md.measure.yAxis});
                     });
                 }
                 else {
-                    seriesList.push(md.measure.name);
+                    seriesList.push({name: md.measure.name, yAxisSide: md.measure.yAxis});
                 }
             }
         });
@@ -568,7 +612,8 @@ LABKEY.vis.TimeChartPanel = Ext.extend(Ext.Panel, {
         {
         	for(var i = 0; i < seriesList.length; i++)
         	{
-                var yAxisSeries = seriesList[i];
+                var yAxisSeries = seriesList[i].name;
+                var yAxisSide = seriesList[i].yAxisSide;
                 var subject = this.chartInfo.subject.values[j];
 
                 var caption = subject;
@@ -586,6 +631,7 @@ LABKEY.vis.TimeChartPanel = Ext.extend(Ext.Panel, {
                     yAxisSeries: yAxisSeries,
                     caption: caption,
                     data: this.chartSubjectData[subject] ? this.chartSubjectData[subject][yAxisSeries] : [],
+                    axis: yAxisSide,
                     xProperty:"interval",
                     yProperty: "dataValue",
                     style: style
@@ -648,7 +694,7 @@ LABKEY.vis.TimeChartPanel = Ext.extend(Ext.Panel, {
         }
         else if(this.chartInfo.chartLayout == "per_dimension") {
         	for(var i = 0; i < (seriesList.length > this.maxCharts ? this.maxCharts : seriesList.length); i++){
-        	    var md = seriesList[i];
+        	    var md = seriesList[i].name;
         		charts.push(this.newLineChart(size, series, {parameter: "yAxisSeries", value: md}, md));
         	}
 
@@ -681,7 +727,8 @@ LABKEY.vis.TimeChartPanel = Ext.extend(Ext.Panel, {
     {
         // hold on to the x and y axis measure index
         var xAxisMeasureIndex = this.getFirstMeasureIndex(this.chartInfo.measures, "x-axis");
-        var firstYAxisMeasureIndex = this.getFirstMeasureIndex(this.chartInfo.measures, "y-axis");
+        var firstLeftAxisMeasureIndex = this.getFirstYMeasureIndex(this.chartInfo.measures, "left");
+        var firstRightAxisMeasureIndex = this.getFirstYMeasureIndex(this.chartInfo.measures, "right");
 
     	// if seriesFilter is not null, then create a sub-array for that filter
     	var tempSeries = [];
@@ -696,21 +743,10 @@ LABKEY.vis.TimeChartPanel = Ext.extend(Ext.Panel, {
 
     	// set the title for this chart based on the Chart Title entered by the user and the ptid/dimension layout option
     	var mainTitle = this.chartInfo.title + (this.chartInfo.title != "" && title != null ? ": " : "") + (title ? title : "");
-
-        var chartComponent = new LABKEY.vis.LineChart({
+        var lineChartConfig = {
             width: size.width,
             height: size.height - 25,
             axes: {
-                y: {
-                    min: (typeof this.chartInfo.measures[firstYAxisMeasureIndex].axis.range.min == "number"
-                                ? this.chartInfo.measures[firstYAxisMeasureIndex].axis.range.min
-                                : this.autoAxisRange.y.min),
-                    max: (typeof this.chartInfo.measures[firstYAxisMeasureIndex].axis.range.max == "number"
-                                ? this.chartInfo.measures[firstYAxisMeasureIndex].axis.range.max
-                                : this.autoAxisRange.y.max),
-                    caption: this.chartInfo.measures[firstYAxisMeasureIndex].axis.label,
-                    scale: this.chartInfo.measures[firstYAxisMeasureIndex].axis.scale
-                },
                 x: {
                     min: (typeof this.chartInfo.measures[xAxisMeasureIndex].axis.range.min == "number"
                                 ? this.chartInfo.measures[xAxisMeasureIndex].axis.range.min
@@ -723,7 +759,34 @@ LABKEY.vis.TimeChartPanel = Ext.extend(Ext.Panel, {
             },
             series: tempSeries.length > 0 ? tempSeries : series,
             title: mainTitle
-        });
+        };
+
+        if (firstLeftAxisMeasureIndex > -1) {
+            lineChartConfig.axes.left = {
+                min: (typeof this.chartInfo.measures[firstLeftAxisMeasureIndex].axis.range.min == "number"
+                        ? this.chartInfo.measures[firstLeftAxisMeasureIndex].axis.range.min
+                        : this.autoAxisRange.y.min),
+                max: (typeof this.chartInfo.measures[firstLeftAxisMeasureIndex].axis.range.max == "number"
+                        ? this.chartInfo.measures[firstLeftAxisMeasureIndex].axis.range.max
+                        : this.autoAxisRange.y.max),
+                caption: this.chartInfo.measures[firstLeftAxisMeasureIndex].axis.label,
+                scale: this.chartInfo.measures[firstLeftAxisMeasureIndex].axis.scale
+            };
+        }
+
+        if (firstRightAxisMeasureIndex  > -1) {
+            lineChartConfig.axes.right = {
+                min: (typeof this.chartInfo.measures[firstRightAxisMeasureIndex].axis.range.min == "number"
+                        ? this.chartInfo.measures[firstRightAxisMeasureIndex].axis.range.min
+                        : this.autoAxisRange.y.min),
+                max: (typeof this.chartInfo.measures[firstRightAxisMeasureIndex].axis.range.max == "number"
+                        ? this.chartInfo.measures[firstRightAxisMeasureIndex].axis.range.max
+                        : this.autoAxisRange.y.max),
+                caption: this.chartInfo.measures[firstRightAxisMeasureIndex].axis.label,
+                scale: this.chartInfo.measures[firstRightAxisMeasureIndex].axis.scale
+            };
+        }
+        var chartComponent = new LABKEY.vis.LineChart(lineChartConfig);
 
         // if the chart component is exportable, either add a listener to the exportPdfSingleBtn or add an item to the exportPdfMenuBtn
         if (chartComponent.canExport()) {
@@ -867,6 +930,17 @@ LABKEY.vis.TimeChartPanel = Ext.extend(Ext.Panel, {
         var index = -1;
         for(var i = 0; i < measures.length; i++){
             if(measures[i].axis.name == axis){
+                index = i;
+                break;
+            }
+        }
+        return index;
+    },
+
+    getFirstYMeasureIndex: function(measures, axis) {
+        var index = -1;
+        for (var i = 0; i < measures.length; i++) {
+            if (measures[i].measure.yAxis == axis) {
                 index = i;
                 break;
             }

@@ -89,7 +89,7 @@ LABKEY.vis.ChartEditorMeasurePanel = Ext.extend(Ext.FormPanel, {
                     if(listView.getSelectedIndexes().length > 0){
                         var md = this.measures[this.getSelectedMeasureIndex()];
                         this.measureDimensionComboBox.bindStore(md.dimensionStore);
-                        this.toggleDimensionComponents(md.dimension.name, md.measure.aggregate);
+                        this.toggleMeasureOptions(md.dimension.name, md.measure.aggregate, md.measure.yAxis);
                     }
                 }
             }
@@ -121,6 +121,31 @@ LABKEY.vis.ChartEditorMeasurePanel = Ext.extend(Ext.FormPanel, {
             handler: this.removeSelectedMeasure,
             scope: this
         });
+
+        // combobox for choosing axis on left/right
+        this.yAxisSide = new Ext.form.ComboBox({
+            id: 'y-axis-side',
+            triggerAction: 'all',
+            mode: 'local',
+            store: new Ext.data.ArrayStore({
+                fields: ['value'],
+                data: [['left'], ['right']]
+            }),
+            fieldLabel: 'Draw x-axis on',
+            forceSelection: 'true',
+            valueField: 'value',
+            displayField: 'value',
+            value: 'Left',
+            listeners: {
+                scope: this,
+                'select': function(combo){
+                    // When the user selects left or right we want to save their choice to the measure.
+                    this.measures[this.getSelectedMeasureIndex()].measure.yAxis = combo.getValue();
+                    this.fireEvent('chartDefinitionChanged', true);
+                }
+            }
+        });
+        columnTwoItems.push(this.yAxisSide);
 
         // add a label and radio buttons for allowing user to divide data into series (subject and dimension options)
         columnTwoItems.push({
@@ -409,6 +434,7 @@ LABKEY.vis.ChartEditorMeasurePanel = Ext.extend(Ext.FormPanel, {
 
     addMeasure: function(newMeasure){
         // add the measure to this
+         newMeasure.yAxis = "left";
         this.measures.push({
             id: this.getNextMeasureId(),
             name: newMeasure.name,
@@ -486,7 +512,7 @@ LABKEY.vis.ChartEditorMeasurePanel = Ext.extend(Ext.FormPanel, {
                         }
                     }
 
-                    this.toggleDimensionComponents(dimension.name, measure.aggregate);
+                    this.toggleMeasureOptions(dimension.name, measure.aggregate, measure.yAxis);
 
                     // this is one of the requests being tracked, see if the rest are done
                     this.fireEvent('measureMetadataRequestComplete');
@@ -495,7 +521,7 @@ LABKEY.vis.ChartEditorMeasurePanel = Ext.extend(Ext.FormPanel, {
         })
     },
 
-    toggleDimensionComponents: function(dimensionName, measureAggregate)
+    toggleMeasureOptions: function(dimensionName, measureAggregate, yAxisValue)
     {
         // enable/disable the dimension components depending if there is a dimension set
         if(dimensionName){
@@ -526,6 +552,10 @@ LABKEY.vis.ChartEditorMeasurePanel = Ext.extend(Ext.FormPanel, {
         else{
             this.seriesPerDimensionRadio.enable();
         }
+
+        //Here we want to set the value of the yAxisValue comboBox.
+        this.yAxisSide.setValue(yAxisValue);
+        
     },
 
     measureDimensionSelected: function(index, reloadChartData) {

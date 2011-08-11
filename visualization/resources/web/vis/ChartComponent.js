@@ -621,29 +621,38 @@ LABKEY.vis.LineChart = Ext.extend(LABKEY.vis.XYChartComponent, {
        // for backwards-compatability, allow the bottom axes name to be "x" and the left to be "y"
        var bottomAxesName = this.axes["bottom"] ? "bottom" : "x";
        var leftAxesName = this.axes["left"] ? "left" : "y";
+       var rightAxesName = this.axes["right"] ? "right" : "y";
 
        // if the chart has a left axis, set up the scale for it
        var left;
-       if(this.axes[leftAxesName]){
+       if (this.axes[leftAxesName]) {
            left = this.getScale(this.axes[leftAxesName], this.chartHeight, this.series, "getY", "left");
            this.setLeftMargin();
            this.side.left = true;
+       } else {
+           this.side.left = false;
        }
 
        // if the chart has a right axis, set up the scale for it
        var right;
-       if(this.axes["right"]){
+       if (this.axes[rightAxesName]) {
            right = this.getScale(this.axes["right"], this.chartHeight, this.series, "getY", "right");
            this.setRightMargin();
            this.side.right = true;
+       } else {
+           this.side.right = false;
        }
        
        var bottom = this.getScale(this.axes[bottomAxesName], this.chartWidth, this.series, "getX");
        var chartPanel = this.addChartPanel();
 
        this.drawRule(bottom, "bottom", this.axes[bottomAxesName]);
-       if(left) this.drawRule(left, "left", this.axes[leftAxesName]);
-       if(right) this.drawRule(right, "right", this.axes["right"]);
+       if (left) {
+           this.drawRule(left, "left", this.axes[leftAxesName]);
+       }
+       if (right) {
+           this.drawRule(right, "right", this.axes[rightAxesName]);
+       }
 
        //To get z ordering right we add the dataPanel after rules etc have been drawn.
        var dataPanel = this.addDataPanel();
