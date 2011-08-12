@@ -21,14 +21,26 @@ import org.apache.log4j.Logger;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.RenderContext;
-import org.labkey.api.query.*;
+import org.labkey.api.query.CustomViewInfo;
+import org.labkey.api.query.QueryAction;
+import org.labkey.api.query.QueryDefinition;
+import org.labkey.api.query.QueryParam;
+import org.labkey.api.query.QueryService;
+import org.labkey.api.query.QueryView;
+import org.labkey.api.query.UserSchema;
 import org.labkey.api.reports.Report;
 import org.labkey.api.reports.ReportService;
-import org.labkey.api.reports.report.*;
+import org.labkey.api.reports.model.ViewInfo;
+import org.labkey.api.reports.report.ChartReportDescriptor;
+import org.labkey.api.reports.report.ModuleRReportDescriptor;
+import org.labkey.api.reports.report.ReportDescriptor;
+import org.labkey.api.reports.report.ReportIdentifier;
+import org.labkey.api.reports.report.ReportUrls;
+import org.labkey.api.reports.report.ScriptReport;
+import org.labkey.api.reports.report.ScriptReportDescriptor;
 import org.labkey.api.security.SecurityManager;
 import org.labkey.api.security.User;
 import org.labkey.api.security.UserManager;
-import org.labkey.api.util.DateUtil;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.Pair;
 import org.labkey.api.view.ActionURL;
@@ -41,8 +53,10 @@ import java.awt.image.BufferedImage;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.sql.SQLException;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
+import java.util.Map;
 import java.util.regex.Pattern;
 
 /**
@@ -329,12 +343,12 @@ public class ReportUtil
         }
     }
 
-    public static List<Map<String, String>> getViews(ViewContext context, String schemaName, String queryName, boolean includeQueries)
+    public static List<ViewInfo> getViews(ViewContext context, String schemaName, String queryName, boolean includeQueries)
     {
         return getViews(context, schemaName, queryName, includeQueries, new DefaultReportFilter());
     }
 
-    public static List<Map<String, String>> getViews(ViewContext context, String schemaName, String queryName, boolean includeQueries, ReportFilter filter)
+    public static List<ViewInfo> getViews(ViewContext context, String schemaName, String queryName, boolean includeQueries, ReportFilter filter)
     {
         Container c = context.getContainer();
         User user = context.getUser();
@@ -347,7 +361,7 @@ public class ReportUtil
         if (schemaName != null && queryName != null)
             reportKey = ReportUtil.getReportKey(schemaName, queryName);
 
-        List<Map<String, String>> views = new ArrayList<Map<String, String>>();
+        List<ViewInfo> views = new ArrayList<ViewInfo>();
 
         for (Report r : ReportUtil.getReports(c, user, reportKey, true))
         {
@@ -357,7 +371,6 @@ public class ReportUtil
             if (!StringUtils.isEmpty(r.getDescriptor().getReportName()))
             {
                 ReportDescriptor descriptor = r.getDescriptor();
-                Map<String, String> record = new HashMap<String, String>();
 
                 User createdBy = UserManager.getUser(descriptor.getCreatedBy());
                 User modifiedBy = UserManager.getUser(descriptor.getModifiedBy());
@@ -365,18 +378,18 @@ public class ReportUtil
                 String query = descriptor.getProperty(ReportDescriptor.Prop.queryName);
                 String schema = descriptor.getProperty(ReportDescriptor.Prop.schemaName);
 
-                record.put("name", descriptor.getReportName());
-                record.put("reportId", descriptor.getReportId().toString());
-                record.put("query", StringUtils.defaultIfEmpty(query, "Stand-alone views"));
-                record.put("schema", schema);
-                record.put("createdBy", createdBy != null ? createdBy.getDisplayName(user) : String.valueOf(descriptor.getCreatedBy()));
-                record.put("created", DateUtil.formatDate(descriptor.getCreated()));
-                record.put("modifiedBy", modifiedBy != null ? modifiedBy.getDisplayName(user) : String.valueOf(descriptor.getModifiedBy()));
-                record.put("modified", DateUtil.formatDate(descriptor.getModified()));
-                record.put("type", r.getTypeDescription());
-                record.put("editable", String.valueOf(descriptor.canEdit(user, c)));
-                record.put("inherited", String.valueOf(inherited));
-                record.put("version", descriptor.getVersionString());
+                ViewInfo info = new ViewInfo(descriptor.getReportName(), r.getTypeDescription());
+
+                info.setReportId(descriptor.getReportId());
+                info.setQuery(StringUtils.defaultIfEmpty(query, "Stand-alone views"));
+                info.setSchema(schema);
+                info.setCreatedBy(createdBy);
+                info.setCreated(descriptor.getCreated());
+                info.setModifiedBy(modifiedBy);
+                info.setModified(descriptor.getModified());
+                info.setEditable(descriptor.canEdit(user, c));
+                info.setInherited(inherited);
+                info.setVersion(descriptor.getVersionString());
 
                 /**
                  * shared reports are only available if there is a query/schema available in the container that matches
@@ -389,20 +402,20 @@ public class ReportUtil
                     ActionURL editUrl = r.getEditReportURL(context);
                     ActionURL runUrl = r.getRunReportURL(context);
 
-                    record.put("editUrl", editUrl != null ? editUrl.getLocalURIString() : null);
-                    record.put("runUrl", runUrl != null ? runUrl.getLocalURIString() : null);
+                    info.setEditUrl(editUrl);
+                    info.setRunUrl(runUrl);
                 }
                 else
                 {
                     ActionURL runUrl = r.getRunReportURL(context);
 
                     if (queryExists(user, c, schema, query))
-                        record.put("runUrl", runUrl != null ? runUrl.getLocalURIString() : null);
+                        info.setRunUrl(runUrl);
                     else
                         continue;
                 }
-                record.put("description", descriptor.getReportDescription());
-                record.put("container", descriptor.getContainerPath());
+                info.setDescription(descriptor.getReportDescription());
+                info.setContainer(descriptor.lookupContainer());
 
                 String security;
                 if (descriptor.getOwner() != null)
@@ -413,13 +426,13 @@ public class ReportUtil
                 else
                     security = "public";
 
-                record.put("permissions", security);
+                info.setPermissions(security);
                 
                 String iconPath = ReportService.get().getReportIcon(context, r.getType());  
                 if (!StringUtils.isEmpty(iconPath))
-                    record.put("icon", iconPath);
+                    info.setIcon(iconPath);
 
-                views.add(record);
+                views.add(info);
             }
         }
 
@@ -433,24 +446,23 @@ public class ReportUtil
                 if (view.getName() == null)
                     continue;
 
-                Map<String, String> record = new HashMap<String, String>();
+                ViewInfo info = new ViewInfo(view.getName(), "query view");
 
                 User createdBy = view.getCreatedBy();
 
-                record.put("queryView", "true");
+//                record.put("queryView", "true");
 
                 // create a fake report id to reference the custom views by (would be nice if this could be a rowId)
                 Map<String, String> viewId = PageFlowUtil.map(QueryParam.schemaName.name(), view.getSchemaName(),
                         QueryParam.queryName.name(), view.getQueryName(),
                         QueryParam.viewName.name(), view.getName());
-                record.put("reportId", PageFlowUtil.encode(PageFlowUtil.toQueryString(viewId.entrySet())));
-                record.put("name", view.getName());
-                record.put("query", view.getQueryName());
-                record.put("schema", view.getSchemaName());
-                record.put("type", "query view");
-                record.put("editable", String.valueOf(view.isEditable()));
-                record.put("createdBy", createdBy != null ? createdBy.getDisplayName(user) : null);
-                record.put("permissions", view.isShared() ? "public" : "private");
+
+                info.setReportId(new QueryViewReportId(viewId));
+                info.setQuery(view.getQueryName());
+                info.setSchema(view.getSchemaName());
+                info.setEditable(view.isEditable());
+                info.setCreatedBy(createdBy);
+                info.setPermissions(view.isShared() ? "public" : "private");
 
                 boolean inherited = isInherited(view, c);
 
@@ -460,23 +472,45 @@ public class ReportUtil
                     if (url != null)
                     {
                         url.addParameter(QueryParam.srcURL, PageFlowUtil.urlProvider(ReportUrls.class).urlManageViews(c).getLocalURIString());
-                        record.put("editUrl", url.getLocalURIString());
+                        info.setEditUrl(url);
                     }
                 }
 
-                record.put("runUrl", filter.getViewRunURL(user, c, view).getLocalURIString());
+                info.setRunUrl(filter.getViewRunURL(user, c, view));
                 // FIXME: see 10473: ModuleCustomViewInfo has no Container or Owner.
-                record.put("container", view.getContainer() != null ? view.getContainer().getPath() : "");
-                record.put("inherited", String.valueOf(inherited));
+                info.setContainer(view.getContainer());
+                info.setInherited(inherited);
 
                 if (!StringUtils.isEmpty(view.getCustomIconUrl()))
-                    record.put("icon", view.getCustomIconUrl());
+                    info.setIcon(view.getCustomIconUrl());
 
-                views.add(record);
+                views.add(info);
             }
         }
 
         return views;
+    }
+
+    private static class QueryViewReportId implements ReportIdentifier
+    {
+        private Map<String, String> _params;
+
+        public QueryViewReportId(Map<String, String> params)
+        {
+            _params = params;
+        }
+
+        @Override
+        public Report getReport() throws Exception
+        {
+            throw new UnsupportedOperationException("No report bound to this id");
+        }
+
+        @Override
+        public String toString()
+        {
+            return PageFlowUtil.encode(PageFlowUtil.toQueryString(_params.entrySet()));
+        }
     }
 
     public static boolean queryExists(User user, Container container, String schema, String query)
