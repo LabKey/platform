@@ -94,6 +94,7 @@ import org.labkey.api.reader.DataLoader;
 import org.labkey.api.reader.TabLoader;
 import org.labkey.api.reports.Report;
 import org.labkey.api.reports.ReportService;
+import org.labkey.api.reports.model.ViewInfo;
 import org.labkey.api.reports.report.AbstractReportIdentifier;
 import org.labkey.api.reports.report.ChartQueryReport;
 import org.labkey.api.reports.report.ChartReportDescriptor;
@@ -6938,5 +6939,26 @@ public class StudyController extends BaseStudyController
             }
             return root;
         }
+    }
+
+    @RequiresPermissionClass(ReadPermission.class)
+    public class BrowseDataAction extends ApiAction<BrowseDataForm>
+    {
+        public ApiResponse execute(BrowseDataForm form, BindException errors) throws Exception
+        {
+            boolean isAdmin = getContainer().hasPermission(getUser(), AdminPermission.class);
+            JSONArray data = new JSONArray();
+
+            for (ViewInfo info : ReportManager.get().getViews(getViewContext(), null, null, isAdmin, true))
+            {
+                data.put(info.toJSON(getUser()));
+            }
+            return new ApiSimpleResponse("data", data);
+        }
+    }
+
+    public static class BrowseDataForm
+    {
+        
     }
 }

@@ -20,6 +20,7 @@ import org.apache.commons.lang.BooleanUtils;
 import org.apache.commons.lang.ObjectUtils;
 import org.apache.commons.lang.StringUtils;
 import org.apache.commons.lang.math.NumberUtils;
+import org.json.JSONArray;
 import org.labkey.api.action.ApiAction;
 import org.labkey.api.action.ApiResponse;
 import org.labkey.api.action.ApiSimpleResponse;
@@ -55,6 +56,7 @@ import org.labkey.api.reports.ExternalScriptEngineFactory;
 import org.labkey.api.reports.LabkeyScriptEngineManager;
 import org.labkey.api.reports.Report;
 import org.labkey.api.reports.ReportService;
+import org.labkey.api.reports.model.ViewInfo;
 import org.labkey.api.reports.report.ChartQueryReport;
 import org.labkey.api.reports.report.ChartReport;
 import org.labkey.api.reports.report.RReport;
@@ -1151,8 +1153,13 @@ public class ReportsController extends SpringActionController
     {
         public ApiResponse execute(ViewsSummaryForm form, BindException errors) throws Exception
         {
-            return new ApiSimpleResponse("views", ReportUtil.getViews(getViewContext(), form.getSchemaName(), form.getQueryName(),
-                    getViewContext().getContainer().hasPermission(getViewContext().getUser(), AdminPermission.class)));
+            boolean isAdmin = getViewContext().getContainer().hasPermission(getViewContext().getUser(), AdminPermission.class);
+            JSONArray views = new JSONArray();
+
+            for (ViewInfo info :  ReportUtil.getViews(getViewContext(), form.getSchemaName(), form.getQueryName(), isAdmin))
+                views.put(info.toJSON(getUser()));
+
+            return new ApiSimpleResponse("views", views);
         }
     }
 

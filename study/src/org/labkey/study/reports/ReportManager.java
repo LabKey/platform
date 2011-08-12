@@ -22,6 +22,7 @@ import org.labkey.api.data.dialect.SqlDialect;
 import org.labkey.api.query.*;
 import org.labkey.api.reports.Report;
 import org.labkey.api.reports.ReportService;
+import org.labkey.api.reports.model.ViewInfo;
 import org.labkey.api.reports.report.ReportDescriptor;
 import org.labkey.api.reports.report.view.ReportQueryView;
 import org.labkey.api.reports.report.view.ReportUtil;
@@ -309,7 +310,7 @@ public class ReportManager implements StudyManager.DataSetListener
     /**
      * Returns the list of views available and additionally checks study security.
      */
-    public List<Map<String, String>> getViews(ViewContext context, String schemaName, String queryName, boolean includeQueries, boolean editOnly)
+    public List<ViewInfo> getViews(ViewContext context, String schemaName, String queryName, boolean includeQueries, boolean editOnly)
     {
         return ReportUtil.getViews(context, schemaName, queryName, includeQueries, new StudyReportFilter(editOnly));
     }

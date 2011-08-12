@@ -20,6 +20,7 @@ import gwt.client.org.labkey.study.chart.client.StudyChartDesigner;
 import org.apache.commons.beanutils.ConversionException;
 import org.apache.commons.lang.StringUtils;
 import org.apache.commons.lang.math.NumberUtils;
+import org.json.JSONArray;
 import org.labkey.api.action.*;
 import org.labkey.api.attachments.AttachmentForm;
 import org.labkey.api.attachments.AttachmentService;
@@ -30,6 +31,7 @@ import org.labkey.api.gwt.server.BaseRemoteService;
 import org.labkey.api.query.*;
 import org.labkey.api.reports.Report;
 import org.labkey.api.reports.ReportService;
+import org.labkey.api.reports.model.ViewInfo;
 import org.labkey.api.reports.report.RReport;
 import org.labkey.api.reports.report.ReportDescriptor;
 import org.labkey.api.reports.report.ReportIdentifier;
@@ -230,7 +232,12 @@ public class ReportsController extends BaseStudyController
         public ApiResponse execute(ViewsSummaryForm form, BindException errors) throws Exception
         {
             boolean isAdmin = getContainer().hasPermission(getUser(), AdminPermission.class);
-            return new ApiSimpleResponse("views", ReportManager.get().getViews(getViewContext(), form.getSchemaName(), form.getQueryName(), isAdmin, true));
+            JSONArray views = new JSONArray();
+
+            for (ViewInfo info : ReportManager.get().getViews(getViewContext(), form.getSchemaName(), form.getQueryName(), isAdmin, true))
+                views.put(info.toJSON(getUser()));
+
+            return new ApiSimpleResponse("views", views);
         }
     }
 

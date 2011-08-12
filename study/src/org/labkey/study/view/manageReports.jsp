@@ -32,6 +32,7 @@
 <%@ page import="java.util.TreeMap" %>
 <%@ page import="org.labkey.study.controllers.reports.ReportsController" %>
 <%@ page import="org.labkey.api.data.Container" %>
+<%@ page import="org.labkey.api.reports.model.ViewInfo" %>
 <%@ page extends="org.labkey.api.jsp.JspBase"%>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 
@@ -44,12 +45,12 @@
     User user = context.getUser();
 
     // group by query name
-    List<Map<String, String>> allViews = ReportManager.get().getViews(context, null, null, true, false);
-    Map<String, List<Map<String, String>>> groups = new TreeMap<String, List<Map<String, String>>>();
-    for (Map<String, String> view : allViews)
+    List<ViewInfo> allViews = ReportManager.get().getViews(context, null, null, true, false);
+    Map<String, List<ViewInfo>> groups = new TreeMap<String, List<ViewInfo>>();
+    for (ViewInfo view : allViews)
     {
-        List<Map<String, String>> views;
-        String queryName = view.get("query");
+        List<ViewInfo> views;
+        String queryName = view.getQuery();
 
         if (groups.containsKey(queryName))
         {
@@ -57,7 +58,7 @@
         }
         else
         {
-            views = new ArrayList<Map<String, String>>();
+            views = new ArrayList<ViewInfo>();
             groups.put(queryName, views);
         }
         views.add(view);
@@ -80,7 +81,7 @@
     else if (bean.getAdminView())
         out.print("<table>");
 
-    for (Map.Entry<String, List<Map<String, String>>> entry : groups.entrySet())
+    for (Map.Entry<String, List<ViewInfo>> entry : groups.entrySet())
     {
         if (entry.getValue().isEmpty())
             continue;
@@ -91,24 +92,24 @@
             maxColumns--;
         }
         startReportSection(out, entry.getKey(), bean);
-        for (Map<String, String> view : entry.getValue())
+        for (ViewInfo view : entry.getValue())
         {
             reportCount++;
-            if (!StringUtils.isEmpty(view.get("runUrl"))) { %>
+            if (view.getRunUrl() != null) { %>
                 <tr>
                     <td>
                         <%
-                        if (view.containsKey("icon"))
+                        if (view.getIcon() != null)
                         {
                         %>
-                        <img src="<%= h(view.get("icon"))%>" alt="">
+                        <img src="<%= h(view.getIcon())%>" alt="">
                         <%
                         }
                         %>
                     </td>
-                <td><a href="<%=h(view.get("runUrl"))%>"><%=h(view.get("name"))%></a></td></tr>
+                <td><a href="<%=h(view.getRunUrl().getLocalURIString())%>"><%=h(view.getName())%></a></td></tr>
          <% } else { %>
-                <tr><td><%=h(view.get("name"))%></td></tr>
+                <tr><td><%=h(view.getName())%></td></tr>
          <% }
         }
         endReportSection(out, bean);
