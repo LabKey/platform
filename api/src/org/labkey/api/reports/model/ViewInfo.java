@@ -28,8 +28,9 @@ public class ViewInfo
     private Date _created;
     private Date _modified;
     private String _type;
-    private boolean _editable;
-    private boolean _inherited;
+    private Boolean _editable;
+    private Boolean _inherited;
+    private Boolean _queryView;
     private String _version;
 
     private ActionURL _editUrl;
@@ -136,22 +137,22 @@ public class ViewInfo
         _type = type;
     }
 
-    public boolean isEditable()
+    public Boolean getEditable()
     {
         return _editable;
     }
 
-    public void setEditable(boolean editable)
+    public void setEditable(Boolean editable)
     {
         _editable = editable;
     }
 
-    public boolean isInherited()
+    public Boolean getInherited()
     {
         return _inherited;
     }
 
-    public void setInherited(boolean inherited)
+    public void setInherited(Boolean inherited)
     {
         _inherited = inherited;
     }
@@ -236,14 +237,29 @@ public class ViewInfo
         _category = category;
     }
 
+    public Boolean getQueryView()
+    {
+        return _queryView;
+    }
+
+    public void setQueryView(Boolean queryView)
+    {
+        _queryView = queryView;
+    }
+
     public JSONObject toJSON(User user)
     {
         JSONObject o = new JSONObject();
 
         o.put("name", getName());
         o.put("type", getType());
-        o.put("editable", isEditable());
-        o.put("inherited", isInherited());
+
+        if (getEditable() != null)
+            o.put("editable", getEditable());
+        if (getInherited() != null)
+            o.put("inherited", getInherited());
+        if (getQueryView() != null)
+            o.put("queryView", getQueryView());
 
         if (getReportId() != null)
             o.put("reportId", getReportId().toString());

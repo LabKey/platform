@@ -382,6 +382,7 @@ public class ReportUtil
 
                 info.setReportId(descriptor.getReportId());
                 info.setQuery(StringUtils.defaultIfEmpty(query, "Stand-alone views"));
+                info.setCategory(StringUtils.defaultIfEmpty(query, "Stand-alone views"));
                 info.setSchema(schema);
                 info.setCreatedBy(createdBy);
                 info.setCreated(descriptor.getCreated());
@@ -450,13 +451,13 @@ public class ReportUtil
 
                 User createdBy = view.getCreatedBy();
 
-//                record.put("queryView", "true");
-
                 // create a fake report id to reference the custom views by (would be nice if this could be a rowId)
                 Map<String, String> viewId = PageFlowUtil.map(QueryParam.schemaName.name(), view.getSchemaName(),
                         QueryParam.queryName.name(), view.getQueryName(),
                         QueryParam.viewName.name(), view.getName());
 
+                info.setQueryView(true);
+                info.setCategory(view.getQueryName());
                 info.setReportId(new QueryViewReportId(viewId));
                 info.setQuery(view.getQueryName());
                 info.setSchema(view.getSchemaName());
