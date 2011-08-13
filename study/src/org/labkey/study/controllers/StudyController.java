@@ -6949,11 +6949,43 @@ public class StudyController extends BaseStudyController
             boolean isAdmin = getContainer().hasPermission(getUser(), AdminPermission.class);
             JSONArray data = new JSONArray();
 
+            // get reports and queries
             for (ViewInfo info : ReportManager.get().getViews(getViewContext(), null, null, isAdmin, true))
-            {
                 data.put(info.toJSON(getUser()));
-            }
+
+            // datasets
+            for (ViewInfo info : getDatasets())
+                data.put(info.toJSON(getUser()));
+
             return new ApiSimpleResponse("data", data);
+        }
+
+        private List<ViewInfo> getDatasets()
+        {
+            List<ViewInfo> datasets = new ArrayList<ViewInfo>();
+
+            Study study = StudyService.get().getStudy(getContainer());
+            if (study != null)
+            {
+                for (DataSet ds : study.getDataSets())
+                {
+                    if (!ds.isShowByDefault())
+                        continue;
+
+                    if (ds.canRead(getUser()))
+                    {
+                        ViewInfo view = new ViewInfo(ds.getLabel(), "Dataset");
+
+                        view.setCategory(ds.getCategory());
+                        view.setIcon(getViewContext().getContextPath() + "/reports/grid.gif");
+                        view.setRunUrl(new ActionURL(DefaultDatasetReportAction.class, getContainer()).addParameter("datasetId", ds.getDataSetId()));
+                        view.setContainer(ds.getContainer());
+
+                        datasets.add(view);
+                    }
+                }
+            }
+            return datasets;
         }
     }
 
