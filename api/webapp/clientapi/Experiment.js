@@ -149,13 +149,15 @@ LABKEY.Experiment = new function()
 
         /**
          * Saves a modified batch.
+         * Runs within the batch may refer to existing data and material objects, either inputs or outputs, by ID or LSID.
+         * Runs may also define new data and materials objects by not specifying an ID or LSID in their properties.
          * @param config An object that contains the following configuration parameters
          * @param {Number} config.assayId The assay protocol id.
          * @param {LABKEY.Exp.RunGroup} config.batch The modified batch object.
          * @param {function} config.success The function to call when the function finishes successfully.
-         * This function will be called with a the parameters:
+         * This function will be called with the following parameters:
          * <ul>
-         * <li><b>batch</b> A new {@link LABKEY.Exp.RunGroup} object.  Some values will be filled in by the server.
+         * <li><b>batch</b> A new {@link LABKEY.Exp.RunGroup} object.  Some values (such as IDs and LSIDs) will be filled in by the server.
          * <li><b>response</b> The original response
          * </ul>
          * @param {function} [config.failure] The function to call if this function encounters an error.
@@ -292,10 +294,11 @@ LABKEY.Exp.ExpObject = function (config) {
  * @memberOf LABKEY.Exp
  *
  * @param {Object} [config] The configuration object.  Inherits the config properties of {@link LABKEY.Exp.ExpObject}.
- * @param {Object[]} config.dataInputs Array of {@link LABKEY.Exp.Data} config objects.
- * @param {Object[]} config.dataOutputs Array of {@link LABKEY.Exp.Data} config objects.
+ * @param {Object[]} config.dataInputs Array of {@link LABKEY.Exp.Data} objects that are the inputs to this run. Datas typically represent a file on the server's file system.
+ * @param {Object[]} config.dataOutputs Array of {@link LABKEY.Exp.Data} objects that are the outputs from this run. Datas typically represent a file on the server's file system.
  * @param {Object[]} config.dataRows Array of Objects where each Object corresponds to a row in the results domain.
- * @param {Object[]} config.materialInputs Array of {@link LABKEY.Exp.Material} config objects.
+ * @param {Object[]} config.materialInputs Array of {@link LABKEY.Exp.Material} objects that are material/sample inputs to the run.
+ * @param {Object[]} config.materialOutputs Array of {@link LABKEY.Exp.Material} objects that are material/sample outputs from the run.
  *
  * @see LABKEY.Exp.Data#getContent
  *

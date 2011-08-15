@@ -185,6 +185,11 @@ public abstract class DisplayElement implements View, Cloneable
         _locked = true;
     }
 
+    public boolean isLocked()
+    {
+        return _locked;
+    }
+
     public void checkLocked()
     {
         if (_locked)

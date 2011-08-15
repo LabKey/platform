@@ -839,7 +839,7 @@ LABKEY.ext.ComboPlugin = function () {
             this.combo = combo;
             if (this.combo.store)
             {
-                this.combo.store.on({
+                this.combo.mon(this.combo.store, {
                     load: this.resizeList,
                     // fired when the store is filtered or sorted
                     //datachanged: this.resizeList,
@@ -861,7 +861,7 @@ LABKEY.ext.ComboPlugin = function () {
                 }
                 else
                 {
-                    this.combo.store.on('load', this.initialLoad, this, {single: true});
+                    this.combo.mon(this.combo.store, 'load', this.initialLoad, this, {single: true});
                 }
             }
         },

@@ -691,8 +691,12 @@ public class DataRegion extends AbstractDataRegion
         }
 
         boolean renderButtons = _gridButtonBar.shouldRender(ctx);
-        if (renderButtons)
+        if (renderButtons && _buttonBarConfigs != null && !_buttonBarConfigs.isEmpty())
+        {
+            if (_gridButtonBar.isLocked())
+                _gridButtonBar = new ButtonBar(_gridButtonBar);
             _gridButtonBar.setConfigs(ctx, _buttonBarConfigs);
+        }
 
         boolean showRecordSelectors = getShowRecordSelectors(ctx);
 

@@ -583,24 +583,31 @@ public class StorageProvisioner
             }
             Set<String> hardColumnNames = Sets.newCaseInsensitiveHashSet(table.getColumnNameSet());
             Domain domain = PropertyService.get().getDomain(domainReport.getId());
-            for (DomainProperty domainProp : domain.getProperties())
+            if (domain == null)
             {
-                String expectedColumnName = domainProp.getName();
-                if (hardColumnNames.contains(expectedColumnName))
+                domainReport.addError(String.format("Could not find a domain for %s.%s",
+                        domainReport.getSchemaName(), domainReport.getTableName()));
+            }
+            else
+            {
+                for (DomainProperty domainProp : domain.getProperties())
                 {
-                    if (domainProp.isMvEnabled() && !hardColumnNames.contains(PropertyStorageSpec.getMvIndicatorColumnName(expectedColumnName)))
+                    String expectedColumnName = domainProp.getName();
+                    if (hardColumnNames.contains(expectedColumnName))
                     {
-                        domainReport.addError(String.format("hard table %s.%s has mvindicator enabled but expected %s column wasn't present",
-                                domainReport.getSchemaName(), domainReport.getTableName(), PropertyStorageSpec.getMvIndicatorColumnName(expectedColumnName)));
+                        if (domainProp.isMvEnabled() && !hardColumnNames.contains(PropertyStorageSpec.getMvIndicatorColumnName(expectedColumnName)))
+                        {
+                            domainReport.addError(String.format("hard table %s.%s has mvindicator enabled but expected %s column wasn't present",
+                                    domainReport.getSchemaName(), domainReport.getTableName(), PropertyStorageSpec.getMvIndicatorColumnName(expectedColumnName)));
+                        }
+
                     }
-
+                    else
+                    {
+                        domainReport.addError(String.format("hard table %s.%s did not contain expected column %s",
+                                domainReport.getSchemaName(), domainReport.getTableName(), expectedColumnName));
+                    }
                 }
-                else
-                {
-                    domainReport.addError(String.format("hard table %s.%s did not contain expected column %s",
-                            domainReport.getSchemaName(), domainReport.getTableName(), expectedColumnName));
-                }
-
             }
 
         }
