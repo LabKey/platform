@@ -238,14 +238,6 @@ LABKEY.ViewsPanel.prototype = {
             proxy: new Ext.data.HttpProxy(this.dataConnection),
             autoLoad: true,
             sortInfo: {field:'query', direction:"ASC"},
-/*
-            listeners: {
-                load: function(store, records) {
-                    if (records.length == 0)
-                        Ext.Msg.alert("Manage Views", "You have no views in this container.");
-                }
-            },
-*/
             groupField:'query'});
 
         return store;
