@@ -544,6 +544,7 @@ core/src/org/labkey/core/PostgreSql84Dialect.java -text
 core/src/org/labkey/core/PostgreSql90Dialect.java -text
 core/src/org/labkey/core/PostgreSql91Dialect.java -text
 core/src/org/labkey/core/PostgreSqlDialectFactory.java -text
+core/src/org/labkey/core/PostgreSqlNonConformingStringHandler.java -text
 core/src/org/labkey/core/admin/ActionsHelper.java -text
 core/src/org/labkey/core/admin/ActionsTsvWriter.java -text
 core/src/org/labkey/core/admin/ActionsView.java -text

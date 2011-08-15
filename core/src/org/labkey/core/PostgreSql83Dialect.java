@@ -35,6 +35,7 @@ import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.TempTableTracker;
 import org.labkey.api.data.UpgradeCode;
 import org.labkey.api.data.dialect.ColumnMetaDataReader;
+import org.labkey.api.data.dialect.DialectStringHandler;
 import org.labkey.api.data.dialect.JdbcHelper;
 import org.labkey.api.data.dialect.PkMetaDataReader;
 import org.labkey.api.data.dialect.SqlDialect;
@@ -75,6 +76,12 @@ class PostgreSql83Dialect extends SqlDialect
     private static final Logger _log = Logger.getLogger(PostgreSql83Dialect.class);
 
     private final Map<String, Integer> _userDefinedTypeScales = new ConcurrentHashMap<String, Integer>();
+
+    // Specifies if this PostgreSQL server treats backslashes in string literals as normal characters (as per the SQL
+    // standard) or as escape characters (old, non-standard behavior). As of PostgreSQL 9.1, the setting
+    // standard_conforming_strings in on by default; before 9.1, it was off by default. We check the server setting
+    // when we prepare a new DbScope and use this when we escape and parse string literals.
+    private Boolean _standardConformingStrings = null;
 
     @Override
     protected @NotNull Set<String> getReservedWords()
@@ -625,29 +632,20 @@ class PostgreSql83Dialect extends SqlDialect
     @Override
     public void prepareNewDbScope(DbScope scope) throws SQLException, IOException
     {
-        super.prepareNewDbScope(scope);
-
         initializeUserDefinedTypes(scope);
+        determineSettings(scope);
+        super.prepareNewDbScope(scope);
     }
 
     // When a new PostgreSQL DbScope is created, we enumerate the domains (user-defined types) in the public schema
     // of the datasource, determine their "scale," and stash that information in a map associated with the DbScope.
     // When the PostgreSQLColumnMetaDataReader reads meta data, it returns these scale values for all domains.
-
     private void initializeUserDefinedTypes(DbScope scope) throws SQLException
     {
-        // No synchronization on scales, but there's no harm if we execute this query twice.
-        Connection conn = null;
-        Statement stmt = null;
-        ResultSet rs = null;
-
-        try
-        {
-            conn = scope.getConnection();
-            stmt = conn.createStatement();
-            rs = stmt.executeQuery("SELECT * FROM information_schema.domains WHERE domain_schema = 'public'");
-
-            while (rs.next())
+        TableSelect select = new TableSelect(scope, "SELECT * FROM information_schema.domains WHERE domain_schema = 'public'");
+        select.forEach(new ForEachBlock() {
+            @Override
+            public void exec(ResultSet rs) throws SQLException
             {
                 String domainName = rs.getString("domain_name");
 
@@ -656,15 +654,78 @@ class PostgreSql83Dialect extends SqlDialect
                 else
                     _userDefinedTypeScales.put(domainName, Integer.parseInt(rs.getString("character_maximum_length")));
             }
-        }
-        finally
-        {
-            ResultSetUtil.close(rs);
-            ResultSetUtil.close(stmt);
+        });
+    }
 
-            if (null != conn)
-                scope.releaseConnection(conn);
+
+    // Query any settings that may affect dialect behavior.  Right now, only "standard_conforming_strings".
+    private void determineSettings(DbScope scope) throws SQLException
+    {
+        TableSelect select = new TableSelect(scope, "SELECT setting FROM pg_settings WHERE name = 'standard_conforming_strings'");
+        select.forEach(new ForEachBlock(){
+            @Override
+            public void exec(ResultSet rs) throws SQLException
+            {
+                if (null != _standardConformingStrings)
+                    throw new IllegalStateException("PostgreSQL returned more than one 'standard_conforming_strings' setting");
+
+                _standardConformingStrings = "on".equalsIgnoreCase(rs.getString(1));
+            }
+        });
+    }
+
+
+    // Experimental -- could generalize this and move into Table
+    private static class TableSelect
+    {
+        private final DbScope _scope;
+        private final String _sql;
+
+        TableSelect(DbScope scope, String sql)
+        {
+            _scope = scope;
+            _sql = sql;
         }
+
+        private void forEach(ForEachBlock block) throws SQLException
+        {
+            Connection conn = null;
+            Statement stmt = null;
+            ResultSet rs = null;
+
+            try
+            {
+                conn = _scope.getConnection();
+                stmt = conn.createStatement();
+                rs = stmt.executeQuery(_sql);
+
+                while (rs.next())
+                    block.exec(rs);
+            }
+            finally
+            {
+                ResultSetUtil.close(rs);
+                ResultSetUtil.close(stmt);
+
+                if (null != conn)
+                    _scope.releaseConnection(conn);
+            }
+        }
+    }
+
+    interface ForEachBlock
+    {
+        void exec(ResultSet rs) throws SQLException;
+    }
+
+
+    @Override
+    protected DialectStringHandler getDialectStringHandler()
+    {
+        if (_standardConformingStrings)
+            return super.getDialectStringHandler();
+        else
+            return new PostgreSqlNonConformingStringHandler();
     }
 
     /**
@@ -798,19 +859,6 @@ class PostgreSql83Dialect extends SqlDialect
         return true;
     }
 
-    private static final Pattern s_patStringLiteral = Pattern.compile("\\'([^\\\\\\']|(\\'\\')|(\\\\.))*\\'");
-
-    @Override
-    protected Pattern patStringLiteral()
-    {
-        return s_patStringLiteral;
-    }
-
-    @Override
-    protected String quoteStringLiteral(String str)
-    {
-        return "'" + StringUtils.replace(StringUtils.replace(str, "\\", "\\\\"), "'", "''") + "'";
-    }
 
     @Override
     public List<String> getChangeStatements(TableChange change)
@@ -1151,5 +1199,31 @@ class PostgreSql83Dialect extends SqlDialect
             return getOtherDatabaseThreads();
         }
         return null;
+    }
+
+
+    @Override
+    public void testParameterSubstitution()
+    {
+        super.testParameterSubstitution();
+
+        if (_standardConformingStrings)
+        {
+            assert "'this'".equals(_stringHandler.quoteStringLiteral("this"));
+            assert "'th\\is'".equals(_stringHandler.quoteStringLiteral("th\\is"));
+            assert "'th\\''is'".equals(_stringHandler.quoteStringLiteral("th\\'is"));
+
+            // Backslashes are normal characters in standard SQL, so we have five question marks outside of string literals here
+            testParameterSubstitution(new SQLFragment("'this\\??\\\\''\\'\\\\????\\?''\\'??\\\\?\\\\?''?''?\\'\\'\\?'", 1, 2, 3, 4, 5), "'this\\??\\\\''\\'\\\\'1''2''3''4'\\'5'''\\'??\\\\?\\\\?''?''?\\'\\'\\?'");
+        }
+        else
+        {
+            assert "'this'".equals(_stringHandler.quoteStringLiteral("this"));
+            assert "'th\\\\is'".equals(_stringHandler.quoteStringLiteral("th\\is"));
+            assert "'th\\\\''is'".equals(_stringHandler.quoteStringLiteral("th\\'is"));
+
+            // Backslashes are escape characters in non-conforming strings mode, so we have no question marks outside of string literals here
+            testParameterSubstitution(new SQLFragment("'this\\??\\\\''\\'\\\\????\\?''\\'??\\\\?\\\\?''?''?\\'\\'\\?'"), "'this\\??\\\\''\\'\\\\????\\?''\\'??\\\\?\\\\?''?''?\\'\\'\\?'");
+        }
     }
 }

@@ -233,6 +233,9 @@ public class MySqlDialect extends SimpleSqlDialect
         return "INFORMATION_SCHEMA".equalsIgnoreCase(schemaName);
     }
 
+    // TODO: MySQL has a lot of settings we should check (ANSI_QUOTES, NO_BACKSLASH_ESCAPES, etc.)
+    // Should have a custom MySqlStringHandler
+
     @Override
     // Escape quotes and quote the identifier -- standard MySQL quote character is back tick (`)
     public String quoteIdentifier(String id)

@@ -541,7 +541,7 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
             ResultSetUtil.TestCase.class,
             StorageProvisioner.TestCase.class,
             ArrayListMap.TestCase.class,
-            DbScope.KeywordTestCase.class,
+            DbScope.DialectTestCase.class,
             RhinoService.TestCase.class,
             ValidEmail.TestCase.class
             , SimpleTranslator.TranslateTestCase.class

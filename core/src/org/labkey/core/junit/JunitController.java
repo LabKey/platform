@@ -140,13 +140,12 @@ public class JunitController extends SpringActionController
 
         private List<Class> getTestClasses(TestForm form)
         {
-            Map<String, List<Class>> allTestClasses = JunitManager.getTestCases();
-
             String module = form.getModule();
 
             if (null != module)
                 return JunitManager.getTestCases().get(module);
 
+            Map<String, List<Class>> allTestClasses = JunitManager.getTestCases();
             List<Class> testClasses = new LinkedList<Class>();
             String testCase = form.getTestCase();
 
