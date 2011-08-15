@@ -957,7 +957,8 @@ public class DbScope
     }
 
 
-    public static class KeywordTestCase extends Assert
+    // Tests dialects that are in-use; for tests that requires an ability to connect to the database.
+    public static class DialectTestCase extends Assert
     {
         @Test
         public void test() throws SQLException, IOException
@@ -965,12 +966,12 @@ public class DbScope
             for (DbScope scope : getDbScopes())
             {
                 SqlDialect dialect = scope.getSqlDialect();
-
                 Connection conn = null;
 
                 try
                 {
                     conn = scope.getConnection();
+                    dialect.testParameterSubstitution();
                     dialect.testDialectKeywords(conn);
                     dialect.testKeywordCandidates(conn);
                 }

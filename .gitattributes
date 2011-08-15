@@ -264,6 +264,7 @@ api/src/org/labkey/api/data/dialect/AbstractDialectRetrievalTestCase.java -text
 api/src/org/labkey/api/data/dialect/ColumnMetaDataReader.java -text
 api/src/org/labkey/api/data/dialect/DatabaseMaintenanceTask.java -text
 api/src/org/labkey/api/data/dialect/DatabaseNotSupportedException.java -text
+api/src/org/labkey/api/data/dialect/DialectStringHandler.java -text
 api/src/org/labkey/api/data/dialect/JdbcHelper.java -text
 api/src/org/labkey/api/data/dialect/JdbcHelperTest.java -text
 api/src/org/labkey/api/data/dialect/KeywordCandidates.java -text
@@ -273,6 +274,7 @@ api/src/org/labkey/api/data/dialect/SqlDialect.java -text
 api/src/org/labkey/api/data/dialect/SqlDialectFactory.java -text
 api/src/org/labkey/api/data/dialect/SqlDialectManager.java -text
 api/src/org/labkey/api/data/dialect/SqlDialectNotSupportedException.java -text
+api/src/org/labkey/api/data/dialect/StandardDialectStringHandler.java -text
 api/src/org/labkey/api/data/dialect/StandardJdbcHelper.java -text
 api/src/org/labkey/api/data/dialect/StatementWrapper.java -text
 api/src/org/labkey/api/data/dialect/TestUpgradeCode.java -text

@@ -16,7 +16,6 @@
 
 package org.labkey.api.data.dialect;
 
-import org.apache.commons.lang.ObjectUtils;
 import org.apache.commons.lang.StringUtils;
 import org.apache.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
@@ -58,7 +57,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.TreeSet;
-import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 /**
@@ -72,9 +70,7 @@ import java.util.regex.Pattern;
 public abstract class SqlDialect
 {
     private static final Logger LOG = Logger.getLogger(SqlDialect.class);
-    private static final Pattern s_patStringLiteral = Pattern.compile("'([^']|(''))*'");
-    private static final Pattern s_patQuotedIdentifier = Pattern.compile("\"([^\"]|(\"\"))*\"");
-    private static final Pattern s_patParameter = Pattern.compile("\\?");
+    protected DialectStringHandler _stringHandler = null;
 
     public static final String GENERIC_ERROR_MESSAGE = "The database experienced an unexpected problem. Please check your input and try again.";
     protected static final String INPUT_TOO_LONG_ERROR_MESSAGE = "The input you provided was too long.";
@@ -272,9 +268,15 @@ public abstract class SqlDialect
     }
 
 
-    // Do dialect-specific work for this data source (nothing by default)
+    // Do dialect-specific work for this new data source.
     public void prepareNewDbScope(DbScope scope) throws SQLException, IOException
     {
+        _stringHandler = getDialectStringHandler();
+    }
+
+    protected DialectStringHandler getDialectStringHandler()
+    {
+        return new StandardDialectStringHandler();
     }
 
     // Set of keywords returned by DatabaseMetaData.getMetaData() plus the SQL 2003 keywords
@@ -486,7 +488,7 @@ public abstract class SqlDialect
     }
 
 
-    // Escape quotes and quote the identifier
+    // Escape quotes and quote the identifier  // TODO: Move to DialectStringHandler?
     public String quoteIdentifier(String id)
     {
         return "\"" + id.replaceAll("\"", "\"\"") + "\"";
@@ -752,71 +754,74 @@ public abstract class SqlDialect
 
     abstract public boolean allowSortOnSubqueryWithoutLimit();
 
-    protected Pattern patStringLiteral()
-    {
-        return s_patStringLiteral;
-    }
-
-    protected Pattern patQuotedIdentifier()
-    {
-        return s_patQuotedIdentifier;
-    }
-
-    protected String quoteStringLiteral(String str)
-    {
-        return "'" + StringUtils.replace(str, "'", "''") + "'";
-    }
-
-    /**
-     * Substitute the parameter values into the SQL statement.
-     * Iterates through the SQL string
-     */
+    // Substitute the parameter values into the SQL statement.
     public String substituteParameters(SQLFragment frag)
     {
-        CharSequence sql = frag.getSqlCharSequence();
-        Matcher matchIdentifier = patQuotedIdentifier().matcher(sql);
-        Matcher matchStringLiteral = patStringLiteral().matcher(sql);
-        Matcher matchParam = s_patParameter.matcher(sql);
+        return _stringHandler.substituteParameters(frag);
+    }
 
-        StringBuilder ret = new StringBuilder();
-        List<Object> params = new ArrayList<Object>(frag.getParams());
-        int ich = 0;
-        while (ich < sql.length())
-        {
-            int ichSkipTo = sql.length();
-            int ichSkipPast = sql.length();
-            if (matchIdentifier.find(ich))
-            {
-                if (matchIdentifier.start() < ichSkipTo)
-                {
-                    ichSkipTo = matchIdentifier.start();
-                    ichSkipPast = matchIdentifier.end();
-                }
-            }
-            if (matchStringLiteral.find(ich))
-            {
-                if (matchStringLiteral.start() < ichSkipTo)
-                {
-                    ichSkipTo = matchStringLiteral.start();
-                    ichSkipPast = matchStringLiteral.end();
-                }
-            }
-            if (matchParam.find(ich))
-            {
-                if (matchParam.start() < ichSkipTo)
-                {
-                    ret.append(frag.getSqlCharSequence().subSequence(ich, matchParam.start()));
-                    ret.append(" ");
-                    ret.append(quoteStringLiteral(ObjectUtils.toString(params.remove(0))));
-                    ret.append(" ");
-                    ich = matchParam.start() + 1;
-                    continue;
-                }
-            }
-            ret.append(frag.getSqlCharSequence().subSequence(ich, ichSkipPast));
-            ich = ichSkipPast;
-        }
-        return ret.toString();
+
+    public void testParameterSubstitution()
+    {
+        String longString = "MASSAHLVTIKRSGDDGAHFPLSLSSCLFGRSIECDIRIQLPVVSQRHCPIVVQEQEAILYNFSSTNPTQVNGVTIDEPVRLRHGDIITII" +
+            "DRSFRYEDGNHEDGSKPTEFPGKSLGKEPSRRASRDSFCADPDGEGQDTKASKMTASRRSFVYAKGLSADSPASDGSKNSVSQDSSGHVEQHTGRNIVEPTSGGSLL" +
+            "RSPGLQGAVTGNRSLLPTQSLSNSNEKESPFEKLYQSMKEELDVKSQKSCRKSEPQPDRAAEESRETQLLVSGRARAKSSGSTPVTAASSPKVGKIWTERWRGGMVP" +
+            "VQTSTETAKMKTPVRHSQQLKDEDSRVTGRRHSVNLDEGGSAQAVHKTVTPGKLATRNQTPVEAGDVGSPADTPEHSSSPQRSIPAKVEAPSAETQNRLSLTQRLVP" +
+            "GEKKTPKGSFSKPEKLATAAEQTCSGLPGLSSVDISNFGDSINKSEGMPMKRRRVSFGGHLRPELFDENLPPNTPLKRGETPTKRKSLGTHSPAVLKTIIKERPQSP" +
+            "GKQESPGITPPRTNDQRRRSGRTSSGSNFLCETDIPKKAGRKSGNLPAKRASISRSQHGILQMICSKRRSGASEANLIVAKSWADVVKLGVKQTQTKVAKHVPPKQT" +
+            "SKRQRRPSTPKKPTSNLHNQFTTGHANSPCTIVVGRAQIEKVSVPARPYKMLNNLMLNRKVDFSEDLSGLTEMFKTPVKEKQQQMSDTGSVLSNSANLSERQLQVTN" +
+            "SGDIPEPITTEILGEKVLSSTRNAAKQQSDRYSASPTLRRRSIKHENTVQTPKNVHNITDLEKKTPVSETEPLKTASSVSKLRRSRELRHTLVETMNEKTEAVLAEN" +
+            "TTARHLRGTFREQKVDQQVQDNENAPQRCKESGELSEGSEKTSARRSSARKQKPTKDLLGSQMVTQTADYAEELLSQGQGTIQNLEESMHMQNTSISEDQGITEKKV" +
+            "NIIVYATKEKHSPKTPGKKAQPLEGPAGLKEHFETPNPKDKPITEDRTRVLCKSPQVTTENITTNTKPQTSTSGKKVDMKEESSALTKRIHMPGESRHNPKILKLEC" +
+            "EDIKALKQSENEMLTSTVNGSKRTLGKSKKKAQPLEDLTCFQELFISPVPTNIIKKIPSKSPHTQPVRTPASTKRLSKTGLSKVDVRQEPSTLGKRTKSPGRAPGTP" +
+            "APVQEENDCTAYMETPKQKLESIENLTGLRKQSRTPKDITGFQDSFQIPDHANGPLVVVKTKKMFFNSPQPESAITRKSRERQSRASISKIDVKEELLESEEHLQLG" +
+            "EGVDTFQVSTNKVIRSSRKPAKRKLDSTAGMPNSKRMRCSSKDNTPCLEDLNGFQELFQMPGYANDSLTTGISTMLARSPQLGPVRTQINKKSLPKIILRKMDVTEE" +
+            "ISGLWKQSLGRVHTTQEQEDNAIKAIMEIPKETLQTAADGTRLTRQPQTPKEKVQPLEDHSVFQELFQTSRYCSDPLIGNKQTRMSLRSPQPGFVRTPRTSKRLAKT" +
+            "SVGNIAVREKISPVSLPQCATGEVVHIPIGPEDDTENKGVKESTPQTLDSSASRTVSKRQQGAHEERPQFSGDLFHPQELFQTPASGKDPVTVDETTKIALQSPQPG" +
+            "HIINPASMKRQSNMSLRKDMREFSILEKQTQSRGRDAGTPAPMQEENGTTAIMETPKQKLDFIGNSTGHKRRPRTPKNRAQPLEDLDGFQELFQTPAGASDPVSVEE" +
+            "SAKISLASSQAEPVRTPASTKRRSKTGLSKVDVRQEPSTLGKRMKSLGRAPGTPAPVQEENDSTAFMETPKQKLDFTGNSSGHKRRPQTPKIRAQPLEDLDGFQELF" +
+            "QTPAGANDSVTVEESVKMSLESSQAEPVKTPASTKRLSKTGLSKVDVREDPSILEKKTKSPGTPAPVQEENDCTAFMETPKQKLDFTGNSSGHKRRPRTPKIRAQPL" +
+            "EDLDGFQELFQTPAGASDSVTVEESAKMSLESSQAKPVKTPASTKRLSKTGLSKVDVREDPSTLGKKTKSPGRAPGTPAPVQEENDSTAFMETPKQKLDFAENSSGS" +
+            "KRRSRTSKNRSQPLEDLDGFQELFQTPAGASNPVSVEESAKISLESSQAEPVRTRASTKRLSKTGLNKMDVREGHSPLSKSSCASQKVMQTLTLGEDHGRETKDGKV" +
+            "LLAQKLEPAIYVTRGKRQQRSCKKRSQSPEDLSGVQEVFQTSGHNKDSVTVDNLAKLPSSSPPLEPTDTSVTSRRQARTGLRKVHVKNELSGGIMHPQISGEIVDLP" +
+            "REPEGEGKVIKTRKQSVKRKLDTEVNVPRSKRQRITRAEKTLEDLPGFQELCQAPSLVMDSVIVEKTPKMPDKSPEPVDTTSETQARRRLRRLVVTEEPIPQRKTTR" +
+            "VVRQTRNTQKEPISDNQGMEEFKESSVQKQDPSVSLTGRRNQPRTVKEKTQPLEELTSFQEETAKRISSKSPQPEEKETLAGLKRQLRIQLINDGVKEEPTAQRKQP" +
+            "SRETRNTLKEPVGDSINVEEVKKSTKQKIDPVASVPVSKRPRRVPKEKAQALELAGLKGPIQTLGHTDESASDKGPTQMPCNSLQPEQVDSFQSSPRRPRTRRGKVE" +
+            "ADEEPSAVRKTVSTSRQTMRSRKVPEIGNNGTQVSKASIKQTLDTVAKVTGSRRQLRTHKGWGSTLLKLLGDSKEITQISDHSEKLAHDTSILKSTQQQKPDSVKPL" +
+            "RTCRRVLRASKEVPKEVLVDTRDHATLQSKSNPLLSPKRKSARDGSIVRTRALRSLAPKQEATDEKPVPEKKRAASSKRYVSPEPVKMKHLKIVSNKLESVEEQVST" +
+            "VMKTEEMEAKRENPVTPDQNSRYRKKTNVKQPRPKFDASAENVGIKKNEKTMKTASQETELQNPDDGAKKSTSRGQVSGKRTCLRSRGTTEMPQPCEAEEKTSKPAA" +
+            "EILIKPQEEKGVSGESDVRCLRSRKTRVALDSEPKPRVTRGTKKDAKTLKEDEDIVCTKKLRTRS";
+
+        String longLiteralSql = "WHERE (Run IN (88)) AND (position(TrimmedPeptide IN '" + longString + "') > 0 )";
+        testParameterSubstitution(new SQLFragment(longLiteralSql), longLiteralSql);
+        String longIdentifierSql = "WHERE (\"" + longString + "\" IN (88)) AND (position(TrimmedPeptide IN ('FOO')) > 0 )";
+        testParameterSubstitution(new SQLFragment(longIdentifierSql), longIdentifierSql);
+        String longBothSql = "WHERE (\"" + longString + "\" IN (88)) AND (position(TrimmedPeptide IN ('" + longString + "')) > 0 )";
+        testParameterSubstitution(new SQLFragment(longBothSql), longBothSql);
+
+        testParameterSubstitution(new SQLFragment("? ? ?", 937, "this", 1.234), "'937' 'this' '1.234'");
+        testParameterSubstitution(new SQLFragment("TEST ? TEST ? TEST ?", 937, "this", 1.234), "TEST '937' TEST 'this' TEST '1.234'");
+        testParameterSubstitution(new SQLFragment("'????' ? '???''????' ? ?", 937, "this", 1.234), "'????' '937' '???''????' 'this' '1.234'");
+        testParameterSubstitution(new SQLFragment("\"identifier\" ? \"iden?tif?ier\" '????' ? '???''????' \"iden?tifi?er\" ? ? ?", 937, 123, "this", "that", 1.234), "\"identifier\" '937' \"iden?tif?ier\" '????' '123' '???''????' \"iden?tifi?er\" 'this' 'that' '1.234'");
+
+        // String literal escaping rules vary by dialect and database settings.  Make sure quoting and parsing are consistent.
+        String lit1 = _stringHandler.quoteStringLiteral("th?is'th?at");
+        String lit2 = _stringHandler.quoteStringLiteral("th?is\\'th?at");
+        String lit3 = _stringHandler.quoteStringLiteral("th'?'is\\?\\th\\'\\'at");
+        Pattern litPattern = _stringHandler.getStringLiteralPattern();
+        assert litPattern.matcher(lit1).matches();
+        assert litPattern.matcher(lit2).matches();
+        assert litPattern.matcher(lit3).matches();
+        String prefix = lit1 + " " + lit2 + " " + lit3 + " ";
+
+        testParameterSubstitution(new SQLFragment(prefix + "? ? ?", 456, "this", 7.8748), prefix + "'456' 'this' '7.8748'");
+    }
+
+    protected void testParameterSubstitution(SQLFragment fragment, String expected)
+    {
+        String sub = substituteParameters(fragment);
+        if (!expected.equals(sub))
+            throw new RuntimeException(fragment.toString() + " failed substitution (" + sub + ")");
     }
 
 
