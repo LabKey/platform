@@ -16,6 +16,7 @@
 package org.labkey.filecontent;
 
 import org.apache.commons.beanutils.converters.IntegerConverter;
+import org.apache.log4j.Logger;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.Filter;
 import org.labkey.api.data.SimpleFilter;
@@ -23,6 +24,7 @@ import org.labkey.api.data.Table;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.exp.DomainDescriptor;
 import org.labkey.api.exp.OntologyManager;
+import org.labkey.api.exp.api.DataType;
 import org.labkey.api.exp.api.ExpData;
 import org.labkey.api.exp.api.ExperimentService;
 import org.labkey.api.exp.property.Domain;
@@ -60,6 +62,7 @@ import java.util.Set;
  */
 public class FileQueryUpdateService extends AbstractQueryUpdateService
 {
+    private static final Logger _log = Logger.getLogger(FileQueryUpdateService.class);
     private Container _container;
     private Set<String> _columns;
     private Domain _domain;
@@ -217,11 +220,26 @@ public class FileQueryUpdateService extends AbstractQueryUpdateService
             dataFileUrl = String.valueOf(row.get(ExpDataTable.Column.DataFileUrl.name()));
 
         ExpData data = ExperimentService.get().getExpDataByURL(dataFileUrl, container);
+        WebdavResource resource = davResourceFromKeys(row);
 
-        if (data != null)
+        if (resource != null)
         {
+            // issue 12820 : ensure that a data object exists so we can hang custom file properties off of it, this might
+            // happen is if a file root were moved after files were uploaded, in the future we need to ensure the
+            // exp.datas table gets updated when automatic moves happen, but for manually moved roots we will always need
+            // to do this.
+
+            if (data == null)
+            {
+                _log.warn("Unable to locate the ExpData object for : " + dataFileUrl + " one has been automatically created.");
+
+                data = ExperimentService.get().createData(container, new DataType("UploadedFile"));
+                data.setName(resource.getName());
+                data.setDataFileUrl(dataFileUrl);
+                data.save(user);
+            }
+
             Domain domain = getFileProperties(container);
-            WebdavResource resource = davResourceFromKeys(row);
 
             if (domain != null)
             {
@@ -242,22 +260,19 @@ public class FileQueryUpdateService extends AbstractQueryUpdateService
                         delim = ",";
                     }
                 }
-                if (resource != null)
-                {
-                    SearchService ss = ServiceRegistry.get().getService(SearchService.class);
+                SearchService ss = ServiceRegistry.get().getService(SearchService.class);
 
-                    if (null != ss)
-                        ss.defaultTask().addResource(resource, SearchService.PRIORITY.item);
+                if (null != ss)
+                    ss.defaultTask().addResource(resource, SearchService.PRIORITY.item);
 
-                    resource.notify(new ContainerUser(){
-                        public User getUser(){
-                            return user;
-                        }
-                        public Container getContainer(){
-                            return container;
-                        }
-                    }, sb.toString());
-                }
+                resource.notify(new ContainerUser(){
+                    public User getUser(){
+                        return user;
+                    }
+                    public Container getContainer(){
+                        return container;
+                    }
+                }, sb.toString());
             }
             return row;
         }

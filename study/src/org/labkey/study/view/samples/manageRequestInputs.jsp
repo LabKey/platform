@@ -106,6 +106,17 @@
         while (rowIndex < table.rows.length && table.rows[rowIndex] != row)
             rowIndex++;
         table.deleteRow(rowIndex);
+
+        // We may need to reindex our values, since they're indexes into the array of inputs.
+        for (var fixIndex = rowIndex; fixIndex < table.rows.length; fixIndex++)
+        {
+            var fixRow = table.rows[fixIndex];
+            // set our checkbox values to be the zero-indexed row number, excluding the header row (hence the "-1")
+            getNamedElemFromRow(fixRow, "multiline").value = (fixIndex - 1);
+            getNamedElemFromRow(fixRow, "required").value = (fixIndex - 1);
+            getNamedElemFromRow(fixRow, "rememberSiteValue").value = (fixIndex - 1);
+        }
+
         return false;
     }
 

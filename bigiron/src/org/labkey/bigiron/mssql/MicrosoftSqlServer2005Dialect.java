@@ -392,7 +392,34 @@ public class MicrosoftSqlServer2005Dialect extends SqlDialect
 
         // TODO - There is still an issue if the individual input values contain commas. We need to escape or otherwise handle that
         SQLFragment ret = new SQLFragment(selectSql);
-        int fromIndex = sql.indexOf("FROM");
+        int startIndex = 0;
+        int fromIndex;
+        int parensCount = 0;
+        do
+        {
+            // We need to find the FROM that's not part of a subselect. We'll do a simplistic count of open and close
+            // parens to determine if we're inside of a subselect
+            fromIndex = sql.indexOf("FROM", startIndex);
+            for (int i = startIndex; i <= fromIndex; i++)
+            {
+                char c = sql.charAt(i);
+                // This will get confused if there are embedded strings in the SQL that contain parens, etc
+                if (c == '(')
+                {
+                    parensCount++;
+                }
+                else if (c == ')')
+                {
+                    parensCount--;
+                }
+            }
+            startIndex = fromIndex + 1;
+        }
+        while (parensCount > 0 && fromIndex != -1);
+        if (fromIndex == -1)
+        {
+            throw new IllegalArgumentException("Can't handle SQL: " + sql);
+        }
         ret.insert(fromIndex, "AS NVARCHAR) AS [text()] ");
         int selectIndex = sql.indexOf("SELECT");
         ret.insert(selectIndex + "SELECT".length(), "',' + CAST(");

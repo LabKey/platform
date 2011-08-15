@@ -18,11 +18,13 @@ package org.labkey.study.writer;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.TableInfoWriter;
+import org.labkey.api.exp.PropertyDescriptor;
+import org.labkey.api.exp.property.SystemProperty;
 import org.labkey.api.study.DataSet;
 import org.labkey.api.study.StudyContext;
+import org.labkey.api.study.assay.SpecimenForeignKey;
 import org.labkey.api.writer.VirtualFile;
 import org.labkey.api.writer.Writer;
-import org.labkey.api.exp.property.Domain;
 import org.labkey.data.xml.ColumnType;
 import org.labkey.data.xml.TableType;
 import org.labkey.data.xml.TablesDocument;
@@ -32,7 +34,9 @@ import org.labkey.study.query.DataSetTable;
 import org.labkey.study.query.StudyQuerySchema;
 
 import java.io.IOException;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 /**
  * User: adam
@@ -44,10 +48,19 @@ public class SchemaXmlWriter implements Writer<List<DataSetDefinition>, StudyCon
     public static final String SCHEMA_FILENAME = "datasets_metadata.xml";
 
     private final String _defaultDateFormat;
+    private final Set<String> _candidatePropertyURIs = new HashSet<String>();   // Allows nulls
 
     public SchemaXmlWriter(String defaultDateFormat)
     {
         _defaultDateFormat = defaultDateFormat;
+
+        // We export only the standard study propertyURIs and the SystemProperty propertyURIs (special EHR properties,
+        // etc.); see #12742.  We could have a registration mechanism for this... but this seems good enough for now.
+        for (PropertyDescriptor pd : DataSetDefinition.getStandardPropertiesMap().values())
+            _candidatePropertyURIs.add(pd.getPropertyURI());
+
+        for (PropertyDescriptor pd: SystemProperty.getProperties())
+            _candidatePropertyURIs.add(pd.getPropertyURI());
     }
 
     public String getSelectionText()
@@ -75,16 +88,14 @@ public class SchemaXmlWriter implements Writer<List<DataSetDefinition>, StudyCon
     }
 
 
-    private static class DatasetTableInfoWriter extends TableInfoWriter
+    private class DatasetTableInfoWriter extends TableInfoWriter
     {
         private final DataSetDefinition _def;
-        private Domain _domain;
 
         private DatasetTableInfoWriter(TableInfo ti, DataSetDefinition def, String defaultDateFormat)
         {
             super(ti, DatasetWriter.getColumnsToExport(ti, def, true), defaultDateFormat);
             _def = def;
-            _domain = _def.getDomain();
         }
 
         @Override
@@ -104,6 +115,18 @@ public class SchemaXmlWriter implements Writer<List<DataSetDefinition>, StudyCon
         {
             super.writeColumn(column, columnXml);
 
+            if (column.getFk() instanceof SpecimenForeignKey)
+            {
+                columnXml.unsetFk();
+            }
+
+            if (column.isUnselectable())
+            {
+                // Still export the underlying value, but since we don't support unselectable as an attribute in
+                // export/import, do the next best thing and just hide the column
+                columnXml.setIsHidden(true);
+            }
+
             String columnName = column.getName();
             if (columnName.equals(_def.getKeyPropertyName()))
             {
@@ -120,19 +143,21 @@ public class SchemaXmlWriter implements Writer<List<DataSetDefinition>, StudyCon
         protected String getPropertyURI(ColumnInfo column)
         {
             String propertyURI = column.getPropertyURI();
-            // Only round-trip PropertyURIs that are special. Ones that are standard domain properties will have
-            // a new PropertyURI generated that contains the proper container id, etc on the import side.
-            if (propertyURI != null && (_domain == null || !propertyURI.startsWith(_domain.getTypeURI())) && !propertyURI.startsWith(ColumnInfo.DEFAULT_PROPERTY_URI_PREFIX))
+
+            // Only round-trip the special PropertyURIs.  See #12742.
+            if (_candidatePropertyURIs.contains(propertyURI))
                 return propertyURI;
-            return null;
+            else
+                return null;
         }
 
         @Override
         protected String getConceptURI(ColumnInfo column)
         {
             String conceptURI = super.getConceptURI(column);
+
             if (null != conceptURI)
-                    return conceptURI;
+                return conceptURI;
 
             // Proper ConceptURI support is not implemented, but we use the 'VisitDate' concept in this isolated spot
             // as a marker to indicate which dataset column should be tagged as the visit date column during import:

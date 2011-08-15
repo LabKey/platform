@@ -42,6 +42,7 @@ import org.labkey.api.security.SecurityManager;
 import org.labkey.api.security.User;
 import org.labkey.api.services.ServiceRegistry;
 import org.labkey.api.util.ContainerUtil;
+import org.labkey.api.util.ExceptionUtil;
 import org.labkey.api.util.HString;
 import org.labkey.api.util.JunitUtil;
 import org.labkey.api.util.PageFlowUtil;
@@ -718,13 +719,25 @@ public class WikiManager implements WikiService
                 props.put(SearchService.PROPERTY.displayTitle.toString(), wikiTitle);
                 props.put(SearchService.PROPERTY.searchTitle.toString(), searchTitle);
 
-                WikiWebdavProvider.WikiPageResource r = new RenderedWikiResource(c, name, entityId, body, rendererType, props);
-                task.addResource(r, SearchService.PRIORITY.item);
+                try
+                {
+                    WikiWebdavProvider.WikiPageResource r = new RenderedWikiResource(c, name, entityId, body, rendererType, props);
+                    task.addResource(r, SearchService.PRIORITY.item);
+                }
+                catch (Throwable t)
+                {
+                    // Log rendering exception and details about the culprit, but continue indexing wikis in this container
+                    LOG.error("Could not render wiki \"" + name + "\" in folder \"" + c.getPath() + "\"");
+                    ExceptionUtil.logExceptionToMothership(null, t);
+                    continue;
+                }
+
                 if (Thread.interrupted())
                 {
                     LOG.debug("Wiki indexing interrupted");
                     return;
                 }
+
                 Wiki parent = new Wiki();
                 parent.setContainer(c.getId());
                 parent.setEntityId(entityId);

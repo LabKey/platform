@@ -31,6 +31,7 @@ import org.labkey.api.security.permissions.*;
 import org.labkey.api.study.DataSet;
 import org.labkey.api.study.StudyService;
 import org.labkey.api.study.TimepointType;
+import org.labkey.api.study.assay.AbstractAssayProvider;
 import org.labkey.api.study.assay.AssayProvider;
 import org.labkey.api.study.assay.AssaySchema;
 import org.labkey.api.study.assay.AssayService;
@@ -282,6 +283,17 @@ public class DataSetTable extends FilteredTable
                         defaultVisibleCols.add(fieldKey);
                     }
                 }
+
+                // Remove the target study column from the dataset version of the table - it's already scoped to the
+                // relevant study so don't clutter the UI with it
+                for (FieldKey fieldKey : defaultVisibleCols)
+                {
+                    if (AbstractAssayProvider.TARGET_STUDY_PROPERTY_NAME.equals(fieldKey.getName()))
+                    {
+                        defaultVisibleCols.remove(fieldKey);
+                        break;
+                    }
+                }
                 ExpProtocol protocol = _dsd.getAssayProtocol();
                 AssayProvider provider = AssayService.get().getProvider(protocol);
                 defaultVisibleCols.add(new FieldKey(provider.getTableMetadata().getRunFieldKeyFromResults(), ExpRunTable.Column.Name.toString()));
@@ -308,11 +320,11 @@ public class DataSetTable extends FilteredTable
         if (protocol != null)
         {
             AssayProvider provider = AssayService.get().getProvider(protocol);
-            FieldKey runFieldKey = provider.getTableMetadata().getRunFieldKeyFromResults();
+            FieldKey runFieldKey = provider == null ? null : provider.getTableMetadata().getRunFieldKeyFromResults();
             if (name.toLowerCase().startsWith("run"))
             {
                 String runProperty = name.substring("run".length()).trim();
-                if (runProperty.length() > 0)
+                if (runProperty.length() > 0 && runFieldKey != null)
                 {
                     fieldKey = new FieldKey(runFieldKey, runProperty);
                 }
@@ -320,7 +332,7 @@ public class DataSetTable extends FilteredTable
             else if (name.toLowerCase().startsWith("batch"))
             {
                 String batchPropertyName = name.substring("batch".length()).trim();
-                if (batchPropertyName.length() > 0)
+                if (batchPropertyName.length() > 0 && runFieldKey != null)
                 {
                     fieldKey = new FieldKey(new FieldKey(runFieldKey, "Batch"), batchPropertyName);
                 }
