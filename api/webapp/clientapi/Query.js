@@ -342,7 +342,7 @@ LABKEY.Query = new function()
         *        When 'selected' or 'unselected' the set of rows selected or unselected by the user in the grid view will be returned.
         *        You can programatically get and set the selection using the {@link LABKEY.DataRegion.setSelected} APIs.
         *        Setting <code>config.maxRows</code> to -1 is the same as setting <code>config.showRows</code> to 'all'.
-        * @param {Integer} [config.maxRows] The maximum number of rows to return from the server (defaults to 100).
+        * @param {Integer} [config.maxRows] The maximum number of rows to return from the server (defaults to 100000).
         *        If you want to return all possible rows, set this config property to -1.
         * @param {Integer} [config.offset] The index of the first row to return from the server (defaults to 0).
         *        Use this along with the maxRows config property to request pages of data.
