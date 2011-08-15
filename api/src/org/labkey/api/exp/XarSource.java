@@ -77,6 +77,10 @@ public abstract class XarSource implements Serializable
      */
     public final String getCanonicalDataFileURL(String dataFileURL) throws XarFormatException
     {
+        if (dataFileURL == null)
+        {
+            return null;
+        }
         String result = _dataFileURLs.get(dataFileURL);
         if (result == null)
         {

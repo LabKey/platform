@@ -110,9 +110,12 @@ public class ApiQueryResponse implements ApiResponse, ApiStreamResponse
 
         writeRowset(writer);
 
-        writer.writeProperty("rowCount", _rowCount > 0 ? _rowCount : _offset + _numRespRows);
+        if (!_metaDataOnly)
+        {
+            writer.writeProperty("rowCount", _rowCount > 0 ? _rowCount : _offset + _numRespRows);
+        }
         writer.endResponse();
-    }    
+    }
 
     public List<FieldKey> getFieldKeys()
     {
@@ -132,7 +135,7 @@ public class ApiQueryResponse implements ApiResponse, ApiStreamResponse
 
     }
 
-    
+
     protected double getFormatVersion()
     {
         return 8.3;
@@ -203,7 +206,7 @@ public class ApiQueryResponse implements ApiResponse, ApiStreamResponse
         return metaData;
     }
 
-    
+
     public ArrayList<Map<String, Object>> getFieldsMetaData(Collection<DisplayColumn> displayColumns, boolean includeLookupInfo)
     {
         ArrayList<Map<String, Object>> fields = new ArrayList<Map<String,Object>>();
@@ -225,7 +228,7 @@ public class ApiQueryResponse implements ApiResponse, ApiStreamResponse
         }
         return fields;
     }
-    
+
 
     protected Map<String,Object> getFileUrlMeta(DisplayColumn fileColumn)
     {
@@ -373,4 +376,8 @@ public class ApiQueryResponse implements ApiResponse, ApiStreamResponse
         return _ctx;
     }
 
+    public boolean isMetaDataOnly()
+    {
+        return _metaDataOnly;
+    }
 }

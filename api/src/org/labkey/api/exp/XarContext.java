@@ -173,6 +173,36 @@ public class XarContext
             return f;
         }
 
+        // Check if it's in the current directory, stripping off any extra path from the file name
+        int index = path.lastIndexOf("/");
+        if (index != -1)
+        {
+            String filename = path.substring(index + 1);
+            if (!filename.isEmpty())
+            {
+                f = new File(relativeFile, filename);
+                if (NetworkDrive.exists(f))
+                {
+                    return f;
+                }
+            }
+        }
+
+        // Do the same for Windows paths
+        index = path.lastIndexOf("\\");
+        if (index != -1)
+        {
+            String filename = path.substring(index + 1);
+            if (!filename.isEmpty())
+            {
+                f = new File(relativeFile, filename);
+                if (NetworkDrive.exists(f))
+                {
+                    return f;
+                }
+            }
+        }
+
         // Finally, try using the pipeline's path mapper if we have one to
         // translate from a cluster path to a webserver path
         if (PipelineJobService.get().getGlobusClientProperties() != null &&

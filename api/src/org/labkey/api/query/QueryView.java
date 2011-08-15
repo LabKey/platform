@@ -1785,6 +1785,7 @@ public class QueryView extends WebPartView<Object>
             _initializeButtonBar = false;
             DataView view = createDataView();
             DataRegion rgn = view.getDataRegion();
+            rgn.setShowPaginationCount(!response.isMetaDataOnly());
 
             //force the pk column(s) into the default list of columns
             List<ColumnInfo> pkCols = table.getPkColumns();
