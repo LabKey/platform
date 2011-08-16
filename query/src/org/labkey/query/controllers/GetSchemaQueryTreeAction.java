@@ -136,7 +136,7 @@ public class GetSchemaQueryTreeAction extends ApiAction<GetSchemaQueryTreeAction
                         addedQueryCount++;
                     }
 
-                    if (addedQueryCount == MAX_TABLES_TO_LIST)
+                    if (addedQueryCount == MAX_TABLES_TO_LIST && addedQueryCount < queryNames.size())
                         addMoreLinkToList(schemaName, builtIn);
 
                     //get user-defined queries
@@ -161,7 +161,7 @@ public class GetSchemaQueryTreeAction extends ApiAction<GetSchemaQueryTreeAction
                         }
                     }
 
-                    if (addedQueryCount == MAX_TABLES_TO_LIST)
+                    if (addedQueryCount == MAX_TABLES_TO_LIST && addedQueryCount < queryNames.size())
                         addMoreLinkToList(schemaName, userDefined);
 
                     //group the user-defined and built-in queries into folders
