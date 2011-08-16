@@ -134,7 +134,7 @@ LABKEY.vis.ChartEditorMeasurePanel = Ext.extend(Ext.FormPanel, {
                 fields: ['value'],
                 data: [['left'], ['right']]
             }),
-            fieldLabel: 'Draw x-axis on',
+            fieldLabel: 'Draw y-axis on',
             forceSelection: 'true',
             valueField: 'value',
             displayField: 'value',
@@ -799,11 +799,13 @@ LABKEY.vis.ChartEditorMeasurePanel = Ext.extend(Ext.FormPanel, {
         this.measuresStoreData = data;
     },
 
-    getDefaultLabel: function(){
+    getDefaultLabel: function(side){
         var label = "";
         Ext.each(this.measures, function(m){
-            if (label.indexOf(m.origLabel) == -1)
+            if(m.measure.yAxis == side){
+                if (label.indexOf(m.origLabel) == -1)
                 label += (label.length > 0 ? ", " : "") + m.origLabel;
+            }
         });
         return label;
     },

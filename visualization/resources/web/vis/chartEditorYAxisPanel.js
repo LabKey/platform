@@ -10,7 +10,6 @@ Ext.QuickTips.init();
 LABKEY.vis.ChartEditorYAxisPanel = Ext.extend(Ext.FormPanel, {
     constructor : function(config){
         Ext.apply(config, {
-            title: 'Y-Axis',
             autoHeight: true,
             autoWidth: true,
             bodyStyle: 'padding: 5px',
@@ -62,7 +61,6 @@ LABKEY.vis.ChartEditorYAxisPanel = Ext.extend(Ext.FormPanel, {
         columnOneItems.push(this.scaleCombo);
 
         this.labelTextField = new Ext.form.TextField({
-            id: 'y-axis-label-textfield',
             fieldLabel: 'Axis label',
             value: this.axis.label,
             width: 300,
@@ -84,7 +82,6 @@ LABKEY.vis.ChartEditorYAxisPanel = Ext.extend(Ext.FormPanel, {
         columnOneItems.push(this.labelTextField);
 
         this.rangeAutomaticRadio = new Ext.form.Radio({
-            name: 'yaxis_range',
             fieldLabel: 'Range',
             inputValue: 'automatic',
             boxLabel: 'Automatic',
@@ -105,7 +102,6 @@ LABKEY.vis.ChartEditorYAxisPanel = Ext.extend(Ext.FormPanel, {
         columnTwoItems.push(this.rangeAutomaticRadio);
 
         this.rangeManualRadio = new Ext.form.Radio({
-            name: 'yaxis_range',
             inputValue: 'manual',
             boxLabel: 'Manual',
             width: 85,
