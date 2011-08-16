@@ -85,9 +85,6 @@ LABKEY.vis.TimeChartPanel = Ext.extend(Ext.Panel, {
                 listeners: {
                     scope: this,
                     'measureSelected': this.measureSelected,
-                    'dimensionSelected': function(hasDimension){
-                        this.editorChartsPanel.disableDimensionOption(hasDimension);
-                    },
                     'chartDefinitionChanged': function(requiresDataRefresh){
                         if(requiresDataRefresh){
                             this.getChartData();
@@ -712,7 +709,7 @@ LABKEY.vis.TimeChartPanel = Ext.extend(Ext.Panel, {
                 })
             });
             this.autoAxisRange = {
-                x:LABKEY.vis.getAxisRange(allX, this.chartInfo.measures[xAxisMeasureIndex].axis.scale),
+                x:LABKEY.vis.getAxisRange(allX, this.chartInfo.measures[xAxisMeasureIndex].axis.scale)
             };
             if (firstLeftAxisMeasureIndex > -1) {
                 this.autoAxisRange.left = LABKEY.vis.getAxisRange(allLeft, this.chartInfo.measures[firstLeftAxisMeasureIndex].axis.scale);

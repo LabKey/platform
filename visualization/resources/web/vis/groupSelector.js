@@ -57,7 +57,7 @@ LABKEY.vis.GroupSelector = Ext.extend(Ext.Panel, {
                 if (a.created > b.created) {return 1}
                 return 0;
             }
-            this.subject.groups.sort(compareCreated);            
+            this.subject.groups.sort(compareCreated);
 
             this.fireEvent('chartDefinitionChanged', true);
         }, this, {buffer: 1000}); // buffer allows single event to fire if bulk changes are made within the given time (in ms)
@@ -81,8 +81,8 @@ LABKEY.vis.GroupSelector = Ext.extend(Ext.Panel, {
                 fields: [
                     {name: 'rowId', type: 'integer'},
                     {name: 'label', type: 'string'},
+                    {name: 'created', type: 'date'},
                     {name: 'participantIds'},
-                    {name: 'created', type: 'date'}
                 ],
                 sortInfo: {
                     field: 'created',
@@ -112,7 +112,7 @@ LABKEY.vis.GroupSelector = Ext.extend(Ext.Panel, {
                             }
                             this.subject.values = this.getUniqueGroupSubjectValues(this.subject.groups);
                         }
-                        // for saved charts w/ pre-selected groups, remove the groups that do not exist
+                        // for saved charts w/ pre-selected groups, update the group memberships or remove the groups that don't exist
                         // (because they were deleted or because the given user does not have access to them)
                         else
                         {
@@ -122,9 +122,14 @@ LABKEY.vis.GroupSelector = Ext.extend(Ext.Panel, {
                                 if (index == -1)
                                 {
                                     this.subject.groups.splice(i, 1);
-                                    this.subject.values = this.getUniqueGroupSubjectValues(this.subject.groups);
+                                    i--;
+                                }
+                                else
+                                {
+                                    this.subject.groups[i].participantIds = store.getAt(index).get("participantIds").slice(0);
                                 }
                             }
+                            this.subject.values = this.getUniqueGroupSubjectValues(this.subject.groups);
                         }
 
                         // if there are no groups in the given study, hide the gridPanel and add some text

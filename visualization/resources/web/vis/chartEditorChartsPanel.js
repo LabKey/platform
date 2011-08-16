@@ -93,7 +93,7 @@ LABKEY.vis.ChartEditorChartsPanel = Ext.extend(Ext.FormPanel, {
 
         this.chartLayoutPerDimensionRadio = new Ext.form.Radio({
             name: 'chart_layout',
-            boxLabel: 'One Chart for Each Dimension',
+            boxLabel: 'One Chart for Each Measure/Dimension',
             inputValue: 'per_dimension',
             checked: this.chartLayout == 'per_dimension',
             height: 10,
@@ -271,19 +271,5 @@ LABKEY.vis.ChartEditorChartsPanel = Ext.extend(Ext.FormPanel, {
         this.hideDataPointCheckbox.suspendEvents(false);
         this.hideDataPointCheckbox.setValue(hide);
         this.hideDataPointCheckbox.resumeEvents();
-    },
-
-    disableDimensionOption: function(hasDimension){
-        // if no dimension has been selected, disable that radio option
-        if(hasDimension){
-            this.chartLayoutPerDimensionRadio.setDisabled(false);
-        }
-        else{
-            this.chartLayoutPerDimensionRadio.setDisabled(true);
-            // if this radio was checked, reset it to the original value of the radio group
-            if(this.chartLayoutPerDimensionRadio.getValue()){
-                this.setChartLayout('single');
-            }
-        }
     }
 });

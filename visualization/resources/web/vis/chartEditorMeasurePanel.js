@@ -22,7 +22,6 @@ LABKEY.vis.ChartEditorMeasurePanel = Ext.extend(Ext.FormPanel, {
 
         this.addEvents(
             'measureSelected',
-            'dimensionSelected',
             'chartDefinitionChanged',
             'measureMetadataRequestPending',
             'measureMetadataRequestComplete',
@@ -167,7 +166,6 @@ LABKEY.vis.ChartEditorMeasurePanel = Ext.extend(Ext.FormPanel, {
                     if(checked && this.getSelectedMeasureIndex() != -1) {
                         this.removeDimension();
                         this.fireEvent('chartDefinitionChanged', true);
-                        this.fireEvent('dimensionSelected', false);
                     }
                 }
             }
@@ -209,8 +207,6 @@ LABKEY.vis.ChartEditorMeasurePanel = Ext.extend(Ext.FormPanel, {
                         this.dimensionAggregateLabel.enable();
                         this.dimensionAggregateComboBox.enable();
                         this.setDimensionAggregate(LABKEY.Visualization.Aggregate.AVG);
-
-                        this.fireEvent('dimensionSelected', true);
                     }
                 }
             }
