@@ -28,6 +28,7 @@ import org.labkey.api.data.dialect.JdbcHelperTest;
 import org.labkey.api.data.dialect.SqlDialect;
 import org.labkey.api.data.dialect.SqlDialectFactory;
 import org.labkey.api.data.dialect.TestUpgradeCode;
+import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.VersionNumber;
 
 import java.sql.SQLException;
@@ -103,6 +104,16 @@ public class PostgreSqlDialectFactory extends SqlDialectFactory
     public Collection<? extends Class> getJUnitTests()
     {
         return Arrays.asList(DialectRetrievalTestCase.class, JavaUpgradeCodeTestCase.class, JdbcHelperTestCase.class);
+    }
+
+    @Override
+    public Collection<? extends SqlDialect> getDialectsToTest()
+    {
+        // 8.4, 9.0, 9.1 dialects are nearly identical to 8.3
+        return PageFlowUtil.set(
+            new PostgreSql83Dialect(true),
+            new PostgreSql83Dialect(false)
+        );
     }
 
     public static class DialectRetrievalTestCase extends AbstractDialectRetrievalTestCase

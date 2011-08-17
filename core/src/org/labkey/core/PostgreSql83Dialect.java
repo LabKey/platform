@@ -83,6 +83,17 @@ class PostgreSql83Dialect extends SqlDialect
     // when we prepare a new DbScope and use this when we escape and parse string literals.
     private Boolean _standardConformingStrings = null;
 
+    // Standard constructor used by factory and subclasses
+    PostgreSql83Dialect()
+    {
+    }
+
+    // Constructor used to test standardConformingStrings setting
+    PostgreSql83Dialect(boolean standardConformingStrings)
+    {
+        _standardConformingStrings = standardConformingStrings;
+    }
+
     @Override
     protected @NotNull Set<String> getReservedWords()
     {
@@ -720,10 +731,10 @@ class PostgreSql83Dialect extends SqlDialect
 
 
     @Override
-    protected DialectStringHandler getDialectStringHandler()
+    protected DialectStringHandler createStringHandler()
     {
         if (_standardConformingStrings)
-            return super.getDialectStringHandler();
+            return super.createStringHandler();
         else
             return new PostgreSqlNonConformingStringHandler();
     }
@@ -1202,28 +1213,26 @@ class PostgreSql83Dialect extends SqlDialect
     }
 
 
-    @Override
+    // TODO: Move to special test case for PostgreSQL
     public void testParameterSubstitution()
     {
-        super.testParameterSubstitution();
-
         if (_standardConformingStrings)
         {
-            assert "'this'".equals(_stringHandler.quoteStringLiteral("this"));
-            assert "'th\\is'".equals(_stringHandler.quoteStringLiteral("th\\is"));
-            assert "'th\\''is'".equals(_stringHandler.quoteStringLiteral("th\\'is"));
+            assert "'this'".equals(getStringHandler().quoteStringLiteral("this"));
+            assert "'th\\is'".equals(getStringHandler().quoteStringLiteral("th\\is"));
+            assert "'th\\''is'".equals(getStringHandler().quoteStringLiteral("th\\'is"));
 
             // Backslashes are normal characters in standard SQL, so we have five question marks outside of string literals here
-            testParameterSubstitution(new SQLFragment("'this\\??\\\\''\\'\\\\????\\?''\\'??\\\\?\\\\?''?''?\\'\\'\\?'", 1, 2, 3, 4, 5), "'this\\??\\\\''\\'\\\\'1''2''3''4'\\'5'''\\'??\\\\?\\\\?''?''?\\'\\'\\?'");
+//            testParameterSubstitution(new SQLFragment("'this\\??\\\\''\\'\\\\????\\?''\\'??\\\\?\\\\?''?''?\\'\\'\\?'", 1, 2, 3, 4, 5), "'this\\??\\\\''\\'\\\\'1''2''3''4'\\'5'''\\'??\\\\?\\\\?''?''?\\'\\'\\?'");
         }
         else
         {
-            assert "'this'".equals(_stringHandler.quoteStringLiteral("this"));
-            assert "'th\\\\is'".equals(_stringHandler.quoteStringLiteral("th\\is"));
-            assert "'th\\\\''is'".equals(_stringHandler.quoteStringLiteral("th\\'is"));
+            assert "'this'".equals(getStringHandler().quoteStringLiteral("this"));
+            assert "'th\\\\is'".equals(getStringHandler().quoteStringLiteral("th\\is"));
+            assert "'th\\\\''is'".equals(getStringHandler().quoteStringLiteral("th\\'is"));
 
             // Backslashes are escape characters in non-conforming strings mode, so we have no question marks outside of string literals here
-            testParameterSubstitution(new SQLFragment("'this\\??\\\\''\\'\\\\????\\?''\\'??\\\\?\\\\?''?''?\\'\\'\\?'"), "'this\\??\\\\''\\'\\\\????\\?''\\'??\\\\?\\\\?''?''?\\'\\'\\?'");
+//            testParameterSubstitution(new SQLFragment("'this\\??\\\\''\\'\\\\????\\?''\\'??\\\\?\\\\?''?''?\\'\\'\\?'"), "'this\\??\\\\''\\'\\\\????\\?''\\'??\\\\?\\\\?''?''?\\'\\'\\?'");
         }
     }
 }

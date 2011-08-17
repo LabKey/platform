@@ -92,6 +92,12 @@ public class OracleDialectFactory extends SqlDialectFactory
         return Collections.singleton(JdbcHelperTestCase.class);
     }
 
+    @Override
+    public Collection<? extends SqlDialect> getDialectsToTest()
+    {
+        return Collections.emptyList();
+    }
+
     public static class JdbcHelperTestCase extends Assert
     {
         @Test

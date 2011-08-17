@@ -28,6 +28,7 @@ import org.labkey.api.data.dialect.JdbcHelperTest;
 import org.labkey.api.data.dialect.SqlDialect;
 import org.labkey.api.data.dialect.SqlDialectFactory;
 import org.labkey.api.data.dialect.TestUpgradeCode;
+import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.VersionNumber;
 
 import java.sql.SQLException;
@@ -84,6 +85,12 @@ public class MicrosoftSqlServerDialectFactory extends SqlDialectFactory
     public Collection<? extends Class> getJUnitTests()
     {
         return Arrays.asList(DialectRetrievalTestCase.class, JavaUpgradeCodeTestCase.class, JdbcHelperTestCase.class);
+    }
+
+    @Override
+    public Collection<? extends SqlDialect> getDialectsToTest()
+    {
+        return PageFlowUtil.set(new MicrosoftSqlServer2005Dialect(), new MicrosoftSqlServer2008Dialect(), new MicrosoftSqlServer2008R2Dialect());
     }
 
     public static class DialectRetrievalTestCase extends AbstractDialectRetrievalTestCase

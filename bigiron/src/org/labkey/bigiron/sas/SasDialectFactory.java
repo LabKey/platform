@@ -63,4 +63,10 @@ public class SasDialectFactory extends SqlDialectFactory
     {
         return Collections.emptyList();
     }
+
+    @Override
+    public Collection<? extends SqlDialect> getDialectsToTest()
+    {
+        return Collections.emptyList();
+    }
 }
