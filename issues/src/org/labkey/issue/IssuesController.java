@@ -20,6 +20,7 @@ import org.apache.commons.lang.BooleanUtils;
 import org.apache.commons.lang.StringUtils;
 import org.apache.commons.lang.math.NumberUtils;
 import org.apache.log4j.Logger;
+import org.jetbrains.annotations.NotNull;
 import org.junit.Assert;
 import org.junit.Test;
 import org.labkey.api.action.AjaxCompletionAction;
@@ -73,6 +74,7 @@ import org.labkey.api.util.GUID;
 import org.labkey.api.util.HString;
 import org.labkey.api.util.HStringBuilder;
 import org.labkey.api.util.HelpTopic;
+import org.labkey.api.util.IdentifierString;
 import org.labkey.api.util.MailHelper;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.ResultSetUtil;
@@ -252,7 +254,7 @@ public class IssuesController extends SpringActionController
         QuerySettings settings = schema.getSettings(getViewContext(), IssuesQuerySchema.TableType.Issues.name());
         settings.setQueryName(IssuesQuerySchema.TableType.Issues.name());
 
-        IssuesQueryView queryView = new IssuesQueryView(getViewContext(), schema, settings);
+        QueryView queryView = schema.createView(getViewContext(), settings, null);
 
         return queryView.getResultSet();
     }
@@ -261,7 +263,6 @@ public class IssuesController extends SpringActionController
     @RequiresPermissionClass(ReadPermission.class)
     public class ListAction extends SimpleViewAction<ListForm>
     {
-
         public ListAction() {}
 
         public ListAction(ViewContext ctx)
@@ -436,7 +437,7 @@ public class IssuesController extends SpringActionController
             page.setIssueList(issueList);
             page.setCustomColumnConfiguration(getCustomColumnConfiguration());
             page.setRequiredFields(IssueManager.getRequiredIssueFields(getContainer()));
-            page.setDataRegionSelectionKey(listForm.getDataRegionSelectionKey());
+            page.setDataRegionSelectionKey(listForm.getQuerySettings().getSelectionKey());
 
             return v;
         }
@@ -2336,57 +2337,21 @@ public class IssuesController extends SpringActionController
     }
 
 
-    public static class ListForm
+    public static class ListForm extends QueryForm
     {
-        private QuerySettings _settings;
-        private boolean _export;
-        private ActionURL _customizeURL;
-        private Map<String, CustomView> _views;
-        private String dataRegionSelectionKey = null;
-        private Map<String, String> _reports;
-
-        public boolean getExport()
+        @NotNull
+        @Override
+        public IdentifierString getSchemaName()
         {
-            return _export;
+            return new IdentifierString(IssuesQuerySchema.SCHEMA_NAME, false);
         }
 
-        public void setExport(boolean export)
+        @Override
+        protected UserSchema createSchema()
         {
-            _export = export;
+            return new IssuesQuerySchema(getUser(), getContainer());
         }
 
-        public ActionURL getCustomizeURL() {return _customizeURL;}
-        public void setCustomizeURL(ActionURL url) {_customizeURL = url;}
-        public Map<String, CustomView> getViews() {return _views;}
-        public void setViews(Map<String, CustomView> views) {_views = views;}
-        public QuerySettings getQuerySettings()
-        {
-            return _settings;
-        }
-        public void setQuerySettings(QuerySettings settings)
-        {
-            _settings = settings;
-        }
-
-        public String getDataRegionSelectionKey()
-        {
-            return dataRegionSelectionKey;
-        }
-
-        public void setDataRegionSelectionKey(String dataRegionSelectionKey)
-        {
-            this.dataRegionSelectionKey = dataRegionSelectionKey;
-        }
-
-        public Map<String, String> getReports()
-        {
-            return _reports;
-        }
-
-        public void setReports(Map<String, String> reports)
-        {
-            _reports = reports;
-        }
     }
 
     public static class IssueIdForm

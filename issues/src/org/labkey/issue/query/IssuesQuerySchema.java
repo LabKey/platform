@@ -16,6 +16,8 @@
 
 package org.labkey.issue.query;
 
+import org.labkey.api.query.QuerySettings;
+import org.labkey.api.query.QueryView;
 import org.labkey.api.query.UserSchema;
 import org.labkey.api.query.DefaultSchema;
 import org.labkey.api.query.QuerySchema;
@@ -23,6 +25,8 @@ import org.labkey.api.security.User;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.issues.IssuesSchema;
+import org.labkey.api.view.ViewContext;
+import org.springframework.validation.BindException;
 
 import java.util.Set;
 import java.util.LinkedHashSet;
@@ -84,9 +88,10 @@ public class IssuesQuerySchema extends UserSchema
             for (TableType t : TableType.values())
             {
                 // Make the enum name lookup case insensitive
-                if (t.name().toLowerCase().equals(name.toLowerCase()))
+                if (t.name().equalsIgnoreCase(name.toLowerCase()))
                 {
                     tableType = t;
+                    break;
                 }
             }
             if (tableType != null)
@@ -95,5 +100,41 @@ public class IssuesQuerySchema extends UserSchema
             }
         }
         return null;
+    }
+
+    public enum QueryType
+    {
+        Issues
+        {
+            @Override
+            public QueryView createView(ViewContext context, IssuesQuerySchema schema, QuerySettings settings, BindException errors)
+            {
+                return new IssuesQueryView(context, schema, settings);
+            }
+        };
+
+        public abstract QueryView createView(ViewContext context, IssuesQuerySchema schema, QuerySettings settings, BindException errors);
+    }
+
+    @Override
+    public QueryView createView(ViewContext context, QuerySettings settings, BindException errors)
+    {
+        String queryName = settings.getQueryName();
+        if (queryName != null)
+        {
+            QueryType queryType = null;
+            for (QueryType qt : QueryType.values())
+            {
+                if (qt.name().equalsIgnoreCase(queryName))
+                {
+                    queryType = qt;
+                    break;
+                }
+            }
+            if (queryType != null)
+                return queryType.createView(context, this, settings, errors);
+        }
+
+        return super.createView(context, settings, errors);
     }
 }

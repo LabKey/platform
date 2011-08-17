@@ -103,7 +103,7 @@ public class IssuesQueryView extends QueryView
         menu.addMenuItem(item);
 
         url = target.clone().deleteParameters();
-        url.addFilter("Issues", FieldKey.fromString("Status"), CompareType.EQUAL, "open");
+        url.addFilter(getDataRegionName(), FieldKey.fromString("Status"), CompareType.EQUAL, "open");
         Sort sort = new Sort("AssignedTo/DisplayName");
         sort.insertSortColumn("Milestone", true);
         sort.addURLSort(url, getDataRegionName());
@@ -114,7 +114,7 @@ public class IssuesQueryView extends QueryView
         menu.addMenuItem(item);
 
         url = target.clone().deleteParameters();
-        url.addFilter("Issues", FieldKey.fromString("Status"), CompareType.EQUAL, "resolved");
+        url.addFilter(getDataRegionName(), FieldKey.fromString("Status"), CompareType.EQUAL, "resolved");
         sort = new Sort("AssignedTo/DisplayName");
         sort.insertSortColumn("Milestone", true);
         sort.addURLSort(url, getDataRegionName());
@@ -127,8 +127,8 @@ public class IssuesQueryView extends QueryView
         if (!getUser().isGuest())
         {
             url = target.clone().deleteParameters();
-            url.addFilter("Issues", FieldKey.fromString("AssignedTo/DisplayName"), CompareType.EQUAL, getUser().getDisplayName(getViewContext().getUser()));
-            url.addFilter("Issues", FieldKey.fromString("Status"), CompareType.NEQ_OR_NULL, "closed");
+            url.addFilter(getDataRegionName(), FieldKey.fromString("AssignedTo/DisplayName"), CompareType.EQUAL, getUser().getDisplayName(getViewContext().getUser()));
+            url.addFilter(getDataRegionName(), FieldKey.fromString("Status"), CompareType.NEQ_OR_NULL, "closed");
             sort = new Sort("-Milestone");
             sort.addURLSort(url, getDataRegionName());
             url.addParameter(getDataRegionName() + ".sort", sort.getSortParamValue());

@@ -322,7 +322,7 @@ public class AssaySchemaImpl extends AssaySchema
     }
 
     @Override
-    public QueryView createView(ViewContext context, QuerySettings settings, org.springframework.validation.BindException errors) throws ServletException
+    public QueryView createView(ViewContext context, QuerySettings settings, org.springframework.validation.BindException errors)
     {
         String name = settings.getQueryName();
         for (ExpProtocol protocol : getProtocols())
