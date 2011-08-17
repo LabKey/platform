@@ -109,12 +109,12 @@ public class QueryView extends WebPartView<Object>
         return _exportScriptFactories.get(type);
     }
 
-    static public QueryView create(ViewContext context, UserSchema schema, QuerySettings settings, BindException errors) throws ServletException
+    static public QueryView create(ViewContext context, UserSchema schema, QuerySettings settings, BindException errors)
     {
         return schema.createView(context, settings, errors);
     }
 
-    static public QueryView create(QueryForm form, BindException errors) throws ServletException
+    static public QueryView create(QueryForm form, BindException errors)
     {
         UserSchema s = form.getSchema();
         if (s == null)

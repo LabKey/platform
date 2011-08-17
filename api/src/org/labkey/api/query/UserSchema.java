@@ -304,14 +304,27 @@ abstract public class UserSchema extends AbstractSchema
     }
 
     @Deprecated
-    public final QueryView createView(ViewContext context, QuerySettings settings) throws ServletException
+    // Use createView(ViewContext, QuerySettings, BindException) instead.
+    public final QueryView createView(ViewContext context, QuerySettings settings)
     {
         return createView(context, settings, null);
     }
 
-    public QueryView createView(ViewContext context, QuerySettings settings, BindException errors) throws ServletException
+    /** Override this method to return a schema specific QueryView for the given QuerySettings. */
+    public QueryView createView(ViewContext context, QuerySettings settings, BindException errors)
     {
         return new QueryView(this, settings, errors);
+    }
+
+    public final QueryView createView(QueryForm form, BindException errors)
+    {
+        return createView(form.getViewContext(), form.getQuerySettings(), errors);
+    }
+
+    public final QueryView createView(ViewContext context, String dataRegionName, String queryName, BindException errors)
+    {
+        QuerySettings settings = getSettings(context, dataRegionName, queryName);
+        return createView(context, settings, errors);
     }
 
     /**

@@ -211,14 +211,7 @@ public class QueryForm extends ReturnUrlForm implements HasViewContext, HasBindP
                 return null;
             }
             QuerySettings settings = createQuerySettings(baseSchema);
-            try
-            {
-                return baseSchema.createView(getViewContext(), settings).getSchema();
-            }
-            catch (ServletException e)
-            {
-                throw UnexpectedException.wrap(e);
-            }
+            return baseSchema.createView(getViewContext(), settings).getSchema();
         }
 
         return ret;
