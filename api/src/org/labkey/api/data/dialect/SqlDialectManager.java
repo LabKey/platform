@@ -16,8 +16,6 @@
 
 package org.labkey.api.data.dialect;
 
-import org.labkey.api.util.VersionNumber;
-
 import javax.servlet.ServletException;
 import java.sql.DatabaseMetaData;
 import java.sql.SQLException;
@@ -76,7 +74,7 @@ public class SqlDialectManager
                 return dialect;
         }
 
-        throw new SqlDialectNotSupportedException("The requested product name and version -- " + dataBaseProductName + " " + databaseProductVersion.toString() + " -- is not supported by your LabKey installation.");
+        throw new SqlDialectNotSupportedException("The requested product name and version -- " + dataBaseProductName + " " + databaseProductVersion + " -- is not supported by your LabKey installation.");
     }
 
 
@@ -87,6 +85,28 @@ public class SqlDialectManager
         for (SqlDialectFactory factory : _factories)
             classes.addAll(factory.getJUnitTests());
 
+        classes.add(RegularExpressionTest.class);
+
         return classes;
+    }
+
+
+    // Returns instances of all dialect implementations for testing purposes
+    public static Collection<? extends SqlDialect> getAllDialectsToTest()
+    {
+        Set<SqlDialect> dialects = new HashSet<SqlDialect>();
+
+        for (SqlDialectFactory factory : _factories)
+        {
+            for (SqlDialect dialect : factory.getDialectsToTest())
+            {
+                // Must initialize all dialects before using; most convenient to do it here instead of forcing each
+                // dialect to do this
+                dialect.initialize();
+                dialects.add(dialect);
+            }
+        }
+
+        return dialects;
     }
 }

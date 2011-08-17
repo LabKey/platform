@@ -36,4 +36,7 @@ public abstract class SqlDialectFactory
     // These tests must be safe to invoke when LabKey Server can't connect to any datasources matching the dialect and
     // even when the JDBC driver isn't present.
     public abstract Collection<? extends Class> getJUnitTests();
+
+    // Caller must invoke initialize() on the dialects.
+    public abstract Collection<? extends SqlDialect> getDialectsToTest();
 }

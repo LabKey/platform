@@ -70,7 +70,7 @@ import java.util.regex.Pattern;
 public abstract class SqlDialect
 {
     private static final Logger LOG = Logger.getLogger(SqlDialect.class);
-    protected DialectStringHandler _stringHandler = null;
+    private DialectStringHandler _stringHandler = null;
 
     public static final String GENERIC_ERROR_MESSAGE = "The database experienced an unexpected problem. Please check your input and try again.";
     protected static final String INPUT_TOO_LONG_ERROR_MESSAGE = "The input you provided was too long.";
@@ -271,12 +271,24 @@ public abstract class SqlDialect
     // Do dialect-specific work for this new data source.
     public void prepareNewDbScope(DbScope scope) throws SQLException, IOException
     {
-        _stringHandler = getDialectStringHandler();
+        initialize();
     }
 
-    protected DialectStringHandler getDialectStringHandler()
+    // Post construction initiatization that doesn't require a scope
+    void initialize()
+    {
+        _stringHandler = createStringHandler();
+    }
+
+    // Called once when new scope is being prepared
+    protected DialectStringHandler createStringHandler()
     {
         return new StandardDialectStringHandler();
+    }
+
+    public DialectStringHandler getStringHandler()
+    {
+        return _stringHandler;
     }
 
     // Set of keywords returned by DatabaseMetaData.getMetaData() plus the SQL 2003 keywords
@@ -758,70 +770,6 @@ public abstract class SqlDialect
     public String substituteParameters(SQLFragment frag)
     {
         return _stringHandler.substituteParameters(frag);
-    }
-
-
-    public void testParameterSubstitution()
-    {
-        String longString = "MASSAHLVTIKRSGDDGAHFPLSLSSCLFGRSIECDIRIQLPVVSQRHCPIVVQEQEAILYNFSSTNPTQVNGVTIDEPVRLRHGDIITII" +
-            "DRSFRYEDGNHEDGSKPTEFPGKSLGKEPSRRASRDSFCADPDGEGQDTKASKMTASRRSFVYAKGLSADSPASDGSKNSVSQDSSGHVEQHTGRNIVEPTSGGSLL" +
-            "RSPGLQGAVTGNRSLLPTQSLSNSNEKESPFEKLYQSMKEELDVKSQKSCRKSEPQPDRAAEESRETQLLVSGRARAKSSGSTPVTAASSPKVGKIWTERWRGGMVP" +
-            "VQTSTETAKMKTPVRHSQQLKDEDSRVTGRRHSVNLDEGGSAQAVHKTVTPGKLATRNQTPVEAGDVGSPADTPEHSSSPQRSIPAKVEAPSAETQNRLSLTQRLVP" +
-            "GEKKTPKGSFSKPEKLATAAEQTCSGLPGLSSVDISNFGDSINKSEGMPMKRRRVSFGGHLRPELFDENLPPNTPLKRGETPTKRKSLGTHSPAVLKTIIKERPQSP" +
-            "GKQESPGITPPRTNDQRRRSGRTSSGSNFLCETDIPKKAGRKSGNLPAKRASISRSQHGILQMICSKRRSGASEANLIVAKSWADVVKLGVKQTQTKVAKHVPPKQT" +
-            "SKRQRRPSTPKKPTSNLHNQFTTGHANSPCTIVVGRAQIEKVSVPARPYKMLNNLMLNRKVDFSEDLSGLTEMFKTPVKEKQQQMSDTGSVLSNSANLSERQLQVTN" +
-            "SGDIPEPITTEILGEKVLSSTRNAAKQQSDRYSASPTLRRRSIKHENTVQTPKNVHNITDLEKKTPVSETEPLKTASSVSKLRRSRELRHTLVETMNEKTEAVLAEN" +
-            "TTARHLRGTFREQKVDQQVQDNENAPQRCKESGELSEGSEKTSARRSSARKQKPTKDLLGSQMVTQTADYAEELLSQGQGTIQNLEESMHMQNTSISEDQGITEKKV" +
-            "NIIVYATKEKHSPKTPGKKAQPLEGPAGLKEHFETPNPKDKPITEDRTRVLCKSPQVTTENITTNTKPQTSTSGKKVDMKEESSALTKRIHMPGESRHNPKILKLEC" +
-            "EDIKALKQSENEMLTSTVNGSKRTLGKSKKKAQPLEDLTCFQELFISPVPTNIIKKIPSKSPHTQPVRTPASTKRLSKTGLSKVDVRQEPSTLGKRTKSPGRAPGTP" +
-            "APVQEENDCTAYMETPKQKLESIENLTGLRKQSRTPKDITGFQDSFQIPDHANGPLVVVKTKKMFFNSPQPESAITRKSRERQSRASISKIDVKEELLESEEHLQLG" +
-            "EGVDTFQVSTNKVIRSSRKPAKRKLDSTAGMPNSKRMRCSSKDNTPCLEDLNGFQELFQMPGYANDSLTTGISTMLARSPQLGPVRTQINKKSLPKIILRKMDVTEE" +
-            "ISGLWKQSLGRVHTTQEQEDNAIKAIMEIPKETLQTAADGTRLTRQPQTPKEKVQPLEDHSVFQELFQTSRYCSDPLIGNKQTRMSLRSPQPGFVRTPRTSKRLAKT" +
-            "SVGNIAVREKISPVSLPQCATGEVVHIPIGPEDDTENKGVKESTPQTLDSSASRTVSKRQQGAHEERPQFSGDLFHPQELFQTPASGKDPVTVDETTKIALQSPQPG" +
-            "HIINPASMKRQSNMSLRKDMREFSILEKQTQSRGRDAGTPAPMQEENGTTAIMETPKQKLDFIGNSTGHKRRPRTPKNRAQPLEDLDGFQELFQTPAGASDPVSVEE" +
-            "SAKISLASSQAEPVRTPASTKRRSKTGLSKVDVRQEPSTLGKRMKSLGRAPGTPAPVQEENDSTAFMETPKQKLDFTGNSSGHKRRPQTPKIRAQPLEDLDGFQELF" +
-            "QTPAGANDSVTVEESVKMSLESSQAEPVKTPASTKRLSKTGLSKVDVREDPSILEKKTKSPGTPAPVQEENDCTAFMETPKQKLDFTGNSSGHKRRPRTPKIRAQPL" +
-            "EDLDGFQELFQTPAGASDSVTVEESAKMSLESSQAKPVKTPASTKRLSKTGLSKVDVREDPSTLGKKTKSPGRAPGTPAPVQEENDSTAFMETPKQKLDFAENSSGS" +
-            "KRRSRTSKNRSQPLEDLDGFQELFQTPAGASNPVSVEESAKISLESSQAEPVRTRASTKRLSKTGLNKMDVREGHSPLSKSSCASQKVMQTLTLGEDHGRETKDGKV" +
-            "LLAQKLEPAIYVTRGKRQQRSCKKRSQSPEDLSGVQEVFQTSGHNKDSVTVDNLAKLPSSSPPLEPTDTSVTSRRQARTGLRKVHVKNELSGGIMHPQISGEIVDLP" +
-            "REPEGEGKVIKTRKQSVKRKLDTEVNVPRSKRQRITRAEKTLEDLPGFQELCQAPSLVMDSVIVEKTPKMPDKSPEPVDTTSETQARRRLRRLVVTEEPIPQRKTTR" +
-            "VVRQTRNTQKEPISDNQGMEEFKESSVQKQDPSVSLTGRRNQPRTVKEKTQPLEELTSFQEETAKRISSKSPQPEEKETLAGLKRQLRIQLINDGVKEEPTAQRKQP" +
-            "SRETRNTLKEPVGDSINVEEVKKSTKQKIDPVASVPVSKRPRRVPKEKAQALELAGLKGPIQTLGHTDESASDKGPTQMPCNSLQPEQVDSFQSSPRRPRTRRGKVE" +
-            "ADEEPSAVRKTVSTSRQTMRSRKVPEIGNNGTQVSKASIKQTLDTVAKVTGSRRQLRTHKGWGSTLLKLLGDSKEITQISDHSEKLAHDTSILKSTQQQKPDSVKPL" +
-            "RTCRRVLRASKEVPKEVLVDTRDHATLQSKSNPLLSPKRKSARDGSIVRTRALRSLAPKQEATDEKPVPEKKRAASSKRYVSPEPVKMKHLKIVSNKLESVEEQVST" +
-            "VMKTEEMEAKRENPVTPDQNSRYRKKTNVKQPRPKFDASAENVGIKKNEKTMKTASQETELQNPDDGAKKSTSRGQVSGKRTCLRSRGTTEMPQPCEAEEKTSKPAA" +
-            "EILIKPQEEKGVSGESDVRCLRSRKTRVALDSEPKPRVTRGTKKDAKTLKEDEDIVCTKKLRTRS";
-
-        String longLiteralSql = "WHERE (Run IN (88)) AND (position(TrimmedPeptide IN '" + longString + "') > 0 )";
-        testParameterSubstitution(new SQLFragment(longLiteralSql), longLiteralSql);
-        String longIdentifierSql = "WHERE (\"" + longString + "\" IN (88)) AND (position(TrimmedPeptide IN ('FOO')) > 0 )";
-        testParameterSubstitution(new SQLFragment(longIdentifierSql), longIdentifierSql);
-        String longBothSql = "WHERE (\"" + longString + "\" IN (88)) AND (position(TrimmedPeptide IN ('" + longString + "')) > 0 )";
-        testParameterSubstitution(new SQLFragment(longBothSql), longBothSql);
-
-        testParameterSubstitution(new SQLFragment("? ? ?", 937, "this", 1.234), "'937' 'this' '1.234'");
-        testParameterSubstitution(new SQLFragment("TEST ? TEST ? TEST ?", 937, "this", 1.234), "TEST '937' TEST 'this' TEST '1.234'");
-        testParameterSubstitution(new SQLFragment("'????' ? '???''????' ? ?", 937, "this", 1.234), "'????' '937' '???''????' 'this' '1.234'");
-        testParameterSubstitution(new SQLFragment("\"identifier\" ? \"iden?tif?ier\" '????' ? '???''????' \"iden?tifi?er\" ? ? ?", 937, 123, "this", "that", 1.234), "\"identifier\" '937' \"iden?tif?ier\" '????' '123' '???''????' \"iden?tifi?er\" 'this' 'that' '1.234'");
-
-        // String literal escaping rules vary by dialect and database settings.  Make sure quoting and parsing are consistent.
-        String lit1 = _stringHandler.quoteStringLiteral("th?is'th?at");
-        String lit2 = _stringHandler.quoteStringLiteral("th?is\\'th?at");
-        String lit3 = _stringHandler.quoteStringLiteral("th'?'is\\?\\th\\'\\'at");
-        Pattern litPattern = _stringHandler.getStringLiteralPattern();
-        assert litPattern.matcher(lit1).matches();
-        assert litPattern.matcher(lit2).matches();
-        assert litPattern.matcher(lit3).matches();
-        String prefix = lit1 + " " + lit2 + " " + lit3 + " ";
-
-        testParameterSubstitution(new SQLFragment(prefix + "? ? ?", 456, "this", 7.8748), prefix + "'456' 'this' '7.8748'");
-    }
-
-    protected void testParameterSubstitution(SQLFragment fragment, String expected)
-    {
-        String sub = substituteParameters(fragment);
-        if (!expected.equals(sub))
-            throw new RuntimeException(fragment.toString() + " failed substitution (" + sub + ")");
     }
 
 

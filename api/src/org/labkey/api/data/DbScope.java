@@ -957,7 +957,7 @@ public class DbScope
     }
 
 
-    // Tests dialects that are in-use; for tests that requires an ability to connect to the database.
+    // Test dialects that are in-use; only for tests that require connecting to the database.
     public static class DialectTestCase extends Assert
     {
         @Test
@@ -971,7 +971,6 @@ public class DbScope
                 try
                 {
                     conn = scope.getConnection();
-                    dialect.testParameterSubstitution();
                     dialect.testDialectKeywords(conn);
                     dialect.testKeywordCandidates(conn);
                 }
