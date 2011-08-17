@@ -664,11 +664,12 @@ public class DataRegion extends AbstractDataRegion
 
     public class ParameterViewBean
     {
-        public String dataRegion = "query";
+        public String dataRegionName;
         public Collection<QueryService.ParameterDecl> params;
         public Map<String,Object> values;
-        ParameterViewBean(Collection<QueryService.ParameterDecl> params,Map<String,Object> values)
+        ParameterViewBean(String dataRegionName, Collection<QueryService.ParameterDecl> params, Map<String,Object> values)
         {
+            this.dataRegionName = dataRegionName;
             this.params = params;
             this.values = values;
         }
@@ -678,7 +679,7 @@ public class DataRegion extends AbstractDataRegion
     {
         ParameterView(Collection<QueryService.ParameterDecl> params, Map<String,Object> defaults)
         {
-            super(DataRegion.class, "parameterForm.jsp", new ParameterViewBean(params,defaults));
+            super(DataRegion.class, "parameterForm.jsp", new ParameterViewBean(DataRegion.this.getName(), params, defaults));
         }
     }
 
@@ -733,20 +734,8 @@ public class DataRegion extends AbstractDataRegion
 
             if (showParameterForm)
             {
-                try
-                {
-                    Collection<QueryService.ParameterDecl> params = getTable().getNamedParameters();
-                    (new ParameterView(params, null)).render(ctx.getViewContext().getRequest(), ctx.getViewContext().getResponse());
-                    return;
-                }
-                catch (IOException io)
-                {
-                    throw io;
-                }
-                catch (Exception x)
-                {
-                    throw new RuntimeException(x);
-                }
+                renderButtons = false;
+                showRecordSelectors = false;
             }
 
             List<DisplayColumn> renderers = getDisplayColumns();
@@ -798,6 +787,24 @@ public class DataRegion extends AbstractDataRegion
                 messages.put(MessagePart.filter.name(), filterMsg.toString());
 
             renderHeaderScript(ctx, out, messages, showRecordSelectors);
+
+            if (showParameterForm)
+            {
+                try
+                {
+                    Collection<QueryService.ParameterDecl> params = getTable().getNamedParameters();
+                    (new ParameterView(params, null)).render(ctx.getViewContext().getRequest(), ctx.getViewContext().getResponse());
+                    return;
+                }
+                catch (IOException io)
+                {
+                    throw io;
+                }
+                catch (Exception x)
+                {
+                    throw new RuntimeException(x);
+                }
+            }
 
             if (!_showPagination && rs instanceof Table.TableResultSet)
             {

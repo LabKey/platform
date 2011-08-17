@@ -101,6 +101,7 @@ LABKEY.DataRegion = function (config)
          "beforeclearallfilters",
          "beforechangeview",
          "beforeshowrowschange",
+         "beforesetparameters",
          "buttonclick",
             /**
              * @memberOf LABKEY.DataRegion#
@@ -115,6 +116,32 @@ LABKEY.DataRegion = function (config)
 
     this.rendered = true; // prevent Ext.Component.render() from doing anything
     LABKEY.DataRegion.superclass.constructor.call(this, config);
+
+    /**
+     * Set the parameterized query values for this query.  These parameters
+     * are named by the query itself.
+     * @param {Mixed} params An Object or Array or Array key/val pairs.
+     */
+    this.setParameters = function (params)
+    {
+        if (false === this.fireEvent("beforesetparameters", this, params))
+            return;
+
+        // convert Object into Array of Array pairs and prefix the parameter name if necessary.
+        if (Ext.isObject(params))
+        {
+            var values = params,
+                params = [];
+            for (var key in values)
+            {
+                if (key.indexOf(this.name + ".param.") !== 0)
+                    key = this.name + ".param." + key;
+                params.push([key, values[key]]);
+            }
+        }
+
+        this._setParams(params, [".offset", ".param."]);
+    };
 
     /**
      * Changes the current row offset for paged content
@@ -595,7 +622,8 @@ LABKEY.DataRegion = function (config)
 
     this.addMessage = function(msg, part)
     {
-        this.msgbox.addMessage(msg, part);
+        if (this.msgbox)
+            this.msgbox.addMessage(msg, part);
     };
 
     /**
@@ -606,12 +634,14 @@ LABKEY.DataRegion = function (config)
      */
     this.showMessage = function (html)
     {
-        this.msgbox.addMessage(html);
+        if (this.msgbox)
+            this.msgbox.addMessage(html);
     };
 
     this.showMessageArea = function()
     {
-        this.msgbox.render();
+        if (this.msgbox)
+            this.msgbox.render();
     };
 
     /**
@@ -650,20 +680,24 @@ LABKEY.DataRegion = function (config)
      */
     this.isMessageShowing = function()
     {
-        return this.msgbox.isVisible();
+        return this.msgbox && this.msgbox.isVisible();
     };
 
     /** If a message is currently showing, hide it and clear out its contents */
     this.hideMessage = function ()
     {
-        this.msgbox.setVisible(false);
-        this.msgbox.clear();
+        if (this.msgbox)
+        {
+            this.msgbox.setVisible(false);
+            this.msgbox.clear();
+        }
     };
 
     /** Clear the message box contents. */
     this.clearMessage = function ()
     {
-        this.msgbox.clear();
+        if (this.msgbox)
+            this.msgbox.clear();
     };
 
     this.getMessageArea = function()
@@ -913,9 +947,14 @@ Ext.extend(LABKEY.DataRegion, Ext.Component, {
             for (var i = 0; i < newParamValPairs.length; i++)
             {
                 var param = newParamValPairs[i][0],
-                        value = newParamValPairs[i][1];
+                    value = newParamValPairs[i][1];
                 if (null != param && null != value)
-                    paramValPairs[paramValPairs.length] = [this.name + param, value];
+                {
+                    if (param.indexOf(this.name) !== 0)
+                        param = this.name + param;
+
+                    paramValPairs[paramValPairs.length] = [param, value];
+                }
             }
         }
         LABKEY.DataRegion._filterUI.setSearchString(this.name, LABKEY.DataRegion._filterUI.buildQueryString(paramValPairs));
@@ -1735,6 +1774,12 @@ LABKEY.DataRegion._filterUI =
     _fieldCaption : "",
     _filterWin : null,
 
+    hideFilterPanel : function ()
+    {
+        if (this._filterWin)
+            this._filterWin.close();
+    },
+
     showFilterPanel : function(dataRegionName, colName, caption, dataType, mvEnabled, queryString, dialogTitle, confirmCallback)
     {
         this._fieldName = colName;
@@ -2253,12 +2298,6 @@ LABKEY.DataRegion._filterUI =
     },
 
     savedSearchString : null,
-    filterListeners : [],
-
-    registerFilterListener : function(fn)
-    {
-        filterListeners.push(fn);
-    },
 
     getSearchString : function()
     {
@@ -2426,6 +2465,7 @@ LABKEY.DataRegion._filterUI =
 
         var newQueryString = this.buildQueryString(newParamValPairs);
         var filterParamsString = this.buildQueryString(comparisons);
+
         this.changeFilterCallback.call(this, newParamValPairs, newQueryString, filterParamsString);
     },
 

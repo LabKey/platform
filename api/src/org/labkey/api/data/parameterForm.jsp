@@ -20,6 +20,7 @@
 <%@ page import="org.labkey.api.data.DataRegion" %>
 <%@ page import="org.labkey.api.query.QueryService" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
+<%@ page import="org.labkey.api.util.PageFlowUtil" %>
 <%@ page import="java.util.Collection" %>
 <%@ page import="java.util.Map" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
@@ -29,8 +30,8 @@
 %>
 <script>
 (function (){
-var dataregion = <%=q(bean.dataRegion)%>;
-var divId = <%=q(bean.dataRegion + "ParameterDiv")%>;
+var dataRegionName = <%=q(bean.dataRegionName)%>;
+var divId = <%=q(bean.dataRegionName + "ParameterDiv")%>;
 var decl = [
     <%
     Collection<QueryService.ParameterDecl> decls = bean.params;
@@ -56,10 +57,18 @@ var formpanel;
 function submitHandler()
 {
     var values = formpanel.getForm().getValues();
-    var query = LABKEY.ActionURL.getParameters();
-    query = Ext.apply(query||{}, values);
-    var u = LABKEY.ActionURL.queryString(query);
-    window.location.search = "?" + u;
+    var dataRegion = LABKEY.DataRegions[dataRegionName];
+    if (dataRegion)
+    {
+        dataRegion.setParameters(values);
+    }
+    else
+    {
+        var query = LABKEY.ActionURL.getParameters();
+        query = Ext.apply(query||{}, values);
+        var u = LABKEY.ActionURL.queryString(query);
+        window.location.search = "?" + u;
+    }
 }
 Ext.onReady(function()
 {
@@ -72,11 +81,11 @@ Ext.onReady(function()
         if (p.jsontype == 'int')
             item.decimalPrecision=0;
         item.fieldLabel = p.name;
-        item.name = dataregion + ".param." + p.name;
+        item.name = <%=PageFlowUtil.qh(bean.dataRegionName)%> + ".param." + Ext.util.Format.htmlEncode(p.name);
         item.value=p.value;
         items.push(item);
     }
-    formpanel = new Ext.form.FormPanel({
+    formpanel = new LABKEY.ext.FormPanel({
         items:items,
         bbar:[{text:'Submit', handler:submitHandler}]
     });
@@ -84,4 +93,4 @@ Ext.onReady(function()
 });
 })();
 </script>
-<div id="<%=h(bean.dataRegion + "ParameterDiv")%>"></div>
+<div id=<%=PageFlowUtil.qh(bean.dataRegionName + "ParameterDiv")%>></div>

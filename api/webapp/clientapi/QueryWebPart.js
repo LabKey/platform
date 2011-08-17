@@ -263,7 +263,8 @@ LABKEY.QueryWebPart = Ext.extend(Ext.util.Observable, {
         maxRows: false,
         offset: false,
         scope: false,
-        metadata: false
+        metadata: false,
+        parameters: false
     },
 
     constructor : function(config)
@@ -352,6 +353,7 @@ LABKEY.QueryWebPart = Ext.extend(Ext.util.Observable, {
             params[this.dataRegionName + ".maxRows"] = this.maxRows;
         if (this.offset)
             params[this.dataRegionName + ".offset"] = this.offset;
+
         // Sorts configured by the user when interacting with the grid. We need to pass these as URL parameters.
         if (this.userSort && this.userSort.length > 0)
             params[this.dataRegionName + ".sort"] = this.userSort;
@@ -366,7 +368,13 @@ LABKEY.QueryWebPart = Ext.extend(Ext.util.Observable, {
         if (this.parameters)
         {
             for (name in this.parameters)
-                params[this.dataRegionName  + ".param." + name] = this.parameters[name];
+            {
+                var key = name;
+                if (key.indexOf(this.dataRegionName + ".param.") !== 0)
+                    key = this.dataRegionName + ".param." + name;
+
+                params[key] = this.parameters[name];
+            }
         }
 
         // XXX: Uncomment when UI supports adding/removing aggregates as URL parameters just like filters/sorts
@@ -485,6 +493,7 @@ LABKEY.QueryWebPart = Ext.extend(Ext.util.Observable, {
                             dr.on("beforeclearallfilters", this.beforeClearAllFilters, this);
                             dr.on("beforechangeview", this.beforeChangeView, this);
                             dr.on("beforeshowrowschange", this.beforeShowRowsChange, this);
+                            dr.on("beforesetparameters", this.beforeSetParameters, this);
                             dr.on("buttonclick", this.onButtonClick, this);
                             dr.on("beforerefresh", this.beforeRefresh, this);
 
@@ -720,6 +729,13 @@ LABKEY.QueryWebPart = Ext.extend(Ext.util.Observable, {
         this.showRows = showRowsSetting;
         delete this.offset;
         delete this.maxRows;
+        this.render();
+        return false;
+    },
+
+    beforeSetParameters : function(dataRegion, parameters) {
+        this.parameters = parameters;
+        delete this.offset;
         this.render();
         return false;
     },
