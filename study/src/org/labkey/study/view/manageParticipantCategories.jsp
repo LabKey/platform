@@ -113,6 +113,7 @@
         // create a gridpanel with the list of categories (one per row)
         _grid = new Ext.grid.GridPanel({
             renderTo: 'participantCategoriesGrid',
+            cls:'participantCategoriesGrid',
             autoScroll:false,
             autoHeight:true,
             width:800,
