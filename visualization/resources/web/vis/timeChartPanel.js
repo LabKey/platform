@@ -361,13 +361,84 @@ LABKEY.vis.TimeChartPanel = Ext.extend(Ext.Panel, {
                 scope: this
             });
 
+            // checkboxes for displaying individual and/or aggregate lines
+            this.displayIndividualCheckbox = new Ext.form.Checkbox({
+                boxLabel  : 'Show Individual Lines',
+                disabled  : true,
+                checked   : this.displayIndividual || true,
+                value     : this.displayIndividual || true,
+                listeners : {
+                    check : function(cmp, checked){
+                        this.displayIndividual = checked;
+
+                        //this.fireEvent('chartDefinitionChanged', true);
+                    },
+                    scope : this
+                }
+            });
+
+            this.displayAggregateCheckbox = new Ext.form.Checkbox({
+                boxLabel  : 'Show Aggregate',
+                disabled  : true,
+                checked   : this.displayAggregate || false,
+                value     : this.displayAggregate || false,
+                listeners : {
+                    check : function(cmp, checked){
+                        this.displayAggregate = checked;
+
+                        // enable/disable the aggregate combo box accordingly
+                        this.displayAggregateComboBox.setDisabled(!checked);
+                        
+                        //this.fireEvent('chartDefinitionChanged', false);
+                    },
+                    scope : this
+                }
+            });
+
+            // combobox for selecting which aggregate to display when checkbox is selected
+            this.displayAggregateComboBox = new Ext.form.ComboBox({
+                triggerAction : 'all',
+                mode          : 'local',
+                store         : new Ext.data.ArrayStore({
+                       fields : ['value'],
+                       data   : [['Mean'], ['Median']]
+                }),
+                disabled      : this.displayAggregate || true,
+                hideLabel     : true,
+                forceSelection: 'true',
+                valueField    : 'value',
+                displayField  : 'value',
+                value         : 'Mean',
+                width         : 75,
+                listeners     : {
+                    select    : function(cb){
+                        this.displayAggregateValue = cb.getValue();
+                        //this.fireEvent('chartDefinitionChanged', true);
+                    },
+                    scope     : this
+                }
+            });
+
             this.chart = new Ext.Panel({
                 id: 'chart-tabpanel',
                 region: 'center',
                 layout: 'fit',
                 frame: false,
                 autoScroll: true,
-                tbar: [this.viewGridBtn, this.viewChartBtn, '-', this.exportPdfSingleBtn, this.exportPdfMenuBtn],
+                tbar: [
+                        this.viewGridBtn,
+                        this.viewChartBtn,
+                        '-',
+                        this.exportPdfSingleBtn,
+                        this.exportPdfMenuBtn,
+                        '->',
+                        this.displayIndividualCheckbox,
+                        {xtype: 'tbspacer', width: 10},
+                        this.displayAggregateCheckbox,
+                        {xtype: 'tbspacer', width: 5},
+                        this.displayAggregateComboBox,
+                        {xtype: 'tbspacer', width: 10}
+                ],
                 items: [],
                 listeners: {
                     scope: this,
