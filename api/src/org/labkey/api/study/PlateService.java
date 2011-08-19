@@ -16,6 +16,7 @@
 
 package org.labkey.api.study;
 
+import org.labkey.api.assay.dilution.DilutionCurve;
 import org.labkey.api.attachments.AttachmentFile;
 import org.labkey.api.attachments.AttachmentService;
 import org.labkey.api.data.Container;

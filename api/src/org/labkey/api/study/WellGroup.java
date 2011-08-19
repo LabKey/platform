@@ -35,7 +35,7 @@ public interface WellGroup extends WellData, WellGroupTemplate
         OTHER
     }
 
-    List<WellData> getWellData(boolean combineReplicates);
+    List<? extends WellData> getWellData(boolean combineReplicates);
 
     Type getType();
 

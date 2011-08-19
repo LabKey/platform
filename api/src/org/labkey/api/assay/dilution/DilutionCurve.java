@@ -14,8 +14,10 @@
  * limitations under the License.
  */
 
-package org.labkey.api.study;
+package org.labkey.api.assay.dilution;
 
+import org.labkey.api.study.WellData;
+import org.labkey.api.study.WellGroup;
 import org.labkey.api.util.Pair;
 
 import java.util.Map;
