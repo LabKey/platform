@@ -241,6 +241,28 @@
 <%=generateButton("Export Study", StudyController.ExportStudyAction.class)%>
 <%=generateButton("Reload Study", StudyController.ImportStudyAction.class)%>
 <%=generateButton("Delete Study", StudyController.DeleteStudyAction.class)%>
+<%=generateButton("Create New Study", "javascript:void(0)", "showNewStudyWizard()")%>
 <%
     }
 %>
+
+<script type="text/javascript">
+
+    LABKEY.requiresScript("study/StudyWizard.js");
+
+    function showNewStudyWizard()
+    {
+        var wizard = new LABKEY.study.CreateStudyWizard({
+            subject: {
+                nounSingular: <%=q(study.getSubjectNounSingular())%>,
+                nounPlural: <%=q(study.getSubjectNounPlural())%>,
+                nounColumnName: <%=q(study.getSubjectColumnName())%>
+            }
+        });
+
+        wizard.on('success', function(info){}, this);
+
+        // run the wizard
+        wizard.show();
+    }
+</script>

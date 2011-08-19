@@ -44,22 +44,22 @@
     Container c = context.getContainer();
     User user = context.getUser();
 
-    // group by query name
+    // group by category name
     List<ViewInfo> allViews = ReportManager.get().getViews(context, null, null, true, false);
     Map<String, List<ViewInfo>> groups = new TreeMap<String, List<ViewInfo>>();
     for (ViewInfo view : allViews)
     {
         List<ViewInfo> views;
-        String queryName = view.getQuery();
+        String category = view.getCategory();
 
-        if (groups.containsKey(queryName))
+        if (groups.containsKey(category))
         {
-            views = groups.get(queryName);
+            views = groups.get(category);
         }
         else
         {
             views = new ArrayList<ViewInfo>();
-            groups.put(queryName, views);
+            groups.put(category, views);
         }
         views.add(view);
     }

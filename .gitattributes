@@ -2982,6 +2982,8 @@ study/src/org/labkey/study/writer/VisitMapWriter.java -text
 study/src/org/labkey/study/writer/XmlVisitMapWriter.java -text
 study/webapp/WEB-INF/study/studyContext.xml -text
 study/webapp/sampleRequest.js -text
+study/webapp/study/ParticipantGroup.js -text
+study/webapp/study/StudyWizard.js -text
 study/webapp/study/assay/SampleLookupTemplate.xls -text
 timeline/Timeline.iml -text
 timeline/build.xml -text
