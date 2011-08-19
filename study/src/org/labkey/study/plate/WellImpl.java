@@ -16,6 +16,7 @@
 
 package org.labkey.study.plate;
 
+import org.labkey.api.study.PositionImpl;
 import org.labkey.api.study.Well;
 
 /**

@@ -16,6 +16,7 @@
 
 package org.labkey.study.plate;
 
+import org.labkey.api.assay.dilution.DilutionCurve;
 import org.labkey.api.study.*;
 
 import java.util.*;
@@ -83,7 +84,7 @@ public class WellGroupImpl extends WellGroupTemplateImpl implements WellGroup
         return typedGroups;
     }
 
-    public synchronized List<WellData> getWellData(boolean combineReplicates)
+    public synchronized List<? extends WellData> getWellData(boolean combineReplicates)
     {
         if (!combineReplicates)
         {
@@ -186,7 +187,7 @@ public class WellGroupImpl extends WellGroupTemplateImpl implements WellGroup
 
     public Double getMaxDilution()
     {
-        List<WellData> datas = getWellData(true);
+        List<? extends WellData> datas = getWellData(true);
         Double max = null;
         for (WellData data : datas)
         {
@@ -199,7 +200,7 @@ public class WellGroupImpl extends WellGroupTemplateImpl implements WellGroup
 
     public Double getMinDilution()
     {
-        List<WellData> datas = getWellData(true);
+        List<? extends WellData> datas = getWellData(true);
         Double min = null;
         for (WellData data : datas)
         {
@@ -228,7 +229,7 @@ public class WellGroupImpl extends WellGroupTemplateImpl implements WellGroup
 
     private synchronized void recomputeStats()
     {
-        List<WellData> data = getWellData(true);
+        List<? extends WellData> data = getWellData(true);
         double[] values = new double[data.size()];
         for (int i = 0; i < data.size(); i++)
             values[i] = data.get(i).getMean();

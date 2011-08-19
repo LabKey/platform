@@ -18,11 +18,11 @@ package org.labkey.study.plate;
 
 import org.labkey.api.study.PlateTemplate;
 import org.labkey.api.study.Position;
+import org.labkey.api.study.PositionImpl;
 import org.labkey.api.study.WellGroup;
 import org.labkey.api.study.WellGroupTemplate;
 import org.labkey.api.data.Container;
 import org.labkey.api.util.GUID;
-import org.labkey.api.attachments.Attachment;
 
 import java.util.*;
 

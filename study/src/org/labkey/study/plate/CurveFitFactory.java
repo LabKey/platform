@@ -16,7 +16,9 @@
 
 package org.labkey.study.plate;
 
-import org.labkey.api.study.DilutionCurve;
+import org.labkey.api.assay.dilution.DilutionCurve;
+import org.labkey.api.assay.dilution.ParameterCurveImpl;
+import org.labkey.api.assay.dilution.PolynomialCurveImpl;
 import org.labkey.api.study.WellGroup;
 
 import java.util.Collections;

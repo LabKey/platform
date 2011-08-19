@@ -17,6 +17,7 @@
 package org.labkey.study.plate;
 
 import org.jetbrains.annotations.NotNull;
+import org.labkey.api.assay.dilution.DilutionCurve;
 import org.labkey.api.attachments.Attachment;
 import org.labkey.api.attachments.AttachmentFile;
 import org.labkey.api.attachments.AttachmentService;
