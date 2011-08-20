@@ -16,11 +16,14 @@
 
 package org.labkey.api.data.dialect;
 
-import org.apache.commons.lang.ObjectUtils;
 import org.apache.commons.lang.StringUtils;
+import org.labkey.api.data.Parameter;
 import org.labkey.api.data.SQLFragment;
+import org.labkey.api.util.DateUtil;
 
-import java.util.ArrayList;
+import java.sql.SQLException;
+import java.util.Date;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -72,7 +75,7 @@ public class StandardDialectStringHandler implements DialectStringHandler
         Matcher matchParam = _parameterPattern.matcher(sql);
 
         StringBuilder ret = new StringBuilder();
-        List<Object> params = new ArrayList<Object>(frag.getParams());
+        List<Object> params = new LinkedList<Object>(frag.getParams());
         int ich = 0;
 
         while (ich < sql.length())
@@ -103,7 +106,7 @@ public class StandardDialectStringHandler implements DialectStringHandler
                 if (matchParam.start() < ichSkipTo)
                 {
                     ret.append(frag.getSqlCharSequence().subSequence(ich, matchParam.start()));
-                    ret.append(quoteStringLiteral(ObjectUtils.toString(params.remove(0))));
+                    ret.append(formatParameter(params.remove(0)));
                     ich = matchParam.start() + 1;
                     continue;
                 }
@@ -114,5 +117,48 @@ public class StandardDialectStringHandler implements DialectStringHandler
         }
 
         return ret.toString();
+    }
+
+
+    private String formatParameter(Object o)
+    {
+        Object value;
+
+        try
+        {
+            value = Parameter.getValueToBind(o);
+        }
+        catch (SQLException x)
+        {
+            value = null;
+        }
+
+        if (value == null)
+        {
+            return "NULL";
+        }
+        else if (value instanceof String)
+        {
+            return quoteStringLiteral((String)value);
+        }
+        else if (value instanceof Date)
+        {
+            return quoteStringLiteral(DateUtil.formatDateTime((Date)value));
+        }
+        else if (value instanceof Boolean)
+        {
+            return booleanValue((Boolean)value);
+        }
+        else
+        {
+            return value.toString();
+        }
+    }
+
+
+    // TODO: Adjust based on dialect?
+    private String booleanValue(Boolean b)
+    {
+        return b ? "TRUE" : "FALSE";
     }
 }

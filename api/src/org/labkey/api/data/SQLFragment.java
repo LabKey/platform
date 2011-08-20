@@ -20,6 +20,7 @@ import org.labkey.api.data.dialect.SqlDialect;
 import org.labkey.api.util.HString;
 import org.labkey.api.util.JdbcUtil;
 
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -31,7 +32,7 @@ import java.util.List;
  * Date: Apr 19, 2006
  * Time: 4:56:01 PM
  */
-public class SQLFragment
+public class SQLFragment implements Appendable, CharSequence
 {
     String sql;
     StringBuilder sb = null;
@@ -83,7 +84,7 @@ public class SQLFragment
 
     public String toString()
     {
-        return JdbcUtil.format(getSQL(), params);
+        return JdbcUtil.format(this);
     }
 
 
@@ -120,6 +121,7 @@ public class SQLFragment
         return sb;
     }
 
+    @Override
     public SQLFragment append(CharSequence s)
     {
         guard(s);
@@ -127,6 +129,13 @@ public class SQLFragment
         return this;
     }
 
+
+    @Override
+    public SQLFragment append(CharSequence csq, int start, int end) throws IOException
+    {
+        append(csq.subSequence(start, end));
+        return this;
+    }
 
     public SQLFragment append(Object o)
     {
@@ -255,5 +264,23 @@ public class SQLFragment
     {
         if (s instanceof HString && ((HString)s).isTainted())
             throw new IllegalArgumentException(((HString)s).getSource());
+    }
+
+    @Override
+    public char charAt(int index)
+    {
+        return getSqlCharSequence().charAt(index);
+    }
+
+    @Override
+    public int length()
+    {
+        return getSqlCharSequence().length();
+    }
+
+    @Override
+    public CharSequence subSequence(int start, int end)
+    {
+        return getSqlCharSequence().subSequence(start, end);
     }
 }

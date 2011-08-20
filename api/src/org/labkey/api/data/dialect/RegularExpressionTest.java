@@ -74,28 +74,27 @@ public class RegularExpressionTest extends Assert
         String longBothSql = "WHERE (\"" + longString + "\" IN (88)) AND (position(TrimmedPeptide IN ('" + longString + "')) > 0 )";
         testParameterSubstitution(dialect, new SQLFragment(longBothSql), longBothSql);
 
-        testParameterSubstitution(dialect, new SQLFragment("? ? ?", 937, "this", 1.234), "'937' 'this' '1.234'");
-        testParameterSubstitution(dialect, new SQLFragment("TEST ? TEST ? TEST ?", 937, "this", 1.234), "TEST '937' TEST 'this' TEST '1.234'");
-        testParameterSubstitution(dialect, new SQLFragment("'????' ? '???''????' ? ?", 937, "this", 1.234), "'????' '937' '???''????' 'this' '1.234'");
-        testParameterSubstitution(dialect, new SQLFragment("\"identifier\" ? \"iden?tif?ier\" '????' ? '???''????' \"iden?tifi?er\" ? ? ?", 937, 123, "this", "that", 1.234), "\"identifier\" '937' \"iden?tif?ier\" '????' '123' '???''????' \"iden?tifi?er\" 'this' 'that' '1.234'");
+        testParameterSubstitution(dialect, new SQLFragment("? ? ?", 937, "this", 1.234), "937 'this' 1.234");
+        testParameterSubstitution(dialect, new SQLFragment("TEST ? TEST ? TEST ?", 937, "this", 1.234), "TEST 937 TEST 'this' TEST 1.234");
+        testParameterSubstitution(dialect, new SQLFragment("'????' ? '???''????' ? ?", 937, "this", 1.234), "'????' 937 '???''????' 'this' 1.234");
+        testParameterSubstitution(dialect, new SQLFragment("\"identifier\" ? \"iden?tif?ier\" '????' ? '???''????' \"iden?tifi?er\" ? ? ?", 937, 123, "this", "that", 1.234), "\"identifier\" 937 \"iden?tif?ier\" '????' 123 '???''????' \"iden?tifi?er\" 'this' 'that' 1.234");
 
         // String literal escaping rules vary by dialect and database settings.  Make sure quoting and parsing are consistent.
         String lit1 = dialect.getStringHandler().quoteStringLiteral("th?is'th?at");
         String lit2 = dialect.getStringHandler().quoteStringLiteral("th?is\\'th?at");
         String lit3 = dialect.getStringHandler().quoteStringLiteral("th'?'is\\?\\th\\'\\'at");
         Pattern litPattern = dialect.getStringHandler().getStringLiteralPattern();
-        assert litPattern.matcher(lit1).matches();
-        assert litPattern.matcher(lit2).matches();
-        assert litPattern.matcher(lit3).matches();
+        assertTrue(lit1 + " doesn't match string literal pattern " + litPattern.pattern(), litPattern.matcher(lit1).matches());
+        assertTrue(lit2 + " doesn't match string literal pattern " + litPattern.pattern(), litPattern.matcher(lit2).matches());
+        assertTrue(lit3 + " doesn't match string literal pattern " + litPattern.pattern(), litPattern.matcher(lit3).matches());
         String prefix = lit1 + " " + lit2 + " " + lit3 + " ";
 
-        testParameterSubstitution(dialect, new SQLFragment(prefix + "? ? ?", 456, "this", 7.8748), prefix + "'456' 'this' '7.8748'");
+        testParameterSubstitution(dialect, new SQLFragment(prefix + "? ? ?", 456, "this", 7.8748), prefix + "456 'this' 7.8748");
     }
 
     private void testParameterSubstitution(SqlDialect dialect, SQLFragment fragment, String expected)
     {
         String sub = dialect.substituteParameters(fragment);
         assertEquals("Failed substitution", expected, sub);
-        // fragment.toString() + " failed substitution (" + sub + ")");
     }
 }
