@@ -1798,7 +1798,7 @@ public class SpecimenImporter
                         if (rs.next())
                             rowExists = true;
                         if (VERBOSE_DEBUG)
-                            info((rowExists ? "Row exists" : "Row does NOT exist") + " matching:\n" + JdbcUtil.format(selectSql.toString(), Arrays.asList(params)));
+                            info((rowExists ? "Row exists" : "Row does NOT exist") + " matching:\n" + JdbcUtil.format(new SQLFragment(selectSql, params)));
                     }
                     finally
                     {
