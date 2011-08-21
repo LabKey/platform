@@ -38,7 +38,7 @@
 %>
     <form method="get" action="<%=new UserController.UserUrlsImpl().getImpersonateURL(c)%>"><labkey:csrf/>
         <table>
-        <tr><td><%=bean.message%></td></tr>
+        <tr><td colspan="2"><%=bean.message%></td></tr>
         <tr><td><%
             if (user.isImpersonated())
             {
@@ -48,7 +48,7 @@
             else
             {
         %>
-            <select id="email" name="email" style="width:200"><%
+            <select id="email" name="email" style="width:200px;"><%
                 for (String email : bean.emails)
                 {%>
                 <option value="<%=h(email)%>" <%=(email.equals(user.getEmail())) ? "selected" : ""%>><%=h(email)%></option ><%
@@ -59,6 +59,6 @@
             <%=generateSubmitButton("Impersonate")%><%
             }
             %></td>
-        </td></tr>
+        </tr>
         </table>
     </form>
