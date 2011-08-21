@@ -363,7 +363,7 @@ function addFilePicker(tblId, linkId)
     newRow.id = "row" + filePickerIndex;
     var filePickerCell = newRow.insertCell(0);
     var filePickerId = "formFile" + filePickerIndex;
-    filePickerCell.innerHTML = '<input type="file" id="' + filePickerId + '" name="formFiles[' + filePickerIndex + ']" size="60" onChange="showPathname(this, \'filename' + filePickerIndex + '\')">';
+    filePickerCell.innerHTML = '<input type="file" id="' + filePickerId + '" name="formFiles[' + filePickerIndex + ']" size="45" onChange="showPathname(this, \'filename' + filePickerIndex + '\')">';
     var removePathnameCell = newRow.insertCell(1);
     removePathnameCell.innerHTML = '<a href="javascript:removeFilePicker(\'' + tblId + '\', \'' + linkId + '\', \'' + newRow.id + '\')">remove</a>' +
         '&nbsp;&nbsp;<label id="filename' + filePickerIndex + '"></label>';
@@ -386,6 +386,47 @@ function removeFilePicker(tblId, linkId, rowId)
     }
 
     updateInstructions(document.getElementById(linkId), table.rows.length);
+}
+
+function removeAttachment(eid, name, xid)
+{
+    if (Ext)
+    {
+        function remove()
+        {
+            var params = {
+                entityId : eid,
+                name: name
+            };
+
+            Ext.Ajax.request({
+                url    : LABKEY.ActionURL.buildURL('announcements', 'deleteAttachment'),
+                method : 'POST',
+                success: function() {
+                    var el = document.getElementById(xid);
+                    if (el) {
+                        el.parentNode.removeChild(el);
+                    }
+                },
+                failure: function() {
+                    alert('Failed to remove attachment.');
+                },
+                params : params
+            });
+        }
+
+        Ext.Msg.show({
+            title : 'Remove Attachment',
+            msg : 'Please confirm you would like to remove this attachment. This cannot be undone.',
+            buttons: Ext.Msg.OKCANCEL,
+            icon: Ext.MessageBox.QUESTION,
+            fn  : function(b) {
+                if (b == 'ok') {
+                    remove();
+                }
+            }
+        });
+    }
 }
 
 function updateInstructions(instructions, rowCount)
