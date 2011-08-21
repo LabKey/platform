@@ -146,7 +146,17 @@ public class AnnouncementServiceImpl implements AnnouncementService.Interface
             
             model.setTitle(title);
             model.setBody(body);
-            AnnouncementManager.updateAnnouncement(u, model);
+
+            List<AttachmentFile> files = Collections.emptyList();
+
+            try
+            {
+                AnnouncementManager.updateAnnouncement(u, model, files);
+            }
+            catch (IOException e)
+            {
+                throw new RuntimeException(e);
+            }
         }
         catch (SQLException e)
         {

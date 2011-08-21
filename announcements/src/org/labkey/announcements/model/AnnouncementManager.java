@@ -308,7 +308,7 @@ public class AnnouncementManager
     }
 
 
-    public static void insertAnnouncement(Container c, User user, AnnouncementModel insert, List<AttachmentFile> files) throws SQLException, IOException, AttachmentService.DuplicateFilenameException
+    public static void insertAnnouncement(Container c, User user, AnnouncementModel insert, List<AttachmentFile> files) throws SQLException, IOException
     {
         insert.beforeInsert(user, c.getId());
         AnnouncementModel ann = Table.insert(user, _comm.getTableInfoAnnouncements(), insert);
@@ -364,10 +364,11 @@ public class AnnouncementManager
     }
 
 
-    public static void updateAnnouncement(User user, AnnouncementModel update) throws SQLException
+    public static void updateAnnouncement(User user, AnnouncementModel update, List<AttachmentFile> files) throws SQLException, IOException
     {
         update.beforeUpdate(user);
         Table.update(user, _comm.getTableInfoAnnouncements(), update, update.getRowId());
+        AttachmentService.get().addAttachments(update, files, user);
         indexThread(update);
     }
 

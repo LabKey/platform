@@ -83,39 +83,32 @@
             }
         %></select></td></tr><%
     }
-  %><tr><td colspan=3 align=left></td></tr>                   
-</table>
-<%
-if (bean.allowBroadcast)
-{
-%><table width=100%>
-  <tr class="labkey-wp-header">
-    <td title="Admin Broadcast" colspan="2" nowrap>
-      <div class="labkey-wp-title"><span>Admin Broadcast</span></div>
-    </td>
-  </tr>
-  <tr>
-    <td width="2%"><input type="checkbox" name="broadcast"></td>
-    <td>Send this message as email to all site users who have not explicitly opted-out (site admins only).  If checked, this email will be sent to <%=Formats.commaf0.format(AnnouncementsController.getBroadcastEmailAddresses(c).size())%> users.</td>
-  </tr>
-</table><%
-}%>
-<table width=100%>
-	<tr class="labkey-wp-header">
-		<td title="Attachments" width="100%" nowrap>
-		<div class="labkey-wp-title"><span>Attachments</span></div>
-		</td>
-	</tr>
-	<tr><td>
-        <table id="filePickerTable">
-        </table>
-	</td>
-	</tr>
-    <tr><td>
-      <table>
-        <tr><td colspan=2><a href="javascript:addFilePicker('filePickerTable','filePickerLink')" id="filePickerLink"><img src="<%=request.getContextPath()%>/_images/paperclip.gif">Attach a file</a></td></tr>
-      </table>
-    </td></tr>
+
+    if (bean.allowBroadcast)
+    {
+  %>
+    <tr>
+        <td class="labkey-form-label">Admin Broadcast</td>
+        <td><input type="checkbox" name="broadcast"></td>
+        <td>
+            Email this message to all site users who have not explicitly opted-out (site admins only).
+            If checked, this email will be sent to <%=Formats.commaf0.format(AnnouncementsController.getBroadcastEmailAddresses(c).size())%> users.
+        </td>
+    </tr>
+  <%
+    }
+  %>
+    <tr>
+        <td class="labkey-form-label">Attachments</td>
+        <td colspan="2">
+            <table id="filePickerTable"></table>
+            <table>
+                <tbody>
+                <tr><td><a href="javascript:addFilePicker('filePickerTable','filePickerLink')" id="filePickerLink"><img src="<%=request.getContextPath()%>/_images/paperclip.gif">&nbsp;Attach a file</a></td></tr>
+                </tbody>
+            </table>
+        </td>
+    </tr>
 </table>
 <br>&nbsp;<%=PageFlowUtil.generateSubmitButton("Submit", null, null, true, true)%>&nbsp;<%
 if (null != cancelURL)

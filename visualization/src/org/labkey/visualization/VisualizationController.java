@@ -621,6 +621,7 @@ public class VisualizationController extends SpringActionController
             }
 
             ApiQueryResponse response = getApiResponse(getViewContext(), sqlGenerator.getPrimarySchema(), sql, errors);
+
             // Note: extra properties can only be gathered after the query has executed, since execution populates the name maps.
             Map<String, Object> extraProperties = new HashMap<String, Object>();
             Map<String, String> measureNameToColumnName = sqlGenerator.getColumnMapping();
@@ -942,28 +943,44 @@ public class VisualizationController extends SpringActionController
     @RequiresPermissionClass(ReadPermission.class)
     public class GetVisualizationAction extends ApiAction<GetVisualizationForm>
     {
+        private ReportDescriptor descriptor;
+
         @Override
-        public ApiResponse execute(GetVisualizationForm form, BindException errors) throws Exception
+        public void validateForm(GetVisualizationForm form, Errors errors)
         {
             if (form.getName() == null && form.getReportId() == null)
             {
                 errors.reject(ERROR_MSG, "The 'name' or 'reportId' property is required to get a saved visualization.");
-                return null;
+                return;
             }
 
-            Report report = getReport(form);
+            Report report = null;
+            try
+            {
+                report = getReport(form);
+            }
+            catch (SQLException e)
+            {
+                errors.reject(ERROR_MSG, "Visualization \"" + form.getName() + "\" does not exist in " + getContainer().getPath() + ".");
+            }
+
             if (report == null || !report.getDescriptor().getContainerId().equals(getContainer().getId()))
             {
                 errors.reject(ERROR_MSG, "Visualization \"" + form.getName() + "\" does not exist in " + getContainer().getPath() + ".");
-                return null;
+                return;
             }
 
-            ReportDescriptor descriptor = report.getDescriptor();
+            descriptor = report.getDescriptor();
             if (!(descriptor instanceof VisualizationReportDescriptor))
             {
                 errors.reject(ERROR_MSG, "Report type \"" + descriptor.getReportType() + "\" is not an available visualization type.");
-                return null;
+                return;
             }
+        }
+
+        @Override
+        public ApiResponse execute(GetVisualizationForm form, BindException errors) throws Exception
+        {
             VisualizationReportDescriptor vizDescriptor = (VisualizationReportDescriptor) descriptor;
             ApiSimpleResponse resp = new ApiSimpleResponse();
             resp.put("reportId", vizDescriptor.getReportId());

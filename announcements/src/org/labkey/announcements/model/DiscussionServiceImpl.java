@@ -19,6 +19,7 @@ package org.labkey.announcements.model;
 import org.apache.commons.lang.StringUtils;
 import org.labkey.announcements.AnnouncementsController;
 import org.labkey.api.announcements.DiscussionService;
+import org.labkey.api.attachments.AttachmentFile;
 import org.labkey.api.data.*;
 import org.labkey.api.security.User;
 import org.labkey.api.settings.AppProps;
@@ -29,8 +30,10 @@ import org.springframework.web.servlet.ModelAndView;
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
+import java.io.IOException;
 import java.io.PrintWriter;
 import java.sql.SQLException;
+import java.util.Collections;
 import java.util.Map;
 
 /**
@@ -243,11 +246,15 @@ public class DiscussionServiceImpl implements DiscussionService.Service
             try
             {
                 ann.setDiscussionSrcURL(null);
-                AnnouncementManager.updateAnnouncement(user, ann);
+                AnnouncementManager.updateAnnouncement(user, ann, Collections.<AttachmentFile>emptyList());
             }
             catch (SQLException x)
             {
                 throw new RuntimeSQLException(x);
+            }
+            catch (IOException e)
+            {
+                throw new RuntimeException(e);
             }
         }
     }

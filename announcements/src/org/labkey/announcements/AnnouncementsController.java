@@ -612,15 +612,6 @@ public class AnnouncementsController extends SpringActionController
     }
 
     @RequiresNoPermission    // Permission checking done in verifyPermissions() to handle owner-update, etc.
-    public class ShowAddAttachmentAction extends AttachmentAction
-    {
-        public ModelAndView getAttachmentView(AttachmentForm form, AttachmentParent parent)
-        {
-            return AttachmentService.get().getAddAttachmentView(getContainer(), parent);
-        }
-    }
-
-    @RequiresNoPermission    // Permission checking done in verifyPermissions() to handle owner-update, etc.
     public class AddAttachmentAction extends AttachmentAction
     {
         public ModelAndView getAttachmentView(AttachmentForm form, AttachmentParent parent) throws Exception
@@ -651,15 +642,6 @@ public class AnnouncementsController extends SpringActionController
             {
                 throw new UnauthorizedException();
             }
-        }
-    }
-
-    @RequiresNoPermission    // Permission checking done in verifyPermissions() to handle owner-update, etc.
-    public class ShowConfirmDeleteAction extends AttachmentAction
-    {
-        public ModelAndView getAttachmentView(AttachmentForm form, AttachmentParent parent) throws Exception
-        {
-            return AttachmentService.get().getConfirmDeleteView(getContainer(), DeleteAttachmentAction.class, parent, form.getName());
         }
     }
 
@@ -797,9 +779,7 @@ public class AnnouncementsController extends SpringActionController
 
         public boolean handlePost(AnnouncementForm form, BindException errors) throws Exception
         {
-            Permissions perm = getPermissions();
-
-            if (!perm.allowInsert())
+            if (!getPermissions().allowInsert())
             {
                 throw new UnauthorizedException();
             }
@@ -821,13 +801,6 @@ public class AnnouncementsController extends SpringActionController
             try
             {
                 AnnouncementManager.insertAnnouncement(c, u, insert, files);
-            }
-            catch (AttachmentService.DuplicateFilenameException e)
-            {
-                errors.reject(ERROR_MSG, "Your changes have been saved, but some attachments had duplicate names:");
-
-                for (String error: e.getErrors())
-                    errors.reject(ERROR_MSG, error);
             }
             catch (IOException e)
             {
@@ -1333,6 +1306,9 @@ public class AnnouncementsController extends SpringActionController
             }
 
             Container c = getContainer();
+
+            List<AttachmentFile> files = getAttachmentFileList();
+
             AnnouncementModel update = form.getBean();
 
             // TODO: What is this checking for?
@@ -1341,7 +1317,7 @@ public class AnnouncementsController extends SpringActionController
                 throw new UnauthorizedException();
             }
 
-            AnnouncementManager.updateAnnouncement(getUser(), update);
+            AnnouncementManager.updateAnnouncement(getUser(), update, files);
 
             // Needs to support non-ActionURL (e.g., an HTML page using the client API with embedded discussion webpart)
             // so we can't use getSuccessURL()
@@ -2684,23 +2660,18 @@ public class AnnouncementsController extends SpringActionController
             public String memberList;
             public WikiRendererType[] renderers;
             public WikiRendererType currentRendererType;
-            public DownloadURL deleteURL;
-            public ActionURL addAttachmentURL;
             public URLHelper returnURL;
 
             private UpdateBean(AnnouncementForm form, AnnouncementModel ann)
             {
                 Container c = form.getContainer();
                 String reshowEmailList = (String)form.get("emailList");
-                DownloadURL attachmentURL = new DownloadURL(ShowConfirmDeleteAction.class, c, ann.getEntityId(), null);
 
                 this.annModel = ann;
                 settings = getSettings(c);
                 currentRendererType = WikiRendererType.valueOf(ann.getRendererType());
                 renderers = WikiRendererType.values();
                 memberList = getMemberListTextArea(form.getUser(), c, ann, null != reshowEmailList ? reshowEmailList : null);
-                deleteURL = attachmentURL;
-                addAttachmentURL = attachmentURL.clone().setAction(ShowAddAttachmentAction.class);
                 statusSelect = getStatusSelect(settings, ann.getStatus());
                 assignedToSelect = getAssignedToSelect(c, ann.getAssignedTo(), "assignedTo", getViewContext().getUser());
                 returnURL = form.getReturnURLHelper();

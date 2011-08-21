@@ -33,7 +33,7 @@
     DiscussionService.Settings settings = bean.settings;
 %>
 <%=formatMissedErrors("form")%>
-<form method="post" action="update.post">
+<form method="post" action="update.post" enctype="multipart/form-data">
 <input type="hidden" name="rowId" value="<%=ann.getRowId()%>">
 <input type="hidden" name="entityId" value="<%=ann.getEntityId()%>">
 <input type="hidden" name=".oldValues" value="<%=PageFlowUtil.encodeObject(ann)%>">
@@ -103,28 +103,34 @@ if (settings.hasExpires())
   <tr>
     <td class='labkey-form-label'>Attachments</td>
     <td colspan="2">
-<%
-    for (Attachment attach : ann.getAttachments())
-    {
-        out.print(h(attach.getName()));
-        bean.deleteURL.setFileName(attach.getName());
-        out.print(" [<a href=\"#deleteAttachment\" onClick=\"window.open('");
-        out.print(h(bean.deleteURL));
-        out.print("', null, 'height=200,width=450', false);\" class=\"labkey-message\">");
-        out.print("Delete");
-        out.print("</a>]");
-        out.print("<br>\n");
-    }
-%>
-    [<a href="#addAttachment" onclick="window.open('<%=h(bean.addAttachmentURL)%>',null,'height=200,width=550', false);" class="labkey-message">add attachment</a>]
+        <table id="filePickerTable">
+            <tbody>
+                <%
+                    int x = -1;
+                    for (Attachment att : ann.getAttachments())
+                {
+                    x++;
+                    %><tr id="attach-<%=x%>">
+                        <td><img src="<%=request.getContextPath() + att.getFileIcon()%>" alt="logo"/>&nbsp;<%= h(att.getName()) %></td>
+                        <td><a onclick="removeAttachment(<%=PageFlowUtil.jsString(ann.getEntityId())%>, <%=PageFlowUtil.jsString(att.getName())%>, 'attach-<%=x%>'); ">remove</a></td>
+                    </tr><%
+                }
+                %>
+            </tbody>
+        </table>
+        <table>
+            <tbody>
+                <tr><td><a href="javascript:addFilePicker('filePickerTable','filePickerLink')" id="filePickerLink"><img src="<%=request.getContextPath()%>/_images/paperclip.gif">&nbsp;Attach a file</a></td></tr>
+            </tbody>
+        </table>
 	</td>
   </tr>
   <tr>
     <td colspan=3 align=left>
       <table>
         <tr>
-          <td><%=PageFlowUtil.generateSubmitButton("Submit", "this.form.action='update.post';this.form.method='post';", "name=\"update.post\"")%>
-             &nbsp;<%=generateButton("Cancel", bean.returnURL)%></td>
+          <td><%=PageFlowUtil.generateSubmitButton("Submit", null, null, true, true)%>
+             &nbsp;<%=generateBackButton("Cancel")%></td>
         </tr>
       </table>
     </td>
