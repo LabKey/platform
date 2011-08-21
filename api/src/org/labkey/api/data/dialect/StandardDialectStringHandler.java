@@ -17,6 +17,7 @@
 package org.labkey.api.data.dialect;
 
 import org.apache.commons.lang.StringUtils;
+import org.labkey.api.data.CoreSchema;
 import org.labkey.api.data.Parameter;
 import org.labkey.api.data.SQLFragment;
 import org.labkey.api.util.DateUtil;
@@ -156,9 +157,9 @@ public class StandardDialectStringHandler implements DialectStringHandler
     }
 
 
-    // TODO: Adjust based on dialect?
-    private String booleanValue(Boolean b)
+    // TODO: This is wrong -- SQL could run against any database (not just core).  Need to pass in dialect.
+    private String booleanValue(Boolean value)
     {
-        return b ? "TRUE" : "FALSE";
+        return CoreSchema.getInstance().getSqlDialect().getBooleanLiteral(value);
     }
 }
