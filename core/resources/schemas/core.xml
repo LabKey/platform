@@ -524,7 +524,7 @@
     <ns:versionColumnName>Modified</ns:versionColumnName>
   </ns:table>
   <ns:table tableName="RoleAssignments" tableDbType="TABLE">
-    <ns:cacheSize>10000</ns:cacheSize>
+    <ns:cacheSize>20000</ns:cacheSize>
     <ns:columns>
       <ns:column columnName="ResourceId"/>
       <ns:column columnName="UserId"/>

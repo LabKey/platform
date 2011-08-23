@@ -545,11 +545,17 @@ public class DatasetSnapshotProvider extends AbstractSnapshotProvider implements
 
     private static void autoUpdateSnapshot(QuerySnapshotDefinition def, ActionURL url) throws Exception
     {
-        if (def.getUpdateDelay() > 0 && def.getNextUpdate() == null)
+        Calendar startTime = Calendar.getInstance();
+        startTime.setTime(new Date());
+
+        // add a new timer task set to the snapshot's configured delay time
+        //
+        // 12903 : next update time gets cleared once the snapshot is updated, need an additional check
+        // to ensure that a snapshot doesn't get into a state where it no longer automatically updates.
+        //
+        if (def.getUpdateDelay() > 0 && (def.getNextUpdate() == null || startTime.getTime().after(def.getNextUpdate())))
         {
             // calculate the update time
-            Calendar startTime = Calendar.getInstance();
-            startTime.setTime(new Date());
             startTime.add(Calendar.SECOND, def.getUpdateDelay());
 
             def.setNextUpdate(startTime.getTime());

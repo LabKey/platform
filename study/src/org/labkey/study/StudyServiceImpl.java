@@ -292,10 +292,19 @@ public class StudyServiceImpl implements StudyService.Service
         {
             ensureTransaction();
 
-            List<Map<String,Object>> dataMap = new ArrayList<Map<String, Object>>();//convertMapToPropertyMapArray(u, data, def);
-            dataMap.add(data);
+            List<Map<String,Object>> dataMaps = new ArrayList<Map<String, Object>>();
+            Map<String,Object> mapIgnoreNulls = new CaseInsensitiveHashMap<Object>();
+            // SEE bug 12884
+            // this is somewhat inconsistent behavior IMHO, but we want to ignore null values
+            // Mostly this is a no-op except for columns with generated default values (e.g. managed keys)
+            for (Map.Entry<String,Object> e : data.entrySet())
+            {
+                if (e.getValue() != null)
+                    mapIgnoreNulls.put(e.getKey(), e.getValue());
+            }
+            dataMaps.add(mapIgnoreNulls);
 
-            List<String> result = StudyManager.getInstance().importDatasetData(study, u, def, dataMap, System.currentTimeMillis(), errors, true, true, defaultQCState, null, false);
+            List<String> result = StudyManager.getInstance().importDatasetData(study, u, def, dataMaps, System.currentTimeMillis(), errors, true, true, defaultQCState, null, false);
 
             if (result.size() > 0)
             {

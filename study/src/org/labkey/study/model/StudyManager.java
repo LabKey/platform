@@ -1915,8 +1915,10 @@ public class StudyManager
     }
 
 
-    /** delete a dataset type and data */
-    public void deleteDatasetType(Study study, User user,  DataSetDefinition ds) throws SQLException
+    /** delete a dataset type and data
+     *  does not clear typeURI as we're about to delete the dataset
+     */
+    private void deleteDatasetType(Study study, User user,  DataSetDefinition ds) throws SQLException
     {
         assert StudySchema.getInstance().getSchema().getScope().isTransactionActive();
 
@@ -1927,7 +1929,6 @@ public class StudyManager
 
         if (ds.getTypeURI() != null)
         {
-            ds = ds.createMutable();
             try
             {
                 OntologyManager.deleteType(ds.getTypeURI(), study.getContainer());
@@ -1936,19 +1937,24 @@ public class StudyManager
             {
                 // continue
             }
-            ds.setTypeURI(null);
-            updateDataSetDefinition(user, ds);
+
+            /*
+                ds = ds.createMutable();
+                ds.setTypeURI(null);
+                updateDataSetDefinition(user, ds);
+            */
         }
     }
 
 
+    // Any container can be passed here (whether it contains a study or not).
     public void clearCaches(Container c, boolean unmaterializeDatasets)
     {
         Study study = getStudy(c);
         _studyHelper.clearCache(c);
         _visitHelper.clearCache(c);
         _siteHelper.clearCache(c);
-        if (unmaterializeDatasets)
+        if (unmaterializeDatasets && null != study)
             for (DataSetDefinition def : getDataSetDefinitions(study))
                 uncache(def);
         _dataSetHelper.clearCache(c);

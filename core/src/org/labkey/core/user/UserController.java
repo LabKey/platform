@@ -257,7 +257,7 @@ public class UserController extends SpringActionController
             delete.setActionType(ActionButton.Action.POST);
             gridButtonBar.add(delete);
 
-            ActionButton insert = new ActionButton(PageFlowUtil.urlProvider(SecurityUrls.class).getAddUsersURL(getContainer(), getViewContext().getActionURL()), "Add Users");
+            ActionButton insert = new ActionButton(PageFlowUtil.urlProvider(SecurityUrls.class).getAddUsersURL(), "Add Users");
             insert.setActionType(ActionButton.Action.LINK);
             gridButtonBar.add(insert);
 
@@ -1225,14 +1225,9 @@ public class UserController extends SpringActionController
             return true;
         }
 
-        public ActionURL getSuccessURL(UpdateForm form)
+        public URLHelper getSuccessURL(UpdateForm form)
         {
-            ActionURL returnURL = null;
-
-            String returnURLString = form.getStrings().get(ActionURL.Param.returnUrl.name());
-            if (null != returnURLString)
-                returnURL = new ActionURL(returnURLString);
-
+            URLHelper returnURL = form.getReturnURLHelper();
             return new UserUrlsImpl().getUserDetailsURL(getContainer(), ((Integer)form.getPkVal()).intValue(), returnURL);
         }
 

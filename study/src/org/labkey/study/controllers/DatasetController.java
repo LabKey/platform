@@ -440,10 +440,11 @@ public class DatasetController extends BaseStudyController
         public boolean handlePost(DatasetDeleteForm form, BindException errors) throws Exception
         {
             int[] datasetIds = form.getDatasetIds();
+            int countDeleted = 0;
 
             if (datasetIds == null)
                 return false;
-
+            
             // Loop over each dataset, transacting per dataset to keep from locking out other users
             for (int datasetId : datasetIds)
             {
@@ -455,14 +456,18 @@ public class DatasetController extends BaseStudyController
                 try
                 {
                     scope.ensureTransaction();
-                    StudyManager.getInstance().deleteDataset(getStudy(), getUser(), def, true);
+                    StudyManager.getInstance().deleteDataset(getStudy(), getUser(), def, false);
                     scope.commitTransaction();
+                    countDeleted++;
                 }
                 finally
                 {
                     scope.closeConnection();
                 }
             }
+
+            if (countDeleted > 0)
+                StudyManager.getInstance().getVisitManager(getStudy()).updateParticipantVisits(getUser(), Collections.<DataSetDefinition>emptySet());
 
             return true;
         }

@@ -33,10 +33,12 @@ public class StudyContainerListener implements ContainerManager.ContainerListene
 {
     private static final Logger _log = Logger.getLogger(StudyContainerListener.class);
 
+    @Override
     public void containerCreated(Container c, User user)
     {
     }
 
+    @Override
     public void containerDeleted(Container c, User user)
     {
         try
@@ -53,9 +55,16 @@ public class StudyContainerListener implements ContainerManager.ContainerListene
     @Override
     public void containerMoved(Container c, Container oldParent, User user)
     {
+        StudyManager.getInstance().clearCaches(c, true);
     }
 
+    @Override
     public void propertyChange(PropertyChangeEvent evt)
     {
+        if ("Name".equals(evt.getPropertyName()))
+        {
+            Container c = (Container)evt.getSource();
+            StudyManager.getInstance().clearCaches(c, true);
+        }
     }
 }

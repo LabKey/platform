@@ -119,6 +119,11 @@ public class SchemaXmlWriter implements Writer<List<DataSetDefinition>, StudyCon
             {
                 columnXml.unsetFk();
             }
+            if (column.getURL() != null && column.getURL().getSource().startsWith("/assay/assayDetailRedirect.view?"))
+            {
+                // We don't include assay runs in study exports, so the link target won't be available in the target system
+                columnXml.unsetUrl();
+            }
 
             if (column.isUnselectable())
             {

@@ -139,11 +139,9 @@ public class SecurityController extends SpringActionController
         }
 
         @Override
-        public ActionURL getAddUsersURL(Container container, URLHelper returnURL)
+        public ActionURL getAddUsersURL()
         {
-            ActionURL url = new ActionURL(AddUsersAction.class, container);
-            url.addReturnURL(returnURL);
-            return url;
+            return new ActionURL(AddUsersAction.class, ContainerManager.getRoot());
         }
     }
 
