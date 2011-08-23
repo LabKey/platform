@@ -799,7 +799,7 @@ public class StatusController extends SpringActionController
 
         ButtonBar bb = new ProviderButtonBar(sf);
 
-        ActionButton showGrid = new ActionButton("showList.view?.lastFilter=true", "Show Grid");
+        ActionButton showGrid = new ActionButton(new ActionURL(ShowListAction.class, getContainer()).addParameter(DataRegion.LAST_FILTER_PARAM, "true"), "Show Grid");
         showGrid.setActionType(ActionButton.Action.LINK);
         showGrid.setDisplayPermission(ReadPermission.class);
         bb.add(showGrid);

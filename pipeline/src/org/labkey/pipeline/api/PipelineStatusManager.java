@@ -317,7 +317,7 @@ public class PipelineStatusManager
         return sfExist.getJobStore();
     }
 
-    public static PipelineStatusFileImpl[] getSplitStatusFiles(String parentId, Container container) throws SQLException
+    public static PipelineStatusFileImpl[] getSplitStatusFiles(String parentId, Container container)
     {
         if (parentId == null)
         {
@@ -328,7 +328,14 @@ public class PipelineStatusManager
         if (null != container)
             filter.addCondition("Container", container.getId(), CompareType.EQUAL);
 
-        return Table.select(_schema.getTableInfoStatusFiles(), Table.ALL_COLUMNS, filter, null, PipelineStatusFileImpl.class);
+        try
+        {
+            return Table.select(_schema.getTableInfoStatusFiles(), Table.ALL_COLUMNS, filter, null, PipelineStatusFileImpl.class);
+        }
+        catch (SQLException e)
+        {
+            throw new RuntimeSQLException(e);
+        }
     }
 
     /**
