@@ -75,14 +75,18 @@ public class StringUtilsLabKey
     }
 
     /** Recognizes strings that start with http://, https://, ftp://, or mailto: */
+    private static final String[] URL_PREFIXES = {"http://", "https://", "ftp://", "mailto:"};
+
     public static boolean startsWithURL(String s)
     {
-        if (s == null)
+        if (s != null)
         {
-            return false;
+            for (String prefix : URL_PREFIXES)
+                if (StringUtils.startsWithIgnoreCase(s, prefix))
+                    return true;
         }
-        s = s.toLowerCase();
-        return s.startsWith("http://") || s.startsWith("https://") || s.startsWith("ftp://") || s.startsWith("mailto:");
+
+        return false;
     }
 
     // Does the string have ANY upper-case letters?

@@ -833,7 +833,7 @@ public class SecurityManager
     {
         try
         {
-            message.setVerificationURL(PageFlowUtil.filter(verificationURL.getURIString()));
+            message.setVerificationURL(verificationURL.getURIString());
             message.setOriginatingUser(user.getEmail());
             if (message.getTo() == null)
                 message.setTo(to);

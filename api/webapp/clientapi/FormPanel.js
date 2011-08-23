@@ -520,18 +520,7 @@ LABKEY.ext.FormHelper =
                 case "date":
                     field.xtype = 'datefield';
                     field.format = Date.patterns.ISO8601Long;
-                    field.altFormats = Date.patterns.ISO8601Short +
-                                    'n/j/y g:i:s a|n/j/Y g:i:s a|n/j/y G:i:s|n/j/Y G:i:s|' +
-                                    'n-j-y g:i:s a|n-j-Y g:i:s a|n-j-y G:i:s|n-j-Y G:i:s|' +
-                                    'n/j/y g:i a|n/j/Y g:i a|n/j/y G:i|n/j/Y G:i|' +
-                                    'n-j-y g:i a|n-j-Y g:i a|n-j-y G:i|n-j-Y G:i|' +
-                                    'j-M-y g:i a|j-M-Y g:i a|j-M-y G:i|j-M-Y G:i|' +
-                                    'n/j/y|n/j/Y|' +
-                                    'n-j-y|n-j-Y|' +
-                                    'j-M-y|j-M-Y|' +
-                                    'Y-n-d H:i:s|Y-n-d|' +
-                                    'j M Y G:i:s O|' + // 10 Sep 2009 11:24:12 -0700
-                                    'j M Y H:i:s';     // 10 Sep 2009 01:24:12
+                    field.altFormats = LABKEY.Utils.getDateAltFormats();
                     break;
                 case "string":
                     if (config.inputType=='textarea')
@@ -687,6 +676,14 @@ LABKEY.ext.FormHelper =
         return config;
     },
 
+    twoDigit : function(num)
+    {
+        if (num < 10)
+            return "0" + num;
+        else
+            return "" + num;
+    },
+
     /**
      * Note: this is an experimental API that may change unexpectedly in future releases.
      * Validate a form value against the json type.  Error alerts will be displayed.
@@ -753,9 +750,9 @@ LABKEY.ext.FormHelper =
                 hour = dateVal.getHours();
                 minute = dateVal.getMinutes();
             }
-            var str = "" + year + "-" + twoDigit(month) + "-" + twoDigit(day);
+            var str = "" + year + "-" + this.twoDigit(month) + "-" + this.twoDigit(day);
             if (hour != 0 || minute != 0)
-                str += " " + twoDigit(hour) + ":" + twoDigit(minute);
+                str += " " + this.twoDigit(hour) + ":" + this.twoDigit(minute);
 
             return str;
         }

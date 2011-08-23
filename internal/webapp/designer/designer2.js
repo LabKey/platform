@@ -685,7 +685,6 @@ LABKEY.DataRegion.ViewDesigner = Ext.extend(LABKEY.ext.SplitGroupTabPanel, {
     }
 
 });
-
 LABKEY.DataRegion.Tab = Ext.extend(Ext.Panel, {
     constructor : function (config) {
         this.designer = config.designer;
@@ -1546,14 +1545,31 @@ LABKEY.DataRegion.FilterTab = Ext.extend(LABKEY.DataRegion.Tab, {
         for (var i = 0; i < records.length; i++)
         {
             var filterRecord = records[i];
+            var fieldKey = filterRecord.data.fieldKey;
+            if (!fieldKey)
+                continue;
+
+            var fieldMetaRecord = this.fieldMetaStore.getById(fieldKey.toUpperCase());
+            if (!fieldMetaRecord)
+                continue;
+
+            var jsonType = fieldMetaRecord.data.jsonType;
+
             var items = filterRecord.get("items");
             for (var j = 0; j < items.length; j++)
             {
                 var o = {
-                    fieldKey: items[j].fieldKey || filterRecord.data.fieldKey,
-                    op: items[j].op,
-                    value: items[j].value
+                    fieldKey: items[j].fieldKey || fieldKey,
+                    op: items[j].op
                 };
+
+                var filterType = LABKEY.Filter.getFilterTypeForURLSuffix(items[j].op);
+                if (filterType) {
+                    // filterType.validate() converts the value to a string
+                    o.value = filterType.validate(items[j].value, jsonType, o.fieldKey);
+                } else {
+                    o.value = items[j].value;
+                }
                 if (items[j].urlParameter)
                     urlData.push(o);
                 else

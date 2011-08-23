@@ -244,7 +244,7 @@ public class URLHelper implements Cloneable, Serializable, Taintable
 
     protected void _parsePath(String path)
     {
-        if (null == path || 0 == path.length())
+        if (null == path || 0 == path.length() || "/".equals(path))
             _path = Path.rootPath;
         else
             _path = Path.decode(path);

@@ -1913,9 +1913,6 @@ LABKEY.DataRegion._filterUI =
                     disable: function(field){
                         //Call validate after we disable so any pre-existing validation errors go away.
                         this.validate();
-                    },
-                    afterRender: function(field){
-                        this.focus('', 250);
                     }
                 }
             });
@@ -1949,9 +1946,6 @@ LABKEY.DataRegion._filterUI =
                     disable: function(field){
                         //Call validate after disable so any pre-existing validation errors go away.
                         this.validate();
-                    },
-                    afterRender: function(field){
-                        this.focus('', 250);
                     }
                 }
             });
@@ -1973,6 +1967,10 @@ LABKEY.DataRegion._filterUI =
             });
         }
 
+        // create a task to set the input focus that will get started after layout is complete, the task will
+        // run for a max of 2000ms but will get stopped when the component receives focus
+        this.focusTask = {interval:150, run: function(){inputField1.focus();}, scope: this, duration: 2000};
+        inputField1.on('focus', function(){Ext.TaskMgr.stop(this.focusTask)}, this);
 
         function inputFieldValidator1(input){
             //Helper function for validateInputField
@@ -2091,6 +2089,7 @@ LABKEY.DataRegion._filterUI =
                 {text: 'CLEAR ALL FILTERS', handler: clearAllFiltersHandler}
             ]
         });
+        filterPanel.on('afterlayout', function(cmp){Ext.TaskMgr.start(this.focusTask)}, this);
 
          this._filterWin = new Ext.Window({
             //contentEl: div,
@@ -2579,6 +2578,7 @@ LABKEY.MessageArea = Ext.extend(Ext.util.Observable, {
 
         part = part || 'info';
         this.parts[part] = msg;
+        this.setVisible(true);
         this._refresh();
     },
 

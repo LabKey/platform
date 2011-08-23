@@ -33,6 +33,7 @@ import org.labkey.api.security.permissions.InsertPermission;
 import org.labkey.api.security.permissions.Permission;
 import org.labkey.api.security.permissions.UpdatePermission;
 import org.labkey.api.util.PageFlowUtil;
+import org.labkey.api.util.ReturnURLString;
 import org.labkey.api.view.NotFoundException;
 import org.labkey.api.view.UnauthorizedException;
 import org.labkey.api.view.ViewContext;
@@ -722,6 +723,22 @@ public class TableViewForm extends ViewForm implements DynaBean, HasBindParamete
         }
 
         BindException errors = new NullSafeBindException(new BaseViewAction.BeanUtilsPropertyBindingResult(this, "form"));
+
+        // handle binding of base class ReturnURLForm
+        PropertyValue pvReturn = params.getPropertyValue("returnUrl");
+        if (null == pvReturn)
+            pvReturn = params.getPropertyValue("returnURL");
+        if (null != pvReturn)
+        {
+            try
+            {
+                setReturnUrl(new ReturnURLString((String)pvReturn.getValue()));
+            }
+            catch (Exception x)
+            {
+                //
+            }
+        }
 
         for (PropertyValue pv : params.getPropertyValues())
         {
