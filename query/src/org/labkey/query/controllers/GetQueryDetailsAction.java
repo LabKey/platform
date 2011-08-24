@@ -159,7 +159,7 @@ public class GetQueryDetailsAction extends ApiAction<GetQueryDetailsAction.Form>
             for (String viewName : viewNames)
             {
                 viewName = StringUtils.trimToNull(viewName);
-                viewInfos.add(CustomViewUtil.toMap(getViewContext(), (UserSchema)schema, form.getQueryName(), viewName, true));
+                viewInfos.add(CustomViewUtil.toMap(getViewContext(), (UserSchema)schema, form.getQueryName(), viewName, true, form.isInitializeMissingView()));
             }
 
             // Include information about where these views might be saved and if the user has permission
@@ -253,7 +253,8 @@ public class GetQueryDetailsAction extends ApiAction<GetQueryDetailsAction.Form>
         private String _schemaName;
         private String[] _viewName;
         private String _fk;
-        private String[] _additionalFields; 
+        private String[] _additionalFields;
+        private boolean _initializeMissingView;
 
         public String getSchemaName()
         {
@@ -303,6 +304,16 @@ public class GetQueryDetailsAction extends ApiAction<GetQueryDetailsAction.Form>
         public void setFields(String[] fields)
         {
             _additionalFields = fields;
+        }
+
+        public boolean isInitializeMissingView()
+        {
+            return _initializeMissingView;
+        }
+
+        public void setInitializeMissingView(boolean initializeMissingView)
+        {
+            _initializeMissingView = initializeMissingView;
         }
     }
 }

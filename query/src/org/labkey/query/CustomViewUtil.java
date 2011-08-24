@@ -140,7 +140,7 @@ public class CustomViewUtil
         view.setFilterAndSortFromURL(url, FILTER_PARAM_PREFIX);
     }
 
-    public static Map<String, Object> toMap(ViewContext context, UserSchema schema, String queryName, String viewName, boolean includeFieldMeta)
+    public static Map<String, Object> toMap(ViewContext context, UserSchema schema, String queryName, String viewName, boolean includeFieldMeta, boolean initializeMissingView)
             throws ServletException
     {
         //build a query view.  XXX: is this necessary?  Old version used queryView.getDisplayColumns() to get cols in the default view
@@ -151,9 +151,10 @@ public class CustomViewUtil
         CustomView view = qview.getCustomView();
         if (view == null)
         {
-            if (viewName == null)
+            if (viewName == null || initializeMissingView)
             {
                 // create a new default view if it doesn't exist
+                // Note that the view is not saved to the database yet.
                 view = qview.getQueryDef().createCustomView(context.getUser(), viewName);
                 newView = true;
             }
@@ -165,7 +166,7 @@ public class CustomViewUtil
 
         Map<String, Object> ret = toMap(view, includeFieldMeta);
         if (newView)
-            ret.put("new", true);
+            ret.put("doesNotExist", true);
 
         return ret;
     }
