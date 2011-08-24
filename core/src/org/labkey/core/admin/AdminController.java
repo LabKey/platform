@@ -559,6 +559,21 @@ public class AdminController extends SpringActionController
 
             views.addView(new CreditsView("/core/META-INF/core/common_jars.txt", getCreditsFile(core, "common_jars.txt"), getCommonJars(), "Common JAR", "/external/lib/common directory", null, jarRegEx));
             views.addView(new CreditsView("/core/META-INF/core/scripts.txt", getCreditsFile(core, "scripts.txt"), null, "JavaScript and Icons", null, null, null));
+
+            for (Module module : modules)
+            {
+                if (!module.equals(core))
+                {
+                    String wikiSource = getCreditsFile(module, "scripts.txt");
+
+                    if (null != wikiSource)
+                    {
+                        HttpView moduleJS = new CreditsView("scripts.txt", wikiSource, null, "JavaScript and Icons", null, "the " + module.getName() + " Module", null);
+                        views.addView(moduleJS);
+                    }
+                }
+            }
+
             views.addView(new CreditsView("/core/META-INF/core/source.txt", getCreditsFile(core, "source.txt"), null, "Java Source Code", null, null, null));
             views.addView(new CreditsView("/core/META-INF/core/executables.txt", getCreditsFile(core, "executables.txt"), getBinFilenames(), "Executable", "/external/bin directory", null, "([\\w\\.]+\\.(exe|dll|manifest|jar))"));
             views.addView(new CreditsView("/core/META-INF/core/installer.txt", getCreditsFile(core, "installer.txt"), null, "Executable", null, "the Graphical Windows Installer", null));
@@ -581,7 +596,7 @@ public class AdminController extends SpringActionController
         CreditsView(String creditsFilename, String wikiSource, Collection<String> filenames, String fileType, String foundWhere, String component, String wikiSourceSearchPattern) throws IOException
         {
             super();
-            setTitle(fileType + " Files Distributed with " + (null == component ? "Labkey Core" : component));
+            setTitle(fileType + " Files Distributed with " + (null == component ? "LabKey Core" : component));
 
             if (null != filenames)
                 wikiSource = wikiSource + getErrors(wikiSource, creditsFilename, filenames, fileType, foundWhere, wikiSourceSearchPattern);
