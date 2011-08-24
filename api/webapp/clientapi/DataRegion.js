@@ -1225,6 +1225,7 @@ Ext.extend(LABKEY.DataRegion, Ext.Component, {
                     queryName: this.queryName,
                     viewName: viewName,
                     fields: fields,
+                    initializeMissingView: true,
                     success: function (json, response, options) {
                         if (timerId > 0)
                             clearTimeout(timerId);

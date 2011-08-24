@@ -925,6 +925,7 @@ LABKEY.Query = new function()
          * @param {String} config.queryName The name of the query.
          * @param {String} [config.viewName] An optional view name or Array of view names to include custom view details.
          * @param {String} [config.fields] An optional field key or Array of field keys to include in the metadata.
+         * @param {Boolean} [config.initializeMissingView] Optionally initialize the view based on the default view iff the view doesn't yet exist.
          * @param {function} config.success The function to call when the function finishes successfully.
          * This function will be called with the following parameters:
          * <ul>
@@ -975,6 +976,9 @@ LABKEY.Query = new function()
 
             if (config.fk)
                 params.fk = config.fk;
+
+            if (config.initializeMissingView)
+                params.initializeMissingView = config.initializeMissingView;
 
             return LABKEY.Ajax.request({
                 url: LABKEY.ActionURL.buildURL('query', 'getQueryDetails', config.containerPath),

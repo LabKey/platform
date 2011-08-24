@@ -84,24 +84,16 @@ LABKEY.DataRegion.ViewDesigner = Ext.extend(LABKEY.ext.SplitGroupTabPanel, {
         this.viewName = config.viewName || "";
         this.query = config.query;
 
-        var customViewExists = false;
+        // Find the custom view in the LABKEY.Query.getQueryDetails() response.
         this.customView = null;
         for (var i = 0; i < this.query.views.length; i++)
         {
             if (this.query.views[i].name == this.viewName)
             {
                 this.customView = this.query.views[i];
-                customViewExists = true;
                 break;
             }
         }
-
-        this.fieldMetaStore = new LABKEY.ext.FieldMetaStore({
-            schemaName: this.schemaName,
-            queryName: this.queryName,
-            data: this.query
-        });
-        this.fieldMetaStore.loadData(this.query);
 
         if (!this.customView)
         {
@@ -115,9 +107,19 @@ LABKEY.DataRegion.ViewDesigner = Ext.extend(LABKEY.ext.SplitGroupTabPanel, {
                 fields: [],
                 columns: [],
                 sort: [],
-                filter: []
+                filter: [],
+                doesNotExist: true
             };
         }
+
+        // Create the FieldKey metadata store
+        this.fieldMetaStore = new LABKEY.ext.FieldMetaStore({
+            schemaName: this.schemaName,
+            queryName: this.queryName,
+            data: this.query
+        });
+        this.fieldMetaStore.loadData(this.query);
+
 
         {
             // Add any additional field metadata for view's selected columns, sorts, filters.
@@ -238,7 +240,7 @@ LABKEY.DataRegion.ViewDesigner = Ext.extend(LABKEY.ext.SplitGroupTabPanel, {
         var deleteEnabled = canEdit && this.customView.name;
 
         // enabled for saved (non-session) editable views or customized default view (not new) views.
-        var revertEnabled = canEdit && (this.customView.session || (!this.customView.name && !this.customView["new"]));
+        var revertEnabled = canEdit && (this.customView.session || (!this.customView.name && !this.customView["doesNotExist"]));
 
         // Issue 11188: Don't use friendly id for grouptabs (eg., "ColumnsTab") -- breaks showing two customize views on the same page.
         // Provide mapping from friendly tab names to tab index.
@@ -347,8 +349,9 @@ LABKEY.DataRegion.ViewDesigner = Ext.extend(LABKEY.ext.SplitGroupTabPanel, {
         this.fieldsTree.on('checkchange', this.onCheckChange, this);
         this.on('tabchange', this.onTabChange, this);
 
-        if (!customViewExists)
-            this.addMessage("Custom View '" + Ext.util.Format.htmlEncode(this.viewName) + "' not found.");
+        // Show 'does not exist' message only for non-default views.
+        if (this.customView.doesNotExist && this.viewName)
+            this.showMessage("Custom View '" + Ext.util.Format.htmlEncode(this.viewName) + "' not found.");
     },
 
     initComponent : function () {
