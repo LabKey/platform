@@ -127,30 +127,26 @@ LABKEY.DataRegion.ViewDesigner = Ext.extend(LABKEY.ext.SplitGroupTabPanel, {
             // The FieldMetaStore uses a reader that expects the field metadata to be under a 'columns' property instead of 'fields'
             this.fieldMetaStore.loadData({columns: this.customView.fields}, true);
 
-            var newSortArray = [];
-            
-            // Add user filters if we're being used from a data region. Ideally, they'd be passed in
-            // separately instead of introducing this dependency
-            if (this.dataRegion)
+            // Add user filters
+            this.userFilter = config.userFilter || [];
+            for (var i = 0; i < this.userFilter.length; i++)
             {
-                this.userFilter = this.dataRegion.getUserFilter();
-                for (var i = 0; i < this.userFilter.length; i++)
-                {
-                    // copy the filter so the original userFilter isn't modified by the designer
-                    var userFilter = Ext.apply({urlParameter: true}, this.userFilter[i]);
-                    this.customView.filter.unshift(userFilter);
-                }
-
-                // Add user sort
-                this.userSort = this.dataRegion.getUserSort();
-                for (var i = 0; i < this.userSort.length; i++)
-                {
-                    // copy the sort so the original userSort isn't modified by the designer
-                    var userSort = Ext.apply({urlParameter: true}, this.userSort[i]);
-                    newSortArray.push(userSort);
-                }
+                // copy the filter so the original userFilter isn't modified by the designer
+                var userFilter = Ext.apply({urlParameter: true}, this.userFilter[i]);
+                this.customView.filter.unshift(userFilter);
             }
 
+            // Add user sort
+            var newSortArray = [];
+            this.userSort = config.userSort || [];
+            for (var i = 0; i < this.userSort.length; i++)
+            {
+                // copy the sort so the original userSort isn't modified by the designer
+                var userSort = Ext.apply({urlParameter: true}, this.userSort[i]);
+                newSortArray.push(userSort);
+            }
+
+            // Merge userSort and existing customView sort.
             for (var i = 0; i < this.customView.sort.length; i++)
             {
                 var sort = this.customView.sort[i];
@@ -169,7 +165,7 @@ LABKEY.DataRegion.ViewDesigner = Ext.extend(LABKEY.ext.SplitGroupTabPanel, {
             this.customView.sort = newSortArray;
 
             // Add user containerFilter
-            this.userContainerFilter = this.dataRegion ? this.dataRegion.getUserContainerFilter() : null;
+            this.userContainerFilter = config.userContainerFilter;
             if (this.userContainerFilter && this.customView.containerFilter != this.userContainerFilter)
                 this.customView.containerFilter = this.userContainerFilter;
         }
@@ -236,11 +232,11 @@ LABKEY.DataRegion.ViewDesigner = Ext.extend(LABKEY.ext.SplitGroupTabPanel, {
 
         var canEdit = this.canEdit();
 
-        // enabled for named editable views.
-        var deleteEnabled = canEdit && this.customView.name;
+        // enabled for named editable views that exist.
+        var deleteEnabled = canEdit && this.customView.name && !this.customView.doesNotExist;
 
         // enabled for saved (non-session) editable views or customized default view (not new) views.
-        var revertEnabled = canEdit && (this.customView.session || (!this.customView.name && !this.customView["doesNotExist"]));
+        var revertEnabled = canEdit && (this.customView.session || (!this.customView.name && !this.customView.doesNotExist));
 
         // Issue 11188: Don't use friendly id for grouptabs (eg., "ColumnsTab") -- breaks showing two customize views on the same page.
         // Provide mapping from friendly tab names to tab index.
@@ -403,7 +399,7 @@ LABKEY.DataRegion.ViewDesigner = Ext.extend(LABKEY.ext.SplitGroupTabPanel, {
     {
         if (!this.editableErrors)
         {
-            this.editableErrors = this.dataRegion ? this.dataRegion._getCustomViewEditableErrors(this.customView) : [];
+            this.editableErrors = LABKEY.DataRegion._getCustomViewEditableErrors(this.customView);
         }
         return this.editableErrors;
     },
@@ -560,24 +556,28 @@ LABKEY.DataRegion.ViewDesigner = Ext.extend(LABKEY.ext.SplitGroupTabPanel, {
 
     onDeleteClick : function (btn, e) {
         if (this.dataRegion)
-        {
             this.dataRegion.deleteCustomView();
-        }
         else
-        {
-            // If we're not attached to a grid, delete the view and reload the page
-            Ext.Ajax.request({
-                url: LABKEY.ActionURL.buildURL("query", "deleteView"),
-                jsonData: {schemaName: this.schemaName, queryName: this.queryName, viewName: this.viewName, complete: true},
-                method: "POST",
-                scope: this,
-                success: function() { window.location.reload() }
-            });
-        }
+            this._deleteCustomView(true);
     },
 
     onRevertClick : function (btn, e) {
-        this.dataRegion.revertCustomView();
+        if (this.dataRegion)
+            this.dataRegion.revertCustomView();
+        else
+            this._deleteCustomView(false);
+    },
+
+    // If designer isn't attached to a DataRegion, delete the view and reload the page.  Only call when no grid is present.
+    _deleteCustomView : function (complete)
+    {
+        Ext.Ajax.request({
+            url: LABKEY.ActionURL.buildURL("query", "deleteView"),
+            jsonData: {schemaName: this.schemaName, queryName: this.queryName, viewName: this.viewName, complete: complete},
+            method: "POST",
+            scope: this,
+            success: function() { window.location.reload() }
+        });
     },
 
     onApplyClick : function (btn, e) {

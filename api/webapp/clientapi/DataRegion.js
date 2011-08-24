@@ -1244,6 +1244,9 @@ Ext.extend(LABKEY.DataRegion, Ext.Component, {
                             queryName: this.queryName,
                             viewName: viewName,
                             query: json,
+                            userFilter: userFilter,
+                            userSort: userSort,
+                            userContainerFilter: this.getUserContainerFilter(),
                             allowableContainerFilters: this.allowableContainerFilters
                         });
 
@@ -1347,17 +1350,6 @@ Ext.extend(LABKEY.DataRegion, Ext.Component, {
         });
     },
 
-    _getCustomViewEditableErrors : function (view)
-    {
-        var errors = [];
-        if (view)
-        {
-            if (!view.editable)
-                errors.push("The view is read-only and cannot be edited.");
-        }
-        return errors;
-    },
-
     // private
     saveSessionCustomView : function ()
     {
@@ -1370,7 +1362,7 @@ Ext.extend(LABKEY.DataRegion, Ext.Component, {
         {
             var config = Ext.applyIf({
                 canEditSharedViews: self.canEditSharedViews,
-                canEdit: self._getCustomViewEditableErrors(config).length == 0,
+                canEdit: LABKEY.DataRegion._getCustomViewEditableErrors(config).length == 0,
                 success: function (win, o) {
                     var timerId = function () {
                         timerId = 0;
@@ -1554,6 +1546,18 @@ LABKEY.DataRegion.getSelected = function (config)
         success: LABKEY.Utils.getCallbackWrapper(LABKEY.Utils.getOnSuccess(config), config.scope),
         failure: LABKEY.Utils.getCallbackWrapper(LABKEY.Utils.getOnFailure(config), config.scope, true)
     });
+};
+
+// private
+LABKEY.DataRegion._getCustomViewEditableErrors = function (view)
+{
+    var errors = [];
+    if (view)
+    {
+        if (!view.editable)
+            errors.push("The view is read-only and cannot be edited.");
+    }
+    return errors;
 };
 
 // private
