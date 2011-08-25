@@ -28,101 +28,154 @@ if (!LABKEY.DataRegions)
 /**
  * The DataRegion constructor is private - to get a LABKEY.DataRegion object, use <code>Ext.ComponentMgr.get(<em>&lt;dataregionname&gt;</em>)</code> or <code>Ext.ComponentMgr.onAvailable(<em>&lt;dataregionname&gt;</em>, callback)</code>.
  * @class The DataRegion class allows you to interact with LabKey grids, including querying and modifying selection state, filters, and more.
+ * @constructor
  */
-LABKEY.DataRegion = function (config)
+LABKEY.DataRegion = Ext.extend(Ext.Component,
+/** @lends LABKEY.DataRegion.prototype */
 {
-    this.config = config || {};
+    constructor : function (config)
+    {
+        this.config = config || {};
 
-    this.id = config.name; // XXX: may not be unique on the on page with webparts
-    /** Name of the DataRegion. Should be unique within a given page */
-    this.name = config.name;
-    /** Schema name of the query to which this DataRegion is bound */
-    this.schemaName = config.schemaName;
-    /** Name of the query to which this DataRegion is bound */
-    this.queryName = config.queryName;
-    /** Name of the custom view to which this DataRegion is bound, may be blank */
-    this.viewName = config.viewName || "";
-    this.view = config.view;
-    this.sortFilter = config.sortFilter;
+        this.id = config.name; // XXX: may not be unique on the on page with webparts
+        /** Name of the DataRegion. Should be unique within a given page. Read-only. */
+        this.name = config.name;
+        /** Schema name of the query to which this DataRegion is bound. Read-only. */
+        this.schemaName = config.schemaName;
+        /** Name of the query to which this DataRegion is bound. Read-only. */
+        this.queryName = config.queryName;
+        /** Name of the custom view to which this DataRegion is bound, may be blank. Read-only. */
+        this.viewName = config.viewName || "";
+        this.view = config.view;
+        this.sortFilter = config.sortFilter;
 
-    this.complete = config.complete;
-    /** Starting offset of the rows to be displayed. 0 if at the beginning of the results */
-    this.offset = config.offset || 0;
-    /** Maximum number of rows to be displayed. 0 if the count is not limited */
-    this.maxRows = config.maxRows || 0;
-    this.totalRows = config.totalRows; // may be undefined
-    this.rowCount = config.rowCount; // may be null
-    this.showRows = config.showRows;
+        this.complete = config.complete;
+        /** Starting offset of the rows to be displayed. 0 if at the beginning of the results. Read-only. */
+        this.offset = config.offset || 0;
+        /** Maximum number of rows to be displayed. 0 if the count is not limited. Read-only. */
+        this.maxRows = config.maxRows || 0;
+        this.totalRows = config.totalRows; // may be undefined
+        this.rowCount = config.rowCount; // may be undefined
+        this.showRows = config.showRows;
 
-    this.selectionModified = false;
+        this.selectionModified = false;
 
-    this.showRecordSelectors = config.showRecordSelectors;
-    this.showInitialSelectMessage = config.showSelectMessage;
-    /** Unique string used to associate the selected items with this DataRegion, schema, query, and view. */
-    this.selectionKey = config.selectionKey;
-    this.selectorCols = config.selectorCols;
-    this.requestURL = config.requestURL;
+        this.showRecordSelectors = config.showRecordSelectors;
+        this.showInitialSelectMessage = config.showSelectMessage;
+        /** Unique string used to associate the selected items with this DataRegion, schema, query, and view. */
+        this.selectionKey = config.selectionKey;
+        this.selectorCols = config.selectorCols;
+        this.requestURL = config.requestURL;
 
-    // The button for the ribbon panel that we're currently showing
-    this.currentPanelButton = null;
+        // The button for the ribbon panel that we're currently showing
+        this.currentPanelButton = null;
 
-    // All of the different ribbon panels that have been constructed for this data region
-    this.panelButtonContents = [];
+        // All of the different ribbon panels that have been constructed for this data region
+        this.panelButtonContents = [];
 
-    LABKEY.DataRegions[this.name] = this;
+        LABKEY.DataRegions[this.name] = this;
 
-    this.addEvents(
-        /**
-         * @memberOf LABKEY.DataRegion#
-         * @name selectchange
-         * @event
-         * @description Fires when the selection has changed.
-         * @param {LABKEY.DataRegion} dataRegion this DataRegion object.
-         * @param {Boolean} hasSelection true if the DataRegion has at least one selected item.
-         * @example Here's an example of subscribing to the DataRegion 'selectchange' event:
-         * Ext.ComponentMgr.onAvailable("dataRegionName", function (dataregion) {
-         *     dataregion.on('selectchange', function (dr, selected) {
-         *         var btn = Ext.get('my-button-id');
-         *         if (selected) {
-         *             btn.replaceClass('labkey-disabled-button', 'labkey-button');
-         *         }
-         *         else {
-         *             btn.replaceClass('labkey-button', 'labkey-disabled-button');
-         *         }
-         *     });
-         *  });
-         */
-         "selectchange",
-         "beforeoffsetchange",
-         "beforemaxrowschange",
-         "beforesortchange",
-         "beforeclearsort",
-         "beforeclearfilter",
-         "beforeclearallfilters",
-         "beforechangeview",
-         "beforeshowrowschange",
-         "beforesetparameters",
-         "buttonclick",
-            /**
-             * @memberOf LABKEY.DataRegion#
-             * @name beforerefresh
-             * @event
-             * @description Fires when a refresh of the DataRegion has been requested. If no handler consumes the event,
-             * the whole page will be reloaded.
-             * @param {LABKEY.DataRegion} dataRegion this DataRegion object.
-             */
-         "beforerefresh"
-    );
+        this.addEvents(
+                /**
+                 * @memberOf LABKEY.DataRegion#
+                 * @name selectchange
+                 * @event
+                 * @description Fires when the selection has changed.
+                 * @param {LABKEY.DataRegion} dataRegion this DataRegion object.
+                 * @param {Boolean} hasSelection true if the DataRegion has at least one selected item.
+                 * @example Here's an example of subscribing to the DataRegion 'selectchange' event:
+                 * Ext.ComponentMgr.onAvailable("dataRegionName", function (dataregion) {
+                 *     dataregion.on('selectchange', function (dr, selected) {
+                 *         var btn = Ext.get('my-button-id');
+                 *         if (selected) {
+                 *             btn.replaceClass('labkey-disabled-button', 'labkey-button');
+                 *         }
+                 *         else {
+                 *             btn.replaceClass('labkey-button', 'labkey-disabled-button');
+                 *         }
+                 *     });
+                 *  });
+                 */
+                "selectchange",
+                "beforeoffsetchange",
+                "beforemaxrowschange",
+                "beforesortchange",
+                "beforeclearsort",
+                "beforeclearfilter",
+                "beforeclearallfilters",
+                "beforechangeview",
+                "beforeshowrowschange",
+                "beforesetparameters",
+                "buttonclick",
+                /**
+                 * @memberOf LABKEY.DataRegion#
+                 * @name beforerefresh
+                 * @event
+                 * @description Fires when a refresh of the DataRegion has been requested. If no handler consumes the event,
+                 * the whole page will be reloaded.
+                 * @param {LABKEY.DataRegion} dataRegion this DataRegion object.
+                 */
+                "beforerefresh"
+        );
 
-    this.rendered = true; // prevent Ext.Component.render() from doing anything
-    LABKEY.DataRegion.superclass.constructor.call(this, config);
+        this._initElements();
+        Ext.EventManager.on(window, "load", this._resizeContainer, this, {single: true});
+        Ext.EventManager.on(window, "resize", this._resizeContainer, this);
+        this._showPagination(this.header);
+        this._showPagination(this.footer);
+
+        if (this.view && this.view.session)
+        {
+            var msg;
+            if (this.view.savable)
+            {
+                msg = (this.viewName ? "The current view '<em>" + Ext.util.Format.htmlEncode(this.viewName) + "</em>'" : "The current <em>&lt;default&gt;</em> view") + " is unsaved.";
+                msg += " &nbsp;";
+                msg += "<span class='labkey-button unsavedview-revert'>Revert</span>";
+                msg += "&nbsp;";
+                msg += "<span class='labkey-button unsavedview-edit'>Edit</span>";
+                msg += "&nbsp;";
+                msg += "<span class='labkey-button unsavedview-save'>Save</span>";
+            }
+            else
+            {
+                msg = ("The current view has been customized.");
+                msg += " &nbsp;";
+                msg += "<span class='labkey-button unsavedview-revert' title='Revert'>Revert</span>";
+                msg += ", &nbsp;";
+                msg += "<span class='labkey-button unsavedview-edit'>Edit</span>";
+            }
+
+            // add the customize view message, the link handlers will get added after render in _onRenderMessageArea
+            var el = this.addMessage(msg, 'customizeview');
+        }
+
+        if (this.showInitialSelectMessage)
+        {
+            switch (this.showRows)
+            {
+                case "all":
+                    this._showSelectMessage("Showing all " + this.totalRows + " rows.");
+                    break;
+                case "selected":
+                    this._showSelectMessage("Showing only <em>selected</em> rows.");
+                    break;
+                case "unselected":
+                    this._showSelectMessage("Showing only <em>unselected</em> rows.");
+                    break;
+            }
+        }
+
+        this.rendered = true; // prevent Ext.Component.render() from doing anything
+        LABKEY.DataRegion.superclass.constructor.call(this, config);
+    },
 
     /**
      * Set the parameterized query values for this query.  These parameters
      * are named by the query itself.
      * @param {Mixed} params An Object or Array or Array key/val pairs.
      */
-    this.setParameters = function (params)
+    setParameters : function (params)
     {
         if (false === this.fireEvent("beforesetparameters", this, params))
             return;
@@ -141,94 +194,94 @@ LABKEY.DataRegion = function (config)
         }
 
         this._setParams(params, [".offset", ".param."]);
-    };
+    },
 
     /**
      * Changes the current row offset for paged content
      * @param newoffset row index that should be at the top of the grid
      */
-    this.setOffset = function (newoffset)
+    setOffset : function (newoffset)
     {
         if (false === this.fireEvent("beforeoffsetchange", this, newoffset))
             return;
 
         this._setParam(".offset", newoffset, [".offset", ".showRows"]);
-    };
+    },
 
     /**
      * Changes the maximum number of rows that the grid will display at one time
      * @param newmax the maximum number of rows to be shown
      */
-    this.setMaxRows = function (newmax)
+    setMaxRows : function (newmax)
     {
         if (false === this.fireEvent("beforemaxrowschange", this, newmax))
             return;
 
         this._setParam(".maxRows", newmax, [".offset", ".maxRows", ".showRows"]);
-    };
+    },
 
     /**
      * Refreshes the grid, via AJAX if loaded through a QueryWebPart, and via a page reload otherwise.
      */
-    this.refresh = function ()
+    refresh : function ()
     {
         if (false === this.fireEvent("beforerefresh", this))
             return;
 
         window.location.reload(false);
-    };
+    },
 
     /**
      * Forces the grid to do paging based on the current maximum number of rows
      */
-    this.showPaged = function ()
+    showPaged : function ()
     {
         if (false === this.fireEvent("beforeshowrowschange", this, null))
             return;
 
         this._removeParams([".showRows"]);
-    };
+    },
 
     /**
      * Forces the grid to show all rows, without any paging
      */
-    this.showAll = function ()
+    showAll : function ()
     {
         if (false === this.fireEvent("beforeshowrowschange", this, "all"))
             return;
 
         this._setParam(".showRows", "all", [".offset", ".maxRows", ".showRows"]);
-    };
+    },
 
     /**
      * Forces the grid to show only rows that have been selected
      */
-    this.showSelected = function ()
+    showSelected : function ()
     {
         if (false === this.fireEvent("beforeshowrowschange", this, "selected"))
             return;
 
         this._setParam(".showRows", "selected", [".offset", ".maxRows", ".showRows"]);
-    };
+    },
 
     /**
      * Forces the grid to show only rows that have not been selected
      */
-    this.showUnselected = function ()
+    showUnselected : function ()
     {
         if (false === this.fireEvent("beforeshowrowschange", this, "unselected"))
             return;
 
         this._setParam(".showRows", "unselected", [".offset", ".maxRows", ".showRows"]);
-    };
+    },
 
     /** Displays the first page of the grid */
-    this.pageFirst = function ()
+    pageFirst : function ()
     {
         this.setOffset(0);
-    };
+    },
 
-    this.selectRow = function (el)
+    selectRow : function (el)
     {
         this.setSelected({ids: [el.value], checked: el.checked});
         var toggle = this.form[".toggle"];
@@ -245,16 +298,16 @@ LABKEY.DataRegion = function (config)
             this.hideMessage();
             this.onSelectChange(this.hasSelected());
         }
-    };
+    },
 
     /**
      * Get selected items on the current page of the DataRegion.  Selected items may exist on other pages.
      * @see LABKEY.DataRegion#getSelected
      */
-    this.getChecked = function ()
+    getChecked : function ()
     {
         return getCheckedValues(this.form, '.select');
-    };
+    },
 
     /**
      * Get all selected items for this DataRegion.
@@ -277,7 +330,7 @@ LABKEY.DataRegion = function (config)
      *
      * @see LABKEY.DataRegion.getSelected static method.
      */
-    this.getSelected = function (config)
+    getSelected : function (config)
     {
         if (!this.selectionKey)
             return;
@@ -285,7 +338,7 @@ LABKEY.DataRegion = function (config)
         config = config || { };
         config.selectionKey = this.selectionKey;
         LABKEY.DataRegion.getSelected(config);
-    };
+    },
 
     /**
      * Add or remove items from the selection associated with the this DataRegion.
@@ -311,7 +364,7 @@ LABKEY.DataRegion = function (config)
      * @see LABKEY.DataRegion#getSelected to get the selected items for this DataRegion.
      * @see LABKEY.DataRegion#clearSelected to clear all selected items for this DataRegion.
      */
-    this.setSelected = function (config)
+    setSelected : function (config)
     {
         if (!this.selectionKey)
             return;
@@ -337,7 +390,7 @@ LABKEY.DataRegion = function (config)
 
         this.selectionModified = true;
         LABKEY.DataRegion.setSelected(config);
-    };
+    },
 
     /**
      * Set the selection state for all checkboxes on the current page of the DataRegion.
@@ -347,7 +400,7 @@ LABKEY.DataRegion = function (config)
      * @see LABKEY.DataRegion#setSelected to set selected items on the current page of the DataRegion.
      * @see LABKEY.DataRegion#clearSelected to clear all selected.
      */
-    this.selectPage = function (checked)
+    selectPage : function (checked)
     {
         var ids = this._setAllCheckboxes(checked, '.select');
         if (ids.length > 0)
@@ -382,14 +435,14 @@ LABKEY.DataRegion = function (config)
             }});
         }
         return ids;
-    };
+    },
 
     /**
      * Returns true if any row is checked on the current page of the DataRegion. Selected items may exist on other pages.
      * @returns {Boolean} true if any row is checked on the current page of the DataRegion.
      * @see LABKEY.DataRegion#getSelected to get all selected rows.
      */
-    this.hasSelected = function ()
+    hasSelected : function ()
     {
         if (!this.form)
             return false;
@@ -404,14 +457,14 @@ LABKEY.DataRegion = function (config)
             }
         }
         return false;
-    };
+    },
 
     /**
      * Returns true if all rows are checked on the current page of the DataRegion and at least one row is present.
      * @returns {Boolean} true if all rows are checked on the current page of the DataRegion and at least one row is present.
      * @see LABKEY.DataRegion#getSelected to get all selected rows.
      */
-    this.isPageSelected = function ()
+    isPageSelected : function ()
     {
         if (!this.form)
             return false;
@@ -428,12 +481,12 @@ LABKEY.DataRegion = function (config)
             }
         }
         return hasCheckbox;
-    };
+    },
 
-    this.selectNone = function (config)
+    selectNone : function (config)
     {
         return this.clearSelected(config);
-    };
+    },
 
     /**
      * Clear all selected items for the current DataRegion.
@@ -457,7 +510,7 @@ LABKEY.DataRegion = function (config)
      * @see LABKEY.DataRegion#selectPage
      * @see LABKEY.DataRegion.clearSelected static method.
      */
-    this.clearSelected = function (config)
+    clearSelected : function (config)
     {
         if (!this.selectionKey)
             return;
@@ -482,27 +535,27 @@ LABKEY.DataRegion = function (config)
             this._setAllCheckboxes(false);
             this.hideMessage();
         }
-    };
+    },
 
     /**
      * Replaces the sort on the given column, if present, or sets a brand new sort
      * @param columnName name of the column to be sorted
      * @param sortDirection either "+' for ascending or '-' for descending
      */
-    this.changeSort = function (columnName, sortDirection)
+    changeSort : function (columnName, sortDirection)
     {
         if (false === this.fireEvent("beforesortchange", this, columnName, sortDirection))
             return;
 
         var newSortString = this.alterSortString(LABKEY.DataRegion._filterUI.getParameter(this.name + ".sort"), columnName, sortDirection);
         this._setParam(".sort", newSortString, [".sort", ".offset"]);
-    };
+    },
 
     /**
      * Removes the sort on a specified column
      * @param columnName name of the column
      */
-    this.clearSort = function (columnName)
+    clearSort : function (columnName)
     {
         if (!columnName)
             return;
@@ -515,35 +568,35 @@ LABKEY.DataRegion = function (config)
             this._setParam(".sort", newSortString, [".sort", ".offset"]);
         else
             this._removeParams([".sort", ".offset"]);
-    };
+    },
 
     // private
-    this.changeFilter = function (newParamValPairs, newQueryString)
+    changeFilter : function (newParamValPairs, newQueryString)
     {
         if (false === this.fireEvent("beforefilterchange", this, newParamValPairs))
             return;
 
         LABKEY.DataRegion._filterUI.setSearchString(this.name, newQueryString);
-    };
+    },
 
     /**
      * Removes all the filters for a particular field
      * @param fieldName the name of the field from which all filters should be removed
      */
-    this.clearFilter = function (fieldName)
+    clearFilter : function (fieldName)
     {
         if (false === this.fireEvent("beforeclearfilter", this, fieldName))
             return;
         this._removeParams(["." + fieldName + "~", ".offset"]);
-    };
+    },
 
     /** Removes all filters from the DataRegion */
-    this.clearAllFilters = function ()
+    clearAllFilters : function ()
     {
         if (false === this.fireEvent("beforeclearallfilters", this))
             return;
         this._removeParams([".", ".offset"]);
-    };
+    },
 
     /**
      * Returns the user filter from the URL. The filter is represented as an Array of objects of the form:
@@ -554,7 +607,7 @@ LABKEY.DataRegion = function (config)
      * </ul>
      * @returns {Object} Object representing the user filter.
      */
-    this.getUserFilter = function ()
+    getUserFilter : function ()
     {
         var userFilter = [];
         var paramValPairs = LABKEY.DataRegion._filterUI.getParamValPairs(this.requestURL, null);
@@ -573,16 +626,16 @@ LABKEY.DataRegion = function (config)
         }
 
         return userFilter;
-    };
+    },
 
     /**
      * Returns the user {@link LABKEY.Query.containerFilter} parameter from the URL.
      * @returns {LABKEY.Query.containerFilter} The user container filter.
      */
-    this.getUserContainerFilter = function ()
+    getUserContainerFilter : function ()
     {
         return LABKEY.DataRegion._filterUI.getParameter(this.name + ".containerFilterName");
-    };
+    },
 
     /**
      * Returns the user sort from the URL. The sort is represented as an Array of objects of the form:
@@ -592,7 +645,7 @@ LABKEY.DataRegion = function (config)
      * </ul>
      * @returns {Object} Object representing the user sort.
      */
-    this.getUserSort = function ()
+    getUserSort : function ()
     {
         var userSort = [];
         var sortParam = LABKEY.DataRegion._filterUI.getParameter(this.name + ".sort");
@@ -618,94 +671,104 @@ LABKEY.DataRegion = function (config)
         }
 
         return userSort;
-    };
+    },
 
-    this.addMessage = function(msg, part)
+    /**
+     * Show a message in the header of this DataRegion.
+     * @param html the HTML source of the message to be shown
+     * @param part
+     * @return {Ext.Element} The Ext.Element of the newly created message div.
+     */
+    addMessage : function (html, part)
     {
         if (this.msgbox)
-            this.msgbox.addMessage(msg, part);
-    };
+            this.msgbox.addMessage(html, part);
+    },
 
     /**
      * Show a message in the header of this DataRegion.
      * @param html the HTML source of the message to be shown
      * @return {Ext.Element} The Ext.Element of the newly created message div.
-     * @deprecated use addMessage(part, msg) instead.
+     * @deprecated use addMessage(html, msg) instead.
      */
-    this.showMessage = function (html)
+    showMessage : function (html)
     {
         if (this.msgbox)
             this.msgbox.addMessage(html);
-    };
+    },
 
-    this.showMessageArea = function()
+    showMessageArea : function()
     {
         if (this.msgbox)
             this.msgbox.render();
-    };
+    },
 
     /**
      * Show a message in the header of this DataRegion with a loading indicator.
      * @param html the HTML source of the message to be shown
      */
-    this.showLoadingMessage = function (html)
+    showLoadingMessage : function (html)
     {
         html = html || "Loading...";
         this.addMessage("<div><span class='loading-indicator'>&nbsp;</span><em>" + html + "</em></div>");
-    };
+    },
 
     /**
      * Show a success message in the header of this DataRegion.
      * @param html the HTML source of the message to be shown
      */
-    this.showSuccessMessage = function (html)
+    showSuccessMessage : function (html)
     {
         html = html || "Completed successfully.";
         this.addMessage("<div class='labkey-message'>" + html + "</div>");
-    };
+    },
 
     /**
      * Show an error message in the header of this DataRegion.
      * @param html the HTML source of the message to be shown
      */
-    this.showErrorMessage = function (html)
+    showErrorMessage : function (html)
     {
         html = html || "An error occurred.";
         this.addMessage("<div class='labkey-error'>" + html + "</div>");
-    };
+    },
 
     /**
      * Returns true if a message is currently being shown for this DataRegion. Messages are shown as a header.
      * @return {Boolean} true if a message is showing.
      */
-    this.isMessageShowing = function()
+    isMessageShowing : function()
     {
         return this.msgbox && this.msgbox.isVisible();
-    };
+    },
 
     /** If a message is currently showing, hide it and clear out its contents */
-    this.hideMessage = function ()
+    hideMessage : function ()
     {
         if (this.msgbox)
         {
             this.msgbox.setVisible(false);
             this.msgbox.clear();
         }
-    };
+    },
 
     /** Clear the message box contents. */
-    this.clearMessage = function ()
+    clearMessage : function ()
     {
         if (this.msgbox)
             this.msgbox.clear();
-    };
+    },
 
-    this.getMessageArea = function()
+    /**
+     * Get the message area if it exists.
+     * @return {LABKEY.DataRegion.MessageArea} The message area object.
+     */
+    getMessageArea : function()
     {
         return this.msgbox;
-    };
+    },
 
-    this.alterSortString = function(currentSortString, columnName, direction)
+    alterSortString : function(currentSortString, columnName, direction)
     {
         var newSortArray = [];
 
@@ -726,7 +789,7 @@ LABKEY.DataRegion = function (config)
             newSortArray = [direction + columnName].concat(newSortArray);
 
         return newSortArray.join(",");
-    };
+    },
 
     /**
      * Change the currently selected view to the named view
@@ -736,7 +799,7 @@ LABKEY.DataRegion = function (config)
      * @param {String} [view.reportId] If the type is 'report', then the report id.
      * @param urlParameters <b>NOTE: Experimental parameter; may change without warning.</b> A set of filter and sorts to apply as URL parameters when changing the view.
      */
-    this.changeView = function(view, urlParameters)
+    changeView : function(view, urlParameters)
     {
         if (false === this.fireEvent("beforechangeview", this, view, urlParameters))
             return;
@@ -786,58 +849,8 @@ LABKEY.DataRegion = function (config)
 
 
         this._setParams(newParamValPairs, skipPrefixes);
-    };
+    },
 
-    this._initElements();
-    Ext.EventManager.on(window, "load", this._resizeContainer, this, {single: true});
-    Ext.EventManager.on(window, "resize", this._resizeContainer, this);
-    this._showPagination(this.header);
-    this._showPagination(this.footer);
-
-    if (this.view && this.view.session)
-    {
-        var msg;
-        if (this.view.savable)
-        {
-            msg = (this.viewName ? "The current view '<em>" + Ext.util.Format.htmlEncode(this.viewName) + "</em>'" : "The current <em>&lt;default&gt;</em> view") + " is unsaved.";
-            msg += " &nbsp;";
-            msg += "<span class='labkey-button unsavedview-revert'>Revert</span>";
-            msg += "&nbsp;";
-            msg += "<span class='labkey-button unsavedview-edit'>Edit</span>";
-            msg += "&nbsp;";
-            msg += "<span class='labkey-button unsavedview-save'>Save</span>";
-        }
-        else
-        {
-            msg = ("The current view has been customized.");
-            msg += " &nbsp;";
-            msg += "<span class='labkey-button unsavedview-revert' title='Revert'>Revert</span>";
-            msg += ", &nbsp;";
-            msg += "<span class='labkey-button unsavedview-edit'>Edit</span>";
-        }
-
-        // add the customize view message, the link handlers will get added after render in _onRenderMessageArea
-        var el = this.addMessage(msg, 'customizeview');
-    }
-
-    if (this.showInitialSelectMessage)
-    {
-        switch (this.showRows)
-        {
-            case "all":
-                this._showSelectMessage("Showing all " + this.totalRows + " rows.");
-                break;
-            case "selected":
-                this._showSelectMessage("Showing only <em>selected</em> rows.");
-                break;
-            case "unselected":
-                this._showSelectMessage("Showing only <em>unselected</em> rows.");
-                break;
-        }
-    }
-};
-
-Ext.extend(LABKEY.DataRegion, Ext.Component, {
     // private
     _initElements : function ()
     {
@@ -1322,6 +1335,7 @@ Ext.extend(LABKEY.DataRegion, Ext.Component, {
         this._deleteCustomView(false, "Reverting view...");
     },
 
+    // private
     _deleteCustomView : function (complete, message)
     {
         var timerId = function () {

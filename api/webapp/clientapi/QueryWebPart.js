@@ -241,7 +241,9 @@ function onItem2Handler(dataRegion)
 
 &lt;/script&gt;
 */
-LABKEY.QueryWebPart = Ext.extend(Ext.util.Observable, {
+LABKEY.QueryWebPart = Ext.extend(Ext.util.Observable,
+/** @lends LABKEY.QueryWebPart.prototype */
+{
     _paramTranslationMap : {
         frame: 'webpart.frame',
         bodyClass: 'webpart.bodyClass',
@@ -408,9 +410,6 @@ LABKEY.QueryWebPart = Ext.extend(Ext.util.Observable, {
      * Note that you do not need to call this method explicitly if you specify a renderTo property on the config object
      * handed to the class constructor. If you do not specify renderTo in the config, then you must call this method
      * passing the id of the element in which you want the part rendered
-     * @name render
-     * @function
-     * @memberOf LABKEY.QueryWebPart#
      * @param renderTo The id of the element in which you want the part rendered.
      */
     render : function(renderTo) {
