@@ -183,7 +183,8 @@ LABKEY.study.ParticipantGroupPanel = Ext.extend(Ext.Panel, {
         var label = fieldValues["categoryLabel"];
         var idStr = fieldValues["categoryIdentifiers"];
 
-        this.validate();
+        if (!this.validate())
+            return;
 
         // mask the panel
         this.getEl().mask("Saving category...", "x-mask-loading");

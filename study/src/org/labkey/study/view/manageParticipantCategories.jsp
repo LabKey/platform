@@ -85,7 +85,7 @@
         var tbarButtons = [{
             text: 'Create',
             handler: function(){
-                editParticipantCategories(null);
+                editParticipantGroup(null);
             },
             scope: this
         },{
@@ -95,7 +95,7 @@
             handler: function(){
                 if (_grid.getSelectionModel().hasSelection())
                 {
-                    editParticipantCategories(_grid.getSelectionModel().getSelected());
+                    editParticipantGroup(_grid.getSelectionModel().getSelected());
                 }
             },
             scope: this
@@ -106,7 +106,7 @@
             handler: function(){
                 if (_grid.getSelectionModel().hasSelection())
                 {
-                    deleteParticipantCategories(_grid.getSelectionModel().getSelected());
+                    deleteParticipantGroup(_grid.getSelectionModel().getSelected());
                 }
             },
             scope: this
@@ -131,7 +131,7 @@
         _grid.on('rowdblclick', function(g, idx, e){
             if (_grid.getSelectionModel().hasSelection())
             {
-                editParticipantCategories(_grid.getSelectionModel().getSelected());
+                editParticipantGroup(_grid.getSelectionModel().getSelected());
             }
         });
     }
@@ -168,13 +168,13 @@
         }
     }
 
-    function editParticipantCategories(row){
+    function editParticipantGroup(row){
         var win = new Ext.Window({
             cls: 'extContainer',
             title: 'Define <%= subjectNounSingular %> Group',
             layout:'fit',
-            width:800,
-            height:550,
+            width: Ext.getBody().getViewSize().width < 850 ? Ext.getBody().getViewSize().width * .9 : 800,
+            height: Ext.getBody().getViewSize().height * .75, 
             modal: true,
             closeAction:'close',
             items: new LABKEY.study.ParticipantGroupPanel({
@@ -200,12 +200,12 @@
         win.show(this);
     }
 
-    function deleteParticipantCategories(row){
-        // todo: do we need to handle deletion of a shared/public category differently?
+    function deleteParticipantGroup(row){
+        // todo: do we need to handle deletion of a shared/public group differently?
 
         Ext.Msg.show({
-            title : 'Delete Category',
-            msg : 'Delete Selected Category:<br/>' + $h(row.get("label")),
+            title : 'Delete Group',
+            msg : 'Delete Selected Group:<br/>' + $h(row.get("label")),
             buttons: Ext.Msg.YESNO,
             icon: Ext.Msg.QUESTION,
             fn: function(btn, text) {
