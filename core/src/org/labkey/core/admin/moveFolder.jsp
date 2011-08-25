@@ -51,7 +51,7 @@
 </style>
 <table class="button-bar">
     <tr>
-        <td><%=generateButton("Confirm Move", "#", "action('confirmmove');")%></td>
+        <td><%=PageFlowUtil.generateButton("Confirm Move", "#", "action('confirmmove');", "id=\"confirm-move-btn\" style=\"display: none;\"")%></td>
         <td><%=generateBackButton("Cancel")%></td>
     </tr>
 </table>
@@ -78,6 +78,11 @@
 
         Ext.QuickTips.init();
 
+        // Move Button -- Disable
+        var moveBtn = Ext.get('confirm-move-btn');
+        moveBtn.replaceClass('labkey-button', 'labkey-disabled-button');
+        moveBtn.show();
+
         folderTree = new Ext.tree.TreePanel({
             loader : new Ext.tree.TreeLoader({
                 dataUrl : LABKEY.ActionURL.buildURL('core', 'getExtContainerAdminTree.api'),
@@ -100,6 +105,7 @@
         });
 
         folderTree.on('click', function(node, event) {
+            moveBtn.replaceClass('labkey-disabled-button', 'labkey-button');
             selectedNode = node;
         });
 
