@@ -350,11 +350,6 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
         {
             throw new RuntimeSQLException(e);
         }
-
-        if (moduleContext.getInstalledVersion() < 9.11)
-        {
-            getUpgradeCode().installDefaultMvIndicators();
-        }
     }
 
 
@@ -375,6 +370,8 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
 
         // Users & guests can read from /home
         ContainerManager.bootstrapContainer(ContainerManager.HOME_PROJECT_PATH, siteAdminRole, readerRole, readerRole);
+
+        getUpgradeCode().installDefaultMvIndicators();
     }
 
 

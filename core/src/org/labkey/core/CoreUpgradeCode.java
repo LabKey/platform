@@ -16,14 +16,17 @@
 package org.labkey.core;
 
 import org.apache.log4j.Logger;
-import org.labkey.api.data.*;
+import org.labkey.api.data.Container;
+import org.labkey.api.data.ContainerManager;
+import org.labkey.api.data.CoreSchema;
+import org.labkey.api.data.Filter;
+import org.labkey.api.data.MvUtil;
+import org.labkey.api.data.SimpleFilter;
+import org.labkey.api.data.Table;
+import org.labkey.api.data.TableInfo;
+import org.labkey.api.data.UpgradeCode;
 import org.labkey.api.module.ModuleContext;
-import org.labkey.api.security.ACL;
-import org.labkey.api.security.Group;
 import org.labkey.api.security.PasswordExpiration;
-import org.labkey.api.security.SecurityManager;
-import org.labkey.api.security.roles.*;
-import org.labkey.api.util.ResultSetUtil;
 import org.labkey.api.util.UnexpectedException;
 import org.labkey.api.util.emailTemplate.EmailTemplateService;
 import org.labkey.core.login.DbLoginManager;
@@ -32,7 +35,9 @@ import org.labkey.core.login.PasswordRule;
 
 import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.util.*;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.Map;
 
 /**
  * User: adam
@@ -59,7 +64,7 @@ public class CoreUpgradeCode implements UpgradeCode
     }
 
 
-    // After schema update, 9.11
+    // Called on bootstrap... probably doesn't belong here...
     public void installDefaultMvIndicators()
     {
         try
@@ -96,172 +101,6 @@ public class CoreUpgradeCode implements UpgradeCode
         {
             UnexpectedException.rethrow(se);
         }
-    }
-
-
-    //invoked by core-9.10-9.20.sql
-    @SuppressWarnings({"ConstantConditions"})
-    public void migrateAcls(ModuleContext context)
-    {
-        //8441: skip ACL migration if this is a brand-new install 
-        if (context.isNewInstall())
-            return;
-
-        int numAcls = 0;
-        _log.info("Migrating existing ACLs to RoleAssignments...");
-
-        ResultSet rs = null;
-        String insertPolicySql = "insert into core.Policies(ResourceId,ResourceClass,Container,Modified) values(?,?,?,?)";
-        String insertAssignmentSql = "insert into core.RoleAssignments(ResourceId,UserId,Role) values (?,?,?)";
-        Role siteAdminRole = new SiteAdminRole();
-        Date now = new Date();
-
-        try
-        {
-            DbSchema coreSchema = CoreSchema.getInstance().getSchema();
-
-            //delete any previously-migrated data in case we failed part way through
-            Table.execute(coreSchema, "delete from core.RoleAssignments");
-            Table.execute(coreSchema, "delete from core.Policies");
-
-            //get all the user ids so that we can verify if a particular group id
-            //still exists and ignore if not--returned array is sorted so we can
-            //use Arrays.binarySearch()
-            int[] userIds = getAllUserIds();
-            String rootId = getRootId();
-
-            rs = Table.executeQuery(coreSchema, "select * from core.ACLs", null);
-            while(rs.next())
-            {
-                //NOTE: container id may be null in some old databases!
-                //not sure exactly what this means, but we need to handle that case
-                String containerId = rs.getString("Container");
-                String objectId = rs.getString("ObjectId");
-                String resourceClass = objectId.equals(containerId) ? Container.class.getName() : null;
-
-                ACL acl = new ACL(rs.getBytes("ACL"));
-                int[] groups = acl.getAllGroups();
-                int[] perms = acl.getAllPermissions();
-                boolean empty = true; //will be set to true if ACL contains a valid group id
-
-                //insert into policies
-                Table.execute(coreSchema, insertPolicySql, objectId, resourceClass, containerId, now);
-
-                ContainerType containerType;
-
-                if (null == containerId)
-                {
-                    containerType = ContainerType.UNKNOWN;
-                }
-                else
-                {
-                    // Figure out the container type by reading properties directly from the database
-                    String parentId = Table.executeSingleton(CoreSchema.getInstance().getSchema(), "SELECT Parent FROM core.Containers WHERE EntityId = ?", new Object[]{containerId}, String.class);
-
-                    if (null == parentId)
-                        containerType = ContainerType.ROOT;
-                    else if (rootId.equals(parentId))
-                        containerType = ContainerType.PROJECT;
-                    else
-                        containerType = ContainerType.FOLDER;
-                }
-
-                //iterate over all groups in the ACL, mapping the store perms to a role
-                //and saving that role assignment to the new table
-                for(int idx = 0; idx < groups.length; ++idx)
-                {
-                    //note that the old ACLs might contain groups that no longer exist
-                    //the old binary format made it difficult to scrub when a group was deleted
-                    //so check the group against the full list in memory and skip if not found
-                    if(Arrays.binarySearch(userIds, groups[idx]) > 0)
-                    {
-                        Role role = getRoleForPerms(perms[idx], containerType, objectId);
-                        if(null == role)
-                        {
-                            _log.warn("Unable to determine a role for permissions bits 0x" + Integer.toHexString(perms[idx])
-                                    + " in ACL for object id " + objectId + " and group id " + groups[idx]
-                                    + "! Skipping role assignment.");
-                            continue;
-                        }
-
-                        Table.execute(coreSchema, insertAssignmentSql, objectId, groups[idx], role.getUniqueName());
-                        empty = false;
-                    }
-                }
-
-                if(empty)
-                {
-                    //if the acl is empty, that means no group still in existence has permissions to this object
-                    //but parts of our code generally check explicitly for user.isAdmin() to
-                    //allow admins access to the object. The real equivalent is to assign
-                    //the administrators group to the site admin role for this object
-                    //and that's all.
-                    Table.execute(CoreSchema.getInstance().getSchema(), insertAssignmentSql, objectId, Group.groupAdministrators, siteAdminRole.getUniqueName());
-                }
-
-                ++numAcls;
-                if((numAcls % 100) == 0)
-                    _log.info("Migrated " + numAcls + " ACLs...");
-            }
-        }
-        catch(SQLException e)
-        {
-            _log.error("SQLException while converting ACL to SecurityPolicy!", e);
-            throw new RuntimeSQLException(e);
-        }
-        finally
-        {
-            ResultSetUtil.close(rs);
-        }
-
-        _log.info("Finished migrating " + numAcls + " ACLs to RoleAssignments.");
-    }
-
-    private enum ContainerType { ROOT, PROJECT, FOLDER, UNKNOWN }
-
-    private int[] getAllUserIds() throws SQLException
-    {
-        Integer[] principalIds = Table.executeArray(CoreSchema.getInstance().getSchema(), "select UserId from core.Principals order by UserId", null, Integer.class);
-        int[] ret = new int[principalIds.length];
-        for(int idx = 0; idx < principalIds.length; ++idx)
-        {
-            ret[idx] = principalIds[idx].intValue();
-        }
-        return ret;
-    }
-
-    private Role getRoleForPerms(int perms, ContainerType containerType, String objectId)
-    {
-        if(SecurityManager.PermissionSet.ADMIN.getPermissions() == perms)
-        {
-            if(ContainerType.UNKNOWN == containerType || ContainerType.ROOT == containerType)
-                return new SiteAdminRole();
-            else if(ContainerType.PROJECT == containerType)
-                return new ProjectAdminRole();
-            else
-                return new FolderAdminRole();
-        }
-        else if(SecurityManager.PermissionSet.EDITOR.getPermissions() == perms)
-            return new EditorRole();
-        else if(SecurityManager.PermissionSet.AUTHOR.getPermissions() == perms || (ACL.PERM_READ | ACL.PERM_INSERT) == perms)
-            return new AuthorRole();
-        else if(SecurityManager.PermissionSet.READER.getPermissions() == perms)
-            return new ReaderRole();
-        else if(SecurityManager.PermissionSet.RESTRICTED_READER.getPermissions() == perms)
-        {
-            //HACK: this was never really implemented on the container itself,
-            //but study used this to distinguish between "read-some" and "read-all"
-            //In either case, we should migrate to a normal reader role.
-            return new RestrictedReaderRole();
-        }
-        else if(SecurityManager.PermissionSet.SUBMITTER.getPermissions() == perms)
-            return new SubmitterRole();
-        else if(SecurityManager.PermissionSet.NO_PERMISSIONS.getPermissions() == perms)
-            return new NoPermissionsRole();
-        else if((ACL.PERM_UPDATE | ACL.PERM_READ) == perms) //special case for editable datasets
-            return new EditorRole();
-        else
-            return null;
     }
 
 
