@@ -41,16 +41,11 @@ public class LoggingDataIterator extends AbstractDataIterator
 
     public static DataIterator wrap(DataIterator in)
     {
+        if (in instanceof LoggingDataIterator)
+            return in;
         if (_staticLog.isEnabledFor(Priority.DEBUG))
-            return new LoggingDataIterator(in);
+            return new LoggingDataIterator(in, _staticLog);
         return in;
-    }
-
-
-    public LoggingDataIterator(DataIterator in)
-    {
-        super(null);
-        _data = in;
     }
 
     public LoggingDataIterator(DataIterator in, Logger log)
@@ -93,9 +88,10 @@ public class LoggingDataIterator extends AbstractDataIterator
             if (name.length() > 50)
                 name = name.substring(name.length()-50);
             Object value = _data.get(i);
+            String cls = null == value ? "NULL" : value.getClass().getSimpleName();
             if (null == value)
                 value = "";
-            formatter.format("%50s  %s\n", name, value);
+            formatter.format("%50s %10s| %s\n", name, cls, value);
         }
 
         _log.log(_pri, sb.toString());

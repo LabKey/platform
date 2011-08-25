@@ -280,7 +280,7 @@ public class SchemaColumnMetaData
         {
             for (ColumnInfo column : _columns)
             {
-                if (column.isStringType() && !"entityid".equals(column.getSqlTypeName()))
+                if (column.isStringType() && !StringUtils.equalsIgnoreCase("entityid",column.getSqlTypeName()))
                 {
                     _titleColumn = column.getName();
                     break;
