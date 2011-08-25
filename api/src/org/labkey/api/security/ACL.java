@@ -16,12 +16,6 @@
 
 package org.labkey.api.security;
 
-import org.apache.log4j.Logger;
-import org.labkey.api.security.permissions.*;
-import org.jetbrains.annotations.Nullable;
-
-import java.nio.ByteBuffer;
-import java.nio.ByteOrder;
 import java.util.Arrays;
 
 
@@ -49,9 +43,6 @@ public class ACL implements Cloneable
     public static final int PERM_ADMIN = 0x00008000;
     public static final int PERM_ALLOWALL = 0x0000ffff;
 
-    // NYI
-    public static final int PERM_DENYALL = 0xffff0000;
-
     private static int[] _emptyArray = new int[0];
 
     // use two arrays, makes it easy to use binarySearch()
@@ -60,78 +51,14 @@ public class ACL implements Cloneable
     boolean _isEmpty = true;
 
 
-    public static final ACL EMPTY = new ACL(true)
-    {
-        public void setPermission(int group, int permission)
-        {
-            throw new IllegalStateException("This ACL is read only");
-        }
-    };
-
-
     public ACL()
     {
-        this(true);
-    }
-
-
-    /*
-     * see isEmpty()
-     */
-    public ACL(boolean empty)
-    {
-        _isEmpty = empty;
-    }
-
-
-    public ACL(byte[] bytes)
-    {
-        if (null == bytes || bytes.length == 0)
-            return;
-
-        _isEmpty = false;
-
-        ByteBuffer buf = ByteBuffer.wrap(bytes);
-        buf.order(ByteOrder.LITTLE_ENDIAN);
-        int len = bytes.length / 8;
-        _groups = new int[len];
-        _permissions = new int[len];
-        for (int i = 0; i < len; i++)
-        {
-            _groups[i] = buf.getInt();
-            _permissions[i] = buf.getInt();
-        }
-    }
-
-
-    /** NOTE NOTE NOTE
-     *
-     * There is no explicit way to say, "No group has any permission"
-     * isEmpty() means 'ignore this ACL' or 'do the default'
-     *
-     * To explicity deny permissions do something like
-     *
-     * acl = new ACL()
-     * acl.setPermissions(User.GUEST, ACL.PERM_DENYALL)
-     */
-
-    public boolean isEmpty()
-    {
-        assert !_isEmpty || _permissions.length == 0;
-        return _isEmpty;
     }
 
 
     public boolean hasPermission(User u, int requested)
     {
         int p = getPermissions(u);
-        return p == (p | requested);
-    }
-
-
-    public boolean hasPermission(Group g, int requested)
-    {
-        int p = getPermissions(g);
         return p == (p | requested);
     }
 
@@ -247,130 +174,4 @@ public class ACL implements Cloneable
         _groups = g;
         _permissions = p;
     }
-
-
-    public byte[] toByteArray()
-    {
-        assert(_groups.length == _permissions.length);
-
-        ByteBuffer buf = ByteBuffer.allocate(Math.max(1, _groups.length) * 4 * 2);
-        buf.order(ByteOrder.LITTLE_ENDIAN);
-        for (int i = 0; i < _groups.length; i++)
-        {
-            if (_permissions[i] == 0)
-                continue;
-            buf.putInt(_groups[i]);
-            buf.putInt(_permissions[i]);
-        }
-
-        // disambiguate empty v. no permissions if necessary
-        if (buf.position() == 0 && !_isEmpty)
-        {
-            buf.putInt(0);
-            buf.putInt(PERM_DENYALL);
-        }
-
-        if (buf.position() == buf.capacity())
-            return buf.array();
-        byte[] bytes = new byte[buf.position()];
-        buf.position(0);
-        buf.get(bytes);
-        return bytes;
-    }
-
-
-    public ACL copy()
-    {
-        try
-        {
-            return (ACL)this.clone();
-        }
-        catch (CloneNotSupportedException x)
-        {
-            Logger.getLogger(ACL.class).error("unexpected error", x);
-            throw new RuntimeException(x);
-        }
-    }
-
-
-    /**
-     * create copy of this ACL removing all groups not in set
-     * will return this if there are no changes
-     */
-    public ACL scrub(int[] in)
-    {
-        // probably sorted already, but just to be safe
-        Arrays.sort(in);
-
-        // check that all groups with permissions are in the restricted list
-
-        int i = 0;
-        for ( ; i<_groups.length ; i++)
-        {
-            if (Arrays.binarySearch(in,_groups[i]) < 0 && _permissions[i] != 0)
-                break;
-        }
-        if (i == _groups.length)
-            return this;
-
-        // otherwise need to create scrubbed ACL
-
-        ACL aclNew = this.copy();
-        for ( ; i<_groups.length ; i++)
-        {
-            if (Arrays.binarySearch(in,aclNew._groups[i]) < 0)
-                aclNew._permissions[i] = 0;
-        }
-        return aclNew;
-    }
-
-
-    public int[] getGroups(int perm, User user)
-    {
-        int[] groupsWithPerm = new int[_groups.length];
-        int len=0;
-        for (int i=0 ; i<_groups.length ; i++)
-        {
-            if ((null == user || user.isInGroup(_groups[i])) && perm == (_permissions[i] & perm))
-                groupsWithPerm[len++] = _groups[i];
-        }
-        int[] ret = new int[len];
-        System.arraycopy(groupsWithPerm,0,ret,0,len);
-        return ret;
-    }
-
-    //To be used strictly by the CoreUpgradeCode
-    public int[] getAllGroups()
-    {
-        int[] copy = new int[_groups.length];
-        System.arraycopy(_groups, 0, copy, 0,
-                         _groups.length);
-        return copy;
-    }
-    
-    public int[] getAllPermissions()
-    {
-        int[] copy = new int[_permissions.length];
-        System.arraycopy(_permissions, 0, copy, 0,
-                         _permissions.length);
-        return copy;
-    }
-
-    @Nullable
-    public static Class<? extends Permission> translatePermission(int perm)
-    {
-        if((perm & PERM_READ) > 0 || (perm & PERM_READOWN) > 0)
-            return ReadPermission.class;
-        if((perm & PERM_INSERT) > 0)
-            return InsertPermission.class;
-        if((perm & PERM_UPDATE) > 0 || (perm & PERM_UPDATEOWN) > 0)
-            return UpdatePermission.class;
-        if((perm & PERM_DELETE) > 0 || (perm & PERM_DELETEOWN) > 0)
-            return DeletePermission.class;
-        if((perm & PERM_ADMIN) > 0)
-            return AdminPermission.class;
-
-        return null;
-    }
-
 }
