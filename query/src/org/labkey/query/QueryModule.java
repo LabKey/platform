@@ -142,9 +142,11 @@ public class QueryModule extends DefaultModule
         }
 
         SystemMaintenance.addTask(new SchemaReloadMaintenanceTask());
-        ServiceRegistry.get(SearchService.class).addDocumentProvider(ExternalSchemaDocumentProvider.getInstance());
-        ServiceRegistry.get(SearchService.class).addSearchCategory(ExternalSchemaDocumentProvider.externalTableCategory);
-
+        if (null != ServiceRegistry.get(SearchService.class))
+        {
+            ServiceRegistry.get(SearchService.class).addDocumentProvider(ExternalSchemaDocumentProvider.getInstance());
+            ServiceRegistry.get(SearchService.class).addSearchCategory(ExternalSchemaDocumentProvider.externalTableCategory);
+        }
         PropertyService.get().registerDomainKind(new SimpleTableDomainKind());
     }
 

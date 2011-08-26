@@ -135,8 +135,9 @@ public class SearchModule extends DefaultModule
 
         // add a container listener so we'll know when containers are deleted
         ContainerManager.addContainerListener(new SearchContainerListener());
-        
-        ServiceRegistry.get(SearchService.class).addSearchCategory(UmlsController.umlsCategory);
+
+        if (null != ServiceRegistry.get(SearchService.class))
+            ServiceRegistry.get(SearchService.class).addSearchCategory(UmlsController.umlsCategory);
     }
 
 

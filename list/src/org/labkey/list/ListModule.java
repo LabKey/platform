@@ -85,8 +85,11 @@ public class ListModule extends DefaultModule
         if (null != registry)
             registry.addFactories(new StudyListWriter.Factory(), new StudyListImporter.Factory());
 
-        ServiceRegistry.get(SearchService.class).addDocumentProvider(ListManager.get());
-        ServiceRegistry.get(SearchService.class).addSearchCategory(ListManager.listCategory);
+        if (null != ServiceRegistry.get(SearchService.class))
+        {
+            ServiceRegistry.get(SearchService.class).addDocumentProvider(ListManager.get());
+            ServiceRegistry.get(SearchService.class).addSearchCategory(ListManager.listCategory);
+        }
     }
 
     @Override
