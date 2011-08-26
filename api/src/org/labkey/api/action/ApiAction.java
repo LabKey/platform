@@ -23,9 +23,9 @@ import org.labkey.api.query.BatchValidationException;
 import org.labkey.api.query.InvalidKeyException;
 import org.labkey.api.query.ValidationException;
 import org.labkey.api.view.NotFoundException;
+import org.labkey.api.view.RequestBasicAuthException;
 import org.labkey.api.view.TermsOfUseException;
 import org.labkey.api.view.UnauthorizedException;
-import org.labkey.api.view.ViewServlet;
 import org.springframework.beans.MutablePropertyValues;
 import org.springframework.mock.web.MockHttpServletRequest;
 import org.springframework.validation.BindException;
@@ -162,6 +162,14 @@ public abstract class ApiAction<FORM> extends BaseViewAction<FORM>
         catch (ValidationException e)
         {
             createResponseWriter().write(e);
+        }
+        catch (UnauthorizedException e)
+        {
+            // Force Basic authentication
+            if (!getViewContext().getUser().isGuest())
+                throw e;
+            else
+                throw new RequestBasicAuthException();
         }
         catch (Exception e)
         {
