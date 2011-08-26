@@ -42,7 +42,8 @@ LABKEY.vis.TimeChartPanel = Ext.extend(Ext.Panel, {
         // hold on to the x and y axis measure index
         var xAxisMeasureIndex = this.getFirstMeasureIndex(this.chartInfo.measures, "x-axis");
         var firstYAxisMeasureIndex = this.getFirstMeasureIndex(this.chartInfo.measures, "y-axis");
-
+        var firstLeftAxisMeasureIndex = this.getFirstYMeasureIndex(this.chartInfo.measures, "left");
+        var firstRightAxisMeasureIndex = this.getFirstYMeasureIndex(this.chartInfo.measures, "right");
         // add a listener to call measureSelected on render if this is a saved chart
         this.listeners = {
             scope: this,
@@ -144,7 +145,7 @@ LABKEY.vis.TimeChartPanel = Ext.extend(Ext.Panel, {
             this.editorYAxisLeftPanel = new LABKEY.vis.ChartEditorYAxisPanel({
                 disabled: true,
                 title: "Left-Axis",
-                axis: this.chartInfo.measures[firstYAxisMeasureIndex] ? this.chartInfo.measures[firstYAxisMeasureIndex].axis : {},
+                axis: this.chartInfo.measures[firstLeftAxisMeasureIndex] ? this.chartInfo.measures[firstLeftAxisMeasureIndex].axis : {},
                 listeners: {
                     scope: this,
                     'chartDefinitionChanged': function(requiresDataRefresh){
@@ -165,7 +166,7 @@ LABKEY.vis.TimeChartPanel = Ext.extend(Ext.Panel, {
             this.editorYAxisRightPanel = new LABKEY.vis.ChartEditorYAxisPanel({
                 disabled: true,
                 title: "Right-Axis",
-                axis: this.chartInfo.measures[firstYAxisMeasureIndex] ? this.chartInfo.measures[firstYAxisMeasureIndex].axis : {},
+                axis: this.chartInfo.measures[firstRightAxisMeasureIndex] ? this.chartInfo.measures[firstRightAxisMeasureIndex].axis : {},
                 listeners: {
                     scope: this,
                     'chartDefinitionChanged': function(requiresDataRefresh){
@@ -203,15 +204,15 @@ LABKEY.vis.TimeChartPanel = Ext.extend(Ext.Panel, {
                     'groupLayoutSelectionChanged': function(groupLayoutSelected){
                         if (groupLayoutSelected)
                         {
-                            this.groupsSelector.enable();
-                            this.subjectSelector.disable();
-                            Ext.getCmp('series-selector-tabpanel').activate(this.groupsSelector.getId());
+                            this.seriesSelectorTabPanel.activate(this.groupsSelector.getId());
+                            this.seriesSelectorTabPanel.unhideTabStripItem(this.groupsSelector);
+                            this.seriesSelectorTabPanel.hideTabStripItem(this.subjectSelector);
                         }
                         else
                         {
-                            this.groupsSelector.disable();
-                            this.subjectSelector.enable();
-                            Ext.getCmp('series-selector-tabpanel').activate(this.subjectSelector.getId());
+                            this.seriesSelectorTabPanel.activate(this.subjectSelector.getId());
+                            this.seriesSelectorTabPanel.unhideTabStripItem(this.subjectSelector);
+                            this.seriesSelectorTabPanel.hideTabStripItem(this.groupsSelector);
                         }
 
                         this.getChartData();
@@ -263,7 +264,6 @@ LABKEY.vis.TimeChartPanel = Ext.extend(Ext.Panel, {
             items.push(this.chartEditor);
 
             this.subjectSelector = new LABKEY.vis.SubjectSeriesSelector({
-                disabled: (this.chartInfo.chartLayout == "per_group"), // disabled by default if showing saved chart with per_group layout
                 subject: (this.chartInfo.chartLayout != "per_group" ? this.chartInfo.subject : {}),
                 subjectNounPlural: this.viewInfo.subjectNounPlural,
                 subjectNounSingular: this.viewInfo.subjectNounSingular,
@@ -284,7 +284,6 @@ LABKEY.vis.TimeChartPanel = Ext.extend(Ext.Panel, {
             });
 
             this.groupsSelector = new LABKEY.vis.GroupSelector({
-                disabled: (this.chartInfo.chartLayout != "per_group"), // disabled by default if NOT showing saved chart with per_group layout,
                 subject: (this.chartInfo.chartLayout == "per_group" ? this.chartInfo.subject : {}),
                 listeners: {
                     scope: this,
@@ -299,6 +298,30 @@ LABKEY.vis.TimeChartPanel = Ext.extend(Ext.Panel, {
                 }
             });
 
+            this.seriesSelectorTabPanel = new Ext.TabPanel({
+                id: 'series-selector-tabpanel',
+                activeTab: (this.chartInfo.chartLayout != "per_group" ? 0 : 1),
+                padding: 5,
+                enablePanelScroll: true,
+                enableTabScroll: true,
+                items: [
+                    this.subjectSelector,
+                    this.groupsSelector
+                ],
+                listeners: {
+                    scope: this,
+                    'afterRender': function(){
+                        if(this.chartInfo.chartLayout == "per_group"){
+                            this.seriesSelectorTabPanel.unhideTabStripItem(this.groupsSelector);
+                            this.seriesSelectorTabPanel.hideTabStripItem(this.subjectSelector);
+                        } else {
+                            this.seriesSelectorTabPanel.unhideTabStripItem(this.subjectSelector);
+                            this.seriesSelectorTabPanel.hideTabStripItem(this.groupsSelector);
+                        }
+                    }
+                }
+            })
+            
             this.seriesSelector = new Ext.Panel({
                 region: 'east',
                 layout: 'fit',
@@ -310,17 +333,7 @@ LABKEY.vis.TimeChartPanel = Ext.extend(Ext.Panel, {
                 hideCollapseTool: true,
                 header: false,
                 items: [
-                    new Ext.TabPanel({
-                        id: 'series-selector-tabpanel',
-                        activeTab: (this.chartInfo.chartLayout != "per_group" ? 0 : 1),
-                        padding: 5,
-                        enablePanelScroll: true,
-                        enableTabScroll: true,
-                        items: [
-                            this.subjectSelector,
-                            this.groupsSelector
-                        ]
-                    })
+                    this.seriesSelectorTabPanel
                 ],
                 tbar: {
                     height: 25,
