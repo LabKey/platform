@@ -93,18 +93,30 @@ LABKEY.study.CreateStudyWizard = Ext.extend(Ext.util.Observable, {
 
         var items = [];
 
+        this.info.name = 'New Study';
+        this.info.dstPath = LABKEY.ActionURL.getContainer();
+
         var formItems = [
             {
                 xtype: 'textfield',
                 fieldLabel: 'Study Name',
                 allowBlank: false,
                 name: 'studyName',
-                value: 'New Study'
+                value: this.info.name,
+                listeners: {change:function(cmp, newValue, oldValue) {this.info.name = newValue;}, scope:this}
             },{
                 xtype: 'textarea',
                 name: 'studyDescription',
                 height: '200',
-                emptyText: 'Type Description here'
+                emptyText: 'Type Description here',
+                listeners: {change:function(cmp, newValue, oldValue) {this.info.description = newValue;}, scope:this}
+            },{
+                xtype: 'textfield',
+                fieldLabel: 'New Study Location',
+                allowBlank: false,
+                name: 'studyFolder',
+                value: this.info.dstPath,
+                listeners: {change:function(cmp, newValue, oldValue) {this.info.dstPath = newValue;}, scope:this}
             }
         ];
 
@@ -120,7 +132,7 @@ LABKEY.study.CreateStudyWizard = Ext.extend(Ext.util.Observable, {
         items.push(formPanel);
 
         var txt = Ext.DomHelper.markup({tag:'div', html:'This Study will be created as a subfolder from the current folder. Click on the Change Folder button to select a different location.<br>'});
-        items.push({xtype:'displayfield', html: txt});
+//        items.push({xtype:'displayfield', html: txt});
 
         var panel = new Ext.Panel({
             border: false,
@@ -129,8 +141,8 @@ LABKEY.study.CreateStudyWizard = Ext.extend(Ext.util.Observable, {
                 align: 'stretch',
                 pack: 'start'
             },
-            items: items,
-            buttons: [{text: 'Change Folder', scope: this, handler: function(){Ext.MessageBox.alert('Coming Soon', 'This feature has not been implemented yet.');}}]
+            items: items
+//            buttons: [{text: 'Change Folder', scope: this, handler: function(){Ext.MessageBox.alert('Coming Soon', 'This feature has not been implemented yet.');}}]
         });
 
         panel.on('beforehide', function(cmp){
@@ -362,8 +374,38 @@ LABKEY.study.CreateStudyWizard = Ext.extend(Ext.util.Observable, {
             return;
         }
 
-        // at this point we probably need to gather the wizard state and issue an ajax request
-        // to create the study
-        this.win.close();
+        // prepare the params to post to the api action
+        var params = {};
+
+        params.name = this.info.name;
+        params.description = this.info.description;
+        params.srcPath = LABKEY.ActionURL.getContainer();
+        params.dstPath = this.info.dstPath;
+        params.datasets = [];
+
+        for (var i=0; i < this.info.datasets.length; i++)
+        {
+            var ds = this.info.datasets[i];
+
+            params.datasets.push(ds.data.DataSetId);
+        }
+
+        Ext.Ajax.request({
+            url: LABKEY.ActionURL.buildURL('study', 'createEmphasisStudy'),
+            method : 'POST',
+            scope: this,
+            success: function(){
+                this.fireEvent('success');
+                this.win.close();
+            },
+            failure: function(response, opts){
+                LABKEY.Utils.displayAjaxErrorResponse(response, opts);
+                this.fireEvent('failure');
+            },
+            jsonData : params,
+            headers : {
+                'Content-Type' : 'application/json'
+            }
+        });
     }
 });

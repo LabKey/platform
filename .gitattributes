@@ -2644,6 +2644,7 @@ study/src/org/labkey/study/model/DatasetImportHelper.java -text
 study/src/org/labkey/study/model/DatasetReorderer.java -text
 study/src/org/labkey/study/model/DateDatasetDomainKind.java -text
 study/src/org/labkey/study/model/DerivativeType.java -text
+study/src/org/labkey/study/model/EmphasisStudyDefinition.java -text
 study/src/org/labkey/study/model/ExtensibleStudyEntity.java -text
 study/src/org/labkey/study/model/Participant.java -text
 study/src/org/labkey/study/model/ParticipantCategory.java -text

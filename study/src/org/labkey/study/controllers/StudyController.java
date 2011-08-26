@@ -38,6 +38,7 @@ import org.labkey.api.action.FormHandlerAction;
 import org.labkey.api.action.FormViewAction;
 import org.labkey.api.action.GWTServiceAction;
 import org.labkey.api.action.HasViewContext;
+import org.labkey.api.action.MutatingApiAction;
 import org.labkey.api.action.NullSafeBindException;
 import org.labkey.api.action.QueryViewAction;
 import org.labkey.api.action.RedirectAction;
@@ -182,6 +183,7 @@ import org.labkey.study.model.CohortManager;
 import org.labkey.study.model.CustomParticipantView;
 import org.labkey.study.model.DataSetDefinition;
 import org.labkey.study.model.DatasetReorderer;
+import org.labkey.study.model.EmphasisStudyDefinition;
 import org.labkey.study.model.Participant;
 import org.labkey.study.model.ParticipantGroupManager;
 import org.labkey.study.model.QCState;
@@ -6992,5 +6994,25 @@ public class StudyController extends BaseStudyController
     public static class BrowseDataForm
     {
         
+    }
+
+    @RequiresPermissionClass(AdminPermission.class)
+    public class CreateEmphasisStudyAction extends MutatingApiAction<SimpleApiJsonForm>
+    {
+        @Override
+        public ApiResponse execute(SimpleApiJsonForm form, BindException errors) throws Exception
+        {
+            ApiSimpleResponse resp = new ApiSimpleResponse();
+
+            EmphasisStudyDefinition def = EmphasisStudyDefinition.fromJSON(form.getJsonObject());
+
+            resp.put("success", true);
+            return resp;
+        }
+
+        @Override
+        public void validateForm(SimpleApiJsonForm form, Errors errors)
+        {
+        }
     }
 }
