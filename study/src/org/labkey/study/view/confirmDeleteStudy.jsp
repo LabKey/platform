@@ -20,7 +20,20 @@
 <%@ page import="org.labkey.api.module.ModuleLoader" %>
 <%@ page import="java.util.Collection" %>
 <%@ page extends="org.labkey.study.view.BaseStudyPage" %>
-<form action="deleteStudy.post" method="post">
+<script>
+    function deleteStudy_onSubmit()
+    {
+        var confirmed = Ext.get("deleteStudyConfirm").dom.checked;
+        if (!confirmed)
+        {
+            Ext.Msg.alert("Info", "Check 'confirm delete' to continue.");
+            return false;
+        }
+        Ext.getBody().mask();
+        return true;
+    }
+</script>
+<form action="deleteStudy.post" method="post" onsubmit="return deleteStudy_onSubmit();">
 This will delete all study data in this folder.
 <ul>
 <%
@@ -35,6 +48,6 @@ for (String s : summaries)
 </ul>
     <br>
     Check the box below to confirm that you want to delete this study. <br>
-<input type=checkbox name=confirm value=true> Confirm Delete<br><br>
+<input type=checkbox name=confirm id=deleteStudyConfirm value=true> Confirm Delete<br><br>
 <%=generateSubmitButton("Delete")%> <%=generateButton("Cancel", "manageStudy.view")%>
 </form>
