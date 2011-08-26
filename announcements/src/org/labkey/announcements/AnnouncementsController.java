@@ -2217,10 +2217,8 @@ public class AnnouncementsController extends SpringActionController
     {
         public AnnouncementWebPart(Container c, ActionURL url, User user, Settings settings, boolean displayAll, boolean asWebPart) throws SQLException, ServletException
         {
-            super(null==url.getParameter("hotness")?
-                    "/org/labkey/announcements/announcementWebPart.jsp" :
-                    "/org/labkey/announcements/announcementWebPart2.jsp",
-            new MessagesBean(c, url, user, settings, displayAll));
+            super("/org/labkey/announcements/announcementWebPartWithExpandos.jsp",
+                new MessagesBean(c, url, user, settings, displayAll));
             setTitle(settings.getBoardName());
             setTitleHref(getBeginURL(c));
 
