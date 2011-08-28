@@ -1156,9 +1156,10 @@ public class ExperimentServiceImpl implements ExperimentService.Interface
         }
         if (includeProjectAndShared)
         {
-            if (container.getProject() != null && container.getProject().hasPermission(user, ReadPermission.class))
+            Container project = container.getProject();
+            if (project != null && project.hasPermission(user, ReadPermission.class))
             {
-                containerIds.add(container.getProject().getId());
+                containerIds.add(project.getId());
             }
             Container shared = ContainerManager.getSharedContainer();
             if (shared.hasPermission(user, ReadPermission.class))
@@ -1482,7 +1483,7 @@ public class ExperimentServiceImpl implements ExperimentService.Interface
         Set<Integer> allIds = new HashSet<Integer>();
         for (int selectedProtocolId : selectedProtocolIds)
         {
-            allIds.add(new Integer(selectedProtocolId));
+            allIds.add(selectedProtocolId);
         }
 
         Set<Integer> idsToCheck = new HashSet<Integer>(allIds);
@@ -1560,13 +1561,13 @@ public class ExperimentServiceImpl implements ExperimentService.Interface
 
             String protocolIds = StringUtils.join(toIntegers(selectedProtocolIds), ",");
 
-            String sql = "SELECT * FROM exp.Protocol WHERE RowId IN (" + protocolIds + ");";
-            Protocol[] protocols = Table.executeQuery(getExpSchema(), sql, new Object[]{}, Protocol.class);
+            SQLFragment sql = new SQLFragment("SELECT * FROM exp.Protocol WHERE RowId IN (" + protocolIds + ");");
+            Protocol[] protocols = Table.executeQuery(getExpSchema(), sql, Protocol.class);
 
-            sql = "SELECT RowId FROM exp.ProtocolAction ";
-            sql += " WHERE (ChildProtocolId IN (" + protocolIds + ")";
-            sql += " OR ParentProtocolId IN (" + protocolIds + ") );";
-            Integer[] actionIds = Table.executeArray(getExpSchema(), sql, new Object[]{}, Integer.class);
+            sql = new SQLFragment("SELECT RowId FROM exp.ProtocolAction ");
+            sql.append(" WHERE (ChildProtocolId IN (" + protocolIds + ")");
+            sql.append(" OR ParentProtocolId IN (" + protocolIds + ") );");
+            Integer[] actionIds = Table.executeArray(getExpSchema(), sql, Integer.class);
 
             try
             {
@@ -1594,15 +1595,12 @@ public class ExperimentServiceImpl implements ExperimentService.Interface
                     }
 
                     String actionIdsJoined = "(" + StringUtils.join(actionIds, ",") + ")";
-                    sql = "DELETE FROM exp.ProtocolActionPredecessor WHERE ActionId IN " + actionIdsJoined + " OR PredecessorId IN " + actionIdsJoined + ";";
-                    Table.execute(getExpSchema(), sql);
+                    Table.execute(getExpSchema(), "DELETE FROM exp.ProtocolActionPredecessor WHERE ActionId IN " + actionIdsJoined + " OR PredecessorId IN " + actionIdsJoined + ";");
 
-                    sql = "DELETE FROM exp.ProtocolAction WHERE RowId IN " + actionIdsJoined + ";";
-                    Table.execute(getExpSchema(), sql);
+                    Table.execute(getExpSchema(), "DELETE FROM exp.ProtocolAction WHERE RowId IN " + actionIdsJoined + ";");
                 }
 
-                sql = "DELETE FROM exp.ProtocolParameter WHERE ProtocolId IN (" + protocolIds + ");";
-                Table.execute(getExpSchema(), sql);
+                Table.execute(getExpSchema(), "DELETE FROM exp.ProtocolParameter WHERE ProtocolId IN (" + protocolIds + ");");
 
                 for (Protocol protocol : protocols)
                 {
@@ -1614,11 +1612,11 @@ public class ExperimentServiceImpl implements ExperimentService.Interface
                     OntologyManager.deleteOntologyObjects(c, protocol.getLSID());
                 }
 
-                sql = "  DELETE FROM exp.Protocol WHERE RowId IN (" + protocolIds + ");";
-                Table.execute(getExpSchema(), sql);
+                Table.execute(getExpSchema(), "DELETE FROM exp.Protocol WHERE RowId IN (" + protocolIds + ");");
 
-                sql = "SELECT RowId FROM exp.Protocol Where RowId NOT IN (SELECT ParentProtocolId from exp.ProtocolAction UNION SELECT ChildProtocolId FROM exp.ProtocolAction) AND Container = ?";
-                int[] orphanedProtocolIds = toInts(Table.executeArray(getExpSchema(), sql, new Object[]{c.getId()}, Integer.class));
+                sql = new SQLFragment("SELECT RowId FROM exp.Protocol Where RowId NOT IN (SELECT ParentProtocolId from exp.ProtocolAction UNION SELECT ChildProtocolId FROM exp.ProtocolAction) AND Container = ?");
+                sql.add(c.getId());
+                int[] orphanedProtocolIds = toInts(Table.executeArray(getExpSchema(), sql, Integer.class));
                 deleteProtocolByRowIds(c, user, orphanedProtocolIds);
 
                 getExpSchema().getScope().commitTransaction();
@@ -2237,7 +2235,7 @@ public class ExperimentServiceImpl implements ExperimentService.Interface
             }
             finally
             {
-                if (materialInputRS != null) { try { materialInputRS.close(); } catch (SQLException e) {} }
+                if (materialInputRS != null) { try { materialInputRS.close(); } catch (SQLException ignored) {} }
             }
 
             // now hook up data inputs in both directions
@@ -2251,7 +2249,7 @@ public class ExperimentServiceImpl implements ExperimentService.Interface
             ResultSet dataInputRS = null;
             try
             {
-                dataInputRS = Table.executeQuery(getExpSchema(), dataSQL, new Object[]{new Integer(runId)});
+                dataInputRS = Table.executeQuery(getExpSchema(), dataSQL, new Object[]{runId});
                 while (dataInputRS.next())
                 {
                     Integer appId = dataInputRS.getInt("TargetApplicationId");
@@ -2282,7 +2280,7 @@ public class ExperimentServiceImpl implements ExperimentService.Interface
             }
             finally
             {
-                if (dataInputRS != null ) { try { dataInputRS.close(); } catch (SQLException e) {} }
+                if (dataInputRS != null ) { try { dataInputRS.close(); } catch (SQLException ignored) {} }
             }
 
             //For run summary view, need to know if other ExperimentRuns
@@ -2299,7 +2297,7 @@ public class ExperimentServiceImpl implements ExperimentService.Interface
                         + " WHERE ");
                 sql.append(in.toSQLFragment(Collections.<String, ColumnInfo>emptyMap(), getExpSchema().getSqlDialect()));
                 sql.append(" AND PA.RunId <> ? ORDER BY TargetApplicationId, MaterialId");
-                sql.add(new Integer(runId));
+                sql.add(runId);
 
                 ResultSet materialOutputRS = null;
                 try
@@ -2316,7 +2314,7 @@ public class ExperimentServiceImpl implements ExperimentService.Interface
                 }
                 finally
                 {
-                    if (materialOutputRS != null) { try { materialOutputRS.close(); } catch (SQLException e) {} }
+                    if (materialOutputRS != null) { try { materialOutputRS.close(); } catch (SQLException ignored) {} }
                 }
             }
 
@@ -2333,7 +2331,7 @@ public class ExperimentServiceImpl implements ExperimentService.Interface
                 ResultSet dataOutputRS = null;
                 try
                 {
-                    dataOutputRS = Table.executeQuery(getExpSchema(), dataSQL, new Object[]{new Integer(runId)});
+                    dataOutputRS = Table.executeQuery(getExpSchema(), dataSQL, new Object[]{runId});
                     while (dataOutputRS.next())
                     {
                         int successorRunId = dataOutputRS.getInt("RunId");
@@ -2344,7 +2342,7 @@ public class ExperimentServiceImpl implements ExperimentService.Interface
                 }
                 finally
                 {
-                    if (dataOutputRS != null) { try { dataOutputRS.close(); } catch (SQLException e) {} }
+                    if (dataOutputRS != null) { try { dataOutputRS.close(); } catch (SQLException ignored) {} }
                 }
             }
 
@@ -3064,10 +3062,10 @@ public class ExperimentServiceImpl implements ExperimentService.Interface
         try
         {
             SQLFragment sql = new SQLFragment("SELECT p.* FROM ");
-            sql.append(getTinfoProtocol());
-            sql.append(" p WHERE LSID IN (SELECT ProtocolLSID FROM ");
-            sql.append(getTinfoExperimentRun());
-            sql.append(" WHERE Container = ?)");
+            sql.append(getTinfoProtocol(), "p");
+            sql.append(" WHERE LSID IN (SELECT ProtocolLSID FROM ");
+            sql.append(getTinfoExperimentRun(), "er");
+            sql.append(" WHERE er.Container = ?)");
             sql.add(container.getId());
             return ExpProtocolImpl.fromProtocols(Table.executeQuery(getSchema(), sql, Protocol.class));
         }

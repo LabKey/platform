@@ -70,7 +70,6 @@ import org.labkey.study.assay.ModuleAssayLoader;
 import org.labkey.study.controllers.assay.AssayController;
 import org.labkey.study.model.StudyManager;
 
-import javax.servlet.ServletException;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.HashMap;

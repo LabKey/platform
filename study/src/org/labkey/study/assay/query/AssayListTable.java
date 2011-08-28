@@ -39,6 +39,7 @@ public class AssayListTable extends FilteredTable
         super(ExperimentService.get().getTinfoProtocol(), schema.getContainer(), new ContainerFilter.WorkbookAssay(schema.getUser()));
         setDescription("Contains all of the assay definitions visible in this folder");
         addCondition(_rootTable.getColumn("ApplicationType"), "ExperimentRun");
+        setTitleColumn("Name");
 
         _schema = schema;
 

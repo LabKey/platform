@@ -2091,7 +2091,7 @@ public class QueryController extends SpringActionController
         public NavTree appendNavTrail(NavTree root)
         {
             super.appendNavTrail(root);
-            root.addChild("Insert");
+            root.addChild("Insert " + _form.getQueryName());
             return root;
         }
     }
@@ -2121,7 +2121,7 @@ public class QueryController extends SpringActionController
         public NavTree appendNavTrail(NavTree root)
         {
             super.appendNavTrail(root);
-            root.addChild("Edit");
+            root.addChild("Edit " + _form.getQueryName());
             return root;
         }
     }
