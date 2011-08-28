@@ -215,7 +215,7 @@ public class QuerySettings
             setReportId(ReportService.get().getReportIdentifier(_getParameter(param(QueryParam.reportId))));
         }
 
-        // Ignore maxRows, offset, and containerFilterName parameters when not PAGINATED.
+        // Ignore maxRows and offset parameters when not PAGINATED.
         if (_showRows == ShowRows.PAGINATED)
         {
             String offsetParam = _getParameter(param(QueryParam.offset));
@@ -241,11 +241,11 @@ public class QuerySettings
                 }
                 catch (NumberFormatException e) { }
             }
-
-            String containerFilterNameParam = _getParameter(param(QueryParam.containerFilterName));
-            if (containerFilterNameParam != null)
-                setContainerFilterName(containerFilterNameParam);
         }
+
+        String containerFilterNameParam = _getParameter(param(QueryParam.containerFilterName));
+        if (containerFilterNameParam != null)
+            setContainerFilterName(containerFilterNameParam);
 
         String returnURL = _getParameter(ActionURL.Param.returnUrl.name());
         if (returnURL == null)

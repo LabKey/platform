@@ -15,6 +15,7 @@
  */
 package org.labkey.api.study.assay;
 
+import org.jetbrains.annotations.NotNull;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.DbSchema;
 import org.labkey.api.data.TableInfo;
@@ -74,9 +75,23 @@ public abstract class AssaySchema extends UserSchema
         return getProviderTableName(protocol, "Data");
     }
 
-    public static String getProviderTableName(ExpProtocol protocol, String tableName)
+    /** Tack the table type onto the protocol name to create the full table name */
+    public static String getProviderTableName(ExpProtocol protocol, @NotNull String tableType)
     {
-        assert tableName != null;
-        return protocol.getName() + " " + tableName;
+        return protocol.getName() + " " + tableType;
+    }
+
+    /** Strip off the provider name to determine the specific assay table type (runs, batches, etc) */
+    public static String getProviderTableType(ExpProtocol protocol, @NotNull String tableName)
+    {
+        String lname = tableName.toLowerCase();
+        String protocolPrefix = protocol.getName().toLowerCase() + " ";
+        if (lname.startsWith(protocolPrefix))
+        {
+            return tableName.substring(protocolPrefix.length());
+        }
+        
+        // This wasn't a table associated with the given protocol
+        return null;
     }
 }

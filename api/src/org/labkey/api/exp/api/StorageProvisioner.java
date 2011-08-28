@@ -857,11 +857,17 @@ renaming a property AND toggling mvindicator on in the same change.
         {
             ProvisioningReport report = StorageProvisioner.getProvisioningReport();
             Assert.assertNotNull(report);
+            boolean success = true;
+            StringBuilder sb = new StringBuilder();
             for (ProvisioningReport.DomainReport dr : report.getProvisionedDomains())
             {
-                Assert.assertTrue(dr.getErrors().toString(), dr.getErrors().isEmpty());
+                if (!dr.getErrors().isEmpty())
+                {
+                    success = false;
+                    sb.append(dr.getErrors().toString());
+                }
             }
-
+            Assert.assertTrue(sb.toString(), success);
         }
 
         private void addPropertyB() throws Exception
