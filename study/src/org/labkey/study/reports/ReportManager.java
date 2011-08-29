@@ -268,7 +268,7 @@ public class ReportManager implements StudyManager.DataSetListener
         columns.add(tinfo.getColumn("SequenceNum"));
         columns.addAll(propertyColumns);
 
-        return Table.selectForDisplay(tinfo, columns, null, filter, null, 0, 0);
+        return Table.selectForDisplay(tinfo, columns, null, filter, null, Table.ALL_ROWS, 0);
     }
 
 

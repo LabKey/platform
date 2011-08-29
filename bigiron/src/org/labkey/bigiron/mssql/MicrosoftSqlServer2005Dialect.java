@@ -216,7 +216,7 @@ public class MicrosoftSqlServer2005Dialect extends SqlDialect
         {
             String sql = frag.getSQL();
             if (!sql.substring(0, 6).equalsIgnoreCase("SELECT"))
-                throw new IllegalArgumentException("ERROR: Limit SQL Doesn't Start with SELECT: " + sql);
+                throw new IllegalArgumentException("ERROR: Limit SQL doesn't start with SELECT: " + sql);
 
             int offset = 6;
             if (sql.substring(0, 15).equalsIgnoreCase("SELECT DISTINCT"))

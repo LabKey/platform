@@ -865,7 +865,7 @@ public class AssayPublishManager implements AssayPublishService.Service
                         ColumnInfo objectIdColumn = cols.get(objectIdFK);
                         assert cols.get(runFK) != null : "Could not find object id column: " + objectIdFK;
 
-                        SQLFragment sql = QueryService.get().getSelectSQL(resultTable, cols.values(), new SimpleFilter(runFK.encode(), run.getRowId()), null, Table.ALL_ROWS, 0, false);
+                        SQLFragment sql = QueryService.get().getSelectSQL(resultTable, cols.values(), new SimpleFilter(runFK.encode(), run.getRowId()), null, Table.ALL_ROWS, Table.NO_OFFSET, false);
                         ResultSet rs = null;
                         try
                         {

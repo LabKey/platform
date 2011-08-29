@@ -2890,7 +2890,7 @@ public class StudyManager
                 f.append(" WHERE container = ?");
                 f.add(c);
             }
-            rs = Table.executeQuery(StudySchema.getInstance().getSchema(), f, 0, false, false);
+            rs = Table.executeQuery(StudySchema.getInstance().getSchema(), f, Table.ALL_ROWS, false, false);
 
             while (rs.next())
             {
@@ -2969,7 +2969,7 @@ public class StudyManager
         try
         {
             SQLFragment f = new SQLFragment("SELECT DISTINCT container FROM study.participant");
-            rs = Table.executeQuery(StudySchema.getInstance().getSchema(), f, 0, false, false);
+            rs = Table.executeQuery(StudySchema.getInstance().getSchema(), f, Table.ALL_ROWS, false, false);
             while (rs.next())
             {
                 final String id = rs.getString(1);
@@ -3059,7 +3059,7 @@ public class StudyManager
                 }
                 f.append(")");
             }
-            rs = Table.executeQuery(StudySchema.getInstance().getSchema(), f, 0, false, false);
+            rs = Table.executeQuery(StudySchema.getInstance().getSchema(), f, Table.ALL_ROWS, false, false);
 
             ActionURL indexURL = new ActionURL(StudyController.IndexParticipantAction.class, c);
             indexURL.setExtraPath(c.getId());
@@ -3137,7 +3137,7 @@ public class StudyManager
                 f.append(" WHERE container = ?");
                 f.add(c);
             }
-            rs = Table.executeQuery(StudySchema.getInstance().getSchema(), f, 0, false, false);
+            rs = Table.executeQuery(StudySchema.getInstance().getSchema(), f, Table.ALL_ROWS, false, false);
             ss.addParticipantIds(rs);
         }
         catch (SQLException x)

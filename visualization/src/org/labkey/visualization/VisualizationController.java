@@ -467,7 +467,7 @@ public class VisualizationController extends SpringActionController
                                     ActionURL filterUrl = new ActionURL(filterUrlString);
                                     filter = new SimpleFilter(filterUrl, VisualizationController.FILTER_DATAREGION);
                                 }
-                                SQLFragment sql = QueryService.get().getSelectSQL(tinfo, Collections.singleton(col), filter, null, Table.ALL_ROWS, 0, false);
+                                SQLFragment sql = QueryService.get().getSelectSQL(tinfo, Collections.singleton(col), filter, null, Table.ALL_ROWS, Table.NO_OFFSET, false);
 
                                 rs = Table.executeQuery(uschema.getDbSchema(), sql.getSQL().replaceFirst("SELECT", "SELECT DISTINCT"), sql.getParamsArray());
                                 Iterator<Map<String, Object>> it = rs.iterator();

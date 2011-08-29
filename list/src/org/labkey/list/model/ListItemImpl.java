@@ -33,7 +33,6 @@ import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.Table;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.exp.ChangePropertyDescriptorException;
-import org.labkey.api.exp.MvFieldWrapper;
 import org.labkey.api.exp.ObjectProperty;
 import org.labkey.api.exp.OntologyManager;
 import org.labkey.api.exp.OntologyObject;
@@ -487,7 +486,7 @@ public class ListItemImpl implements ListItem
                             if (rowMap == null)
                             {
                                 TableInfo table = _list.getTable(user);
-                                ResultSet rs = Table.selectForDisplay(table, table.getColumns(), null, new PkFilter(table, _itm.getKey()), null, 0, 0);
+                                ResultSet rs = Table.selectForDisplay(table, table.getColumns(), null, new PkFilter(table, _itm.getKey()), null, Table.ALL_ROWS, 0);
                                 rs.next();
                                 rowMap = ResultSetUtil.mapRow(rs);
                                 rs.close();

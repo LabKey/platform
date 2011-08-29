@@ -1149,7 +1149,7 @@ public class QueryServiceImpl extends QueryService
 		if (q.getParseErrors().size() > 0)
 			throw q.getParseErrors().get(0);
 
-        SQLFragment sqlf = getSelectSQL(table, null, null, null, 0, 0, false);
+        SQLFragment sqlf = getSelectSQL(table, null, null, null, Table.ALL_ROWS, Table.NO_OFFSET, false);
 
 		return Table.executeQuery(table.getSchema(), sqlf);
 	}
@@ -1157,7 +1157,7 @@ public class QueryServiceImpl extends QueryService
 
     public void bindNamedParameters(SQLFragment frag, Map<String,Object> in)
     {
-        Map<String,Object> params = null==in ? Collections.EMPTY_MAP :
+        Map<String,Object> params = null==in ? Collections.<String, Object>emptyMap() :
                 in instanceof CaseInsensitiveHashMap ? in :
                 new CaseInsensitiveHashMap<Object>(in);
 
@@ -1206,7 +1206,7 @@ public class QueryServiceImpl extends QueryService
 
     public Results select(TableInfo table, Collection<ColumnInfo> columns, Filter filter, Sort sort, Map<String,Object> parameters) throws SQLException
     {
-        SQLFragment sql = getSelectSQL(table, columns, filter, sort, 0, 0, false);
+        SQLFragment sql = getSelectSQL(table, columns, filter, sort, Table.ALL_ROWS, Table.NO_OFFSET, false);
         bindNamedParameters(sql, parameters);
         validateNamedParameters(sql);
 		ResultSet rs = Table.executeQuery(table.getSchema(), sql);
@@ -1217,6 +1217,8 @@ public class QueryServiceImpl extends QueryService
 	public SQLFragment getSelectSQL(TableInfo table, Collection<ColumnInfo> selectColumns, Filter filter, Sort sort,
                                     int rowCount, long offset, boolean forceSort)
 	{
+        assert Table.validMaxRows(rowCount) : rowCount + " is an illegal value for rowCount; should be positive, Table.ALL_ROWS or Table.NO_ROWS";
+
         if (null == selectColumns)
             selectColumns = table.getColumns();
 

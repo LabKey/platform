@@ -178,7 +178,7 @@ public abstract class VisitManager
 
         try
         {
-            rows = Table.executeQuery(StudySchema.getInstance().getSchema(), sql, 0, false, false);
+            rows = Table.executeQuery(StudySchema.getInstance().getSchema(), sql, Table.ALL_ROWS, false, false);
 
             Map<VisitMapKey, VisitStatistics> visitSummary = new HashMap<VisitMapKey, VisitStatistics>();
             VisitMapKey key = null;
