@@ -92,7 +92,7 @@ public class GroupTableInfo extends VirtualTable
         sql.append("\nFROM (\n");
         TableInfo source = getSourceTable();
 
-        sql.append(QueryService.get().getSelectSQL(source, getDistinctColumns(), _sourceFilter, null, Table.ALL_ROWS, 0, false));
+        sql.append(QueryService.get().getSelectSQL(source, getDistinctColumns(), _sourceFilter, null, Table.ALL_ROWS, Table.NO_OFFSET, false));
         sql.append("\n) AS ");
         sql.append(ALIAS_SOURCE);
 

@@ -96,9 +96,18 @@ public class Table
 {
     public static Set<String> ALL_COLUMNS = Collections.unmodifiableSet(Collections.<String>emptySet());
 
-    /** Return all rows instead of limiting to the top n */
-    public static final int ALL_ROWS = 0;
-    public static final int NO_ROWS = -2;
+    // Return all rows instead of limiting to the top n
+    public static final int ALL_ROWS = -1;
+    // Return no rows -- useful for query validation or when you need just metadata
+    public static final int NO_ROWS = 0;
+
+    // Makes long parameter lists easier to read
+    public static final int NO_OFFSET = 0;
+
+    public static boolean validMaxRows(int maxRows)
+    {
+        return NO_ROWS == maxRows | ALL_ROWS == maxRows | maxRows > 0;
+    }
 
     public static String SQLSTATE_TRANSACTION_STATE = "25000";
     public static final int ERROR_ROWVERSION = 10001;
@@ -274,7 +283,7 @@ public class Table
     public static Table.TableResultSet executeQuery(DbSchema schema, String sql, Object[] parameters)
             throws SQLException
     {
-        return (Table.TableResultSet) executeQuery(schema, sql, parameters, Table.ALL_ROWS, true);
+        return (Table.TableResultSet) executeQuery(schema, sql, parameters, ALL_ROWS, true);
     }
 
     public static Table.TableResultSet executeQuery(DbSchema schema, SQLFragment sql) throws SQLException
@@ -286,7 +295,7 @@ public class Table
     public static Table.TableResultSet executeQuery(DbSchema schema, SQLFragment sql, int rowCount)
             throws SQLException
     {
-        return (Table.TableResultSet) executeQuery(schema, sql.getSQL(), sql.getParamsArray(), rowCount, 0, true, false, null, null, null);
+        return (Table.TableResultSet) executeQuery(schema, sql.getSQL(), sql.getParamsArray(), rowCount, NO_OFFSET, true, false, null, null, null);
     }
 
     public static ResultSet executeQuery(DbSchema schema, SQLFragment sql, int rowCount, boolean cache, boolean scrollable) throws SQLException
@@ -297,13 +306,13 @@ public class Table
     public static ResultSet executeQuery(DbSchema schema, String sql, Object[] parameters, int rowCount, boolean cache)
             throws SQLException
     {
-        return executeQuery(schema, sql, parameters, rowCount, 0, cache, false, null, null, null);
+        return executeQuery(schema, sql, parameters, rowCount, NO_OFFSET, cache, false, null, null, null);
     }
 
     public static ResultSet executeQuery(DbSchema schema, String sql, Object[] parameters, int rowCount, boolean cache, boolean scrollable)
             throws SQLException
     {
-        return executeQuery(schema, sql, parameters, rowCount, 0, cache, scrollable, null, null, null);
+        return executeQuery(schema, sql, parameters, rowCount, NO_OFFSET, cache, scrollable, null, null, null);
     }
 
     private static ResultSet executeQuery(DbSchema schema, String sql, Object[] parameters, int rowCount, long scrollOffset, boolean cache, boolean scrollable, @Nullable AsyncQueryRequest asyncRequest, @Nullable Logger log, @Nullable Integer statementRowCount)
@@ -345,14 +354,14 @@ public class Table
     public static <K> K[] executeQuery(DbSchema schema, SQLFragment sqlf, Class<K> clss)
             throws SQLException
     {
-        return internalExecuteQueryArray(schema, sqlf.getSQL(), sqlf.getParamsArray(), clss, 0);
+        return internalExecuteQueryArray(schema, sqlf.getSQL(), sqlf.getParamsArray(), clss, NO_OFFSET);
     }
 
 
     public static <K> K[] executeQuery(DbSchema schema, String sql, Object[] parameters, Class<K> clss)
             throws SQLException
     {
-        return internalExecuteQueryArray(schema, sql, parameters, clss, 0);
+        return internalExecuteQueryArray(schema, sql, parameters, clss, NO_OFFSET);
     }
 
     @NotNull
@@ -378,7 +387,7 @@ public class Table
 
             if (clss == java.util.Map.class)
             {
-                CachedResultSet copy = (CachedResultSet)cacheResultSet(schema.getSqlDialect(), rs, 0, null);
+                CachedResultSet copy = (CachedResultSet)cacheResultSet(schema.getSqlDialect(), rs, ALL_ROWS, null);
                 //noinspection unchecked
                 K[] arrayListMaps = (K[])(copy._arrayListMaps == null ? new ArrayListMap[0] : copy._arrayListMaps);
                 copy.close();
@@ -1206,7 +1215,7 @@ public class Table
 
         try
         {
-            K[] values = select(table, Table.ALL_COLUMNS, filter, null, clss);
+            K[] values = select(table, ALL_COLUMNS, filter, null, clss);
             assert (values.length == 0 || values.length == 1);
 
             if (values.length == 0)
@@ -1244,9 +1253,9 @@ public class Table
     }
 
 
-    static private int decideRowCount(int rowcount, Class clazz)
+    private static int decideRowCount(int rowcount, Class clazz)
     {
-        if (Table.ALL_ROWS == rowcount || Table.NO_ROWS == rowcount)
+        if (ALL_ROWS == rowcount || Table.NO_ROWS == rowcount)
             return rowcount;
 
         // add 1 to count so we can set isComplete()
@@ -1259,13 +1268,13 @@ public class Table
     public static SQLFragment getFullSelectSQL(TableInfo table, List<ColumnInfo> select, Filter filter, Sort sort)
     {
         List<ColumnInfo> allColumns = new ArrayList<ColumnInfo>(select);
-        return QueryService.get().getSelectSQL(table, allColumns, filter, sort, 0, 0, false);
+        return QueryService.get().getSelectSQL(table, allColumns, filter, sort, ALL_ROWS, NO_OFFSET, false);
     }
 
 
     public static SQLFragment getSelectSQL(TableInfo table, Collection<ColumnInfo> columns, Filter filter, Sort sort)
     {
-        return QueryService.get().getSelectSQL(table, columns, filter, sort, 0, 0, false);
+        return QueryService.get().getSelectSQL(table, columns, filter, sort, ALL_ROWS, NO_OFFSET, false);
     }
 
 
@@ -1287,7 +1296,7 @@ public class Table
     public static <K> K[] select(TableInfo table, Set<String> select, Filter filter, Sort sort, Class<K> clss)
             throws SQLException
     {
-        return select(table, select, filter, sort, clss, 0, 0);
+        return select(table, select, filter, sort, clss, ALL_ROWS, NO_OFFSET);
     }
 
 
@@ -1303,7 +1312,7 @@ public class Table
     public static <K> K[] select(TableInfo table, Collection<ColumnInfo> columns, Filter filter, Sort sort, Class<K> clss)
             throws SQLException
     {
-        return select(table, columns, filter, sort, clss, 0, 0);
+        return select(table, columns, filter, sort, clss, ALL_ROWS, NO_OFFSET);
     }
 
     @NotNull
@@ -1350,7 +1359,7 @@ public class Table
     {
         Map<String, ColumnInfo> columns = getDisplayColumnsList(select);
         ensureRequiredColumns(table, columns, filter, null, aggregates);
-        SQLFragment innerSql = QueryService.get().getSelectSQL(table, new ArrayList<ColumnInfo>(columns.values()), filter, null, 0, 0, false);
+        SQLFragment innerSql = QueryService.get().getSelectSQL(table, new ArrayList<ColumnInfo>(columns.values()), filter, null, ALL_ROWS, NO_OFFSET, false);
         QueryService.get().bindNamedParameters(innerSql, parameters);
         QueryService.get().validateNamedParameters(innerSql);
 
@@ -1383,7 +1392,7 @@ public class Table
         Table.TableResultSet rs = null;
         try
         {
-            rs = (Table.TableResultSet) executeQuery(table.getSchema(), sql.toString(), innerSql.getParams().toArray(), ALL_ROWS, 0, cache, false, asyncRequest, null, null);
+            rs = (Table.TableResultSet) executeQuery(table.getSchema(), sql.toString(), innerSql.getParams().toArray(), ALL_ROWS, NO_OFFSET, cache, false, asyncRequest, null, null);
             boolean next = rs.next();
             if (!next)
                 throw new IllegalStateException("Expected a non-empty resultset from aggregate query.");
@@ -1476,8 +1485,8 @@ public class Table
     {
         Map<String, ColumnInfo> columns = getDisplayColumnsList(select);
         ensureRequiredColumns(table, columns, filter, sort, null);
-        SQLFragment sql = QueryService.get().getSelectSQL(table, new ArrayList<ColumnInfo>(columns.values()), filter, sort, 0, 0, true);
-        return internalExecuteQueryArray(table.getSchema(), sql.getSQL(), sql.getParams().toArray(), clss, 0);
+        SQLFragment sql = QueryService.get().getSelectSQL(table, new ArrayList<ColumnInfo>(columns.values()), filter, sort, ALL_ROWS, NO_OFFSET, true);
+        return internalExecuteQueryArray(table.getSchema(), sql.getSQL(), sql.getParams().toArray(), clss, NO_OFFSET);
     }
 
 
@@ -1582,9 +1591,9 @@ public class Table
     public static long rowCount(TableInfo tinfo) throws SQLException
     {
         SQLFragment sql = new SQLFragment("SELECT COUNT(*) FROM (");
-        sql.append(QueryService.get().getSelectSQL(tinfo, tinfo.getPkColumns(), null, null, Table.ALL_ROWS, 0, false));
+        sql.append(QueryService.get().getSelectSQL(tinfo, tinfo.getPkColumns(), null, null, ALL_ROWS, NO_OFFSET, false));
         sql.append(") x");
-        return Table.executeSingleton(tinfo.getSchema(), sql.getSQL(), sql.getParamsArray(), Long.class);
+        return executeSingleton(tinfo.getSchema(), sql.getSQL(), sql.getParamsArray(), Long.class);
     }
 
 
@@ -1622,7 +1631,7 @@ public class Table
         private final DbSchema schema;
         private final Connection connection;
         private boolean isComplete = true;
-        private int maxRows = 0;
+        private int maxRows = ALL_ROWS;
 
         // for resource tracking
         private Throwable debugCreated = null;
@@ -1631,13 +1640,13 @@ public class Table
 
         public ResultSetImpl(ResultSet rs)
         {
-            this(null, null, rs, 0);
+            this(null, null, rs, ALL_ROWS);
         }
 
 
         public ResultSetImpl(Connection connection, DbSchema schema, ResultSet rs)
         {
-            this(connection, schema, rs, 0);
+            this(connection, schema, rs, ALL_ROWS);
         }
 
         public ResultSetImpl(Connection connection, DbSchema schema, ResultSet rs, int maxRows)
@@ -1678,7 +1687,7 @@ public class Table
         public boolean next() throws SQLException
         {
             boolean success = super.next();
-            if (!success || 0 == maxRows)
+            if (!success || ALL_ROWS == maxRows)
                 return success;
             return this.getRow() <= maxRows;
         }
@@ -1759,13 +1768,13 @@ public class Table
         {
             switch (error)
             {
-                case Table.ERROR_DELETED:
+                case ERROR_DELETED:
                     return new OptimisticConflictException("Optimistic concurrency exception: Row deleted",
-                            Table.SQLSTATE_TRANSACTION_STATE,
+                            SQLSTATE_TRANSACTION_STATE,
                             error);
-                case Table.ERROR_ROWVERSION:
+                case ERROR_ROWVERSION:
                     return new OptimisticConflictException("Optimistic concurrency exception: Row updated",
-                            Table.SQLSTATE_TRANSACTION_STATE,
+                            SQLSTATE_TRANSACTION_STATE,
                             error);
             }
             assert false : "unexpected error code";
@@ -1859,7 +1868,7 @@ public class Table
             inSQL.append(",?");
         inSQL.append(sql.substring(q + 1));
 
-        Map[] right = internalExecuteQueryArray(schema, inSQL.toString(), keys.toArray(), Map.class, 0);
+        Map[] right = internalExecuteQueryArray(schema, inSQL.toString(), keys.toArray(), Map.class, NO_OFFSET);
         return Join.join(left, Arrays.asList(right), key);
     }
 
@@ -1930,13 +1939,13 @@ public class Table
         {
             TableInfo tinfo = _core.getTableInfoPrincipals();
 
-            ResultSet rs = Table.select(tinfo, Table.ALL_COLUMNS, null, null);
+            ResultSet rs = select(tinfo, ALL_COLUMNS, null, null);
             rs.close();
 
-            Map[] maps = Table.select(tinfo, Table.ALL_COLUMNS, null, null, Map.class);
+            Map[] maps = select(tinfo, ALL_COLUMNS, null, null, Map.class);
             assertNotNull(maps);
 
-            Principal[] principals = Table.select(tinfo, Table.ALL_COLUMNS, null, null, Principal.class);
+            Principal[] principals = select(tinfo, ALL_COLUMNS, null, null, Principal.class);
             assertNotNull(principals);
             assertTrue(principals.length > 0);
             assertTrue(principals[0].userId != 0);
@@ -1949,14 +1958,14 @@ public class Table
         {
             TableInfo tinfo = _core.getTableInfoPrincipals();
 
-            Results rsAll = Table.selectForDisplay(tinfo, Table.ALL_COLUMNS, null, null, null, 0, 0);
+            Results rsAll = Table.selectForDisplay(tinfo, ALL_COLUMNS, null, null, null, ALL_ROWS, NO_OFFSET);
             rsAll.last();
             int rowCount = rsAll.getRow();
             assertTrue(((Table.TableResultSet)rsAll.getResultSet()).isComplete());
             rsAll.close();
 
             rowCount -= 2;
-            Results rs = Table.selectForDisplay(tinfo, Table.ALL_COLUMNS, null, null, null, rowCount, 0);
+            Results rs = Table.selectForDisplay(tinfo, ALL_COLUMNS, null, null, null, rowCount, NO_OFFSET);
             rs.last();
             int row = rs.getRow();
             assertTrue(row == rowCount);
@@ -2550,12 +2559,7 @@ public class Table
             if (!checkColumn(table, column, "TableInfo.getPkColumns() for " + prefix))
                 bad++;
 
-        // TODO: Remove this -- just logging the stack trace without failing the test
-        if (bad > 0)
-            _log.info("Stack trace", new Exception());
-
-        // TODO: Should return (0 == bad)
-        return true;
+        return 0 == bad;
     }
 
 

@@ -101,7 +101,7 @@ public class CachedResultSet implements ResultSet, Table.TableResultSet
     {
         List<Map<String, Object>> list = new ArrayList<Map<String, Object>>();
 
-        if (maxRows == 0)
+        if (maxRows == Table.ALL_ROWS)
             maxRows = Integer.MAX_VALUE;
 
         ResultSetRowMapFactory factory = ResultSetRowMapFactory.create(rs);

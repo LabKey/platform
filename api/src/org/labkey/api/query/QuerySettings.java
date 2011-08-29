@@ -236,6 +236,7 @@ public class QuerySettings
                 try
                 {
                     int maxRows = Integer.parseInt(maxRowsParam);
+                    assert Table.validMaxRows(maxRows) : maxRows + " is an illegal value for maxRows; should be positive, Table.ALL_ROWS or Table.NO_ROWS";
                     if (maxRows > 0)
                         _maxRows = maxRows;
                 }
@@ -473,16 +474,17 @@ public class QuerySettings
         _ignoreUserFilter = b;
     }
 
-    /** @return The maxRows parameter when {@link ShowRows#PAGINATED}, otherwise 0. */
+    /** @return The maxRows parameter when {@link ShowRows#PAGINATED}, otherwise ALL_ROWS. */
     public int getMaxRows()
     {
         if (_showRows != ShowRows.PAGINATED)
-            return 0;
+            return Table.ALL_ROWS;
         return _maxRows;
     }
 
     public void setMaxRows(int maxRows)
     {
+        assert Table.validMaxRows(maxRows) : maxRows + " is an illegal value for maxRows; should be positive, Table.ALL_ROWS or Table.NO_ROWS";
         assert _showRows == ShowRows.PAGINATED : "Can't set maxRows when not paginated";
         _maxRows = maxRows;
     }

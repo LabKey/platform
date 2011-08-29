@@ -312,9 +312,9 @@ public abstract class SqlDialect
     public abstract boolean requiresStatementMaxRows();
 
     /**
-     * Limit a SELECT query to the specified number of rows (0 == no limit).
+     * Limit a SELECT query to the specified number of rows (Table.ALL_ROWS == no limit).
      * @param sql a SELECT query
-     * @param rowCount return the first rowCount number of rows (0 == no limit).
+     * @param rowCount return the first rowCount number of rows (Table.ALL_ROWS == no limit).
      * @return the query
      */
     public abstract SQLFragment limitRows(SQLFragment sql, int rowCount);
@@ -336,7 +336,7 @@ public abstract class SqlDialect
      * @param filter may be null
      * @param order may be null
      * @param groupBy may be null
-     * @param rowCount 0 means all rows, > 0 limits result set
+     * @param rowCount Table.ALL_ROWS means all rows, 0 (Table.NO_ROWS) means no rows, > 0 limits result set
      * @param offset 0 based   @return the query
      */
     public abstract SQLFragment limitRows(SQLFragment select, SQLFragment from, SQLFragment filter, String order, String groupBy, int rowCount, long offset);

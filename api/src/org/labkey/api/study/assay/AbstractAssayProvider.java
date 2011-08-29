@@ -102,6 +102,7 @@ import org.labkey.api.util.FileUtil;
 import org.labkey.api.util.GUID;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.Pair;
+import org.labkey.api.util.ResultSetUtil;
 import org.labkey.api.util.StringExpressionFactory;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.DetailsView;
@@ -200,17 +201,16 @@ public abstract class AbstractAssayProvider implements AssayProvider
             ColumnInfo rowIdColumn = columns.get(objectIdFK);
             ColumnInfo runLSIDColumn = columns.get(runLSIDFK);
 
-            SQLFragment sql = QueryService.get().getSelectSQL(dataTable, columns.values(), filter, null, Table.ALL_ROWS, 0, false);
+            SQLFragment sql = QueryService.get().getSelectSQL(dataTable, columns.values(), filter, null, Table.ALL_ROWS, Table.NO_OFFSET, false);
 
             List<Map<String, Object>> dataMaps = new ArrayList<Map<String, Object>>();
-
             Container sourceContainer = null;
-
             ResultSet rs = null;
 
             try
             {
                 rs = Table.executeQuery(dataTable.getSchema(), sql);
+
                 while (rs.next())
                 {
                     AssayPublishKey publishKey = dataKeys.get(((Number)rowIdColumn.getValue(rs)).intValue());
@@ -226,12 +226,14 @@ public abstract class AbstractAssayProvider implements AssayProvider
 
                     String runLSID = (String)runLSIDColumn.getValue(rs);
                     String sourceLSID = getSourceLSID(runLSID, publishKey.getDataId());
+
                     if (sourceContainer == null)
                     {
                         sourceContainer = ExperimentService.get().getExpRun(runLSID).getContainer();
                     }
 
                     dataMap.put(AssayPublishService.PARTICIPANTID_PROPERTY_NAME, publishKey.getParticipantId());
+
                     if (TimepointType.DATE == studyType)
                     {
                         dataMap.put(AssayPublishService.DATE_PROPERTY_NAME, publishKey.getDate());
@@ -242,6 +244,7 @@ public abstract class AbstractAssayProvider implements AssayProvider
                         // for date-based studies in the ETL layer
                         dataMap.put(AssayPublishService.SEQUENCENUM_PROPERTY_NAME, publishKey.getVisitId());
                     }
+
                     dataMap.put(AssayPublishService.SOURCE_LSID_PROPERTY_NAME, sourceLSID);
                     dataMap.put(getTableMetadata().getDatasetRowIdPropertyName(), publishKey.getDataId());
                     dataMap.put(AssayPublishService.TARGET_STUDY_PROPERTY_NAME, targetStudyContainer);
@@ -254,7 +257,7 @@ public abstract class AbstractAssayProvider implements AssayProvider
             }
             finally
             {
-                if (rs != null) { try { rs.close(); } catch (SQLException ignored) {} }
+                ResultSetUtil.close(rs);
             }
         }
         catch (SQLException e)

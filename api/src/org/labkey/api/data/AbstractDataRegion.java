@@ -17,7 +17,6 @@ package org.labkey.api.data;
 
 import org.apache.commons.lang.StringUtils;
 import org.apache.log4j.Logger;
-import org.labkey.api.query.CustomView;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.QuerySettings;
 import org.labkey.api.util.PageFlowUtil;
@@ -25,12 +24,10 @@ import org.labkey.api.view.DisplayElement;
 
 import java.io.IOException;
 import java.io.Writer;
-import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
 /**
- * Created by IntelliJ IDEA.
  * User: klum
  * Date: Jun 23, 2011
  * Time: 7:20:16 PM

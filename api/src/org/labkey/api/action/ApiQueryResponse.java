@@ -98,9 +98,13 @@ public class ApiQueryResponse implements ApiResponse, ApiStreamResponse
         writer.writeProperty("metaData", getMetaData());
         // see Ext.data.ColumnModel
         writer.writeProperty("columnModel", getColumnModel());
-        Map<String,String> qcInfo = getQcInfo();
-        if (qcInfo != null)
-            writer.writeProperty("qcInfo", qcInfo);    // TODO: Change to mvInfo?
+        Map<String,String> mvInfo = getMvInfo();
+
+        if (mvInfo != null)
+        {
+            writer.writeProperty("qcInfo", mvInfo);    // Leave for backward compatibility
+            writer.writeProperty("mvInfo", mvInfo);    // New name
+        }
 
         if (_extraReturnProperties != null)
         {
@@ -114,6 +118,7 @@ public class ApiQueryResponse implements ApiResponse, ApiStreamResponse
         {
             writer.writeProperty("rowCount", _rowCount > 0 ? _rowCount : _offset + _numRespRows);
         }
+
         writer.endResponse();
     }
 
@@ -127,8 +132,8 @@ public class ApiQueryResponse implements ApiResponse, ApiStreamResponse
         _rs = rs;
         _tinfo = table;
         _displayColumns = displayColumns;
-        if(null != rowCount)
-            _rowCount = rowCount.longValue();
+        if (null != rowCount)
+            _rowCount = rowCount;
 
         _ctx = new RenderContext(_viewContext);
         _ctx.setResults(rs);
@@ -147,20 +152,21 @@ public class ApiQueryResponse implements ApiResponse, ApiStreamResponse
      *
      * If no columns contained in this result allow missing values,
      * the result of this method will be null
+     * @return Map of MV indicators to their labels.
      */
-    protected Map<String,String> getQcInfo()
+    protected Map<String, String> getMvInfo()
     {
         for (DisplayColumn dc : _displayColumns)
         {
             if (dc instanceof MVDisplayColumn)
             {
-                Map<String,String> qcInfo = new HashMap<String,String>();
-                Set<String> qcValues = MvUtil.getMvIndicators(_viewContext.getContainer());
-                for (String qcValue :qcValues)
+                Map<String, String> mvInfo = new HashMap<String, String>();
+                Set<String> mvIndicators = MvUtil.getMvIndicators(_viewContext.getContainer());
+                for (String mvIndicator : mvIndicators)
                 {
-                    qcInfo.put(qcValue, MvUtil.getMvLabel(qcValue, _viewContext.getContainer()));
+                    mvInfo.put(mvIndicator, MvUtil.getMvLabel(mvIndicator, _viewContext.getContainer()));
                 }
-                return qcInfo;
+                return mvInfo;
             }
         }
         return null;
@@ -168,12 +174,12 @@ public class ApiQueryResponse implements ApiResponse, ApiStreamResponse
 
 
     // see Ext.data.JsonReader (response.metaData)
-    protected Map<String,Object> getMetaData() throws Exception
+    protected Map<String, Object> getMetaData() throws Exception
     {
-        Map<String,Object> metaData = new HashMap<String,Object>();
+        Map<String, Object> metaData = new HashMap<String,Object>();
 
         // see Ext.data.Field
-        ArrayList<Map<String,Object>> fields = getFieldsMetaData(_displayColumns, _includeLookupInfo);
+        ArrayList<Map<String, Object>> fields = getFieldsMetaData(_displayColumns, _includeLookupInfo);
 
         metaData.put("root", "rows");
         metaData.put("totalProperty", "rowCount");
@@ -183,7 +189,7 @@ public class ApiQueryResponse implements ApiResponse, ApiStreamResponse
             String sort =_viewContext.getRequest().getParameter("query.sort");
             if (sort != null && sort.length() > 1)
             {
-                String dir =  "ASC";
+                String dir = "ASC";
                 if (sort.charAt(0) == '-')
                 {
                     dir = "DESC";
