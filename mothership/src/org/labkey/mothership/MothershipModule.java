@@ -50,9 +50,11 @@ import java.util.Set;
  */
 public class MothershipModule extends DefaultModule
 {
+    public static final String NAME = "Mothership";
+
     public String getName()
     {
-        return "Mothership";
+        return NAME;
     }
 
     public double getVersion()
@@ -90,7 +92,7 @@ public class MothershipModule extends DefaultModule
         try
         {
             Container c = ContainerManager.ensureContainer(MothershipReport.CONTAINER_PATH);
-            Group mothershipGroup = SecurityManager.createGroup(c, "Mothership");
+            Group mothershipGroup = SecurityManager.createGroup(c, NAME);
             MutableSecurityPolicy policy = new MutableSecurityPolicy(c, SecurityManager.getPolicy(c));
             Role noPermsRole = RoleManager.getRole(NoPermissionsRole.class);
             Role projAdminRole = RoleManager.getRole(ProjectAdminRole.class);

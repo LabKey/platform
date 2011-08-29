@@ -27,6 +27,7 @@ import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.dialect.SqlDialect;
 import org.labkey.api.issues.IssuesUrls;
+import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.query.DefaultSchema;
 import org.labkey.api.query.DetailsURL;
 import org.labkey.api.query.ExprColumn;
@@ -41,6 +42,7 @@ import org.labkey.api.util.StringExpressionFactory;
 import org.labkey.api.view.ActionURL;
 import org.labkey.mothership.MothershipController;
 import org.labkey.mothership.MothershipManager;
+import org.labkey.mothership.MothershipModule;
 import org.labkey.mothership.StackTraceDisplayColumn;
 
 import java.util.ArrayList;
@@ -84,10 +86,15 @@ public class MothershipSchema extends UserSchema
 
     static public void register()
     {
-        DefaultSchema.registerProvider(SCHEMA_NAME, new DefaultSchema.SchemaProvider() {
+        DefaultSchema.registerProvider(SCHEMA_NAME, new DefaultSchema.SchemaProvider()
+        {
             public QuerySchema getSchema(DefaultSchema schema)
             {
-                return new MothershipSchema(schema.getUser(), schema.getContainer());
+                if (schema.getContainer().getActiveModules().contains(ModuleLoader.getInstance().getModule(MothershipModule.NAME)))
+                {
+                    return new MothershipSchema(schema.getUser(), schema.getContainer());
+                }
+                return null;
             }
         });
     }
