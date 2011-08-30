@@ -96,6 +96,23 @@ LABKEY.study.CreateStudyWizard = Ext.extend(Ext.util.Observable, {
         this.info.name = 'New Study';
         this.info.dstPath = LABKEY.ActionURL.getContainer();
 
+        var studyLocation = new Ext.form.TextField({
+            fieldLabel: 'New Study Location',
+            allowBlank: true,
+            name: 'studyFolder',
+            value: this.info.dstPath,
+            validator: addSlash,
+            listeners: {change:function(cmp, newValue, oldValue) {this.info.dstPath = newValue;}, scope:this},
+            scope: this
+        });
+
+        function addSlash(input){
+            if(input == ""){
+                studyLocation.setValue('/');
+            }
+            return true;
+        }
+
         var formItems = [
             {
                 xtype: 'textfield',
@@ -110,20 +127,49 @@ LABKEY.study.CreateStudyWizard = Ext.extend(Ext.util.Observable, {
                 height: '200',
                 emptyText: 'Type Description here',
                 listeners: {change:function(cmp, newValue, oldValue) {this.info.description = newValue;}, scope:this}
-            },{
-                xtype: 'textfield',
-                fieldLabel: 'New Study Location',
-                allowBlank: false,
-                name: 'studyFolder',
-                value: this.info.dstPath,
-                listeners: {change:function(cmp, newValue, oldValue) {this.info.dstPath = newValue;}, scope:this}
-            }
+            },
+            studyLocation
         ];
+
+        var folderTree = new Ext.tree.TreePanel({
+            loader : new Ext.tree.TreeLoader({
+                dataUrl : LABKEY.ActionURL.buildURL('core', 'getExtContainerAdminTree.api'),
+                baseParams : {requiredPermission : 'org.labkey.api.security.permissions.AdminPermission'}
+            }),
+            root : {
+                id : '1',
+                nodeType : 'async',
+                expanded : true,
+                editable : true,
+                expandable : true,
+                draggable : false,
+                text : 'LabKey Server Projects',
+                cls : 'x-tree-node-current'
+            },
+            listeners: {
+                dblclick: onDblClick
+            },
+            fieldLabel: 'Choose A Folder',
+            cls : 'folder-management-tree', // used by selenium helper
+            rootVisible: true,
+            enableDD: false,
+            animate : true,
+            useArrows : true,
+            autoScroll: true,
+            height: 200,
+            border: true
+        });
+
+        function onDblClick(e){
+            studyLocation.setValue(e.attributes.containerPath);
+        }
+
+        formItems.push(folderTree);
 
         var formPanel = new Ext.form.FormPanel({
             border: false,
             defaults: {
-                width: '85%'
+                width: 710
             },
             flex: 1,
             layout: 'form',
