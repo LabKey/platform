@@ -277,6 +277,12 @@ table.labkey-no-spacing
     margin: 1px 2px;
 }
 
+/* Make spacer row 'transparent' */
+tr.dataregion_column_header_row_spacer td div
+{
+    color: white !important;
+}
+
 /* Used for the status box that pops up on some forms, such as the wiki editor, which tells the user
  whether its through saving or not */
 div.labkey-status-info, .labkey-status-info
@@ -2011,7 +2017,7 @@ a.labkey-text-link, a.labkey-text-link:visited {
     padding: 2px 12px 2px 0;
     text-transform: uppercase;
 	border: none;
-    position: relative;
+    position: relative;  /* header lock -- this needs to be disabled */
     vertical-align: middle;
     white-space: nowrap;
     margin: 0.1em 0.8em 0.5em 0;
