@@ -37,6 +37,7 @@ public abstract class AbstractDataRegion extends DisplayElement
     private static final Logger _log = Logger.getLogger(DataRegion.class);
     private String _name = null;
     private QuerySettings _settings = null;
+    private boolean _allowHeaderLock = false; // Set to 'true' to enable header locking.
 
     public enum PaginationLocation
     {
@@ -86,6 +87,17 @@ public abstract class AbstractDataRegion extends DisplayElement
         return _settings;
     }
 
+    // Not meant to be set from outside for now
+//    public void setAllowHeaderLock(boolean allow)
+//    {
+//        _allowHeaderLock = allow;
+//    }
+
+    public boolean getAllowHeaderLock()
+    {
+        return _allowHeaderLock;
+    }
+
     protected final void getHeaderScriptStart(StringBuilder sb, Map<String, String> messages)
     {
         sb.append("<script type=\"text/javascript\">\n");
@@ -100,6 +112,8 @@ public abstract class AbstractDataRegion extends DisplayElement
             sb.append(",'queryName' : " + PageFlowUtil.jsString(getSettings().getQueryName()) + "\n");
             sb.append(",'viewName' : " + PageFlowUtil.jsString(getSettings().getViewName()) + "\n");
         }
+
+        sb.append(",'allowHeaderLock' : " + getAllowHeaderLock() + "\n");
     }
 
     protected final void getHeaderScriptEnd(StringBuilder sb, Map<String, String> messages)
@@ -253,7 +267,7 @@ public abstract class AbstractDataRegion extends DisplayElement
         out.write("\n<tr");
         if (!shouldRenderHeader(renderButtons))
             out.write(" style=\"display:none\"");
-        out.write(">");
+        out.write(" id=\"" + PageFlowUtil.filter("dataregion_header_row_" + getName()) + "\">");
 
         out.write("<td colspan=\"");
         out.write(String.valueOf(colCount));
@@ -278,6 +292,34 @@ public abstract class AbstractDataRegion extends DisplayElement
         out.write("</table>\n");
 
         out.write("\n</td></tr>");
+
+        if (this.getAllowHeaderLock())
+        {
+            out.write("\n<tr");
+            if (!shouldRenderHeader(renderButtons))
+                out.write(" style=\"display:none\"");
+            out.write(" id=\"" + PageFlowUtil.filter("dataregion_header_row_spacer_" + getName()) + "\" style=\"display: none;\">");
+
+            out.write("<td colspan=\"");
+            out.write(String.valueOf(colCount));
+            out.write("\" class=\"labkey-data-region-header-container\">\n");
+
+            out.write("<table class=\"labkey-data-region-header\">\n");
+            out.write("<tr><td nowrap>\n");
+            out.write("</td>");
+
+            out.write("<td align=\"right\" valign=\"top\" nowrap>\n");
+            renderPagination(ctx, out, PaginationLocation.TOP);
+            out.write("</td></tr>\n");
+
+            renderRibbon(ctx, out);
+            renderMessageBox(ctx, out, colCount);
+
+            // end table.labkey-data-region-header
+            out.write("</table>\n");
+
+            out.write("\n</td></tr>");
+        }
     }
 
     protected void renderRibbon(RenderContext ctx, Writer out) throws IOException

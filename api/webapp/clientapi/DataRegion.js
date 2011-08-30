@@ -73,6 +73,10 @@ LABKEY.DataRegion = Ext.extend(Ext.Component,
         // All of the different ribbon panels that have been constructed for this data region
         this.panelButtonContents = [];
 
+        // Lockable Header - set allowHeaderLock to true to receive magical floating headers
+        this.allowHeaderLock = config.allowHeaderLock || false; // Ext.isIE9 || Ext.isChrome || Ext.isFirefox; // modern as of 8.26.2011
+        this.first = -1;
+
         LABKEY.DataRegions[this.name] = this;
 
         this.addEvents(
@@ -119,8 +123,6 @@ LABKEY.DataRegion = Ext.extend(Ext.Component,
         );
 
         this._initElements();
-        Ext.EventManager.on(window, "load", this._resizeContainer, this, {single: true});
-        Ext.EventManager.on(window, "resize", this._resizeContainer, this);
         this._showPagination(this.header);
         this._showPagination(this.footer);
 
@@ -900,21 +902,134 @@ LABKEY.DataRegion = Ext.extend(Ext.Component,
             }
         }
 
+        Ext.EventManager.on(window, "load", this._resizeContainer, this, {single: true});
+        Ext.EventManager.on(window, "resize", this._resizeContainer, this);
+
         this._resizeContainer(true);
+
+        if (this.allowHeaderLock) {
+            Ext.EventManager.on(window, "scroll", this._scrollContainer, this);
+            this._initHeaderLock();
+        }
+    },
+
+    _initHeaderLock : function() {
+        // initialize constants
+        this.headerRow = Ext.get('dataregion_header_row_' + this.name);
+        this.headerSpacer = Ext.get('dataregion_header_row_spacer_' + this.name);
+        this.colHeaderRow = Ext.get('dataregion_column_header_row_' + this.name);
+        this.colHeaderRowSpacer = Ext.get('dataregion_column_header_row_spacer_' + this.name);
+
+        // initialize row contents
+        this.rowContent = Ext.query("#" + this.colHeaderRow.id + " > td[class*=labkey-column-header]");
+        this.rowSpacerContent = Ext.query('#' + this.colHeaderRowSpacer.id +' > td[class*=labkey-column-header]');
+
+        this._calculateHeader();
+    },
+
+    _calculateHeader : function() {
+        this._calculateHeaderLock();
+        this.tableWidth = this.table.getComputedWidth();
+        this._calculateHeaderFooter(this.tableWidth);
+        this._scrollContainer();
+    },
+
+    _calculateHeaderLock : function() {
+        var el, z, w, h;
+        for (var i=0; i < this.rowContent.length; i++) {
+            el = Ext.get(this.rowContent[i]);
+            h = el.getHeight();
+            w = el.getWidth();
+            el.setHeight(h);
+            el.setWidth(w);
+            z = Ext.get(this.rowSpacerContent[i]); // must be done after others are set (ext side-effect?)
+            z.setHeight(h);
+            z.setWidth(w);
+        }
+
+        if (this.first < 0) this.first = this._findPos(this.headerRow.dom);
+        this.hdrLocked = false;
+
+        if (this.tableTask) { Ext.TaskMgr.stop(this.tableTask); }
+
+        this.tableWidth = this.table.getComputedWidth();
+        this.tableTask = {interval:500, run: function(){
+            if (this.table.getComputedWidth() != this.tableWidth) {
+                this.tableWidth = this.table.getComputedWidth();
+                Ext.TaskMgr.stop(this.tableTask);
+                this.first = -1;
+                this._calculateHeaderLock();
+            }
+        }, scope: this};
+        Ext.TaskMgr.start(this.tableTask);
+    },
+
+    _calculateHeaderFooter : function(width) {
+        if (this.header) { this.header.setWidth(width); }
+        if (this.footer) { this.footer.setWidth(width); }
+    },
+
+    _findPos : function(obj) {
+        var curleft = curtop = 0;
+        if (obj && obj.offsetParent) {
+            do {
+                curleft += obj.offsetLeft;
+                curtop += obj.offsetTop;
+            } while (obj = obj.offsetParent);
+        }
+        return [
+            curleft,
+            curtop,
+            (curtop+this.table.getHeight()-((this.headerRow.getComputedHeight()*2)+(this.colHeaderRow.getComputedHeight()*2)+25)),
+            this.headerRow.getComputedHeight()
+        ];
+    },
+
+    // WARNING: This function is called often. Performance implications for each line.
+    _scrollContainer : function() {
+        // calculate Y scrolling
+        if (window.pageYOffset > this.first[1] && window.pageYOffset < this.first[2]) {
+            this.hdrLocked = true;
+            this.headerSpacer.dom.style.display = "table-row";
+            this.colHeaderRowSpacer.dom.style.display = "table-row";
+            this.headerRow.applyStyles("top: 0; position: fixed");
+            this.colHeaderRow.applyStyles("position: fixed; background: white; top: " + this.first[3] + "px;");
+        }
+        else if (this.hdrLocked && window.pageYOffset >= this.first[2]) {
+            var top = this.first[2]-window.pageYOffset;
+            this.headerRow.applyStyles("top: " + top + "px;");
+            this.colHeaderRow.applyStyles("top: " + (top + this.first[3]) + "px;");
+        }
+        else {
+            this.hdrLocked = false;
+            this.headerRow.applyStyles("top: auto; position: static;");
+            this.colHeaderRow.applyStyles("top: auto; position: static;");
+            this.headerSpacer.dom.style.display = "none";
+            this.colHeaderRowSpacer.dom.style.display = "none";
+        }
+
+        // Calculate X Scrolling
+        if (this.hdrLocked && window.pageXOffset > 0) {
+            this.headerRow.applyStyles("left: " + (this.first[0]-window.pageXOffset) + "px;");
+            this.colHeaderRow.applyStyles("left: " + (this.first[0]-window.pageXOffset) + "px;");
+        }
+        else if (window.pageXOffset == 0) {
+            this.headerRow.applyStyles("left: auto;");
+            this.colHeaderRow.applyStyles("left: auto;");
+        }
     },
 
     // private
     _showPagination : function (el)
     {
         if (!el) return;
-        //var pagination = Ext.lib.Dom.getElementsByClassName("labkey-pagination", "div", el)[0];
         var pagination = el.child("div[class='labkey-pagination']", true);
         if (pagination)
             pagination.style.visibility = "visible";
     },
 
     // private
-    _resizeContainer : function ()
+    _resizeContainer : function (init)
     {
         if (!this.table) return;
 
@@ -934,6 +1049,10 @@ LABKEY.DataRegion = Ext.extend(Ext.Component,
         {
             var frameWidth = this.footer.getFrameWidth("lr") + this.footer.parent().getFrameWidth("lr");
             this.footer.setWidth(headerWidth - frameWidth);
+        }
+
+        if (init !== true && this.allowHeaderLock) {
+            this._calculateHeader();
         }
     },
 

@@ -1135,7 +1135,7 @@ public class DataRegion extends AbstractDataRegion
     protected void renderGridHeaderColumns(RenderContext ctx, Writer out, boolean showRecordSelectors, List<DisplayColumn> renderers)
             throws IOException, SQLException
     {
-        out.write("\n<tr>");
+        out.write("\n<tr id=\"" + PageFlowUtil.filter("dataregion_column_header_row_" + getName()) + "\">");
 
         if (showRecordSelectors)
         {
@@ -1157,6 +1157,31 @@ public class DataRegion extends AbstractDataRegion
         }
 
         out.write("</tr>\n");
+
+        if (this.getAllowHeaderLock())
+        {
+            out.write("\n<tr class=\"dataregion_column_header_row_spacer\" style=\"display: none; text-colo\" id=\"" + PageFlowUtil.filter("dataregion_column_header_row_spacer_" + getName()) +"\">");
+
+            if (showRecordSelectors)
+            {
+                out.write("<td valign=\"top\" class=\"labkey-column-header labkey-selectors");
+                out.write("\">");
+
+                out.write("<input type=checkbox title='Select/unselect all on current page' ");
+                out.write(" onClick='LABKEY.DataRegions[" + PageFlowUtil.filterQuote(getName()) + "].selectPage(this.checked);'");
+                out.write("></td>");
+            }
+
+            for (DisplayColumn renderer : renderers)
+            {
+                if (renderer.isVisible(ctx))
+                {
+                    renderer.renderGridHeaderCell(ctx, out);
+                }
+            }
+
+            out.write("</tr>\n");
+        }
     }
 
     protected void renderAggregatesTableRow(RenderContext ctx, Writer out, boolean showRecordSelectors, List<DisplayColumn> renderers) throws IOException
