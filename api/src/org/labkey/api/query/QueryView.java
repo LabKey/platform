@@ -1670,6 +1670,7 @@ public class QueryView extends WebPartView<Object>
         getSettings().setOffset(Table.ALL_ROWS);
         rgn.setAllowAsync(false);
         RenderContext rc = view.getRenderContext();
+        rc.setCache(false);
         ResultSet rs = rgn.getResultSet(rc);
         Map<FieldKey,ColumnInfo> map = rc.getFieldMap();
         ExcelWriter ew = new ExcelWriter(rs, map, getExportColumns(rgn.getDisplayColumns()));
