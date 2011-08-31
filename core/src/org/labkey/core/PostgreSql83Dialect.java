@@ -653,8 +653,8 @@ class PostgreSql83Dialect extends SqlDialect
     // When the PostgreSQLColumnMetaDataReader reads meta data, it returns these scale values for all domains.
     private void initializeUserDefinedTypes(DbScope scope) throws SQLException
     {
-        TableSelect select = new TableSelect(scope, "SELECT * FROM information_schema.domains WHERE domain_schema = 'public'");
-        select.forEach(new ForEachBlock() {
+        Table.Selector selector = new Table.QuerySelector(scope, "SELECT * FROM information_schema.domains WHERE domain_schema = 'public'");
+        selector.forEach(new Table.ForEachBlock<ResultSet>() {
             @Override
             public void exec(ResultSet rs) throws SQLException
             {
@@ -672,8 +672,8 @@ class PostgreSql83Dialect extends SqlDialect
     // Query any settings that may affect dialect behavior.  Right now, only "standard_conforming_strings".
     private void determineSettings(DbScope scope) throws SQLException
     {
-        TableSelect select = new TableSelect(scope, "SELECT setting FROM pg_settings WHERE name = 'standard_conforming_strings'");
-        select.forEach(new ForEachBlock(){
+        Table.Selector selector = new Table.QuerySelector(scope, "SELECT setting FROM pg_settings WHERE name = 'standard_conforming_strings'");
+        selector.forEach(new Table.ForEachBlock<ResultSet>(){
             @Override
             public void exec(ResultSet rs) throws SQLException
             {
@@ -683,50 +683,6 @@ class PostgreSql83Dialect extends SqlDialect
                 _standardConformingStrings = "on".equalsIgnoreCase(rs.getString(1));
             }
         });
-    }
-
-
-    // Experimental -- could generalize this and move into Table
-    private static class TableSelect
-    {
-        private final DbScope _scope;
-        private final String _sql;
-
-        TableSelect(DbScope scope, String sql)
-        {
-            _scope = scope;
-            _sql = sql;
-        }
-
-        private void forEach(ForEachBlock block) throws SQLException
-        {
-            Connection conn = null;
-            Statement stmt = null;
-            ResultSet rs = null;
-
-            try
-            {
-                conn = _scope.getConnection();
-                stmt = conn.createStatement();
-                rs = stmt.executeQuery(_sql);
-
-                while (rs.next())
-                    block.exec(rs);
-            }
-            finally
-            {
-                ResultSetUtil.close(rs);
-                ResultSetUtil.close(stmt);
-
-                if (null != conn)
-                    _scope.releaseConnection(conn);
-            }
-        }
-    }
-
-    interface ForEachBlock
-    {
-        void exec(ResultSet rs) throws SQLException;
     }
 
 

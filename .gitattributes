@@ -601,7 +601,6 @@ core/src/org/labkey/core/analytics/analyticsSettings.jsp -text
 core/src/org/labkey/core/attachment/AttachmentCache.java -text
 core/src/org/labkey/core/attachment/AttachmentServiceImpl.java -text
 core/src/org/labkey/core/attachment/DatabaseAttachmentFile.java -text
-core/src/org/labkey/core/attachment/confirmDelete.jsp -text
 core/src/org/labkey/core/attachment/refreshParent.jsp -text
 core/src/org/labkey/core/attachment/showErrors.jsp -text
 core/src/org/labkey/core/filters/SetCharacterEncodingFilter.java -text

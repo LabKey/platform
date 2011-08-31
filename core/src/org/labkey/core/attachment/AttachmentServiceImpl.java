@@ -28,7 +28,6 @@ import org.labkey.api.attachments.AttachmentFile;
 import org.labkey.api.attachments.AttachmentParent;
 import org.labkey.api.attachments.AttachmentService;
 import org.labkey.api.attachments.DocumentWriter;
-import org.labkey.api.attachments.DownloadURL;
 import org.labkey.api.attachments.FileAttachmentFile;
 import org.labkey.api.attachments.SpringAttachmentFile;
 import org.labkey.api.audit.AuditLogEvent;
@@ -79,7 +78,6 @@ import org.labkey.core.query.AttachmentAuditViewFactory;
 import org.springframework.mock.web.MockMultipartFile;
 import org.springframework.validation.BindException;
 import org.springframework.web.multipart.MultipartFile;
-import org.springframework.web.servlet.mvc.Controller;
 
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletResponse;
@@ -250,28 +248,11 @@ public class AttachmentServiceImpl implements AttachmentService.Service, Contain
     }
 
     @Override
-    public HttpView getAddAttachmentView(Container container, AttachmentParent parent)
-    {
-        return getAddAttachmentView(container, parent, null);
-    }
-
-    @Override
     public HttpView getAddAttachmentView(Container container, AttachmentParent parent, BindException errors)
     {
         HttpView view = new AddAttachmentView(parent, errors);
         DialogTemplate template = new DialogTemplate(view);
         template.getModelBean().setTitle("Add Attachment");
-        template.getModelBean().setShowHeader(false);
-        return template;
-    }
-
-    @Override
-    public HttpView getConfirmDeleteView(Container container, Class<? extends Controller> deleteActionClass, AttachmentParent parent, String filename)
-    {
-        DownloadURL deleteURL = new DownloadURL(deleteActionClass, container, parent.getEntityId(), filename);
-        HttpView view = new ConfirmDeleteView(deleteURL, filename);
-        DialogTemplate template = new DialogTemplate(view);
-        template.getModelBean().setTitle("Delete Attachment?");
         template.getModelBean().setShowHeader(false);
         return template;
     }
@@ -300,20 +281,6 @@ public class AttachmentServiceImpl implements AttachmentService.Service, Contain
         }
     }
 
-
-    public static class ConfirmDeleteView extends JspView
-    {
-        public DownloadURL deleteURL;
-        public String name;
-
-        private ConfirmDeleteView(DownloadURL deleteURL, String name)
-        {
-            super("/org/labkey/core/attachment/confirmDelete.jsp");
-            this.deleteURL = deleteURL;
-            this.name = name;
-            setFrame(FrameType.NONE);
-        }
-    }
 
     @Override
     public synchronized void addAttachments(AttachmentParent parent, List<AttachmentFile> files, @NotNull User user) throws IOException
