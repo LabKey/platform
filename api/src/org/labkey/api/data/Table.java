@@ -109,6 +109,11 @@ public class Table
         return NO_ROWS == maxRows | ALL_ROWS == maxRows | maxRows > 0;
     }
 
+    public static boolean validOffset(int offset)
+    {
+        return offset >= 0;
+    }
+
     public static String SQLSTATE_TRANSACTION_STATE = "25000";
     public static final int ERROR_ROWVERSION = 10001;
     public static final int ERROR_DELETED = 10002;
@@ -346,7 +351,7 @@ public class Table
         {
             // Close everything for cached result sets and exceptions only
             if (cache || queryFailed)
-                _doFinally(rs, null, conn, schema);
+                _doFinally(rs, null, conn, schema.getScope());
         }
     }
 
@@ -403,7 +408,7 @@ public class Table
         }
         finally
         {
-            _doFinally(rs, null, conn, schema);
+            _doFinally(rs, null, conn, schema.getScope());
         }
     }
 
@@ -431,7 +436,7 @@ public class Table
         }
         finally
         {
-            _doFinally(null, null, conn, schema);
+            _doFinally(null, null, conn, schema.getScope());
         }
     }
 
@@ -474,7 +479,7 @@ public class Table
         }
         finally
         {
-            _doFinally(null, stmt, conn, schema);
+            _doFinally(null, stmt, conn, schema.getScope());
         }
     }
 
@@ -532,7 +537,7 @@ public class Table
         }
         finally
         {
-            _doFinally(rs, null, conn, schema);
+            _doFinally(rs, null, conn, schema.getScope());
         }
     }
 
@@ -596,7 +601,7 @@ public class Table
 
 
     // Typical finally block cleanup
-    private static void _doFinally(ResultSet rs, Statement stmt, Connection conn, DbSchema schema)
+    private static void _doFinally(ResultSet rs, Statement stmt, Connection conn, DbScope scope)
     {
         try
         {
@@ -625,7 +630,7 @@ public class Table
             _log.error("_doFinally", x);
         }
 
-        if (null != conn) schema.getScope().releaseConnection(conn);
+        if (null != conn) scope.releaseConnection(conn);
     }
 
 
@@ -671,7 +676,7 @@ public class Table
         }
         finally
         {
-            _doFinally(rs, null, conn, schema);
+            _doFinally(rs, null, conn, schema.getScope());
         }
     }
     
@@ -683,30 +688,9 @@ public class Table
     }
 
     /** return a result from a one column resultset. K should be a string or number type */
-    public static <K> K[] executeArray(DbSchema schema, String sql, Object[] parameters, Class<K> c)
-            throws SQLException
+    public static <K> K[] executeArray(DbSchema schema, String sql, Object[] parameters, Class<K> c) throws SQLException
     {
-        Connection conn = null;
-        ResultSet rs = null;
-
-        try
-        {
-            conn = schema.getScope().getConnection();
-            rs = _executeQuery(conn, sql, parameters);
-            ArrayList<Object> list = new ArrayList<Object>();
-            while (rs.next())
-                list.add(rs.getObject(1));
-            return list.toArray((K[]) Array.newInstance(c, list.size()));
-        }
-        catch(SQLException e)
-        {
-            _doCatch(sql, parameters, conn, e);
-            throw(e);
-        }
-        finally
-        {
-            _doFinally(rs, null, conn, schema);
-        }
+        return new QuerySelector(schema, new SQLFragment(sql, null == parameters ? new Object[0] : parameters)).getArray(c);
     }
 
 
@@ -714,7 +698,7 @@ public class Table
      * This is a shortcut method which can be used for TWO column ResultSets
      * The first column is key, the second column is the value
      */
-    public static Map executeValueMap(DbSchema schema, String sql, Object[] parameters, Map<Object,Object> m)
+    public static Map executeValueMap(DbSchema schema, String sql, Object[] parameters, Map<Object, Object> m)
             throws SQLException
     {
         Connection conn = null;
@@ -725,7 +709,7 @@ public class Table
             conn = schema.getScope().getConnection();
             rs = _executeQuery(conn, sql, parameters);
             if (null == m)
-                m = new HashMap<Object,Object>();
+                m = new HashMap<Object, Object>();
             while (rs.next())
                 m.put(rs.getObject(1), rs.getObject(2));
             return m;
@@ -737,7 +721,7 @@ public class Table
         }
         finally
         {
-            _doFinally(rs, null, conn, schema);
+            _doFinally(rs, null, conn, schema.getScope());
         }
     }
 
@@ -1011,7 +995,7 @@ public class Table
         }
         finally
         {
-            _doFinally(rs, stmt, conn, schema);
+            _doFinally(rs, stmt, conn, schema.getScope());
             closeParameters(parameters.toArray());
         }
 
@@ -1134,7 +1118,7 @@ public class Table
 
         finally
         {
-            _doFinally(null, stmt, conn, schema);
+            _doFinally(null, stmt, conn, schema.getScope());
         }
 
         return (fieldsIn instanceof Map && !(fieldsIn instanceof BoundMap)) ? (K)fields : fieldsIn;
@@ -2770,5 +2754,170 @@ public class Table
             
             Table.execute(testTable.getSchema(), "delete from test.testtable where entityid = '" + extract.guid + "'");
         }
+    }
+
+
+    public static abstract class Selector
+    {
+        private Connection _conn = null;
+        private SQLFragment _sql = null;
+
+        abstract Connection getConnection() throws SQLException;
+        abstract DbScope getScope() throws SQLException;
+        abstract SQLFragment getSql();
+
+        public ResultSet getResultSet() throws SQLException
+        {
+            _sql = getSql();
+            _conn = getConnection();
+            return _executeQuery(_conn, _sql.getSQL(), _sql.getParamsArray());
+        }
+
+        private <K> ArrayList<K> getArrayList(Class<K> clazz) throws SQLException
+        {
+            final ArrayList<K> list = new ArrayList<K>();
+
+            forEach(new ForEachBlock<ResultSet>() {
+                @Override
+                public void exec(ResultSet rs) throws SQLException
+                {
+                    list.add((K)rs.getObject(1));
+                }
+            });
+
+            return list;
+        }
+
+        public <K> K[] getArray(Class<K> clazz) throws SQLException
+        {
+            ArrayList<K> list = getArrayList(clazz);
+            return list.toArray((K[]) Array.newInstance(clazz, list.size()));
+        }
+
+        public <K> Collection<K> getCollection(Class<K> clazz) throws SQLException
+        {
+            return getArrayList(clazz);
+        }
+
+        public <K> K getObject(Class<K> clazz)
+        {
+            return null;
+        }
+
+        public void forEach(ForEachBlock<ResultSet> block) throws SQLException
+        {
+            ResultSet rs = null;
+
+            try
+            {
+                rs = getResultSet();
+
+                while (rs.next())
+                    block.exec(rs);
+            }
+            catch(SQLException e)
+            {
+                SQLFragment sql = getSql();
+                _doCatch(sql.getSQL(), sql.getParamsArray(), _conn, e);
+                throw(e);
+            }
+            finally
+            {
+                _doFinally(rs, null, _conn, getScope());
+            }
+        }
+
+        public void forEachMap(ForEachBlock<Map<String, Object>> block)
+        {
+
+        }
+
+        public <K> void forEach(ForEachBlock<K> block, Class<K> clazz)
+        {
+
+        }
+    }
+
+
+    public static class QuerySelector extends Selector
+    {
+        private final DbScope _scope;
+        private final SQLFragment _sql;
+
+        // Execute select SQL against a schema
+        public QuerySelector(DbSchema schema, SQLFragment sql)
+        {
+            this(schema.getScope(), sql);
+        }
+
+        // Execute select SQL against a scope
+        public QuerySelector(DbScope scope, SQLFragment sql)
+        {
+            _scope = scope;
+            _sql = sql;
+        }
+
+        // Execute select SQL against a scope
+        public QuerySelector(DbScope scope, String sql)
+        {
+            _scope = scope;
+            _sql = new SQLFragment(sql);
+        }
+
+        @Override
+        Connection getConnection() throws SQLException
+        {
+            return _scope.getConnection();
+        }
+
+        @Override
+        DbScope getScope() throws SQLException
+        {
+            return _scope;
+        }
+
+        @Override
+        SQLFragment getSql()
+        {
+            return _sql;
+        }
+    }
+
+
+    public static class TableSelector
+    {
+        private final TableInfo _table;
+        private final Collection<ColumnInfo> _columns;
+
+        // Select specified columns from a table
+        public TableSelector(TableInfo table, Collection<ColumnInfo> columns)
+        {
+            _table = table;
+            _columns = columns;
+        }
+
+        // Select all columns from a table
+        public TableSelector(TableInfo table)
+        {
+            this(table, Table.ALL_COLUMNS);
+        }
+
+        // Select specified columns from a table
+        public TableSelector(TableInfo table, Set<String> columnNames)
+        {
+            this(table, columnInfosList(table, columnNames));
+        }
+
+        // Select a single column -- not sure this is useful
+        public TableSelector(ColumnInfo column)
+        {
+            this(column.getParentTable(), PageFlowUtil.set(column));
+        }
+    }
+
+
+    public interface ForEachBlock<K>
+    {
+        void exec(K object) throws SQLException;
     }
 }

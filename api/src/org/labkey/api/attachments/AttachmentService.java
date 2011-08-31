@@ -16,33 +16,32 @@
 
 package org.labkey.api.attachments;
 
+import org.apache.commons.lang.StringUtils;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.Container;
 import org.labkey.api.search.SearchService;
 import org.labkey.api.security.User;
 import org.labkey.api.services.ServiceRegistry;
+import org.labkey.api.util.Pair;
 import org.labkey.api.util.Path;
+import org.labkey.api.util.URLHelper;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.HttpView;
 import org.labkey.api.view.ViewContext;
-import org.labkey.api.util.URLHelper;
-import org.labkey.api.util.Pair;
 import org.labkey.api.webdav.WebdavResource;
 import org.springframework.validation.BindException;
-import org.apache.commons.lang.StringUtils;
-import org.springframework.web.servlet.mvc.Controller;
 
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletResponse;
-import java.io.IOException;
 import java.io.FileNotFoundException;
+import java.io.IOException;
 import java.io.InputStream;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.List;
 import java.util.Date;
+import java.util.List;
 
 /**
  * User: adam
@@ -64,9 +63,7 @@ public class AttachmentService
         @Deprecated
         public HttpView delete(AttachmentParent parent, String name, User auditUser) throws SQLException;
 
-        public HttpView getAddAttachmentView(Container container, AttachmentParent parent);
         public HttpView getAddAttachmentView(Container container, AttachmentParent parent, BindException errors);
-        public HttpView getConfirmDeleteView(Container container, Class<? extends Controller> deleteActionClass, AttachmentParent parent, String filename);
         public HttpView getHistoryView(ViewContext context, AttachmentParent parent);
         public HttpView getErrorView(List<AttachmentFile> files, BindException errors, URLHelper returnUrl);
 
