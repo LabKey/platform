@@ -1576,7 +1576,7 @@ public class DataSetDefinition extends AbstractStudyEntity<DataSetDefinition> im
                         {
                             try
                             {
-                                return getMaxKeyValue();
+                                return getMaxKeyValue()+1;
                             }
                             catch (SQLException x)
                             {

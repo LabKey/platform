@@ -306,7 +306,7 @@ public class MothershipSchema extends UserSchema
 
     public FilteredTable createExceptionStackTraceTable()
     {
-        FilteredTable result = new FilteredTable(MothershipManager.get().getTableInfoExceptionStackTrace());
+        FilteredTable result = new FilteredTable(MothershipManager.get().getTableInfoExceptionStackTrace(), getContainer());
         result.wrapAllColumns(true);
         result.getColumn("StackTrace").setDisplayColumnFactory(new DisplayColumnFactory()
         {
@@ -395,7 +395,7 @@ public class MothershipSchema extends UserSchema
 
     public FilteredTable createExceptionReportTable()
     {
-        FilteredTable result = new FilteredTable(MothershipManager.get().getTableInfoExceptionReport());
+        FilteredTable result = new FilteredTable(MothershipManager.get().getTableInfoExceptionReport(), getContainer());
         result.wrapAllColumns(true);
         result.getColumn("URL").setDisplayColumnFactory(new DisplayColumnFactory()
         {
@@ -415,6 +415,13 @@ public class MothershipSchema extends UserSchema
                 return result;
             }
         });
+
+        // Container column is on another table so join to it to filter appropriately
+        SQLFragment containerSQL = new SQLFragment("ExceptionStackTraceId IN (SELECT ExceptionStackTraceId FROM ");
+        containerSQL.append(MothershipManager.get().getTableInfoExceptionStackTrace(), "st");
+        containerSQL.append(" WHERE st.Container = ?)");
+        containerSQL.add(getContainer().getId());
+        result.addCondition(containerSQL);
 
         // Decorate the stack trace id column and make it a lookup
         ColumnInfo stackTraceIdColumn = result.getColumn("ExceptionStackTraceId");

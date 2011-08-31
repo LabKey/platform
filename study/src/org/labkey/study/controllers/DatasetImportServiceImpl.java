@@ -122,6 +122,27 @@ public class DatasetImportServiceImpl extends DomainImporterServiceBase
         return status;
     }
 
+
+    @Override
+    public List<String> updateDomainDescriptor(GWTDomain orig, GWTDomain update)
+    {
+        Container container = getContainer();
+        StudyImpl study = StudyManager.getInstance().getStudy(container);
+        DataSetDefinition def = StudyManager.getInstance().getDataSetDefinition(study, orig.getName());
+        if (def == null)
+            throw new IllegalStateException("Could not find dataset: " + orig.getName());
+
+        try
+        {
+            return super.updateDomainDescriptor(orig, update);
+        }
+        finally
+        {
+            StudyManager.getInstance().uncache(def);
+        }
+    }
+
+
     public ImportStatus getStatus(String jobId) throws ImportException
     {
         throw new ImportException("Shouldn't be calling getStatus() -- datasets import synchronously");
