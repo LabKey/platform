@@ -39,6 +39,10 @@
         <tr><td>Check table consistency:&nbsp;</td>
         <td> <%=generateButton("Do Database Check", new ActionURL(AdminController.DoCheckAction.class, ContainerManager.getRoot()))%>&nbsp;</td></tr>
         <tr><td>&nbsp;</td><td></td></tr>
+        <tr><td>Validate domains match hard tables:&nbsp;<br/>
+        (Runs in background as pipeline job)</td>
+        <td> <%=generateButton("Validate", new ActionURL(AdminController.ValidateDomainsAction.class, ContainerManager.getRoot()))%>&nbsp;</td></tr>
+        <tr><td>&nbsp;</td><td></td></tr>
         <tr><td>Get schema xml doc:&nbsp;</td>
             <td>
 

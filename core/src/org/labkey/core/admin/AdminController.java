@@ -35,6 +35,7 @@ import org.labkey.api.action.ExportAction;
 import org.labkey.api.action.FormViewAction;
 import org.labkey.api.action.HasValidator;
 import org.labkey.api.action.MutatingApiAction;
+import org.labkey.api.action.RedirectAction;
 import org.labkey.api.action.ReturnUrlForm;
 import org.labkey.api.action.SimpleErrorView;
 import org.labkey.api.action.SimpleRedirectAction;
@@ -70,6 +71,10 @@ import org.labkey.api.module.ModuleContext;
 import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.ms2.MS2Service;
 import org.labkey.api.ms2.SearchClient;
+import org.labkey.api.pipeline.PipeRoot;
+import org.labkey.api.pipeline.PipelineJob;
+import org.labkey.api.pipeline.PipelineService;
+import org.labkey.api.pipeline.PipelineUrls;
 import org.labkey.api.pipeline.view.SetupForm;
 import org.labkey.api.search.SearchService;
 import org.labkey.api.security.AdminConsoleAction;
@@ -123,6 +128,7 @@ import org.labkey.api.view.TabStripView;
 import org.labkey.api.view.TermsOfUseException;
 import org.labkey.api.view.UnauthorizedException;
 import org.labkey.api.view.VBox;
+import org.labkey.api.view.ViewBackgroundInfo;
 import org.labkey.api.view.ViewContext;
 import org.labkey.api.view.ViewServlet;
 import org.labkey.api.view.WebPartView;
@@ -4226,6 +4232,39 @@ public class AdminController extends SpringActionController
         public NavTree appendNavTrail(NavTree root)
         {
             return null;
+        }
+    }
+
+    @RequiresSiteAdmin
+    public class ValidateDomainsAction extends RedirectAction
+    {
+        @Override
+        public URLHelper getSuccessURL(Object o)
+        {
+            return PageFlowUtil.urlProvider(PipelineUrls.class).urlBegin(ContainerManager.getRoot());
+        }
+
+        @Override
+        public boolean doAction(Object o, BindException errors) throws Exception
+        {
+            // Find a valid pipeline root - we don't really care which one, we just need somewhere to write the log file
+            for (Container project : ContainerManager.getProjects())
+            {
+                PipeRoot root = PipelineService.get().findPipelineRoot(project);
+                if (root != null && root.isValid())
+                {
+                    ViewBackgroundInfo info = getViewBackgroundInfo();
+                    PipelineJob job = new ValidateDomainsPipelineJob(info, root);
+                    PipelineService.get().getPipelineQueue().addJob(job);
+                    return true;
+                }
+            }
+            return false;
+        }
+
+        @Override
+        public void validateCommand(Object target, Errors errors)
+        {
         }
     }
 }
