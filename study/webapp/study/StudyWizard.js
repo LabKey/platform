@@ -147,7 +147,8 @@ LABKEY.study.CreateStudyWizard = Ext.extend(Ext.util.Observable, {
                 cls : 'x-tree-node-current'
             },
             listeners: {
-                dblclick: onDblClick
+                dblclick: onDblClick,
+                scope:this
             },
             fieldLabel: 'Choose A Folder',
             cls : 'folder-management-tree', // used by selenium helper
@@ -162,6 +163,7 @@ LABKEY.study.CreateStudyWizard = Ext.extend(Ext.util.Observable, {
 
         function onDblClick(e){
             studyLocation.setValue(e.attributes.containerPath);
+            this.info.dstPath = e.attributes.containerPath;
         }
 
         formItems.push(folderTree);
@@ -209,8 +211,12 @@ LABKEY.study.CreateStudyWizard = Ext.extend(Ext.util.Observable, {
 
         var items = [];
 
-        var txt = Ext.DomHelper.markup({tag:'div', html:'How will participants be added to this study.<br>'});
-        //items.push({xtype:'displayfield', html: txt});
+        var txt = Ext.DomHelper.markup({tag:'div', html:'How will participants be added to this study?<br>'});
+
+        this.newGroupRadio = new Ext.form.Radio({boxLabel:'Create a new participant group', name: 'renderType', scope: this,
+            handler: this.showNewParticipantGroupPanel});
+        this.existingGroupRadio = new Ext.form.Radio({boxLabel:'Select from existing participant groups', name: 'renderType',
+            checked: true, scope:this, handler: this.showExistingParticipantGroupPanel});
 
         var formItems = [
             {xtype: 'displayfield', html: txt},
@@ -220,9 +226,8 @@ LABKEY.study.CreateStudyWizard = Ext.extend(Ext.util.Observable, {
                 fieldLabel: '',
                 labelWidth: 5,
                 items: [
-                    {boxLabel:'Create a new participant group', name: 'renderType', scope: this, handler: this.showNewParticipantGroupPanel},
-                    {boxLabel:'Select from existing participant groups', name: 'renderType', checked: true, scope:this,
-                        handler: this.showExistingParticipantGroupPanel}
+                    this.newGroupRadio,
+                    this.existingGroupRadio
                 ]
             }
         ];
@@ -257,6 +262,13 @@ LABKEY.study.CreateStudyWizard = Ext.extend(Ext.util.Observable, {
                     this.updateStep();
                     return false;
                 }
+            } else {
+                if(!this.info.existingRowId){
+                    Ext.Msg.alert("Error", "You must select an existing group or create a new one.");
+                    this.currentStep--;
+                    this.updateStep();
+                    return false;
+                }
             }
             return true;
         }, this);
@@ -282,34 +294,42 @@ LABKEY.study.CreateStudyWizard = Ext.extend(Ext.util.Observable, {
                     hasButtons: false,
                     subject: this.subject
                 });
+
+                this.participantPanel.add(this.newGroupPanel);
+                this.participantPanel.doLayout();
+            } else {
+                this.newGroupPanel.setVisible(true);
             }
-            this.newGroupPanel.show();
-            this.participantPanel.add(this.newGroupPanel);
         }
         else if (this.participantPanel && this.newGroupPanel)
         {
-            this.newGroupPanel.hide();
-            this.participantPanel.remove(this.newGroupPanel);
+            this.newGroupPanel.setVisible(false);
+            this.participantPanel.doLayout();
         }
-        this.participantPanel.doLayout();
     },
 
     showExistingParticipantGroupPanel : function(cmp, show)
     {
         if (show && this.participantPanel)
         {
-            Ext.Ajax.request(
-            {
-                url : LABKEY.ActionURL.buildURL("participant-group", "getParticipantCategories"),
-                method : 'get',
-                success: this.createExistingParticipantGroupPanel,
-                failure: function(response, options){LABKEY.Utils.displayAjaxErrorResponse(response, options);},
-                scope: this
-            });
+            if(!this.existingGroupPanel){
+                Ext.Ajax.request(
+                        {
+                            url : LABKEY.ActionURL.buildURL("participant-group", "getParticipantCategories"),
+                            method : 'get',
+                            success: this.createExistingParticipantGroupPanel,
+                            failure: function(response, options){LABKEY.Utils.displayAjaxErrorResponse(response, options);},
+                            scope: this
+                        });
+
+                this.participantPanel.doLayout();
+            } else {
+                this.existingGroupPanel.setVisible(true);
+            }
         }
         else if (this.participantPanel && this.existingGroupPanel)
         {
-            this.participantPanel.remove(this.existingGroupPanel);
+            this.existingGroupPanel.setVisible(false);
             this.participantPanel.doLayout();
         }
     },
@@ -328,7 +348,7 @@ LABKEY.study.CreateStudyWizard = Ext.extend(Ext.util.Observable, {
                 {
                     var group = o.categories[i];
 
-                    items.push({boxLabel: group.label, name:'participantGroups', value: group.rowId});
+                    items.push({boxLabel: group.label, name:'participantGroups', value: group.rowId, handler: this.participantGroupRadioHandler, scope: this});
                 }
 
                 var formItems = [{
@@ -359,6 +379,12 @@ LABKEY.study.CreateStudyWizard = Ext.extend(Ext.util.Observable, {
             }
             this.participantPanel.add(this.existingGroupPanel);
             this.participantPanel.doLayout();
+        }
+    },
+
+    participantGroupRadioHandler : function(cmp, selected) {
+        if(selected){
+            this.info.existingRowId = cmp.value;
         }
     },
 
@@ -428,6 +454,14 @@ LABKEY.study.CreateStudyWizard = Ext.extend(Ext.util.Observable, {
         params.srcPath = LABKEY.ActionURL.getContainer();
         params.dstPath = this.info.dstPath;
         params.datasets = [];
+
+        if(this.existingGroupRadio.checked){
+            //If we chose an existing group then we just pass the rowid of the group.
+            params.categories = [{rowid: this.info.existingRowId}];
+        } else {
+            //If it's a new group we pass the categoryData from the newGroupPanel.
+            params.categories = [this.newGroupPanel.getCategoryData()];
+        }
 
         for (var i=0; i < this.info.datasets.length; i++)
         {

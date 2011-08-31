@@ -247,22 +247,27 @@
 %>
 
 <script type="text/javascript">
-
     LABKEY.requiresScript("study/StudyWizard.js");
+</script>
+
+<script type="text/javascript">
 
     function showNewStudyWizard()
     {
-        var wizard = new LABKEY.study.CreateStudyWizard({
-            subject: {
-                nounSingular: <%=q(study.getSubjectNounSingular())%>,
-                nounPlural: <%=q(study.getSubjectNounPlural())%>,
-                nounColumnName: <%=q(study.getSubjectColumnName())%>
-            }
-        });
+        function init(){
+            var wizard = new LABKEY.study.CreateStudyWizard({
+                subject: {
+                    nounSingular: <%=q(study.getSubjectNounSingular())%>,
+                    nounPlural: <%=q(study.getSubjectNounPlural())%>,
+                    nounColumnName: <%=q(study.getSubjectColumnName())%>
+                }
+            });
 
-        wizard.on('success', function(info){}, this);
+            wizard.on('success', function(info){}, this);
 
-        // run the wizard
-        wizard.show();
+            // run the wizard
+            wizard.show();
+        }
+        Ext.onReady(init);
     }
 </script>

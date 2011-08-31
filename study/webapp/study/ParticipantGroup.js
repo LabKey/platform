@@ -178,31 +178,9 @@ LABKEY.study.ParticipantGroupPanel = Ext.extend(Ext.Panel, {
 
     saveCategory: function()
     {
-        // get the label and ids from the form
-        var fieldValues = this.categoryPanel.getForm().getFieldValues();
-        var label = fieldValues["categoryLabel"];
-        var idStr = fieldValues["categoryIdentifiers"];
-
-        if (!this.validate())
+         if (!this.validate())
             return;
-
-        // mask the panel
-        this.getEl().mask("Saving category...", "x-mask-loading");
-
-        // split the ptid list into an array of strings
-        var ids = idStr.split(",");
-        for (var i = 0; i < ids.length; i++)
-        {
-            ids[i] = ids[i].trim();
-        }
-
-        // setup the data to be stored for the category
-        var categoryData = {
-            label: label,
-            type: 'list',
-            participantIds: ids,
-            shared : this.sharedfield.getValue()
-        };
+        var categoryData = this.getCategoryData();
 
         if (this.categoryRowId)
         {
@@ -230,6 +208,33 @@ LABKEY.study.ParticipantGroupPanel = Ext.extend(Ext.Panel, {
             headers : {'Content-Type' : 'application/json'},
             scope: this
         });
+    },
+
+    getCategoryData: function(){
+         // get the label and ids from the form
+        var fieldValues = this.categoryPanel.getForm().getFieldValues();
+        var label = fieldValues["categoryLabel"];
+        var idStr = fieldValues["categoryIdentifiers"];
+
+        // mask the panel
+        this.getEl().mask("Saving category...", "x-mask-loading");
+
+        // split the ptid list into an array of strings
+        var ids = idStr.split(",");
+        for (var i = 0; i < ids.length; i++)
+        {
+            ids[i] = ids[i].trim();
+        }
+
+        // setup the data to be stored for the category
+        var categoryData = {
+            label: label,
+            type: 'list',
+            participantIds: ids,
+            shared : this.sharedfield.getValue()
+        };
+        
+        return categoryData;
     },
 
     getDemoQueryWebPart: function(queryName)
