@@ -2017,10 +2017,20 @@ a.labkey-text-link, a.labkey-text-link:visited {
     padding: 2px 12px 2px 0;
     text-transform: uppercase;
 	border: none;
-    position: relative;  /* header lock -- this needs to be disabled */
+    position: relative;
     vertical-align: middle;
     white-space: nowrap;
     margin: 0.1em 0.8em 0.5em 0;
+}
+
+/* Data Region Header Locking */
+table.labkey-data-region a.labkey-text-link,
+table.labkey-data-region a.labkey-text-link:visited {
+    position: static;
+}
+
+table.labkey-data-region .css-arrow-right {
+    display: none;
 }
 
 a.labkey-text-link:hover {
