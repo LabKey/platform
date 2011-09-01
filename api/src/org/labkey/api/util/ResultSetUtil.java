@@ -82,7 +82,7 @@ public class ResultSetUtil
     }
     
 
-    // Convenience method to convert the current row in a ResultSet to a map.  Do not call this in a loop -- new up a ResultSetRowMap instead
+    // Convenience method to convert the current row in a ResultSet to a map.  Do not call this in a loop -- use a ResultSetRowMapFactory or ResultSetIterator instead
     public static Map<String, Object> mapRow(ResultSet rs) throws SQLException
     {
         if (rs instanceof CachedResultSet)

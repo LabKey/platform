@@ -690,7 +690,7 @@ public class Table
     /** return a result from a one column resultset. K should be a string or number type */
     public static <K> K[] executeArray(DbSchema schema, String sql, Object[] parameters, Class<K> c) throws SQLException
     {
-        return new QuerySelector(schema, new SQLFragment(sql, null == parameters ? new Object[0] : parameters)).getArray(c);
+        return new SqlSelector(schema, new SQLFragment(sql, null == parameters ? new Object[0] : parameters)).getArray(c);
     }
 
 
@@ -2775,15 +2775,41 @@ public class Table
 
         private <K> ArrayList<K> getArrayList(Class<K> clazz) throws SQLException
         {
-            final ArrayList<K> list = new ArrayList<K>();
+            final ArrayList<K> list;
 
-            forEach(new ForEachBlock<ResultSet>() {
-                @Override
-                public void exec(ResultSet rs) throws SQLException
+            if (isSimpleObject(clazz))
+            {
+                list = new ArrayList<K>();
+
+                forEach(new ForEachBlock<ResultSet>() {
+                    @Override
+                    public void exec(ResultSet rs) throws SQLException
+                    {
+                        list.add((K)rs.getObject(1));
+                    }
+                });
+            }
+            else
+            {
+                ObjectFactory<K> factory = BeanObjectFactory.Registry.getFactory(clazz);
+                ResultSet rs = null;
+
+                try
                 {
-                    list.add((K)rs.getObject(1));
+                    rs = getResultSet();
+                    list = factory.handleArrayList(rs);
                 }
-            });
+                catch (SQLException e)
+                {
+                    SQLFragment sql = getSql();
+                    _doCatch(sql.getSQL(), sql.getParamsArray(), _conn, e);
+                    throw(e);
+                }
+                finally
+                {
+                    _doFinally(rs, null, _conn, getScope());
+                }
+            }
 
             return list;
         }
@@ -2815,6 +2841,30 @@ public class Table
                 while (rs.next())
                     block.exec(rs);
             }
+            catch (SQLException e)
+            {
+                SQLFragment sql = getSql();
+                _doCatch(sql.getSQL(), sql.getParamsArray(), _conn, e);
+                throw(e);
+            }
+            finally
+            {
+                _doFinally(rs, null, _conn, getScope());
+            }
+        }
+
+        public void forEachMap(final ForEachBlock<Map<String, Object>> block) throws SQLException
+        {
+            ResultSet rs = null;
+
+            try
+            {
+                rs = getResultSet();
+                ResultSetIterator iter = new ResultSetIterator(rs);
+
+                while (iter.hasNext())
+                    block.exec(iter.next());
+            }
             catch(SQLException e)
             {
                 SQLFragment sql = getSql();
@@ -2827,38 +2877,48 @@ public class Table
             }
         }
 
-        public void forEachMap(ForEachBlock<Map<String, Object>> block)
+        public <K> void forEach(final ForEachBlock<K> block, Class<K> clazz) throws SQLException
         {
+            final ObjectFactory<K> factory = ObjectFactory.Registry.getFactory(clazz);
 
+            ForEachBlock<Map<String, Object>> mapBlock = new ForEachBlock<Map<String, Object>>() {
+                @Override
+                public void exec(Map<String, Object> map) throws SQLException
+                {
+                    block.exec(factory.fromMap(map));
+                }
+            };
+
+            forEachMap(mapBlock);
         }
 
-        public <K> void forEach(ForEachBlock<K> block, Class<K> clazz)
+        private static boolean isSimpleObject(Class clazz)
         {
-
+            return String.class.isAssignableFrom(clazz) || Number.class.isAssignableFrom(clazz) || Date.class.isAssignableFrom(clazz);
         }
     }
 
 
-    public static class QuerySelector extends Selector
+    public static class SqlSelector extends Selector
     {
         private final DbScope _scope;
         private final SQLFragment _sql;
 
         // Execute select SQL against a schema
-        public QuerySelector(DbSchema schema, SQLFragment sql)
+        public SqlSelector(DbSchema schema, SQLFragment sql)
         {
             this(schema.getScope(), sql);
         }
 
         // Execute select SQL against a scope
-        public QuerySelector(DbScope scope, SQLFragment sql)
+        public SqlSelector(DbScope scope, SQLFragment sql)
         {
             _scope = scope;
             _sql = sql;
         }
 
         // Execute select SQL against a scope
-        public QuerySelector(DbScope scope, String sql)
+        public SqlSelector(DbScope scope, String sql)
         {
             _scope = scope;
             _sql = new SQLFragment(sql);

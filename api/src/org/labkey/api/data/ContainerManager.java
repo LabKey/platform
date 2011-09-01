@@ -29,7 +29,6 @@ import org.labkey.api.attachments.AttachmentParent;
 import org.labkey.api.cache.CacheManager;
 import org.labkey.api.cache.StringKeyCache;
 import org.labkey.api.collections.CaseInsensitiveHashSet;
-import org.labkey.api.collections.CaseInsensitiveTreeMap;
 import org.labkey.api.data.dialect.SqlDialect;
 import org.labkey.api.module.FolderType;
 import org.labkey.api.module.ModuleLoader;
@@ -2057,13 +2056,21 @@ public class ContainerManager
             return d;
         }
 
-        public Container[] handleArray(ResultSet rs) throws SQLException
+        @Override
+        public ArrayList<Container> handleArrayList(ResultSet rs) throws SQLException
         {
             ArrayList<Container> list = new ArrayList<Container>();
             while (rs.next())
             {
                 list.add(handle(rs));
             }
+            return list;
+        }
+
+        @Override
+        public Container[] handleArray(ResultSet rs) throws SQLException
+        {
+            ArrayList<Container> list = handleArrayList(rs);
             return list.toArray(new Container[list.size()]);
         }
     }

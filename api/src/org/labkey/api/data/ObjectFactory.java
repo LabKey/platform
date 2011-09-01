@@ -21,6 +21,7 @@ import org.labkey.api.collections.BoundMap;
 
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.util.ArrayList;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -39,6 +40,8 @@ public interface ObjectFactory<K>
     Map<String, Object> toMap(K bean, Map<String, Object> m);
 
     K handle(ResultSet rs) throws SQLException;
+
+    ArrayList<K> handleArrayList(ResultSet rs) throws SQLException;
 
     K[] handleArray(ResultSet rs) throws SQLException;
 

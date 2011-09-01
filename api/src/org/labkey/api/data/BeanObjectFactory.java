@@ -125,6 +125,7 @@ public class BeanObjectFactory<K> implements ObjectFactory<K> // implements Resu
     }
     
 
+    @Override
     public K fromMap(K bean, Map<String, ?> m)
     {
         for (String prop : _writeableProperties)
@@ -156,6 +157,7 @@ public class BeanObjectFactory<K> implements ObjectFactory<K> // implements Resu
     }
 
 
+    @Override
     public Map<String, Object> toMap(K bean, Map<String, Object> m)
     {
         try
@@ -192,13 +194,15 @@ public class BeanObjectFactory<K> implements ObjectFactory<K> // implements Resu
     }
 
 
+    @Override
     public K handle(ResultSet rs) throws SQLException
     {
         Map<String, Object> map = ResultSetUtil.mapRow(rs);
         return fromMap(map);
     }
 
-    public K[] handleArray(ResultSet rs) throws SQLException
+    @Override
+    public ArrayList<K> handleArrayList(ResultSet rs) throws SQLException
     {
         ResultSetMetaData md = rs.getMetaData();
         int count = md.getColumnCount();
@@ -263,6 +267,14 @@ public class BeanObjectFactory<K> implements ObjectFactory<K> // implements Resu
             assert false : "unexpected exception";
         }
 
+        return list;
+    }
+
+
+    @Override
+    public K[] handleArray(ResultSet rs) throws SQLException
+    {
+        ArrayList<K> list = handleArrayList(rs);
         K[] array = (K[]) Array.newInstance(_class, list.size());
         return list.toArray(array);
     }
