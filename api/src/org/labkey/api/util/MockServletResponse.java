@@ -1,12 +1,10 @@
 package org.labkey.api.util;
 
-import com.sun.xml.internal.messaging.saaj.util.ByteOutputStream;
-
 import javax.servlet.ServletOutputStream;
 import javax.servlet.http.Cookie;
 import javax.servlet.http.HttpServletResponse;
+import java.io.ByteArrayOutputStream;
 import java.io.IOException;
-import java.io.OutputStream;
 import java.io.PrintWriter;
 import java.util.Locale;
 import java.util.Map;
@@ -27,7 +25,7 @@ class MockServletResponse implements HttpServletResponse
     String contentType = null;
     String characterEncoding = null;
     int contentLength = 0;
-    ByteOutputStream os = new ByteOutputStream();
+    ByteArrayOutputStream os = new ByteArrayOutputStream();
     Locale locale;
 
     PrintWriter printWriter = new PrintWriter(os);
@@ -206,7 +204,7 @@ class MockServletResponse implements HttpServletResponse
     public void resetBuffer()
     {
         printWriter.flush();
-        ((ByteOutputStream)os).reset();
+        os.reset();
     }
 
     @Override
@@ -236,6 +234,6 @@ class MockServletResponse implements HttpServletResponse
     public String getBodyAsText()
     {
         printWriter.flush();
-        return new String(os.getBytes(), 0, os.size());
+        return new String(os.toByteArray(), 0, os.size());
     }
 }

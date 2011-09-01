@@ -822,7 +822,6 @@ public class ExceptionUtil
             User me = TestContext.get().getUser();
             ExceptionResponse answer;
 
-            // TODO: make ExceptionUtil injectable so we can test SearchService interaction
             answer = handleIt(guest, new NotFoundException("Not here"), null);
             assertNull("not found does not redirect", answer.redirect);
             assertEquals(HttpServletResponse.SC_NOT_FOUND, answer.response.status);
