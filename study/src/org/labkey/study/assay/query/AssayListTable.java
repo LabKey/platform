@@ -21,6 +21,7 @@ import org.labkey.api.exp.api.ExperimentService;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.FilteredTable;
 import org.labkey.api.query.DetailsURL;
+import org.labkey.api.study.assay.AssaySchema;
 import org.labkey.api.view.ActionURL;
 import org.labkey.study.controllers.assay.AssayController;
 
@@ -39,6 +40,7 @@ public class AssayListTable extends FilteredTable
         super(ExperimentService.get().getTinfoProtocol(), schema.getContainer(), new ContainerFilter.WorkbookAssay(schema.getUser()));
         setDescription("Contains all of the assay definitions visible in this folder");
         addCondition(_rootTable.getColumn("ApplicationType"), "ExperimentRun");
+        setName(AssaySchema.ASSAY_LIST_TABLE_NAME);
         setTitleColumn("Name");
 
         _schema = schema;
@@ -84,5 +86,11 @@ public class AssayListTable extends FilteredTable
         addCondition(new SQLFragment("(SELECT MAX(pd.PropertyId) from exp.object o, exp.objectproperty op, exp.propertydescriptor pd where pd.propertyid = op.propertyid and op.objectid = o.objectid and o.objecturi = lsid AND pd.PropertyURI LIKE '%AssayDomain-Run%') IS NOT NULL"));
 
         setDetailsURL(detailsURL);
+    }
+
+    @Override
+    public String getPublicSchemaName()
+    {
+        return AssaySchema.NAME;
     }
 }

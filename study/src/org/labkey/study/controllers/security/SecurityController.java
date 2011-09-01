@@ -585,8 +585,9 @@ public class SecurityController extends SpringActionController
         protected void renderView(Object model, PrintWriter out) throws Exception
         {
             ActionURL urlStudy = new ActionURL(BeginAction.class, getViewContext().getContainer());
-            out.print("<br>Click here to manage permissions for the Study module.<br>");
+            out.print("<p>Permissions for datasets in a Study are managed separately.<br/>");
             out.print(PageFlowUtil.generateButton("Study Security", urlStudy));
+            out.print("<br/>&nbsp;</p>");
         }
     }
 }
