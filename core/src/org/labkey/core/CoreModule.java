@@ -86,6 +86,7 @@ import org.labkey.api.study.Study;
 import org.labkey.api.study.StudyService;
 import org.labkey.api.util.ContextListener;
 import org.labkey.api.util.DateUtil;
+import org.labkey.api.util.ExceptionUtil;
 import org.labkey.api.util.FileType;
 import org.labkey.api.util.FileUtil;
 import org.labkey.api.util.HString;
@@ -544,6 +545,7 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
             , SimpleTranslator.TranslateTestCase.class
             , CachingDataIterator.ScrollTestCase.class
             , ResultSetDataIterator.TestCase.class
+            , ExceptionUtil.TestCase.class
             //,RateLimiter.TestCase.class
         ));
 
