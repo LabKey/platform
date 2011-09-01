@@ -49,7 +49,7 @@ public class VisualizationSQLGenerator implements CustomApiForm, HasViewContext
     }
 
     private Map<String, VisualizationSourceQuery> _sourceQueries = new LinkedHashMap<String, VisualizationSourceQuery>();
-    private List<VisualizationIntervalColumn> _intervals = new ArrayList<VisualizationIntervalColumn>();
+    private Map<String, VisualizationIntervalColumn> _intervals = new HashMap<String, VisualizationIntervalColumn>();
     private ViewContext _viewContext;
     private VisualizationSourceColumn.Factory _columnFactory = new VisualizationSourceColumn.Factory();
 
@@ -108,7 +108,11 @@ public class VisualizationSQLGenerator implements CustomApiForm, HasViewContext
                         ensureSourceQuery(_viewContext.getContainer(), zeroDateMeasure, query).addSelect(zeroDateMeasure);
                         String interval = (String) dateOptions.get("interval");
                         if (interval != null)
-                            _intervals.add(new VisualizationIntervalColumn(zeroDateMeasure, col, interval));
+                        {
+                            VisualizationIntervalColumn newInterval = new VisualizationIntervalColumn(zeroDateMeasure, col, interval);
+                            if (!_intervals.containsKey(newInterval.getFullAlias()))
+                                _intervals.put(newInterval.getFullAlias(), newInterval);
+                        }
                     }
                 }
                 previous = query;
@@ -243,7 +247,7 @@ public class VisualizationSQLGenerator implements CustomApiForm, HasViewContext
         }
         // Add inner joins to the inner-join queries
         queries.addAll(innerJoinQueries);
-        return getSQL(parentQuery, _columnFactory, queries, _intervals, "INNER JOIN", true);
+        return getSQL(parentQuery, _columnFactory, queries, new ArrayList<VisualizationIntervalColumn>(_intervals.values()), "INNER JOIN", true);
     }
 
     private static IVisualizationSourceQuery findQuery(VisualizationSourceColumn column, Collection<IVisualizationSourceQuery> queries)
@@ -259,9 +263,10 @@ public class VisualizationSQLGenerator implements CustomApiForm, HasViewContext
     public static String getSQL(IVisualizationSourceQuery parentQuery, VisualizationSourceColumn.Factory factory, Collection<IVisualizationSourceQuery> queries, List<VisualizationIntervalColumn> intervals, String joinOperator, boolean includeOrderBys) throws VisualizationSQLGenerator.GenerationException
     {
         // Now that we have the full list of columns we want to select, we can generate our select list
+        Map<String, Set<String>> allAliases = getColumnMapping(factory, queries);
         StringBuilder masterSelectList = new StringBuilder();
         String sep = "";
-        for (Set<String> selectAliases : getColumnMapping(factory, queries).values())
+        for (Set<String> selectAliases : allAliases.values())
         {
             String selectAlias;
             if (parentQuery != null)
@@ -275,6 +280,12 @@ public class VisualizationSQLGenerator implements CustomApiForm, HasViewContext
         for (int i = 0, intervalsSize = intervals.size(); i < intervalsSize; i++)
         {
             VisualizationIntervalColumn interval = intervals.get(i);
+            // if the end date has multiple aliases, set it to be the first
+            Set<String> intervalAliases = allAliases.get(interval.getEndDate().getOriginalName());
+            if (intervalAliases.size() > 1)
+            {
+                interval.getEndDate().setOtherAlias(factory.get(intervalAliases.iterator().next()).getAlias());
+            }
             String alias = (intervalsSize > 1) ? interval.getFullAlias() : interval.getSimpleAlias();
             masterSelectList.append(sep).append(interval.getSQL()).append(" AS ").append(alias);
         }
@@ -284,7 +295,13 @@ public class VisualizationSQLGenerator implements CustomApiForm, HasViewContext
         for (IVisualizationSourceQuery query : queries)
         {
             for (VisualizationSourceColumn orderBy : query.getSorts())
-                orderBys.put(orderBy, query);
+            {
+                Set<String> orderByAliases = allAliases.get(orderBy.getOriginalName());
+                if (orderByAliases.size() > 1)
+                    orderBys.put(factory.get(orderByAliases.iterator().next()), query);
+                else
+                    orderBys.put(orderBy, query);
+            }
             if (sql.length() == 0)
                 sql.append("SELECT ").append(masterSelectList).append(" FROM\n");
             else

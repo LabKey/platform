@@ -21,6 +21,7 @@ LABKEY.vis.ChartEditorYAxisPanel = Ext.extend(Ext.FormPanel, {
         // set axis defaults, if not a saved chart
         Ext.applyIf(config.axis, {
             name: "y-axis",
+            side: "left",
             scale: "linear",
             range: {type: "automatic"}
         });

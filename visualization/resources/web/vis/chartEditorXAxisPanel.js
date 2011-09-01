@@ -22,14 +22,7 @@ LABKEY.vis.ChartEditorXAxisPanel = Ext.extend(Ext.FormPanel, {
         // set axis defaults, if not a saved chart
         Ext.applyIf(config.axis, {
             name: "x-axis",
-            timeAxis: "true",
             range: {type: "automatic"}
-        });
-
-        // set the axis dateOptions, if not a saved chart
-        Ext.applyIf(config.dateOptions,  {
-            interval: "Days",
-            zeroDateCol: {}
         });
 
         this.addEvents(
@@ -68,7 +61,7 @@ LABKEY.vis.ChartEditorXAxisPanel = Ext.extend(Ext.FormPanel, {
                     }
                 }
             }),
-            value: this.dateOptions.interval,
+            value: this.interval,
             valueField: 'value',
             displayField: 'value',
             fieldLabel: 'Draw x-axis as',
@@ -87,42 +80,24 @@ LABKEY.vis.ChartEditorXAxisPanel = Ext.extend(Ext.FormPanel, {
                         this.axis.label = newLabel;
                     }
 
-                    this.dateOptions.interval = cmp.getValue();
+                    this.interval = cmp.getValue();
                     this.fireEvent('chartDefinitionChanged', true);
                 }
             }
         });
         columnOneItems.push(this.intervalCombo);
 
-        // combobox for the selection of the date to use for the given measure on the x-axis
-        this.measureDateCombo = new Ext.form.ComboBox({
-            id: 'measure-date-combo',
-            triggerAction: 'all',
-            mode: 'local',
-            store: new Ext.data.Store(),
-            valueField: 'name',
-            displayField: 'label',
-            forceSelection: true,
-            width: 175,
-            minListWidth : 350,
-            listeners: {
-                scope: this,
-                'select': function(cmp, record, index) {
-                    this.measure = record.data;
-                    this.fireEvent('chartDefinitionChanged', true);
-                }
-            }
-        });
-
         // combobox to select the "starting date" to be used for the x-axis interval calculation
         this.zeroDateCombo = new Ext.form.ComboBox({
             id: 'zero-date-combo',
+            fieldLabel: 'Calculate time interval(s) relative to',
             triggerAction: 'all',
             mode: 'local',
             store: new Ext.data.Store(),
             valueField: 'longlabel',
             displayField: 'longlabel',
             forceSelection: true,
+            width: 250,
             minListWidth : 350,
             listeners: {
                 scope: this,
@@ -137,27 +112,13 @@ LABKEY.vis.ChartEditorXAxisPanel = Ext.extend(Ext.FormPanel, {
                         this.axis.label = newLabel;
                     }
 
-                    Ext.apply(this.dateOptions.zeroDateCol, record.data);
+                    Ext.apply(this.zeroDateCol, record.data);
                     this.fireEvent('chartDefinitionChanged', true);
                 }
             }
         });
 
-        columnOneItems.push({
-            xtype: 'compositefield',
-            fieldLabel: 'Calculate interval between',
-            defaults: {flex: 1},
-            items: [
-                this.zeroDateCombo,
-                {
-                    xtype:'label',
-                    text:'and',
-                    width: 30,
-                    style: {textAlign: 'center'}
-                },
-                this.measureDateCombo
-            ]
-        });
+        columnOneItems.push(this.zeroDateCombo);
 
         this.labelTextField = new Ext.form.TextField({
             id: 'x-axis-label-textfield',            
@@ -334,11 +295,11 @@ LABKEY.vis.ChartEditorXAxisPanel = Ext.extend(Ext.FormPanel, {
 
                     // if this is a saved report, we will have a zero date to select
                     var index = 0;
-                    if(this.dateOptions.zeroDateCol.name){
+                    if(this.zeroDateCol.name){
                         // need to get the index by the variable name and query name
                         index = store.findBy(function(record, id){
-                            return (record.get('name') == this.dateOptions.zeroDateCol.name
-                               && record.get('queryName') == this.dateOptions.zeroDateCol.queryName)
+                            return (record.get('name') == this.zeroDateCol.name
+                               && record.get('queryName') == this.zeroDateCol.queryName)
                         }, this);
                     }
                     // otherwise, try a few hard-coded options
@@ -354,7 +315,7 @@ LABKEY.vis.ChartEditorXAxisPanel = Ext.extend(Ext.FormPanel, {
 
                     if(store.getAt(index)){
                         this.zeroDateCombo.setValue(store.getAt(index).get('longlabel'));
-                        Ext.apply(this.dateOptions.zeroDateCol, store.getAt(index).data);
+                        Ext.apply(this.zeroDateCol, store.getAt(index).data);
                     }
 
                     // if this is not a saved chart and the interval value has loaded, then set the default axis label
@@ -373,89 +334,22 @@ LABKEY.vis.ChartEditorXAxisPanel = Ext.extend(Ext.FormPanel, {
         })
     },
 
-    newMeasureDateStore: function(schemaName, queryName) {
-        return new Ext.data.Store({
-            autoLoad: true,
-            reader: new Ext.data.JsonReader({
-                    root:'measures',
-                    idProperty:'id'
-                },
-                [{name: 'id'}, {name:'name'},{name:'label'},{name:'longlabel'},{name:'description'}, {name:'isUserDefined'}, {name:'queryName'}, {name:'schemaName'}, {name:'type'}]
-            ),
-            proxy: new Ext.data.HttpProxy({
-                method: 'GET',
-                url : LABKEY.ActionURL.buildURL('visualization', 'getMeasures', LABKEY.ActionURL.getContainer(), {
-                    filters: [LABKEY.Visualization.Filter.create({schemaName: schemaName, queryName: queryName})],
-                    dateMeasures: true
-                })
-            }),
-            sortInfo: {
-                field: 'label',
-                direction: 'ASC'
-            },
-            listeners: {
-                scope: this,
-                'load': function(store, records, options){
-                    // since the ParticipantVisit/VisitDate will almost always be the date the users wants for multiple measures,
-                    // always make sure that it is added to the store
-                    var visitDateStr = this.subjectNounSingular + "Visit/VisitDate";
-                    if (store.find('name', visitDateStr) == -1)
-                    {
-                        var newDateRecordData = {
-                            schemaName: schemaName,
-                            queryName: queryName,
-                            name: visitDateStr,
-                            label: "Visit Date",
-                            type: "TIMESTAMP"
-                        };
-                        var newRecord = new store.recordType(newDateRecordData, store.getTotalCount() + 1);
-                        store.add([newRecord]);
-                    }
-
-                        // if this is a saved report, we will have a measure date to select
-                        var index = 0;
-                        if(this.measure.name){
-                            index = store.find('name', this.measure.name);
-                        }
-                        // otherwise, try a few hard-coded options
-                        else if(store.find('name', visitDateStr) > -1) {
-                            index = store.find('name', visitDateStr);
-                        }
-
-                        if(store.getAt(index)){
-                            this.measureDateCombo.setValue(store.getAt(index).get('name'));
-                            this.measure = store.getAt(index).data;
-                        }
-
-                    // this is one of the requests being tracked, see if the rest are done
-                    this.fireEvent('measureMetadataRequestComplete');
-                }
-            }
-        });
-    },
-
     getAxis: function(){
         return this.axis;
     },
 
-    getDateOptions: function(){
-        return this.dateOptions;
+    getZeroDateCol: function(){
+        return this.zeroDateCol;
     },
 
-    getMeasure: function(){
-        return this.measure;
+    getInterval: function(){
+        return this.interval;
     },
 
     setZeroDateStore: function(schema){
         this.fireEvent('measureMetadataRequestPending');
         var newZStore = this.newZeroDateStore(schema);
         this.zeroDateCombo.bindStore(newZStore);
-    },
-
-    setMeasureDateStore: function(schema, query){
-        this.fireEvent('measureMetadataRequestPending');
-        var newMStore = this.newMeasureDateStore(schema, query);
-        this.measureDateCombo.bindStore(newMStore);
     },
 
     setRange: function(rangeType){

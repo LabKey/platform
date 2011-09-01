@@ -38,6 +38,7 @@ public class VisualizationSourceColumn
     private UserSchema _schema;
     private boolean _allowNullResults;
     private String _name;
+    private String _otherAlias;
     private JdbcType _type = null;
     private Set<Object> _values = new LinkedHashSet<Object>();
 
@@ -47,7 +48,7 @@ public class VisualizationSourceColumn
 
         private VisualizationSourceColumn findOrAdd(VisualizationSourceColumn col)
         {
-            String key = col.getSchemaName() + "." + col.getQueryName() + "." + col.getOriginalName();
+            String key = ColumnInfo.legalNameFromName(col.getSchemaName() + "_" + col.getQueryName() + "_" + col.getOriginalName());
             VisualizationSourceColumn current = _currentCols.get(key);
             if (current != null)
             {
@@ -73,6 +74,11 @@ public class VisualizationSourceColumn
         {
             VisualizationSourceColumn col = new VisualizationSourceColumn(context, properties);
             return findOrAdd(col);
+        }
+
+        public VisualizationSourceColumn get(String columnKey)
+        {
+            return _currentCols.get(columnKey);
         }
     }
 
@@ -191,6 +197,19 @@ public class VisualizationSourceColumn
     {
         _values.addAll(other.getValues());
         other._values.addAll(getValues());
+    }
+
+    public void setOtherAlias(String otherAlias)
+    {
+        _otherAlias = otherAlias;
+    }
+
+    public String getOtherAlias()
+    {
+        if (_otherAlias == null)
+            return getAlias();
+        else
+            return _otherAlias;
     }
     
     public String getAlias()

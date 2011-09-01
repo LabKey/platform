@@ -1,5 +1,7 @@
 package org.labkey.visualization.sql;
 
+import org.labkey.api.data.ColumnInfo;
+
 /**
  * Copyright (c) 2011 LabKey Corporation
  * <p/>
@@ -27,7 +29,7 @@ public class VisualizationIntervalColumn
             @Override
             public String getSQL(VisualizationSourceColumn startDate, VisualizationSourceColumn endDate)
             {
-                return "TIMESTAMPDIFF(SQL_TSI_DAY, " + startDate.getAlias() + ", " + endDate.getAlias() + ")";
+                return "TIMESTAMPDIFF(SQL_TSI_DAY, " + startDate.getAlias() + ", " + endDate.getOtherAlias() + ")";
             }},
         WEEK("Weeks") {
             @Override
@@ -39,13 +41,13 @@ public class VisualizationIntervalColumn
             @Override
             public String getSQL(VisualizationSourceColumn startDate, VisualizationSourceColumn endDate)
             {
-                return "AGE(" + startDate.getAlias() + ", " + endDate.getAlias() + ", SQL_TSI_MONTH)";
+                return "AGE(" + startDate.getAlias() + ", " + endDate.getOtherAlias() + ", SQL_TSI_MONTH)";
             }},
         YEAR("Years") {
             @Override
             public String getSQL(VisualizationSourceColumn startDate, VisualizationSourceColumn endDate)
             {
-                return "AGE(" + startDate.getAlias() + ", " + endDate.getAlias() + ", SQL_TSI_YEAR)";
+                return "AGE(" + startDate.getAlias() + ", " + endDate.getOtherAlias() + ", SQL_TSI_YEAR)";
             }};
 
         private String _label;
@@ -76,6 +78,11 @@ public class VisualizationIntervalColumn
         _interval = Interval.valueOf(interval.toUpperCase());
     }
 
+    public VisualizationSourceColumn getEndDate()
+    {
+        return _endDate;
+    }
+
     public String getLabel()
     {
         return _interval.getLabel();
@@ -93,6 +100,6 @@ public class VisualizationIntervalColumn
 
     public String getFullAlias()
     {
-        return _startDate.getOriginalName() + "_" + _endDate.getOriginalName() + "_" + getSimpleAlias();
+        return ColumnInfo.legalNameFromName(_endDate.getSchemaName() + "_" + _endDate.getQueryName() + "_" + _endDate.getOriginalName() + "_" + getSimpleAlias());
     }
 }
