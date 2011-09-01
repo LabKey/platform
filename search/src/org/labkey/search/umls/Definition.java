@@ -100,21 +100,32 @@ public class Definition // MRDEF
     {
         ObjectFactory.Registry.register(Definition.class, new BeanObjectFactory<Definition>()
         {
+            @Override
             public Definition fromMap(Map<String, ?> m)
             {
                 return new Definition((Map)m);
             }
+
+            @Override
             public Definition fromMap(Definition bean, Map<String, ?> m)
             {
                 bean.apply((Map)m);
                 return bean;
             }
+
             @Override
-            public Definition[] handleArray(ResultSet rs) throws SQLException
+            public ArrayList<Definition> handleArrayList(ResultSet rs) throws SQLException
             {
                 ArrayList<Definition> list = new ArrayList<Definition>();
                 while (rs.next())
                     list.add(new Definition(ResultSetUtil.mapRow(rs)));
+                return list;
+            }
+
+            @Override
+            public Definition[] handleArray(ResultSet rs) throws SQLException
+            {
+                ArrayList<Definition> list = handleArrayList(rs);
                 return list.toArray(new Definition[list.size()]);
             }
         });

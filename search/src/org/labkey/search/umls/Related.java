@@ -121,21 +121,32 @@ public class Related
     {
         ObjectFactory.Registry.register(Related.class, new BeanObjectFactory<Related>()
         {
+            @Override
             public Related fromMap(Map<String, ?> m)
             {
                 return new Related((Map)m);
             }
+
+            @Override
             public Related fromMap(Related bean, Map<String, ?> m)
             {
                 bean.apply((Map)m);
                 return bean;
             }
+
             @Override
-            public Related[] handleArray(ResultSet rs) throws SQLException
+            public ArrayList<Related> handleArrayList(ResultSet rs) throws SQLException
             {
                 ArrayList<Related> list = new ArrayList<Related>();
                 while (rs.next())
                     list.add(new Related(ResultSetUtil.mapRow(rs)));
+                return list;
+            }
+
+            @Override
+            public Related[] handleArray(ResultSet rs) throws SQLException
+            {
+                ArrayList<Related> list = handleArrayList(rs);
                 return list.toArray(new Related[list.size()]);
             }
         });

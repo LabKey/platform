@@ -96,21 +96,32 @@ public class SemanticType // MRSTY
     {
         ObjectFactory.Registry.register(SemanticType.class, new BeanObjectFactory<SemanticType>()
         {
+            @Override
             public SemanticType fromMap(Map<String, ?> m)
             {
                 return new SemanticType((Map)m);
             }
+
+            @Override
             public SemanticType fromMap(SemanticType bean, Map<String, ?> m)
             {
                 bean.apply((Map)m);
                 return bean;
             }
+
             @Override
-            public SemanticType[] handleArray(ResultSet rs) throws SQLException
+            public ArrayList<SemanticType> handleArrayList(ResultSet rs) throws SQLException
             {
                 ArrayList<SemanticType> list = new ArrayList<SemanticType>();
                 while (rs.next())
                     list.add(new SemanticType(ResultSetUtil.mapRow(rs)));
+                return list;
+            }
+
+            @Override
+            public SemanticType[] handleArray(ResultSet rs) throws SQLException
+            {
+                ArrayList<SemanticType> list = handleArrayList(rs);
                 return list.toArray(new SemanticType[list.size()]);
             }
         });

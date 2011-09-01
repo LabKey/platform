@@ -228,6 +228,12 @@ class VisitMapRecord
             throw new java.lang.UnsupportedOperationException();
         }
 
+        @Override
+        public ArrayList<VisitMapRecord> handleArrayList(ResultSet rs) throws SQLException
+        {
+            throw new java.lang.UnsupportedOperationException();
+        }
+
         public VisitMapRecord[] handleArray(ResultSet rs) throws SQLException
         {
             throw new java.lang.UnsupportedOperationException();

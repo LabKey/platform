@@ -653,7 +653,7 @@ class PostgreSql83Dialect extends SqlDialect
     // When the PostgreSQLColumnMetaDataReader reads meta data, it returns these scale values for all domains.
     private void initializeUserDefinedTypes(DbScope scope) throws SQLException
     {
-        Table.Selector selector = new Table.QuerySelector(scope, "SELECT * FROM information_schema.domains WHERE domain_schema = 'public'");
+        Table.Selector selector = new Table.SqlSelector(scope, "SELECT * FROM information_schema.domains WHERE domain_schema = 'public'");
         selector.forEach(new Table.ForEachBlock<ResultSet>() {
             @Override
             public void exec(ResultSet rs) throws SQLException
@@ -672,7 +672,7 @@ class PostgreSql83Dialect extends SqlDialect
     // Query any settings that may affect dialect behavior.  Right now, only "standard_conforming_strings".
     private void determineSettings(DbScope scope) throws SQLException
     {
-        Table.Selector selector = new Table.QuerySelector(scope, "SELECT setting FROM pg_settings WHERE name = 'standard_conforming_strings'");
+        Table.Selector selector = new Table.SqlSelector(scope, "SELECT setting FROM pg_settings WHERE name = 'standard_conforming_strings'");
         selector.forEach(new Table.ForEachBlock<ResultSet>(){
             @Override
             public void exec(ResultSet rs) throws SQLException

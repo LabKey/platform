@@ -131,21 +131,32 @@ public class ConceptName  // MRCONSO
     {
         ObjectFactory.Registry.register(ConceptName.class, new BeanObjectFactory<ConceptName>()
         {
+            @Override
             public ConceptName fromMap(Map<String, ?> m)
             {
                 return new ConceptName((Map)m);
             }
+
+            @Override
             public ConceptName fromMap(ConceptName bean, Map<String, ?> m)
             {
                 bean.apply((Map)m);
                 return bean;
             }
+
             @Override
-            public ConceptName[] handleArray(ResultSet rs) throws SQLException
+            public ArrayList<ConceptName> handleArrayList(ResultSet rs) throws SQLException
             {
                 ArrayList<ConceptName> list = new ArrayList<ConceptName>();
                 while (rs.next())
                     list.add(new ConceptName(ResultSetUtil.mapRow(rs)));
+                return list;
+            }
+
+            @Override
+            public ConceptName[] handleArray(ResultSet rs) throws SQLException
+            {
+                ArrayList<ConceptName> list = handleArrayList(rs);
                 return list.toArray(new ConceptName[list.size()]);
             }
         });
