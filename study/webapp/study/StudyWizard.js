@@ -343,28 +343,82 @@ LABKEY.study.CreateStudyWizard = Ext.extend(Ext.util.Observable, {
             if (o.categories.length > 0)
             {
                 var items = [];
+                var participantStores = [];
+                var participantGroupsStore =new Ext.data.ArrayStore({
+                    fields: ['participantGroup', 'storeIndex']
+                });
+                var participantGroupsStoreRecord = Ext.data.Record.create([
+                    {name:'participantGroup'},
+                    {name: 'rowId'},
+                    {name: 'storeIndex'}
+                ]);
+                var participantsStoreRecord = Ext.data.Record.create([
+                    {name:'participantId'}
+                ]);
 
                 for (var i=0; i < o.categories.length; i++)
                 {
                     var group = o.categories[i];
-
-                    items.push({boxLabel: group.label, name:'participantGroups', value: group.rowId, handler: this.participantGroupRadioHandler, scope: this});
+                    var tempStore = new Ext.data.ArrayStore({
+                        fields: ['participantId']
+                    });
+                    for(var j = 0; j < group.participantIds.length; j++){
+                        tempStore.add(new participantsStoreRecord({participantId: group.participantIds[j]}));
+                    }
+                    participantGroupsStore.add(new participantGroupsStoreRecord({participantGroup: group.label, rowId: group.rowId, storeIndex: i}));
+                    participantStores.push(tempStore);
                 }
 
-                var formItems = [{
-                    xtype: 'radiogroup',
-                    columns: 1,
-                    fieldLabel: 'Existing ' + this.subject.nounSingular + ' groups',
-                    items: items
-                }];
+                this.participantListView = new Ext.list.ListView({
+                    store: new Ext.data.ArrayStore({
+                        fields: ['participantId']
+                    }),
+                    emptyText: "No participants to display.",
+                    width: 250,
+                    columns:[
+                        {
+                            header:'Participants',
+                            dataIndex: 'participantId'
+                        }
+                    ]
+                });
+
+                this.participantGroupListView = new Ext.list.ListView({
+                    store: participantGroupsStore,
+                    emptyText: "No groups to display.",
+                    width: 250,
+                    singleSelect: true,
+                    columnSort: false,
+                    columns:[
+                        {
+                            header:'Participant Groups',
+                            dataIndex: 'participantGroup'
+                        }
+                    ],
+                    listeners:{
+                        'selectionchange': groupSelected,
+                        scope: this
+                    }
+                });
+
+                function groupSelected(cmp, selection){
+                    var selectedStoreIndex = cmp.getSelectedRecords()[0].get('storeIndex');
+                    this.info.existingRowId = cmp.getSelectedRecords()[0].get('rowId');
+                    this.participantListView.bindStore(participantStores[selectedStoreIndex]);
+                }
+
+                var formItems = [
+                    this.participantGroupListView,
+                    this.participantListView
+                ];
 
                 this.existingGroupPanel = new Ext.Panel({
                     padding: '20px',
                     border: false,
                     labelWidth: 250,
                     flex: 1,
-                    layout: 'form',
-                    items: formItems
+                    layout: 'hbox',
+                    items: [formItems]
                 });
             }
             else
@@ -377,14 +431,9 @@ LABKEY.study.CreateStudyWizard = Ext.extend(Ext.util.Observable, {
                     html: 'There are no ' + this.subject.nounSingular + ' groups defined for this Study'
                 });
             }
+
             this.participantPanel.add(this.existingGroupPanel);
             this.participantPanel.doLayout();
-        }
-    },
-
-    participantGroupRadioHandler : function(cmp, selected) {
-        if(selected){
-            this.info.existingRowId = cmp.value;
         }
     },
 
