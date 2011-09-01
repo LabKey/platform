@@ -1472,6 +1472,40 @@ public abstract class AbstractAssayProvider implements AssayProvider
             {
                 throw new ExperimentException(e);
             }
+
+            // Make sure we kill the pointer to the domain as well
+            PropertyDescriptor prop = OntologyManager.getPropertyDescriptor(domain.getTypeURI(), domain.getContainer());
+            if (prop != null)
+            {
+                try
+                {
+                    OntologyManager.deletePropertyDescriptor(prop);
+                }
+                catch (SQLException e)
+                {
+                    throw new RuntimeSQLException(e);
+                }
+            }
+        }
+
+        // Take care of a few extra settings, such as whether runs and data rows are editable
+        for (Map.Entry<String, ObjectProperty> entry : protocol.getObjectProperties().entrySet())
+        {
+            if (entry.getKey().startsWith(protocol.getLSID() + "#"))
+            {
+                PropertyDescriptor prop = OntologyManager.getPropertyDescriptor(entry.getKey(), protocol.getContainer());
+                if (prop != null)
+                {
+                    try
+                    {
+                        OntologyManager.deletePropertyDescriptor(prop);
+                    }
+                    catch (SQLException e)
+                    {
+                        throw new RuntimeSQLException(e);
+                    }
+                }
+            }
         }
     }
 

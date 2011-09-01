@@ -46,6 +46,7 @@ import org.labkey.api.settings.TemplateResourceHandler;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.AjaxCompletion;
 import org.labkey.api.view.HttpView;
+import org.labkey.api.view.NotFoundException;
 import org.labkey.api.view.ViewContext;
 import org.labkey.api.view.WebTheme;
 import org.labkey.api.view.WebThemeManager;
@@ -768,7 +769,14 @@ public class PageFlowUtil
     // Read the file and stream it to the browser
     public static void streamFile(HttpServletResponse response, Map<String, String> responseHeaders, File file, boolean asAttachment) throws IOException
     {
-        streamFile(response, responseHeaders, file.getName(), new FileInputStream(file), asAttachment);
+        try
+        {
+            streamFile(response, responseHeaders, file.getName(), new FileInputStream(file), asAttachment);
+        }
+        catch (FileNotFoundException e)
+        {
+            throw new NotFoundException(file.getName());
+        }
     }
 
 

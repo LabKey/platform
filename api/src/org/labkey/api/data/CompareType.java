@@ -1024,14 +1024,14 @@ public enum CompareType
 
         String toWhereClause(SqlDialect dialect, String alias)
         {
-            return dialect.getColumnSelectName(alias) + " NOT " + dialect.getCaseInsensitiveLikeOperator() + " " + dialect.concatenate("?", "'%'") + sqlEscape();
+            return "(" + dialect.getColumnSelectName(alias) + " IS NULL OR " + dialect.getColumnSelectName(alias) + " NOT " + dialect.getCaseInsensitiveLikeOperator() + " " + dialect.concatenate("?", "'%'") + sqlEscape() + ")";
         }
 
         @Override
         public String getLabKeySQLWhereClause(Map<FieldKey, ? extends ColumnInfo> columnMap)
         {
             Object value = getParamVals()[0];
-            return  getLabKeySQLColName(_colName) + " NOT LIKE '" + escapeLabKeySqlValue(value, getColumnType(columnMap), true) + "%'";
+            return "(" + _colName + " IS NULL OR " + getLabKeySQLColName(_colName) + " NOT LIKE '" + escapeLabKeySqlValue(value, getColumnType(columnMap), true) + "%'" + ")";
         }
 
         @Override
@@ -1125,14 +1125,14 @@ public enum CompareType
         }
         String toWhereClause(SqlDialect dialect, String alias)
         {
-            return dialect.getColumnSelectName(alias) + " NOT " + dialect.getCaseInsensitiveLikeOperator() + " " + dialect.concatenate("'%'", "?", "'%'") + sqlEscape(); 
+            return "(" + dialect.getColumnSelectName(alias) + " IS NULL OR " + dialect.getColumnSelectName(alias) + " NOT " + dialect.getCaseInsensitiveLikeOperator() + " " + dialect.concatenate("'%'", "?", "'%'") + sqlEscape() + ")"; 
         }
 
         @Override
         public String getLabKeySQLWhereClause(Map<FieldKey, ? extends ColumnInfo> columnMap)
         {
             String colName = getLabKeySQLColName(_colName);
-            return "LOWER(" + colName + ") NOT LIKE LOWER('%" + escapeLabKeySqlValue(getParamVals()[0], getColumnType(columnMap), true) + "%')";
+            return "(" + colName + " IS NULL OR LOWER(" + colName + ") NOT LIKE LOWER('%" + escapeLabKeySqlValue(getParamVals()[0], getColumnType(columnMap), true) + "%'))";
         }
 
         @Override

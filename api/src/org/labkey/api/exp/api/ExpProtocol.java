@@ -29,8 +29,6 @@ import java.util.Set;
 
 public interface ExpProtocol extends ExpObject
 {
-    Map<String, ObjectProperty> getObjectProperties();
-
     public static final String ASSAY_DOMAIN_PREFIX = "AssayDomain-";
     public static final String ASSAY_DOMAIN_RUN = AssayDomainTypes.Run.getPrefix();
     public static final String ASSAY_DOMAIN_BATCH = AssayDomainTypes.Batch.getPrefix();
