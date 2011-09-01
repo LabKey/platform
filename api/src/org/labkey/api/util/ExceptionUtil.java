@@ -19,11 +19,14 @@ package org.labkey.api.util;
 import org.apache.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.junit.Test;
+import org.junit.Assert;
 import org.labkey.api.data.*;
 import org.labkey.api.data.dialect.SqlDialect;
 import org.labkey.api.search.SearchService;
 import org.labkey.api.security.LoginUrls;
 import org.labkey.api.security.User;
+import org.labkey.api.security.UserManager;
 import org.labkey.api.services.ServiceRegistry;
 import org.labkey.api.settings.AppProps;
 import org.labkey.api.settings.LookAndFeelProperties;
@@ -31,13 +34,18 @@ import org.labkey.api.view.*;
 
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletRequestWrapper;
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.io.StringWriter;
+import java.lang.reflect.InvocationHandler;
 import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
+import java.lang.reflect.Proxy;
 import java.net.MalformedURLException;
 import java.net.URISyntaxException;
+import java.security.Principal;
 import java.sql.BatchUpdateException;
 import java.sql.SQLException;
 import java.util.HashMap;
@@ -52,7 +60,7 @@ import java.util.WeakHashMap;
 public class ExceptionUtil
 {
     private static final JobRunner _jobRunner = new JobRunner(1);
-    private static final Logger _log = Logger.getLogger(ExceptionUtil.class);
+    private static final Logger _logStatic = Logger.getLogger(ExceptionUtil.class);
 
 
     private ExceptionUtil()
@@ -167,7 +175,7 @@ public class ExceptionUtil
         if (isIgnoreable(ex))
             return;
 
-        _log.error("Exception detected and logged to mothership", ex);
+        _logStatic.error("Exception detected and logged to mothership", ex);
 
         String originalURL = request == null ? null : (String) request.getAttribute(ViewServlet.ORIGINAL_URL_STRING);
         ExceptionReportingLevel level = AppProps.getInstance().getExceptionReportingLevel();
@@ -339,6 +347,14 @@ public class ExceptionUtil
     // This is called by SpringActionController (to display unhandled exceptions) and called directly by AuthFilter.doFilter() (to display startup errors and bypass normal request handling)
     public static ActionURL handleException(HttpServletRequest request, HttpServletResponse response, Throwable ex, String message, boolean startupFailure)
     {
+        SearchService ss = ServiceRegistry.get(SearchService.class);
+        Logger log = _logStatic;
+        return handleException(request, response, ex, message, startupFailure, ss, log);
+    }
+
+    static ActionURL handleException(HttpServletRequest request, HttpServletResponse response, Throwable ex, String message, boolean startupFailure,
+        SearchService ss, Logger log)
+    {
         DbScope.closeAllConnections();
 
         // First, get rid of RuntimeException, InvocationTargetException, etc. wrappers
@@ -442,7 +458,6 @@ public class ExceptionUtil
                 URLHelper url = (URLHelper)request.getAttribute(ViewServlet.ORIGINAL_URL_URLHELPER);
                 if (null != url && null != url.getParameter("_docid"))
                 {
-                    SearchService ss = ServiceRegistry.get(SearchService.class);
                     if (null != ss)
                         ss.notFound(url);
                 }
@@ -476,11 +491,11 @@ public class ExceptionUtil
 
         if (responseStatus == HttpServletResponse.SC_NOT_FOUND)
         {
-            _log.warn(null == message ? "" : message, ex);
+            log.warn(null == message ? "" : message, ex);
         }
         else if (responseStatus != HttpServletResponse.SC_UNAUTHORIZED) //don't log unauthorized (basic-auth challenge)
         {
-            _log.error("Unhandled exception: " + (null == message ? "" : message), ex);
+            log.error("Unhandled exception: " + (null == message ? "" : message), ex);
         }
 
         if (isForbiddenProject)
@@ -535,7 +550,7 @@ public class ExceptionUtil
             }
             catch (Exception x)
             {
-                _log.error("Global.handleException", x);
+                log.error("Global.handleException", x);
             }
         }
 
@@ -560,7 +575,7 @@ public class ExceptionUtil
         }
         catch (IOException x)
         {
-            _log.error("doErrorRedirect", x);
+            _logStatic.error("doErrorRedirect", x);
         }
     }
 
@@ -656,5 +671,192 @@ public class ExceptionUtil
         else
             cause = t.getCause();
         return cause==t ? null : cause;
+    }
+
+
+    static class ExceptionResponse
+    {
+        ActionURL redirect;
+        MockServletResponse response;
+        String body;
+    }
+
+    public static class TestCase extends Assert
+    {
+        ExceptionResponse handleIt(final User user, Exception ex, @Nullable String message)
+        {
+            final MockServletResponse res = new MockServletResponse();
+            InvocationHandler h = new InvocationHandler()
+            {
+                @Override
+                public Object invoke(Object o, Method method, Object[] objects) throws Throwable
+                {
+                    // still calls in 'headers' for validation
+                    res.addHeader(method.getDeclaringClass().getSimpleName() + "." + method.getName(), objects.length==0 ? "" : objects.length==1 ? String.valueOf(objects[0]) : objects.toString());
+                    return null;
+                }
+            };
+            SearchService dummySearch = (SearchService)Proxy.newProxyInstance(this.getClass().getClassLoader(), new Class[]{SearchService.class}, h);
+            Logger dummyLog = new Logger("mock logger")
+            {
+                @Override
+                public void debug(Object message)
+                {
+                }
+                @Override
+                public void debug(Object message, Throwable t)
+                {
+                }
+                @Override
+                public void error(Object message)
+                {
+                }
+                @Override
+                public void error(Object message, Throwable t)
+                {
+                    res.addHeader("Logger.error", null!=message?String.valueOf(message):null!=t?t.getMessage():"");
+                }
+                @Override
+                public void fatal(Object message)
+                {
+                }
+                @Override
+                public void fatal(Object message, Throwable t)
+                {
+                }
+                @Override
+                public void warn(Object message)
+                {
+                }
+                @Override
+                public void warn(Object message, Throwable t)
+                {
+                }
+            };
+            HttpServletRequestWrapper req = new HttpServletRequestWrapper(TestContext.get().getRequest())
+            {
+                @Override
+                public Principal getUserPrincipal()
+                {
+                    return user;
+                }
+            };
+            ExceptionUtil.decorateException(ex, ExceptionInfo.SkipMothershipLogging, "true", true);
+            ActionURL url = ExceptionUtil.handleException(req, res, ex, message, false, dummySearch, dummyLog);
+            ExceptionResponse ret = new ExceptionResponse();
+            ret.redirect = url;
+            ret.response = res;
+            ret.body = res.getBodyAsText();
+            return ret;
+        }
+
+
+        @Test
+        public void testUnauthorized()
+        {
+            User guest = UserManager.getGuestUser();
+            User me = TestContext.get().getUser();
+            ExceptionResponse answer;
+
+            // Guest Unauthorized
+            answer = handleIt(guest, new UnauthorizedException("Not on my watch"), null);
+            assertNotNull("expect return url for login redirect", answer.redirect);
+            assertEquals(0, answer.response.status);  // status not set
+
+            // Non-Guest Unauthorized
+            answer = handleIt(me, new UnauthorizedException("Not on my watch"), null);
+            assertNull(answer.redirect);
+            assertEquals(HttpServletResponse.SC_UNAUTHORIZED, answer.response.status);
+
+            // Guest Basic Unauthorized
+            answer = handleIt(guest, new RequestBasicAuthException(), null);
+            assertNull("BasicAuth should not redirect", answer.redirect);
+            assertEquals(HttpServletResponse.SC_UNAUTHORIZED, answer.response.status);
+            assertTrue(answer.response.headers.containsKey("WWW-Authenticate"));
+
+            // Non-Guest Basic Unauthorized
+            answer = handleIt(me, new RequestBasicAuthException(), null);
+            assertNull("BasicAuth should not redirect", answer.redirect);
+            assertEquals(HttpServletResponse.SC_UNAUTHORIZED, answer.response.status);
+            assertFalse(answer.response.headers.containsKey("WWW-Authenticate"));
+
+            // Guest TermsOfUse
+            answer = handleIt(guest, new TermsOfUseException(), null);
+            assertNotNull("expect return url for terms of use redirect", answer.redirect);
+            assertEquals(0, answer.response.status);  // status not set
+
+            // Non-Guest TermsOfUse
+            answer = handleIt(me, new TermsOfUseException(), null);
+            assertNotNull("expect return url for terms of use redirect", answer.redirect);
+            assertEquals(0, answer.response.status);  // status not set
+
+            // Guest CSRF
+            answer = handleIt(guest, new CSRFException(), null);
+            assertNull(answer.redirect);
+            assertEquals(HttpServletResponse.SC_UNAUTHORIZED, answer.response.status);
+
+            // Non-Guest CSRF
+            answer = handleIt(me, new CSRFException(), null);
+            assertNull(answer.redirect);
+            assertEquals(HttpServletResponse.SC_UNAUTHORIZED, answer.response.status);
+        }
+
+        @Test
+        public void testRedirect()
+        {
+            User guest = UserManager.getGuestUser();
+            User me = TestContext.get().getUser();
+            ExceptionResponse answer;
+
+            ActionURL url = new ActionURL("controller", "action", JunitUtil.getTestContainer());
+            answer = handleIt(guest, new RedirectException(url), null);
+            assertNull(answer.redirect);
+            assertEquals(HttpServletResponse.SC_TEMPORARY_REDIRECT, answer.response.status);
+            assertTrue(answer.response.headers.containsKey("Location"));
+        }
+
+        @Test
+        public void testNotFound()
+        {
+            User guest = UserManager.getGuestUser();
+            User me = TestContext.get().getUser();
+            ExceptionResponse answer;
+
+            // TODO: make ExceptionUtil injectable so we can test SearchService interaction
+            answer = handleIt(guest, new NotFoundException("Not here"), null);
+            assertNull("not found does not redirect", answer.redirect);
+            assertEquals(HttpServletResponse.SC_NOT_FOUND, answer.response.status);
+            assertTrue(answer.body.contains("Not here"));
+
+            // simulate a search result not found
+            HttpServletRequest req = TestContext.get().getRequest();
+            ActionURL orig = new ActionURL("controller", "action", JunitUtil.getTestContainer());
+            orig.addParameter("_docid", "fred");
+            req.setAttribute(ViewServlet.ORIGINAL_URL_URLHELPER, orig);
+
+            answer = handleIt(guest, new NotFoundException("Not here"), null);
+            assertNull("not found does not redirect", answer.redirect);
+            assertEquals(HttpServletResponse.SC_NOT_FOUND, answer.response.status);
+            assertTrue(answer.body.contains("Not here"));
+            assertTrue(answer.response.headers.containsKey("SearchService.notFound"));
+        }
+
+        @Test
+        public void testServerError()
+        {
+            User guest = UserManager.getGuestUser();
+            User me = TestContext.get().getUser();
+            ExceptionResponse answer;
+
+            answer = handleIt(me, new NullPointerException(), null);
+            assertEquals(HttpServletResponse.SC_INTERNAL_SERVER_ERROR, answer.response.status);
+            assertTrue(answer.response.headers.containsKey("Logger.error"));
+        }
+
+        @Test
+        public void testUnwrap()
+        {
+
+        }
     }
 }

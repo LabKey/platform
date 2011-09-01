@@ -1,0 +1,241 @@
+package org.labkey.api.util;
+
+import com.sun.xml.internal.messaging.saaj.util.ByteOutputStream;
+
+import javax.servlet.ServletOutputStream;
+import javax.servlet.http.Cookie;
+import javax.servlet.http.HttpServletResponse;
+import java.io.IOException;
+import java.io.OutputStream;
+import java.io.PrintWriter;
+import java.util.Locale;
+import java.util.Map;
+import java.util.TreeMap;
+
+/**
+* Created by IntelliJ IDEA.
+* User: matthewb
+* Date: 2011-09-01
+* Time: 11:25 AM
+*/
+class MockServletResponse implements HttpServletResponse
+{
+    Map<String,String> headers = new TreeMap<String,String>();
+    int status = 0;
+    String message = null;
+    String redirect = null;
+    String contentType = null;
+    String characterEncoding = null;
+    int contentLength = 0;
+    ByteOutputStream os = new ByteOutputStream();
+    Locale locale;
+
+    PrintWriter printWriter = new PrintWriter(os);
+    ServletOutputStream servletOutputStream = new ServletOutputStream()
+    {
+        @Override
+        public void write(int i) throws IOException
+        {
+            os.write(i);
+        }
+    };
+
+
+    @Override
+    public void addCookie(Cookie cookie)
+    {
+    }
+
+    @Override
+    public boolean containsHeader(String s)
+    {
+        return headers.containsKey(s);
+    }
+
+    @Override
+    public String encodeURL(String s)
+    {
+        throw new IllegalStateException();
+    }
+
+    @Override
+    public String encodeRedirectURL(String s)
+    {
+        throw new IllegalStateException();
+    }
+
+    @Override
+    public String encodeUrl(String s)
+    {
+        throw new IllegalStateException();
+    }
+
+    @Override
+    public String encodeRedirectUrl(String s)
+    {
+        throw new IllegalStateException();
+    }
+
+    @Override
+    public void sendError(int i, String s) throws IOException
+    {
+        status = i;
+        message = s;
+    }
+
+    @Override
+    public void sendError(int i) throws IOException
+    {
+        status = i;
+    }
+
+    @Override
+    public void sendRedirect(String s) throws IOException
+    {
+        redirect = s;
+    }
+
+    @Override
+    public void setDateHeader(String s, long l)
+    {
+        headers.put(s, DateUtil.toISO(l));
+    }
+
+    @Override
+    public void addDateHeader(String s, long l)
+    {
+        headers.put(s, DateUtil.toISO(l));
+    }
+
+    @Override
+    public void setHeader(String s, String s1)
+    {
+        headers.put(s,s1);
+    }
+
+    @Override
+    public void addHeader(String s, String s1)
+    {
+        headers.put(s,s1);
+    }
+
+    @Override
+    public void setIntHeader(String s, int i)
+    {
+        headers.put(s,String.valueOf(i));
+    }
+
+    @Override
+    public void addIntHeader(String s, int i)
+    {
+        headers.put(s,String.valueOf(i));
+    }
+
+    @Override
+    public void setStatus(int i)
+    {
+        status = i;
+    }
+
+    @Override
+    public void setStatus(int i, String s)
+    {
+        status = i;
+        message = s;
+    }
+
+    @Override
+    public String getCharacterEncoding()
+    {
+        return characterEncoding;
+    }
+
+    @Override
+    public String getContentType()
+    {
+        return contentType;
+    }
+
+    @Override
+    public ServletOutputStream getOutputStream() throws IOException
+    {
+        return servletOutputStream;
+    }
+
+    @Override
+    public PrintWriter getWriter() throws IOException
+    {
+        return printWriter;
+    }
+
+    @Override
+    public void setCharacterEncoding(String s)
+    {
+        characterEncoding = s;
+    }
+
+    @Override
+    public void setContentLength(int i)
+    {
+        contentLength = i;
+    }
+
+    @Override
+    public void setContentType(String s)
+    {
+        contentType = s;
+    }
+
+    @Override
+    public void setBufferSize(int i)
+    {
+    }
+
+    @Override
+    public int getBufferSize()
+    {
+        return 0;
+    }
+
+    @Override
+    public void flushBuffer() throws IOException
+    {
+    }
+
+    @Override
+    public void resetBuffer()
+    {
+        printWriter.flush();
+        ((ByteOutputStream)os).reset();
+    }
+
+    @Override
+    public boolean isCommitted()
+    {
+        return false;
+    }
+
+    @Override
+    public void reset()
+    {
+        resetBuffer();
+    }
+
+    @Override
+    public void setLocale(Locale locale)
+    {
+        this.locale = locale;
+    }
+
+    @Override
+    public Locale getLocale()
+    {
+        return locale;
+    }
+
+    public String getBodyAsText()
+    {
+        printWriter.flush();
+        return new String(os.getBytes(), 0, os.size());
+    }
+}
