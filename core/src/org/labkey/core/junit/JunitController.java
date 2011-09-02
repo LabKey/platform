@@ -100,8 +100,8 @@ public class JunitController extends SpringActionController
 
                     out.println("</table></div>");
 
-                    out.print("<br>" + PageFlowUtil.generateButton("Run All", new ActionURL(RunAction.class, getContainer())));
-                    out.print("<br><form name=\"run2\" action=\"run2.post\" method=\"post\">" + PageFlowUtil.generateSubmitButton("Run In Background #1 (Experimental)") + "</form>");
+                    out.print("<p><br>" + PageFlowUtil.generateButton("Run All", new ActionURL(RunAction.class, getContainer())) + "</p>");
+                    out.print("<form name=\"run2\" action=\"run2.post\" method=\"post\">" + PageFlowUtil.generateSubmitButton("Run In Background #1 (Experimental)") + "</form>");
                     out.print("<br>" + PageFlowUtil.generateButton("Run In Background #2 (Experimental)", new ActionURL(Run3Action.class, getContainer())));
                 }
             };

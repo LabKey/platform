@@ -42,6 +42,7 @@ import org.labkey.api.security.permissions.InsertPermission;
 import org.labkey.api.services.ServiceRegistry;
 import org.labkey.api.study.assay.*;
 import org.labkey.api.util.DateUtil;
+import org.labkey.api.util.GUID;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.Path;
 import org.labkey.api.view.*;
@@ -65,6 +66,8 @@ import java.util.*;
 public class AssayManager implements AssayService.Interface
 {
     private List<AssayProvider> _providers = new ArrayList<AssayProvider>();
+    /** Synchronization lock object for ensuring that batch names are unique */
+    private static final Object BATCH_NAME_LOCK = new Object();
 
     public AssayManager()
     {
@@ -288,27 +291,37 @@ public class AssayManager implements AssayService.Interface
         return result;
     }
 
-    public ExpExperiment createStandardBatch(Container container, String namePrefix, ExpProtocol protocol)
+    public ExpExperiment createStandardBatch(Container container, String name, ExpProtocol protocol)
     {
-        if (namePrefix == null)
+        if (name == null)
         {
-            namePrefix = DateUtil.formatDate() + " batch";
+            name = DateUtil.formatDate() + " batch";
         }
-        ExpExperiment batch;
-        int batchNumber = 1;
-        do
-        {
-            String name = namePrefix;
-            if (batchNumber > 1)
-            {
-                name = namePrefix + " " + batchNumber;
-            }
-            batchNumber++;
-            batch = ExperimentService.get().createExpExperiment(container, name);
-            batch.setBatchProtocol(protocol);
-        }
-        while(ExperimentService.get().getExpExperiment(batch.getLSID()) != null);
+        ExpExperiment batch = ExperimentService.get().createExpExperiment(container, name);
+        // Make sure that our LSID is unique using a GUID.
+        // Outside the main transaction, we'll separately give it a uinque name
+        batch.setLSID(ExperimentService.get().generateLSID(container, ExpExperiment.class, GUID.makeGUID()));
+        batch.setBatchProtocol(protocol);
+
         return batch;
+    }
+
+    public ExpExperiment ensureUniqueBatchName(ExpExperiment batch, ExpProtocol protocol, User user)
+    {
+        synchronized (BATCH_NAME_LOCK)
+        {
+            int suffix = 1;
+            String originalName = batch.getName();
+            ExpExperiment[] batches = ExperimentService.get().getExperiments(batch.getContainer(), user, false, true);
+            while (batches.length > 1)
+            {
+                batch.setName(originalName + " " + (++suffix));
+                batch.save(user);
+                batches = ExperimentService.get().getMatchingBatches(batch.getName(), batch.getContainer(), protocol);
+            }
+
+            return batches[0];
+        }
     }
 
     public ExpExperiment findBatch(ExpRun run)

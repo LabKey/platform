@@ -519,6 +519,7 @@ public class SaveAssayBatchAction extends AbstractAssayAPIAction<SimpleApiJsonFo
 
     private ExpExperiment handleBatch(JSONObject batchJsonObject, ExpProtocol protocol, AssayProvider provider) throws Exception
     {
+        boolean makeNameUnique = false;
         ExpExperiment batch;
         if (batchJsonObject.has(ExperimentJSONConverter.ID))
         {
@@ -526,8 +527,17 @@ public class SaveAssayBatchAction extends AbstractAssayAPIAction<SimpleApiJsonFo
         }
         else
         {
-            batch = AssayService.get().createStandardBatch(getViewContext().getContainer(),
-                    batchJsonObject.has(ExperimentJSONConverter.NAME) ? batchJsonObject.getString(ExperimentJSONConverter.NAME) : null, protocol);
+            String batchName;
+            if (batchJsonObject.has(ExperimentJSONConverter.NAME))
+            {
+                batchName = batchJsonObject.getString(ExperimentJSONConverter.NAME);
+            }
+            else
+            {
+                batchName = null;
+                makeNameUnique = true;
+            }
+            batch = AssayService.get().createStandardBatch(getViewContext().getContainer(), batchName, protocol);
         }
 
         if (batchJsonObject.has(ExperimentJSONConverter.COMMENT))
@@ -560,6 +570,11 @@ public class SaveAssayBatchAction extends AbstractAssayAPIAction<SimpleApiJsonFo
         for (ExpRun runToRemove : runsToRemove)
         {
             batch.removeRun(getViewContext().getUser(), runToRemove);
+        }
+
+        if (makeNameUnique)
+        {
+            batch = AssayService.get().ensureUniqueBatchName(batch, protocol, getViewContext().getUser());
         }
 
         return batch;

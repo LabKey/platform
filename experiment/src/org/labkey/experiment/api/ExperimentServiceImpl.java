@@ -157,6 +157,23 @@ public class ExperimentServiceImpl implements ExperimentService.Interface
         AuditLogService.get().addEvent(event);
     }
 
+    @Override
+    public ExpExperiment[] getMatchingBatches(String name, Container container, ExpProtocol protocol)
+    {
+        try
+        {
+            SimpleFilter filter = new SimpleFilter("Name", name);
+            filter.addCondition("Container", container.getId());
+            filter.addCondition("BatchProtocolId", protocol.getRowId());
+            Experiment[] experiment = Table.select(getTinfoExperiment(), Table.ALL_COLUMNS, filter, null, Experiment.class);
+            return ExpExperimentImpl.fromExperiments(experiment);
+        }
+        catch (SQLException e)
+        {
+            throw new RuntimeSQLException(e);
+        }
+    }
+
     public ExpRunImpl getExpRun(String lsid)
     {
         ExperimentRun run = getExperimentRun(lsid);
