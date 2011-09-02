@@ -753,8 +753,14 @@ LABKEY.vis.TimeChartPanel = Ext.extend(Ext.Panel, {
         this.chartInfo = this.getChartInfoFromEditorTabs();
 
         // enable/disable the left and right axis tabs
-        (this.getAxisIndex(this.chartInfo.axis, "y-axis", "left") > -1 ? this.editorYAxisLeftPanel.enable() : this.editorYAxisLeftPanel.disable());
-        (this.getAxisIndex(this.chartInfo.axis, "y-axis", "right") > -1 ? this.editorYAxisRightPanel.enable() : this.editorYAxisRightPanel.disable());
+        (this.getAxisIndex(this.chartInfo.axis, "y-axis", "left") > -1 ? enableAndSetRangeOptions(this.editorYAxisLeftPanel) : this.editorYAxisLeftPanel.disable());
+        (this.getAxisIndex(this.chartInfo.axis, "y-axis", "right") > -1 ? enableAndSetRangeOptions(this.editorYAxisRightPanel) : this.editorYAxisRightPanel.disable());
+
+        function enableAndSetRangeOptions(yAxisPanel){
+            //We have to call setRangeFormOptions AFTER we enable the panel, otherwise all fields get enabled.
+            yAxisPanel.enable();
+            yAxisPanel.setRangeFormOptions(yAxisPanel.axis.range.type);
+        }
 
         if (this.chartSubjectData.filterDescription)
             this.editorMeasurePanel.setFilterWarningText(this.chartSubjectData.filterDescription);

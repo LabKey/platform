@@ -94,7 +94,6 @@ LABKEY.vis.ChartEditorYAxisPanel = Ext.extend(Ext.FormPanel, {
                     // if checked, remove any manual axis min value
                     if(checked) {
                         this.axis.range.type = 'automatic';
-                        this.setRangeFormOptions(this.axis.range.type);
                         this.fireEvent('chartDefinitionChanged', false);
                     }
                 }
