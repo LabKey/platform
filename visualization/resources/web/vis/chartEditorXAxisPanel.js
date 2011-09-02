@@ -19,6 +19,11 @@ LABKEY.vis.ChartEditorXAxisPanel = Ext.extend(Ext.FormPanel, {
             items: []
         });
 
+        //Set time to 'date' if not already set.
+        Ext.applyIf(config, {
+            time: 'date'
+        });
+
         // set axis defaults, if not a saved chart
         Ext.applyIf(config.axis, {
             name: "x-axis",
@@ -39,9 +44,56 @@ LABKEY.vis.ChartEditorXAxisPanel = Ext.extend(Ext.FormPanel, {
         var columnOneItems = [];
         var columnTwoItems = [];
 
+        //Radio Buttons for Date/Visit based chart.
+        this.dateChartRadio = new Ext.form.Radio({
+            name: 'chartType',
+            fieldLabel: 'Chart Type',
+            inputValue: 'date',
+            boxLabel: 'Date Based Chart',
+            checked: this.time == "date", //|| !this.time, //For old charts we default to date based chart.
+            listeners: {
+                scope: this,
+                'check': function(field, checked){
+                    if(checked) {
+                        this.time = "date"; //This will have to be changed to take into account the new data configuration.
+                        this.zeroDateCombo.enable();
+                        this.intervalCombo.enable();
+                    }
+                }
+            }
+        });
+
+        this.visitChartRadio = new Ext.form.Radio({
+            name: 'chartType',
+            inputValue: 'visit',
+            boxLabel: 'Visit Based Chart',
+            checked: this.time == "visit",
+            listeners: {
+                scope: this,
+                'check': function(field, checked){
+                    if(checked) {
+                        this.time = "visit";
+                        this.zeroDateCombo.disable();
+                        this.intervalCombo.disable();
+                    }
+                }
+            }
+        });
+
+
+        columnOneItems.push({
+            xtype: 'compositefield',
+            defaults: {flex: 1},
+            items: [
+                this.dateChartRadio,
+                this.visitChartRadio
+            ]
+        });
+        
         // combobox for the selection of the date axis interval unit
         this.intervalCombo = new Ext.form.ComboBox({
             id: 'x-axis-interval-combo',
+            disabled: this.axis.type == 'visit', //disable combo if the chart is visit based.
             triggerAction: 'all',
             mode: 'local',
             store: new Ext.data.ArrayStore({
@@ -90,6 +142,7 @@ LABKEY.vis.ChartEditorXAxisPanel = Ext.extend(Ext.FormPanel, {
         // combobox to select the "starting date" to be used for the x-axis interval calculation
         this.zeroDateCombo = new Ext.form.ComboBox({
             id: 'zero-date-combo',
+            disabled: this.axis.type == 'visit', //disable combo if the chart is visit based.
             fieldLabel: 'Calculate time interval(s) relative to',
             triggerAction: 'all',
             mode: 'local',
@@ -336,6 +389,10 @@ LABKEY.vis.ChartEditorXAxisPanel = Ext.extend(Ext.FormPanel, {
 
     getAxis: function(){
         return this.axis;
+    },
+
+    getTime: function(){
+        return this.time;
     },
 
     getZeroDateCol: function(){

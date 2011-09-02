@@ -1210,6 +1210,7 @@ LABKEY.vis.TimeChartPanel = Ext.extend(Ext.Panel, {
             config.measures.push({
                 measure: yAxisMeauresDimensions[i].measure,
                 dimension: yAxisMeauresDimensions[i].dimension,
+                time: this.editorXAxisPanel.getTime(),
                 dateOptions: {
                     dateCol: yAxisMeauresDimensions[i].dateCol,
                     zeroDateCol: this.editorXAxisPanel.getZeroDateCol(),
