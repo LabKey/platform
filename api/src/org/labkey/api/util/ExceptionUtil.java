@@ -811,7 +811,7 @@ public class ExceptionUtil
             ActionURL url = new ActionURL("controller", "action", JunitUtil.getTestContainer());
             answer = handleIt(guest, new RedirectException(url), null);
             assertNull(answer.redirect);
-            assertEquals(HttpServletResponse.SC_TEMPORARY_REDIRECT, answer.response.status);
+            assertEquals(HttpServletResponse.SC_MOVED_TEMPORARILY, answer.response.status);
             assertTrue(answer.response.headers.containsKey("Location"));
         }
 
