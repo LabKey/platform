@@ -76,12 +76,8 @@ public class AssayService
 
         /**
          * Populates the import button with possible containers
-         * @param protocol
-         * @param user
-         * @param currentContainer
          * @param isStudyView true if this view is from a study, and thus should exclude the current container
          * unless it already has assay data in it
-         * @return
          */
         public List<ActionButton> getImportButtons(ExpProtocol protocol, User user, Container currentContainer, boolean isStudyView);
 
@@ -89,9 +85,11 @@ public class AssayService
          * Creates a batch object but does not save it to the database
          * @param container location for this batch to live
          * @param name preferred name for the batch. If null, a default name will be assigned. If the name is already in
-         * @param protocol
          */
         public ExpExperiment createStandardBatch(Container container, String name, ExpProtocol protocol);
+
+        /** Ensures that the batch name is unique within the container. Will add unique numeric suffix until it is. */
+        public ExpExperiment ensureUniqueBatchName(ExpExperiment batch, ExpProtocol protocol, User user);
 
         /**
          * @return the batch object for the assay run, if it has one.

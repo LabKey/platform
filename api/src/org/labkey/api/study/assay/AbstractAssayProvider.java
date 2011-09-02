@@ -677,8 +677,6 @@ public abstract class AbstractAssayProvider implements AssayProvider
         return run;
     }
 
-    private static final Object BATCH_CREATION_SYNC = new Object();
-
     /**
      * @param batch if not null, the run group that's already created for this batch. If null, a new one needs to be created
      * @return the run and batch that were inserted
@@ -758,13 +756,9 @@ public abstract class AbstractAssayProvider implements AssayProvider
             // Save the batch first
             if (batch == null)
             {
-                // synchronize to prevent two uploads from grabbing the same batch ID (see bug 8685)
-                synchronized (BATCH_CREATION_SYNC)
-                {
-                    // Make sure that we have a batch to associate with this run
-                    batch = AssayService.get().createStandardBatch(run.getContainer(), null, context.getProtocol());
-                    batch.save(context.getUser());
-                }
+                // Make sure that we have a batch to associate with this run
+                batch = AssayService.get().createStandardBatch(run.getContainer(), null, context.getProtocol());
+                batch.save(context.getUser());
                 saveBatchProps = true;
             }
             run.save(context.getUser());
@@ -789,29 +783,6 @@ public abstract class AbstractAssayProvider implements AssayProvider
             List<ExpData> insertedDatas = new ArrayList<ExpData>();
             if (context instanceof AssayRunUploadForm)
                 ((AssayRunUploadForm)context).setTransformResult(transformResult);
-
-/*
-            if (!transformResult.getTransformedData().isEmpty())
-            {
-                for (Map.Entry<DataType, File> entry : transformResult.getTransformedData().entrySet())
-                {
-                    // for any transformed data, we want to attach it to the run and request that it be imported
-                    // instead of the original data.
-                    ExpData data = createData(context.getContainer(), entry.getValue(), "transformed output", entry.getKey());
-                    data.setSourceApplication(run.getOutputProtocolApplication());
-                    data.setRun(run);
-                    data.save(context.getUser());
-
-                    run.getOutputProtocolApplication().addDataInput(context.getUser(), data, "Data");
-                    insertedDatas.add(data);
-                }
-            }
-            else
-            {
-                insertedDatas.addAll(inputDatas.keySet());
-                insertedDatas.addAll(outputDatas.keySet());
-            }
-*/
 
             if (saveBatchProps)
             {
@@ -875,6 +846,8 @@ public abstract class AbstractAssayProvider implements AssayProvider
             validate(context, run);
 
             scope.commitTransaction();
+
+            AssayService.get().ensureUniqueBatchName(batch, context.getProtocol(), context.getUser());
 
             return new Pair<ExpRun, ExpExperiment>(run, batch);
         }
