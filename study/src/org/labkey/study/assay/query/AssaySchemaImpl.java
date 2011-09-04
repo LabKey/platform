@@ -89,7 +89,7 @@ public class AssaySchemaImpl extends AssaySchema
     private static final String RUN_PROPERTIES_COLUMN_NAME = "RunProperties";
     private static final String BATCH_PROPERTIES_COLUMN_NAME = "BatchProperties";
 
-    private List<ExpProtocol> _protocols;
+    private Map<ExpProtocol, AssayProvider> _protocols;
 
     static public class Provider extends DefaultSchema.SchemaProvider
     {
@@ -123,9 +123,10 @@ public class AssaySchemaImpl extends AssaySchema
         });
 
         names.add(ASSAY_LIST_TABLE_NAME);
-        for (ExpProtocol protocol : getProtocols())
+        for (Map.Entry<ExpProtocol, AssayProvider> entry : getProtocols().entrySet())
         {
-            AssayProvider provider = AssayService.get().getProvider(protocol);
+            ExpProtocol protocol = entry.getKey();
+            AssayProvider provider = entry.getValue();
             if (provider != null)
             {
                 names.add(getBatchesTableName(protocol));
@@ -139,11 +140,15 @@ public class AssaySchemaImpl extends AssaySchema
         return names;
     }
 
-    private List<ExpProtocol> getProtocols()
+    private Map<ExpProtocol, AssayProvider> getProtocols()
     {
         if (_protocols == null)
         {
-            _protocols = AssayService.get().getAssayProtocols(getContainer());
+            _protocols = new HashMap<ExpProtocol, AssayProvider>();
+            for (ExpProtocol protocol : AssayService.get().getAssayProtocols(getContainer()))
+            {
+                _protocols.put(protocol, AssayService.get().getProvider(protocol));
+            }
         }
         return _protocols;
     }
@@ -155,10 +160,11 @@ public class AssaySchemaImpl extends AssaySchema
             return new AssayListTable(this);
         else
         {
-            for (ExpProtocol protocol : getProtocols())
+            for (Map.Entry<ExpProtocol, AssayProvider> entry : getProtocols().entrySet())
             {
+                ExpProtocol protocol = entry.getKey();
+                AssayProvider provider = entry.getValue();
                 TableInfo table = null;
-                AssayProvider provider = AssayService.get().getProvider(protocol);
                 if (provider != null)
                 {
                     if (name.equalsIgnoreCase(getBatchesTableName(protocol)))
@@ -324,9 +330,10 @@ public class AssaySchemaImpl extends AssaySchema
     public QueryView createView(ViewContext context, QuerySettings settings, org.springframework.validation.BindException errors)
     {
         String name = settings.getQueryName();
-        for (ExpProtocol protocol : getProtocols())
+        for (Map.Entry<ExpProtocol, AssayProvider> entry : getProtocols().entrySet())
         {
-            AssayProvider provider = AssayService.get().getProvider(protocol);
+            ExpProtocol protocol = entry.getKey();
+            AssayProvider provider = entry.getValue();
             if (provider != null)
             {
                 if (name != null && name.equals(AssayService.get().getResultsTableName(protocol)))

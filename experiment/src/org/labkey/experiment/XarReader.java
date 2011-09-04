@@ -1050,6 +1050,10 @@ public class XarReader extends AbstractXarImporter
         {
             _deferredDataLoads.add(new DeferredDataLoad(expData, new ExpRunImpl(experimentRun)));
         }
+        else
+        {
+            getLog().warn("No data file found for " + expData.getName() + ", unable to import. (LSID: " + expData.getLSID() + ", path: " + expData.getDataFileUrl() + ")");
+        }
 
 
         _xarSource.addData(experimentRun == null ? null : experimentRun.getLSID(), expData);

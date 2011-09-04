@@ -147,6 +147,12 @@ public class ReportServiceImpl implements ReportService.I, ContainerManager.Cont
 
     public Report createReportInstance(String typeName)
     {
+        // ConcurrentHashMap doesn't support null keys, so do the extra check ourselves
+        if (typeName == null)
+        {
+            return null;
+        }
+
         Class clazz = _reports.get(typeName);
 
         if (null == clazz)

@@ -786,6 +786,9 @@ public class QueryServiceImpl extends QueryService
         if (columnMap.containsKey(key))
             return columnMap.get(key);
 
+        if (key == null)
+            return null;
+
         ColumnInfo parent = getColumn(manager, table, columnMap, key.getParent());
 
         if (parent == null)

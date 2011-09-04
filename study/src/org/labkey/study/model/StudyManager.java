@@ -35,7 +35,6 @@ import org.labkey.api.collections.CaseInsensitiveHashSet;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.ConditionalFormat;
 import org.labkey.api.data.Container;
-import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.DbSchema;
 import org.labkey.api.data.DbScope;
@@ -74,7 +73,6 @@ import org.labkey.api.gwt.client.model.PropertyValidatorType;
 import org.labkey.api.module.Module;
 import org.labkey.api.portal.ProjectUrls;
 import org.labkey.api.query.BatchValidationException;
-import org.labkey.api.query.FilteredTable;
 import org.labkey.api.query.QueryService;
 import org.labkey.api.query.QueryUpdateService;
 import org.labkey.api.query.ValidationError;
@@ -413,16 +411,17 @@ public class StudyManager
     @NotNull
     public Study[] getAllStudies(Container root, User user, Class<? extends Permission> perm)
     {
-        try
+        StudyImpl[] studies = getAllStudies();
+        List<Study> result = new ArrayList<Study>(studies.length);
+        for (StudyImpl study : studies)
         {
-            FilteredTable t = new FilteredTable(StudySchema.getInstance().getTableInfoStudy(), root, new ContainerFilter.CurrentAndSubfolders(user, perm));
-            t.wrapAllColumns(true);
-            return Table.select(t, Table.ALL_COLUMNS, null, null, StudyImpl.class);
+            if (study.getContainer().hasPermission(user, perm) &&
+                    (study.getContainer().equals(root) || study.getContainer().isDescendant(root)))
+            {
+                result.add(study);
+            }
         }
-        catch (SQLException e)
-        {
-            throw new RuntimeSQLException(e);
-        }
+        return result.toArray(new Study[result.size()]);
     }
 
     public StudyImpl createStudy(User user, StudyImpl study) throws SQLException

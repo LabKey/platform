@@ -2723,7 +2723,7 @@ public class DavController extends SpringActionController
         // if the initial OPTIONS request works.
         // AllowNoLogin header returns to normal behavior (simple permission check)
         String userAgent = getRequest().getHeader("User-Agent");
-        boolean isFinder = userAgent.startsWith("WebDAVFS") && -1 != userAgent.indexOf("Darwin");
+        boolean isFinder = userAgent != null && userAgent.startsWith("WebDAVFS") && -1 != userAgent.indexOf("Darwin");
         boolean isBasicAuthentication = "Basic".equals(getRequest().getAttribute(org.labkey.api.security.SecurityManager.AUTHENTICATION_METHOD));
         boolean isGuest = getUser().isGuest();
 //        boolean hasAllowNoLogin = !StringUtils.isEmpty(getRequest().getHeader("AllowNoLogin"));
