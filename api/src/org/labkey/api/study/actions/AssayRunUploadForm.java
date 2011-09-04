@@ -16,9 +16,9 @@
 
 package org.labkey.api.study.actions;
 
+import org.apache.commons.beanutils.ConversionException;
 import org.jetbrains.annotations.NotNull;
 import org.labkey.api.exp.*;
-import org.labkey.api.exp.api.ExpProtocol;
 import org.labkey.api.exp.property.DomainProperty;
 import org.labkey.api.exp.property.Domain;
 import org.labkey.api.study.Study;
@@ -27,14 +27,12 @@ import org.labkey.api.view.ActionURL;
 import org.labkey.api.data.*;
 import org.labkey.api.study.assay.*;
 import org.labkey.api.query.PdLookupForeignKey;
-import org.labkey.api.query.QueryView;
 import org.labkey.api.util.GUID;
 import org.labkey.api.defaults.DefaultValueService;
 import org.labkey.api.qc.TransformResult;
 import org.labkey.api.qc.DefaultTransformResult;
 import org.labkey.api.security.permissions.ReadPermission;
 import org.apache.commons.beanutils.ConvertUtils;
-import org.labkey.api.view.ViewContext;
 
 import java.util.*;
 import java.io.File;
@@ -317,24 +315,31 @@ public class AssayRunUploadForm<ProviderType extends AssayProvider> extends Prot
                 if (pks.size() == 1)
                 {
                     ColumnInfo pk = pks.get(0);
-                    Object filterValue = ConvertUtils.convert(value, pk.getJavaClass());
-                    SimpleFilter filter = new SimpleFilter(pk.getName(), filterValue);
                     try
                     {
-                        Set<String> cols = new HashSet<String>();
-                        cols.add(lookupTable.getTitleColumn());
-                        cols.add(pks.get(0).getName());
-                        Map[] maps =  Table.selectForDisplay(lookupTable, cols, filter, null, Map.class);
-                        if (maps.length > 0)
+                        Object filterValue = ConvertUtils.convert(value, pk.getJavaClass());
+                        SimpleFilter filter = new SimpleFilter(pk.getName(), filterValue);
+                        try
                         {
-                            Object title = maps[0].get(lookupTable.getTitleColumn());
-                            if (title != null)
-                                value = title.toString();
+                            Set<String> cols = new HashSet<String>();
+                            cols.add(lookupTable.getTitleColumn());
+                            cols.add(pks.get(0).getName());
+                            Map[] maps =  Table.selectForDisplay(lookupTable, cols, filter, null, Map.class);
+                            if (maps.length > 0)
+                            {
+                                Object title = maps[0].get(lookupTable.getTitleColumn());
+                                if (title != null)
+                                    value = title.toString();
+                            }
+                        }
+                        catch (SQLException e)
+                        {
+                            throw new RuntimeSQLException(e);
                         }
                     }
-                    catch (SQLException e)
+                    catch (ConversionException e)
                     {
-                        throw new RuntimeSQLException(e);
+                        // Use the raw value as the display value
                     }
                 }
             }

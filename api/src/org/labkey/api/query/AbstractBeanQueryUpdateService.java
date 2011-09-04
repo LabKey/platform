@@ -18,6 +18,7 @@ package org.labkey.api.query;
 import org.apache.commons.beanutils.BeanUtils;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.data.Container;
+import org.labkey.api.data.ObjectFactory;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.security.User;
 import org.labkey.api.view.NotFoundException;
@@ -93,7 +94,8 @@ public abstract class AbstractBeanQueryUpdateService<T,K> extends AbstractQueryU
     {
         try
         {
-            BeanUtils.populate(bean, row);
+            ObjectFactory f = ObjectFactory.Registry.getFactory(bean.getClass());
+            f.fromMap(bean, row);
         }
         catch(Exception e)
         {

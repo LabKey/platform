@@ -42,9 +42,9 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
-import java.util.LinkedList;
 import java.util.Map;
 import java.util.Set;
 
@@ -506,15 +506,25 @@ public class DbScope
             scope.invalidateIncompleteSchemas();
     }
 
-
+    /**
+     * If a transaction is active, the task is run after it's committed. If not, it's run immediately and synchronously.
+     *
+     * The tasks are put into a LinkedHashSet, so they'll run in order, but we will avoid running identical tasks
+     * multiple times. Make sure you have implemented hashCode() and equals() on your task if you want to only run it
+     * once per transaction.
+     */
     public void addCommitTask(Runnable task)
     {
         Transaction t = _transaction.get();
 
         if (null == t)
-            throw new IllegalStateException("Must be inside a transaction");
-
-        t.addCommitTask(task);
+        {
+            task.run();
+        }
+        else
+        {
+            t.addCommitTask(task);
+        }
     }
 
 
@@ -875,7 +885,8 @@ public class DbScope
     {
         private final Connection _conn;
         private final Map<DatabaseCache<?>, StringKeyCache<?>> _caches = new HashMap<DatabaseCache<?>, StringKeyCache<?>>(20);
-        private final LinkedList<Runnable> _commitTasks = new LinkedList<Runnable>();
+        // A set so that we can coalesce identical tasks and avoid duplicating the effort
+        private final Set<Runnable> _commitTasks = new LinkedHashSet<Runnable>();
         private int _count = 1;
         private boolean _aborted = false;
         private int _closesToIgnore = 0;
@@ -914,7 +925,11 @@ public class DbScope
         private void runCommitTasks()
         {
             while (!_commitTasks.isEmpty())
-                _commitTasks.removeFirst().run();
+            {
+                Iterator<Runnable> i = _commitTasks.iterator();
+                i.next().run();
+                i.remove();
+            }
 
             closeCaches();
         }

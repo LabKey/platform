@@ -755,6 +755,7 @@ abstract public class AbstractTableInfo implements TableInfo, ContainerContext
         return true;
     }
 
+    @NotNull
     public ContainerFilter getContainerFilter()
     {
         return null;

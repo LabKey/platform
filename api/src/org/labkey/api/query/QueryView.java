@@ -328,8 +328,8 @@ public class QueryView extends WebPartView<Object>
                 String name = query.getName();
                 NavTree item = new NavTree(name, target.clone().replaceParameter(param(QueryParam.queryName), name).getLocalURIString());
                 item.setId(getDataRegionName() + ":" + label + ":" + name);
-                if (query.getDescription() != null)
-                    item.setDescription(query.getDescription());
+                // Intentionally don't set the description so we can avoid having to instantiate all of the TableInfos,
+                // which can be expensive for some schemas
                 if (name.equals(current))
                     item.setStrong(true);
                 item.setImageSrc(getViewContext().getContextPath() + "/reports/grid.gif");
