@@ -39,7 +39,6 @@ import org.labkey.study.StudySchema;
 import org.labkey.study.controllers.CohortController;
 import org.labkey.study.controllers.StudyController;
 
-import javax.servlet.ServletException;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
@@ -232,7 +231,7 @@ public class ParticipantGroupManager
         return getParticipantCategories(c, user, new SimpleFilter());
     }
 
-    public ParticipantCategory setParticipantCategory(Container c, User user, ParticipantCategory def)
+    public ParticipantCategory setParticipantCategory(Container c, User user, ParticipantCategory def, String[] participants)
     {
         DbScope scope = StudySchema.getInstance().getSchema().getScope();
 
@@ -256,7 +255,7 @@ public class ParticipantGroupManager
             switch (ParticipantCategory.Type.valueOf(ret.getType()))
             {
                 case list:
-                    updateListTypeDef(c, user, ret, isUpdate);
+                    updateListTypeDef(c, user, ret, isUpdate, participants);
                     break;
                 case query:
                     throw new UnsupportedOperationException("Participant category type: query not yet supported");
@@ -457,7 +456,7 @@ public class ParticipantGroupManager
         }
     }
 
-    private void updateListTypeDef(Container c, User user, ParticipantCategory def, boolean update) throws SQLException
+    private void updateListTypeDef(Container c, User user, ParticipantCategory def, boolean update, String[] participants) throws SQLException
     {
         assert !def.isNew() : "The participant category has not been created yet";
 
@@ -483,7 +482,7 @@ public class ParticipantGroupManager
                     }
                 }
                 group.setLabel(def.getLabel());
-                group.setParticipantIds(Arrays.asList(def.getParticipantIds()));
+                group.setParticipantIds(Arrays.asList(participants));
 
                 group = setParticipantGroup(user, group);
                 def.setGroups(new ParticipantGroup[]{group});

@@ -53,7 +53,6 @@ public class ParticipantCategory extends Entity
     private int _datasetId;
     private String _groupProperty;
 
-    private String[] _participantIds = new String[0];
     private ParticipantGroup[] _groups = new ParticipantGroup[0];
 
     public enum Type {
@@ -170,19 +169,6 @@ public class ParticipantCategory extends Entity
         _groupProperty = groupProperty;
     }
 
-    public String[] getParticipantIds()
-    {
-        return _participantIds;
-    }
-
-    public void setParticipantIds(String[] participantIds)
-    {
-        if (!Type.list.name().equals(getType()))
-            throw new UnsupportedOperationException("Only participant sets that are of type: list can accept an array of participant IDs.");
-
-        _participantIds = participantIds;
-    }
-
     public ParticipantGroup[] getGroups()
     {
         return _groups;
@@ -243,6 +229,32 @@ public class ParticipantCategory extends Entity
         }
 
         return json;
+    }
+
+    public void fromJSON(JSONObject json)
+    {
+        if (json.has("rowId"))
+            setRowId(json.getInt("rowId"));
+        if (json.has("shared"))
+            setShared(json.getBoolean("shared"));
+        if (json.has("label"))
+            setLabel(json.getString("label"));
+        if (json.has("type"))
+            setType(json.getString("type"));
+        if (json.has("autoUpdate"))
+            setShared(json.getBoolean("autoUpdate"));
+
+        if (json.has("queryName"))
+            setLabel(json.getString("queryName"));
+        if (json.has("schemaName"))
+            setLabel(json.getString("schemaName"));
+        if (json.has("viewName"))
+            setLabel(json.getString("viewName"));
+
+        if (json.has("datasetId"))
+            setDatasetId(json.getInt("datasetId"));
+        if (json.has("groupProperty"))
+            setGroupProperty(json.getString("groupProperty"));
     }
 
     private JSONObject createDisplayValue(Object value, Object displayValue)

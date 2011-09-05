@@ -16,6 +16,7 @@
 package org.labkey.study.controllers;
 
 import org.json.JSONArray;
+import org.json.JSONObject;
 import org.labkey.api.action.ApiAction;
 import org.labkey.api.action.ApiResponse;
 import org.labkey.api.action.ApiSimpleResponse;
@@ -45,16 +46,16 @@ public class ParticipantGroupController extends BaseStudyController
     }
 
     @RequiresPermissionClass(ReadPermission.class)
-    public class CreateParticipantCategory extends MutatingApiAction<ParticipantCategory>
+    public class CreateParticipantCategory extends MutatingApiAction<ParticipantCategorySpecification>
     {
         @Override
-        public ApiResponse execute(ParticipantCategory form, BindException errors) throws Exception
+        public ApiResponse execute(ParticipantCategorySpecification form, BindException errors) throws Exception
         {
             ApiSimpleResponse resp = new ApiSimpleResponse();
 
             form.setContainer(getContainer().getId());
 
-            ParticipantCategory category = ParticipantGroupManager.getInstance().setParticipantCategory(getContainer(), getUser(), form);
+            ParticipantCategory category = ParticipantGroupManager.getInstance().setParticipantCategory(getContainer(), getUser(), form, form.getParticipantIds());
 
             resp.put("success", true);
             resp.put("category", category.toJSON());
@@ -63,11 +64,46 @@ public class ParticipantGroupController extends BaseStudyController
         }
     }
 
+    /**
+     * Bean used to create and update participant categories
+     */
+    public static class ParticipantCategorySpecification extends ParticipantCategory
+    {
+        private String[] _participantIds = new String[0];
+
+        public String[] getParticipantIds()
+        {
+            return _participantIds;
+        }
+
+        public void setParticipantIds(String[] participantIds)
+        {
+            _participantIds = participantIds;
+        }
+
+        public void fromJSON(JSONObject json)
+        {
+            super.fromJSON(json);
+
+            if (json.has("participantIds"))
+            {
+                JSONArray ptids = json.getJSONArray("participantIds");
+                String[] ids = new String[ptids.length()];
+
+                for (int i=0; i < ptids.length(); i++)
+                {
+                    ids[i] = ptids.getString(i);
+                }
+                setParticipantIds(ids);
+            }
+        }
+    }
+
     @RequiresPermissionClass(ReadPermission.class)
-    public class UpdateParticipantCategory extends MutatingApiAction<ParticipantCategory>
+    public class UpdateParticipantCategory extends MutatingApiAction<ParticipantCategorySpecification>
     {
         @Override
-        public ApiResponse execute(ParticipantCategory form, BindException errors) throws Exception
+        public ApiResponse execute(ParticipantCategorySpecification form, BindException errors) throws Exception
         {
             ApiSimpleResponse resp = new ApiSimpleResponse();
 
@@ -81,7 +117,7 @@ public class ParticipantGroupController extends BaseStudyController
             if (defs.length == 1)
             {
                 form.copySpecialFields(defs[0]);
-                ParticipantCategory category = ParticipantGroupManager.getInstance().setParticipantCategory(getContainer(), getUser(), form);
+                ParticipantCategory category = ParticipantGroupManager.getInstance().setParticipantCategory(getContainer(), getUser(), form, form.getParticipantIds());
 
                 resp.put("success", true);
                 resp.put("category", category.toJSON());

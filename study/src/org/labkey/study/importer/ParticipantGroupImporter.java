@@ -1,0 +1,102 @@
+package org.labkey.study.importer;
+
+import org.apache.xmlbeans.XmlException;
+import org.apache.xmlbeans.XmlObject;
+import org.labkey.api.data.DbScope;
+import org.labkey.api.study.InvalidFileException;
+import org.labkey.api.util.XmlBeansUtil;
+import org.labkey.study.StudySchema;
+import org.labkey.study.model.ParticipantCategory;
+import org.labkey.study.model.ParticipantGroupManager;
+import org.labkey.study.model.StudyImpl;
+import org.labkey.study.writer.ParticipantGroupWriter;
+import org.labkey.study.xml.participantGroups.CategoryType;
+import org.labkey.study.xml.participantGroups.GroupType;
+import org.labkey.study.xml.participantGroups.ParticipantGroupsDocument;
+
+import java.io.File;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
+
+/**
+ * Created by IntelliJ IDEA.
+ * User: klum
+ * Date: Aug 31, 2011
+ * Time: 12:57:55 PM
+ */
+public class ParticipantGroupImporter implements InternalStudyImporter
+{
+    @Override
+    public String getDescription()
+    {
+        return "participant groups";
+    }
+
+    @Override
+    public void process(StudyImpl study, ImportContext ctx, File root) throws Exception
+    {
+        File file = new File(root, ParticipantGroupWriter.FILE_NAME);//ctx.getStudyFile(root, root, ParticipantGroupWriter.FILE_NAME);
+
+        if (file.exists())
+        {
+            try
+            {
+                ParticipantGroupsDocument doc = ParticipantGroupsDocument.Factory.parse(file, XmlBeansUtil.getDefaultParseOptions());
+                process(study, ctx, doc);
+            }
+            catch (XmlException x)
+            {
+                throw new InvalidFileException(root, file, x);
+            }
+        }
+    }
+
+    public void process(StudyImpl study, ImportContext ctx, XmlObject xmlObject) throws Exception
+    {
+        if (xmlObject instanceof ParticipantGroupsDocument)
+        {
+            DbScope scope = StudySchema.getInstance().getSchema().getScope();
+
+            try
+            {
+                ParticipantGroupsDocument doc = (ParticipantGroupsDocument)xmlObject;
+                XmlBeansUtil.validateXmlDocument(doc);
+
+                scope.ensureTransaction();
+
+                // create the imported participant groups
+                for (CategoryType category : doc.getParticipantGroups().getParticipantCategoryArray())
+                {
+                    ParticipantCategory pc = new ParticipantCategory();
+
+                    pc.setContainer(ctx.getContainer().getId());
+                    pc.setLabel(category.getLabel());
+                    pc.setType(category.getType());
+                    pc.setShared(category.getShared());
+                    pc.setAutoUpdate(category.getAutoUpdate());
+
+                    pc.setSchemaName(category.getSchemaName());
+                    pc.setQueryName(category.getQueryName());
+                    pc.setViewName(category.getViewName());
+
+                    pc.setDatasetId(category.getDatasetId());
+                    pc.setGroupProperty(category.getGroupProperty());
+
+                    List<String> participants = new ArrayList<String>();
+                    for (GroupType group : category.getGroupArray())
+                    {
+                        participants.addAll(Arrays.asList(group.getParticipantIdArray()));
+                    }
+                    ParticipantGroupManager.getInstance().setParticipantCategory(ctx.getContainer(), ctx.getUser(), pc,
+                            participants.toArray(new String[participants.size()]));
+                }
+                scope.commitTransaction();
+            }
+            finally
+            {
+                scope.closeConnection();
+            }
+        }
+    }
+}
