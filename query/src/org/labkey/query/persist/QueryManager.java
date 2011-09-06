@@ -18,14 +18,25 @@ package org.labkey.query.persist;
 
 import org.apache.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
-import org.labkey.api.data.*;
-import org.labkey.api.query.*;
+import org.labkey.api.data.ColumnInfo;
+import org.labkey.api.data.Container;
+import org.labkey.api.data.ContainerManager;
+import org.labkey.api.data.DbSchema;
+import org.labkey.api.data.RuntimeSQLException;
+import org.labkey.api.data.SimpleFilter;
+import org.labkey.api.data.Table;
+import org.labkey.api.data.TableInfo;
+import org.labkey.api.query.CustomView;
+import org.labkey.api.query.DefaultSchema;
+import org.labkey.api.query.FieldKey;
+import org.labkey.api.query.QueryParseException;
+import org.labkey.api.query.QueryService;
+import org.labkey.api.query.UserSchema;
 import org.labkey.api.security.User;
-import org.labkey.api.util.UnexpectedException;
 import org.labkey.api.util.ResultSetUtil;
+import org.labkey.api.util.UnexpectedException;
 import org.labkey.query.ExternalSchema;
 import org.labkey.query.ExternalSchemaDocumentProvider;
-import org.labkey.query.sql.Query;
 
 import java.beans.PropertyChangeEvent;
 import java.sql.SQLException;
@@ -335,7 +346,6 @@ public class QueryManager
     public void reloadExternalSchema(ExternalSchemaDef def)
     {
         ExternalSchema.uncache(def);
-        ExternalSchema.getDbSchema(def);
     }
 
 

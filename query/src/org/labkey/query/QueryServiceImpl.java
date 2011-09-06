@@ -954,7 +954,7 @@ public class QueryServiceImpl extends QueryService
         {
             try
             {
-                UserSchema schema = new ExternalSchema(folderSchema.getUser(), folderSchema.getContainer(), def);
+                UserSchema schema = ExternalSchema.get(folderSchema.getUser(), folderSchema.getContainer(), def);
                 ret.put(def.getUserSchemaName(), schema);
             }
             catch (Exception e)
@@ -969,21 +969,17 @@ public class QueryServiceImpl extends QueryService
     @Override
     public UserSchema getExternalSchema(DefaultSchema folderSchema, String name)
     {
-        ExternalSchemaDef[] defs = QueryManager.get().getExternalSchemaDefs(folderSchema.getContainer());
+        ExternalSchemaDef def = QueryManager.get().getExternalSchemaDef(folderSchema.getContainer(), name);
 
-        for (ExternalSchemaDef def : defs)
+        if (null != def)
         {
-            if (name.equals(def.getUserSchemaName()))
+            try
             {
-                try
-                {
-                    return new ExternalSchema(folderSchema.getUser(), folderSchema.getContainer(), def);
-                }
-                catch (Exception e)
-                {
-                    Logger.getLogger(QueryServiceImpl.class).warn("Could not load schema " + def.getDbSchemaName() + " from " + def.getDataSource(), e);
-                    break;
-                }
+                return ExternalSchema.get(folderSchema.getUser(), folderSchema.getContainer(), def);
+            }
+            catch (Exception e)
+            {
+                Logger.getLogger(QueryServiceImpl.class).warn("Could not load schema " + def.getDbSchemaName() + " from " + def.getDataSource(), e);
             }
         }
 

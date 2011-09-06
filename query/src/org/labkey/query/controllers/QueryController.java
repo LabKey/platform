@@ -4085,7 +4085,7 @@ public class QueryController extends SpringActionController
             //built-in tables
             if (form.isIncludeSystemQueries())
             {
-                for(String qname : uschema.getVisibleTableNames())
+                for (String qname : uschema.getVisibleTableNames())
                 {
                     ActionURL viewDataUrl = QueryService.get().urlFor(getUser(), getContainer(), QueryAction.executeQuery, uschema.getSchemaName(), qname);
                     TableInfo tinfo = uschema.getTable(qname);

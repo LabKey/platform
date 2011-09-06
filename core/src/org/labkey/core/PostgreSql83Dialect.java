@@ -28,6 +28,7 @@ import org.labkey.api.data.DbScope;
 import org.labkey.api.data.PropertyStorageSpec;
 import org.labkey.api.data.RuntimeSQLException;
 import org.labkey.api.data.SQLFragment;
+import org.labkey.api.data.Selector;
 import org.labkey.api.data.SqlScriptParser;
 import org.labkey.api.data.Table;
 import org.labkey.api.data.TableChange;
@@ -648,12 +649,13 @@ class PostgreSql83Dialect extends SqlDialect
         super.prepareNewDbScope(scope);
     }
 
+
     // When a new PostgreSQL DbScope is created, we enumerate the domains (user-defined types) in the public schema
     // of the datasource, determine their "scale," and stash that information in a map associated with the DbScope.
     // When the PostgreSQLColumnMetaDataReader reads meta data, it returns these scale values for all domains.
-    private void initializeUserDefinedTypes(DbScope scope) throws SQLException
+    private void initializeUserDefinedTypes(DbScope scope)
     {
-        Table.Selector selector = new Table.SqlSelector(scope, "SELECT * FROM information_schema.domains WHERE domain_schema = 'public'");
+        Selector selector = new Table.SqlSelector(scope, "SELECT * FROM information_schema.domains WHERE domain_schema = 'public'");
         selector.forEach(new Table.ForEachBlock<ResultSet>() {
             @Override
             public void exec(ResultSet rs) throws SQLException
@@ -670,9 +672,9 @@ class PostgreSql83Dialect extends SqlDialect
 
 
     // Query any settings that may affect dialect behavior.  Right now, only "standard_conforming_strings".
-    private void determineSettings(DbScope scope) throws SQLException
+    private void determineSettings(DbScope scope)
     {
-        Table.Selector selector = new Table.SqlSelector(scope, "SELECT setting FROM pg_settings WHERE name = 'standard_conforming_strings'");
+        Selector selector = new Table.SqlSelector(scope, "SELECT setting FROM pg_settings WHERE name = 'standard_conforming_strings'");
         selector.forEach(new Table.ForEachBlock<ResultSet>(){
             @Override
             public void exec(ResultSet rs) throws SQLException

@@ -33,6 +33,7 @@ public class ExternalSchemaDef extends Entity
         {
             super(QueryManager.get().getTableInfoExternalSchema(), ExternalSchemaDef.class, container);
         }
+
         public void setUserSchemaName(String name)
         {
             addCondition(Column.userschemaname, name);

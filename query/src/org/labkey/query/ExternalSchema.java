@@ -18,6 +18,7 @@ package org.labkey.query;
 
 import org.apache.xmlbeans.XmlException;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.collections.CsvSet;
 import org.labkey.api.data.Container;
@@ -43,19 +44,32 @@ public class ExternalSchema extends SimpleUserSchema
     private final ExternalSchemaDef _def;
     private final Map<String, TableType> _metaDataMap;
 
-    public ExternalSchema(User user, Container container, ExternalSchemaDef def)
+    public static ExternalSchema get(User user, Container container, ExternalSchemaDef def)
     {
-        super(def.getUserSchemaName(), "Contains data tables from the '" + def.getUserSchemaName() + "' database schema.",
-                user, container, getDbSchema(def), getAvailableTables(def), getHiddenTables(def));
+        DbSchema schema = getDbSchema(def);
+        Collection<String> availableTables = getAvailableTables(def, schema);
+        TableType[] tableTypes = parseTableTypes(def);
+        Collection<String> hiddenTables = getHiddenTables(tableTypes);
 
-        _def = def;
-        _metaDataMap = new CaseInsensitiveHashMap<TableType>();
+        Map<String, TableType> metaDataMap = new CaseInsensitiveHashMap<TableType>();
 
-        for (TableType tt : getTableTypes(def))
-            _metaDataMap.put(tt.getTableName(), tt);
+        for (TableType tt : tableTypes)
+            metaDataMap.put(tt.getTableName(), tt);
+
+        return new ExternalSchema(user, container, def, schema, metaDataMap, availableTables, hiddenTables);
     }
 
-    public static DbSchema getDbSchema(ExternalSchemaDef def)
+    private ExternalSchema(User user, Container container, ExternalSchemaDef def, DbSchema schema,
+        Map<String, TableType> metaDataMap, Collection<String> availableTables, Collection<String> hiddenTables)
+    {
+        super(def.getUserSchemaName(), "Contains data tables from the '" + def.getUserSchemaName() + "' database schema.",
+                user, container, schema, availableTables, hiddenTables);
+
+        _def = def;
+        _metaDataMap = metaDataMap;
+    }
+
+    private static DbSchema getDbSchema(ExternalSchemaDef def)
     {
         DbScope scope = DbScope.getDbScope(def.getDataSource());
 
@@ -65,30 +79,57 @@ public class ExternalSchema extends SimpleUserSchema
             return null;
     }
 
-    private static @NotNull Collection<String> getAvailableTables(ExternalSchemaDef def)
+    private static @NotNull TableType[] parseTableTypes(ExternalSchemaDef def)
     {
-        DbSchema schema = getDbSchema(def);
+        if (def.getMetaData() != null)
+        {
+            try
+            {
+                TablesDocument doc = TablesDocument.Factory.parse(def.getMetaData());
 
+                if (doc.getTables() != null)
+                    return doc.getTables().getTableArray();
+            }
+            catch (XmlException e)
+            {
+                // TODO: Throw or log or display this exception?
+            }
+        }
+
+        return new TableType[0];
+    }
+
+    private static @NotNull Collection<String> getAvailableTables(ExternalSchemaDef def, @Nullable DbSchema schema)
+    {
         if (null == schema)
             return Collections.emptySet();
 
-        String allowedTables = def.getTables();
+        String allowedTableNames = def.getTables();
 
-        if ("*".equals(allowedTables))
+        if ("*".equals(allowedTableNames))
         {
             return schema.getTableNames();
         }
         else
         {
-            return new CsvSet(allowedTables);
+            // Some tables in the "allowed" list may no longer exist, so check each table in the schema.  #13002
+            @SuppressWarnings({"MismatchedQueryAndUpdateOfCollection"})
+            Set<String> allowed = new CsvSet(allowedTableNames);
+            Set<String> available = new HashSet<String>(allowed.size());
+
+            for (String name : allowed)
+                if (null != schema.getTable(name))
+                    available.add(name);
+
+            return available;
         }
     }
 
-    private static @NotNull Collection<String> getHiddenTables(ExternalSchemaDef def)
+    private static @NotNull Collection<String> getHiddenTables(TableType[] tableTypes)
     {
         Set<String> hidden = new HashSet<String>();
 
-        for (TableType tt : getTableTypes(def))
+        for (TableType tt : tableTypes)
             if (tt.getHidden())
                 hidden.add(tt.getTableName());
 
@@ -120,26 +161,6 @@ public class ExternalSchema extends SimpleUserSchema
     private TableType getXbTable(String name)
     {
         return _metaDataMap.get(name);
-    }
-
-    private static @NotNull TableType[] getTableTypes(ExternalSchemaDef def)
-    {
-        if (def.getMetaData() != null)
-        {
-            try
-            {
-                TablesDocument doc = TablesDocument.Factory.parse(def.getMetaData());
-
-                if (doc.getTables() != null)
-                    return doc.getTables().getTableArray();
-            }
-            catch (XmlException e)
-            {
-                // TODO: Throw or log or display this exception?
-            }
-        }
-
-        return new TableType[0];
     }
 
     public boolean areTablesEditable()
