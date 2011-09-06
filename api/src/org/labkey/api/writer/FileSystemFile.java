@@ -15,8 +15,10 @@
  */
 package org.labkey.api.writer;
 
+import org.apache.xmlbeans.XmlException;
 import org.apache.xmlbeans.XmlObject;
 import org.apache.xmlbeans.XmlOptions;
+import org.labkey.api.study.StudyImportException;
 import org.labkey.api.util.FileUtil;
 import org.labkey.api.util.XmlBeansUtil;
 import org.labkey.api.util.XmlValidationException;
@@ -110,5 +112,41 @@ public class FileSystemFile implements VirtualFile
 
         if (!dir.canWrite())
             throw new IllegalStateException("Can't write to " + dir.getAbsolutePath());
+    }
+
+    @Override
+    public XmlObject getXmlBean(String filename) throws IOException
+    {
+        File file = new File(_root, makeLegalName(filename));
+
+        if (file.exists())
+        {
+            try {
+                return XmlObject.Factory.parse(file, XmlBeansUtil.getDefaultParseOptions());
+            }
+            catch (XmlException e)
+            {
+                throw new IOException(e);
+            }
+        }
+        return null;
+    }
+
+    @Override
+    public InputStream getInputStream(String filename) throws IOException
+    {
+        File file = new File(_root, makeLegalName(filename));
+
+        if (file.exists())
+            return new FileInputStream(file);
+        else
+            return null;
+    }
+
+    @Override
+    public String getRelativePath(String filename)
+    {
+        File file = new File(_root, makeLegalName(filename));
+        return StudyImportException.getRelativePath(_root, file);
     }
 }

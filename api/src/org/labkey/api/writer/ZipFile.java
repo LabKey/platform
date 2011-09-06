@@ -204,4 +204,22 @@ public class ZipFile implements Archive
             }
         }
     }
+
+    @Override
+    public XmlObject getXmlBean(String filename) throws IOException
+    {
+        throw new UnsupportedOperationException("The ZipFile class only supports write operations");
+    }
+
+    @Override
+    public InputStream getInputStream(String filename) throws IOException
+    {
+        throw new UnsupportedOperationException("The ZipFile class only supports write operations");
+    }
+
+    @Override
+    public String getRelativePath(String filename)
+    {
+        throw new UnsupportedOperationException("The ZipFile class only supports write operations");
+    }
 }

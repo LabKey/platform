@@ -39,6 +39,11 @@ public class InvalidFileException extends StudyImportException
         super(getErrorString(root, file, (String)null), e);
     }
 
+    public InvalidFileException(String relativePath, Throwable t)
+    {
+        super(getErrorString(relativePath, t.getMessage()));
+    }
+
     // Special handling for XmlException: e.getMessage() includes absolute path to file, which we don't want to display
     private static String getErrorString(File root, File file, XmlException e)
     {
@@ -49,5 +54,10 @@ public class InvalidFileException extends StudyImportException
     private static String getErrorString(File root, File file, String message)
     {
         return getRelativePath(root, file) + " is not valid" + (null != message ? ": " + message : "");
+    }
+
+    private static String getErrorString(String relativePath, String message)
+    {
+        return relativePath + " is not valid" + (null != message ? ": " + message : "");
     }
 }

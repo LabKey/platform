@@ -18,6 +18,7 @@ package org.labkey.api.writer;
 import org.apache.xmlbeans.XmlObject;
 
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.OutputStream;
 import java.io.PrintWriter;
 
@@ -31,6 +32,10 @@ public interface VirtualFile
     public PrintWriter getPrintWriter(String path) throws IOException;
     public OutputStream getOutputStream(String filename) throws IOException;
     public void saveXmlBean(String filename, XmlObject doc) throws IOException;
+    public XmlObject getXmlBean(String filename) throws IOException;
+    public InputStream getInputStream(String filename) throws IOException;
+    public String getRelativePath(String filename);
+
     public Archive createZipArchive(String name) throws IOException;
     public VirtualFile getDir(String path);
     public String makeLegalName(String name);
