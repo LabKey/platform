@@ -27,6 +27,6 @@ public class LegacySqlSelector extends LegacySelector
 {
     public LegacySqlSelector(DbSchema schema, SQLFragment sql)
     {
-        super(new Table.SqlSelector(schema, sql));
+        super(new SqlSelector(schema, sql));
     }
 }

@@ -36,7 +36,7 @@ public class LegacySelector
 {
     private final Selector _selector;
 
-    public LegacySelector(Table.BaseSelector selector)
+    public LegacySelector(BaseSelector selector)
     {
         _selector = selector;
         selector.setExceptionFramework(ExceptionFramework.JDBC);
@@ -44,7 +44,7 @@ public class LegacySelector
 
     // All the results-gathering methods are below
 
-    public <K> void forEach(Table.ForEachBlock<K> block, Class<K> clazz) throws SQLException
+    public <K> void forEach(Selector.ForEachBlock<K> block, Class<K> clazz) throws SQLException
     {
         try
         {
@@ -56,7 +56,7 @@ public class LegacySelector
         }
     }
 
-    public void forEach(Table.ForEachBlock<ResultSet> block) throws SQLException
+    public void forEach(Selector.ForEachBlock<ResultSet> block) throws SQLException
     {
         try
         {
@@ -68,7 +68,7 @@ public class LegacySelector
         }
     }
 
-    public void forEachMap(Table.ForEachBlock<Map<String, Object>> block) throws SQLException
+    public void forEachMap(Selector.ForEachBlock<Map<String, Object>> block) throws SQLException
     {
         try
         {

@@ -17,8 +17,9 @@
 package org.labkey.api.data;
 
 import org.springframework.dao.DataAccessException;
+import org.springframework.jdbc.support.SQLErrorCodeSQLExceptionTranslator;
+import org.springframework.jdbc.support.SQLExceptionTranslator;
 
-import java.sql.Connection;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.Collection;
@@ -38,7 +39,8 @@ public interface Selector
                 @Override
                 DataAccessException translate(DbScope scope, String message, String sql, SQLException e)
                 {
-                    return scope.translateToSpringException(message, sql, e);
+                    SQLExceptionTranslator translator = new SQLErrorCodeSQLExceptionTranslator(scope.getDataSource());
+                    return translator.translate(message, sql, e);
                 }
             },
         JDBC
@@ -61,11 +63,11 @@ public interface Selector
 
     <K> K getObject(Class<K> clazz);
 
-    void forEach(Table.ForEachBlock<ResultSet> block);
+    void forEach(ForEachBlock<ResultSet> block);
 
-    void forEachMap(Table.ForEachBlock<Map<String, Object>> block);
+    void forEachMap(ForEachBlock<Map<String, Object>> block);
 
-    <K> void forEach(Table.ForEachBlock<K> block, Class<K> clazz);
+    <K> void forEach(ForEachBlock<K> block, Class<K> clazz);
 
     // Used to populate a map with a two-column query; the first column is the key, the second column is the value.
     // This variant returns a new map.
@@ -74,4 +76,9 @@ public interface Selector
     // Used to populate a map with a two-column query; the first column is the key, the second column is the value.
     // This variant populates and returns the map that is passed in.
     Map<Object, Object> fillValueMap(Map<Object, Object> map);
+
+    interface ForEachBlock<K>
+    {
+        void exec(K object) throws SQLException;
+    }
 }

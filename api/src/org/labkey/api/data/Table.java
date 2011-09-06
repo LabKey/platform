@@ -136,7 +136,7 @@ public class Table
     }
 
 
-    private static ResultSet _executeQuery(Connection conn, String sql, Object[] parameters) throws SQLException
+    static ResultSet _executeQuery(Connection conn, String sql, Object[] parameters) throws SQLException
     {
         return _executeQuery(conn, sql, parameters, false, null, null);
     }
@@ -190,8 +190,7 @@ public class Table
     }
 
 
-    public static int execute(Connection conn, String sql, @NotNull Object... parameters)
-            throws SQLException
+    public static int execute(Connection conn, String sql, @NotNull Object... parameters) throws SQLException
     {
         Statement stmt = null;
 
@@ -285,8 +284,7 @@ public class Table
         }
     }
 
-    public static Table.TableResultSet executeQuery(DbSchema schema, String sql, Object[] parameters)
-            throws SQLException
+    public static Table.TableResultSet executeQuery(DbSchema schema, String sql, Object[] parameters) throws SQLException
     {
         return (Table.TableResultSet) executeQuery(schema, sql, parameters, ALL_ROWS, true);
     }
@@ -343,7 +341,7 @@ public class Table
         }
         catch(SQLException e)
         {
-            _doCatch(sql, parameters, conn, e);
+            doCatch(sql, parameters, conn, e);
             queryFailed = true;
             throw(e);
         }
@@ -351,7 +349,7 @@ public class Table
         {
             // Close everything for cached result sets and exceptions only
             if (cache || queryFailed)
-                _doFinally(rs, null, conn, schema.getScope());
+                doFinally(rs, null, conn, schema.getScope());
         }
     }
 
@@ -363,8 +361,7 @@ public class Table
     }
 
 
-    public static <K> K[] executeQuery(DbSchema schema, String sql, Object[] parameters, Class<K> clss)
-            throws SQLException
+    public static <K> K[] executeQuery(DbSchema schema, String sql, Object[] parameters, Class<K> clss) throws SQLException
     {
         return internalExecuteQueryArray(schema, sql, parameters, clss, NO_OFFSET);
     }
@@ -403,25 +400,23 @@ public class Table
         }
         catch(SQLException e)
         {
-            _doCatch(sql, parameters, conn, e);
+            doCatch(sql, parameters, conn, e);
             throw(e);
         }
         finally
         {
-            _doFinally(rs, null, conn, schema.getScope());
+            doFinally(rs, null, conn, schema.getScope());
         }
     }
 
 
-    public static int execute(DbSchema schema, SQLFragment f)
-            throws SQLException
+    public static int execute(DbSchema schema, SQLFragment f) throws SQLException
     {
         return execute(schema, f.getSQL(), f.getParamsArray());
     }
 
 
-    public static int execute(DbSchema schema, String sql, @NotNull Object... parameters)
-            throws SQLException
+    public static int execute(DbSchema schema, String sql, @NotNull Object... parameters) throws SQLException
     {
         Connection conn = schema.getScope().getConnection();
 
@@ -431,12 +426,12 @@ public class Table
         }
         catch(SQLException e)
         {
-            _doCatch(sql, parameters, conn, e);
+            doCatch(sql, parameters, conn, e);
             throw(e);
         }
         finally
         {
-            _doFinally(null, null, conn, schema.getScope());
+            doFinally(null, null, conn, schema.getScope());
         }
     }
 
@@ -474,12 +469,12 @@ public class Table
                     e = e.getNextException();
             }
 
-            _doCatch(sql, null, conn, e);
+            doCatch(sql, null, conn, e);
             throw(e);
         }
         finally
         {
-            _doFinally(null, stmt, conn, schema.getScope());
+            doFinally(null, stmt, conn, schema.getScope());
         }
     }
 
@@ -525,7 +520,7 @@ public class Table
 
     private static Map<Class, Getter> _getterMap = new HashMap<Class, Getter>(10);
 
-    private static enum Getter
+    static enum Getter
     {
         STRING(String.class) { String getObject(ResultSet rs) throws SQLException { return rs.getString(1); }},
         INTEGER(Integer.class) { Integer getObject(ResultSet rs) throws SQLException { int i = rs.getInt(1); return rs.wasNull() ? null : i ; }},
@@ -562,7 +557,7 @@ public class Table
 
 
     // Standard SQLException catch block: log exception, query SQL, and params
-    private static void _doCatch(String sql, Object[] parameters, Connection conn, SQLException e)
+    static void doCatch(String sql, Object[] parameters, Connection conn, SQLException e)
     {
         if (SqlDialect.isCancelException(e))
         {
@@ -582,7 +577,7 @@ public class Table
 
 
     // Typical finally block cleanup
-    private static void _doFinally(ResultSet rs, Statement stmt, Connection conn, DbScope scope)
+    static void doFinally(ResultSet rs, Statement stmt, Connection conn, DbScope scope)
     {
         try
         {
@@ -591,7 +586,7 @@ public class Table
         }
         catch (SQLException x)
         {
-            _log.error("_doFinally", x);
+            _log.error("doFinally", x);
         }
 
         try
@@ -600,7 +595,7 @@ public class Table
         }
         catch (SQLException x)
         {
-            _log.error("_doFinally", x);
+            _log.error("doFinally", x);
         }
         try
         {
@@ -608,7 +603,7 @@ public class Table
         }
         catch (SQLException x)
         {
-            _log.error("_doFinally", x);
+            _log.error("doFinally", x);
         }
 
         if (null != conn) scope.releaseConnection(conn);
@@ -652,12 +647,12 @@ public class Table
         }
         catch(SQLException e)
         {
-            _doCatch(sql, parameters, conn, e);
+            doCatch(sql, parameters, conn, e);
             throw(e);
         }
         finally
         {
-            _doFinally(rs, null, conn, schema.getScope());
+            doFinally(rs, null, conn, schema.getScope());
         }
     }
     
@@ -959,12 +954,12 @@ public class Table
         }
         catch(SQLException e)
         {
-            _doCatch(insertSQL.toString(), parameters.toArray(), conn, e);
+            doCatch(insertSQL.toString(), parameters.toArray(), conn, e);
             throw(e);
         }
         finally
         {
-            _doFinally(rs, stmt, conn, schema.getScope());
+            doFinally(rs, stmt, conn, schema.getScope());
             closeParameters(parameters.toArray());
         }
 
@@ -1081,13 +1076,13 @@ public class Table
         }
         catch(SQLException e)
         {
-            _doCatch(updateSQL.getSQL(), updateSQL.getParamsArray(), conn, e);
+            doCatch(updateSQL.getSQL(), updateSQL.getParamsArray(), conn, e);
             throw(e);
         }
 
         finally
         {
-            _doFinally(null, stmt, conn, schema.getScope());
+            doFinally(null, stmt, conn, schema.getScope());
         }
 
         return (fieldsIn instanceof Map && !(fieldsIn instanceof BoundMap)) ? (K)fields : fieldsIn;
@@ -1443,7 +1438,7 @@ public class Table
     }
 
 
-    private static List<ColumnInfo> columnInfosList(TableInfo table, Set<String> select)
+    static List<ColumnInfo> columnInfosList(TableInfo table, Set<String> select)
     {
         List<ColumnInfo> allColumns = table.getColumns();
         List<ColumnInfo> selectColumns;
@@ -1550,7 +1545,7 @@ public class Table
     }
 
 
-    private static TableResultSet cacheResultSet(SqlDialect dialect, ResultSet rs, int rowCount, @Nullable AsyncQueryRequest asyncRequest) throws SQLException
+    static TableResultSet cacheResultSet(SqlDialect dialect, ResultSet rs, int rowCount, @Nullable AsyncQueryRequest asyncRequest) throws SQLException
     {
         CachedResultSet crs = new CachedResultSet(rs, dialect.shouldCacheMetaData(), rowCount);
 
@@ -2723,287 +2718,5 @@ public class Table
             
             Table.execute(testTable.getSchema(), "delete from test.testtable where entityid = '" + extract.guid + "'");
         }
-    }
-
-
-    public static abstract class BaseSelector implements Selector
-    {
-        private Connection _conn = null;
-        private SQLFragment _sql = null;
-        private ExceptionFramework _exceptionFramework = ExceptionFramework.Spring;
-
-        abstract Connection getConnection() throws SQLException;
-        abstract DbScope getScope();
-        abstract SQLFragment getSql();
-
-        protected void setExceptionFramework(ExceptionFramework exceptionFramework)
-        {
-            _exceptionFramework = exceptionFramework;
-        }
-
-        @Override
-        public ResultSet getResultSet() throws SQLException
-        {
-            _sql = getSql();
-            _conn = getConnection();
-            return _executeQuery(_conn, _sql.getSQL(), _sql.getParamsArray());
-        }
-
-        private <K> ArrayList<K> getArrayList(final Class<K> clazz)
-        {
-            final ArrayList<K> list;
-            final Getter getter = Getter.forClass(clazz);
-
-            // This is a simple object (Number, String, Date, etc.)
-            if (null != getter)
-            {
-                list = new ArrayList<K>();
-                forEach(new ForEachBlock<ResultSet>() {
-                    @Override
-                    public void exec(ResultSet rs) throws SQLException
-                    {
-                        //noinspection unchecked
-                        list.add((K)getter.getObject(rs));
-                    }
-                });
-            }
-            else
-            {
-                list = handleResultSet(new ResultSetHandler<ArrayList<K>>() {
-                    @Override
-                    public ArrayList<K> handle(ResultSet rs) throws SQLException
-                    {
-                        if (Map.class.isAssignableFrom(clazz))
-                        {
-                            CachedResultSet copy = (CachedResultSet)cacheResultSet(getScope().getSqlDialect(), rs, ALL_ROWS, null);
-                            //noinspection unchecked
-                            K[] arrayListMaps = (K[])(copy._arrayListMaps == null ? new ArrayListMap[0] : copy._arrayListMaps);
-                            copy.close();
-
-                            // TODO: Not very efficient...
-                            return new ArrayList<K>(Arrays.asList(arrayListMaps));
-                        }
-                        else
-                        {
-                            ObjectFactory<K> factory = ObjectFactory.Registry.getFactory(clazz);
-
-                            if (null == factory)
-                                throw new IllegalArgumentException("Cound not find object factory for " + clazz.getSimpleName() + ".");
-
-                            return factory.handleArrayList(rs);
-                        }
-                    }
-                });
-            }
-
-            return list;
-        }
-
-        @Override
-        public <K> K[] getArray(Class<K> clazz)
-        {
-            ArrayList<K> list = getArrayList(clazz);
-            return list.toArray((K[]) Array.newInstance(clazz, list.size()));
-        }
-
-        @Override
-        public <K> Collection<K> getCollection(Class<K> clazz)
-        {
-            return getArrayList(clazz);
-        }
-
-        @Override
-        public <K> K getObject(Class<K> clazz)  // TODO: Or getSingleton?  Or getSingleObject?
-        {
-            List<K> list = getArrayList(clazz);
-
-            if (list.isEmpty())
-                return null;
-            else
-                return list.get(0);
-
-            // TODO: Throw if size() > 1?
-        }
-
-        @Override
-        public void forEach(final ForEachBlock<ResultSet> block)
-        {
-            handleResultSet((new ResultSetHandler<Object>() {
-                @Override
-                public Object handle(ResultSet rs) throws SQLException
-                {
-                    while (rs.next())
-                        block.exec(rs);
-
-                    return null;
-                }
-            }));
-        }
-
-        @Override
-        public void forEachMap(final ForEachBlock<Map<String, Object>> block)
-        {
-            handleResultSet(new ResultSetHandler<Object>() {
-                @Override
-                public Object handle(ResultSet rs) throws SQLException
-                {
-                    ResultSetIterator iter = new ResultSetIterator(rs);
-
-                    while (iter.hasNext())
-                        block.exec(iter.next());
-
-                    return null;
-                }
-            });
-        }
-
-        @Override
-        public <K> void forEach(final ForEachBlock<K> block, Class<K> clazz)
-        {
-            final ObjectFactory<K> factory = ObjectFactory.Registry.getFactory(clazz);
-
-            ForEachBlock<Map<String, Object>> mapBlock = new ForEachBlock<Map<String, Object>>() {
-                @Override
-                public void exec(Map<String, Object> map) throws SQLException
-                {
-                    block.exec(factory.fromMap(map));
-                }
-            };
-
-            forEachMap(mapBlock);
-        }
-
-        @Override
-        public Map<Object, Object> fillValueMap(final Map<Object, Object> map)
-        {
-            forEach(new ForEachBlock<ResultSet>()
-            {
-                @Override
-                public void exec(ResultSet rs) throws SQLException
-                {
-                    map.put(rs.getObject(1), rs.getObject(2));
-                }
-            });
-
-            return map;
-        }
-
-        @Override
-        public Map<Object, Object> getValueMap()
-        {
-            return fillValueMap(new HashMap<Object, Object>());
-        }
-
-        private <K> K handleResultSet(ResultSetHandler<K> handler)
-        {
-            ResultSet rs = null;
-
-            try
-            {
-                rs = getResultSet();
-                return handler.handle(rs);
-            }
-            catch(SQLException e)
-            {
-                // TODO: Substitute SQL parameters placeholders with values?
-                SQLFragment sql = getSql();
-                _doCatch(sql.getSQL(), sql.getParamsArray(), _conn, e);
-                throw _exceptionFramework.translate(getScope(), "Message", sql.getSQL(), e);
-            }
-            finally
-            {
-                _doFinally(rs, null, _conn, getScope());
-            }
-        }
-    }
-
-
-    private interface ResultSetHandler<K>
-    {
-        K handle(ResultSet rs) throws SQLException;
-    }
-
-
-    public static class SqlSelector extends BaseSelector
-    {
-        private final DbScope _scope;
-        private final SQLFragment _sql;
-
-        // Execute select SQL against a schema
-        public SqlSelector(DbSchema schema, SQLFragment sql)
-        {
-            this(schema.getScope(), sql);
-        }
-
-        // Execute select SQL against a scope
-        public SqlSelector(DbScope scope, SQLFragment sql)
-        {
-            _scope = scope;
-            _sql = sql;
-        }
-
-        // Execute select SQL against a scope
-        public SqlSelector(DbScope scope, String sql)
-        {
-            _scope = scope;
-            _sql = new SQLFragment(sql);
-        }
-
-        @Override
-        public Connection getConnection() throws SQLException
-        {
-            return _scope.getConnection();
-        }
-
-        @Override
-        public DbScope getScope()
-        {
-            return _scope;
-        }
-
-        @Override
-        public SQLFragment getSql()
-        {
-            return _sql;
-        }
-    }
-
-
-    // TODO: NYI
-    public static class TableSelector
-    {
-        private final TableInfo _table;
-        private final Collection<ColumnInfo> _columns;
-
-        // Select specified columns from a table
-        public TableSelector(TableInfo table, Collection<ColumnInfo> columns)
-        {
-            _table = table;
-            _columns = columns;
-        }
-
-        // Select all columns from a table
-        public TableSelector(TableInfo table)
-        {
-            this(table, Table.ALL_COLUMNS);
-        }
-
-        // Select specified columns from a table
-        public TableSelector(TableInfo table, Set<String> columnNames)
-        {
-            this(table, columnInfosList(table, columnNames));
-        }
-
-        // Select a single column -- not sure this is useful
-        public TableSelector(ColumnInfo column)
-        {
-            this(column.getParentTable(), PageFlowUtil.set(column));
-        }
-    }
-
-
-    public interface ForEachBlock<K>
-    {
-        void exec(K object) throws SQLException;
     }
 }
