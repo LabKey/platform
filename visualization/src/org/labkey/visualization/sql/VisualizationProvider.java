@@ -32,8 +32,11 @@ import java.util.*;
 */
 public abstract class VisualizationProvider
 {
+    private VisualizationSQLGenerator.ChartType _type;
+
     public abstract List<Pair<VisualizationSourceColumn, VisualizationSourceColumn>>
-    getJoinColumns(VisualizationSourceColumn.Factory factory, VisualizationSourceQuery first, VisualizationSourceQuery second);
+            getJoinColumns(VisualizationSourceColumn.Factory factory, VisualizationSourceQuery first, VisualizationSourceQuery second);
+    public abstract void addExtraSelectColumns(VisualizationSourceColumn.Factory factory, VisualizationSourceQuery query);
 
     protected static enum ColumnMatchType
     {
@@ -177,6 +180,16 @@ public abstract class VisualizationProvider
             }
         }
         return matches;
+    }
+
+    public void configure(VisualizationSQLGenerator.ChartType type)
+    {
+        _type = type;
+    }
+
+    public VisualizationSQLGenerator.ChartType getType()
+    {
+        return _type;
     }
 
     protected Map<ColumnInfo, QueryView> getMatchingColumns(ViewContext context, ColumnMatchType matchType, String queryName)

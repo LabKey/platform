@@ -41,6 +41,18 @@ public class StudyVisualizationProvider extends VisualizationProvider
     }
 
     @Override
+    public void addExtraSelectColumns(VisualizationSourceColumn.Factory factory, VisualizationSourceQuery query)
+    {
+        if (getType() == VisualizationSQLGenerator.ChartType.TIME_VISITBASED)
+        {
+            // add the visit sequencenum, label, and display order to the select list
+            query.addSelect(factory.create(query.getSchema(), query.getQueryName(), "ParticipantVisit/sequencenum", true));
+            query.addSelect(factory.create(query.getSchema(), query.getQueryName(), "ParticipantVisit/Visit/Label", true));
+            query.addSelect(factory.create(query.getSchema(), query.getQueryName(), "ParticipantVisit/Visit/DisplayOrder", true));
+        }
+    }
+
+    @Override
     public List<Pair<VisualizationSourceColumn, VisualizationSourceColumn>> getJoinColumns(VisualizationSourceColumn.Factory factory, VisualizationSourceQuery first, VisualizationSourceQuery second)
     {
         if (!first.getContainer().equals(second.getContainer()))
@@ -62,8 +74,18 @@ public class StudyVisualizationProvider extends VisualizationProvider
         if (firstType != DataSet.KeyType.SUBJECT && secondType != DataSet.KeyType.SUBJECT)
         {
             // for non-demographic datasets, join on subject/visit, allowing null results for this column so as to follow the lead of the primary measure column for this query:
-            VisualizationSourceColumn firstSequenceCol = factory.create(first.getSchema(), first.getQueryName(), "ParticipantVisit/VisitDate", true);
-            VisualizationSourceColumn secondSequenceCol = factory.create(second.getSchema(), second.getQueryName(), "ParticipantVisit/VisitDate", true);
+            VisualizationSourceColumn firstSequenceCol;
+            VisualizationSourceColumn secondSequenceCol;
+            if (getType() == VisualizationSQLGenerator.ChartType.TIME_VISITBASED)
+            {
+                firstSequenceCol = factory.create(first.getSchema(), first.getQueryName(), "ParticipantVisit/sequencenum", true);
+                secondSequenceCol = factory.create(second.getSchema(), second.getQueryName(), "ParticipantVisit/sequencenum", true);
+            }
+            else
+            {
+                firstSequenceCol = factory.create(first.getSchema(), first.getQueryName(), "ParticipantVisit/VisitDate", true);
+                secondSequenceCol = factory.create(second.getSchema(), second.getQueryName(), "ParticipantVisit/VisitDate", true);
+            }
             joinCols.add(new Pair<VisualizationSourceColumn, VisualizationSourceColumn>(firstSequenceCol, secondSequenceCol));
         }
 

@@ -3,6 +3,7 @@ package org.labkey.visualization.sql;
 import org.json.JSONArray;
 import org.labkey.api.action.CustomApiForm;
 import org.labkey.api.action.HasViewContext;
+import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.query.DefaultSchema;
@@ -65,6 +66,40 @@ public class VisualizationSQLGenerator implements CustomApiForm, HasViewContext
         return _viewContext;
     }
 
+    public static enum ChartType
+    {
+        TIME_DATEBASED,
+        TIME_VISITBASED
+    }
+
+
+    private Map<String, VisualizationProvider> _providers = new CaseInsensitiveHashMap<VisualizationProvider>();
+
+    public VisualizationProvider ensureVisualizationProvider(String schema, ChartType type)
+    {
+        VisualizationProvider provider = _providers.get(schema);
+        if (provider == null)
+        {
+            provider = VisualizationController.createVisualizationProvider(schema);
+            provider.configure(type);
+            _providers.put(schema, provider);
+        }
+        else
+        {
+            if (type != provider.getType())
+                throw new IllegalArgumentException("Cannot generate SQL for two chart types with a single call.  Chart type was " + provider.getType() + ", but is now requested as " + type);
+        }
+        return provider;
+    }
+
+    public VisualizationProvider getVisualizationProvider(String schema)
+    {
+        VisualizationProvider provider = _providers.get(schema);
+        if (provider == null)
+            throw new IllegalStateException("No provider configured for schema " + schema);
+        return provider;
+    }
+
     @Override
     public void bindProperties(Map<String, Object> properties)
     {
@@ -74,47 +109,71 @@ public class VisualizationSQLGenerator implements CustomApiForm, HasViewContext
             VisualizationSourceQuery previous = null;
             for (Map<String, Object> measureInfo : ((JSONArray) measuresProp).toJSONObjectArray())
             {
-                Map<String, Object> axisInfo = (Map<String, Object>) measureInfo.get("axis");
                 Map<String, Object> measureProperties = (Map<String, Object>) measureInfo.get("measure");
                 Map<String, Object> dimensionProperties = (Map<String, Object>) measureInfo.get("dimension");
 
                 VisualizationSourceQuery query;
-                VisualizationSourceColumn col;
+                VisualizationSourceColumn measureCol;
                 if (dimensionProperties != null && !dimensionProperties.isEmpty())
                 {
                     // this column is the value column of a pivot, so we assume that it's an aggregate
-                    col = new VisualizationAggregateColumn(getViewContext(), measureProperties);
-                    query = ensureSourceQuery(_viewContext.getContainer(), col, previous);
-                    query.addAggregate((VisualizationAggregateColumn) col);
+                    measureCol = new VisualizationAggregateColumn(getViewContext(), measureProperties);
+                    query = ensureSourceQuery(_viewContext.getContainer(), measureCol, previous);
+                    query.addAggregate((VisualizationAggregateColumn) measureCol);
                     VisualizationSourceColumn pivot = _columnFactory.create(getViewContext(), dimensionProperties);
                     query.setPivot(pivot);
                 }
                 else
                 {
-                    col = _columnFactory.create(getViewContext(), measureProperties);
-                    query = ensureSourceQuery(_viewContext.getContainer(), col, previous);
-                    query.addSelect(col);
+                    measureCol = _columnFactory.create(getViewContext(), measureProperties);
+                    query = ensureSourceQuery(_viewContext.getContainer(), measureCol, previous);
+                    query.addSelect(measureCol);
                 }
 
-                Object timeAxis = axisInfo.get("timeAxis");
-                if (timeAxis instanceof String && Boolean.parseBoolean((String) timeAxis))
+                Object timeAxis = measureInfo.get("time");
+                ChartType type = null;
+                if (timeAxis instanceof String)
                 {
-                    Map<String, Object> dateOptions = (Map<String, Object>) measureInfo.get("dateOptions");
-                    Map<String, Object> zeroDateProperties = (Map<String, Object>) dateOptions.get("zeroDateCol");
-                    if (zeroDateProperties != null && !zeroDateProperties.isEmpty())
-                    {
-                        VisualizationSourceColumn zeroDateMeasure = _columnFactory.create(getViewContext(), zeroDateProperties);
-                        zeroDateMeasure.setAllowNullResults(false);
-                        ensureSourceQuery(_viewContext.getContainer(), zeroDateMeasure, query).addSelect(zeroDateMeasure);
-                        String interval = (String) dateOptions.get("interval");
-                        if (interval != null)
-                        {
-                            VisualizationIntervalColumn newInterval = new VisualizationIntervalColumn(zeroDateMeasure, col, interval);
-                            if (!_intervals.containsKey(newInterval.getFullAlias()))
-                                _intervals.put(newInterval.getFullAlias(), newInterval);
-                        }
-                    }
+                    if ("date".equalsIgnoreCase((String) timeAxis))
+                        type = ChartType.TIME_DATEBASED;
+                    else if ("visit".equalsIgnoreCase((String) timeAxis))
+                        type = ChartType.TIME_VISITBASED;
+                    else
+                        throw new IllegalArgumentException("Unknown time value: " + timeAxis);
                 }
+                else
+                    throw new IllegalStateException("Only time charts are currently supported: expected 'time' property on each measure.");
+
+                switch (type)
+                {
+                    case TIME_DATEBASED:
+                        Map<String, Object> dateOptions = (Map<String, Object>) measureInfo.get("dateOptions");
+                        Map<String, Object> dateProperties = (Map<String, Object>) dateOptions.get("dateCol");
+                        Map<String, Object> zeroDateProperties = (Map<String, Object>) dateOptions.get("zeroDateCol");
+                        if (zeroDateProperties != null && !zeroDateProperties.isEmpty())
+                        {
+                            VisualizationSourceColumn dateCol = _columnFactory.create(getViewContext(), dateProperties);
+                            dateCol.setAllowNullResults(measureCol.isAllowNullResults());
+                            ensureSourceQuery(_viewContext.getContainer(), dateCol, query).addSelect(dateCol);
+                            VisualizationSourceColumn zeroDateCol = _columnFactory.create(getViewContext(), zeroDateProperties);
+                            zeroDateCol.setAllowNullResults(false);
+                            ensureSourceQuery(_viewContext.getContainer(), zeroDateCol, query).addSelect(zeroDateCol);
+                            String interval = (String) dateOptions.get("interval");
+                            if (interval != null)
+                            {
+                                VisualizationIntervalColumn newInterval = new VisualizationIntervalColumn(zeroDateCol, dateCol, interval);
+                                if (!_intervals.containsKey(newInterval.getFullAlias()))
+                                    _intervals.put(newInterval.getFullAlias(), newInterval);
+                            }
+                        }
+                        break;
+                    case TIME_VISITBASED:
+                        // No special handling needed for visit-based charts
+                        break;
+                }
+
+                VisualizationProvider provider = ensureVisualizationProvider(query.getSchemaName(), type);
+                provider.addExtraSelectColumns(_columnFactory, query);
                 previous = query;
             }
         }
@@ -160,7 +219,7 @@ public class VisualizationSQLGenerator implements CustomApiForm, HasViewContext
                     throw new IllegalArgumentException("Cross-schema joins are not yet supported.  Attempt to join " +
                             query.getDisplayName() + " to " + joinTarget.getDisplayName());
                 }
-                VisualizationProvider provider = VisualizationController.getVisualizationProviders().get(query.getSchemaName());
+                VisualizationProvider provider = getVisualizationProvider(query.getSchemaName());
                 if (provider == null)
                     throw new IllegalArgumentException("No visualization provider registered for schema \"" + query.getSchemaName() + "\".");
                 List<Pair<VisualizationSourceColumn, VisualizationSourceColumn>> joinConditions = new ArrayList<Pair<VisualizationSourceColumn, VisualizationSourceColumn>>();

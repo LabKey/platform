@@ -58,6 +58,8 @@ LABKEY.vis.ChartEditorXAxisPanel = Ext.extend(Ext.FormPanel, {
                         this.time = "date"; //This will have to be changed to take into account the new data configuration.
                         this.zeroDateCombo.enable();
                         this.intervalCombo.enable();
+
+                        this.fireEvent('chartDefinitionChanged', true);
                     }
                 }
             }
@@ -75,6 +77,8 @@ LABKEY.vis.ChartEditorXAxisPanel = Ext.extend(Ext.FormPanel, {
                         this.time = "visit";
                         this.zeroDateCombo.disable();
                         this.intervalCombo.disable();
+
+                        this.fireEvent('chartDefinitionChanged', true);
                     }
                 }
             }
