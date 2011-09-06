@@ -37,7 +37,6 @@ CREATE TABLE core.Logins
 )
 GO
 
-
 -- Principals is used for managing security related information
 -- It is not used for validating login, that requires an 'external'
 -- process, either using SMB, LDAP, JDBC etc (see Logins table)
@@ -57,7 +56,6 @@ CREATE TABLE core.Principals
 )
 GO
 
-
 -- maps users to groups
 CREATE TABLE core.Members
 (
@@ -67,7 +65,6 @@ CREATE TABLE core.Members
     CONSTRAINT PK_Members PRIMARY KEY (UserId, GroupId)
 )
 GO
-
 
 CREATE TABLE core.UsersData
 (
@@ -97,7 +94,6 @@ CREATE TABLE core.UsersData
 )
 GO
 
-
 CREATE TABLE core.Containers
 (
     _ts TIMESTAMP,
@@ -115,7 +111,6 @@ CREATE TABLE core.Containers
 )
 GO
 
-
 -- table for all modules
 CREATE TABLE core.Modules
 (
@@ -127,7 +122,6 @@ CREATE TABLE core.Modules
     CONSTRAINT PK_Modules PRIMARY KEY (Name)
 )
 GO
-
 
 -- keep track of sql scripts that have been run in each module
 CREATE TABLE core.SqlScripts
@@ -145,7 +139,6 @@ CREATE TABLE core.SqlScripts
     CONSTRAINT PK_SqlScripts PRIMARY KEY (ModuleName, FileName)
 )
 GO
-
 
 -- generic table for all attached docs
 CREATE TABLE core.Documents
@@ -411,6 +404,7 @@ CREATE TABLE core.RoleAssignments
     CONSTRAINT PK_RoleAssignments PRIMARY KEY CLUSTERED (ResourceId,UserId,Role),
     CONSTRAINT FK_RA_UP FOREIGN KEY(UserId) REFERENCES core.Principals(UserId)
 );
+GO
 
 CREATE TABLE core.MvIndicators
 (
@@ -435,6 +429,7 @@ GO
 
 -- create Policies and RoleAssignments tables
 EXEC core.fn_dropifexists 'RoleAssignments', 'core', 'TABLE', null;
+GO
 
 CREATE TABLE core.Policies
 (
@@ -445,6 +440,7 @@ CREATE TABLE core.Policies
 
     CONSTRAINT PK_Policies PRIMARY KEY(ResourceId)
 );
+GO
 
 CREATE TABLE core.RoleAssignments
 (
@@ -456,3 +452,4 @@ CREATE TABLE core.RoleAssignments
     CONSTRAINT FK_RA_P FOREIGN KEY(ResourceId) REFERENCES core.Policies(ResourceId),
     CONSTRAINT FK_RA_UP FOREIGN KEY(UserId) REFERENCES core.Principals(UserId)
 );
+GO

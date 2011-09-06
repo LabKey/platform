@@ -23,6 +23,7 @@ CREATE DOMAIN public.ENTITYID AS VARCHAR(36);
 CREATE DOMAIN public.USERID AS INT;
 
 CREATE SCHEMA core;
+CREATE SCHEMA temp;
 
 -- for JDBC Login support, validates email/password,
 -- UserId is stored in the Principals table
@@ -55,7 +56,6 @@ CREATE TABLE core.Principals
     CONSTRAINT UQ_Principals_Container_Name_OwnerId UNIQUE (Container, Name, OwnerId)
 );
 
-
 SELECT SETVAL('core.Principals_UserId_Seq', 1000);
 
 -- maps users to groups (issue: groups containing groups?)
@@ -66,7 +66,6 @@ CREATE TABLE core.Members
 
     CONSTRAINT PK_Members PRIMARY KEY (UserId, GroupId)
 );
-
 
 CREATE TABLE core.UsersData
 (
@@ -95,7 +94,6 @@ CREATE TABLE core.UsersData
     CONSTRAINT UQ_DisplayName UNIQUE (DisplayName)
 );
 
-
 CREATE TABLE core.Containers
 (
     _ts TIMESTAMP DEFAULT now(),
@@ -112,7 +110,6 @@ CREATE TABLE core.Containers
     CONSTRAINT FK_Containers_Containers FOREIGN KEY (Parent) REFERENCES core.Containers(EntityId)
 );
 
-
 -- table for all modules
 CREATE TABLE core.Modules
 (
@@ -123,7 +120,6 @@ CREATE TABLE core.Modules
 
     CONSTRAINT PK_Modules PRIMARY KEY (Name)
 );
-
 
 -- keep track of sql scripts that have been run in each module
 CREATE TABLE core.SqlScripts
@@ -180,8 +176,6 @@ CREATE TABLE core.UserHistory
 
 /* core-1.40-1.50.sql */
 
-CREATE SCHEMA temp;
-
 CREATE TABLE core.Report
 (
     RowId SERIAL,
@@ -201,6 +195,7 @@ CREATE TABLE core.Report
 
 CREATE INDEX IX_Containers_Parent_Entity ON core.Containers(Parent, EntityId);
 ALTER TABLE core.Containers ADD CONSTRAINT UQ_Containers_RowId UNIQUE (RowId);
+
 CREATE INDEX IX_Documents_Container ON core.Documents(Container);
 CREATE INDEX IX_Documents_Parent ON core.Documents(Parent);
 
@@ -320,6 +315,7 @@ $$ LANGUAGE plpgsql;
 
 /* Expand DocumentType to handle new longer Office document mime-types */
 ALTER TABLE core.Documents ALTER COLUMN DocumentType TYPE VARCHAR(500);
+
 ALTER TABLE core.Report ADD COLUMN Flags INT NOT NULL DEFAULT 0;
 
 -- Add Active column to Principals table
@@ -404,3 +400,4 @@ CREATE TABLE core.RoleAssignments
     CONSTRAINT FK_RA_P FOREIGN KEY(ResourceId) REFERENCES core.Policies(ResourceId),
     CONSTRAINT FK_RA_UP FOREIGN KEY(UserId) REFERENCES core.Principals(UserId)
 );
+
