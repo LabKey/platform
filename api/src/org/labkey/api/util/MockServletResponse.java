@@ -219,7 +219,7 @@ class MockServletResponse implements HttpServletResponse
         resetBuffer();
         status = 0;
         message = null;
-        headers.clear();
+//        headers.clear();
     }
 
     @Override
