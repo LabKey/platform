@@ -20,6 +20,7 @@ import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.collections.CaseInsensitiveHashSet;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.ContainerFilter;
+import org.labkey.api.data.ContainerForeignKey;
 import org.labkey.api.data.DataColumn;
 import org.labkey.api.data.DisplayColumn;
 import org.labkey.api.data.DisplayColumnFactory;
@@ -51,6 +52,7 @@ import org.labkey.api.query.QueryUpdateService;
 import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.DeletePermission;
 import org.labkey.api.security.permissions.Permission;
+import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.security.permissions.UpdatePermission;
 
 import java.sql.Connection;
@@ -230,6 +232,17 @@ public class AssayResultTable extends FilteredTable implements UpdateableTableIn
             }
         }
 
+        ColumnInfo folderCol = getColumn("Folder");
+        if (folderCol == null)
+        {
+            // Insert a folder/container column so that we can build up the right URL for links to this row of data 
+            SQLFragment folderSQL = new SQLFragment("(SELECT Container FROM exp.Data d WHERE RowId = DataId)");
+            folderCol = new ExprColumn(this, "Folder", folderSQL, JdbcType.VARCHAR);
+            folderCol.setHidden(true);
+            folderCol.setFk(new ContainerForeignKey());
+            addColumn(folderCol);
+        }
+
         setDefaultVisibleColumns(visibleColumns);
     }
 
@@ -366,7 +379,7 @@ public class AssayResultTable extends FilteredTable implements UpdateableTableIn
     @Override
     public boolean hasPermission(User user, Class<? extends Permission> perm)
     {
-        return (DeletePermission.class.isAssignableFrom(perm) || UpdatePermission.class.isAssignableFrom(perm)) &&
+        return (DeletePermission.class.isAssignableFrom(perm) || UpdatePermission.class.isAssignableFrom(perm) || ReadPermission.class.isAssignableFrom(perm)) &&
                 _provider.isEditableResults(_protocol) &&
                 _schema.getContainer().hasPermission(user, perm);
     }

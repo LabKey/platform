@@ -1932,6 +1932,13 @@ public class DataRegion extends AbstractDataRegion
             return;
         }
 
+        // Check if we have any value to update
+        if (action == MODE_UPDATE && valueMap == null)
+        {
+            out.write("Could not find row in current project or folder.");
+            return;
+        }
+
         ButtonBar buttonBar;
 
         if (action == MODE_INSERT)

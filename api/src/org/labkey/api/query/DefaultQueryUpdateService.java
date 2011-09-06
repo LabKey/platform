@@ -15,6 +15,7 @@
  */
 package org.labkey.api.query;
 
+import org.apache.commons.beanutils.ConversionException;
 import org.apache.commons.beanutils.ConvertUtils;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.data.*;
@@ -392,7 +393,17 @@ public class DefaultQueryUpdateService extends AbstractQueryUpdateService
         for(int idx = 0; idx < pks.size(); ++idx)
         {
             ColumnInfo pk = pks.get(idx);
-            pkVals[idx] = map.get(pk.getName());
+            Object pkValue = map.get(pk.getName());
+            // Check the type and coerce if needed
+            if (pkValue != null && !pk.getJavaObjectClass().isInstance(pkValue))
+            {
+                try
+                {
+                    pkValue = ConvertUtils.convert(pkValue.toString(), pk.getJavaObjectClass());
+                }
+                catch (ConversionException ignored) { /* Maybe the database can do the conversion */ }
+            }
+            pkVals[idx] = pkValue;
             if(null == pkVals[idx])
                 throw new InvalidKeyException("Value for key field '" + pk.getName() + "' was null or not supplied!", map);
         }

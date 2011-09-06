@@ -700,8 +700,12 @@ public class AssayDesignerMainPanel extends VerticalPanel implements Saveable<GW
             _closeHandlerManager.removeHandler();
             _closeHandlerManager = null;
         }
-        String loc = PropertyUtil.getContextPath() + "/Project" + PropertyUtil.getContainerPath() + "/begin.view";
-        WindowUtil.setLocation(loc);
+        String url = _returnURL;
+        if (url == null)
+        {
+            url = PropertyUtil.getContextPath() + "/Project" + PropertyUtil.getContainerPath() + "/begin.view";
+        }
+        WindowUtil.setLocation(url);
     }
 
     public void finish()
