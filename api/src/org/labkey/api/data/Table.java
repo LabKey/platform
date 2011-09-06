@@ -488,6 +488,7 @@ public class Table
      * return a result from a one row one column resultset or null.
      * K should be a string or number type.
      */
+    // TODO: why is there a sort parameter here?
     public static <K> K executeSingleton(TableInfo table, String column, Filter filter, Sort sort, Class<K> c)
     {
         ColumnInfo col = table.getColumn(column);
@@ -518,27 +519,7 @@ public class Table
     // does not distinguish between not found, and set NULL
     public static <K> K executeSingleton(DbSchema schema, String sql, Object[] parameters, Class<K> c) throws SQLException
     {
-        Connection conn = null;
-        ResultSet rs = null;
-
-        try
-        {
-            conn = schema.getScope().getConnection();
-            rs = _executeQuery(conn, sql, parameters);
-            if (!rs.next())
-                return null;
-
-            return Getter.getByClass(rs, c);
-        }
-        catch(SQLException e)
-        {
-            _doCatch(sql, parameters, conn, e);
-            throw e;
-        }
-        finally
-        {
-            _doFinally(rs, null, conn, schema.getScope());
-        }
+        return new LegacySqlSelector(schema, fragment(sql, parameters)).getObject(c);
     }
 
 
@@ -681,48 +662,36 @@ public class Table
     }
     
     /** return a result from a one column resultset. K should be a string or number type */
-    public static <K> K[] executeArray(DbSchema schema, SQLFragment sql, Class<K> c)
-            throws SQLException
+    public static <K> K[] executeArray(DbSchema schema, SQLFragment sql, Class<K> c) throws SQLException
     {
-        return executeArray(schema, sql.getSQL(), sql.getParams().toArray(), c);
+        return new LegacySqlSelector(schema, sql).getArray(c);
     }
+
+    // TODO: Matt: Table layer allows parameters == null, but SQLFragment doesn't... change SQLFragment?  Or change Table callers?
+    private static SQLFragment fragment(String sql, Object[] parameters)
+    {
+        return new SQLFragment(sql, null == parameters ? new Object[0] : parameters);
+    }
+
 
     /** return a result from a one column resultset. K should be a string or number type */
     public static <K> K[] executeArray(DbSchema schema, String sql, Object[] parameters, Class<K> c) throws SQLException
     {
-        return new SqlSelector(schema, new SQLFragment(sql, null == parameters ? new Object[0] : parameters)).getArray(c);
+        return new LegacySqlSelector(schema, fragment(sql, parameters)).getArray(c);
     }
 
 
     /**
-     * This is a shortcut method which can be used for TWO column ResultSets
+     * This is a shortcut method that can be used for two-column ResultSets
      * The first column is key, the second column is the value
      */
-    public static Map executeValueMap(DbSchema schema, String sql, Object[] parameters, Map<Object, Object> m)
+    public static Map executeValueMap(DbSchema schema, String sql, Object[] parameters, @Nullable Map<Object, Object> m)
             throws SQLException
     {
-        Connection conn = null;
-        ResultSet rs = null;
-
-        try
-        {
-            conn = schema.getScope().getConnection();
-            rs = _executeQuery(conn, sql, parameters);
-            if (null == m)
-                m = new HashMap<Object, Object>();
-            while (rs.next())
-                m.put(rs.getObject(1), rs.getObject(2));
-            return m;
-        }
-        catch(SQLException e)
-        {
-            _doCatch(sql, parameters, conn, e);
-            throw(e);
-        }
-        finally
-        {
-            _doFinally(rs, null, conn, schema.getScope());
-        }
+        if (null == m)
+            return new LegacySqlSelector(schema, fragment(sql, parameters)).getValueMap();
+        else
+            return new LegacySqlSelector(schema, fragment(sql, parameters)).fillValueMap(m);
     }
 
 
@@ -1583,12 +1552,12 @@ public class Table
 
     private static TableResultSet cacheResultSet(SqlDialect dialect, ResultSet rs, int rowCount, @Nullable AsyncQueryRequest asyncRequest) throws SQLException
     {
-        CachedResultSet crsi = new CachedResultSet(rs, dialect.shouldCacheMetaData(), rowCount);
+        CachedResultSet crs = new CachedResultSet(rs, dialect.shouldCacheMetaData(), rowCount);
 
         if (null != asyncRequest && AppProps.getInstance().isDevMode())
-            crsi.setStackTrace(asyncRequest.getCreationStackTrace());
+            crs.setStackTrace(asyncRequest.getCreationStackTrace());
 
-        return crsi;
+        return crs;
     }
 
 
@@ -2757,15 +2726,22 @@ public class Table
     }
 
 
-    public static abstract class Selector
+    public static abstract class BaseSelector implements Selector
     {
         private Connection _conn = null;
         private SQLFragment _sql = null;
+        private ExceptionFramework _exceptionFramework = ExceptionFramework.Spring;
 
         abstract Connection getConnection() throws SQLException;
-        abstract DbScope getScope() throws SQLException;
+        abstract DbScope getScope();
         abstract SQLFragment getSql();
 
+        protected void setExceptionFramework(ExceptionFramework exceptionFramework)
+        {
+            _exceptionFramework = exceptionFramework;
+        }
+
+        @Override
         public ResultSet getResultSet() throws SQLException
         {
             _sql = getSql();
@@ -2773,111 +2749,116 @@ public class Table
             return _executeQuery(_conn, _sql.getSQL(), _sql.getParamsArray());
         }
 
-        private <K> ArrayList<K> getArrayList(Class<K> clazz) throws SQLException
+        private <K> ArrayList<K> getArrayList(final Class<K> clazz)
         {
             final ArrayList<K> list;
+            final Getter getter = Getter.forClass(clazz);
 
-            if (isSimpleObject(clazz))
+            // This is a simple object (Number, String, Date, etc.)
+            if (null != getter)
             {
                 list = new ArrayList<K>();
-
                 forEach(new ForEachBlock<ResultSet>() {
                     @Override
                     public void exec(ResultSet rs) throws SQLException
                     {
-                        list.add((K)rs.getObject(1));
+                        //noinspection unchecked
+                        list.add((K)getter.getObject(rs));
                     }
                 });
             }
             else
             {
-                ObjectFactory<K> factory = BeanObjectFactory.Registry.getFactory(clazz);
-                ResultSet rs = null;
+                list = handleResultSet(new ResultSetHandler<ArrayList<K>>() {
+                    @Override
+                    public ArrayList<K> handle(ResultSet rs) throws SQLException
+                    {
+                        if (Map.class.isAssignableFrom(clazz))
+                        {
+                            CachedResultSet copy = (CachedResultSet)cacheResultSet(getScope().getSqlDialect(), rs, ALL_ROWS, null);
+                            //noinspection unchecked
+                            K[] arrayListMaps = (K[])(copy._arrayListMaps == null ? new ArrayListMap[0] : copy._arrayListMaps);
+                            copy.close();
 
-                try
-                {
-                    rs = getResultSet();
-                    list = factory.handleArrayList(rs);
-                }
-                catch (SQLException e)
-                {
-                    SQLFragment sql = getSql();
-                    _doCatch(sql.getSQL(), sql.getParamsArray(), _conn, e);
-                    throw(e);
-                }
-                finally
-                {
-                    _doFinally(rs, null, _conn, getScope());
-                }
+                            // TODO: Not very efficient...
+                            return new ArrayList<K>(Arrays.asList(arrayListMaps));
+                        }
+                        else
+                        {
+                            ObjectFactory<K> factory = ObjectFactory.Registry.getFactory(clazz);
+
+                            if (null == factory)
+                                throw new IllegalArgumentException("Cound not find object factory for " + clazz.getSimpleName() + ".");
+
+                            return factory.handleArrayList(rs);
+                        }
+                    }
+                });
             }
 
             return list;
         }
 
-        public <K> K[] getArray(Class<K> clazz) throws SQLException
+        @Override
+        public <K> K[] getArray(Class<K> clazz)
         {
             ArrayList<K> list = getArrayList(clazz);
             return list.toArray((K[]) Array.newInstance(clazz, list.size()));
         }
 
-        public <K> Collection<K> getCollection(Class<K> clazz) throws SQLException
+        @Override
+        public <K> Collection<K> getCollection(Class<K> clazz)
         {
             return getArrayList(clazz);
         }
 
-        public <K> K getObject(Class<K> clazz)
+        @Override
+        public <K> K getObject(Class<K> clazz)  // TODO: Or getSingleton?  Or getSingleObject?
         {
-            return null;
+            List<K> list = getArrayList(clazz);
+
+            if (list.isEmpty())
+                return null;
+            else
+                return list.get(0);
+
+            // TODO: Throw if size() > 1?
         }
 
-        public void forEach(ForEachBlock<ResultSet> block) throws SQLException
+        @Override
+        public void forEach(final ForEachBlock<ResultSet> block)
         {
-            ResultSet rs = null;
+            handleResultSet((new ResultSetHandler<Object>() {
+                @Override
+                public Object handle(ResultSet rs) throws SQLException
+                {
+                    while (rs.next())
+                        block.exec(rs);
 
-            try
-            {
-                rs = getResultSet();
-
-                while (rs.next())
-                    block.exec(rs);
-            }
-            catch (SQLException e)
-            {
-                SQLFragment sql = getSql();
-                _doCatch(sql.getSQL(), sql.getParamsArray(), _conn, e);
-                throw(e);
-            }
-            finally
-            {
-                _doFinally(rs, null, _conn, getScope());
-            }
+                    return null;
+                }
+            }));
         }
 
-        public void forEachMap(final ForEachBlock<Map<String, Object>> block) throws SQLException
+        @Override
+        public void forEachMap(final ForEachBlock<Map<String, Object>> block)
         {
-            ResultSet rs = null;
+            handleResultSet(new ResultSetHandler<Object>() {
+                @Override
+                public Object handle(ResultSet rs) throws SQLException
+                {
+                    ResultSetIterator iter = new ResultSetIterator(rs);
 
-            try
-            {
-                rs = getResultSet();
-                ResultSetIterator iter = new ResultSetIterator(rs);
+                    while (iter.hasNext())
+                        block.exec(iter.next());
 
-                while (iter.hasNext())
-                    block.exec(iter.next());
-            }
-            catch(SQLException e)
-            {
-                SQLFragment sql = getSql();
-                _doCatch(sql.getSQL(), sql.getParamsArray(), _conn, e);
-                throw(e);
-            }
-            finally
-            {
-                _doFinally(rs, null, _conn, getScope());
-            }
+                    return null;
+                }
+            });
         }
 
-        public <K> void forEach(final ForEachBlock<K> block, Class<K> clazz) throws SQLException
+        @Override
+        public <K> void forEach(final ForEachBlock<K> block, Class<K> clazz)
         {
             final ObjectFactory<K> factory = ObjectFactory.Registry.getFactory(clazz);
 
@@ -2892,14 +2873,58 @@ public class Table
             forEachMap(mapBlock);
         }
 
-        private static boolean isSimpleObject(Class clazz)
+        @Override
+        public Map<Object, Object> fillValueMap(final Map<Object, Object> map)
         {
-            return String.class.isAssignableFrom(clazz) || Number.class.isAssignableFrom(clazz) || Date.class.isAssignableFrom(clazz);
+            forEach(new ForEachBlock<ResultSet>()
+            {
+                @Override
+                public void exec(ResultSet rs) throws SQLException
+                {
+                    map.put(rs.getObject(1), rs.getObject(2));
+                }
+            });
+
+            return map;
+        }
+
+        @Override
+        public Map<Object, Object> getValueMap()
+        {
+            return fillValueMap(new HashMap<Object, Object>());
+        }
+
+        private <K> K handleResultSet(ResultSetHandler<K> handler)
+        {
+            ResultSet rs = null;
+
+            try
+            {
+                rs = getResultSet();
+                return handler.handle(rs);
+            }
+            catch(SQLException e)
+            {
+                // TODO: Substitute SQL parameters placeholders with values?
+                SQLFragment sql = getSql();
+                _doCatch(sql.getSQL(), sql.getParamsArray(), _conn, e);
+                throw _exceptionFramework.translate(getScope(), "Message", sql.getSQL(), e);
+            }
+            finally
+            {
+                _doFinally(rs, null, _conn, getScope());
+            }
         }
     }
 
 
-    public static class SqlSelector extends Selector
+    private interface ResultSetHandler<K>
+    {
+        K handle(ResultSet rs) throws SQLException;
+    }
+
+
+    public static class SqlSelector extends BaseSelector
     {
         private final DbScope _scope;
         private final SQLFragment _sql;
@@ -2925,25 +2950,26 @@ public class Table
         }
 
         @Override
-        Connection getConnection() throws SQLException
+        public Connection getConnection() throws SQLException
         {
             return _scope.getConnection();
         }
 
         @Override
-        DbScope getScope() throws SQLException
+        public DbScope getScope()
         {
             return _scope;
         }
 
         @Override
-        SQLFragment getSql()
+        public SQLFragment getSql()
         {
             return _sql;
         }
     }
 
 
+    // TODO: NYI
     public static class TableSelector
     {
         private final TableInfo _table;

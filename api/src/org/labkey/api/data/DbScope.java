@@ -25,6 +25,9 @@ import org.labkey.api.data.dialect.SqlDialect;
 import org.labkey.api.data.dialect.SqlDialectManager;
 import org.labkey.api.util.ConfigurationException;
 import org.labkey.api.util.MemTracker;
+import org.springframework.dao.DataAccessException;
+import org.springframework.jdbc.support.SQLErrorCodeSQLExceptionTranslator;
+import org.springframework.jdbc.support.SQLExceptionTranslator;
 
 import javax.servlet.ServletException;
 import javax.sql.DataSource;
@@ -62,8 +65,9 @@ public class DbScope
     private static final Map<String, DbScope> _scopes = new LinkedHashMap<String, DbScope>();
     private static DbScope _labkeyScope = null;
 
-    private String _dsName;
-    private DataSource _dataSource;
+    private final String _dsName;
+    private final DataSource _dataSource;
+    private SQLExceptionTranslator _springExceptionTranslator;
     private SqlDialect _dialect;
     private @Nullable String _databaseName;    // Possibly null, e.g., for SAS datasources
     private String _URL;
@@ -81,6 +85,8 @@ public class DbScope
     // Used only for testing
     protected DbScope()
     {
+        _dsName = null;
+        _dataSource = null;
     }
 
 
@@ -121,6 +127,7 @@ public class DbScope
             _databaseProductVersion = dbmd.getDatabaseProductVersion();
             _driverName = dbmd.getDriverName();
             _driverVersion = dbmd.getDriverVersion();
+            _springExceptionTranslator = new SQLErrorCodeSQLExceptionTranslator(dataSource);
         }
         finally
         {
@@ -164,7 +171,7 @@ public class DbScope
         return _dataSource;
     }
 
-    public String getDatabaseName()
+    public @Nullable String getDatabaseName()
     {
         return _databaseName;
     }
@@ -513,6 +520,12 @@ public class DbScope
      * multiple times. Make sure you have implemented hashCode() and equals() on your task if you want to only run it
      * once per transaction.
      */
+    public DataAccessException translateToSpringException(String message, String sql, SQLException e)
+    {
+        throw _springExceptionTranslator.translate(message, sql, e);
+    }
+
+
     public void addCommitTask(Runnable task)
     {
         Transaction t = _transaction.get();

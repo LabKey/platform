@@ -20,7 +20,12 @@ import org.jetbrains.annotations.Nullable;
 import org.labkey.api.collections.BoundMap;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.collections.CaseInsensitiveHashSet;
-import org.labkey.api.data.*;
+import org.labkey.api.data.ColumnInfo;
+import org.labkey.api.data.Container;
+import org.labkey.api.data.DbSchema;
+import org.labkey.api.data.ForeignKey;
+import org.labkey.api.data.MultiValuedForeignKey;
+import org.labkey.api.data.TableInfo;
 import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.security.permissions.UpdatePermission;
@@ -33,8 +38,16 @@ import org.labkey.api.view.ViewContext;
 import org.springframework.beans.PropertyValues;
 import org.springframework.validation.BindException;
 
-import javax.servlet.ServletException;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.Comparator;
+import java.util.HashSet;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.TreeMap;
 
 
 abstract public class UserSchema extends AbstractSchema
