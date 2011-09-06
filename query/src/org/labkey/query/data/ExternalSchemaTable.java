@@ -20,6 +20,7 @@ import org.labkey.api.data.*;
 import org.labkey.api.query.QueryUpdateService;
 import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.Permission;
+import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.data.xml.TableType;
 import org.labkey.query.ExternalSchema;
 
@@ -50,7 +51,7 @@ public class ExternalSchemaTable extends SimpleUserSchema.SimpleTable
     public boolean hasPermission(User user, Class<? extends Permission> perm)
     {
         List<ColumnInfo> columns = getPkColumns();
-        return (super.hasPermission(user, perm) && getUserSchema().areTablesEditable() && columns.size() > 0);
+        return (perm.isAssignableFrom(ReadPermission.class) || (super.hasPermission(user, perm) && getUserSchema().areTablesEditable() && columns.size() > 0));
     }
 
     public void setContainer(String containerId)

@@ -243,6 +243,7 @@ public class AuditLogImpl implements AuditLogService.I, StartupListener
         catch (SQLException e)
         {
             _log.error("Failed to insert audit log event", e);
+            throw new RuntimeSQLException(e);
         }
         return null;
     }

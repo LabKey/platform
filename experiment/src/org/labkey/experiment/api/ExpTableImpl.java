@@ -28,6 +28,7 @@ import org.labkey.api.query.*;
 import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.DeletePermission;
 import org.labkey.api.security.permissions.Permission;
+import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.view.ActionURL;
 import org.labkey.experiment.api.flag.FlagColumnRenderer;
 import org.labkey.experiment.api.flag.FlagForeignKey;
@@ -50,6 +51,7 @@ abstract public class ExpTableImpl<C extends Enum> extends FilteredTable impleme
         setName(name);
         _schema = schema;
         _allowablePermissions.add(DeletePermission.class);
+        _allowablePermissions.add(ReadPermission.class);
     }
 
     public void addAllowablePermission(Class<? extends Permission> permission)
