@@ -21,11 +21,16 @@ import org.labkey.api.data.ConditionalFormat;
 import org.labkey.api.reader.TabLoader;
 import org.labkey.api.study.DataSet;
 import org.labkey.api.study.Study;
+import org.labkey.api.writer.VirtualFile;
 import org.labkey.study.model.DataSetDefinition;
 import org.springframework.validation.BindException;
 
+import java.io.BufferedReader;
 import java.io.File;
 import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.io.Reader;
 import java.util.*;
 
 /**
@@ -226,9 +231,9 @@ public class SchemaTsvReader implements SchemaReader
         this(study, new TabLoader(tsv, true), labelColumn, typeNameColumn, typeIdColumn, null, errors);
     }
 
-    public SchemaTsvReader(Study study, File tsvFile, String labelColumn, String typeNameColumn, String typeIdColumn, Map<String, DatasetImporter.DatasetImportProperties> extraImportProps, BindException errors) throws IOException
+    public SchemaTsvReader(Study study, VirtualFile root, String tsvFileName, String labelColumn, String typeNameColumn, String typeIdColumn, Map<String, DatasetImporter.DatasetImportProperties> extraImportProps, BindException errors) throws IOException
     {
-        this(study, new TabLoader(tsvFile, true), labelColumn, typeNameColumn, typeIdColumn, extraImportProps, errors);
+        this(study, new TabLoader(new BufferedReader(new InputStreamReader(root.getInputStream(tsvFileName))), true), labelColumn, typeNameColumn, typeIdColumn, extraImportProps, errors);
     }
 
     public List<Map<String, Object>> getImportMaps()

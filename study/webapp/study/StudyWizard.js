@@ -383,6 +383,12 @@ LABKEY.study.CreateStudyWizard = Ext.extend(Ext.util.Observable, {
                     ]
                 });
 
+                function groupSelected(cmp, selection){
+                    var selectedStoreIndex = cmp.getSelectedRecords()[0].get('storeIndex');
+                    this.info.existingRowId = cmp.getSelectedRecords()[0].get('rowId');
+                    this.participantListView.bindStore(participantStores[selectedStoreIndex]);
+                }
+
                 this.participantGroupListView = new Ext.list.ListView({
                     store: participantGroupsStore,
                     emptyText: "No groups to display.",
@@ -400,12 +406,6 @@ LABKEY.study.CreateStudyWizard = Ext.extend(Ext.util.Observable, {
                         scope: this
                     }
                 });
-
-                function groupSelected(cmp, selection){
-                    var selectedStoreIndex = cmp.getSelectedRecords()[0].get('storeIndex');
-                    this.info.existingRowId = cmp.getSelectedRecords()[0].get('rowId');
-                    this.participantListView.bindStore(participantStores[selectedStoreIndex]);
-                }
 
                 var formItems = [
                     this.participantGroupListView,
@@ -506,7 +506,7 @@ LABKEY.study.CreateStudyWizard = Ext.extend(Ext.util.Observable, {
 
         if(this.existingGroupRadio.checked){
             //If we chose an existing group then we just pass the rowid of the group.
-            params.categories = [{rowid: this.info.existingRowId}];
+            params.categories = [{rowId: this.info.existingRowId}];
         } else {
             //If it's a new group we pass the categoryData from the newGroupPanel.
             params.categories = [this.newGroupPanel.getCategoryData()];
@@ -519,15 +519,23 @@ LABKEY.study.CreateStudyWizard = Ext.extend(Ext.util.Observable, {
             params.datasets.push(ds.data.DataSetId);
         }
 
+        this.win.getEl().mask("creating study...", "x-mask-loading");
+
         Ext.Ajax.request({
-            url: LABKEY.ActionURL.buildURL('study', 'createEmphasisStudy'),
+            url: LABKEY.ActionURL.buildURL('study', 'createAncillaryStudy'),
             method : 'POST',
             scope: this,
-            success: function(){
+            success: function(response, opts){
+                var o = eval('var $=' + response.responseText + ';$;');
+
                 this.fireEvent('success');
                 this.win.close();
+
+                if (o.redirect)
+                    window.location = o.redirect;
             },
             failure: function(response, opts){
+                this.win.getEl().unmask();
                 LABKEY.Utils.displayAjaxErrorResponse(response, opts);
                 this.fireEvent('failure');
             },

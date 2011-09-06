@@ -20,6 +20,8 @@ import org.labkey.api.pipeline.*;
 import org.labkey.api.study.StudyImportException;
 import org.labkey.api.study.TimepointType;
 import org.labkey.api.util.FileType;
+import org.labkey.api.writer.FileSystemFile;
+import org.labkey.api.writer.VirtualFile;
 import org.labkey.study.controllers.StudyController;
 import org.labkey.study.model.SecurityType;
 import org.labkey.study.model.StudyImpl;
@@ -125,13 +127,17 @@ public class StudyImportInitialTask extends PipelineJob.Task<StudyImportInitialT
                 StudyManager.getInstance().updateStudy(ctx.getUser(), study);
             }
 
-            new MissingValueImporter().process(ctx);
-            new QcStatesImporter().process(support.getStudy(), ctx);
+            VirtualFile vf = new FileSystemFile(support.getRoot());
 
-            if (!new VisitImporter().process(support.getStudy(), ctx, support.getRoot(), support.getSpringErrors()))
+            new MissingValueImporter().process(support.getStudy(), ctx, vf, support.getSpringErrors());
+            new QcStatesImporter().process(support.getStudy(), ctx, vf, support.getSpringErrors());
+
+            new VisitImporter().process(support.getStudy(), ctx, vf, support.getSpringErrors());
+            if (support.getSpringErrors().hasErrors())
                 throwFirstErrorAsPiplineJobException(support.getSpringErrors());
 
-            if (!new DatasetImporter().process(support.getStudy(), ctx, support.getRoot(), support.getSpringErrors()))
+            new DatasetImporter().process(support.getStudy(), ctx, vf, support.getSpringErrors());
+            if (support.getSpringErrors().hasErrors())
                 throwFirstErrorAsPiplineJobException(support.getSpringErrors());
         }
         catch (Throwable t)

@@ -53,7 +53,7 @@ import java.util.Set;
  * Date: Apr 16, 2009
  * Time: 3:10:37 PM
  */
-class DatasetWriter implements InternalStudyWriter
+public class DatasetWriter implements InternalStudyWriter
 {
     private static final Logger LOG = Logger.getLogger(DatasetWriter.class);
     private static final String DEFAULT_DIRECTORY = "datasets";

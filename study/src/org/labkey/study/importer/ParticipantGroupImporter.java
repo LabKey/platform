@@ -5,6 +5,7 @@ import org.apache.xmlbeans.XmlObject;
 import org.labkey.api.data.DbScope;
 import org.labkey.api.study.InvalidFileException;
 import org.labkey.api.util.XmlBeansUtil;
+import org.labkey.api.writer.VirtualFile;
 import org.labkey.study.StudySchema;
 import org.labkey.study.model.ParticipantCategory;
 import org.labkey.study.model.ParticipantGroupManager;
@@ -13,8 +14,8 @@ import org.labkey.study.writer.ParticipantGroupWriter;
 import org.labkey.study.xml.participantGroups.CategoryType;
 import org.labkey.study.xml.participantGroups.GroupType;
 import org.labkey.study.xml.participantGroups.ParticipantGroupsDocument;
+import org.springframework.validation.BindException;
 
-import java.io.File;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -34,21 +35,20 @@ public class ParticipantGroupImporter implements InternalStudyImporter
     }
 
     @Override
-    public void process(StudyImpl study, ImportContext ctx, File root) throws Exception
+    public void process(StudyImpl study, ImportContext ctx, VirtualFile root, BindException errors) throws Exception
     {
-        File file = new File(root, ParticipantGroupWriter.FILE_NAME);//ctx.getStudyFile(root, root, ParticipantGroupWriter.FILE_NAME);
-
-        if (file.exists())
+        try
         {
-            try
+            XmlObject xml = root.getXmlBean(ParticipantGroupWriter.FILE_NAME);
+            if (xml instanceof ParticipantGroupsDocument)
             {
-                ParticipantGroupsDocument doc = ParticipantGroupsDocument.Factory.parse(file, XmlBeansUtil.getDefaultParseOptions());
-                process(study, ctx, doc);
+                xml.validate(XmlBeansUtil.getDefaultParseOptions());
+                process(study, ctx, xml);
             }
-            catch (XmlException x)
-            {
-                throw new InvalidFileException(root, file, x);
-            }
+        }
+        catch (XmlException x)
+        {
+            throw new InvalidFileException(root.getRelativePath(ParticipantGroupWriter.FILE_NAME), x);
         }
     }
 

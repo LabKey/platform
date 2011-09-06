@@ -15,15 +15,15 @@
  */
 package org.labkey.study.importer;
 
+import org.labkey.api.action.SpringActionController;
 import org.labkey.api.query.ValidationException;
-import org.labkey.api.study.TimepointType;
-import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.study.StudyImportException;
-import org.labkey.study.xml.StudyDocument;
+import org.labkey.api.study.TimepointType;
+import org.labkey.api.writer.VirtualFile;
 import org.labkey.study.model.StudyImpl;
+import org.labkey.study.xml.StudyDocument;
 import org.springframework.validation.BindException;
 
-import java.io.File;
 import java.io.IOException;
 import java.sql.SQLException;
 import java.util.LinkedList;
@@ -34,9 +34,15 @@ import java.util.List;
  * Date: May 17, 2009
  * Time: 8:11:51 AM
  */
-class VisitImporter
+public class VisitImporter implements InternalStudyImporter
 {
-    boolean process(StudyImpl study, ImportContext ctx, File root, BindException errors) throws IOException, SQLException, StudyImportException, ValidationException
+    @Override
+    public String getDescription()
+    {
+        return "Visit Importer";
+    }
+
+    public void process(StudyImpl study, ImportContext ctx, VirtualFile vf, BindException errors) throws IOException, SQLException, StudyImportException, ValidationException
     {
         // Visit map
         StudyDocument.Study.Visits visitsXml = ctx.getStudyXml().getVisits();
@@ -46,25 +52,20 @@ class VisitImporter
             if (study.getTimepointType() == TimepointType.CONTINUOUS)
             {
                 ctx.getLogger().warn("Can't import visits for an continuous date based study.");
-                return true;
+                return;
             }
 
-            File visitMap = ctx.getStudyFile(root, root, visitsXml.getFile());
-            ctx.getLogger().info("Loading visit map from " + StudyImportException.getRelativePath(root, visitMap));
-            String content = PageFlowUtil.getFileContentsAsString(visitMap);
+            String visitMapFile = visitsXml.getFile();
+            ctx.getLogger().info("Loading visit map from " + visitMapFile);
 
             VisitMapImporter importer = new VisitMapImporter();
             List<String> errorMsg = new LinkedList<String>();
 
-            if (!importer.process(ctx.getUser(), study, content, VisitMapImporter.Format.getFormat(visitMap), errorMsg, ctx.getLogger()))
+            if (!importer.process(ctx.getUser(), study, vf, visitMapFile, VisitMapImporter.Format.getFormat(visitMapFile), errorMsg, ctx.getLogger()))
             {
                 for (String error : errorMsg)
                     errors.reject("uploadVisitMap", error);
-
-                return false;
             }
         }
-
-        return true;
     }
 }

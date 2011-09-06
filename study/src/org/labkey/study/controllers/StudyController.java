@@ -38,7 +38,6 @@ import org.labkey.api.action.FormHandlerAction;
 import org.labkey.api.action.FormViewAction;
 import org.labkey.api.action.GWTServiceAction;
 import org.labkey.api.action.HasViewContext;
-import org.labkey.api.action.MutatingApiAction;
 import org.labkey.api.action.NullSafeBindException;
 import org.labkey.api.action.QueryViewAction;
 import org.labkey.api.action.RedirectAction;
@@ -183,7 +182,6 @@ import org.labkey.study.model.CohortManager;
 import org.labkey.study.model.CustomParticipantView;
 import org.labkey.study.model.DataSetDefinition;
 import org.labkey.study.model.DatasetReorderer;
-import org.labkey.study.model.EmphasisStudyDefinition;
 import org.labkey.study.model.Participant;
 import org.labkey.study.model.ParticipantGroupManager;
 import org.labkey.study.model.QCState;
@@ -258,13 +256,15 @@ public class StudyController extends BaseStudyController
 {
     private static final Logger _log = Logger.getLogger(StudyController.class);
 
-    private static final ActionResolver ACTION_RESOLVER = new DefaultActionResolver(StudyController.class);
     private static final String PARTICIPANT_CACHE_PREFIX = "Study_participants/participantCache";
     private static final String EXPAND_CONTAINERS_KEY = StudyController.class.getName() + "/expandedContainers";
 
     private static final String DATASET_DATAREGION_NAME = "Dataset";
     public static final String DATASET_REPORT_ID_PARAMETER_NAME = "Dataset.reportId";
     public static final String DATASET_VIEW_NAME_PARAMETER_NAME = "Dataset.viewName";
+    private static final ActionResolver ACTION_RESOLVER = new DefaultActionResolver(
+            StudyController.class,
+            CreateAncillaryStudyAction.class);
 
     public static class StudyUrlsImpl implements StudyUrls
     {
@@ -6994,25 +6994,5 @@ public class StudyController extends BaseStudyController
     public static class BrowseDataForm
     {
         
-    }
-
-    @RequiresPermissionClass(AdminPermission.class)
-    public class CreateEmphasisStudyAction extends MutatingApiAction<SimpleApiJsonForm>
-    {
-        @Override
-        public ApiResponse execute(SimpleApiJsonForm form, BindException errors) throws Exception
-        {
-            ApiSimpleResponse resp = new ApiSimpleResponse();
-
-            EmphasisStudyDefinition def = EmphasisStudyDefinition.fromJSON(form.getJsonObject());
-
-            resp.put("success", true);
-            return resp;
-        }
-
-        @Override
-        public void validateForm(SimpleApiJsonForm form, Errors errors)
-        {
-        }
     }
 }

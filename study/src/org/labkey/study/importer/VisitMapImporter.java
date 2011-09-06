@@ -24,6 +24,8 @@ import org.labkey.api.security.User;
 import org.labkey.api.study.DataSet;
 import org.labkey.api.study.Study;
 import org.labkey.api.study.TimepointType;
+import org.labkey.api.util.PageFlowUtil;
+import org.labkey.api.writer.VirtualFile;
 import org.labkey.study.StudySchema;
 import org.labkey.study.model.StudyImpl;
 import org.labkey.study.model.StudyManager;
@@ -32,8 +34,8 @@ import org.labkey.study.model.VisitImpl;
 import org.labkey.study.model.VisitMapKey;
 import org.labkey.study.visitmanager.VisitManager;
 
-import java.io.File;
 import java.io.IOException;
+import java.io.InputStream;
 import java.sql.SQLException;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -56,6 +58,18 @@ public class VisitMapImporter
                 return new DataFaxVisitMapReader(contents);
             }
 
+            public VisitMapReader getReader(VirtualFile file, String name) throws IOException
+            {
+                InputStream is = file.getInputStream(name);
+
+                if (is != null)
+                {
+                    String contents = PageFlowUtil.getStreamContentsAsString(is);
+                    return new DataFaxVisitMapReader(contents);
+                }
+                return null;
+            }
+
             public String getExtension()
             {
                 return ".txt";
@@ -67,6 +81,10 @@ public class VisitMapImporter
             {
                 return new XmlVisitMapReader(contents);
             }
+            public VisitMapReader getReader(VirtualFile file, String name) throws VisitMapParseException, IOException
+            {
+                return new XmlVisitMapReader(file.getXmlBean(name));  //To change body of implemented methods use File | Settings | File Templates.
+            }
 
             public String getExtension()
             {
@@ -74,12 +92,11 @@ public class VisitMapImporter
             }};
 
         abstract public VisitMapReader getReader(String contents) throws VisitMapParseException;
+        abstract public VisitMapReader getReader(VirtualFile file, String name) throws VisitMapParseException, IOException;
         abstract public String getExtension();
 
-        static Format getFormat(File visitMapFile)
+        static Format getFormat(String name)
         {
-            String name = visitMapFile.getName();
-
             for (Format format : Format.values())
                 if (name.endsWith(format.getExtension()))
                     return format;
@@ -90,16 +107,49 @@ public class VisitMapImporter
 
     public boolean process(User user, StudyImpl study, String content, Format format, List<String> errors, Logger logger) throws SQLException, IOException, ValidationException
     {
-        if (study.getTimepointType() == TimepointType.CONTINUOUS)
-        {
-            logger.warn("Can't import visits for an continuous date based study.");
-            return true;
-        }
-
         if (content == null)
         {
             errors.add("Visit map is empty");
             return false;
+        }
+
+        try
+        {
+            VisitMapReader reader = format.getReader(content);
+            return _process(user, study, reader, errors, logger);
+        }
+        catch (VisitMapParseException x)
+        {
+            errors.add("Unable to parse the visit map format: " + x.getMessage());
+            return false;
+        }
+    }
+
+    public boolean process(User user, StudyImpl study, VirtualFile file, String name, Format format, List<String> errors, Logger logger) throws SQLException, IOException, ValidationException
+    {
+        if (file == null)
+        {
+            errors.add("Visit map is empty");
+            return false;
+        }
+        try
+        {
+            VisitMapReader reader = format.getReader(file, name);
+            return _process(user, study, reader, errors, logger);
+        }
+        catch (VisitMapParseException x)
+        {
+            errors.add("Unable to parse the visit map format: " + x.getMessage());
+            return false;
+        }
+    }
+
+    private boolean _process(User user, StudyImpl study, VisitMapReader reader, List<String> errors, Logger logger) throws SQLException, IOException, ValidationException
+    {
+        if (study.getTimepointType() == TimepointType.CONTINUOUS)
+        {
+            logger.warn("Can't import visits for an continuous date based study.");
+            return true;
         }
 
         List<VisitMapRecord> records;
@@ -107,7 +157,6 @@ public class VisitMapImporter
 
         try
         {
-            VisitMapReader reader = format.getReader(content);
             records = reader.getVisitMapRecords();
             aliases = reader.getVisitImportAliases();
         }

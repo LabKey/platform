@@ -16,15 +16,16 @@
 package org.labkey.study.importer;
 
 import org.apache.xmlbeans.XmlException;
+import org.apache.xmlbeans.XmlObject;
 import org.labkey.api.collections.RowMapFactory;
 import org.labkey.api.data.ColumnRenderProperties;
 import org.labkey.api.data.ConditionalFormat;
 import org.labkey.api.exp.property.Type;
 import org.labkey.api.study.DataSet;
-import org.labkey.api.study.InvalidFileException;
 import org.labkey.api.study.StudyImportException;
 import org.labkey.api.util.XmlBeansUtil;
 import org.labkey.api.util.XmlValidationException;
+import org.labkey.api.writer.VirtualFile;
 import org.labkey.data.xml.ColumnType;
 import org.labkey.data.xml.TableType;
 import org.labkey.data.xml.TablesDocument;
@@ -32,9 +33,14 @@ import org.labkey.study.importer.DatasetImporter.DatasetImportProperties;
 import org.labkey.study.model.DataSetDefinition;
 import org.labkey.study.model.StudyImpl;
 
-import java.io.File;
 import java.io.IOException;
-import java.util.*;
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.LinkedHashSet;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 
 /**
  * User: adam
@@ -49,24 +55,25 @@ public class SchemaXmlReader implements SchemaReader
     private final List<List<ConditionalFormat>> _formats = new LinkedList<List<ConditionalFormat>>();
     private final Map<Integer, DataSetImportInfo> _datasetInfoMap;
 
-
-    public SchemaXmlReader(StudyImpl study, File root, File metaDataFile, Map<String, DatasetImportProperties> extraImportProps) throws IOException, XmlException, StudyImportException
+    public SchemaXmlReader(StudyImpl study, VirtualFile root, String metaDataFile, Map<String, DatasetImportProperties> extraImportProps) throws IOException, XmlException, StudyImportException
     {
         TablesDocument tablesDoc;
 
         try
         {
-            tablesDoc = TablesDocument.Factory.parse(metaDataFile, XmlBeansUtil.getDefaultParseOptions());
-            XmlBeansUtil.validateXmlDocument(tablesDoc);
+            XmlObject doc = root.getXmlBean(metaDataFile);
+            if (doc instanceof TablesDocument)
+            {
+                XmlBeansUtil.validateXmlDocument(doc);
+                tablesDoc =  (TablesDocument)doc;
+            }
+            else
+                throw new IllegalArgumentException("Could not get an instance of: " + metaDataFile);
         }
         catch (XmlValidationException xve)
         {
             // Note: different constructor than the one below
-            throw new InvalidFileException(root, metaDataFile, xve);
-        }
-        catch (Exception e)
-        {
-            throw new InvalidFileException(root, metaDataFile, e);
+            throw new StudyImportException("Invalid TablesDocument ", xve);
         }
 
         TablesDocument.Tables tablesXml = tablesDoc.getTables();
@@ -81,7 +88,7 @@ public class SchemaXmlReader implements SchemaReader
             DatasetImportProperties tableProps = extraImportProps.get(datasetName);
 
             if (null == tableProps)
-                throw new StudyImportException("Dataset \"" + datasetName + "\" was specified in " + metaDataFile.getName() + " but not in the dataset manifest file.");
+                throw new StudyImportException("Dataset \"" + datasetName + "\" was specified in " + metaDataFile + " but not in the dataset manifest file.");
 
             info.category = tableProps.getCategory();
             info.name = datasetName;

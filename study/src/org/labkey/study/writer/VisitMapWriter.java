@@ -28,11 +28,13 @@ import java.sql.SQLException;
  * Date: Apr 15, 2009
  * Time: 10:52:38 AM
  */
-class VisitMapWriter implements InternalStudyWriter
+public class VisitMapWriter implements InternalStudyWriter
 {
+    public static final String DATA_TYPE = "Visit Map";
+
     public String getSelectionText()
     {
-        return "Visit Map";
+        return DATA_TYPE;
     }
 
     public void write(StudyImpl study, StudyExportContext ctx, VirtualFile vf) throws IOException, StudyImportException, SQLException

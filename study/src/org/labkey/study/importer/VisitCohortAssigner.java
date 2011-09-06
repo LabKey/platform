@@ -20,12 +20,14 @@ import org.labkey.api.security.User;
 import org.labkey.api.study.StudyImportException;
 import org.labkey.api.study.TimepointType;
 import org.labkey.api.util.PageFlowUtil;
+import org.labkey.api.writer.VirtualFile;
 import org.labkey.study.model.CohortImpl;
 import org.labkey.study.model.StudyImpl;
 import org.labkey.study.model.StudyManager;
 import org.labkey.study.model.VisitImpl;
 import org.labkey.study.visitmanager.VisitManager;
 import org.labkey.study.xml.StudyDocument;
+import org.springframework.validation.BindException;
 
 import java.io.File;
 import java.sql.SQLException;
@@ -45,7 +47,7 @@ public class VisitCohortAssigner implements InternalStudyImporter
 
     // Parses the whole visit map again to retrieve the cohort assignments; should cache info from the first parsing
     // somewhere in the ImportContext
-    public void process(StudyImpl study, ImportContext ctx, File root) throws SQLException, StudyImportException
+    public void process(StudyImpl study, ImportContext ctx, VirtualFile root, BindException errors) throws SQLException, StudyImportException
     {
         StudyDocument.Study.Visits visitsXml = ctx.getStudyXml().getVisits();
 
@@ -57,20 +59,18 @@ public class VisitCohortAssigner implements InternalStudyImporter
                 return;
             }
             
-            File visitMap = ctx.getStudyFile(root, root, visitsXml.getFile());
-
             StudyManager studyManager = StudyManager.getInstance();
             VisitManager visitManager = studyManager.getVisitManager(study);
             Container c = ctx.getContainer();
             User user = ctx.getUser();
 
-            VisitMapImporter.Format vmFormat = VisitMapImporter.Format.getFormat(visitMap);
-            String contents = PageFlowUtil.getFileContentsAsString(visitMap);
+            String visitMapName = visitsXml.getFile();
+            VisitMapImporter.Format vmFormat = VisitMapImporter.Format.getFormat(visitMapName);
             List<VisitMapRecord> records;
 
             try
             {
-                records = vmFormat.getReader(contents).getVisitMapRecords();
+                records = vmFormat.getReader(root, visitMapName).getVisitMapRecords();
             }
             catch (Exception e)
             {

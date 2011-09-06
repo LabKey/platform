@@ -21,6 +21,8 @@ import org.labkey.api.query.QueryService;
 import org.labkey.api.security.User;
 import org.labkey.api.util.FileType;
 import org.labkey.api.study.ExternalStudyImporter;
+import org.labkey.api.writer.FileSystemFile;
+import org.labkey.api.writer.VirtualFile;
 import org.labkey.study.writer.StudySerializationRegistryImpl;
 
 import java.util.*;
@@ -59,11 +61,12 @@ public class StudyImportFinalTask extends PipelineJob.Task<StudyImportFinalTask.
             internalImporters.add(new ParticipantCommentImporter());
             internalImporters.add(new ParticipantGroupImporter());
 
+            VirtualFile vf = new FileSystemFile(support.getRoot());
             for (InternalStudyImporter importer : internalImporters)
             {
                 job.info("Importing " + importer.getDescription());
                 job.setStatus("IMPORT " + importer.getDescription());
-                importer.process(support.getStudy(), support.getImportContext(), support.getRoot());
+                importer.process(support.getStudy(), support.getImportContext(), vf, support.getSpringErrors());
                 job.info("Done importing " + importer.getDescription());
             }
 

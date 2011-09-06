@@ -17,14 +17,15 @@
 package org.labkey.study.importer;
 
 import org.apache.xmlbeans.XmlException;
+import org.apache.xmlbeans.XmlObject;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.Container;
 import org.labkey.api.study.StudyImportException;
-import org.labkey.api.study.InvalidFileException;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.XmlBeansUtil;
 import org.labkey.api.util.XmlValidationException;
+import org.labkey.api.writer.VirtualFile;
 import org.labkey.study.model.DatasetReorderer;
 import org.labkey.study.model.StudyImpl;
 import org.labkey.study.model.StudyManager;
@@ -45,20 +46,26 @@ import java.util.Map;
  * Date: May 16, 2009
  * Time: 9:42:02 PM
  */
-public class DatasetImporter
+public class DatasetImporter implements InternalStudyImporter
 {
-    boolean process(StudyImpl study, ImportContext ctx, File root, BindException errors) throws IOException, SQLException, DatasetImportUtils.DatasetLockExistsException, XmlException, StudyImportException
+    @Override
+    public String getDescription()
+    {
+        return "Dataset Definition Importer";
+    }
+
+    public void process(StudyImpl study, ImportContext ctx, VirtualFile vf, BindException errors) throws IOException, SQLException, DatasetImportUtils.DatasetLockExistsException, XmlException, StudyImportException
     {
         StudyDocument.Study.Datasets datasetsXml = ctx.getStudyXml().getDatasets();
 
         if (null != datasetsXml)
         {
-            File datasetDir = getDatasetDirectory(ctx, root);
+            VirtualFile datasetDir = getDatasetDirectory(ctx, vf);
 
             List<Integer> orderedIds = null;
             Map<String, DatasetImportProperties> extraProps = null;
             SchemaReader reader = null;
-            DatasetsDocument.Datasets manifestDatasetsXml = getDatasetsManifest(ctx, root, true);  // Log the first manifest load
+            DatasetsDocument.Datasets manifestDatasetsXml = getDatasetsManifest(ctx, vf, true);  // Log the first manifest load
 
             if (null != manifestDatasetsXml)
             {
@@ -83,9 +90,8 @@ public class DatasetImporter
 
                 if (null != metaDataFilename)
                 {
-                    File schemaXmlFile = ctx.getStudyFile(root, datasetDir, metaDataFilename, datasetsXml.getFile());
-                    ctx.getLogger().info("Loading dataset schema from " + StudyImportException.getRelativePath(root, schemaXmlFile));
-                    reader = new SchemaXmlReader(study, root, schemaXmlFile, extraProps);
+                    ctx.getLogger().info("Loading dataset schema from " + metaDataFilename);
+                    reader = new SchemaXmlReader(study, datasetDir, metaDataFilename, extraProps);
                 }
             }
 
@@ -100,17 +106,15 @@ public class DatasetImporter
                     String typeNameColumn = schema.getTypeNameColumn();
                     String typeIdColumn = schema.getTypeIdColumn();
 
-                    File schemaTsvFile = ctx.getStudyFile(root, datasetDir, schemaTsvSource);
-
-                    ctx.getLogger().info("Loading dataset schema from " + StudyImportException.getRelativePath(root, schemaTsvFile));
-                    reader = new SchemaTsvReader(study, schemaTsvFile, labelColumn, typeNameColumn, typeIdColumn, extraProps, errors);
+                    ctx.getLogger().info("Loading dataset schema from " + schemaTsvSource);
+                    reader = new SchemaTsvReader(study, datasetDir, schemaTsvSource, labelColumn, typeNameColumn, typeIdColumn, extraProps, errors);
                 }
             }
 
             if (null != reader)
             {
                 if (!StudyManager.getInstance().importDatasetSchemas(study, ctx.getUser(), reader, errors))
-                    return false;
+                    return;
             }
 
             if (null != orderedIds)
@@ -119,10 +123,7 @@ public class DatasetImporter
                 reorderer.reorderDatasets(orderedIds);
             }
         }
-
-        return true;
     }
-
 
     public static File getDatasetDirectory(ImportContext ctx, File root) throws StudyImportException
     {
@@ -139,11 +140,25 @@ public class DatasetImporter
         return null;
     }
 
+    public static VirtualFile getDatasetDirectory(ImportContext ctx, VirtualFile root) throws StudyImportException
+    {
+        StudyDocument.Study.Datasets datasetsXml = ctx.getStudyXml().getDatasets();
+
+        if (null != datasetsXml)
+        {
+            if (null == datasetsXml.getDir())
+                return root;
+
+            return root.getDir(datasetsXml.getDir());
+        }
+
+        return null;
+    }
 
     @Nullable
-    public static DatasetsDocument.Datasets getDatasetsManifest(ImportContext ctx, File root, boolean log) throws XmlException, IOException, StudyImportException
+    public static DatasetsDocument.Datasets getDatasetsManifest(ImportContext ctx, VirtualFile root, boolean log) throws XmlException, IOException, StudyImportException
     {
-        File datasetDir = getDatasetDirectory(ctx, root);
+        VirtualFile datasetDir = getDatasetDirectory(ctx, root);
 
         if (null != datasetDir)
         {
@@ -151,31 +166,28 @@ public class DatasetImporter
 
             if (null != datasetsXmlFilename)
             {
-                File datasetsXmlFile = ctx.getStudyFile(root, datasetDir, datasetsXmlFilename);
-
                 try
                 {
                     if (log)
-                        ctx.getLogger().info("Loading datasets manifest from " + StudyImportException.getRelativePath(root, datasetsXmlFile));
+                        ctx.getLogger().info("Loading datasets manifest from " + datasetsXmlFilename);
 
-                    DatasetsDocument doc = DatasetsDocument.Factory.parse(datasetsXmlFile, XmlBeansUtil.getDefaultParseOptions());
-                    XmlBeansUtil.validateXmlDocument(doc);
-                    return doc.getDatasets();
-                }
-                catch (XmlException e)
-                {
-                    throw new InvalidFileException(root, datasetsXmlFile, e);
+                    XmlObject doc = datasetDir.getXmlBean(datasetsXmlFilename);
+                    if (doc instanceof DatasetsDocument)
+                    {
+                        XmlBeansUtil.validateXmlDocument(doc);
+                        return ((DatasetsDocument)doc).getDatasets();
+                    }
+                    return null;
                 }
                 catch (XmlValidationException e)
                 {
-                    throw new InvalidFileException(root, datasetsXmlFile, e);
+                    throw new StudyImportException("Invalid DatasetsDocument ", e);
                 }
             }
         }
 
         return null;
     }
-
 
     public static Map<String, DatasetImportProperties> getDatasetImportProperties(@NotNull DatasetsDocument.Datasets datasetsXml)
     {

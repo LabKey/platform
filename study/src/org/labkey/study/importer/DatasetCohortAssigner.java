@@ -21,11 +21,13 @@ import org.labkey.api.security.User;
 import org.labkey.api.study.Cohort;
 import org.labkey.api.study.StudyImportException;
 import org.labkey.api.util.PageFlowUtil;
+import org.labkey.api.writer.VirtualFile;
 import org.labkey.study.model.CohortImpl;
 import org.labkey.study.model.DataSetDefinition;
 import org.labkey.study.model.StudyImpl;
 import org.labkey.study.model.StudyManager;
 import org.labkey.study.xml.DatasetsDocument;
+import org.springframework.validation.BindException;
 
 import java.io.File;
 import java.io.IOException;
@@ -46,7 +48,7 @@ public class DatasetCohortAssigner implements InternalStudyImporter
 
     // Parses the dataset manifest again to retrieve the cohort assigments; should cache info from the first parsing
     // somewhere in the ImportContext
-    public void process(StudyImpl study, ImportContext ctx, File root) throws SQLException, XmlException, IOException, StudyImportException
+    public void process(StudyImpl study, ImportContext ctx, VirtualFile root, BindException errors) throws SQLException, XmlException, IOException, StudyImportException
     {
         DatasetsDocument.Datasets datasets = DatasetImporter.getDatasetsManifest(ctx, root, false);
 

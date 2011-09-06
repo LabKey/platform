@@ -16,6 +16,8 @@
 package org.labkey.study.importer;
 
 import org.apache.xmlbeans.XmlException;
+import org.apache.xmlbeans.XmlObject;
+import org.labkey.api.writer.VirtualFile;
 import org.labkey.study.model.CohortImpl;
 import org.labkey.study.model.CohortManager;
 import org.labkey.study.model.StudyImpl;
@@ -27,6 +29,7 @@ import org.labkey.api.study.StudyImportException;
 import org.labkey.api.study.InvalidFileException;
 import org.labkey.api.util.XmlBeansUtil;
 import org.labkey.api.util.XmlValidationException;
+import org.springframework.validation.BindException;
 
 import javax.servlet.ServletException;
 import java.io.File;
@@ -47,7 +50,7 @@ public class CohortImporter implements InternalStudyImporter
         return "cohort settings";
     }
 
-    public void process(StudyImpl study, ImportContext ctx, File root) throws IOException, SQLException, ServletException, StudyImportException
+    public void process(StudyImpl study, ImportContext ctx, VirtualFile root, BindException errors) throws IOException, SQLException, ServletException, StudyImportException
     {
         StudyDocument.Study.Cohorts cohortsXml = ctx.getStudyXml().getCohorts();
 
@@ -66,22 +69,24 @@ public class CohortImporter implements InternalStudyImporter
             }
             else
             {
-                File cohortFile = ctx.getStudyFile(root, root, cohortsXml.getFile());
-                ctx.getLogger().info("Loading manual cohort assignments from " + StudyImportException.getRelativePath(root, cohortFile));
+                String cohortFileName = cohortsXml.getFile();
+                ctx.getLogger().info("Loading manual cohort assignments from " + root.getRelativePath(cohortFileName));
                 CohortsDocument cohortAssignmentXml;
 
                 try
                 {
-                    cohortAssignmentXml = CohortsDocument.Factory.parse(cohortFile, XmlBeansUtil.getDefaultParseOptions());
-                    XmlBeansUtil.validateXmlDocument(cohortAssignmentXml);
-                }
-                catch (XmlException e)
-                {
-                    throw new InvalidFileException(root, cohortFile, e);
+                    XmlObject xml = root.getXmlBean(cohortFileName);
+                    if (xml instanceof CohortsDocument)
+                    {
+                        cohortAssignmentXml = (CohortsDocument)xml;
+                        XmlBeansUtil.validateXmlDocument(cohortAssignmentXml);
+                    }
+                    else
+                        throw new StudyImportException("Unable to get an instance of CohortsDocument");
                 }
                 catch (XmlValidationException e)
                 {
-                    throw new InvalidFileException(root, cohortFile, e);
+                    throw new InvalidFileException(root.getRelativePath(cohortFileName), e);
                 }
 
                 Map<String, Integer> p2c = new HashMap<String, Integer>();

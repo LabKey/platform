@@ -15,10 +15,12 @@
  */
 package org.labkey.study.importer;
 
+import org.labkey.api.writer.VirtualFile;
 import org.labkey.study.controllers.StudyController;
 import org.labkey.study.model.StudyImpl;
 import org.labkey.study.xml.StudyDocument;
 import org.labkey.api.study.StudyImportException;
+import org.springframework.validation.BindException;
 
 import java.sql.SQLException;
 
@@ -27,9 +29,16 @@ import java.sql.SQLException;
  * Date: May 16, 2009
  * Time: 9:36:25 PM
  */
-class QcStatesImporter
+class QcStatesImporter implements InternalStudyImporter
 {
-    void process(StudyImpl study, ImportContext ctx) throws SQLException, StudyImportException
+    @Override
+    public String getDescription()
+    {
+        return "QC States Importer";
+    }
+
+    @Override
+    public void process(StudyImpl study, ImportContext ctx, VirtualFile root, BindException errors) throws Exception
     {
         // TODO: Generalize to all qc state properties
         StudyDocument.Study.QcStates qcStates = ctx.getStudyXml().getQcStates();

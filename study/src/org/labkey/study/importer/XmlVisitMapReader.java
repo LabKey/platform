@@ -19,6 +19,7 @@ package org.labkey.study.importer;
 import org.apache.commons.lang.ArrayUtils;
 import org.apache.xmlbeans.XmlError;
 import org.apache.xmlbeans.XmlException;
+import org.apache.xmlbeans.XmlObject;
 import org.jetbrains.annotations.NotNull;
 import org.labkey.api.util.XmlBeansUtil;
 import org.labkey.api.util.XmlValidationException;
@@ -54,6 +55,25 @@ public class XmlVisitMapReader implements VisitMapReader
             // TODO: Use InvalidFileException... but need to pass in root and file instead of an xml string
             XmlError error = x.getError();
             throw new VisitMapParseException("visit map XML file is not valid: " + error.getLine() + ":" + error.getColumn() + ": " + error.getMessage());
+        }
+        catch (XmlValidationException e)
+        {
+            throw new VisitMapParseException("visit map XML file is not valid: it does not conform to visitMap.xsd", e);
+        }
+    }
+
+    public XmlVisitMapReader(XmlObject xmlObj) throws VisitMapParseException
+    {
+        try
+        {
+            if (xmlObj instanceof VisitMapDocument)
+            {
+                VisitMapDocument doc = (VisitMapDocument)xmlObj;
+                XmlBeansUtil.validateXmlDocument(doc);
+                _visitMapXml = doc.getVisitMap();
+            }
+            else
+                throw new VisitMapParseException("The XmlObject specified is not an instance of a VisitMapDocument");
         }
         catch (XmlValidationException e)
         {

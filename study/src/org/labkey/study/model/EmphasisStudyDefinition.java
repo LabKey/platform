@@ -15,9 +15,16 @@
  */
 package org.labkey.study.model;
 
-import org.apache.commons.beanutils.BeanUtils;
 import org.json.JSONArray;
 import org.json.JSONObject;
+import org.labkey.api.action.CustomApiForm;
+import org.labkey.api.action.HasViewContext;
+import org.labkey.api.view.ViewContext;
+import org.labkey.study.controllers.ParticipantGroupController;
+
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
 
 /**
  * Created by IntelliJ IDEA.
@@ -25,13 +32,28 @@ import org.json.JSONObject;
  * Date: Aug 25, 2011
  * Time: 3:51:31 PM
  */
-public class EmphasisStudyDefinition
+public class EmphasisStudyDefinition implements CustomApiForm, HasViewContext
 {
     private String _name;
     private String _description;
     private String _srcPath;
     private String _dstPath;
     private int[] _datasets;
+    private ViewContext _context;
+
+    private ParticipantGroupController.ParticipantCategorySpecification[] _categories;
+
+    @Override
+    public void setViewContext(ViewContext context)
+    {
+        _context = context;
+    }
+
+    @Override
+    public ViewContext getViewContext()
+    {
+        return _context;
+    }
 
     public String getName()
     {
@@ -78,10 +100,33 @@ public class EmphasisStudyDefinition
         return _datasets;
     }
 
-    public void setDatasets(JSONArray datasets)
+    public void setDatasets(int[] datasets)
     {
-        if (datasets != null)
+        _datasets = datasets;
+    }
+
+    public ParticipantGroupController.ParticipantCategorySpecification[] getCategories()
+    {
+        return _categories;
+    }
+
+    public void setCategories(ParticipantGroupController.ParticipantCategorySpecification[] categories)
+    {
+        _categories = categories;
+    }
+
+    @Override
+    public void bindProperties(Map<String, Object> props)
+    {
+        setName((String)props.get("name"));
+        setDescription((String)props.get("description"));
+        setSrcPath((String)props.get("srcPath"));
+        setDstPath((String)props.get("dstPath"));
+
+        Object datasetsJSON = props.get("datasets");
+        if (datasetsJSON instanceof JSONArray)
         {
+            JSONArray datasets = (JSONArray)datasetsJSON;
             _datasets = new int[datasets.length()];
 
             for (int i=0; i < datasets.length(); i++)
@@ -89,23 +134,19 @@ public class EmphasisStudyDefinition
                 _datasets[i] = datasets.getInt(i);
             }
         }
-    }
 
-    public static EmphasisStudyDefinition fromJSON(JSONObject json)
-    {
-        try
+        Object categories = props.get("categories");
+        if (categories != null)
         {
-            EmphasisStudyDefinition sample = new EmphasisStudyDefinition();
-            BeanUtils.populate(sample, json);
+            List<ParticipantGroupController.ParticipantCategorySpecification> categorySpecs = new ArrayList<ParticipantGroupController.ParticipantCategorySpecification>();
+            for (JSONObject categoryInfo : ((JSONArray)categories).toJSONObjectArray())
+            {
+                ParticipantGroupController.ParticipantCategorySpecification spec = new ParticipantGroupController.ParticipantCategorySpecification();
 
-            JSONArray dsa = json.getJSONArray("datasets");
-            sample.setDatasets(dsa);
-
-            return sample;
-        }
-        catch (Exception e)
-        {
-            throw new RuntimeException(e);
+                spec.fromJSON(categoryInfo);
+                categorySpecs.add(spec);
+            }
+            setCategories(categorySpecs.toArray(new ParticipantGroupController.ParticipantCategorySpecification[categorySpecs.size()]));
         }
     }
 }
