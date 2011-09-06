@@ -1643,7 +1643,8 @@ public class IssuesController extends SpringActionController
         @Override
         public void checkPermissions() throws TermsOfUseException, UnauthorizedException
         {
-            checkPermissionsBasicAuth();
+            setUseBasicAuthentication(true);
+            super.checkPermissions();
         }
 
         public ModelAndView getView(Object o, BindException errors) throws Exception

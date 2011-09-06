@@ -1394,7 +1394,8 @@ public class AnnouncementsController extends SpringActionController
         @Override
         public void checkPermissions() throws UnauthorizedException
         {
-            checkPermissionsBasicAuth();
+            setUseBasicAuthentication(true);
+            super.checkPermissions();
         }
 
         public ModelAndView getView(Object o, BindException errors) throws Exception
