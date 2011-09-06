@@ -989,8 +989,8 @@ LABKEY.DataRegion = Ext.extend(Ext.Component,
                 this._calculateHeaderLock(true);
             this.headerSpacer.dom.style.display = "table-row";
             this.colHeaderRowSpacer.dom.style.display = "table-row";
-            this.headerRow.applyStyles("top: 0; position: fixed");
-            this.colHeaderRow.applyStyles("position: fixed; background: white; top: " + this.first[3] + "px;");
+            this.headerRow.applyStyles("top: 0; position: fixed; min-width: " + this.table.getComputedWidth() + "px");
+            this.colHeaderRow.applyStyles("position: fixed; background: white; top: " + this.first[3] + "px; min-width: " + this.table.getComputedWidth() + "px");
             this.hdrLocked = true;
         }
         else if (this.hdrLocked && window.pageYOffset >= this.first[2]) {
