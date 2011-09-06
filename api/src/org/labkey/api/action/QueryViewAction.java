@@ -39,13 +39,8 @@ public abstract class QueryViewAction<Form extends QueryViewAction.QueryExportFo
     public void checkPermissions() throws UnauthorizedException
     {
         if ("excelWebQuery".equals(getViewContext().getRequest().getParameter("exportType")))
-        {
-            checkPermissionsBasicAuth();
-        }
-        else
-        {
-            super.checkPermissions();
-        }
+            setUseBasicAuthentication(true);
+        super.checkPermissions();
     }
 
     public ModelAndView getView(Form form, BindException errors) throws Exception

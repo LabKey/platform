@@ -19,9 +19,12 @@ package org.labkey.api.util;
 import org.apache.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-import org.junit.Test;
 import org.junit.Assert;
-import org.labkey.api.data.*;
+import org.junit.Test;
+import org.labkey.api.data.ContainerManager;
+import org.labkey.api.data.CoreSchema;
+import org.labkey.api.data.DbScope;
+import org.labkey.api.data.RuntimeSQLException;
 import org.labkey.api.data.dialect.SqlDialect;
 import org.labkey.api.search.SearchService;
 import org.labkey.api.security.LoginUrls;
@@ -30,7 +33,17 @@ import org.labkey.api.security.UserManager;
 import org.labkey.api.services.ServiceRegistry;
 import org.labkey.api.settings.AppProps;
 import org.labkey.api.settings.LookAndFeelProperties;
-import org.labkey.api.view.*;
+import org.labkey.api.view.ActionURL;
+import org.labkey.api.view.ForbiddenProjectException;
+import org.labkey.api.view.HttpView;
+import org.labkey.api.view.NotFoundException;
+import org.labkey.api.view.RedirectException;
+import org.labkey.api.view.RequestBasicAuthException;
+import org.labkey.api.view.TermsOfUseException;
+import org.labkey.api.view.UnauthorizedException;
+import org.labkey.api.view.ViewContext;
+import org.labkey.api.view.ViewServlet;
+import org.labkey.api.view.WebPartView;
 
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
@@ -51,6 +64,7 @@ import java.sql.SQLException;
 import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.Map;
+import java.util.TreeMap;
 import java.util.WeakHashMap;
 
 /**
@@ -360,6 +374,11 @@ public class ExceptionUtil
         // First, get rid of RuntimeException, InvocationTargetException, etc. wrappers
         ex = unwrapException(ex);
 
+        // unhandledException indicates whether the exception is expected or not
+        // assume it is unhandled and clear for Unauthorized, NotFound, etc
+        Throwable unhandledException = ex;
+        String responseStatusMessage = null;    // set to use non default status message
+
         if (isClientAbortException(ex))
         {
             // The client dropped the connection. We don't care about this case,
@@ -398,76 +417,66 @@ public class ExceptionUtil
             }
         }
 
-        boolean resetResponse = true;
-        boolean isForbiddenProject = false;  // Hack
+        User user = (User) request.getUserPrincipal();
+        boolean isGET = "GET".equals(request.getMethod());
 
         ErrorView errorView;
+        Map<String, String> headers = new TreeMap<String,String>();
 
-        // check for unauthorized guest, go to login
-        if (ex instanceof UnauthorizedException && !(ex instanceof CSRFException))
+        // check for redirect to login.jsp
+        //      unauthorized guest
+        if (ex instanceof UnauthorizedException && isGET)
         {
-            User user = (User) request.getUserPrincipal();
+            UnauthorizedException uae = (UnauthorizedException)ex;
 
             // If user has not logged in or agreed to terms, not really unauthorized yet...
-            if (user.isGuest() || ex instanceof TermsOfUseException)
+            if (!(uae instanceof CSRFException) && !uae.getUseBasicAuthentication() &&
+                (user.isGuest() || ex instanceof TermsOfUseException))
             {
-                if (ex instanceof RequestBasicAuthException)
+                ActionURL redirect;
+
+                if (uae instanceof TermsOfUseException)
                 {
-                    response.setHeader("WWW-Authenticate", "Basic realm=\"" + LookAndFeelProperties.getInstance(ContainerManager.getRoot()).getDescription() + "\"");
-                    responseStatus = HttpServletResponse.SC_UNAUTHORIZED;
-                    message = "You must log in to view this content.";
-                    resetResponse = false;
-                    ex = null;
+                    redirect = PageFlowUtil.urlProvider(LoginUrls.class).getAgreeToTermsURL(HttpView.getContextContainer(), HttpView.getContextURLHelper());
                 }
-                else if (request.getMethod().equalsIgnoreCase("GET"))
+                else
                 {
-                    UnauthorizedException uae = (UnauthorizedException)ex;
-
-                    ActionURL redirect;
-
-                    if (uae instanceof TermsOfUseException)
-                    {
-                        redirect = PageFlowUtil.urlProvider(LoginUrls.class).getAgreeToTermsURL(HttpView.getContextContainer(), HttpView.getContextURLHelper());
-                    }
-                    else
-                    {
-                        redirect = PageFlowUtil.urlProvider(LoginUrls.class).getLoginURL(HttpView.getContextContainer(), HttpView.getContextURLHelper());
-                    }
-
-                    return redirect;
+                    redirect = PageFlowUtil.urlProvider(LoginUrls.class).getLoginURL(HttpView.getContextContainer(), HttpView.getContextURLHelper());
                 }
-            }
-
-            // Hack so we can set the right buttons in ErrorView -- ex gets nulled out before we have the view 
-            if (ex instanceof ForbiddenProjectException)
-            {
-                isForbiddenProject = true;
+                return redirect;
             }
         }
 
-        if (ex instanceof NotFoundException || ex instanceof UnauthorizedException)
+        if (ex instanceof NotFoundException)
         {
-            if (ex instanceof NotFoundException)
+            responseStatus = HttpServletResponse.SC_NOT_FOUND;
+            if (ex.getMessage() != null)
             {
-                responseStatus = HttpServletResponse.SC_NOT_FOUND;
-                if (ex instanceof NotFoundException && ex.getMessage() != null)
-                    message = ex.getMessage();
-                else
-                    message = responseStatus + ": Page not Found";
-
-                URLHelper url = (URLHelper)request.getAttribute(ViewServlet.ORIGINAL_URL_URLHELPER);
-                if (null != url && null != url.getParameter("_docid"))
-                {
-                    if (null != ss)
-                        ss.notFound(url);
-                }
+                message = ex.getMessage();
+                responseStatusMessage = message;
             }
             else
+                message = responseStatus + ": Page not Found";
+
+            URLHelper url = (URLHelper)request.getAttribute(ViewServlet.ORIGINAL_URL_URLHELPER);
+            if (null != url && null != url.getParameter("_docid"))
             {
-                responseStatus = HttpServletResponse.SC_UNAUTHORIZED;
-                message = ex.getMessage();
+                if (null != ss)
+                    ss.notFound(url);
             }
-            ex = null;
+        }
+        else if (ex instanceof UnauthorizedException)
+        {
+            responseStatus = HttpServletResponse.SC_UNAUTHORIZED;
+            message = ex.getMessage();
+            responseStatusMessage = message;
+            if (user.isGuest() && ((UnauthorizedException)ex).getUseBasicAuthentication())
+            {
+                headers.put("WWW-Authenticate", "Basic realm=\"" + LookAndFeelProperties.getInstance(ContainerManager.getRoot()).getDescription() + "\"");
+                if (isGET)
+                    message = "You must log in to view this content.";
+            }
+            unhandledException = null;
         }
         else if (ex instanceof SQLException)
         {
@@ -478,16 +487,17 @@ public class ExceptionUtil
             {
                 if (null != ((BatchUpdateException)ex).getNextException())
                     ex = ((BatchUpdateException)ex).getNextException();
+                unhandledException = ex;
             }
         }
 
-        if (null == message && null != ex)
+        if (null == message && null != unhandledException)
         {
             responseStatus = HttpServletResponse.SC_INTERNAL_SERVER_ERROR;
             message = responseStatus + ": Unexpected server error";
         }
 
-        errorView = ExceptionUtil.getErrorView(responseStatus, message, ex, request, startupFailure);
+        errorView = ExceptionUtil.getErrorView(responseStatus, message, unhandledException, request, startupFailure);
 
         if (responseStatus == HttpServletResponse.SC_NOT_FOUND)
         {
@@ -498,7 +508,7 @@ public class ExceptionUtil
             log.error("Unhandled exception: " + (null == message ? "" : message), ex);
         }
 
-        if (isForbiddenProject)
+        if (ex instanceof ForbiddenProjectException)
         {
             // Not allowed in the project... don't offer Home or Folder buttons, provide "Stop Impersonating" button 
             errorView.setIncludeHomeButton(false);
@@ -536,12 +546,14 @@ public class ExceptionUtil
         {
             try
             {
-                if (resetResponse)
-                {
-                    response.reset();
-                }
+                response.reset();
                 response.setContentType("text/html");
-                response.setStatus(responseStatus);
+                if (null == responseStatusMessage)
+                    response.setStatus(responseStatus);
+                else
+                    response.setStatus(responseStatus, responseStatusMessage);
+                for (Map.Entry<String,String> entry : headers.entrySet())
+                    response.addHeader(entry.getKey(), entry.getValue());
                 errorView.render(request, response);
                 return null;
             }
@@ -696,7 +708,7 @@ public class ExceptionUtil
                     return null;
                 }
             };
-            SearchService dummySearch = (SearchService)Proxy.newProxyInstance(this.getClass().getClassLoader(), new Class[]{SearchService.class}, h);
+            SearchService dummySearch = (SearchService) Proxy.newProxyInstance(this.getClass().getClassLoader(), new Class[]{SearchService.class}, h);
             Logger dummyLog = new Logger("mock logger")
             {
                 @Override

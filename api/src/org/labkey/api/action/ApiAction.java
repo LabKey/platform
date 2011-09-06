@@ -58,26 +58,13 @@ public abstract class ApiAction<FORM> extends BaseViewAction<FORM>
 
     public ApiAction()
     {
+        setUseBasicAuthentication(true);
     }
 
     public ApiAction(Class<? extends FORM> formClass)
     {
         super(formClass);
-    }
-
-    /**
-     * Overriden in order to return an HTTP unauthorized response code (401) if
-     * the user is not logged in. Clients of API actions will typically either be
-     * logged in (HTML page hosted in LabKey frame) or an external application
-     * using basic authentication. Most HTTP libraries require a 401 response
-     * before sending the basic auth header
-     *
-     * @throws TermsOfUseException
-     * @throws UnauthorizedException
-     */
-    public void checkPermissions() throws TermsOfUseException, UnauthorizedException
-    {
-        checkPermissionsBasicAuth();
+        setUseBasicAuthentication(true);
     }
 
     protected String getCommandClassMethodName()
@@ -165,11 +152,8 @@ public abstract class ApiAction<FORM> extends BaseViewAction<FORM>
         }
         catch (UnauthorizedException e)
         {
-            // Force Basic authentication
-            if (!getViewContext().getUser().isGuest())
-                throw e;
-            else
-                throw new RequestBasicAuthException();
+            e.setUseBasicAuthentication(_useBasicAuthentication);
+            throw e;
         }
         catch (Exception e)
         {

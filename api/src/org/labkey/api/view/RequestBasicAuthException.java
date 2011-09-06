@@ -22,4 +22,9 @@ package org.labkey.api.view;
  */
 public class RequestBasicAuthException extends UnauthorizedException
 {
+    public RequestBasicAuthException()
+    {
+        super();
+        setUseBasicAuthentication(true);
+    }
 }

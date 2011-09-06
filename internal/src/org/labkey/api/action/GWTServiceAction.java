@@ -33,12 +33,7 @@ public abstract class GWTServiceAction extends BaseViewAction<Object>
     protected GWTServiceAction()
     {
         super(Object.class);
-    }
-
-    @Override
-    public void checkPermissions() throws UnauthorizedException
-    {
-        checkPermissionsBasicAuth();
+        setUseBasicAuthentication(true);
     }
 
     @Override

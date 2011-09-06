@@ -26,7 +26,7 @@ class MockServletResponse implements HttpServletResponse
     String characterEncoding = null;
     int contentLength = 0;
     ByteArrayOutputStream os = new ByteArrayOutputStream();
-    Locale locale;
+    Locale locale = null;
 
     PrintWriter printWriter = new PrintWriter(os);
     ServletOutputStream servletOutputStream = new ServletOutputStream()
@@ -217,6 +217,9 @@ class MockServletResponse implements HttpServletResponse
     public void reset()
     {
         resetBuffer();
+        status = 0;
+        message = null;
+        headers.clear();
     }
 
     @Override

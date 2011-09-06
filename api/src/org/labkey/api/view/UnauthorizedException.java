@@ -22,6 +22,8 @@ import javax.servlet.http.HttpServletResponse;
 
 public class UnauthorizedException extends RuntimeException implements SkipMothershipLogging
 {
+    boolean _useBasicAuthentication = false;
+
     public UnauthorizedException()
     {
         this(null);
@@ -30,5 +32,15 @@ public class UnauthorizedException extends RuntimeException implements SkipMothe
     public UnauthorizedException(String message)
     {
         super(StringUtils.defaultIfEmpty(message, "" + HttpServletResponse.SC_UNAUTHORIZED + ": User does not have permission to perform this operation"));
+    }
+
+    public void setUseBasicAuthentication(boolean use)
+    {
+        _useBasicAuthentication = use;
+    }
+
+    public boolean getUseBasicAuthentication()
+    {
+        return _useBasicAuthentication;
     }
 }

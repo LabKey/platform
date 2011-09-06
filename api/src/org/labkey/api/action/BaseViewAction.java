@@ -65,6 +65,7 @@ public abstract class BaseViewAction<FORM> extends BaseCommandController impleme
     ViewContext _context = null;
     PageConfig _pageConfig = null;
     PropertyValues _pvs;
+    boolean _useBasicAuthentication = false;
 
 
     // shared construction code
@@ -118,6 +119,12 @@ public abstract class BaseViewAction<FORM> extends BaseCommandController impleme
     {
         _BaseViewAction();
         setCommandClass(commandClass);
+    }
+
+
+    protected void setUseBasicAuthentication(boolean use)
+    {
+        _useBasicAuthentication = use;
     }
 
 
@@ -531,36 +538,35 @@ public abstract class BaseViewAction<FORM> extends BaseCommandController impleme
 
     public void checkPermissions() throws TermsOfUseException, UnauthorizedException
     {
-        //ideally, we should pass the bound FORM to getContextualRoles so that
-        //actions can determine if the OwnerRole should apply, but this would require
-        //a large amount of rework that is too much to consider now.
-        checkPermissionsAndTermsOfUse(getClass(), getViewContext(), getContextualRoles());
+        checkPermissions(_useBasicAuthentication);
     }
 
-    // Special version of check permissions for actions that need to support Basic Authentication.  Do the standard
-    // permissions check, but ignore terms-of-use (non-web clients can't view/respond to terms of use page).  If user
-    // is guest and unauthorized, then send a Basic Authentication request.
-    //
-    // To use, simply override checkPermissions() and call this method
-    protected void checkPermissionsBasicAuth() throws UnauthorizedException
+    protected void checkPermissions(boolean useBasicAuth) throws TermsOfUseException, UnauthorizedException
     {
+        // ideally, we should pass the bound FORM to getContextualRoles so that
+        // actions can determine if the OwnerRole should apply, but this would require
+        // a large amount of rework that is too much to consider now.
+        //
+        // If the action needs Basic Authentication.  Do the standard
+        // permissions check, but ignore terms-of-use (non-web clients can't view/respond to terms of use page).  If user
+        // is guest and unauthorized, then send a Basic Authentication request.
         try
         {
             checkPermissionsAndTermsOfUse(getClass(), getViewContext(), getContextualRoles());
         }
         catch (TermsOfUseException e)
         {
-            // We don't enforce terms of use
+            if (useBasicAuth)
+                return;
+            throw e;
         }
         catch (UnauthorizedException e)
         {
-            // Force Basic authentication
-            if (!getViewContext().getUser().isGuest())
-                throw e;
-            else
-                throw new RequestBasicAuthException();
+            e.setUseBasicAuthentication(useBasicAuth);
+            throw e;
         }
     }
+
 
     /**
      * Actions may provide a set of {@link Role}s used during permission checking

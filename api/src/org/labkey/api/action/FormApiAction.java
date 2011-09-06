@@ -42,7 +42,6 @@ public abstract class FormApiAction<FORM> extends ExtFormAction<FORM> implements
 
     protected FormApiAction()
     {
-
     }
 
     protected FormApiAction(Class<? extends FORM> formClass)
@@ -54,10 +53,8 @@ public abstract class FormApiAction<FORM> extends ExtFormAction<FORM> implements
     public void checkPermissions() throws TermsOfUseException, UnauthorizedException
     {
         HttpServletRequest req = getViewContext().getRequest();
-        if ("GET".equals(req.getMethod()))
-            checkPermissionsAndTermsOfUse(getClass(), getViewContext(), getContextualRoles());
-        else
-            checkPermissionsBasicAuth();
+        setUseBasicAuthentication(!"GET".equals(req.getMethod()));
+        super.checkPermissions();
     }
 
     @Override
