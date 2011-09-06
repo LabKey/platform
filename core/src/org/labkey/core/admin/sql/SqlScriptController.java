@@ -21,26 +21,53 @@ import org.labkey.api.action.FormViewAction;
 import org.labkey.api.action.SimpleViewAction;
 import org.labkey.api.action.SpringActionController;
 import org.labkey.api.admin.AdminUrls;
-import org.labkey.api.data.*;
+import org.labkey.api.data.Container;
+import org.labkey.api.data.ContainerManager;
+import org.labkey.api.data.CoreSchema;
+import org.labkey.api.data.FileSqlScriptProvider;
+import org.labkey.api.data.SqlScriptManager;
+import org.labkey.api.data.SqlScriptRunner;
 import org.labkey.api.data.SqlScriptRunner.SqlScript;
 import org.labkey.api.data.SqlScriptRunner.SqlScriptException;
 import org.labkey.api.data.SqlScriptRunner.SqlScriptProvider;
 import org.labkey.api.jsp.JspLoader;
-import org.labkey.api.module.*;
+import org.labkey.api.module.AllowedDuringUpgrade;
+import org.labkey.api.module.DefaultModule;
+import org.labkey.api.module.Module;
+import org.labkey.api.module.ModuleContext;
+import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.security.RequiresPermissionClass;
 import org.labkey.api.security.RequiresSiteAdmin;
 import org.labkey.api.security.permissions.AdminPermission;
 import org.labkey.api.settings.AppProps;
 import org.labkey.api.util.PageFlowUtil;
-import org.labkey.api.view.*;
+import org.labkey.api.view.ActionURL;
+import org.labkey.api.view.HtmlView;
+import org.labkey.api.view.HttpView;
+import org.labkey.api.view.JspView;
+import org.labkey.api.view.NavTree;
+import org.labkey.api.view.RedirectException;
+import org.labkey.api.view.WebPartView;
 import org.labkey.api.view.template.PageConfig;
 import org.springframework.validation.BindException;
 import org.springframework.validation.Errors;
 import org.springframework.web.servlet.ModelAndView;
 
+import javax.servlet.ServletException;
 import java.io.IOException;
 import java.io.PrintWriter;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.Comparator;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.LinkedHashMap;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.TreeSet;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -690,7 +717,7 @@ public class SqlScriptController extends SpringActionController
             return getScriptView(provider.getScript(_filename));
         }
 
-        protected ModelAndView getScriptView(SqlScript script)
+        protected ModelAndView getScriptView(SqlScript script) throws ServletException, IOException
         {
             return new ScriptView(script);
         }
@@ -770,9 +797,21 @@ public class SqlScriptController extends SpringActionController
 
 
     @RequiresSiteAdmin
-    public class SaveReorderedScriptAction extends ReorderScriptAction
+    public class SaveReorderedScriptAction extends ScriptAction
     {
-        // TODO: Implement
+        @Override
+        protected ModelAndView getScriptView(SqlScript script) throws RedirectException, IOException
+        {
+            ScriptReorderer reorderer = new ScriptReorderer(script.getContents());
+            String reorderedScript = reorderer.getReorderedScript(false);
+            ((FileSqlScriptProvider)script.getProvider()).saveScript(script.getDescription(), reorderedScript);
+            
+            final ActionURL url = new ActionURL(ScriptAction.class, getViewContext().getContainer());
+            url.addParameter("moduleName", script.getProvider().getProviderName());
+            url.addParameter("filename", script.getDescription());
+
+            throw new RedirectException(url);
+        }
     }
 
 
@@ -794,19 +833,40 @@ public class SqlScriptController extends SpringActionController
 
         protected void renderButtons(SqlScript script, PrintWriter out)
         {
-            ActionURL url = new ActionURL(SaveReorderedScriptAction.class, getViewContext().getContainer());
-            url.addParameter("moduleName", script.getProvider().getProviderName());
-            url.addParameter("filename", script.getDescription());
-            out.println(PageFlowUtil.generateButton("Save Reordered Script to " + script.getDescription(), url));
+            ActionURL reorderUrl = new ActionURL(SaveReorderedScriptAction.class, getViewContext().getContainer());
+            reorderUrl.addParameter("moduleName", script.getProvider().getProviderName());
+            reorderUrl.addParameter("filename", script.getDescription());
+            out.println(PageFlowUtil.generateButton("Save Reordered Script to " + script.getDescription(), reorderUrl));
+
+            ActionURL backUrl = new ActionURL(ScriptAction.class, getViewContext().getContainer());
+            backUrl.addParameter("moduleName", script.getProvider().getProviderName());
+            backUrl.addParameter("filename", script.getDescription());
+            out.println(PageFlowUtil.generateButton("Back", backUrl));
         }
     }
 
 
     private static class ScriptReorderer
     {
-        private static final String TABLE_NAME_REGEX = "((?:(?:\\w+)\\.)?(?:[a-zA-Z0-9]+))";
-        private static final String STATEMENT_ENDING_REGEX = "GO$(\\s*)";
-        private static final String COMMENT_REGEX = "((/\\*.+?\\*/)|(^--.+?$))\\s*";   // Single-line or block comment, followed by white space
+        private static final String TABLE_NAME_REGEX;
+        private static final String STATEMENT_ENDING_REGEX;
+        private static final String COMMENT_REGEX;   // Single-line or block comment, followed by white space
+
+        static
+        {
+            if (CoreSchema.getInstance().getSqlDialect().isSqlServer())
+            {
+                TABLE_NAME_REGEX = "((?:(?:\\w+)\\.)?(?:[a-zA-Z0-9]+))";
+                STATEMENT_ENDING_REGEX = " GO$(\\s*)";
+                COMMENT_REGEX = "((/\\*.+?\\*/)|(^--.+?$))\\s*";   // Single-line or block comment, followed by white space
+            }
+            else
+            {
+                TABLE_NAME_REGEX = "((?:(?:\\w+)\\.)?(?:[a-zA-Z0-9]+))";
+                STATEMENT_ENDING_REGEX = ";$(\\s*)";
+                COMMENT_REGEX = "((/\\*.+?\\*/)|(^--.+?$))\\s*";   // Single-line or block comment, followed by white space
+            }
+        }
 
         private String _contents;
         private int _row = 0;
@@ -823,11 +883,11 @@ public class SqlScriptController extends SpringActionController
             Pattern commentPattern = compile(COMMENT_REGEX);
 
             List<Pattern> patterns = new LinkedList<Pattern>();
+            List<Pattern> nonTablePatterns = new LinkedList<Pattern>();
+
             patterns.add(compile("INSERT INTO " + TABLE_NAME_REGEX + " \\([^\\)]+?\\) VALUES \\([^\\)]+?\\)\\s*(" + STATEMENT_ENDING_REGEX + "|$(\\s*))"));
-            patterns.add(compile("INSERT INTO " + TABLE_NAME_REGEX + " \\([^\\)]+?\\) SELECT .+? "+ STATEMENT_ENDING_REGEX));
-            patterns.add(compile("EXEC sp_rename (?:@objname\\s*=\\s*)?'" + TABLE_NAME_REGEX + "'.+?" + STATEMENT_ENDING_REGEX ));
-            patterns.add(compile("EXEC core\\.fn_dropifexists '(\\w+)', '(\\w+)'.+?" + STATEMENT_ENDING_REGEX));
-            patterns.add(compile("CREATE (?:UNIQUE )?(?:CLUSTERED )?INDEX [a-zA-Z0-9_]+? ON " + TABLE_NAME_REGEX + ".+? " + STATEMENT_ENDING_REGEX));
+            patterns.add(compile("INSERT INTO " + TABLE_NAME_REGEX + " \\([^\\)]+?\\) SELECT .+?"+ STATEMENT_ENDING_REGEX));
+            patterns.add(compile("CREATE (?:UNIQUE )?(?:CLUSTERED )?INDEX [a-zA-Z0-9_]+? ON " + TABLE_NAME_REGEX + ".+?" + STATEMENT_ENDING_REGEX));
             patterns.add(compile(getRegExWithPrefix("CREATE TABLE ")));
             patterns.add(compile(getRegExWithPrefix("ALTER TABLE ")));
             patterns.add(compile(getRegExWithPrefix("INSERT INTO ")));
@@ -835,8 +895,20 @@ public class SqlScriptController extends SpringActionController
             patterns.add(compile(getRegExWithPrefix("DELETE FROM ")));
             patterns.add(compile(getRegExWithPrefix("DROP TABLE ")));
 
-            List<Pattern> nonTablePatterns = new LinkedList<Pattern>();
-            nonTablePatterns.add(compile(getRegExWithPrefix("CREATE PROCEDURE ")));
+            if (CoreSchema.getInstance().getSqlDialect().isSqlServer())
+            {
+                patterns.add(compile("EXEC sp_rename (?:@objname\\s*=\\s*)?'" + TABLE_NAME_REGEX + "'.+?" + STATEMENT_ENDING_REGEX ));
+                patterns.add(compile("EXEC core\\.fn_dropifexists '(\\w+)', '(\\w+)'.+?" + STATEMENT_ENDING_REGEX));
+                nonTablePatterns.add(compile(getRegExWithPrefix("CREATE PROCEDURE ")));      // TODO: ??
+            }
+            else
+            {
+                // TODO: ALTER TABLE xxx RENAME TO
+                //patterns.add(compile("SELECT sp_rename (?:@objname\\s*=\\s*)?'" + TABLE_NAME_REGEX + "'.+?" + STATEMENT_ENDING_REGEX ));
+                patterns.add(compile("SELECT core\\.fn_dropifexists\\('(\\w+)', '(\\w+)'.+?" + STATEMENT_ENDING_REGEX));
+                patterns.add(compile("SELECT SETVAL\\('([a-zA-Z]+)\\.([a-zA-Z]+)_.+?" + STATEMENT_ENDING_REGEX));
+                nonTablePatterns.add(compile("CREATE FUNCTION .+? RETURNS \\w+ AS (.+?) (?:.+?) \\1 LANGUAGE plpgsql" + STATEMENT_ENDING_REGEX));
+            }
 
             StringBuilder newScript = new StringBuilder();
             StringBuilder unknown = new StringBuilder();
@@ -944,7 +1016,7 @@ public class SqlScriptController extends SpringActionController
 
         private String getRegExWithPrefix(String prefix)
         {
-            return prefix + TABLE_NAME_REGEX + ".+? " + STATEMENT_ENDING_REGEX;
+            return prefix + TABLE_NAME_REGEX + ".*?" + STATEMENT_ENDING_REGEX;
         }
 
         private Pattern compile(String regEx)
