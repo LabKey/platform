@@ -469,7 +469,7 @@ CREATE TABLE study.ParticipantVisit
 (
     Container ENTITYID NOT NULL,
     ParticipantId VARCHAR(32) NOT NULL,
-    VisitRowId int NULL,
+    VisitRowId INT NULL,
     SequenceNum NUMERIC(15,4) NOT NULL,
     VisitDate TIMESTAMP
 );
@@ -787,7 +787,7 @@ CREATE TABLE study.ParticipantView
 );
 
 ALTER TABLE study.specimen
-    ADD column CurrentLocation INT,
+    ADD COLUMN CurrentLocation INT,
     ADD CONSTRAINT FK_CurrentLocation_Site FOREIGN KEY (CurrentLocation) references study.Site(RowId);
 
 CREATE INDEX IX_Specimen_CurrentLocation ON study.Specimen(CurrentLocation);

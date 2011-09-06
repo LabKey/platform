@@ -13,28 +13,19 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-/* core-9.30-9.31.sql */
 
-
-
-/* core-9.31-9.32.sql */
-
-/* SQLServer Version */
-
-alter table core.Containers
-  add ExperimentID int,
-  Description nvarchar(4000);
-
-/* core-9.32-9.33.sql */
+ALTER TABLE core.Containers
+  ADD ExperimentID INT,
+  Description NVARCHAR(4000);
 
 -- experiment id should not be on Containers table
-alter table core.Containers
-drop column ExperimentID;
+ALTER TABLE core.Containers
+DROP COLUMN ExperimentID;
 
 /* core-9.33-9.34.sql */
 
-alter table core.Containers
-  add Workbook bit not null default 0;
+ALTER TABLE core.Containers
+  ADD Workbook BIT NOT NULL DEFAULT 0;
 
 /* core-9.34-9.35.sql */
 
@@ -112,13 +103,13 @@ BEGIN
 END
 ELSE IF (UPPER(@objtype)) = 'SCHEMA'
 BEGIN
-    DECLARE @uid int
+    DECLARE @uid INT
     SELECT @uid=uid FROM sysusers WHERE name = LOWER(@objschema) AND IsAppRole=1
     IF @uid IS NOT NULL
     BEGIN
         IF (@objname = '*' )
         BEGIN
-            DECLARE @soName sysname, @parent int, @xt char(2), @fkschema sysname
+            DECLARE @soName sysname, @parent INT, @xt CHAR(2), @fkschema sysname
             DECLARE soCursor CURSOR for SELECT so.name, so.xtype, so.parent_obj, su.name
                         FROM sysobjects so
                         INNER JOIN sysusers su ON (so.uid = su.uid)
@@ -179,12 +170,12 @@ GO
 
 /* core-9.35-9.36.sql */
 
-alter table core.Containers
-  add Title nvarchar(1000);
+ALTER TABLE core.Containers
+  ADD Title NVARCHAR(1000);
 
 /* core-9.36-9.37.sql */
 
-alter table core.Documents add LastIndexed datetime null
+ALTER TABLE core.Documents ADD LastIndexed DATETIME NULL
 GO
 
 /* core-9.37-9.38.sql */

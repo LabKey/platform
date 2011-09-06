@@ -51,7 +51,7 @@ CREATE TABLE prop.Properties
 GO
 
 
-CREATE PROCEDURE prop.Property_setValue(@Set int, @Name VARCHAR(255), @Value VARCHAR(2000)) AS
+CREATE PROCEDURE prop.Property_setValue(@Set INT, @Name VARCHAR(255), @Value VARCHAR(2000)) AS
     BEGIN
     IF (@Value IS NULL)
         DELETE prop.Properties WHERE "Set" = @Set AND Name = @Name

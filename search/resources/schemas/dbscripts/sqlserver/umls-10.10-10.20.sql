@@ -23,348 +23,348 @@ GO
 
 
 CREATE TABLE umls.MRCOC (
-    CUI1 char(8) NOT NULL,
-    AUI1 nvarchar(9) NOT NULL,
-    CUI2 char(8),
-    AUI2 nvarchar(9),
-    SAB nvarchar(20) NOT NULL,
-    COT nvarchar(3) NOT NULL,
-    COF integer,
-    COA nvarchar(300),
-    CVF integer
+    CUI1 CHAR(8) NOT NULL,
+    AUI1 NVARCHAR(9) NOT NULL,
+    CUI2 CHAR(8),
+    AUI2 NVARCHAR(9),
+    SAB NVARCHAR(20) NOT NULL,
+    COT NVARCHAR(3) NOT NULL,
+    COF INTEGER,
+    COA NVARCHAR(300),
+    CVF INTEGER
 )
 go
 
 CREATE TABLE umls.MRCOLS (
-    COL nvarchar(20),
-    DES nvarchar(200),
-    REF nvarchar(20),
-    MIN integer,
+    COL NVARCHAR(20),
+    DES NVARCHAR(200),
+    REF NVARCHAR(20),
+    MIN INTEGER,
     AV numeric(5,2),
-    MAX integer,
-    FIL nvarchar(50),
-    DTY nvarchar(20)
+    MAX INTEGER,
+    FIL NVARCHAR(50),
+    DTY NVARCHAR(20)
 )
 
 go
 CREATE TABLE umls.MRCONSO (
-    CUI char(8) NOT NULL,
-    LAT char(3) NOT NULL,
-    TS char(1) NOT NULL,
-    LUI nvarchar(10) NOT NULL,
-    STT nvarchar(3) NOT NULL,
-    SUI nvarchar(10) NOT NULL,
-    ISPREF char(1) NOT NULL,
-    AUI nvarchar(9) NOT NULL,
-    SAUI nvarchar(50),
-    SCUI nvarchar(50),
-    SDUI nvarchar(50),
-    SAB nvarchar(20) NOT NULL,
-    TTY nvarchar(20) NOT NULL,
-    CODE nvarchar(50) NOT NULL,
-    STR nvarchar(3000) NOT NULL,
-    SRL integer NOT NULL,
-    SUPPRESS char(1) NOT NULL,
-    CVF integer
+    CUI CHAR(8) NOT NULL,
+    LAT CHAR(3) NOT NULL,
+    TS CHAR(1) NOT NULL,
+    LUI NVARCHAR(10) NOT NULL,
+    STT NVARCHAR(3) NOT NULL,
+    SUI NVARCHAR(10) NOT NULL,
+    ISPREF CHAR(1) NOT NULL,
+    AUI NVARCHAR(9) NOT NULL,
+    SAUI NVARCHAR(50),
+    SCUI NVARCHAR(50),
+    SDUI NVARCHAR(50),
+    SAB NVARCHAR(20) NOT NULL,
+    TTY NVARCHAR(20) NOT NULL,
+    CODE NVARCHAR(50) NOT NULL,
+    STR NVARCHAR(3000) NOT NULL,
+    SRL INTEGER NOT NULL,
+    SUPPRESS CHAR(1) NOT NULL,
+    CVF INTEGER
 )
 go
 
 CREATE TABLE umls.MRCUI (
-    CUI1 char(8) NOT NULL,
-    VER nvarchar(10) NOT NULL,
-    REL nvarchar(4) NOT NULL,
-    RELA nvarchar(100),
-    MAPREASON nvarchar(4000),
-    CUI2 char(8),
-    MAPIN char(1)
+    CUI1 CHAR(8) NOT NULL,
+    VER NVARCHAR(10) NOT NULL,
+    REL NVARCHAR(4) NOT NULL,
+    RELA NVARCHAR(100),
+    MAPREASON NVARCHAR(4000),
+    CUI2 CHAR(8),
+    MAPIN CHAR(1)
 )
 go
 
 CREATE TABLE umls.MRCXT (
-    CUI char(8),
-    SUI nvarchar(10),
-    AUI nvarchar(9),
-    SAB nvarchar(20),
-    CODE nvarchar(50),
-    CXN integer,
-    CXL char(3),
-    RANK integer,
-    CXS nvarchar(3000),
-    CUI2 char(8),
-    AUI2 nvarchar(9),
-    HCD nvarchar(50),
-    RELA nvarchar(100),
-    XC nvarchar(1),
-    CVF integer
+    CUI CHAR(8),
+    SUI NVARCHAR(10),
+    AUI NVARCHAR(9),
+    SAB NVARCHAR(20),
+    CODE NVARCHAR(50),
+    CXN INTEGER,
+    CXL CHAR(3),
+    RANK INTEGER,
+    CXS NVARCHAR(3000),
+    CUI2 CHAR(8),
+    AUI2 NVARCHAR(9),
+    HCD NVARCHAR(50),
+    RELA NVARCHAR(100),
+    XC NVARCHAR(1),
+    CVF INTEGER
 )
 go
 
 CREATE TABLE umls.MRDEF (
-    CUI char(8) NOT NULL,
-    AUI nvarchar(9) NOT NULL,
-    ATUI nvarchar(11) NOT NULL,
-    SATUI nvarchar(50),
-    SAB nvarchar(20) NOT NULL,
+    CUI CHAR(8) NOT NULL,
+    AUI NVARCHAR(9) NOT NULL,
+    ATUI NVARCHAR(11) NOT NULL,
+    SATUI NVARCHAR(50),
+    SAB NVARCHAR(20) NOT NULL,
     DEF NTEXT NOT NULL,
-    SUPPRESS char(1) NOT NULL,
-    CVF integer
+    SUPPRESS CHAR(1) NOT NULL,
+    CVF INTEGER
 )
 go
 
 CREATE TABLE umls.MRDOC (
-    DOCKEY nvarchar(50) NOT NULL,
-    VALUE nvarchar(200),
-    TYPE nvarchar(50) NOT NULL,
-    EXPL nvarchar(1000)
+    DOCKEY NVARCHAR(50) NOT NULL,
+    VALUE NVARCHAR(200),
+    TYPE NVARCHAR(50) NOT NULL,
+    EXPL NVARCHAR(1000)
 );
 
 
 CREATE TABLE umls.MRFILES (
-    FIL nvarchar(50),
-    DES nvarchar(200),
-    FMT nvarchar(300),
-    CLS integer,
-    RWS integer,
-    BTS integer
+    FIL NVARCHAR(50),
+    DES NVARCHAR(200),
+    FMT NVARCHAR(300),
+    CLS INTEGER,
+    RWS INTEGER,
+    BTS INTEGER
 )
 go
 
 CREATE TABLE umls.MRHIER (
-    CUI char(8) NOT NULL,
-    AUI nvarchar(9) NOT NULL,
-    CXN integer NOT NULL,
-    PAUI nvarchar(10),
-    SAB nvarchar(20) NOT NULL,
-    RELA nvarchar(100),
-    PTR nvarchar(1000),
-    HCD nvarchar(50),
-    CVF integer
+    CUI CHAR(8) NOT NULL,
+    AUI NVARCHAR(9) NOT NULL,
+    CXN INTEGER NOT NULL,
+    PAUI NVARCHAR(10),
+    SAB NVARCHAR(20) NOT NULL,
+    RELA NVARCHAR(100),
+    PTR NVARCHAR(1000),
+    HCD NVARCHAR(50),
+    CVF INTEGER
 )
 go
 
 CREATE TABLE umls.MRHIST (
-    CUI char(8),
-    SOURCEUI nvarchar(50),
-    SAB nvarchar(20),
-    SVER nvarchar(20),
-    CHANGETYPE nvarchar(1000),
-    CHANGEKEY nvarchar(1000),
-    CHANGEVAL nvarchar(1000),
-    REASON nvarchar(1000),
-    CVF integer
+    CUI CHAR(8),
+    SOURCEUI NVARCHAR(50),
+    SAB NVARCHAR(20),
+    SVER NVARCHAR(20),
+    CHANGETYPE NVARCHAR(1000),
+    CHANGEKEY NVARCHAR(1000),
+    CHANGEVAL NVARCHAR(1000),
+    REASON NVARCHAR(1000),
+    CVF INTEGER
 )
 go
 
 CREATE TABLE umls.MRMAP (
-    MAPSETCUI char(8) NOT NULL,
-    MAPSETSAB nvarchar(20) NOT NULL,
-    MAPSUBSETID nvarchar(10),
-    MAPRANK integer,
-    MAPID nvarchar(50) NOT NULL,
-    MAPSID nvarchar(50),
-    FROMID nvarchar(50) NOT NULL,
-    FROMSID nvarchar(50),
-    FROMEXPR nvarchar(4000) NOT NULL,
-    FROMTYPE nvarchar(50) NOT NULL,
-    FROMRULE nvarchar(4000),
-    FROMRES nvarchar(4000),
-    REL nvarchar(4) NOT NULL,
-    RELA nvarchar(100),
-    TOID nvarchar(50),
-    TOSID nvarchar(50),
-    TOEXPR nvarchar(4000),
-    TOTYPE nvarchar(50),
-    TORULE nvarchar(4000),
-    TORES nvarchar(4000),
-    MAPRULE nvarchar(4000),
-    MAPRES nvarchar(4000),
-    MAPTYPE nvarchar(50),
-    MAPATN nvarchar(20),
-    MAPATV nvarchar(4000),
-    CVF integer
+    MAPSETCUI CHAR(8) NOT NULL,
+    MAPSETSAB NVARCHAR(20) NOT NULL,
+    MAPSUBSETID NVARCHAR(10),
+    MAPRANK INTEGER,
+    MAPID NVARCHAR(50) NOT NULL,
+    MAPSID NVARCHAR(50),
+    FROMID NVARCHAR(50) NOT NULL,
+    FROMSID NVARCHAR(50),
+    FROMEXPR NVARCHAR(4000) NOT NULL,
+    FROMTYPE NVARCHAR(50) NOT NULL,
+    FROMRULE NVARCHAR(4000),
+    FROMRES NVARCHAR(4000),
+    REL NVARCHAR(4) NOT NULL,
+    RELA NVARCHAR(100),
+    TOID NVARCHAR(50),
+    TOSID NVARCHAR(50),
+    TOEXPR NVARCHAR(4000),
+    TOTYPE NVARCHAR(50),
+    TORULE NVARCHAR(4000),
+    TORES NVARCHAR(4000),
+    MAPRULE NVARCHAR(4000),
+    MAPRES NVARCHAR(4000),
+    MAPTYPE NVARCHAR(50),
+    MAPATN NVARCHAR(20),
+    MAPATV NVARCHAR(4000),
+    CVF INTEGER
 )
 go
 
 CREATE TABLE umls.MRRANK (
-    RANK integer NOT NULL,
-    SAB nvarchar(20) NOT NULL,
-    TTY nvarchar(20) NOT NULL,
-    SUPPRESS char(1) NOT NULL
+    RANK INTEGER NOT NULL,
+    SAB NVARCHAR(20) NOT NULL,
+    TTY NVARCHAR(20) NOT NULL,
+    SUPPRESS CHAR(1) NOT NULL
 )
 go
 
 CREATE TABLE umls.MRREL (
-    CUI1 char(8) NOT NULL,
-    AUI1 nvarchar(9),
-    STYPE1 nvarchar(50) NOT NULL,
-    REL nvarchar(4) NOT NULL,
-    CUI2 char(8) NOT NULL,
-    AUI2 nvarchar(9),
-    STYPE2 nvarchar(50) NOT NULL,
-    RELA nvarchar(100),
-    RUI nvarchar(10) NOT NULL,
-    SRUI nvarchar(50),
-    SAB nvarchar(20) NOT NULL,
-    SL nvarchar(20) NOT NULL,
-    RG nvarchar(10),
-    DIR nvarchar(1),
-    SUPPRESS char(1) NOT NULL,
-    CVF integer
+    CUI1 CHAR(8) NOT NULL,
+    AUI1 NVARCHAR(9),
+    STYPE1 NVARCHAR(50) NOT NULL,
+    REL NVARCHAR(4) NOT NULL,
+    CUI2 CHAR(8) NOT NULL,
+    AUI2 NVARCHAR(9),
+    STYPE2 NVARCHAR(50) NOT NULL,
+    RELA NVARCHAR(100),
+    RUI NVARCHAR(10) NOT NULL,
+    SRUI NVARCHAR(50),
+    SAB NVARCHAR(20) NOT NULL,
+    SL NVARCHAR(20) NOT NULL,
+    RG NVARCHAR(10),
+    DIR NVARCHAR(1),
+    SUPPRESS CHAR(1) NOT NULL,
+    CVF INTEGER
 )
 go
 
 CREATE TABLE umls.MRSAB (
-    VCUI char(8),
-    RCUI char(8) NOT NULL,
-    VSAB nvarchar(20) NOT NULL,
-    RSAB nvarchar(20) NOT NULL,
-    SON nvarchar(3000) NOT NULL,
-    SF nvarchar(20) NOT NULL,
-    SVER nvarchar(20),
-    VSTART char(8),
-    VEND char(8),
-    IMETA nvarchar(10) NOT NULL,
-    RMETA nvarchar(10),
-    SLC nvarchar(1000),
-    SCC nvarchar(1000),
-    SRL integer NOT NULL,
-    TFR integer,
-    CFR integer,
-    CXTY nvarchar(50),
-    TTYL nvarchar(300),
-    ATNL nvarchar(1000),
-    LAT char(3),
-    CENC nvarchar(20) NOT NULL,
-    CURVER char(1) NOT NULL,
-    SABIN char(1) NOT NULL,
-    SSN nvarchar(3000) NOT NULL,
-    SCIT nvarchar(4000) NOT NULL
+    VCUI CHAR(8),
+    RCUI CHAR(8) NOT NULL,
+    VSAB NVARCHAR(20) NOT NULL,
+    RSAB NVARCHAR(20) NOT NULL,
+    SON NVARCHAR(3000) NOT NULL,
+    SF NVARCHAR(20) NOT NULL,
+    SVER NVARCHAR(20),
+    VSTART CHAR(8),
+    VEND CHAR(8),
+    IMETA NVARCHAR(10) NOT NULL,
+    RMETA NVARCHAR(10),
+    SLC NVARCHAR(1000),
+    SCC NVARCHAR(1000),
+    SRL INTEGER NOT NULL,
+    TFR INTEGER,
+    CFR INTEGER,
+    CXTY NVARCHAR(50),
+    TTYL NVARCHAR(300),
+    ATNL NVARCHAR(1000),
+    LAT CHAR(3),
+    CENC NVARCHAR(20) NOT NULL,
+    CURVER CHAR(1) NOT NULL,
+    SABIN CHAR(1) NOT NULL,
+    SSN NVARCHAR(3000) NOT NULL,
+    SCIT NVARCHAR(4000) NOT NULL
 )
 go
 
 CREATE TABLE umls.MRSAT (
-    CUI char(8) NOT NULL,
-    LUI nvarchar(10),
-    SUI nvarchar(10),
-    METAUI nvarchar(50),
-    STYPE nvarchar(50) NOT NULL,
-    CODE nvarchar(50),
-    ATUI nvarchar(11) NOT NULL,
-    SATUI nvarchar(50),
-    ATN nvarchar(50) NOT NULL,
-    SAB nvarchar(20) NOT NULL,
-    ATV nvarchar(4000),
-    SUPPRESS char(1) NOT NULL,
-    CVF integer
+    CUI CHAR(8) NOT NULL,
+    LUI NVARCHAR(10),
+    SUI NVARCHAR(10),
+    METAUI NVARCHAR(50),
+    STYPE NVARCHAR(50) NOT NULL,
+    CODE NVARCHAR(50),
+    ATUI NVARCHAR(11) NOT NULL,
+    SATUI NVARCHAR(50),
+    ATN NVARCHAR(50) NOT NULL,
+    SAB NVARCHAR(20) NOT NULL,
+    ATV NVARCHAR(4000),
+    SUPPRESS CHAR(1) NOT NULL,
+    CVF INTEGER
 )
 go
 
 CREATE TABLE umls.MRSMAP (
-    MAPSETCUI char(8) NOT NULL,
-    MAPSETSAB nvarchar(20) NOT NULL,
-    MAPID nvarchar(50) NOT NULL,
-    MAPSID nvarchar(50),
-    FROMEXPR nvarchar(4000) NOT NULL,
-    FROMTYPE nvarchar(50) NOT NULL,
-    REL nvarchar(4) NOT NULL,
-    RELA nvarchar(100),
-    TOEXPR nvarchar(4000),
-    TOTYPE nvarchar(50),
-    CVF integer
+    MAPSETCUI CHAR(8) NOT NULL,
+    MAPSETSAB NVARCHAR(20) NOT NULL,
+    MAPID NVARCHAR(50) NOT NULL,
+    MAPSID NVARCHAR(50),
+    FROMEXPR NVARCHAR(4000) NOT NULL,
+    FROMTYPE NVARCHAR(50) NOT NULL,
+    REL NVARCHAR(4) NOT NULL,
+    RELA NVARCHAR(100),
+    TOEXPR NVARCHAR(4000),
+    TOTYPE NVARCHAR(50),
+    CVF INTEGER
 )
 go
 
 CREATE TABLE umls.MRSTY (
-    CUI char(8) NOT NULL,
-    TUI char(4) NOT NULL,
-    STN nvarchar(100) NOT NULL,
-    STY nvarchar(50) NOT NULL,
-    ATUI nvarchar(11) NOT NULL,
-    CVF integer
+    CUI CHAR(8) NOT NULL,
+    TUI CHAR(4) NOT NULL,
+    STN NVARCHAR(100) NOT NULL,
+    STY NVARCHAR(50) NOT NULL,
+    ATUI NVARCHAR(11) NOT NULL,
+    CVF INTEGER
 )
 go
 
 CREATE TABLE umls.MRXNS_ENG (
-    LAT char(3) NOT NULL,
-    NSTR nvarchar(3000) NOT NULL,
-    CUI char(8) NOT NULL,
-    LUI nvarchar(10) NOT NULL,
-    SUI nvarchar(10) NOT NULL
+    LAT CHAR(3) NOT NULL,
+    NSTR NVARCHAR(3000) NOT NULL,
+    CUI CHAR(8) NOT NULL,
+    LUI NVARCHAR(10) NOT NULL,
+    SUI NVARCHAR(10) NOT NULL
 )
 go
 
 CREATE TABLE umls.MRXNW_ENG (
-    LAT char(3) NOT NULL,
-    NWD nvarchar(100) NOT NULL,
-    CUI char(8) NOT NULL,
-    LUI nvarchar(10) NOT NULL,
-    SUI nvarchar(10) NOT NULL
+    LAT CHAR(3) NOT NULL,
+    NWD NVARCHAR(100) NOT NULL,
+    CUI CHAR(8) NOT NULL,
+    LUI NVARCHAR(10) NOT NULL,
+    SUI NVARCHAR(10) NOT NULL
 )
 go
 
 CREATE TABLE umls.MRAUI (
-    AUI1 nvarchar(9) NOT NULL,
-    CUI1 char(8) NOT NULL,
-    VER nvarchar(10) NOT NULL,
-    REL nvarchar(4),
-    RELA nvarchar(100),
-    MAPREASON nvarchar(4000) NOT NULL,
-    AUI2 nvarchar(9) NOT NULL,
-    CUI2 char(8) NOT NULL,
-    MAPIN char(1) NOT NULL
+    AUI1 NVARCHAR(9) NOT NULL,
+    CUI1 CHAR(8) NOT NULL,
+    VER NVARCHAR(10) NOT NULL,
+    REL NVARCHAR(4),
+    RELA NVARCHAR(100),
+    MAPREASON NVARCHAR(4000) NOT NULL,
+    AUI2 NVARCHAR(9) NOT NULL,
+    CUI2 CHAR(8) NOT NULL,
+    MAPIN CHAR(1) NOT NULL
 )
 go
 
 CREATE TABLE umls.MRXW (
-    LAT char(3) NOT NULL,
-    WD nvarchar(200) NOT NULL,
-    CUI char(8) NOT NULL,
-    LUI nvarchar(10) NOT NULL,
-    SUI nvarchar(10) NOT NULL
+    LAT CHAR(3) NOT NULL,
+    WD NVARCHAR(200) NOT NULL,
+    CUI CHAR(8) NOT NULL,
+    LUI NVARCHAR(10) NOT NULL,
+    SUI NVARCHAR(10) NOT NULL
 );
 
 
 CREATE TABLE umls.AMBIGSUI (
-    SUI nvarchar(10) NOT NULL,
-    CUI char(8) NOT NULL
+    SUI NVARCHAR(10) NOT NULL,
+    CUI CHAR(8) NOT NULL
 )
 go
 
 CREATE TABLE umls.AMBIGLUI (
-    LUI nvarchar(10) NOT NULL,
-    CUI char(8) NOT NULL
+    LUI NVARCHAR(10) NOT NULL,
+    CUI CHAR(8) NOT NULL
 )
 go
 
 CREATE TABLE umls.DELETEDCUI (
-    PCUI char(8) NOT NULL,
-    PSTR nvarchar(3000) NOT NULL
+    PCUI CHAR(8) NOT NULL,
+    PSTR NVARCHAR(3000) NOT NULL
 )
 go
 
 CREATE TABLE umls.DELETEDLUI (
-    PLUI nvarchar(10) NOT NULL,
-    PSTR nvarchar(3000) NOT NULL
+    PLUI NVARCHAR(10) NOT NULL,
+    PSTR NVARCHAR(3000) NOT NULL
 )
 go
 
 CREATE TABLE umls.DELETEDSUI (
-    PSUI nvarchar(10) NOT NULL,
-    LAT char(3) NOT NULL,
-    PSTR nvarchar(3000) NOT NULL
+    PSUI NVARCHAR(10) NOT NULL,
+    LAT CHAR(3) NOT NULL,
+    PSTR NVARCHAR(3000) NOT NULL
 )
 go
 
 CREATE TABLE umls.MERGEDCUI (
-    PCUI char(8) NOT NULL,
-    CUI char(8) NOT NULL
+    PCUI CHAR(8) NOT NULL,
+    CUI CHAR(8) NOT NULL
 )
 go
 
 CREATE TABLE umls.MERGEDLUI
 (
-    PLUI nvarchar(10),
-    LUI nvarchar(10)
+    PLUI NVARCHAR(10),
+    LUI NVARCHAR(10)
 )
 go
 

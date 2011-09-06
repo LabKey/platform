@@ -27,38 +27,38 @@ EXEC sp_addapprole 'exp', 'password'
 GO
 
 IF NOT EXISTS (SELECT * FROM systypes WHERE name ='LSIDtype')
-    EXEC sp_addtype 'LSIDtype', 'nvarchar(300)'
+    EXEC sp_addtype 'LSIDtype', 'NVARCHAR(300)'
 GO
 
 CREATE TABLE exp.ExperimentRun
 (
-    RowId int IDENTITY (1, 1) NOT NULL,
+    RowId INT IDENTITY (1, 1) NOT NULL,
     LSID LSIDtype NOT NULL,
-    Name nvarchar (50) NULL,
+    Name NVARCHAR (50) NULL,
     ProtocolLSID LSIDtype NOT NULL,
     ExperimentLSID LSIDtype NULL,
-    Comments ntext NULL,
-    EntityId uniqueidentifier NULL,
-    Created datetime NULL,
-    CreatedBy int NULL,
-    Modified datetime NULL,
-    ModifiedBy int NULL,
+    Comments NTEXT NULL,
+    EntityId UNIQUEIDENTIFIER NULL,
+    Created DATETIME NULL,
+    CreatedBy INT NULL,
+    Modified DATETIME NULL,
+    ModifiedBy INT NULL,
     Container EntityId NOT NULL,
-    FilePathRoot nvarchar(500)
+    FilePathRoot NVARCHAR(500)
 )
 GO
 
 CREATE TABLE exp.Data
 (
-    RowId int IDENTITY (1, 1) NOT NULL,
+    RowId INT IDENTITY (1, 1) NOT NULL,
     LSID LSIDtype NOT NULL,
-    Name nvarchar (200) NULL,
-    CpasType nvarchar (50) NULL,
-    SourceApplicationId int NULL,
+    Name NVARCHAR (200) NULL,
+    CpasType NVARCHAR (50) NULL,
+    SourceApplicationId INT NULL,
     SourceProtocolLSID LSIDtype NULL,
-    DataFileUrl nvarchar (400) NULL,
-    RunId int NULL,
-    Created datetime NOT NULL,
+    DataFileUrl NVARCHAR (400) NULL,
+    RunId INT NULL,
+    Created DATETIME NOT NULL,
     Container EntityId NOT NULL
 )
 GO
@@ -66,25 +66,25 @@ GO
 
 CREATE TABLE exp.DataInput
 (
-    DataId int NOT NULL,
-    TargetApplicationId int NOT NULL
+    DataId INT NOT NULL,
+    TargetApplicationId INT NOT NULL
 )
 GO
 
 CREATE TABLE exp.Experiment
 (
-    RowId int IDENTITY (1, 1) NOT NULL,
+    RowId INT IDENTITY (1, 1) NOT NULL,
     LSID LSIDtype NOT NULL,
-    Name nvarchar (200) NULL,
-    Hypothesis nvarchar (500) NULL,
-    ContactId nvarchar (100) NULL,
-    ExperimentDescriptionURL nvarchar (200) NULL,
-    Comments nvarchar (2000) NULL,
-    EntityId uniqueidentifier NULL,
-    Created datetime NULL,
-    CreatedBy int NULL,
-    Modified datetime NULL,
-    ModifiedBy int NULL,
+    Name NVARCHAR (200) NULL,
+    Hypothesis NVARCHAR (500) NULL,
+    ContactId NVARCHAR (100) NULL,
+    ExperimentDescriptionURL NVARCHAR (200) NULL,
+    Comments NVARCHAR (2000) NULL,
+    EntityId UNIQUEIDENTIFIER NULL,
+    Created DATETIME NULL,
+    CreatedBy INT NULL,
+    Modified DATETIME NULL,
+    ModifiedBy INT NULL,
     Container EntityId NOT NULL
 )
 GO
@@ -92,23 +92,23 @@ GO
 --  this table to be deleted in 1.2
 CREATE TABLE exp.Fraction
 (
-    MaterialId int NOT NULL,
-    StartPoint float NULL,
-    EndPoint float NULL,
-    ProteinAssay float NULL
+    MaterialId INT NOT NULL,
+    StartPoint FLOAT NULL,
+    EndPoint FLOAT NULL,
+    ProteinAssay FLOAT NULL
 )
 GO
 
 CREATE TABLE exp.Material
 (
-    RowId int IDENTITY (1, 1) NOT NULL,
+    RowId INT IDENTITY (1, 1) NOT NULL,
     LSID LSIDtype NOT NULL,
-    Name nvarchar (200) NULL,
-    CpasType nvarchar (200) NULL,
-    SourceApplicationId int NULL,
+    Name NVARCHAR (200) NULL,
+    CpasType NVARCHAR (200) NULL,
+    SourceApplicationId INT NULL,
     SourceProtocolLSID LSIDtype NULL,
-    RunId int NULL,
-    Created datetime NOT NULL,
+    RunId INT NULL,
+    Created DATETIME NOT NULL,
     Container EntityId NOT NULL,
 )
 GO
@@ -116,23 +116,23 @@ GO
 
 CREATE TABLE exp.MaterialInput
 (
-    MaterialId int NOT NULL,
-    TargetApplicationId int NOT NULL
+    MaterialId INT NOT NULL,
+    TargetApplicationId INT NOT NULL
 )
 GO
 
 CREATE TABLE exp.MaterialSource
 (
-    RowId int IDENTITY (1, 1) NOT NULL,
-    Name nvarchar(50) NOT NULL,
+    RowId INT IDENTITY (1, 1) NOT NULL,
+    Name NVARCHAR(50) NOT NULL,
     LSID LSIDtype NOT NULL,
-    MaterialLSIDPrefix nvarchar(200) NULL,
-    URLPattern nvarchar(200) NULL,
-    Description ntext NULL,
-    Created datetime NULL,
-    CreatedBy int NULL,
-    Modified datetime NULL,
-    ModifiedBy int NULL,
+    MaterialLSIDPrefix NVARCHAR(200) NULL,
+    URLPattern NVARCHAR(200) NULL,
+    Description NTEXT NULL,
+    Created DATETIME NULL,
+    CreatedBy INT NULL,
+    Modified DATETIME NULL,
+    ModifiedBy INT NULL,
     Container EntityId NOT NULL
 )
 GO
@@ -149,18 +149,18 @@ GO
 --  this table to be deleted in 1.2
 CREATE TABLE exp.BioSource
 (
-    MaterialId int NOT NULL,
-    Individual nvarchar(50) NULL,
-    SampleOriginDate datetime NULL
+    MaterialId INT NOT NULL,
+    Individual NVARCHAR(50) NULL,
+    SampleOriginDate DATETIME NULL
 )
 GO
 
 CREATE TABLE exp.Object
 (
-    ObjectId int IDENTITY(1,1) NOT NULL,
+    ObjectId INT IDENTITY(1,1) NOT NULL,
     Container ENTITYID NOT NULL,
     ObjectURI LSIDType NOT NULL,
-    OwnerObjectId int NULL,
+    OwnerObjectId INT NULL,
     CONSTRAINT PK_Object PRIMARY KEY NONCLUSTERED (ObjectId),
     CONSTRAINT UQ_Object UNIQUE CLUSTERED (Container, ObjectURI)
 )
@@ -170,27 +170,27 @@ GO
 
 CREATE TABLE exp.ObjectProperty
 (
-    ObjectId int NOT NULL,  -- FK exp.Object
-    PropertyId int NOT NULL, -- FK exp.PropertyDescriptor
-    TypeTag char(1) NOT NULL, -- s string, f float, d datetime, t text
-    FloatValue float NULL,
-    DateTimeValue datetime NULL,
-    StringValue nvarchar(400) NULL,
-    TextValue ntext NULL,
+    ObjectId INT NOT NULL,  -- FK exp.Object
+    PropertyId INT NOT NULL, -- FK exp.PropertyDescriptor
+    TypeTag CHAR(1) NOT NULL, -- s string, f float, d datetime, t text
+    FloatValue FLOAT NULL,
+    DateTimeValue DATETIME NULL,
+    StringValue NVARCHAR(400) NULL,
+    TextValue NTEXT NULL,
     CONSTRAINT PK_ObjectProperty PRIMARY KEY CLUSTERED (ObjectId, PropertyId)
 )
 GO
 
 CREATE TABLE exp.PropertyDescriptor
 (
-    RowId int IDENTITY (1, 1) NOT NULL,
-    PropertyURI nvarchar(200) NOT NULL,
-    OntologyURI nvarchar (200) NULL,
-    TypeURI nvarchar(200) NULL,
-    Name nvarchar(50) NULL,
-    Description ntext NULL,
-    ValueType nvarchar(50) NULL,
-    DatatypeURI nvarchar(200) NOT NULL DEFAULT 'http://www.w3.org/2001/XMLSchema#string',
+    RowId INT IDENTITY (1, 1) NOT NULL,
+    PropertyURI NVARCHAR(200) NOT NULL,
+    OntologyURI NVARCHAR (200) NULL,
+    TypeURI NVARCHAR(200) NULL,
+    Name NVARCHAR(50) NULL,
+    Description NTEXT NULL,
+    ValueType NVARCHAR(50) NULL,
+    DatatypeURI NVARCHAR(200) NOT NULL DEFAULT 'http://www.w3.org/2001/XMLSchema#string',
     CONSTRAINT PK_PropertyDescriptor PRIMARY KEY (RowId),
     CONSTRAINT UQ_PropertyDescriptor UNIQUE (PropertyURI)
 )
@@ -198,25 +198,25 @@ GO
 
 CREATE TABLE exp.Protocol
 (
-    RowId int IDENTITY (1, 1) NOT NULL,
+    RowId INT IDENTITY (1, 1) NOT NULL,
     LSID LSIDtype NOT NULL,
-    Name nvarchar (200) NULL,
-    ProtocolDescription ntext NULL,
-    ApplicationType nvarchar (50) NULL,
-    MaxInputMaterialPerInstance int NULL,
-    MaxInputDataPerInstance int NULL,
-    OutputMaterialPerInstance int NULL,
-    OutputDataPerInstance int NULL,
-    OutputMaterialType nvarchar (50) NULL,
-    OutputDataType nvarchar (50) NULL,
-    Instrument nvarchar (200) NULL,
-    Software nvarchar (200) NULL,
-    ContactId nvarchar (100) NULL,
-    Created datetime NULL,
-    EntityId uniqueidentifier NULL,
-    CreatedBy int NULL,
-    Modified datetime NULL,
-    ModifiedBy int NULL,
+    Name NVARCHAR (200) NULL,
+    ProtocolDescription NTEXT NULL,
+    ApplicationType NVARCHAR (50) NULL,
+    MaxInputMaterialPerInstance INT NULL,
+    MaxInputDataPerInstance INT NULL,
+    OutputMaterialPerInstance INT NULL,
+    OutputDataPerInstance INT NULL,
+    OutputMaterialType NVARCHAR (50) NULL,
+    OutputDataType NVARCHAR (50) NULL,
+    Instrument NVARCHAR (200) NULL,
+    Software NVARCHAR (200) NULL,
+    ContactId NVARCHAR (100) NULL,
+    Created DATETIME NULL,
+    EntityId UNIQUEIDENTIFIER NULL,
+    CreatedBy INT NULL,
+    Modified DATETIME NULL,
+    ModifiedBy INT NULL,
     Container EntityId NOT NULL
 )
 GO
@@ -224,65 +224,65 @@ GO
 
 CREATE TABLE exp.ProtocolAction
 (
-    RowId int IDENTITY (10, 10) NOT NULL,
-    ParentProtocolId int NOT NULL,
-    ChildProtocolId int NOT NULL,
-    Sequence int NOT NULL
+    RowId INT IDENTITY (10, 10) NOT NULL,
+    ParentProtocolId INT NOT NULL,
+    ChildProtocolId INT NOT NULL,
+    Sequence INT NOT NULL
 )
 GO
 
 
 CREATE TABLE exp.ProtocolActionPredecessor
 (
-    ActionId int NOT NULL,
-    PredecessorId int NOT NULL
+    ActionId INT NOT NULL,
+    PredecessorId INT NOT NULL
 )
 GO
 
 
 CREATE TABLE exp.ProtocolApplication
 (
-    RowId int IDENTITY (1, 1) NOT NULL,
+    RowId INT IDENTITY (1, 1) NOT NULL,
     LSID LSIDtype NOT NULL,
-    Name nvarchar (200) NULL,
-    CpasType nvarchar (50) NULL,
+    Name NVARCHAR (200) NULL,
+    CpasType NVARCHAR (50) NULL,
     ProtocolLSID LSIDtype NOT NULL,
-    ActivityDate datetime NULL,
-    Comments nvarchar (2000) NULL,
-    RunId int NOT NULL,
-    ActionSequence int NOT NULL
+    ActivityDate DATETIME NULL,
+    Comments NVARCHAR (2000) NULL,
+    RunId INT NOT NULL,
+    ActionSequence INT NOT NULL
 )
 GO
 
 CREATE TABLE exp.ProtocolParameter
 (
-    RowId int IDENTITY (1, 1) NOT NULL,
-    ProtocolId int NOT NULL,
-    Name nvarchar (200) NULL,
-    ValueType nvarchar(50) NULL,
-    StringValue nvarchar (400) NULL,
-    IntegerValue int NULL,
-    DoubleValue float NULL,
-    DateTimeValue datetime NULL,
-    FileLinkValue nvarchar(400) NULL,
-    XmlTextValue ntext NULL,
-    OntologyEntryURI nvarchar (200) NULL
+    RowId INT IDENTITY (1, 1) NOT NULL,
+    ProtocolId INT NOT NULL,
+    Name NVARCHAR (200) NULL,
+    ValueType NVARCHAR(50) NULL,
+    StringValue NVARCHAR (400) NULL,
+    IntegerValue INT NULL,
+    DoubleValue FLOAT NULL,
+    DateTimeValue DATETIME NULL,
+    FileLinkValue NVARCHAR(400) NULL,
+    XmlTextValue NTEXT NULL,
+    OntologyEntryURI NVARCHAR (200) NULL
 )
 GO
 
 CREATE TABLE exp.ProtocolApplicationParameter
 (
-    RowId int IDENTITY (1, 1) NOT NULL,
-    ProtocolApplicationId int NOT NULL,
-    Name nvarchar (200) NULL,
-    ValueType nvarchar(50) NULL,
-    StringValue nvarchar (400) NULL,
-    IntegerValue int NULL,
-    DoubleValue float NULL,
-    DateTimeValue datetime NULL,
-    FileLinkValue nvarchar(400) NULL,
-    XmlTextValue ntext NULL,
-    OntologyEntryURI nvarchar (200) NULL
+    RowId INT IDENTITY (1, 1) NOT NULL,
+    ProtocolApplicationId INT NOT NULL,
+    Name NVARCHAR (200) NULL,
+    ValueType NVARCHAR(50) NULL,
+    StringValue NVARCHAR (400) NULL,
+    IntegerValue INT NULL,
+    DoubleValue FLOAT NULL,
+    DateTimeValue DATETIME NULL,
+    FileLinkValue NVARCHAR(400) NULL,
+    XmlTextValue NTEXT NULL,
+    OntologyEntryURI NVARCHAR (200) NULL
 )
 GO
 
@@ -810,7 +810,7 @@ ALTER TABLE exp.MaterialSource
    DROP CONSTRAINT UQ_MaterialSource_Name
 GO
 
-ALTER TABLE exp.ProtocolParameter ALTER COLUMN StringValue nvarchar(4000) NULL
+ALTER TABLE exp.ProtocolParameter ALTER COLUMN StringValue NVARCHAR(4000) NULL
 GO
 UPDATE exp.ProtocolParameter
     SET StringValue = FileLinkValue WHERE ValueType='FileLink'
@@ -820,7 +820,7 @@ GO
 ALTER TABLE exp.ProtocolParameter DROP COLUMN XmlTextValue
 GO
 
-ALTER TABLE exp.ProtocolApplicationParameter ALTER COLUMN StringValue nvarchar(4000) NULL
+ALTER TABLE exp.ProtocolApplicationParameter ALTER COLUMN StringValue NVARCHAR(4000) NULL
 GO
 UPDATE exp.ProtocolApplicationParameter
     SET StringValue = FileLinkValue WHERE ValueType='FileLink'
@@ -853,18 +853,18 @@ GO
 
 CREATE TABLE exp.PropertyDescriptor
 (
-    PropertyId int IDENTITY (1, 1) NOT NULL,
-    PropertyURI nvarchar (200) NOT NULL,
-    OntologyURI nvarchar (200) NULL,
-    DomainURI nvarchar (200) NULL,
-    Name nvarchar (200) NULL,
-    Description ntext NULL,
-    RangeURI nvarchar (200) NOT NULL DEFAULT ('http://www.w3.org/2001/XMLSchema#string'),
-    ConceptURI nvarchar (200) NULL,
-    Label nvarchar (200) NULL,
-    SearchTerms nvarchar (1000) NULL,
-    SemanticType nvarchar (200) NULL,
-    Format nvarchar (50) NULL,
+    PropertyId INT IDENTITY (1, 1) NOT NULL,
+    PropertyURI NVARCHAR (200) NOT NULL,
+    OntologyURI NVARCHAR (200) NULL,
+    DomainURI NVARCHAR (200) NULL,
+    Name NVARCHAR (200) NULL,
+    Description NTEXT NULL,
+    RangeURI NVARCHAR (200) NOT NULL DEFAULT ('http://www.w3.org/2001/XMLSchema#string'),
+    ConceptURI NVARCHAR (200) NULL,
+    Label NVARCHAR (200) NULL,
+    SearchTerms NVARCHAR (1000) NULL,
+    SemanticType NVARCHAR (200) NULL,
+    Format NVARCHAR (50) NULL,
     Container ENTITYID NOT NULL,
     Project ENTITYID NOT NULL
 )
@@ -975,10 +975,10 @@ GO
 
 CREATE TABLE exp.DomainDescriptor
 (
-    DomainId int IDENTITY (1, 1) NOT NULL,
-    Name nvarchar (200) NULL,
-    DomainURI nvarchar (200) NOT NULL,
-    Description ntext NULL,
+    DomainId INT IDENTITY (1, 1) NOT NULL,
+    Name NVARCHAR (200) NULL,
+    DomainURI NVARCHAR (200) NOT NULL,
+    Description NTEXT NULL,
     Container ENTITYID NOT NULL,
     Project ENTITYID NOT NULL,
     CONSTRAINT PK_DomainDescriptor PRIMARY KEY CLUSTERED (DomainId),
@@ -988,8 +988,8 @@ GO
 
 CREATE TABLE exp.PropertyDomain
 (
-    PropertyId int NOT NULL,
-    DomainId int NOT NULL,
+    PropertyId INT NOT NULL,
+    DomainId INT NOT NULL,
     CONSTRAINT PK_PropertyDomain PRIMARY KEY  CLUSTERED (PropertyId,DomainId),
     CONSTRAINT FK_PropertyDomain_Property FOREIGN KEY (PropertyId)
         REFERENCES exp.PropertyDescriptor (PropertyId),
@@ -1064,8 +1064,8 @@ GO
 
 CREATE TABLE exp.RunList
 (
-    ExperimentId int NOT NULL,
-    ExperimentRunId int NOT NULL,
+    ExperimentId INT NOT NULL,
+    ExperimentRunId INT NOT NULL,
     CONSTRAINT PK_RunList PRIMARY KEY (ExperimentId, ExperimentRunId),
     CONSTRAINT FK_RunList_ExperimentId FOREIGN KEY (ExperimentId)
             REFERENCES exp.Experiment(RowId),
@@ -1241,13 +1241,13 @@ ALTER TABLE exp.PropertyDescriptor ADD LookupQuery VARCHAR(50);
 CREATE TABLE exp.list
 (
     RowId INT IDENTITY (1, 1) NOT NULL,
-    EntityId uniqueidentifier NOT NULL,
-    Created datetime NULL,
-    CreatedBy int NULL,
-    Modified datetime NULL,
-    ModifiedBy int NULL,
+    EntityId UNIQUEIDENTIFIER NOT NULL,
+    Created DATETIME NULL,
+    CreatedBy INT NULL,
+    Modified DATETIME NULL,
+    ModifiedBy INT NULL,
 
-    Container uniqueidentifier NOT NULL,
+    Container UNIQUEIDENTIFIER NOT NULL,
     Name NVARCHAR(64) NOT NULL,
     DomainId INT NOT NULL,
     KeyName NVARCHAR(64) NOT NULL,
@@ -1514,7 +1514,7 @@ ALTER TABLE exp.materialsource ADD
 GO
 
 ALTER TABLE exp.Experiment ADD
-    BatchProtocolId int NULL
+    BatchProtocolId INT NULL
 GO
 
 ALTER TABLE exp.Experiment ADD CONSTRAINT
@@ -1595,7 +1595,7 @@ where so.xtype='D'
 and soc.id=object_id('exp.PropertyDescriptor')
 and col_name(soc.id, sc.colid) = 'QcEnabled'
 
-declare @cmd varchar(500)
+declare @cmd VARCHAR(500)
 select @cmd='Alter Table exp.PropertyDescriptor DROP CONSTRAINT ' + @constname
 select @cmd
 

@@ -65,14 +65,14 @@ GO
 
 CREATE TABLE comm.PageVersions
 (
-    RowId int IDENTITY (1, 1) NOT NULL,
+    RowId INT IDENTITY (1, 1) NOT NULL,
     PageEntityId ENTITYID NOT NULL,
     CreatedBy USERID NULL,
-    Created datetime NULL,
+    Created DATETIME NULL,
     Owner USERID NULL,
-    Version int NOT NULL,
-    Title nvarchar (255),
-    Body ntext,
+    Version INT NOT NULL,
+    Title NVARCHAR (255),
+    Body NTEXT,
 
     CONSTRAINT PK_PageVersions PRIMARY KEY (RowId),
     CONSTRAINT FK_PageVersions_Pages FOREIGN KEY (PageEntityId) REFERENCES comm.Pages(EntityId),
@@ -82,7 +82,7 @@ GO
 
 /* comm-1.30-1.40.sql */
 
-ALTER TABLE comm.Pages ADD PageVersionId int NULL
+ALTER TABLE comm.Pages ADD PageVersionId INT NULL
 ALTER TABLE comm.Pages ADD CONSTRAINT FK_Pages_PageVersions FOREIGN KEY (PageVersionId) REFERENCES comm.PageVersions (RowId)
 GO
 

@@ -29,7 +29,7 @@ CREATE TABLE search.CrawlCollections
 
     Modified TIMESTAMP NULL,      -- newest file at last crawl
     LastCrawled TIMESTAMP NULL,   -- last crawl (or attempted crawl)
-    ChangeInterval int NULL DEFAULT 1000*60*60*24,  -- daily
+    ChangeInterval INT NULL DEFAULT 1000*60*60*24,  -- daily
     NextCrawl TIMESTAMP NOT NULL DEFAULT CAST('1967-10-04' as TIMESTAMP), -- approx LastCrawled + 1/2 * ChangeInterval
     CONSTRAINT PK_Collections PRIMARY KEY (id),
     CONSTRAINT AK_Unique UNIQUE (Parent, Name)

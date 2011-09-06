@@ -51,13 +51,13 @@ CREATE TABLE prop.Properties
 );
 
 
-CREATE FUNCTION prop.Property_setValue(int, text, text) RETURNS void AS '
+CREATE FUNCTION prop.Property_setValue(INT, TEXT, TEXT) RETURNS void AS '
     DECLARE
         propertySet ALIAS FOR $1;
         propertyName ALIAS FOR $2;
         propertyValue ALIAS FOR $3;
 
-        rowCount int;
+        rowCount INT;
     BEGIN
         IF (propertyValue IS NULL) THEN
             DELETE FROM prop.Properties WHERE Set = propertySet AND Name = propertyName;

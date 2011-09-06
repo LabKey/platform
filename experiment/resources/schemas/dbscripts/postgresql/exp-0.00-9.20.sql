@@ -37,9 +37,9 @@ CREATE TABLE exp.ExperimentRun
     Comments TEXT NULL,
     EntityId ENTITYID NULL,
     Created TIMESTAMP NULL,
-    CreatedBy int NULL,
+    CreatedBy INT NULL,
     Modified TIMESTAMP NULL,
-    ModifiedBy int NULL,
+    ModifiedBy INT NULL,
     Container ENTITYID NOT NULL,
     FilePathRoot VARCHAR(500)
 );
@@ -50,18 +50,18 @@ CREATE TABLE exp.Data
     LSID LSIDtype NOT NULL,
     Name VARCHAR (200) NULL,
     CpasType VARCHAR (50) NULL,
-    SourceApplicationId int NULL,
+    SourceApplicationId INT NULL,
     SourceProtocolLSID LSIDtype NULL,
     DataFileUrl VARCHAR (400) NULL,
-    RunId int NULL,
+    RunId INT NULL,
     Created TIMESTAMP NOT NULL,
     Container ENTITYID NOT NULL
 );
 
 CREATE TABLE exp.DataInput
 (
-    DataId int NOT NULL,
-    TargetApplicationId int NOT NULL
+    DataId INT NOT NULL,
+    TargetApplicationId INT NOT NULL
 );
 
 CREATE TABLE exp.Experiment
@@ -75,18 +75,18 @@ CREATE TABLE exp.Experiment
     Comments VARCHAR (2000) NULL,
     EntityId ENTITYID NULL,
     Created TIMESTAMP NULL,
-    CreatedBy int NULL,
+    CreatedBy INT NULL,
     Modified TIMESTAMP NULL,
-    ModifiedBy int NULL,
+    ModifiedBy INT NULL,
     Container ENTITYID NOT NULL
 );
 
 CREATE TABLE exp.Fraction
 (
-    MaterialId int NOT NULL,
-    StartPoint float NULL,
-    EndPoint float NULL,
-    ProteinAssay float NULL
+    MaterialId INT NOT NULL,
+    StartPoint FLOAT NULL,
+    EndPoint FLOAT NULL,
+    ProteinAssay FLOAT NULL
 );
 
 CREATE TABLE exp.Material
@@ -95,17 +95,17 @@ CREATE TABLE exp.Material
     LSID LSIDtype NOT NULL,
     Name VARCHAR (200) NULL,
     CpasType VARCHAR (200) NULL,
-    SourceApplicationId int NULL,
+    SourceApplicationId INT NULL,
     SourceProtocolLSID LSIDtype NULL,
-    RunId int NULL,
+    RunId INT NULL,
     Created TIMESTAMP NOT NULL,
     Container ENTITYID NOT NULL
 );
 
 CREATE TABLE exp.MaterialInput
 (
-    MaterialId int NOT NULL,
-    TargetApplicationId int NOT NULL
+    MaterialId INT NOT NULL,
+    TargetApplicationId INT NOT NULL
 );
 
 CREATE TABLE exp.MaterialSource
@@ -117,9 +117,9 @@ CREATE TABLE exp.MaterialSource
     URLPattern VARCHAR(200) NULL,
     Description TEXT NULL,
     Created TIMESTAMP NULL,
-    CreatedBy int NULL,
+    CreatedBy INT NULL,
     Modified TIMESTAMP NULL,
-    ModifiedBy int NULL,
+    ModifiedBy INT NULL,
     Container ENTITYID NOT NULL
 );
 
@@ -132,7 +132,7 @@ ALTER TABLE exp.MaterialSource
 
 CREATE TABLE exp.BioSource
 (
-    MaterialId int NOT NULL,
+    MaterialId INT NOT NULL,
     Individual VARCHAR(50) NULL,
     SampleOriginDate TIMESTAMP NULL
 );
@@ -142,7 +142,7 @@ CREATE TABLE exp.Object
     ObjectId SERIAL NOT NULL,
     Container ENTITYID NOT NULL,
     ObjectURI LSIDType NOT NULL,
-    OwnerObjectId int NULL,
+    OwnerObjectId INT NULL,
     CONSTRAINT PK_Object PRIMARY KEY (ObjectId),
     CONSTRAINT UQ_Object UNIQUE (Container, ObjectURI)
 );
@@ -152,12 +152,12 @@ CREATE INDEX IDX_Object_OwnerObjectId ON exp.Object (OwnerObjectId);
 
 CREATE TABLE exp.ObjectProperty
 (
-    ObjectId int NOT NULL,  -- FK exp.Object
-    PropertyId int NOT NULL, -- FK exp.PropertyDescriptor
-    TypeTag char(1) NOT NULL, -- s string, f float, d datetime, t text
-    FloatValue float NULL,
-    DateTimeValue timestamp NULL,
-    StringValue varchar(400) NULL,
+    ObjectId INT NOT NULL,  -- FK exp.Object
+    PropertyId INT NOT NULL, -- FK exp.PropertyDescriptor
+    TypeTag CHAR(1) NOT NULL, -- s string, f float, d datetime, t text
+    FloatValue FLOAT NULL,
+    DateTimeValue TIMESTAMP NULL,
+    StringValue VARCHAR(400) NULL,
     TextValue text NULL,
     CONSTRAINT PK_ObjectProperty PRIMARY KEY (ObjectId, PropertyId)
 );
@@ -185,10 +185,10 @@ CREATE TABLE exp.Protocol
     Name VARCHAR (200) NULL,
     ProtocolDescription TEXT NULL,
     ApplicationType VARCHAR (50) NULL,
-    MaxInputMaterialPerInstance int NULL,
-    MaxInputDataPerInstance int NULL,
-    OutputMaterialPerInstance int NULL,
-    OutputDataPerInstance int NULL,
+    MaxInputMaterialPerInstance INT NULL,
+    MaxInputDataPerInstance INT NULL,
+    OutputMaterialPerInstance INT NULL,
+    OutputDataPerInstance INT NULL,
     OutputMaterialType VARCHAR (50) NULL,
     OutputDataType VARCHAR (50) NULL,
     Instrument VARCHAR (200) NULL,
@@ -196,24 +196,24 @@ CREATE TABLE exp.Protocol
     ContactId VARCHAR (100) NULL,
     Created TIMESTAMP NULL,
     EntityId ENTITYID NULL,
-    CreatedBy int NULL,
+    CreatedBy INT NULL,
     Modified TIMESTAMP NULL,
-    ModifiedBy int NULL,
+    ModifiedBy INT NULL,
     Container ENTITYID NOT NULL
 );
 
 CREATE TABLE exp.ProtocolAction
 (
     RowId SERIAL NOT NULL,
-    ParentProtocolId int NOT NULL,
-    ChildProtocolId int NOT NULL,
-    Sequence int NOT NULL
+    ParentProtocolId INT NOT NULL,
+    ChildProtocolId INT NOT NULL,
+    Sequence INT NOT NULL
 );
 
 CREATE TABLE exp.ProtocolActionPredecessor
 (
-    ActionId int NOT NULL,
-    PredecessorId int NOT NULL
+    ActionId INT NOT NULL,
+    PredecessorId INT NOT NULL
 );
 
 CREATE TABLE exp.ProtocolApplication
@@ -225,19 +225,19 @@ CREATE TABLE exp.ProtocolApplication
     ProtocolLSID LSIDtype NOT NULL,
     ActivityDate TIMESTAMP NULL,
     Comments VARCHAR (2000) NULL,
-    RunId int NOT NULL,
-    ActionSequence int NOT NULL
+    RunId INT NOT NULL,
+    ActionSequence INT NOT NULL
 );
 
 CREATE TABLE exp.ProtocolParameter
 (
     RowId SERIAL NOT NULL,
-    ProtocolId int NOT NULL,
+    ProtocolId INT NOT NULL,
     Name VARCHAR (200) NULL,
     ValueType VARCHAR(50) NULL,
     StringValue VARCHAR (400) NULL,
-    IntegerValue int NULL,
-    DoubleValue float NULL,
+    IntegerValue INT NULL,
+    DoubleValue FLOAT NULL,
     DateTimeValue TIMESTAMP NULL,
     FileLinkValue VARCHAR(400) NULL,
     XmlTextValue TEXT NULL,
@@ -247,12 +247,12 @@ CREATE TABLE exp.ProtocolParameter
 CREATE TABLE exp.ProtocolApplicationParameter
 (
     RowId SERIAL NOT NULL,
-    ProtocolApplicationId int NOT NULL,
+    ProtocolApplicationId INT NOT NULL,
     Name VARCHAR (200) NULL,
     ValueType VARCHAR(50) NULL,
     StringValue VARCHAR (400) NULL,
-    IntegerValue int NULL,
-    DoubleValue float NULL,
+    IntegerValue INT NULL,
+    DoubleValue FLOAT NULL,
     DateTimeValue TIMESTAMP NULL,
     FileLinkValue VARCHAR(400) NULL,
     XmlTextValue TEXT NULL,
@@ -563,7 +563,7 @@ END;
 --
 
 
-CREATE OR REPLACE FUNCTION exp.setProperty(INTEGER, LSIDType, LSIDType, CHAR(1), FLOAT, varchar(400), timestamp, TEXT) RETURNS void AS $$
+CREATE OR REPLACE FUNCTION exp.setProperty(INTEGER, LSIDType, LSIDType, CHAR(1), FLOAT, VARCHAR(400), TIMESTAMP, TEXT) RETURNS void AS $$
 DECLARE
     _objectid ALIAS FOR $1;
     _propertyuri ALIAS FOR $2;
@@ -730,16 +730,16 @@ $$ LANGUAGE plpgsql;
 
 
 CREATE OR REPLACE FUNCTION exp.setDateTimeProperties(_propertyid INTEGER,
-    _objectid1 INTEGER, _datetime1 timestamp,
-    _objectid2 INTEGER, _datetime2 timestamp,
-    _objectid3 INTEGER, _datetime3 timestamp,
-    _objectid4 INTEGER, _datetime4 timestamp,
-    _objectid5 INTEGER, _datetime5 timestamp,
-    _objectid6 INTEGER, _datetime6 timestamp,
-    _objectid7 INTEGER, _datetime7 timestamp,
-    _objectid8 INTEGER, _datetime8 timestamp,
-    _objectid9 INTEGER, _datetime9 timestamp,
-    _objectid10 INTEGER, _datetime10 timestamp
+    _objectid1 INTEGER, _datetime1 TIMESTAMP,
+    _objectid2 INTEGER, _datetime2 TIMESTAMP,
+    _objectid3 INTEGER, _datetime3 TIMESTAMP,
+    _objectid4 INTEGER, _datetime4 TIMESTAMP,
+    _objectid5 INTEGER, _datetime5 TIMESTAMP,
+    _objectid6 INTEGER, _datetime6 TIMESTAMP,
+    _objectid7 INTEGER, _datetime7 TIMESTAMP,
+    _objectid8 INTEGER, _datetime8 TIMESTAMP,
+    _objectid9 INTEGER, _datetime9 TIMESTAMP,
+    _objectid10 INTEGER, _datetime10 TIMESTAMP
     ) RETURNS void AS '
 BEGIN
 --    BEGIN TRANSACTION
@@ -766,7 +766,7 @@ ALTER TABLE exp.Fraction DROP CONSTRAINT FK_Fraction_Material;
 
 DROP TABLE exp.BioSource;
 DROP TABLE exp.Fraction;
-DROP FUNCTION exp.setProperty(INTEGER, LSIDType, LSIDType, CHAR(1), FLOAT, varchar(400), timestamp, TEXT);
+DROP FUNCTION exp.setProperty(INTEGER, LSIDType, LSIDType, CHAR(1), FLOAT, VARCHAR(400), TIMESTAMP, TEXT);
 
 ALTER TABLE exp.MaterialSource
    DROP CONSTRAINT UQ_MaterialSource_Name;
@@ -898,8 +898,8 @@ ALTER TABLE exp.Object ADD CONSTRAINT FK_Object_Containers FOREIGN KEY (Containe
 CREATE TABLE exp.DomainDescriptor
 (
     DomainId SERIAL NOT NULL,
-    Name varchar (200) NULL,
-    DomainURI varchar (200) NOT NULL,
+    Name VARCHAR (200) NULL,
+    DomainURI VARCHAR (200) NOT NULL,
     Description text NULL,
     Container ENTITYID NOT NULL,
     Project ENTITYID NOT NULL,
@@ -909,8 +909,8 @@ CREATE TABLE exp.DomainDescriptor
 
 CREATE TABLE exp.PropertyDomain
 (
-    PropertyId int NOT NULL,
-    DomainId int NOT NULL,
+    PropertyId INT NOT NULL,
+    DomainId INT NOT NULL,
     CONSTRAINT PK_PropertyDomain PRIMARY KEY (PropertyId,DomainId),
     CONSTRAINT FK_PropertyDomain_Property FOREIGN KEY (PropertyId)
         REFERENCES exp.PropertyDescriptor (PropertyId),
@@ -956,8 +956,8 @@ ALTER TABLE exp.propertydomain ADD COLUMN Required BOOLEAN NOT NULL DEFAULT '0';
 
 CREATE TABLE exp.RunList
 (
-    ExperimentId int NOT NULL,
-    ExperimentRunId int NOT NULL,
+    ExperimentId INT NOT NULL,
+    ExperimentRunId INT NOT NULL,
     CONSTRAINT PK_RunList PRIMARY KEY (ExperimentId, ExperimentRunId),
     CONSTRAINT FK_RunList_ExperimentId FOREIGN KEY (ExperimentId)
             REFERENCES exp.Experiment(RowId),
@@ -1069,9 +1069,9 @@ CREATE TABLE exp.list
     RowId SERIAL NOT NULL,
     EntityId ENTITYID NOT NULL,
     Created TIMESTAMP NULL,
-    CreatedBy int NULL,
+    CreatedBy INT NULL,
     Modified TIMESTAMP NULL,
-    ModifiedBy int NULL,
+    ModifiedBy INT NULL,
 
     Container ENTITYID NOT NULL,
     Name VARCHAR(64) NOT NULL,
@@ -1284,7 +1284,7 @@ ALTER TABLE exp.PropertyDescriptor ADD COLUMN QcEnabled BOOLEAN NOT NULL DEFAULT
 ALTER TABLE exp.materialsource ADD COLUMN ParentCol VARCHAR(200) NULL;
 
 ALTER TABLE exp.Experiment ADD COLUMN
-    BatchProtocolId int NULL;
+    BatchProtocolId INT NULL;
 
 ALTER TABLE exp.Experiment ADD CONSTRAINT
     FK_Experiment_BatchProtocolId FOREIGN KEY (BatchProtocolId) REFERENCES exp.Protocol (RowId);

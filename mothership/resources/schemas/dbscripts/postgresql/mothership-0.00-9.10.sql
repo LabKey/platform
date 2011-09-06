@@ -119,7 +119,7 @@ ALTER TABLE mothership.ExceptionStackTrace DROP CONSTRAINT uq_exceptionstacktrac
 
 /* mothership-2.20-2.30.sql */
 
-ALTER TABLE mothership.ServerSession ADD JavaVersion varchar(100);
+ALTER TABLE mothership.ServerSession ADD JavaVersion VARCHAR(100);
 ALTER TABLE mothership.ServerSession ADD UserCount INT;
 ALTER TABLE mothership.ServerSession ADD ActiveUserCount INT;
 ALTER TABLE mothership.ServerSession ADD ProjectCount INT;

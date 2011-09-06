@@ -22,10 +22,10 @@ CREATE TABLE query.QueryDef
 (
     QueryDefId SERIAL NOT NULL,
     EntityId ENTITYID NOT NULL,
-    Created TIMESTAMP NULL ,
-    CreatedBy int NULL ,
-    Modified TIMESTAMP NULL ,
-    ModifiedBy int NULL ,
+    Created TIMESTAMP NULL,
+    CreatedBy INT NULL,
+    Modified TIMESTAMP NULL,
+    ModifiedBy INT NULL,
 
     Container ENTITYID NOT NULL,
     Name VARCHAR(50) NOT NULL,
@@ -44,7 +44,7 @@ CREATE TABLE query.CustomView
     CustomViewId SERIAL NOT NULL,
     EntityId ENTITYID NOT NULL,
     Created TIMESTAMP NOT NULL,
-    CreatedBy int NULL,
+    CreatedBy INT NULL,
     Modified TIMESTAMP NULL,
     ModifiedBy INT NULL,
     Schema VARCHAR(50) NOT NULL,
@@ -52,7 +52,7 @@ CREATE TABLE query.CustomView
 
     Container ENTITYID NOT NULL,
     Name VARCHAR(50) NULL,
-    CustomViewOwner int NULL,
+    CustomViewOwner INT NULL,
     Columns TEXT,
     Filter TEXT,
     Flags INTEGER NOT NULL,
@@ -65,9 +65,9 @@ CREATE TABLE query.DbUserSchema
     DbUserSchemaId SERIAL NOT NULL,
     EntityId ENTITYID NOT NULL,
     Created TIMESTAMP NULL,
-    CreatedBy int NULL,
+    CreatedBy INT NULL,
     Modified TIMESTAMP NULL,
-    ModifiedBy int NULL,
+    ModifiedBy INT NULL,
 
     Container ENTITYID NOT NULL,
     UserSchemaName VARCHAR(50) NOT NULL,
@@ -90,9 +90,9 @@ CREATE TABLE query.QuerySnapshotDef
 
     EntityId ENTITYID NOT NULL,
     Created TIMESTAMP NULL,
-    CreatedBy int NULL,
+    CreatedBy INT NULL,
     Modified TIMESTAMP NULL,
-    ModifiedBy int NULL,
+    ModifiedBy INT NULL,
     Container ENTITYID NOT NULL,
     Schema VARCHAR(50) NOT NULL,
     Name VARCHAR(50) NOT NULL,
@@ -114,4 +114,4 @@ ALTER TABLE query.QuerySnapshotDef DROP COLUMN ViewName;
 
 /* query-8.30-9.10.sql */
 
-ALTER TABLE query.customview ALTER COLUMN name type varchar(200);
+ALTER TABLE query.customview ALTER COLUMN name TYPE VARCHAR(200);

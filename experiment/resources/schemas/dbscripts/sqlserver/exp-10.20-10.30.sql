@@ -68,8 +68,8 @@ GO
 
 /* exp-10.22-10.23.sql */
 
-ALTER TABLE exp.domaindescriptor ADD storageTableName nvarchar(100);
-ALTER TABLE exp.domaindescriptor ADD storageSchemaName nvarchar(100);
+ALTER TABLE exp.domaindescriptor ADD storageTableName NVARCHAR(100);
+ALTER TABLE exp.domaindescriptor ADD storageSchemaName NVARCHAR(100);
 GO
 
 /* exp-10.23-10.24.sql */

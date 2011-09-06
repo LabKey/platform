@@ -31,7 +31,7 @@ CREATE TABLE search.CrawlCollections
 
   Modified DATETIME NULL,
   LastCrawled DATETIME NULL,
-  ChangeInterval int NULL DEFAULT 1000*60*60*24,
+  ChangeInterval INT NULL DEFAULT 1000*60*60*24,
   NextCrawl DATETIME NOT NULL DEFAULT CAST('1967-10-04' as DATETIME),
 
   -- NOTE: Path is too long to use for primary key

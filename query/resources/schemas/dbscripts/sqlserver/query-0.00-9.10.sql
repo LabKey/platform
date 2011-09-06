@@ -27,7 +27,7 @@ CREATE TABLE query.QueryDef
     Modified DATETIME NULL,
     ModifiedBy INT NULL,
 
-    Container uniqueidentifier NOT NULL,
+    Container UNIQUEIDENTIFIER NOT NULL,
     Name NVARCHAR(50) NOT NULL,
     "Schema" NVARCHAR(50) NOT NULL,
     Sql NTEXT,
@@ -67,9 +67,9 @@ CREATE TABLE query.DbUserSchema
     DbUserSchemaId INT IDENTITY(1,1) NOT NULL,
     EntityId UNIQUEIDENTIFIER NOT NULL,
     Created DATETIME NULL,
-    CreatedBy int NULL,
+    CreatedBy INT NULL,
     Modified DATETIME NULL,
-    ModifiedBy int NULL,
+    ModifiedBy INT NULL,
 
     Container UNIQUEIDENTIFIER NOT NULL,
     UserSchemaName NVARCHAR(50) NOT NULL,
@@ -86,7 +86,7 @@ ALTER TABLE query.dbuserschema ADD
     metadata NTEXT NULL
 GO
 
-ALTER TABLE query.customview ALTER COLUMN queryname nvarchar(200)
+ALTER TABLE query.customview ALTER COLUMN queryname NVARCHAR(200)
 GO
 
 ALTER TABLE query.dbuserschema ALTER COLUMN dbschemaname NVARCHAR(50) NOT NULL
@@ -99,9 +99,9 @@ CREATE TABLE query.QuerySnapshotDef
 
     EntityId ENTITYID NOT NULL,
     Created DATETIME NULL,
-    CreatedBy int NULL,
+    CreatedBy INT NULL,
     Modified DATETIME NULL,
-    ModifiedBy int NULL,
+    ModifiedBy INT NULL,
     Container ENTITYID NOT NULL,
     "Schema" NVARCHAR(50) NOT NULL,
     Name NVARCHAR(50) NOT NULL,
@@ -132,5 +132,5 @@ GO
 
 /* query-8.30-9.10.sql */
 
-ALTER TABLE query.customview ALTER COLUMN name nvarchar(200)
+ALTER TABLE query.customview ALTER COLUMN name NVARCHAR(200)
 GO

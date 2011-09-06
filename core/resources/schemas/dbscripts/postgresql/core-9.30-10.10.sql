@@ -13,41 +13,28 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-/* core-9.30-9.31.sql */
 
-
-
-/* core-9.31-9.32.sql */
-
-/* PostgreSQL Version */
-
-alter table core.Containers
-  add ExperimentID int,
-  add Description varchar(4000);
-
-/* core-9.32-9.33.sql */
+ALTER TABLE core.Containers
+  ADD ExperimentID INT,
+  ADD Description VARCHAR(4000);
 
 -- experiment id should not be on Containers table
-alter table core.Containers
-drop column ExperimentID;
+ALTER TABLE core.Containers
+  DROP COLUMN ExperimentID;
 
-/* core-9.33-9.34.sql */
-
-alter table core.Containers
-  add Workbook boolean not null default false;
-
-/* core-9.34-9.35.sql */
+ALTER TABLE core.Containers
+  ADD Workbook BOOLEAN NOT NULL DEFAULT false;
 
 -- Add ability to drop default
-CREATE OR REPLACE FUNCTION core.fn_dropifexists (text, text, text, text) RETURNS integer AS $$
+CREATE OR REPLACE FUNCTION core.fn_dropifexists (text, text, text, text) RETURNS INTEGER AS $$
 DECLARE
     objname ALIAS FOR $1;
     objschema ALIAS FOR $2;
     objtype ALIAS FOR $3;
     subobjname ALIAS FOR $4;
     ret_code INTEGER;
-    fullname text;
-    tempschema text;
+    fullname TEXT;
+    tempschema TEXT;
     BEGIN
     ret_code := 0;
     fullname := (LOWER(objschema) || '.' || LOWER(objname));
@@ -126,16 +113,10 @@ DECLARE
     END;
 $$ LANGUAGE plpgsql;
 
-/* core-9.35-9.36.sql */
+ALTER TABLE core.Containers
+  ADD Title VARCHAR(1000);
 
-alter table core.Containers
-  add Title varchar(1000);
-
-/* core-9.36-9.37.sql */
-
-alter table core.Documents add LastIndexed timestamp null;
-
-/* core-9.37-9.38.sql */
+ALTER TABLE core.Documents ADD LastIndexed TIMESTAMP NULL;
 
 -- Add support for password expiration and password history
 ALTER TABLE core.Logins

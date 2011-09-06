@@ -51,6 +51,7 @@ CREATE TABLE core.Principals
     OwnerId ENTITYID NULL,
     Name VARCHAR(64),                 -- email (must contain @ and .), group name (no punctuation), or hidden (no @)
     Type CHAR(1),                     -- 'u'=user 'g'=group (NYI 'r'=role, 'm'=managed(module specific)
+    Active boolean NOT NULL DEFAULT true,
 
     CONSTRAINT PK_Principals PRIMARY KEY (UserId),
     CONSTRAINT UQ_Principals_Container_Name_OwnerId UNIQUE (Container, Name, OwnerId)
@@ -104,11 +105,16 @@ CREATE TABLE core.Containers
 
     Parent ENTITYID,
     Name VARCHAR(255),
+    SortOrder INTEGER NOT NULL DEFAULT 0,
+    CaBIGPublished BOOLEAN NOT NULL DEFAULT '0',
 
+    CONSTRAINT UQ_Containers_RowId UNIQUE (RowId),
     CONSTRAINT UQ_Containers_EntityId UNIQUE (EntityId),
     CONSTRAINT UQ_Containers_Parent_Name UNIQUE (Parent, Name),
     CONSTRAINT FK_Containers_Containers FOREIGN KEY (Parent) REFERENCES core.Containers(EntityId)
 );
+
+CREATE INDEX IX_Containers_Parent_Entity ON core.Containers(Parent, EntityId);
 
 -- table for all modules
 CREATE TABLE core.Modules
@@ -154,12 +160,15 @@ CREATE TABLE core.Documents
     DocumentName VARCHAR(195),    --filename
 
     DocumentSize INT DEFAULT -1,
-    DocumentType VARCHAR(32) DEFAULT 'text/plain',
+    DocumentType VARCHAR(500) DEFAULT 'text/plain',    -- Needs to be large enough to handle new Office document mime-types
     Document BYTEA,            -- ContentType LIKE application/*
 
     CONSTRAINT PK_Documents PRIMARY KEY (RowId),
     CONSTRAINT UQ_Documents_Parent_DocumentName UNIQUE (Parent, DocumentName)
 );
+
+CREATE INDEX IX_Documents_Container ON core.Documents(Container);
+CREATE INDEX IX_Documents_Parent ON core.Documents(Parent);
 
 /* core-1.30-1.40.sql */
 
@@ -187,28 +196,11 @@ CREATE TABLE core.Report
     ContainerId ENTITYID NOT NULL,
     EntityId ENTITYID NULL,
     DescriptorXML TEXT,
+    ReportOwner INT,
+    Flags INT NOT NULL DEFAULT 0,
 
     CONSTRAINT PK_Report PRIMARY KEY (RowId)
 );
-
-/* core-1.70-2.00.sql */
-
-CREATE INDEX IX_Containers_Parent_Entity ON core.Containers(Parent, EntityId);
-ALTER TABLE core.Containers ADD CONSTRAINT UQ_Containers_RowId UNIQUE (RowId);
-
-CREATE INDEX IX_Documents_Container ON core.Documents(Container);
-CREATE INDEX IX_Documents_Parent ON core.Documents(Parent);
-
-ALTER TABLE core.Containers ADD
-    SortOrder INTEGER NOT NULL DEFAULT 0;
-
-ALTER TABLE core.Report
-    ADD COLUMN ReportOwner INT;
-
-/* core-2.00-2.10.sql */
-
-ALTER TABLE core.Containers ADD 
-    CaBIGPublished BOOLEAN NOT NULL DEFAULT '0';
 
 CREATE TABLE core.ContainerAliases
 (
@@ -230,8 +222,40 @@ CREATE TABLE core.MappedDirectories
    CONSTRAINT UQ_MappedDirectories UNIQUE (Container,Name)
 );
 
--- Add ability to drop constraints; switch to $$ quoting for sanity
-CREATE FUNCTION core.fn_dropifexists (text, text, text, text) RETURNS integer AS $$
+/* core-9.10-9.20.sql */
+
+CREATE TABLE core.Policies
+(
+    ResourceId ENTITYID NOT NULL,
+    ResourceClass VARCHAR(1000),
+    Container ENTITYID NOT NULL,
+    Modified TIMESTAMP NOT NULL,
+
+    CONSTRAINT PK_Policies PRIMARY KEY(ResourceId)
+);
+
+CREATE TABLE core.RoleAssignments
+(
+    ResourceId ENTITYID NOT NULL,
+    UserId USERID NOT NULL,
+    Role VARCHAR(500) NOT NULL,
+
+    CONSTRAINT PK_RoleAssignments PRIMARY KEY(ResourceId,UserId,Role),
+    CONSTRAINT FK_RA_P FOREIGN KEY(ResourceId) REFERENCES core.Policies(ResourceId),
+    CONSTRAINT FK_RA_UP FOREIGN KEY(UserId) REFERENCES core.Principals(UserId)
+);
+
+CREATE TABLE core.MvIndicators
+(
+    Container ENTITYID,
+    MvIndicator VARCHAR(64),
+    Label VARCHAR(255) NULL,
+
+    CONSTRAINT PK_MvIndicators_Container_MvIndicator PRIMARY KEY (Container, MvIndicator)
+);
+
+-- Function to safely drop tables, views, indexes, constraints, and schemas
+CREATE FUNCTION core.fn_dropifexists (text, text, text, text) RETURNS INTEGER AS $$
 DECLARE
     objname ALIAS FOR $1;
     objschema ALIAS FOR $2;
@@ -313,15 +337,6 @@ DECLARE
     END;
 $$ LANGUAGE plpgsql;
 
-/* Expand DocumentType to handle new longer Office document mime-types */
-ALTER TABLE core.Documents ALTER COLUMN DocumentType TYPE VARCHAR(500);
-
-ALTER TABLE core.Report ADD COLUMN Flags INT NOT NULL DEFAULT 0;
-
--- Add Active column to Principals table
-ALTER TABLE core.Principals
-    ADD COLUMN Active boolean NOT NULL DEFAULT true;
-
 /* core-8.30-9.10.sql */
 
 -- This empty stored procedure doesn't directly change the database, but calling it from a sql script signals the
@@ -332,72 +347,4 @@ CREATE FUNCTION core.executeJavaUpgradeCode(text) RETURNS void AS $$
     BEGIN
     END
 $$ LANGUAGE plpgsql;
-
-/* core-9.10-9.20.sql */
-
-CREATE TABLE core.QcValues
-(
-    Container ENTITYID,
-    QcValue VARCHAR(64),
-    Label VARCHAR(255) NULL,
-
-    CONSTRAINT PK_QcValues_Container_QcValue PRIMARY KEY (Container, QcValue)
-);
-
-SELECT core.fn_dropifexists('RoleAssignments', 'core', 'TABLE', null);
-
-CREATE TABLE core.RoleAssignments
-(
-    ResourceId ENTITYID NOT NULL,
-    UserId USERID NOT NULL,
-    Role VARCHAR(500) NOT NULL,
-    Container ENTITYID,
-    ResourceClass VARCHAR(1000),
-
-    CONSTRAINT PK_RoleAssignments PRIMARY KEY(ResourceId,UserId,Role),
-    CONSTRAINT FK_RA_UP FOREIGN KEY(UserId) REFERENCES core.Principals(UserId)
-);
-
-CREATE TABLE core.MvIndicators
-(
-    Container ENTITYID,
-    MvIndicator VARCHAR(64),
-    Label VARCHAR(255) NULL,
-
-    CONSTRAINT PK_MvIndicators_Container_MvIndicator PRIMARY KEY (Container, MvIndicator)
-);
-
-INSERT INTO core.MvIndicators (Container, MvIndicator, Label)
-(
-    SELECT Container, QcValue, Label FROM core.QcValues
-);
-
-DROP TABLE core.QcValues;
-
--- create Policies and RoleAssignments tables
-SELECT core.fn_dropifexists('RoleAssignments', 'core', 'TABLE', null);
-
--- create Policies and RoleAssignments tables
-SELECT core.fn_dropifexists('Policies', 'core', 'TABLE', null);
-
-CREATE TABLE core.Policies
-(
-    ResourceId ENTITYID NOT NULL,
-    ResourceClass VARCHAR(1000),
-    Container ENTITYID NOT NULL,
-    Modified TIMESTAMP NOT NULL,
-
-    CONSTRAINT PK_Policies PRIMARY KEY(ResourceId)
-);
-
-CREATE TABLE core.RoleAssignments
-(
-    ResourceId ENTITYID NOT NULL,
-    UserId USERID NOT NULL,
-    Role VARCHAR(500) NOT NULL,
-
-    CONSTRAINT PK_RoleAssignments PRIMARY KEY(ResourceId,UserId,Role),
-    CONSTRAINT FK_RA_P FOREIGN KEY(ResourceId) REFERENCES core.Policies(ResourceId),
-    CONSTRAINT FK_RA_UP FOREIGN KEY(UserId) REFERENCES core.Principals(UserId)
-);
 

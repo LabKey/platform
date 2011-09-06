@@ -136,7 +136,7 @@ GO
 
 /* mothership-2.20-2.30.sql */
 
-ALTER TABLE mothership.ServerSession ADD JavaVersion varchar(100)
+ALTER TABLE mothership.ServerSession ADD JavaVersion VARCHAR(100)
 GO
 
 ALTER TABLE mothership.ServerSession ADD UserCount INT

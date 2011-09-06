@@ -38,7 +38,7 @@ INSERT INTO comm.emailOptions (EmailOptionId, EmailOption, Type) VALUES
 INSERT INTO comm.emailPrefs (Container, UserId, EmailOptionId, EmailFormatId, PageTypeId, Type) SELECT
 	ObjectId,
 	UserId,
-	CAST(Value AS integer) + 512,
+	CAST(Value AS INTEGER) + 512,
 	1, 0, 'files'
 	FROM prop.Properties props JOIN prop.PropertySets ps on props.set = ps.set AND category = 'EmailService.emailPrefs' WHERE name = 'FileContentEmailPref' AND value <> '-1';
 

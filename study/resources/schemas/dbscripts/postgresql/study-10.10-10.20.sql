@@ -23,7 +23,7 @@
 /* Handle the possibility that branch release10.1 study-10.10-10.11.sql script has already run. */
 
 /* Create studydata participant index if it doesn't exist. */
-CREATE OR REPLACE FUNCTION core.fn_create_studydata_participant_index () RETURNS integer AS $$
+CREATE OR REPLACE FUNCTION core.fn_create_studydata_participant_index () RETURNS INTEGER AS $$
 BEGIN
     IF NOT EXISTS (SELECT * FROM pg_indexes
                    WHERE schemaname = 'study'
@@ -46,7 +46,7 @@ DROP FUNCTION core.fn_create_studydata_participant_index();
 
 
 /* Create study.vial.AvailabilityReason column if it doesn't exist. */
-CREATE OR REPLACE FUNCTION core.fn_create_vial_availabilityreason () RETURNS integer AS $$
+CREATE OR REPLACE FUNCTION core.fn_create_vial_availabilityreason () RETURNS INTEGER AS $$
 BEGIN
     IF NOT EXISTS ( SELECT * FROM pg_attribute, pg_class
         WHERE attname = LOWER('AvailabilityReason')
@@ -66,7 +66,7 @@ DROP FUNCTION core.fn_create_vial_availabilityreason();
 
 
 /* Create study.SampleAvailabilityRule table if it doesn't exist */
-CREATE OR REPLACE FUNCTION core.fn_create_study_sampleavailabilityrule () RETURNS integer AS $$
+CREATE OR REPLACE FUNCTION core.fn_create_study_sampleavailabilityrule () RETURNS INTEGER AS $$
 BEGIN
     IF NOT EXISTS ( SELECT * FROM pg_tables WHERE schemaname = 'study' AND tablename = LOWER('SampleAvailabilityRule'))
     THEN

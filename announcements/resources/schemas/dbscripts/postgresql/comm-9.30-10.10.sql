@@ -16,11 +16,11 @@
 
 /* comm-9.30-9.31.sql */
 
-alter table comm.pages add LastIndexed timestamp null;
+ALTER TABLE comm.pages ADD LastIndexed TIMESTAMP NULL;
 
 /* comm-9.31-9.32.sql */
 
-alter table comm.announcements add LastIndexed timestamp null;
+ALTER TABLE comm.announcements ADD LastIndexed TIMESTAMP NULL;
 
 /* comm-9.32-9.33.sql */
 

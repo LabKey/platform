@@ -60,7 +60,7 @@ GO
 ALTER TABLE pipeline.StatusFiles ADD
     Description NVARCHAR(255),
     DataUrl NVARCHAR(255),
-    Job uniqueidentifier,
+    Job UNIQUEIDENTIFIER,
     Provider NVARCHAR(255)
 GO
 
@@ -69,7 +69,7 @@ ALTER TABLE pipeline.PipelineRoots ADD
 GO
 
 ALTER TABLE pipeline.StatusFiles ADD
-    HadError bit NOT NULL DEFAULT 0
+    HadError BIT NOT NULL DEFAULT 0
 GO
 
 ALTER TABLE pipeline.StatusFiles
@@ -85,7 +85,7 @@ ALTER TABLE pipeline.StatusFiles
 GO
 
 ALTER TABLE pipeline.StatusFiles ADD
-    JobParent uniqueidentifier,
+    JobParent UNIQUEIDENTIFIER,
     JobStore NTEXT
 GO
 
@@ -96,7 +96,7 @@ ALTER TABLE pipeline.PipelineRoots ADD
 GO
 
 ALTER TABLE pipeline.PipelineRoots ADD
-    PerlPipeline bit NOT NULL DEFAULT 0
+    PerlPipeline BIT NOT NULL DEFAULT 0
 GO
 
 ALTER TABLE pipeline.StatusFiles ADD

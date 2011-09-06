@@ -804,7 +804,7 @@ public class SqlScriptController extends SpringActionController
         {
             ScriptReorderer reorderer = new ScriptReorderer(script.getContents());
             String reorderedScript = reorderer.getReorderedScript(false);
-            ((FileSqlScriptProvider)script.getProvider()).saveScript(script.getDescription(), reorderedScript);
+            ((FileSqlScriptProvider)script.getProvider()).saveScript(script.getDescription(), reorderedScript, true);
             
             final ActionURL url = new ActionURL(ScriptAction.class, getViewContext().getContainer());
             url.addParameter("moduleName", script.getProvider().getProviderName());

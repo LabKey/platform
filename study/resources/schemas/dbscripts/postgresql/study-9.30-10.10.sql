@@ -18,7 +18,7 @@
 
 ALTER TABLE study.study
   ALTER COLUMN datebased DROP DEFAULT,
-  ALTER COLUMN datebased TYPE varchar(15)
+  ALTER COLUMN datebased TYPE VARCHAR(15)
     USING CASE WHEN datebased THEN 'RELATIVE_DATE' ELSE 'VISIT' END,
   ALTER COLUMN datebased SET NOT NULL;
 

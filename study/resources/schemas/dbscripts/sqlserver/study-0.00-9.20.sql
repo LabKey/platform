@@ -23,7 +23,7 @@ IF NOT EXISTS (SELECT * FROM sysusers WHERE name ='study')
 GO
 
 IF NOT EXISTS (SELECT * FROM systypes WHERE name ='LSIDtype')
-    EXEC sp_addtype 'LSIDtype', 'nvarchar(300)'
+    EXEC sp_addtype 'LSIDtype', 'NVARCHAR(300)'
 GO
 
 
@@ -355,7 +355,7 @@ GO
 
 CREATE TABLE study.AssayRun
 (
-    RowId int IDENTITY (1, 1) NOT NULL,
+    RowId INT IDENTITY (1, 1) NOT NULL,
     AssayType NVARCHAR(200) NOT NULL,
     Container ENTITYID NOT NULL,
     CONSTRAINT PK_AssayRun PRIMARY KEY (RowId)
@@ -527,7 +527,7 @@ CREATE TABLE study.ParticipantVisit
 (
     Container ENTITYID NOT NULL,
     ParticipantId VARCHAR(32) NOT NULL,
-    VisitRowId int NULL,
+    VisitRowId INT NULL,
     SequenceNum NUMERIC(15,4) NOT NULL,
     VisitDate DATETIME NULL
 );
@@ -1014,7 +1014,7 @@ where so.xtype='D'
 and soc.id=object_id('Study.Study')
 and col_name(soc.id, sc.colid) = 'StudySecurity'
 
-declare @cmd varchar(500)
+declare @cmd VARCHAR(500)
 select @cmd='Alter Table Study.Study DROP CONSTRAINT ' + @constname
 select @cmd
 

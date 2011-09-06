@@ -18,8 +18,6 @@
 
 EXEC sp_addtype 'ENTITYID', 'UNIQUEIDENTIFIER'
 EXEC sp_addtype 'USERID', 'INT'
-GO
-
 EXEC sp_addapprole 'core', 'password'
 GO
 
@@ -45,11 +43,12 @@ GO
 
 CREATE TABLE core.Principals
 (
-    UserId USERID IDENTITY(1000,1),    -- user or group
-    Container ENTITYID,                -- NULL for all users, NOT NULL for _ALL_ groups
+    UserId USERID IDENTITY(1000,1),   -- user or group
+    Container ENTITYID,               -- NULL for all users, NOT NULL for _ALL_ groups
     OwnerId ENTITYID NULL,
     Name NVARCHAR(64),                -- email (must contain @ and .), group name (no punctuation), or hidden (no @)
-    Type CHAR(1),                   -- 'u'=user 'g'=group (NYI 'r'=role, 'm'=managed(module specific)
+    Type CHAR(1),                     -- 'u'=user 'g'=group (NYI 'r'=role, 'm'=managed(module specific)
+    Active BIT NOT NULL DEFAULT 1,
 
     CONSTRAINT PK_Principals PRIMARY KEY (UserId),
     CONSTRAINT UQ_Principals_Container_Name_OwnerId UNIQUE (Container, Name, OwnerId)
@@ -104,11 +103,17 @@ CREATE TABLE core.Containers
 
     Parent ENTITYID,
     Name VARCHAR(255),
+    SortOrder INTEGER NOT NULL DEFAULT 0,
+    CaBIGPublished BIT NOT NULL DEFAULT 0,
 
+    CONSTRAINT UQ_Containers_RowId UNIQUE CLUSTERED (RowId),
     CONSTRAINT UQ_Containers_EntityId UNIQUE (EntityId),
     CONSTRAINT UQ_Containers_Parent_Name UNIQUE (Parent, Name),
     CONSTRAINT FK_Containers_Containers FOREIGN KEY (Parent) REFERENCES core.Containers(EntityId)
 )
+GO
+
+CREATE INDEX IX_Containers_Parent_Entity ON core.Containers(Parent, EntityId)
 GO
 
 -- table for all modules
@@ -157,12 +162,16 @@ CREATE TABLE core.Documents
     DocumentName NVARCHAR(195),        --filename
 
     DocumentSize INT DEFAULT -1,
-    DocumentType VARCHAR(32) DEFAULT 'text/plain',
+    DocumentType VARCHAR(500) DEFAULT 'text/plain',  -- Needs to be large enough to handle new Office document mime-types
     Document IMAGE,            -- ContentType LIKE application/*
 
     CONSTRAINT PK_Documents PRIMARY KEY (RowId),
     CONSTRAINT UQ_Documents_Parent_DocumentName UNIQUE (Parent, DocumentName)
 )
+GO
+
+CREATE INDEX IX_Documents_Container ON core.Documents(Container)
+CREATE INDEX IX_Documents_Parent ON core.Documents(Parent)
 GO
 
 -- Create a log of events (created, verified, password reset, etc.) associated with users
@@ -188,30 +197,11 @@ CREATE TABLE core.Report
     ContainerId ENTITYID NOT NULL,
     EntityId ENTITYID NULL,
     DescriptorXML TEXT,
+    ReportOwner INT,
+    Flags INT NOT NULL DEFAULT 0,
 
     CONSTRAINT PK_Report PRIMARY KEY (RowId)
 );
-GO
-
-CREATE INDEX IX_Containers_Parent_Entity ON core.Containers(Parent, EntityId)
-GO
-ALTER TABLE core.Containers ADD CONSTRAINT UQ_Containers_RowId UNIQUE CLUSTERED (RowId)
-GO
-CREATE INDEX IX_Documents_Container ON core.Documents(Container)
-GO
-CREATE INDEX IX_Documents_Parent ON core.Documents(Parent)
-GO
-
-ALTER TABLE core.Containers ADD
-    SortOrder INTEGER NOT NULL DEFAULT 0
-GO
-
-ALTER TABLE core.Report
-    ADD ReportOwner INT
-GO
-
-ALTER TABLE core.Containers ADD
-    CaBIGPublished BIT NOT NULL DEFAULT 0
 GO
 
 CREATE TABLE core.ContainerAliases
@@ -237,7 +227,42 @@ CREATE TABLE core.MappedDirectories
 )
 GO
 
--- Add ability to drop constraints
+/* core-9.10-9.20.sql */
+
+CREATE TABLE core.Policies
+(
+    ResourceId ENTITYID NOT NULL,
+    ResourceClass VARCHAR(1000),
+    Container ENTITYID NOT NULL,
+    Modified DATETIME NOT NULL,
+
+    CONSTRAINT PK_Policies PRIMARY KEY(ResourceId)
+);
+GO
+
+CREATE TABLE core.RoleAssignments
+(
+    ResourceId ENTITYID NOT NULL,
+    UserId USERID NOT NULL,
+    Role VARCHAR(500) NOT NULL,
+
+    CONSTRAINT PK_RoleAssignments PRIMARY KEY(ResourceId, UserId, Role),
+    CONSTRAINT FK_RA_P FOREIGN KEY(ResourceId) REFERENCES core.Policies(ResourceId),
+    CONSTRAINT FK_RA_UP FOREIGN KEY(UserId) REFERENCES core.Principals(UserId)
+);
+GO
+
+CREATE TABLE core.MvIndicators
+(
+    Container ENTITYID NOT NULL,
+    MvIndicator VARCHAR(64) NOT NULL,
+    Label VARCHAR(255),
+
+    CONSTRAINT PK_MvIndicators_Container_MvIndicator PRIMARY KEY (Container, MvIndicator)
+)
+GO
+
+-- Procedure to safely drop tables, views, indexes, constraints, and schemas
 CREATE PROCEDURE core.fn_dropifexists (@objname VARCHAR(250), @objschema VARCHAR(50), @objtype VARCHAR(50), @subobjname VARCHAR(250) = NULL)
 AS
 DECLARE @ret_code INTEGER
@@ -290,13 +315,13 @@ BEGIN
 END
 ELSE IF (UPPER(@objtype)) = 'SCHEMA'
 BEGIN
-    DECLARE @uid int
+    DECLARE @uid INT
     SELECT @uid=uid FROM sysusers WHERE name = LOWER(@objschema) AND IsAppRole=1
     IF @uid IS NOT NULL
     BEGIN
         IF (@objname = '*' )
         BEGIN
-            DECLARE @soName sysname, @parent int, @xt char(2), @fkschema sysname
+            DECLARE @soName sysname, @parent INT, @xt CHAR(2), @fkschema sysname
             DECLARE soCursor CURSOR for SELECT so.name, so.xtype, so.parent_obj, su.name
                         FROM sysobjects so
                         INNER JOIN sysusers su ON (so.uid = su.uid)
@@ -355,18 +380,6 @@ ELSE
 RETURN @ret_code
 GO
 
-/* Expand the size of DocumentType to handle new longer Office document mime-types */
-ALTER TABLE core.Documents ALTER COLUMN DocumentType VARCHAR(500)
-GO
-
-ALTER TABLE core.Report ADD Flags INT NOT NULL DEFAULT 0
-GO
-
--- Add Active column to Principals table
-ALTER TABLE core.Principals ADD
-    Active bit NOT NULL DEFAULT 1
-GO
-
 /* core-8.30-9.10.sql */
 
 -- This empty stored procedure doesn't directly change the database, but calling it from a sql script signals the
@@ -377,79 +390,4 @@ BEGIN
     DECLARE @notice VARCHAR(255)
     SET @notice = 'Empty function that signals script runner to execute Java code.  See usages of UpgradeCode.java.'
 END
-GO
-
-/* core-9.10-9.20.sql */
-
-CREATE TABLE core.QcValues
-(
-    Container ENTITYID NOT NULL,
-    QcValue VARCHAR(64) NOT NULL,
-    Label VARCHAR(255),
-
-    CONSTRAINT PK_QcValues_Container_QcValue PRIMARY KEY (Container, QcValue)
-)
-GO
-
-EXEC core.fn_dropifexists 'RoleAssignments', 'core', 'TABLE', null;
-
-CREATE TABLE core.RoleAssignments
-(
-    ResourceId ENTITYID NOT NULL,
-    UserId USERID NOT NULL,
-    Role VARCHAR(500) NOT NULL,
-    Container ENTITYID,
-    ResourceClass VARCHAR(1000),
-
-    CONSTRAINT PK_RoleAssignments PRIMARY KEY CLUSTERED (ResourceId,UserId,Role),
-    CONSTRAINT FK_RA_UP FOREIGN KEY(UserId) REFERENCES core.Principals(UserId)
-);
-GO
-
-CREATE TABLE core.MvIndicators
-(
-    Container ENTITYID NOT NULL,
-    MvIndicator VARCHAR(64) NOT NULL,
-    Label VARCHAR(255),
-
-    CONSTRAINT PK_MvIndicators_Container_MvIndicator PRIMARY KEY (Container, MvIndicator)
-)
-GO
-
-INSERT INTO core.MvIndicators (Container, MvIndicator, Label)
-(
-    SELECT Container, QcValue, Label
-    FROM
-    core.QcValues
-)
-GO
-
-DROP TABLE core.QcValues
-GO
-
--- create Policies and RoleAssignments tables
-EXEC core.fn_dropifexists 'RoleAssignments', 'core', 'TABLE', null;
-GO
-
-CREATE TABLE core.Policies
-(
-    ResourceId ENTITYID NOT NULL,
-    ResourceClass VARCHAR(1000),
-    Container ENTITYID NOT NULL,
-    Modified DATETIME NOT NULL,
-
-    CONSTRAINT PK_Policies PRIMARY KEY(ResourceId)
-);
-GO
-
-CREATE TABLE core.RoleAssignments
-(
-    ResourceId ENTITYID NOT NULL,
-    UserId USERID NOT NULL,
-    Role VARCHAR(500) NOT NULL,
-
-    CONSTRAINT PK_RoleAssignments PRIMARY KEY(ResourceId,UserId,Role),
-    CONSTRAINT FK_RA_P FOREIGN KEY(ResourceId) REFERENCES core.Policies(ResourceId),
-    CONSTRAINT FK_RA_UP FOREIGN KEY(UserId) REFERENCES core.Principals(UserId)
-);
 GO
