@@ -691,7 +691,7 @@ LABKEY.vis.TimeChartPanel = Ext.extend(Ext.Panel, {
                 // store the temp schema name, query name, etc. for the data grid
                 this.tempGridInfo = {schema: data.schemaName, query: data.queryName,
                         subjectCol: data.measureToColumn[this.viewInfo.subjectColumn],
-                        sortCols: this.editorXAxisPanel.getTime() == "date" ? gridSortCols : [data.measureToColumn["ParticipantVisit/Visit/DisplayOrder"]]
+                        sortCols: this.editorXAxisPanel.getTime() == "date" ? gridSortCols : [data.measureToColumn[this.viewInfo.subjectNounSingular + "Visit/Visit/DisplayOrder"]]
                 };
 
                 // now that we have the temp grid info, enable the View Data button
@@ -706,7 +706,7 @@ LABKEY.vis.TimeChartPanel = Ext.extend(Ext.Panel, {
                 LABKEY.Utils.displayAjaxErrorResponse(response, options);
                 this.maskChartPanel("Error: " + info.exception);
             },
-            measures: this.chartInfo.measures,//this.getOrigGetDataMeasuresConfig(), // todo: remove this conversion after the re-config happens
+            measures: this.chartInfo.measures,
             viewInfo: this.viewInfo,
             sorts: this.getDataSortArray(),
             filterUrl: this.chartInfo.filterUrl,
@@ -714,36 +714,6 @@ LABKEY.vis.TimeChartPanel = Ext.extend(Ext.Panel, {
             scope: this
         });
     },
-
-//    getOrigGetDataMeasuresConfig: function(){
-//        var arr = [];
-//        Ext.each(this.chartInfo.measures, function(md){
-//            if (this.chartInfo.time == "date")
-//            {
-//                arr.push({
-//                    measure: md.dateOptions.dateCol,
-//                    time: this.chartInfo.time,
-//                    dateOptions: {
-//                        zeroDateCol: md.dateOptions.zeroDateCol,
-//                        interval: md.dateOptions.interval
-//                    }
-//                });
-//                arr.push({
-//                    measure: md.measure,
-//                    dimension: md.dimension
-//                });
-//            }
-//            else
-//            {
-//                    arr.push({
-//                        measure: md.measure,
-//                        dimension: md.dimension,
-//                        time: this.chartInfo.time
-//                    });
-//            }
-//        }, this);
-//        return arr;
-//    },
 
     renderLineChart: function(force)
     {
@@ -763,9 +733,9 @@ LABKEY.vis.TimeChartPanel = Ext.extend(Ext.Panel, {
             yAxisPanel.setRangeFormOptions(yAxisPanel.axis.range.type);
         }
 
-        if (!this.editorYAxisLeftPanel.labelTextField.userEditedLabel)
+        if (!this.editorYAxisLeftPanel.userEditedLabel)
             this.editorYAxisLeftPanel.setLabel(this.editorMeasurePanel.getDefaultLabel("left"));
-        if (!this.editorYAxisRightPanel.labelTextField.userEditedLabel) 
+        if (!this.editorYAxisRightPanel.userEditedLabel) 
             this.editorYAxisRightPanel.setLabel(this.editorMeasurePanel.getDefaultLabel("right"));
 
         if (this.chartSubjectData.filterDescription)
@@ -801,8 +771,7 @@ LABKEY.vis.TimeChartPanel = Ext.extend(Ext.Panel, {
                 }
             }, this);
             if (msg.length > 0) {
-                this.maskChartPanel("No data found in: " + msg + " for the selected " + this.viewInfo.subjectNounPlural + ".");
-                return;
+                this.addWarningText("No data found in: " + msg + " for the selected " + this.viewInfo.subjectNounPlural + ".");
             }
         }
 
@@ -890,20 +859,19 @@ LABKEY.vis.TimeChartPanel = Ext.extend(Ext.Panel, {
 
 	    // four options: all series on one chart, one chart per subject, one chart per group, or one chart per measure/dimension
         var charts = [];
-        var warningText = null;
         if (this.chartInfo.chartLayout == "per_subject")
         {
             // warn if user doesn't have an subjects selected
             if (this.chartInfo.subject.values.length == 0)
             {
-                warningText = "Please select at least one subject.";
+                this.addWarningText("Please select at least one subject.");
             }
             else
             {
                 // warn if the max number of charts has been exceeded
                 if (this.chartInfo.subject.values.length > this.maxCharts)
                 {
-                    warningText = "Only showing the first " + this.maxCharts + " charts.";
+                    this.addWarningText("Only showing the first " + this.maxCharts + " charts.");
                 }
 
                 for (var i = 0; i < (this.chartInfo.subject.values.length > this.maxCharts ? this.maxCharts : this.chartInfo.subject.values.length); i++)
@@ -918,14 +886,14 @@ LABKEY.vis.TimeChartPanel = Ext.extend(Ext.Panel, {
             // warn if use doesn't have any groups selected
             if (this.chartInfo.subject.groups.length == 0)
             {
-                warningText = "Please select at least one group.";
+                this.addWarningText("Please select at least one group.");
             }
             else
             {
                 // warn if the max number of charts has been exceeded
                 if (this.chartInfo.subject.groups.length > this.maxCharts)
                 {
-                    warningText = "Only showing the first " + this.maxCharts + " charts.";
+                    this.addWarningText("Only showing the first " + this.maxCharts + " charts.");
                 }
 
                 for (var i = 0; i < (this.chartInfo.subject.groups.length > this.maxCharts ? this.maxCharts : this.chartInfo.subject.groups.length); i++)
@@ -946,11 +914,11 @@ LABKEY.vis.TimeChartPanel = Ext.extend(Ext.Panel, {
             // warn if user doesn't have an dimension values selected or if the max number has been exceeded
             if (seriesList.length == 0)
             {
-                warningText = "Please select at least one dimension value.";
+                this.addWarningText("Please select at least one dimension value.");
             }
         	else if (seriesList.length > this.maxCharts)
             {
-        	    warningText = "Only showing the first " + this.maxCharts + " charts";
+        	    this.addWarningText("Only showing the first " + this.maxCharts + " charts");
         	}
         }
         else if (this.chartInfo.chartLayout == "single")
@@ -959,11 +927,11 @@ LABKEY.vis.TimeChartPanel = Ext.extend(Ext.Panel, {
         }
 
         // if the user has selected more charts than the max allowed, show warning
-        if(warningText){
+        if(this.warningText.length > 0){
             this.chart.add(new Ext.form.DisplayField({
                 autoHeight: 25,
                 autoWidth: true,
-                value: warningText,
+                value: this.warningText,
                 style: "font-style:italic;width:100%;padding:5px;text-align:center;"
             }));
         };
@@ -1076,7 +1044,7 @@ LABKEY.vis.TimeChartPanel = Ext.extend(Ext.Panel, {
             arr.push({
                 schemaName: md.dateOptions? md.dateOptions.dateCol.schemaName : md.measure.schemaName,
                 queryName: md.dateOptions ? md.dateOptions.dateCol.queryName : md.measure.queryName,
-                name: this.editorXAxisPanel.getTime() == "date" ? md.dateOptions.dateCol.name : "ParticipantVisit/sequencenum"
+                name: this.editorXAxisPanel.getTime() == "date" ? md.dateOptions.dateCol.name : this.viewInfo.subjectNounSingular + "Visit/sequencenum"
             });
         }, this);
         return arr;
@@ -1452,11 +1420,22 @@ LABKEY.vis.TimeChartPanel = Ext.extend(Ext.Panel, {
         if(!this.isMasked){
             var msg = message || "Loading...";
             this.chart.removeAll();
+            this.clearWarningText();
             this.chart.add(new Ext.Panel({
                 padding: 10,
                 html : "<table width='100%'><tr><td align='center' style='font-style:italic'>" + msg + "</td></tr></table>"
             }));
             this.chart.doLayout();
         }
+    },
+
+    clearWarningText: function(){
+        this.warningText = "";
+    },
+
+    addWarningText: function(message){
+        if (this.warningText.length > 0)
+            this.warningText += "<BR/>";
+        this.warningText += message; 
     }
 });

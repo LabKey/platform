@@ -417,6 +417,7 @@ public class VisualizationSQLGenerator implements CustomApiForm, HasViewContext
         for (Map.Entry<String, Set<String>> entry : allAliases.entrySet())
             colMap.put(entry.getKey(), entry.getValue().iterator().next());
 
+        /*
         // Now that we have the full set of columns, we can take a pass through to eliminate the columns on the right
         // side of join clauses, since we know the columns contain duplicate data. We leave a key in the column map
         // for the originally requested column name, but replace the value column, so the requestor can use whichever
@@ -438,6 +439,7 @@ public class VisualizationSQLGenerator implements CustomApiForm, HasViewContext
             if (remappedAlias != null)
                 mapping.setValue(remappedAlias);
         }
+        */
 
         return colMap;
     }

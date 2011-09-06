@@ -46,9 +46,10 @@ public class StudyVisualizationProvider extends VisualizationProvider
         if (getType() == VisualizationSQLGenerator.ChartType.TIME_VISITBASED)
         {
             // add the visit sequencenum, label, and display order to the select list
-            query.addSelect(factory.create(query.getSchema(), query.getQueryName(), "ParticipantVisit/sequencenum", true));
-            query.addSelect(factory.create(query.getSchema(), query.getQueryName(), "ParticipantVisit/Visit/Label", true));
-            query.addSelect(factory.create(query.getSchema(), query.getQueryName(), "ParticipantVisit/Visit/DisplayOrder", true));
+            String subjectNounSingular = StudyService.get().getSubjectNounSingular(query.getContainer());
+            query.addSelect(factory.create(query.getSchema(), query.getQueryName(), subjectNounSingular + "Visit/sequencenum", true));
+            query.addSelect(factory.create(query.getSchema(), query.getQueryName(), subjectNounSingular + "Visit/Visit/Label", true));
+            query.addSelect(factory.create(query.getSchema(), query.getQueryName(), subjectNounSingular + "Visit/Visit/DisplayOrder", true));
         }
     }
 
@@ -63,9 +64,11 @@ public class StudyVisualizationProvider extends VisualizationProvider
         DataSet.KeyType firstType = StudyService.get().getDatasetKeyType(first.getContainer(), first.getQueryName());
         DataSet.KeyType secondType = StudyService.get().getDatasetKeyType(second.getContainer(), second.getQueryName());
         String firstSubjectColumnName = StudyService.get().getSubjectColumnName(first.getContainer());
+        String firstSubjectNounSingular = StudyService.get().getSubjectNounSingular(first.getContainer());
         // allow null results for this column so as to follow the lead of the primary measure column for this query:
         VisualizationSourceColumn firstSubjectCol = factory.create(first.getSchema(), first.getQueryName(), firstSubjectColumnName, true);
         String secondSubjectColName = StudyService.get().getSubjectColumnName(second.getContainer());
+        String secondSubjectNounSingular = StudyService.get().getSubjectNounSingular(second.getContainer());
         // allow null results for this column so as to follow the lead of the primary measure column for this query:
         VisualizationSourceColumn secondSubjectCol = factory.create(second.getSchema(), second.getQueryName(), secondSubjectColName, true);
 
@@ -78,13 +81,13 @@ public class StudyVisualizationProvider extends VisualizationProvider
             VisualizationSourceColumn secondSequenceCol;
             if (getType() == VisualizationSQLGenerator.ChartType.TIME_VISITBASED)
             {
-                firstSequenceCol = factory.create(first.getSchema(), first.getQueryName(), "ParticipantVisit/sequencenum", true);
-                secondSequenceCol = factory.create(second.getSchema(), second.getQueryName(), "ParticipantVisit/sequencenum", true);
+                firstSequenceCol = factory.create(first.getSchema(), first.getQueryName(), firstSubjectNounSingular + "Visit/sequencenum", true);
+                secondSequenceCol = factory.create(second.getSchema(), second.getQueryName(), secondSubjectNounSingular + "Visit/sequencenum", true);
             }
             else
             {
-                firstSequenceCol = factory.create(first.getSchema(), first.getQueryName(), "ParticipantVisit/VisitDate", true);
-                secondSequenceCol = factory.create(second.getSchema(), second.getQueryName(), "ParticipantVisit/VisitDate", true);
+                firstSequenceCol = factory.create(first.getSchema(), first.getQueryName(), firstSubjectNounSingular + "Visit/VisitDate", true);
+                secondSequenceCol = factory.create(second.getSchema(), second.getQueryName(), secondSubjectNounSingular + "Visit/VisitDate", true);
             }
             joinCols.add(new Pair<VisualizationSourceColumn, VisualizationSourceColumn>(firstSequenceCol, secondSequenceCol));
         }
