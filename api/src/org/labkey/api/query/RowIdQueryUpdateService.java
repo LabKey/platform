@@ -38,24 +38,19 @@ import java.sql.SQLException;
 public abstract class RowIdQueryUpdateService<T> extends AbstractBeanQueryUpdateService<T, Integer>
 {
     private String _keyColumn;
-    private IntegerConverter _converter = new IntegerConverter();
 
-    public RowIdQueryUpdateService(TableInfo table, String keyColumn)
+    public RowIdQueryUpdateService(TableInfo table)
     {
         super(table);
-        assert null != keyColumn;
-        _keyColumn = keyColumn;
+        assert table.getPkColumns().size() == 1;
+        assert table.getPkColumns().get(0).getJavaClass() == Integer.class || table.getPkColumns().get(0).getJavaClass() == int.class;
+
+        _keyColumn = table.getPkColumnNames().get(0);
     }
 
     public java.lang.Integer keyFromMap(Map<String, Object> map) throws InvalidKeyException
     {
-        Object key = map.get(_keyColumn);
-        if(null == key)
-            throw new InvalidKeyException("No key value defined for key field '" + _keyColumn + "'!", map);
-        Integer ikey = (Integer)(_converter.convert(Integer.class, key));
-        if(null == ikey)
-            throw new InvalidKeyException("Key value '" + key.toString() + "' could not be converted to an Integer!", map);
-        return ikey;
+        return getInteger(map, _keyColumn);
     }
 
     public final T get(User user, Container container, Integer key) throws QueryUpdateServiceException, SQLException

@@ -16,6 +16,7 @@
 package org.labkey.api.query;
 
 import org.apache.commons.beanutils.BeanUtils;
+import org.apache.commons.beanutils.converters.IntegerConverter;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ObjectFactory;
@@ -47,6 +48,8 @@ import java.util.Map;
  */
 public abstract class AbstractBeanQueryUpdateService<T,K> extends AbstractQueryUpdateService
 {
+    private IntegerConverter _converter = new IntegerConverter();
+
     public AbstractBeanQueryUpdateService(TableInfo queryTable)
     {
         super(queryTable);
@@ -198,10 +201,21 @@ public abstract class AbstractBeanQueryUpdateService<T,K> extends AbstractQueryU
     /**
      * Deletes a bean in the database.
      * @param user The current user.
-     * @param container The contain in which the bean should exist.
+     * @param container The container in which the bean should exist.
      * @param key The key for the bean.
      * @throws QueryUpdateServiceException Thrown for implementation-specific exceptions.
      * @throws SQLException Thrown if there is a problem communicating with the database.
      */
     protected abstract void delete(User user, Container container, K key) throws QueryUpdateServiceException, SQLException;
+
+    protected Integer getInteger(Map<String, Object> map, String propName) throws InvalidKeyException
+    {
+        Object key = map.get(propName);
+        if(null == key)
+            throw new InvalidKeyException("No key value defined for key field '" + propName + "'!", map);
+        Integer ikey = (Integer)(_converter.convert(Integer.class, key));
+        if(null == ikey)
+            throw new InvalidKeyException("Key value '" + key.toString() + "' could not be converted to an Integer!", map);
+        return ikey;
+    }
 }
