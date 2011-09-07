@@ -117,11 +117,6 @@ public class CoreSchema
         return getSchema().getTable("Contacts");
     }
 
-    public TableInfo getTableInfoUserHistory()
-    {
-        return getSchema().getTable("UserHistory");
-    }
-
     public TableInfo getTableInfoContainerAliases()
     {
         return getSchema().getTable("ContainerAliases");
