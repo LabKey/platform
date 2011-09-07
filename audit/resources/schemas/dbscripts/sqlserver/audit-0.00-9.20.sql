@@ -17,8 +17,7 @@
 /* audit-0.00-8.30.sql */
 
 -- Table used by Audit module
-EXEC sp_addapprole 'audit', 'password'
-GO
+EXEC sp_addapprole 'audit', 'password';
 
 CREATE TABLE audit.AuditLog
 (
@@ -26,53 +25,23 @@ CREATE TABLE audit.AuditLog
     Key1 NVARCHAR(200),
     Key2 NVARCHAR(200),
     Key3 NVARCHAR(200),
-    IntKey1 INT NULL,
-    IntKey2 INT NULL,
-    IntKey3 INT NULL,
+    IntKey1 INT NOT NULL,
+    IntKey2 INT NOT NULL,
+    IntKey3 INT NOT NULL,
     Comment NVARCHAR(500),
     EventType NVARCHAR(64),
-    CreatedBy USERID,
+    CreatedBy USERID NOT NULL,
     Created DATETIME,
     ContainerId ENTITYID,
     EntityId ENTITYID NULL,
     Lsid LSIDtype,
     ProjectId ENTITYID,
+    ImpersonatedBy USERID NULL,
 
     CONSTRAINT PK_AuditLog PRIMARY KEY (RowId)
 );
-GO
-
-INSERT INTO audit.AuditLog (IntKey1, Created, Comment, EventType)
-    (SELECT UserId, Date, Message, 'UserAuditEvent' FROM core.UserHistory);
-GO
-
-ALTER TABLE audit.AuditLog
-    ADD Impersonator USERID NULL
-GO
-
-EXEC sp_rename 'audit.AuditLog.Impersonator', 'ImpersonatedBy', 'COLUMN'
-GO
-
-UPDATE audit.AuditLog SET IntKey1 = '0' WHERE IntKey1 IS NULL
-GO
-UPDATE audit.AuditLog SET IntKey2 = '0' WHERE IntKey2 IS NULL
-GO
-UPDATE audit.AuditLog SET IntKey3 = '0' WHERE IntKey3 IS NULL
-GO
-UPDATE audit.AuditLog SET CreatedBy = '0' WHERE CreatedBy IS NULL
-GO
-
-ALTER TABLE audit.AuditLog ALTER COLUMN IntKey1 INT NOT NULL
-GO
-ALTER TABLE audit.AuditLog ALTER COLUMN IntKey2 INT NOT NULL
-GO
-ALTER TABLE audit.AuditLog ALTER COLUMN IntKey3 INT NOT NULL
-GO
-ALTER TABLE audit.AuditLog ALTER COLUMN CreatedBy USERID NOT NULL
-GO
 
 /* audit-9.10-9.20.sql */
 
 CREATE INDEX IX_Audit_Container ON audit.AuditLog(ContainerId);
 CREATE INDEX IX_Audit_EventType ON audit.AuditLog(EventType);
-GO

@@ -16,9 +16,9 @@
 
 /* core-0.00-8.30.sql */
 
-EXEC sp_addtype 'ENTITYID', 'UNIQUEIDENTIFIER'
-EXEC sp_addtype 'USERID', 'INT'
-EXEC sp_addapprole 'core', 'password'
+EXEC sp_addtype 'ENTITYID', 'UNIQUEIDENTIFIER';
+EXEC sp_addtype 'USERID', 'INT';
+EXEC sp_addapprole 'core', 'password';
 GO
 
 -- for JDBC Login support, validates email/password,
@@ -32,8 +32,7 @@ CREATE TABLE core.Logins
     Verification VARCHAR(64),
 
     CONSTRAINT PK_Logins PRIMARY KEY (Email)
-)
-GO
+);
 
 -- Principals is used for managing security related information
 -- It is not used for validating login, that requires an 'external'
@@ -52,8 +51,7 @@ CREATE TABLE core.Principals
 
     CONSTRAINT PK_Principals PRIMARY KEY (UserId),
     CONSTRAINT UQ_Principals_Container_Name_OwnerId UNIQUE (Container, Name, OwnerId)
-)
-GO
+);
 
 -- maps users to groups
 CREATE TABLE core.Members
@@ -62,8 +60,7 @@ CREATE TABLE core.Members
     GroupId USERID,
 
     CONSTRAINT PK_Members PRIMARY KEY (UserId, GroupId)
-)
-GO
+);
 
 CREATE TABLE core.UsersData
 (
@@ -90,8 +87,7 @@ CREATE TABLE core.UsersData
 
     CONSTRAINT PK_UsersData PRIMARY KEY (UserId),
     CONSTRAINT UQ_DisplayName UNIQUE (DisplayName)
-)
-GO
+);
 
 CREATE TABLE core.Containers
 (
@@ -110,11 +106,9 @@ CREATE TABLE core.Containers
     CONSTRAINT UQ_Containers_EntityId UNIQUE (EntityId),
     CONSTRAINT UQ_Containers_Parent_Name UNIQUE (Parent, Name),
     CONSTRAINT FK_Containers_Containers FOREIGN KEY (Parent) REFERENCES core.Containers(EntityId)
-)
-GO
+);
 
-CREATE INDEX IX_Containers_Parent_Entity ON core.Containers(Parent, EntityId)
-GO
+CREATE INDEX IX_Containers_Parent_Entity ON core.Containers(Parent, EntityId);
 
 -- table for all modules
 CREATE TABLE core.Modules
@@ -125,8 +119,7 @@ CREATE TABLE core.Modules
     Enabled BIT DEFAULT 1,
 
     CONSTRAINT PK_Modules PRIMARY KEY (Name)
-)
-GO
+);
 
 -- keep track of sql scripts that have been run in each module
 CREATE TABLE core.SqlScripts
@@ -142,8 +135,7 @@ CREATE TABLE core.SqlScripts
     FileName NVARCHAR(300),
 
     CONSTRAINT PK_SqlScripts PRIMARY KEY (ModuleName, FileName)
-)
-GO
+);
 
 -- generic table for all attached docs
 CREATE TABLE core.Documents
@@ -167,12 +159,10 @@ CREATE TABLE core.Documents
 
     CONSTRAINT PK_Documents PRIMARY KEY (RowId),
     CONSTRAINT UQ_Documents_Parent_DocumentName UNIQUE (Parent, DocumentName)
-)
-GO
+);
 
-CREATE INDEX IX_Documents_Container ON core.Documents(Container)
-CREATE INDEX IX_Documents_Parent ON core.Documents(Parent)
-GO
+CREATE INDEX IX_Documents_Container ON core.Documents(Container);
+CREATE INDEX IX_Documents_Parent ON core.Documents(Parent);
 
 -- Create a log of events (created, verified, password reset, etc.) associated with users
 CREATE TABLE core.UserHistory
@@ -183,8 +173,7 @@ CREATE TABLE core.UserHistory
 
     CONSTRAINT PK_UserHistory PRIMARY KEY (UserId, Date),
     CONSTRAINT FK_UserHistory_UserId FOREIGN KEY (UserId) REFERENCES core.Principals(UserId)
-)
-GO
+);
 
 CREATE TABLE core.Report
 (
@@ -202,7 +191,6 @@ CREATE TABLE core.Report
 
     CONSTRAINT PK_Report PRIMARY KEY (RowId)
 );
-GO
 
 CREATE TABLE core.ContainerAliases
 (
@@ -211,8 +199,7 @@ CREATE TABLE core.ContainerAliases
 
     CONSTRAINT UK_ContainerAliases_Paths UNIQUE (Path),
     CONSTRAINT FK_ContainerAliases_Containers FOREIGN KEY (ContainerId) REFERENCES core.Containers(EntityId)
-)
-GO
+);
 
 CREATE TABLE core.MappedDirectories
 (
@@ -224,8 +211,7 @@ CREATE TABLE core.MappedDirectories
 
     CONSTRAINT PK_MappedDirecctories PRIMARY KEY (EntityId),
     CONSTRAINT UQ_MappedDirectories UNIQUE (Container,Name)
-)
-GO
+);
 
 /* core-9.10-9.20.sql */
 
@@ -238,7 +224,6 @@ CREATE TABLE core.Policies
 
     CONSTRAINT PK_Policies PRIMARY KEY(ResourceId)
 );
-GO
 
 CREATE TABLE core.RoleAssignments
 (
@@ -250,7 +235,6 @@ CREATE TABLE core.RoleAssignments
     CONSTRAINT FK_RA_P FOREIGN KEY(ResourceId) REFERENCES core.Policies(ResourceId),
     CONSTRAINT FK_RA_UP FOREIGN KEY(UserId) REFERENCES core.Principals(UserId)
 );
-GO
 
 CREATE TABLE core.MvIndicators
 (
@@ -259,7 +243,7 @@ CREATE TABLE core.MvIndicators
     Label VARCHAR(255),
 
     CONSTRAINT PK_MvIndicators_Container_MvIndicator PRIMARY KEY (Container, MvIndicator)
-)
+);
 GO
 
 -- Procedure to safely drop tables, views, indexes, constraints, and schemas
@@ -375,9 +359,9 @@ BEGIN
     END
 END
 ELSE
-    RAISERROR('Invalid object type - %   Valid values are TABLE, VIEW, INDEX, CONSTRAINT, SCHEMA ', 16,1, @objtype )
+    RAISERROR('Invalid object type - %   Valid values are TABLE, VIEW, INDEX, CONSTRAINT, SCHEMA ', 16, 1, @objtype )
 
-RETURN @ret_code
+RETURN @ret_code;
 GO
 
 /* core-8.30-9.10.sql */
@@ -389,5 +373,4 @@ CREATE PROCEDURE core.executeJavaUpgradeCode(@Name VARCHAR(255)) AS
 BEGIN
     DECLARE @notice VARCHAR(255)
     SET @notice = 'Empty function that signals script runner to execute Java code.  See usages of UpgradeCode.java.'
-END
-GO
+END;

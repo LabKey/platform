@@ -18,8 +18,7 @@
 
 /* comm-0.00-1.10.sql */
 
-EXEC sp_addapprole 'comm', 'password'
-GO
+EXEC sp_addapprole 'comm', 'password';
 
 CREATE TABLE comm.Announcements
 (
@@ -29,18 +28,23 @@ CREATE TABLE comm.Announcements
     Created DATETIME,
     ModifiedBy USERID,
     Modified DATETIME,
-    Owner USERID,
     Container ENTITYID NOT NULL,
     Parent ENTITYID,
     Title NVARCHAR(255),
     Expires DATETIME,
     Body NTEXT,
+    RendererType NVARCHAR(50) NULL,  -- Updates to properties will result in NULL body and NULL render type
+    EmailList VARCHAR(1000) NULL,    -- Place to store history of addresses that were notified
+    Status VARCHAR(50) NULL,
+    AssignedTo USERID NULL,
+    DiscussionSrcIdentifier NVARCHAR(100) NULL,
+    DiscussionSrcURL NVARCHAR(1000) NULL,
 
     CONSTRAINT PK_Announcements PRIMARY KEY (RowId),
     CONSTRAINT UQ_Announcements UNIQUE CLUSTERED (Container, Parent, RowId)
-)
-GO
+);
 
+CREATE INDEX IX_DiscussionSrcIdentifier ON comm.announcements(Container, DiscussionSrcIdentifier);
 
 CREATE TABLE comm.Pages
 (
@@ -54,12 +58,13 @@ CREATE TABLE comm.Pages
     Container ENTITYID NOT NULL,
     Name NVARCHAR(255) NOT NULL,
     Parent INT NOT NULL,
-    DisplayOrder FLOAT NOT NULL
+    DisplayOrder FLOAT NOT NULL,
+    PageVersionId INT NULL,
+    ShowAttachments BIT NOT NULL DEFAULT 1,
 
     CONSTRAINT PK_Pages PRIMARY KEY (EntityId),
     CONSTRAINT UQ_Pages UNIQUE CLUSTERED (Container, Name)
-)
-GO
+);
 
 /* comm-1.20-1.30.sql */
 
@@ -73,18 +78,19 @@ CREATE TABLE comm.PageVersions
     Version INT NOT NULL,
     Title NVARCHAR (255),
     Body NTEXT,
+    RendererType NVARCHAR(50) NOT NULL DEFAULT 'RADEOX',
 
     CONSTRAINT PK_PageVersions PRIMARY KEY (RowId),
     CONSTRAINT FK_PageVersions_Pages FOREIGN KEY (PageEntityId) REFERENCES comm.Pages(EntityId),
     CONSTRAINT UQ_PageVersions UNIQUE (PageEntityId, Version)
-)
-GO
+);
 
 /* comm-1.30-1.40.sql */
 
-ALTER TABLE comm.Pages ADD PageVersionId INT NULL
-ALTER TABLE comm.Pages ADD CONSTRAINT FK_Pages_PageVersions FOREIGN KEY (PageVersionId) REFERENCES comm.PageVersions (RowId)
-GO
+ALTER TABLE comm.Pages
+    ADD CONSTRAINT FK_Pages_PageVersions FOREIGN KEY (PageVersionId) REFERENCES comm.PageVersions (RowId);
+
+/* comm-1.50-1.60.sql */
 
 CREATE TABLE comm.EmailOptions
 (
@@ -92,15 +98,13 @@ CREATE TABLE comm.EmailOptions
     EmailOption NVARCHAR(50),
 
     CONSTRAINT PK_EmailOptions PRIMARY KEY (EmailOptionId)
-)
-GO
+);
 
-INSERT INTO comm.EmailOptions (EmailOptionId, EmailOption) VALUES (0, 'No Email')
-INSERT INTO comm.EmailOptions (EmailOptionId, EmailOption) VALUES (1, 'All conversations')
-INSERT INTO comm.EmailOptions (EmailOptionId, EmailOption) VALUES (2, 'My conversations')
-INSERT INTO comm.EmailOptions (EmailOptionId, EmailOption) VALUES (257, 'Daily digest of all conversations')
-INSERT INTO comm.EmailOptions (EmailOptionId, EmailOption) VALUES (258, 'Daily digest of my conversations')
-GO
+INSERT INTO comm.EmailOptions (EmailOptionId, EmailOption) VALUES (0, 'No Email');
+INSERT INTO comm.EmailOptions (EmailOptionId, EmailOption) VALUES (1, 'All conversations');
+INSERT INTO comm.EmailOptions (EmailOptionId, EmailOption) VALUES (2, 'My conversations');
+INSERT INTO comm.EmailOptions (EmailOptionId, EmailOption) VALUES (257, 'Daily digest of all conversations');
+INSERT INTO comm.EmailOptions (EmailOptionId, EmailOption) VALUES (258, 'Daily digest of my conversations');
 
 CREATE TABLE comm.EmailFormats
 (
@@ -108,12 +112,10 @@ CREATE TABLE comm.EmailFormats
     EmailFormat NVARCHAR(20),
 
     CONSTRAINT PK_EmailFormats PRIMARY KEY (EmailFormatId)
-)
-GO
+);
 
-INSERT INTO comm.EmailFormats (EmailFormatId, EmailFormat) VALUES (0, 'Plain Text')
-INSERT INTO comm.EmailFormats (EmailFormatId, EmailFormat) VALUES (1, 'HTML')
-
+INSERT INTO comm.EmailFormats (EmailFormatId, EmailFormat) VALUES (0, 'Plain Text');
+INSERT INTO comm.EmailFormats (EmailFormatId, EmailFormat) VALUES (1, 'HTML');
 
 CREATE TABLE comm.PageTypes
 (
@@ -121,12 +123,10 @@ CREATE TABLE comm.PageTypes
     PageType NVARCHAR(20),
 
     CONSTRAINT PK_PageTypes PRIMARY KEY (PageTypeId)
-)
-GO
+);
 
-INSERT INTO comm.PageTypes (PageTypeId, PageType) VALUES (0, 'Message')
-INSERT INTO comm.PageTypes (PageTypeId, PageType) VALUES (1, 'Wiki')
-GO
+INSERT INTO comm.PageTypes (PageTypeId, PageType) VALUES (0, 'Message');
+INSERT INTO comm.PageTypes (PageTypeId, PageType) VALUES (1, 'Wiki');
 
 CREATE TABLE comm.EmailPrefs
 (
@@ -135,6 +135,7 @@ CREATE TABLE comm.EmailPrefs
     EmailOptionId INT NOT NULL,
     EmailFormatId INT NOT NULL,
     PageTypeId INT NOT NULL,
+    LastModifiedBy USERID,
 
     CONSTRAINT PK_EmailPrefs PRIMARY KEY (Container, UserId),
     CONSTRAINT FK_EmailPrefs_Containers FOREIGN KEY (Container) REFERENCES core.Containers (EntityId),
@@ -142,20 +143,7 @@ CREATE TABLE comm.EmailPrefs
     CONSTRAINT FK_EmailPrefs_EmailOptions FOREIGN KEY (EmailOptionId) REFERENCES comm.EmailOptions (EmailOptionId),
     CONSTRAINT FK_EmailPrefs_EmailFormats FOREIGN KEY (EmailFormatId) REFERENCES comm.EmailFormats (EmailFormatId),
     CONSTRAINT FK_EmailPrefs_PageTypes FOREIGN KEY (PageTypeId) REFERENCES comm.PageTypes (PageTypeId)
-)
-GO
-
-/* comm-1.40-1.50.sql */
-
-ALTER TABLE comm.EmailPrefs ADD LastModifiedBy USERID
-GO
-
-/* comm-1.50-1.60.sql */
-
-ALTER TABLE comm.PageVersions ADD RendererType NVARCHAR(50) NOT NULL DEFAULT 'RADEOX'
-GO
-ALTER TABLE comm.Announcements ADD RendererType NVARCHAR(50) NOT NULL DEFAULT 'RADEOX'
-GO
+);
 
 /* comm-1.60-1.70.sql */
 
@@ -166,38 +154,8 @@ CREATE TABLE comm.UserList
     UserId USERID NOT NULL,
 
     CONSTRAINT PK_UserList PRIMARY KEY (MessageId, UserId)
-)
-GO
+);
 
 -- Improve performance of user list lookups for permission checking
-CREATE INDEX IX_UserList_UserId ON comm.UserList(UserId)
-GO
+CREATE INDEX IX_UserList_UserId ON comm.UserList(UserId);
 
--- Add EmailList (place to store history of addresses that were notified), Status and AssignedTo
-ALTER TABLE comm.Announcements
-    ADD EmailList VARCHAR(1000) NULL, Status VARCHAR(50) NULL, AssignedTo USERID NULL
-GO
-
--- Allow RenderType to be NULL; updates to properties will result in NULL body and NULL render type
-ALTER TABLE comm.Announcements
-    ALTER COLUMN RendererType NVARCHAR(50) NULL
-GO
-
--- Drop unused Owner column
-ALTER TABLE comm.Announcements
-    DROP COLUMN Owner
-GO
-
-/* comm-1.70-2.00.sql */
-
-ALTER TABLE comm.Announcements ADD DiscussionSrcIdentifier NVARCHAR(100) NULL
-ALTER TABLE comm.Announcements ADD DiscussionSrcURL NVARCHAR(1000) NULL
-GO
-
-CREATE INDEX IX_DiscussionSrcIdentifier ON comm.announcements(Container, DiscussionSrcIdentifier)
-GO
-
-/* comm-9.10-9.20.sql */
-
--- add ShowAttachments column
-ALTER TABLE comm.Pages ADD ShowAttachments BIT NOT NULL DEFAULT 1;

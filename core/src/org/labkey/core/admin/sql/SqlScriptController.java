@@ -850,28 +850,27 @@ public class SqlScriptController extends SpringActionController
     {
         private static final String TABLE_NAME_REGEX;
         private static final String STATEMENT_ENDING_REGEX;
-        private static final String COMMENT_REGEX;   // Single-line or block comment, followed by white space
+        private static final String COMMENT_REGEX = "((/\\*.+?\\*/)|(^--.+?$))\\s*";   // Single-line or block comment, followed by white space
 
         static
         {
             if (CoreSchema.getInstance().getSqlDialect().isSqlServer())
             {
-                TABLE_NAME_REGEX = "((?:(?:\\w+)\\.)?(?:[a-zA-Z0-9]+))";
-                STATEMENT_ENDING_REGEX = " GO$(\\s*)";
-                COMMENT_REGEX = "((/\\*.+?\\*/)|(^--.+?$))\\s*";   // Single-line or block comment, followed by white space
+                TABLE_NAME_REGEX = "((?:(?:\\w+)\\.)?(?:#?[a-zA-Z0-9]+))";  // # allows for temp table names
+                STATEMENT_ENDING_REGEX = "((; GO$)|(;$)|( GO$))\\s*";       // Semicolon, GO, or both
             }
             else
             {
                 TABLE_NAME_REGEX = "((?:(?:\\w+)\\.)?(?:[a-zA-Z0-9]+))";
                 STATEMENT_ENDING_REGEX = ";$(\\s*)";
-                COMMENT_REGEX = "((/\\*.+?\\*/)|(^--.+?$))\\s*";   // Single-line or block comment, followed by white space
             }
         }
 
-        private String _contents;
-        private int _row = 0;
         private final Map<String, Collection<String>> _statements = new LinkedHashMap<String, Collection<String>>();
         private final List<String> _unknownStatements = new LinkedList<String>();
+
+        private String _contents;
+        private int _row = 0;
 
         private ScriptReorderer(String contents)
         {
@@ -885,8 +884,8 @@ public class SqlScriptController extends SpringActionController
             List<Pattern> patterns = new LinkedList<Pattern>();
             List<Pattern> nonTablePatterns = new LinkedList<Pattern>();
 
-            patterns.add(compile("INSERT INTO " + TABLE_NAME_REGEX + " \\([^\\)]+?\\) VALUES \\([^\\)]+?\\)\\s*(" + STATEMENT_ENDING_REGEX + "|$(\\s*))"));
-            patterns.add(compile("INSERT INTO " + TABLE_NAME_REGEX + " \\([^\\)]+?\\) SELECT .+?"+ STATEMENT_ENDING_REGEX));
+            patterns.add(compile("INSERT (?:INTO )?" + TABLE_NAME_REGEX + " \\([^\\)]+?\\) VALUES \\([^\\)]+?\\)\\s*(" + STATEMENT_ENDING_REGEX + "|$(\\s*))"));
+            patterns.add(compile("INSERT (?:INTO )?" + TABLE_NAME_REGEX + " \\([^\\)]+?\\) SELECT .+?"+ STATEMENT_ENDING_REGEX));
             patterns.add(compile("CREATE (?:UNIQUE )?(?:CLUSTERED )?INDEX [a-zA-Z0-9_]+? ON " + TABLE_NAME_REGEX + ".+?" + STATEMENT_ENDING_REGEX));
             patterns.add(compile(getRegExWithPrefix("CREATE TABLE ")));
             patterns.add(compile(getRegExWithPrefix("ALTER TABLE ")));
@@ -894,18 +893,19 @@ public class SqlScriptController extends SpringActionController
             patterns.add(compile(getRegExWithPrefix("UPDATE ")));
             patterns.add(compile(getRegExWithPrefix("DELETE FROM ")));
             patterns.add(compile(getRegExWithPrefix("DROP TABLE ")));
+            patterns.add(compile(getRegExWithPrefix("DROP INDEX ")));    // By convention, index names start with their associated table names
 
             if (CoreSchema.getInstance().getSqlDialect().isSqlServer())
             {
-                patterns.add(compile("EXEC sp_rename (?:@objname\\s*=\\s*)?'" + TABLE_NAME_REGEX + "'.+?" + STATEMENT_ENDING_REGEX ));
+                patterns.add(compile(getRegExWithPrefix("CREATE TABLE ")));
+                patterns.add(compile("EXEC sp_rename (?:@objname\\s*=\\s*)?'" + TABLE_NAME_REGEX + ".*?'.+?" + STATEMENT_ENDING_REGEX ));
                 patterns.add(compile("EXEC core\\.fn_dropifexists '(\\w+)', '(\\w+)'.+?" + STATEMENT_ENDING_REGEX));
-                nonTablePatterns.add(compile(getRegExWithPrefix("CREATE PROCEDURE ")));      // TODO: ??
+                nonTablePatterns.add(compile("CREATE PROCEDURE .+?" + STATEMENT_ENDING_REGEX));
             }
             else
             {
-                // TODO: ALTER TABLE xxx RENAME TO
-                //patterns.add(compile("SELECT sp_rename (?:@objname\\s*=\\s*)?'" + TABLE_NAME_REGEX + "'.+?" + STATEMENT_ENDING_REGEX ));
-                patterns.add(compile("SELECT core\\.fn_dropifexists\\('(\\w+)', '(\\w+)'.+?" + STATEMENT_ENDING_REGEX));
+                patterns.add(compile(getRegExWithPrefix("CREATE (?:TEMPORARY )?TABLE ")));
+                patterns.add(compile("SELECT core\\.fn_dropifexists\\s*\\('(\\w+)', '(\\w+)'.+?" + STATEMENT_ENDING_REGEX));
                 patterns.add(compile("SELECT SETVAL\\('([a-zA-Z]+)\\.([a-zA-Z]+)_.+?" + STATEMENT_ENDING_REGEX));
                 nonTablePatterns.add(compile("CREATE FUNCTION .+? RETURNS \\w+ AS (.+?) (?:.+?) \\1 LANGUAGE plpgsql" + STATEMENT_ENDING_REGEX));
             }

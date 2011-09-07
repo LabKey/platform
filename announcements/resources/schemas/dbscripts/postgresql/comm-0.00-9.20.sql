@@ -28,17 +28,23 @@ CREATE TABLE comm.Announcements
     Created TIMESTAMP,
     ModifiedBy USERID,
     Modified TIMESTAMP,
-    Owner USERID,
     Container ENTITYID NOT NULL,
     Parent ENTITYID,
     Title VARCHAR(255),
     Expires TIMESTAMP,
     Body TEXT,
+    RendererType VARCHAR(50) NULL,       -- Updates to properties will result in NULL body and NULL render type
+    EmailList VARCHAR(1000) NULL,        -- History of addresses that were notified
+    Status VARCHAR(50) NULL,
+    AssignedTo USERID NULL,
+    DiscussionSrcIdentifier VARCHAR(100) NULL,
+    DiscussionSrcURL VARCHAR(1000) NULL,
 
     CONSTRAINT PK_Announcements PRIMARY KEY (RowId),
     CONSTRAINT UQ_Announcements UNIQUE (Container, Parent, RowId)
 );
 
+CREATE INDEX IX_DiscussionSrcIdentifier ON comm.announcements(Container, DiscussionSrcIdentifier);
 
 CREATE TABLE comm.Pages
 (
@@ -53,6 +59,8 @@ CREATE TABLE comm.Pages
     Name VARCHAR(255) NOT NULL,
     Parent INT NOT NULL,
     DisplayOrder REAL NOT NULL,
+    PageVersionId INT4 NULL,
+    ShowAttachments BOOLEAN NOT NULL DEFAULT TRUE,
 
     CONSTRAINT PK_Pages PRIMARY KEY (EntityId),
     CONSTRAINT UQ_Pages UNIQUE (Container, Name)
@@ -70,6 +78,7 @@ CREATE TABLE comm.PageVersions
     Version INT4 NOT NULL,
     Title VARCHAR(255),
     Body TEXT,
+    RendererType VARCHAR(50) NOT NULL DEFAULT 'RADEOX',
 
     CONSTRAINT PK_PageVersions PRIMARY KEY (RowId),
     CONSTRAINT FK_PageVersions_Pages FOREIGN KEY (PageEntityId) REFERENCES comm.Pages(EntityId),
@@ -79,9 +88,9 @@ CREATE TABLE comm.PageVersions
 /* comm-1.30-1.40.sql */
 
 ALTER TABLE comm.Pages
-    ADD PageVersionId int4 NULL;
-ALTER TABLE comm.Pages
     ADD CONSTRAINT FK_Pages_PageVersions FOREIGN KEY (PageVersionId) REFERENCES comm.PageVersions (RowId);
+
+/* comm-1.50-1.60.sql */
 
 CREATE TABLE comm.EmailOptions
 (
@@ -126,6 +135,7 @@ CREATE TABLE comm.EmailPrefs
     EmailOptionId INT4 NOT NULL,
     EmailFormatId INT4 NOT NULL,
     PageTypeId INT4 NOT NULL,
+    LastModifiedBy USERID,
 
     CONSTRAINT PK_EmailPrefs PRIMARY KEY (Container, UserId),
     CONSTRAINT FK_EmailPrefs_Containers FOREIGN KEY (Container) REFERENCES core.Containers (EntityId),
@@ -134,18 +144,6 @@ CREATE TABLE comm.EmailPrefs
     CONSTRAINT FK_EmailPrefs_EmailFormats FOREIGN KEY (EmailFormatId) REFERENCES comm.EmailFormats (EmailFormatId),
     CONSTRAINT FK_EmailPrefs_PageTypes FOREIGN KEY (PageTypeId) REFERENCES comm.PageTypes (PageTypeId)
 );
-
-/* comm-1.40-1.50.sql */
-
-ALTER TABLE comm.EmailPrefs
-    ADD LastModifiedBy userid;
-
-/* comm-1.50-1.60.sql */
-
-ALTER TABLE comm.PageVersions
-    ADD RendererType VARCHAR(50) NOT NULL DEFAULT 'RADEOX';
-ALTER TABLE comm.Announcements
-    ADD RendererType VARCHAR(50) NOT NULL DEFAULT 'RADEOX';
 
 /* comm-1.60-1.70.sql */
 
@@ -161,26 +159,3 @@ CREATE TABLE comm.UserList
 -- Improve performance of user list lookups for permission checking
 CREATE INDEX IX_UserList_UserId ON comm.UserList(UserId);
 
--- Add EmailList (place to store history of addresses that were notified), Status and AssignedTo
--- Allow RenderType to be NULL; updates to properties will result in NULL body and NULL render type
--- Drop unused Owner column
-ALTER TABLE comm.Announcements
-    ADD EmailList VARCHAR(1000) NULL,
-    ADD Status VARCHAR(50) NULL,
-    ADD AssignedTo USERID NULL,
-    ALTER RendererType DROP NOT NULL,
-    ALTER RendererType DROP DEFAULT,
-    DROP Owner;
-
-/* comm-1.70-2.00.sql */
-
-ALTER TABLE comm.Announcements
-    ADD COLUMN DiscussionSrcIdentifier VARCHAR(100) NULL,
-    ADD COLUMN DiscussionSrcURL VARCHAR(1000) NULL;
-
-CREATE INDEX IX_DiscussionSrcIdentifier ON comm.announcements(Container, DiscussionSrcIdentifier);
-
-/* comm-9.10-9.20.sql */
-
--- add ShowAttachments column
-ALTER TABLE comm.Pages ADD COLUMN ShowAttachments BOOLEAN NOT NULL DEFAULT TRUE;

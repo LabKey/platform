@@ -459,20 +459,6 @@
     <ns:titleColumn>DisplayName</ns:titleColumn>
   </ns:table>
 
-  <ns:table tableName="UserHistory" tableDbType="TABLE">
-    <ns:columns>
-      <ns:column columnName="UserId" />
-      <ns:column columnName="Date">
-        <ns:formatString>DateTime</ns:formatString>
-        <ns:displayWidth>120</ns:displayWidth>
-        <ns:textAlign>left</ns:textAlign>
-      </ns:column>
-      <ns:column columnName="Message">
-        <ns:displayWidth>800</ns:displayWidth>
-      </ns:column>
-    </ns:columns>
-  </ns:table>
-
   <ns:table tableName="Report" tableDbType="TABLE">
     <ns:columns>
       <ns:column columnName="RowId"/>
