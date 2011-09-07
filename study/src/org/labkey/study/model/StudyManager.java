@@ -3860,8 +3860,6 @@ public class StudyManager
                     // insert one row w/visit
                     importRow((String[]) null, def,PageFlowUtil.map("SubjectId", "A1", "SequenceNum", 1.0, "Measure", "Test"+(++counterRow), "Value", 1.0));
 
-                    if (errors.size() != 0)
-                        fail(errors.get(0));
                     assertEquals(0, errors.size());
                     rs = Table.select(tt, Table.ALL_COLUMNS, null, null);
                     assertTrue(rs.next());
@@ -3901,8 +3899,6 @@ public class StudyManager
 
                     importRow((String[]) null, def, PageFlowUtil.map("SubjectId", "A2", "Measure", "Test"+(++counterRow), "Value", 1.0));
 
-                    if (errors.size() != 0)
-                        fail(errors.get(0));
                     assertEquals(0, errors.size());
                     rs = Table.select(tt, Table.ALL_COLUMNS, null, null);
                     assertTrue(rs.next());
