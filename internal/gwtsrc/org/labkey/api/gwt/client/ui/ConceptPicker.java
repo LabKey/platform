@@ -213,9 +213,9 @@ public class ConceptPicker extends TriggerField<ConceptPicker.ConceptType>
         {
             super();
             _service = lookupService;
-            setSize(320, 500);
-            setAutoHeight(true);
             setModal(true);
+            setSize(400, 500);
+            setAutoHeight(true);
             setHeading("Choose field type:");
 
 //            setLayout(new AccordionLayout());

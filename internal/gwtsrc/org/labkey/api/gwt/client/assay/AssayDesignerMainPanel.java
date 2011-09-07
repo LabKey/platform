@@ -108,6 +108,7 @@ public class AssayDesignerMainPanel extends VerticalPanel implements Saveable<GW
         _copy = copyStr != null && Boolean.TRUE.toString().equals(copyStr);
 
         _autoCopyTargetListBox = new ListBox();
+        DOM.setStyleAttribute(_autoCopyTargetListBox.getElement(), "width", "500px");
         _autoCopyTargetListBox.setEnabled(false);
 
         _autoCopyCheckBox = new CheckBox(" Automatically copy uploaded data to study: ");

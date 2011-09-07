@@ -133,10 +133,13 @@ public class BeanObjectFactory<K> implements ObjectFactory<K> // implements Resu
             Object value = null;
             try
             {
-                value = m.get(prop);
-                //Assume nulls mean do not change value
-                if (null != value)
+                // If the map contains the key, assuming that we should use the map's value, even if it's null.
+                // Otherwise, don't set a value on the bean.
+                if (m.containsKey(prop))
+                {
+                    value = m.get(prop);
                     BeanUtils.copyProperty(bean, prop, value);
+                }
             }
             catch (IllegalAccessException x)
             {
