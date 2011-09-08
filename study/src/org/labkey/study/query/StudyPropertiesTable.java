@@ -57,6 +57,15 @@ public class StudyPropertiesTable extends BaseStudyTable
         ColumnInfo timepointTypeColumn = addWrapColumn(_rootTable.getColumn("timepointType"));
         timepointTypeColumn.setUserEditable(false);
 
+        ColumnInfo subjectNounSingularColumn = addWrapColumn(_rootTable.getColumn("subjectNounSingular"));
+        subjectNounSingularColumn.setUserEditable(false);
+
+        ColumnInfo subjectNounPluralColumn = addWrapColumn(_rootTable.getColumn("subjectNounPlural"));
+        subjectNounPluralColumn.setUserEditable(false);
+
+        ColumnInfo subjectColumnNameColumn = addWrapColumn(_rootTable.getColumn("subjectColumnName"));
+        subjectColumnNameColumn.setUserEditable(false);
+
         String bTRUE = getSchema().getSqlDialect().getBooleanTRUE();
         String bFALSE = getSchema().getSqlDialect().getBooleanFALSE();
 
