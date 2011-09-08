@@ -3634,14 +3634,24 @@ public class StudyManager
                 List<String> errors = new ArrayList<String>();
 
                 String guid = "GUUUUID";
-
-                importRowVerifyGuid((String[]) null, def, PageFlowUtil.map("SubjectId", "A1", "Date", Jan1, "Measure", "Test" + (++counterRow), "Value", 1.0, "SequenceNum", sequenceNum++, "GUID", guid), tt);
+                Map map =PageFlowUtil.map("SubjectId", "A1", "Date", Jan1, "Measure", "Test" + (++counterRow), "Value", 1.0, "SequenceNum", sequenceNum++, "GUID", guid);
+                importRowVerifyGuid((String[]) null, def,  map, tt);
 
                 // duplicate row
                 // Issue 12985
-//                _import(def, rows, errors);
+                rows.add(map);
+                try
+                {
+                    _import(def, rows, errors);
+                    assertTrue("Should have thrown exception before this line", false);
+                }
+                catch(Exception e)
+                {
+                    assertTrue("Unexpected Exception", e.getMessage().indexOf("duplicate key")>-1);
+                }
                 //study:Label: Only one row is allowed for each Subject/Visit/Measure Triple.  Duplicates were found in the database or imported data.; Duplicate: Subject = A1Date = Sat Jan 01 00:00:00 PST 2011, Measure = Test1
 //                assertTrue(-1 != errors.get(0).indexOf("duplicate key value violates unique constraint"));
+
 
 
                 //same participant, guid, different sequenceNum
