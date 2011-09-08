@@ -117,10 +117,23 @@ class PostgreSql83Dialect extends SqlDialect
     }
 
     @Override
+    public StatementWrapper getStatementWrapper(ConnectionWrapper conn, Statement stmt)
+    {
+        StatementWrapper statementWrapper = super.getStatementWrapper(conn, stmt);
+        configureStatementWrapper(statementWrapper);
+        return statementWrapper;
+    }
+
+    @Override
     public StatementWrapper getStatementWrapper(ConnectionWrapper conn, Statement stmt, String sql)
     {
         StatementWrapper statementWrapper = super.getStatementWrapper(conn, stmt, sql);
+        configureStatementWrapper(statementWrapper);
+        return statementWrapper;
+    }
 
+    private void configureStatementWrapper(StatementWrapper statementWrapper)
+    {
         try
         {
             //pgSQL JDBC driver will load all results locally unless this is set along with autoCommit=false on the connection
@@ -131,7 +144,6 @@ class PostgreSql83Dialect extends SqlDialect
             throw new RuntimeSQLException(e);
         }
 
-        return statementWrapper;
     }
 
     @Override

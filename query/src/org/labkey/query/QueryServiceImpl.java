@@ -799,7 +799,9 @@ public class QueryServiceImpl extends QueryService
         if (lookup == null)
             return null;
 
-        AliasedColumn ret = new QAliasedColumn(key, manager.decideAlias(key.toString()), lookup, true);
+        // When determining the alias, use the field key with the canonical casing for this column name, not the one
+        // that was passed in. This makes sure that we generate the exact same JOIN SQL.
+        AliasedColumn ret = new QAliasedColumn(key, manager.decideAlias(lookup.getFieldKey().toString()), lookup, true);
         columnMap.put(key, ret);
 
         return ret;
