@@ -37,7 +37,7 @@ public abstract class AbstractDataRegion extends DisplayElement
     private static final Logger _log = Logger.getLogger(DataRegion.class);
     private String _name = null;
     private QuerySettings _settings = null;
-    private boolean _allowHeaderLock = false; // Set to 'true' to enable header locking.
+    protected boolean _allowHeaderLock = true; // Set to 'true' to enable header locking.
 
     public enum PaginationLocation
     {
@@ -273,7 +273,7 @@ public abstract class AbstractDataRegion extends DisplayElement
         out.write(String.valueOf(colCount));
         out.write("\" class=\"labkey-data-region-header-container\">\n");
 
-        out.write("<table class=\"labkey-data-region-header\" id=\"" + PageFlowUtil.filter("dataregion_header_" + getName()) + "\">\n");
+        out.write("<table class=\"labkey-data-region-header\" cellpadding=\"0\" cellspacing=\"0\" id=\"" + PageFlowUtil.filter("dataregion_header_" + getName()) + "\">\n");
         out.write("<tr><td nowrap>\n");
         if (renderButtons)
         {

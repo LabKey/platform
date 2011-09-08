@@ -54,6 +54,7 @@ public class ReportDataRegion extends AbstractDataRegion
             report.getDescriptor().setProperty(ReportDescriptor.Prop.dataRegionName, settings.getDataRegionName());
             _report = report;
             _reportView = report.getRunReportView(context);
+            _allowHeaderLock = false;
         }
         catch (Exception e)
         {
