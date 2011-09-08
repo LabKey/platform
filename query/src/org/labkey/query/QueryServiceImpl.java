@@ -1178,6 +1178,8 @@ public class QueryServiceImpl extends QueryService
             if (params.containsKey(name))
             {
                 value = params.get(p.getName());
+                if (value instanceof String && ((String)value).isEmpty())
+                    value = null;
                 provided = true;
             }
 
