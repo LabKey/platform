@@ -112,8 +112,6 @@ public class CachingDataIterator extends AbstractDataIterator
     }
 
 
-
-
     private static String[] as(String... arr)
     {
       return arr;

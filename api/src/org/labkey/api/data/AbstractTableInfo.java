@@ -846,20 +846,36 @@ abstract public class AbstractTableInfo implements TableInfo, ContainerContext
     }
 
 
-    ScriptReference tableScript;
-
-
-    public boolean hasTableScript(Container c) throws ScriptException
+    public boolean hasTriggers(Container c)
     {
-        return null != getTableScript(c);
+        try
+        {
+            return null != getTableScript(c);
+        }
+        catch (ScriptException x)
+        {
+            return true;
+        }
     }
 
 
+    boolean scriptLoaded = false;
+    ScriptReference tableScript = null;
+
     protected ScriptReference getTableScript(Container c) throws ScriptException
     {
-        if (tableScript != null)
-            return tableScript;
+        if (!scriptLoaded)
+        {
+            ScriptReference script = loadScript(c);
+            tableScript = script;
+            scriptLoaded = true;
+        }
+        return tableScript;
+    }
 
+
+    private ScriptReference loadScript(Container c) throws ScriptException
+    {
         ScriptService svc = ServiceRegistry.get().getService(ScriptService.class);
         assert svc != null;
         if (svc == null)
@@ -878,7 +894,7 @@ abstract public class AbstractTableInfo implements TableInfo, ContainerContext
                 getPublicSchemaName().replaceAll("\\W", "_"),
                 getName().replaceAll("\\W", "_") + ".js");
 
-        Path[] paths = new Path[] { pathNew, pathOld };
+        Path[] paths = pathNew.equals(pathOld) ? new Path[] {pathNew} : new Path[] { pathNew, pathOld };
 
         // UNDONE: get all table scripts instead of just first found
         Resource r = null;
@@ -893,10 +909,10 @@ abstract public class AbstractTableInfo implements TableInfo, ContainerContext
         }
         if (r == null)
             return null;
-        
-        tableScript = svc.compile(r);
-        return tableScript;
+
+        return svc.compile(r);
     }
+
 
     protected <T> T invokeTableScript(Container c, Class<T> resultType, String methodName, Map<String, Object> extraContext, Object... args)
     {

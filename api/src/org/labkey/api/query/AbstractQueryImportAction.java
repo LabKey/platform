@@ -267,8 +267,11 @@ public abstract class AbstractQueryImportAction<FORM> extends FormApiAction<FORM
         try
         {
             scope.beginTransaction();
-            List res = _updateService.insertRows(getViewContext().getUser(), getViewContext().getContainer(), dl.load(), new HashMap<String, Object>());
+            List res = _updateService.insertRows(getViewContext().getUser(), getViewContext().getContainer(), dl.load(), errors, new HashMap<String, Object>());
+//            List res = _updateService.importRows(getViewContext().getUser(), getViewContext().getContainer(), dl.getDataIterator(errors), errors, new HashMap<String, Object>());
             scope.commitTransaction();
+            if (errors.hasErrors())
+                return 0;
             return res.size();
         }
         catch (BatchValidationException x)

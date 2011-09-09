@@ -35,6 +35,7 @@ import org.labkey.api.collections.Join;
 import org.labkey.api.collections.Sets;
 import org.labkey.api.data.dialect.SqlDialect;
 import org.labkey.api.etl.AbstractDataIterator;
+import org.labkey.api.etl.DataIteratorBuilder;
 import org.labkey.api.etl.Pump;
 import org.labkey.api.etl.SimpleTranslator;
 import org.labkey.api.etl.TableInsertDataIterator;
@@ -2712,7 +2713,7 @@ public class Table
                     testTable,
                     errors
             );
-            new Pump(load, errors).run();
+            new Pump((DataIteratorBuilder)load, errors).run();
 
             assertFalse(errors.hasErrors());
             

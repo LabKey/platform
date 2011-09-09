@@ -19,6 +19,7 @@ import org.jetbrains.annotations.Nullable;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.collections.CaseInsensitiveHashSet;
 import org.labkey.api.etl.DataIterator;
+import org.labkey.api.etl.DataIteratorBuilder;
 import org.labkey.api.query.BatchValidationException;
 import org.labkey.api.query.ValidationException;
 import org.labkey.api.security.User;
@@ -104,12 +105,12 @@ public interface UpdateableTableInfo
      * If there are idiosyncratic column mapping problems (hidden columns?) etc, you can override this method.
      * Try to use generic code paths to get the input data iterator to match the parameters when possible.
      *
-     * This method is _NOT_ usually called directly. See TableInfo.getUpdateService().
+     * This method is _NOT_ usually called directly. See TableInfo.getUpdateService(), and StandardETL.
      * 
      * @param data
      * @param errors
      */
-    int persistRows(DataIterator data, BatchValidationException errors);
+    DataIteratorBuilder persistRows(DataIteratorBuilder data, BatchValidationException errors);
 
 
     /** persist one row in the database

@@ -15,6 +15,7 @@
  */
 package org.labkey.api.query;
 
+import org.labkey.api.etl.DataIterator;
 import org.labkey.api.security.User;
 import org.labkey.api.data.Container;
 
@@ -72,8 +73,29 @@ public interface QueryUpdateService
      * @throws QueryUpdateServiceException Thrown for implementation-specific exceptions.
      * @throws DuplicateKeyException Thrown if primary key values were supplied in the map
      */
-    public List<Map<String,Object>> insertRows(User user, Container container, List<Map<String, Object>> rows, Map<String, Object> extraScriptContext)
-            throws DuplicateKeyException, BatchValidationException, QueryUpdateServiceException, SQLException;
+    public List<Map<String,Object>> insertRows(User user, Container container, List<Map<String, Object>> rows,
+            BatchValidationException errors, Map<String, Object> extraScriptContext)
+        throws DuplicateKeyException, BatchValidationException, QueryUpdateServiceException, SQLException;
+
+    /**
+     * Inserts the given values as new rows into the source table of this query.  Same as insertRows() except for the use
+     * of DataIterator.  importRows() may be implmented using insertRows() or vice versa.
+     *
+     * @param user The current user.
+     * @param container The container in which the data should exist.
+     * @param rows The row values provided using a DataIterator.
+     * @return The row values after insert. If the rows have an automatically-assigned
+     * primary key value(s), those should be added to the returned map. However, the
+     * implementation should not completely refetch the row data. The caller will use
+     * <code>getRows()</code> to refetch if that behavior is necessary.
+     * @throws SQLException Thrown if there was an error communicating with the database.
+     * @throws ValidationException Thrown if the data failed one of the validation checks
+     * @throws QueryUpdateServiceException Thrown for implementation-specific exceptions.
+     * @throws DuplicateKeyException Thrown if primary key values were supplied in the map
+     */
+    public List<Map<String,Object>> importRows(User user, Container container, DataIterator rows,
+           BatchValidationException errors, Map<String, Object> extraScriptContext)
+        throws SQLException;
 
     /**
      * Updates a set of rows in the source table for this query.

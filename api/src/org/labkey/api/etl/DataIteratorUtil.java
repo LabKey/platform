@@ -101,9 +101,16 @@ public class DataIteratorUtil
     public static ArrayList<ColumnInfo> matchColumns(DataIterator input, TableInfo target)
     {
         Map<String,ColumnInfo> targetMap = createAllAliasesMap(target);
+        return matchColumns(input, targetMap);
+    }
+
+
+    /* NOTE doesn't check column mapping collisions */
+    public static ArrayList<ColumnInfo> matchColumns(DataIterator input, Map<String,ColumnInfo> targetMap)
+    {
         ArrayList<ColumnInfo> matches = new ArrayList<ColumnInfo>(input.getColumnCount()+1);
         matches.add(null);
-        
+
         // match columns to target columninfos (duplicates StandardETL, extract shared method?)
         for (int i=1 ; i<=input.getColumnCount() ; i++)
         {
@@ -124,8 +131,22 @@ public class DataIteratorUtil
     }
 
 
-    static DataIterator makeScrollable(DataIterator di)
+    /*
+     * Wrapping functions to add functionality to existing DataIterators
+     */
+
+    public static DataIterator wrapScrollable(DataIterator di)
     {
         return CachingDataIterator.wrap(di);
+    }
+
+
+    public static MapDataIterator wrapMap(DataIterator in, boolean mutable)
+    {
+        if (in instanceof MapDataIterator && !mutable)
+        {
+            return (MapDataIterator)in;
+        }
+        return new MapDataIterator.MapDataIteratorImpl(in, mutable);
     }
 }

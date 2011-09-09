@@ -23,6 +23,14 @@ import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ImportAliasable;
 import org.labkey.api.data.TableInfo;
+import org.labkey.api.data.UpdateableTableInfo;
+import org.labkey.api.etl.DataIterator;
+import org.labkey.api.etl.DataIteratorBuilder;
+import org.labkey.api.etl.DataIteratorUtil;
+import org.labkey.api.etl.MapDataIterator;
+import org.labkey.api.etl.Pump;
+import org.labkey.api.etl.StandardETL;
+import org.labkey.api.etl.TriggerDataBuilder;
 import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.*;
 import org.labkey.api.view.NotFoundException;
@@ -76,18 +84,122 @@ public abstract class AbstractQueryUpdateService implements QueryUpdateService
         return result;
     }
 
+    /*
+     * construct the core ETL tranformation pipeline for this table, may be just StandardETL.
+     * does NOT handle triggers or the insert/update iterator.
+     */
+    protected DataIteratorBuilder createImportETL(User user, Container container, DataIteratorBuilder data, BatchValidationException errors)
+    {
+        StandardETL etl = StandardETL.forInsert(getQueryTable(), data, container, user, errors);
+        DataIteratorBuilder insert = ((UpdateableTableInfo)getQueryTable()).persistRows(etl, errors);
+        return insert;
+    }
+
+
+    /** @deprecated implementation to use insertRows() while we migrate to using ETL for all code paths
+     *
+     * DataIterator should/must use same error collection as passed in
+     */
+    @Deprecated
+    protected List<Map<String, Object>> _importRowsUsingInsertRows(User user, Container container, DataIterator rows, BatchValidationException errors, Map<String, Object> extraScriptContext) throws SQLException
+    {
+        MapDataIterator mapIterator = DataIteratorUtil.wrapMap(rows, true);
+        List<Map<String, Object>> list = new ArrayList<Map<String, Object>>();
+        List<Map<String, Object>> ret;
+        Exception rowException = null;
+
+        try
+        {
+            while (mapIterator.next())
+                list.add(mapIterator.getMap());
+            ret = insertRows(user, container, list, errors, extraScriptContext);
+            if (errors.hasErrors())
+                return null;
+            return ret;
+        }
+        catch (BatchValidationException x)
+        {
+            assert x == errors;
+            assert x.hasErrors();
+            return null;
+        }
+        catch (QueryUpdateServiceException x)
+        {
+            rowException = x;
+        }
+        catch (DuplicateKeyException x)
+        {
+            rowException = x;
+        }
+        errors.addRowError(new ValidationException(rowException.getMessage()));
+        return null;
+    }
+
+
+    protected List<Map<String, Object>> _importRowsUsingETL(User user, Container container, DataIterator rows, BatchValidationException errors, Map<String, Object> extraScriptContext) throws DuplicateKeyException, BatchValidationException, QueryUpdateServiceException, SQLException
+    {
+        if (!hasPermission(user, InsertPermission.class))
+            throw new UnauthorizedException("You do not have permission to insert data into this table.");
+
+        errors.setExtraContext(extraScriptContext);
+
+        boolean hasTableScript = hasTableScript(container);
+        DataIteratorBuilder in = new DataIteratorBuilder.Wrapper(rows);
+        if (hasTableScript)
+            in = TriggerDataBuilder.before(in, getQueryTable(), container);
+        DataIteratorBuilder importETL = createImportETL(user, container, in, errors);
+        DataIteratorBuilder out = importETL;
+        if (hasTableScript)
+            out = TriggerDataBuilder.after(importETL, getQueryTable(), container);
+
+        Pump pump = new Pump(out, errors);
+        pump.run();
+        // TODO
+        return Collections.emptyList();
+    }
+
+
+    @Override
+    public List<Map<String, Object>> importRows(User user, Container container, DataIterator rows, BatchValidationException errors, Map<String, Object> extraScriptContext) throws SQLException
+    {
+        return _importRowsUsingInsertRows(user,container,rows,errors,extraScriptContext);
+    }
+
+
+    private boolean hasTableScript(Container container)
+    {
+        return getQueryTable().hasTriggers(container);
+    }
+
+
     protected abstract Map<String, Object> insertRow(User user, Container container, Map<String, Object> row)
         throws DuplicateKeyException, ValidationException, QueryUpdateServiceException, SQLException;
 
-    public List<Map<String, Object>> insertRows(User user, Container container, List<Map<String, Object>> rows, Map<String, Object> extraScriptContext)
+
+    protected List<Map<String, Object>> _insertRowsUsingETL(User user, Container container, List<Map<String, Object>> rows, BatchValidationException errors, Map<String, Object> extraScriptContext)
             throws DuplicateKeyException, BatchValidationException, QueryUpdateServiceException, SQLException
     {
         if (!hasPermission(user, InsertPermission.class))
             throw new UnauthorizedException("You do not have permission to insert data into this table.");
 
-        BatchValidationException errors = new BatchValidationException();
+        throw new UnsupportedOperationException();
+        //importRows(user, container, toDataIterator(rows), extraScriptContext);
+    }
+
+
+    /** @deprecated switch to using ETL based method */
+    @Deprecated
+    protected List<Map<String, Object>> _insertRowsUsingInsertRow(User user, Container container, List<Map<String, Object>> rows, BatchValidationException errors, Map<String, Object> extraScriptContext)
+            throws DuplicateKeyException, BatchValidationException, QueryUpdateServiceException, SQLException
+    {
+        if (!hasPermission(user, InsertPermission.class))
+            throw new UnauthorizedException("You do not have permission to insert data into this table.");
+
+        boolean hasTableScript = hasTableScript(container);
+
         errors.setExtraContext(extraScriptContext);
-        getQueryTable().fireBatchTrigger(container, TableInfo.TriggerType.INSERT, true, errors, extraScriptContext);
+        if (hasTableScript)
+            getQueryTable().fireBatchTrigger(container, TableInfo.TriggerType.INSERT, true, errors, extraScriptContext);
 
         List<Map<String, Object>> result = new ArrayList<Map<String, Object>>(rows.size());
         for (int i = 0; i < rows.size(); i++)
@@ -95,13 +207,17 @@ public abstract class AbstractQueryUpdateService implements QueryUpdateService
             Map<String, Object> row = rows.get(i);
             try
             {
-                row = coerceTypes(row);
-                getQueryTable().fireRowTrigger(container, TableInfo.TriggerType.INSERT, true, i, row, null, extraScriptContext);
+                if (hasTableScript)
+                {
+                    row = coerceTypes(row);
+                    getQueryTable().fireRowTrigger(container, TableInfo.TriggerType.INSERT, true, i, row, null, extraScriptContext);
+                }
                 row = insertRow(user, container, row);
                 if (row == null)
                     continue;
 
-                getQueryTable().fireRowTrigger(container, TableInfo.TriggerType.INSERT, false, i, row, null, extraScriptContext);
+                if (hasTableScript)
+                    getQueryTable().fireRowTrigger(container, TableInfo.TriggerType.INSERT, false, i, row, null, extraScriptContext);
                 result.add(row);
             }
             catch (ValidationException vex)
@@ -110,12 +226,35 @@ public abstract class AbstractQueryUpdateService implements QueryUpdateService
             }
         }
 
-        getQueryTable().fireBatchTrigger(container, TableInfo.TriggerType.INSERT, false, errors, extraScriptContext);
+        if (hasTableScript)
+            getQueryTable().fireBatchTrigger(container, TableInfo.TriggerType.INSERT, false, errors, extraScriptContext);
 
         return result;
     }
 
+
+    public List<Map<String, Object>> insertRows(User user, Container container, List<Map<String, Object>> rows, BatchValidationException errors, Map<String, Object> extraScriptContext)
+            throws DuplicateKeyException, QueryUpdateServiceException, SQLException
+    {
+        try
+        {
+            List<Map<String,Object>> ret = _insertRowsUsingInsertRow(user, container, rows, errors, extraScriptContext);
+            if (errors.hasErrors())
+                return null;
+            return ret;
+        }
+        catch (BatchValidationException x)
+        {
+            assert x == errors;
+            assert x.hasErrors();
+            x = errors;
+        }
+        return null;
+    }
+
+
     /** Attempt to make the passed in types match the expected types so the script doesn't have to do the conversion */
+    @Deprecated
     protected Map<String, Object> coerceTypes(Map<String, Object> row)
     {
         Map<String, Object> result = new CaseInsensitiveHashMap<Object>(row.size());

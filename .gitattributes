@@ -304,11 +304,13 @@ api/src/org/labkey/api/defaults/SetDefaultValuesListAction.java -text
 api/src/org/labkey/api/etl/AbstractDataIterator.java -text
 api/src/org/labkey/api/etl/BeanDataIterator.java -text
 api/src/org/labkey/api/etl/CachingDataIterator.java -text
+api/src/org/labkey/api/etl/CoerceDataIterator.java -text
 api/src/org/labkey/api/etl/DataIterator.java -text
 api/src/org/labkey/api/etl/DataIteratorBuilder.java -text
 api/src/org/labkey/api/etl/DataIteratorUtil.java -text
 api/src/org/labkey/api/etl/ErrorIterator.java -text
 api/src/org/labkey/api/etl/FilterDataIterator.java -text
+api/src/org/labkey/api/etl/ListofMapsDataIterator.java -text
 api/src/org/labkey/api/etl/LoggingDataIterator.java -text
 api/src/org/labkey/api/etl/MapDataIterator.java -text
 api/src/org/labkey/api/etl/Pump.java -text
@@ -318,6 +320,7 @@ api/src/org/labkey/api/etl/StandardETL.java -text
 api/src/org/labkey/api/etl/StatementDataIterator.java -text
 api/src/org/labkey/api/etl/StringTestIterator.java -text
 api/src/org/labkey/api/etl/TableInsertDataIterator.java -text
+api/src/org/labkey/api/etl/TriggerDataBuilder.java -text
 api/src/org/labkey/api/etl/ValidatorIterator.java -text
 api/src/org/labkey/api/exp/AbstractParameter.java -text
 api/src/org/labkey/api/exp/ChangePropertyDescriptorException.java -text

@@ -26,6 +26,7 @@ import org.labkey.api.collections.CaseInsensitiveHashSet;
 import org.labkey.api.collections.NamedObjectList;
 import org.labkey.api.data.dialect.SqlDialect;
 import org.labkey.api.etl.DataIterator;
+import org.labkey.api.etl.DataIteratorBuilder;
 import org.labkey.api.etl.Pump;
 import org.labkey.api.etl.TableInsertDataIterator;
 import org.labkey.api.exp.property.Domain;
@@ -636,6 +637,11 @@ public class SchemaTableInfo implements TableInfo, UpdateableTableInfo
         throw new UnsupportedOperationException("Table triggers not yet supported on schema tables");
     }
 
+    @Override
+    public boolean hasTriggers(Container c)
+    {
+        return false;
+    }
 
     //
     // UpdateableTableInfo
@@ -696,11 +702,9 @@ public class SchemaTableInfo implements TableInfo, UpdateableTableInfo
     }
 
     @Override
-    public int persistRows(DataIterator data, BatchValidationException errors)
+    public DataIteratorBuilder persistRows(DataIteratorBuilder data, BatchValidationException errors)
     {
-        TableInsertDataIterator insert = TableInsertDataIterator.create(data, this, errors);
-        new Pump(insert, errors).run();
-        return insert.getExecuteCount();
+        return TableInsertDataIterator.create(data, this, errors);
     }
 
     @Override

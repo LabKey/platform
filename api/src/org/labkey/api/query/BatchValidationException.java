@@ -76,4 +76,11 @@ public class BatchValidationException extends Exception
     {
         return extraContext;
     }
+
+    // most for debug code to reuse the object
+    public void clear()
+    {
+        rowErrors.clear();
+        extraContext = null;
+    }
 }

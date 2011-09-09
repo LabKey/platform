@@ -132,7 +132,7 @@ public class SimpleTranslator extends AbstractDataIterator implements DataIterat
     }
 
 
-    protected void addConversionException(String fieldName, Object value, JdbcType target, Exception x)
+    protected Object addConversionException(String fieldName, Object value, JdbcType target, Exception x)
     {
         String msg;
         if (null != value && null != target)
@@ -142,6 +142,7 @@ public class SimpleTranslator extends AbstractDataIterator implements DataIterat
         else
             msg = "Could not convert value";
         addFieldError(fieldName, msg);
+        return null;
     }
 
 
@@ -202,9 +203,8 @@ public class SimpleTranslator extends AbstractDataIterator implements DataIterat
             }
             catch (ConversionException x)
             {
-                addConversionException(fieldName, value, type, x);
+                return addConversionException(fieldName, value, type, x);
             }
-            return null;
         }
 
         protected Object convert(Object o)
@@ -335,15 +335,29 @@ public class SimpleTranslator extends AbstractDataIterator implements DataIterat
 
     protected class RemapColumn implements Callable
     {
-        final int _index;
+        //final int _index;
+        final Callable _inputColumn;
         final Map<?, ?> _map;
         final boolean _strict;
 
         // strict == true means every incoming value must have an entry in the map
         // string == false means incoming values without a map entry will pass through
-        public RemapColumn(int index, Map<?, ?> map, boolean strict)
+        public RemapColumn(final int index, Map<?, ?> map, boolean strict)
         {
-            _index = index;
+            _inputColumn = new Callable(){
+                @Override
+                public Object call() throws Exception
+                {
+                    return _data.get(index);
+                }
+            };
+            _map = map;
+            _strict = strict;
+        }
+
+        public RemapColumn(Callable call, Map<?, ?> map, boolean strict)
+        {
+            _inputColumn = call;
             _map = map;
             _strict = strict;
         }
@@ -351,7 +365,7 @@ public class SimpleTranslator extends AbstractDataIterator implements DataIterat
         @Override
         public Object call() throws Exception
         {
-            Object k = _data.get(_index);
+            Object k = _inputColumn.call();
             if (null == k)
                 return null;
             Object v = _map.get(k);
@@ -359,11 +373,21 @@ public class SimpleTranslator extends AbstractDataIterator implements DataIterat
                 return v;
             if (!_strict)
                 return k;
-            addFieldError(_data.getColumnInfo(_index).getName(), "Couldn't not translate value: " + String.valueOf(k));
-            return null;
+            throw new ConversionException("Could not translate value: " + String.valueOf(k));
         }
     }
     
+
+    protected class NullColumn implements Callable
+    {
+        @Override
+        public Object call() throws Exception
+        {
+            return null;
+        }
+    }
+
+
 
     /* use same value for all rows, set value on first usage */
     Timestamp _ts = null;
@@ -473,6 +497,13 @@ public class SimpleTranslator extends AbstractDataIterator implements DataIterat
         col.setName(name);
         col.setJdbcType(pt.getJdbcType());
         return addColumn(col, new PropertyConvertColumn(name, fromIndex, 0, pd, pt));
+    }
+
+
+    public int addNullColumn(String name, JdbcType type)
+    {
+        ColumnInfo col = new ColumnInfo(name, type);
+        return addColumn(col, new NullColumn());
     }
 
 
@@ -609,7 +640,7 @@ public class SimpleTranslator extends AbstractDataIterator implements DataIterat
             catch (ConversionException x)
             {
                 // preferable to handle in call()
-                addConversionException(_outputColumns.get(i).getKey().getName(), null, null, x);
+                _row[i] = addConversionException(_outputColumns.get(i).getKey().getName(), null, null, x);
             }
             catch (RuntimeException x)
             {

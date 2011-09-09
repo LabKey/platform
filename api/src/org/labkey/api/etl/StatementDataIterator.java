@@ -28,7 +28,7 @@ import java.util.ArrayList;
 class StatementDataIterator extends AbstractDataIterator
 {
     protected Parameter.ParameterMap _stmt;
-    final BatchValidationException _errors;
+    BatchValidationException _errors;
     DataIterator _data;
     int _executeCount = 0;
     ColumnInfo[] _columns = null;

@@ -140,7 +140,7 @@ public class ArrayListMap<K, V> extends AbstractMap<K, V> implements Serializabl
     }
 
 
-    protected ArrayListMap(FindMap findMap, List<V> row)
+    public ArrayListMap(FindMap findMap, List<V> row)
     {
         _findMap = findMap;
         _row = row;
@@ -205,7 +205,9 @@ public class ArrayListMap<K, V> extends AbstractMap<K, V> implements Serializabl
         Set<Entry<K, V>> r = new HashSet<Entry<K, V>>(_row.size() * 2);
         for (Entry<K, Integer> e : _findMap.entrySet())
         {
-            r.add(new Pair(e.getKey(), _row.get(e.getValue())));
+            int i = e.getValue();
+            if (i < _row.size())
+                r.add(new Pair<K,V>(e.getKey(), _row.get(i)));
         }
         return r;
     }

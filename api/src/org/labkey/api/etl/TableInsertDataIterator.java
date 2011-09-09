@@ -30,7 +30,7 @@ import java.sql.Connection;
 import java.sql.SQLException;
 import java.util.Map;
 
-public class TableInsertDataIterator extends StatementDataIterator
+public class TableInsertDataIterator extends StatementDataIterator implements DataIteratorBuilder
 {
     DbScope _scope = null;
     Connection _conn = null;
@@ -42,6 +42,14 @@ public class TableInsertDataIterator extends StatementDataIterator
         it.init();
         return it;
     }
+
+    public static TableInsertDataIterator create(DataIteratorBuilder data, TableInfo table, BatchValidationException errors)
+    {
+        TableInsertDataIterator it = new TableInsertDataIterator(data.getDataIterator(errors), table, errors);
+        it.init();
+        return it;
+    }
+
 
     protected TableInsertDataIterator(DataIterator data, TableInfo table, BatchValidationException errors)
     {
@@ -73,6 +81,15 @@ public class TableInsertDataIterator extends StatementDataIterator
         {
             throw new RuntimeSQLException(x);
         }
+    }
+
+    @Override
+    public DataIterator getDataIterator(BatchValidationException errors)
+    {
+        assert null == errors || null == _errors || _errors == errors;
+        if (null != errors)
+            _errors = errors;
+        return this;
     }
 
     @Override

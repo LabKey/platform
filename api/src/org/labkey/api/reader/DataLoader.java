@@ -31,6 +31,7 @@ import org.labkey.api.data.MvUtil;
 import org.labkey.api.etl.DataIteratorBuilder;
 import org.labkey.api.etl.DataIterator;
 import org.labkey.api.etl.LoggingDataIterator;
+import org.labkey.api.etl.MapDataIterator;
 import org.labkey.api.exp.MvColumn;
 import org.labkey.api.exp.MvFieldWrapper;
 import org.labkey.api.iterator.CloseableIterator;
@@ -87,6 +88,7 @@ public abstract class DataLoader implements Iterable<Map<String, Object>>, Loade
     protected int _scanAheadLineCount = 100; // number of lines to scan trying to infer data types
     // CONSIDER: explicit flags for hasHeaders, inferHeaders, skipLines etc.
     protected int _skipLines = -1;      // -1 means infer headers
+    private boolean _inferTypes = true;
     protected boolean _throwOnErrors = false;
     private Container _mvIndicatorContainer;
 
@@ -194,6 +196,16 @@ public abstract class DataLoader implements Iterable<Map<String, Object>>, Loade
         throw new ServletException("Unknown file type. File must have a suffix of .xls, .xlsx, .txt, .tsv or .csv.");
     }
 
+
+    public void setInferTypes(boolean infer)
+    {
+        _inferTypes = infer;
+    }
+
+    public boolean getInferTypes()
+    {
+        return _inferTypes;
+    }
 
     public boolean isThrowOnErrors()
     {
@@ -306,42 +318,45 @@ public abstract class DataLoader implements Iterable<Map<String, Object>>, Loade
             colDescs[i] = new ColumnDescriptor();
 
         //Try to infer types
-        int inferStartLine = _skipLines == -1 ? 1 : _skipLines;
-        for (int f = 0; f < nCols; f++)
+        if (getInferTypes())
         {
-            int classIndex = -1;
-            for (int line = inferStartLine; line < numLines; line++)
+            int inferStartLine = _skipLines == -1 ? 1 : _skipLines;
+            for (int f = 0; f < nCols; f++)
             {
-                if (f >= lineFields[line].length)
-                    continue;
-                String field = lineFields[line][f];
-                if (missingValueIndicators.contains(field))
+                int classIndex = -1;
+                for (int line = inferStartLine; line < numLines; line++)
                 {
-                    colDescs[f].setMvEnabled(_mvIndicatorContainer);
-                    continue;
-                }
-
-                if ("".equals(field))
-                    continue;
-
-                for (int c = Math.max(classIndex, 0); c < CONVERT_CLASSES.length; c++)
-                {
-                    //noinspection EmptyCatchBlock
-                    try
+                    if (f >= lineFields[line].length)
+                        continue;
+                    String field = lineFields[line][f];
+                    if (missingValueIndicators.contains(field))
                     {
-                        Object o = ConvertUtils.convert(field, CONVERT_CLASSES[c]);
-                        //We found a type that works. If it is more general than
-                        //what we had before, we must use it.
-                        if (o != null && c > classIndex)
-                            classIndex = c;
-                        break;
+                        colDescs[f].setMvEnabled(_mvIndicatorContainer);
+                        continue;
                     }
-                    catch (Exception x)
+
+                    if ("".equals(field))
+                        continue;
+
+                    for (int c = Math.max(classIndex, 0); c < CONVERT_CLASSES.length; c++)
                     {
+                        //noinspection EmptyCatchBlock
+                        try
+                        {
+                            Object o = ConvertUtils.convert(field, CONVERT_CLASSES[c]);
+                            //We found a type that works. If it is more general than
+                            //what we had before, we must use it.
+                            if (o != null && c > classIndex)
+                                classIndex = c;
+                            break;
+                        }
+                        catch (Exception x)
+                        {
+                        }
                     }
                 }
+                colDescs[f].clazz = classIndex == -1 ? String.class : CONVERT_CLASSES[classIndex];
             }
-            colDescs[f].clazz = classIndex == -1 ? String.class : CONVERT_CLASSES[classIndex];
         }
 
         //If first line is compatible type for all fields, then there is no header row
@@ -773,11 +788,12 @@ public abstract class DataLoader implements Iterable<Map<String, Object>>, Loade
     @Override
     public DataIterator getDataIterator(final BatchValidationException errors)
     {
+        setInferTypes(false);
         return LoggingDataIterator.wrap(new _DataIterator(errors));
     }
 
 
-    private class _DataIterator implements DataIterator
+    private class _DataIterator implements MapDataIterator
     {
         final BatchValidationException _errors;
         DataLoaderIterator _it = null;
@@ -836,6 +852,14 @@ public abstract class DataLoader implements Iterable<Map<String, Object>>, Loade
                 _rowNumber++;
             }
             return hasNext;
+        }
+
+        @Override
+        public Map<String, Object> getMap()
+        {
+            boolean debug = false;
+            assert debug = true;
+            return debug ? Collections.unmodifiableMap(_row) : _row;
         }
 
         @Override

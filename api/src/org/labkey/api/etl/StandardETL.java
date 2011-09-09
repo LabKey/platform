@@ -16,6 +16,7 @@
 
 package org.labkey.api.etl;
 
+import com.sun.tools.doclets.standard.Standard;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
@@ -30,6 +31,7 @@ import org.labkey.api.query.BatchValidationException;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.ValidationException;
 import org.labkey.api.security.User;
+import sun.reflect.generics.reflectiveObjects.NotImplementedException;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -49,19 +51,33 @@ import java.util.Map;
  */
 
 
-public class StandardETL implements DataIteratorBuilder, Runnable
+public class StandardETL implements DataIteratorBuilder
 {
+    enum _op {forInsert, forUpdate}
+
     final DataIteratorBuilder _inputBuilder;
     final TableInfo _target;
     BatchValidationException _errors;
     final Container _c;
     final User _user;
     boolean _failFast = true;
-    int _rowCount = 0;
+    _op op = _op.forInsert;
 
     ValidatorIterator _it;
 
-    public StandardETL(TableInfo target, @NotNull DataIteratorBuilder in, @Nullable Container c, @NotNull User user, BatchValidationException errors)
+
+    public static StandardETL forInsert(TableInfo target, @NotNull DataIteratorBuilder in, @Nullable Container c, @NotNull User user, BatchValidationException errors)
+    {
+        return new StandardETL(target, in, c, user, errors);
+    }
+
+    public static StandardETL forUpdate(TableInfo target, @NotNull DataIteratorBuilder in, @Nullable Container c, @NotNull User user, BatchValidationException errors)
+    {
+        throw new NotImplementedException();
+    }
+
+
+    protected StandardETL(TableInfo target, @NotNull DataIteratorBuilder in, @Nullable Container c, @NotNull User user, BatchValidationException errors)
     {
         if (!(target instanceof UpdateableTableInfo))
             throw new IllegalArgumentException("Must implement UpdateableTableInfo");
@@ -73,32 +89,16 @@ public class StandardETL implements DataIteratorBuilder, Runnable
     }
 
 
-    public StandardETL(TableInfo target, @NotNull DataIterator it, @Nullable Container c, @NotNull User user,  BatchValidationException errors)
-    {
-        if (!(target instanceof UpdateableTableInfo))
-            throw new IllegalArgumentException("Must implement UpdateableTableInfo");
-        _inputBuilder = new DataIteratorBuilder.Wrapper(it);
-        _target = target;
-        _c = c;
-        _user = user;
-        _errors = errors;
-    }
-
-
-    @Override
-    public void run()
-    {
-        if (null == _errors)
-            _errors = new BatchValidationException();
-        DataIterator data = getDataIterator(_errors);
-        _rowCount = ((UpdateableTableInfo)_target).persistRows(data, _errors);
-    }
-
-
-    public int getRowCount()
-    {
-        return _rowCount;
-    }
+//    public StandardETL(TableInfo target, @NotNull DataIterator it, @Nullable Container c, @NotNull User user,  BatchValidationException errors)
+//    {
+//        if (!(target instanceof UpdateableTableInfo))
+//            throw new IllegalArgumentException("Must implement UpdateableTableInfo");
+//        _inputBuilder = new DataIteratorBuilder.Wrapper(it);
+//        _target = target;
+//        _c = c;
+//        _user = user;
+//        _errors = errors;
+//    }
 
 
     public BatchValidationException getErrors()

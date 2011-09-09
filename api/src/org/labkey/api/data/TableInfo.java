@@ -359,4 +359,5 @@ public interface TableInfo
                                   Map<String, Object> newRow, Map<String, Object> oldRow, Map<String, Object> extraContext)
             throws ValidationException;
 
+    public boolean hasTriggers(Container c);
 }

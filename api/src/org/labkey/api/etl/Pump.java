@@ -24,9 +24,11 @@ import java.io.IOException;
  */
 public class Pump implements Runnable
 {
-    final DataIterator _it;
+    DataIterator _it;
+    DataIteratorBuilder _builder;
     BatchValidationException _errors;
     int _errorLimit = Integer.MAX_VALUE;
+    int _rowCount = 0;
 
     public Pump(DataIterator it, BatchValidationException errors)
     {
@@ -34,13 +36,23 @@ public class Pump implements Runnable
         this._errors = errors;
     }
 
+    public Pump(DataIteratorBuilder builder, BatchValidationException errors)
+    {
+        this._builder = builder;
+        this._errors = errors;
+    }
+
     @Override
     public void run() throws RuntimeException
     {
+        if (null == _it && null != _builder)
+            _it = _builder.getDataIterator(_errors);
+
         try
         {
             while (_it.next())
             {
+                _rowCount++;
                 if (_errors.getRowErrors().size() > _errorLimit)
                     return;
             }
@@ -60,5 +72,10 @@ public class Pump implements Runnable
                 /* ignore */
             }
         }
+    }
+
+    public int getRowCount()
+    {
+        return _rowCount;
     }
 }
