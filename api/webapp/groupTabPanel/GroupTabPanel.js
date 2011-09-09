@@ -52,6 +52,7 @@ Ext.ux.GroupTabPanel = Ext.extend(Ext.TabPanel, {
     },
 
     initEvents : function() {
+        Ext.ux.GroupTabPanel.superclass.initEvents.call(this);
         this.mon(this.strip, 'mousedown', this.onStripMouseDown, this);
     },
 

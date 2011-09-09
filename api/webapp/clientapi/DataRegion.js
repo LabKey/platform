@@ -74,7 +74,7 @@ LABKEY.DataRegion = Ext.extend(Ext.Component,
         this.panelButtonContents = [];
 
         // Lockable Header - set allowHeaderLock to true to receive magical floating headers
-        this.allowHeaderLock = config.allowHeaderLock || false; //(Ext.isIE9 || Ext.isWebKit || Ext.isGecko2); // modern as of 8.26.2011
+        this.allowHeaderLock = config.allowHeaderLock && (Ext.isIE9 || Ext.isWebKit || Ext.isGecko); // modern as of 8.26.2011
 
         if (this.allowHeaderLock) {
             this.first = -1;
@@ -119,6 +119,8 @@ LABKEY.DataRegion = Ext.extend(Ext.Component,
                 "beforeshowrowschange",
                 "beforesetparameters",
                 "buttonclick",
+                "afterpanelhide",
+                "afterpanelshow",
                 /**
                  * @memberOf LABKEY.DataRegion#
                  * @name beforerefresh
@@ -930,6 +932,10 @@ LABKEY.DataRegion = Ext.extend(Ext.Component,
         this.rowContent         = Ext.query(" > td[class*=labkey-column-header]", this.colHeaderRow.id);
         this.rowSpacerContent   = Ext.query(" > td[class*=labkey-column-header]", this.colHeaderRowSpacer.id);
 
+        // initialize panel listeners
+        this.on('afterpanelshow', this._resizeContainer, this);
+        this.on('afterpanelhide', this._resizeContainer, this);
+
         this._calculateHeader();
     },
 
@@ -989,8 +995,11 @@ LABKEY.DataRegion = Ext.extend(Ext.Component,
                 this._calculateHeaderLock(true);
             this.headerSpacer.dom.style.display = "table-row";
             this.colHeaderRowSpacer.dom.style.display = "table-row";
-            this.headerRow.applyStyles("top: 0; position: fixed; min-width: " + this.table.getComputedWidth() + "px");
-            this.colHeaderRow.applyStyles("position: fixed; background: white; top: " + this.first[3] + "px; min-width: " + this.table.getComputedWidth() + "px");
+            // "box-shadow: 5px 5px 5px #888888;"
+            this.headerRow.applyStyles("top: 0; position: fixed; " +
+                    "min-width: " + this.table.getComputedWidth() + "px; ");
+            this.colHeaderRow.applyStyles("position: fixed; background: white; top: " + this.first[3] + "px;" +
+                    "min-width: " + this.table.getComputedWidth() + "px; ");
             this.hdrLocked = true;
         }
         else if (this.hdrLocked && window.pageYOffset >= this.first[2]) {
@@ -1017,6 +1026,7 @@ LABKEY.DataRegion = Ext.extend(Ext.Component,
         this.headerRow.applyStyles("top: auto; position: static;");
         this.colHeaderRow.applyStyles("top: auto; position: static;");
         this.headerSpacer.dom.style.display = "none";
+        this.headerSpacer.setHeight(this.headerRow.getHeight());
         this.colHeaderRowSpacer.dom.style.display = "none";
     },
 
@@ -1053,7 +1063,7 @@ LABKEY.DataRegion = Ext.extend(Ext.Component,
         }
 
         if (init !== true && this.allowHeaderLock) {
-            this.resizeTask.delay(150);
+            this.resizeTask.delay(80);
         }
     },
 
@@ -1227,6 +1237,8 @@ LABKEY.DataRegion = Ext.extend(Ext.Component,
                 panelToHide = this.panelButtonContents[this.currentPanelId];
             }
 
+            var _duration = 0.4, y, h;
+
             // Create a callback function to render the requested ribbon panel
             var callback = function()
             {
@@ -1292,7 +1304,25 @@ LABKEY.DataRegion = Ext.extend(Ext.Component,
                     // Slide it into place
                     var panelToShow = this.panelButtonContents[panelId];
                     panelToShow.setVisible(true);
-                    panelToShow.getEl().slideIn();
+
+                    if (this.allowHeaderLock) {
+                        y = this.colHeaderRow.getY();
+                        h = this.headerSpacer.getHeight();
+                    }
+
+                    panelToShow.getEl().slideIn('t',{
+                        callback : function() {
+                            this.fireEvent('afterpanelshow');
+                        },
+                        concurrent : true,
+                        duration   : _duration,
+                        scope      : this
+                    });
+
+                    if (this.allowHeaderLock) {
+                        this.headerSpacer.setHeight(h+panelToShow.getHeight());
+                        this.colHeaderRow.shift({y:(y+panelToShow.getHeight()), duration : _duration, concurrent: true, scope: this});
+                    }
 
                     panelToShow.setWidth(panelToShow.getResizeEl().getWidth());
                 }
@@ -1306,7 +1336,25 @@ LABKEY.DataRegion = Ext.extend(Ext.Component,
             if (this.currentPanelId)
             {
                 // We're already showing a ribbon panel, so hide it before showing the new one
-                panelToHide.getEl().slideOut('t', { callback: callback, scope: this });
+                if (this.allowHeaderLock) {
+                    y = this.colHeaderRow.getY();
+                    h = this.headerSpacer.getHeight();
+                }
+
+                panelToHide.getEl().slideOut('t',{
+                    callback: function() {
+                        this.fireEvent('afterpanelhide');
+                        callback.call(this);
+                    },
+                    concurrent : true,
+                    duration   : _duration,
+                    scope      : this
+                });
+
+                if (this.allowHeaderLock) {
+                    this.headerSpacer.setHeight(h-panelToHide.getHeight());
+                    this.colHeaderRow.shift({y:(y-panelToHide.getHeight()), duration : _duration, concurrent: true, scope: this});
+                }
             }
             else
             {

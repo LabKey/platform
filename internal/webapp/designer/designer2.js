@@ -14,14 +14,6 @@ LABKEY.ext.SplitGroupTabPanel = Ext.extend(Ext.ux.GroupTabPanel, {
         this.layout.layoutOnCardChange = true;
     },
 
-    initComponent : function () {
-        LABKEY.ext.SplitGroupTabPanel.superclass.initComponent.call(this);
-    },
-
-    render : function (ct, position) {
-        LABKEY.ext.SplitGroupTabPanel.superclass.render.call(this, ct, position);
-    },
-
     afterRender : function () {
         var splitItem = this.splitItem;
         splitItem.render(this.bwrap, 0);
@@ -310,17 +302,15 @@ LABKEY.DataRegion.ViewDesigner = Ext.extend(LABKEY.ext.SplitGroupTabPanel, {
                 style: { "border-left-width": "1px", "border-top-width": "1px", "border-bottom-width": "1px" },
                 items: [ this.fieldsTree ]
             },
+            defaults : {
+                xtype             : 'grouptab',
+                layoutOnTabChange : true
+            },
             items: [{
-                xtype: 'grouptab',
-                layoutOnTabChange: true,
                 items: [ this.columnsTab ]
             },{
-                xtype: 'grouptab',
-                layoutOnTabChange: true,
                 items: [ this.filterTab ]
             },{
-                xtype: 'grouptab',
-                layoutOnTabChange: true,
                 items: [ this.sortTab ]
             }],
             buttonAlign: "left",
@@ -348,10 +338,6 @@ LABKEY.DataRegion.ViewDesigner = Ext.extend(LABKEY.ext.SplitGroupTabPanel, {
         // Show 'does not exist' message only for non-default views.
         if (this.customView.doesNotExist && this.viewName)
             this.showMessage("Custom View '" + Ext.util.Format.htmlEncode(this.viewName) + "' not found.");
-    },
-
-    initComponent : function () {
-        LABKEY.DataRegion.ViewDesigner.superclass.initComponent.call(this);
     },
 
     onRender : function (ct, position) {
@@ -706,7 +692,7 @@ LABKEY.DataRegion.Tab = Ext.extend(Ext.Panel, {
     },
 
     initComponent : function () {
-        LABKEY.DataRegion.Tab.superclass.initComponent.call(this);
+        LABKEY.DataRegion.Tab.superclass.initComponent.apply(this, arguments);
         this.getList().on('selectionchange', this.onListSelectionChange, this);
         this.getList().on('render', function (list) {
             this.addEvents("beforetooltipshow");
@@ -991,10 +977,6 @@ LABKEY.DataRegion.ColumnsTab = Ext.extend(LABKEY.DataRegion.Tab, {
         }, config);
 
         LABKEY.DataRegion.ColumnsTab.superclass.constructor.call(this, config);
-    },
-
-    initComponent : function () {
-        LABKEY.DataRegion.ColumnsTab.superclass.initComponent.call(this);
     },
 
     getList : function () { return this.columnsList; },
@@ -1335,7 +1317,7 @@ LABKEY.DataRegion.FilterTab = Ext.extend(LABKEY.DataRegion.Tab, {
     },
 
     initComponent : function () {
-        LABKEY.DataRegion.FilterTab.superclass.initComponent.call(this);
+        LABKEY.DataRegion.FilterTab.superclass.initComponent.apply(this, arguments);
         this.updateTitle();
     },
 
@@ -1704,7 +1686,7 @@ LABKEY.DataRegion.SortTab = Ext.extend(LABKEY.DataRegion.Tab, {
     },
 
     initComponent : function () {
-        LABKEY.DataRegion.SortTab.superclass.initComponent.call(this);
+        LABKEY.DataRegion.SortTab.superclass.initComponent.apply(this, arguments);
         this.updateTitle();
     },
 
@@ -1887,7 +1869,7 @@ LABKEY.DataRegion.PaperclipButton = Ext.extend(Ext.Button, {
 
     initComponent : function () {
         this.addEvents('blur');
-        LABKEY.DataRegion.PaperclipButton.superclass.initComponent.call(this);
+        LABKEY.DataRegion.PaperclipButton.superclass.initComponent.apply(this, arguments);
     },
 
     afterRender : function () {
@@ -2132,7 +2114,7 @@ LABKEY.ext.FilterOpCombo = Ext.extend(Ext.form.ComboBox, {
     },
 
     initComponent : function () {
-        LABKEY.ext.FilterOpCombo.superclass.initComponent.call(this);
+        LABKEY.ext.FilterOpCombo.superclass.initComponent.apply(this, arguments);
         this.setOptions();
     },
 
