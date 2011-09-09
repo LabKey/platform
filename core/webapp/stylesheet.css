@@ -935,7 +935,7 @@ regions look the same in IE, Safari, and Firefox */
 table.labkey-data-region
 {
     background-color: #FFFFFF;
-    border-collapse: collapse;
+    *border-collapse: collapse;
     border-spacing: 0;
 }
 
