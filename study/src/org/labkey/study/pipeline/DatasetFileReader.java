@@ -148,12 +148,6 @@ public class DatasetFileReader
         Date defaultReplaceCutoff = null;
 
         OneToOneStringMap defaultColumnMap = new OneToOneStringMap();
-        // see also StudyController.handleImportDataset()
-        // UNDONE: share code
-        defaultColumnMap.put("ptid", DataSetDefinition.getParticipantIdURI());
-        defaultColumnMap.put("visit", DataSetDefinition.getSequenceNumURI());
-        defaultColumnMap.put("dfcreate", DataSetDefinition.getCreatedURI());     // datafax field name
-        defaultColumnMap.put("dfmodify", DataSetDefinition.getModifiedURI());    // datafax field name
 
         for (Map.Entry e : props.entrySet())
         {

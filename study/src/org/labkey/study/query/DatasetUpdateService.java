@@ -17,6 +17,7 @@ package org.labkey.study.query;
 
 import org.jetbrains.annotations.NotNull;
 import org.labkey.api.data.*;
+import org.labkey.api.etl.DataIterator;
 import org.labkey.api.query.*;
 import org.labkey.api.security.User;
 import org.labkey.api.study.StudyService;
@@ -63,10 +64,18 @@ public class DatasetUpdateService extends AbstractQueryUpdateService
     }
 
     @Override
-    public List<Map<String, Object>> insertRows(User user, Container container, List<Map<String, Object>> rows, Map<String, Object> extraScriptContext)
-            throws DuplicateKeyException, BatchValidationException, QueryUpdateServiceException, SQLException
+    public List<Map<String, Object>> importRows(User user, Container container, DataIterator rows, BatchValidationException errors, Map<String, Object> extraScriptContext) throws SQLException
     {
-        List<Map<String, Object>> result = super.insertRows(user, container, rows, extraScriptContext);
+        List<Map<String, Object>> result = super.importRows(user, container, rows, errors, extraScriptContext);
+        resyncStudy(user, container);
+        return result;
+    }
+
+    @Override
+    public List<Map<String, Object>> insertRows(User user, Container container, List<Map<String, Object>> rows, BatchValidationException errors, Map<String, Object> extraScriptContext)
+            throws DuplicateKeyException, QueryUpdateServiceException, SQLException
+    {
+        List<Map<String, Object>> result = super.insertRows(user, container, rows, errors, extraScriptContext);
         resyncStudy(user, container);
         return result;
     }

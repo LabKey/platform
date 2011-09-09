@@ -2168,112 +2168,6 @@ public class StudyController extends BaseStudyController
 
 
     @RequiresPermissionClass(InsertPermission.class)
-    public class ShowImportDatasetAction extends FormViewAction<ImportDataSetForm>
-    {
-        public void validateCommand(ImportDataSetForm target, Errors errors)
-        {
-        }
-
-        @SuppressWarnings("deprecation")
-        public ModelAndView getView(ImportDataSetForm form, boolean reshow, BindException errors) throws Exception
-        {
-            Study study = getStudy();
-            DataSetDefinition def = StudyManager.getInstance().getDataSetDefinition(study, form.getDatasetId());
-
-            if (null == def || def.getTypeURI() == null)
-            {
-                return new HtmlView("Error",
-                        "Dataset is not yet defined. <a href=\"datasetDetails.view?id=%d\">Show Dataset Details</a>", form.getDatasetId());
-            }
-
-            if (null == PipelineService.get().findPipelineRoot(getContainer()))
-                return new RequirePipelineView(getStudy(), true, errors);
-
-            form.setTypeURI(StudyManager.getInstance().getDatasetType(getContainer(), form.getDatasetId()));
-
-            if (form.getTypeURI() == null)
-                throw new NotFoundException();
-
-            form.setKeys(StringUtils.join(def.getDisplayKeyNames(), ", "));
-
-            return new JspView<ImportDataSetForm>("/org/labkey/study/view/importDataset.jsp", form, errors);
-        }
-
-        public boolean handlePost(ImportDataSetForm form, BindException errors) throws Exception
-        {
-            String tsvData = form.getTsv();
-            if (tsvData == null)
-            {
-                errors.reject("showImportDataset", "Form contains no data");
-                return false;
-            }
-            String[] keys = new String[]{"ParticipantId", "SequenceNum"};
-
-            if (null != PipelineService.get().findPipelineRoot(getContainer()))
-            {
-                String formKeys = StringUtils.trimToEmpty(form.getKeys());
-
-                if (formKeys != null && formKeys.length() > 0)
-                {
-                    String[] keysPOST = formKeys.split(",");
-                    if (keysPOST.length >= 1)
-                        keys[0] = keysPOST[0];
-                    if (keysPOST.length >= 2)
-                        keys[1] = keysPOST[1];
-                }
-
-                Map<String,String> columnMap = new CaseInsensitiveHashMap<String>();
-                columnMap.put(keys[0], DataSetDefinition.getParticipantIdURI());
-                columnMap.put(keys[1], DataSetDefinition.getSequenceNumURI());
-                // 2379
-                // see DatasetBatch.prepareImport()
-                columnMap.put("visit", DataSetDefinition.getSequenceNumURI());
-
-                if (getStudy().getTimepointType() != TimepointType.VISIT)
-                    columnMap.put("date", DataSetDefinition.getVisitDateURI());
-                columnMap.put("ptid", DataSetDefinition.getParticipantIdURI());
-                columnMap.put("qcstate", DataSetDefinition.getQCStateURI());
-                columnMap.put("dfcreate", DataSetDefinition.getCreatedURI());     // datafax field name
-                columnMap.put("dfmodify", DataSetDefinition.getModifiedURI());    // datafax field name
-                BatchValidationException validationErrors = new BatchValidationException();
-
-                DataSetDefinition dsd = StudyManager.getInstance().getDataSetDefinition(getStudy(), form.getDatasetId());
-                DataLoader dl = new TabLoader(tsvData, true);
-                FileStream f = new FileStream.StringFileStream(tsvData);
-                Pair<List<String>, UploadLog> result = AssayPublishManager.getInstance().importDatasetTSV(getUser(), getStudy(), dsd, dl, f, "upload.tsv", columnMap, validationErrors);
-
-                if (!result.getKey().isEmpty())
-                {
-                    // Log the import
-                    String comment = "Dataset data imported. " + result.getKey().size() + " rows imported";
-                    StudyServiceImpl.addDatasetAuditEvent(
-                            getUser(), getContainer(), dsd, comment, result.getValue());
-                }
-
-                validationErrors.addToErrors(errors);
-
-                return !errors.hasErrors();
-            }
-            return false;
-        }
-
-        public ActionURL getSuccessURL(ImportDataSetForm form)
-        {
-            ActionURL url = new ActionURL(DatasetAction.class, getContainer()).
-                    addParameter(DataSetDefinition.DATASETKEY, form.getDatasetId());
-            if (StudyManager.getInstance().showQCStates(getContainer()))
-                url.addParameter(SharedFormParameters.QCState, QCStateSet.getAllStates(getContainer()).getFormValue());
-            return url;
-        }
-
-        public NavTree appendNavTrail(NavTree root)
-        {
-            return root.addChild("Import Dataset");
-        }
-    }
-
-
-    @RequiresPermissionClass(InsertPermission.class)
     public class ImportAction extends AbstractQueryImportAction<ImportDataSetForm>
     {
         ImportDataSetForm _form = null;
@@ -2339,21 +2233,10 @@ public class StudyController extends BaseStudyController
             }
 
             Map<String,String> columnMap = new CaseInsensitiveHashMap<String>();
-            // 2379
-            // see DatasetBatch.prepareImport()
-            columnMap.put("visit", DataSetDefinition.getSequenceNumURI());
-
-            if (_study.getTimepointType() != TimepointType.VISIT)
-                columnMap.put("date", DataSetDefinition.getVisitDateURI());
-            columnMap.put("ptid", DataSetDefinition.getParticipantIdURI());
-            columnMap.put("qcstate", DataSetDefinition.getQCStateURI());
-            columnMap.put("dfcreate", DataSetDefinition.getCreatedURI());     // datafax field name
-            columnMap.put("dfmodify", DataSetDefinition.getModifiedURI());    // datafax field name
-
             Pair<List<String>, UploadLog> result;
             try
             {
-                result = AssayPublishManager.getInstance().importDatasetTSV(getUser(), (StudyImpl)_study, _def, dl, file, originalName, columnMap, errors);
+                result = AssayPublishManager.getInstance().importDatasetTSV(getUser(), (StudyImpl)_study, _def, dl, true, file, originalName, columnMap, errors);
             }
             catch (ServletException x)
             {

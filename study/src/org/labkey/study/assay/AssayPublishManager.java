@@ -33,8 +33,11 @@ import org.labkey.api.exp.property.PropertyService;
 import org.labkey.api.pipeline.PipeRoot;
 import org.labkey.api.pipeline.PipelineService;
 import org.labkey.api.query.BatchValidationException;
+import org.labkey.api.query.DefaultSchema;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.QueryService;
+import org.labkey.api.query.QueryUpdateService;
+import org.labkey.api.query.UserSchema;
 import org.labkey.api.query.ValidationException;
 import org.labkey.api.reader.DataLoader;
 import org.labkey.api.security.User;
@@ -56,6 +59,7 @@ import org.labkey.study.controllers.BaseStudyController;
 import org.labkey.study.controllers.StudyController;
 import org.labkey.study.controllers.assay.AssayController;
 import org.labkey.study.model.*;
+import org.labkey.study.query.StudyQuerySchema;
 
 import javax.servlet.ServletException;
 import java.io.File;
@@ -687,7 +691,7 @@ public class AssayPublishManager implements AssayPublishService.Service
      * Return an array of LSIDs from the newly created dataset entries,
      * along with the upload log.
      */
-    public Pair<List<String>, UploadLog> importDatasetTSV(User user, StudyImpl study, DataSetDefinition dsd, DataLoader dl, FileStream in, String originalFileName, Map<String, String> columnMap, BatchValidationException errors) throws SQLException, ServletException
+    public Pair<List<String>, UploadLog> importDatasetTSV(User user, StudyImpl study, DataSetDefinition dsd, DataLoader dl, boolean withTriggers, FileStream in, String originalFileName, Map<String, String> columnMap, BatchValidationException errors) throws SQLException, ServletException
     {
         UploadLog ul = null;
         List<String> lsids = Collections.emptyList();
@@ -695,11 +699,23 @@ public class AssayPublishManager implements AssayPublishService.Service
         {
             if (null != in)
                 ul = saveUploadData(user, dsd, in, originalFileName);
-            Integer defaultQCStateId = study.getDefaultDirectEntryQCState();
-            QCState defaultQCState = null;
-            if (defaultQCStateId != null)
-                defaultQCState = StudyManager.getInstance().getQCStateForRowId(study.getContainer(), defaultQCStateId.intValue());
-            lsids = StudyManager.getInstance().importDatasetData(study, user, dsd, dl, columnMap, errors, true, defaultQCState, null);
+
+//            Integer defaultQCStateId = study.getDefaultDirectEntryQCState();
+//            QCState defaultQCState = null;
+//            if (defaultQCStateId != null)
+//                defaultQCState = StudyManager.getInstance().getQCStateForRowId(study.getContainer(), defaultQCStateId.intValue());
+//            lsids = StudyManager.getInstance().importDatasetData(study, user, dsd, dl, columnMap, errors, true, defaultQCState, null);
+
+            StudyQuerySchema querySchema = new StudyQuerySchema(study, user, true);
+            TableInfo queryTableInfo = querySchema.getTable(dsd.getName());
+            if (null == queryTableInfo)
+                throw new UnauthorizedException("Can not update dataset: " + dsd.getName());
+            QueryUpdateService qus = queryTableInfo.getUpdateService();
+            if (null == qus)
+                throw new UnauthorizedException("Can not update dataset: " + dsd.getName());
+
+            qus.importRows(user, study.getContainer(), dl.getDataIterator(errors), errors, null);
+
             if (!errors.hasErrors())
                 StudyManager.getInstance().getVisitManager(study).updateParticipantVisits(user, Collections.singleton(dsd));
         }

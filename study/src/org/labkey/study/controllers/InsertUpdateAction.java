@@ -255,7 +255,10 @@ public abstract class InsertUpdateAction<Form extends DatasetController.EditData
 
             if (isInsert())
             {
-                List<Map<String, Object>> insertedRows = qus.insertRows(user, c, Collections.singletonList(data), null);
+                BatchValidationException batchErrors = new BatchValidationException();
+                List<Map<String, Object>> insertedRows = qus.insertRows(user, c, Collections.singletonList(data), batchErrors, null);
+                if (batchErrors.hasErrors())
+                    throw batchErrors;
                 if (insertedRows.size() == 0)
                     return false;
 

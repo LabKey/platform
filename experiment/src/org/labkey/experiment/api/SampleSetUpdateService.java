@@ -16,10 +16,12 @@
 package org.labkey.experiment.api;
 
 import org.apache.commons.beanutils.converters.IntegerConverter;
+import org.jetbrains.annotations.NotNull;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.Filter;
 import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.Table;
+import org.labkey.api.etl.DataIterator;
 import org.labkey.api.exp.ExperimentException;
 import org.labkey.api.exp.api.ExpMaterial;
 import org.labkey.api.exp.api.ExpSampleSet;
@@ -43,15 +45,13 @@ import static org.labkey.experiment.samples.UploadMaterialSetForm.*;
 /**
  * User: kevink
  */
-class SampleSetUpdateService implements QueryUpdateService
+class SampleSetUpdateService extends AbstractQueryUpdateService
 {
-    private ExpMaterialTableImpl _table;
     private ExpSampleSet _ss;
-    private boolean _isBulkLoad = false;
 
     public SampleSetUpdateService(ExpMaterialTableImpl table, ExpSampleSet ss)
     {
-        _table = table;
+        super(table);
         _ss = ss;
     }
 
@@ -122,7 +122,7 @@ class SampleSetUpdateService implements QueryUpdateService
             throw new QueryUpdateServiceException("Either RowId or LSID is required to get Sample Set Material.");
 
 
-        return Table.selectObject(_table, Table.ALL_COLUMNS, filter, null, Map.class);
+        return Table.selectObject(getQueryTable(), Table.ALL_COLUMNS, filter, null, Map.class);
     }
 
     @Override
@@ -138,8 +138,8 @@ class SampleSetUpdateService implements QueryUpdateService
     }
 
     @Override
-    public List<Map<String, Object>> insertRows(User user, Container container, List<Map<String, Object>> rows, Map<String, Object> extraScriptContext)
-            throws DuplicateKeyException, BatchValidationException, QueryUpdateServiceException, SQLException
+    public List<Map<String, Object>> insertRows(User user, Container container, List<Map<String, Object>> rows, BatchValidationException errors, Map<String, Object> extraScriptContext)
+            throws DuplicateKeyException, QueryUpdateServiceException, SQLException
     {
         try
         {
@@ -153,8 +153,9 @@ class SampleSetUpdateService implements QueryUpdateService
         }
         catch (ValidationException vex)
         {
-            throw new BatchValidationException(Arrays.asList(vex), extraScriptContext);
+            errors.addRowError(vex);
         }
+        return null;
     }
 
     @Override
@@ -204,15 +205,32 @@ class SampleSetUpdateService implements QueryUpdateService
         return result;
     }
 
+
+
+
+    /* don't need to implement these since we override insertRows() etc. */
+
     @Override
-    public void setBulkLoad(boolean bulk)
+    protected Map<String, Object> getRow(User user, Container container, Map<String, Object> keys) throws InvalidKeyException, QueryUpdateServiceException, SQLException
     {
-        _isBulkLoad = bulk;
-    }
-    
-    public boolean isBulkLoad()
-    {
-        return _isBulkLoad;
+        throw new IllegalStateException();
     }
 
+    @Override
+    protected Map<String, Object> insertRow(User user, Container container, Map<String, Object> row) throws DuplicateKeyException, ValidationException, QueryUpdateServiceException, SQLException
+    {
+        throw new IllegalStateException();
+    }
+
+    @Override
+    protected Map<String, Object> updateRow(User user, Container container, Map<String, Object> row, @NotNull Map<String, Object> oldRow) throws InvalidKeyException, ValidationException, QueryUpdateServiceException, SQLException
+    {
+        throw new IllegalStateException();
+    }
+
+    @Override
+    protected Map<String, Object> deleteRow(User user, Container container, Map<String, Object> oldRow) throws InvalidKeyException, ValidationException, QueryUpdateServiceException, SQLException
+    {
+        throw new IllegalStateException();
+    }
 }

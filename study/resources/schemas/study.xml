@@ -438,7 +438,10 @@
         <ns:description>Subject identifier</ns:description>
         <ns:propertyURI>http://cpas.labkey.com/Study#ParticipantId</ns:propertyURI>
         <ns:datatype>Varchar</ns:datatype>
-          <ns:nullable>false</ns:nullable>
+        <ns:nullable>false</ns:nullable>
+        <ns:importAliases>
+            <ns:importAlias>ptid</ns:importAlias>
+        </ns:importAliases>
       </ns:column>
       <ns:column columnName="datasetid">
         <ns:columnTitle>Dataset ID</ns:columnTitle>
@@ -465,6 +468,9 @@
         <ns:shownInInsertView>false</ns:shownInInsertView>
         <ns:shownInUpdateView>false</ns:shownInUpdateView>
         <ns:datatype>Date</ns:datatype>
+        <ns:importAliases>
+          <ns:importAlias>dfcreate</ns:importAlias>
+        </ns:importAliases>
       </ns:column>
         <ns:column columnName="CreatedBy">
             <ns:propertyURI>http://cpas.labkey.com/Study#CreatedBy</ns:propertyURI>
@@ -482,6 +488,9 @@
         <ns:shownInInsertView>false</ns:shownInInsertView>
         <ns:shownInUpdateView>false</ns:shownInUpdateView>
         <ns:datatype>Date</ns:datatype>
+        <ns:importAliases>
+          <ns:importAlias>dfmodify</ns:importAlias>
+        </ns:importAliases>
       </ns:column>
       <ns:column columnName="ModifiedBy">
           <ns:propertyURI>http://cpas.labkey.com/Study#ModifiedBy</ns:propertyURI>
@@ -496,6 +505,9 @@
         <ns:propertyURI>http://cpas.labkey.com/Study#SequenceNum</ns:propertyURI>
         <ns:nullable>false</ns:nullable>
         <ns:datatype>numeric</ns:datatype>
+        <ns:importAliases>
+            <ns:importAlias>visit</ns:importAlias>
+        </ns:importAliases>
       </ns:column>
         <!-- the actual column name is Date, should migrate this -->
       <ns:column columnName="_VisitDate">
@@ -505,20 +517,23 @@
       <ns:column columnName="VisitDate">
         <ns:propertyURI>http://cpas.labkey.com/Study#VisitDate</ns:propertyURI>
         <ns:datatype>date</ns:datatype>
+        <ns:importAliases>
+            <ns:importAlias>date</ns:importAlias>
+        </ns:importAliases>
       </ns:column>
       <ns:column columnName="_key">
         <ns:datatype>Varchar</ns:datatype>
       </ns:column>
-        <ns:column columnName="QCState">
-          <ns:columnTitle>QC State</ns:columnTitle>
-          <ns:propertyURI>http://cpas.labkey.com/Study#QCState</ns:propertyURI>
-            <ns:fk>
-              <ns:fkColumnName>RowId</ns:fkColumnName>
-              <ns:fkTable>QCState</ns:fkTable>
-              <ns:fkDbSchema>study</ns:fkDbSchema>
-            </ns:fk>
-            <ns:datatype>int</ns:datatype>
-        </ns:column>
+      <ns:column columnName="QCState">
+        <ns:columnTitle>QC State</ns:columnTitle>
+        <ns:propertyURI>http://cpas.labkey.com/Study#QCState</ns:propertyURI>
+        <ns:fk>
+          <ns:fkColumnName>RowId</ns:fkColumnName>
+          <ns:fkTable>QCState</ns:fkTable>
+          <ns:fkDbSchema>study</ns:fkDbSchema>
+        </ns:fk>
+        <ns:datatype>int</ns:datatype>
+      </ns:column>
     </ns:columns>
   </ns:table>
   <ns:table tableName="QCState" tableDbType="TABLE">

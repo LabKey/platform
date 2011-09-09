@@ -48,11 +48,13 @@ import org.labkey.api.data.Sort;
 import org.labkey.api.data.Table;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.TableInfoGetter;
+import org.labkey.api.data.UpdateableTableInfo;
 import org.labkey.api.data.dialect.SqlDialect;
 import org.labkey.api.etl.BeanDataIterator;
 import org.labkey.api.etl.DataIteratorBuilder;
 import org.labkey.api.etl.DataIteratorUtil;
-import org.labkey.api.etl.MapDataIterator;
+import org.labkey.api.etl.ListofMapsDataIterator;
+import org.labkey.api.etl.Pump;
 import org.labkey.api.etl.StandardETL;
 import org.labkey.api.exp.DomainNotFoundException;
 import org.labkey.api.exp.DomainURIFactory;
@@ -641,15 +643,18 @@ public class StudyManager
 
             clearVisitAliases(study);
 
-            StandardETL etl = new StandardETL(tinfo, loader, study.getContainer(), user, null);
-            etl.run();
+            BatchValidationException errors = new BatchValidationException();
+            StandardETL etl = StandardETL.forInsert(tinfo, loader, study.getContainer(), user, errors);
+            DataIteratorBuilder insert = ((UpdateableTableInfo)tinfo).persistRows(etl, errors);
+            Pump p = new Pump(insert, errors);
+            p.run();
 
-            if (etl.getErrors().hasErrors())
-                throw etl.getErrors().getRowErrors().get(0);
+            if (errors.hasErrors())
+                throw errors.getRowErrors().get(0);
 
             scope.commitTransaction();
 
-            return etl.getRowCount();
+            return p.getRowCount();
         }
         finally
         {
@@ -2377,7 +2382,7 @@ public class StudyManager
         if (data.isEmpty())
             return Collections.emptyList();
 
-        DataIteratorBuilder it = new MapDataIterator.Builder(data.get(0).keySet(), data);
+        DataIteratorBuilder it = new ListofMapsDataIterator.Builder(data.get(0).keySet(), data);
         BatchValidationException ve = new BatchValidationException();
         List<String> lsids = def.importDatasetData(study, user, it, ve, checkDuplicates, defaultQCState, logger, forUpdate);
         batchValidateExceptionToList(ve,errors);
@@ -2391,7 +2396,7 @@ public class StudyManager
         if (data.isEmpty())
             return Collections.emptyList();
 
-        DataIteratorBuilder it = new MapDataIterator.Builder(data.get(0).keySet(), data);
+        DataIteratorBuilder it = new ListofMapsDataIterator.Builder(data.get(0).keySet(), data);
 
         return def.importDatasetData(study, user, it, errors, checkDuplicates, defaultQCState, logger, false);
     }
@@ -3408,6 +3413,7 @@ public class StudyManager
                 DataSet def = createDataset(study, "A", false);
                 TableInfo tt = ss.getTable(def.getName());
                 QueryUpdateService qus = tt.getUpdateService();
+                BatchValidationException errors = new BatchValidationException();
                 assertNotNull(qus);
 
                 Date Jan1 = new Date(DateUtil.parseDateTime("1/1/2011"));
@@ -3415,9 +3421,10 @@ public class StudyManager
                 List rows = new ArrayList();
 
                 // insert one row
-                rows.clear();
+                rows.clear(); errors.clear();
                 rows.add(PageFlowUtil.map("SubjectId", "A1", "Date", Jan1, "Measure", "Test"+(++this.counterRow), "Value", 1.0));
-                List<Map<String,Object>> ret = qus.insertRows(_context.getUser(), study.getContainer(), rows, null);
+                List<Map<String,Object>> ret = qus.insertRows(_context.getUser(), study.getContainer(), rows, errors, null);
+                assertFalse(errors.hasErrors());
                 Map<String,Object> firstRowMap = ret.get(0);
                 String lsidRet = (String)firstRowMap.get("lsid");
                 assertNotNull(lsidRet);
@@ -3430,163 +3437,113 @@ public class StudyManager
                 rs = null;
 
                 // duplicate row
-                try
-                {
-                    qus.insertRows(_context.getUser(), study.getContainer(), rows, null);
-                    fail("duplicate key");
-                }
-                catch (BatchValidationException x)
-                {
-                    //study:Label: Only one row is allowed for each Subject/Visit/Measure Triple.  Duplicates were found in the database or imported data.; Duplicate: Subject = A1Date = Sat Jan 01 00:00:00 PST 2011, Measure = Test1
-                    assertTrue(-1 != x.getRowErrors().get(0).getMessage().indexOf("Duplicates were found"));
-                }
+                qus.insertRows(_context.getUser(), study.getContainer(), rows, errors, null);
+                //study:Label: Only one row is allowed for each Subject/Visit/Measure Triple.  Duplicates were found in the database or imported data.; Duplicate: Subject = A1Date = Sat Jan 01 00:00:00 PST 2011, Measure = Test1
+                assertTrue(-1 != errors.getRowErrors().get(0).getMessage().indexOf("Duplicates were found"));
 
                 // different participant
-                rows.clear();
+                rows.clear(); errors.clear();
                 rows.add(PageFlowUtil.map("SubjectId", "B2", "Date", Jan1, "Measure", "Test" + (counterRow), "Value", 2.0));
-                qus.insertRows(_context.getUser(), study.getContainer(), rows, null);
+                qus.insertRows(_context.getUser(), study.getContainer(), rows, errors, null);
+                assertFalse(errors.hasErrors());
 
                 // different date
-                rows.clear();
+                rows.clear(); errors.clear();
                 rows.add(PageFlowUtil.map("SubjectId", "A1", "Date", Jan2, "Measure", "Test"+(counterRow), "Value", "X"));
-                qus.insertRows(_context.getUser(), study.getContainer(), rows, null);
+                qus.insertRows(_context.getUser(), study.getContainer(), rows, errors, null);
+                assertFalse(errors.hasErrors());
 
                 // different measure
-                rows.clear();
+                rows.clear(); errors.clear();
                 rows.add(PageFlowUtil.map("SubjectId", "A1", "Date", Jan1, "Measure", "Test"+(++counterRow), "Value", "X"));
-                qus.insertRows(_context.getUser(), study.getContainer(), rows, null);
+                qus.insertRows(_context.getUser(), study.getContainer(), rows, errors, null);
+                assertFalse(errors.hasErrors());
 
                 // duplicates in batch
-                rows.clear();
+                rows.clear(); errors.clear();
                 rows.add(PageFlowUtil.map("SubjectId", "A1", "Date", Jan1, "Measure", "Test"+(++counterRow), "Value", 1.0));
                 rows.add(PageFlowUtil.map("SubjectId", "A1", "Date", Jan1, "Measure", "Test"+(counterRow), "Value", 1.0));
-                try
-                {
-                    qus.insertRows(_context.getUser(), study.getContainer(), rows, null);
-                    fail("duplicates");
-                }
-                catch (BatchValidationException x)
-                {
-                    //study:Label: Only one row is allowed for each Subject/Visit/Measure Triple.  Duplicates were found in the database or imported data.; Duplicate: Subject = A1Date = Sat Jan 01 00:00:00 PST 2011, Measure = Test3
-                    assertTrue(-1 != x.getRowErrors().get(0).getMessage().indexOf("Duplicates were found in the database or imported data"));
-                }
+                qus.insertRows(_context.getUser(), study.getContainer(), rows, errors, null);
+                //study:Label: Only one row is allowed for each Subject/Visit/Measure Triple.  Duplicates were found in the database or imported data.; Duplicate: Subject = A1Date = Sat Jan 01 00:00:00 PST 2011, Measure = Test3
+                assertTrue(-1 != errors.getRowErrors().get(0).getMessage().indexOf("Duplicates were found in the database or imported data"));
 
                 // missing participantid
-                rows.clear();
+                rows.clear(); errors.clear();
                 rows.add(PageFlowUtil.map("SubjectId", null, "Date", Jan1, "Measure", "Test"+(++counterRow), "Value", 1.0));
-                try
-                {
-                    qus.insertRows(_context.getUser(), study.getContainer(), rows, null);
-                    fail("subjectid is null");
-                }
-                catch (BatchValidationException x)
-                {
-                    //study:Label: All dataset rows must include a value for SubjectID
-                    String msg = x.getRowErrors().get(0).getMessage();
-                    assertTrue(-1 != msg.indexOf("required") || -1 != msg.indexOf("must include"));
-                    assertTrue(-1 != x.getRowErrors().get(0).getMessage().indexOf("SubjectID"));
-                }
+                qus.insertRows(_context.getUser(), study.getContainer(), rows, errors, null);
+                //study:Label: All dataset rows must include a value for SubjectID
+                String msg = errors.getRowErrors().get(0).getMessage();
+                assertTrue(-1 != msg.indexOf("required") || -1 != msg.indexOf("must include"));
+                assertTrue(-1 != errors.getRowErrors().get(0).getMessage().indexOf("SubjectID"));
 
                 // missing date
-                rows.clear();
+                rows.clear(); errors.clear();
                 rows.add(PageFlowUtil.map("SubjectId", "A1", "Date", null, "Measure", "Test"+(++counterRow), "Value", 1.0));
-                try
-                {
-                    qus.insertRows(_context.getUser(), study.getContainer(), rows, null);
-                    fail("date is null");
-                }
-                catch (BatchValidationException x)
-                {
-                    //study:Label: Row 1 does not contain required field date.
-                    assertTrue(-1 != x.getRowErrors().get(0).getMessage().toLowerCase().indexOf("date"));
-                }
+                qus.insertRows(_context.getUser(), study.getContainer(), rows, errors, null);
+                //study:Label: Row 1 does not contain required field date.
+                assertTrue(-1 != errors.getRowErrors().get(0).getMessage().toLowerCase().indexOf("date"));
 
                 // missing required property field (Measure in map)
-                rows.clear();
+                rows.clear(); errors.clear();
                 rows.add(PageFlowUtil.map("SubjectId", "A1", "Date", Jan1, "Measure", null, "Value", 1.0));
-                try
-                {
-                    qus.insertRows(_context.getUser(), study.getContainer(), rows, null);
-                    fail("measure is null");
-                }
-                catch (BatchValidationException x)
-                {
-                    //study:Label: Row 1 does not contain required field Measure.
-                    assertTrue(-1 != x.getRowErrors().get(0).getMessage().indexOf("required"));
-                    assertTrue(-1 != x.getRowErrors().get(0).getMessage().indexOf("Measure"));
-                }
-
+                qus.insertRows(_context.getUser(), study.getContainer(), rows, errors, null);
+                //study:Label: Row 1 does not contain required field Measure.
+                assertTrue(-1 != errors.getRowErrors().get(0).getMessage().indexOf("required"));
+                assertTrue(-1 != errors.getRowErrors().get(0).getMessage().indexOf("Measure"));
 
                 // missing required property field (Measure not in map)
-                rows.clear();
+                rows.clear(); errors.clear();
                 rows.add(PageFlowUtil.map("SubjectId", "A1", "Date", Jan1, "Value", 1.0));
-                try
-                {
-                    qus.insertRows(_context.getUser(), study.getContainer(), rows, null);
-                    fail("measure is missing");
-                }
-                catch (BatchValidationException x)
-                {
-                    //study:Label: Row 1 does not contain required field Measure.
-                    assertTrue(-1 != x.getRowErrors().get(0).getMessage().indexOf("does not contain required field"));
-                    assertTrue(-1 != x.getRowErrors().get(0).getMessage().indexOf("Measure"));
-                }
+                qus.insertRows(_context.getUser(), study.getContainer(), rows, errors, null);
+                //study:Label: Row 1 does not contain required field Measure.
+                assertTrue(-1 != errors.getRowErrors().get(0).getMessage().indexOf("does not contain required field"));
+                assertTrue(-1 != errors.getRowErrors().get(0).getMessage().indexOf("Measure"));
 
                 // legal MV indicator
-                rows.clear();
+                rows.clear(); errors.clear();
                 rows.add(PageFlowUtil.map("SubjectId", "A1", "Date", Jan1, "Measure", "Test"+(++counterRow), "Value", "X"));
-                qus.insertRows(_context.getUser(), study.getContainer(), rows, null);
+                qus.insertRows(_context.getUser(), study.getContainer(), rows, errors, null);
+                assertFalse(errors.hasErrors());
 
                 // illegal MV indicator
-                rows.clear();
+                rows.clear(); errors.clear();
                 rows.add(PageFlowUtil.map("SubjectId", "A1", "Date", Jan1, "Measure", "Test"+(++counterRow), "Value", "N/A"));
-                try
-                {
-                    qus.insertRows(_context.getUser(), study.getContainer(), rows, null);
-                    fail("measure is illegal QC value");
-                }
-                catch (BatchValidationException x)
-                {
-                    //study:Label: Could not convert 'N/A' for field Value, should be of type Double
-                    assertTrue(-1 != x.getRowErrors().get(0).getMessage().indexOf("should be of type Double"));
-                }
+                qus.insertRows(_context.getUser(), study.getContainer(), rows, errors, null);
+                //study:Label: Could not convert 'N/A' for field Value, should be of type Double
+                assertTrue(-1 != errors.getRowErrors().get(0).getMessage().indexOf("should be of type Double"));
 
                 // conversion test
-                rows.clear();
+                rows.clear(); errors.clear();
                 rows.add(PageFlowUtil.map("SubjectId", "A1", "Date", Jan1, "Measure", "Test" + (++counterRow), "Value", "100"));
-                qus.insertRows(_context.getUser(), study.getContainer(), rows, null);
+                qus.insertRows(_context.getUser(), study.getContainer(), rows, errors, null);
+                assertFalse(errors.hasErrors());
 
 
                 // validation test
-                rows.clear();
+                rows.clear(); errors.clear();
                 rows.add(PageFlowUtil.map("SubjectId", "A1", "Date", Jan1, "Measure", "Test" + (++counterRow), "Value", 1, "Number", 101));
-                try
-                {
-                    qus.insertRows(_context.getUser(), study.getContainer(), rows, null);
-                    fail("should fail validation test");
-                }
-                catch (BatchValidationException x)
-                {
-                    //study:Label: Value '101.0' for field 'Number' is invalid.
-                    assertTrue(-1 != x.getRowErrors().get(0).getMessage().indexOf("is invalid"));
-                }
+                qus.insertRows(_context.getUser(), study.getContainer(), rows, errors, null);
+                //study:Label: Value '101.0' for field 'Number' is invalid.
+                assertTrue(-1 != errors.getRowErrors().get(0).getMessage().indexOf("is invalid"));
 
-                rows.clear();
+                rows.clear(); errors.clear();
                 rows.add(PageFlowUtil.map("SubjectId", "A1", "Date", Jan1, "Measure", "Test"+(counterRow), "Value", 1, "Number", 99));
-                qus.insertRows(_context.getUser(), study.getContainer(), rows, null);
+                qus.insertRows(_context.getUser(), study.getContainer(), rows, errors, null);
+                assertFalse(errors.hasErrors());
 
                 // QCStateLabel
-                rows.clear();
+                rows.clear(); errors.clear();
                 rows.add(PageFlowUtil.map("QCStateLabel", "dirty", "SubjectId", "A1", "Date", Jan1, "Measure", "Test" + (++counterRow), "Value", 1, "Number", 5));
                 QCState[] qcstates = StudyManager.getInstance().getQCStates(study.getContainer());
                 assertEquals(0, qcstates.length);
-                qus.insertRows(_context.getUser(), study.getContainer(), rows, null);
+                qus.insertRows(_context.getUser(), study.getContainer(), rows, errors, null);
+                assertFalse(errors.hasErrors());
                 qcstates = StudyManager.getInstance().getQCStates(study.getContainer());
                 assertEquals(1, qcstates.length);
                 assertEquals("dirty" , qcstates[0].getLabel());
 
                 // let's try to update a row
-                rows.clear();
+                rows.clear(); errors.clear();
                 assertTrue(firstRowMap.containsKey("Value"));
                 firstRowMap.put("Value", 3.14159);
                 // TODO why is Number==null OK on insert() but not update()?

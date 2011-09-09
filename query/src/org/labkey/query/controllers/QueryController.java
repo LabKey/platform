@@ -1970,7 +1970,10 @@ public class QueryController extends SpringActionController
                 
                 if (insert)
                 {
-                    qus.insertRows(form.getUser(), form.getContainer(), Collections.singletonList(values), null);
+                    BatchValidationException batchErrors = new BatchValidationException();
+                    qus.insertRows(form.getUser(), form.getContainer(), Collections.singletonList(values), batchErrors, null);
+                    if (batchErrors.hasErrors())
+                        throw batchErrors;
                 }
                 else
                 {
@@ -2607,7 +2610,10 @@ public class QueryController extends SpringActionController
             public List<Map<String, Object>> saveRows(QueryUpdateService qus, List<Map<String, Object>> rows, User user, Container container, Map<String, Object> extraContext)
                     throws SQLException, InvalidKeyException, QueryUpdateServiceException, BatchValidationException, DuplicateKeyException
             {
-                List<Map<String, Object>> insertedRows = qus.insertRows(user, container, rows, extraContext);
+                BatchValidationException errors = new BatchValidationException();
+                List<Map<String, Object>> insertedRows = qus.insertRows(user, container, rows, errors, extraContext);
+                if (errors.hasErrors())
+                    throw errors;
                 return qus.getRows(user, container, insertedRows);
             }
         },
@@ -2623,7 +2629,10 @@ public class QueryController extends SpringActionController
                     newRows.add((Map<String, Object>)row.get(SaveRowsAction.PROP_VALUES));
                     oldKeys.add((Map<String, Object>)row.get(SaveRowsAction.PROP_OLD_KEYS));
                 }
-                List<Map<String, Object>> updatedRows = qus.insertRows(user, container, newRows, extraContext);
+                BatchValidationException errors = new BatchValidationException();
+                List<Map<String, Object>> updatedRows = qus.insertRows(user, container, newRows, errors, extraContext);
+                if (errors.hasErrors())
+                    throw errors;
                 updatedRows = qus.getRows(user, container, updatedRows);
                 List<Map<String, Object>> results = new ArrayList<Map<String, Object>>();
                 for (int i = 0; i < updatedRows.size(); i++)

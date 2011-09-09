@@ -27,12 +27,12 @@ import org.labkey.api.collections.CaseInsensitiveHashSet;
 import org.labkey.api.collections.Sets;
 import org.labkey.api.data.*;
 import org.labkey.api.data.dialect.SqlDialect;
-import org.labkey.api.etl.CachingDataIterator;
 import org.labkey.api.etl.DataIterator;
 import org.labkey.api.etl.DataIteratorBuilder;
 import org.labkey.api.etl.DataIteratorUtil;
 import org.labkey.api.etl.ErrorIterator;
 import org.labkey.api.etl.LoggingDataIterator;
+import org.labkey.api.etl.Pump;
 import org.labkey.api.etl.SimpleTranslator;
 import org.labkey.api.etl.StandardETL;
 import org.labkey.api.exp.ChangePropertyDescriptorException;
@@ -58,6 +58,7 @@ import org.labkey.api.query.ValidationException;
 import org.labkey.api.security.SecurityManager;
 import org.labkey.api.security.SecurityPolicy;
 import org.labkey.api.security.User;
+import org.labkey.api.security.permissions.AdminPermission;
 import org.labkey.api.security.permissions.DeletePermission;
 import org.labkey.api.security.permissions.InsertPermission;
 import org.labkey.api.security.permissions.Permission;
@@ -598,6 +599,8 @@ public class DataSetDefinition extends AbstractStudyEntity<DataSetDefinition> im
 
     public boolean canWrite(User user)
     {
+        if (getContainer().hasPermission(user, AdminPermission.class))
+            return true;
         return getPermissions(user).contains(UpdatePermission.class);
     }
 
@@ -1478,7 +1481,6 @@ public class DataSetDefinition extends AbstractStudyEntity<DataSetDefinition> im
                 }
             }
 
-            // like createColumnAndPropertyMap, but we want to add
             Map<String,Integer> fromMap = DataIteratorUtil.createColumnAndPropertyMap(it);
 
             // find important columns in the input (CONSIDER: use standard etl alt
@@ -1551,7 +1553,7 @@ public class DataSetDefinition extends AbstractStudyEntity<DataSetDefinition> im
                     for (Map.Entry<String, Double> entry : map.entrySet())
                         translateMap.put(entry.getKey(), String.valueOf(entry.getValue()));
 
-                    it.indexSequenceNumOutput = it.mapColumn(indexSequenceNum, translateMap, false);
+                    it.indexSequenceNumOutput = it.translateColumn(indexSequenceNum, translateMap, false);
                 }
                 catch (SQLException e)
                 {
@@ -1662,7 +1664,7 @@ public class DataSetDefinition extends AbstractStudyEntity<DataSetDefinition> im
                 // no point if required columns are missing
                 if (null != indexPTID && null != indexVisit)
                 {
-                    DataIterator scrollable = CachingDataIterator.wrap(ret);
+                    DataIterator scrollable = DataIteratorUtil.wrapScrollable(ret);
                     checkForDuplicates(scrollable, indexLSID,
                             indexPTID, null==indexVisit?-1:indexVisit, null==indexKeyProperty?-1:indexKeyProperty, null==indexReplace?-1:indexReplace,
                             errors, logger);
@@ -1801,10 +1803,11 @@ public class DataSetDefinition extends AbstractStudyEntity<DataSetDefinition> im
             return addColumn(new ColumnInfo("SequenceNum", JdbcType.DOUBLE), new SequenceNumFromDateColumn());
         }
 
-        int mapColumn(int index, Map<?, ?> map, boolean strict)
+        int translateColumn(final int index, Map<?, ?> map, boolean strict)
         {
-            ColumnInfo existing = getInput().getColumnInfo(index);
-            RemapColumn remapColumn = new RemapColumn(index, map, strict);
+            ColumnInfo existing = getColumnInfo(index);
+            Callable origCallable = this._outputColumns.get(index).getValue();
+            RemapColumn remapColumn = new RemapColumn(origCallable, map, strict);
             return replaceOrAddColumn(index, existing, remapColumn);
         }
 
@@ -1984,8 +1987,10 @@ public class DataSetDefinition extends AbstractStudyEntity<DataSetDefinition> im
             long start = System.currentTimeMillis();
             {
                 TableInfo table = getTableInfo(user, false);
-                StandardETL etl = new StandardETL(table, b, getContainer(), user, errors);
-                etl.run();
+                StandardETL etl = StandardETL.forInsert(table, b, getContainer(), user, errors);
+                DataIteratorBuilder insert = ((UpdateableTableInfo)table).persistRows(etl, errors);
+                Pump p = new Pump(insert.getDataIterator(errors), errors);
+                p.run();
             }
             long end = System.currentTimeMillis();
 
@@ -2080,14 +2085,21 @@ public class DataSetDefinition extends AbstractStudyEntity<DataSetDefinition> im
             while (rows.next())
             {
                 String uri = (String)rows.get(indexLSID);
-                String ptid = (String)rows.get(indexPTID);
+                String ptid = ConvertUtils.convert(rows.get(indexPTID));
                 Object[] key = new Object[4];
                 key[0] = ptid;
                 key[1] = rows.get(indexDate);
                 if (indexKey > 0)
                     key[2] = rows.get(indexKey);
                 if (indexReplace > 0)
-                    key[3] = rows.get(indexReplace);
+                {
+                    Object replaceStr = rows.get(indexReplace);
+                    Boolean replace =
+                            null==replaceStr ? Boolean.FALSE :
+                            replaceStr instanceof Boolean ? (Boolean)replaceStr :
+                            (Boolean)ConvertUtils.convert(String.valueOf(replaceStr),Boolean.class);
+                    key[3] = replace;
+                }
 
                 String uniq = isDemographic ? ptid : uri;
                 if (null != uriMap.put(uniq, key))
