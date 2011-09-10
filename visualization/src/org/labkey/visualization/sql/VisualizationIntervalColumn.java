@@ -88,6 +88,16 @@ public class VisualizationIntervalColumn
         return _interval.getLabel();
     }
 
+    public Interval getInterval()
+    {
+        return _interval;
+    }
+
+    public VisualizationSourceColumn getStartDate()
+    {
+        return _startDate;
+    }
+
     public String getSQL()
     {
         return _interval.getSQL(_startDate, _endDate);

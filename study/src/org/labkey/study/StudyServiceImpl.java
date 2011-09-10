@@ -754,6 +754,11 @@ public class StudyServiceImpl implements StudyService.Service
             if (dataset != null)
                 return dataset.getKeyType();
         }
+        if (datasetName.equals(getSubjectGroupMapTableName(container)) || datasetName.equals(getSubjectTableName(container)))
+        {
+            // Treat these the same as demographics datasets for JOIN purposes - just use ParticipantId
+            return DataSet.KeyType.SUBJECT;
+        }
         return null;
     }
 }

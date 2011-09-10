@@ -4141,6 +4141,8 @@ public class QueryController extends SpringActionController
                     cinfo.put("name", col.getName());
                     if (null != col.getLabel())
                         cinfo.put("caption", col.getLabel());
+                    if (null != col.getShortLabel())
+                        cinfo.put("shortCaption", col.getShortLabel());
                     if (null != col.getDescription())
                         cinfo.put("description", col.getDescription());
 

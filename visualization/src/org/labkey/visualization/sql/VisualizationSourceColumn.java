@@ -103,6 +103,10 @@ public class VisualizationSourceColumn
 
     private static UserSchema getUserSchema(ViewContext context, String schemaName)
     {
+        if (schemaName == null)
+        {
+            throw new NullPointerException("No schema specified");
+        }
         DefaultSchema defSchema = DefaultSchema.get(context.getUser(), context.getContainer());
         return (UserSchema) defSchema.getSchema(schemaName);
     }

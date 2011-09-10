@@ -8,6 +8,7 @@ import org.labkey.api.data.Container;
 import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.query.DefaultSchema;
 import org.labkey.api.query.UserSchema;
+import org.labkey.api.study.StudyService;
 import org.labkey.api.util.Pair;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.ViewContext;
@@ -51,6 +52,9 @@ public class VisualizationSQLGenerator implements CustomApiForm, HasViewContext
 
     private Map<String, VisualizationSourceQuery> _sourceQueries = new LinkedHashMap<String, VisualizationSourceQuery>();
     private Map<String, VisualizationIntervalColumn> _intervals = new HashMap<String, VisualizationIntervalColumn>();
+    private List<VisualizationSourceColumn> _groupBys = new ArrayList<VisualizationSourceColumn>();
+    private List<VisualizationSourceColumn> _measureCols = new ArrayList<VisualizationSourceColumn>();
+
     private ViewContext _viewContext;
     private VisualizationSourceColumn.Factory _columnFactory = new VisualizationSourceColumn.Factory();
 
@@ -129,9 +133,10 @@ public class VisualizationSQLGenerator implements CustomApiForm, HasViewContext
                     query = ensureSourceQuery(_viewContext.getContainer(), measureCol, previous);
                     query.addSelect(measureCol);
                 }
+                _measureCols.add(measureCol);
 
                 Object timeAxis = measureInfo.get("time");
-                ChartType type = null;
+                ChartType type;
                 if (timeAxis instanceof String)
                 {
                     if ("date".equalsIgnoreCase((String) timeAxis))
@@ -162,8 +167,25 @@ public class VisualizationSQLGenerator implements CustomApiForm, HasViewContext
                             if (interval != null)
                             {
                                 VisualizationIntervalColumn newInterval = new VisualizationIntervalColumn(zeroDateCol, dateCol, interval);
-                                if (!_intervals.containsKey(newInterval.getFullAlias()))
+                                boolean foundMatch = false;
+                                if (!_intervals.isEmpty())
+                                {
+                                    for (VisualizationIntervalColumn existingInterval : _intervals.values())
+                                    {
+                                        if (existingInterval.getStartDate() == newInterval.getStartDate() && existingInterval.getInterval() == newInterval.getInterval())
+                                        {
+                                            foundMatch = true;
+                                        }
+                                    }
+                                    if (!foundMatch)
+                                    {
+                                        throw new IllegalArgumentException("Multiple intervals with different start dates or units are not supported");
+                                    }
+                                }
+                                else
+                                {
                                     _intervals.put(newInterval.getFullAlias(), newInterval);
+                                }
                             }
                         }
                         break;
@@ -198,6 +220,15 @@ public class VisualizationSQLGenerator implements CustomApiForm, HasViewContext
             {
                 SimpleFilter filter = new SimpleFilter(filterUrl, VisualizationController.FILTER_DATAREGION);
                 query.setFilter(filter);
+            }
+        }
+
+        Object groupBys = properties.get("groupBys");
+        if (groupBys != null)
+        {
+            for (Map<String, Object> additionalSelectInfo : ((JSONArray)groupBys).toJSONObjectArray())
+            {
+                _groupBys.add(_columnFactory.create(getViewContext(), additionalSelectInfo));
             }
         }
 
@@ -261,17 +292,7 @@ public class VisualizationSQLGenerator implements CustomApiForm, HasViewContext
         return query;
     }
 
-    public VisualizationSQLGenerator()
-    {
-        super();    //To change body of overridden methods use File | Settings | File Templates.
-    }
-
     public String getSQL() throws VisualizationSQLGenerator.GenerationException
-    {
-        return getSQL(null);
-    }
-
-    public String getSQL(IVisualizationSourceQuery parentQuery) throws VisualizationSQLGenerator.GenerationException
     {
         Set<IVisualizationSourceQuery> outerJoinQueries = new LinkedHashSet<IVisualizationSourceQuery>();
         Set<VisualizationSourceQuery> innerJoinQueries = new LinkedHashSet<VisualizationSourceQuery>();
@@ -306,7 +327,84 @@ public class VisualizationSQLGenerator implements CustomApiForm, HasViewContext
         }
         // Add inner joins to the inner-join queries
         queries.addAll(innerJoinQueries);
-        return getSQL(parentQuery, _columnFactory, queries, new ArrayList<VisualizationIntervalColumn>(_intervals.values()), "INNER JOIN", true);
+
+        String sql = getSQL(null, _columnFactory, queries, new ArrayList<VisualizationIntervalColumn>(_intervals.values()), "INNER JOIN", _groupBys.isEmpty());
+
+        if (!_groupBys.isEmpty())
+        {
+            Map<String, Set<String>> columnAliases = getColumnMapping(_columnFactory, queries);
+            String subjectColumnName = StudyService.get().getSubjectColumnName(_viewContext.getContainer());
+
+            StringBuilder realSQL = new StringBuilder("SELECT ");
+            String separator = "";
+            Map<String, String> groupByAliases = new CaseInsensitiveHashMap<String>();
+            int aliasIndex = 1;
+            StringBuilder groupByAndSelectSQL = new StringBuilder();
+            for (VisualizationSourceColumn groupBy : _groupBys)
+            {
+                realSQL.append(separator);
+                separator = ", ";
+                String key = groupBy.getSchemaName() + "." + groupBy.getQueryName();
+                String alias = groupByAliases.get(key);
+                if (alias == null)
+                {
+                    alias = "groupBy" + (aliasIndex++);
+                    groupByAliases.put(key, alias);
+                }
+                groupByAndSelectSQL.append(alias + "." + groupBy.getOriginalName());
+            }
+            if (_intervals.size() > 1)
+            {
+                throw new IllegalArgumentException("A maximum of one interval is supported");
+            }
+            for (Map.Entry<String, VisualizationIntervalColumn> entry : _intervals.entrySet())
+            {
+                groupByAndSelectSQL.append(", x.");
+                groupByAndSelectSQL.append(_intervals.size() == 1 ? entry.getValue().getSimpleAlias() : entry.getValue().getFullAlias());
+            }
+
+            realSQL.append(groupByAndSelectSQL);
+            realSQL.append(", COUNT(");
+            realSQL.append(columnAliases.get(subjectColumnName).iterator().next());
+            realSQL.append(") AS ParticipantCount");
+            for (VisualizationSourceColumn measureCol : _measureCols)
+            {
+                String alias = columnAliases.get(measureCol.getOriginalName()).iterator().next();
+                realSQL.append(", AVG(x." + alias + ") AS " + alias);
+            }
+
+            realSQL.append("\n FROM (");
+            realSQL.append(sql);
+            realSQL.append(") x");
+            for (Map.Entry<String, String> entry : groupByAliases.entrySet())
+            {
+                realSQL.append(", ");
+                realSQL.append(entry.getKey());
+                realSQL.append(" AS ");
+                realSQL.append(entry.getValue());
+            }
+
+            realSQL.append(" WHERE ");
+            separator = "";
+            for (String groupByAlias : groupByAliases.values())
+            {
+                realSQL.append(separator);
+                separator = " AND ";
+
+                realSQL.append("x.");
+                realSQL.append(columnAliases.get(subjectColumnName).iterator().next());
+                realSQL.append(" = ");
+                realSQL.append(groupByAlias);
+                realSQL.append(".");
+                realSQL.append(subjectColumnName);
+            }
+            realSQL.append("\nGROUP BY ");
+            realSQL.append(groupByAndSelectSQL);
+
+            return realSQL.toString();
+        }
+
+        return sql;
     }
 
     private static IVisualizationSourceQuery findQuery(VisualizationSourceColumn column, Collection<IVisualizationSourceQuery> queries)

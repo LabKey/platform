@@ -735,6 +735,7 @@ LABKEY.vis.TimeChartPanel = Ext.extend(Ext.Panel, {
             },
             measures: this.chartInfo.measures,
             viewInfo: this.viewInfo,
+//            groupBys: [{schemaName: 'study', queryName: 'ParticipantGroupMap', name: 'GroupId'}],
             sorts: this.getDataSortArray(),
             filterUrl: this.chartInfo.filterUrl,
             filterQuery: this.chartInfo.filterQuery,
