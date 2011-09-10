@@ -15,6 +15,7 @@
  */
 package org.labkey.announcements.model;
 
+import org.jetbrains.annotations.Nullable;
 import org.labkey.announcements.AnnouncementsController.DownloadAction;
 import org.labkey.announcements.AnnouncementsController.ThreadAction;
 import org.labkey.api.attachments.Attachment;
@@ -28,7 +29,6 @@ import org.labkey.api.security.User;
 import org.labkey.api.security.UserManager;
 import org.labkey.api.services.ServiceRegistry;
 import org.labkey.api.view.ActionURL;
-import org.labkey.api.wiki.WikiRenderer;
 import org.labkey.api.wiki.WikiRendererType;
 import org.labkey.api.wiki.WikiService;
 
@@ -268,8 +268,7 @@ public class AnnouncementModel extends AttachmentParentEntity implements Seriali
     {
         DownloadURL urlAttach = new DownloadURL(DownloadAction.class, container, getEntityId(), "");
 
-        WikiRenderer renderer = getRenderer(urlAttach.getLocalURIString());
-        return renderer.format(_body).getHtml();
+        return getFormattedHtml(urlAttach.getLocalURIString());
     }
 
     //returns string corresponding to name of enum entry
@@ -289,21 +288,25 @@ public class AnnouncementModel extends AttachmentParentEntity implements Seriali
         _rendererType = WikiRendererType.valueOf(rendererType);
     }
 
-    public WikiRenderer getRenderer()
+    public String getFormattedHtml()
     {
-        return getRenderer(null);
+        return getFormattedHtml(null);
     }
 
-    private WikiRenderer getRenderer(String attachPrefix)
+    private String getFormattedHtml(@Nullable String attachPrefix)
     {
         WikiService wikiService = ServiceRegistry.get().getService(WikiService.class);
 
-        if (_rendererType == null)
-        {
-            _rendererType = null != wikiService ? wikiService.getDefaultMessageRendererType() : null;
-        }
+        if (null == wikiService)
+            return null;
 
-        return null != wikiService ? wikiService.getRenderer(_rendererType, attachPrefix, getAttachments()) : null;
+        if (_rendererType == null)
+            _rendererType = wikiService.getDefaultMessageRendererType();
+
+        if (null == attachPrefix)
+            return wikiService.getFormattedHtml(_rendererType, _body);
+        else
+            return wikiService.getFormattedHtml(_rendererType, _body, attachPrefix, getAttachments());
     }
 
     public String getStatus()

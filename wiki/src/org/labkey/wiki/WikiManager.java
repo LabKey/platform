@@ -409,8 +409,8 @@ public class WikiManager implements WikiService
     public FormattedHtml formatWiki(Container c, Wiki wiki, WikiVersion wikiversion) throws SQLException
     {
         String hrefPrefix = wiki.getWikiURL(WikiController.PageAction.class, HString.EMPTY).toString();
-
         String attachPrefix = null;
+
         if (null != wiki.getEntityId())
             attachPrefix = wiki.getAttachmentLink("");
 
@@ -795,7 +795,7 @@ public class WikiManager implements WikiService
     // WikiService
     //
 
-        public static WikiRendererType DEFAULT_WIKI_RENDERER_TYPE = WikiRendererType.HTML;
+    public static WikiRendererType DEFAULT_WIKI_RENDERER_TYPE = WikiRendererType.HTML;
     public static WikiRendererType DEFAULT_MESSAGE_RENDERER_TYPE = WikiRendererType.TEXT_WITH_LINKS;
 
     private Map<String, MacroProvider> providers = new HashMap<String, MacroProvider>();
@@ -900,16 +900,31 @@ public class WikiManager implements WikiService
         }
     }
 
+    @Override
     public WikiRendererType getDefaultWikiRendererType()
     {
         return DEFAULT_WIKI_RENDERER_TYPE;
     }
 
+    @Override
     public WikiRendererType getDefaultMessageRendererType()
     {
         return DEFAULT_MESSAGE_RENDERER_TYPE;
     }
 
+    @Override
+    public String getFormattedHtml(WikiRendererType rendererType, String source)
+    {
+        return getFormattedHtml(rendererType, source, null, null);
+    }
+
+    @Override
+    public String getFormattedHtml(WikiRendererType rendererType, String source, String attachPrefix, Collection<? extends Attachment> attachments)
+    {
+        return "<div class=\"labkey-wiki\">" + getRenderer(rendererType, attachPrefix, attachments).format(source).getHtml() + "</div>";
+    }
+
+    @Override
     public WikiRenderer getRenderer(WikiRendererType rendererType)
     {
         return getRenderer(rendererType, null, null, null, null);

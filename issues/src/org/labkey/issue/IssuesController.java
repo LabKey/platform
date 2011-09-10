@@ -1929,8 +1929,8 @@ public class IssuesController extends SpringActionController
         WikiService wikiService = ServiceRegistry.get().getService(WikiService.class);
         if (null != wikiService)
         {
-            WikiRenderer w = wikiService.getRenderer(WikiRendererType.TEXT_WITH_LINKS);
-            formattedComment.append(w.format(comment).getHtml());
+            String html = wikiService.getFormattedHtml(WikiRendererType.TEXT_WITH_LINKS, comment);
+            formattedComment.append(html);
         }
         else
             formattedComment.append(comment);

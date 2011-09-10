@@ -2544,7 +2544,7 @@ public class WikiController extends SpringActionController
                     wikiver.setBody(form.getBody());
 
                 wikiver.setRendererType(form.getFromFormat());
-                newBody = wikiver.getHtml(getViewContext().getContainer(), wiki);
+                newBody = wikiver.getHtmlForConvert(getViewContext().getContainer(), wiki);
             }
 
             response.put("toFormat", form.getToFormat());

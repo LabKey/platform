@@ -490,10 +490,9 @@ public class AdminController extends SpringActionController
             getPageConfig().setTemplate(Template.Dialog);
             WikiService wikiService = ServiceRegistry.get().getService(WikiService.class);
             String content = "This site is currently undergoing maintenance.";
-            if(null != wikiService)
+            if (null != wikiService)
             {
-                WikiRenderer formatter = wikiService.getRenderer(WikiRendererType.RADEOX);
-                content = formatter.format(ModuleLoader.getInstance().getAdminOnlyMessage()).getHtml();
+                content =  wikiService.getFormattedHtml(WikiRendererType.RADEOX, ModuleLoader.getInstance().getAdminOnlyMessage());
             }
             return new HtmlView("The site is currently undergoing maintenance", content);
         }
@@ -610,8 +609,8 @@ public class AdminController extends SpringActionController
             WikiService wikiService = ServiceRegistry.get().getService(WikiService.class);
             if (null != wikiService)
             {
-                WikiRenderer wf = wikiService.getRenderer(WikiRendererType.RADEOX);
-                _html = "<style type=\"text/css\">\ntr.table-odd td { background-color: #EEEEEE; }</style>\n" + wf.format(wikiSource).getHtml();
+                String html = wikiService.getFormattedHtml(WikiRendererType.RADEOX, wikiSource);
+                _html = "<style type=\"text/css\">\ntr.table-odd td { background-color: #EEEEEE; }</style>\n" + html;
             }
             else
                 _html = "<p class='labkey-error'>NO WIKI SERVICE AVAILABLE!</p>";

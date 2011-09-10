@@ -3412,7 +3412,6 @@ wiki/src/META-INF/wiki/jars.txt -text
 wiki/src/org/labkey/wiki/BaseWikiPermissions.java -text
 wiki/src/org/labkey/wiki/MenuWikiWebPartFactory.java -text
 wiki/src/org/labkey/wiki/RenderedWikiResource.java -text
-wiki/src/org/labkey/wiki/ServiceImpl.java -text
 wiki/src/org/labkey/wiki/WikiCache.java -text
 wiki/src/org/labkey/wiki/WikiCollections.java -text
 wiki/src/org/labkey/wiki/WikiContainerListener.java -text

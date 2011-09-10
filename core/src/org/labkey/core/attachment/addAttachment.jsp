@@ -22,7 +22,7 @@
 <%
     String entityId = ((AttachmentServiceImpl.AddAttachmentView) HttpView.currentView()).getModelBean();
 %>
-<script type="text/javascript" language="javascript">
+<script type="text/javascript">
     LABKEY.requiresScript('util.js');
 </script>
 <labkey:errors />

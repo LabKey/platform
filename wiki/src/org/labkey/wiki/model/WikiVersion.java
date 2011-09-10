@@ -18,12 +18,10 @@ package org.labkey.wiki.model;
 
 import org.labkey.api.attachments.Attachment;
 import org.labkey.api.data.Container;
-import org.labkey.api.services.ServiceRegistry;
 import org.labkey.api.util.HString;
 import org.labkey.api.util.MemTracker;
 import org.labkey.api.wiki.WikiRenderer;
 import org.labkey.api.wiki.WikiRendererType;
-import org.labkey.api.wiki.WikiService;
 import org.labkey.wiki.WikiContentCache;
 import org.labkey.wiki.WikiManager;
 
@@ -121,6 +119,11 @@ public class WikiVersion
 
     // TODO: WikiVersion should know its wiki & container
     public String getHtml(Container c, Wiki wiki) throws SQLException
+    {
+        return "<div class=\"labkey-wiki\">" + getHtmlForConvert(c, wiki) + "</div>";
+    }
+
+    public String getHtmlForConvert(Container c, Wiki wiki) throws SQLException
     {
         return WikiContentCache.getHtml(c, wiki, this, _cache);
     }

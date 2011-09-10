@@ -1824,8 +1824,7 @@ public class AnnouncementsController extends SpringActionController
             WikiService wikiService = ServiceRegistry.get().getService(WikiService.class);
             if (null != wikiService)
             {
-                WikiRenderer w = wikiService.getRenderer(currentRendererType);
-                page.body = w.format(a.getBody()).getHtml();
+                page.body = wikiService.getFormattedHtml(currentRendererType, a.getBody());
             }
         }
         return page;

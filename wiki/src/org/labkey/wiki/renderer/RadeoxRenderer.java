@@ -22,6 +22,7 @@ import org.junit.Before;
 import org.junit.Test;
 import org.labkey.api.attachments.Attachment;
 import org.labkey.api.data.Container;
+import org.labkey.api.services.ServiceRegistry;
 import org.labkey.api.util.HString;
 import org.labkey.api.util.MemTracker;
 import org.labkey.api.util.MimeMap;
@@ -37,6 +38,8 @@ import org.labkey.api.view.menu.ProjectsMenu;
 import org.labkey.api.view.menu.SiteAdminMenu;
 import org.labkey.api.wiki.FormattedHtml;
 import org.labkey.api.wiki.WikiRenderer;
+import org.labkey.api.wiki.WikiRendererType;
+import org.labkey.api.wiki.WikiService;
 import org.radeox.api.engine.RenderEngine;
 import org.radeox.api.engine.WikiRenderEngine;
 import org.radeox.api.engine.context.InitialRenderContext;
@@ -722,29 +725,35 @@ public class RadeoxRenderer extends BaseRenderEngine implements WikiRenderEngine
     public static class RadeoxRenderTest extends Assert
     {
         RadeoxRenderer _r;
+        WikiService _ws;
 
         @Before
         public void setup()
         {
            _r = new RadeoxRenderer();
+           _ws = ServiceRegistry.get().getService(WikiService.class);
         }
 
         @Test
         public void testRendering()
         {
-            String underline = "<div class=\"labkey-wiki\"><u class=\"underline\">something</u></div>";
-            String italics = "<div class=\"labkey-wiki\"><i class=\"italic\">something</i></div>";
-            String bold = "<div class=\"labkey-wiki\"><b class=\"bold\">something</b></div>";
-            String url = "<div class=\"labkey-wiki\"><span class=\"nobr\"><a href=\"https://www.d.com/?l=q&#38;r=e\">&#104;ttps://www.d.com/?l=q&#38;r=e</a></span></div>";
-            String code = "<div class=\"labkey-wiki\"><div class=\"code\"><pre>def fn:<br />something here<br />something here<br /><br />something <span class=\"java&#45;keyword\">else</span></pre></div></div>";
-            String link = "<div class=\"labkey-wiki\"><span class=\"nobr\" style=\"border:4px dotted red;\"><a href=\"https://www.labkey.org/\">To Labkey</a></span></div>";
+            test("__something__", "<u class=\"underline\">something</u>");      // Underline
+            test("~~something~~", "<i class=\"italic\">something</i>");         // Italics
+            test("**something**", "<b class=\"bold\">something</b>");           // Bold
 
-            assertEquals(underline, _r.format("__something__").getHtml());
-            assertEquals(italics,  _r.format("~~something~~").getHtml());
-            assertEquals(bold,  _r.format("**something**").getHtml());
-            assertEquals(url,  _r.format("https://www.d.com/?l=q&r=e").getHtml());
-            assertEquals(code,  _r.format("{code}def fn:\nsomething here\nsomething here\n\nsomething else{code}").getHtml());
-            assertEquals(link,  _r.format("{link:style=border:4px dotted red;|url=https://www.labkey.org/|text=To Labkey}").getHtml());
+            // URL
+            test("https://www.d.com/?l=q&r=e", "<span class=\"nobr\"><a href=\"https://www.d.com/?l=q&#38;r=e\">&#104;ttps://www.d.com/?l=q&#38;r=e</a></span>");
+            // Code
+            test("{code}def fn:\nsomething here\nsomething here\n\nsomething else{code}", "<div class=\"code\"><pre>def fn:<br />something here<br />something here<br /><br />something <span class=\"java&#45;keyword\">else</span></pre></div>");
+            // Link
+            test("{link:style=border:4px dotted red;|url=https://www.labkey.org/|text=To Labkey}", "<span class=\"nobr\" style=\"border:4px dotted red;\"><a href=\"https://www.labkey.org/\">To Labkey</a></span>");
+        }
+
+        // Service should wrap rendered HTML in a <div> but renderer shouldn't. 
+        private void test(String wiki, String html)
+        {
+            assertEquals(html, _r.format(wiki).getHtml());
+            assertEquals("<div class=\"labkey-wiki\">" + html + "</div>", _ws.getFormattedHtml(WikiRendererType.RADEOX, wiki));
         }
     }
 }

@@ -75,7 +75,6 @@ import org.labkey.api.view.NavTree;
 import org.labkey.api.view.UnauthorizedException;
 import org.labkey.api.view.VBox;
 import org.labkey.api.view.template.PageConfig;
-import org.labkey.api.wiki.WikiRenderer;
 import org.labkey.api.wiki.WikiRendererType;
 import org.labkey.api.wiki.WikiService;
 import org.labkey.core.admin.AdminController;
@@ -431,8 +430,7 @@ public class LoginController extends SpringActionController
             WikiService wikiService = ServiceRegistry.get().getService(WikiService.class);
             if (null != wikiService)
             {
-                WikiRenderer formatter = wikiService.getRenderer(WikiRendererType.RADEOX);
-                content = formatter.format(ModuleLoader.getInstance().getAdminOnlyMessage()).getHtml();
+                content = wikiService.getFormattedHtml(WikiRendererType.RADEOX, ModuleLoader.getInstance().getAdminOnlyMessage());
             }
             HtmlView adminMessageView = new HtmlView("The site is currently undergoing maintenance", content);
             vBox.addView(adminMessageView);

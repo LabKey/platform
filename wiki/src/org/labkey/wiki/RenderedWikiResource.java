@@ -54,6 +54,6 @@ public class RenderedWikiResource extends WikiWebdavProvider.WikiPageResource
         if (null == service)
             throw new IllegalStateException("WikiService not found");
 
-        return service.getRenderer(type).format(body).getHtml();
+        return service.getFormattedHtml(type, body);
     }
 }

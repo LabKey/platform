@@ -15,11 +15,9 @@
  * limitations under the License.
  */
 %>
-<%@ page import="org.labkey.api.view.HttpView" %>
-<%@ page import="org.labkey.api.view.ViewContext" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 
-<script type="text/javascript" language="javascript">
+<script type="text/javascript">
     LABKEY.requiresScript("ActionsAdmin.js");
 </script>
 
