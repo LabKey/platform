@@ -30,14 +30,20 @@ import org.labkey.api.data.UnionTableInfo;
 import org.labkey.api.exp.property.Domain;
 import org.labkey.api.exp.property.DomainProperty;
 import org.labkey.api.exp.property.PropertyService;
+import org.labkey.api.query.BatchValidationException;
 import org.labkey.api.query.CustomView;
+import org.labkey.api.query.DefaultSchema;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.QueryDefinition;
+import org.labkey.api.query.QueryException;
 import org.labkey.api.query.QueryForm;
 import org.labkey.api.query.QueryParam;
+import org.labkey.api.query.QuerySchema;
 import org.labkey.api.query.QueryService;
 import org.labkey.api.query.QuerySettings;
 import org.labkey.api.query.QueryView;
+import org.labkey.api.query.UserSchema;
+import org.labkey.api.query.ValidationException;
 import org.labkey.api.query.snapshot.AbstractSnapshotProvider;
 import org.labkey.api.query.snapshot.QuerySnapshotDefinition;
 import org.labkey.api.query.snapshot.QuerySnapshotForm;
@@ -55,10 +61,13 @@ import org.labkey.api.util.ShutdownListener;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.HttpView;
 import org.labkey.api.view.ViewContext;
+import org.labkey.api.writer.ContainerUser;
 import org.labkey.study.StudyServiceImpl;
 import org.labkey.study.controllers.StudyController;
 import org.labkey.study.model.DataSetDefinition;
+import org.labkey.study.model.StudyImpl;
 import org.labkey.study.model.StudyManager;
+import org.labkey.study.visitmanager.VisitManager;
 import org.springframework.validation.BindException;
 
 import javax.servlet.ServletContextEvent;
@@ -66,6 +75,7 @@ import javax.servlet.ServletException;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Calendar;
+import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
@@ -139,60 +149,117 @@ public class DatasetSnapshotProvider extends AbstractSnapshotProvider implements
                 addParameter(ActionURL.Param.redirectUrl, PageFlowUtil.encode(context.getActionURL().getLocalURIString()));
     }
 
-    public ActionURL createSnapshot(QuerySnapshotForm form, BindException errors) throws Exception
+    public void createSnapshot(ViewContext context, QuerySnapshotDefinition qsDef, BindException errors) throws Exception
     {
         DbSchema schema = StudyManager.getSchema();
 
         try
         {
-            QueryView view = QueryView.create(form, errors);
-            // TODO: Create class ResultSetDataLoader and use it here instead of round-tripping through a TSV StringBuilder
-            StringBuilder sb = new StringBuilder();
-            TSVGridWriter tsvWriter = view.getTsvWriter();
-            tsvWriter.setColumnHeaderType(TSVGridWriter.ColumnHeaderType.queryColumnName);
-            tsvWriter.write(sb);
-
-            schema.getScope().ensureTransaction();
-
-            // create the dataset definition
-            Study study = StudyManager.getInstance().getStudy(form.getViewContext().getContainer());
-
-            DataSetDefinition def = StudyManager.getInstance().getDataSetDefinition(study, form.getSnapshotName());
-
-            if (def != null)
+            if (qsDef != null)
             {
-                QuerySnapshotDefinition snapshot = createSnapshotDef(form);
+                QueryDefinition queryDef = qsDef.getQueryDefinition(context.getUser());
 
-                if (snapshot == null)
-                    throw new IllegalArgumentException("Unable to create the query snapshot definition");
+                // dataset snapshots must have an underlying dataset definition defined
+                StudyImpl study = StudyManager.getInstance().getStudy(qsDef.getContainer());
+                DataSetDefinition def = StudyManager.getInstance().getDataSetDefinition(study, qsDef.getName());
 
-                snapshot.save(form.getViewContext().getUser(), form.getViewContext().getContainer());
-
-                String domainURI = def.getTypeURI();
-                Domain d = PropertyService.get().getDomain(form.getViewContext().getContainer(), domainURI);
-                Map<String, String> columnMap = getColumnMap(d, view, snapshot.getColumns(), tsvWriter.getFieldMap());
-
-                // import the data
-                List<String> err = new ArrayList<String>();
-                StudyManager.getInstance().importDatasetData(study, form.getViewContext().getUser(), def, new TabLoader(sb, true),
-                        columnMap, err, true, null, null);
-                for (String e : err)
-                    errors.reject(SpringActionController.ERROR_MSG, e);
-
-                if (!errors.hasErrors())
+                if (def != null)
                 {
-                    schema.getScope().commitTransaction();
+                    QueryView view = createQueryView(context, qsDef, errors);
 
-                    return new ActionURL(StudyController.DatasetAction.class, form.getViewContext().getContainer()).
-                            addParameter(DataSetDefinition.DATASETKEY, def.getDataSetId());
+                    if (view != null && !errors.hasErrors())
+                    {
+                        // TODO: Create class ResultSetDataLoader and use it here instead of round-tripping through a TSV StringBuilder
+                        StringBuilder sb = new StringBuilder();
+                        TSVGridWriter tsvWriter = view.getTsvWriter();
+                        tsvWriter.setColumnHeaderType(TSVGridWriter.ColumnHeaderType.queryColumnName);
+                        tsvWriter.write(sb);
+
+                        schema.getScope().ensureTransaction();
+
+                        String domainURI = def.getTypeURI();
+                        Domain d = PropertyService.get().getDomain(qsDef.getContainer(), domainURI);
+                        Map<String, String> columnMap = getColumnMap(d, view, qsDef.getColumns(), tsvWriter.getFieldMap());
+
+                        // import the data
+                        BatchValidationException ve = new BatchValidationException();
+                        StudyManager.getInstance().importDatasetData(study, context.getUser(), def, new TabLoader(sb, true),
+                                columnMap, ve, true, null, null);
+
+                        for (ValidationException e : ve.getRowErrors())
+                            errors.reject(SpringActionController.ERROR_MSG, e.getMessage());
+
+                        if (!errors.hasErrors())
+                        {
+                            // if the source of the snapshot (query definition) is in a different
+                            // container, make sure the participants and visits for the study for the
+                            // snapshot are updated
+                            if (!queryDef.getContainer().equals(qsDef.getContainer()))
+                            {
+                                StudyManager.getInstance().getVisitManager(study).updateParticipantVisits(context.getUser(),
+                                        Collections.singletonList(def));
+                            }
+                            schema.getScope().commitTransaction();
+                        }
+                    }
                 }
+                else
+                    errors.reject(SpringActionController.ERROR_MSG, "A dataset definition does not exist for query snapshot: " + qsDef.getName());
             }
-            return null;
+            else
+                throw new IllegalArgumentException("QuerySnapshotDefinition cannot be null");
         }
         finally
         {
             schema.getScope().closeConnection();
         }
+    }
+
+    private static QueryView createQueryView(ViewContext context, QuerySnapshotDefinition qsDef, BindException errors)
+    {
+        QueryDefinition queryDef = qsDef.getQueryDefinition(context.getUser());
+        QuerySchema querySchema = DefaultSchema.get(context.getUser(), queryDef.getContainer()).getSchema(queryDef.getSchemaName());
+
+        if (querySchema instanceof UserSchema)
+        {
+            QuerySettings settings = new QuerySettings(context, QueryView.DATAREGIONNAME_DEFAULT);
+
+            settings.setQueryName(queryDef.getName());
+            QueryView view = ((UserSchema)querySchema).createView(context, settings, errors);
+
+            if (!qsDef.getColumns().isEmpty())
+            {
+                // create a temporary custom view to add additional display columns to the base query definition
+                CustomView custView = queryDef.createCustomView(context.getUser(), "tempCustomView");
+                custView.setColumns(qsDef.getColumns());
+                custView.setFilterAndSort(qsDef.getFilter());
+
+                view.setCustomView(custView);
+            }
+            return view;
+        }
+        return null;
+    }
+
+    public ActionURL createSnapshot(QuerySnapshotForm form, BindException errors) throws Exception
+    {
+        QuerySnapshotDefinition qsDef = createSnapshotDef(form);
+
+        if (qsDef != null)
+        {
+            qsDef.save(form.getViewContext().getUser());
+            createSnapshot(form.getViewContext(), qsDef, errors);
+
+            if (!errors.hasErrors())
+            {
+                Study study = StudyManager.getInstance().getStudy(qsDef.getContainer());
+                DataSetDefinition def = StudyManager.getInstance().getDataSetDefinition(study, qsDef.getName());
+
+                return new ActionURL(StudyController.DatasetAction.class, qsDef.getContainer()).
+                        addParameter(DataSetDefinition.DATASETKEY, def.getDataSetId());
+            }
+        }
+        return null;
     }
 
     /**
@@ -220,30 +287,11 @@ public class DatasetSnapshotProvider extends AbstractSnapshotProvider implements
         return columnMap;
     }
 
-    private static QueryForm getQueryForm(QuerySnapshotDefinition snapshotDef, ViewContext context)
-    {
-        QueryDefinition def = snapshotDef.getQueryDefinition(context.getUser());
-
-        QueryForm form = new QueryForm();
-        form.setSchemaName(new IdentifierString(def.getSchemaName()));
-        form.setQueryName(def.getName());
-        form.setViewContext(context);
-
-        // create a temporary custom view to add additional display columns to the base query definition
-        CustomView custView = def.createCustomView(form.getViewContext().getUser(), "tempCustomView");
-        custView.setColumns(snapshotDef.getColumns());
-        custView.setFilterAndSort(snapshotDef.getFilter());
-        form.setCustomView(custView);
-
-        return form;
-    }
-
     public synchronized ActionURL updateSnapshot(QuerySnapshotForm form, BindException errors) throws Exception
     {
         QuerySnapshotDefinition def = QueryService.get().getSnapshotDef(form.getViewContext().getContainer(), form.getSchemaName().toString(), form.getSnapshotName());
         if (def != null)
         {
-            QueryForm sourceForm = getQueryForm(def, form.getViewContext());
             Study study = StudyManager.getInstance().getStudy(form.getViewContext().getContainer());
 
             // purge the dataset rows then recreate the new one...
@@ -254,54 +302,47 @@ public class DatasetSnapshotProvider extends AbstractSnapshotProvider implements
 
                 try
                 {
-                    QueryView view = QueryView.create(sourceForm, errors);
-                    if (errors.hasErrors())
-                        return null;
+                    QueryView view = createQueryView(form.getViewContext(), def, errors);
 
-                    view.setCustomView(sourceForm.getCustomView());
-                    view.getSettings().setAllowChooseQuery(false);
-                    view.getSettings().setAllowChooseView(false);
-                    view.setShowExportButtons(false);
-                    view.setShowInsertNewButton(false);
-                    view.setShowDeleteButton(false);
-                    view.setShowUpdateColumn(false);
+                    if (view != null && !errors.hasErrors())
+                    {
+                        // TODO: Create and use a ResultSetDataLoader here instead of round-tripping through a TSV StringBuilder
+                        StringBuilder sb = new StringBuilder();
+                        TSVGridWriter tsvWriter = view.getTsvWriter();
+                        tsvWriter.setColumnHeaderType(TSVGridWriter.ColumnHeaderType.queryColumnName);
+                        tsvWriter.write(sb);
 
-                    // TODO: Create and use a ResultSetDataLoader here instead of round-tripping through a TSV StringBuilder
-                    StringBuilder sb = new StringBuilder();
-                    TSVGridWriter tsvWriter = view.getTsvWriter();
-                    tsvWriter.setColumnHeaderType(TSVGridWriter.ColumnHeaderType.queryColumnName);
-                    tsvWriter.write(sb);
+                        schema.getScope().ensureTransaction();
 
-                    schema.getScope().ensureTransaction();
+                        int numRowsDeleted;
+                        List<String> newRows;
 
-                    int numRowsDeleted;
-                    List<String> newRows;
+                        List<String> importErrors = new ArrayList<String>();
+                        numRowsDeleted = StudyManager.getInstance().purgeDataset(study, dsDef, form.getViewContext().getUser());
+                        Domain d = PropertyService.get().getDomain(form.getViewContext().getContainer(), dsDef.getTypeURI());
+                        Map<String, String> columnMap = getColumnMap(d, view, def.getColumns(), tsvWriter.getFieldMap());
 
-                    List<String> importErrors = new ArrayList<String>();
-                    numRowsDeleted = StudyManager.getInstance().purgeDataset(study, dsDef, form.getViewContext().getUser());
-                    Domain d = PropertyService.get().getDomain(form.getViewContext().getContainer(), dsDef.getTypeURI());
-                    Map<String, String> columnMap = getColumnMap(d, view, def.getColumns(), tsvWriter.getFieldMap());
+                        // import the new data
+                        newRows = StudyManager.getInstance().importDatasetData(study, form.getViewContext().getUser(), dsDef, new TabLoader(sb, true), columnMap, importErrors, true, null, null);
 
-                    // import the new data
-                    newRows = StudyManager.getInstance().importDatasetData(study, form.getViewContext().getUser(), dsDef, new TabLoader(sb, true), columnMap, importErrors, true, null, null);
+                        for (String error : importErrors)
+                            errors.reject(SpringActionController.ERROR_MSG, error);
 
-                    for (String error : importErrors)
-                        errors.reject(SpringActionController.ERROR_MSG, error);
+                        if (errors.hasErrors())
+                            return null;
 
-                    if (errors.hasErrors())
-                        return null;
+                        schema.getScope().commitTransaction();
 
-                    schema.getScope().commitTransaction();
+                        ViewContext context = form.getViewContext();
+                        StudyServiceImpl.addDatasetAuditEvent(context.getUser(), context.getContainer(), dsDef,
+                                "Dataset snapshot was updated. " + numRowsDeleted + " rows were removed and replaced with " + newRows.size() + " rows.", null);
 
-                    ViewContext context = form.getViewContext();
-                    StudyServiceImpl.addDatasetAuditEvent(context.getUser(), context.getContainer(), dsDef,
-                            "Dataset snapshot was updated. " + numRowsDeleted + " rows were removed and replaced with " + newRows.size() + " rows.", null);
+                        def.setLastUpdated(new Date());
+                        def.save(form.getViewContext().getUser());
 
-                    def.setLastUpdated(new Date());
-                    def.save(form.getViewContext().getUser(), form.getViewContext().getContainer());
-                    
-                    return new ActionURL(StudyController.DatasetAction.class, form.getViewContext().getContainer()).
-                            addParameter(DataSetDefinition.DATASETKEY, dsDef.getDataSetId());
+                        return new ActionURL(StudyController.DatasetAction.class, form.getViewContext().getContainer()).
+                                addParameter(DataSetDefinition.DATASETKEY, dsDef.getDataSetId());
+                    }
                 }
                 catch (SQLException e)
                 {
@@ -444,12 +485,10 @@ public class DatasetSnapshotProvider extends AbstractSnapshotProvider implements
                 ViewContext context = new ViewContext(getViewContext(def, false));
                 context.setContainer(def.getContainer());
 
-                QueryForm sourceForm = getQueryForm(def, context);
-                QueryView view = QueryView.create(sourceForm, null);
-                view.setCustomView(sourceForm.getCustomView());
-                view.setShowUpdateColumn(false);
-
+                BindException errors = new NullSafeBindException(def, "snapshot");
+                QueryView view = createQueryView(context, def, errors);
                 TableInfo tinfo = view.getTable();
+
                 if (tinfo instanceof UnionTableInfo)
                 {
                     for (ColumnInfo info : ((UnionTableInfo)tinfo).getUnionColumns())
@@ -562,7 +601,7 @@ public class DatasetSnapshotProvider extends AbstractSnapshotProvider implements
             User user = def.getModifiedBy();
             if (user != null)
             {
-                def.save(user, def.getContainer());
+                def.save(user);
 
                 TimerTask task = new SnapshotUpdateTask(def, url);
                 Timer timer = new Timer("QuerySnapshot Update Timer", true);
@@ -589,7 +628,7 @@ public class DatasetSnapshotProvider extends AbstractSnapshotProvider implements
             try
             {
                 _def.setNextUpdate(null);
-                _def.save(_def.getModifiedBy(), _def.getContainer());
+                _def.save(_def.getModifiedBy());
 
                 QuerySnapshotForm form = new QuerySnapshotForm();
                 ViewContext context = getViewContext(_def, true);

@@ -34,13 +34,14 @@ import java.util.Collection;
  * Date: Apr 23, 2009
  * Time: 11:29:36 AM
  */
-class CohortWriter implements InternalStudyWriter
+public class CohortWriter implements InternalStudyWriter
 {
     private static final String COHORTS_FILENAME = "cohorts.xml";
+    public static final String DATA_TYPE = "Cohort Settings";
 
     public String getSelectionText()
     {
-        return "Cohort Settings";
+        return DATA_TYPE;
     }
 
     public void write(StudyImpl study, StudyExportContext ctx, VirtualFile vf) throws Exception

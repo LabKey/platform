@@ -33,7 +33,7 @@ import java.util.Map;
  * Date: May 16, 2009
  * Time: 9:20:22 PM
  */
-class MissingValueImporter implements InternalStudyImporter
+public class MissingValueImporter implements InternalStudyImporter
 {
     @Override
     public String getDescription()

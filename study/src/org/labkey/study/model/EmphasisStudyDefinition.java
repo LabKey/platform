@@ -40,6 +40,7 @@ public class EmphasisStudyDefinition implements CustomApiForm, HasViewContext
     private String _dstPath;
     private int[] _datasets;
     private ViewContext _context;
+    private int _updateDelay;
 
     private ParticipantGroupController.ParticipantCategorySpecification[] _categories;
 
@@ -115,6 +116,16 @@ public class EmphasisStudyDefinition implements CustomApiForm, HasViewContext
         _categories = categories;
     }
 
+    public int getUpdateDelay()
+    {
+        return _updateDelay;
+    }
+
+    public void setUpdateDelay(int updateDelay)
+    {
+        _updateDelay = updateDelay;
+    }
+
     @Override
     public void bindProperties(Map<String, Object> props)
     {
@@ -133,6 +144,15 @@ public class EmphasisStudyDefinition implements CustomApiForm, HasViewContext
             {
                 _datasets[i] = datasets.getInt(i);
             }
+        }
+
+        Object dataRefresh = props.get("dataRefresh");
+        if (dataRefresh instanceof JSONObject)
+        {
+            JSONObject refresh = (JSONObject)dataRefresh;
+
+            if (refresh.getBoolean("autoRefresh"))
+                _updateDelay = refresh.getInt("updateDelay");
         }
 
         Object categories = props.get("categories");

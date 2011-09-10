@@ -24,11 +24,13 @@ import org.labkey.study.xml.StudyDocument;
  * Date: Apr 23, 2009
  * Time: 11:43:38 AM
  */
-class QcStateWriter implements InternalStudyWriter
+public class QcStateWriter implements InternalStudyWriter
 {
+    public static final String DATA_TYPE = "QC State Settings";
+
     public String getSelectionText()
     {
-        return "QC State Settings";
+        return DATA_TYPE;
     }
 
     public void write(StudyImpl study, StudyExportContext ctx, VirtualFile vf) throws Exception

@@ -171,6 +171,7 @@ LABKEY.study.CreateStudyWizard = Ext.extend(Ext.util.Observable, {
         var formPanel = new Ext.form.FormPanel({
             border: false,
             defaults: {
+                labelSeparator: '',
                 width: 710
             },
             flex: 1,
@@ -211,7 +212,10 @@ LABKEY.study.CreateStudyWizard = Ext.extend(Ext.util.Observable, {
 
         var items = [];
 
-        var txt = Ext.DomHelper.markup({tag:'div', html:'How will participants be added to this study?<br>'});
+        var txt = Ext.DomHelper.markup({tag:'div', cls:'labkey-strong', html:'Participant Selection'}) +
+                Ext.DomHelper.markup({tag:'div', cls: 'labkey-emphasis', html:'How will participants be added to this study?<br>'});
+
+        items.push({xtype:'displayfield', html: txt});
 
         this.newGroupRadio = new Ext.form.Radio({boxLabel:'Create a new participant group', name: 'renderType', scope: this,
             handler: this.showNewParticipantGroupPanel});
@@ -219,15 +223,14 @@ LABKEY.study.CreateStudyWizard = Ext.extend(Ext.util.Observable, {
             checked: true, scope:this, handler: this.showExistingParticipantGroupPanel});
 
         var formItems = [
-            {xtype: 'displayfield', html: txt},
             {
                 xtype: 'radiogroup',
                 columns: 2,
                 fieldLabel: '',
                 labelWidth: 5,
                 items: [
-                    this.newGroupRadio,
-                    this.existingGroupRadio
+                    this.existingGroupRadio,
+                    this.newGroupRadio
                 ]
             }
         ];
@@ -441,8 +444,8 @@ LABKEY.study.CreateStudyWizard = Ext.extend(Ext.util.Observable, {
 
         var items = [];
 
-        var txt = Ext.DomHelper.markup({tag:'div', cls:'labkey-wp-header', html:'Dataset Selection'}) +
-                Ext.DomHelper.markup({tag:'div', html:'Select existing datasets to include in this Study.<br>'});
+        var txt = Ext.DomHelper.markup({tag:'div', cls:'labkey-strong', html:'Dataset Selection'}) +
+                Ext.DomHelper.markup({tag:'div', cls: 'labkey-emphasis', html:'Select existing datasets to include in this Study<br>'});
 
         items.push({xtype:'displayfield', html: txt});
 
@@ -458,7 +461,6 @@ LABKEY.study.CreateStudyWizard = Ext.extend(Ext.util.Observable, {
             enableFilters: true,
             editable: false,
             stripeRows: true,
-            //border: false,
             cls: 'extContainer',
             flex: 1,
             tbar: []
@@ -466,6 +468,43 @@ LABKEY.study.CreateStudyWizard = Ext.extend(Ext.util.Observable, {
         items.push(grid);
         grid.on('columnmodelcustomize', this.customizeColumnModel, this);
         grid.selModel.on('selectionchange', function(cmp){this.info.datasets = cmp.getSelections();}, this);
+
+        var syncTxt = Ext.DomHelper.markup({tag:'div', cls:'labkey-strong', html:'<br><br>Data Linking Options'}) +
+                Ext.DomHelper.markup({tag:'div', cls: 'labkey-emphasis', html:'Linked datasets can be configured to be manually updated or to automatically ' +
+                    'update within an amount of time after the data from the original study has changed<br>'});
+
+        items.push({xtype:'displayfield', html: syncTxt});
+
+        var updateDelay = new Ext.form.ComboBox({
+            xtype: 'combo',
+            hiddenName: 'updateDelay',
+            fieldLabel: '',
+            allowBlank: false,
+            forceSelection: true,
+            mode: 'local',
+            triggerAction: 'all',
+            value: 30,
+            store: [[30,'30 seconds'],[60, '1 minute'], [300, '5 minutes'], [600, '10 minutes'],
+                [1800, '30 minutes'],[3600, '1 hour'], [7200, '2 hours']]
+        });
+
+        this.snapshotOptions = new Ext.form.FormPanel({
+            defaults: {labelSeparator: ''},
+            items: [
+                {xtype: 'radiogroup', fieldLabel: '', columns: 2, items: [
+                    {name: 'autoRefresh', boxLabel: 'Automatic Refresh', inputValue: 'true', checked: true,
+                        listeners: {check: function(cmp, checked){updateDelay.setVisible(checked);}}
+                    },
+                    {name: 'autoRefresh', boxLabel: 'Manual Refresh', inputValue: 'false'}]
+                },
+                updateDelay
+            ],
+            padding: '10px 0px',
+            border: false,
+            height: 100,
+            labelWidth: 100
+        });
+        items.push(this.snapshotOptions);
 
         var panel = new Ext.Panel({
             border: false,
@@ -518,6 +557,9 @@ LABKEY.study.CreateStudyWizard = Ext.extend(Ext.util.Observable, {
 
             params.datasets.push(ds.data.DataSetId);
         }
+
+        var form = this.snapshotOptions.getForm();
+        params.dataRefresh = form.getValues();
 
         this.win.getEl().mask("creating study...", "x-mask-loading");
 

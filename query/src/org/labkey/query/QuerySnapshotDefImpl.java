@@ -54,19 +54,33 @@ public class QuerySnapshotDefImpl implements QuerySnapshotDefinition
     private boolean _dirty;
 
 
-    public QuerySnapshotDefImpl(QueryDef queryDef, String name)
-    {
-        this(queryDef.getContainerId(), queryDef.getSchema(), null, name);
-        _queryDef = queryDef;
-    }
-
-    public QuerySnapshotDefImpl(String containerId, String schema, String queryTableName, String name)
+    public QuerySnapshotDefImpl(QueryDefinition queryDef, Container container, String name)
     {
         _snapshotDef = new QuerySnapshotDef();
-        _snapshotDef.setContainer(containerId);
-        _snapshotDef.setSchema(schema);
+
         _snapshotDef.setName(name);
-        _snapshotDef.setQueryTableName(queryTableName);
+        _snapshotDef.setSchema(queryDef.getSchemaName());
+        _snapshotDef.setContainer(container.getId());
+
+        // if this is a table based query view, we just need to save the table name, else create a copy of the query
+        // definition for the snapshot to refer back to on updates.
+        if (queryDef.isTableQueryDefinition())
+        {
+            _snapshotDef.setQueryTableName(queryDef.getName());
+            _snapshotDef.setQueryTableContainer(queryDef.getContainer());
+        }
+        else
+        {
+            QueryDefinitionImpl qd = new CustomQueryDefinitionImpl(queryDef.getUser(), queryDef.getContainer(), queryDef.getSchemaName(), queryDef.getName() + "_" + name);
+
+            qd.setMetadataXml(queryDef.getMetadataXml());
+            qd.setSql(queryDef.getSql());
+            qd.setDescription(queryDef.getDescription());
+            qd.setIsHidden(true);
+            qd.setIsSnapshot(true);
+            
+            _queryDef = qd.getQueryDef();
+        }
         _dirty = true;
     }
 
@@ -120,7 +134,7 @@ public class QuerySnapshotDefImpl implements QuerySnapshotDefinition
         }
         else if (_snapshotDef.getQueryTableName() != null)
         {
-            UserSchema schema = QueryService.get().getUserSchema(user, getContainer(), _snapshotDef.getSchema());
+            UserSchema schema = QueryService.get().getUserSchema(user, _snapshotDef.getQueryTableContainer(), _snapshotDef.getSchema());
             return schema.getQueryDefForTable(_snapshotDef.getQueryTableName());
         }
         return null;
@@ -209,9 +223,8 @@ public class QuerySnapshotDefImpl implements QuerySnapshotDefinition
         return _snapshotDef.getFilter();
     }
 
-    public void save(User user, Container container) throws Exception
+    public void save(User user) throws Exception
     {
-        //setContainer(container);
         if (!_dirty)
             return;
         if (isNew())

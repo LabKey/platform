@@ -24,8 +24,13 @@ import org.labkey.api.action.SpringActionController;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.DbScope;
+import org.labkey.api.data.TableInfo;
 import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.portal.ProjectUrls;
+import org.labkey.api.query.QueryDefinition;
+import org.labkey.api.query.QueryService;
+import org.labkey.api.query.snapshot.QuerySnapshotDefinition;
+import org.labkey.api.query.snapshot.QuerySnapshotService;
 import org.labkey.api.security.RequiresPermissionClass;
 import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.AdminPermission;
@@ -33,21 +38,28 @@ import org.labkey.api.study.Study;
 import org.labkey.api.util.FileUtil;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.XmlBeansUtil;
-import org.labkey.api.view.ActionURL;
 import org.labkey.api.writer.Archive;
 import org.labkey.api.writer.VirtualFile;
 import org.labkey.study.StudyFolderType;
 import org.labkey.study.StudySchema;
+import org.labkey.study.importer.DatasetImporter;
 import org.labkey.study.importer.ImportContext;
+import org.labkey.study.importer.MissingValueImporter;
 import org.labkey.study.importer.ParticipantGroupImporter;
+import org.labkey.study.importer.QcStatesImporter;
 import org.labkey.study.importer.VisitImporter;
+import org.labkey.study.model.DataSetDefinition;
 import org.labkey.study.model.EmphasisStudyDefinition;
 import org.labkey.study.model.ParticipantCategory;
 import org.labkey.study.model.ParticipantGroupManager;
+import org.labkey.study.model.SecurityType;
 import org.labkey.study.model.StudyImpl;
 import org.labkey.study.model.StudyManager;
+import org.labkey.study.query.StudyQuerySchema;
+import org.labkey.study.writer.CohortWriter;
 import org.labkey.study.writer.DatasetWriter;
 import org.labkey.study.writer.ParticipantGroupWriter;
+import org.labkey.study.writer.QcStateWriter;
 import org.labkey.study.writer.StudyExportContext;
 import org.labkey.study.writer.StudyWriter;
 import org.labkey.study.writer.VisitMapWriter;
@@ -82,6 +94,7 @@ public class CreateAncillaryStudyAction extends MutatingApiAction<EmphasisStudyD
 {
     private Container _dstContainer;
     private StudyImpl _parentStudy;
+    private List<DataSetDefinition> _datasets = new ArrayList<DataSetDefinition>();
 
     @Override
     public ApiResponse execute(EmphasisStudyDefinition form, BindException errors) throws Exception
@@ -96,13 +109,24 @@ public class CreateAncillaryStudyAction extends MutatingApiAction<EmphasisStudyD
             StudyImpl newStudy = createNewStudy(form);
             if (newStudy != null)
             {
-                MemoryVirtualFile vf = new MemoryVirtualFile("");
+                // get the list of datasets to export
+                for (int datasetId : form.getDatasets())
+                {
+                    DataSetDefinition def = StudyManager.getInstance().getDataSetDefinition(getParentStudy(), datasetId);
 
+                    if (def != null)
+                        _datasets.add(def);
+                }
+
+                MemoryVirtualFile vf = new MemoryVirtualFile();
+
+                // export objects from the parent study, then import then into the new study
                 exportFromParentStudy(form, errors, vf);
-
-                // import content from the parent study into the new study
                 importToDestinationStudy(form, errors, newStudy, vf);
 
+                // snapshot datasets
+                createSnapshotDatasets(form, errors, newStudy);
+                
                 // copy participants
                 copyParticipants(form, errors, newStudy, vf);
                 String redirect = PageFlowUtil.urlProvider(ProjectUrls.class).getBeginURL(_dstContainer).getLocalURIString();
@@ -110,7 +134,6 @@ public class CreateAncillaryStudyAction extends MutatingApiAction<EmphasisStudyD
                 resp.put("redirect", redirect);
                 resp.put("success", true);
             }
-
             scope.commitTransaction();
         }
         finally
@@ -121,22 +144,31 @@ public class CreateAncillaryStudyAction extends MutatingApiAction<EmphasisStudyD
         return resp;
     }
 
+    private StudyImpl getParentStudy()
+    {
+        return _parentStudy;
+    }
+
     private void exportFromParentStudy(EmphasisStudyDefinition form, BindException errors, VirtualFile vf) throws Exception
     {
         User user = getViewContext().getUser();
         Set<String> dataTypes = new HashSet<String>();
 
-        // export conten from the parent study into a memory virtual file to avoid needing to serialize to disk
-        // need a better way to add types...
+        // export content from the parent study into a memory virtual file to avoid needing to serialize to disk
+        // need a better way to add export types...
 
+        dataTypes.add(CohortWriter.DATA_TYPE);
+        dataTypes.add(QcStateWriter.DATA_TYPE);
         dataTypes.add(VisitMapWriter.DATA_TYPE);
-        dataTypes.add(ParticipantGroupWriter.DATA_TYPE);
         dataTypes.add(DatasetWriter.SELECTION_TEXT);
 
         StudyWriter writer = new StudyWriter();
         StudyExportContext ctx = new StudyExportContext(_parentStudy, user, _parentStudy.getContainer(), false, dataTypes, Logger.getLogger(StudyWriter.class));
 
-        writer.write(_parentStudy, ctx, vf);
+        ctx.getDatasets().clear();
+        ctx.getDatasets().addAll(_datasets);
+
+        writer.write(getParentStudy(), ctx, vf);
     }
 
     private void importToDestinationStudy(EmphasisStudyDefinition form, BindException errors, StudyImpl newStudy, VirtualFile vf) throws Exception
@@ -147,17 +179,46 @@ public class CreateAncillaryStudyAction extends MutatingApiAction<EmphasisStudyD
         if (studyXml instanceof StudyDocument)
         {
             StudyDocument studyDoc = (StudyDocument)studyXml;
-            ImportContext importContext = new ImportContext(user, _parentStudy.getContainer(), studyDoc, Logger.getLogger(StudyWriter.class));
+            ImportContext importContext = new ImportContext(user, newStudy.getContainer(), studyDoc, Logger.getLogger(StudyWriter.class));
+
+            // missing values and qc states
+            new MissingValueImporter().process(newStudy, importContext, vf, errors);
+            new QcStatesImporter().process(newStudy, importContext, vf, errors);
 
             // import visits
             VisitImporter visitImporter = new VisitImporter();
             visitImporter.process(newStudy, importContext, vf, errors);
 
-            // datasets (temporary)
-/*
+            // dataset definitions
             DatasetImporter datasetImporter = new DatasetImporter();
             datasetImporter.process(newStudy, importContext, vf, errors);
-*/
+        }
+    }
+
+    private void createSnapshotDatasets(EmphasisStudyDefinition form, BindException errors, StudyImpl newStudy) throws Exception
+    {
+        User user = getViewContext().getUser();
+        QuerySnapshotService.I svc = QuerySnapshotService.get(StudyManager.getSchemaName());
+
+        for (DataSetDefinition def : _datasets)
+        {
+            StudyQuerySchema schema = new StudyQuerySchema(getParentStudy(), user, true);
+            TableInfo table = def.getTableInfo(user);
+            QueryDefinition queryDef = QueryService.get().createQueryDefForTable(schema, table.getName());
+
+            if (queryDef != null)
+            {
+                queryDef.setContainer(getParentStudy().getContainer());
+
+                QuerySnapshotDefinition qsDef = QueryService.get().createQuerySnapshotDef(newStudy.getContainer(), queryDef, def.getLabel());
+                qsDef.setUpdateDelay(form.getUpdateDelay());
+                qsDef.save(user);
+
+                if (svc != null)
+                {
+                    svc.createSnapshot(getViewContext(), qsDef, errors);
+                }
+            }
         }
     }
 
@@ -193,12 +254,15 @@ public class CreateAncillaryStudyAction extends MutatingApiAction<EmphasisStudyD
             groupWriter.setCategoriesToCopy(categoriesToCopy);
             groupWriter.write(_parentStudy, ctx, vf);
 
-            ParticipantGroupImporter groupImporter = new ParticipantGroupImporter();
-            XmlObject groupDoc = vf.getXmlBean(ParticipantGroupWriter.FILE_NAME);
-            if (groupDoc != null)
+            XmlObject studyXml = vf.getXmlBean("study.xml");
+
+            if (studyXml instanceof StudyDocument)
             {
-                //ImportContext importCtx = new ImportContext(user, _dstContainer, null, Logger.getLogger(CreateAncillaryStudyAction.class));
-                //groupImporter.process(newStudy, importContext, groupDoc);
+                StudyDocument studyDoc = (StudyDocument)studyXml;
+                ImportContext importContext = new ImportContext(user, newStudy.getContainer(), studyDoc, Logger.getLogger(StudyWriter.class));
+
+                ParticipantGroupImporter groupImporter = new ParticipantGroupImporter();
+                groupImporter.process(newStudy, importContext, vf, errors);
             }
         }
     }
@@ -231,9 +295,20 @@ public class CreateAncillaryStudyAction extends MutatingApiAction<EmphasisStudyD
     {
         StudyImpl study = new StudyImpl(_dstContainer, form.getName());
 
+        // new studies should default to read only
+        SecurityType securityType = _parentStudy.getSecurityType();
+        switch (_parentStudy.getSecurityType())
+        {
+            case BASIC_WRITE:
+                securityType = SecurityType.BASIC_READ;
+                break;
+            case ADVANCED_WRITE:
+                securityType = SecurityType.ADVANCED_READ;
+                break;
+        }
         study.setTimepointType(_parentStudy.getTimepointType());
         study.setStartDate(_parentStudy.getStartDate());
-        study.setSecurityType(_parentStudy.getSecurityType());
+        study.setSecurityType(securityType);
         study.setSubjectNounSingular(_parentStudy.getSubjectNounSingular());
         study.setSubjectNounPlural(_parentStudy.getSubjectNounPlural());
         study.setSubjectColumnName(_parentStudy.getSubjectColumnName());
@@ -251,6 +326,11 @@ public class CreateAncillaryStudyAction extends MutatingApiAction<EmphasisStudyD
         private Map<String, XmlObject> _docMap = new HashMap<String, XmlObject>();
         private Map<String, StringWriter> _textDocMap = new HashMap<String, StringWriter>();
         private Map<String, MemoryVirtualFile> _folders = new HashMap<String, MemoryVirtualFile>();
+
+        public MemoryVirtualFile()
+        {
+            this("");
+        }
 
         public MemoryVirtualFile(String root)
         {

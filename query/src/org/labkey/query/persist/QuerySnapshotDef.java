@@ -67,6 +67,7 @@ public class QuerySnapshotDef extends Entity implements Cloneable
     private Date _nextUpdate;
     private int _updateDelay;
     private String _queryTableName;
+    private Container _queryTableContainer;
 
     public int getRowId()
     {
@@ -166,6 +167,16 @@ public class QuerySnapshotDef extends Entity implements Cloneable
     public void setQueryTableName(String queryTableName)
     {
         _queryTableName = queryTableName;
+    }
+
+    public Container getQueryTableContainer()
+    {
+        return _queryTableContainer;
+    }
+
+    public void setQueryTableContainer(Container queryTableContainer)
+    {
+        _queryTableContainer = queryTableContainer;
     }
 
     public QuerySnapshotDef clone()

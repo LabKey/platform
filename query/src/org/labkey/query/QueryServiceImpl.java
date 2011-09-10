@@ -734,26 +734,14 @@ public class QueryServiceImpl extends QueryService
         return qdef;
     }
 
+    public QuerySnapshotDefinition createQuerySnapshotDef(Container container, QueryDefinition queryDef, String name)
+    {
+        return new QuerySnapshotDefImpl(queryDef, container, name);
+    }
+
     public QuerySnapshotDefinition createQuerySnapshotDef(QueryDefinition queryDef, String name)
     {
-        // if this is a table based query view, we just need to save the table name, else create a copy of the query
-        // definition for the snapshot to refer back to on updates.
-        if (queryDef.isTableQueryDefinition())
-        {
-            return new QuerySnapshotDefImpl(queryDef.getContainer().getId(), queryDef.getSchemaName(), queryDef.getName(), name);
-        }
-        else
-        {
-            QueryDefinitionImpl qd = new CustomQueryDefinitionImpl(queryDef.getUser(), queryDef.getContainer(), queryDef.getSchemaName(), queryDef.getName() + "_" + name);
-
-            qd.setMetadataXml(queryDef.getMetadataXml());
-            qd.setSql(queryDef.getSql());
-            qd.setDescription(queryDef.getDescription());
-            qd.setIsHidden(true);
-            qd.setIsSnapshot(true);
-
-            return new QuerySnapshotDefImpl(qd.getQueryDef(), name);
-        }
+        return createQuerySnapshotDef(queryDef.getContainer(), queryDef, name);
     }
 
     private ColumnInfo getColumn(AliasManager manager, TableInfo table, Map<FieldKey, ColumnInfo> columnMap, FieldKey key)

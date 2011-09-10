@@ -1845,6 +1845,7 @@ query/resources/schemas/dbscripts/postgresql/obsolete/query-9.21-9.22.sql -text
 query/resources/schemas/dbscripts/postgresql/obsolete/query-9.22-9.23.sql -text
 query/resources/schemas/dbscripts/postgresql/query-0.00-9.10.sql -text
 query/resources/schemas/dbscripts/postgresql/query-10.10-10.20.sql -text
+query/resources/schemas/dbscripts/postgresql/query-11.20-11.21.sql -text
 query/resources/schemas/dbscripts/postgresql/query-9.20-9.30.sql -text
 query/resources/schemas/dbscripts/sqlserver/obsolete/query-0.00-2.00.sql -text
 query/resources/schemas/dbscripts/sqlserver/obsolete/query-0.00-2.20.sql -text
@@ -1877,6 +1878,7 @@ query/resources/schemas/dbscripts/sqlserver/obsolete/query-9.21-9.22.sql -text
 query/resources/schemas/dbscripts/sqlserver/obsolete/query-9.22-9.23.sql -text
 query/resources/schemas/dbscripts/sqlserver/query-0.00-9.10.sql -text
 query/resources/schemas/dbscripts/sqlserver/query-10.10-10.20.sql -text
+query/resources/schemas/dbscripts/sqlserver/query-11.20-11.21.sql -text
 query/resources/schemas/dbscripts/sqlserver/query-9.20-9.30.sql -text
 query/resources/schemas/query.xml -text
 query/src/META-INF/query/jars.txt -text
