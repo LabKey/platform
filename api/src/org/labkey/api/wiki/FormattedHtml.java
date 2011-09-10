@@ -45,17 +45,8 @@ public class FormattedHtml
 
     public FormattedHtml(String html, boolean isVolatile, Set<String> dependencies)
     {
-        if (html.startsWith("<div class=\"labkey-wiki\">"))
-        {
-            throw new IllegalStateException("HTML source already wrapped in a labkey-wiki div");  
-        }
-
-        if (html.contains("CDATA"))
-        {
-            throw new IllegalStateException("CDATA detected");
-        }
-
-        _html = "<div class=\"labkey-wiki\">" + html + "</div>";
+        assert !html.trim().startsWith("<div class=\"labkey-wiki\">");
+        _html = html;
         _volatile = isVolatile;
         _dependencies = dependencies;
     }

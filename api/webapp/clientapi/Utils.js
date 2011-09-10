@@ -301,7 +301,7 @@ LABKEY.Utils = new function()
          * or DecimalFormat to control how the value is formatted</li>
          * <li><b>timeOnly:</b> for dates, whether the date part should be ignored and only the time value is important</li>
          * </ul>
-         * @example &lt;script language="javascript"&gt;
+         * @example &lt;script type="text/javascript"&gt;
 LABKEY.Utils.convertToExcel(
 {
 	fileName: 'output.xls',

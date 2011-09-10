@@ -38,7 +38,7 @@
 </div>
 <table class="labkey-wp" style="background-color:#ffffff;">
 <tr class="labkey-wp-header" style="min-width:600px;">
-    <th class="labkey-wp-title-left\" style="padding:5px;"><span class="labkey-header" style="font-weight:normal;">Copy/paste text</span></th>
+    <th class="labkey-wp-title-left" style="padding:5px;"><span class="labkey-header" style="font-weight:normal;">Copy/paste text</span></th>
     <th class="labkey-wp-title-right"><%=PageFlowUtil.generateButtonHtml("&ndash;","#",null,"id='"+copyPasteDivId+"Expando'")%></th>
 </tr>
 <tr><td colspan=2 style="display:inline;"><div id="<%=copyPasteDivId%>"></div></td></tr>
@@ -46,7 +46,7 @@
 <br>
 <table class="labkey-bordered labkey-wp" style="background-color:#ffffff;">
 <tr class="labkey-wp-header" style="min-width:600px;">
-    <th class="labkey-wp-title-left\" style="padding:5px;"><span class="labkey-header" style="font-weight:normal;">Upload file (.xls, .csv, .txt)</span></th>
+    <th class="labkey-wp-title-left" style="padding:5px;"><span class="labkey-header" style="font-weight:normal;">Upload file (.xls, .csv, .txt)</span></th>
     <th class="labkey-wp-title-right"><%=PageFlowUtil.generateButton("+","#",null,"id='"+uploadFileDivId+"Expando'")%></tr>
 <tr><td colspan=2 style="display:none;"><div id="<%=uploadFileDivId%>"></div></td></tr>
 </table>

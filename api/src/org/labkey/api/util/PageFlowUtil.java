@@ -1547,16 +1547,18 @@ public class PageFlowUtil
 
         try
         {
-            // parse want's to use streams
+            // parse wants to use streams
             ByteArrayOutputStream out = new ByteArrayOutputStream();
             tidy.setErrout(new PrintWriter(err));
             tidy.parse(new ByteArrayInputStream(xml.getBytes("UTF-8")), out);
             tidy.getErrout().close();
+
             for (String error : err.toString().split("\n"))
             {
                 if (error.contains("Error:"))
                     errors.add(error.trim());
             }
+
             return new String(out.toByteArray(), "UTF-8");
         }
         catch (UnsupportedEncodingException x)
@@ -1816,8 +1818,8 @@ public class PageFlowUtil
         String serverHash = getServerSessionHash();
 
         StringBuilder sb = new StringBuilder();
-        sb.append("<script src=\"").append(contextPath).append("/labkey.js?").append(serverHash).append("\" type=\"text/javascript\" language=\"javascript\"></script>\n");
-        sb.append("<script type=\"text/javascript\" language=\"javascript\">\n");
+        sb.append("<script src=\"").append(contextPath).append("/labkey.js?").append(serverHash).append("\" type=\"text/javascript\"></script>\n");
+        sb.append("<script type=\"text/javascript\">\n");
         sb.append("LABKEY.init(").append(jsInitObject()).append(");\n");
         sb.append("</script>\n");
         return sb.toString();
@@ -1839,14 +1841,14 @@ public class PageFlowUtil
 
         if (combinedJS && !AppProps.getInstance().isDevMode())
         {
-            sb.append("<script src=\"").append(contextPath).append("/core/combinedJavascript.view?").append(serverHash).append("\" type=\"text/javascript\" language=\"javascript\"></script>\n");
+            sb.append("<script src=\"").append(contextPath).append("/core/combinedJavascript.view?").append(serverHash).append("\" type=\"text/javascript\"></script>\n");
         }
         else
         {
             for (String s : scripts)
-                sb.append("<script src=\"").append(contextPath).append("/").append(filter(s)).append("?").append(serverHash).append("\" type=\"text/javascript\" language=\"javascript\"></script>\n");
+                sb.append("<script src=\"").append(contextPath).append("/").append(filter(s)).append("?").append(serverHash).append("\" type=\"text/javascript\"></script>\n");
         }
-        sb.append("<script type=\"text/javascript\" language=\"javascript\">\nLABKEY.loadedScripts(");
+        sb.append("<script type=\"text/javascript\">\nLABKEY.loadedScripts(");
         String comma = "";
         for (String s : includes)
         {

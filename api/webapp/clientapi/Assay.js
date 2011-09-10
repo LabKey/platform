@@ -383,7 +383,7 @@ LABKEY.Assay = new function()
         *       generating a timeout error (defaults to 30000).
         * @example Example:
 <pre name="code" class="xml">
-&lt;script language="javascript"&gt;
+&lt;script type="text/javascript"&gt;
     function showGraph(data)
     {
         var el = document.getElementById("graphDiv");

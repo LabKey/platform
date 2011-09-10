@@ -89,7 +89,7 @@ public class MenuView extends VBox
             renderExpandCollapseTD(request, out, showFolders);
             out.println("</tr>");
         }
-        out.print("</table></div");
+        out.print("</table></div>");
     }
 
     private void renderExpandCollapseTD(HttpServletRequest request, PrintWriter out, boolean showFolders)

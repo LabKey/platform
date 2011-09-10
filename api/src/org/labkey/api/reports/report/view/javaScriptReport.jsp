@@ -23,7 +23,7 @@
     String uniqueDivName = "div_" + UniqueID.getServerSessionScopedUID();  // Unique div name to support multiple reports per page
 %>
 <div id="<%=uniqueDivName%>"></div>
-<script language="javascript" type="text/javascript">
+<script type="text/javascript">
     (function()
     {
         if (typeof render == 'function')

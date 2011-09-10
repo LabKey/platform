@@ -48,8 +48,14 @@ public interface WikiService
      */
     public void registerMacroProvider(String name, MacroProvider provider);
 
+    public String getFormattedHtml(WikiRendererType rendererType, String source);
+    public String getFormattedHtml(WikiRendererType rendererType, String source, String attachPrefix, Collection<? extends Attachment> attachments);
+
+    @Deprecated // use getFormattedHtml() -- service users shouldn't be exposed to WikiRenderer and FormattedHtml
     public WikiRenderer getRenderer(WikiRendererType rendererType);
+    @Deprecated // use getFormattedHtml() -- service users shouldn't be exposed to WikiRenderer and FormattedHtml
     public WikiRenderer getRenderer(WikiRendererType rendererType, String attachPrefix, Collection<? extends Attachment> attachments);
+
     public WikiRendererType getDefaultWikiRendererType();
     public WikiRendererType getDefaultMessageRendererType();
     public java.util.List<String> getNames(Container c);
