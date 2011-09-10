@@ -279,35 +279,44 @@ LABKEY.vis.XYChartComponent = Ext.extend(Ext.BoxComponent, {
                 return this.index % 9 == 0}); //Don't like this rule, but works with ticks that protovis generates
 
         var angle;
+        var textRenderer;
 
         switch (edge)
         {
             case "left":
                 rule.bottom(scale);
                 angle = - Math.PI / 2;
+                textRenderer = this.getTickRenderer(scale);
                 break;
             case "bottom":
                 rule.left(scale);
                 angle = 0;
+                if(this.labels){
+                    textRenderer = this.getVisitBasedRenderer(this.labels);
+                } else {
+                    textRenderer = this.getTickRenderer(scale);
+                }
                 break;
             case "right":
                 rule.bottom(scale);
                 angle = Math.PI / 2;
+                textRenderer = this.getTickRenderer(scale);
                 break;
             case "top":
                 rule.bottom(scale);
                 angle = 0;
+                textRenderer = this.getTickRenderer(scale);
                 break;
         }
 
         rule.anchor(edge).add(pv.Label)
-                //See issue 11789. Work around bug with pv number formatting
-                .text(this.getTickRenderer(scale))
+            //See issue 11789. Work around bug with pv number formatting
+                .text(textRenderer)
                 .visible(function (d) {
-                        if (axis.scale == "log")
-                            return this.index % 9 == 0;
-                        else
-                            return d > start || start < 0 });
+                    if (axis.scale == "log")
+                        return this.index % 9 == 0;
+                    else
+                        return d > start || start < 0 });
 
 
         if (axis.caption) {
@@ -365,6 +374,12 @@ LABKEY.vis.XYChartComponent = Ext.extend(Ext.BoxComponent, {
             else
                 return str;
         }
+    },
+
+    getVisitBasedRenderer: function (labels) {
+            return function(n){
+                return labels[n];
+            }
     },
 
     drawLegend: function () {
