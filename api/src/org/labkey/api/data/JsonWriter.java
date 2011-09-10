@@ -142,6 +142,12 @@ public class JsonWriter
                 }
                 ext.put("xtype","textarea");
             }
+
+            props.put("shortCaption", cinfo.getShortLabel());
+        }
+        else
+        {
+            props.put("shortCaption", dc.getCaption());
         }
 
         props.put("caption", dc.getCaption());

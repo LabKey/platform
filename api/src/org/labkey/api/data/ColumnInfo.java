@@ -267,6 +267,8 @@ public class ColumnInfo extends ColumnRenderProperties implements SqlColumn
     {
         if (col.label != null)
             setLabel(col.getLabel());
+        if (col.shortLabel != null)
+            setShortLabel(col.getShortLabel());
         setDefaultValue(col.getDefaultValue());
         setDescription(col.getDescription());
         if (col.isFormatStringSet())

@@ -93,6 +93,10 @@ public class ExcelColumn extends RenderColumn
         setCaption(dc.getCaptionExpr());
     }
 
+    public DisplayColumn getDisplayColumn()
+    {
+        return _dc;
+    }
 
     public void setName(String name)
     {

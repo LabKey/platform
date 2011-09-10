@@ -27,6 +27,8 @@ import java.util.Map;
 
 public class LookupColumn extends ColumnInfo
 {
+    private String _shortLabel;
+
     /**
      * Create a lookup column to a "real" table - one that actually exists
      * in the underlying database
@@ -46,11 +48,17 @@ public class LookupColumn extends ColumnInfo
         {
             ret.setLabel(lookupColumn.getLabel());
         }
+        ret.setShortLabel(lookupColumn.getShortLabel());
         if (ret.getFk() instanceof RowIdForeignKey)
         {
             ret.setFk(null);
         }
         return ret;
+    }
+
+    public String getShortLabel()
+    {
+        return super.getShortLabel();
     }
 
     @Override

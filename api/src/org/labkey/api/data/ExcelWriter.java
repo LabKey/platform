@@ -38,6 +38,7 @@ import java.sql.ResultSetMetaData;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.regex.Pattern;
@@ -136,6 +137,19 @@ public class ExcelWriter
     public void setShowInsertableColumnsOnly(boolean b)
     {
         this._insertableColumnsOnly = b;
+        if (_insertableColumnsOnly)
+        {
+            // Remove any insert only columns that have already made their way into the list
+            Iterator<ExcelColumn> i = _columns.iterator();
+            while (i.hasNext())
+            {
+                ExcelColumn column = i.next();
+                if (column.getDisplayColumn() != null && column.getDisplayColumn().getColumnInfo() != null && !column.getDisplayColumn().getColumnInfo().isShownInInsertView())
+                {
+                    i.remove();
+                }
+            }
+        }
     }
 
 

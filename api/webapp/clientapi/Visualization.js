@@ -211,7 +211,8 @@ LABKEY.Visualization = new function() {
                 measures : config.measures,
                 sorts : config.sorts,
                 filterUrl: config.filterUrl,
-                filterQuery: config.filterQuery
+                filterQuery: config.filterQuery,
+                groupBys: config.groupBys
             };
 
             Ext.Ajax.request(

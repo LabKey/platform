@@ -49,6 +49,8 @@ public abstract class ColumnRenderProperties implements ImportAliasable
     // in its constructor:
     protected boolean nullable = false;
     protected String label;
+    /** The column's label, without any prefixes from parent lookups */
+    protected String shortLabel;
     protected String description;
     protected boolean hidden;
     protected Boolean measure;
@@ -72,6 +74,7 @@ public abstract class ColumnRenderProperties implements ImportAliasable
         to.excelFormatString = excelFormatString;
         to.tsvFormatString = tsvFormatString;
         to.label = label;
+        to.shortLabel = shortLabel;
         to.hidden = hidden;
         to.shownInInsertView = shownInInsertView;
         to.shownInUpdateView = shownInUpdateView;
@@ -170,6 +173,16 @@ public abstract class ColumnRenderProperties implements ImportAliasable
     public void setLabel(String label)
     {
         this.label = label;
+    }
+
+    public String getShortLabel()
+    {
+        return shortLabel == null ? label : shortLabel;
+    }
+
+    public void setShortLabel(String shortLabel)
+    {
+        this.shortLabel = shortLabel;
     }
 
     public String getDescription()

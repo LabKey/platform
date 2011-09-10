@@ -1570,6 +1570,14 @@ LABKEY.Query = new function()
 /**#@+
 * @memberOf LABKEY.Query.FieldMetaData#
 * @field
+* @name shortCaption
+* @description The caption for this field, without any prefix from potential parent lookups. In many cases this will be identical to the caption property.
+* @type    String
+*/
+
+/**#@+
+* @memberOf LABKEY.Query.FieldMetaData#
+* @field
 * @name description
 * @description The description for this field
 * @type    String
