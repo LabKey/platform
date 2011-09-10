@@ -34,7 +34,7 @@ public interface QuerySnapshotDefinition
     QueryDefinition getQueryDefinition(User user);
 
     boolean canEdit(User user);
-    void save(User user, Container container) throws Exception;
+    void save(User user) throws Exception;
     void delete(User user) throws Exception;
     User getCreatedBy();
     User getModifiedBy();

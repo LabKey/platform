@@ -70,7 +70,7 @@ public abstract class AbstractSnapshotProvider implements QuerySnapshotService.I
 
     public ActionURL updateSnapshotDefinition(ViewContext context, QuerySnapshotDefinition def, BindException errors) throws Exception
     {
-        def.save(context.getUser(), context.getContainer());
+        def.save(context.getUser());
         return null;
     }
 

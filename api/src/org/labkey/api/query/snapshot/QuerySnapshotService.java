@@ -68,6 +68,7 @@ public class QuerySnapshotService
 
         public ActionURL getEditSnapshotURL(QuerySettings settings, ViewContext context);
 
+        public void createSnapshot(ViewContext context, QuerySnapshotDefinition qsDef, BindException errors) throws Exception;
         public ActionURL createSnapshot(QuerySnapshotForm form, BindException errors) throws Exception;
 
         /**
