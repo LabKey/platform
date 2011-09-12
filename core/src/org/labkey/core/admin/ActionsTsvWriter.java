@@ -19,6 +19,7 @@ package org.labkey.core.admin;
 import org.labkey.api.action.SpringActionController;
 import org.labkey.api.data.TSVWriter;
 
+import java.util.Arrays;
 import java.util.Map;
 
 /*
@@ -28,13 +29,18 @@ import java.util.Map;
 */
 public class ActionsTsvWriter extends TSVWriter
 {
-    protected void write()
+    @Override
+    protected void writeColumnHeaders()
+    {
+        writeLine(Arrays.asList("module", "controller", "action", "invocations", "cumulative", "average", "max"));
+    }
+
+    @Override
+    protected void writeBody()
     {
         try
         {
             Map<String, Map<String, Map<String, SpringActionController.ActionStats>>> modules = ActionsHelper.getActionStatistics();
-
-            _pw.println("module\tcontroller\taction\tinvocations\tcumulative\taverage\tmax");
 
             for (Map.Entry<String, Map<String, Map<String, SpringActionController.ActionStats>>> module : modules.entrySet())
             {
