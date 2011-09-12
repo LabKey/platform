@@ -217,10 +217,22 @@ LABKEY.study.CreateStudyWizard = Ext.extend(Ext.util.Observable, {
 
         items.push({xtype:'displayfield', html: txt});
 
-        this.newGroupRadio = new Ext.form.Radio({boxLabel:'Create a new participant group', name: 'renderType', scope: this,
-            handler: this.showNewParticipantGroupPanel});
-        this.existingGroupRadio = new Ext.form.Radio({boxLabel:'Select from existing participant groups', name: 'renderType',
-            checked: true, scope:this, handler: this.showExistingParticipantGroupPanel});
+        this.newGroupRadio = new Ext.form.Radio({
+            boxLabel:'Create a new participant group',
+            name: 'renderType',
+            inputValue: 'new',
+            scope: this,
+            handler: this.showNewParticipantGroupPanel
+        });
+
+        this.existingGroupRadio = new Ext.form.Radio({
+            boxLabel:'Select from existing participant groups',
+            name: 'renderType',
+            inputValue: 'existing',
+            checked: true,
+            scope:this,
+            handler: this.showExistingParticipantGroupPanel
+        });
 
         var formItems = [
             {
@@ -461,7 +473,7 @@ LABKEY.study.CreateStudyWizard = Ext.extend(Ext.util.Observable, {
             enableFilters: true,
             editable: false,
             stripeRows: true,
-            cls: 'extContainer',
+            cls: 'extContainer studyWizardDatasetList',
             flex: 1,
             tbar: []
         });
