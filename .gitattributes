@@ -247,7 +247,9 @@ api/src/org/labkey/api/data/SqlScriptParser.java -text
 api/src/org/labkey/api/data/SqlScriptRunner.java -text
 api/src/org/labkey/api/data/SqlSelector.java -text
 api/src/org/labkey/api/data/StringBuilderWriter.java -text
+api/src/org/labkey/api/data/TSVColumnWriter.java -text
 api/src/org/labkey/api/data/TSVGridWriter.java -text
+api/src/org/labkey/api/data/TSVMapWriter.java -text
 api/src/org/labkey/api/data/TSVWriter.java -text
 api/src/org/labkey/api/data/TableChange.java -text
 api/src/org/labkey/api/data/TableInfo.java -text

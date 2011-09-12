@@ -20,15 +20,21 @@ import org.junit.Assert;
 import org.junit.Test;
 import org.labkey.api.util.FileUtil;
 
+import java.io.PrintWriter;
+import java.util.Iterator;
+import java.util.List;
 import java.util.regex.Pattern;
 
-public abstract class TSVWriter extends TextWriter
+public class TSVWriter extends TextWriter
 {
     private String _filenamePrefix = "tsv";
 
     protected char _chDelimiter = '\t';
     protected char _chQuote = '"';
     protected String _rowSeparator = "\n";
+
+    protected List<String> _fileHeader = null;
+    protected boolean _headerRowVisible = true;
 
 
     public TSVWriter()
@@ -143,6 +149,86 @@ public abstract class TSVWriter extends TextWriter
         return FileUtil.makeFileNameWithTimestamp(getFilenamePrefix(), "tsv");
     }
 
+    public void setFileHeader(List<String> fileHeader)
+    {
+        _fileHeader = fileHeader;
+    }
+
+    public boolean isHeaderRowVisible()
+    {
+        return _headerRowVisible;
+    }
+
+
+    public void setHeaderRowVisible(boolean headerRowVisible)
+    {
+        _headerRowVisible = headerRowVisible;
+    }
+
+    @Override
+    protected void write()
+    {
+        writeFileHeader();
+        if (isHeaderRowVisible())
+            writeColumnHeaders();
+        writeBody();
+        writeFileFooter();
+    }
+
+    public void writeFileHeader()
+    {
+        if (null == _fileHeader)
+            return;
+
+        for (String line : _fileHeader)
+            _pw.println(line);
+    }
+
+    protected void writeFileFooter()
+    {
+    }
+
+    protected void writeColumnHeaders()
+    {
+    }
+
+    // CONSIDER: make abstract
+    protected void writeBody()
+    {
+    }
+
+    protected void writeLine(Iterable<String> values)
+    {
+        if (values == null)
+            return;
+
+        PrintWriter pw = getPrintWriter();
+        Iterator<String> iter = values.iterator();
+        while (iter.hasNext())
+        {
+            pw.write(quoteValue(iter.next()));
+            if (iter.hasNext())
+                pw.write(_chDelimiter);
+        }
+
+        pw.append(_rowSeparator);
+    }
+
+    protected void writeLine(String[] values)
+    {
+        if (values == null || values.length == 0)
+            return;
+
+        PrintWriter pw = getPrintWriter();
+        for (int i = 0; i < values.length; i++)
+        {
+            pw.write(quoteValue(values[i]));
+            if (i < values.length-1)
+                pw.write(_chDelimiter);
+        }
+
+        pw.append(_rowSeparator);
+    }
 
     public static class TestCase extends Assert
     {

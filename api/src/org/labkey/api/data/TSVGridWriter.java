@@ -22,7 +22,6 @@ import org.labkey.api.query.QueryService;
 import org.labkey.api.view.HttpView;
 
 import java.io.IOException;
-import java.io.PrintWriter;
 import java.sql.ResultSet;
 import java.sql.ResultSetMetaData;
 import java.sql.SQLException;
@@ -33,17 +32,11 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 
-public class TSVGridWriter extends TSVWriter
+public class TSVGridWriter extends TSVColumnWriter
 {
-    public enum ColumnHeaderType {caption, propertyName, queryColumnName}
 
     private Results _rs;
-    private List<String> _fileHeader = null;
-    private List<DisplayColumn> _displayColumns;
-    private boolean _captionRowVisible = true;
-    private ColumnHeaderType _columnHeaderType = ColumnHeaderType.caption;
-    private boolean _applyFormats = true;
-
+    protected List<DisplayColumn> _displayColumns;
 
     public TSVGridWriter(RenderContext ctx, TableInfo tinfo, List<DisplayColumn> displayColumns) throws SQLException, IOException
     {
@@ -123,62 +116,20 @@ public class TSVGridWriter extends TSVWriter
         return null==_rs ? null : _rs.getFieldMap();
     }
 
-
-    public boolean isCaptionRowVisible()
+    @Override
+    public void writeColumnHeaders()
     {
-        return _captionRowVisible;
+        RenderContext context = new RenderContext(HttpView.currentContext());
+        writeColumnHeaders(context, _displayColumns);
     }
 
-
-    public void setCaptionRowVisible(boolean captionRowVisible)
+    @Override
+    protected void writeBody()
     {
-        _captionRowVisible = captionRowVisible;
+         writeResultSet(_rs);
     }
 
-
-    public void setColumnHeaderType(ColumnHeaderType columnHeaderType)
-    {
-        _columnHeaderType = columnHeaderType;
-    }
-
-
-    public boolean isApplyFormats()
-    {
-        return _applyFormats;
-    }
-
-
-    public void setApplyFormats(boolean applyFormats)
-    {
-        _applyFormats = applyFormats;
-    }
-
-
-    public ColumnHeaderType getColumnHeaderType()
-    {
-        return _columnHeaderType;
-    }
-
-
-    protected void write()
-    {
-        writeFileHeader();
-        writeColumnHeaders();
-
-        try
-        {
-            writeResultSet(_rs);
-        }
-        catch (SQLException e)
-        {
-            throw new RuntimeSQLException(e);
-        }
-
-        writeFileFooter();
-    }
-
-
-    public void writeResultSet(Results rs) throws SQLException
+    public void writeResultSet(Results rs)
     {
         RenderContext context = new RenderContext(HttpView.currentContext());
         context.setResults(rs);
@@ -186,15 +137,22 @@ public class TSVGridWriter extends TSVWriter
     }
 
 
-    public void writeResultSet(RenderContext ctx, Results rs) throws SQLException
+    public void writeResultSet(RenderContext ctx, Results rs)
     {
-        // Output all the data cells
-        ResultSetRowMapFactory factory = ResultSetRowMapFactory.create(rs);
-
-        while (rs.next())
+        try
         {
-            ctx.setRow(factory.getRowMap(rs));
-            writeRow(_pw, ctx, _displayColumns);
+            // Output all the data cells
+            ResultSetRowMapFactory factory = ResultSetRowMapFactory.create(rs);
+
+            while (rs.next())
+            {
+                ctx.setRow(factory.getRowMap(rs));
+                writeRow(ctx, _displayColumns);
+            }
+        }
+        catch (SQLException ex)
+        {
+            throw new RuntimeSQLException(ex);
         }
     }
 
@@ -206,119 +164,9 @@ public class TSVGridWriter extends TSVWriter
         super.close();
     }
 
-    protected void writeRow(PrintWriter out, RenderContext ctx, List<DisplayColumn> displayColumns)
+    protected void writeRow(RenderContext ctx, List<DisplayColumn> displayColumns)
     {
-        out.print(getRow(ctx, displayColumns).toString());
-        out.write(_rowSeparator);
+        writeLine(getValues(ctx, displayColumns));
     }
 
-
-    protected StringBuilder getRow(RenderContext ctx, List<DisplayColumn> displayColumns)
-    {
-        StringBuilder row = new StringBuilder();
-        for (DisplayColumn dc : displayColumns)
-        {
-            if (dc.isVisible(ctx))
-            {
-                String value;
-
-                // Export formatted values some of the time; see #10771
-                if (isApplyFormats())
-                {
-                    value = dc.getTsvFormattedValue(ctx);
-                }
-                else
-                {
-                    Object rawValue = dc.getValue(ctx);
-                    value = (null == rawValue ? "" : String.valueOf(rawValue)); 
-                }
-
-                // Encode all tab and newline characters; see #8435, #8748
-                row.append(quoteValue(value));
-                row.append(_chDelimiter);
-            }
-        }
-
-        // displayColumns could be empty
-        if (row.length() > 0)
-            row.deleteCharAt(row.length() - 1);
-
-        return row;
-    }
-
-    public void setFileHeader(List<String> fileHeader)
-    {
-        _fileHeader = fileHeader;    
-    }
-
-
-    public void writeFileHeader()
-    {
-        if (null == _fileHeader)
-            return;
-
-        for (String line : _fileHeader)
-            _pw.println(line);
-    }
-
-    protected void writeFileFooter()
-    {
-    }
-
-
-    public void writeColumnHeaders()
-    {
-        // Output the column headers
-        if (_captionRowVisible)
-        {
-            StringBuilder header = getHeader(new RenderContext(HttpView.currentContext()), _displayColumns);
-            _pw.print(header.toString());
-            _pw.print(_rowSeparator);
-        }
-    }
-
-
-    protected StringBuilder getHeader(RenderContext ctx, List<DisplayColumn> displayColumns)
-    {
-        StringBuilder header = new StringBuilder();
-
-        for (DisplayColumn dc : displayColumns)
-        {
-            if (dc.isVisible(ctx))
-            {
-                switch(_columnHeaderType)
-                {
-                    case caption:
-                        header.append(dc.getCaption());
-                        break;
-                    case propertyName:
-                        header.append(dc.getName());
-                        break;
-                    case queryColumnName:
-                    {
-                        ColumnInfo columnInfo = dc.getColumnInfo();
-                        String name;
-                        if (columnInfo != null)
-                        {
-                            name = FieldKey.fromString(columnInfo.getName()).getDisplayString();
-                        }
-                        else
-                        {
-                            name = dc.getName();
-                        }
-                        header.append(name);
-
-                    }
-                    break;
-                }
-                header.append(_chDelimiter);
-            }
-        }
-
-        // displayColumns could be empty
-        if (header.length() > 0)
-            header.deleteCharAt(header.length() - 1);
-
-        return header;
-    }
 }
