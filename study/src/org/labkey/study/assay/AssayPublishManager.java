@@ -693,28 +693,35 @@ public class AssayPublishManager implements AssayPublishService.Service
      */
     public Pair<List<String>, UploadLog> importDatasetTSV(User user, StudyImpl study, DataSetDefinition dsd, DataLoader dl, boolean withTriggers, FileStream in, String originalFileName, Map<String, String> columnMap, BatchValidationException errors) throws SQLException, ServletException
     {
+        boolean useQueryUpdateService = false;
         UploadLog ul = null;
         List<String> lsids = Collections.emptyList();
+
         try
         {
             if (null != in)
                 ul = saveUploadData(user, dsd, in, originalFileName);
 
-//            Integer defaultQCStateId = study.getDefaultDirectEntryQCState();
-//            QCState defaultQCState = null;
-//            if (defaultQCStateId != null)
-//                defaultQCState = StudyManager.getInstance().getQCStateForRowId(study.getContainer(), defaultQCStateId.intValue());
-//            lsids = StudyManager.getInstance().importDatasetData(study, user, dsd, dl, columnMap, errors, true, defaultQCState, null);
+            if (!useQueryUpdateService)
+            {
+                Integer defaultQCStateId = study.getDefaultDirectEntryQCState();
+                QCState defaultQCState = null;
+                if (defaultQCStateId != null)
+                    defaultQCState = StudyManager.getInstance().getQCStateForRowId(study.getContainer(), defaultQCStateId.intValue());
+                lsids = StudyManager.getInstance().importDatasetData(study, user, dsd, dl, columnMap, errors, true, defaultQCState, null);
+            }
+            else
+            {
+                StudyQuerySchema querySchema = new StudyQuerySchema(study, user, true);
+                TableInfo queryTableInfo = querySchema.getTable(dsd.getName());
+                if (null == queryTableInfo)
+                    throw new UnauthorizedException("Can not update dataset: " + dsd.getName());
+                QueryUpdateService qus = queryTableInfo.getUpdateService();
+                if (null == qus)
+                    throw new UnauthorizedException("Can not update dataset: " + dsd.getName());
 
-            StudyQuerySchema querySchema = new StudyQuerySchema(study, user, true);
-            TableInfo queryTableInfo = querySchema.getTable(dsd.getName());
-            if (null == queryTableInfo)
-                throw new UnauthorizedException("Can not update dataset: " + dsd.getName());
-            QueryUpdateService qus = queryTableInfo.getUpdateService();
-            if (null == qus)
-                throw new UnauthorizedException("Can not update dataset: " + dsd.getName());
-
-            qus.importRows(user, study.getContainer(), dl.getDataIterator(errors), errors, null);
+                qus.importRows(user, study.getContainer(), dl.getDataIterator(errors), errors, null);
+            }
 
             if (!errors.hasErrors())
                 StudyManager.getInstance().getVisitManager(study).updateParticipantVisits(user, Collections.singleton(dsd));
