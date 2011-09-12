@@ -785,7 +785,9 @@ api/src/org/labkey/api/security/CSRF.java -text
 api/src/org/labkey/api/security/ContextualRoles.java -text
 api/src/org/labkey/api/security/Group.java -text
 api/src/org/labkey/api/security/GroupManager.java -text
+api/src/org/labkey/api/security/GuestUser.java -text
 api/src/org/labkey/api/security/IgnoresTermsOfUse.java -text
+api/src/org/labkey/api/security/LimitedUser.java -text
 api/src/org/labkey/api/security/LoginUrls.java -text
 api/src/org/labkey/api/security/MutableSecurityPolicy.java -text
 api/src/org/labkey/api/security/PasswordExpiration.java -text

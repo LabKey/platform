@@ -25,6 +25,7 @@ import jxl.write.*;
 import org.apache.log4j.Logger;
 import org.labkey.api.collections.ResultSetRowMapFactory;
 import org.labkey.api.query.FieldKey;
+import org.labkey.api.util.ExceptionUtil;
 import org.labkey.api.util.FileUtil;
 import org.labkey.api.view.HttpView;
 
@@ -386,11 +387,11 @@ public class ExcelWriter
         }
         catch (IOException e)
         {
-            _log.error(e);
+            ExceptionUtil.logExceptionToMothership(null, e);
         }
         catch (WriteException e)
         {
-            _log.error(e);
+            ExceptionUtil.logExceptionToMothership(null, e);
         }
     }
 
@@ -407,11 +408,11 @@ public class ExcelWriter
         }
         catch (IOException e)
         {
-            _log.error(e);
+            ExceptionUtil.logExceptionToMothership(null, e);
         }
         catch (WriteException e)
         {
-            _log.error(e);
+            ExceptionUtil.logExceptionToMothership(null, e);
         }
     }
 
@@ -460,7 +461,7 @@ public class ExcelWriter
         }
         catch (IOException e)
         {
-            _log.error(e);
+            ExceptionUtil.logExceptionToMothership(null, e);
         }
 
         return null;
@@ -480,7 +481,7 @@ public class ExcelWriter
         }
         catch (IOException e)
         {
-            _log.error(e);
+            ExceptionUtil.logExceptionToMothership(null, e);
             return null;
         }
     }
@@ -500,11 +501,11 @@ public class ExcelWriter
         }
         catch (IOException e)
         {
-            _log.error(e);
+            ExceptionUtil.logExceptionToMothership(null, e);
         }
         catch (WriteException e)
         {
-            _log.error(e);
+            ExceptionUtil.logExceptionToMothership(null, e);
         }
     }
 

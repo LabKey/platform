@@ -28,8 +28,6 @@ public class User extends UserPrincipal implements Serializable, Cloneable
 {
     private static final Logger _log = Logger.getLogger(User.class);
 
-    private static final int[] _guestGroups = new int[]{Group.groupGuests};
-
     private String _firstName = null;
     private String _lastName = null;
     private String _displayName = null;
@@ -42,27 +40,6 @@ public class User extends UserPrincipal implements Serializable, Cloneable
 
     public static final User guest = new GuestUser("guest");
     private static final User search = new GuestUser("search");
-
-    private static class GuestUser extends User
-    {
-        GuestUser(String name)
-        {
-            super(name, 0);
-            _groups = _guestGroups;
-        }
-
-        @Override
-        public boolean isGuest()
-        {
-            return true;
-        }
-
-        @Override
-        public boolean isActive()
-        {
-            return true;
-        }
-    }
 
 
     public User()
@@ -134,7 +111,7 @@ public class User extends UserPrincipal implements Serializable, Cloneable
     public int[] getGroups()
     {
         if (_groups == null)
-            _groups = GroupManager.getAllGroupsForUser(this);
+            _groups = GroupManager.getAllGroupsForPrincipal(this);
         return _groups;
     }
 

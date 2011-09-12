@@ -375,21 +375,24 @@ public class SecurityManager
     public static User getAuthenticatedUser(HttpServletRequest request)
     {
         User u = (User) request.getUserPrincipal();
+
         if (null == u)
         {
             User sessionUser = null;
             HttpSession session = request.getSession(true);
 
             Integer userId = (Integer) session.getAttribute(USER_ID_KEY);
+
             if (null != userId)
-                sessionUser = UserManager.getUser(userId.intValue());
+                sessionUser = UserManager.getUser(userId);
+
             if (null != sessionUser)
             {
                 Integer impersonatingUserId = (Integer) session.getAttribute(IMPERSONATING_USER_ID_KEY);
 
                 if (null != impersonatingUserId)
                 {
-                    sessionUser.setImpersonatingUser(UserManager.getUser(impersonatingUserId.intValue()));
+                    sessionUser.setImpersonatingUser(UserManager.getUser(impersonatingUserId));
 
                     String projectId = (String) session.getAttribute(IMPERSONATION_PROJECT_KEY);
 
@@ -403,9 +406,10 @@ public class SecurityManager
                 // u = sessionUser.cloneUser();
                 assert sessionUser._groups == null;
                 sessionUser._groups = null;
-                u = sessionUser;
+                u = sessionUser;           //new LimitedUser(sessionUser, new int[]{3213});
             }
         }
+
         if (null == u)
         {
             // Authorization: Basic QWxhZGRpbjpvcGVuIHNlc2FtZQ==
@@ -422,6 +426,7 @@ public class SecurityManager
                 }
             }
         }
+
         return null == u || u.isGuest() ? null : u;
     }
 
@@ -787,9 +792,9 @@ public class SecurityManager
                     }
                 }
 
-                UserManager.clearUserList(userId.intValue());
+                UserManager.clearUserList(userId);
 
-                newUser = UserManager.getUser(userId.intValue());
+                newUser = UserManager.getUser(userId);
                 UserManager.fireAddUser(newUser);
             }
             catch (SQLException e)
@@ -1912,9 +1917,6 @@ public class SecurityManager
     // Permissions, ACL cache and Permission testing
     //
 
-    private static String _aclPrefix = "ACL/";
-
-
     //manage SecurityPolicy
     private static String _policyPrefix = "Policy/";
 
@@ -2129,11 +2131,6 @@ public class SecurityManager
     }
 
 
-    private static String cacheName(String c, String objectId)
-    {
-        return _aclPrefix + c + "/" + objectId;
-    }
-
     private static String cacheName(SecurableResource resource)
     {
         return cacheNameForResourceId(resource.getResourceId());
@@ -2159,16 +2156,16 @@ public class SecurityManager
     {
         try
         {
-        Table.execute(
-                core.getSchema(),
-                "DELETE FROM " + core.getTableInfoRoleAssignments() + " WHERE ResourceId IN(SELECT ResourceId FROM " +
-                core.getTableInfoPolicies() + " WHERE Container=?)",
-                c.getId());
+            Table.execute(
+                    core.getSchema(),
+                    "DELETE FROM " + core.getTableInfoRoleAssignments() + " WHERE ResourceId IN(SELECT ResourceId FROM " +
+                    core.getTableInfoPolicies() + " WHERE Container=?)",
+                    c.getId());
             Table.execute(
                     core.getSchema(),
                     "DELETE FROM " + core.getTableInfoPolicies() + " WHERE Container=?",
                     c.getId());
-        DbCache.clear(core.getTableInfoRoleAssignments());
+            DbCache.clear(core.getTableInfoRoleAssignments());
         }
         catch (SQLException x)
         {

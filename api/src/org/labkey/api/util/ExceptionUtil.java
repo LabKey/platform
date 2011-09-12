@@ -182,7 +182,7 @@ public class ExceptionUtil
     /** request may be null if this is coming from a background thread */
     public static void logExceptionToMothership(@Nullable HttpServletRequest request, Throwable ex)
     {
-        Map<Enum,String> decorations = getExceptionDecorations(ex);
+        Map<Enum, String> decorations = getExceptionDecorations(ex);
 
         ex = unwrapException(ex);
 

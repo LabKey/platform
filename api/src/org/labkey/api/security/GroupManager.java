@@ -17,14 +17,18 @@
 package org.labkey.api.security;
 
 import org.apache.log4j.Logger;
-import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import org.junit.Assert;
 import org.junit.Test;
 import org.labkey.api.audit.AuditLogEvent;
 import org.labkey.api.audit.AuditLogService;
 import org.labkey.api.cache.CacheManager;
 import org.labkey.api.cache.StringKeyCache;
-import org.labkey.api.data.*;
+import org.labkey.api.data.Container;
+import org.labkey.api.data.ContainerManager;
+import org.labkey.api.data.CoreSchema;
+import org.labkey.api.data.RuntimeSQLException;
+import org.labkey.api.data.Table;
 import org.labkey.api.util.JunitUtil;
 import org.labkey.api.util.TestContext;
 import org.labkey.api.view.HttpView;
@@ -86,7 +90,7 @@ public class GroupManager
     }
 
     /** this method returns the FLATTENED group list for this principal */
-    static int[] getAllGroupsForPrincipal(@NotNull UserPrincipal user)
+    static int[] getAllGroupsForPrincipal(@Nullable UserPrincipal user)
     {
         if (user == null)
             return EMPTY_INT_ARRAY;
@@ -102,12 +106,6 @@ public class GroupManager
 
         return groups;
     }
-
-    static int[] getAllGroupsForUser(@NotNull User user)
-    {
-        return getAllGroupsForPrincipal(user);
-    }
-
 
     private static void removeFromCache(UserPrincipal principal)
     {
