@@ -348,23 +348,21 @@ public class PipelineStatusManager
     */
     public static int getIncompleteStatusFileCount(String parentId, Container container) throws SQLException
     {
-        Integer count = Table.executeSingleton(_schema.getSchema(),
-        "SELECT COUNT(*) FROM " + _schema.getTableInfoStatusFiles() +  " WHERE Container = ? AND JobParent = ? AND Status <> ? ",
-        new Object[]{container.getId(), parentId,PipelineJob.COMPLETE_STATUS }, Integer.class);
-
-        return count.intValue();
+        return Table.executeSingleton(_schema.getSchema(),
+            "SELECT COUNT(*) FROM " + _schema.getTableInfoStatusFiles() +  " WHERE Container = ? AND JobParent = ? AND Status <> ? ",
+            new Object[]{container.getId(), parentId,PipelineJob.COMPLETE_STATUS }, Integer.class);
     }
 
     public static List<PipelineStatusFileImpl> getStatusFilesForLocation(String location, boolean includeJobsOnQueue)
     {
         // NOTE: JobIds end up all uppercase in the database, but they are lowercase in jobs
-        Set<String> ignoreableIds = new CaseInsensitiveHashSet();
+        Set<String> ignorableIds = new CaseInsensitiveHashSet();
         if (!includeJobsOnQueue)
         {
             List<PipelineJob> queuedJobs = PipelineService.get().getPipelineQueue().findJobs(location);
             for (PipelineJob job : queuedJobs)
             {
-                ignoreableIds.add(job.getJobGUID());
+                ignorableIds.add(job.getJobGUID());
             }
         }
 
@@ -378,7 +376,7 @@ public class PipelineStatusManager
                 PipelineStatusFileImpl[] statusFiles = getQueuedStatusFilesForActiveTaskId(id.toString());
                 for (PipelineStatusFileImpl statusFile : statusFiles)
                 {
-                    if (!ignoreableIds.contains(statusFile.getJobId()))
+                    if (!ignorableIds.contains(statusFile.getJobId()))
                     {
                         result.add(statusFile);
                     }
