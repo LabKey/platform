@@ -218,7 +218,8 @@
             }
             else
             {
-                collection.push($json(errors));
+                for (var p in errors)
+                    collection.push(errors[p]);
             }
         }
 
