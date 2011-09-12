@@ -115,6 +115,7 @@ public class SecurityApiActions
                 return null;
 
             List<Map<String, Object>> groupsPerms = new ArrayList<Map<String,Object>>();
+
             for(Group group : groups)
             {
                 Map<String, Object> groupPerms = new HashMap<String,Object>();

@@ -584,7 +584,7 @@ public class UserController extends SpringActionController
         @Override
         protected ModelAndView getHtmlView(ShowUsersForm form, BindException errors) throws Exception
         {
-            ImpersonateView impersonateView = new ImpersonateView(getContainer(), false);
+            ImpersonateView impersonateView = new ImpersonateView(getContainer(), getUser(), false);
 
             VBox users = new VBox();
             users.setTitle("Users");
@@ -1607,15 +1607,22 @@ public class UserController extends SpringActionController
 
     public static class ImpersonateBean
     {
-        public List<String> emails;
-        public String message;
+        public final List<String> emails;
+        public final String title;
+        public final String message;
+        public final boolean isAdminConsole;
 
-        public ImpersonateBean(Container c, boolean isAdminConsole)
+        public ImpersonateBean(Container c, User user, boolean isAdminConsole)
         {
+            this.isAdminConsole = isAdminConsole;
+
             if (c.isRoot())
             {
                 emails = UserManager.getUserEmailList();
-                message = isAdminConsole ? "<b>Impersonate User</b>" : "";
+                // Can't impersonate yourself, so remove current user
+                emails.remove(user.getEmail());
+                message = null;
+                title = isAdminConsole ? "<b>Impersonate User</b>" : null;
             }
             else
             {
@@ -1623,11 +1630,25 @@ public class UserController extends SpringActionController
                 List<User> projectUsers = SecurityManager.getProjectUsers(c);
                 emails = new ArrayList<String>(projectUsers.size());
 
+                // Can't impersonate yourself, so remove current user
                 for (User member : projectUsers)
-                    emails.add(member.getEmail());
+                    if (!user.equals(member))
+                        emails.add(member.getEmail());
 
                 Collections.sort(emails);
-                message = PageFlowUtil.filter("Impersonate user within the " + c.getName() + " project");
+
+                String instructions = PageFlowUtil.filter("While impersonating within this project, you will not be " +
+                    "able to navigate outside the project and you will not inherit any of the user's site-level roles " +
+                    "(e.g., Site Administrator, Developer).");
+
+                if (user.isAdministrator())
+                    instructions += "<br><br>" + PageFlowUtil.filter("As a site administrator, you can also impersonate " +
+                        "from the Admin Console; when impersonating from there, you can access all the user's projects " +
+                        "and you inherit the user's site-level roles.  This provides a more complete picture of the user's " +
+                        "experience on the site .");
+
+                message = instructions + "<br><br>";
+                title = "Impersonate User Within Project " + c.getProject().getName();
             }
         }
     }
@@ -1635,12 +1656,17 @@ public class UserController extends SpringActionController
 
     public static class ImpersonateView extends JspView<ImpersonateBean>
     {
-        public ImpersonateView(Container c, boolean isAdminConsole)
+        public ImpersonateView(Container c, User user, boolean isAdminConsole)
         {
-            super("/org/labkey/core/user/impersonate.jsp", new ImpersonateBean(c, isAdminConsole));
+            super("/org/labkey/core/user/impersonate.jsp", new ImpersonateBean(c, user, isAdminConsole));
 
             if (!isAdminConsole)
-                setTitle("Impersonation");
+            {
+                if (c.isRoot())
+                    setTitle("Impersonate User");
+                else
+                    setTitle("Impersonate User Within Project " + c.getProject().getName());
+            }
         }
 
         public boolean hasUsers()
@@ -1682,6 +1708,9 @@ public class UserController extends SpringActionController
                 throw new NotFoundException("User doesn't exist");
 
             final User impersonatedUser = UserManager.getUser(email);
+
+            if (impersonatedUser.equals(getUser()))
+                throw new UnauthorizedException("Can't impersonate yourself");
 
             authorizeUserAction(impersonatedUser.getUserId(), "impersonate");
             Container c = getContainer();

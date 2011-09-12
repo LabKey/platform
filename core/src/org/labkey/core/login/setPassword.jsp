@@ -48,16 +48,16 @@
 
     for (NamedObject input : bean.nonPasswordInputs)
     { %>
-    <tr><td width=150px><%=h(input.getName())%></td><td><input id="<%=input.getObject()%>" type="text" name="<%=input.getObject()%>" style="width:150px;"></td></tr><%
+    <tr><td style="white-space: nowrap;"><%=h(input.getName())%>&nbsp;</td><td style="width:100%;"><input id="<%=input.getObject()%>" type="text" name="<%=input.getObject()%>" style="width:150px;"></td></tr><%
     }
 
     for (NamedObject input : bean.passwordInputs)
     { %>
-    <tr><td width=150px><%=h(input.getName())%></td><td><input id="<%=input.getObject()%>" type="password" name="<%=input.getObject()%>" style="width:150px;"></td></tr><%
+    <tr><td style="white-space: nowrap;"><%=h(input.getName())%>&nbsp;</td><td style="width:100%;"><input id="<%=input.getObject()%>" type="password" name="<%=input.getObject()%>" style="width:150px;"></td></tr><%
     }
     %>
     <tr>
-        <td><%
+        <td colspan="2"><%
             if (null != bean.email)
             { %>
             <input type="hidden" name="email" value="<%=h(bean.email)%>"><%

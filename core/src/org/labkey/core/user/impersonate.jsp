@@ -38,27 +38,37 @@
 %>
     <form method="get" action="<%=new UserController.UserUrlsImpl().getImpersonateURL(c)%>"><labkey:csrf/>
         <table>
-        <tr><td colspan="2"><%=bean.message%></td></tr>
-        <tr><td><%
+            <%
+
+            if (bean.isAdminConsole)
+            { %>
+            <tr><td><%=bean.title%></td></tr><%
+            }
+
             if (user.isImpersonated())
             {
         %>
-        Already impersonating; click <a href="<%=h(urlProvider(LoginUrls.class).getStopImpersonatingURL(c, request))%>">here</a> to change back to <%=h(user.getImpersonatingUser().getDisplayName(user))%>.<%
+            <tr><td>Already impersonating; click <a href="<%=h(urlProvider(LoginUrls.class).getStopImpersonatingURL(c, request))%>">here</a> to change back to <%=h(user.getImpersonatingUser().getDisplayName(user))%>.</td></tr><%
             }
             else
             {
-        %>
-            <select id="email" name="email" style="width:200px;"><%
-                for (String email : bean.emails)
-                {%>
-                <option value="<%=h(email)%>" <%=(email.equals(user.getEmail())) ? "selected" : ""%>><%=h(email)%></option ><%
+                if (null != bean.message)
+                { %>
+            <tr><td><%=bean.message%></td></tr><%
                 }
             %>
-            </select></td><td>
+            <tr><td>
+                <select id="email" name="email" style="width:200px;"><%
+                    for (String email : bean.emails)
+                    {%>
+                    <option value="<%=h(email)%>"><%=h(email)%></option><%
+                    }
+                %>
+                </select>
             <%=generateReturnUrlFormField(returnURL)%>
-            <%=generateSubmitButton("Impersonate")%><%
+            <%=generateSubmitButton("Impersonate")%>
+            </td></tr><%
             }
-            %></td>
-        </tr>
+            %>
         </table>
     </form>

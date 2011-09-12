@@ -33,7 +33,7 @@
     HttpView<AdminController.AdminBean> me = (HttpView<AdminController.AdminBean>) HttpView.currentView();
     AdminController.AdminBean bean = me.getModelBean();
 
-    ViewContext context = HttpView.currentContext();
+    ViewContext context = me.getViewContext();
     Container c = context.getContainer();
     String contextPath = context.getContextPath();
 %>
@@ -47,7 +47,7 @@
     <tr><td colspan="2"><b><%=type.name()%></b></td></tr><%
         for (AdminLink link : AdminConsole.getLinks(type))
         { %>
-    <tr><td colspan="2"><%=textLink(h(link.getText()), h(link.getUrl()))%></td></tr><%
+    <tr><td colspan="2"><%=textLink(h(link.getText()), link.getUrl())%></td></tr><%
         } %>
     <tr><td colspan="2">&nbsp;</td></tr><%
     }
@@ -56,7 +56,7 @@
     {
     %>
     <tr><td colspan="2"><%
-        include(new UserController.ImpersonateView(c, true), out);
+        include(new UserController.ImpersonateView(c, context.getUser(), true), out);
     %>
     </td></tr><%
     }

@@ -428,7 +428,7 @@ public class SecurityController extends SpringActionController
         {
             projectViews.addView(getGroupsView(c, expandedGroup, errors, messages));
 
-            UserController.ImpersonateView impersonateView = new UserController.ImpersonateView(project, false);
+            UserController.ImpersonateView impersonateView = new UserController.ImpersonateView(project, getUser(), false);
 
             if (impersonateView.hasUsers())
                 projectViews.addView(impersonateView);

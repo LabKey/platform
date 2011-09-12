@@ -24,7 +24,6 @@ import org.labkey.api.action.ApiVersion;
 import org.labkey.api.action.CustomApiForm;
 import org.labkey.api.action.FormViewAction;
 import org.labkey.api.action.HasViewContext;
-import org.labkey.api.action.RedirectAction;
 import org.labkey.api.action.ReturnUrlForm;
 import org.labkey.api.action.SimpleViewAction;
 import org.labkey.api.action.SpringActionController;

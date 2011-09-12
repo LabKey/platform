@@ -325,7 +325,7 @@ Ext.onReady(function(){
 <%
     if (user.isAdministrator() || project != null && project.hasPermission(user, AdminPermission.class))
     {
-        UserController.ImpersonateView impersonateView = new UserController.ImpersonateView(user.isAdministrator() ? root : null!=project ? project : c, false);
+        UserController.ImpersonateView impersonateView = new UserController.ImpersonateView(user.isAdministrator() ? root : null!=project ? project : c, user, false);
         if (impersonateView.hasUsers())
         {
             %><script type="text/javascript">
