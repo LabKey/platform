@@ -66,15 +66,6 @@ public interface TableInfo
     String getSelectName();
 
     /**
-     * SQL representing this table, e.g. "SELECT * FROM Issues.Issues WHERE Container='...'"
-     *
-     * @deprecated use getFromSQL(String alias)
-    @Deprecated
-    @NotNull
-    SQLFragment getFromSQL();
-     **/
-
-    /**
      * SQL representing this table, e.g.
      *     "Issues.Issues <alias>"
      *     "(SELECT * FROM Issues.Issues WHERE Container='...') <alias>"
