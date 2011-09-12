@@ -301,7 +301,7 @@ public abstract class WebPartView<ModelBean> extends HttpView<ModelBean>
             catch (Throwable t)
             {
                 exceptionToRender = ExceptionUtil.unwrapException(t);
-                if (ExceptionUtil.isIgnoreable(exceptionToRender))
+                if (ExceptionUtil.isIgnorable(exceptionToRender))
                 {
                     exceptionToRender = null;
                 }

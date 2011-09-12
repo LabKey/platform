@@ -135,7 +135,7 @@ public abstract class HttpView<ModelBean> extends DefaultModelAndView<ModelBean>
                 try {response.getWriter().flush();} catch (Exception x) {/* */}
                 response.flushBuffer();
             }
-            if (!ExceptionUtil.isIgnoreable(e))
+            if (!ExceptionUtil.isIgnorable(e))
                 Logger.getLogger(HttpView.class).error("Exception while rendering view; creation stacktrace:" + ExceptionUtil.renderStackTrace(_creationStackTrace));
             throw e;
         }

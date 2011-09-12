@@ -520,7 +520,7 @@ public class TsvDataExchangeHandler implements DataExchangeHandler
         }
     }
 
-    protected boolean isIgnoreableOutput(File file)
+    protected boolean isIgnorableOutput(File file)
     {
         return _filesToIgnore.contains(file);
     }
@@ -568,7 +568,7 @@ public class TsvDataExchangeHandler implements DataExchangeHandler
                 // Look through all of the files that are left after running the transform script
                 for (File file : runInfo.getParentFile().listFiles())
                 {
-                        if (!isIgnoreableOutput(file) && runDataUploadedFile != null)
+                        if (!isIgnorableOutput(file) && runDataUploadedFile != null)
                     {
                         int extensionIndex = runDataUploadedFile.getName().lastIndexOf(".");
                         String baseName = extensionIndex >= 0 ? runDataUploadedFile.getName().substring(0, extensionIndex) : runDataUploadedFile.getName();

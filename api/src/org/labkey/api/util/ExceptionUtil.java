@@ -186,7 +186,7 @@ public class ExceptionUtil
 
         ex = unwrapException(ex);
 
-        if (isIgnoreable(ex))
+        if (isIgnorable(ex))
             return;
 
         _logStatic.error("Exception detected and logged to mothership", ex);
@@ -303,9 +303,9 @@ public class ExceptionUtil
         }
     }
 
-    public static boolean isIgnoreable(Throwable ex)
+    public static boolean isIgnorable(Throwable ex)
     {
-        Map<Enum,String> decorations = getExceptionDecorations(ex);
+        Map<Enum, String> decorations = getExceptionDecorations(ex);
         
         return ex == null ||
                 null != decorations.get(ExceptionInfo.SkipMothershipLogging) ||

@@ -82,6 +82,7 @@ public class EhCacheProvider implements CacheProvider, ShutdownListener
     @Override
     public void shutdownStarted(ServletContextEvent servletContextEvent)
     {
+        LOG.info("Shutting down Ehcache");
         MANAGER.shutdown();
     }
 
