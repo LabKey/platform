@@ -59,7 +59,7 @@ public class PostgreSqlDialectFactory extends SqlDialectFactory
             return null;
     }
 
-    private final String _recommended = getProductName() + " 9.0 is the recommended version.";
+    private final String _recommended = getProductName() + " 9.1 is the recommended version.";
 
     @Override
     public @Nullable SqlDialect createFromProductNameAndVersion(String dataBaseProductName, String databaseProductVersion, String jdbcDriverVersion, boolean logWarnings) throws DatabaseNotSupportedException
@@ -88,7 +88,10 @@ public class PostgreSqlDialectFactory extends SqlDialectFactory
             if (90 == version)
                 return new PostgreSql90Dialect();
 
-            if (version > 90)
+            if (91 == version)
+                return new PostgreSql91Dialect();
+
+            if (version > 91)
             {
                 if (logWarnings)
                     _log.warn("LabKey Server has not been tested against " + getProductName() + " version " + databaseProductVersion + ".  " + _recommended);
@@ -125,7 +128,7 @@ public class PostgreSqlDialectFactory extends SqlDialectFactory
             badProductName("Postgres", 8.0, 8.5, "");
             badProductName("postgresql", 8.0, 8.5, "");
 
-            // 8.2 or lower should result in bad version number
+            // 8.2 or lower should result in bad version number exception
             badVersion("PostgreSQL", 0.0, 8.2, null);
 
             // >= 8.3 should be good
