@@ -374,11 +374,13 @@ public class VisualizationSQLGenerator implements CustomApiForm, HasViewContext
 
             for (VisualizationSourceQuery groupByQuery : groupByQueries)
             {
-                aggregatedSQL.append(" INNER JOIN ");
+                aggregatedSQL.append(" INNER JOIN (SELECT * FROM ");
                 aggregatedSQL.append(groupByQuery.getSchemaName());
                 aggregatedSQL.append(".");
                 aggregatedSQL.append(groupByQuery.getQueryName());
-                aggregatedSQL.append(" AS ");
+                aggregatedSQL.append("\n");
+                aggregatedSQL.append(groupByQuery.getWhereClause());
+                aggregatedSQL.append(") AS ");
                 aggregatedSQL.append(groupByQuery.getAlias());
                 separator = "";
                 aggregatedSQL.append(" ON ");
