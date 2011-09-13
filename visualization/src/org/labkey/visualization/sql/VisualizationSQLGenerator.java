@@ -1,5 +1,6 @@
 package org.labkey.visualization.sql;
 
+import org.jetbrains.annotations.NotNull;
 import org.json.JSONArray;
 import org.labkey.api.action.CustomApiForm;
 import org.labkey.api.action.HasViewContext;
@@ -8,7 +9,6 @@ import org.labkey.api.data.Container;
 import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.query.DefaultSchema;
 import org.labkey.api.query.UserSchema;
-import org.labkey.api.study.StudyService;
 import org.labkey.api.util.Pair;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.ViewContext;
@@ -96,7 +96,7 @@ public class VisualizationSQLGenerator implements CustomApiForm, HasViewContext
         return provider;
     }
 
-    public VisualizationProvider getVisualizationProvider(String schema)
+    public @NotNull VisualizationProvider getVisualizationProvider(String schema)
     {
         VisualizationProvider provider = _providers.get(schema);
         if (provider == null)
@@ -251,8 +251,6 @@ public class VisualizationSQLGenerator implements CustomApiForm, HasViewContext
                             query.getDisplayName() + " to " + joinTarget.getDisplayName());
                 }
                 VisualizationProvider provider = getVisualizationProvider(query.getSchemaName());
-                if (provider == null)
-                    throw new IllegalArgumentException("No visualization provider registered for schema \"" + query.getSchemaName() + "\".");
                 List<Pair<VisualizationSourceColumn, VisualizationSourceColumn>> joinConditions = new ArrayList<Pair<VisualizationSourceColumn, VisualizationSourceColumn>>();
                 for (Pair<VisualizationSourceColumn, VisualizationSourceColumn> join : provider.getJoinColumns(_columnFactory, query, joinTarget))
                 {
@@ -333,75 +331,76 @@ public class VisualizationSQLGenerator implements CustomApiForm, HasViewContext
         if (!_groupBys.isEmpty())
         {
             Map<String, Set<String>> columnAliases = getColumnMapping(_columnFactory, queries);
-            String subjectColumnName = StudyService.get().getSubjectColumnName(_viewContext.getContainer());
 
-            StringBuilder realSQL = new StringBuilder("SELECT ");
+            StringBuilder aggregatedSQL = new StringBuilder("SELECT ");
             String separator = "";
-            Map<String, String> groupByAliases = new CaseInsensitiveHashMap<String>();
-            int aliasIndex = 1;
+            Set<VisualizationSourceQuery> groupByQueries = new LinkedHashSet<VisualizationSourceQuery>();
             StringBuilder groupByAndSelectSQL = new StringBuilder();
-            for (VisualizationSourceColumn groupBy : _groupBys)
+
+            for (VisualizationSourceColumn groupByColumn : _groupBys)
             {
-                realSQL.append(separator);
-                separator = ", ";
-                String key = groupBy.getSchemaName() + "." + groupBy.getQueryName();
-                String alias = groupByAliases.get(key);
-                if (alias == null)
-                {
-                    alias = "groupBy" + (aliasIndex++);
-                    groupByAliases.put(key, alias);
-                }
-                groupByAndSelectSQL.append(alias + "." + groupBy.getOriginalName());
+                VisualizationSourceQuery joinQuery = innerJoinQueries.iterator().next();
+                VisualizationSourceQuery groupByQuery = ensureSourceQuery(_viewContext.getContainer(), groupByColumn, joinQuery);
+                groupByQuery.addSelect(groupByColumn);
+                groupByQueries.add(groupByQuery);
             }
             if (_intervals.size() > 1)
             {
                 throw new IllegalArgumentException("A maximum of one interval is supported");
             }
+
+            for (VisualizationSourceQuery groupByQuery : groupByQueries)
+            {
+                groupByQuery.appendColumnNames(groupByAndSelectSQL, groupByQuery.getSelects(_columnFactory, false), false, false, false);
+            }
+
             for (Map.Entry<String, VisualizationIntervalColumn> entry : _intervals.entrySet())
             {
                 groupByAndSelectSQL.append(", x.");
                 groupByAndSelectSQL.append(_intervals.size() == 1 ? entry.getValue().getSimpleAlias() : entry.getValue().getFullAlias());
             }
 
-            realSQL.append(groupByAndSelectSQL);
-            realSQL.append(", COUNT(");
-            realSQL.append(columnAliases.get(subjectColumnName).iterator().next());
-            realSQL.append(") AS ParticipantCount");
+            aggregatedSQL.append(groupByAndSelectSQL);
+            aggregatedSQL.append(", COUNT(*) AS AggregateCount");
             for (VisualizationSourceColumn measureCol : _measureCols)
             {
                 String alias = columnAliases.get(measureCol.getOriginalName()).iterator().next();
-                realSQL.append(", AVG(x." + alias + ") AS " + alias);
+                aggregatedSQL.append(", AVG(x." + alias + ") AS " + alias);
             }
 
-            realSQL.append("\n FROM (");
-            realSQL.append(sql);
-            realSQL.append(") x");
-            for (Map.Entry<String, String> entry : groupByAliases.entrySet())
+            aggregatedSQL.append("\n FROM (");
+            aggregatedSQL.append(sql);
+            aggregatedSQL.append(") x");
+
+            for (VisualizationSourceQuery groupByQuery : groupByQueries)
             {
-                realSQL.append(", ");
-                realSQL.append(entry.getKey());
-                realSQL.append(" AS ");
-                realSQL.append(entry.getValue());
+                aggregatedSQL.append(" INNER JOIN ");
+                aggregatedSQL.append(groupByQuery.getSchemaName());
+                aggregatedSQL.append(".");
+                aggregatedSQL.append(groupByQuery.getQueryName());
+                aggregatedSQL.append(" AS ");
+                aggregatedSQL.append(groupByQuery.getAlias());
+                separator = "";
+                aggregatedSQL.append(" ON ");
+                VisualizationProvider provider = getVisualizationProvider(groupByQuery.getSchemaName());
+                for (Pair<VisualizationSourceColumn, VisualizationSourceColumn> pair : provider.getJoinColumns(_columnFactory, groupByQuery, innerJoinQueries.iterator().next()))
+                {
+                    aggregatedSQL.append(separator);
+                    separator = " AND ";
+
+                    aggregatedSQL.append("x.");
+                    aggregatedSQL.append(columnAliases.get(pair.getKey().getOriginalName()).iterator().next());
+                    aggregatedSQL.append(" = ");
+                    aggregatedSQL.append(groupByQuery.getAlias());
+                    aggregatedSQL.append(".");
+                    aggregatedSQL.append(pair.getValue().getOriginalName());
+                }
             }
 
-            realSQL.append(" WHERE ");
-            separator = "";
-            for (String groupByAlias : groupByAliases.values())
-            {
-                realSQL.append(separator);
-                separator = " AND ";
+            aggregatedSQL.append("\nGROUP BY ");
+            aggregatedSQL.append(groupByAndSelectSQL);
 
-                realSQL.append("x.");
-                realSQL.append(columnAliases.get(subjectColumnName).iterator().next());
-                realSQL.append(" = ");
-                realSQL.append(groupByAlias);
-                realSQL.append(".");
-                realSQL.append(subjectColumnName);
-            }
-            realSQL.append("\nGROUP BY ");
-            realSQL.append(groupByAndSelectSQL);
-
-            return realSQL.toString();
+            return aggregatedSQL.toString();
         }
 
         return sql;

@@ -231,7 +231,7 @@ public class VisualizationSourceQuery implements IVisualizationSourceQuery
         return ColumnInfo.legalNameFromName(getSchemaName() + "_" + _queryName);
     }
 
-    private void appendColumnNames(StringBuilder sql, Set<? extends VisualizationSourceColumn> columns, boolean aggregate, boolean aliasInsteadOfName, boolean appendAlias)
+    public void appendColumnNames(StringBuilder sql, Set<? extends VisualizationSourceColumn> columns, boolean aggregate, boolean aliasInsteadOfName, boolean appendAlias)
     {
         if (columns == null || columns.size() == 0)
             return;
@@ -267,7 +267,7 @@ public class VisualizationSourceQuery implements IVisualizationSourceQuery
         StringBuilder selectList = new StringBuilder("SELECT ");
         Set<VisualizationSourceColumn> selects = new LinkedHashSet<VisualizationSourceColumn>();
         if (_pivot != null)
-                selects.add(_pivot);
+            selects.add(_pivot);
         selects.addAll(getSelects(factory, true));
         selects.addAll(_sorts);
         selects.addAll(_aggregates);
