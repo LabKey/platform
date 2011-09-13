@@ -79,6 +79,7 @@ public class ExcelColumn extends RenderColumn
     {
         super();
         _dc = dc;
+        _dc.setHtmlFiltered(false);
         _formatters = formatters;
         setSimpleType(dc);
         if (dc.getExcelFormatString() != null)
