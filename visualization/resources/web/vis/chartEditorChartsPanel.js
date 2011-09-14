@@ -43,12 +43,7 @@ LABKEY.vis.ChartEditorChartsPanel = Ext.extend(Ext.FormPanel, {
             height: 10,
             listeners: {
                 scope: this,
-                'check': function(field, checked) {
-                    if(checked) {
-                        this.chartLayout = 'single';
-                        this.fireEvent('chartDefinitionChanged', false);
-                    }
-                }
+                'check': this.chartLayoutRadioChecked
             }
         });
 
@@ -60,12 +55,7 @@ LABKEY.vis.ChartEditorChartsPanel = Ext.extend(Ext.FormPanel, {
             height: 10,
             listeners: {
                 scope: this,
-                'check': function(field, checked) {
-                    if(checked) {
-                        this.chartLayout = 'per_subject';
-                        this.fireEvent('chartDefinitionChanged', false);
-                    }
-                }
+                'check': this.chartLayoutRadioChecked
             }
         });
 
@@ -78,15 +68,8 @@ LABKEY.vis.ChartEditorChartsPanel = Ext.extend(Ext.FormPanel, {
             listeners: {
                 scope: this,
                 'check': function(field, checked) {
-                    if (checked)
-                    {
-                        this.chartLayout = 'per_group';
-                        this.fireEvent('groupLayoutSelectionChanged', true);
-                    }
-                    else
-                    {
-                        this.fireEvent('groupLayoutSelectionChanged', false);
-                    }
+                    this.chartLayoutRadioChecked(field, checked);
+                    this.fireEvent('groupLayoutSelectionChanged', checked);
                 }
             }
         });
@@ -99,12 +82,7 @@ LABKEY.vis.ChartEditorChartsPanel = Ext.extend(Ext.FormPanel, {
             height: 10,
             listeners: {
                 scope: this,
-                'check': function(field, checked) {
-                    if(checked) {
-                        this.chartLayout = 'per_dimension';
-                        this.fireEvent('chartDefinitionChanged', false);
-                    }
-                }
+                'check': this.chartLayoutRadioChecked
             }
         });
 
@@ -271,5 +249,13 @@ LABKEY.vis.ChartEditorChartsPanel = Ext.extend(Ext.FormPanel, {
         this.hideDataPointCheckbox.suspendEvents(false);
         this.hideDataPointCheckbox.setValue(hide);
         this.hideDataPointCheckbox.resumeEvents();
+    },
+
+    chartLayoutRadioChecked: function(field, checked) {
+        if (checked)
+        {
+            this.chartLayout = field.inputValue;
+            this.fireEvent('chartDefinitionChanged', true);
+        }
     }
 });

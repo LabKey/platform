@@ -24,7 +24,6 @@ LABKEY.vis.TimeChartPanel = Ext.extend(Ext.Panel, {
         // properties for this panel
         Ext.apply(config, {
             layout: 'border',
-            isMasked: false,
             maxCharts: 30
         });
 
@@ -266,8 +265,6 @@ LABKEY.vis.TimeChartPanel = Ext.extend(Ext.Panel, {
                             this.seriesSelectorTabPanel.unhideTabStripItem(this.subjectSelector);
                             this.seriesSelectorTabPanel.hideTabStripItem(this.groupsSelector);
                         }
-
-                        this.getChartData();
                     }
                 }
             });
@@ -594,7 +591,8 @@ LABKEY.vis.TimeChartPanel = Ext.extend(Ext.Panel, {
 
     measureMetadataRequestPending:  function() {
         // mask panel and remove the chart(s)
-        this.maskChartPanel();
+        this.getEl().mask("loading...");
+        this.clearChartPanel();
 
         // increase the request counter
         this.measureMetadataRequestCounter++;
@@ -612,13 +610,14 @@ LABKEY.vis.TimeChartPanel = Ext.extend(Ext.Panel, {
 
     getChartData: function() {
         // mask panel and remove the chart(s)
-        this.maskChartPanel();
+        this.getEl().mask("loading...");
+        this.clearChartPanel();
 
         // get the updated chart information from the varios tabs of the chartEditor
         this.chartInfo = this.getChartInfoFromEditorTabs();
 
         if(this.chartInfo.measures.length == 0){
-           this.maskChartPanel("No measure selected. Please click the \"Add Measure\" button to select a measure.");
+           this.clearChartPanel("No measure selected. Please click the \"Add Measure\" button to select a measure.");
            return;
         }
 
@@ -731,7 +730,7 @@ LABKEY.vis.TimeChartPanel = Ext.extend(Ext.Panel, {
             },
             failure : function(info, response, options) {
                 LABKEY.Utils.displayAjaxErrorResponse(response, options);
-                this.maskChartPanel("Error: " + info.exception);
+                this.clearChartPanel("Error: " + info.exception);
             },
             measures: this.chartInfo.measures,
             viewInfo: this.viewInfo,
@@ -787,7 +786,8 @@ LABKEY.vis.TimeChartPanel = Ext.extend(Ext.Panel, {
     renderLineChart: function(force)
     {
         // mask panel and remove the chart(s)
-        this.maskChartPanel();
+        this.getEl().mask("loading...");
+        this.clearChartPanel();
 
         // get the updated chart information from the varios tabs of the chartEditor
         this.chartInfo = this.getChartInfoFromEditorTabs();
@@ -811,7 +811,7 @@ LABKEY.vis.TimeChartPanel = Ext.extend(Ext.Panel, {
             this.editorMeasurePanel.setFilterWarningText(this.chartSubjectData.filterDescription);
 
         if(this.chartInfo.measures.length == 0){
-           this.maskChartPanel("No measure selected. Please click the \"Add Measure\" button to select a measure.");
+           this.clearChartPanel("No measure selected. Please click the \"Add Measure\" button to select a measure.");
            return;
         }
 
@@ -1007,6 +1007,10 @@ LABKEY.vis.TimeChartPanel = Ext.extend(Ext.Panel, {
 
         this.chart.add(charts);
         this.chart.doLayout();
+
+        // unmask the panel if needed
+        if (this.getEl().isMasked())
+            this.getEl().unmask();
     },
 
     newLineChart: function(size, series, seriesFilter, title)
@@ -1168,7 +1172,8 @@ LABKEY.vis.TimeChartPanel = Ext.extend(Ext.Panel, {
         // make sure the tempGridInfo is available
         if(typeof this.tempGridInfo == "object") {
             // mask panel and remove the chart(s)
-            this.maskChartPanel();
+            this.getEl().mask("loading...");
+            this.clearChartPanel();
             this.loader = this.viewDataGrid;
             this.loaderName = 'viewDataGrid';
 
@@ -1208,6 +1213,10 @@ LABKEY.vis.TimeChartPanel = Ext.extend(Ext.Panel, {
             // re-enable the View Charts button once the QWP has rendered
             chartQueryWebPart.on('render', function(){
                 this.viewChartBtn.enable();
+                
+                // unmask the panel if needed
+                if (this.getEl().isMasked())
+                    this.getEl().unmask();                
             }, this);
 
             this.chart.removeAll();
@@ -1487,19 +1496,21 @@ LABKEY.vis.TimeChartPanel = Ext.extend(Ext.Panel, {
         }
     },
 
-    // WORKAROUND: this is a workaround way of masking the chart panel since the ExtJS mask/unmask
-    // results in the chart image being masked in IE (even after unmask is called)
-    maskChartPanel: function(message){
-        if(!this.isMasked){
-            var msg = message || "Loading...";
-            this.chart.removeAll();
-            this.clearWarningText();
+    // clear the chart panel of any messages, charts, or grids
+    // if displaying a message, also make sure to unmask the time chart wizard element
+    clearChartPanel: function(message){
+        this.chart.removeAll();
+        this.clearWarningText();
+        if (message)
+        {
             this.chart.add(new Ext.Panel({
                 padding: 10,
-                html : "<table width='100%'><tr><td align='center' style='font-style:italic'>" + msg + "</td></tr></table>"
+                html : "<table width='100%'><tr><td align='center' style='font-style:italic'>" + message + "</td></tr></table>"
             }));
-            this.chart.doLayout();
+            if (this.getEl().isMasked)
+                this.getEl().unmask();
         }
+        this.chart.doLayout();
     },
 
     clearWarningText: function(){
