@@ -36,10 +36,22 @@ import java.util.List;
  */
 public class VisitImporter implements InternalStudyImporter
 {
+    private boolean _ensureDataSets = true;
+
     @Override
     public String getDescription()
     {
         return "Visit Importer";
+    }
+
+    public boolean isEnsureDataSets()
+    {
+        return _ensureDataSets;
+    }
+
+    public void setEnsureDataSets(boolean ensureDataSets)
+    {
+        _ensureDataSets = ensureDataSets;
     }
 
     public void process(StudyImpl study, ImportContext ctx, VirtualFile vf, BindException errors) throws IOException, SQLException, StudyImportException, ValidationException
@@ -59,6 +71,7 @@ public class VisitImporter implements InternalStudyImporter
             ctx.getLogger().info("Loading visit map from " + visitMapFile);
 
             VisitMapImporter importer = new VisitMapImporter();
+            importer.setEnsureDataSets(_ensureDataSets);
             List<String> errorMsg = new LinkedList<String>();
 
             if (!importer.process(ctx.getUser(), study, vf, visitMapFile, VisitMapImporter.Format.getFormat(visitMapFile), errorMsg, ctx.getLogger()))

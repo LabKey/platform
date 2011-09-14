@@ -27,6 +27,8 @@ import org.labkey.api.data.DbScope;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.portal.ProjectUrls;
+import org.labkey.api.query.CustomView;
+import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.QueryDefinition;
 import org.labkey.api.query.QueryService;
 import org.labkey.api.query.snapshot.QuerySnapshotDefinition;
@@ -37,7 +39,9 @@ import org.labkey.api.security.permissions.AdminPermission;
 import org.labkey.api.study.Study;
 import org.labkey.api.util.FileUtil;
 import org.labkey.api.util.PageFlowUtil;
+import org.labkey.api.util.Pair;
 import org.labkey.api.util.XmlBeansUtil;
+import org.labkey.api.view.ActionURL;
 import org.labkey.api.writer.Archive;
 import org.labkey.api.writer.VirtualFile;
 import org.labkey.study.StudyFolderType;
@@ -51,10 +55,12 @@ import org.labkey.study.importer.VisitImporter;
 import org.labkey.study.model.DataSetDefinition;
 import org.labkey.study.model.EmphasisStudyDefinition;
 import org.labkey.study.model.ParticipantCategory;
+import org.labkey.study.model.ParticipantGroup;
 import org.labkey.study.model.ParticipantGroupManager;
 import org.labkey.study.model.SecurityType;
 import org.labkey.study.model.StudyImpl;
 import org.labkey.study.model.StudyManager;
+import org.labkey.study.query.DataSetQueryView;
 import org.labkey.study.query.StudyQuerySchema;
 import org.labkey.study.writer.CohortWriter;
 import org.labkey.study.writer.DatasetWriter;
@@ -95,6 +101,7 @@ public class CreateAncillaryStudyAction extends MutatingApiAction<EmphasisStudyD
     private Container _dstContainer;
     private StudyImpl _parentStudy;
     private List<DataSetDefinition> _datasets = new ArrayList<DataSetDefinition>();
+    private List<ParticipantCategory> _participantCategories = new ArrayList<ParticipantCategory>();
 
     @Override
     public ApiResponse execute(EmphasisStudyDefinition form, BindException errors) throws Exception
@@ -116,6 +123,16 @@ public class CreateAncillaryStudyAction extends MutatingApiAction<EmphasisStudyD
 
                     if (def != null)
                         _datasets.add(def);
+                }
+
+                for (ParticipantGroupController.ParticipantCategorySpecification category : form.getCategories())
+                {
+                    if (!category.isNew())
+                    {
+                        ParticipantCategory pc = ParticipantGroupManager.getInstance().getParticipantCategory(_parentStudy.getContainer(), getViewContext().getUser(), category.getRowId());
+                        if (pc != null)
+                            _participantCategories.add(pc);
+                    }
                 }
 
                 MemoryVirtualFile vf = new MemoryVirtualFile();
@@ -185,20 +202,37 @@ public class CreateAncillaryStudyAction extends MutatingApiAction<EmphasisStudyD
             new MissingValueImporter().process(newStudy, importContext, vf, errors);
             new QcStatesImporter().process(newStudy, importContext, vf, errors);
 
-            // import visits
-            VisitImporter visitImporter = new VisitImporter();
-            visitImporter.process(newStudy, importContext, vf, errors);
-
             // dataset definitions
             DatasetImporter datasetImporter = new DatasetImporter();
             datasetImporter.process(newStudy, importContext, vf, errors);
+
+            // import visits
+            VisitImporter visitImporter = new VisitImporter();
+
+            // don't create dataset definitions for datasets we don't import
+            visitImporter.setEnsureDataSets(false);
+            visitImporter.process(newStudy, importContext, vf, errors);
+
+            if (errors.hasErrors())
+                throw new RuntimeException("Error importing study objects : " + errors.getMessage());
         }
     }
 
     private void createSnapshotDatasets(EmphasisStudyDefinition form, BindException errors, StudyImpl newStudy) throws Exception
     {
         User user = getViewContext().getUser();
+        Container container = getViewContext().getContainer();
+
         QuerySnapshotService.I svc = QuerySnapshotService.get(StudyManager.getSchemaName());
+
+        ActionURL filterURL = new ActionURL(CreateAncillaryStudyAction.class, container);
+        for (ParticipantCategory category : _participantCategories)
+        {
+            for (ParticipantGroup group : category.getGroups())
+            {
+                group.addURLFilter(filterURL, container, DataSetQueryView.DATAREGION);
+            }
+        }
 
         for (DataSetDefinition def : _datasets)
         {
@@ -212,11 +246,19 @@ public class CreateAncillaryStudyAction extends MutatingApiAction<EmphasisStudyD
 
                 QuerySnapshotDefinition qsDef = QueryService.get().createQuerySnapshotDef(newStudy.getContainer(), queryDef, def.getLabel());
                 qsDef.setUpdateDelay(form.getUpdateDelay());
+
+                // use a temporary custom view to build a fiter for the participant groups
+                CustomView custView = queryDef.createCustomView(user, "tempCustomView");
+                custView.setFilterAndSortFromURL(filterURL, DataSetQueryView.DATAREGION);
+
+                qsDef.setFilter(custView.getFilterAndSort());
                 qsDef.save(user);
 
                 if (svc != null)
                 {
                     svc.createSnapshot(getViewContext(), qsDef, errors);
+                    if (errors.hasErrors())
+                        throw new RuntimeException("Error copying the dataset data : " + errors.getMessage());
                 }
             }
         }
@@ -227,6 +269,10 @@ public class CreateAncillaryStudyAction extends MutatingApiAction<EmphasisStudyD
         User user = getViewContext().getUser();
 
         List<ParticipantCategory> categoriesToCopy = new ArrayList<ParticipantCategory>();
+        if (form.isCopyParticipantGroups())
+            categoriesToCopy.addAll(_participantCategories);
+
+/*
         for (ParticipantGroupController.ParticipantCategorySpecification category : form.getCategories())
         {
             if (category.isNew())
@@ -242,6 +288,7 @@ public class CreateAncillaryStudyAction extends MutatingApiAction<EmphasisStudyD
                     categoriesToCopy.add(pc);
             }
         }
+*/
 
         if (!categoriesToCopy.isEmpty())
         {
@@ -265,6 +312,9 @@ public class CreateAncillaryStudyAction extends MutatingApiAction<EmphasisStudyD
                 groupImporter.process(newStudy, importContext, vf, errors);
             }
         }
+
+        if (errors.hasErrors())
+            throw new RuntimeException("Error copying participant groups : " + errors.getMessage());
     }
 
     @Override

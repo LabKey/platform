@@ -42,7 +42,8 @@ public class EmphasisStudyDefinition implements CustomApiForm, HasViewContext
     private ViewContext _context;
     private int _updateDelay;
 
-    private ParticipantGroupController.ParticipantCategorySpecification[] _categories;
+    private ParticipantGroupController.ParticipantCategorySpecification[] _categories = new ParticipantGroupController.ParticipantCategorySpecification[0];
+    private boolean _copyParticipantGroups;
 
     @Override
     public void setViewContext(ViewContext context)
@@ -126,6 +127,16 @@ public class EmphasisStudyDefinition implements CustomApiForm, HasViewContext
         _updateDelay = updateDelay;
     }
 
+    public boolean isCopyParticipantGroups()
+    {
+        return _copyParticipantGroups;
+    }
+
+    public void setCopyParticipantGroups(boolean copyParticipantGroups)
+    {
+        _copyParticipantGroups = copyParticipantGroups;
+    }
+
     @Override
     public void bindProperties(Map<String, Object> props)
     {
@@ -133,6 +144,7 @@ public class EmphasisStudyDefinition implements CustomApiForm, HasViewContext
         setDescription((String)props.get("description"));
         setSrcPath((String)props.get("srcPath"));
         setDstPath((String)props.get("dstPath"));
+        setCopyParticipantGroups((Boolean)props.get("copyParticipantGroups"));
 
         Object datasetsJSON = props.get("datasets");
         if (datasetsJSON instanceof JSONArray)

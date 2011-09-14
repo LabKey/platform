@@ -50,6 +50,8 @@ import java.util.Set;
  */
 public class VisitMapImporter
 {
+    private boolean _ensureDataSets = true;
+
     public enum Format
     {
         DataFax {
@@ -103,6 +105,16 @@ public class VisitMapImporter
 
             throw new IllegalStateException("Unknown visit map extension for file " + name);
         }
+    }
+
+    public boolean isEnsureDataSets()
+    {
+        return _ensureDataSets;
+    }
+
+    public void setEnsureDataSets(boolean ensureDataSets)
+    {
+        _ensureDataSets = ensureDataSets;
     }
 
     public boolean process(User user, StudyImpl study, String content, Format format, List<String> errors, Logger logger) throws SQLException, IOException, ValidationException
@@ -329,7 +341,7 @@ public class VisitMapImporter
 
         for (Integer dataSetId : addDatasetIds)
         {
-            if (dataSetId > 0 && !existingSet.contains(dataSetId))
+            if (dataSetId > 0 && _ensureDataSets && !existingSet.contains(dataSetId))
                 StudyManager.getInstance().createDataSetDefinition(user, study.getContainer(), dataSetId);
         }
     }

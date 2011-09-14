@@ -185,6 +185,11 @@ public class QueryManager
         return Table.update(user, getTableInfoQuerySnapshotDef(), snapshotDef, snapshotDef.getRowId());
     }
 
+    public QuerySnapshotDef getQuerySnapshotDef(int id)
+    {
+        return Table.selectObject(getTableInfoQuerySnapshotDef(), id, QuerySnapshotDef.class);
+    }
+
     public CstmView getCustomView(int id) throws SQLException
     {
         SimpleFilter filter = new SimpleFilter();

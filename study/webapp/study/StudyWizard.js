@@ -212,13 +212,14 @@ LABKEY.study.CreateStudyWizard = Ext.extend(Ext.util.Observable, {
 
         var items = [];
 
-        var txt = Ext.DomHelper.markup({tag:'div', cls:'labkey-strong', html:'Participant Selection'}) +
-                Ext.DomHelper.markup({tag:'div', cls: 'labkey-emphasis', html:'How will participants be added to this study?<br>'});
+        var txt = Ext.DomHelper.markup({tag:'div', cls:'labkey-strong', html: this.subject.nounSingular + ' Selection'}) +
+                Ext.DomHelper.markup({tag:'div', cls: 'labkey-emphasis', html:'How will ' + this.subject.nounPlural + ' be added to this study?<br>'});
 
         items.push({xtype:'displayfield', html: txt});
 
+        var noGroupRadio = new Ext.form.Radio({boxLabel:'Use all ' + this.subject.nounPlural + ' from the source Study', name: 'renderType', inputValue: 'all'});
         this.newGroupRadio = new Ext.form.Radio({
-            boxLabel:'Create a new participant group',
+            boxLabel:'Create a new ' + this.subject.nounSingular + ' group',
             name: 'renderType',
             inputValue: 'new',
             scope: this,
@@ -226,12 +227,17 @@ LABKEY.study.CreateStudyWizard = Ext.extend(Ext.util.Observable, {
         });
 
         this.existingGroupRadio = new Ext.form.Radio({
-            boxLabel:'Select from existing participant groups',
+            boxLabel:'Select from existing ' + this.subject.nounPlural + ' groups',
             name: 'renderType',
             inputValue: 'existing',
             checked: true,
             scope:this,
             handler: this.showExistingParticipantGroupPanel
+        });
+
+        this.copyParticipantGroups = new Ext.form.Checkbox({
+            boxLabel: 'Copy selected ' + this.subject.nounSingular + ' groups to the new study',
+            checked:true
         });
 
         var formItems = [
@@ -242,17 +248,17 @@ LABKEY.study.CreateStudyWizard = Ext.extend(Ext.util.Observable, {
                 labelWidth: 5,
                 items: [
                     this.existingGroupRadio,
-                    this.newGroupRadio
+                    noGroupRadio
                 ]
-            }
+            },
+            this.copyParticipantGroups
         ];
 
         var formPanel = new Ext.Panel({
             padding: '5px',
             border: false,
             layout: 'form',
-            //flex: 2,
-            height: 75,
+            flex: 1,
             labelWidth: 5,
             items: formItems
         });
@@ -277,8 +283,10 @@ LABKEY.study.CreateStudyWizard = Ext.extend(Ext.util.Observable, {
                     this.updateStep();
                     return false;
                 }
-            } else {
-                if(!this.info.existingRowId){
+            }
+            else if (this.existingGroupRadio.checked)
+            {
+                if(!this.info.existingCategories){
                     Ext.Msg.alert("Error", "You must select an existing group or create a new one.");
                     this.currentStep--;
                     this.updateStep();
@@ -325,6 +333,7 @@ LABKEY.study.CreateStudyWizard = Ext.extend(Ext.util.Observable, {
 
     showExistingParticipantGroupPanel : function(cmp, show)
     {
+        this.copyParticipantGroups.setVisible(show);
         if (show && this.participantPanel)
         {
             if(!this.existingGroupPanel){
@@ -389,18 +398,20 @@ LABKEY.study.CreateStudyWizard = Ext.extend(Ext.util.Observable, {
                         fields: ['participantId']
                     }),
                     emptyText: "No participants to display.",
-                    width: 250,
+                    flex: 1,
+                    autoScroll: true,
                     columns:[
                         {
-                            header:'Participants',
+                            header: this.subject.nounPlural,
                             dataIndex: 'participantId'
                         }
                     ]
                 });
 
                 function groupSelected(cmp, selection){
+                    this.info.existingCategories = cmp.getSelectedRecords();
+
                     var selectedStoreIndex = cmp.getSelectedRecords()[0].get('storeIndex');
-                    this.info.existingRowId = cmp.getSelectedRecords()[0].get('rowId');
                     this.participantListView.bindStore(participantStores[selectedStoreIndex]);
                 }
 
@@ -408,11 +419,12 @@ LABKEY.study.CreateStudyWizard = Ext.extend(Ext.util.Observable, {
                     store: participantGroupsStore,
                     emptyText: "No groups to display.",
                     width: 250,
+                    autoScroll: true,
                     singleSelect: true,
                     columnSort: false,
                     columns:[
                         {
-                            header:'Participant Groups',
+                            header: this.subject.nounSingular + ' Groups',
                             dataIndex: 'participantGroup'
                         }
                     ],
@@ -428,11 +440,13 @@ LABKEY.study.CreateStudyWizard = Ext.extend(Ext.util.Observable, {
                 ];
 
                 this.existingGroupPanel = new Ext.Panel({
-                    padding: '20px',
-                    border: false,
                     labelWidth: 250,
-                    flex: 1,
+                    flex: 2,
                     layout: 'hbox',
+                    layoutConfig: {
+                        align: 'stretch',
+                        pack: 'start'
+                    },
                     items: [formItems]
                 });
             }
@@ -441,7 +455,7 @@ LABKEY.study.CreateStudyWizard = Ext.extend(Ext.util.Observable, {
                 this.existingGroupPanel = new Ext.Panel({
                     padding: '20px',
                     border: false,
-                    flex: 1,
+                    flex: 2,
                     layout: 'fit',
                     html: 'There are no ' + this.subject.nounSingular + ' groups defined for this Study'
                 });
@@ -473,6 +487,7 @@ LABKEY.study.CreateStudyWizard = Ext.extend(Ext.util.Observable, {
             enableFilters: true,
             editable: false,
             stripeRows: true,
+            pageSize: 300000,
             cls: 'extContainer studyWizardDatasetList',
             flex: 1,
             tbar: []
@@ -554,14 +569,26 @@ LABKEY.study.CreateStudyWizard = Ext.extend(Ext.util.Observable, {
         params.srcPath = LABKEY.ActionURL.getContainer();
         params.dstPath = this.info.dstPath;
         params.datasets = [];
+        params.categories = [];
 
-        if(this.existingGroupRadio.checked){
+        if(this.existingGroupRadio.checked)
+        {
             //If we chose an existing group then we just pass the rowid of the group.
-            params.categories = [{rowId: this.info.existingRowId}];
-        } else {
+            for (var i=0; i < this.info.existingCategories.length; i++)
+            {
+                var category = this.info.existingCategories[i];
+
+                params.categories.push({rowId: category.get('rowId')});
+            }
+        }
+/*
+        else
+        {
             //If it's a new group we pass the categoryData from the newGroupPanel.
             params.categories = [this.newGroupPanel.getCategoryData()];
         }
+*/
+        params.copyParticipantGroups = this.copyParticipantGroups.checked;
 
         for (var i=0; i < this.info.datasets.length; i++)
         {

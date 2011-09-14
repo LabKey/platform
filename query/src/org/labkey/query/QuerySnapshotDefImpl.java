@@ -233,7 +233,8 @@ public class QuerySnapshotDefImpl implements QuerySnapshotDefinition
         }
         else
         {
-            _snapshotDef = QueryManager.get().update(user, _queryDef, _snapshotDef);
+            if (QueryManager.get().getQuerySnapshotDef(_snapshotDef.getRowId()) != null)
+                _snapshotDef = QueryManager.get().update(user, _queryDef, _snapshotDef);
         }
         _dirty = false;
     }

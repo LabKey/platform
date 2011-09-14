@@ -15,6 +15,7 @@
  */
 package org.labkey.study.dataset;
 
+import org.apache.commons.lang.StringUtils;
 import org.apache.log4j.Logger;
 import org.labkey.api.action.NullSafeBindException;
 import org.labkey.api.action.SpringActionController;
@@ -67,6 +68,7 @@ import org.labkey.study.controllers.StudyController;
 import org.labkey.study.model.DataSetDefinition;
 import org.labkey.study.model.StudyImpl;
 import org.labkey.study.model.StudyManager;
+import org.labkey.study.query.DataSetQueryView;
 import org.labkey.study.visitmanager.VisitManager;
 import org.springframework.validation.BindException;
 
@@ -227,12 +229,15 @@ public class DatasetSnapshotProvider extends AbstractSnapshotProvider implements
             settings.setQueryName(queryDef.getName());
             QueryView view = ((UserSchema)querySchema).createView(context, settings, errors);
 
-            if (!qsDef.getColumns().isEmpty())
+            //if (!qsDef.getColumns().isEmpty() || !StringUtils.isBlank(qsDef.getFilter()))
             {
                 // create a temporary custom view to add additional display columns to the base query definition
                 CustomView custView = queryDef.createCustomView(context.getUser(), "tempCustomView");
-                custView.setColumns(qsDef.getColumns());
-                custView.setFilterAndSort(qsDef.getFilter());
+
+                if (!qsDef.getColumns().isEmpty())
+                    custView.setColumns(qsDef.getColumns());
+                if (!StringUtils.isBlank(qsDef.getFilter()))
+                    custView.setFilterAndSort(qsDef.getFilter());
 
                 view.setCustomView(custView);
             }
