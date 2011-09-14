@@ -23,7 +23,6 @@ import org.labkey.api.action.SpringActionController;
 import org.labkey.api.admin.AdminUrls;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
-import org.labkey.api.data.CoreSchema;
 import org.labkey.api.data.FileSqlScriptProvider;
 import org.labkey.api.data.SqlScriptManager;
 import org.labkey.api.data.SqlScriptRunner;
@@ -57,13 +56,10 @@ import javax.servlet.ServletException;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.HashSet;
-import java.util.LinkedHashMap;
-import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -842,225 +838,6 @@ public class SqlScriptController extends SpringActionController
             backUrl.addParameter("moduleName", script.getProvider().getProviderName());
             backUrl.addParameter("filename", script.getDescription());
             out.println(PageFlowUtil.generateButton("Back", backUrl));
-        }
-    }
-
-
-    private static class ScriptReorderer
-    {
-        private static final String TABLE_NAME_REGEX;
-        private static final String STATEMENT_ENDING_REGEX;
-        private static final String COMMENT_REGEX = "((/\\*.+?\\*/)|(^--.+?$))\\s*";   // Single-line or block comment, followed by white space
-
-        static
-        {
-            if (CoreSchema.getInstance().getSqlDialect().isSqlServer())
-            {
-                TABLE_NAME_REGEX = "((?:(?:\\w+)\\.)?(?:#?[a-zA-Z0-9]+))";  // # allows for temp table names
-                STATEMENT_ENDING_REGEX = "((; GO$)|(;$)|( GO$))\\s*";       // Semicolon, GO, or both
-            }
-            else
-            {
-                TABLE_NAME_REGEX = "((?:(?:\\w+)\\.)?(?:[a-zA-Z0-9]+))";
-                STATEMENT_ENDING_REGEX = ";$(\\s*)";
-            }
-        }
-
-        private final Map<String, Collection<String>> _statements = new LinkedHashMap<String, Collection<String>>();
-        private final List<String> _unknownStatements = new LinkedList<String>();
-
-        private String _contents;
-        private int _row = 0;
-
-        private ScriptReorderer(String contents)
-        {
-            _contents = contents;
-        }
-
-        public String getReorderedScript(boolean isHtml)
-        {
-            Pattern commentPattern = compile(COMMENT_REGEX);
-
-            List<Pattern> patterns = new LinkedList<Pattern>();
-            List<Pattern> nonTablePatterns = new LinkedList<Pattern>();
-
-            patterns.add(compile("INSERT (?:INTO )?" + TABLE_NAME_REGEX + " \\([^\\)]+?\\) VALUES \\([^\\)]+?\\)\\s*(" + STATEMENT_ENDING_REGEX + "|$(\\s*))"));
-            patterns.add(compile("INSERT (?:INTO )?" + TABLE_NAME_REGEX + " \\([^\\)]+?\\) SELECT .+?"+ STATEMENT_ENDING_REGEX));
-            patterns.add(compile("CREATE (?:UNIQUE )?(?:CLUSTERED )?INDEX [a-zA-Z0-9_]+? ON " + TABLE_NAME_REGEX + ".+?" + STATEMENT_ENDING_REGEX));
-            patterns.add(compile(getRegExWithPrefix("CREATE TABLE ")));
-            patterns.add(compile(getRegExWithPrefix("ALTER TABLE ")));
-            patterns.add(compile(getRegExWithPrefix("INSERT INTO ")));
-            patterns.add(compile(getRegExWithPrefix("UPDATE ")));
-            patterns.add(compile(getRegExWithPrefix("DELETE FROM ")));
-            patterns.add(compile(getRegExWithPrefix("DROP TABLE ")));
-            patterns.add(compile(getRegExWithPrefix("DROP INDEX ")));    // By convention, index names start with their associated table names
-
-            if (CoreSchema.getInstance().getSqlDialect().isSqlServer())
-            {
-                patterns.add(compile(getRegExWithPrefix("CREATE TABLE ")));
-                patterns.add(compile("EXEC sp_rename (?:@objname\\s*=\\s*)?'" + TABLE_NAME_REGEX + ".*?'.+?" + STATEMENT_ENDING_REGEX ));
-                patterns.add(compile("EXEC core\\.fn_dropifexists '(\\w+)', '(\\w+)'.+?" + STATEMENT_ENDING_REGEX));
-                nonTablePatterns.add(compile("CREATE PROCEDURE .+?" + STATEMENT_ENDING_REGEX));
-            }
-            else
-            {
-                patterns.add(compile(getRegExWithPrefix("CREATE (?:TEMPORARY )?TABLE ")));
-                patterns.add(compile("SELECT core\\.fn_dropifexists\\s*\\('(\\w+)', '(\\w+)'.+?" + STATEMENT_ENDING_REGEX));
-                patterns.add(compile("SELECT SETVAL\\('([a-zA-Z]+)\\.([a-zA-Z]+)_.+?" + STATEMENT_ENDING_REGEX));
-                nonTablePatterns.add(compile("CREATE FUNCTION .+? RETURNS \\w+ AS (.+?) (?:.+?) \\1 LANGUAGE plpgsql" + STATEMENT_ENDING_REGEX));
-            }
-
-            StringBuilder newScript = new StringBuilder();
-            StringBuilder unknown = new StringBuilder();
-
-            boolean firstMatch = true;
-
-            while (0 < _contents.length())
-            {
-                // Parse all the comments first.  If we match a table statement next, we'll include the comments.
-                StringBuilder comments = new StringBuilder();
-
-                Matcher m = commentPattern.matcher(_contents);
-
-                while (m.lookingAt())
-                {
-                    comments.append(m.group());
-                    _contents = _contents.substring(m.end());
-                    m = commentPattern.matcher(_contents);
-                }
-
-                boolean found = false;
-
-                for (Pattern p : patterns)
-                {
-                    m = p.matcher(_contents);
-
-                    if (m.lookingAt())
-                    {
-                        if (firstMatch)
-                        {
-                            // Section before first match (copyright, license, type creation, etc.) always goes first
-                            addStatement("initial section", unknown.toString());
-                            unknown = new StringBuilder();
-                            firstMatch = false;
-                        }
-
-                        String tableName = m.group(1);
-
-                        if (-1 == tableName.indexOf('.'))
-                            tableName = m.group(2) + "." + m.group(1);
-
-                        addStatement(tableName, comments + m.group());
-                        _contents = _contents.substring(m.end());
-                        found = true;
-                        break;
-                    }
-                }
-
-                String nonTableStatement = null;
-
-                if (!found)
-                {
-                    for (Pattern p : nonTablePatterns)
-                    {
-                        m = p.matcher(_contents);
-
-                        if (m.lookingAt())
-                        {
-                            nonTableStatement = comments + m.group();
-                            _contents = _contents.substring(m.end());
-                            found = true;
-                            break;
-                        }
-                    }
-                }
-
-                if (found)
-                {
-                    if (unknown.length() > 0)
-                    {
-                        _unknownStatements.add(unknown.toString());
-                        unknown = new StringBuilder();
-                    }
-                }
-                else
-                {
-                    unknown.append(comments);
-
-                    if (_contents.length() > 0)
-                    {
-                        unknown.append(_contents.charAt(0));
-                        _contents = _contents.substring(1);
-                    }
-                }
-
-                if (null != nonTableStatement)
-                    _unknownStatements.add(nonTableStatement);
-            }
-
-            appendAllStatements(newScript, isHtml);
-
-            if (unknown.length() > 0)
-                _unknownStatements.add(unknown.toString());
-
-            if (!_unknownStatements.isEmpty())
-            {
-                appendStatement(newScript, "\n=======================\n", isHtml);
-
-                for (String unknownStatement : _unknownStatements)
-                    appendStatement(newScript, unknownStatement, isHtml);
-            }
-
-            return newScript.toString();
-        }
-
-        private String getRegExWithPrefix(String prefix)
-        {
-            return prefix + TABLE_NAME_REGEX + ".*?" + STATEMENT_ENDING_REGEX;
-        }
-
-        private Pattern compile(String regEx)
-        {
-            return Pattern.compile(regEx.replaceAll(" ", "\\\\s+"), Pattern.CASE_INSENSITIVE + Pattern.DOTALL + Pattern.MULTILINE);
-        }
-
-        private void addStatement(String tableName, String statement)
-        {
-            String key = tableName.toLowerCase();
-
-            Collection<String> tableStatements = _statements.get(key);
-
-            if (null == tableStatements)
-            {
-                tableStatements = new LinkedList<String>();
-                _statements.put(key, tableStatements);
-            }
-
-            tableStatements.add(statement);
-        }
-
-        private void appendAllStatements(StringBuilder sb, boolean html)
-        {
-            for (Map.Entry<String, Collection<String>> tableStatements : _statements.entrySet())
-                for (String statement : tableStatements.getValue())
-                    appendStatement(sb, statement, html);
-        }
-
-        private void appendStatement(StringBuilder sb, String statement, boolean html)
-        {
-            if (html)
-            {
-                sb.append("<tr class=\"");
-                sb.append(0 == (_row % 2) ? "labkey-row" : "labkey-alternate-row");
-                sb.append("\"><td>");
-                sb.append(PageFlowUtil.filter(statement, true));
-                sb.append("</td></tr>\n");
-                _row++;
-            }
-            else
-            {
-                sb.append(statement);
-            }
         }
     }
 

@@ -586,6 +586,7 @@ core/src/org/labkey/core/admin/mvIndicators.jsp -text
 core/src/org/labkey/core/admin/properties.jsp -text
 core/src/org/labkey/core/admin/renameFolder.jsp -text
 core/src/org/labkey/core/admin/reorderFolders.jsp -text
+core/src/org/labkey/core/admin/sql/ScriptReorderer.java -text
 core/src/org/labkey/core/admin/sql/ShowRunningScriptsPage.java -text
 core/src/org/labkey/core/admin/sql/SqlScriptController.java -text
 core/src/org/labkey/core/admin/sql/ViewHandler.java -text
