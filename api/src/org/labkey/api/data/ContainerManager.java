@@ -1631,7 +1631,7 @@ public class ContainerManager
             }
             catch (Throwable t)
             {
-                LOG.error("fireCreateContainer", t);
+                LOG.error("fireCreateContainer for " + cl.getClass().getName(), t);
             }
     }
 
@@ -1649,7 +1649,7 @@ public class ContainerManager
             }
             catch (Throwable t)
             {
-                LOG.error("fireDeleteContainer", t);
+                LOG.error("fireDeleteContainer for " + l.getClass().getName(), t);
                 errors.add(t);
             }
         }
@@ -1676,7 +1676,7 @@ public class ContainerManager
             }
             catch (Throwable t)
             {
-                LOG.error("fireMoveContainer", t);
+                LOG.error("fireMoveContainer for " + cl.getClass().getName(), t);
             }
         }
         ContainerPropertyChangeEvent evt = new ContainerPropertyChangeEvent(c, Property.Parent, oldParent, c.getParent());
@@ -1695,7 +1695,7 @@ public class ContainerManager
             }
             catch (Throwable t)
             {
-                LOG.error("firePropertyChangeEvent", t);
+                LOG.error("firePropertyChangeEvent for " + l.getClass().getName(), t);
             }
         }
     }

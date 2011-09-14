@@ -16,6 +16,7 @@
 
 package org.labkey.api.etl;
 
+import org.apache.commons.lang.NotImplementedException;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
@@ -30,7 +31,6 @@ import org.labkey.api.query.BatchValidationException;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.ValidationException;
 import org.labkey.api.security.User;
-import sun.reflect.generics.reflectiveObjects.NotImplementedException;
 
 import java.util.ArrayList;
 import java.util.HashMap;

@@ -153,6 +153,5 @@ public class TSVMapWriter extends TSVWriter
                 assertEquals(expected, sb.toString());
             }
         }
-
     }
 }
