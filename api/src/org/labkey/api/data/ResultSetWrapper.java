@@ -1137,4 +1137,16 @@ public class ResultSetWrapper implements ResultSet
     {
         throw new UnsupportedOperationException();
     }
+
+    // JDBC 4.1 methods below must be here so we compile on JDK 7
+
+    public <T> T getObject(int columnIndex, Class<T> type) throws SQLException
+    {
+        throw new UnsupportedOperationException();
+    }
+
+    public <T> T getObject(String columnLabel, Class<T> type) throws SQLException
+    {
+        throw new UnsupportedOperationException();
+    }
 }

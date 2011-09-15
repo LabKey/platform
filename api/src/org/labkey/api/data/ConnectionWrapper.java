@@ -25,6 +25,7 @@ import org.labkey.api.util.Pair;
 import java.sql.*;
 import java.text.DateFormat;
 import java.util.*;
+import java.util.concurrent.Executor;
 
 /**
  * User: jeckels
@@ -411,10 +412,6 @@ public class ConnectionWrapper implements java.sql.Connection
     }
 
 
-    // The following methods are "implemented" to allow compiling and running on JDK/JRE 6.0 while still supporting
-    // JDK/JRE 5.0.  If/when we require JDK/JRE 6.0, these methods should be properly implemented.
-
-
     public boolean isWrapperFor(Class<?> iface) throws SQLException
     {
         return iface.isAssignableFrom(_connection.getClass());
@@ -485,6 +482,34 @@ public class ConnectionWrapper implements java.sql.Connection
     }
 
     
+    // The following methods are "implemented" to allow compiling and running on JDK/JRE 7.0 while still supporting
+    // JDK/JRE 7.0.  If/when we require JDK/JRE 7.0, these methods should be properly implemented.
+
+    public void setSchema(String schema) throws SQLException
+    {
+        throw new UnsupportedOperationException();
+    }
+
+    public String getSchema() throws SQLException
+    {
+        throw new UnsupportedOperationException();
+    }
+
+    public void abort(Executor executor) throws SQLException
+    {
+        throw new UnsupportedOperationException();
+    }
+
+    public void setNetworkTimeout(Executor executor, int milliseconds) throws SQLException
+    {
+        throw new UnsupportedOperationException();
+    }
+
+    public int getNetworkTimeout() throws SQLException
+    {
+        throw new UnsupportedOperationException();
+    }
+
     private class DatabaseMetaDataWrapper implements DatabaseMetaData
     {
         private final DatabaseMetaData _md;
@@ -1718,6 +1743,21 @@ public class ConnectionWrapper implements java.sql.Connection
                 throws SQLException
         {
             return iface.isAssignableFrom(DatabaseMetaData.class);
+        }
+
+
+        // Once JRE 7 is required, should implement these via delegation.
+
+        @Override
+        public ResultSet getPseudoColumns(String catalog, String schemaPattern, String tableNamePattern, String columnNamePattern) throws SQLException
+        {
+            throw new UnsupportedOperationException();
+        }
+
+        @Override
+        public boolean generatedKeyAlwaysReturned() throws SQLException
+        {
+            throw new UnsupportedOperationException();
         }
     }
 }

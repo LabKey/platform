@@ -1229,9 +1229,7 @@ public class StatementWrapper implements Statement, PreparedStatement, CallableS
         return _stmt.toString();
     }
 
-    // The following methods are "implemented" to allow compiling and running on JDK/JRE 6.0 while still supporting
-    // JDK/JRE 5.0.  If/when we require JDK/JRE 6.0, these methods should be properly implemented.
-
+    // TODO: These methods should be properly implemented via delegation.
 
     public boolean isWrapperFor(Class<?> iface) throws SQLException
     {
@@ -1510,6 +1508,27 @@ public class StatementWrapper implements Statement, PreparedStatement, CallableS
         throw new UnsupportedOperationException();
     }
 
+    public <T> T getObject(int parameterIndex, Class<T> type) throws SQLException
+    {
+        throw new UnsupportedOperationException();
+    }
+
+    // JDBC 4.1 methods below must be here so we compile on JDK 7; implement once we require JRE 7.
+
+    public <T> T getObject(String parameterName, Class<T> type) throws SQLException
+    {
+        throw new UnsupportedOperationException();
+    }
+
+    public void closeOnCompletion() throws SQLException
+    {
+        throw new UnsupportedOperationException();
+    }
+
+    public boolean isCloseOnCompletion() throws SQLException
+    {
+        throw new UnsupportedOperationException();
+    }
 
     private final void beforeExecute(String sql)
     {

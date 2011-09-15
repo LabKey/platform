@@ -497,8 +497,8 @@ public class ModuleLoader implements Filter
 
     private void verifyJavaVersion() throws ServletException
     {
-        if (!SystemUtils.IS_JAVA_1_6)
-            throw new ConfigurationException("Unsupported Java runtime version: " + SystemUtils.JAVA_VERSION + ".  LabKey Server requires Java 1.6.");
+        if (!SystemUtils.isJavaVersionAtLeast(160))
+            throw new ConfigurationException("Unsupported Java runtime version: " + SystemUtils.JAVA_VERSION + ".  LabKey Server requires Java 1.6 or 1.7.");
     }
 
     private void removeAPIFiles(Set<File> unclaimedFiles, File webappRoot) throws IOException
