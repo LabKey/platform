@@ -613,7 +613,7 @@ public class AuthenticationManager
             return true;
         }
 
-        // Returns true is a logo is deleted
+        // Returns true if a logo is deleted
         public boolean deleteLogos(AuthLogoForm form) throws SQLException
         {
             String[] deletedLogos = form.getDeletedLogos();
@@ -622,7 +622,7 @@ public class AuthenticationManager
                 return false;
 
             for (String logoName : deletedLogos)
-                AttachmentService.get().delete(ContainerManager.RootContainer.get(), logoName, getViewContext().getUser());
+                AttachmentService.get().deleteAttachment(ContainerManager.RootContainer.get(), logoName, getViewContext().getUser());
 
             return true;
         }
