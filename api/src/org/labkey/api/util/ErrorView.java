@@ -16,6 +16,8 @@
 
 package org.labkey.api.util;
 
+import org.apache.commons.lang.StringUtils;
+import org.labkey.api.settings.LookAndFeelProperties;
 import org.labkey.api.view.HttpView;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.data.Container;
@@ -23,6 +25,7 @@ import org.labkey.api.data.ContainerManager;
 import org.labkey.api.settings.AppProps;
 import org.labkey.api.portal.ProjectUrls;
 import org.labkey.api.security.LoginUrls;
+import org.labkey.api.view.UnauthorizedException;
 import org.labkey.api.view.WebTheme;
 import org.labkey.api.view.WebThemeManager;
 
@@ -121,6 +124,22 @@ class ErrorView extends HttpView
         // These buttons are useless if the server fails to start up.  Also, they try to hit a database that probably doesn't exist.
         if (!_startupFailure)
         {
+            if (_renderer.getStatus() == HttpServletResponse.SC_UNAUTHORIZED)
+            {
+                LookAndFeelProperties props = org.labkey.api.settings.LookAndFeelProperties.getInstance(getContextContainer());
+                if (!StringUtils.isBlank(props.getSupportEmail()))
+                {
+                    out.println("<p>If you believe you should have permission to perform this action, please <a href=\"mailto:");
+                    out.println(PageFlowUtil.filter(props.getSupportEmail()));
+                    out.println("?subject=Permissions on ");
+                    if (!StringUtils.isBlank(props.getShortName()))
+                    {
+                        out.println(PageFlowUtil.filter(props.getShortName()));
+                    }
+                    out.println("\">email your system administrator</a>.</p>");
+                }
+            }
+
             if (_popup)
             {
                 out.print(PageFlowUtil.generateButton("Close", "#", "window.close(); return false;"));

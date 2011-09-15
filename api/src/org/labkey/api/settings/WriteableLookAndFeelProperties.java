@@ -50,6 +50,11 @@ public class WriteableLookAndFeelProperties extends LookAndFeelProperties
         storeStringValue(FOLDER_DISPLAY_MODE, folderDisplayMode.toString());
     }
 
+    public void setSupportEmail(String email)
+    {
+        storeStringValue(SUPPORT_EMAIL, email);
+    }
+
     public void setNavigationBarWidth(String width)
     {
         storeStringValue(NAVIGATION_BAR_WIDTH, width);

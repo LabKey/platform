@@ -44,6 +44,7 @@ public class LookAndFeelProperties extends AbstractWriteableSettingsGroup
 
     protected static final String COMPANY_NAME_PROP = "companyName";
     protected static final String SYSTEM_EMAIL_ADDRESS_PROP = "systemEmailAddress";
+    protected static final String SUPPORT_EMAIL = "supportEmail";
     protected static final String REPORT_A_PROBLEM_PATH_PROP = "reportAProblemPath";
 
     private Container _c;
@@ -159,6 +160,11 @@ public class LookAndFeelProperties extends AbstractWriteableSettingsGroup
     public String getUnsubstitutedReportAProblemPath()
     {
         return lookupStringValue(REPORT_A_PROBLEM_PATH_PROP, "${contextPath}/project" + Container.DEFAULT_SUPPORT_PROJECT_PATH + "/begin.view");
+    }
+
+    public String getSupportEmail()
+    {
+        return lookupStringValue(SUPPORT_EMAIL, null);
     }
 
     public String getReportAProblemPath()
