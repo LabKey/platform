@@ -1126,19 +1126,10 @@ public class AttachmentServiceImpl implements AttachmentService.Service, Contain
         @Override
         public boolean delete(User user) throws IOException
         {
-            try
-            {
-                if (user != null && !canDelete(user))
-                    return false;
-                AttachmentService.get().delete(_parent, _name, user);
-                return true;
-            }
-            catch (SQLException x)
-            {
-                IOException io = new IOException();
-                io.initCause(x);
-                throw io;
-            }
+            if (user != null && !canDelete(user))
+                return false;
+            AttachmentService.get().deleteAttachment(_parent, _name, user);
+            return true;
         }
 
         @Override

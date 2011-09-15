@@ -608,15 +608,6 @@ public class AnnouncementsController extends SpringActionController
         }
     }
 
-    @RequiresNoPermission    // Permission checking done in verifyPermissions() to handle owner-update, etc.
-    public class AddAttachmentAction extends AttachmentAction
-    {
-        public ModelAndView getAttachmentView(AttachmentForm form, AttachmentParent parent) throws Exception
-        {
-            return AttachmentService.get().add(parent, getAttachmentFileList(), getUser());
-        }
-    }
-
     @RequiresPermissionClass(ReadPermission.class)
     public class DownloadAction extends AttachmentAction
     {
@@ -641,16 +632,6 @@ public class AnnouncementsController extends SpringActionController
             }
         }
     }
-
-    @RequiresNoPermission    // Permission checking done in verifyPermissions() to handle owner-update, etc.
-    public class DeleteAttachmentAction extends AttachmentAction
-    {
-        public ModelAndView getAttachmentView(AttachmentForm form, AttachmentParent parent) throws Exception
-        {
-            return AttachmentService.get().delete(parent, form.getName(), getUser());
-        }
-    }
-
 
     public static class MemberListRemovalForm
     {
@@ -1047,7 +1028,7 @@ public class AnnouncementsController extends SpringActionController
         {
             select.append("      <option value=").append(user.getUserId());
 
-            if (assignedTo != null && assignedTo.intValue() == user.getUserId())
+            if (assignedTo != null && assignedTo == user.getUserId())
                 select.append(" selected");
 
             select.append(">");
