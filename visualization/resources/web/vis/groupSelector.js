@@ -45,6 +45,7 @@ LABKEY.vis.GroupSelector = Ext.extend(Ext.Panel, {
             {
                 this.subject.groups.push({
                     label: selectedRecords[i].get("label"),
+                    id: selectedRecords[i].get('rowId'),
                     participantIds: selectedRecords[i].get("participantIds"),
                     created: selectedRecords[i].get("created") 
                 });
@@ -82,7 +83,7 @@ LABKEY.vis.GroupSelector = Ext.extend(Ext.Panel, {
                     {name: 'rowId', type: 'integer'},
                     {name: 'label', type: 'string'},
                     {name: 'created', type: 'date'},
-                    {name: 'participantIds'},
+                    {name: 'participantIds'}
                 ],
                 sortInfo: {
                     field: 'created',
@@ -105,6 +106,7 @@ LABKEY.vis.GroupSelector = Ext.extend(Ext.Panel, {
                                 var record = store.getAt(i);
                                 this.subject.groups.push({
                                     label: record.get("label"),
+                                    id: record.get('rowId'),
                                     participantIds: record.get("participantIds"),
                                     created: record.get("created")
                                 });
