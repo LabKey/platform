@@ -1746,15 +1746,13 @@ public class ConnectionWrapper implements java.sql.Connection
         }
 
 
-        // Once JRE 7 is required, should implement these via delegation.
+        // JDBC 4.1 methods below must be here so we compile on JDK 7; Once JRE 7 is required, should implement these via delegation.
 
-        @Override
         public ResultSet getPseudoColumns(String catalog, String schemaPattern, String tableNamePattern, String columnNamePattern) throws SQLException
         {
             throw new UnsupportedOperationException();
         }
 
-        @Override
         public boolean generatedKeyAlwaysReturned() throws SQLException
         {
             throw new UnsupportedOperationException();
