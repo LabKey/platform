@@ -330,82 +330,94 @@ public class VisualizationSQLGenerator implements CustomApiForm, HasViewContext
 
         if (!_groupBys.isEmpty())
         {
-            Map<String, Set<String>> columnAliases = getColumnMapping(_columnFactory, queries);
-
-            StringBuilder aggregatedSQL = new StringBuilder("SELECT ");
-            String separator = "";
-            Set<VisualizationSourceQuery> groupByQueries = new LinkedHashSet<VisualizationSourceQuery>();
-            StringBuilder groupByAndSelectSQL = new StringBuilder();
-
-            for (VisualizationSourceColumn groupByColumn : _groupBys)
-            {
-                VisualizationSourceQuery joinQuery = innerJoinQueries.iterator().next();
-                VisualizationSourceQuery groupByQuery = ensureSourceQuery(_viewContext.getContainer(), groupByColumn, joinQuery);
-                groupByQuery.addSelect(groupByColumn);
-                groupByQueries.add(groupByQuery);
-            }
-            if (_intervals.size() > 1)
-            {
-                throw new IllegalArgumentException("A maximum of one interval is supported");
-            }
-
-            for (VisualizationSourceQuery groupByQuery : groupByQueries)
-            {
-                groupByQuery.appendColumnNames(groupByAndSelectSQL, groupByQuery.getSelects(_columnFactory, false), false, false, false);
-            }
-
-            for (Map.Entry<String, VisualizationIntervalColumn> entry : _intervals.entrySet())
-            {
-                groupByAndSelectSQL.append(", x.");
-                groupByAndSelectSQL.append(_intervals.size() == 1 ? entry.getValue().getSimpleAlias() : entry.getValue().getFullAlias());
-            }
-
-            aggregatedSQL.append(groupByAndSelectSQL);
-            aggregatedSQL.append(", COUNT(*) AS AggregateCount");
-            for (VisualizationSourceColumn measureCol : _measureCols)
-            {
-                String alias = columnAliases.get(measureCol.getOriginalName()).iterator().next();
-                aggregatedSQL.append(", AVG(x." + alias + ") AS " + alias);
-            }
-
-            aggregatedSQL.append("\n FROM (");
-            aggregatedSQL.append(sql);
-            aggregatedSQL.append(") x");
-
-            for (VisualizationSourceQuery groupByQuery : groupByQueries)
-            {
-                aggregatedSQL.append(" INNER JOIN (SELECT * FROM ");
-                aggregatedSQL.append(groupByQuery.getSchemaName());
-                aggregatedSQL.append(".");
-                aggregatedSQL.append(groupByQuery.getQueryName());
-                aggregatedSQL.append("\n");
-                aggregatedSQL.append(groupByQuery.getWhereClause());
-                aggregatedSQL.append(") AS ");
-                aggregatedSQL.append(groupByQuery.getAlias());
-                separator = "";
-                aggregatedSQL.append(" ON ");
-                VisualizationProvider provider = getVisualizationProvider(groupByQuery.getSchemaName());
-                for (Pair<VisualizationSourceColumn, VisualizationSourceColumn> pair : provider.getJoinColumns(_columnFactory, groupByQuery, innerJoinQueries.iterator().next()))
-                {
-                    aggregatedSQL.append(separator);
-                    separator = " AND ";
-
-                    aggregatedSQL.append("x.");
-                    aggregatedSQL.append(columnAliases.get(pair.getKey().getOriginalName()).iterator().next());
-                    aggregatedSQL.append(" = ");
-                    aggregatedSQL.append(groupByQuery.getAlias());
-                    aggregatedSQL.append(".");
-                    aggregatedSQL.append(pair.getValue().getOriginalName());
-                }
-            }
-
-            aggregatedSQL.append("\nGROUP BY ");
-            aggregatedSQL.append(groupByAndSelectSQL);
-
-            return aggregatedSQL.toString();
+            return wrapInGroupBy(innerJoinQueries, queries, sql);
         }
 
         return sql;
+    }
+
+    private String wrapInGroupBy(Set<VisualizationSourceQuery> innerJoinQueries, List<IVisualizationSourceQuery> queries, String sql)
+            throws GenerationException
+    {
+        Map<String, Set<String>> columnAliases = getColumnMapping(_columnFactory, queries);
+
+        StringBuilder aggregatedSQL = new StringBuilder("SELECT ");
+        String separator = "";
+        Set<VisualizationSourceQuery> groupByQueries = new LinkedHashSet<VisualizationSourceQuery>();
+        StringBuilder groupByAndSelectSQL = new StringBuilder();
+
+        for (VisualizationSourceColumn groupByColumn : _groupBys)
+        {
+            VisualizationSourceQuery joinQuery = innerJoinQueries.iterator().next();
+            VisualizationSourceQuery groupByQuery = ensureSourceQuery(_viewContext.getContainer(), groupByColumn, joinQuery);
+            groupByQuery.addSelect(groupByColumn);
+            groupByQueries.add(groupByQuery);
+        }
+        if (_intervals.size() > 1)
+        {
+            throw new IllegalArgumentException("A maximum of one interval is supported");
+        }
+
+        for (VisualizationSourceQuery groupByQuery : groupByQueries)
+        {
+            groupByQuery.appendColumnNames(groupByAndSelectSQL, groupByQuery.getSelects(_columnFactory, false), false, false, false);
+        }
+
+        for (Map.Entry<String, VisualizationIntervalColumn> entry : _intervals.entrySet())
+        {
+            groupByAndSelectSQL.append(", x.");
+            groupByAndSelectSQL.append(_intervals.size() == 1 ? entry.getValue().getSimpleAlias() : entry.getValue().getFullAlias());
+        }
+
+        aggregatedSQL.append(groupByAndSelectSQL);
+        aggregatedSQL.append(", COUNT(*) AS AggregateCount");
+        for (VisualizationSourceColumn measureCol : _measureCols)
+        {
+            String alias = columnAliases.get(measureCol.getOriginalName()).iterator().next();
+            aggregatedSQL.append(", AVG(x." + alias + ") AS " + alias);
+        }
+
+        aggregatedSQL.append("\n FROM (");
+        aggregatedSQL.append(sql);
+        aggregatedSQL.append(") x");
+
+        for (VisualizationSourceQuery groupByQuery : groupByQueries)
+        {
+            aggregatedSQL.append(" INNER JOIN (SELECT * FROM ");
+            aggregatedSQL.append(groupByQuery.getSchemaName());
+            aggregatedSQL.append(".");
+            aggregatedSQL.append(groupByQuery.getQueryName());
+            aggregatedSQL.append("\n");
+            aggregatedSQL.append(groupByQuery.getWhereClause());
+            aggregatedSQL.append(") AS ");
+            aggregatedSQL.append(groupByQuery.getAlias());
+            separator = "";
+            aggregatedSQL.append(" ON ");
+            VisualizationProvider provider = getVisualizationProvider(groupByQuery.getSchemaName());
+            for (Pair<VisualizationSourceColumn, VisualizationSourceColumn> pair : provider.getJoinColumns(_columnFactory, groupByQuery, innerJoinQueries.iterator().next()))
+            {
+                aggregatedSQL.append(separator);
+                separator = " AND ";
+
+                aggregatedSQL.append("x.");
+                aggregatedSQL.append(columnAliases.get(pair.getKey().getOriginalName()).iterator().next());
+                aggregatedSQL.append(" = ");
+                aggregatedSQL.append(groupByQuery.getAlias());
+                aggregatedSQL.append(".");
+                aggregatedSQL.append(pair.getValue().getOriginalName());
+            }
+        }
+
+        aggregatedSQL.append("\nGROUP BY ");
+        aggregatedSQL.append(groupByAndSelectSQL);
+
+        // For now, always sort by the GROUP BY columns - the ones requested by the client with the "groupBys" parameter,
+        // and the interval columns. The sorts parameter is ignored in the aggregation case.
+        // We should use the sort parameter instead, but it makes SQL generation much harder
+        aggregatedSQL.append("\nORDER BY ");
+        aggregatedSQL.append(groupByAndSelectSQL);
+
+        return aggregatedSQL.toString();
     }
 
     private static IVisualizationSourceQuery findQuery(VisualizationSourceColumn column, Collection<IVisualizationSourceQuery> queries)
