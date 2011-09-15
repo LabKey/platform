@@ -146,6 +146,10 @@ if (AppProps.getInstance().isDevMode())
     <td><input type="text" name="reportAProblemPath" size="50" value="<%= h(laf.getUnsubstitutedReportAProblemPath()) %>"></td>
 </tr>
 <tr>
+    <td class="labkey-form-label">Support email (shown to users if they don't have permission to see a page, or are having trouble logging in)</td>
+    <td><input type="text" name="supportEmail" size="50" value="<%= h(laf.getSupportEmail()) %>"></td>
+</tr>
+<tr>
     <td>&nbsp;</td>
 </tr>
 

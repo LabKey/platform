@@ -1096,6 +1096,7 @@ public class AdminController extends SpringActionController
         private String _tabId;
         private String _projectRootPath;
         private String _fileRootOption;
+        private String _supportEmail;
 
         public enum FileRootProp
         {
@@ -1287,6 +1288,16 @@ public class AdminController extends SpringActionController
         public void setFileRootOption(String fileRootOption)
         {
             _fileRootOption = fileRootOption;
+        }
+
+        public void setSupportEmail(String supportEmail)
+        {
+            _supportEmail = supportEmail;
+        }
+
+        public String getSupportEmail()
+        {
+            return _supportEmail;
         }
     }
 

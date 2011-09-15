@@ -25,6 +25,9 @@
 <%@ page import="org.labkey.api.view.ViewContext" %>
 <%@ page import="org.labkey.core.login.LoginController.LoginBean" %>
 <%@ page import="org.labkey.core.login.LoginController.LoginForm" %>
+<%@ page import="org.labkey.api.settings.LookAndFeelProperties" %>
+<%@ page import="org.apache.commons.lang.StringUtils" %>
+<%@ page import="java.net.URLEncoder" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
     HttpView<LoginBean> me = (HttpView<LoginBean>) HttpView.currentView();
@@ -34,6 +37,7 @@
     User user = context.getUser();
     LoginForm form = bean.form;
     URLHelper returnURL = form.getReturnURLHelper(AppProps.getInstance().getHomePageActionURL());
+    org.labkey.api.settings.LookAndFeelProperties props = org.labkey.api.settings.LookAndFeelProperties.getInstance(context.getContainer());
     boolean agreeOnly = bean.agreeOnly;
 
     // Next bit of code makes the enter button work on all browsers.
@@ -89,7 +93,8 @@
         <tr><td>Email:</td><td><input id="email" type="text" name="email" value="<%=h(form.getEmail())%>" style="width:200px;"></td></tr>
         <tr><td>Password:</td><td><input id="password" type="password" name="password" style="width:200px;"></td></tr>
         <tr><td></td><td><input type=checkbox name="remember" id="remember" <%=bean.remember ? "checked" : ""%>><label for="remember">Remember my email address</label></td></tr>
-        <tr><td></td><td><a href="resetPassword.view">Forgot your password?</a></td></tr><%
+        <tr><td></td><td><a href="resetPassword.view">Forgot your password?</a></td></tr>
+        <% if (!org.apache.commons.lang.StringUtils.isBlank(props.getSupportEmail())) { %><tr><td></td><td><a href="mailto:<%= h(props.getSupportEmail()) %>?subject=Account request<%= org.apache.commons.lang.StringUtils.isBlank(props.getShortName()) ? "" : " for " + h(props.getShortName()) %>">Request an account</a></td></tr><% }
     }
 
     if (null != bean.termsOfUseHTML)

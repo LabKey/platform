@@ -155,6 +155,18 @@ public class ProjectSettingsAction extends FormViewAction<AdminController.Projec
         props.setSystemShortName(form.getSystemShortName());
         props.setNavigationBarWidth(form.getNavigationBarWidth());
         props.setReportAProblemPath(form.getReportAProblemPath());
+        try
+        {
+            // this will throw an InvalidEmailException for invalid email addresses
+            ValidEmail email = new ValidEmail(form.getSupportEmail());
+            props.setSupportEmail(email.toString());
+        }
+        catch (ValidEmail.InvalidEmailException e)
+        {
+            errors.reject(SpringActionController.ERROR_MSG, "Invalid Support Email Address: ["
+                    + e.getBadEmail() + "]. Please enter a valid email address.");
+            return false;
+        }
         props.setAppBarUIEnabled(form.isAppBarUIEnabled());
 
         FolderDisplayMode folderDisplayMode = FolderDisplayMode.ALWAYS;

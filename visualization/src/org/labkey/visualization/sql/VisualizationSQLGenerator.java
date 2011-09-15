@@ -488,22 +488,32 @@ public class VisualizationSQLGenerator implements CustomApiForm, HasViewContext
 
         if (includeOrderBys && !orderBys.isEmpty())
         {
-            sep = "";
-            sql.append("ORDER BY ");
-            UserSchema firstSchema = null;
-            for (Map.Entry<VisualizationSourceColumn, IVisualizationSourceQuery> orderBy : orderBys.entrySet())
-            {
-                if (firstSchema == null)
-                    firstSchema = orderBy.getKey().getSchema();
-                sql.append(sep).append(orderBy.getValue().getAlias()).append(".").append(orderBy.getKey().getAlias());
-                sep = ", ";
-            }
-            assert firstSchema != null : "Should have at least one column with a schema.";
-            DefaultSchema defSchema = DefaultSchema.get(firstSchema.getUser(), firstSchema.getContainer());
-            if (defSchema.getDbSchema().getSqlDialect().isSqlServer())
-                sql.append(" LIMIT 1000000");
+            sql.append(getOrderByClause(orderBys));
         }
 
+        return sql.toString();
+    }
+
+    private static String getOrderByClause(Map<VisualizationSourceColumn, IVisualizationSourceQuery> orderBys)
+    {
+        if (orderBys.isEmpty())
+        {
+            return "";
+        }
+        String sep = "";
+        StringBuilder sql = new StringBuilder("ORDER BY ");
+        UserSchema firstSchema = null;
+        for (Map.Entry<VisualizationSourceColumn, IVisualizationSourceQuery> orderBy : orderBys.entrySet())
+        {
+            if (firstSchema == null)
+                firstSchema = orderBy.getKey().getSchema();
+            sql.append(sep).append(orderBy.getValue().getAlias()).append(".").append(orderBy.getKey().getAlias());
+            sep = ", ";
+        }
+        assert firstSchema != null : "Should have at least one column with a schema.";
+        DefaultSchema defSchema = DefaultSchema.get(firstSchema.getUser(), firstSchema.getContainer());
+        if (defSchema.getDbSchema().getSqlDialect().isSqlServer())
+            sql.append(" LIMIT 1000000");
         return sql.toString();
     }
 
