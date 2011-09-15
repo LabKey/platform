@@ -111,7 +111,6 @@ import org.labkey.api.view.VBox;
 import org.labkey.api.view.ViewContext;
 import org.labkey.api.view.WebPartView;
 import org.labkey.api.view.template.PageConfig;
-import org.labkey.api.wiki.WikiRenderer;
 import org.labkey.api.wiki.WikiRendererType;
 import org.labkey.api.wiki.WikiService;
 import org.springframework.validation.BindException;
@@ -136,7 +135,6 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.TreeSet;
 
 
 /**
@@ -1023,8 +1021,7 @@ public class AnnouncementsController extends SpringActionController
 
         try
         {
-            Set<Class<? extends Permission>> perms = new TreeSet<Class<? extends Permission>>();
-            perms.add(InsertPermission.class);
+            Set<Class<? extends Permission>> perms = Collections.<Class<? extends Permission>>singleton(InsertPermission.class);
             possibleAssignedTo = SecurityManager.getUsersWithPermissions(c, perms);
         }
         catch (SQLException e)
@@ -1076,8 +1073,7 @@ public class AnnouncementsController extends SpringActionController
         public List<AjaxCompletion> getCompletions(AjaxCompletionForm form, BindException errors) throws Exception
         {
             // Limit member list lookup to those with read permissions in this container.
-            Set<Class<? extends Permission>> perms = new TreeSet<Class<? extends Permission>>();
-            perms.add(ReadPermission.class);
+            Set<Class<? extends Permission>> perms = Collections.<Class<? extends Permission>>singleton(ReadPermission.class);
             List<User> completionUsers = SecurityManager.getUsersWithPermissions(getContainer(), perms);
             return UserManager.getAjaxCompletions(form.getPrefix(), completionUsers, getViewContext().getUser());
         }
