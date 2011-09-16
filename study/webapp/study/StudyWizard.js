@@ -498,33 +498,18 @@ LABKEY.study.CreateStudyWizard = Ext.extend(Ext.util.Observable, {
 
         var syncTxt = Ext.DomHelper.markup({tag:'div', cls:'labkey-strong', html:'<br><br>Data Linking Options'}) +
                 Ext.DomHelper.markup({tag:'div', cls: 'labkey-emphasis', html:'Linked datasets can be configured to be manually updated or to automatically ' +
-                    'update within an amount of time after the data from the original study has changed<br>'});
+                    'update within a fixed amount of time after the data from the original study has changed<br>'});
 
         items.push({xtype:'displayfield', html: syncTxt});
-
-        var updateDelay = new Ext.form.ComboBox({
-            xtype: 'combo',
-            hiddenName: 'updateDelay',
-            fieldLabel: '',
-            allowBlank: false,
-            forceSelection: true,
-            mode: 'local',
-            triggerAction: 'all',
-            value: 30,
-            store: [[30,'30 seconds'],[60, '1 minute'], [300, '5 minutes'], [600, '10 minutes'],
-                [1800, '30 minutes'],[3600, '1 hour'], [7200, '2 hours']]
-        });
 
         this.snapshotOptions = new Ext.form.FormPanel({
             defaults: {labelSeparator: ''},
             items: [
+                {xtype: 'hidden', name: 'updateDelay', value: 30},
                 {xtype: 'radiogroup', fieldLabel: '', columns: 2, items: [
-                    {name: 'autoRefresh', boxLabel: 'Automatic Refresh', inputValue: 'true', checked: true,
-                        listeners: {check: function(cmp, checked){updateDelay.setVisible(checked);}}
-                    },
+                    {name: 'autoRefresh', boxLabel: 'Automatic Refresh', inputValue: 'true', checked: true},
                     {name: 'autoRefresh', boxLabel: 'Manual Refresh', inputValue: 'false'}]
-                },
-                updateDelay
+                }
             ],
             padding: '10px 0px',
             border: false,
