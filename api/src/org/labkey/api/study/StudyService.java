@@ -45,6 +45,10 @@ public class StudyService
     /** LSID namespace prefix for study specimens in the experiment material table */
     public static final String SPECIMEN_NAMESPACE_PREFIX = "StudySpecimen";
 
+    public static final String STUDY_REDESIGN_FOLDER_TYPE_NAME_CHAVI = "Study Redesign (CHAVI)";
+    public static final String STUDY_REDESIGN_FOLDER_TYPE_NAME_ITN = "Study Redesign (ITN)";
+
+
     public interface Service
     {
         /**
