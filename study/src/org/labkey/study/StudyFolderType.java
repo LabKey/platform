@@ -35,7 +35,6 @@ import org.labkey.api.view.NavTree;
 import org.labkey.api.view.ViewContext;
 import org.labkey.api.view.template.AppBar;
 import org.labkey.study.controllers.StudyController;
-import org.labkey.study.controllers.StudyPagesController;
 import org.labkey.study.controllers.reports.ReportsController;
 import org.labkey.study.model.StudyManager;
 

@@ -25,6 +25,7 @@ import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.DbScope;
 import org.labkey.api.data.TableInfo;
+import org.labkey.api.module.FolderType;
 import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.portal.ProjectUrls;
 import org.labkey.api.query.CustomView;
@@ -37,6 +38,7 @@ import org.labkey.api.security.RequiresPermissionClass;
 import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.AdminPermission;
 import org.labkey.api.study.Study;
+import org.labkey.api.study.StudyService;
 import org.labkey.api.util.FileUtil;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.Pair;
@@ -146,7 +148,7 @@ public class CreateAncillaryStudyAction extends MutatingApiAction<EmphasisStudyD
                 
                 // copy participants
                 copyParticipants(form, errors, newStudy, vf);
-                String redirect = PageFlowUtil.urlProvider(ProjectUrls.class).getBeginURL(_dstContainer).getLocalURIString();
+                String redirect = PageFlowUtil.urlProvider(ProjectUrls.class).getStartURL(_dstContainer).getLocalURIString();
 
                 resp.put("redirect", redirect);
                 resp.put("success", true);
@@ -365,7 +367,11 @@ public class CreateAncillaryStudyAction extends MutatingApiAction<EmphasisStudyD
 
         StudyManager.getInstance().createStudy(getViewContext().getUser(), study);
 
-        _dstContainer.setFolderType(ModuleLoader.getInstance().getFolderType(StudyFolderType.NAME));
+        FolderType folderType = ModuleLoader.getInstance().getFolderType(StudyService.STUDY_REDESIGN_FOLDER_TYPE_NAME_CHAVI);
+        // We may not have the study redesign module installed:
+        if (folderType == null)
+            folderType = ModuleLoader.getInstance().getFolderType(StudyFolderType.NAME);
+        _dstContainer.setFolderType(folderType);
 
         return study;
     }
