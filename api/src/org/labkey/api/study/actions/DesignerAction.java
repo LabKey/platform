@@ -66,22 +66,21 @@ public class DesignerAction extends BaseAssayAction<DesignerAction.DesignerForm>
     public ModelAndView getView(DesignerForm form, BindException errors) throws Exception
     {
         _form = form;
-        Integer rowId = form.getRowId();
-        Map<String, String> properties = new HashMap<String, String>();
-        if (rowId != null)
+        try
         {
             _protocol = form.getProtocol(!form.isCopy());
-            properties.put("protocolId", "" + rowId);
+        }
+        catch (NotFoundException ignored) { /* User is probably creating a new assay design */ }
+        Map<String, String> properties = new HashMap<String, String>();
+        if (_protocol != null)
+        {
+            properties.put("protocolId", "" + _protocol.getRowId());
             properties.put("copy", Boolean.toString(form.isCopy()));
         }
         AssayProvider provider = AssayService.get().getProvider(form.getProviderName());
         if (provider == null)
         {
-            provider = getProvider(form);
-        }
-        if (provider == null)
-        {
-            throw new NotFoundException("No such assay provider: " + form.getProviderName());
+            provider = form.getProvider();
         }
         properties.put("providerName", provider.getName());
         properties.put("supportsEditableResults", Boolean.toString(provider.supportsEditableResults()));
@@ -96,7 +95,7 @@ public class DesignerAction extends BaseAssayAction<DesignerAction.DesignerForm>
         VBox result = new VBox();
         if (_protocol != null && !form.isCopy())
         {
-            result.addView(new AssayHeaderView(_protocol, getProvider(form), false, false, ContainerFilter.CURRENT));
+            result.addView(new AssayHeaderView(_protocol, form.getProvider(), false, false, ContainerFilter.CURRENT));
         }
         result.addView(createGWTView(properties));
         return result;

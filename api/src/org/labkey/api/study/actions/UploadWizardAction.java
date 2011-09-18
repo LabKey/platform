@@ -230,7 +230,7 @@ public class UploadWizardAction<FormType extends AssayRunUploadForm<ProviderType
 
     private ModelAndView getBatchPropertiesView(FormType runForm, boolean errorReshow, BindException errors) throws ServletException
     {
-        ExpProtocol protocol = getProtocol(runForm);
+        ExpProtocol protocol = runForm.getProtocol();
         AssayProvider provider = AssayService.get().getProvider(protocol);
         runForm.setProviderName(provider.getName());
         Domain uploadDomain = provider.getBatchDomain(protocol);
@@ -325,7 +325,7 @@ public class UploadWizardAction<FormType extends AssayRunUploadForm<ProviderType
             }
         }
 
-        ExpRunTable table = AssayService.get().createRunTable(_protocol, getProvider(newRunForm), newRunForm.getUser(), newRunForm.getContainer());
+        ExpRunTable table = AssayService.get().createRunTable(_protocol, newRunForm.getProvider(), newRunForm.getUser(), newRunForm.getContainer());
         insertView.getDataRegion().addColumn(0, table.getColumn("Name"));
         insertView.getDataRegion().addColumn(1, table.getColumn("Comments"));
 

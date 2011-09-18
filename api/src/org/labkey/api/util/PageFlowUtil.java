@@ -2164,21 +2164,6 @@ public class PageFlowUtil
     }
 
 
-    // Compares two objects even if they're null.
-    public static boolean nullSafeEquals(Object o1, Object o2)
-    {
-        if (null == o1)
-            return null == o2;
-
-        return o1.equals(o2);
-    }
-
-
-
-    //
-    //  From PFUtil
-    //
-
     /**
      * Returns a specified <code>UrlProvider</code> interface implementation, for use
      * in writing URLs implemented in other modules.

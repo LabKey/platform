@@ -194,8 +194,8 @@ public class PublishConfirmAction extends BaseAssayAction<PublishConfirmAction.P
     public ModelAndView getView(PublishConfirmForm publishConfirmForm, BindException errors) throws Exception
     {
         ViewContext context = getViewContext();
-        _protocol = getProtocol(publishConfirmForm);
-        AssayProvider provider = AssayService.get().getProvider(_protocol);
+        _protocol = publishConfirmForm.getProtocol();
+        AssayProvider provider = publishConfirmForm.getProvider();
         Set<Integer> selectedObjects = new HashSet<Integer>(getCheckboxIds());
         Integer[] allObjectsArray = publishConfirmForm.getObjectId();
 

@@ -419,7 +419,7 @@ public class PropertiesEditor<DomainType extends GWTDomain<FieldType>, FieldType
             if (w instanceof FocusWidget)
                 ((FocusWidget)w).setFocus(true);
         }
-        catch (Exception x)
+        catch (Exception ignored)
         {
         }
     }
@@ -933,7 +933,7 @@ public class PropertiesEditor<DomainType extends GWTDomain<FieldType>, FieldType
         }
 
         // blank cell
-        _table.setHTML(tableRow, col,"&nbsp");
+        _table.setHTML(tableRow, col,"&nbsp;");
         formatter.setWidth(tableRow, col, "900");
         formatter.setHeight(tableRow, col, "23");
     }
@@ -1641,5 +1641,5 @@ public class PropertiesEditor<DomainType extends GWTDomain<FieldType>, FieldType
     private static boolean _empty(String s) {return null==s || s.length()==0;}
     private static String _string(Object o) {return null==o ? "" : o.toString();}
     private static String _default(String a, String b) {return _empty(a) ? b : a;}
-    private static String _trimToNull(String a) {return _empty(a) ? null : StringUtils.trimToNull(a.toString());}
+    private static String _trimToNull(String a) {return _empty(a) ? null : StringUtils.trimToNull(a);}
 }

@@ -63,7 +63,7 @@ public class AssayRunDetailsAction extends BaseAssayAction<AssayRunDetailsAction
     public ModelAndView getView(AssayRunDetailsForm form, BindException errors) throws Exception
     {
         ViewContext context = getViewContext();
-        _protocol = getProtocol(form);
+        _protocol = form.getProtocol();
         _run = ExperimentService.get().getExpRun(form.getRunId());
         if (_run == null)
         {

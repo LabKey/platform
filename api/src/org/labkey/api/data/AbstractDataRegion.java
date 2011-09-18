@@ -24,6 +24,7 @@ import org.labkey.api.view.DisplayElement;
 
 import java.io.IOException;
 import java.io.Writer;
+import java.util.Collections;
 import java.util.Map;
 import java.util.Set;
 
@@ -237,6 +238,11 @@ public abstract class AbstractDataRegion extends DisplayElement
         return (ctx.getView() == null || StringUtils.isEmpty(ctx.getView().getName()));
     }
 
+    public Map<String,Object> getQueryParameters()
+    {
+        return null== getSettings() ? Collections.<String, Object>emptyMap() : getSettings().getQueryParameters();
+    }
+
     /**
      * Adds any filter error messages and optionally the filter description that is applied to the current context.
      * @param headerMessage The StringBuilder to append messages to
@@ -248,6 +254,22 @@ public abstract class AbstractDataRegion extends DisplayElement
         String filterDescription = showFilterDescription ? getFilterDescription(ctx) : null;
         if (filterErrorMsg != null && filterErrorMsg.length() > 0)
             headerMessage.append("<span class=\"labkey-error\">").append(PageFlowUtil.filter(filterErrorMsg)).append("</span>");
+
+        Map<String, Object> parameters = getQueryParameters();
+        if (!parameters.isEmpty())
+        {
+            headerMessage.append("<span class='labkey-strong'>Parameters:</span>&nbsp;");
+            String separator = "";
+            for (Map.Entry<String, Object> entry : parameters.entrySet())
+            {
+                headerMessage.append(separator);
+                separator = ", ";
+                headerMessage.append(PageFlowUtil.filter(entry.getKey()));
+                headerMessage.append("&nbsp;=&nbsp;");
+                headerMessage.append(PageFlowUtil.filter(entry.getValue()));
+            }
+            headerMessage.append("&nbsp;&nbsp;");
+        }
 
         if (filterDescription != null)
         {

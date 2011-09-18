@@ -24,7 +24,6 @@ import org.labkey.api.security.RequiresPermissionClass;
 import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.study.assay.AbstractAssayProvider;
 import org.labkey.api.study.assay.AssayProvider;
-import org.labkey.api.study.assay.AssayService;
 import org.labkey.api.study.assay.AssayUrls;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.view.ActionURL;
@@ -50,10 +49,10 @@ public class AssayResultDetailsAction extends BaseAssayAction<DataDetailsForm>
     public ModelAndView getView(DataDetailsForm form, BindException errors) throws Exception
     {
         ViewContext context = getViewContext();
-        _protocol = getProtocol(form);
+        _protocol = form.getProtocol();
         _dataRowId = form.getDataRowId();
 
-        AssayProvider provider = AssayService.get().getProvider(_protocol);
+        AssayProvider provider = form.getProvider();
         if (!(provider instanceof AbstractAssayProvider))
             throw new RuntimeException("Assay must be derived from AbstractAssayProvider to use the AssayResultDetailsAction");
 

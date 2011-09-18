@@ -74,8 +74,8 @@ public class AssayRunsAction extends BaseAssayAction<AssayRunsAction.AssayRunsFo
         if (summaryForm.getClearDataRegionSelectionKey() != null)
             DataRegionSelection.clearAll(context, summaryForm.getClearDataRegionSelectionKey());
 
-        _protocol = getProtocol(summaryForm);
-        AssayProvider provider = AssayService.get().getProvider(_protocol);
+        _protocol = summaryForm.getProtocol();
+        AssayProvider provider = summaryForm.getProvider();
 
         ModelAndView resultsView = provider.createRunsView(context, _protocol);
         if (resultsView != null)

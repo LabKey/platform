@@ -43,7 +43,7 @@ public class AssayBatchesAction extends BaseAssayAction<AssayRunsAction.AssayRun
         if (summaryForm.getClearDataRegionSelectionKey() != null)
             DataRegionSelection.clearAll(context, summaryForm.getClearDataRegionSelectionKey());
 
-        _protocol = getProtocol(summaryForm);
+        _protocol = summaryForm.getProtocol();
         AssayProvider provider = AssayService.get().getProvider(_protocol);
         ModelAndView resultsView = provider.createBatchesView(context, _protocol);
         if (resultsView != null)

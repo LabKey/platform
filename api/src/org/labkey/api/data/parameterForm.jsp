@@ -81,6 +81,7 @@ Ext.onReady(function()
         if (p.jsontype == 'int')
             item.decimalPrecision=0;
         item.fieldLabel = p.name;
+        item.width = 250;
         item.name = <%=PageFlowUtil.qh(bean.dataRegionName)%> + ".param." + Ext.util.Format.htmlEncode(p.name);
         item.value=p.value;
         items.push(item);

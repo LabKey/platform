@@ -22,11 +22,9 @@ import com.google.gwt.event.dom.client.ClickEvent;
 import com.google.gwt.event.dom.client.ClickHandler;
 import com.google.gwt.user.client.DOM;
 import com.google.gwt.user.client.Window;
-import com.google.gwt.user.client.rpc.AsyncCallback;
 import com.google.gwt.user.client.ui.*;
 import org.labkey.api.gwt.client.model.GWTPropertyDescriptor;
 import org.labkey.api.gwt.client.util.ErrorDialogAsyncCallback;
-import org.labkey.api.gwt.client.util.IPropertyWrapper;
 import org.labkey.api.gwt.client.util.StringProperty;
 import org.labkey.api.gwt.client.util.StringUtils;
 
@@ -64,9 +62,6 @@ public class LookupEditor<FieldType extends GWTPropertyDescriptor> extends Dialo
         // set up labels, add textboxes when bound
         _table = new FlexTable();
         int row = 0;
-
-//            String contextPath = PropertyUtil.getServerProperty("contextPath")
-//            Image image = new Image("X");
 
         if (showContainer)
         {
@@ -403,7 +398,6 @@ public class LookupEditor<FieldType extends GWTPropertyDescriptor> extends Dialo
 
     private class PopupList extends PopupPanel implements ChangeHandler
     {
-        IPropertyWrapper _prop;
         ListBox _list = new ListBox();
         String _value = null;
 

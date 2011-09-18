@@ -191,7 +191,7 @@ public class SQLFragment implements Appendable, CharSequence
 
 
 
-    @Deprecated  // use append(TableInfo, String alias)
+    @Deprecated  /** use append(TableInfo, String alias) */
     public SQLFragment append(TableInfo table)
     {
         String s = table.getSelectName();

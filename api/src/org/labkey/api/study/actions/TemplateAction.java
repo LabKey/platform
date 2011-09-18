@@ -48,7 +48,7 @@ public class TemplateAction extends BaseAssayAction<ProtocolIdForm>
     ExpProtocol _protocol;
     public ModelAndView getView(ProtocolIdForm rowIdForm, BindException errors) throws Exception
     {
-        _protocol = getProtocol(rowIdForm);
+        _protocol = rowIdForm.getProtocol();
         AssayProvider provider = AssayService.get().getProvider(_protocol);
         Domain runDataDomain = provider.getResultsDomain(_protocol);
         Map<String, String> colNameToPdname = new CaseInsensitiveHashMap<String>();

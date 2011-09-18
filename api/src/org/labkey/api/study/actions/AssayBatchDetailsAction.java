@@ -63,7 +63,7 @@ public class AssayBatchDetailsAction extends BaseAssayAction<AssayBatchDetailsAc
     public ModelAndView getView(AssayBatchDetailsForm form, BindException errors) throws Exception
     {
         ViewContext context = getViewContext();
-        _protocol = getProtocol(form);
+        _protocol = form.getProtocol();
         _exp = ExperimentService.get().getExpExperiment(form.getBatchId());
         if (_exp == null)
         {

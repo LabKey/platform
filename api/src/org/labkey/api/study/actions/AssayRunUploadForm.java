@@ -237,9 +237,10 @@ public class AssayRunUploadForm<ProviderType extends AssayProvider> extends Prot
         return _additionalFiles;
     }
 
+    @NotNull
     public ProviderType getProvider()
     {
-        return (ProviderType)AssayService.get().getProvider(getProtocol());
+        return (ProviderType)super.getProvider();
     }
 
     public ActionURL getActionURL()

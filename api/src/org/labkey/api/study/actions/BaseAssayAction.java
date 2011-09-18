@@ -16,21 +16,17 @@
 
 package org.labkey.api.study.actions;
 
-import org.jetbrains.annotations.NotNull;
 import org.labkey.api.action.AppBarAction;
 import org.labkey.api.action.SimpleViewAction;
 import org.labkey.api.data.*;
 import org.labkey.api.exp.api.ExpProtocol;
-import org.labkey.api.exp.api.ExperimentService;
 import org.labkey.api.exp.property.DomainProperty;
-import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.study.assay.AssayProvider;
 import org.labkey.api.study.assay.AssayService;
 import org.labkey.api.study.assay.AssayUrls;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.NavTree;
-import org.labkey.api.view.NotFoundException;
 import org.labkey.api.view.template.AppBar;
 
 import java.util.ArrayList;
@@ -60,39 +56,6 @@ public abstract class BaseAssayAction<T extends ProtocolIdForm> extends SimpleVi
         return PageFlowUtil.urlProvider(AssayUrls.class).getAssayRunsURL(getContainer(), protocol);
     }
 
-    public static ExpProtocol getProtocol(ProtocolIdForm form)
-    {
-        return getProtocol(form, true);
-    }
-
-    @NotNull
-    public static ExpProtocol getProtocol(ProtocolIdForm form, boolean validateContainer)
-    {
-        if (form.getRowId() == null)
-            throw new NotFoundException("Assay ID not specified.");
-        ExpProtocol protocol = ExperimentService.get().getExpProtocol(form.getRowId().intValue());
-        if (protocol == null || (validateContainer && !protocol.getContainer().equals(form.getContainer()) &&
-                                                      !protocol.getContainer().equals(form.getContainer().getProject()) &&
-                                                      !protocol.getContainer().equals(ContainerManager.getSharedContainer()) &&
-                                                      !(form.getContainer().isWorkbook() && protocol.getContainer().equals(form.getContainer().getParent()))))
-        {
-            throw new NotFoundException("Assay " + form.getRowId() + " does not exist in " + form.getContainer().getPath());
-        }
-
-        // even if we don't validate that the protocol is from the current or project container,
-        // but we still make sure that the current user can read from the protocol container:
-        if (!protocol.getContainer().hasPermission(form.getViewContext().getUser(), ReadPermission.class))
-            throw new NotFoundException();
-
-        AssayProvider provider = AssayService.get().getProvider(protocol);
-        if (provider == null)
-        {
-            throw new NotFoundException("Could not find assay provider for assay id " + protocol.getRowId());
-        }
-        
-        return protocol;
-    }
-
     protected Container getContainer()
     {
         return getViewContext().getContainer();
@@ -117,7 +80,7 @@ public abstract class BaseAssayAction<T extends ProtocolIdForm> extends SimpleVi
 
     protected AssayProvider getProvider(ProtocolIdForm form)
     {
-        return AssayService.get().getProvider(getProtocol(form));
+        return AssayService.get().getProvider(form.getProtocol());
     }
 
     public NavTree appendNavTrail(NavTree root)

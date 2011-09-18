@@ -17,6 +17,7 @@
 package org.labkey.api.study.query;
 
 import org.apache.commons.beanutils.ConversionException;
+import org.apache.commons.lang.ObjectUtils;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.*;
 import org.labkey.api.exp.ExperimentException;
@@ -521,8 +522,8 @@ public class PublishResultsQueryView extends ResultsQueryView
                         // Need to grab the study specimen's participant and visit
                         String targetSpecimenPTID = convertObjectToString(_specimenPTIDCol.getValue(ctx));
                         Double targetSpecimenVisit = convertObjectToDouble(_specimenVisitCol.getValue(ctx));
-                        userInputMatchesTargetSpecimen = PageFlowUtil.nullSafeEquals(targetSpecimenPTID, userParticipantId) &&
-                                PageFlowUtil.nullSafeEquals(targetSpecimenVisit, userVisitId);
+                        userInputMatchesTargetSpecimen = ObjectUtils.equals(targetSpecimenPTID, userParticipantId) &&
+                                ObjectUtils.equals(targetSpecimenVisit, userVisitId);
                     }
                     else
                     {
@@ -541,8 +542,8 @@ public class PublishResultsQueryView extends ResultsQueryView
                         if (userDate == null || targetSpecimenDate == null)
                         {
                             // Do a simple object equality on the dates if one or both of them is null
-                            userInputMatchesTargetSpecimen = PageFlowUtil.nullSafeEquals(targetSpecimenPTID, userParticipantId) &&
-                                    PageFlowUtil.nullSafeEquals(userDate, targetSpecimenDate);
+                            userInputMatchesTargetSpecimen = ObjectUtils.equals(targetSpecimenPTID, userParticipantId) &&
+                                    ObjectUtils.equals(userDate, targetSpecimenDate);
                         }
                         else
                         {
@@ -552,7 +553,7 @@ public class PublishResultsQueryView extends ResultsQueryView
                             Calendar userCal = new GregorianCalendar();
                             userCal.setTime(userDate);
 
-                            userInputMatchesTargetSpecimen = PageFlowUtil.nullSafeEquals(targetSpecimenPTID, userParticipantId) &&
+                            userInputMatchesTargetSpecimen = ObjectUtils.equals(targetSpecimenPTID, userParticipantId) &&
                                     userCal.get(Calendar.YEAR) == targetSpecimenCal.get(Calendar.YEAR) &&
                                     userCal.get(Calendar.MONTH) == targetSpecimenCal.get(Calendar.MONTH) &&
                                     userCal.get(Calendar.DAY_OF_MONTH) == targetSpecimenCal.get(Calendar.DAY_OF_MONTH);

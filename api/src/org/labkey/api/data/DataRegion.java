@@ -439,11 +439,6 @@ public class DataRegion extends AbstractDataRegion
         return getSettings() != null ? getSettings().getMaxRows() : _maxRows;
     }
 
-    public Map<String,Object> getQueryParameters()
-    {
-        return null== getSettings() ? Collections.<String, Object>emptyMap() : getSettings().getQueryParameters();
-    }
-
     /** Use {@link QuerySettings#setMaxRows(int)}. */
     @Deprecated
     public void setMaxRows(int maxRows)

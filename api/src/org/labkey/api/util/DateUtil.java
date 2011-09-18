@@ -669,6 +669,15 @@ validNum:       {
             ;
         }
 
+        try
+        {
+            // One final format to try - handles "2-3-01", "02-03-01", "02-03-2001", etc
+            DateFormat format = new SimpleDateFormat("M-d-yy");
+            format.setLenient(false);
+            return format.parse(s).getTime();
+        }
+        catch (ParseException ignored) {}
+        
         throw new ConversionException(s);
     }
 
@@ -738,12 +747,25 @@ validNum:       {
             if (s.length() == 10 && s.charAt(4) == '-' && s.charAt(7) == '-')
                 return parseStringJDBC(s);
         }
-        catch (ConversionException x)
-        {
-            ;
-        }
+        catch (ConversionException ignored) {}
 
-        return parseDateTimeUS(s, DateTimeOption.DateOnly, true);
+        try
+        {
+            return parseDateTimeUS(s, DateTimeOption.DateOnly, true);
+        }
+        catch (ConversionException e)
+        {
+            try
+            {
+                // One final format to try - handles "2-3-01", "02-03-01", "02-03-2001", etc
+                DateFormat format = new SimpleDateFormat("M-d-yy");
+                format.setLenient(false);
+                return format.parse(s).getTime();
+            }
+            catch (ParseException ignored) {}
+
+            throw e;
+        }
     }
 
 
@@ -1153,7 +1175,13 @@ Parse:
             // Date
             assertEquals(dateExpected, DateUtil.parseDateTime("2001-02-03"));
             assertEquals(dateExpected, DateUtil.parseDate("2/3/01"));
-            assertEquals(dateExpected, DateUtil.parseDate("2/3/01"));
+            assertEquals(dateExpected, DateUtil.parseDate("2-3-01"));
+            assertEquals(dateExpected, DateUtil.parseDate("2-3-2001"));
+            assertEquals(dateExpected, DateUtil.parseDate("2/3/2001"));
+            assertEquals(dateExpected, DateUtil.parseDate("02/03/01"));
+            assertEquals(dateExpected, DateUtil.parseDate("02-03-01"));
+            assertEquals(dateExpected, DateUtil.parseDate("02/03/2001"));
+            assertEquals(dateExpected, DateUtil.parseDate("02-03-2001"));
             assertEquals(dateExpected, DateUtil.parseDate("3-Feb-01"));
             assertEquals(dateExpected, DateUtil.parseDate("3Feb01"));
             assertEquals(dateExpected, DateUtil.parseDate("3Feb2001"));

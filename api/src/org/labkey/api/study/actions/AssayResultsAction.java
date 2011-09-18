@@ -43,10 +43,9 @@ public class AssayResultsAction extends BaseAssayAction<ProtocolIdForm>
     public ModelAndView getView(ProtocolIdForm form, BindException errors) throws Exception
     {
         ViewContext context = getViewContext();
-        _protocol = getProtocol(form);
-        AssayProvider provider = AssayService.get().getProvider(_protocol);
+        _protocol = form.getProtocol();
 
-        ModelAndView resultsView = provider.createResultsView(context, _protocol);
+        ModelAndView resultsView = form.getProvider().createResultsView(context, _protocol);
         if (resultsView != null)
             return resultsView;
         return new AssayResultsView(_protocol, false);

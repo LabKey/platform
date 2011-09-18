@@ -15,6 +15,7 @@
  */
 package org.labkey.api.study.assay;
 
+import org.apache.commons.lang.ObjectUtils;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.Table;
@@ -78,7 +79,7 @@ public class AssayResultUpdateService extends DefaultQueryUpdateService
                 Object newValue = entry.getValue();
 
                 TableInfo fkTableInfo = col.getFkTableInfo();
-                if (!PageFlowUtil.nullSafeEquals(oldValue, newValue) && fkTableInfo != null && !AbstractAssayProvider.SPECIMENID_PROPERTY_NAME.equalsIgnoreCase(entry.getKey()))
+                if (!ObjectUtils.equals(oldValue, newValue) && fkTableInfo != null && !AbstractAssayProvider.SPECIMENID_PROPERTY_NAME.equalsIgnoreCase(entry.getKey()))
                 {
                     // Don't follow the lookup for specimen IDs, since their FK is very special and based on target study, etc
                     Map<String, Object> oldLookupTarget = Table.selectObject(fkTableInfo, oldValue, Map.class);
@@ -133,7 +134,7 @@ public class AssayResultUpdateService extends DefaultQueryUpdateService
 
     private StringBuilder appendPropertyIfChanged(StringBuilder sb, String label, Object oldValue, Object newValue)
     {
-        if (!PageFlowUtil.nullSafeEquals(oldValue, newValue))
+        if (!ObjectUtils.equals(oldValue, newValue))
         {
             sb.append(" ");
             sb.append(label);

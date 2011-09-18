@@ -23,6 +23,7 @@ import com.extjs.gxt.ui.client.widget.Dialog;
 import com.extjs.gxt.ui.client.widget.button.Button;
 import com.extjs.gxt.ui.client.widget.form.*;
 import com.extjs.gxt.ui.client.widget.layout.RowLayout;
+import com.extjs.gxt.ui.client.widget.tips.ToolTip;
 import com.google.gwt.user.client.Event;
 import com.google.gwt.user.client.Window;
 import org.labkey.api.gwt.client.model.GWTPropertyDescriptor;
@@ -91,9 +92,16 @@ public class ConceptPicker extends TriggerField<ConceptPicker.ConceptType>
         setValue(type);
     }
 
+    @Override
+    public ToolTip getToolTip()
+    {
+        return super.getToolTip();
+    }
+
     public void setValue(ConceptType t)
     {
         assert t != genericLookup;
+        setToolTip(t == null ? null : t.getDisplay());
         super.setValue(t);
     }
 

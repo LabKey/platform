@@ -19,6 +19,7 @@ package org.labkey.api.module;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.RuntimeSQLException;
 import org.labkey.api.security.User;
+import org.labkey.api.study.StudyUrls;
 import org.labkey.api.util.HelpTopic;
 import org.labkey.api.view.Portal;
 import org.labkey.api.view.Portal.WebPart;
@@ -259,11 +260,27 @@ public class DefaultFolderType implements FolderType
         return m;
     }
 
+    public static void addStandardManageLinks(NavTree adminNavTree, Container container)
+    {
+        // make sure the modules are loaded first
+        boolean hasStudyModule = null != ModuleLoader.getInstance().getModule("Study");
+        if (hasStudyModule)
+        {
+            adminNavTree.addChild(new NavTree("Manage Assays", PageFlowUtil.urlProvider(AssayUrls.class).getAssayListURL(container)));
+            if (container.getActiveModules().contains(ModuleLoader.getInstance().getModule("Study")))
+            {
+                adminNavTree.addChild(new NavTree("Manage Study", PageFlowUtil.urlProvider(StudyUrls.class).getManageStudyURL(container)));
+            }
+        }
+        if (null != ModuleLoader.getInstance().getModule("List"))
+            adminNavTree.addChild(new NavTree("Manage Lists", ListService.get().getManageListsURL(container)));
+        if (hasStudyModule)
+            adminNavTree.addChild(new NavTree("Manage Views", PageFlowUtil.urlProvider(ReportUrls.class).urlManageViews(container)));
+    }
+
     public void addManageLinks(NavTree adminNavTree, Container container)
     {
-        adminNavTree.addChild(new NavTree("Manage Assays", PageFlowUtil.urlProvider(AssayUrls.class).getAssayListURL(container)));
-        adminNavTree.addChild(new NavTree("Manage Lists", ListService.get().getManageListsURL(container)));
-        adminNavTree.addChild(new NavTree("Manage Views", PageFlowUtil.urlProvider(ReportUrls.class).urlManageViews(container)));
+        addStandardManageLinks(adminNavTree, container);
     }
 
     public AppBar getAppBar(ViewContext context)
