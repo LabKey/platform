@@ -17,6 +17,7 @@
 package org.labkey.core.webdav;
 
 import org.apache.commons.io.IOUtils;
+import org.apache.commons.lang.ObjectUtils;
 import org.apache.commons.lang.StringUtils;
 import org.apache.commons.lang.time.FastDateFormat;
 import org.apache.log4j.Logger;
@@ -2664,7 +2665,7 @@ public class DavController extends SpringActionController
 
         Container srcContainer = src.getContainerId() == null ? null : ContainerManager.getForId(src.getContainerId());
         Container destContainer = dest.getContainerId() == null ? null : ContainerManager.getForId(dest.getContainerId());
-        if (PageFlowUtil.nullSafeEquals(srcContainer, destContainer) && src.getFile() != null)
+        if (ObjectUtils.equals(srcContainer, destContainer) && src.getFile() != null)
         {
             ExpData data = ExperimentService.get().getExpDataByURL(src.getFile(), srcContainer);
             if (data == null && dest.getFile() != null)

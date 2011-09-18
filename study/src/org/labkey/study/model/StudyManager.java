@@ -17,6 +17,7 @@
 package org.labkey.study.model;
 
 import org.apache.commons.io.IOUtils;
+import org.apache.commons.lang.ObjectUtils;
 import org.apache.commons.lang.StringUtils;
 import org.apache.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
@@ -446,7 +447,7 @@ public class StudyManager
         Date oldStartDate = oldStudy.getStartDate();
         _studyHelper.update(user, study, new Object[] { study.getContainer() });
 
-        if (oldStudy.getTimepointType() == TimepointType.DATE && !PageFlowUtil.nullSafeEquals(study.getStartDate(), oldStartDate))
+        if (oldStudy.getTimepointType() == TimepointType.DATE && !ObjectUtils.equals(study.getStartDate(), oldStartDate))
         {
             // start date has changed, and datasets may use that value. Uncache.
             RelativeDateVisitManager visitManager = (RelativeDateVisitManager) getVisitManager(study);

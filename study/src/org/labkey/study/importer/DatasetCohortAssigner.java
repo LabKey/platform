@@ -15,12 +15,12 @@
  */
 package org.labkey.study.importer;
 
+import org.apache.commons.lang.ObjectUtils;
 import org.apache.xmlbeans.XmlException;
 import org.labkey.api.data.Container;
 import org.labkey.api.security.User;
 import org.labkey.api.study.Cohort;
 import org.labkey.api.study.StudyImportException;
-import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.writer.VirtualFile;
 import org.labkey.study.model.CohortImpl;
 import org.labkey.study.model.DataSetDefinition;
@@ -29,7 +29,6 @@ import org.labkey.study.model.StudyManager;
 import org.labkey.study.xml.DatasetsDocument;
 import org.springframework.validation.BindException;
 
-import java.io.File;
 import java.io.IOException;
 import java.sql.SQLException;
 import java.util.Map;
@@ -74,7 +73,7 @@ public class DatasetCohortAssigner implements InternalStudyImporter
                     Cohort cohort = def.getCohort();
                     String oldCohortLabel = null != cohort ? cohort.getLabel() : null;
 
-                    if (!PageFlowUtil.nullSafeEquals(oldCohortLabel, props.getCohort()))
+                    if (!ObjectUtils.equals(oldCohortLabel, props.getCohort()))
                     {
                         CohortImpl newCohort = studyManager.getCohortByLabel(c, user, props.getCohort());
                         def = def.createMutable();

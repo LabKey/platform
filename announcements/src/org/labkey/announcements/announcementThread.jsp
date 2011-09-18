@@ -35,6 +35,7 @@
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.api.view.ViewContext" %>
 <%@ page import="org.springframework.web.servlet.mvc.Controller" %>
+<%@ page import="org.apache.commons.lang.ObjectUtils" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <!--ANNOUNCEMENTS-->
 <%
@@ -195,14 +196,14 @@ if (0 < announcementModel.getResponses().size())
             </tr><%
             }
 
-            if (settings.hasExpires() && !PageFlowUtil.nullSafeEquals(r.getExpires(), prev.getExpires()))
+            if (settings.hasExpires() && !ObjectUtils.equals(r.getExpires(), prev.getExpires()))
             { %>
             <tr>
                 <td colspan="2">Expires: <%=h(DateUtil.formatDate(r.getExpires()))%></td>
             </tr><%
             }
 
-            if (settings.hasAssignedTo() && !PageFlowUtil.nullSafeEquals(r.getAssignedTo(), prev.getAssignedTo()))
+            if (settings.hasAssignedTo() && !ObjectUtils.equals(r.getAssignedTo(), prev.getAssignedTo()))
             { %>
             <tr>
                 <td colspan="2">Assigned&nbsp;To: <%=h(r.getAssignedToName(user))%></td>

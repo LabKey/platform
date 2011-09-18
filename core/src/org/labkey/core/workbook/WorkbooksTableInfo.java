@@ -19,9 +19,12 @@ import org.labkey.api.query.*;
 import org.labkey.api.data.*;
 import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.DeletePermission;
+import org.labkey.api.security.permissions.InsertPermission;
 import org.labkey.api.security.permissions.Permission;
 import org.labkey.api.security.permissions.ReadPermission;
+import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.NotFoundException;
+import org.labkey.core.CoreController;
 import org.labkey.core.query.CoreQuerySchema;
 
 import java.sql.SQLException;
@@ -50,6 +53,8 @@ public class WorkbooksTableInfo extends ContainerTable
 
         //workbook true
         this.addCondition(new SQLFragment("Workbook=?", true));
+
+        setInsertURL(new DetailsURL(new ActionURL(CoreController.CreateWorkbookAction.class, coreSchema.getContainer())));
     }
 
     @Override
@@ -62,7 +67,7 @@ public class WorkbooksTableInfo extends ContainerTable
     public boolean hasPermission(User user, Class<? extends Permission> perm)
     {
         if (getUpdateService() != null)
-            return (DeletePermission.class.isAssignableFrom(perm) || ReadPermission.class.isAssignableFrom(perm)) && _schema.getContainer().hasPermission(user, perm);
+            return (DeletePermission.class.isAssignableFrom(perm) || ReadPermission.class.isAssignableFrom(perm) || InsertPermission.class.isAssignableFrom(perm)) && _schema.getContainer().hasPermission(user, perm);
         return false;
     }
 

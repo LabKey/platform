@@ -15,11 +15,11 @@
  */
 package org.labkey.study.importer;
 
+import org.apache.commons.lang.ObjectUtils;
 import org.labkey.api.data.Container;
 import org.labkey.api.security.User;
 import org.labkey.api.study.StudyImportException;
 import org.labkey.api.study.TimepointType;
-import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.writer.VirtualFile;
 import org.labkey.study.model.CohortImpl;
 import org.labkey.study.model.StudyImpl;
@@ -29,7 +29,6 @@ import org.labkey.study.visitmanager.VisitManager;
 import org.labkey.study.xml.StudyDocument;
 import org.springframework.validation.BindException;
 
-import java.io.File;
 import java.sql.SQLException;
 import java.util.List;
 
@@ -83,7 +82,7 @@ public class VisitCohortAssigner implements InternalStudyImporter
 
                 String oldCohortLabel = null != visit.getCohort() ? visit.getCohort().getLabel() : null;
 
-                if (!PageFlowUtil.nullSafeEquals(oldCohortLabel, record.getCohort()))
+                if (!ObjectUtils.equals(oldCohortLabel, record.getCohort()))
                 {
                     CohortImpl cohort = studyManager.getCohortByLabel(c, user, record.getCohort());
                     VisitImpl mutable = visit.createMutable();

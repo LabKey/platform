@@ -46,6 +46,8 @@ public class WorkbookQueryView extends QueryView
 
         setShadeAlternatingRows(true);
         setShowBorders(true);
+        setShowInsertNewButton(true);
+        setShowImportDataButton(false);
         setShowDeleteButton(true);
         setFrame(FrameType.NONE);
     }
@@ -66,11 +68,6 @@ public class WorkbookQueryView extends QueryView
                 btn.setActionType(ActionButton.Action.POST);
                 btn.setRequiresSelection(true);
                 btn.setDisplayPermission(AdminPermission.class);
-                bar.add(btn);
-
-                btn = new ActionButton(new ActionURL(CoreController.CreateWorkbookAction.class, getContainer()), "Create New Workbook");
-                btn.setActionType(ActionButton.Action.LINK);
-                btn.setDisplayPermission(InsertPermission.class);
                 bar.add(btn);
 
                 btn = new ActionButton(new ActionURL(CoreController.ManageWorkbooksAction.class, getContainer()), "Manage Workbooks");

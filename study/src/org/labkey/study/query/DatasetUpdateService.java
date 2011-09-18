@@ -15,13 +15,13 @@
  */
 package org.labkey.study.query;
 
+import org.apache.commons.lang.ObjectUtils;
 import org.jetbrains.annotations.NotNull;
 import org.labkey.api.data.*;
 import org.labkey.api.etl.DataIterator;
 import org.labkey.api.query.*;
 import org.labkey.api.security.User;
 import org.labkey.api.study.StudyService;
-import org.labkey.api.util.PageFlowUtil;
 import org.labkey.study.model.DataSetDefinition;
 import org.labkey.study.model.StudyImpl;
 import org.labkey.study.model.StudyManager;
@@ -192,7 +192,7 @@ public class DatasetUpdateService extends AbstractQueryUpdateService
             // Check if the visit has changed, but only if we don't already know we need to resync
             Object oldSequenceNum = oldRow.get("SequenceNum");
             Object newSequenceNum = row.get("SequenceNum");
-            if (!PageFlowUtil.nullSafeEquals(oldSequenceNum, newSequenceNum))
+            if (!ObjectUtils.equals(oldSequenceNum, newSequenceNum))
             {
                 _participantVisitResyncRequired = true;
             }

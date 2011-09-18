@@ -462,7 +462,7 @@ public class ListController extends SpringActionController
                 _returnURL = form.getReturnURLHelper();
 
                 // If user changed the PK then change returnURL to match
-                if (!PageFlowUtil.nullSafeEquals(oldKey, item.getKey()) && null != _returnURL.getParameter("pk"))
+                if (!ObjectUtils.equals(oldKey, item.getKey()) && null != _returnURL.getParameter("pk"))
                     _returnURL.replaceParameter("pk", item.getKey().toString());
 
                 if (isInsert())

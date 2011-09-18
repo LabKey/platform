@@ -17,6 +17,7 @@
 package org.labkey.experiment.api;
 
 import org.apache.commons.beanutils.ConvertUtils;
+import org.apache.commons.lang.ObjectUtils;
 import org.jetbrains.annotations.NotNull;
 import org.labkey.api.collections.NamedObjectList;
 import org.labkey.api.data.ColumnInfo;
@@ -749,7 +750,7 @@ public class ExpRunTableImpl extends ExpTableImpl<ExpRunTable.Column> implements
 
         private StringBuilder appendPropertyIfChanged(StringBuilder sb, String label, Object oldValue, Object newValue)
         {
-            if (!PageFlowUtil.nullSafeEquals(oldValue, newValue))
+            if (!ObjectUtils.equals(oldValue, newValue))
             {
                 sb.append(" ");
                 sb.append(label);

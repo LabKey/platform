@@ -465,6 +465,16 @@ public class DataSetTable extends FilteredTable
         // every dataset
         super.overlayMetadata(StudyQuerySchema.STUDY_DATA_TABLE_NAME, schema, errors);
 
+        if (!_dsd.getName().equalsIgnoreCase(tableName))
+        {
+            super.overlayMetadata(_dsd.getName(), schema, errors);
+        }
+
+        if (_dsd.getLabel() != null && !_dsd.getLabel().equalsIgnoreCase(tableName))
+        {
+            super.overlayMetadata(_dsd.getLabel(), schema, errors);
+        }
+
         // Then include the specific overrides for this dataset
         super.overlayMetadata(tableName, schema, errors);
     }

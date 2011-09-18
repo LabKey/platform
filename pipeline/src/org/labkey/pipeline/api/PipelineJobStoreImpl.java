@@ -22,11 +22,11 @@ import java.util.List;
 import java.util.Arrays;
 import java.util.ArrayList;
 
+import org.apache.commons.lang.ObjectUtils;
 import org.labkey.api.pipeline.*;
 import org.labkey.api.data.DbScope;
 import org.labkey.api.data.Container;
 import com.thoughtworks.xstream.converters.ConversionException;
-import org.labkey.api.util.PageFlowUtil;
 
 /**
  * Implements serialization of a <code>PipelineJob</code> to and from XML,
@@ -74,7 +74,7 @@ public class PipelineJobStoreImpl extends PipelineJobMarshaller
             PipelineService.get().getPipelineQueue().addJob(job);
 
             job.getLogger().info("Retrying job. Old Job ID: " + oldJobId +
-                    (PageFlowUtil.nullSafeEquals(sf.getJobId(), job.getJobGUID()) ? "" : ", new Job ID: " + job.getJobGUID()));
+                    (ObjectUtils.equals(sf.getJobId(), job.getJobGUID()) ? "" : ", new Job ID: " + job.getJobGUID()));
         }
         catch (ConversionException e)
         {

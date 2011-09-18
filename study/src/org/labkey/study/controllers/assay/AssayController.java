@@ -345,11 +345,7 @@ public class AssayController extends SpringActionController
 
         public ModelAndView getView(ProtocolIdForm form, BindException errors) throws Exception
         {
-            _protocol = form.getRowId() != null ? ExperimentService.get().getExpProtocol(form.getRowId().intValue()) : null;
-            if (_protocol == null)
-            {
-                throw new NotFoundException();
-            }
+            _protocol = form.getProtocol(false);
 
             final Container currentContainer = getViewContext().getContainer();
             final User user = getViewContext().getUser();
@@ -399,7 +395,7 @@ public class AssayController extends SpringActionController
         ExpProtocol _protocol;
         public ModelAndView getView(ProtocolIdForm form, BindException errors) throws Exception
         {
-            _protocol = getProtocol(form);
+            _protocol = form.getProtocol();
             throw new RedirectException(PageFlowUtil.urlProvider(AssayUrls.class).getAssayRunsURL(getContainer(), _protocol));
         }
 
@@ -425,8 +421,6 @@ public class AssayController extends SpringActionController
         {
             _protocol = form.getProtocol();
             AssayProvider provider = form.getProvider();
-            if (null == provider)
-                throw new NotFoundException("No assay was found with id " + form.getRowId());
             ModelAndView view = provider.createBeginView(getViewContext(), form.getProtocol());
             _hasCustomView = (null != view);
             setHelpTopic("createDatasetViaAssay");
@@ -639,9 +633,9 @@ public class AssayController extends SpringActionController
             if (form.getContainerFilterName() != null)
                 containerFilter = ContainerFilter.getContainerFilterByName(form.getContainerFilterName(), getViewContext().getUser());
 
-            _protocol = getProtocol(form);
+            _protocol = form.getProtocol();
             VBox view = new VBox();
-            view.addView(new AssayHeaderView(_protocol, getProvider(form), false, true, containerFilter));
+            view.addView(new AssayHeaderView(_protocol, form.getProvider(), false, true, containerFilter));
             view.addView(AssayAuditViewFactory.getInstance().createPublishHistoryView(getViewContext(), _protocol.getRowId(), containerFilter));
             return view;
         }
@@ -703,11 +697,9 @@ public class AssayController extends SpringActionController
             if (!PipelineService.get().hasValidPipelineRoot(getContainer()))
                 throw new NotFoundException("Pipeline root must be configured before uploading assay files");
 
-            _protocol = getProtocol(form);
+            _protocol = form.getProtocol();
 
-            AssayProvider ap = AssayService.get().getProvider(_protocol);
-            if (ap == null)
-                throw new NotFoundException("Assay not found for protocol with lsid: " + _protocol.getLSID());
+            AssayProvider ap = form.getProvider();
             if (!(ap instanceof ModuleAssayProvider))
                 throw new RuntimeException("Assay must be a ModuleAssayProvider");
             ModuleAssayProvider provider = (ModuleAssayProvider) ap;

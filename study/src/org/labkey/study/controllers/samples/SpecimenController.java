@@ -19,6 +19,7 @@ package org.labkey.study.controllers.samples;
 import jxl.Range;
 import jxl.Workbook;
 import jxl.WorkbookSettings;
+import org.apache.commons.lang.ObjectUtils;
 import org.apache.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.labkey.api.action.*;
@@ -440,7 +441,7 @@ public class SpecimenController extends BaseStudyController
             String firstVisit = visitIt.next().getValue();
             while (visitIt.hasNext())
             {
-                if (!PageFlowUtil.nullSafeEquals(firstVisit, visitIt.next().getValue()))
+                if (!ObjectUtils.equals(firstVisit, visitIt.next().getValue()))
                     return false;
             }
             return true;
@@ -3255,7 +3256,7 @@ public class SpecimenController extends BaseStudyController
                     _mixedFlagState = _mixedFlagState || currentFlagState != previousFlagState;
                     String currentCommentString = comment != null ? comment.getComment() : null;
                     String previousCommentString = prevComment != null ? prevComment.getComment() : null;
-                    _mixedComments = _mixedComments || !PageFlowUtil.nullSafeEquals(previousCommentString, currentCommentString);
+                    _mixedComments = _mixedComments || !ObjectUtils.equals(previousCommentString, currentCommentString);
                     prevComment = comment;
                 }
                 if (!_mixedComments && prevComment != null)

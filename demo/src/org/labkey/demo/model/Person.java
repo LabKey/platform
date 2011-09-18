@@ -16,6 +16,7 @@
 
 package org.labkey.demo.model;
 
+import org.apache.commons.lang.ObjectUtils;
 import org.labkey.api.data.Entity;
 import org.labkey.api.util.PageFlowUtil;
 import org.apache.commons.lang.StringUtils;
@@ -92,6 +93,6 @@ public class Person extends Entity
         
         return StringUtils.equals(_firstName, p.getFirstName()) &&
                 StringUtils.equals(_lastName, p.getLastName()) &&
-                PageFlowUtil.nullSafeEquals(_age, p.getAge());
+                ObjectUtils.equals(_age, p.getAge());
     }
 }

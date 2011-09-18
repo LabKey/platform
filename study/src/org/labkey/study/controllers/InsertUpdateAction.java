@@ -16,6 +16,7 @@
 
 package org.labkey.study.controllers;
 
+import org.apache.commons.lang.ObjectUtils;
 import org.labkey.api.action.FormViewAction;
 import org.labkey.api.action.SpringActionController;
 import org.labkey.api.data.*;
@@ -95,7 +96,7 @@ public abstract class InsertUpdateAction<Form extends DatasetController.EditData
 
         // if this is our cohort assignment dataset, we may want to display drop-downs for cohort, rather
         // than a text entry box:
-        if (!study.isManualCohortAssignment() && PageFlowUtil.nullSafeEquals(_ds.getDataSetId(), study.getParticipantCohortDataSetId()))
+        if (!study.isManualCohortAssignment() && ObjectUtils.equals(_ds.getDataSetId(), study.getParticipantCohortDataSetId()))
         {
             final Cohort[] cohorts = StudyManager.getInstance().getCohorts(study.getContainer(), getViewContext().getUser());
             ColumnInfo cohortCol = datasetTable.getColumn(study.getParticipantCohortProperty());
@@ -118,7 +119,7 @@ public abstract class InsertUpdateAction<Form extends DatasetController.EditData
                                 for (Cohort cohort : cohorts)
                                 {
                                     out.write("\t<option value=\"" + PageFlowUtil.filter(cohort.getLabel()) + "\" " +
-                                            (PageFlowUtil.nullSafeEquals(value, cohort.getLabel()) ? "SELECTED" : "") + ">");
+                                            (ObjectUtils.equals(value, cohort.getLabel()) ? "SELECTED" : "") + ">");
                                     out.write(PageFlowUtil.filter(cohort.getLabel()));
                                     out.write("</option>\n");
                                 }

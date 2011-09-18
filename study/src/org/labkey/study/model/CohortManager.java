@@ -15,6 +15,7 @@
  */
 package org.labkey.study.model;
 
+import org.apache.commons.lang.ObjectUtils;
 import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.AdminPermission;
 import org.labkey.api.study.Cohort;
@@ -429,7 +430,7 @@ public class CohortManager
                 if (study.isAdvancedCohorts())
                 {
                     // if this ptid/visit isn't already assigned to this cohort visit, we need to make the assignment now:
-                    if (!PageFlowUtil.nullSafeEquals(newCohortId, assignedCohortId))
+                    if (!ObjectUtils.equals(newCohortId, assignedCohortId))
                     {
                         List<Object> params = new ArrayList<Object>();
                         addCohortIdParameter(params, newCohortId);
