@@ -2198,8 +2198,7 @@ public class AnnouncementsController extends SpringActionController
             setTitle(settings.getBoardName());
             setTitleHref(getBeginURL(c));
 
-            // TODO: Move this into a method
-            MessagesBean bean = new MessagesBean(c, url, user, settings, displayAll); // I'd prefer not to replicate like this, but super() call
+            MessagesBean bean = getModelBean(); 
             NavTree menu = new NavTree("");
             if (bean.insertURL != null)
                 menu.addChild("New", bean.insertURL);

@@ -15,7 +15,6 @@
  */
 package org.labkey.core.admin;
 
-import org.apache.commons.collections15.MultiMap;
 import org.apache.commons.lang.StringUtils;
 import org.apache.commons.lang.time.DateUtils;
 import org.apache.log4j.Logger;
@@ -99,7 +98,6 @@ import org.labkey.api.settings.PreferenceService;
 import org.labkey.api.settings.WriteableAppProps;
 import org.labkey.api.settings.WriteableLookAndFeelProperties;
 import org.labkey.api.util.BreakpointThread;
-import org.labkey.api.util.ContainerTree;
 import org.labkey.api.util.DateUtil;
 import org.labkey.api.util.ExceptionReportingLevel;
 import org.labkey.api.util.Formats;
@@ -135,7 +133,6 @@ import org.labkey.api.view.WebPartView;
 import org.labkey.api.view.WebTheme;
 import org.labkey.api.view.WebThemeManager;
 import org.labkey.api.view.template.PageConfig.Template;
-import org.labkey.api.wiki.WikiRenderer;
 import org.labkey.api.wiki.WikiRendererType;
 import org.labkey.api.wiki.WikiService;
 import org.labkey.core.admin.sql.SqlScriptController;
@@ -311,6 +308,7 @@ public class AdminController extends SpringActionController
 
         private AdminBean(User user)
         {
+            //noinspection ConstantConditions,AssertWithSideEffects
             assert null != (asserts = "enabled");
             userEmail = user.getEmail();
             modules = new ArrayList<Module>(ModuleLoader.getInstance().getModules());
@@ -1110,6 +1108,7 @@ public class AdminController extends SpringActionController
             return _shouldInherit;
         }
 
+        @SuppressWarnings({"UnusedDeclaration"})
         public void setShouldInherit(boolean b)
         {
             _shouldInherit = b;
@@ -1120,6 +1119,7 @@ public class AdminController extends SpringActionController
             return _systemDescription;
         }
 
+        @SuppressWarnings({"UnusedDeclaration"})
         public void setSystemDescription(String systemDescription)
         {
             _systemDescription = systemDescription;
@@ -1130,6 +1130,7 @@ public class AdminController extends SpringActionController
             return _systemShortName;
         }
 
+        @SuppressWarnings({"UnusedDeclaration"})
         public void setSystemShortName(String systemShortName)
         {
             _systemShortName = systemShortName;
@@ -1140,6 +1141,7 @@ public class AdminController extends SpringActionController
             return _themeName;
         }
 
+        @SuppressWarnings({"UnusedDeclaration"})
         public void setThemeName(String themeName)
         {
             _themeName = themeName;
@@ -1150,6 +1152,7 @@ public class AdminController extends SpringActionController
             return _themeFont;
         }
 
+        @SuppressWarnings({"UnusedDeclaration"})
         public void setThemeFont(String themeFont)
         {
             _themeFont = themeFont;
@@ -1160,11 +1163,13 @@ public class AdminController extends SpringActionController
             return _folderDisplayMode;
         }
 
+        @SuppressWarnings({"UnusedDeclaration"})
         public void setFolderDisplayMode(String folderDisplayMode)
         {
             _folderDisplayMode = folderDisplayMode;
         }
 
+        // TODO: Delete: not used?
         public String getNavigationBarWidth()
         {
             return _navigationBarWidth;
@@ -1180,6 +1185,7 @@ public class AdminController extends SpringActionController
             return _logoHref;
         }
 
+        @SuppressWarnings({"UnusedDeclaration"})
         public void setLogoHref(String logoHref)
         {
             _logoHref = logoHref;
@@ -1190,6 +1196,7 @@ public class AdminController extends SpringActionController
             return _reportAProblemPath;
         }
 
+        @SuppressWarnings({"UnusedDeclaration"})
         public void setReportAProblemPath(String reportAProblemPath)
         {
             _reportAProblemPath = reportAProblemPath;
@@ -1200,6 +1207,7 @@ public class AdminController extends SpringActionController
             return _companyName;
         }
 
+        @SuppressWarnings({"UnusedDeclaration"})
         public void setCompanyName(String companyName)
         {
             _companyName = companyName;
@@ -1210,6 +1218,7 @@ public class AdminController extends SpringActionController
             return _systemEmailAddress;
         }
 
+        @SuppressWarnings({"UnusedDeclaration"})
         public void setSystemEmailAddress(String systemEmailAddress)
         {
             _systemEmailAddress = systemEmailAddress;
@@ -1220,6 +1229,7 @@ public class AdminController extends SpringActionController
             return _tabId;
         }
 
+        @SuppressWarnings({"UnusedDeclaration"})
         public void setTabId(String tabId)
         {
             _tabId = tabId;
@@ -1255,6 +1265,7 @@ public class AdminController extends SpringActionController
             return _enableMenuBar;
         }
 
+        @SuppressWarnings({"UnusedDeclaration"})
         public void setEnableMenuBar(boolean enableMenuBar)
         {
             _enableMenuBar = enableMenuBar;
@@ -1265,6 +1276,7 @@ public class AdminController extends SpringActionController
             return _appBarUIEnabled;
         }
 
+        @SuppressWarnings({"UnusedDeclaration"})
         public void setAppBarUIEnabled(boolean appBarUIEnabled)
         {
             _appBarUIEnabled = appBarUIEnabled;
@@ -1290,6 +1302,7 @@ public class AdminController extends SpringActionController
             _fileRootOption = fileRootOption;
         }
 
+        @SuppressWarnings({"UnusedDeclaration"})
         public void setSupportEmail(String supportEmail)
         {
             _supportEmail = supportEmail;
@@ -2872,9 +2885,9 @@ public class AdminController extends SpringActionController
 
     @RequiresSiteAdmin
     @AllowedDuringUpgrade
-    public class ModuleUpgradeAction extends SimpleRedirectAction<UpgradeStatusForm>
+    public class ModuleUpgradeAction extends SimpleRedirectAction
     {
-        public ActionURL getRedirectURL(UpgradeStatusForm form) throws Exception
+        public ActionURL getRedirectURL(Object o) throws Exception
         {
             ModuleLoader.getInstance().startNonCoreUpgrade(getUser());
             return getModuleStatusURL();
@@ -2890,9 +2903,9 @@ public class AdminController extends SpringActionController
 
     @RequiresSiteAdmin
     @AllowedDuringUpgrade
-    public class ModuleStatusAction extends SimpleViewAction<UpgradeStatusForm>
+    public class ModuleStatusAction extends SimpleViewAction
     {
-        public ModelAndView getView(UpgradeStatusForm form, BindException errors) throws Exception
+        public ModelAndView getView(Object o, BindException errors) throws Exception
         {
             ModuleLoader loader = ModuleLoader.getInstance();
             VBox vbox = new VBox();
@@ -2920,55 +2933,6 @@ public class AdminController extends SpringActionController
         public NavTree appendNavTrail(NavTree root)
         {
             return null;
-        }
-    }
-
-
-    public static class UpgradeStatusForm
-    {
-        private double oldVersion;
-        private double newVersion;
-        private String moduleName = null;
-        private String state = ModuleLoader.ModuleState.InstallRequired.name();
-
-        public double getOldVersion()
-        {
-            return oldVersion;
-        }
-
-        public void setOldVersion(double oldVersion)
-        {
-            this.oldVersion = oldVersion;
-        }
-
-        public double getNewVersion()
-        {
-            return newVersion;
-        }
-
-        public void setNewVersion(double newVersion)
-        {
-            this.newVersion = newVersion;
-        }
-
-        public String getModuleName()
-        {
-            return moduleName;
-        }
-
-        public void setModuleName(String moduleName)
-        {
-            this.moduleName = moduleName;
-        }
-
-        public void setState(String state)
-        {
-            this.state = state;
-        }
-
-        public String getState()
-        {
-            return state;
         }
     }
 
@@ -3955,35 +3919,6 @@ public class AdminController extends SpringActionController
     }
 
 
-    public static class MoveContainerTree extends ContainerTree
-    {
-        private Container ignore;
-
-        public MoveContainerTree(String rootPath, User user, ActionURL url)
-        {
-            super(rootPath, user, AdminPermission.class, url);
-        }
-
-        public void setIgnore(Container c)
-        {
-            ignore = c;
-        }
-
-        @Override
-        protected boolean renderChildren(StringBuilder html, MultiMap<Container, Container> mm, Container parent, int level)
-        {
-            if (!parent.equals(ignore))
-                return super.renderChildren(html, mm, parent, level);
-            else
-                return false;
-        }
-
-        protected void addContainerToURL(ActionURL url, Container c)
-        {
-            url.replaceParameter("target", c.getPath());
-        }
-    }
-
     public static class EmailTestForm
     {
         private String _to;
@@ -4245,6 +4180,7 @@ public class AdminController extends SpringActionController
         }
     }
 
+
     @RequiresSiteAdmin
     public class ValidateDomainsAction extends RedirectAction
     {
@@ -4275,6 +4211,32 @@ public class AdminController extends SpringActionController
         @Override
         public void validateCommand(Object target, Errors errors)
         {
+        }
+    }
+
+
+    @AdminConsoleAction
+    public class UnknownModulesAction extends SimpleViewAction
+    {
+        @Override
+        public ModelAndView getView(Object o, BindException errors) throws Exception
+        {
+            ModuleLoader ml = ModuleLoader.getInstance();
+            StringBuilder html = new StringBuilder();
+
+            for (ModuleContext moduleContext : ml.getAllModuleContexts())
+            {
+                if (null == ml.getModule(moduleContext.getName()))
+                    html.append(moduleContext.getName()).append("<br>\n");
+            }
+
+            return new HtmlView(html.toString());
+        }
+
+        @Override
+        public NavTree appendNavTrail(NavTree root)
+        {
+            return appendAdminNavTrail(root, "Unknown Modules", getClass());
         }
     }
 }

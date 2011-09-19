@@ -155,6 +155,7 @@ public class ProjectSettingsAction extends FormViewAction<AdminController.Projec
         props.setSystemShortName(form.getSystemShortName());
         props.setNavigationBarWidth(form.getNavigationBarWidth());
         props.setReportAProblemPath(form.getReportAProblemPath());
+
         if (!StringUtils.isBlank(form.getSupportEmail()))
         {
             try
