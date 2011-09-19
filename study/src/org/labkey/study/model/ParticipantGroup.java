@@ -24,8 +24,8 @@ import org.labkey.api.study.StudyService;
 import org.labkey.api.util.Pair;
 import org.labkey.api.view.ActionURL;
 
-import java.util.ArrayList;
-import java.util.List;
+import java.util.LinkedHashSet;
+import java.util.Set;
 
 /**
  * Created by IntelliJ IDEA.
@@ -40,7 +40,7 @@ public class ParticipantGroup extends Entity
     private int _categoryId;  // fk to participant category
     private String _categoryLabel;
 
-    private List<String> _participantIds = new ArrayList<String>();
+    private Set<String> _participantIds = new LinkedHashSet<String>();
 
     public boolean isNew()
     {
@@ -77,18 +77,28 @@ public class ParticipantGroup extends Entity
         _categoryId = categoryId;
     }
 
-    public List<String> getParticipantIds()
+    public String[] getParticipantIds()
     {
-        return _participantIds;
+        return _participantIds.toArray(new String[_participantIds.size()]);
     }
 
-    public void setParticipantIds(List<String> participantIds)
+    public void setParticipantIds(String[] participantIds)
     {
-        _participantIds = participantIds;
+        Set<String> participants = new LinkedHashSet<String>();
+        for (String id : participantIds)
+        {
+            if (participants.contains(id))
+                throw new IllegalArgumentException("ID :" + id + " is specified more than once, duplicates are not allowed in a group.");
+            participants.add(id);
+        }
+        _participantIds = participants;
     }
 
     public void addParticipantId(String participantId)
     {
+        if (_participantIds.contains(participantId))
+            throw new IllegalArgumentException("ID :" + participantId + " is specified more than once, duplicates are not allowed in a group.");
+
         _participantIds.add(participantId);
     }
 

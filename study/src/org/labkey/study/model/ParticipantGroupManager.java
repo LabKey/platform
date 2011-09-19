@@ -482,7 +482,7 @@ public class ParticipantGroupManager
                     }
                 }
                 group.setLabel(def.getLabel());
-                group.setParticipantIds(Arrays.asList(participants));
+                group.setParticipantIds(participants);
 
                 group = setParticipantGroup(user, group);
                 def.setGroups(new ParticipantGroup[]{group});
