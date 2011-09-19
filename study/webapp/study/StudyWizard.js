@@ -447,7 +447,8 @@ LABKEY.study.CreateStudyWizard = Ext.extend(Ext.util.Observable, {
                         align: 'stretch',
                         pack: 'start'
                     },
-                    items: [formItems]
+                    items: [formItems],
+                    cls: 'testParticipantGroups'
                 });
             }
             else
