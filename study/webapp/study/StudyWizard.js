@@ -7,6 +7,7 @@
 Ext.namespace("LABKEY.study");
 
 LABKEY.requiresScript("study/ParticipantGroup.js");
+LABKEY.requiresScript("FileUploadField.js");
 
 Ext.QuickTips.init();
 
@@ -100,18 +101,39 @@ LABKEY.study.CreateStudyWizard = Ext.extend(Ext.util.Observable, {
             fieldLabel: 'New Study Location',
             allowBlank: true,
             name: 'studyFolder',
-            value: this.info.dstPath,
-            validator: addSlash,
-            listeners: {change:function(cmp, newValue, oldValue) {this.info.dstPath = newValue;}, scope:this},
+            width: 650,
+            readOnly: true,
+            value: this.info.dstPath + '/' + this.info.name,
             scope: this
         });
 
-        function addSlash(input){
-            if(input == ""){
-                studyLocation.setValue('/');
-            }
-            return true;
+        var browseBtn = new Ext.Button({
+            name:"browseBtn",
+            text: "Change",
+            cls: "labkey-button",
+            handler: browseFolders
+        });
+
+        function browseFolders(){
+            treeWin.show();
         }
+
+        var protocolDocField = new Ext.form.FileUploadField({
+            emptyText: 'Select an protocol document',
+            fieldLabel: 'Protocol Document',
+            name: 'protocolDoc',
+            buttonText: 'Browse',
+            buttonCfg: { cls: "labkey-button" },
+            listeners: {
+                "fileselected": function (fb, v) {
+                    var i = Math.max(v.lastIndexOf('/'), v.lastIndexOf('\\'));
+                    var name = v.substring(i+1); //this code was taken from fileBrowser.js line 3570.
+                    this.info.protocolDoc = v;
+                },
+                scope: this
+            },
+            scope: this
+        });
 
         var formItems = [
             {
@@ -120,7 +142,7 @@ LABKEY.study.CreateStudyWizard = Ext.extend(Ext.util.Observable, {
                 allowBlank: false,
                 name: 'studyName',
                 value: this.info.name,
-                listeners: {change:function(cmp, newValue, oldValue) {this.info.name = newValue;}, scope:this}
+                listeners: {change:nameChange, scope:this}
             },{
                 xtype: 'textarea',
                 name: 'studyDescription',
@@ -128,8 +150,20 @@ LABKEY.study.CreateStudyWizard = Ext.extend(Ext.util.Observable, {
                 emptyText: 'Type Description here',
                 listeners: {change:function(cmp, newValue, oldValue) {this.info.description = newValue;}, scope:this}
             },
-            studyLocation
+            protocolDocField,
+            {
+                xtype:'compositefield',
+                items:[
+                    studyLocation,
+                    browseBtn
+                ]
+            }
         ];
+
+        function nameChange(cmp, newValue, oldValue){
+            this.info.name = newValue;
+            studyLocation.setValue(this.info.dstPath + '/' + this.info.name);
+        }
 
         var folderTree = new Ext.tree.TreePanel({
             loader : new Ext.tree.TreeLoader({
@@ -150,23 +184,70 @@ LABKEY.study.CreateStudyWizard = Ext.extend(Ext.util.Observable, {
                 dblclick: onDblClick,
                 scope:this
             },
-            fieldLabel: 'Choose A Folder',
             cls : 'folder-management-tree', // used by selenium helper
             rootVisible: true,
             enableDD: false,
             animate : true,
             useArrows : true,
             autoScroll: true,
-            height: 200,
+            height: 325,
             border: true
         });
 
         function onDblClick(e){
-            studyLocation.setValue(e.attributes.containerPath);
-            this.info.dstPath = e.attributes.containerPath;
+            if(e.attributes.containerPath){
+                studyLocation.setValue(e.attributes.containerPath + '/' + this.info.name);
+                this.info.dstPath = e.attributes.containerPath + '/' + this.info.name
+            } else {
+                studyLocation.setValue("/" + this.info.name);
+                this.info.dstPath = "/" + this.info.name;
+            }
+            treeWin.hide();
         }
 
-        formItems.push(folderTree);
+        var selectFolderBtn = new Ext.Button({
+            name:"selectFolder",
+            text: "Select",
+            cls: "labkey-button",
+            handler: selectFolder,
+            scope: this
+        });
+
+        var cancelBtn = new Ext.Button({
+            name: "cancelBtn",
+            text: "cancel",
+            cls: "labkey-button",
+            handler: function(){
+                treeWin.hide();
+            },
+            scope: this
+        });
+
+        function selectFolder(){
+            var path = folderTree.getSelectionModel().getSelectedNode().attributes.containerPath
+            if(path){
+                studyLocation.setValue(path + '/' + this.info.name);
+                this.info.dstPath = path + '/' + this.info.name;
+            } else {
+                studyLocation.setValue("/" + this.info.name);
+                this.info.dstPath = "/" + this.info.name;
+            }
+            treeWin.hide();
+        }
+
+        var treeWin = new Ext.Window ({
+            title: 'Choose Study Location',
+            width: 600,
+            height: 400,
+            cls: 'extContainer',
+            autoScroll: true,
+            closeAction:'hide',
+            border: false,
+            modal: true,
+            layout: 'fit',
+            items: [folderTree],
+            bbar: ['->',cancelBtn, selectFolderBtn]
+        });
 
         var formPanel = new Ext.form.FormPanel({
             border: false,
