@@ -102,4 +102,10 @@ public class Group extends UserPrincipal
         }
         return _path;
     }
+
+    @Override
+    public int[] getGroups()
+    {
+        return GroupManager.getAllGroupsForPrincipal(this);
+    }
 }

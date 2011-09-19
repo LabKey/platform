@@ -406,7 +406,8 @@ public class SecurityManager
                 // u = sessionUser.cloneUser();
                 assert sessionUser._groups == null;
                 sessionUser._groups = null;
-                u = sessionUser;           //new LimitedUser(sessionUser, new int[]{3213});
+                u = sessionUser;
+//                u = new LimitedUser(sessionUser, new int[]{Group.groupGuests, Group.groupUsers, 3213});  // Test "impersonate group" idea
             }
         }
 

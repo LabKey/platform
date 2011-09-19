@@ -85,7 +85,7 @@ public class NavTreeManager
             //FIX: 5389
             //It's possible to get two requests on two different threads under
             //the same session (e.g., nav tree embedded in a wiki web part). So these
-            //collections be concurrent.
+            //collections must be concurrent.
             treeMap = new ConcurrentHashMap<String, Set<String>>();
             // Don't track. These stick around in session, so are new?
             // assert MemTracker.put(treeMap);

@@ -1190,7 +1190,7 @@ public class ModuleLoader implements Filter
     }
 
 
-    private ModuleContext[] getAllModuleContexts()
+    public ModuleContext[] getAllModuleContexts()
     {
         try
         {

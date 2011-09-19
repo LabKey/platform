@@ -153,7 +153,7 @@ public class SecurityPolicy
     @NotNull
     public Set<Role> getEffectiveRoles(@NotNull UserPrincipal principal)
     {
-        Set<Role> roles = getRoles(GroupManager.getAllGroupsForPrincipal(principal));
+        Set<Role> roles = getRoles(principal.getGroups());
         roles.addAll(getContextualRoles(principal));
         return roles;
     }
@@ -185,7 +185,7 @@ public class SecurityPolicy
         if (contextualRoles != null)
             allContextualRoles.addAll(contextualRoles);
 
-        return getPermissions(GroupManager.getAllGroupsForPrincipal(principal), allContextualRoles);
+        return getPermissions(principal.getGroups(), allContextualRoles);
     }
 
     /**

@@ -20,7 +20,6 @@ import java.security.Principal;
 import java.io.Serializable;
 
 /**
- * Created by IntelliJ IDEA.
  * User: matthewb
  * Date: Sep 20, 2006
  * Time: 1:28:26 PM
@@ -79,4 +78,6 @@ public abstract class UserPrincipal implements Principal, Serializable
             throw new IllegalArgumentException("Unrecognized type specified.  Must be one of 'u', 'g', or 'm'.");
         _type = type;
     }
+
+    public abstract int[] getGroups();
 }
