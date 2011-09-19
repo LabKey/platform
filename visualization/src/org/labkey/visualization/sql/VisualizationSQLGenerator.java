@@ -7,7 +7,6 @@ import org.labkey.api.action.HasViewContext;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.SimpleFilter;
-import org.labkey.api.query.DefaultSchema;
 import org.labkey.api.query.UserSchema;
 import org.labkey.api.util.Pair;
 import org.labkey.api.view.ActionURL;
@@ -416,6 +415,8 @@ public class VisualizationSQLGenerator implements CustomApiForm, HasViewContext
         // We should use the sort parameter instead, but it makes SQL generation much harder
         aggregatedSQL.append("\nORDER BY ");
         aggregatedSQL.append(groupByAndSelectSQL);
+        if (findSchema(_groupBys).getDbSchema().getSqlDialect().isSqlServer())
+            aggregatedSQL.append(" LIMIT 1000000");
 
         return aggregatedSQL.toString();
     }
@@ -514,19 +515,26 @@ public class VisualizationSQLGenerator implements CustomApiForm, HasViewContext
         }
         String sep = "";
         StringBuilder sql = new StringBuilder("ORDER BY ");
-        UserSchema firstSchema = null;
         for (Map.Entry<VisualizationSourceColumn, IVisualizationSourceQuery> orderBy : orderBys.entrySet())
         {
-            if (firstSchema == null)
-                firstSchema = orderBy.getKey().getSchema();
             sql.append(sep).append(orderBy.getValue().getAlias()).append(".").append(orderBy.getKey().getAlias());
             sep = ", ";
         }
-        assert firstSchema != null : "Should have at least one column with a schema.";
-        DefaultSchema defSchema = DefaultSchema.get(firstSchema.getUser(), firstSchema.getContainer());
-        if (defSchema.getDbSchema().getSqlDialect().isSqlServer())
+        if (findSchema(orderBys.keySet()).getDbSchema().getSqlDialect().isSqlServer())
             sql.append(" LIMIT 1000000");
         return sql.toString();
+    }
+
+    private static UserSchema findSchema(Collection<VisualizationSourceColumn> columns)
+    {
+        for (VisualizationSourceColumn column : columns)
+        {
+            if (column.getSchema() != null)
+            {
+                return column.getSchema();
+            }
+        }
+        throw new IllegalArgumentException("At least one column should have a schema");
     }
 
     public Map<String, String> getColumnMapping()
