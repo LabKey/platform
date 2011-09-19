@@ -1,5 +1,7 @@
 package org.labkey.visualization.sql;
 
+import org.labkey.api.data.Container;
+import org.labkey.api.query.UserSchema;
 import org.labkey.api.util.Pair;
 
 import java.util.*;
@@ -151,5 +153,42 @@ public class OuterJoinSourceQuery implements IVisualizationSourceQuery
             }
         }
         return colMap;
+    }
+
+    @Override
+    public UserSchema getSchema()
+    {
+        Iterator<IVisualizationSourceQuery> i = _queries.iterator();
+        UserSchema result = i.next().getSchema();
+        while (i.hasNext())
+        {
+            UserSchema schema = i.next().getSchema();
+            if (!schema.getContainer().equals(result.getContainer()) || !schema.getName().equals(result.getName()) || !schema.getUser().equals(result.getUser()))
+            {
+                throw new IllegalStateException("All source schemas must be the same");
+            }
+        }
+        return result;
+    }
+
+    @Override
+    public Container getContainer()
+    {
+        Iterator<IVisualizationSourceQuery> i = _queries.iterator();
+        Container result = i.next().getContainer();
+        while (i.hasNext())
+        {
+            if (!result.equals(i.next().getContainer()))
+            {
+                throw new IllegalStateException("All source queries must be from the same container");
+            }
+        }
+        return result;
+    }
+
+    @Override
+    public String getQueryName()
+    {
+        return _queries.iterator().next().getQueryName();
     }
 }

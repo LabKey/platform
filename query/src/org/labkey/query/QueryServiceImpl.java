@@ -107,6 +107,7 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
 
 
 public class QueryServiceImpl extends QueryService
@@ -695,14 +696,14 @@ public class QueryServiceImpl extends QueryService
         Map<ContainerSchemaKey, Map<String, SessionQuery>> containerQueries = (Map<ContainerSchemaKey, Map<String, SessionQuery>>) session.getAttribute(PERSISTED_TEMP_QUERIES_KEY);
         if (containerQueries == null)
         {
-            containerQueries = new HashMap<ContainerSchemaKey, Map<String, SessionQuery>>();
+            containerQueries = new ConcurrentHashMap<ContainerSchemaKey, Map<String, SessionQuery>>();
             session.setAttribute(PERSISTED_TEMP_QUERIES_KEY, containerQueries);
         }
         ContainerSchemaKey key = new ContainerSchemaKey(container, schemaName);
         Map<String, SessionQuery> queries = containerQueries.get(key);
         if (queries == null)
         {
-            queries = new HashMap<String, SessionQuery>();
+            queries = new ConcurrentHashMap<String, SessionQuery>();
             containerQueries.put(key, queries);
         }
         return queries;

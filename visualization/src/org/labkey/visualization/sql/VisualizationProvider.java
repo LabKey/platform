@@ -35,8 +35,10 @@ public abstract class VisualizationProvider
     private VisualizationSQLGenerator.ChartType _type;
 
     public abstract List<Pair<VisualizationSourceColumn, VisualizationSourceColumn>>
-            getJoinColumns(VisualizationSourceColumn.Factory factory, VisualizationSourceQuery first, VisualizationSourceQuery second);
+            getJoinColumns(VisualizationSourceColumn.Factory factory, VisualizationSourceQuery first, IVisualizationSourceQuery second);
     public abstract void addExtraSelectColumns(VisualizationSourceColumn.Factory factory, VisualizationSourceQuery query);
+
+    public abstract void appendAggregates(StringBuilder sql, Map<String, Set<String>> columnAliases, Map<String, VisualizationIntervalColumn> intervals, String queryAlias, IVisualizationSourceQuery joinQuery);
 
     protected static enum ColumnMatchType
     {

@@ -54,7 +54,31 @@ public class StudyVisualizationProvider extends VisualizationProvider
     }
 
     @Override
-    public List<Pair<VisualizationSourceColumn, VisualizationSourceColumn>> getJoinColumns(VisualizationSourceColumn.Factory factory, VisualizationSourceQuery first, VisualizationSourceQuery second)
+    public void appendAggregates(StringBuilder sql, Map<String, Set<String>> columnAliases, Map<String, VisualizationIntervalColumn> intervals, String queryAlias, IVisualizationSourceQuery joinQuery)
+    {
+        for (Map.Entry<String, VisualizationIntervalColumn> entry : intervals.entrySet())
+        {
+            sql.append(", ");
+            sql.append(queryAlias);
+            sql.append(".");
+            sql.append(entry.getValue().getSimpleAlias());
+        }
+
+        Container container = joinQuery.getContainer();
+        String subjectColumnName = StudyService.get().getSubjectNounSingular(container);
+
+        if (getType() == VisualizationSQLGenerator.ChartType.TIME_VISITBASED)
+        {
+            sql.append(", ");
+            sql.append(queryAlias);
+            sql.append(".");
+            String columnAlias = columnAliases.get(subjectColumnName + "Visit/sequencenum").iterator().next();
+            sql.append(columnAlias);
+        }
+    }
+
+    @Override
+    public List<Pair<VisualizationSourceColumn, VisualizationSourceColumn>> getJoinColumns(VisualizationSourceColumn.Factory factory, VisualizationSourceQuery first, IVisualizationSourceQuery second)
     {
         if (!first.getContainer().equals(second.getContainer()))
             throw new IllegalArgumentException("Can't yet join across containers.");

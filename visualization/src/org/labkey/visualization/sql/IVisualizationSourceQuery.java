@@ -1,7 +1,6 @@
 package org.labkey.visualization.sql;
 
 import org.labkey.api.data.Container;
-import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.query.UserSchema;
 import org.labkey.api.util.Pair;
 
@@ -51,4 +50,10 @@ public interface IVisualizationSourceQuery
     String getSelectListName(Set<String> selectAliases);
 
     Map<String, Set<String>> getColumnNameToValueAliasMap(VisualizationSourceColumn.Factory factory);
+
+    UserSchema getSchema();
+
+    Container getContainer();
+
+    String getQueryName();
 }

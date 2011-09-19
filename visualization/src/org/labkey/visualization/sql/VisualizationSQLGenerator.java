@@ -329,13 +329,14 @@ public class VisualizationSQLGenerator implements CustomApiForm, HasViewContext
 
         if (!_groupBys.isEmpty())
         {
-            return wrapInGroupBy(innerJoinQueries, queries, sql);
+            IVisualizationSourceQuery joinQuery = innerJoinQueries.isEmpty() ? outerJoinQueries.iterator().next() : innerJoinQueries.iterator().next();
+            return wrapInGroupBy(joinQuery, queries, sql);
         }
 
         return sql;
     }
 
-    private String wrapInGroupBy(Set<VisualizationSourceQuery> innerJoinQueries, List<IVisualizationSourceQuery> queries, String sql)
+    private String wrapInGroupBy(IVisualizationSourceQuery joinQuery, List<IVisualizationSourceQuery> queries, String sql)
             throws GenerationException
     {
         Map<String, Set<String>> columnAliases = getColumnMapping(_columnFactory, queries);
@@ -347,8 +348,7 @@ public class VisualizationSQLGenerator implements CustomApiForm, HasViewContext
 
         for (VisualizationSourceColumn groupByColumn : _groupBys)
         {
-            VisualizationSourceQuery joinQuery = innerJoinQueries.iterator().next();
-            VisualizationSourceQuery groupByQuery = ensureSourceQuery(_viewContext.getContainer(), groupByColumn, joinQuery);
+            VisualizationSourceQuery groupByQuery = ensureSourceQuery(_viewContext.getContainer(), groupByColumn, null);
             groupByQuery.addSelect(groupByColumn);
             groupByQueries.add(groupByQuery);
         }
@@ -362,10 +362,9 @@ public class VisualizationSQLGenerator implements CustomApiForm, HasViewContext
             groupByQuery.appendColumnNames(groupByAndSelectSQL, groupByQuery.getSelects(_columnFactory, false), false, false, false);
         }
 
-        for (Map.Entry<String, VisualizationIntervalColumn> entry : _intervals.entrySet())
+        for (VisualizationProvider provider : _providers.values())
         {
-            groupByAndSelectSQL.append(", x.");
-            groupByAndSelectSQL.append(_intervals.size() == 1 ? entry.getValue().getSimpleAlias() : entry.getValue().getFullAlias());
+            provider.appendAggregates(groupByAndSelectSQL, columnAliases, _intervals, "x", joinQuery);
         }
 
         aggregatedSQL.append(groupByAndSelectSQL);
@@ -393,7 +392,7 @@ public class VisualizationSQLGenerator implements CustomApiForm, HasViewContext
             separator = "";
             aggregatedSQL.append(" ON ");
             VisualizationProvider provider = getVisualizationProvider(groupByQuery.getSchemaName());
-            for (Pair<VisualizationSourceColumn, VisualizationSourceColumn> pair : provider.getJoinColumns(_columnFactory, groupByQuery, innerJoinQueries.iterator().next()))
+            for (Pair<VisualizationSourceColumn, VisualizationSourceColumn> pair : provider.getJoinColumns(_columnFactory, groupByQuery, joinQuery))
             {
                 aggregatedSQL.append(separator);
                 separator = " AND ";
