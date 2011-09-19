@@ -101,7 +101,7 @@ public class ParticipantGroupWriter implements InternalStudyWriter
 
                         pg.setLabel(group.getLabel());
                         pg.setCategoryLabel(group.getCategoryLabel());
-                        pg.setParticipantIdArray(group.getParticipantIds().toArray(new String[0]));
+                        pg.setParticipantIdArray(group.getParticipantIds());
                     }
                 }
             }
