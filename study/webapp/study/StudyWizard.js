@@ -95,7 +95,7 @@ LABKEY.study.CreateStudyWizard = Ext.extend(Ext.util.Observable, {
         var items = [];
 
         this.info.name = 'New Study';
-        this.info.dstPath = LABKEY.ActionURL.getContainer();
+        this.info.dstPath = LABKEY.ActionURL.getContainer() + '/' + this.info.name;
 
         var studyLocation = new Ext.form.TextField({
             fieldLabel: 'New Study Location',
@@ -103,7 +103,7 @@ LABKEY.study.CreateStudyWizard = Ext.extend(Ext.util.Observable, {
             name: 'studyFolder',
             width: 650,
             readOnly: true,
-            value: this.info.dstPath + '/' + this.info.name,
+            value: this.info.dstPath,
             scope: this
         });
 

@@ -364,6 +364,7 @@ public class CreateAncillaryStudyAction extends MutatingApiAction<EmphasisStudyD
         study.setSubjectNounSingular(_parentStudy.getSubjectNounSingular());
         study.setSubjectNounPlural(_parentStudy.getSubjectNounPlural());
         study.setSubjectColumnName(_parentStudy.getSubjectColumnName());
+        study.setDescription(form.getDescription());
 
         StudyManager.getInstance().createStudy(getViewContext().getUser(), study);
 

@@ -80,6 +80,7 @@ public class StudyImpl extends ExtensibleStudyEntity<StudyImpl> implements Study
     private String _subjectNounSingular;
     private String _subjectNounPlural;
     private String _subjectColumnName;
+    private String _description;
 
     public StudyImpl()
     {
@@ -494,6 +495,16 @@ public class StudyImpl extends ExtensibleStudyEntity<StudyImpl> implements Study
     public void setSubjectColumnName(String subjectColumnName)
     {
         _subjectColumnName = ColumnInfo.legalNameFromName(subjectColumnName);
+    }
+
+    public String getDescription()
+    {
+        return _description;
+    }
+
+    public void setDescription(String description)
+    {
+        _description = description;
     }
 
     @Override

@@ -99,6 +99,9 @@
       <ns:column columnName="SubjectColumnName">
         <ns:description>The column header for subject IDs.  Examples include "ParticipantId", "MouseId", or "YeastId".  This value cannot be changed after study creation.</ns:description>
       </ns:column>
+      <ns:column columnName="Description">
+        <ns:description>A short description of the study.</ns:description>
+      </ns:column>
     </ns:columns>
   </ns:table>
   <ns:table tableName="Site" tableDbType="TABLE">
