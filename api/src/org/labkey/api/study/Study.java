@@ -54,4 +54,6 @@ public interface Study extends StudyEntity
     String getSearchKeywords();
 
     String getSearchBody();
+
+    String getDescription();
 }
