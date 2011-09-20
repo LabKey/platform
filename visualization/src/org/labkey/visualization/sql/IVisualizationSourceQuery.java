@@ -49,7 +49,7 @@ public interface IVisualizationSourceQuery
 
     String getSelectListName(Set<String> selectAliases);
 
-    Map<String, Set<String>> getColumnNameToValueAliasMap(VisualizationSourceColumn.Factory factory);
+    Map<String, Set<String>> getColumnNameToValueAliasMap(VisualizationSourceColumn.Factory factory, boolean measuresOnly);
 
     UserSchema getSchema();
 

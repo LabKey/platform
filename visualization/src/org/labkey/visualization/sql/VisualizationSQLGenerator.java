@@ -52,7 +52,6 @@ public class VisualizationSQLGenerator implements CustomApiForm, HasViewContext
     private Map<String, VisualizationSourceQuery> _sourceQueries = new LinkedHashMap<String, VisualizationSourceQuery>();
     private Map<String, VisualizationIntervalColumn> _intervals = new HashMap<String, VisualizationIntervalColumn>();
     private List<VisualizationSourceColumn> _groupBys = new ArrayList<VisualizationSourceColumn>();
-    private List<VisualizationSourceColumn> _measureCols = new ArrayList<VisualizationSourceColumn>();
 
     private ViewContext _viewContext;
     private VisualizationSourceColumn.Factory _columnFactory = new VisualizationSourceColumn.Factory();
@@ -132,7 +131,6 @@ public class VisualizationSQLGenerator implements CustomApiForm, HasViewContext
                     query = ensureSourceQuery(_viewContext.getContainer(), measureCol, previous);
                     query.addSelect(measureCol);
                 }
-                _measureCols.add(measureCol);
 
                 Object timeAxis = measureInfo.get("time");
                 ChartType type;
@@ -369,10 +367,15 @@ public class VisualizationSQLGenerator implements CustomApiForm, HasViewContext
 
         aggregatedSQL.append(groupByAndSelectSQL);
         aggregatedSQL.append(", COUNT(*) AS AggregateCount");
-        for (VisualizationSourceColumn measureCol : _measureCols)
+        for (IVisualizationSourceQuery query : queries)
         {
-            String alias = columnAliases.get(measureCol.getOriginalName()).iterator().next();
-            aggregatedSQL.append(", AVG(x." + alias + ") AS " + alias);
+            // Get all of the columns selected for all of the measures, even if they've been pivoted out into separate
+            // columns based on a dimension
+            for (Map.Entry<String, Set<String>> entry : query.getColumnNameToValueAliasMap(_columnFactory, true).entrySet())
+            {
+                String alias = entry.getValue().iterator().next();
+                aggregatedSQL.append(", AVG(x.\"" + alias + "\") AS \"" + alias + "\"");
+            }
         }
 
         aggregatedSQL.append("\n FROM (");
@@ -597,7 +600,7 @@ public class VisualizationSQLGenerator implements CustomApiForm, HasViewContext
 
         for (IVisualizationSourceQuery query : queries)
         {
-            Map<String, Set<String>> queryColMap = query.getColumnNameToValueAliasMap(factory);
+            Map<String, Set<String>> queryColMap = query.getColumnNameToValueAliasMap(factory, false);
             for (Map.Entry<String, Set<String>> entry : queryColMap.entrySet())
                 addToColMap(colMap, entry.getKey(), entry.getValue());
         }

@@ -155,7 +155,7 @@ public class VisualizationSourceQuery implements IVisualizationSourceQuery
 
 
     @Override
-    public Map<String, Set<String>> getColumnNameToValueAliasMap(VisualizationSourceColumn.Factory factory)
+    public Map<String, Set<String>> getColumnNameToValueAliasMap(VisualizationSourceColumn.Factory factory, boolean measuresOnly)
     {
         Map<String, Set<String>> colMap = new LinkedHashMap<String, Set<String>>();
         Set<VisualizationAggregateColumn> aggregates = getAggregates();
@@ -163,7 +163,7 @@ public class VisualizationSourceQuery implements IVisualizationSourceQuery
         {
             for (VisualizationAggregateColumn aggregate : aggregates)
             {
-                if (getPivot() != null && !getPivot().getValues().isEmpty())
+                if (getPivot() != null)
                 {
                     // Aggregate with pivot:
                     for (Object pivotValue : getPivot().getValues())
@@ -178,15 +178,19 @@ public class VisualizationSourceQuery implements IVisualizationSourceQuery
                 }
             }
         }
-        for (VisualizationSourceColumn select : getSelects(factory, true))
-            addToColMap(colMap, select.getOriginalName(), select.getAlias());
 
-        if (getJoinConditions() != null)
+        if (!measuresOnly)
         {
-            for (Pair<VisualizationSourceColumn, VisualizationSourceColumn> join : getJoinConditions())
+            for (VisualizationSourceColumn select : getSelects(factory, true))
+                addToColMap(colMap, select.getOriginalName(), select.getAlias());
+
+            if (getJoinConditions() != null)
             {
-                addToColMap(colMap, join.getKey().getOriginalName(), join.getKey().getAlias());
-                addToColMap(colMap, join.getValue().getOriginalName(), join.getValue().getAlias());
+                for (Pair<VisualizationSourceColumn, VisualizationSourceColumn> join : getJoinConditions())
+                {
+                    addToColMap(colMap, join.getKey().getOriginalName(), join.getKey().getAlias());
+                    addToColMap(colMap, join.getValue().getOriginalName(), join.getValue().getAlias());
+                }
             }
         }
         return colMap;
@@ -310,14 +314,21 @@ public class VisualizationSourceQuery implements IVisualizationSourceQuery
         {
             sql.append(" IN (");
             String sep = "";
-            for (Object value : col.getValues())
+            if (col.getValues().isEmpty())
             {
-                sql.append(sep);
-                if (col.getType().isNumeric() || col.getType() == JdbcType.BOOLEAN)
-                    sql.append(value);
-                else
-                    sql.append("'").append(value).append("'");
-                sep = ", ";
+                sql.append(" NULL");
+            }
+            else
+            {
+                for (Object value : col.getValues())
+                {
+                    sql.append(sep);
+                    if (col.getType().isNumeric() || col.getType() == JdbcType.BOOLEAN)
+                        sql.append(value);
+                    else
+                        sql.append("'").append(value).append("'");
+                    sep = ", ";
+                }
             }
             sql.append(")");
         }

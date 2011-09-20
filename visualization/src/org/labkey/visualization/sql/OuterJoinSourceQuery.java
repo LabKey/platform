@@ -135,12 +135,12 @@ public class OuterJoinSourceQuery implements IVisualizationSourceQuery
     }
 
     @Override
-    public Map<String, Set<String>> getColumnNameToValueAliasMap(VisualizationSourceColumn.Factory factory)
+    public Map<String, Set<String>> getColumnNameToValueAliasMap(VisualizationSourceColumn.Factory factory, boolean measuresOnly)
     {
         Map<String, Set<String>> colMap = new LinkedHashMap<String, Set<String>>();
         for (IVisualizationSourceQuery query : _queries)
         {
-            Map<String, Set<String>> queryColMap = query.getColumnNameToValueAliasMap(factory);
+            Map<String, Set<String>> queryColMap = query.getColumnNameToValueAliasMap(factory, measuresOnly);
             for (Map.Entry<String, Set<String>> entry : queryColMap.entrySet())
             {
                 Set<String> valueAliases = colMap.get(entry.getKey());
