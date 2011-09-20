@@ -34,6 +34,7 @@ public class VisualizationSourceQuery implements IVisualizationSourceQuery
     private String _queryName;
     private TableInfo _tinfo;
     private VisualizationSourceColumn _pivot;
+    private Set<VisualizationSourceColumn> _measures = new LinkedHashSet<VisualizationSourceColumn>();
     private Set<VisualizationSourceColumn> _selects = new LinkedHashSet<VisualizationSourceColumn>();
     private Set<VisualizationSourceColumn> _allSelects = null;
     private Set<VisualizationAggregateColumn> _aggregates = new LinkedHashSet<VisualizationAggregateColumn>();
@@ -96,10 +97,14 @@ public class VisualizationSourceQuery implements IVisualizationSourceQuery
         return false;
     }
 
-    public void addSelect(VisualizationSourceColumn select)
+    public void addSelect(VisualizationSourceColumn select, boolean measure)
     {
         ensureSameQuery(select);
         _selects.add(select);
+        if (measure)
+        {
+            _measures.add(select);
+        }
     }
 
     @Override
@@ -179,7 +184,14 @@ public class VisualizationSourceQuery implements IVisualizationSourceQuery
             }
         }
 
-        if (!measuresOnly)
+        if (measuresOnly)
+        {
+            for (VisualizationSourceColumn select : _measures)
+            {
+                addToColMap(colMap, select.getOriginalName(), select.getAlias());
+            }
+        }
+        else
         {
             for (VisualizationSourceColumn select : getSelects(factory, true))
                 addToColMap(colMap, select.getOriginalName(), select.getAlias());

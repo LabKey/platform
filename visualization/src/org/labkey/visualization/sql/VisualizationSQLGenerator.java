@@ -129,7 +129,7 @@ public class VisualizationSQLGenerator implements CustomApiForm, HasViewContext
                 {
                     measureCol = _columnFactory.create(getViewContext(), measureProperties);
                     query = ensureSourceQuery(_viewContext.getContainer(), measureCol, previous);
-                    query.addSelect(measureCol);
+                    query.addSelect(measureCol, true);
                 }
 
                 Object timeAxis = measureInfo.get("time");
@@ -156,10 +156,10 @@ public class VisualizationSQLGenerator implements CustomApiForm, HasViewContext
                         {
                             VisualizationSourceColumn dateCol = _columnFactory.create(getViewContext(), dateProperties);
                             dateCol.setAllowNullResults(measureCol.isAllowNullResults());
-                            ensureSourceQuery(_viewContext.getContainer(), dateCol, query).addSelect(dateCol);
+                            ensureSourceQuery(_viewContext.getContainer(), dateCol, query).addSelect(dateCol, false);
                             VisualizationSourceColumn zeroDateCol = _columnFactory.create(getViewContext(), zeroDateProperties);
                             zeroDateCol.setAllowNullResults(false);
-                            ensureSourceQuery(_viewContext.getContainer(), zeroDateCol, query).addSelect(zeroDateCol);
+                            ensureSourceQuery(_viewContext.getContainer(), zeroDateCol, query).addSelect(zeroDateCol, false);
                             String interval = (String) dateOptions.get("interval");
                             if (interval != null)
                             {
@@ -253,9 +253,9 @@ public class VisualizationSQLGenerator implements CustomApiForm, HasViewContext
                 {
                     // Make sure we're selecting all the columns we need to join on:
                     VisualizationSourceColumn left = join.getKey();
-                    getSourceQuery(join.getKey(), true).addSelect(left);
+                    getSourceQuery(join.getKey(), true).addSelect(left, false);
                     VisualizationSourceColumn right = join.getValue();
-                    getSourceQuery(join.getValue(), true).addSelect(right);
+                    getSourceQuery(join.getValue(), true).addSelect(right, false);
                     // We need to filter both left and right queries by the same values (for the same columns), since we
                     // may be doing an outer join.
                     left.syncValues(right);
@@ -347,7 +347,7 @@ public class VisualizationSQLGenerator implements CustomApiForm, HasViewContext
         for (VisualizationSourceColumn groupByColumn : _groupBys)
         {
             VisualizationSourceQuery groupByQuery = ensureSourceQuery(_viewContext.getContainer(), groupByColumn, null);
-            groupByQuery.addSelect(groupByColumn);
+            groupByQuery.addSelect(groupByColumn, false);
             groupByQueries.add(groupByQuery);
         }
         if (_intervals.size() > 1)
