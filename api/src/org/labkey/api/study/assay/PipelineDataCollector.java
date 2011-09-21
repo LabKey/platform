@@ -124,13 +124,15 @@ public class PipelineDataCollector<ContextType extends AssayRunUploadContext> ex
 
     private static List<Map<String, File>> getFileQueue(HttpSession session, Container c, ExpProtocol protocol)
     {
-        Map<Pair<Container, ExpProtocol>, List<Map<String, File>>> collections = (Map<Pair<Container, ExpProtocol>, List<Map<String, File>>>) session.getAttribute(PipelineDataCollector.class.getName());
+        // Use the protocol's RowId instead the ExpProtocol itself because it will be serialized as part of the session
+        // state when Tomcat is shut down cleanly
+        Map<Pair<Container, Integer>, List<Map<String, File>>> collections = (Map<Pair<Container, Integer>, List<Map<String, File>>>) session.getAttribute(PipelineDataCollector.class.getName());
         if (collections == null)
         {
-            collections = new HashMap<Pair<Container, ExpProtocol>, List<Map<String, File>>>();
+            collections = new HashMap<Pair<Container, Integer>, List<Map<String, File>>>();
             session.setAttribute(PipelineDataCollector.class.getName(), collections);
         }
-        Pair<Container, ExpProtocol> key = new Pair<Container, ExpProtocol>(c, protocol);
+        Pair<Container, Integer> key = new Pair<Container, Integer>(c, protocol.getRowId());
         List<Map<String, File>> result = collections.get(key);
         if (result == null)
         {
