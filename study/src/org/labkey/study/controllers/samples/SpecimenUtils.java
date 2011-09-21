@@ -195,7 +195,7 @@ public class SpecimenUtils
 
         List<DisplayElement> buttons = new ArrayList<DisplayElement>();
 
-        ActionButton ptidListButton = ParticipantGroupManager.getInstance().createParticipantGroupButton(getViewContext(), gridView.getSettings().getDataRegionName(), cohortFilter);
+        ActionButton ptidListButton = ParticipantGroupManager.getInstance().createParticipantGroupButton(getViewContext(), gridView.getSettings().getDataRegionName(), cohortFilter, false);
         if (ptidListButton != null)
             buttons.add(ptidListButton);
 

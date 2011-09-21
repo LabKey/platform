@@ -8,6 +8,35 @@ Ext.namespace("LABKEY.study");
 
 Ext.QuickTips.init();
 
+
+LABKEY.study.ParticipantGroupDialog = Ext.extend(Ext.Window, {
+
+    constructor : function(config){
+        this.panelConfig = config;
+        this.addEvents('aftersave');
+
+        LABKEY.study.ParticipantGroupDialog.superclass.constructor.call(this, {
+            cls: 'extContainer',
+            title: 'Define ' + config.subject.nounSingular + ' Group',
+            layout:'fit',
+            width: Ext.getBody().getViewSize().width < 850 ? Ext.getBody().getViewSize().width * .9 : 800,
+            height: config.hideDataRegion ? 250 : Ext.getBody().getViewSize().height * .75,
+            modal: true,
+            closeAction:'close'
+        });
+    },
+
+    initComponent : function() {
+        var groupPanel = new LABKEY.study.ParticipantGroupPanel(this.panelConfig);
+
+        groupPanel.on('closeWindow', this.close, this);
+        groupPanel.on('aftersave', function(){this.fireEvent('aftersave'); this.close();}, this);
+        this.items = [groupPanel];
+        
+        LABKEY.study.ParticipantGroupDialog.superclass.initComponent.call(this);
+    }
+});
+
 /**
  * Panel to take user input for the label and list of participant ids for a classfication to be created or edited
  * @param categoryRowId = the rowId of the category to be edited (null if create new)
@@ -24,6 +53,7 @@ LABKEY.study.ParticipantGroupPanel = Ext.extend(Ext.Panel, {
         });
 
         this.addEvents('closeWindow');
+        this.addEvents('aftersave');
 
         this.isAdmin = config.isAdmin || false;
         this.subject = config.subject;
@@ -70,45 +100,48 @@ LABKEY.study.ParticipantGroupPanel = Ext.extend(Ext.Panel, {
             buttons: buttons
         });
 
-        var demoStore = new LABKEY.ext.Store({
-            schemaName: 'study',
-            queryName: 'DataSets',
-            filterArray: [LABKEY.Filter.create('DemographicData', true)],
-            columns: 'Label',
-            sort: 'Label',
-            listeners: {
-                scope: this,
-                'load': function(store, records, options)
-                {
-                    // on load, select the first item in the combobox
-                    if (records.length > 0)
+        if (!this.hideDataRegion)
+        {
+            var demoStore = new LABKEY.ext.Store({
+                schemaName: 'study',
+                queryName: 'DataSets',
+                filterArray: [LABKEY.Filter.create('DemographicData', true)],
+                columns: 'Label',
+                sort: 'Label',
+                listeners: {
+                    scope: this,
+                    'load': function(store, records, options)
                     {
-                        this.demoCombobox.setValue(records[0].get("Label"));
-                        this.demoCombobox.fireEvent('select', this.demoCombobox, records[0], 0);
+                        // on load, select the first item in the combobox
+                        if (records.length > 0)
+                        {
+                            this.demoCombobox.setValue(records[0].get("Label"));
+                            this.demoCombobox.fireEvent('select', this.demoCombobox, records[0], 0);
+                        }
+                    }
+                },
+                autoLoad: true
+            });
+
+            this.demoCombobox = new Ext.form.ComboBox({
+                triggerAction: 'all',
+                mode: 'local',
+                store: demoStore,
+                valueField: 'Label',
+                displayField: 'Label',
+                fieldLabel: 'Select ' + this.subject.nounPlural + ' from',
+                labelStyle: 'width: 150px;',
+                labelSeparator : '',
+                minListWidth : 300,
+                disabled : !this.canEdit,
+                listeners: {
+                    scope: this,
+                    'select': function(cmp, record, index){
+                        this.getDemoQueryWebPart(record.get("Label"));
                     }
                 }
-            },
-            autoLoad: true
-        });
-
-        this.demoCombobox = new Ext.form.ComboBox({
-            triggerAction: 'all',
-            mode: 'local',
-            store: demoStore,
-            valueField: 'Label',
-            displayField: 'Label',
-            fieldLabel: 'Select ' + this.subject.nounPlural + ' from',
-            labelStyle: 'width: 150px;',
-            labelSeparator : '',
-            minListWidth : 300,
-            disabled : !this.canEdit,
-            listeners: {
-                scope: this,
-                'select': function(cmp, record, index){
-                    this.getDemoQueryWebPart(record.get("Label"));
-                }
-            }
-        });
+            });
+        }
 
         console.info('category shared : ' + this.categoryShared);
         this.sharedfield = new Ext.form.Checkbox({
@@ -129,6 +162,10 @@ LABKEY.study.ParticipantGroupPanel = Ext.extend(Ext.Panel, {
         else
             this.sharedfield.setValue(true);
 
+        var categoryItems = [this.sharedfield];
+        if (this.demoCombobox)
+            categoryItems.push(this.demoCombobox);
+
         this.items = [
             this.categoryPanel,
             {
@@ -143,15 +180,14 @@ LABKEY.study.ParticipantGroupPanel = Ext.extend(Ext.Panel, {
                         layout      : 'form',
                         columnWidth : 1,
                         border : false, frame : false,
-                        items       : [this.sharedfield, this.demoCombobox]
+                        items : categoryItems
                     }]
                 }]
-            },{
-                xtype: 'panel',
-                id: 'demoQueryWebPartPanel',
-                border: false
             }
         ];
+
+        if (!this.hideDataRegion)
+            this.items.push({xtype: 'panel', id: 'demoQueryWebPartPanel', border: false});
 
         LABKEY.study.ParticipantGroupPanel.superclass.initComponent.call(this);
     },
@@ -198,7 +234,7 @@ LABKEY.study.ParticipantGroupPanel = Ext.extend(Ext.Panel, {
             method : 'POST',
             success: function(){
                 this.getEl().unmask();
-                this.fireEvent('closeWindow');
+                this.fireEvent('aftersave');
                 _grid.getStore().reload();
             },
             failure: function(response, options){

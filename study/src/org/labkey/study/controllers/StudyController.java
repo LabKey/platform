@@ -971,7 +971,9 @@ public class StudyController extends BaseStudyController
                 sb.append("<br/><span><b>QC States:</b> ").append(filter(qcStateSet.getLabel())).append("</span>");
             HtmlView header = new HtmlView(sb.toString());
 
-            HttpView view = new VBox(header, queryView);
+            HtmlView script = new HtmlView("<script type=\"text/javascript\">LABKEY.requiresScript('study/ParticipantGroup.js');</script>");
+            VBox view = new VBox(script, header, queryView);
+
             Report report = queryView.getSettings().getReportView();
             if (report != null && !ReportManager.get().canReadReport(getUser(), getContainer(), report))
             {
@@ -1142,7 +1144,7 @@ public class StudyController extends BaseStudyController
 
         private void createParticipantGroupButton(List<ActionButton> buttonBar, String dataRegionName, CohortFilter cohortFilter)
         {
-            ActionButton listButton = ParticipantGroupManager.getInstance().createParticipantGroupButton(getViewContext(), dataRegionName, cohortFilter);
+            ActionButton listButton = ParticipantGroupManager.getInstance().createParticipantGroupButton(getViewContext(), dataRegionName, cohortFilter, true);
             if (null != listButton)
                 buttonBar.add(listButton);
         }

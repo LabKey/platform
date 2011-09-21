@@ -169,15 +169,7 @@
     }
 
     function editParticipantGroup(row){
-        var win = new Ext.Window({
-            cls: 'extContainer',
-            title: 'Define <%= subjectNounSingular %> Group',
-            layout:'fit',
-            width: Ext.getBody().getViewSize().width < 850 ? Ext.getBody().getViewSize().width * .9 : 800,
-            height: Ext.getBody().getViewSize().height * .75, 
-            modal: true,
-            closeAction:'close',
-            items: new LABKEY.study.ParticipantGroupPanel({
+        var dialog = new LABKEY.study.ParticipantGroupDialog({
                 subject: {
                     nounSingular: <%=q(subjectNounSingular)%>,
                     nounPlural: <%=q(subjectNounPlural)%>,
@@ -188,16 +180,10 @@
                 categoryLabel: (row ? row.get("label") : null),
                 categoryParticipantIds: (row ? row.get("participantIds") : null),
                 categoryShared : (row ? row.get("shared") : false),
-                canEdit : (row ? row.get("canEdit") :  true), // TODO: Modify this to adhere to API to check (participant) group permission
-                listeners: {
-                    scope: this,
-                    'closeWindow': function(){
-                        win.close();
-                    }
-                }
-            })
+                canEdit : (row ? row.get("canEdit") :  true) // TODO: Modify this to adhere to API to check (participant) group permission
         });
-        win.show(this);
+        dialog.show(this);
+
     }
 
     function deleteParticipantGroup(row){

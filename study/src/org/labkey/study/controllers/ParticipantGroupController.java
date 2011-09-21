@@ -23,11 +23,17 @@ import org.labkey.api.action.ApiSimpleResponse;
 import org.labkey.api.action.MutatingApiAction;
 import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.security.RequiresPermissionClass;
-import org.labkey.api.security.permissions.AdminPermission;
 import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.study.model.ParticipantCategory;
+import org.labkey.study.model.ParticipantDataset;
 import org.labkey.study.model.ParticipantGroupManager;
+import org.labkey.study.model.StudyManager;
 import org.springframework.validation.BindException;
+
+import java.sql.SQLException;
+import java.util.Arrays;
+import java.util.LinkedHashSet;
+import java.util.Set;
 
 /**
  * Created by IntelliJ IDEA.
@@ -200,6 +206,47 @@ public class ParticipantGroupController extends BaseStudyController
             resp.put("success", true);
 
             return resp;
+        }
+    }
+
+    @RequiresPermissionClass(ReadPermission.class)
+    public class GetParticipantsFromSelectionAction extends MutatingApiAction<ParticipantSelection>
+    {
+        @Override
+        public ApiResponse execute(ParticipantSelection form, BindException errors) throws Exception
+        {
+            ApiSimpleResponse resp = new ApiSimpleResponse();
+            try
+            {
+                Set<String> ptids = new LinkedHashSet<String>();
+                ParticipantDataset[] pds = StudyManager.getInstance().getParticipantDatasets(getContainer(), Arrays.asList(form.getSelections()));
+                for (ParticipantDataset pd : pds)
+                {
+                    ptids.add(pd.getParticipantId());
+                }
+                resp.put("ptids", ptids);
+                resp.put("success", true);
+            }
+            catch (SQLException e)
+            {
+                errors.reject(ERROR_MSG, e.getMessage());
+            }
+            return resp;
+        }
+    }
+
+    public static class ParticipantSelection
+    {
+        private String[] _selections;
+
+        public String[] getSelections()
+        {
+            return _selections;
+        }
+
+        public void setSelections(String[] selections)
+        {
+            _selections = selections;
         }
     }
 }

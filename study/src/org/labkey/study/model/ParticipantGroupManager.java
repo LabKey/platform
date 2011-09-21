@@ -30,6 +30,8 @@ import org.labkey.api.query.FieldKey;
 import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.AdminPermission;
 import org.labkey.api.study.Study;
+import org.labkey.api.study.permissions.SharedParticipantGroupPermission;
+import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.Pair;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.NavTree;
@@ -42,7 +44,6 @@ import org.labkey.study.controllers.StudyController;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -117,7 +118,8 @@ public class ParticipantGroupManager
         }
     }
 
-    public ActionButton createParticipantGroupButton(ViewContext context, String dataRegionName, CohortFilter cohortFilter)
+    public ActionButton createParticipantGroupButton(ViewContext context, String dataRegionName, CohortFilter cohortFilter,
+                                                     boolean hasCreateGroupFromSelection)
     {
         Container container = context.getContainer();
         String[] colFilterParamNames = context.getActionURL().getKeysByPrefix(dataRegionName + ".");
@@ -147,10 +149,11 @@ public class ParticipantGroupManager
                     selected.add(group);
             }
         }
-        return createParticipantGroupButton(context, dataRegionName, selected, cohortFilter);
+        return createParticipantGroupButton(context, dataRegionName, selected, cohortFilter, hasCreateGroupFromSelection);
     }
 
-    private ActionButton createParticipantGroupButton(ViewContext context, String dataRegionName, Set<ParticipantGroup> selected, CohortFilter cohortFilter)
+    private ActionButton createParticipantGroupButton(ViewContext context, String dataRegionName, Set<ParticipantGroup> selected, CohortFilter cohortFilter,
+                                                      boolean hasCreateGroupFromSelection)
     {
         try {
             Container container = context.getContainer();
@@ -218,6 +221,11 @@ public class ParticipantGroupManager
             }
             button.addMenuItem("Manage " + study.getSubjectNounSingular() + " Groups", new ActionURL(StudyController.ManageParticipantCategoriesAction.class, container));
 
+            if (hasCreateGroupFromSelection)
+            {
+                button.addSeparator();
+                button.addMenuItem("Create " + study.getSubjectNounSingular() + " Group from Selection", "#", createNewParticipantGroupScript(context, dataRegionName));
+            }
             return button;
         }
         catch (Exception e)
@@ -225,7 +233,53 @@ public class ParticipantGroupManager
             throw new RuntimeException(e);
         }
     }
-    
+
+    private String createNewParticipantGroupScript(ViewContext context, String dataRegionName)
+    {
+        Container container = context.getContainer();
+        Study study = StudyManager.getInstance().getStudy(container);
+
+        boolean isAdmin = container.hasPermission(context.getUser(), SharedParticipantGroupPermission.class) ||
+                container.hasPermission(context.getUser(), AdminPermission.class);
+
+        StringBuilder sb = new StringBuilder();
+
+        sb.append("var dataRegion = LABKEY.DataRegions[").append(PageFlowUtil.jsString(dataRegionName)).append("];");
+        sb.append("if (dataRegion) {");
+        sb.append("     var checked = dataRegion.getChecked();");
+        sb.append("     if (checked.length > 0) {");
+        sb.append("         var dataRegionEl = Ext.get(").append(PageFlowUtil.jsString(dataRegionName)).append(");");
+        sb.append("         dataRegionEl.mask('getting selections...', 'x-mask-loading');");
+        sb.append("         Ext.Ajax.request({");
+        sb.append("             url: LABKEY.ActionURL.buildURL('participant-group', 'getParticipantsFromSelection'),");
+        sb.append("             jsonData: {selections:checked},");
+        sb.append("             method: 'post', scope: this,");
+        sb.append("             failure: function(res, opt){dataRegionEl.unmask(); LABKEY.Utils.displayAjaxErrorResponse(res, opt);},");
+        sb.append("             success: function(res, opt) {");
+        sb.append("                 dataRegionEl.unmask();");
+        sb.append("                 var o = eval('var $=' + res.responseText + ';$;');");
+        sb.append("                 if (o.success && o.ptids) {");
+        sb.append("                     var dlg = new LABKEY.study.ParticipantGroupDialog({");
+        sb.append("                             subject: {");
+        sb.append("                                 nounSingular:").append(PageFlowUtil.jsString(study.getSubjectNounSingular())).append(',');
+        sb.append("                                 nounPlural:").append(PageFlowUtil.jsString(study.getSubjectNounPlural()));
+        sb.append("                             },");
+        sb.append("                             categoryParticipantIds: o.ptids,");
+        sb.append("                             canEdit:true, hideDataRegion:true,");
+        sb.append("                             isAdmin:").append(isAdmin);
+        sb.append("                     });");
+        sb.append("                     dlg.on('aftersave', function(c){dataRegion.clearSelected(); dataRegion.refresh();}, this);");
+        sb.append("                     dlg.show(this);");
+        sb.append("                 }");
+        sb.append("             }});");
+        sb.append("     } else {");
+        sb.append("         Ext.MessageBox.alert('Selection Error', 'At least one ").append(study.getSubjectNounSingular()).append(" must be selected from the checkboxes in order to use this feature.');");
+        sb.append("     }");
+        sb.append("}");
+
+        return sb.toString();
+    }
+
     public ParticipantCategory[] getParticipantCategories(Container c, User user)
     {
         return getParticipantCategories(c, user, new SimpleFilter());
