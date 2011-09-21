@@ -517,7 +517,7 @@ LABKEY.vis.TimeChartPanel = Ext.extend(Ext.Panel, {
                         {xtype: 'tbspacer', width: 10},
                         this.displayAggregateCheckbox,
                         {xtype: 'tbspacer', width: 5},
-                        this.displayAggregateComboBox,
+//                        this.displayAggregateComboBox, //this needs to be un-commented when we figure out what to do with count.
                         {xtype: 'tbspacer', width: 10}
                 ],
                 items: [],
@@ -635,7 +635,7 @@ LABKEY.vis.TimeChartPanel = Ext.extend(Ext.Panel, {
         if((this.displayIndividualCheckbox.disabled === false && this.displayIndividualCheckbox.getValue() === true) || (this.displayIndividualCheckbox.disabled === true)){
             this.loaderCount++;
         }
-        if(this.displayAggregateCheckbox.disabled === false && this.displayAggregateCheckbox.getValue() === true){
+        if(this.displayAggregateCheckbox.disabled === false && this.displayAggregate){
             this.loaderCount++;
         }
 
@@ -773,7 +773,7 @@ LABKEY.vis.TimeChartPanel = Ext.extend(Ext.Panel, {
             });
         }
 
-        if(this.displayAggregateCheckbox.disabled === false && this.displayAggregateCheckbox.getValue() === true){
+        if(this.displayAggregateCheckbox.disabled === false && this.displayAggregate){
             //Get data for Aggregates.
             var groups = [];
             for(var i = 0; i < this.chartInfo.subject.groups.length; i++){
@@ -794,7 +794,7 @@ LABKEY.vis.TimeChartPanel = Ext.extend(Ext.Panel, {
                     }, this);
                     
                     Ext.each(data.rows, function(row){
-                        var rowSubject = row.GroupId.displayValue;
+                        var rowSubject = row.CategoryId.displayValue;
                         if(!this.aggregateChartSubjectData[rowSubject]){
                             this.aggregateChartSubjectData[rowSubject] = new Object();
 
@@ -805,15 +805,20 @@ LABKEY.vis.TimeChartPanel = Ext.extend(Ext.Panel, {
                         }
 
                         Ext.each(seriesList, function(s) {
-                            //TODO: Add support for visit based study aggregates.
                             var dataValue = row[this.aggregateData.measureToColumn[s.name]];
-                                if(typeof dataValue != "object") {
-                                    dataValue = {value: dataValue};
-                                }
-
-                            var measureIntervalKey = this.chartInfo.measures[s.measureIndex].dateOptions.interval;
+                            var measureIntervalKey;
+                            
+                            if(typeof dataValue != "object") {
+                                dataValue = {value: dataValue};
+                            }
                             // record that this measure has data
                             if (dataValue.value) this.aggregateHasData[s.name] = true;
+
+                            if (this.editorXAxisPanel.getTime() == "visit"){
+                                measureIntervalKey = this.aggregateData.measureToColumn[this.viewInfo.subjectNounSingular + "Visit/sequencenum"];
+                            } else {
+                                measureIntervalKey = this.chartInfo.measures[s.measureIndex].dateOptions.interval;
+                            }
 
                             this.aggregateChartSubjectData[rowSubject][s.name].push({
                                 interval: row[measureIntervalKey],
@@ -839,7 +844,7 @@ LABKEY.vis.TimeChartPanel = Ext.extend(Ext.Panel, {
                 },
                 measures: this.chartInfo.measures,
                 viewInfo: this.viewInfo,
-                groupBys: [{schemaName: 'study', queryName: this.viewInfo.subjectNounSingular + 'GroupMap', name: 'GroupId', values: groups}],
+                groupBys: [{schemaName: 'study', queryName: this.viewInfo.subjectNounSingular + 'GroupMap', name: 'GroupId/CategoryId', values: groups}],
                 sorts: this.getDataSortArray(),
                 filterUrl: this.chartInfo.filterUrl,
                 filterQuery: this.chartInfo.filterQuery,
@@ -860,7 +865,7 @@ LABKEY.vis.TimeChartPanel = Ext.extend(Ext.Panel, {
     },
 
     generateDisplayOrderAndLabels: function(data){
-        //Used when no explicit Display order has been set by the user.
+        //Generates the labels used for tickmarks, Used when no explicit Display order has been set by the user.
         var sequenceNums = [];
         this.displayOrder = {};
         this.displayLabels = {};
@@ -880,12 +885,11 @@ LABKEY.vis.TimeChartPanel = Ext.extend(Ext.Panel, {
     generateDisplayLabels: function(data){
       //Generates the labels used for tickmarks, used when an explicit display order has been set.
         var rows = data.rows;
-        var displayOrder = [];
         this.displayLabels = {};
+        this.displayOrder = {};
         for(var i = 0; i < rows.length; i++){
-            if(displayOrder.indexOf(rows[i][data.measureToColumn[this.viewInfo.subjectNounSingular + "Visit/Visit/DisplayOrder"]].value) == -1){
                 this.displayLabels[rows[i][data.measureToColumn[this.viewInfo.subjectNounSingular + "Visit/Visit/DisplayOrder"]].value] = rows[i][data.measureToColumn[this.viewInfo.subjectNounSingular + "Visit/sequencenum"]].value;
-            }
+                this.displayOrder[rows[i][data.measureToColumn[this.viewInfo.subjectNounSingular + "Visit/sequencenum"]].value] = rows[i][data.measureToColumn[this.viewInfo.subjectNounSingular + "Visit/Visit/DisplayOrder"]].value;
         }
     },
 
@@ -960,7 +964,7 @@ LABKEY.vis.TimeChartPanel = Ext.extend(Ext.Panel, {
             series = this.generateSeries(series, seriesList, false);
         }
 
-        if(this.displayAggregateCheckbox.disabled === false && this.displayAggregateCheckbox.getValue() === true){
+        if(this.displayAggregateCheckbox.disabled === false && this.displayAggregate){
             //generate series for aggregate lines.
             series = this.generateSeries(series, seriesList, true);
         }
@@ -1122,6 +1126,13 @@ LABKEY.vis.TimeChartPanel = Ext.extend(Ext.Panel, {
                     }
                     var caption = subject;
                     if(aggregate){
+                        //Convert intervals from seq num to display order:
+                        if (this.editorXAxisPanel.getTime() == "visit" && this.displayOrder && subjectData[subject]){
+                            for(var k = 0; k < subjectData[subject][seriesList[i].name].length; k++){
+                                subjectData[subject][seriesList[i].name][k].interval = this.displayOrder[subjectData[subject][seriesList[i].name][k].interval.value];
+                            }
+                        }
+                        //Set caption
                         if(seriesList.length > 1){
                             caption += " " + yAxisSeries;
                         }
