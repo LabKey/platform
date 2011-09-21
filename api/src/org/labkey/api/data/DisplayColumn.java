@@ -355,12 +355,12 @@ public abstract class DisplayColumn extends RenderColumn
         if (_width != null)
         {
             out.write("width=\"");
-            out.write(isLast ? "*" : _width);
+            out.write(isLast ? "*" : _width + "px");
             out.write("\"");
         }
         out.write(" style=\"text-align:");
         out.write(_textAlign == null ? "left" : _textAlign);
-        out.write("\"/>");
+        out.write(";\"/>");
     }
 
     public String getGridHeaderCell(RenderContext ctx)
@@ -379,7 +379,7 @@ public abstract class DisplayColumn extends RenderColumn
 
     public String getDefaultHeaderStyle()
     {
-        return "text-align:" + (getTextAlign() != null ? getTextAlign() : "left");
+        return "text-align:" + (getTextAlign() != null ? getTextAlign() : "left") + ";";
     }
 
     public void renderGridHeaderCell(RenderContext ctx, Writer out) throws IOException, SQLException

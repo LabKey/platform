@@ -1163,7 +1163,7 @@ public class PageFlowUtil
             for (String attribute : attributes.keySet())
             {
                 String value = attributes.get(attribute);
-                sb.append(filter(attribute)).append(" \"").append(filter(value)).append("\"");
+                sb.append(filter(attribute)).append("=\"").append(filter(value)).append("\"");
             }
         }
         sb.append("><span>");

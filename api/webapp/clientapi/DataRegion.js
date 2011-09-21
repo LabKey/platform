@@ -26,7 +26,8 @@ if (!LABKEY.DataRegions)
 }
 
 /**
- * The DataRegion constructor is private - to get a LABKEY.DataRegion object, use <code>Ext.ComponentMgr.get(<em>&lt;dataregionname&gt;</em>)</code> or <code>Ext.ComponentMgr.onAvailable(<em>&lt;dataregionname&gt;</em>, callback)</code>.
+ * The DataRegion constructor is private - to get a LABKEY.DataRegion object,
+ * use <code>Ext.ComponentMgr.get(<em>&lt;dataregionname&gt;</em>)</code> or <code>Ext.ComponentMgr.onAvailable(<em>&lt;dataregionname&gt;</em>, callback)</code>.
  * @class The DataRegion class allows you to interact with LabKey grids, including querying and modifying selection state, filters, and more.
  * @constructor
  */
@@ -37,53 +38,49 @@ LABKEY.DataRegion = Ext.extend(Ext.Component,
     {
         this.config = config || {};
 
-        this.id = config.name; // XXX: may not be unique on the on page with webparts
-        /** Name of the DataRegion. Should be unique within a given page. Read-only. */
-        this.name = config.name;
-        /** Schema name of the query to which this DataRegion is bound. Read-only. */
-        this.schemaName = config.schemaName;
-        /** Name of the query to which this DataRegion is bound. Read-only. */
-        this.queryName = config.queryName;
-        /** Name of the custom view to which this DataRegion is bound, may be blank. Read-only. */
-        this.viewName = config.viewName || "";
-        this.view = config.view;
-        this.sortFilter = config.sortFilter;
+        /**
+         * Config Options
+         *  name       - Name of the DataRegion. Should be unique within a given page. Read-only. This will also be used
+         *               as the Id.
+         *  schemaName - Schema name of the query to which this DataRegion is bound. Read-only.
+         *  queryName  - Name of the query to which this DataRegion is bound. Read-only.
+         *  viewName   - Name of the custom view to which this DataRegion is bound, may be blank. Read-only.
+         *  view
+         *  sortFilter
+         *  complete
+         *  offset     - Starting offset of the rows to be displayed. 0 if at the beginning of the results. Read-only.
+         *  maxRows    - Maximum number of rows to be displayed. 0 if the count is not limited. Read-only.
+         *  totalRows  - (may be undefined)
+         *  rowCount   - (may be undefined)
+         *  showRows
+         *  showRecordSelectors
+         *  showInitialSelectMessage
+         *  selectionKey - Unique string used to associate the selected items with this DataRegion, schema, query, and view.
+         *  selectorCols
+         *  requestURL
+         */
+        Ext.apply(this, config, {
+            viewName : "",
+            offset   : 0,
+            maxRows  : 0
+        });
 
-        this.complete = config.complete;
-        /** Starting offset of the rows to be displayed. 0 if at the beginning of the results. Read-only. */
-        this.offset = config.offset || 0;
-        /** Maximum number of rows to be displayed. 0 if the count is not limited. Read-only. */
-        this.maxRows = config.maxRows || 0;
-        this.totalRows = config.totalRows; // may be undefined
-        this.rowCount = config.rowCount; // may be undefined
-        this.showRows = config.showRows;
+        /**
+         * Non-Configurable Options
+         *  selectionModified
+         *  currentPanelButton  - The button for the ribbon panel that we're currently showing
+         *  panelButtonContents - All of the different ribbon panels that have been constructed for this data region
+         *  allowHeaderLock     - A partially configurable option that allows for lockable headers on scrolling. Only
+         *                        includes "modern browsers" as of 9.8.2011
+         */
+        Ext.apply(this, {
+            selectionModified  : false,
+            currentPanelButton : null,
+            panelButtonContents: [],
+            allowHeaderLock    : this.allowHeaderLock && (Ext.isIE9 || Ext.isWebKit || Ext.isGecko)
+        });
 
-        this.selectionModified = false;
-
-        this.showRecordSelectors = config.showRecordSelectors;
-        this.showInitialSelectMessage = config.showSelectMessage;
-        /** Unique string used to associate the selected items with this DataRegion, schema, query, and view. */
-        this.selectionKey = config.selectionKey;
-        this.selectorCols = config.selectorCols;
-        this.requestURL = config.requestURL;
-
-        // The button for the ribbon panel that we're currently showing
-        this.currentPanelButton = null;
-
-        // All of the different ribbon panels that have been constructed for this data region
-        this.panelButtonContents = [];
-
-        // Lockable Header - set allowHeaderLock to true to receive magical floating headers
-        this.allowHeaderLock = config.allowHeaderLock && (Ext.isIE9 || Ext.isWebKit || Ext.isGecko); // modern as of 8.26.2011
-
-        if (this.allowHeaderLock) {
-            this.first = -1;
-            this.resizeTask = new Ext.util.DelayedTask(function(){
-                this.first = -1;
-                this._resetHeader();
-                this._calculateHeader();
-            }, this);
-        }
+        this.id = this.name;
 
         LABKEY.DataRegions[this.name] = this;
 
@@ -767,8 +764,7 @@ LABKEY.DataRegion = Ext.extend(Ext.Component,
     /** Clear the message box contents. */
     clearMessage : function ()
     {
-        if (this.msgbox)
-            this.msgbox.clear();
+        if (this.msgbox) this.msgbox.clear();
     },
 
     /**
@@ -866,15 +862,16 @@ LABKEY.DataRegion = Ext.extend(Ext.Component,
     // private
     _initElements : function ()
     {
-        this.form = document.forms[this.name];
+        this.form  = document.forms[this.name];
         this.table = Ext.get("dataregion_" + this.name);
-        var msgEl = Ext.get("dataregion_msgbox_" + this.name);
+        var msgEl  = Ext.get("dataregion_msgbox_" + this.name);
         if (msgEl)
         {
             this.msgbox = new LABKEY.MessageArea({parent: msgEl});
             this.msgbox.on('rendermsg', this._onRenderMessageArea, this);
         }
         this.header = Ext.get("dataregion_header_" + this.name);
+        this.header.applyStyles('width: 100%');
         this.footer = Ext.get("dataregion_footer_" + this.name);
 
         // derived DataRegion's may not include the form id
@@ -912,18 +909,18 @@ LABKEY.DataRegion = Ext.extend(Ext.Component,
             }
         }
 
-        Ext.EventManager.on(window, "load", this._resizeContainer, this, {single: true});
-        Ext.EventManager.on(window, "resize", this._resizeContainer, this);
-
         if (this.allowHeaderLock) {
-            Ext.EventManager.on(window, "scroll", this._scrollContainer, this);
             this._initHeaderLock();
         }
+
+        Ext.EventManager.on(window, "load", this._resizeContainer, this, {single: true});
+        Ext.EventManager.on(window, "resize", this._resizeContainer, this);
     },
 
     _initHeaderLock : function() {
         // initialize constants
         this.headerRow          = Ext.get('dataregion_header_row_' + this.name);
+        this.headerRowContent   = this.headerRow.child('td');
         this.headerSpacer       = Ext.get('dataregion_header_row_spacer_' + this.name);
         this.colHeaderRow       = Ext.get('dataregion_column_header_row_' + this.name);
         this.colHeaderRowSpacer = Ext.get('dataregion_column_header_row_spacer_' + this.name);
@@ -932,37 +929,72 @@ LABKEY.DataRegion = Ext.extend(Ext.Component,
         this.rowContent         = Ext.query(" > td[class*=labkey-column-header]", this.colHeaderRow.id);
         this.rowSpacerContent   = Ext.query(" > td[class*=labkey-column-header]", this.colHeaderRowSpacer.id);
 
+        // performance degradation
+        if (this.rowContent.length > 30)
+        {
+            this.allowHeaderLock = false;
+            return;
+        }
+
         // initialize panel listeners
         this.on('afterpanelshow', this._resizeContainer, this);
         this.on('afterpanelhide', this._resizeContainer, this);
+        Ext.EventManager.on(window, "scroll", this._scrollContainer, this);
+
+        // initialize timer task for resizing and scrolling
+        this.first = -1;
+        this.resizeTask = new Ext.util.DelayedTask(function(){
+            this.first = -1;
+            this._resetHeader();
+            this._calculateHeader();
+        }, this);
 
         this._calculateHeader();
     },
 
     _calculateHeader : function() {
-        this._calculateHeaderLock();
+        this._calculateHeaderLock(0, this.rowContent.length);
         this._scrollContainer();
+//        if (this.rowContent.length <= 60)
+//        {
+//            this._calculateHeaderLock(0, this.rowContent.length);
+//        }
+//        else
+//        {
+//            var start = 0;
+//            var interval = 5;
+//            var finish = Math.min(this.rowContent.length, interval);
+//            var runner = new Ext.util.TaskRunner();
+//
+//            var task = {
+//                run: function(){
+//                    console.info('running (' + start + ", " + finish + ")");
+//                    this._calculateHeaderLock(start, finish);
+//                    if (finish == this.rowContent.length)
+//                    {
+//                        runner.stop(task);
+//                    }
+//
+//                    start = finish;
+//                    finish = Math.min(this.rowContent.length, finish+interval);
+//                },
+//                interval: 650,
+//                scope   : this
+//            };
+//
+//            runner.start(task);
+//        }
     },
 
-    _calculateHeaderLock : function(scroll) {
-        var el, z, w, h;
+    _calculateHeaderLock : function() {
+        var el, z, s;
         for (var i=0; i < this.rowContent.length; i++) {
             el = Ext.get(this.rowContent[i]);
-            h = el.getHeight();
-            w = el.getWidth();
-            el.setHeight(h);
-            el.setWidth(w);
-            z = Ext.get(this.rowSpacerContent[i]); // must be done after others are set (ext side-effect?) -- TODO: look at suspend event, also setSize
-            z.setHeight(h);
-            z.setWidth(w);
-
-            if (scroll) {
-                el.setWidth(z.getComputedWidth());
-                el.setHeight(z.getComputedHeight());
-            }
+            s = { width : el.getWidth(), height: el.getHeight() };
+            el.setSize(s);
+            z = Ext.get(this.rowSpacerContent[i]); // must be done after others are set (ext side-effect?)
+            z.setSize(s);
         }
-
-        if (scroll) { return; }
 
         if (this.first < 0) this.first = this._findPos(this.headerRow);
         this.hdrLocked = false;
@@ -975,7 +1007,7 @@ LABKEY.DataRegion = Ext.extend(Ext.Component,
         if (obj && obj.offsetParent) {
             do {
                 curleft += obj.offsetLeft;
-                curtop += obj.offsetTop;
+                curtop  += obj.offsetTop;
             } while (obj = obj.offsetParent);
         }
 
@@ -991,15 +1023,14 @@ LABKEY.DataRegion = Ext.extend(Ext.Component,
     _scrollContainer : function() {
         // calculate Y scrolling
         if (window.pageYOffset > this.first[1] && window.pageYOffset < this.first[2]) {
-            if (!this.hdrLocked)
-                this._calculateHeaderLock(true);
+            var tWidth = this.table.getComputedWidth();
             this.headerSpacer.dom.style.display = "table-row";
             this.colHeaderRowSpacer.dom.style.display = "table-row";
-            // "box-shadow: 5px 5px 5px #888888;"
             this.headerRow.applyStyles("top: 0; position: fixed; " +
-                    "min-width: " + this.table.getComputedWidth() + "px; ");
+                    "min-width: " + tWidth + "px; ");
+            this.headerRowContent.applyStyles("min-width: " + (tWidth-4) + "px; ");
             this.colHeaderRow.applyStyles("position: fixed; background: white; top: " + this.first[3] + "px;" +
-                    "min-width: " + this.table.getComputedWidth() + "px; ");
+                    "min-width: " + tWidth + "px; box-shadow: -2px 5px 5px #DCDCDC;");
             this.hdrLocked = true;
         }
         else if (this.hdrLocked && window.pageYOffset >= this.first[2]) {
@@ -1024,7 +1055,7 @@ LABKEY.DataRegion = Ext.extend(Ext.Component,
     _resetHeader : function() {
         this.hdrLocked = false;
         this.headerRow.applyStyles("top: auto; position: static;");
-        this.colHeaderRow.applyStyles("top: auto; position: static;");
+        this.colHeaderRow.applyStyles("top: auto; position: static; box-shadow: none;");
         this.headerSpacer.dom.style.display = "none";
         this.headerSpacer.setHeight(this.headerRow.getHeight());
         this.colHeaderRowSpacer.dom.style.display = "none";
@@ -1044,11 +1075,7 @@ LABKEY.DataRegion = Ext.extend(Ext.Component,
     {
         if (!this.table) return;
 
-        var viewportWidth = Ext.lib.Dom.getViewWidth() - 20;     // - 20 to account for scrollbar.
-
         var headerWidth = this.table.getWidth(true);
-        if (this.table.getRight(false) > viewportWidth)
-            headerWidth = viewportWidth - this.table.getLeft(false);
 
         if (this.header)
         {
@@ -1062,8 +1089,8 @@ LABKEY.DataRegion = Ext.extend(Ext.Component,
             this.footer.setWidth(headerWidth - frameWidth);
         }
 
-        if (init !== true && this.allowHeaderLock) {
-            this.resizeTask.delay(80);
+        if (init !== true && this.allowHeaderLock == true) {
+            if (this.resizeTask) this.resizeTask.delay(110);
         }
     },
 
@@ -1216,12 +1243,7 @@ LABKEY.DataRegion = Ext.extend(Ext.Component,
      */
     showButtonPanel : function (panelButton, tabPanelConfig)
     {
-        panelButton = Ext.get(panelButton);
-        var regionHeader = panelButton.parent(".labkey-data-region-header");
-        if (!regionHeader)
-            return;
-
-        this._showButtonPanel(regionHeader, panelButton.getAttribute("panelId"), true, tabPanelConfig);
+        this._showButtonPanel(this.header, panelButton.getAttribute("panelId"), true, tabPanelConfig);
     },
 
     _showButtonPanel : function(headerOrFooter, panelId, animate, tabPanelConfig)
@@ -1402,12 +1424,12 @@ LABKEY.DataRegion = Ext.extend(Ext.Component,
 
                 var viewName = (this.view && this.view.name) || this.viewName || "";
                 LABKEY.Query.getQueryDetails({
-                    schemaName: this.schemaName,
-                    queryName: this.queryName,
-                    viewName: viewName,
-                    fields: fields,
-                    initializeMissingView: true,
-                    success: function (json, response, options) {
+                    schemaName : this.schemaName,
+                    queryName  : this.queryName,
+                    viewName   : viewName,
+                    fields     : fields,
+                    initializeMissingView : true,
+                    success    : function (json, response, options) {
                         if (timerId > 0)
                             clearTimeout(timerId);
                         else
@@ -1417,18 +1439,18 @@ LABKEY.DataRegion = Ext.extend(Ext.Component,
                         var renderTo = Ext.getBody().createChild({tag: "div", customizeView: true, style: {display: "none"}});
 
                         this.customizeView = new LABKEY.DataRegion.ViewDesigner({
-                            renderTo: renderTo,
-                            width: minWidth,
-                            activeGroup: activeTab,
-                            dataRegion: this,
-                            schemaName: this.schemaName,
-                            queryName: this.queryName,
-                            viewName: viewName,
-                            query: json,
-                            userFilter: userFilter,
-                            userSort: userSort,
-                            userContainerFilter: this.getUserContainerFilter(),
-                            allowableContainerFilters: this.allowableContainerFilters
+                            renderTo    : renderTo,
+                            width       : headerOrFooter.getWidth(true),
+                            activeGroup : activeTab,
+                            dataRegion  : this,
+                            schemaName  : this.schemaName,
+                            queryName   : this.queryName,
+                            viewName    : viewName,
+                            query       : json,
+                            userFilter  : userFilter,
+                            userSort    : userSort,
+                            userContainerFilter       : this.getUserContainerFilter(),
+                            allowableContainerFilters : this.allowableContainerFilters
                         });
 
                         this.customizeView.on("viewsave", this.onViewSave, this);
@@ -1512,11 +1534,11 @@ LABKEY.DataRegion = Ext.extend(Ext.Component,
         }.defer(500, this);
 
         Ext.Ajax.request({
-            url: LABKEY.ActionURL.buildURL("query", "deleteView"),
-            jsonData: {schemaName: this.schemaName, queryName: this.queryName, viewName: this.viewName, complete: complete},
-            method: "POST",
-            scope: this,
-            success: LABKEY.Utils.getCallbackWrapper(function (json, response, options) {
+            url      : LABKEY.ActionURL.buildURL("query", "deleteView"),
+            jsonData : {schemaName: this.schemaName, queryName: this.queryName, viewName: this.viewName, complete: complete},
+            method   : "POST",
+            scope    : this,
+            success  : LABKEY.Utils.getCallbackWrapper(function (json, response, options) {
                 if (timerId > 0)
                     clearTimeout(timerId);
                 this.showSuccessMessage();
@@ -1524,7 +1546,7 @@ LABKEY.DataRegion = Ext.extend(Ext.Component,
                 var viewName = json.viewName;
                 this.changeView({type:'view', viewName: viewName});
             }, this),
-            failure: LABKEY.Utils.getCallbackWrapper(function (json, response, options) {
+            failure  : LABKEY.Utils.getCallbackWrapper(function (json, response, options) {
                 if (timerId > 0)
                     clearTimeout(timerId);
                 this.showErrorMessage(json.exception);
@@ -1991,10 +2013,8 @@ LABKEY.DataRegion._filterUI =
             this.changeFilterCallback = confirmCallback;
         }
 
-        var comboStore1 = new Ext.data.ArrayStore({fields: ['text', 'value']});
-        comboStore1 = this.fillOptions(mvEnabled, this._mappedType, 0);
-        var comboStore2 = new Ext.data.ArrayStore({fields: ['text', 'value']});
-        comboStore2 = this.fillOptions(mvEnabled, this._mappedType, 1);
+        var comboStore1 = this.fillOptions(mvEnabled, this._mappedType, 0);
+        var comboStore2 = this.fillOptions(mvEnabled, this._mappedType, 1);
 
         var self = this; //Used so we can get _mappedType within Ext component configs (comboBoxes && validators).
 
@@ -2026,7 +2046,8 @@ LABKEY.DataRegion._filterUI =
                     }
                 }
             },
-            scope: this });
+            scope: this
+        });
 
         var filterComboBox2 = new Ext.form.ComboBox({
             emptyText: 'Choose a filter:',
@@ -2083,101 +2104,65 @@ LABKEY.DataRegion._filterUI =
             }
         }
 
-        var inputField1;
-        var inputField2;
+        var inputFieldConfig1 = {
+            name          : 'value_1',
+            id            : 'value_1',
+            allowBlank    : false,
+            width         : 250,
+            blankText     : 'You must enter a value.',
+            validateOnBlur: false,
+            validator     : inputFieldValidator1,
+            listeners     : {
+                disable   : function(field){
+                    //Call validate after disable so any pre-existing validation errors go away.
+                    this.validate();
+                }
+            }
+        };
+
+        var inputFieldConfig2 = {
+            name          : 'value_2',
+            id            : 'value_2',
+            allowBlank    : false,
+            width         : 250,
+            blankText     : 'You must enter a value.',
+            validateOnBlur: false,
+            validator     : inputFieldValidator2,
+            listeners     : {
+                disable   : function(field){
+                    //Call validate after disable so any pre-existing validation errors go away.
+                    this.validate();
+                }
+            }
+        };
 
         if(this._mappedType == "DATE"){
-            inputField1 = new Ext.form.DateField({
-                name: 'value_1',
-                id: 'value_1',
-                allowBlank: false,
-                width: 250,
-                blankText: 'You must enter a value.',
-                altFormats: LABKEY.Utils.getDateAltFormats(),
-                validateOnBlur: false,
-                validator: inputFieldValidator1,
-                listeners: {
-                    disable: function(field){
-                        //Call validate after we disable so any pre-existing validation errors go away.
-                        this.validate();
-                    }
-                }
-            });
-
-            inputField2 = new Ext.form.DateField({
-                name: 'value_2',
-                id: 'value_2',
-                allowBlank: false,
-                width: 250,
-                blankText: 'You must enter a value.',
-                altFormats: LABKEY.Utils.getDateAltFormats(),
-                validateOnBlur: false,
-                validator: inputFieldValidator2,
-                listeners: {
-                    disable: function(field){
-                        //Call validate after we disable so any pre-existing validation errors go away.
-                        this.validate();
-                    }
-                }
-            });
-        } else {
-            inputField1 = new Ext.form.TextField({
-                name: 'value_1',
-                id: 'value_1',
-                allowBlank: false,
-                width: 250,
-                blankText: 'You must enter a value.',
-                validateOnBlur: false,
-                validator: inputFieldValidator1,
-                listeners: {
-                    disable: function(field){
-                        //Call validate after disable so any pre-existing validation errors go away.
-                        this.validate();
-                    }
-                }
-            });
-
-            inputField2 = new Ext.form.TextField({
-                name: 'value_2',
-                id: 'value_2',
-                allowBlank: false,
-                width: 250,
-                blankText: 'You must enter a value.',
-                validator: inputFieldValidator2,
-                validateOnBlur: false,
-                listeners: {
-                    disable: function(field){
-                        //Call validate after we disable so any pre-existing validation errors go away.
-                        this.validate();
-                    }
-                }
-            });
+            inputFieldConfig1.altFormats = LABKEY.Utils.getDateAltFormats();
+            inputFieldConfig1.altFormats = LABKEY.Utils.getDateAltFormats();
         }
+
+        var inputField1 = new Ext.form.TextField(inputFieldConfig1);
+        var inputField2 = new Ext.form.TextField(inputFieldConfig2);
 
         // create a task to set the input focus that will get started after layout is complete, the task will
         // run for a max of 2000ms but will get stopped when the component receives focus
         this.focusTask = {interval:150, run: function(){inputField1.focus();}, scope: this, duration: 2000};
         inputField1.on('focus', function(){Ext.TaskMgr.stop(this.focusTask)}, this);
 
-        function inputFieldValidator1(input){
-            //Helper function for validateInputField
-            var test = filterComboBox1.getValue();
-            if(filterComboBox1.getStore().getAt(filterComboBox1.getStore().find('text', filterComboBox1.getValue())).data.value == 'in'){
-                return validateEqOneOf(input, self._mappedType)
-            } else {
-                return validateInputField(input, self._mappedType);
+        function inputFieldValidator(input, cb)
+        {
+            if(cb.getStore().getAt(cb.getStore().find('text', cb.getValue())).data.value == 'in'){
+                return validateEqOneOf(input, self._mappedType);
             }
+            return validateInputField(input, self._mappedType);
+        }
 
+        function inputFieldValidator1(input){
+            return inputFieldValidator(input, filterComboBox1);
         }
 
         function inputFieldValidator2(input){
-            //Helper function for validateInputField
-            if(filterComboBox2.getStore().getAt(filterComboBox2.getStore().find('text', filterComboBox2.getValue())).data.value == 'in'){
-                return validateEqOneOf(input, self._mappedType)
-            } else {
-                return validateInputField(input, self._mappedType);
-            }
-
+            return inputFieldValidator(input, filterComboBox2);
         }
 
         function validateInputField(input, mappedType){
@@ -2242,7 +2227,7 @@ LABKEY.DataRegion._filterUI =
             if(inputField1.isValid() && inputField2.isValid()){
                 var filterType1 = filterComboBox1.getStore().getAt(filterComboBox1.getStore().find('text', filterComboBox1.getValue())).data.value;
                 var filterType2 = filterComboBox2.getStore().getAt(filterComboBox2.getStore().find('text', filterComboBox2.getValue())).data.value;
-                LABKEY.DataRegion._filterUI.setFilter(inputField1.getValue(), inputField2.getValue(), filterType1, filterType2);
+                self.setFilter(inputField1.getValue(), inputField2.getValue(), filterType1, filterType2);
                 self._filterWin.close();
             }
         };
@@ -2279,8 +2264,6 @@ LABKEY.DataRegion._filterUI =
         filterPanel.on('afterlayout', function(cmp){Ext.TaskMgr.start(this.focusTask)}, this);
 
          this._filterWin = new Ext.Window({
-            //contentEl: div,
-             //id: 'filterWinId',
              width: 400,
              autoHeight: true,
              modal: true,
@@ -2383,101 +2366,65 @@ LABKEY.DataRegion._filterUI =
 
     fillOptions : function(mvEnabled, mappedType, storeNum)
     {
-        var store = new Ext.data.ArrayStore({fields: ['text', 'value']});
+        var store       = new Ext.data.ArrayStore({fields: ['text', 'value']});
         var comboRecord = Ext.data.Record.create(['text', 'value']);
-        var rec;
 
         if(storeNum == 1){
-            rec = new comboRecord({text:'No Other Filter', value: ''});
-            store.add(rec);
+            store.add(new comboRecord({text:'No Other Filter', value: ''}));
         } else{
-            rec = new comboRecord({text:'Has Any Value', value: ''});
-            store.add(rec);
+            store.add(new comboRecord({text:'Has Any Value', value: ''}));
         }
 
         if (mappedType != "LONGTEXT")
         {
             if(mappedType == "DATE"){
-                rec = new comboRecord({text:'Equals', value: 'dateeq'});
+                store.add(new comboRecord({text:'Equals', value: 'dateeq'}))
             } else {
-                rec = new comboRecord({text:'Equals', value: 'eq'});
+                store.add(new comboRecord({text:'Equals', value: 'eq'}));
             }
-            store.add(rec);
 
-            if (mappedType != "BOOL" && mappedType != "DATE")
-            {
-                rec = new comboRecord({text:"Equals One Of (e.g. \"a;b;c\")", value: 'in'});
-                store.add(rec);
+            if (mappedType != "BOOL" && mappedType != "DATE"){
+                store.add(new comboRecord({text:"Equals One Of (e.g. \"a;b;c\")", value: 'in'}));
             }
 
             if(mappedType == "DATE"){
-                rec = new comboRecord({text:'Does Not Equal', value: 'dateneq'});
+                store.add(new comboRecord({text:'Does Not Equal', value: 'dateneq'}));
             } else {
-                rec = new comboRecord({text:'Does Not Equal', value: 'neqornull'});
+                store.add(new comboRecord({text:'Does Not Equal', value: 'neqornull'}));
             }
-            store.add(rec);
         }
 
         if (mappedType != "LONGTEXT" && mappedType != "BOOL")
         {
             if(mappedType == "DATE"){
-                rec = new comboRecord({text:'Is Greater Than', value: 'dategt'});
+                store.add(new comboRecord({text:'Is Greater Than',             value: 'dategt'}));
+                store.add(new comboRecord({text:'Is Less Than',                value: 'datelt'}));
+                store.add(new comboRecord({text:'Is Greater Than Or Equal To', value: 'dategte'}));
+                store.add(new comboRecord({text:'Is Less Than Or Equal To',    value: 'datelte'}));
             } else {
-                rec = new comboRecord({text:'Is Greater Than', value: 'gt'});
+                store.add(new comboRecord({text:'Is Greater Than',             value: 'gt'}));
+                store.add(new comboRecord({text:'Is Less Than',                value: 'lt'}));
+                store.add(new comboRecord({text:'Is Greater Than Or Equal To', value: 'gte'}));
+                store.add(new comboRecord({text:'Is Less Than Or Equal To',    value: 'lte'}));
             }
-            store.add(rec);
-
-            if(mappedType == "DATE"){
-                rec = new comboRecord({text:'Is Less Than', value: 'datelt'});
-            } else {
-                rec = new comboRecord({text:'Is Less Than', value: 'lt'});
-            }
-            store.add(rec);
-
-            if(mappedType == "DATE"){
-                rec = new comboRecord({text:'Is Greater Than Or Equal To', value: 'dategte'});
-            } else {
-                rec = new comboRecord({text:'Is Greater Than Or Equal To', value: 'gte'});
-            }
-            store.add(rec);
-
-            if(mappedType == "DATE"){
-                rec = new comboRecord({text:'Is Less Than Or Equal To', value: 'datelte'});
-            } else {
-                rec = new comboRecord({text:'Is Less Than Or Equal To', value: 'lte'});
-            }
-            store.add(rec);
         }
 
         if (mappedType == "TEXT" || mappedType == "LONGTEXT")
         {
-            rec = new comboRecord({text:'Starts With', value: 'startswith'});
-            store.add(rec);
-
-            rec = new comboRecord({text:'Does Not Start With', value: 'doesnotstartwith'});
-            store.add(rec);
-
-            rec = new comboRecord({text:'Contains', value: 'contains'});
-            store.add(rec);
-
-            rec = new comboRecord({text:'Does Not Contain', value: 'doesnotcontain'});
-            store.add(rec);
+            store.add(new comboRecord({text:'Starts With',         value: 'startswith'}));
+            store.add(new comboRecord({text:'Does Not Start With', value: 'doesnotstartwith'}));
+            store.add(new comboRecord({text:'Contains',            value: 'contains'}));
+            store.add(new comboRecord({text:'Does Not Contain',    value: 'doesnotcontain'}));
         }
 
         //All mappedTypes will have these:
-        rec = new comboRecord({text:'Is Blank', value: 'isblank'});
-        store.add(rec);
-
-        rec = new comboRecord({text:'Is Not Blank', value: 'isnonblank'});
-        store.add(rec);
+        store.add(new comboRecord({text:'Is Blank',     value: 'isblank'}));
+        store.add(new comboRecord({text:'Is Not Blank', value: 'isnonblank'}));
 
         if (mvEnabled)
         {
-            rec = new comboRecord({text:'Has A Missing Value Indicator', value: 'hasmvvalue'});
-            store.add(rec);
-
-            rec = new comboRecord({text:'Does Not Have A Missing Value Indicator', value: 'nomvvalue'});
-            store.add(rec);
+            store.add(new comboRecord({text:'Has A Missing Value Indicator',           value: 'hasmvvalue'}));
+            store.add(new comboRecord({text:'Does Not Have A Missing Value Indicator', value: 'nomvvalue'}));
         }
 
         return store;
@@ -2515,7 +2462,6 @@ LABKEY.DataRegion._filterUI =
             }
         }
         var iNew = 0;
-        //alert("getparamValPairs: " + queryString);
         var newParamValPairs = new Array(0);
         if (queryString != null && queryString.length > 0)
         {
@@ -2757,7 +2703,8 @@ LABKEY.MessageArea = Ext.extend(Ext.util.Observable, {
              * @param {String} the name of the message part
              * @param {Ext.Element} the rendered element
              */
-            'rendermsg'
+            'rendermsg',
+            'clearmsg'
         );
     },
 

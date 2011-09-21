@@ -824,7 +824,6 @@ public class DataRegion extends AbstractDataRegion
                     renderAggregatesTableRow(ctx, out, showRecordSelectors, renderers);
 
                 int rows = renderTableContents(ctx, out, showRecordSelectors, renderers);
-                //assert _rowCount != null && rows == _rowCount : "Row size mismatch: NYI";
                 if (rows == 0)
                 {
                     renderNoRowsMessage(ctx, out, colCount);
