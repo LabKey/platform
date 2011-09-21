@@ -69,7 +69,6 @@ LABKEY.vis.ChartEditorChartsPanel = Ext.extend(Ext.FormPanel, {
                 scope: this,
                 'check': function(field, checked) {
                     this.chartLayoutRadioChecked(field, checked);
-                    this.fireEvent('groupLayoutSelectionChanged', checked);
                 }
             }
         });
@@ -254,8 +253,17 @@ LABKEY.vis.ChartEditorChartsPanel = Ext.extend(Ext.FormPanel, {
     chartLayoutRadioChecked: function(field, checked) {
         if (checked)
         {
+            var oldLayout = this.chartLayout;
             this.chartLayout = field.inputValue;
-            this.fireEvent('chartDefinitionChanged', true);
+            if(oldLayout == 'per_group'){
+                this.fireEvent('groupLayoutSelectionChanged', false);
+                this.fireEvent('chartDefinitionChanged', true);
+            }  else if(this.chartLayout == 'per_group'){
+                this.fireEvent('groupLayoutSelectionChanged', true);
+                this.fireEvent('chartDefinitionChanged', true);
+            } else {
+                this.fireEvent('chartDefinitionChanged', true);
+            }
         }
     }
 });
