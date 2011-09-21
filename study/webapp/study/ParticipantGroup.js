@@ -29,6 +29,7 @@ LABKEY.study.ParticipantGroupPanel = Ext.extend(Ext.Panel, {
         this.subject = config.subject;
         this.hasButtons = config.hasButtons || true;
         this.canShare = config.canShare || true;
+        this.dataRegionName = config.dataRegionName || 'demoDataRegion';
 
         LABKEY.study.ParticipantGroupPanel.superclass.constructor.call(this, config);
     },
@@ -244,7 +245,7 @@ LABKEY.study.ParticipantGroupPanel = Ext.extend(Ext.Panel, {
 
         var demoQueryWebPart =  new LABKEY.QueryWebPart({
             renderTo: 'demoQueryWebPartPanel',
-            dataRegionName: 'demoDataRegion',
+            dataRegionName: this.dataRegionName,
             schemaName: 'study',
             queryName: queryName,
             frame: 'none',
@@ -270,10 +271,10 @@ LABKEY.study.ParticipantGroupPanel = Ext.extend(Ext.Panel, {
                 }]
             },
             success: function(){
-                // clear any chached selections from the last time this dataRegion was used
+                // clear any cached selections from the last time this dataRegion was used
                 if (initialLoad)
                 {
-                    Ext.ComponentMgr.get('demoDataRegion').clearSelected();
+                    Ext.ComponentMgr.get(this.dataRegionName).clearSelected();
                     initialLoad = false;
                 }
             }
@@ -285,7 +286,7 @@ LABKEY.study.ParticipantGroupPanel = Ext.extend(Ext.Panel, {
 
         // convert user filters from data region to expected filterArray
         var filters = [];
-        Ext.each(Ext.ComponentMgr.get('demoDataRegion').getUserFilter(), function(usrFilter){
+        Ext.each(Ext.ComponentMgr.get(this.dataRegionName).getUserFilter(), function(usrFilter){
             var filterType = this.getFilterTypeByURLSuffix(usrFilter.op);
             filters.push(LABKEY.Filter.create(usrFilter.fieldKey,  usrFilter.value, filterType));
         }, this);
@@ -294,7 +295,7 @@ LABKEY.study.ParticipantGroupPanel = Ext.extend(Ext.Panel, {
         LABKEY.Query.selectRows({
             schemaName: 'study',
             queryName: queryName,
-            selectionKey: Ext.ComponentMgr.get('demoDataRegion').selectionKey,
+            selectionKey: Ext.ComponentMgr.get(this.dataRegionName).selectionKey,
             showRows: showStr,
             filterArray: filters,
             columns: this.subject.columnName,
