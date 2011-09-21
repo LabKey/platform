@@ -76,11 +76,11 @@ LABKEY.DataRegion = Ext.extend(Ext.Component,
         Ext.apply(this, {
             selectionModified  : false,
             currentPanelButton : null,
-            panelButtonContents: [],
-            allowHeaderLock    : this.allowHeaderLock && (Ext.isIE9 || Ext.isWebKit || Ext.isGecko)
+            panelButtonContents: []
         });
 
         this.id = this.name;
+        this._allowHeaderLock = this.allowHeaderLock && (Ext.isIE9 || Ext.isWebKit || Ext.isGecko);
 
         LABKEY.DataRegions[this.name] = this;
 
@@ -909,12 +909,16 @@ LABKEY.DataRegion = Ext.extend(Ext.Component,
             }
         }
 
-        if (this.allowHeaderLock) {
+        if (this.headerLock()) {
             this._initHeaderLock();
         }
 
         Ext.EventManager.on(window, "load", this._resizeContainer, this, {single: true});
         Ext.EventManager.on(window, "resize", this._resizeContainer, this);
+    },
+
+    headerLock : function() {
+        return this._allowHeaderLock === true;
     },
 
     _initHeaderLock : function() {
@@ -925,6 +929,9 @@ LABKEY.DataRegion = Ext.extend(Ext.Component,
         this.colHeaderRow       = Ext.get('dataregion_column_header_row_' + this.name);
         this.colHeaderRowSpacer = Ext.get('dataregion_column_header_row_spacer_' + this.name);
 
+        // check if the header row is being used
+        this.includeHeader = this.headerRow.isDisplayed();
+
         // initialize row contents
         this.rowContent         = Ext.query(" > td[class*=labkey-column-header]", this.colHeaderRow.id);
         this.rowSpacerContent   = Ext.query(" > td[class*=labkey-column-header]", this.colHeaderRowSpacer.id);
@@ -932,7 +939,7 @@ LABKEY.DataRegion = Ext.extend(Ext.Component,
         // performance degradation
         if (this.rowContent.length > 30)
         {
-            this.allowHeaderLock = false;
+            this._allowHeaderLock = false;
             return;
         }
 
@@ -953,37 +960,8 @@ LABKEY.DataRegion = Ext.extend(Ext.Component,
     },
 
     _calculateHeader : function() {
-        this._calculateHeaderLock(0, this.rowContent.length);
+        this._calculateHeaderLock();
         this._scrollContainer();
-//        if (this.rowContent.length <= 60)
-//        {
-//            this._calculateHeaderLock(0, this.rowContent.length);
-//        }
-//        else
-//        {
-//            var start = 0;
-//            var interval = 5;
-//            var finish = Math.min(this.rowContent.length, interval);
-//            var runner = new Ext.util.TaskRunner();
-//
-//            var task = {
-//                run: function(){
-//                    console.info('running (' + start + ", " + finish + ")");
-//                    this._calculateHeaderLock(start, finish);
-//                    if (finish == this.rowContent.length)
-//                    {
-//                        runner.stop(task);
-//                    }
-//
-//                    start = finish;
-//                    finish = Math.min(this.rowContent.length, finish+interval);
-//                },
-//                interval: 650,
-//                scope   : this
-//            };
-//
-//            runner.start(task);
-//        }
     },
 
     _calculateHeaderLock : function() {
@@ -992,11 +970,11 @@ LABKEY.DataRegion = Ext.extend(Ext.Component,
             el = Ext.get(this.rowContent[i]);
             s = { width : el.getWidth(), height: el.getHeight() };
             el.setSize(s);
-            z = Ext.get(this.rowSpacerContent[i]); // must be done after others are set (ext side-effect?)
+            z = Ext.get(this.rowSpacerContent[i]); // must be done after 'el' is set (ext side-effect?)
             z.setSize(s);
         }
 
-        if (this.first < 0) this.first = this._findPos(this.headerRow);
+        if (this.first < 0) this.first = this._findPos((this.includeHeader ? this.headerRow : this.colHeaderRow));
         this.hdrLocked = false;
     },
 
@@ -1011,12 +989,11 @@ LABKEY.DataRegion = Ext.extend(Ext.Component,
             } while (obj = obj.offsetParent);
         }
 
-        return [
-            curleft,
-            curtop,
-            (curtop+this.table.getHeight()-((this.headerRow.getComputedHeight()*2)+(this.colHeaderRow.getComputedHeight()*2))),
-            this.headerRow.getComputedHeight()
-        ];
+        var curbottom = curtop+this.table.getHeight();
+        curbottom -= (this.includeHeader ? (this.headerRow.getComputedHeight()*2) : 0) + (this.colHeaderRow.getComputedHeight()*2);
+        var hdrOffset = this.includeHeader ? this.headerRow.getComputedHeight() : 0;
+
+        return [ curleft, curtop, curbottom, hdrOffset ];
     },
 
     // WARNING: This function is called often. Performance implications for each line.
@@ -1089,7 +1066,7 @@ LABKEY.DataRegion = Ext.extend(Ext.Component,
             this.footer.setWidth(headerWidth - frameWidth);
         }
 
-        if (init !== true && this.allowHeaderLock == true) {
+        if (init !== true && this.headerLock()) {
             if (this.resizeTask) this.resizeTask.delay(110);
         }
     },
@@ -1327,7 +1304,7 @@ LABKEY.DataRegion = Ext.extend(Ext.Component,
                     var panelToShow = this.panelButtonContents[panelId];
                     panelToShow.setVisible(true);
 
-                    if (this.allowHeaderLock) {
+                    if (this.headerLock()) {
                         y = this.colHeaderRow.getY();
                         h = this.headerSpacer.getHeight();
                     }
@@ -1341,7 +1318,7 @@ LABKEY.DataRegion = Ext.extend(Ext.Component,
                         scope      : this
                     });
 
-                    if (this.allowHeaderLock) {
+                    if (this.headerLock()) {
                         this.headerSpacer.setHeight(h+panelToShow.getHeight());
                         this.colHeaderRow.shift({y:(y+panelToShow.getHeight()), duration : _duration, concurrent: true, scope: this});
                     }
@@ -1358,7 +1335,7 @@ LABKEY.DataRegion = Ext.extend(Ext.Component,
             if (this.currentPanelId)
             {
                 // We're already showing a ribbon panel, so hide it before showing the new one
-                if (this.allowHeaderLock) {
+                if (this.headerLock()) {
                     y = this.colHeaderRow.getY();
                     h = this.headerSpacer.getHeight();
                 }
@@ -1373,7 +1350,7 @@ LABKEY.DataRegion = Ext.extend(Ext.Component,
                     scope      : this
                 });
 
-                if (this.allowHeaderLock) {
+                if (this.headerLock()) {
                     this.headerSpacer.setHeight(h-panelToHide.getHeight());
                     this.colHeaderRow.shift({y:(y-panelToHide.getHeight()), duration : _duration, concurrent: true, scope: this});
                 }

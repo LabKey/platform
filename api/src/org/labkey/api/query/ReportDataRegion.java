@@ -164,4 +164,10 @@ public class ReportDataRegion extends AbstractDataRegion
         headerMessage.append(PageFlowUtil.filter(StringUtils.defaultIfEmpty(_report.getDescriptor().getProperty(ReportDescriptor.Prop.viewName), "default")));
         headerMessage.append("</span>&nbsp;");
     }
+
+    @Override
+    public boolean getAllowHeaderLock()
+    {
+        return false;
+    }
 }
