@@ -72,8 +72,17 @@ public class StudyVisualizationProvider extends VisualizationProvider
             sql.append(", ");
             sql.append(queryAlias);
             sql.append(".");
-            String columnAlias = columnAliases.get(subjectColumnName + "Visit/sequencenum").iterator().next();
-            sql.append(columnAlias);
+            sql.append(columnAliases.get(subjectColumnName + "Visit/Visit/DisplayOrder").iterator().next());
+
+            sql.append(", ");
+            sql.append(queryAlias);
+            sql.append(".");
+            sql.append(columnAliases.get(subjectColumnName + "Visit/sequencenum").iterator().next());
+
+            sql.append(", ");
+            sql.append(queryAlias);
+            sql.append(".");
+            sql.append(columnAliases.get(subjectColumnName + "Visit/Visit/Label").iterator().next());
         }
     }
 
