@@ -60,7 +60,6 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <script type="text/javascript" src="https://getfirebug.com/firebug-lite.js"></script>
     <% if (null != gwtModules && gwtModules.size() > 0 && -1 != userAgent.indexOf("MSIE 9."))
         {
         %><meta http-equiv="X-UA-Compatible" content="IE=8" /><%
