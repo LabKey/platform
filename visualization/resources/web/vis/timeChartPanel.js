@@ -435,24 +435,26 @@ LABKEY.vis.TimeChartPanel = Ext.extend(Ext.Panel, {
                 boxLabel  : 'Show Individual Lines',
                 name      : 'Show Individual Lines',
                 disabled  : true,
-                checked   : this.displayIndividual || true,
-                value     : this.displayIndividual || true,
+                checked   : this.chartInfo.displayIndividual != undefined ? this.chartInfo.displayIndividual : true,
+                value     : this.chartInfo.displayIndividual != undefined ? this.chartInfo.displayIndividual : true,
                 listeners : {
                     check : function(cmp, checked){
                         this.displayIndividual = checked;
                         this.getChartData();
-                        //this.fireEvent('chartDefinitionChanged', true);
+                    },
+                    beforerender: function(){
+                        this.displayIndividual = this.chartInfo.displayIndividual;
                     },
                     scope : this
                 }
             });
 
             this.displayAggregateCheckbox = new Ext.form.Checkbox({
-                boxLabel  : 'Show Aggregate',
-                name      : 'Show Aggregate',
+                boxLabel  : 'Show Mean',
+                name      : 'Show Mean',
                 disabled  : true,
-                checked   : this.displayAggregate || false,
-                value     : this.displayAggregate || false,
+                checked   : this.chartInfo.displayAggregate != undefined ? this.chartInfo.displayAggregate : false,
+                value     : this.chartInfo.displayAggregate != undefined ? this.chartInfo.displayAggregate : false,
                 listeners : {
                     check : function(cmp, checked){
                         this.displayAggregate = checked;
@@ -460,7 +462,9 @@ LABKEY.vis.TimeChartPanel = Ext.extend(Ext.Panel, {
                         // enable/disable the aggregate combo box accordingly
                         this.displayAggregateComboBox.setDisabled(!checked);
                         this.getChartData();
-                        //this.fireEvent('chartDefinitionChanged', true);
+                    },
+                    beforerender: function(){
+                        this.displayAggregate = this.chartInfo.displayAggregate;
                     },
                     scope : this
                 }
@@ -639,6 +643,12 @@ LABKEY.vis.TimeChartPanel = Ext.extend(Ext.Panel, {
             this.loaderCount++;
         }
 
+        if (this.loaderCount == 0)
+        {
+            this.clearChartPanel("Please select either \"Show Individual Lines\" or \"Show Aggregate\".");
+            return;
+        }
+
         // get the updated chart information from the varios tabs of the chartEditor
         this.chartInfo = this.getChartInfoFromEditorTabs();
 
@@ -792,6 +802,16 @@ LABKEY.vis.TimeChartPanel = Ext.extend(Ext.Panel, {
                     Ext.each(seriesList, function(s) {
                         this.aggregateHasData[s.name] = false;
                     }, this);
+
+                    if(this.hasDisplayOrder(data) && !this.displayIndividualCheckbox.getValue()){
+                        this.aggregateData.hasDisplayOrder = true;
+                        // If only aggregates are selected, and we have a display order, then we need to generate the
+                        // labels with the aggregate rows.
+                        this.generateDisplayLabels(this.aggregateData);
+                    } else if(!this.hasDisplayOrder(data) && !this.displayIndividualCheckbox.getValue()){
+                        this.aggregateData.hasDisplayOrder = false;
+                        this.generateDisplayOrderAndLabels(this.aggregateData);
+                    }
                     
                     Ext.each(data.rows, function(row){
                         var rowSubject = row.CategoryId.displayValue;
@@ -917,7 +937,7 @@ LABKEY.vis.TimeChartPanel = Ext.extend(Ext.Panel, {
         if (!this.editorYAxisRightPanel.userEditedLabel) 
             this.editorYAxisRightPanel.setLabel(this.editorMeasurePanel.getDefaultLabel("right"));
 
-        if (this.individualChartSubjectData.filterDescription)
+        if (this.individualChartSubjectData && this.individualChartSubjectData.filterDescription)
             this.editorMeasurePanel.setFilterWarningText(this.individualChartSubjectData.filterDescription);
 
         if(this.chartInfo.measures.length == 0){
@@ -1399,6 +1419,8 @@ LABKEY.vis.TimeChartPanel = Ext.extend(Ext.Panel, {
             chartLayout: this.editorChartsPanel.getChartLayout(),
             lineWidth: this.editorChartsPanel.getLineWidth(),
             hideDataPoints: this.editorChartsPanel.getHideDataPoints(),
+            displayIndividual: this.displayIndividualCheckbox.getValue(),
+            displayAggregate: this.displayAggregateCheckbox.getValue(),
             measures: [],
             axis: [this.editorXAxisPanel.getAxis()],
             filterUrl: this.editorMeasurePanel.getDataFilterUrl(),
