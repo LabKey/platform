@@ -803,14 +803,16 @@ LABKEY.vis.TimeChartPanel = Ext.extend(Ext.Panel, {
                         this.aggregateHasData[s.name] = false;
                     }, this);
 
-                    if(this.hasDisplayOrder(data) && !this.displayIndividualCheckbox.getValue()){
-                        this.aggregateData.hasDisplayOrder = true;
-                        // If only aggregates are selected, and we have a display order, then we need to generate the
-                        // labels with the aggregate rows.
-                        this.generateDisplayLabels(this.aggregateData);
-                    } else if(!this.hasDisplayOrder(data) && !this.displayIndividualCheckbox.getValue()){
-                        this.aggregateData.hasDisplayOrder = false;
-                        this.generateDisplayOrderAndLabels(this.aggregateData);
+                    if(!this.displayIndividualCheckbox.getValue() && this.editorXAxisPanel.getTime() == "visit"){
+                        this.aggregateData.hasDisplayOrder = this.hasDisplayOrder(data);
+                        if(this.aggregateData.hasDisplayOrder){
+                            // If only aggregates are selected, and we have a display order, then we need to generate the
+                            // labels with the aggregate rows.
+                            this.generateDisplayLabels(this.aggregateData);
+                        } else{
+                            this.aggregateData.hasDisplayOrder = false;
+                            this.generateDisplayOrderAndLabels(this.aggregateData);
+                        }
                     }
                     
                     Ext.each(data.rows, function(row){
