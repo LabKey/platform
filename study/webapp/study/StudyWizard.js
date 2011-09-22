@@ -255,7 +255,7 @@ LABKEY.study.CreateStudyWizard = Ext.extend(Ext.util.Observable, {
             bbar: ['->',cancelBtn, selectFolderBtn]
         });
 
-        var formPanel = new Ext.form.FormPanel({
+        this.nameFormPanel = new Ext.form.FormPanel({
             border: false,
             defaults: {
                 labelSeparator: '',
@@ -265,7 +265,7 @@ LABKEY.study.CreateStudyWizard = Ext.extend(Ext.util.Observable, {
             layout: 'form',
             items: formItems
         });
-        items.push(formPanel);
+        items.push(this.nameFormPanel);
 
         var txt = Ext.DomHelper.markup({tag:'div', html:'This Study will be created as a subfolder from the current folder. Click on the Change Folder button to select a different location.<br>'});
 //        items.push({xtype:'displayfield', html: txt});
@@ -282,7 +282,7 @@ LABKEY.study.CreateStudyWizard = Ext.extend(Ext.util.Observable, {
         });
 
         panel.on('beforehide', function(cmp){
-            if (formPanel && !formPanel.getForm().isValid())
+            if (this.nameFormPanel && !this.nameFormPanel.getForm().isValid())
             {
                 Ext.MessageBox.alert('Error', 'Please enter the required information on the page.');
                 this.currentStep--;
@@ -447,7 +447,7 @@ LABKEY.study.CreateStudyWizard = Ext.extend(Ext.util.Observable, {
 
     createExistingParticipantGroupPanel : function(resp, options)
     {
-        var o = eval('var $=' + resp.responseText + ';$;');
+        var o = Ext.util.JSON.decode(resp.responseText);
 
         if (o.success && o.categories)
         {
@@ -595,8 +595,8 @@ LABKEY.study.CreateStudyWizard = Ext.extend(Ext.util.Observable, {
             items: [
                 {xtype: 'hidden', name: 'updateDelay', value: 30},
                 {xtype: 'radiogroup', fieldLabel: '', columns: 2, items: [
-                    {name: 'autoRefresh', boxLabel: 'Automatic Refresh', inputValue: 'true', checked: true},
-                    {name: 'autoRefresh', boxLabel: 'Manual Refresh', inputValue: 'false'}]
+                    {name: 'autoRefresh', boxLabel: 'Automatic Refresh', inputValue: true, checked: true},
+                    {name: 'autoRefresh', boxLabel: 'Manual Refresh', inputValue: false}]
                 }
             ],
             padding: '10px 0px',
@@ -642,16 +642,16 @@ LABKEY.study.CreateStudyWizard = Ext.extend(Ext.util.Observable, {
         params.srcPath = LABKEY.ActionURL.getContainer();
         params.dstPath = this.info.dstPath;
         params.datasets = [];
-        params.categories = [];
 
         if(this.existingGroupRadio.checked)
         {
+            params.categories = [];
+
             //If we chose an existing group then we just pass the rowid of the group.
             for (var i=0; i < this.info.existingCategories.length; i++)
             {
                 var category = this.info.existingCategories[i];
-
-                params.categories.push({rowId: category.get('rowId')});
+                params.categories.push(category.get('rowId'));
             }
         }
 /*
@@ -671,16 +671,22 @@ LABKEY.study.CreateStudyWizard = Ext.extend(Ext.util.Observable, {
         }
 
         var form = this.snapshotOptions.getForm();
-        params.dataRefresh = form.getValues();
+        var refreshOptions = form.getValues();
+        if (refreshOptions.autoRefresh === 'true')
+            params.updateDelay = refreshOptions.updateDelay;
 
         this.win.getEl().mask("creating study...", "x-mask-loading");
 
-        Ext.Ajax.request({
-            url: LABKEY.ActionURL.buildURL('study', 'createAncillaryStudy'),
+        var createForm = new Ext.form.BasicForm(this.nameFormPanel.getForm().getEl(), {
             method : 'POST',
+            url    : LABKEY.ActionURL.buildURL('study', 'createAncillaryStudy'),
+            fileUpload : true
+        });
+
+        createForm.submit({
             scope: this,
             success: function(response, opts){
-                var o = eval('var $=' + response.responseText + ';$;');
+                var o = Ext.util.JSON.decode(opts.response.responseText);
 
                 this.fireEvent('success');
                 this.win.close();
@@ -690,13 +696,16 @@ LABKEY.study.CreateStudyWizard = Ext.extend(Ext.util.Observable, {
             },
             failure: function(response, opts){
                 this.win.getEl().unmask();
-                LABKEY.Utils.displayAjaxErrorResponse(response, opts);
+
+                var jsonResponse = Ext.util.JSON.decode(opts.response.responseText);
+                if (jsonResponse && jsonResponse.exception)
+                {
+                    var error = "An error occurred trying to create the study:\n" + jsonResponse.exception;
+                    Ext.Msg.alert("Create Study Error", error);
+                }
                 this.fireEvent('failure');
             },
-            jsonData : params,
-            headers : {
-                'Content-Type' : 'application/json'
-            }
+            params: params
         });
     }
 });

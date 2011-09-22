@@ -32,17 +32,17 @@ import java.util.Map;
  * Date: Aug 25, 2011
  * Time: 3:51:31 PM
  */
-public class EmphasisStudyDefinition implements CustomApiForm, HasViewContext
+public class EmphasisStudyDefinition implements HasViewContext
 {
     private String _name;
     private String _description;
     private String _srcPath;
     private String _dstPath;
-    private int[] _datasets;
+    private int[] _datasets = new int[0];
     private ViewContext _context;
     private int _updateDelay;
 
-    private ParticipantGroupController.ParticipantCategorySpecification[] _categories = new ParticipantGroupController.ParticipantCategorySpecification[0];
+    private int[] _categories = new int[0];
     private boolean _copyParticipantGroups;
 
     @Override
@@ -107,12 +107,12 @@ public class EmphasisStudyDefinition implements CustomApiForm, HasViewContext
         _datasets = datasets;
     }
 
-    public ParticipantGroupController.ParticipantCategorySpecification[] getCategories()
+    public int[] getCategories()
     {
         return _categories;
     }
 
-    public void setCategories(ParticipantGroupController.ParticipantCategorySpecification[] categories)
+    public void setCategories(int[] categories)
     {
         _categories = categories;
     }
@@ -135,50 +135,5 @@ public class EmphasisStudyDefinition implements CustomApiForm, HasViewContext
     public void setCopyParticipantGroups(boolean copyParticipantGroups)
     {
         _copyParticipantGroups = copyParticipantGroups;
-    }
-
-    @Override
-    public void bindProperties(Map<String, Object> props)
-    {
-        setName((String)props.get("name"));
-        setDescription((String)props.get("description"));
-        setSrcPath((String)props.get("srcPath"));
-        setDstPath((String)props.get("dstPath"));
-        setCopyParticipantGroups((Boolean)props.get("copyParticipantGroups"));
-
-        Object datasetsJSON = props.get("datasets");
-        if (datasetsJSON instanceof JSONArray)
-        {
-            JSONArray datasets = (JSONArray)datasetsJSON;
-            _datasets = new int[datasets.length()];
-
-            for (int i=0; i < datasets.length(); i++)
-            {
-                _datasets[i] = datasets.getInt(i);
-            }
-        }
-
-        Object dataRefresh = props.get("dataRefresh");
-        if (dataRefresh instanceof JSONObject)
-        {
-            JSONObject refresh = (JSONObject)dataRefresh;
-
-            if (refresh.getBoolean("autoRefresh"))
-                _updateDelay = refresh.getInt("updateDelay");
-        }
-
-        Object categories = props.get("categories");
-        if (categories != null)
-        {
-            List<ParticipantGroupController.ParticipantCategorySpecification> categorySpecs = new ArrayList<ParticipantGroupController.ParticipantCategorySpecification>();
-            for (JSONObject categoryInfo : ((JSONArray)categories).toJSONObjectArray())
-            {
-                ParticipantGroupController.ParticipantCategorySpecification spec = new ParticipantGroupController.ParticipantCategorySpecification();
-
-                spec.fromJSON(categoryInfo);
-                categorySpecs.add(spec);
-            }
-            setCategories(categorySpecs.toArray(new ParticipantGroupController.ParticipantCategorySpecification[categorySpecs.size()]));
-        }
     }
 }

@@ -21,6 +21,7 @@ import org.labkey.api.action.ApiResponse;
 import org.labkey.api.action.ApiSimpleResponse;
 import org.labkey.api.action.MutatingApiAction;
 import org.labkey.api.action.SpringActionController;
+import org.labkey.api.attachments.AttachmentFile;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.DbScope;
@@ -105,6 +106,12 @@ public class CreateAncillaryStudyAction extends MutatingApiAction<EmphasisStudyD
     private List<DataSetDefinition> _datasets = new ArrayList<DataSetDefinition>();
     private List<ParticipantCategory> _participantCategories = new ArrayList<ParticipantCategory>();
 
+    public CreateAncillaryStudyAction()
+    {
+        super();
+        setContentTypeOverride("text/html");
+    }
+
     @Override
     public ApiResponse execute(EmphasisStudyDefinition form, BindException errors) throws Exception
     {
@@ -114,6 +121,9 @@ public class CreateAncillaryStudyAction extends MutatingApiAction<EmphasisStudyD
         try
         {
             scope.ensureTransaction();
+
+            // TODO : save the study protocol document via the attachment service 
+            List<AttachmentFile> files = getAttachmentFileList();
 
             StudyImpl newStudy = createNewStudy(form);
             if (newStudy != null)
@@ -127,14 +137,11 @@ public class CreateAncillaryStudyAction extends MutatingApiAction<EmphasisStudyD
                         _datasets.add(def);
                 }
 
-                for (ParticipantGroupController.ParticipantCategorySpecification category : form.getCategories())
+                for (int rowId : form.getCategories())
                 {
-                    if (!category.isNew())
-                    {
-                        ParticipantCategory pc = ParticipantGroupManager.getInstance().getParticipantCategory(_parentStudy.getContainer(), getViewContext().getUser(), category.getRowId());
-                        if (pc != null)
-                            _participantCategories.add(pc);
-                    }
+                    ParticipantCategory pc = ParticipantGroupManager.getInstance().getParticipantCategory(_parentStudy.getContainer(), getViewContext().getUser(), rowId);
+                    if (pc != null)
+                        _participantCategories.add(pc);
                 }
 
                 MemoryVirtualFile vf = new MemoryVirtualFile();
