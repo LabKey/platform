@@ -59,6 +59,13 @@ LABKEY.vis.ChartEditorXAxisPanel = Ext.extend(Ext.FormPanel, {
                         this.zeroDateCombo.enable();
                         this.intervalCombo.enable();
 
+                        if(this.labelTextField.getValue()== "Visit") {
+                            var newLabel = this.intervalCombo.getValue() + " Since " + this.zeroDateCombo.getStore().getAt(this.zeroDateCombo.getStore().find('longlabel', this.zeroDateCombo.getValue())).data.label;
+                            this.labelTextField.setValue(newLabel);
+
+                            this.axis.label = newLabel;
+                        }
+
                         this.fireEvent('chartDefinitionChanged', true);
                     }
                 }
@@ -77,6 +84,12 @@ LABKEY.vis.ChartEditorXAxisPanel = Ext.extend(Ext.FormPanel, {
                         this.time = "visit";
                         this.zeroDateCombo.disable();
                         this.intervalCombo.disable();
+
+                        var beginning = this.intervalCombo.getValue() + " Since ";
+                        if(this.labelTextField.getValue().indexOf(beginning) == 0) {
+                            this.axis.label = "Visit";
+                            this.labelTextField.setValue("Visit");
+                        }
 
                         this.fireEvent('chartDefinitionChanged', true);
                     }
@@ -97,7 +110,7 @@ LABKEY.vis.ChartEditorXAxisPanel = Ext.extend(Ext.FormPanel, {
         // combobox for the selection of the date axis interval unit
         this.intervalCombo = new Ext.form.ComboBox({
             id: 'x-axis-interval-combo',
-            disabled: this.axis.type == 'visit', //disable combo if the chart is visit based.
+            disabled: this.time == 'visit', //disable combo if the chart is visit based.
             triggerAction: 'all',
             mode: 'local',
             store: new Ext.data.ArrayStore({
@@ -111,7 +124,6 @@ LABKEY.vis.ChartEditorXAxisPanel = Ext.extend(Ext.FormPanel, {
                             var zeroDateLabel = this.zeroDateCombo.getStore().getAt(this.zeroDateCombo.getStore().find('longlabel', this.zeroDateCombo.getValue())).data.label;
                             var newLabel = "Days Since " + zeroDateLabel;
                             this.labelTextField.setValue(newLabel);
-
                             this.axis.label = newLabel;
                         }
                     }
@@ -146,7 +158,7 @@ LABKEY.vis.ChartEditorXAxisPanel = Ext.extend(Ext.FormPanel, {
         // combobox to select the "starting date" to be used for the x-axis interval calculation
         this.zeroDateCombo = new Ext.form.ComboBox({
             id: 'zero-date-combo',
-            disabled: this.axis.type == 'visit', //disable combo if the chart is visit based.
+            disabled: this.time == 'visit', //disable combo if the chart is visit based.
             fieldLabel: 'Calculate time interval(s) relative to',
             triggerAction: 'all',
             mode: 'local',

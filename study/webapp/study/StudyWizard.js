@@ -118,7 +118,7 @@ LABKEY.study.CreateStudyWizard = Ext.extend(Ext.util.Observable, {
         }
 
         var protocolDocField = new Ext.form.FileUploadField({
-            emptyText: 'Select an protocol document',
+            emptyText: 'Select a protocol document',
             fieldLabel: 'Protocol Document',
             name: 'protocolDoc',
             buttonText: 'Browse',

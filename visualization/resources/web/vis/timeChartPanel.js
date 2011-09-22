@@ -790,6 +790,9 @@ LABKEY.vis.TimeChartPanel = Ext.extend(Ext.Panel, {
                 groups.push(this.chartInfo.subject.groups[i].id);
             }
 
+            //Set aggregateIntervalsConverted to false so they get converted on generateSeries().
+            this.aggregateIntervalsConverted = false;
+
             LABKEY.Visualization.getData({
                 success: function(data){
                     this.aggregateData = data;
@@ -1136,52 +1139,56 @@ LABKEY.vis.TimeChartPanel = Ext.extend(Ext.Panel, {
             type = "values";
         }
         for(var j = 0; j < this.chartInfo.subject[type].length; j++)
+        {
+            for(var i = 0; i < seriesList.length; i++)
             {
-                for(var i = 0; i < seriesList.length; i++)
-                {
-                    var yAxisSeries = seriesList[i].name;
-                    var yAxisSide = seriesList[i].yAxisSide;
-                    if(aggregate){
-                        var subject = this.chartInfo.subject.groups[j].label;
-                    } else {
-                        var subject = this.chartInfo.subject.values[j];
-                    }
-                    var caption = subject;
-                    if(aggregate){
-                        //Convert intervals from seq num to display order:
-                        if (this.editorXAxisPanel.getTime() == "visit" && this.displayOrder && subjectData[subject]){
-                            for(var k = 0; k < subjectData[subject][seriesList[i].name].length; k++){
-                                subjectData[subject][seriesList[i].name][k].interval = this.displayOrder[subjectData[subject][seriesList[i].name][k].interval.value];
-                            }
-                        }
-                        //Set caption
-                        if(seriesList.length > 1){
-                            caption += " " + yAxisSeries;
-                        }
-                    } else {
-                        if(seriesList.length > 1 || this.chartInfo.chartLayout != "single"){
-                            caption += " " + yAxisSeries;
-                        }
-                    }
-
-
-                    var style = {lineWidth: this.chartInfo.lineWidth};
-                    if(this.chartInfo.hideDataPoints){
-                        style.shape = {name: "square", lineWidth: 1, markSize: 20, hidden: true};
-                    }
-
-                    series.push({
-                        subject: subject,
-                        yAxisSeries: yAxisSeries,
-                        caption: caption,
-                        data: subjectData[subject] ? subjectData[subject][yAxisSeries] : [],
-                        axis: yAxisSide,
-                        xProperty:"interval",
-                        yProperty: "dataValue",
-                        style: style
-                    });
+                var yAxisSeries = seriesList[i].name;
+                var yAxisSide = seriesList[i].yAxisSide;
+                if(aggregate){
+                    var subject = this.chartInfo.subject.groups[j].label;
+                } else {
+                    var subject = this.chartInfo.subject.values[j];
                 }
+                var caption = subject;
+                if(aggregate){
+                    //Convert intervals from seq num to display order:
+                    if ( (this.editorXAxisPanel.getTime() == "visit" && this.displayOrder && subjectData[subject]) && !this.aggregateIntervalsConverted){
+                        for(var k = 0; k < subjectData[subject][seriesList[i].name].length; k++){
+                            subjectData[subject][seriesList[i].name][k].interval = this.displayOrder[subjectData[subject][seriesList[i].name][k].interval.value];
+                        }
+                    }
+                    //Set caption
+                    if(seriesList.length > 1){
+                        caption += " " + yAxisSeries;
+                    }
+                } else {
+                    if(seriesList.length > 1 || this.chartInfo.chartLayout != "single"){
+                        caption += " " + yAxisSeries;
+                    }
+                }
+
+
+                var style = {lineWidth: this.chartInfo.lineWidth};
+                if(this.chartInfo.hideDataPoints){
+                    style.shape = {name: "square", lineWidth: 1, markSize: 20, hidden: true};
+                }
+
+                series.push({
+                    subject: subject,
+                    yAxisSeries: yAxisSeries,
+                    caption: caption,
+                    data: subjectData[subject] ? subjectData[subject][yAxisSeries] : [],
+                    axis: yAxisSide,
+                    xProperty:"interval",
+                    yProperty: "dataValue",
+                    style: style
+                });
             }
+        }
+
+        if(aggregate && !this.aggregateIntervalsConverted){
+            this.aggregateIntervalsConverted = true;
+        }
 
         return series;
     },
