@@ -15,10 +15,15 @@
  */
 package org.labkey.api.module;
 
+import org.apache.commons.lang.StringUtils;
+import org.jetbrains.annotations.Nullable;
 import org.labkey.api.security.User;
 import org.labkey.api.util.ExceptionUtil;
 
 import java.text.DecimalFormat;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.List;
 
 /**
  * User: migra
@@ -35,6 +40,8 @@ public class ModuleContext implements Cloneable
     private volatile double _originalVersion = 0.0;
     private volatile String _className;
     private volatile String _name;
+    private volatile boolean _autoUninstall;
+    private volatile String _schemas;
 
     // These two are updated during the upgrade process.
     private volatile double _installedVersion;
@@ -67,6 +74,7 @@ public class ModuleContext implements Cloneable
         return _originalVersion;
     }
 
+    @SuppressWarnings({"UnusedDeclaration"})
     public void setInstalledVersion(double installedVersion)
     {
         _installedVersion = installedVersion;
@@ -88,6 +96,7 @@ public class ModuleContext implements Cloneable
         return _className;
     }
 
+    @SuppressWarnings({"UnusedDeclaration"})
     public void setClassName(String name)
     {
         _className = name;
@@ -151,5 +160,35 @@ public class ModuleContext implements Cloneable
     public User getUpgradeUser()
     {
         return ModuleLoader.getInstance().getUpgradeUser();
+    }
+
+    public boolean isAutoUninstall()
+    {
+        return _autoUninstall;
+    }
+
+    @SuppressWarnings({"UnusedDeclaration"})
+    public void setAutoUninstall(boolean autoUninstall)
+    {
+        _autoUninstall = autoUninstall;
+    }
+
+    public @Nullable String getSchemas()
+    {
+        return _schemas;
+    }
+
+    public List<String> getSchemaList()
+    {
+        if (StringUtils.isEmpty(getSchemas()))
+            return Collections.emptyList();
+        else
+            return Arrays.asList(getSchemas().split(","));
+    }
+
+    @SuppressWarnings({"UnusedDeclaration"})
+    public void setSchemas(String schemas)
+    {
+        _schemas = schemas;
     }
 }

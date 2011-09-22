@@ -34,6 +34,7 @@ import org.labkey.api.data.RuntimeSQLException;
 import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.Table;
 import org.labkey.api.data.TableInfo;
+import org.labkey.api.data.dialect.SqlDialect;
 import org.labkey.api.resource.Resource;
 import org.labkey.api.security.User;
 import org.labkey.api.security.UserManager;
@@ -42,6 +43,7 @@ import org.labkey.api.settings.AppProps;
 import org.labkey.api.util.BreakpointThread;
 import org.labkey.api.util.ConfigurationException;
 import org.labkey.api.util.ContextListener;
+import org.labkey.api.util.ExceptionUtil;
 import org.labkey.api.util.FileUtil;
 import org.labkey.api.util.Path;
 import org.labkey.api.view.HttpView;
@@ -300,7 +302,7 @@ public class ModuleLoader implements Filter
         if (getTableInfoModules().getTableType() == DatabaseTableType.NOT_IN_DB)
             _newInstall = true;
 
-        upgradeCoreModule();
+        boolean coreRequiredUpgrade = upgradeCoreModule();
 
         ModuleContext[] contexts = getAllModuleContexts();
 
@@ -349,7 +351,7 @@ public class ModuleLoader implements Filter
         }
         else
         {
-            setUpgradeState(UpgradeState.UpgradeComplete);
+            completeUpgrade(coreRequiredUpgrade);
         }
 
         _log.info("Core LabKey Server startup is complete, modules will be initialized after the first HTTP/HTTPS request");
@@ -581,7 +583,8 @@ public class ModuleLoader implements Filter
 
     // Update the CoreModule "manually", outside the normal page flow-based process.  We want to be able to change the core tables
     // before we display pages, require login, check permissions, etc.
-    private void upgradeCoreModule() throws ServletException
+    // Returns true if core module required upgrading, otherwise false
+    private boolean upgradeCoreModule() throws ServletException
     {
         Module coreModule = ModuleLoader.getInstance().getCoreModule();
         if (coreModule == null)
@@ -598,7 +601,7 @@ public class ModuleLoader implements Filter
 
         // Does the core module need to be upgraded?
         if (coreContext.getInstalledVersion() >= coreModule.getVersion())
-            return;
+            return false;
 
         if (coreContext.isNewInstall())
         {
@@ -628,6 +631,8 @@ public class ModuleLoader implements Filter
 
             throw new ServletException(e);
         }
+
+        return true;
     }
 
 
@@ -800,6 +805,34 @@ public class ModuleLoader implements Filter
     }
 
 
+    // Not transacted: SQL Server sp_dropapprole can't be called inside a transaction
+    private void removeModule(ModuleContext context)
+    {
+        DbScope scope = _core.getSchema().getScope();
+        SqlDialect dialect = _core.getSqlDialect();
+
+        try
+        {
+            String moduleName = context.getName();
+            _log.info("Deleting module " + moduleName);
+            String sql = "DELETE FROM " + _core.getTableInfoSqlScripts() + " WHERE ModuleName = ? AND Filename " + dialect.getCaseInsensitiveLikeOperator() + " ?";
+
+            for (String schema : context.getSchemaList())
+            {
+                _log.info("Dropping schema " + schema);
+                Table.execute(_core.getSchema(), sql, moduleName, schema + "-%");
+                scope.getSqlDialect().dropSchema(_core.getSchema(), schema);
+            }
+
+            Table.delete(getTableInfoModules(), context.getName());
+        }
+        catch (SQLException e)
+        {
+            ExceptionUtil.logExceptionToMothership(null, e);
+        }
+    }
+
+
     public void startNonCoreUpgrade(User user) throws Exception
     {
         synchronized(UPGRADE_LOCK)
@@ -815,9 +848,51 @@ public class ModuleLoader implements Filter
                 upgrader.upgradeInBackground(new Runnable(){
                     public void run()
                     {
-                        ModuleLoader.getInstance().setUpgradeState(UpgradeState.UpgradeComplete);
+                        completeUpgrade(true);
                     }
                 });
+            }
+        }
+    }
+
+
+    // Very final step in upgrade process: set the upgrade state to complete and perform any post-upgrade tasks.
+    // performedUpgrade is true if any module required upgrading
+    private void completeUpgrade(boolean performedUpgrade)
+    {
+        setUpgradeState(UpgradeState.UpgradeComplete);
+
+        if (performedUpgrade)
+        {
+            handleUnkownModules();
+            updateModuleProperties();
+        }
+    }
+
+
+    // Remove all unknown modules that are marked as AutoUninstall
+    private void handleUnkownModules()
+    {
+        for (ModuleContext moduleContext : getUnknownModuleContexts())
+            if (moduleContext.isAutoUninstall())
+                removeModule(moduleContext);
+    }
+
+
+    private void updateModuleProperties()
+    {
+        for (Module module : getModules())
+        {
+            try
+            {
+                Map<String, Object> map = new HashMap<String, Object>();
+                map.put("AutoUninstall", module.isAutoUninstall());
+                map.put("Schemas", StringUtils.join(module.getSchemaNames(), ','));
+                Table.update(getUpgradeUser(), getTableInfoModules(), map, module.getName());
+            }
+            catch (SQLException e)
+            {
+                ExceptionUtil.logExceptionToMothership(null, e);
             }
         }
     }
@@ -1190,7 +1265,7 @@ public class ModuleLoader implements Filter
     }
 
 
-    public ModuleContext[] getAllModuleContexts()
+    private ModuleContext[] getAllModuleContexts()
     {
         try
         {
@@ -1204,6 +1279,23 @@ public class ModuleLoader implements Filter
         {
             throw new RuntimeSQLException(x);
         }
+    }
+
+
+    public Collection<ModuleContext> getUnknownModuleContexts()
+    {
+        LinkedList<ModuleContext> unknownContexts = new LinkedList<ModuleContext>();
+
+        for (ModuleContext moduleContext : getAllModuleContexts())
+        {
+            String name = moduleContext.getName();
+            Module module = getModule(moduleContext.getName());
+
+            if (null == module || !name.equals(module.getName()))
+                unknownContexts.add(moduleContext);
+        }
+
+        return unknownContexts;
     }
 
 

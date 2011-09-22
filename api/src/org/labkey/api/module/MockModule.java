@@ -279,4 +279,10 @@ public class MockModule implements Module
     {
         return null;
     }
+
+    @Override
+    public boolean isAutoUninstall()
+    {
+        return false;
+    }
 }

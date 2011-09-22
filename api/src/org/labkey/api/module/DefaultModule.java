@@ -949,4 +949,11 @@ public abstract class DefaultModule implements Module, ApplicationContextAware
     {
         return _applicationContext;
     }
+
+
+    @Override
+    public boolean isAutoUninstall()
+    {
+        return false;
+    }
 }

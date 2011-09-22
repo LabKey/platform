@@ -268,4 +268,8 @@ public interface Module extends Comparable<Module>
      * @return Jar filenames used by this module
      */
     public @Nullable Collection<String> getJarFilenames();
+
+    // Should LabKey should automatically uninstall this module (drop its schemas, delete SqlScripts rows, delete Modules rows)
+    // if the module no longer exists?  This setting gets saved to the Modules table.
+    public boolean isAutoUninstall();
 }
