@@ -114,11 +114,6 @@ public abstract class AbstractWebdavResource extends AbstractResource implements
         return null;
     }
 
-    public long getLastIndexed()
-    {
-        return Long.MIN_VALUE;
-    }
-
     public void setLastIndexed(long indexed, long modified)
     {
         if (isFile())

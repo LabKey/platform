@@ -165,8 +165,8 @@ public class TableViewForm extends ViewForm implements DynaBean, HasBindParamete
      */
     public void doUpdate() throws SQLException, ServletException
     {
-        assert null != _tinfo;
-        assert null != getPkVals();
+        assert null != _tinfo : "No table";
+        assert null != getPkVals() : "No PK values";
 
         if (!isValid())
             throw new SQLException("Form is not valid.");
@@ -191,8 +191,8 @@ public class TableViewForm extends ViewForm implements DynaBean, HasBindParamete
      */
     public void doDelete() throws SQLException, ServletException
     {
-        assert null != _tinfo;
-        assert null != getPkVals();
+        assert null != _tinfo : "No table";
+        assert null != getPkVals() : "No PK values";
 
         if (!hasPermission(DeletePermission.class))
         {
@@ -219,8 +219,8 @@ public class TableViewForm extends ViewForm implements DynaBean, HasBindParamete
      */
     public void refreshFromDb() throws SQLException
     {
-        assert null != _tinfo;
-        assert null != getPkVals();
+        assert null != _tinfo : "No table";
+        assert null != getPkVals() : "No PK values";
 
         Object[] pkVals = getPkVals();
         boolean foundNotNullValue = false;
@@ -260,7 +260,7 @@ public class TableViewForm extends ViewForm implements DynaBean, HasBindParamete
      */
     public String getPkName()
     {
-        assert _tinfo.getPkColumns().size() == 1;
+        assertSinglePK();
 
         return _tinfo.getPkColumnNames().get(0);
     }
@@ -272,14 +272,14 @@ public class TableViewForm extends ViewForm implements DynaBean, HasBindParamete
 
     public void setPkVal(String str)
     {
-        assert _tinfo.getPkColumns().size() == 1;
+        assertSinglePK();
 
         set(getPkName(), str);
     }
 
     public void setPkVal(Object o)
     {
-        assert _tinfo.getPkColumns().size() == 1;
+        assertSinglePK();
 
         setTypedValue(getPkName(), o);
     }
@@ -308,9 +308,14 @@ public class TableViewForm extends ViewForm implements DynaBean, HasBindParamete
      */
     public Object getPkVal()
     {
-        assert _tinfo.getPkColumns().size() == 1;
+        assertSinglePK();
 
         return getPkVals()[0];
+    }
+
+    private void assertSinglePK()
+    {
+        assert _tinfo.getPkColumns().size() == 1 : "Only tables with a single PK column are supported. " + _tinfo + " has " + getPkNamesList().size() + ": " + getPkNamesList();
     }
 
     public Object[] getPkVals()

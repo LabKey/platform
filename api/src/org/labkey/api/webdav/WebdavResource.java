@@ -52,9 +52,6 @@ public interface WebdavResource extends Resource
 
     User getModifiedBy();
 
-    // may return Long.MIN_VALUE
-    long getLastIndexed();
-
     void setLastIndexed(long msLastIndexed, long msModified);
 
     String getContentType();

@@ -246,7 +246,8 @@ public class FilteredTable extends AbstractTableInfo implements ContainerFiltera
 
     public void addCondition(ColumnInfo col, String value)
     {
-        assert col.getParentTable() == _rootTable;
+        assert col.getParentTable() == _rootTable : "Column isn't from the expected table. Should be '" +
+                _rootTable + "' but was '" + col.getParentTable() + "'";
         SQLFragment frag = new SQLFragment();
         frag.append(filterName(col));
         frag.append(" = ");
