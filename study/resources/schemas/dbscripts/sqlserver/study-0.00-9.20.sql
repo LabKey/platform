@@ -773,7 +773,7 @@ GO
 CREATE INDEX IX_Specimen_OriginatingLocationId ON study.Specimen(OriginatingLocationId);
 GO
 
-ALTER TABLE study.StudyDesign ADD StudyEntityId entityid
+ALTER TABLE study.StudyDesign ADD StudyEntityId ENTITYID
 GO
 
 ALTER TABLE study.Dataset ADD Description NTEXT NULL

@@ -51,7 +51,7 @@ CREATE TABLE prop.Properties
 );
 
 
-CREATE FUNCTION prop.Property_setValue(INT, TEXT, TEXT) RETURNS void AS '
+CREATE FUNCTION prop.Property_setValue(INT, TEXT, TEXT) RETURNS void AS $$
     DECLARE
         propertySet ALIAS FOR $1;
         propertyName ALIAS FOR $2;
@@ -67,8 +67,8 @@ CREATE FUNCTION prop.Property_setValue(INT, TEXT, TEXT) RETURNS void AS '
             IF NOT FOUND THEN
                 INSERT INTO prop.Properties VALUES (propertySet, propertyName, propertyValue);
             END IF;
-            END IF;
+        END IF;
 
         RETURN;
     END;
-    ' LANGUAGE plpgsql;
+    $$ LANGUAGE plpgsql;

@@ -13,11 +13,10 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
--- Table: portal.portalwebparts
 
--- DROP TABLE portal.portalwebparts;
+ALTER TABLE portal.PortalWebParts ADD COLUMN Container ENTITYID;
 
-ALTER TABLE portal.portalwebparts ADD COLUMN container entityid;
-UPDATE portal.portalwebparts SET container=pageid;
-ALTER TABLE portal.portalwebparts
-   ALTER COLUMN container SET NOT NULL;
+UPDATE portal.PortalWebParts SET Container = PageId;
+
+ALTER TABLE portal.PortalWebParts
+   ALTER COLUMN Container SET NOT NULL;

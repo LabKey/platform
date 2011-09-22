@@ -78,6 +78,8 @@
       <ns:column columnName="ClassName"/>
       <ns:column columnName="InstalledVersion"/>
       <ns:column columnName="Enabled"/>
+      <ns:column columnName="AutoUninstall"/>
+      <ns:column columnName="Schemas"/>
     </ns:columns>
   </ns:table>
   <ns:table tableName="Principals" tableDbType="TABLE">
@@ -107,7 +109,7 @@
         <ns:description>The name of this principal.</ns:description>
       </ns:column>
       <ns:column columnName="Container">
-        <ns:description>The container in which this principal is defined. For users this will be null, but for project groups, this will be the id of the project in which the group is defined.</ns:description>
+        <ns:description>The container in which this principal is defined. For users this is null, but for project groups, this is the id of the project in which the group is defined.</ns:description>
       </ns:column>
       <ns:column columnName="Type">
         <ns:description>The type of this principal (u=user; g=project group; r=role; m=module-defined group)</ns:description>

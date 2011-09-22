@@ -172,7 +172,7 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
 
     public double getVersion()
     {
-        return 11.21;
+        return 11.22;
     }
 
     @Override
@@ -374,6 +374,7 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
 
         getUpgradeCode().installDefaultMvIndicators();
     }
+
 
 
     @Override

@@ -68,7 +68,6 @@ public class MicrosoftSqlServerDialectFactory extends SqlDialectFactory
         VersionNumber versionNumber = new VersionNumber(databaseProductVersion);
         int version = versionNumber.getVersionInt();
 
-        // TODO: Verify this version number
         if (version >= 105)
             return new MicrosoftSqlServer2008R2Dialect();
 

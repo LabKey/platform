@@ -4224,11 +4224,8 @@ public class AdminController extends SpringActionController
             ModuleLoader ml = ModuleLoader.getInstance();
             StringBuilder html = new StringBuilder();
 
-            for (ModuleContext moduleContext : ml.getAllModuleContexts())
-            {
-                if (null == ml.getModule(moduleContext.getName()))
-                    html.append(moduleContext.getName()).append("<br>\n");
-            }
+            for (ModuleContext moduleContext : ml.getUnknownModuleContexts())
+                html.append(moduleContext.getName()).append("<br>\n");
 
             return new HtmlView(html.toString());
         }

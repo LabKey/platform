@@ -81,4 +81,10 @@ public class caBIGModule extends DefaultModule
     {
         return TabDisplayMode.DISPLAY_NEVER;
     }
+
+    @Override
+    public boolean isAutoUninstall()
+    {
+        return true;  // LabKey can autoinstall caBIG; its schema has no data
+    }
 }

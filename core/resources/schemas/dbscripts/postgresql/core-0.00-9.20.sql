@@ -51,7 +51,7 @@ CREATE TABLE core.Principals
     OwnerId ENTITYID NULL,
     Name VARCHAR(64),                 -- email (must contain @ and .), group name (no punctuation), or hidden (no @)
     Type CHAR(1),                     -- 'u'=user 'g'=group (NYI 'r'=role, 'm'=managed(module specific)
-    Active boolean NOT NULL DEFAULT true,
+    Active BOOLEAN NOT NULL DEFAULT TRUE,
 
     CONSTRAINT PK_Principals PRIMARY KEY (UserId),
     CONSTRAINT UQ_Principals_Container_Name_OwnerId UNIQUE (Container, Name, OwnerId)

@@ -683,7 +683,7 @@ ALTER TABLE study.Specimen
 
 CREATE INDEX IX_Specimen_OriginatingLocationId ON study.Specimen(OriginatingLocationId);
 
-ALTER TABLE study.StudyDesign ADD COLUMN StudyEntityId entityid;
+ALTER TABLE study.StudyDesign ADD COLUMN StudyEntityId ENTITYID;
 
 ALTER TABLE study.Dataset ADD COLUMN Description TEXT NULL;
 

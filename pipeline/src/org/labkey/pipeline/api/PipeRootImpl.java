@@ -54,29 +54,6 @@ public class PipeRootImpl implements PipeRoot
     private static final String SYSTEM_DIRECTORY_NAME = ".labkey";
     private static final String SYSTEM_DIRECTORY_LEGACY = "system";
 
-    @NotNull
-    public File ensureSystemDirectory()
-    {
-        File root = getRootPath();
-        File systemDir = new File(root, SYSTEM_DIRECTORY_NAME);
-        if (!NetworkDrive.exists(systemDir))
-        {
-            systemDir.mkdirs();
-
-            File systemDirLegacy = new File(root, SYSTEM_DIRECTORY_LEGACY);
-            if (systemDirLegacy.exists())
-            {
-                for (File f : systemDirLegacy.listFiles())
-                    f.renameTo(systemDir);
-            }
-
-            for (PipelineProvider provider : PipelineService.get().getPipelineProviders())
-                provider.initSystemDirectory(root, systemDir);
-        }
-
-        return systemDir;        
-    }
-
     private String _containerId;
     private final URI[] _uris;
     private transient File[] _rootPaths;
@@ -111,6 +88,29 @@ public class PipeRootImpl implements PipeRoot
         {
             _keyPair = null;
         }
+    }
+
+    @NotNull
+    public File ensureSystemDirectory()
+    {
+        File root = getRootPath();
+        File systemDir = new File(root, SYSTEM_DIRECTORY_NAME);
+        if (!NetworkDrive.exists(systemDir))
+        {
+            systemDir.mkdirs();
+
+            File systemDirLegacy = new File(root, SYSTEM_DIRECTORY_LEGACY);
+            if (systemDirLegacy.exists())
+            {
+                for (File f : systemDirLegacy.listFiles())
+                    f.renameTo(systemDir);
+            }
+
+            for (PipelineProvider provider : PipelineService.get().getPipelineProviders())
+                provider.initSystemDirectory(root, systemDir);
+        }
+
+        return systemDir;
     }
 
     public Container getContainer()

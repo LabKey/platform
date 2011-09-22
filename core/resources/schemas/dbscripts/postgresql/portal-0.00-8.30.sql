@@ -14,8 +14,6 @@
  * limitations under the License.
  */
  
--- Create "portal" table
-
 CREATE SCHEMA portal;
 
 CREATE TABLE portal.PortalWebParts
@@ -24,11 +22,8 @@ CREATE TABLE portal.PortalWebParts
     Index INT NOT NULL,
     Name VARCHAR(64),
     Location VARCHAR(16),    -- 'body', 'left', 'right'
-
-    Properties VARCHAR(4000),    -- url encoded properties
+    Properties TEXT,    -- url encoded properties
+    Permanent Boolean NOT NULL DEFAULT FALSE,
 
     CONSTRAINT PK_PortalWebParts PRIMARY KEY (PageId, Index)
 );
-
-ALTER TABLE portal.portalwebparts ADD Permanent Boolean NOT NULL DEFAULT FALSE;
-ALTER TABLE Portal.PortalWebParts ALTER COLUMN properties TYPE TEXT;
