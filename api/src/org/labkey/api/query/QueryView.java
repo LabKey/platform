@@ -95,6 +95,7 @@ public class QueryView extends WebPartView<Object>
     private String _updateURL;
     private String _detailsURL;
     private String _insertURL;
+    private String _importURL;
     private String _deleteURL;
 
     public static void register(ExportScriptFactory factory)
@@ -1893,6 +1894,10 @@ public class QueryView extends WebPartView<Object>
                 {
                     urlTableInfo.setInsertURL(DetailsURL.fromString(_insertURL));
                 }
+                if (_importURL != null)
+                {
+                    urlTableInfo.setImportURL(DetailsURL.fromString(_importURL));
+                }
                 if (_deleteURL != null)
                 {
                     urlTableInfo.setDeleteURL(DetailsURL.fromString(_deleteURL));
@@ -2029,6 +2034,11 @@ public class QueryView extends WebPartView<Object>
     public void setInsertURL(String insertURL)
     {
         _insertURL = insertURL;
+    }
+
+    public void setImportURL(String importURL)
+    {
+        _importURL = importURL;
     }
 
     public void setPrintView(boolean b)

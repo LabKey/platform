@@ -74,7 +74,9 @@
  * "/controller/action.view?id=${RowId}" or "org.labkey.package.MyController$ActionAction.class?id=${RowId}"
  * @param {boolean} [config.showUpdateColumn] If the underlying table has an update URL, show a column that renders an [edit] link (default true).
  * @param {String} [config.insertURL] Specify or override the default insert URL for the table with one of the form
- * "/controller/action.view?id=${RowId}" or "org.labkey.package.MyController$ActionAction.class?id=${RowId}"
+ * "/controller/insertAction.view" or "org.labkey.package.MyController$InsertActionAction.class"
+ * @param {String} [config.importURL] Specify or override the default bulk import URL for the table with one of the form
+ * "/controller/importAction.view" or "org.labkey.package.MyController$ImportActionAction.class"
  * @param {String} [config.deleteURL] Specify or override the default delete URL for the table with one of the form
  * "/controller/action.view" or "org.labkey.package.MyController$ActionAction.class". The keys for the selected rows
  * will be included in the POST.
