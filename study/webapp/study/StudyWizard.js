@@ -141,7 +141,8 @@ LABKEY.study.CreateStudyWizard = Ext.extend(Ext.util.Observable, {
                 allowBlank: false,
                 name: 'studyName',
                 value: this.info.name,
-                listeners: {change:nameChange, scope:this}
+                enableKeyEvents: true,
+                listeners: {change: blurChange, keyup:nameChange, scope:this}
             },{
                 xtype: 'textarea',
                 name: 'studyDescription',
@@ -159,7 +160,10 @@ LABKEY.study.CreateStudyWizard = Ext.extend(Ext.util.Observable, {
             }
         ];
 
-        function nameChange(cmp, newValue, oldValue){
+        function blurChange(txtField){
+            //Changes the study location when you click away from the field. This is needed if you are typing and click
+            // away from the textfield very fast.
+            var newValue = txtField.getValue();
             var path;
             if(folderTree.getSelectionModel().getSelectedNode()){
                 path = folderTree.getSelectionModel().getSelectedNode().attributes.containerPath;
@@ -167,7 +171,20 @@ LABKEY.study.CreateStudyWizard = Ext.extend(Ext.util.Observable, {
                 path = LABKEY.ActionURL.getContainer();
             }
             this.info.name = newValue;
-            this.info.dstPath = path + this.info.name;
+            this.info.dstPath = path + '/' + this.info.name;
+            studyLocation.setValue(path + '/' + this.info.name);
+        }
+
+        function nameChange(txtField){
+            var newValue = txtField.getValue();
+            var path;
+            if(folderTree.getSelectionModel().getSelectedNode()){
+                path = folderTree.getSelectionModel().getSelectedNode().attributes.containerPath;
+            } else {
+                path = LABKEY.ActionURL.getContainer();
+            }
+            this.info.name = newValue;
+            this.info.dstPath = path + '/' + this.info.name;
             studyLocation.setValue(path + '/' + this.info.name);
         }
 
