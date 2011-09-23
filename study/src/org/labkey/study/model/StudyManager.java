@@ -2305,7 +2305,7 @@ public class StudyManager
 
         // StandardETL will handle most aliasing, HOWEVER, ...
         // columnMap may contain propertyURIs (dataset import job) and labels (GWT import file)
-        Map<String,ColumnInfo> nameMap = DataIteratorUtil.createAllAliasesMap(tinfo); 
+        Map<String,ColumnInfo> nameMap = DataIteratorUtil.createTableMap(tinfo, true);
 
         //
         // create columns to properties map

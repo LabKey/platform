@@ -46,8 +46,10 @@ import org.labkey.api.action.SimpleRedirectAction;
 import org.labkey.api.action.SimpleViewAction;
 import org.labkey.api.action.SpringActionController;
 import org.labkey.api.admin.AdminUrls;
+import org.labkey.api.collections.ArrayListMap;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.collections.CaseInsensitiveMapWrapper;
+import org.labkey.api.collections.RowMapFactory;
 import org.labkey.api.data.ActionButton;
 import org.labkey.api.data.ButtonBar;
 import org.labkey.api.data.CachedResultSet;
@@ -2744,12 +2746,14 @@ public class QueryController extends SpringActionController
             int rowsAffected = 0;
 
             List<Map<String, Object>> rowsToProcess = new ArrayList<Map<String, Object>>();
+            RowMapFactory f = new RowMapFactory();
             for(int idx = 0; idx < rows.length(); ++idx)
             {
                 JSONObject jsonObj = rows.getJSONObject(idx);
                 if (null != jsonObj)
                 {
-                    CaseInsensitiveHashMap<Object> rowMap = new CaseInsensitiveHashMap<Object>(jsonObj);
+                    Map<String,Object> rowMap = f.getRowMap();
+                    rowMap.putAll(jsonObj);
                     rowsToProcess.add(rowMap);
                     rowsAffected++;
                 }

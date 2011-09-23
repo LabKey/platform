@@ -95,7 +95,7 @@ public class StudyServiceImpl implements StudyService.Service
     public String updateDatasetRow(User u, Container c, int datasetId, String lsid, Map<String, Object> data, List<String> errors)
             throws SQLException
     {
-        boolean allowAliasesInImport = false; // SEE https://www.labkey.org/issues/home/Developer/issues/details.view?issueId=12592
+        boolean allowAliasesInUpdate = false; // SEE https://www.labkey.org/issues/home/Developer/issues/details.view?issueId=12592
         
         StudyImpl study = StudyManager.getInstance().getStudy(c);
         DataSetDefinition def = StudyManager.getInstance().getDataSetDefinition(study, datasetId);
@@ -126,30 +126,17 @@ public class StudyServiceImpl implements StudyService.Service
             // don't default to using old qcstate
             mergeData.remove("qcstate");
 
-            if (allowAliasesInImport)
-            {
-                TableInfo target = def.getTableInfo(u);
-                Map<String,ColumnInfo> colMap = DataIteratorUtil.createAllAliasesMap(target);
+            TableInfo target = def.getTableInfo(u);
+            Map<String,ColumnInfo> colMap = DataIteratorUtil.createTableMap(target, allowAliasesInUpdate);
 
-                // If any fields aren't included, use the old values
-                for (Map.Entry<String,Object> entry : data.entrySet())
-                {
-                    ColumnInfo col = colMap.get(entry.getKey());
-                    String name = null==col ? entry.getKey() : col.getName();
-                    if (name.equalsIgnoreCase(managedKey))
-                        continue;
-                    mergeData.put(name,entry.getValue());
-                }
-            }
-            else
+            // If any fields aren't included, use the old values
+            for (Map.Entry<String,Object> entry : data.entrySet())
             {
-                for (Map.Entry<String,Object> entry : data.entrySet())
-                {
-                    String name = entry.getKey();
-                    if (null != managedKey && name.equalsIgnoreCase(managedKey))
-                        continue;
-                    mergeData.put(name,entry.getValue());
-                }
+                ColumnInfo col = colMap.get(entry.getKey());
+                String name = null==col ? entry.getKey() : col.getName();
+                if (name.equalsIgnoreCase(managedKey))
+                    continue;
+                mergeData.put(name,entry.getValue());
             }
 
             // these columns are always recalculated
@@ -188,6 +175,7 @@ public class StudyServiceImpl implements StudyService.Service
             closeConnection();
         }
     }
+
 
     // change a map's keys to have proper casing just like the list of columns
     private static Map<String,Object> canonicalizeDatasetRow(Map<String,Object> source, List<ColumnInfo> columns)

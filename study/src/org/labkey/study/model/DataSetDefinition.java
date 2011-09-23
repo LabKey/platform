@@ -22,6 +22,7 @@ import org.apache.commons.lang.StringUtils;
 import org.apache.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.labkey.api.ScrollableDataIterator;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.collections.CaseInsensitiveHashSet;
 import org.labkey.api.collections.Sets;
@@ -1374,6 +1375,7 @@ public class DataSetDefinition extends AbstractStudyEntity<DataSetDefinition> im
         List<String> lsids = null;
         boolean checkDuplicates = false;
         boolean isForUpdate = false;
+        boolean useImportAliases = false;
         Logger logger = null;
 
         DataIteratorBuilder builder = null;
@@ -1398,6 +1400,11 @@ public class DataSetDefinition extends AbstractStudyEntity<DataSetDefinition> im
         void setForUpdate(boolean update)
         {
             this.isForUpdate = update;
+        }
+
+        void setUseImportAliases(boolean aliases)
+        {
+            this.useImportAliases = aliases;
         }
 
         void setCheckDuplicates(boolean check)
@@ -1451,7 +1458,10 @@ public class DataSetDefinition extends AbstractStudyEntity<DataSetDefinition> im
 
             _DatasetColumnsIterator it = new _DatasetColumnsIterator(input, errors);
 
-            ArrayList<ColumnInfo> inputMatches = DataIteratorUtil.matchColumns(input,table);
+            ValidationException matchError = new ValidationException();
+            ArrayList<ColumnInfo> inputMatches = DataIteratorUtil.matchColumns(input,table,useImportAliases, matchError);
+            if (matchError.hasErrors())
+                setupError(matchError.getMessage());
 
             // select all columns except those we explicity calculate (e.g. lsid)
             for (int in=1 ; in<=input.getColumnCount() ; in++)
@@ -1584,7 +1594,7 @@ public class DataSetDefinition extends AbstractStudyEntity<DataSetDefinition> im
                             {
                                 throw new RuntimeSQLException(x);
                             }
-                        }
+                            }
                     };
                     indexKeyProperty = it.addColumn(key, call);
                 }
@@ -1658,15 +1668,16 @@ public class DataSetDefinition extends AbstractStudyEntity<DataSetDefinition> im
             it.setInput(ErrorIterator.wrap(input, errors, false, setupError));
             DataIterator ret = LoggingDataIterator.wrap(it);
 
-            if (checkDuplicates && null == setupError)
+            boolean hasError = null != setupError && setupError.hasErrors();
+            if (checkDuplicates && !hasError)
             {
                 Integer indexVisit = timetype == TimepointType.VISIT ? it.indexSequenceNumOutput : indexVisitDate;
                 // no point if required columns are missing
                 if (null != indexPTID && null != indexVisit)
                 {
-                    DataIterator scrollable = DataIteratorUtil.wrapScrollable(ret);
+                    ScrollableDataIterator scrollable = DataIteratorUtil.wrapScrollable(ret);
                     checkForDuplicates(scrollable, indexLSID,
-                            indexPTID, null==indexVisit?-1:indexVisit, null==indexKeyProperty?-1:indexKeyProperty, null==indexReplace?-1:indexReplace,
+                            indexPTID, null == indexVisit ? -1 : indexVisit, null == indexKeyProperty ? -1 : indexKeyProperty, null == indexReplace ? -1 : indexReplace,
                             errors, logger);
                     scrollable.beforeFirst();
                     ret = scrollable;
@@ -1967,6 +1978,8 @@ public class DataSetDefinition extends AbstractStudyEntity<DataSetDefinition> im
 //        if (dataMaps.size() == 0)
 //            return Collections.emptyList();
 
+
+
         DbScope scope = ExperimentService.get().getSchema().getScope();
 
         try
@@ -1980,6 +1993,7 @@ public class DataSetDefinition extends AbstractStudyEntity<DataSetDefinition> im
             b.setInput(in);
             b.setCheckDuplicates(checkDuplicates);
             b.setForUpdate(forUpdate);
+            b.setUseImportAliases(!forUpdate);
 
             ArrayList<String> lsids = new ArrayList<String>();
             b.setKeyList(lsids);

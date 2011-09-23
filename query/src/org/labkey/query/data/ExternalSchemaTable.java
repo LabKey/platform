@@ -16,7 +16,12 @@
 
 package org.labkey.query.data;
 
+import org.labkey.api.collections.CaseInsensitiveHashMap;
+import org.labkey.api.collections.CaseInsensitiveHashSet;
 import org.labkey.api.data.*;
+import org.labkey.api.etl.DataIteratorBuilder;
+import org.labkey.api.etl.TableInsertDataIterator;
+import org.labkey.api.query.BatchValidationException;
 import org.labkey.api.query.QueryUpdateService;
 import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.Permission;
@@ -24,10 +29,13 @@ import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.data.xml.TableType;
 import org.labkey.query.ExternalSchema;
 
+import java.sql.Connection;
+import java.sql.SQLException;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
-public class ExternalSchemaTable extends SimpleUserSchema.SimpleTable
+public class ExternalSchemaTable extends SimpleUserSchema.SimpleTable implements UpdateableTableInfo
 {
     private Container _container;
     
@@ -96,5 +104,25 @@ public class ExternalSchemaTable extends SimpleUserSchema.SimpleTable
             throw new RuntimeException("The table '" + getName() + "' does not have a primary key defined, and thus cannot be updated reliably. Please define a primary key for this table before attempting an update.");
 
         return new SimpleQueryUpdateService(this, table);
+    }
+
+    /*** UpdateableTableInfo ****/
+
+    @Override
+    public boolean insertSupported()
+    {
+        return getUserSchema().areTablesEditable();
+    }
+
+    @Override
+    public boolean updateSupported()
+    {
+        return getUserSchema().areTablesEditable();
+    }
+
+    @Override
+    public boolean deleteSupported()
+    {
+        return getUserSchema().areTablesEditable();
     }
 }

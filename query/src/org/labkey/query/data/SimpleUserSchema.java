@@ -19,6 +19,7 @@ package org.labkey.query.data;
 import com.google.common.base.Predicate;
 import com.google.common.collect.Iterables;
 import org.jetbrains.annotations.NotNull;
+import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.collections.CaseInsensitiveHashSet;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
@@ -27,14 +28,20 @@ import org.labkey.api.data.DbSchema;
 import org.labkey.api.data.ForeignKey;
 import org.labkey.api.data.JdbcType;
 import org.labkey.api.data.MultiValuedForeignKey;
+import org.labkey.api.data.Parameter;
 import org.labkey.api.data.SchemaTableInfo;
+import org.labkey.api.data.Table;
 import org.labkey.api.data.TableInfo;
+import org.labkey.api.data.UpdateableTableInfo;
+import org.labkey.api.etl.DataIteratorBuilder;
+import org.labkey.api.etl.TableInsertDataIterator;
 import org.labkey.api.exp.PropertyColumn;
 import org.labkey.api.exp.PropertyDescriptor;
 import org.labkey.api.exp.property.Domain;
 import org.labkey.api.exp.property.DomainProperty;
 import org.labkey.api.exp.property.PropertyService;
 import org.labkey.api.module.SimpleModule;
+import org.labkey.api.query.BatchValidationException;
 import org.labkey.api.query.FilteredTable;
 import org.labkey.api.query.QueryService;
 import org.labkey.api.query.QueryUpdateService;
@@ -44,6 +51,8 @@ import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.Permission;
 import org.labkey.api.view.NotFoundException;
 
+import java.sql.Connection;
+import java.sql.SQLException;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Set;
@@ -112,7 +121,7 @@ public class SimpleUserSchema extends UserSchema
         return null;
     }
 
-    public static class SimpleTable extends FilteredTable
+    public static class SimpleTable extends FilteredTable implements UpdateableTableInfo
     {
         SimpleUserSchema _userSchema;
         ColumnInfo _objectUriCol;
@@ -293,6 +302,86 @@ public class SimpleUserSchema extends UserSchema
         public String getPublicSchemaName()
         {
             return _userSchema.getName();
+        }
+
+    /*** UpdateableTableInfo ****/
+
+        @Override
+        public boolean insertSupported()
+        {
+            return true;
+        }
+
+        @Override
+        public boolean updateSupported()
+        {
+            return true;
+        }
+
+        @Override
+        public boolean deleteSupported()
+        {
+            return true;
+        }
+
+        @Override
+        public TableInfo getSchemaTableInfo()
+        {
+            return getRealTable();
+        }
+
+        @Override
+        public UpdateableTableInfo.ObjectUriType getObjectUriType()
+        {
+            return ObjectUriType.schemaColumn;
+        }
+
+        @Override
+        public String getObjectURIColumnName()
+        {
+            return null==_objectUriCol ? null : _objectUriCol.getName();
+        }
+
+        @Override
+        public String getObjectIdColumnName()
+        {
+            return null;
+        }
+
+        @Override
+        public CaseInsensitiveHashMap<String> remapSchemaColumns()
+        {
+            return null;
+        }
+
+        @Override
+        public CaseInsensitiveHashSet skipProperties()
+        {
+            return null;
+        }
+
+        @Override
+        public DataIteratorBuilder persistRows(DataIteratorBuilder data, BatchValidationException errors)
+        {
+            return TableInsertDataIterator.create(data, this, errors);
+        }
+
+        @Override
+        public Parameter.ParameterMap insertStatement(Connection conn, User user) throws SQLException
+        {
+            return Table.insertStatement(conn, getRealTable(), null, user, false, true);
+        }
+
+        @Override
+        public Parameter.ParameterMap updateStatement(Connection conn, User user, Set<String> columns) throws SQLException
+        {
+            throw new UnsupportedOperationException();
+        }
+
+        @Override
+        public Parameter.ParameterMap deleteStatement(Connection conn) throws SQLException
+        {
+            throw new UnsupportedOperationException();
         }
     }
 
