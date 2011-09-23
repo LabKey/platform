@@ -871,7 +871,8 @@ LABKEY.DataRegion = Ext.extend(Ext.Component,
             this.msgbox.on('rendermsg', this._onRenderMessageArea, this);
         }
         this.header = Ext.get("dataregion_header_" + this.name);
-        this.header.applyStyles('width: 100%');
+        if (this.header)
+            this.header.applyStyles('width: 100%');
         this.footer = Ext.get("dataregion_footer_" + this.name);
 
         // derived DataRegion's may not include the form id

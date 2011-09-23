@@ -731,6 +731,7 @@ public class DataRegion extends AbstractDataRegion
             {
                 renderButtons = false;
                 showRecordSelectors = false;
+                _allowHeaderLock = false;
             }
 
             List<DisplayColumn> renderers = getDisplayColumns();
