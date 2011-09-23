@@ -523,16 +523,21 @@ public class Table
 
     static enum Getter
     {
-        STRING(String.class) { String getObject(ResultSet rs) throws SQLException { return rs.getString(1); }},
-        INTEGER(Integer.class) { Integer getObject(ResultSet rs) throws SQLException { int i = rs.getInt(1); return rs.wasNull() ? null : i ; }},
-        DOUBLE(Double.class) { Double getObject(ResultSet rs) throws SQLException { double d = rs.getDouble(1); return rs.wasNull() ? null : d ; }},
-        BOOLEAN(Boolean.class) { Boolean getObject(ResultSet rs) throws SQLException { boolean f = rs.getBoolean(1); return rs.wasNull() ? null : f ; }},
-        LONG(Long.class) { Long getObject(ResultSet rs) throws SQLException { long l = rs.getLong(1); return rs.wasNull() ? null : l; }},
-        UTIL_DATE(Date.class) { Date getObject(ResultSet rs) throws SQLException { return rs.getTimestamp(1); }},
-        BYTES(byte[].class) { Object getObject(ResultSet rs) throws SQLException { return rs.getBytes(1); }},
-        TIMESTAMP(Timestamp.class) { Object getObject(ResultSet rs) throws SQLException { return rs.getTimestamp(1); }};
+        STRING(String.class) { String getObject(ResultSet rs, int i) throws SQLException { return rs.getString(i); }},
+        INTEGER(Integer.class) { Integer getObject(ResultSet rs, int i) throws SQLException { int n = rs.getInt(i); return rs.wasNull() ? null : n ; }},
+        DOUBLE(Double.class) { Double getObject(ResultSet rs, int i) throws SQLException { double d = rs.getDouble(i); return rs.wasNull() ? null : d ; }},
+        BOOLEAN(Boolean.class) { Boolean getObject(ResultSet rs, int i) throws SQLException { boolean f = rs.getBoolean(i); return rs.wasNull() ? null : f ; }},
+        LONG(Long.class) { Long getObject(ResultSet rs, int i) throws SQLException { long l = rs.getLong(i); return rs.wasNull() ? null : l; }},
+        UTIL_DATE(Date.class) { Date getObject(ResultSet rs, int i) throws SQLException { return rs.getTimestamp(i); }},
+        BYTES(byte[].class) { Object getObject(ResultSet rs, int i) throws SQLException { return rs.getBytes(i); }},
+        TIMESTAMP(Timestamp.class) { Object getObject(ResultSet rs, int i) throws SQLException { return rs.getTimestamp(i); }},
+        OBJECT(Object.class) { Object getObject(ResultSet rs, int i) throws SQLException { return rs.getObject(i); }};
 
-        abstract Object getObject(ResultSet rs) throws SQLException;
+        abstract Object getObject(ResultSet rs, int i) throws SQLException;
+        Object getObject(ResultSet rs) throws SQLException
+        {
+            return getObject(rs, 1);
+        }
 
         private Getter(Class c)
         {
@@ -638,12 +643,14 @@ public class Table
 
         try
         {
+            Getter getter = Getter.forClass(c);
+            if (null == getter) getter = Getter.OBJECT;
             conn = schema.getScope().getConnection();
             rs = _executeQuery(conn, sql, parameters);
             ArrayList<Object> list = new ArrayList<Object>();
             int i = rs.findColumn(col.getAlias());
             while (rs.next())
-                list.add(rs.getObject(i));
+                list.add(getter.getObject(rs, i));
             return list.toArray((K[]) Array.newInstance(c, list.size()));
         }
         catch(SQLException e)
@@ -2132,7 +2139,7 @@ public class Table
      * This shouldn't be a big problem since we don't usually need to optimize the one row case, and we're moving
      * to provisioned tables for major datatypes.
      */
-    public static Parameter.ParameterMap insertStatement(Connection conn, TableInfo tableInsert, Container c, User user, boolean selectIds, boolean autoFillDefaultColumns) throws SQLException
+    public static Parameter.ParameterMap insertStatement(Connection conn, TableInfo tableInsert, @Nullable Container c, User user, boolean selectIds, boolean autoFillDefaultColumns) throws SQLException
     {
         if (!(tableInsert instanceof UpdateableTableInfo))
             throw new IllegalArgumentException();

@@ -16,6 +16,7 @@
 
 package org.labkey.api.etl;
 
+import org.labkey.api.ScrollableDataIterator;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.JdbcType;
 import org.labkey.api.query.BatchValidationException;
@@ -28,7 +29,7 @@ import java.util.List;
 * Date: 2011-05-20
 * Time: 2:16 PM
 */
-class StringTestIterator extends AbstractDataIterator
+class StringTestIterator extends AbstractDataIterator implements ScrollableDataIterator
 {
     final List<String> columns;
     final List<String[]> data;

@@ -18,6 +18,8 @@ package org.labkey.api.etl;
 
 import junit.framework.Assert;
 import org.junit.Test;
+import org.labkey.api.ScrollableDataIterator;
+import org.labkey.api.data.CachedResultSet;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.DbSchema;
 import org.labkey.api.data.JdbcType;
@@ -36,7 +38,7 @@ import java.sql.SQLException;
  * Date: Jun 8, 2011
  * Time: 10:12:11 PM
  */
-public class ResultSetDataIterator extends AbstractDataIterator
+public class ResultSetDataIterator extends AbstractDataIterator implements ScrollableDataIterator
 {
     static public DataIterator wrap(ResultSet rs, BatchValidationException errors)
     {
@@ -115,7 +117,7 @@ public class ResultSetDataIterator extends AbstractDataIterator
     @Override
     public boolean isScrollable()
     {
-        return false;
+        return (_rs instanceof CachedResultSet);
     }
 
     @Override

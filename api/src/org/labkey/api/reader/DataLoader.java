@@ -21,6 +21,7 @@ import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang.StringUtils;
 import org.apache.log4j.Logger;
 import org.jetbrains.annotations.Nullable;
+import org.labkey.api.ScrollableDataIterator;
 import org.labkey.api.collections.ArrayListMap;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.collections.RowMapFactory;
@@ -793,7 +794,7 @@ public abstract class DataLoader implements Iterable<Map<String, Object>>, Loade
     }
 
 
-    private class _DataIterator implements MapDataIterator
+    private class _DataIterator implements ScrollableDataIterator, MapDataIterator
     {
         final BatchValidationException _errors;
         DataLoaderIterator _it = null;
@@ -804,6 +805,12 @@ public abstract class DataLoader implements Iterable<Map<String, Object>>, Loade
         {
             _errors = errors;
             beforeFirst();
+        }
+
+        @Override
+        public String getDebugName()
+        {
+            return DataLoader.this.getClass().getSimpleName();
         }
 
         @Override
@@ -852,6 +859,12 @@ public abstract class DataLoader implements Iterable<Map<String, Object>>, Loade
                 _rowNumber++;
             }
             return hasNext;
+        }
+
+        @Override
+        public boolean supportsGetMap()
+        {
+            return true;
         }
 
         @Override

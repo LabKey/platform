@@ -347,7 +347,7 @@ public interface TableInfo
      * @throws ValidationException if the trigger function returns false or the errors map isn't empty.
      */
     public void fireRowTrigger(Container c, TriggerType type, boolean before, int rowNumber,
-                                  Map<String, Object> newRow, Map<String, Object> oldRow, Map<String, Object> extraContext)
+                                  @Nullable Map<String, Object> newRow, @Nullable Map<String, Object> oldRow, Map<String, Object> extraContext)
             throws ValidationException;
 
     public boolean hasTriggers(Container c);

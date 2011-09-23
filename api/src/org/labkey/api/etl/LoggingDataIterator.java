@@ -18,11 +18,14 @@ package org.labkey.api.etl;
 import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
 import org.apache.log4j.Priority;
+import org.json.JSONObject;
+import org.labkey.api.ScrollableDataIterator;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.query.BatchValidationException;
 
 import java.io.IOException;
 import java.util.Formatter;
+import java.util.Map;
 
 /**
  * Created by IntelliJ IDEA.
@@ -30,7 +33,7 @@ import java.util.Formatter;
  * Date: 2011-05-27
  * Time: 1:10 PM
  */
-public class LoggingDataIterator extends AbstractDataIterator
+public class LoggingDataIterator extends AbstractDataIterator implements ScrollableDataIterator, MapDataIterator
 {
     static Logger _staticLog = Logger.getLogger(LoggingDataIterator.class);
     Logger _log = _staticLog;
@@ -77,9 +80,7 @@ public class LoggingDataIterator extends AbstractDataIterator
         StringBuilder sb = new StringBuilder();
         Formatter formatter = new Formatter(sb);
 
-        String debugName = _data.getClass().toString();
-        if (_data instanceof AbstractDataIterator)
-            debugName += ": " + ((AbstractDataIterator)_data)._debugName;
+        String debugName = _data.getDebugName() + " : " + _data.getClass().getName();
         sb.append(debugName).append("\n");
 
         for (int i=0 ; i<=_data.getColumnCount() ; i++)
@@ -92,6 +93,14 @@ public class LoggingDataIterator extends AbstractDataIterator
             if (null == value)
                 value = "";
             formatter.format("%50s %10s| %s\n", name, cls, value);
+        }
+
+        if (supportsGetMap())
+        {
+            Map<String,Object> map = getMap();
+            String json = new JSONObject(map).toString();
+            sb.append(json);
+            sb.append("\n");
         }
 
         _log.log(_pri, sb.toString());
@@ -114,12 +123,24 @@ public class LoggingDataIterator extends AbstractDataIterator
     @Override
     public boolean isScrollable()
     {
-        return _data.isScrollable();
+        return _data instanceof ScrollableDataIterator && ((ScrollableDataIterator)_data).isScrollable();
     }
 
     @Override
     public void beforeFirst()
     {
-        _data.beforeFirst();
+        ((ScrollableDataIterator)_data).beforeFirst();
+    }
+
+    @Override
+    public boolean supportsGetMap()
+    {
+        return _data instanceof MapDataIterator && ((MapDataIterator)_data).supportsGetMap();
+    }
+
+    @Override
+    public Map<String, Object> getMap()
+    {
+        return ((MapDataIterator)_data).getMap();
     }
 }

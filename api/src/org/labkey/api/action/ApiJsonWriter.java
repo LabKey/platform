@@ -224,9 +224,9 @@ public class ApiJsonWriter extends ApiResponseWriter
 
     public void write(Errors errors) throws IOException
     {
-        //set the status to 400 to indicate that it was a bad request
-        if (null != getResponse())
-            getResponse().setStatus(errorResponseStatus);
+//set the status to 400 to indicate that it was a bad request
+//        if (null != getResponse())
+//            getResponse().setStatus(errorResponseStatus);
 
         String exception = null;
         JSONArray jsonErrors = new JSONArray();

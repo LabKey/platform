@@ -16,6 +16,7 @@
 
 package org.labkey.api.etl;
 
+import org.apache.commons.lang.StringUtils;
 import org.labkey.api.query.BatchValidationException;
 import org.labkey.api.query.ValidationException;
 
@@ -43,10 +44,18 @@ public abstract class AbstractDataIterator implements DataIterator
     }
 
 
+    @Override
+    public String getDebugName()
+    {
+        return StringUtils.defaultString(_debugName, getClass().getSimpleName());
+    }
+
+
     protected boolean hasErrors()
     {
         return _errors.hasErrors();
     }
+
 
     protected ValidationException getGlobalError()
     {
@@ -70,19 +79,5 @@ public abstract class AbstractDataIterator implements DataIterator
             _errors.addRowError(_rowError);
         }
         return _rowError;
-    }
-
-    @Override
-    public boolean isScrollable()
-    {
-        return false;
-    }
-
-    @Override
-    public void beforeFirst()
-    {
-        if (isScrollable())
-            throw new UnsupportedOperationException("beforeFirst() needs to be implemented if true==isScrollable()");
-        throw new IllegalStateException("Iterator is not scrollabvle");
     }
 }

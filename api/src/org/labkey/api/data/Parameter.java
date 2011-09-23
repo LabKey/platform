@@ -443,22 +443,24 @@ public class Parameter
 
         public boolean execute() throws SQLException
         {
-            if (null == _selectObjectIdIndex && null == _selectRowIdIndex)
-                return _stmt.execute();
+            _stmt.execute();
 
+            if (null == _selectObjectIdIndex && null == _selectRowIdIndex)
+                return true;
+
+            _stmt.getMoreResults();
             ResultSet rs = null;
             try
             {
-                rs = _stmt.executeQuery();
+                _rowId = null; _objectId = null;
+                rs = _stmt.getResultSet();
                 if (!rs.next())
                     return false;
-                _rowId = null;
                 if (null != _selectRowIdIndex)
                 {
                     int id = rs.getInt(_selectRowIdIndex);
                     _rowId = rs.wasNull() ? null : id;
                 }
-                _objectId = null;
                 if (null != _selectObjectIdIndex)
                 {
                     int id = rs.getInt(_selectObjectIdIndex);
@@ -477,6 +479,11 @@ public class Parameter
         public Integer getRowId()
         {
             return _rowId;
+        }
+
+        public Integer getObjectId()
+        {
+            return _objectId;
         }
 
 

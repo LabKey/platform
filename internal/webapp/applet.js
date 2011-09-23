@@ -147,7 +147,14 @@ LABKEY.Applet = Ext.extend(Ext.BoxComponent,
     {
         if (!this.rendered)
             return false;
-        return this.el && 'isActive' in this.el.dom && this.el.dom.isActive();
+        try
+        {
+            return this.el && this.el.dom &&'isActive' in this.el.dom && this.el.dom.isActive();
+        }
+        catch (x)
+        {
+            return false;
+        }
     },
 
     getApplet : function()

@@ -6,6 +6,7 @@ import org.labkey.api.data.JdbcType;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.query.BatchValidationException;
 
+import java.util.Map;
 import java.util.Set;
 
 /**
@@ -22,23 +23,24 @@ import java.util.Set;
  */
 public class CoerceDataIterator extends SimpleTranslator
 {
-    public CoerceDataIterator(DataIterator source, BatchValidationException errors, TableInfo target)
+    public CoerceDataIterator(DataIterator source, BatchValidationException errors, TableInfo target, boolean useImportAliases)
     {
         super(source, errors);
-
-        init(target);
+        setDebugName("Coerce before trigger script");
+        init(target, useImportAliases);
     }
 
-    void init(TableInfo target)
+    void init(TableInfo target, boolean useImportAliases)
     {
+        Map<String,ColumnInfo> targetMap = DataIteratorUtil.createTableMap(target, useImportAliases);
         Set<String> seen = new CaseInsensitiveHashSet();
         DataIterator di = getInput();
         int count = di.getColumnCount();
         for (int i=1 ; i<=count ; i++)
         {
             ColumnInfo from = di.getColumnInfo(i);
-            ColumnInfo to = target.getColumn(from.getName());
-            // TODO CONSIDER : do we rename columns here so that they are consistent in the trigger script?
+            ColumnInfo to = targetMap.get(from.getName());
+
             if (null != to)
             {
                 seen.add(to.getName());
@@ -52,10 +54,24 @@ public class CoerceDataIterator extends SimpleTranslator
         // add null column for all insertable not seen columns
         for (ColumnInfo to : target.getColumns())
         {
-            if (seen.contains(target.getName()))
+            if (seen.contains(to.getName()))
+                continue;
+            if (!to.isUserEditable() || to.isAutoIncrement())
                 continue;
             addNullColumn(to.getName(), to.getJdbcType());
         }
+    }
+
+    @Override
+    public boolean next() throws BatchValidationException
+    {
+        return super.next();
+    }
+
+    @Override
+    public Object get(int i)
+    {
+        return super.get(i);
     }
 
     @Override

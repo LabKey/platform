@@ -20,10 +20,14 @@ import org.labkey.api.data.Parameter;
 import org.labkey.api.data.RuntimeSQLException;
 import org.labkey.api.exp.MvFieldWrapper;
 import org.labkey.api.query.BatchValidationException;
+import org.labkey.api.util.ResultSetUtil;
 
 import java.io.IOException;
+import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
+import java.util.Collections;
+
 
 class StatementDataIterator extends AbstractDataIterator
 {
@@ -31,10 +35,15 @@ class StatementDataIterator extends AbstractDataIterator
     BatchValidationException _errors;
     DataIterator _data;
     int _executeCount = 0;
-    ColumnInfo[] _columns = null;
     boolean _failFast = false;
 
     Triple[] _bindings = null;
+
+    // NOTE all columns are pass through to the source iterator, except for key columns
+    ArrayList<ColumnInfo> _keyColumnInfo;
+    ArrayList<Object> _keyValues;
+    Integer _rowIdIndex = null;
+    Integer _objectIdIndex = null;
 
     protected StatementDataIterator(DataIterator data, Parameter.ParameterMap map, BatchValidationException errors)
     {
@@ -42,6 +51,36 @@ class StatementDataIterator extends AbstractDataIterator
         this._data = data;
         this._stmt = map;
         this._errors = errors;
+
+        _keyColumnInfo = new ArrayList<ColumnInfo>(Collections.nCopies(data.getColumnCount()+1,(ColumnInfo)null));
+        _keyValues = new ArrayList<Object>(Collections.nCopies(data.getColumnCount()+1,null));
+    }
+
+    // configure columns returned by statement, e.g. rowid
+    // index > 0 to override an existing column
+    // index == -1 to append
+    void setRowIdColumn(int index, ColumnInfo col)
+    {
+        if (-1 == index)
+        {
+            _keyColumnInfo.add(null);
+            _keyValues.add(null);
+            index = _keyColumnInfo.size()-1;
+        }
+        _keyColumnInfo.set(index,col);
+        _rowIdIndex = index;
+    }
+
+    void setObjectIdColumn(int index, ColumnInfo col)
+    {
+        if (-1 == index)
+        {
+            _keyColumnInfo.add(null);
+            _keyValues.add(null);
+            index = _keyColumnInfo.size()-1;
+        }
+        _keyColumnInfo.set(index,col);
+        _objectIdIndex = index;
     }
 
     void init()
@@ -88,14 +127,16 @@ class StatementDataIterator extends AbstractDataIterator
     @Override
     public int getColumnCount()
     {
-        return null==_columns ? _data.getColumnCount() : _columns.length-1;
+        return _keyColumnInfo.size()-1;
     }
 
 
     @Override
     public ColumnInfo getColumnInfo(int i)
     {
-        return null==_columns ? _data.getColumnInfo(i) : _columns[i];
+        if (null != _keyColumnInfo.get(i))
+            return _keyColumnInfo.get(i);
+        return _data.getColumnInfo(i);
     }
 
 
@@ -105,6 +146,7 @@ class StatementDataIterator extends AbstractDataIterator
         if (!_data.next())
             return false;
 
+        ResultSet rs = null;
         try
         {
             _stmt.clearParameters();
@@ -126,20 +168,33 @@ class StatementDataIterator extends AbstractDataIterator
             }
             if (_errors.hasErrors())
                 return !_failFast;
+
             _stmt.execute();
+
+            if (null != _rowIdIndex)
+                _keyValues.set(_rowIdIndex, _stmt.getRowId());
+            if (null != _objectIdIndex)
+                _keyValues.set(_objectIdIndex, _stmt.getObjectId());
+
             _executeCount++;
+            return true;
         }
         catch (SQLException x)
         {
             throw new RuntimeSQLException(x);
         }
-        return true;
+        finally
+        {
+            ResultSetUtil.close(rs);
+        }
     }
 
 
     @Override
     public Object get(int i)
     {
+        if (null != _keyColumnInfo.get(i))
+            return _keyValues.get(i);
         return _data.get(i);
     }
 

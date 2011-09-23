@@ -1,6 +1,10 @@
 package org.labkey.api.etl;
 
+import org.apache.log4j.Category;
+import org.apache.log4j.Logger;
+import org.labkey.api.ScrollableDataIterator;
 import org.labkey.api.collections.ArrayListMap;
+import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.query.BatchValidationException;
 
@@ -18,9 +22,10 @@ import java.util.Map;
  */
 public interface MapDataIterator extends DataIterator
 {
+    boolean supportsGetMap();
     Map<String,Object> getMap();
 
-    static class MapDataIteratorImpl implements MapDataIterator
+    static class MapDataIteratorImpl implements MapDataIterator, ScrollableDataIterator
     {
         DataIterator _input;
         boolean _mutable;
@@ -32,11 +37,30 @@ public interface MapDataIterator extends DataIterator
         {
             _input = in;
             _mutable = mutable;
-            _findMap = new ArrayListMap.FindMap<Object>(new HashMap<Object,Integer>(in.getColumnCount()*2));
+            Map map = new CaseInsensitiveHashMap<Integer>(in.getColumnCount()*2);
+            _findMap = new ArrayListMap.FindMap<Object>((Map<Object,Integer>)map);
             for (int i=0 ; i<=in.getColumnCount() ; i++)
             {
+                String name = in.getColumnInfo(i).getName();
+                if (_findMap.containsKey(name))
+                {
+                    Logger.getLogger(MapDataIterator.class).warn("Map already has column named '" + name + "'");
+                    continue;
+                }
                 _findMap.put(in.getColumnInfo(i).getName(),i);
             }
+        }
+
+        @Override
+        public String getDebugName()
+        {
+            return "MapDataIterator";
+        }
+
+        @Override
+        public boolean supportsGetMap()
+        {
+            return true;
         }
 
         @Override
@@ -82,14 +106,14 @@ public interface MapDataIterator extends DataIterator
         @Override
         public boolean isScrollable()
         {
-            return _input.isScrollable();
+            return (_input instanceof ScrollableDataIterator) && ((ScrollableDataIterator)_input).isScrollable();
         }
 
         @Override
         public void beforeFirst()
         {
             _currentMap = null;
-            _input.beforeFirst();
+            ((ScrollableDataIterator)_input).beforeFirst();
         }
 
         @Override

@@ -15,6 +15,7 @@
  */
 package org.labkey.api.etl;
 
+import org.labkey.api.ScrollableDataIterator;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.JdbcType;
 import org.labkey.api.query.BatchValidationException;
@@ -31,7 +32,7 @@ import java.util.Set;
  * Date: May 23, 2011
  * Time: 5:01:51 PM
  */
-public class ListofMapsDataIterator extends AbstractDataIterator implements MapDataIterator
+public class ListofMapsDataIterator extends AbstractDataIterator implements ScrollableDataIterator, MapDataIterator
 {
     List<ColumnInfo> _cols = new ArrayList<ColumnInfo>();
     final List<Map<String,Object>> _rows;
@@ -89,6 +90,24 @@ public class ListofMapsDataIterator extends AbstractDataIterator implements MapD
     public boolean next() throws BatchValidationException
     {
         return ++_currentRow < _rows.size();
+    }
+
+    @Override
+    public boolean isScrollable()
+    {
+        return true;
+    }
+
+    @Override
+    public void beforeFirst()
+    {
+        _currentRow = -1;
+    }
+
+    @Override
+    public boolean supportsGetMap()
+    {
+        return true;
     }
 
     @Override

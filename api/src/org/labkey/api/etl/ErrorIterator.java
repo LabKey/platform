@@ -91,10 +91,4 @@ public class ErrorIterator extends AbstractDataIterator
     {
         _it.close();
     }
-
-    @Override
-    public boolean isScrollable()
-    {
-        return _it.isScrollable();
-    }
 }

@@ -19,6 +19,7 @@ import org.apache.commons.beanutils.ConversionException;
 import org.apache.commons.beanutils.ConvertUtils;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.data.*;
+import org.labkey.api.etl.DataIterator;
 import org.labkey.api.exp.OntologyManager;
 import org.labkey.api.exp.OntologyObject;
 import org.labkey.api.exp.PropertyColumn;
@@ -136,7 +137,7 @@ public class DefaultQueryUpdateService extends AbstractQueryUpdateService
 
         //PostgreSQL includes a column named _row for the row index, but since this is selecting by
         //primary key, it will always be 1, which is not only unnecessary, but confusing, so strip it
-        if(null != row)
+        if (null != row)
             row.remove("_row");
 
         return row;
@@ -172,6 +173,23 @@ public class DefaultQueryUpdateService extends AbstractQueryUpdateService
 
         return row;
     }
+
+
+/*
+    @Override
+    public List<Map<String, Object>> importRows(User user, Container container, DataIterator rows, BatchValidationException errors, Map<String, Object> extraScriptContext) throws SQLException
+    {
+        return super._importRowsUsingETL(user, container, rows, errors, extraScriptContext, true);
+    }
+
+
+    @Override
+    public List<Map<String, Object>> insertRows(User user, Container container, List<Map<String, Object>> rows, BatchValidationException errors, Map<String, Object> extraScriptContext) throws DuplicateKeyException, QueryUpdateServiceException, SQLException
+    {
+        return super._insertRowsUsingETL(user, container, rows, errors, extraScriptContext);
+    }
+*/
+
 
     @Override
     protected Map<String, Object> insertRow(User user, Container container, Map<String, Object> row)

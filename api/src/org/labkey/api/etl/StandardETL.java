@@ -52,10 +52,11 @@ import java.util.Map;
 
 public class StandardETL implements DataIteratorBuilder
 {
-    enum _op {forInsert, forUpdate}
+    protected enum _op {forInsert, forUpdate}
 
     final DataIteratorBuilder _inputBuilder;
     final TableInfo _target;
+    boolean _useImportAliases = false;
     BatchValidationException _errors;
     final Container _c;
     final User _user;
@@ -69,6 +70,7 @@ public class StandardETL implements DataIteratorBuilder
     {
         return new StandardETL(target, in, c, user, errors);
     }
+
 
     public static StandardETL forUpdate(TableInfo target, @NotNull DataIteratorBuilder in, @Nullable Container c, @NotNull User user, BatchValidationException errors)
     {
@@ -88,16 +90,10 @@ public class StandardETL implements DataIteratorBuilder
     }
 
 
-//    public StandardETL(TableInfo target, @NotNull DataIterator it, @Nullable Container c, @NotNull User user,  BatchValidationException errors)
-//    {
-//        if (!(target instanceof UpdateableTableInfo))
-//            throw new IllegalArgumentException("Must implement UpdateableTableInfo");
-//        _inputBuilder = new DataIteratorBuilder.Wrapper(it);
-//        _target = target;
-//        _c = c;
-//        _user = user;
-//        _errors = errors;
-//    }
+    public void setUseImportAliases(boolean forImport)
+    {
+        _useImportAliases = forImport;
+    }
 
 
     public BatchValidationException getErrors()
@@ -177,8 +173,8 @@ public class StandardETL implements DataIteratorBuilder
         // match up the columns, validate that there is no more than one source column that matches the target column
         //
         ValidationException setupError = new ValidationException();
+        ArrayList<ColumnInfo> matches = DataIteratorUtil.matchColumns(input, _target, _useImportAliases, setupError);
 
-        ArrayList<ColumnInfo> matches = DataIteratorUtil.matchColumns(input, _target);
         ArrayList<TranslateHelper> targetCols = new ArrayList<TranslateHelper>(input.getColumnCount()+1);
         for (int i=1 ; i<=input.getColumnCount() ; i++)
         {

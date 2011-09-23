@@ -18,6 +18,7 @@ package org.labkey.api.etl;
 
 import org.junit.Assert;
 import org.junit.Test;
+import org.labkey.api.ScrollableDataIterator;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.query.BatchValidationException;
 import org.labkey.api.util.GUID;
@@ -32,7 +33,7 @@ import java.util.Arrays;
  * Date: 2011-05-31
  * Time: 5:11 PM
  */
-public class CachingDataIterator extends AbstractDataIterator
+public class CachingDataIterator extends AbstractDataIterator implements ScrollableDataIterator
 {
     DataIterator _in;
     int _columnCount;
@@ -41,10 +42,10 @@ public class CachingDataIterator extends AbstractDataIterator
     boolean atEndOfInput = false;
 
 
-    public static DataIterator wrap(DataIterator in)
+    public static ScrollableDataIterator wrap(DataIterator in)
     {
-        if (in.isScrollable())
-            return in;
+        if (in instanceof ScrollableDataIterator && ((ScrollableDataIterator)in).isScrollable())
+            return (ScrollableDataIterator)in;
         return new CachingDataIterator(in);
     }
 
@@ -135,7 +136,7 @@ public class CachingDataIterator extends AbstractDataIterator
         {
             simpleData.setScrollable(false);
 
-            DataIterator scrollable = CachingDataIterator.wrap(simpleData);
+            ScrollableDataIterator scrollable = CachingDataIterator.wrap(simpleData);
             assertTrue(scrollable.next());
             assertEquals("1", scrollable.get(1));
             assertEquals("", scrollable.get(4));

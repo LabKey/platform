@@ -22,6 +22,7 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.junit.Assert;
 import org.junit.Test;
+import org.labkey.api.ScrollableDataIterator;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
@@ -65,7 +66,7 @@ import java.util.concurrent.Callable;
  *
  * see AliasColumn for an example
  */
-public class SimpleTranslator extends AbstractDataIterator implements DataIterator
+public class SimpleTranslator extends AbstractDataIterator implements DataIterator, ScrollableDataIterator
 {
     DataIterator _data;
     protected final ArrayList<Pair<ColumnInfo,Callable>> _outputColumns = new ArrayList<Pair<ColumnInfo,Callable>>()
@@ -443,6 +444,12 @@ public class SimpleTranslator extends AbstractDataIterator implements DataIterat
         return addColumn(col, new PassthroughColumn(fromIndex));
     }
 
+    public int addColumn(ColumnInfo from, int fromIndex)
+    {
+        ColumnInfo clone = new ColumnInfo(from);
+        return addColumn(clone, new PassthroughColumn(fromIndex));
+    }
+
     public int addColumn(String name, int fromIndex)
     {
         ColumnInfo col = new ColumnInfo(_data.getColumnInfo(fromIndex));
@@ -536,7 +543,8 @@ public class SimpleTranslator extends AbstractDataIterator implements DataIterat
         CreatedBy(When.insert),
         Created(When.insert),
         ModifiedBy(When.both),
-        Modified(When.both);
+        Modified(When.both),
+        EntityId(When.insert);
 
         SpecialColumn(When w)
         {
@@ -557,6 +565,7 @@ public class SimpleTranslator extends AbstractDataIterator implements DataIterat
         Callable containerCallable = new Callable(){public Object call() {return containerId;}};
         Callable userCallable = new Callable(){public Object call() {return userId;}};
         Callable tsCallable = new TimestampColumn();
+        Callable guidCallable = new Callable(){public Object call() {return GUID.makeGUID();}};
 
         Map<String, Integer> inputCols = getColumnNameMap();
         Map<String, Integer> outputCols = new CaseInsensitiveHashMap<Integer>();
@@ -569,6 +578,7 @@ public class SimpleTranslator extends AbstractDataIterator implements DataIterat
         addBuiltinColumn(SpecialColumn.ModifiedBy, allowPassThrough, target, inputCols, outputCols, userCallable);
         addBuiltinColumn(SpecialColumn.Created,    allowPassThrough, target, inputCols, outputCols, tsCallable);
         addBuiltinColumn(SpecialColumn.Modified,   allowPassThrough, target, inputCols, outputCols, tsCallable);
+        addBuiltinColumn(SpecialColumn.EntityId,   allowPassThrough, target, inputCols, outputCols, guidCallable);
     }
 
 
@@ -667,13 +677,13 @@ public class SimpleTranslator extends AbstractDataIterator implements DataIterat
     public void beforeFirst()
     {
         _row = null;
-        _data.beforeFirst();
+        ((ScrollableDataIterator)_data).beforeFirst();
     }
 
     @Override
     public boolean isScrollable()
     {
-        return _data.isScrollable();
+        return _data instanceof ScrollableDataIterator && ((ScrollableDataIterator)_data).isScrollable();
     }
 
     @Override

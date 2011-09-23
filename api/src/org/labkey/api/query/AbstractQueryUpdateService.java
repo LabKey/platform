@@ -18,7 +18,9 @@ package org.labkey.api.query;
 import org.apache.commons.beanutils.ConversionException;
 import org.apache.commons.beanutils.ConvertUtils;
 import org.jetbrains.annotations.NotNull;
+import org.labkey.api.collections.ArrayListMap;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
+import org.labkey.api.collections.CaseInsensitiveHashSet;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ImportAliasable;
@@ -27,10 +29,11 @@ import org.labkey.api.data.UpdateableTableInfo;
 import org.labkey.api.etl.DataIterator;
 import org.labkey.api.etl.DataIteratorBuilder;
 import org.labkey.api.etl.DataIteratorUtil;
+import org.labkey.api.etl.ListofMapsDataIterator;
 import org.labkey.api.etl.MapDataIterator;
 import org.labkey.api.etl.Pump;
 import org.labkey.api.etl.StandardETL;
-import org.labkey.api.etl.TriggerDataBuilder;
+import org.labkey.api.etl.TriggerDataBuilderHelper;
 import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.*;
 import org.labkey.api.view.NotFoundException;
@@ -88,15 +91,17 @@ public abstract class AbstractQueryUpdateService implements QueryUpdateService
      * construct the core ETL tranformation pipeline for this table, may be just StandardETL.
      * does NOT handle triggers or the insert/update iterator.
      */
-    protected DataIteratorBuilder createImportETL(User user, Container container, DataIteratorBuilder data, BatchValidationException errors)
+    protected DataIteratorBuilder createImportETL(User user, Container container, DataIteratorBuilder data, BatchValidationException errors, boolean forImport)
     {
         StandardETL etl = StandardETL.forInsert(getQueryTable(), data, container, user, errors);
+        etl.setUseImportAliases(forImport);
         DataIteratorBuilder insert = ((UpdateableTableInfo)getQueryTable()).persistRows(etl, errors);
         return insert;
     }
 
 
-    /** @deprecated implementation to use insertRows() while we migrate to using ETL for all code paths
+    /**
+     * Implementation to use insertRows() while we migrate to using ETL for all code paths
      *
      * DataIterator should/must use same error collection as passed in
      */
@@ -136,7 +141,11 @@ public abstract class AbstractQueryUpdateService implements QueryUpdateService
     }
 
 
-    protected List<Map<String, Object>> _importRowsUsingETL(User user, Container container, DataIterator rows, BatchValidationException errors, Map<String, Object> extraScriptContext) throws DuplicateKeyException, BatchValidationException, QueryUpdateServiceException, SQLException
+    //
+    // TODO do import and insert have different behavior wrt importAlaises?
+    //
+    protected List<Map<String, Object>> _importRowsUsingETL(User user, Container container, DataIterator rows, BatchValidationException errors, Map<String, Object> extraScriptContext, boolean forImport)
+            throws SQLException
     {
         if (!hasPermission(user, InsertPermission.class))
             throw new UnauthorizedException("You do not have permission to insert data into this table.");
@@ -145,12 +154,13 @@ public abstract class AbstractQueryUpdateService implements QueryUpdateService
 
         boolean hasTableScript = hasTableScript(container);
         DataIteratorBuilder in = new DataIteratorBuilder.Wrapper(rows);
+        TriggerDataBuilderHelper helper = new TriggerDataBuilderHelper(getQueryTable(), container, extraScriptContext, forImport);
         if (hasTableScript)
-            in = TriggerDataBuilder.before(in, getQueryTable(), container);
-        DataIteratorBuilder importETL = createImportETL(user, container, in, errors);
+            in = helper.before(in);
+        DataIteratorBuilder importETL = createImportETL(user, container, in, errors, forImport);
         DataIteratorBuilder out = importETL;
         if (hasTableScript)
-            out = TriggerDataBuilder.after(importETL, getQueryTable(), container);
+            out = helper.after(importETL);
 
         Pump pump = new Pump(out, errors);
         pump.run();
@@ -160,7 +170,8 @@ public abstract class AbstractQueryUpdateService implements QueryUpdateService
 
 
     @Override
-    public List<Map<String, Object>> importRows(User user, Container container, DataIterator rows, BatchValidationException errors, Map<String, Object> extraScriptContext) throws SQLException
+    public List<Map<String, Object>> importRows(User user, Container container, DataIterator rows, BatchValidationException errors, Map<String, Object> extraScriptContext)
+            throws SQLException
     {
         return _importRowsUsingInsertRows(user,container,rows,errors,extraScriptContext);
     }
@@ -177,13 +188,36 @@ public abstract class AbstractQueryUpdateService implements QueryUpdateService
 
 
     protected List<Map<String, Object>> _insertRowsUsingETL(User user, Container container, List<Map<String, Object>> rows, BatchValidationException errors, Map<String, Object> extraScriptContext)
-            throws DuplicateKeyException, BatchValidationException, QueryUpdateServiceException, SQLException
+            throws DuplicateKeyException, QueryUpdateServiceException, SQLException
     {
         if (!hasPermission(user, InsertPermission.class))
             throw new UnauthorizedException("You do not have permission to insert data into this table.");
 
-        throw new UnsupportedOperationException();
-        //importRows(user, container, toDataIterator(rows), extraScriptContext);
+        ListofMapsDataIterator di = _toDataIterator(rows);
+        di.setDebugName(getClass().getSimpleName() + ".insertRows()");
+        return _importRowsUsingETL(user, container, di, errors, extraScriptContext, false);
+    }
+
+
+    private ListofMapsDataIterator _toDataIterator(List<Map<String, Object>> rows)
+    {
+        // TODO probably can't assume all rows have all columsn
+        // TODO can we assume that all rows refer to columns consistently? (not PTID and MouseId for the same column)
+        // TODO optimize ArrayListMap?
+        Set<String> colNames;
+
+        if (rows.size() > 0 && rows.get(0) instanceof ArrayListMap)
+        {
+            colNames = ((ArrayListMap)rows.get(0)).getFindMap().keySet();
+        }
+        else
+        {
+            colNames = new CaseInsensitiveHashSet();
+            for (Map<String,Object> row : rows)
+                colNames.addAll(row.keySet());
+        }
+
+        return new ListofMapsDataIterator(colNames, rows);
     }
 
 
@@ -247,7 +281,6 @@ public abstract class AbstractQueryUpdateService implements QueryUpdateService
         {
             assert x == errors;
             assert x.hasErrors();
-            x = errors;
         }
         return null;
     }

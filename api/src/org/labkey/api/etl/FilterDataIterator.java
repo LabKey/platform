@@ -64,10 +64,4 @@ public abstract class FilterDataIterator extends AbstractDataIterator
     {
         throw new NotImplementedException();
     }
-
-    @Override
-    public boolean isScrollable()
-    {
-        return false;
-    }
 }

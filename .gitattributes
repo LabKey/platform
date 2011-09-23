@@ -14,6 +14,7 @@ api/src/org/json/JSONWriter.java -text
 api/src/org/json/Test.java -text
 api/src/org/json/XML.java -text
 api/src/org/json/XMLTokener.java -text
+api/src/org/labkey/api/ScrollableDataIterator.java -text
 api/src/org/labkey/api/action/AbstractFileUploadAction.java -text
 api/src/org/labkey/api/action/AjaxAction.java -text
 api/src/org/labkey/api/action/AjaxCompletionAction.java -text
@@ -322,8 +323,9 @@ api/src/org/labkey/api/etl/StandardETL.java -text
 api/src/org/labkey/api/etl/StatementDataIterator.java -text
 api/src/org/labkey/api/etl/StringTestIterator.java -text
 api/src/org/labkey/api/etl/TableInsertDataIterator.java -text
-api/src/org/labkey/api/etl/TriggerDataBuilder.java -text
+api/src/org/labkey/api/etl/TriggerDataBuilderHelper.java -text
 api/src/org/labkey/api/etl/ValidatorIterator.java -text
+api/src/org/labkey/api/etl/WrapperDataIterator.java -text
 api/src/org/labkey/api/exp/AbstractParameter.java -text
 api/src/org/labkey/api/exp/ChangePropertyDescriptorException.java -text
 api/src/org/labkey/api/exp/DomainDescriptor.java -text

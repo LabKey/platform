@@ -1429,6 +1429,12 @@ public class CachedResultSet implements ResultSet, Table.TableResultSet
     private class DataIteratorAdapter implements DataIterator
     {
         @Override
+        public String getDebugName()
+        {
+            return "CachedResultSet.DataIteratorAdapter";
+        }
+
+        @Override
         public int getColumnCount()
         {
             return getColumnCount();
@@ -1450,18 +1456,6 @@ public class CachedResultSet implements ResultSet, Table.TableResultSet
         public Object get(int i)
         {
             return null;  //To change body of implemented methods use File | Settings | File Templates.
-        }
-
-        @Override
-        public boolean isScrollable()
-        {
-            return false;  //To change body of implemented methods use File | Settings | File Templates.
-        }
-
-        @Override
-        public void beforeFirst()
-        {
-            //To change body of implemented methods use File | Settings | File Templates.
         }
 
         @Override

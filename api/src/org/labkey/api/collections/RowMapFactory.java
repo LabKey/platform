@@ -52,7 +52,7 @@ public class RowMapFactory<V>
             _findMap.put(keys[i], i);
     }
 
-    protected RowMap<V> getRowMap()
+    public RowMap<V> getRowMap()
     {
         return new RowMap<V>(_findMap);
     }
@@ -67,7 +67,10 @@ public class RowMapFactory<V>
         return new RowMap<V>(_findMap, Arrays.asList(row));      // TODO: Pass through actual array?  Different class?  Static factory?
     }
 
-    /* will ignore values in source map that do not have values in the findmap */
+    /**
+     * Will ignore values in source map that do not have values in the findmap.
+     * use getRowMap().putAll() to add all values
+     */
     public RowMap<V> getRowMap(Map<String,V> source)
     {
         RowMap<V> to = new RowMap<V>(_findMap);
