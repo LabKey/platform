@@ -99,6 +99,12 @@ public abstract class AbstractAssayAPIAction<FORM extends SimpleApiJsonForm> ext
         {
             fieldKeys.add(FieldKey.fromParts(property.getName()));
         }
+
+        if (fieldKeys.isEmpty())
+        {
+            return new JSONArray();
+        }
+
         TableInfo tableInfo = provider.createDataTable(AssayService.get().createSchema(user, data.getContainer()), protocol, true);
         Map<FieldKey, ColumnInfo> columns = QueryService.get().getColumns(tableInfo, fieldKeys);
         assert columns.size() == fieldKeys.size() : "Missing a column for at least one of the properties";

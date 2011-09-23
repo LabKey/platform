@@ -189,6 +189,8 @@ public class CoreQuerySchema extends UserSchema
         defCols.add(FieldKey.fromParts("Container"));
         principals.setDefaultVisibleColumns(defCols);
 
+        principals.getColumn("Container").setFk(new ContainerForeignKey());
+
         //filter out inactive
         principals.addCondition(new SQLFragment("Active=?", true));
 
