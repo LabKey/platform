@@ -482,8 +482,11 @@ LABKEY.vis.ChartEditorMeasurePanel = Ext.extend(Ext.FormPanel, {
                         index = store.find('name', visitDateStr);
                     }
 
-                    this.measureDateCombo.setValue(store.getAt(index).get('name'));
-                    this.measures[measureIndex].dateCol = Ext.apply({}, store.getAt(index).data);
+                    if (store.getAt(index))
+                    {
+                        this.measureDateCombo.setValue(store.getAt(index).get('name'));
+                        this.measures[measureIndex].dateCol = Ext.apply({}, store.getAt(index).data);
+                    }
 
                     // this is one of the requests being tracked, see if the rest are done
                     this.fireEvent('measureMetadataRequestComplete');
