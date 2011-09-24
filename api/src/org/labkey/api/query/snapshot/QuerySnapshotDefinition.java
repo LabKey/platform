@@ -44,6 +44,8 @@ public interface QuerySnapshotDefinition
     void setColumns(List<FieldKey> columns);
     void setFilter(String filter);
     String getFilter();
+    List<Integer> getParticipantGroups();
+    void setParticipantGroups(List<Integer> groups);
 
     Date getCreated();
     Date getLastUpdated();
