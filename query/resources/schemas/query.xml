@@ -105,6 +105,7 @@
             <ns:column columnName="Schema"/>
             <ns:column columnName="Columns"/>
             <ns:column columnName="Filter"/>
+            <ns:column columnName="ParticipantGroups"/>
             <ns:column columnName="LastUpdated"/>
             <ns:column columnName="NextUpdate"/>
             <ns:column columnName="UpdateDelay"/>

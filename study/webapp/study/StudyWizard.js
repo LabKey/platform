@@ -172,7 +172,7 @@ LABKEY.study.CreateStudyWizard = Ext.extend(Ext.util.Observable, {
             }
             this.info.name = newValue;
             this.info.dstPath = path + '/' + this.info.name;
-            studyLocation.setValue(path + '/' + this.info.name);
+            studyLocation.setValue(this.info.dstPath);
         }
 
         function nameChange(txtField){
@@ -354,8 +354,8 @@ LABKEY.study.CreateStudyWizard = Ext.extend(Ext.util.Observable, {
                     this.existingGroupRadio,
                     noGroupRadio
                 ]
-            },
-            this.copyParticipantGroups
+            }
+            //this.copyParticipantGroups
         ];
 
         var formPanel = new Ext.Panel({
@@ -524,7 +524,8 @@ LABKEY.study.CreateStudyWizard = Ext.extend(Ext.util.Observable, {
                     emptyText: "No groups to display.",
                     width: 250,
                     autoScroll: true,
-                    singleSelect: true,
+                    multiSelect: true,
+                    simpleSelect: true,
                     columnSort: false,
                     columns:[
                         {
@@ -658,34 +659,31 @@ LABKEY.study.CreateStudyWizard = Ext.extend(Ext.util.Observable, {
         params.description = this.info.description;
         params.srcPath = LABKEY.ActionURL.getContainer();
         params.dstPath = this.info.dstPath;
-        params.datasets = [];
 
+        var hiddenFields = [];
         if(this.existingGroupRadio.checked)
         {
-            params.categories = [];
-
-            //If we chose an existing group then we just pass the rowid of the group.
+            // If we chose an existing group then we just pass the rowid of the group, because of a bug in ie
+            // we add categories and datasets as hidden form fields to the form so the arrays get
+            // serialized correctly
             for (var i=0; i < this.info.existingCategories.length; i++)
             {
                 var category = this.info.existingCategories[i];
-                params.categories.push(category.get('rowId'));
+                var id = Ext.id();
+                hiddenFields.push(id);
+                this.nameFormPanel.add({xtype:'hidden', id: id, name: 'categories', value: category.get('rowId')});
             }
         }
-/*
-        else
-        {
-            //If it's a new group we pass the categoryData from the newGroupPanel.
-            params.categories = [this.newGroupPanel.getCategoryData()];
-        }
-*/
-        params.copyParticipantGroups = this.copyParticipantGroups.checked;
+        params.copyParticipantGroups = true;//this.copyParticipantGroups.checked;
 
         for (var i=0; i < this.info.datasets.length; i++)
         {
             var ds = this.info.datasets[i];
-
-            params.datasets.push(ds.data.DataSetId);
+            var id = Ext.id();
+            hiddenFields.push(id);
+            this.nameFormPanel.add({xtype:'hidden', id: id, name: 'datasets', value: ds.data.DataSetId});
         }
+        this.nameFormPanel.doLayout();
 
         var form = this.snapshotOptions.getForm();
         var refreshOptions = form.getValues();
@@ -713,6 +711,11 @@ LABKEY.study.CreateStudyWizard = Ext.extend(Ext.util.Observable, {
             },
             failure: function(response, opts){
                 this.win.getEl().unmask();
+
+                // need to clean up the added hidden form fields
+                for (var i=0; i < hiddenFields.length; i++)
+                    this.nameFormPanel.remove(hiddenFields[i]);
+                this.nameFormPanel.doLayout();
 
                 var jsonResponse = Ext.util.JSON.decode(opts.response.responseText);
                 if (jsonResponse && jsonResponse.exception)

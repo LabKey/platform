@@ -21,10 +21,12 @@ import org.labkey.api.action.NullSafeBindException;
 import org.labkey.api.action.SpringActionController;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.data.ColumnInfo;
+import org.labkey.api.data.CompareType;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.DbSchema;
 import org.labkey.api.data.DisplayColumn;
+import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.TSVGridWriter;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.UnionTableInfo;
@@ -54,6 +56,7 @@ import org.labkey.api.security.User;
 import org.labkey.api.settings.AppProps;
 import org.labkey.api.study.DataSet;
 import org.labkey.api.study.Study;
+import org.labkey.api.study.StudyService;
 import org.labkey.api.util.ContextListener;
 import org.labkey.api.util.ExceptionUtil;
 import org.labkey.api.util.IdentifierString;
@@ -66,6 +69,8 @@ import org.labkey.api.writer.ContainerUser;
 import org.labkey.study.StudyServiceImpl;
 import org.labkey.study.controllers.StudyController;
 import org.labkey.study.model.DataSetDefinition;
+import org.labkey.study.model.ParticipantCategory;
+import org.labkey.study.model.ParticipantGroupManager;
 import org.labkey.study.model.StudyImpl;
 import org.labkey.study.model.StudyManager;
 import org.labkey.study.query.DataSetQueryView;
@@ -227,6 +232,25 @@ public class DatasetSnapshotProvider extends AbstractSnapshotProvider implements
             QuerySettings settings = new QuerySettings(context, QueryView.DATAREGIONNAME_DEFAULT);
 
             settings.setQueryName(queryDef.getName());
+
+            // set the base filter for any specified participant groups
+            List<Integer> groups = qsDef.getParticipantGroups();
+            if (!groups.isEmpty())
+            {
+                SimpleFilter filter = new SimpleFilter();
+                SimpleFilter.OrClause or = new SimpleFilter.OrClause();
+
+                for (Integer groupId : groups)
+                {
+                    ParticipantCategory category = ParticipantGroupManager.getInstance().getParticipantCategory(queryDef.getContainer(), context.getUser(), groupId);
+                    FieldKey fieldKey = FieldKey.fromParts(StudyService.get().getSubjectColumnName(queryDef.getContainer()), category.getLabel());
+
+                    or.addClause(new CompareType.CompareClause(fieldKey.toString(), CompareType.EQUAL, category.getLabel()));
+                }
+                filter.addClause(or);
+                settings.setBaseFilter(filter);
+            }
+
             QueryView view = ((UserSchema)querySchema).createView(context, settings, errors);
 
             //if (!qsDef.getColumns().isEmpty() || !StringUtils.isBlank(qsDef.getFilter()))
@@ -236,6 +260,7 @@ public class DatasetSnapshotProvider extends AbstractSnapshotProvider implements
 
                 if (!qsDef.getColumns().isEmpty())
                     custView.setColumns(qsDef.getColumns());
+
                 if (!StringUtils.isBlank(qsDef.getFilter()))
                     custView.setFilterAndSort(qsDef.getFilter());
 

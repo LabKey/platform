@@ -16,6 +16,7 @@
 package org.labkey.query;
 
 import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang.math.NumberUtils;
 import org.apache.log4j.Logger;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
@@ -176,6 +177,27 @@ public class QuerySnapshotDefImpl implements QuerySnapshotDefinition
     public void setColumns(List<FieldKey> columns)
     {
         edit().setColumns(StringUtils.join(columns.iterator(), "&"));
+    }
+
+    @Override
+    public List<Integer> getParticipantGroups()
+    {
+        String[] values = StringUtils.split(_snapshotDef.getParticipantGroups(), ",");
+        List<Integer> ret = new ArrayList<Integer>();
+        if (values != null)
+            for (String entry : values)
+            {
+                Integer group = NumberUtils.createInteger(entry);
+                if (group != null)
+                    ret.add(group);
+            }
+        return Collections.unmodifiableList(ret);
+    }
+
+    @Override
+    public void setParticipantGroups(List<Integer> groups)
+    {
+        edit().setParticipantGroups(StringUtils.join(groups.iterator(), ","));
     }
 
     public Date getCreated()

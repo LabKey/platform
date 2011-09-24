@@ -234,13 +234,10 @@ public class CreateAncillaryStudyAction extends MutatingApiAction<EmphasisStudyD
 
         QuerySnapshotService.I svc = QuerySnapshotService.get(StudyManager.getSchemaName());
 
-        ActionURL filterURL = new ActionURL(CreateAncillaryStudyAction.class, container);
+        List<Integer> participantGroups = new ArrayList<Integer>();
         for (ParticipantCategory category : _participantCategories)
         {
-            for (ParticipantGroup group : category.getGroups())
-            {
-                group.addURLFilter(filterURL, container, DataSetQueryView.DATAREGION);
-            }
+            participantGroups.add(category.getRowId());
         }
 
         for (DataSetDefinition def : _datasets)
@@ -255,12 +252,8 @@ public class CreateAncillaryStudyAction extends MutatingApiAction<EmphasisStudyD
 
                 QuerySnapshotDefinition qsDef = QueryService.get().createQuerySnapshotDef(newStudy.getContainer(), queryDef, def.getLabel());
                 qsDef.setUpdateDelay(form.getUpdateDelay());
+                qsDef.setParticipantGroups(participantGroups);
 
-                // use a temporary custom view to build a fiter for the participant groups
-                CustomView custView = queryDef.createCustomView(user, "tempCustomView");
-                custView.setFilterAndSortFromURL(filterURL, DataSetQueryView.DATAREGION);
-
-                qsDef.setFilter(custView.getFilterAndSort());
                 qsDef.save(user);
 
                 if (svc != null)
