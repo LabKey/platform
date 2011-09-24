@@ -16,8 +16,12 @@
 
 package org.labkey.api.study;
 
+import org.labkey.api.attachments.Attachment;
+import org.labkey.api.attachments.AttachmentFile;
 import org.labkey.api.security.User;
 
+import java.io.IOException;
+import java.sql.SQLException;
 import java.util.Date;
 import java.util.List;
 
@@ -56,4 +60,11 @@ public interface Study extends StudyEntity
     String getSearchBody();
 
     String getDescription();
+
+    void attachProtocolDocument(List<AttachmentFile> files , User user)  throws SQLException, IOException;
+
+    void updateProtocolDocument(List<AttachmentFile> files, User user)  throws SQLException, IOException;
+
+    List<Attachment> getProtocolDocuments ();
+
 }
