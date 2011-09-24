@@ -934,11 +934,22 @@ LABKEY.DataRegion = Ext.extend(Ext.Component,
         this.includeHeader = this.headerRow.isDisplayed();
 
         // initialize row contents
-        this.rowContent         = Ext.query(" > td[class*=labkey-column-header]", this.colHeaderRow.id);
-        this.rowSpacerContent   = Ext.query(" > td[class*=labkey-column-header]", this.colHeaderRowSpacer.id);
+        this.rowContent         = Ext.query(" > td[class*=labkey-column-header]",      this.colHeaderRow.id);
+        this.rowSpacerContent   = Ext.query(" > td[class*=labkey-column-header]",      this.colHeaderRowSpacer.id);
+        this.firstRow           = Ext.query("tr[class=labkey-alternate-row]:first td", this.table.id);
+
+        if (this.firstRow.length == 0)
+        {
+            this.firstRow = Ext.query("tr[class=labkey-row]:first td", this.table.id);
+            if (this.firstRow.length == 0)
+            {
+                this._allowHeaderLock = false;
+                return;
+            }
+        }
 
         // performance degradation
-        if (this.rowContent.length > 30)
+        if (this.rowContent.length > 40 && !Ext.isChrome)
         {
             this._allowHeaderLock = false;
             return;
@@ -950,9 +961,9 @@ LABKEY.DataRegion = Ext.extend(Ext.Component,
         Ext.EventManager.on(window, "scroll", this._scrollContainer, this);
 
         // initialize timer task for resizing and scrolling
-        this.first = -1;
+        this.hdrCoord = -1;
         this.resizeTask = new Ext.util.DelayedTask(function(){
-            this.first = -1;
+            this.hdrCoord = -1;
             this._resetHeader();
             this._calculateHeader();
         }, this);
@@ -966,21 +977,21 @@ LABKEY.DataRegion = Ext.extend(Ext.Component,
     },
 
     _calculateHeaderLock : function() {
-        var el, z, s;
+        var el, z, s, src;
         for (var i=0; i < this.rowContent.length; i++) {
-            el = Ext.get(this.rowContent[i]);
-            s = { width : el.getWidth(), height: el.getHeight() };
+            src = Ext.get(this.firstRow[i]);
+            el  = Ext.get(this.rowContent[i]);
+            s   = { width : src.getWidth(), height: el.getHeight() };
             el.setSize(s);
-            z = Ext.get(this.rowSpacerContent[i]); // must be done after 'el' is set (ext side-effect?)
+            z   = Ext.get(this.rowSpacerContent[i]); // must be done after 'el' is set (ext side-effect?)
             z.setSize(s);
         }
 
-        if (this.first < 0) this.first = this._findPos((this.includeHeader ? this.headerRow : this.colHeaderRow));
+        if (this.hdrCoord < 0) this.hdrCoord = this._findPos((this.includeHeader ? this.headerRow : this.colHeaderRow));
         this.hdrLocked = false;
     },
 
     _findPos : function(o) {
-        // TODO: look for Ext optimized function -- possibly use o.getXY()
         var obj = o.dom;
         var curleft = curtop = 0;
         if (obj && obj.offsetParent) {
@@ -1000,28 +1011,30 @@ LABKEY.DataRegion = Ext.extend(Ext.Component,
     // WARNING: This function is called often. Performance implications for each line.
     _scrollContainer : function() {
         // calculate Y scrolling
-        if (window.pageYOffset > this.first[1] && window.pageYOffset < this.first[2]) {
-            var tWidth = this.table.getComputedWidth();
-            this.headerSpacer.dom.style.display = "table-row";
-            this.colHeaderRowSpacer.dom.style.display = "table-row";
-            this.headerRow.applyStyles("top: 0; position: fixed; " +
-                    "min-width: " + tWidth + "px; ");
-            this.headerRowContent.applyStyles("min-width: " + (tWidth-4) + "px; ");
-            this.colHeaderRow.applyStyles("position: fixed; background: white; top: " + this.first[3] + "px;" +
-                    "min-width: " + tWidth + "px; box-shadow: -2px 5px 5px #DCDCDC;");
-            this.hdrLocked = true;
+        if (window.pageYOffset > this.hdrCoord[1] && window.pageYOffset < this.hdrCoord[2]) {
+                var tWidth = this.table.getComputedWidth();
+                this.headerSpacer.dom.style.display = "table-row";
+                this.colHeaderRowSpacer.dom.style.display = "table-row";
+                this.headerRow.applyStyles("top: 0; position: fixed; " +
+                        "min-width: " + tWidth + "px; ");
+                this.headerRowContent.applyStyles("min-width: " + (tWidth-3) + "px; ");
+                this.colHeaderRow.applyStyles("position: fixed; background: white; top: " + this.hdrCoord[3] + "px;" +
+                        "min-width: " + tWidth + "px; box-shadow: -2px 5px 5px #DCDCDC;");
+                this.hdrLocked = true;
         }
-        else if (this.hdrLocked && window.pageYOffset >= this.first[2]) {
-            var top = this.first[2]-window.pageYOffset;
+        else if (this.hdrLocked && window.pageYOffset >= this.hdrCoord[2]) {
+            var top = this.hdrCoord[2]-window.pageYOffset;
             this.headerRow.applyStyles("top: " + top + "px;");
-            this.colHeaderRow.applyStyles("top: " + (top + this.first[3]) + "px;");
+            this.colHeaderRow.applyStyles("top: " + (top + this.hdrCoord[3]) + "px;");
         }
-        else { this._resetHeader(); }
+        else if (this.hdrLocked) {
+            this._resetHeader();
+        }
 
         // Calculate X Scrolling
         if (this.hdrLocked && window.pageXOffset > 0) {
-            this.headerRow.applyStyles("left: " + (this.first[0]-window.pageXOffset) + "px;");
-            this.colHeaderRow.applyStyles("left: " + (this.first[0]-window.pageXOffset) + "px;");
+            this.headerRow.applyStyles("left: " + (this.hdrCoord[0]-window.pageXOffset) + "px;");
+            this.colHeaderRow.applyStyles("left: " + (this.hdrCoord[0]-window.pageXOffset) + "px;");
         }
         else if (window.pageXOffset == 0) {
             this.headerRow.applyStyles("left: auto;");
@@ -1032,11 +1045,13 @@ LABKEY.DataRegion = Ext.extend(Ext.Component,
     // puts header back in normal spot
     _resetHeader : function() {
         this.hdrLocked = false;
-        this.headerRow.applyStyles("top: auto; position: static;");
-        this.colHeaderRow.applyStyles("top: auto; position: static; box-shadow: none;");
+        this.headerRow.applyStyles("top: auto; position: static; min-width: 0;");
+        this.headerRowContent.applyStyles("min-width: 0;");
+        this.colHeaderRow.applyStyles("top: auto; position: static; box-shadow: none; min-width: 0;");
         this.headerSpacer.dom.style.display = "none";
         this.headerSpacer.setHeight(this.headerRow.getHeight());
         this.colHeaderRowSpacer.dom.style.display = "none";
+        this._calculateHeader();
     },
 
     // private
@@ -1049,25 +1064,11 @@ LABKEY.DataRegion = Ext.extend(Ext.Component,
     },
 
     // private
-    _resizeContainer : function (init)
+    _resizeContainer : function ()
     {
         if (!this.table) return;
 
-        var headerWidth = this.table.getWidth(true);
-
-        if (this.header)
-        {
-            var frameWidth = this.header.getFrameWidth("lr") + this.header.parent().getFrameWidth("lr");
-            this.header.setWidth(headerWidth - frameWidth);
-        }
-
-        if (this.footer)
-        {
-            var frameWidth = this.footer.getFrameWidth("lr") + this.footer.parent().getFrameWidth("lr");
-            this.footer.setWidth(headerWidth - frameWidth);
-        }
-
-        if (init !== true && this.headerLock()) {
+        if (this.headerLock()) {
             if (this.resizeTask) this.resizeTask.delay(110);
         }
     },
