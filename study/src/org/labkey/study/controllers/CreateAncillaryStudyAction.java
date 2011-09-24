@@ -30,7 +30,6 @@ import org.labkey.api.module.FolderType;
 import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.portal.ProjectUrls;
 import org.labkey.api.query.CustomView;
-import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.QueryDefinition;
 import org.labkey.api.query.QueryService;
 import org.labkey.api.query.snapshot.QuerySnapshotDefinition;
@@ -42,7 +41,6 @@ import org.labkey.api.study.Study;
 import org.labkey.api.study.StudyService;
 import org.labkey.api.util.FileUtil;
 import org.labkey.api.util.PageFlowUtil;
-import org.labkey.api.util.Pair;
 import org.labkey.api.util.XmlBeansUtil;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.writer.Archive;
@@ -122,12 +120,12 @@ public class CreateAncillaryStudyAction extends MutatingApiAction<EmphasisStudyD
         {
             scope.ensureTransaction();
 
-            // TODO : save the study protocol document via the attachment service 
             List<AttachmentFile> files = getAttachmentFileList();
 
             StudyImpl newStudy = createNewStudy(form);
             if (newStudy != null)
             {
+                newStudy.attachProtocolDocument(files, getViewContext().getUser());
                 // get the list of datasets to export
                 for (int datasetId : form.getDatasets())
                 {

@@ -432,6 +432,10 @@ public class StudyManager
         assert null != study.getContainer();
         if (study.getLsid() == null)
             study.initLsid();
+
+        if(study.getProtocolDocumentEntityId() == null)
+            study.setProtocolDocumentEntityId(GUID.makeGUID());
+
         study = _studyHelper.create(user, study);
 
         //note: we no longer copy the container's policy to the study upon creation

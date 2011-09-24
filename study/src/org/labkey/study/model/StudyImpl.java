@@ -18,6 +18,11 @@ package org.labkey.study.model;
 
 import org.apache.commons.lang.StringUtils;
 import org.jetbrains.annotations.NotNull;
+import org.labkey.api.attachments.Attachment;
+import org.labkey.api.attachments.AttachmentFile;
+import org.labkey.api.attachments.AttachmentParent;
+import org.labkey.api.attachments.AttachmentService;
+import org.labkey.api.data.AttachmentParentEntity;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
 import org.labkey.api.exp.Lsid;
@@ -36,6 +41,7 @@ import org.labkey.study.SampleManager;
 import org.labkey.study.query.StudyQuerySchema;
 import org.labkey.study.samples.settings.RepositorySettings;
 
+import java.io.IOException;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -81,6 +87,7 @@ public class StudyImpl extends ExtensibleStudyEntity<StudyImpl> implements Study
     private String _subjectNounPlural;
     private String _subjectColumnName;
     private String _description;
+    private String _protocolDocumentEntityId;
 
     public StudyImpl()
     {
@@ -507,6 +514,47 @@ public class StudyImpl extends ExtensibleStudyEntity<StudyImpl> implements Study
         _description = description;
     }
 
+    public String getProtocolDocumentEntityId()
+    {
+        return _protocolDocumentEntityId;
+    }
+
+    public void setProtocolDocumentEntityId(String protocolDocumentEntityId)
+    {
+        _protocolDocumentEntityId = protocolDocumentEntityId;
+    }
+
+    public void attachProtocolDocument(List<AttachmentFile> files , User user)  throws SQLException, IOException
+    {
+        AttachmentParent parent = new ProtocolDocumentAttachmentParent(getContainer(), getProtocolDocumentEntityId());
+        AttachmentService.get().addAttachments(parent, files, user);
+    }
+
+    public void updateProtocolDocument(List<AttachmentFile> files , User user)  throws SQLException, IOException
+    {
+        // Here we want to delete the current attachment, and then upload a new one. In the future this might
+        // need to be changed to delete a specific protocol doc in the case that we have more than one doc, but
+        // at the moment we only plan to have one document.
+        AttachmentParent parent = new ProtocolDocumentAttachmentParent(getContainer(), getProtocolDocumentEntityId());
+        AttachmentService.get().deleteAttachments(parent);
+        attachProtocolDocument(files, user);
+    }
+
+    public List<Attachment> getProtocolDocuments()
+    {
+        AttachmentParent parent = new ProtocolDocumentAttachmentParent(getContainer(), getProtocolDocumentEntityId());
+        return new ArrayList<Attachment>(AttachmentService.get().getAttachments(parent));
+    }
+
+    public class ProtocolDocumentAttachmentParent extends AttachmentParentEntity
+    {
+        public ProtocolDocumentAttachmentParent(Container c, String entityId)
+        {
+            setContainer(c.getId());
+            setEntityId(null==entityId?null:entityId);
+        }
+    }
+
     @Override
     public String getSearchDisplayTitle()
     {
@@ -521,6 +569,7 @@ public class StudyImpl extends ExtensibleStudyEntity<StudyImpl> implements Study
         appendKeyword(sb, getLabel());
         appendKeyword(sb, getSubjectNounSingular());
         appendKeyword(sb, getContainer().getName());
+        appendKeyword(sb, getDescription());
 
         return sb.toString();
     }
