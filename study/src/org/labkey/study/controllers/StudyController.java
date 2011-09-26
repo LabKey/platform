@@ -6864,6 +6864,7 @@ public class StudyController extends BaseStudyController
                         ViewInfo view = new ViewInfo(ds.getLabel(), "Dataset");
 
                         view.setCategory(ds.getCategory());
+                        view.setDescription(ds.getDescription());
                         view.setIcon(getViewContext().getContextPath() + "/reports/grid.gif");
                         view.setRunUrl(new ActionURL(DefaultDatasetReportAction.class, getContainer()).addParameter("datasetId", ds.getDataSetId()));
                         view.setContainer(ds.getContainer());
