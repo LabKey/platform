@@ -43,6 +43,8 @@ public interface DataSet<T extends DataSet> extends StudyEntity, StudyCachable<T
 
     String getCategory();
 
+    String getDescription();
+
     int getDataSetId();
 
     String getTypeURI();

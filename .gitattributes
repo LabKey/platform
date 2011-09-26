@@ -2484,6 +2484,7 @@ api/webapp/ext-4.0.2a/ext-all-dev.js -text
 api/webapp/ext-4.0.2a/ext-all.js -text
 api/webapp/ext-4.0.2a/ext-debug.js -text
 api/webapp/ext-4.0.2a/ext-dev.js -text
+api/webapp/ext-4.0.2a/ext-patches.js -text
 api/webapp/ext-4.0.2a/ext.js -text
 api/webapp/ext-4.0.2a/ext3-sb-compat.js -text
 api/webapp/ext-4.0.2a/ext3-sb-core-compat.js -text

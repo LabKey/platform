@@ -242,6 +242,7 @@ LABKEY.requiresExt4Sandbox = function(immediate)
 
     LABKEY.requiresCss(LABKEY.extJsRoot_40 + '/resources/css/ext-sandbox.css', true);
     LABKEY.requiresScript(LABKEY.extJsRoot_40 + "/ext-all-dev.js", immediate);
+    LABKEY.requiresScript(LABKEY.extJsRoot_40 + "/ext-patches.js", immediate);
 };
 
 // adds the compatibility layer to be used on the Ext4 sandbox components
