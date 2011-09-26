@@ -152,6 +152,8 @@ public abstract class Stats
     public static final StatDefinition COUNT = new StatDefinition("Count");
     public static final StatDefinition SUM = new StatDefinition("Sum");
     public static final StatDefinition MEAN = new StatDefinition("Mean");
+    public static final StatDefinition GEOMETRIC_MEAN = new StatDefinition("GeomMean");
+    //public static final StatDefinition MODE = new StatDefinition("Mode");
     public static final StatDefinition MIN = new StatDefinition("Min");
     public static final StatDefinition MAX = new StatDefinition("Max");
     public static final StatDefinition STDDEV = new StatDefinition("StdDev");
@@ -166,6 +168,8 @@ public abstract class Stats
         ALL_STATS.add(COUNT);
         ALL_STATS.add(SUM);
         ALL_STATS.add(MEAN);
+        ALL_STATS.add(GEOMETRIC_MEAN);
+        //ALL_STATS.add(MODE);
         ALL_STATS.add(MIN);
         ALL_STATS.add(MAX);
         ALL_STATS.add(STDDEV);
@@ -281,12 +285,14 @@ public abstract class Stats
         protected double max;
         protected double var;
         protected double stdDev;
+        protected double geomMean;
         protected int count;
         protected double sum;
         protected double[] data;
         private boolean sorted = false;
         private DecimalFormat formatter = new DecimalFormat("0.###");
 
+        private Double mode;
         private Double median;
         private Double mad;
 
@@ -307,15 +313,19 @@ public abstract class Stats
                 max = Double.NaN;
                 min = Double.NaN;
                 mean = Double.NaN;
+                mode = Double.NaN;
                 stdDev = Double.NaN;
+                geomMean = Double.NaN;
                 return;
             }
 
             if (data.length == 1)
             {
                 mean = data[0];
+                mode = data[0];
                 stdDev = Double.NaN;
                 var = Double.NaN;
+                geomMean = Double.NaN;
                 min = data[0];
                 max = data[0];
                 sum = data[0];
@@ -326,7 +336,9 @@ public abstract class Stats
             double min = Double.POSITIVE_INFINITY;
             double max = Double.NEGATIVE_INFINITY;
             final int n = data.length;
+            double sumLogs = 0;
             double sumSquares = 0;
+            int positiveCount = 0;
             mean = 0.0;
             for (int i = 0; i < n; i++)
             {
@@ -337,6 +349,11 @@ public abstract class Stats
                 count ++;
                 sum += d;
                 sumSquares += (d * d);
+                if (d > 0)
+                {
+                    positiveCount++;
+                    sumLogs += Math.log10(d);
+                }
                 if (d < min)
                     min = d;
                 if (d > max)
@@ -345,7 +362,7 @@ public abstract class Stats
             this.min = min;
             this.max = max;
 
-            // calculate the stardard deviation
+            // calculate the variance, stardard deviation, and geomtric mean
             if (count > 0)
             {
                 mean = sum / count;
@@ -354,6 +371,7 @@ public abstract class Stats
             {
                 var = (sumSquares - count * (mean * mean)) / (count - 1);
                 stdDev = Math.sqrt(var);
+                geomMean = Math.pow(10.0d, sumLogs / positiveCount);
             }
         }
 
@@ -365,6 +383,11 @@ public abstract class Stats
         public double getMean()
         {
             return mean;
+        }
+
+        public double getGeometricMean()
+        {
+            return geomMean;
         }
 
         public Double getMin()
@@ -389,10 +412,14 @@ public abstract class Stats
                 return getStdDev();
             if (stat == MEAN)
                 return getMean();
+            if (stat == GEOMETRIC_MEAN)
+                return getGeometricMean();
             if (stat == VAR)
                 return getVar();
             if (stat == MEDIAN)
                 return getMedian();
+            //if (stat == MODE)
+            //    return getMode();
             if (stat == SUM)
                 return getSum();
             if (stat == MEDIAN_ABS_DEV)
@@ -462,6 +489,57 @@ public abstract class Stats
                 return (data[count / 2 - 1] + data[count / 2]) / 2;
 
             return data[(count -1) / 2];
+        }
+
+        public double getMode()
+        {
+            if (mode == null)
+            {
+                mode = _getMode();
+            }
+            return mode.doubleValue();
+        }
+
+        // UNDONE: Need to bucket into bins before calculating mode
+        // CONSIDER: Return multiple values for multi-modal distributions.
+        private double _getMode()
+        {
+            ensureSorted();
+
+            if (count == 0)
+                return Double.NaN;
+
+            if (count == 1)
+                return data[0];
+
+            int modeCount = 0;
+            double modeValue = 0d;
+
+            int currentCount = 1;
+            double currentValue = data[0];
+
+            for (int i = 1; i < data.length; i++)
+            {
+                double nextValue = data[i];
+                if (currentValue == nextValue)
+                {
+                    currentCount++;
+                }
+                else
+                {
+                    // Did we find a new mode candidate?
+                    if (currentCount > modeCount)
+                    {
+                        modeCount = currentCount;
+                        modeValue = currentValue;
+                    }
+
+                    currentCount = 1;
+                    currentValue = nextValue;
+                }
+            }
+
+            return modeValue;
         }
 
         public double getPercentile(double percentile)
