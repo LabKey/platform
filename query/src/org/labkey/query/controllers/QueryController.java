@@ -2746,13 +2746,19 @@ public class QueryController extends SpringActionController
             int rowsAffected = 0;
 
             List<Map<String, Object>> rowsToProcess = new ArrayList<Map<String, Object>>();
-            RowMapFactory f = new RowMapFactory();
-            for(int idx = 0; idx < rows.length(); ++idx)
+
+            // NOTE RowMapFactory is faster, but for update it's important to preserve missing v explicit NULL values
+            // Do we need to support some soft of UNDEFINED and NULL instance of MvFieldWrapper?
+            RowMapFactory f = null;
+            if (commandType == CommandType.insert || commandType == CommandType.insertWithKeys)
+                f = new RowMapFactory();
+
+            for (int idx = 0; idx < rows.length(); ++idx)
             {
                 JSONObject jsonObj = rows.getJSONObject(idx);
                 if (null != jsonObj)
                 {
-                    Map<String,Object> rowMap = f.getRowMap();
+                    Map<String,Object> rowMap = null == f ? new CaseInsensitiveHashMap<Object>() : f.getRowMap();
                     rowMap.putAll(jsonObj);
                     rowsToProcess.add(rowMap);
                     rowsAffected++;
