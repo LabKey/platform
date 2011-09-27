@@ -15,6 +15,8 @@
  */
 package org.labkey.study.model;
 
+import org.junit.Assert;
+import org.junit.Test;
 import org.labkey.api.cache.DbCache;
 import org.labkey.api.data.ActionButton;
 import org.labkey.api.data.Container;
@@ -27,6 +29,7 @@ import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.Table;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.query.FieldKey;
+import org.labkey.api.security.Group;
 import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.AdminPermission;
 import org.labkey.api.study.Study;
@@ -598,5 +601,25 @@ public class ParticipantGroupManager
     private String getCacheKey(int categoryId)
     {
         return "ParticipantCategory-" + categoryId;
+    }
+
+
+    public static class ParticipantGroupTestCase extends Assert
+    {
+
+        @Test
+        public void test()
+        {
+            ParticipantGroupManager p = new ParticipantGroupManager();
+
+            User u = new User();
+//            ParticipantGroup g = new ParticipantGroup();
+//            g.setContainer("14944030-c56c-102e-8297-ca47709443a1");
+//            g.setLabel("pie2");
+
+            ParticipantCategory def = new ParticipantCategory();
+            p.getParticipantGroups(null, null, def);
+        }
+
     }
 }

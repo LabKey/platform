@@ -98,6 +98,7 @@ import org.labkey.study.importer.StudyReload;
 import org.labkey.study.model.CohortDomainKind;
 import org.labkey.study.model.ContinuousDatasetDomainKind;
 import org.labkey.study.model.DateDatasetDomainKind;
+import org.labkey.study.model.ParticipantGroupManager;
 import org.labkey.study.model.SecurityType;
 import org.labkey.study.model.StudyDomainKind;
 import org.labkey.study.model.StudyManager;
@@ -528,6 +529,7 @@ public class StudyModule extends SpringModule implements SearchService.DocumentP
         Set<Class> set = new HashSet<Class>();
         set.add(SpecimenImporter.TestCase.class);
         set.add(StudyManager.DatasetImportTestCase.class);
+        set.add(ParticipantGroupManager.ParticipantGroupTestCase.class);
         return set;
     }
 
