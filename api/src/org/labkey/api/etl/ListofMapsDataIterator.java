@@ -15,7 +15,10 @@
  */
 package org.labkey.api.etl;
 
+import org.apache.commons.collections15.map.CaseInsensitiveMap;
 import org.labkey.api.ScrollableDataIterator;
+import org.labkey.api.collections.ArrayListMap;
+import org.labkey.api.collections.CaseInsensitiveMapWrapper;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.JdbcType;
 import org.labkey.api.query.BatchValidationException;
@@ -65,7 +68,11 @@ public class ListofMapsDataIterator extends AbstractDataIterator implements Scro
         {
             ArrayList<Map<String,Object>> copy = new ArrayList<Map<String,Object>>(rows.size());
             for (Map<String,Object> row : rows)
+            {
+                // assumes all ArrayListMaps are case insensitive
+                assert row instanceof CaseInsensitiveMapWrapper || row instanceof ArrayListMap;
                 copy.add(Collections.unmodifiableMap(row));
+            }
             return copy;
         }
         else

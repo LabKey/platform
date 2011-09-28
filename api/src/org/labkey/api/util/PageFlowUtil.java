@@ -29,6 +29,7 @@ import org.junit.Assert;
 import org.junit.Test;
 import org.labkey.api.action.UrlProvider;
 import org.labkey.api.admin.CoreUrls;
+import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
@@ -533,6 +534,15 @@ public class PageFlowUtil
         HashMap<T, T> m = new HashMap<T, T>();
         for (int i = 0; i < args.length; i += 2)
             m.put(args[i], args[i + 1]);
+        return m;
+    }
+
+
+    public static Map<String, Object> mapInsensitive(Object... args)
+    {
+        Map<String,Object> m = new CaseInsensitiveHashMap<Object>();
+        for (int i = 0; i < args.length; i += 2)
+            m.put(String.valueOf(args[i]), args[i + 1]);
         return m;
     }
 

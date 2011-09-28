@@ -30,15 +30,18 @@ import org.labkey.api.etl.DataIterator;
 import org.labkey.api.etl.DataIteratorBuilder;
 import org.labkey.api.etl.DataIteratorUtil;
 import org.labkey.api.etl.ListofMapsDataIterator;
+import org.labkey.api.etl.LoggingDataIterator;
 import org.labkey.api.etl.MapDataIterator;
 import org.labkey.api.etl.Pump;
 import org.labkey.api.etl.StandardETL;
 import org.labkey.api.etl.TriggerDataBuilderHelper;
+import org.labkey.api.etl.WrapperDataIterator;
 import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.*;
 import org.labkey.api.view.NotFoundException;
 import org.labkey.api.view.UnauthorizedException;
 
+import java.io.IOException;
 import java.sql.SQLException;
 import java.util.*;
 
@@ -106,7 +109,7 @@ public abstract class AbstractQueryUpdateService implements QueryUpdateService
      * DataIterator should/must use same error collection as passed in
      */
     @Deprecated
-    protected List<Map<String, Object>> _importRowsUsingInsertRows(User user, Container container, DataIterator rows, BatchValidationException errors, Map<String, Object> extraScriptContext) throws SQLException
+    protected int _importRowsUsingInsertRows(User user, Container container, DataIterator rows, BatchValidationException errors, Map<String, Object> extraScriptContext) throws SQLException
     {
         MapDataIterator mapIterator = DataIteratorUtil.wrapMap(rows, true);
         List<Map<String, Object>> list = new ArrayList<Map<String, Object>>();
@@ -119,14 +122,14 @@ public abstract class AbstractQueryUpdateService implements QueryUpdateService
                 list.add(mapIterator.getMap());
             ret = insertRows(user, container, list, errors, extraScriptContext);
             if (errors.hasErrors())
-                return null;
-            return ret;
+                return 0;
+            return ret.size();
         }
         catch (BatchValidationException x)
         {
             assert x == errors;
             assert x.hasErrors();
-            return null;
+            return 0;
         }
         catch (QueryUpdateServiceException x)
         {
@@ -137,14 +140,14 @@ public abstract class AbstractQueryUpdateService implements QueryUpdateService
             rowException = x;
         }
         errors.addRowError(new ValidationException(rowException.getMessage()));
-        return null;
+        return 0;
     }
 
 
     //
     // TODO do import and insert have different behavior wrt importAlaises?
     //
-    protected List<Map<String, Object>> _importRowsUsingETL(User user, Container container, DataIterator rows, BatchValidationException errors, Map<String, Object> extraScriptContext, boolean forImport)
+    protected int _importRowsUsingETL(User user, Container container, DataIterator rows, final ArrayList<Map<String,Object>> outputRows, BatchValidationException errors, Map<String, Object> extraScriptContext, boolean forImport)
             throws SQLException
     {
         if (!hasPermission(user, InsertPermission.class))
@@ -162,15 +165,41 @@ public abstract class AbstractQueryUpdateService implements QueryUpdateService
         if (hasTableScript)
             out = helper.after(importETL);
 
-        Pump pump = new Pump(out, errors);
+        int count = _pump(out, outputRows, errors);
+        return errors.hasErrors() ? 0 : count;
+    }
+
+
+    /** this is extracted so subclasses can add wrap */
+    protected int _pump(DataIteratorBuilder etl, final ArrayList<Map<String, Object>> rows, BatchValidationException errors)
+    {
+        DataIterator it = etl.getDataIterator(errors);
+
+        if (null != rows)
+        {
+            MapDataIterator maps = DataIteratorUtil.wrapMap(etl.getDataIterator(errors), false);
+            it = new WrapperDataIterator(maps)
+            {
+                @Override
+                public boolean next() throws BatchValidationException
+                {
+                    boolean ret = super.next();
+                    if (ret)
+                        rows.add(((MapDataIterator)_delegate).getMap());
+                    return ret;
+                }
+            };
+        }
+
+        Pump pump = new Pump(it, errors);
         pump.run();
-        // TODO
-        return Collections.emptyList();
+
+        return pump.getRowCount();
     }
 
 
     @Override
-    public List<Map<String, Object>> importRows(User user, Container container, DataIterator rows, BatchValidationException errors, Map<String, Object> extraScriptContext)
+    public int importRows(User user, Container container, DataIterator rows, BatchValidationException errors, Map<String, Object> extraScriptContext)
             throws SQLException
     {
         return _importRowsUsingInsertRows(user,container,rows,errors,extraScriptContext);
@@ -193,13 +222,14 @@ public abstract class AbstractQueryUpdateService implements QueryUpdateService
         if (!hasPermission(user, InsertPermission.class))
             throw new UnauthorizedException("You do not have permission to insert data into this table.");
 
-        ListofMapsDataIterator di = _toDataIterator(rows);
-        di.setDebugName(getClass().getSimpleName() + ".insertRows()");
-        return _importRowsUsingETL(user, container, di, errors, extraScriptContext, false);
+        DataIterator di = _toDataIterator(getClass().getSimpleName() + ".insertRows()", rows);
+        ArrayList<Map<String,Object>> outputRows = new ArrayList<Map<String, Object>>();
+        int count = _importRowsUsingETL(user, container, di, outputRows, errors, extraScriptContext, false);
+        return errors.hasErrors() ? null : outputRows;
     }
 
 
-    private ListofMapsDataIterator _toDataIterator(List<Map<String, Object>> rows)
+    private DataIterator _toDataIterator(String debugName, List<Map<String, Object>> rows)
     {
         // TODO probably can't assume all rows have all columsn
         // TODO can we assume that all rows refer to columns consistently? (not PTID and MouseId for the same column)
@@ -217,7 +247,9 @@ public abstract class AbstractQueryUpdateService implements QueryUpdateService
                 colNames.addAll(row.keySet());
         }
 
-        return new ListofMapsDataIterator(colNames, rows);
+        ListofMapsDataIterator maps = new ListofMapsDataIterator(colNames, rows);
+        maps.setDebugName(debugName);
+        return LoggingDataIterator.wrap(maps);
     }
 
 

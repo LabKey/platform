@@ -93,7 +93,7 @@ public interface QueryUpdateService
      * @throws QueryUpdateServiceException Thrown for implementation-specific exceptions.
      * @throws DuplicateKeyException Thrown if primary key values were supplied in the map
      */
-    public List<Map<String,Object>> importRows(User user, Container container, DataIterator rows,
+    public int importRows(User user, Container container, DataIterator rows,
            BatchValidationException errors, Map<String, Object> extraScriptContext)
         throws SQLException;
 

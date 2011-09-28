@@ -139,10 +139,21 @@ class StatementDataIterator extends AbstractDataIterator
         return _data.getColumnInfo(i);
     }
 
+    private boolean _firstNext = true;
+
+    protected void onFirst()
+    {
+    }
 
     @Override
     public boolean next() throws BatchValidationException
     {
+        if (_firstNext)
+        {
+            _firstNext = false;
+            onFirst();
+        }
+
         if (!_data.next())
             return false;
 

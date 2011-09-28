@@ -120,10 +120,7 @@ public class StandardETL implements DataIteratorBuilder
         if (null != _it)
             return _it;
 
-        DbScope scope = _target.getSchema().getScope();
         Domain d = _target.getDomain();
-
-        assert scope.isTransactionActive();
 
         Map<String, DomainProperty> propertiesMap = new HashMap<String, DomainProperty>();
         if (null != d)
