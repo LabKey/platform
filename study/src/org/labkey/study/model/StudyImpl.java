@@ -546,7 +546,7 @@ public class StudyImpl extends ExtensibleStudyEntity<StudyImpl> implements Study
         return new ArrayList<Attachment>(AttachmentService.get().getAttachments(parent));
     }
 
-    public class ProtocolDocumentAttachmentParent extends AttachmentParentEntity
+    public static class ProtocolDocumentAttachmentParent extends AttachmentParentEntity
     {
         public ProtocolDocumentAttachmentParent(Container c, String entityId)
         {
@@ -567,6 +567,7 @@ public class StudyImpl extends ExtensibleStudyEntity<StudyImpl> implements Study
         StringBuilder sb = new StringBuilder();
 
         appendKeyword(sb, getLabel());
+        appendKeyword(sb, getDescription());
         appendKeyword(sb, getSubjectNounSingular());
         appendKeyword(sb, getContainer().getName());
         appendKeyword(sb, getDescription());
@@ -586,6 +587,7 @@ public class StudyImpl extends ExtensibleStudyEntity<StudyImpl> implements Study
             appendKeyword(sb, "Study Folder " + c.getName() + " in Project " + c.getProject().getName());
 
         appendKeyword(sb, getLabel());
+        appendKeyword(sb, getDescription());
         appendKeyword(sb, getSubjectNounSingular());
 
         for (DataSetDefinition dataset : getDataSets())

@@ -60,6 +60,7 @@ public class StudyImportFinalTask extends PipelineJob.Task<StudyImportFinalTask.
             internalImporters.add(new DatasetCohortAssigner());
             internalImporters.add(new ParticipantCommentImporter());
             internalImporters.add(new ParticipantGroupImporter());
+            internalImporters.add(new ProtocolDocumentImporter());
 
             VirtualFile vf = new FileSystemFile(support.getRoot());
             for (InternalStudyImporter importer : internalImporters)

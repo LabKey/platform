@@ -474,5 +474,16 @@ public class CreateAncillaryStudyAction extends MutatingApiAction<EmphasisStudyD
         {
             return _root + File.separator + filename;
         }
+
+        @Override
+        public String[] list()
+        {
+            List<String> names = new ArrayList<String>();
+
+            names.addAll(_docMap.keySet());
+            names.addAll(_textDocMap.keySet());
+
+            return names.toArray(new String[names.size()]);
+        }
     }
 }

@@ -1492,6 +1492,7 @@ public class StudyController extends BaseStudyController
             study.setSubjectNounSingular(form.getSubjectNounSingular());
             study.setSubjectNounPlural(form.getSubjectNounPlural());
             study.setSubjectColumnName(form.getSubjectColumnName());
+            study.setDescription(form.getDescription());
             StudyManager.getInstance().createStudy(user, study);
         }
     }
@@ -5807,6 +5808,7 @@ public class StudyController extends BaseStudyController
         private String _subjectNounSingular = "Participant";
         private String _subjectNounPlural = "Participants";
         private String _subjectColumnName = "ParticipantId";
+        private String _description;
 
         public String getLabel()
         {
@@ -5896,6 +5898,16 @@ public class StudyController extends BaseStudyController
         public void setSubjectColumnName(String subjectColumnName)
         {
             _subjectColumnName = subjectColumnName;
+        }
+
+        public String getDescription()
+        {
+            return _description;
+        }
+
+        public void setDescription(String description)
+        {
+            _description = description;
         }
     }
 

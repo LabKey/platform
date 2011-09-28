@@ -87,6 +87,9 @@ public class StudyImportInitialTask extends PipelineJob.Task<StudyImportInitialT
                 if (studyXml.getSubjectNounPlural() != null)
                     studyForm.setSubjectNounPlural(studyXml.getSubjectNounPlural());
 
+                if (studyXml.getDescription() != null)
+                    studyForm.setDescription(studyXml.getDescription());
+
                 StudyController.createStudy(support.getStudy(true), ctx.getContainer(), ctx.getUser(), studyForm);
             }
             else

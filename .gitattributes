@@ -2625,6 +2625,7 @@ study/src/org/labkey/study/importer/MissingValueImporter.java -text
 study/src/org/labkey/study/importer/ParticipantCommentImporter.java -text
 study/src/org/labkey/study/importer/ParticipantGroupImporter.java -text
 study/src/org/labkey/study/importer/PipeDelimParser.java -text
+study/src/org/labkey/study/importer/ProtocolDocumentImporter.java -text
 study/src/org/labkey/study/importer/QcStatesImporter.java -text
 study/src/org/labkey/study/importer/RequestabilityManager.java -text
 study/src/org/labkey/study/importer/SchemaReader.java -text
@@ -2996,6 +2997,7 @@ study/src/org/labkey/study/writer/InternalStudyWriter.java -text
 study/src/org/labkey/study/writer/OutputStreamWrapper.java -text
 study/src/org/labkey/study/writer/ParticipantCommentWriter.java -text
 study/src/org/labkey/study/writer/ParticipantGroupWriter.java -text
+study/src/org/labkey/study/writer/ProtocolDocumentWriter.java -text
 study/src/org/labkey/study/writer/QcStateWriter.java -text
 study/src/org/labkey/study/writer/SchemaTsvWriter.java -text
 study/src/org/labkey/study/writer/SchemaXmlWriter.java -text
