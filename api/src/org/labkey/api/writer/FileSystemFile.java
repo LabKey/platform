@@ -149,4 +149,22 @@ public class FileSystemFile implements VirtualFile
         File file = new File(_root, makeLegalName(filename));
         return StudyImportException.getRelativePath(_root, file);
     }
+
+    @Override
+    public String[] list()
+    {
+        File[] files = _root.listFiles(new FileFilter() {
+            @Override
+            public boolean accept(File file)
+            {
+                return file.isFile();
+            }
+        });
+        String[] fileNames = new String[files.length];
+        int i=0;
+        for (File file : files)
+            fileNames[i++] = file.getName();
+
+        return fileNames;
+    }
 }

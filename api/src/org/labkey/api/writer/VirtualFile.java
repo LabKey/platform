@@ -35,6 +35,7 @@ public interface VirtualFile
     public XmlObject getXmlBean(String filename) throws IOException;
     public InputStream getInputStream(String filename) throws IOException;
     public String getRelativePath(String filename);
+    public String[] list();
 
     public Archive createZipArchive(String name) throws IOException;
     public VirtualFile getDir(String path);

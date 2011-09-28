@@ -222,4 +222,10 @@ public class ZipFile implements Archive
     {
         throw new UnsupportedOperationException("The ZipFile class only supports write operations");
     }
+
+    @Override
+    public String[] list()
+    {
+        throw new UnsupportedOperationException("The ZipFile class only supports write operations");
+    }
 }
