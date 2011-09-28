@@ -19,10 +19,14 @@ import org.apache.commons.lang.ObjectUtils;
 import org.jetbrains.annotations.NotNull;
 import org.labkey.api.data.*;
 import org.labkey.api.etl.DataIterator;
+import org.labkey.api.etl.DataIteratorBuilder;
+import org.labkey.api.etl.StandardETL;
 import org.labkey.api.query.*;
 import org.labkey.api.security.User;
+import org.labkey.api.study.DataSet;
 import org.labkey.api.study.StudyService;
 import org.labkey.study.model.DataSetDefinition;
+import org.labkey.study.model.QCState;
 import org.labkey.study.model.StudyImpl;
 import org.labkey.study.model.StudyManager;
 
@@ -64,43 +68,73 @@ public class DatasetUpdateService extends AbstractQueryUpdateService
     }
 
     @Override
-    public List<Map<String, Object>> importRows(User user, Container container, DataIterator rows, BatchValidationException errors, Map<String, Object> extraScriptContext) throws SQLException
+    public int importRows(User user, Container container, DataIterator rows, BatchValidationException errors, Map<String, Object> extraScriptContext) throws SQLException
     {
-        List<Map<String, Object>> result = super.importRows(user, container, rows, errors, extraScriptContext);
+        int count = super._importRowsUsingETL(user, container, rows, null, errors, extraScriptContext, true);
         resyncStudy(user, container);
-        return result;
+        return count;
     }
 
     @Override
     public List<Map<String, Object>> insertRows(User user, Container container, List<Map<String, Object>> rows, BatchValidationException errors, Map<String, Object> extraScriptContext)
             throws DuplicateKeyException, QueryUpdateServiceException, SQLException
     {
-        List<Map<String, Object>> result = super.insertRows(user, container, rows, errors, extraScriptContext);
+        List<Map<String, Object>> result = super._insertRowsUsingETL(user, container, rows, errors, extraScriptContext);
         resyncStudy(user, container);
         return result;
     }
+
+
+    @Override
+    protected DataIteratorBuilder createImportETL(User user, Container container, DataIteratorBuilder data, BatchValidationException errors, boolean forImport)
+    {
+        QCState defaultQCState = StudyManager.getInstance().getDefaultQCState(_dataset.getStudy());
+        DataIteratorBuilder insert = _dataset.getInsertDataIterator(user, data, null, true, errors, defaultQCState, false);
+//        TableInfo table = _dataset.getTableInfo(user, false);
+//        DataIteratorBuilder insert = ((UpdateableTableInfo)table).persistRows(dsIterator, errors);
+        return insert;
+    }
+
+
+    @Override
+    protected int _pump(DataIteratorBuilder etl, final ArrayList<Map<String, Object>> rows, BatchValidationException errors)
+    {
+        boolean hasRowId = _dataset.getKeyManagementType() == DataSet.KeyManagementType.RowId;
+
+        if (!hasRowId)
+        {
+            return super._pump(etl, rows, errors);
+        }
+
+        synchronized (_dataset.getManagedKeyLock())
+        {
+            return super._pump(etl, rows, errors);
+        }
+    }
+
 
     @Override
     protected Map<String, Object> insertRow(User user, Container container, Map<String, Object> row)
             throws DuplicateKeyException, ValidationException, QueryUpdateServiceException, SQLException
     {
-        List<String> errors = new ArrayList<String>();
-        String newLsid = StudyService.get().insertDatasetRow(user, container, _dataset.getDataSetId(), row, errors);
-
-        if(errors.size() > 0)
-        {
-            ValidationException e = new ValidationException();
-            for(String err : errors)
-                e.addError(new SimpleValidationError(err));
-            throw e;
-        }
-
-        //update the lsid
-        row.put("lsid", newLsid);
-        _potentiallyNewParticipants.add(getParticipant(row, user, container));
-        _participantVisitResyncRequired = true;
-
-        return row;
+        throw new IllegalStateException();
+//        List<String> errors = new ArrayList<String>();
+//        String newLsid = StudyService.get().insertDatasetRow(user, container, _dataset.getDataSetId(), row, errors);
+//
+//        if(errors.size() > 0)
+//        {
+//            ValidationException e = new ValidationException();
+//            for(String err : errors)
+//                e.addError(new SimpleValidationError(err));
+//            throw e;
+//        }
+//
+//        //update the lsid
+//        row.put("lsid", newLsid);
+//        _potentiallyNewParticipants.add(getParticipant(row, user, container));
+//        _participantVisitResyncRequired = true;
+//
+//        return row;
     }
 
     private @NotNull String getParticipant(Map<String, Object> row, User user, Container container) throws ValidationException, QueryUpdateServiceException, SQLException

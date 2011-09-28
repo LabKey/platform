@@ -16,6 +16,7 @@
 
 package org.labkey.study.model;
 
+import org.apache.commons.collections15.map.CaseInsensitiveMap;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang.ObjectUtils;
 import org.apache.commons.lang.StringUtils;
@@ -3411,6 +3412,7 @@ public class StudyManager
         private void _testDatsetUpdateService(Study study) throws Throwable
         {
             ResultSet rs = null;
+            String msg;
 
             try
             {
@@ -3427,9 +3429,10 @@ public class StudyManager
 
                 // insert one row
                 rows.clear(); errors.clear();
-                rows.add(PageFlowUtil.map("SubjectId", "A1", "Date", Jan1, "Measure", "Test"+(++this.counterRow), "Value", 1.0));
+                rows.add(PageFlowUtil.mapInsensitive("SubjectId", "A1", "Date", Jan1, "Measure", "Test" + (++this.counterRow), "Value", 1.0));
                 List<Map<String,Object>> ret = qus.insertRows(_context.getUser(), study.getContainer(), rows, errors, null);
-                assertFalse(errors.hasErrors());
+                msg = errors.getRowErrors().size() > 0 ? errors.getRowErrors().get(0).toString() : "no message";
+                assertFalse(msg, errors.hasErrors());
                 Map<String,Object> firstRowMap = ret.get(0);
                 String lsidRet = (String)firstRowMap.get("lsid");
                 assertNotNull(lsidRet);
@@ -3448,49 +3451,49 @@ public class StudyManager
 
                 // different participant
                 rows.clear(); errors.clear();
-                rows.add(PageFlowUtil.map("SubjectId", "B2", "Date", Jan1, "Measure", "Test" + (counterRow), "Value", 2.0));
+                rows.add(PageFlowUtil.mapInsensitive("SubjectId", "B2", "Date", Jan1, "Measure", "Test" + (counterRow), "Value", 2.0));
                 qus.insertRows(_context.getUser(), study.getContainer(), rows, errors, null);
                 assertFalse(errors.hasErrors());
 
                 // different date
                 rows.clear(); errors.clear();
-                rows.add(PageFlowUtil.map("SubjectId", "A1", "Date", Jan2, "Measure", "Test"+(counterRow), "Value", "X"));
+                rows.add(PageFlowUtil.mapInsensitive("SubjectId", "A1", "Date", Jan2, "Measure", "Test" + (counterRow), "Value", "X"));
                 qus.insertRows(_context.getUser(), study.getContainer(), rows, errors, null);
                 assertFalse(errors.hasErrors());
 
                 // different measure
                 rows.clear(); errors.clear();
-                rows.add(PageFlowUtil.map("SubjectId", "A1", "Date", Jan1, "Measure", "Test"+(++counterRow), "Value", "X"));
+                rows.add(PageFlowUtil.mapInsensitive("SubjectId", "A1", "Date", Jan1, "Measure", "Test" + (++counterRow), "Value", "X"));
                 qus.insertRows(_context.getUser(), study.getContainer(), rows, errors, null);
                 assertFalse(errors.hasErrors());
 
                 // duplicates in batch
                 rows.clear(); errors.clear();
-                rows.add(PageFlowUtil.map("SubjectId", "A1", "Date", Jan1, "Measure", "Test"+(++counterRow), "Value", 1.0));
-                rows.add(PageFlowUtil.map("SubjectId", "A1", "Date", Jan1, "Measure", "Test"+(counterRow), "Value", 1.0));
+                rows.add(PageFlowUtil.mapInsensitive("SubjectId", "A1", "Date", Jan1, "Measure", "Test" + (++counterRow), "Value", 1.0));
+                rows.add(PageFlowUtil.mapInsensitive("SubjectId", "A1", "Date", Jan1, "Measure", "Test" + (counterRow), "Value", 1.0));
                 qus.insertRows(_context.getUser(), study.getContainer(), rows, errors, null);
                 //study:Label: Only one row is allowed for each Subject/Visit/Measure Triple.  Duplicates were found in the database or imported data.; Duplicate: Subject = A1Date = Sat Jan 01 00:00:00 PST 2011, Measure = Test3
                 assertTrue(-1 != errors.getRowErrors().get(0).getMessage().indexOf("Duplicates were found in the database or imported data"));
 
                 // missing participantid
                 rows.clear(); errors.clear();
-                rows.add(PageFlowUtil.map("SubjectId", null, "Date", Jan1, "Measure", "Test"+(++counterRow), "Value", 1.0));
+                rows.add(PageFlowUtil.mapInsensitive("SubjectId", null, "Date", Jan1, "Measure", "Test" + (++counterRow), "Value", 1.0));
                 qus.insertRows(_context.getUser(), study.getContainer(), rows, errors, null);
                 //study:Label: All dataset rows must include a value for SubjectID
-                String msg = errors.getRowErrors().get(0).getMessage();
+                msg = errors.getRowErrors().get(0).getMessage();
                 assertTrue(-1 != msg.indexOf("required") || -1 != msg.indexOf("must include"));
                 assertTrue(-1 != errors.getRowErrors().get(0).getMessage().indexOf("SubjectID"));
 
                 // missing date
                 rows.clear(); errors.clear();
-                rows.add(PageFlowUtil.map("SubjectId", "A1", "Date", null, "Measure", "Test"+(++counterRow), "Value", 1.0));
+                rows.add(PageFlowUtil.mapInsensitive("SubjectId", "A1", "Date", null, "Measure", "Test" + (++counterRow), "Value", 1.0));
                 qus.insertRows(_context.getUser(), study.getContainer(), rows, errors, null);
                 //study:Label: Row 1 does not contain required field date.
                 assertTrue(-1 != errors.getRowErrors().get(0).getMessage().toLowerCase().indexOf("date"));
 
                 // missing required property field (Measure in map)
                 rows.clear(); errors.clear();
-                rows.add(PageFlowUtil.map("SubjectId", "A1", "Date", Jan1, "Measure", null, "Value", 1.0));
+                rows.add(PageFlowUtil.mapInsensitive("SubjectId", "A1", "Date", Jan1, "Measure", null, "Value", 1.0));
                 qus.insertRows(_context.getUser(), study.getContainer(), rows, errors, null);
                 //study:Label: Row 1 does not contain required field Measure.
                 assertTrue(-1 != errors.getRowErrors().get(0).getMessage().indexOf("required"));
@@ -3498,7 +3501,7 @@ public class StudyManager
 
                 // missing required property field (Measure not in map)
                 rows.clear(); errors.clear();
-                rows.add(PageFlowUtil.map("SubjectId", "A1", "Date", Jan1, "Value", 1.0));
+                rows.add(PageFlowUtil.mapInsensitive("SubjectId", "A1", "Date", Jan1, "Value", 1.0));
                 qus.insertRows(_context.getUser(), study.getContainer(), rows, errors, null);
                 //study:Label: Row 1 does not contain required field Measure.
                 assertTrue(-1 != errors.getRowErrors().get(0).getMessage().indexOf("does not contain required field"));
@@ -3506,39 +3509,39 @@ public class StudyManager
 
                 // legal MV indicator
                 rows.clear(); errors.clear();
-                rows.add(PageFlowUtil.map("SubjectId", "A1", "Date", Jan1, "Measure", "Test"+(++counterRow), "Value", "X"));
+                rows.add(PageFlowUtil.mapInsensitive("SubjectId", "A1", "Date", Jan1, "Measure", "Test" + (++counterRow), "Value", "X"));
                 qus.insertRows(_context.getUser(), study.getContainer(), rows, errors, null);
                 assertFalse(errors.hasErrors());
 
                 // illegal MV indicator
                 rows.clear(); errors.clear();
-                rows.add(PageFlowUtil.map("SubjectId", "A1", "Date", Jan1, "Measure", "Test"+(++counterRow), "Value", "N/A"));
+                rows.add(PageFlowUtil.mapInsensitive("SubjectId", "A1", "Date", Jan1, "Measure", "Test" + (++counterRow), "Value", "N/A"));
                 qus.insertRows(_context.getUser(), study.getContainer(), rows, errors, null);
                 //study:Label: Could not convert 'N/A' for field Value, should be of type Double
                 assertTrue(-1 != errors.getRowErrors().get(0).getMessage().indexOf("should be of type Double"));
 
                 // conversion test
                 rows.clear(); errors.clear();
-                rows.add(PageFlowUtil.map("SubjectId", "A1", "Date", Jan1, "Measure", "Test" + (++counterRow), "Value", "100"));
+                rows.add(PageFlowUtil.mapInsensitive("SubjectId", "A1", "Date", Jan1, "Measure", "Test" + (++counterRow), "Value", "100"));
                 qus.insertRows(_context.getUser(), study.getContainer(), rows, errors, null);
                 assertFalse(errors.hasErrors());
 
 
                 // validation test
                 rows.clear(); errors.clear();
-                rows.add(PageFlowUtil.map("SubjectId", "A1", "Date", Jan1, "Measure", "Test" + (++counterRow), "Value", 1, "Number", 101));
+                rows.add(PageFlowUtil.mapInsensitive("SubjectId", "A1", "Date", Jan1, "Measure", "Test" + (++counterRow), "Value", 1, "Number", 101));
                 qus.insertRows(_context.getUser(), study.getContainer(), rows, errors, null);
                 //study:Label: Value '101.0' for field 'Number' is invalid.
                 assertTrue(-1 != errors.getRowErrors().get(0).getMessage().indexOf("is invalid"));
 
                 rows.clear(); errors.clear();
-                rows.add(PageFlowUtil.map("SubjectId", "A1", "Date", Jan1, "Measure", "Test"+(counterRow), "Value", 1, "Number", 99));
+                rows.add(PageFlowUtil.mapInsensitive("SubjectId", "A1", "Date", Jan1, "Measure", "Test" + (counterRow), "Value", 1, "Number", 99));
                 qus.insertRows(_context.getUser(), study.getContainer(), rows, errors, null);
                 assertFalse(errors.hasErrors());
 
                 // QCStateLabel
                 rows.clear(); errors.clear();
-                rows.add(PageFlowUtil.map("QCStateLabel", "dirty", "SubjectId", "A1", "Date", Jan1, "Measure", "Test" + (++counterRow), "Value", 1, "Number", 5));
+                rows.add(PageFlowUtil.mapInsensitive("QCStateLabel", "dirty", "SubjectId", "A1", "Date", Jan1, "Measure", "Test" + (++counterRow), "Value", 1, "Number", 5));
                 QCState[] qcstates = StudyManager.getInstance().getQCStates(study.getContainer());
                 assertEquals(0, qcstates.length);
                 qus.insertRows(_context.getUser(), study.getContainer(), rows, errors, null);
@@ -3550,12 +3553,14 @@ public class StudyManager
                 // let's try to update a row
                 rows.clear(); errors.clear();
                 assertTrue(firstRowMap.containsKey("Value"));
-                firstRowMap.put("Value", 3.14159);
+                CaseInsensitiveMap row = new CaseInsensitiveMap();
+                row.putAll(firstRowMap);
+                row.put("Value", 3.14159);
                 // TODO why is Number==null OK on insert() but not update()?
-                firstRowMap.put("Number", 1.0);
-                rows.add(firstRowMap);
+                row.put("Number", 1.0);
+                rows.add(row);
                 List keys = new ArrayList();
-                keys.add(PageFlowUtil.map("lsid", lsidFirstRow));
+                keys.add(PageFlowUtil.mapInsensitive("lsid", lsidFirstRow));
                 ret = qus.updateRows(_context.getUser(), study.getContainer(), rows, keys, null);
                 assert(ret.size() == 1);
             }

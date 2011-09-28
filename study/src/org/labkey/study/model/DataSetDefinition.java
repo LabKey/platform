@@ -114,7 +114,7 @@ public class DataSetDefinition extends AbstractStudyEntity<DataSetDefinition> im
 {
     // standard string to use in URLs etc.
     public static final String DATASETKEY = "datasetId";
-    private static final Object MANAGED_KEY_LOCK = new Object();
+//    static final Object MANAGED_KEY_LOCK = new Object();
     private static Logger _log = Logger.getLogger(DataSetDefinition.class);
 
     private StudyImpl _study;
@@ -1293,22 +1293,18 @@ public class DataSetDefinition extends AbstractStudyEntity<DataSetDefinition> im
             , boolean forUpdate)
             throws SQLException
     {
-        TableInfo tinfo = getTableInfo(user, false);
-
-        boolean needToHandleQCState = tinfo.getColumn(DataSetTable.QCSTATE_ID_COLNAME) != null;
-
         if (getKeyManagementType() == KeyManagementType.RowId)
         {
             // If additional keys are managed by the server, we need to synchronize around
             // increments, as we're imitating a sequence.
-            synchronized (MANAGED_KEY_LOCK)
+            synchronized (getManagedKeyLock())
             {
-                return insertData(user, in, checkDuplicates, errors, defaultQCState, logger, needToHandleQCState, forUpdate);
+                return insertData(user, in, checkDuplicates, errors, defaultQCState, logger, forUpdate);
             }
         }
         else
         {
-            return insertData(user, in, checkDuplicates, errors, defaultQCState, logger, needToHandleQCState, forUpdate);
+            return insertData(user, in, checkDuplicates, errors, defaultQCState, logger, forUpdate);
         }
     }
 
@@ -1650,10 +1646,13 @@ public class DataSetDefinition extends AbstractStudyEntity<DataSetDefinition> im
             int indexLSID = it.addLSID();
 
 
+            //
+            // check errors, misc
+            //
+
             it.setKeyList(lsids);
 
             it.setDebugName(getName());
-
 
             // don't bother going on if we don't have these required columns
             if (null == indexPTID)
@@ -1667,6 +1666,10 @@ public class DataSetDefinition extends AbstractStudyEntity<DataSetDefinition> im
 
             it.setInput(ErrorIterator.wrap(input, errors, false, setupError));
             DataIterator ret = LoggingDataIterator.wrap(it);
+
+            //
+            // Check Duplicates
+            //
 
             boolean hasError = null != setupError && setupError.hasErrors();
             if (checkDuplicates && !hasError)
@@ -1696,6 +1699,7 @@ public class DataSetDefinition extends AbstractStudyEntity<DataSetDefinition> im
         Converter convertDate = ConvertUtils.lookup(Date.class);
         List<String> lsids;
         User user;
+//        boolean requiresKeyLock = false;
 
         // these columns are used to compute derived columns, should occur early in the output list
         Integer indexPtidOutput, indexSequenceNumOutput, indexVisitDateOutput, indexKeyPropertyOutput;
@@ -1732,13 +1736,17 @@ public class DataSetDefinition extends AbstractStudyEntity<DataSetDefinition> im
         public void beforeFirst()
         {
             super.beforeFirst();
-            lsids.clear();
+            if (null != lsids)
+                lsids.clear();
         }
 
 
         @Override
         public boolean next() throws BatchValidationException
         {
+            assert getKeyManagementType() != KeyManagementType.RowId || Thread.holdsLock(getManagedKeyLock());
+//            assert DbSchema.get("study").getScope().isTransactionActive();
+
             boolean hasNext = super.next();
             if (hasNext)
             {
@@ -1969,16 +1977,13 @@ public class DataSetDefinition extends AbstractStudyEntity<DataSetDefinition> im
     }
 
 
-
     private List<String> insertData(User user, DataIteratorBuilder in,
             boolean checkDuplicates, BatchValidationException errors, QCState defaultQCState,
-            Logger logger, boolean needToHandleQCState, boolean forUpdate)
+            Logger logger, boolean forUpdate)
             throws SQLException
     {
-//        if (dataMaps.size() == 0)
-//            return Collections.emptyList();
-
-
+        ArrayList<String> lsids = new ArrayList<String>();
+        DataIteratorBuilder insert = getInsertDataIterator(user, in, lsids, checkDuplicates, errors, defaultQCState, forUpdate);
 
         DbScope scope = ExperimentService.get().getSchema().getScope();
 
@@ -1986,23 +1991,8 @@ public class DataSetDefinition extends AbstractStudyEntity<DataSetDefinition> im
         {
             scope.ensureTransaction();
 
-            DatasetDataIteratorBuilder b = new DatasetDataIteratorBuilder(
-                    user,
-                    needToHandleQCState,
-                    defaultQCState);
-            b.setInput(in);
-            b.setCheckDuplicates(checkDuplicates);
-            b.setForUpdate(forUpdate);
-            b.setUseImportAliases(!forUpdate);
-
-            ArrayList<String> lsids = new ArrayList<String>();
-            b.setKeyList(lsids);
-
             long start = System.currentTimeMillis();
             {
-                TableInfo table = getTableInfo(user, false);
-                StandardETL etl = StandardETL.forInsert(table, b, getContainer(), user, errors);
-                DataIteratorBuilder insert = ((UpdateableTableInfo)table).persistRows(etl, errors);
                 Pump p = new Pump(insert.getDataIterator(errors), errors);
                 p.run();
             }
@@ -2027,6 +2017,45 @@ public class DataSetDefinition extends AbstractStudyEntity<DataSetDefinition> im
         {
             scope.closeConnection();
         }
+    }
+
+
+    private String _managedKeyLock = null;
+
+    public Object getManagedKeyLock()
+    {
+        if (null == _managedKeyLock)
+            _managedKeyLock = (this.getEntityId() + ".MANAGED_KEY_LOCK").intern();
+        return _managedKeyLock;
+    }
+
+
+    /**
+     * NOTE Currently the caller is still responsible for locking MANAGED_KEY_LOCK while this
+     * Iterator is running.  This is asserted in the code, but it would be nice to move the
+     * locking into the iterator itself.
+     */
+    public DataIteratorBuilder getInsertDataIterator(User user, DataIteratorBuilder in,
+        @Nullable List<String> lsids,
+        boolean checkDuplicates, BatchValidationException errors, QCState defaultQCState,
+        boolean forUpdate)
+    {
+        TableInfo table = getTableInfo(user, false);
+        boolean needToHandleQCState = table.getColumn(DataSetTable.QCSTATE_ID_COLNAME) != null;
+
+        DatasetDataIteratorBuilder b = new DatasetDataIteratorBuilder(
+                user,
+                needToHandleQCState,
+                defaultQCState);
+        b.setInput(in);
+        b.setCheckDuplicates(checkDuplicates);
+        b.setForUpdate(forUpdate);
+        b.setUseImportAliases(!forUpdate);
+        b.setKeyList(lsids);
+
+        StandardETL etl = StandardETL.forInsert(table, b, getContainer(), user, errors);
+        DataIteratorBuilder insert = ((UpdateableTableInfo)table).persistRows(etl, errors);
+        return insert;
     }
 
 

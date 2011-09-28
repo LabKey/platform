@@ -21,68 +21,70 @@ var DEBUG_INT = 10000;
 
 
 /*
-	parseUri 1.2.1
+	from parseUri 1.2.1
 	(c) 2007 Steven Levithan <stevenlevithan.com>
 	MIT License
 */
-function parseUri(str)
+var URI = Ext.extend(Object,
 {
-    var	o   = parseUri.options;
-    var m   = o.parser[o.strictMode ? "strict" : "loose"].exec(str);
-    var uri = this || {};
-    var i   = 14;
-
-    while (i--)
-        uri[o.key[i]] = m[i] || "";
-
-    if (!uri.protocol)
+    constructor : function(u)
     {
-        var l = window.location;
-        uri.protocol = uri.protocol || l.protocol;
-        uri.port = uri.port || l.port;
-        uri.hostname = uri.hostname || l.hostname;
-        uri.host = uri.host || l.host;
+        this.toString = function()
+        {
+            return this.protocol + "://" + this.host + this.pathname + this.search;
+        };
+        if (typeof u == "string")
+            this.parse(u);
+        else if (typeof u == "object")
+            Ext.apply(this,u);
+
+        this.options = Ext.apply({},this.options);  // clone
+    },
+    parse: function(str)
+    {
+        var	o   = this.options;
+        var m   = o.parser[o.strictMode ? "strict" : "loose"].exec(str);
+        var uri = this || {};
+        var i   = 14;
+
+        while (i--)
+            uri[o.key[i]] = m[i] || "";
+
+        if (!uri.protocol)
+        {
+            var l = window.location;
+            uri.protocol = uri.protocol || l.protocol;
+            uri.port = uri.port || l.port;
+            uri.hostname = uri.hostname || l.hostname;
+            uri.host = uri.host || l.host;
+        }
+        if (uri.protocol && uri.protocol.charAt(uri.protocol.length-1) == ":")
+            uri.protocol = uri.protocol.substr(0,uri.protocol.length - 1);
+
+        uri[o.q.name] = {};
+        uri[o.key[12]].replace(o.q.parser, function ($0, $1, $2)
+        {
+            if ($1) uri[o.q.name][$1] = $2;
+        });
+        uri.href = this.protocol + "://" + this.host + this.pathname + this.search;
+        return uri;
+    },
+    options:
+    {
+        strictMode: false,
+        key: ["source","protocol","host","userInfo","user","password","hostname","port","relative","pathname","directory","file","search","hash"],
+        q:
+        {
+            name:   "query",
+            parser: /(?:^|&)([^&=]*)=?([^&]*)/g
+        },
+        parser:
+        {
+            strict: /^(?:([^:\/?#]+):)?(?:\/\/((?:(([^:@]*):?([^:@]*))?@)?([^:\/?#]*)(?::(\d*))?))?((((?:[^?#\/]*\/)*)([^?#]*))(?:\?([^#]*))?(?:#(.*))?)/,
+            loose:  /^(?:(?![^:@]+:[^:@\/]*@)([^:\/?#.]+):)?(?:\/\/)?((?:(([^:@]*):?([^:@]*))?@)?([^:\/?#]*)(?::(\d*))?)(((\/(?:[^?#](?![^?#\/]*\.[^?#\/.]+(?:[?#]|$)))*\/?)?([^?#\/]*))(?:\?([^#]*))?(?:#(.*))?)/
+        }
     }
-    if (uri.protocol && uri.protocol.charAt(uri.protocol.length-1) == ":")
-        uri.protocol = uri.protocol.substr(0,uri.protocol.length - 1);
-
-    uri[o.q.name] = {};
-    uri[o.key[12]].replace(o.q.parser, function ($0, $1, $2)
-    {
-        if ($1) uri[o.q.name][$1] = $2;
-    });
-    uri.href = this.protocol + "://" + this.host + this.pathname + this.search;
-    return uri;
-}
-parseUri.options =
-{
-	strictMode: false,
-	key: ["source","protocol","host","userInfo","user","password","hostname","port","relative","pathname","directory","file","search","hash"],
-	q:
-    {
-		name:   "query",
-		parser: /(?:^|&)([^&=]*)=?([^&]*)/g
-	},
-	parser:
-    {
-		strict: /^(?:([^:\/?#]+):)?(?:\/\/((?:(([^:@]*):?([^:@]*))?@)?([^:\/?#]*)(?::(\d*))?))?((((?:[^?#\/]*\/)*)([^?#]*))(?:\?([^#]*))?(?:#(.*))?)/,
-		loose:  /^(?:(?![^:@]+:[^:@\/]*@)([^:\/?#.]+):)?(?:\/\/)?((?:(([^:@]*):?([^:@]*))?@)?([^:\/?#]*)(?::(\d*))?)(((\/(?:[^?#](?![^?#\/]*\.[^?#\/.]+(?:[?#]|$)))*\/?)?([^?#\/]*))(?:\?([^#]*))?(?:#(.*))?)/
-	}
-};
-/* end parseUri */
-
-var URI = function(u)
-{
-    this.toString = function()
-    {
-        return this.protocol + "://" + this.host + this.pathname + this.search;
-    };
-    if (typeof u == "string")
-        this.parse(u);
-    else if (typeof u == "object")
-        Ext.apply(this,u);
-};
-URI.prototype = {parse: parseUri};
+});
 
 
 // we want to encode everything save / so this is not like encodeURI() or encodeURIComponent()
@@ -1159,18 +1161,18 @@ Ext.extend(AppletFileSystem, FileSystem,
         var js = applet.local_getObjects();
         var json = eval("var $=" + js + ";$;");
         var records = [];
-        for (var i=0 ; i<datas.length ; i++)
+        for (var i=0 ; i<json.records.length ; i++)
         {
-            var data = datas[i];
+            var data = json.records[i];
             if (data.name.charAt(data.name.length-1) == '\\')
                 data.name = data.name.substring(0,data.name.length-1);
             data.file = !data.isDirectory;
             data.size = data.length;
-            data.id = path;
+            data.id = data.path;
             data.modified = data.lastModified;
             data.modifiedBy = null;
             data.iconHref = data.isDirectory ? this.FOLDER_ICON : null;
-            records.push(new this.FileRecord(data, path));
+            records.push(new this.FileRecord(data, data.path));
         }
         this._addFiles(directory, records);
         if (typeof callback == "function")
@@ -3391,7 +3393,7 @@ LABKEY.FileBrowser = Ext.extend(Ext.Panel,
             };
 
             // panel to contain the 2 upload panels
-            uploadPanel = new Ext.Panel({
+            var uploadPanelOuter = new Ext.Panel({
                 border: false,
                 layout: 'card',
                 height: 115,
@@ -3418,18 +3420,18 @@ LABKEY.FileBrowser = Ext.extend(Ext.Panel,
                             if (checked)
                             {
                                 this.applet.setEnabled(false);
-                                uploadPanel.getLayout().setActiveItem(this.uploadPanel.getId());
+                                uploadPanelOuter.getLayout().setActiveItem(this.uploadPanel.getId());
                             }
                         }, scope:this},
                         {boxLabel: 'Multiple&nbsp;files', name: 'rb-file-upload-type', handler: function(cmp, checked){
                             if (checked)
                             {
-                                uploadPanel.getLayout().setActiveItem(this.uploadMultiPanel.getId());
+                                uploadPanelOuter.getLayout().setActiveItem(this.uploadMultiPanel.getId());
                                 this.onMultipleFileUpload();
                             }
                         }, scope: this}
                     ]},
-                    uploadPanel
+                    uploadPanelOuter
                 ]
             });
 
@@ -3464,15 +3466,17 @@ LABKEY.FileBrowser = Ext.extend(Ext.Panel,
             });
 
             // clean up and initialize the transfer applet when the panel is collapsed/expanded
-            this.fileUploadPanel.on('beforecollapse', function(cmp){
+            this.fileUploadPanel.on('beforecollapse', function(cmp)
+            {
                 if (this.applet)
                 {
                     this.applet.destroy();
                     this.applet = null;
                 }
             }, this);
-            this.fileUploadPanel.on('expand', function(cmp){
-                if (uploadPanel.getLayout().activeItem.getId() == this.uploadMultiPanel.getId())
+            this.fileUploadPanel.on('expand', function(cmp)
+            {
+                if (uploadPanelOuter.getLayout().activeItem.getId() == this.uploadMultiPanel.getId())
                     this.onMultipleFileUpload();
             }, this);
 

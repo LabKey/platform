@@ -691,24 +691,36 @@ public class AssayPublishManager implements AssayPublishService.Service
      * Return an array of LSIDs from the newly created dataset entries,
      * along with the upload log.
      */
-    public Pair<List<String>, UploadLog> importDatasetTSV(User user, StudyImpl study, DataSetDefinition dsd, DataLoader dl, boolean withTriggers, FileStream in, String originalFileName, Map<String, String> columnMap, BatchValidationException errors) throws SQLException, ServletException
+    public Pair<List<String>, UploadLog> importDatasetTSV(User user, StudyImpl study, DataSetDefinition dsd, DataLoader dl, boolean withTriggers, FileStream fileIn, String originalFileName, Map<String, String> columnMap, BatchValidationException errors) throws SQLException, ServletException
     {
+        DbScope scope = DbSchema.get("study").getScope();
+
         boolean useQueryUpdateService = false;
         UploadLog ul = null;
         List<String> lsids = Collections.emptyList();
 
         try
         {
-            if (null != in)
-                ul = saveUploadData(user, dsd, in, originalFileName);
+            if (null != fileIn)
+                ul = saveUploadData(user, dsd, fileIn, originalFileName);
 
             if (!useQueryUpdateService)
             {
-                Integer defaultQCStateId = study.getDefaultDirectEntryQCState();
-                QCState defaultQCState = null;
-                if (defaultQCStateId != null)
-                    defaultQCState = StudyManager.getInstance().getQCStateForRowId(study.getContainer(), defaultQCStateId.intValue());
-                lsids = StudyManager.getInstance().importDatasetData(study, user, dsd, dl, columnMap, errors, true, defaultQCState, null);
+                try
+                {
+                    scope.ensureTransaction();
+                    Integer defaultQCStateId = study.getDefaultDirectEntryQCState();
+                    QCState defaultQCState = null;
+                    if (defaultQCStateId != null)
+                        defaultQCState = StudyManager.getInstance().getQCStateForRowId(study.getContainer(), defaultQCStateId.intValue());
+                    lsids = StudyManager.getInstance().importDatasetData(study, user, dsd, dl, columnMap, errors, true, defaultQCState, null);
+                    if (!errors.hasErrors())
+                        scope.commitTransaction();
+                }
+                finally
+                {
+                    scope.closeConnection();
+                }
             }
             else
             {
