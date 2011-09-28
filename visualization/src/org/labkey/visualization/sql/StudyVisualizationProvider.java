@@ -2,7 +2,6 @@ package org.labkey.visualization.sql;
 
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
-import org.labkey.api.data.DisplayColumn;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.query.*;
 import org.labkey.api.study.DataSet;
@@ -129,20 +128,19 @@ public class StudyVisualizationProvider extends VisualizationProvider
     }
 
     @Override
-    protected boolean isValid(QueryView view, ColumnMatchType type)
+    protected boolean isValid(TableInfo table, QueryDefinition query, ColumnMatchType type)
     {
         if (type == ColumnMatchType.CONFIGURED_MEASURES)
         {
-            TableInfo tinfo = view.getTable();
-            return tinfo != null && tinfo.getColumnNameSet().contains("ParticipantSequenceKey");
+            return table != null && table.getColumnNameSet().contains("ParticipantSequenceKey");
         }
         else
-            return super.isValid(view, type);
+            return super.isValid(table, query, type);
     }
 
-    protected Map<ColumnInfo, QueryView> getMatchingColumns(Container container, Collection<QueryView> views, ColumnMatchType type)
+    protected Map<ColumnInfo, QueryDefinition> getMatchingColumns(Container container, Map<QueryDefinition, TableInfo> queries, ColumnMatchType type)
     {
-        Map<ColumnInfo, QueryView> matches = super.getMatchingColumns(container, views, type);
+        Map<ColumnInfo, QueryDefinition> matches = super.getMatchingColumns(container, queries, type);
         if (type == ColumnMatchType.DATETIME_COLS)
         {
             Study study = StudyService.get().getStudy(container);
@@ -150,11 +148,11 @@ public class StudyVisualizationProvider extends VisualizationProvider
             // if found, return that as a date measure
             if (study != null && study.getTimepointType().isVisitBased())
             {
-                for (QueryView view : views)
+                for (Map.Entry<QueryDefinition, TableInfo> entry : queries.entrySet())
                 {
-                    TableInfo tinfo = view.getTable();
+                    QueryDefinition queryDefinition = entry.getKey();
                     String visitColName = StudyService.get().getSubjectVisitColumnName(container);
-                    ColumnInfo visitCol = tinfo.getColumn(visitColName);
+                    ColumnInfo visitCol = entry.getValue().getColumn(visitColName);
                     if (visitCol != null)
                     {
                         TableInfo visitTable = visitCol.getFkTableInfo();
@@ -164,7 +162,7 @@ public class StudyVisualizationProvider extends VisualizationProvider
                             if (visitDate != null)
                             {
                                 visitDate.setFieldKey(FieldKey.fromParts(visitColName, visitDate.getName()));
-                                matches.put(visitDate, view);
+                                matches.put(visitDate, queryDefinition);
                             }
                         }
                     }
@@ -175,28 +173,35 @@ public class StudyVisualizationProvider extends VisualizationProvider
     }
 
     @Override
-    public Map<ColumnInfo, QueryView> getZeroDateMeasures(ViewContext context, VisualizationController.QueryType queryType)
+    protected Set<String> getTableNames(UserSchema schema)
+    {
+        Set<String> tables = new HashSet<String>(super.getTableNames(schema));
+        tables.remove("StudyData");
+        return tables;
+    }
+
+    @Override
+    public Map<ColumnInfo, QueryDefinition> getZeroDateMeasures(ViewContext context, VisualizationController.QueryType queryType)
     {
         // For studies, valid zero date columns are found in demographic datasets only:
-        Map<ColumnInfo, QueryView> measures = new HashMap<ColumnInfo, QueryView>();
+        Map<ColumnInfo, QueryDefinition> measures = new HashMap<ColumnInfo, QueryDefinition>();
         Study study = StudyService.get().getStudy(context.getContainer());
         if (study != null)
         {
+            UserSchema schema = getUserSchema(context.getContainer(), context.getUser());
             for (DataSet ds : study.getDataSets())
             {
                 if (ds.isDemographicData())
                 {
-                    DefaultSchema defSchema = DefaultSchema.get(context.getUser(), context.getContainer());
-                    UserSchema schema = (UserSchema)defSchema.getSchema("study");
-                    assert schema != null : "Study schema should exist";
-                    QuerySettings settings = schema.getSettings(context, QueryView.DATAREGIONNAME_DEFAULT, ds.getName());
-                    QueryView view = new QueryView(schema, settings, null);
-
-                    for (DisplayColumn dc : view.getDisplayColumns())
+                    Pair<QueryDefinition, TableInfo> entry = getTableAndQueryDef(context, schema, ds.getName(), ColumnMatchType.DATETIME_COLS, false);
+                    if (entry != null)
                     {
-                        ColumnInfo col = dc.getColumnInfo();
-                        if (col != null && ColumnMatchType.DATETIME_COLS.match(col))
-                           measures.put(col, view);
+                        QueryDefinition query = entry.getKey();
+                        for (ColumnInfo col : query.getColumns(null, entry.getValue()))
+                        {
+                            if (col != null && ColumnMatchType.DATETIME_COLS.match(col))
+                               measures.put(col, query);
+                        }
                     }
                 }
             }
@@ -206,9 +211,9 @@ public class StudyVisualizationProvider extends VisualizationProvider
 
     private static final boolean INCLUDE_DEMOGRAPHIC_DIMENSIONS = false;
     @Override
-    public Map<ColumnInfo, QueryView> getDimensions(ViewContext context, String queryName)
+    public Map<ColumnInfo, QueryDefinition> getDimensions(ViewContext context, String queryName)
     {
-        Map<ColumnInfo, QueryView> dimensions = super.getDimensions(context, queryName);
+        Map<ColumnInfo, QueryDefinition> dimensions = super.getDimensions(context, queryName);
         if (INCLUDE_DEMOGRAPHIC_DIMENSIONS)
         {
             // include dimensions from demographic data sources

@@ -2,7 +2,7 @@ package org.labkey.visualization.sql;
 
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
-import org.labkey.api.data.DisplayColumn;
+import org.labkey.api.data.TableInfo;
 import org.labkey.api.query.*;
 import org.labkey.api.security.User;
 import org.labkey.api.util.Pair;
@@ -90,31 +90,35 @@ public abstract class VisualizationProvider
         return (UserSchema) schema;
     }
 
-    protected QueryView getQueryView(ViewContext context, ColumnMatchType matchType, String queryName)
+    protected Pair<QueryDefinition, TableInfo> getQueryDefinition(ViewContext context, ColumnMatchType matchType, String queryName)
     {
         UserSchema schema = getUserSchema(context.getContainer(), context.getUser());
-        // built in tables
-        if (schema.getTableNames().contains(queryName))
-        {
-            QueryView view = getView(context, schema, queryName);
-            if (isValid(view, matchType))
-                return view;
-        }
+        return getTableAndQueryDef(context, schema, queryName, matchType, !schema.getTableNames().contains(queryName));
+    }
 
-        // custom queries:
-        QueryDefinition qdef = QueryService.get().getQueryDef(context.getUser(), context.getContainer(), _schemaName, queryName);
-        if (qdef != null && !qdef.isHidden())
+    protected Pair<QueryDefinition, TableInfo> getTableAndQueryDef(ViewContext context, UserSchema schema, String queryName, ColumnMatchType matchType, boolean customQuery)
+    {
+        QueryDefinition queryDef;
+        if (customQuery)
+            queryDef = QueryService.get().getQueryDef(context.getUser(), context.getContainer(), _schemaName, queryName);
+        else
+            queryDef = QueryService.get().createQueryDefForTable(schema, queryName);
+        if (queryDef != null && !queryDef.isHidden())
         {
-            QueryView view = getView(context, schema, qdef.getName());
-            if (isValid(view, matchType))
-                return view;
+            List<QueryException> errors = new ArrayList<QueryException>();
+            TableInfo table = queryDef.getTable(errors, true);
+            if (table != null)
+            {
+                if (isValid(table, queryDef, matchType))
+                    return new Pair<QueryDefinition, TableInfo>(queryDef, table);
+            }
         }
         return null;
     }
 
-    protected Collection<QueryView> getQueryViews(ViewContext context, VisualizationController.QueryType queryType, ColumnMatchType matchType)
+    protected Map<QueryDefinition, TableInfo> getQueryDefinitions(ViewContext context, VisualizationController.QueryType queryType, ColumnMatchType matchType)
     {
-        Map<String, QueryView> views = new HashMap<String, QueryView>();
+        Map<QueryDefinition, TableInfo> queries = new HashMap<QueryDefinition, TableInfo>();
         UserSchema schema = getUserSchema(context.getContainer(), context.getUser());
         if (queryType == VisualizationController.QueryType.all || queryType == VisualizationController.QueryType.custom)
         {
@@ -124,9 +128,11 @@ public abstract class VisualizationProvider
                 QueryDefinition qdef = entry.getValue();
                 if (!qdef.isHidden())
                 {
-                    QueryView view = getView(context, schema, qdef.getName());
-                    if (isValid(view, matchType))
-                        views.put(qdef.getName(), view);
+                    List<QueryException> errors = new ArrayList<QueryException>();
+                    TableInfo table = qdef.getTable(schema, errors, true);
+                    // Ignore specific errors- failed queries won't produce a table
+                    if (table != null && isValid(table, qdef, matchType))
+                        queries.put(qdef, table);
                 }
             }
         }
@@ -134,50 +140,47 @@ public abstract class VisualizationProvider
         // built in tables
         if (queryType == VisualizationController.QueryType.all || queryType == VisualizationController.QueryType.builtIn)
         {
-            for (String name : schema.getTableNames())
+            for (String name : getTableNames(schema))
             {
-                QueryView view = getView(context, schema, name);
-                if (isValid(view, matchType))
-                    views.put(name, view);
+                Pair<QueryDefinition, TableInfo> entry = getTableAndQueryDef(context, schema, name, matchType, false);
+                if (entry != null)
+                    queries.put(entry.getKey(), entry.getValue());
             }
         }
-        return views.values();
+        return queries;
     }
 
-    protected boolean isValid(QueryView view, ColumnMatchType type)
+    protected Set<String> getTableNames(UserSchema schema)
+    {
+        return schema.getTableNames();
+    }
+
+
+    protected boolean isValid(TableInfo info, QueryDefinition query, ColumnMatchType type)
     {
         return true;
     }
 
-    protected QueryView getView(ViewContext context, UserSchema schema, String queryName)
+    protected Map<ColumnInfo, QueryDefinition> getMatchingColumns(Container container, Map<QueryDefinition, TableInfo> queries, ColumnMatchType columnMatchType)
     {
-        QuerySettings settings = schema.getSettings(context, QueryView.DATAREGIONNAME_DEFAULT, queryName);
-        return new QueryView(schema, settings, null);
-    }
-
-    protected Map<ColumnInfo, QueryView> getMatchingColumns(Container container, Collection<QueryView> views, ColumnMatchType columnMatchType)
-    {
-        Map<ColumnInfo, QueryView> matches = new HashMap<ColumnInfo, QueryView>();
-        for (QueryView view : views)
+        Map<ColumnInfo, QueryDefinition> matches = new HashMap<ColumnInfo, QueryDefinition>();
+        for (Map.Entry<QueryDefinition, TableInfo> entry : queries.entrySet())
         {
-            for (DisplayColumn dc : view.getDisplayColumns())
+            QueryDefinition query = entry.getKey();
+            TableInfo table = entry.getValue();
+            for (ColumnInfo col : query.getColumns(null, table))
             {
-                ColumnInfo col = dc.getColumnInfo();
-
-                if (col != null)
+                // ignore hidden columns
+                if (columnMatchType.match(col))
                 {
-                    // ignore hidden columns
-                    if (columnMatchType.match(col))
+                    if (col.getFk() != null)
                     {
-                        if (col.getFk() != null)
-                        {
-                            ColumnInfo lookupCol = col.getFk().createLookupColumn(col, null);
-                            if (lookupCol != null)
-                                col = lookupCol;
-                        }
-                        
-                        matches.put(col, view);
+                        ColumnInfo lookupCol = col.getFk().createLookupColumn(col, null);
+                        if (lookupCol != null)
+                            col = lookupCol;
                     }
+
+                    matches.put(col, query);
                 }
             }
         }
@@ -194,48 +197,48 @@ public abstract class VisualizationProvider
         return _type;
     }
 
-    protected Map<ColumnInfo, QueryView> getMatchingColumns(ViewContext context, ColumnMatchType matchType, String queryName)
+    protected Map<ColumnInfo, QueryDefinition> getMatchingColumns(ViewContext context, ColumnMatchType matchType, String queryName)
     {
-        QueryView view = getQueryView(context, matchType, queryName);
-        if (view != null)
-            return getMatchingColumns(context.getContainer(), Collections.singleton(view), matchType);
+        Pair<QueryDefinition, TableInfo> queryDef = getQueryDefinition(context, matchType, queryName);
+        if (queryDef != null)
+            return getMatchingColumns(context.getContainer(), Collections.singletonMap(queryDef.getKey(), queryDef.getValue()), matchType);
         else
             return Collections.emptyMap();
     }
 
-    protected Map<ColumnInfo, QueryView> getMatchingColumns(ViewContext context, VisualizationController.QueryType queryType, ColumnMatchType matchType)
+    protected Map<ColumnInfo, QueryDefinition> getMatchingColumns(ViewContext context, VisualizationController.QueryType queryType, ColumnMatchType matchType)
     {
-        Collection<QueryView> views = getQueryViews(context, queryType, matchType);
-        return getMatchingColumns(context.getContainer(), views, matchType);
+        Map<QueryDefinition, TableInfo> queries = getQueryDefinitions(context, queryType, matchType);
+        return getMatchingColumns(context.getContainer(), queries, matchType);
     }
 
-    public Map<ColumnInfo, QueryView> getMeasures(ViewContext context, VisualizationController.QueryType queryType)
+    public Map<ColumnInfo, QueryDefinition> getMeasures(ViewContext context, VisualizationController.QueryType queryType)
     {
         return getMatchingColumns(context, queryType, ColumnMatchType.CONFIGURED_MEASURES);
     }
 
-    public Map<ColumnInfo, QueryView> getMeasures(ViewContext context, String queryName)
+    public Map<ColumnInfo, QueryDefinition> getMeasures(ViewContext context, String queryName)
     {
         return getMatchingColumns(context, ColumnMatchType.CONFIGURED_MEASURES, queryName);
     }
 
-    public Map<ColumnInfo, QueryView> getDateMeasures(ViewContext context, VisualizationController.QueryType queryType)
+    public Map<ColumnInfo, QueryDefinition> getDateMeasures(ViewContext context, VisualizationController.QueryType queryType)
     {
         return getMatchingColumns(context, queryType, ColumnMatchType.DATETIME_COLS);
     }
 
-    public Map<ColumnInfo, QueryView> getDateMeasures(ViewContext context, String queryName)
+    public Map<ColumnInfo, QueryDefinition> getDateMeasures(ViewContext context, String queryName)
     {
         return getMatchingColumns(context, ColumnMatchType.DATETIME_COLS, queryName);
     }
 
-    public Map<ColumnInfo, QueryView> getZeroDateMeasures(ViewContext context, VisualizationController.QueryType queryType)
+    public Map<ColumnInfo, QueryDefinition> getZeroDateMeasures(ViewContext context, VisualizationController.QueryType queryType)
     {
         // By default, assume that any date can be a measure date or a zero date.
         return getDateMeasures(context, queryType);
     }
 
-    public Map<ColumnInfo, QueryView> getDimensions(ViewContext context, String queryName)
+    public Map<ColumnInfo, QueryDefinition> getDimensions(ViewContext context, String queryName)
     {
         return getMatchingColumns(context, ColumnMatchType.CONFIGURED_DIMENSIONS, queryName);
     }

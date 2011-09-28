@@ -333,7 +333,7 @@ public class VisualizationController extends SpringActionController
     {
         public ApiResponse execute(Form form, BindException errors) throws Exception
         {
-            Map<ColumnInfo, QueryView> measures = new HashMap<ColumnInfo, QueryView>();
+            Map<ColumnInfo, QueryDefinition> measures = new HashMap<ColumnInfo, QueryDefinition>();
             if (form.getFilters() != null && form.getFilters().length > 0)
             {
                 for (String filter : form.getFilters())
@@ -383,18 +383,18 @@ public class VisualizationController extends SpringActionController
             return resp;
         }
 
-        protected List<Map<String, Object>> getColumnResponse(Map<ColumnInfo, QueryView> cols)
+        protected List<Map<String, Object>> getColumnResponse(Map<ColumnInfo, QueryDefinition> cols)
         {
             List<Map<String, Object>> measuresJSON = new ArrayList<Map<String, Object>>();
             int count = 1;
-            for (Map.Entry<ColumnInfo, QueryView> entry : cols.entrySet())
+            for (Map.Entry<ColumnInfo, QueryDefinition> entry : cols.entrySet())
             {
-                QueryView queryView = entry.getValue();
+                QueryDefinition query = entry.getValue();
                 // add measure properties
-                Map<String, Object> props = getColumnProps(entry.getKey(), queryView);
-                props.put("schemaName", queryView.getSchema().getName());
-                props.put("queryName", queryView.getQueryDef().getName());
-                props.put("isUserDefined", !queryView.getQueryDef().isTableQueryDefinition());
+                Map<String, Object> props = getColumnProps(entry.getKey(), query);
+                props.put("schemaName", query.getSchema().getName());
+                props.put("queryName", query.getName());
+                props.put("isUserDefined", !query.isTableQueryDefinition());
                 props.put("id", count++);
 
                 measuresJSON.add(props);
@@ -402,13 +402,13 @@ public class VisualizationController extends SpringActionController
             return measuresJSON;
         }
 
-        protected Map<String, Object> getColumnProps(ColumnInfo col, QueryView view)
+        protected Map<String, Object> getColumnProps(ColumnInfo col, QueryDefinition query)
         {
             Map<String, Object> props = new HashMap<String, Object>();
 
             props.put("name", col.getName());
             props.put("label", col.getLabel());
-            props.put("longlabel", col.getLabel() + " (" + view.getQueryDef().getName() + ")");
+            props.put("longlabel", col.getLabel() + " (" + query.getName() + ")");
             props.put("type", col.getJdbcType().name());
             props.put("description", StringUtils.trimToEmpty(col.getDescription()));
 
@@ -430,7 +430,7 @@ public class VisualizationController extends SpringActionController
                     errors.reject(ERROR_MSG, "No measure provider found for schema " + form.getSchemaName());
                     return null;
                 }
-                Map<ColumnInfo, QueryView> dimensions = provider.getDimensions(getViewContext(), form.getQueryName());
+                Map<ColumnInfo, QueryDefinition> dimensions = provider.getDimensions(getViewContext(), form.getQueryName());
                 List<Map<String, Object>> dimensionJSON = getColumnResponse(dimensions);
                 resp.put("success", true);
                 resp.put("dimensions", dimensionJSON);
@@ -682,7 +682,7 @@ public class VisualizationController extends SpringActionController
         {
             ApiSimpleResponse resp = new ApiSimpleResponse();
 
-            Map<ColumnInfo, QueryView> measures = new HashMap<ColumnInfo, QueryView>();
+            Map<ColumnInfo, QueryDefinition> measures = new HashMap<ColumnInfo, QueryDefinition>();
             if (form.getFilters() != null && form.getFilters().length > 0)
             {
                 for (String filter : form.getFilters())
