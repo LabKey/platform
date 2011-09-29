@@ -913,9 +913,6 @@ LABKEY.DataRegion = Ext.extend(Ext.Component,
         if (this.headerLock()) {
             this._initHeaderLock();
         }
-
-        Ext.EventManager.on(window, "load", this._resizeContainer, this, {single: true});
-        Ext.EventManager.on(window, "resize", this._resizeContainer, this);
     },
 
     headerLock : function() {
@@ -949,11 +946,16 @@ LABKEY.DataRegion = Ext.extend(Ext.Component,
         }
 
         // performance degradation
-        if (this.rowContent.length > 40 && !Ext.isChrome)
+        if (this.rowContent.length > 40 && !Ext.isWebKit)
         {
             this._allowHeaderLock = false;
             return;
         }
+
+        // initialize listeners
+        Ext.EventManager.on(window,   'load',            this._resizeContainer, this, {single: true});
+        Ext.EventManager.on(window,   'resize',          this._resizeContainer, this);
+        Ext.EventManager.on(document, 'DOMNodeInserted', this._resizeContainer, this); // Issue #13121
 
         // initialize panel listeners
         this.on('afterpanelshow', this._resizeContainer, this);
@@ -977,35 +979,32 @@ LABKEY.DataRegion = Ext.extend(Ext.Component,
     },
 
     _calculateHeaderLock : function() {
-        var el, z, s, src;
+        var el, src;
+
+        this.suspendEvents();
+
         for (var i=0; i < this.rowContent.length; i++) {
             src = Ext.get(this.firstRow[i]);
             el  = Ext.get(this.rowContent[i]);
-            s   = { width : src.getWidth(), height: el.getHeight() };
-            el.setSize(s);
-            z   = Ext.get(this.rowSpacerContent[i]); // must be done after 'el' is set (ext side-effect?)
-            z.setSize(s);
+
+            el.setSize({width: src.getWidth(), height: el.getHeight()}); // note: width coming from data row not header
         }
 
         if (this.hdrCoord < 0) this.hdrCoord = this._findPos((this.includeHeader ? this.headerRow : this.colHeaderRow));
         this.hdrLocked = false;
+
+        this.resumeEvents();
     },
 
     _findPos : function(o) {
-        var obj = o.dom;
-        var curleft = curtop = 0;
-        if (obj && obj.offsetParent) {
-            do {
-                curleft += obj.offsetLeft;
-                curtop  += obj.offsetTop;
-            } while (obj = obj.offsetParent);
-        }
+        var xy = o.getXY();
 
-        var curbottom = curtop+this.table.getHeight();
-        curbottom -= (this.includeHeader ? (this.headerRow.getComputedHeight()*2) : 0) + (this.colHeaderRow.getComputedHeight()*2);
+        var curbottom = xy[1] + this.table.getHeight();
+        curbottom    -= (this.includeHeader ? (this.headerRow.getComputedHeight()*2) : 0) +
+                            (this.colHeaderRow.getComputedHeight()*2);
         var hdrOffset = this.includeHeader ? this.headerRow.getComputedHeight() : 0;
 
-        return [ curleft, curtop, curbottom, hdrOffset ];
+        return [ xy[0], xy[1], curbottom, hdrOffset ];
     },
 
     // WARNING: This function is called often. Performance implications for each line.
@@ -1252,7 +1251,7 @@ LABKEY.DataRegion = Ext.extend(Ext.Component,
                     panelDiv.setDisplayed(true);
                     if (!this.panelButtonContents[panelId])
                     {
-                        var minWidth = 0;
+                        var minWidth = 700;
                         var tabContentWidth = 0;
                         var VERTICAL_TAB_HEIGHT = 28; // pixels. Way to measure how tall the main panel should be
                         var height = VERTICAL_TAB_HEIGHT * 4;
@@ -1284,7 +1283,7 @@ LABKEY.DataRegion = Ext.extend(Ext.Component,
                                 {
                                     tabContentWidth = Ext.get(item.items.items[0].contentEl).getWidth();
                                     item.addClass("x-hide-display");
-                                    minWidth = Math.max(minWidth, tabContentWidth);
+                                    minWidth = Math.min(minWidth, tabContentWidth);
                                 }
                             }
                         }
@@ -1414,12 +1413,12 @@ LABKEY.DataRegion = Ext.extend(Ext.Component,
                         else
                             this.hideMessage();
 
-                        var minWidth = Math.max(700, headerOrFooter.getWidth(true));
+                        var minWidth = Math.min(1200, headerOrFooter.getWidth(true)); // 1024x768
                         var renderTo = Ext.getBody().createChild({tag: "div", customizeView: true, style: {display: "none"}});
 
                         this.customizeView = new LABKEY.DataRegion.ViewDesigner({
                             renderTo    : renderTo,
-                            width       : headerOrFooter.getWidth(true),
+                            width       : minWidth,
                             activeGroup : activeTab,
                             dataRegion  : this,
                             schemaName  : this.schemaName,
