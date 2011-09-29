@@ -956,6 +956,7 @@ LABKEY.DataRegion = Ext.extend(Ext.Component,
         Ext.EventManager.on(window,   'load',            this._resizeContainer, this, {single: true});
         Ext.EventManager.on(window,   'resize',          this._resizeContainer, this);
         Ext.EventManager.on(document, 'DOMNodeInserted', this._resizeContainer, this); // Issue #13121
+        Ext.EventManager.on(document, 'DOMNodeRemoved',  this._resizeContainer, this);
 
         // initialize panel listeners
         this.on('afterpanelshow', this._resizeContainer, this);
