@@ -22,8 +22,15 @@ import org.labkey.api.action.ApiResponse;
 import org.labkey.api.action.ApiSimpleResponse;
 import org.labkey.api.action.MutatingApiAction;
 import org.labkey.api.data.SimpleFilter;
+import org.labkey.api.query.DefaultSchema;
+import org.labkey.api.query.QueryForm;
+import org.labkey.api.query.QuerySchema;
+import org.labkey.api.query.QuerySettings;
+import org.labkey.api.query.QueryView;
+import org.labkey.api.query.UserSchema;
 import org.labkey.api.security.RequiresPermissionClass;
 import org.labkey.api.security.permissions.ReadPermission;
+import org.labkey.api.view.ActionURL;
 import org.labkey.study.model.ParticipantCategory;
 import org.labkey.study.model.ParticipantDataset;
 import org.labkey.study.model.ParticipantGroupManager;
@@ -219,10 +226,33 @@ public class ParticipantGroupController extends BaseStudyController
             try
             {
                 Set<String> ptids = new LinkedHashSet<String>();
-                ParticipantDataset[] pds = StudyManager.getInstance().getParticipantDatasets(getContainer(), Arrays.asList(form.getSelections()));
-                for (ParticipantDataset pd : pds)
+
+                if (form.isSelectAll())
                 {
-                    ptids.add(pd.getParticipantId());
+                    QuerySettings settings = form.getQuerySettings();
+                    if (form.getRequestURL() != null)
+                    {
+                        ActionURL url = new ActionURL(form.getRequestURL());
+
+                        SimpleFilter filter = new SimpleFilter(url, form.getDataRegionName());
+                        settings.setBaseFilter(filter);
+                    }
+                    QuerySchema querySchema = DefaultSchema.get(getUser(), getContainer()).getSchema(form.getSchemaName().toString());
+                    QueryView view = ((UserSchema)querySchema).createView(getViewContext(), settings, errors);
+
+                    if (view != null)
+                    {
+                        for (String ptid : StudyController.generateParticipantGroup(view))
+                            ptids.add(ptid);
+                    }
+                }
+                else
+                {
+                    ParticipantDataset[] pds = StudyManager.getInstance().getParticipantDatasets(getContainer(), Arrays.asList(form.getSelections()));
+                    for (ParticipantDataset pd : pds)
+                    {
+                        ptids.add(pd.getParticipantId());
+                    }
                 }
                 resp.put("ptids", ptids);
                 resp.put("success", true);
@@ -235,9 +265,21 @@ public class ParticipantGroupController extends BaseStudyController
         }
     }
 
-    public static class ParticipantSelection
+    public static class ParticipantSelection extends QueryForm
     {
         private String[] _selections;
+        private boolean _selectAll;
+        private String _requestURL;
+
+        public String getRequestURL()
+        {
+            return _requestURL;
+        }
+
+        public void setRequestURL(String requestURL)
+        {
+            _requestURL = requestURL;
+        }
 
         public String[] getSelections()
         {
@@ -247,6 +289,16 @@ public class ParticipantGroupController extends BaseStudyController
         public void setSelections(String[] selections)
         {
             _selections = selections;
+        }
+
+        public boolean isSelectAll()
+        {
+            return _selectAll;
+        }
+
+        public void setSelectAll(boolean selectAll)
+        {
+            _selectAll = selectAll;
         }
     }
 }

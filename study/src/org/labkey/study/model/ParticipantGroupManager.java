@@ -227,7 +227,14 @@ public class ParticipantGroupManager
             if (hasCreateGroupFromSelection)
             {
                 button.addSeparator();
-                button.addMenuItem("Create " + study.getSubjectNounSingular() + " Group from Selection", "#", createNewParticipantGroupScript(context, dataRegionName));
+                NavTree item = new NavTree("Create " + study.getSubjectNounSingular() + " Group");
+                button.addMenuItem(item);
+
+                NavTree fromSeletion = item.addChild("From selection");
+                fromSeletion.setScript(createNewParticipantGroupScript(context, dataRegionName, true));
+
+                NavTree fromGrid = item.addChild("From all " + study.getSubjectNounPlural());
+                fromGrid.setScript(createNewParticipantGroupScript(context, dataRegionName, false));
             }
             return button;
         }
@@ -237,7 +244,7 @@ public class ParticipantGroupManager
         }
     }
 
-    private String createNewParticipantGroupScript(ViewContext context, String dataRegionName)
+    private String createNewParticipantGroupScript(ViewContext context, String dataRegionName, boolean fromSelection)
     {
         Container container = context.getContainer();
         Study study = StudyManager.getInstance().getStudy(container);
@@ -249,13 +256,29 @@ public class ParticipantGroupManager
 
         sb.append("var dataRegion = LABKEY.DataRegions[").append(PageFlowUtil.jsString(dataRegionName)).append("];");
         sb.append("if (dataRegion) {");
-        sb.append("     var checked = dataRegion.getChecked();");
-        sb.append("     if (checked.length > 0) {");
+
+        if (fromSelection)
+        {
+            sb.append("     var checked = dataRegion.getChecked();");
+            sb.append("     if (checked.length <= 0) {");
+            sb.append("         Ext.MessageBox.alert('Selection Error', 'At least one ").append(study.getSubjectNounSingular()).append(" must be selected from the checkboxes in order to use this feature.');");
+            sb.append("         return;");
+            sb.append("     }");
+        }
+
         sb.append("         var dataRegionEl = Ext.get(").append(PageFlowUtil.jsString(dataRegionName)).append(");");
         sb.append("         dataRegionEl.mask('getting selections...', 'x-mask-loading');");
         sb.append("         Ext.Ajax.request({");
         sb.append("             url: LABKEY.ActionURL.buildURL('participant-group', 'getParticipantsFromSelection'),");
-        sb.append("             jsonData: {selections:checked},");
+
+        // ask for either the selected participants or all the participants in the view
+        if (fromSelection)
+            sb.append("         jsonData: {selections:checked},");
+        else
+        {
+            sb.append("         jsonData: {selectAll:true, schemaName: dataRegion.schemaName, queryName: dataRegion.queryName, ");
+            sb.append("                     viewName: dataRegion.viewName, dataRegionName: dataRegion.name, requestURL: dataRegion.requestURL},");
+        }
         sb.append("             method: 'post', scope: this,");
         sb.append("             failure: function(res, opt){dataRegionEl.unmask(); LABKEY.Utils.displayAjaxErrorResponse(res, opt);},");
         sb.append("             success: function(res, opt) {");
@@ -275,9 +298,6 @@ public class ParticipantGroupManager
         sb.append("                     dlg.show(this);");
         sb.append("                 }");
         sb.append("             }});");
-        sb.append("     } else {");
-        sb.append("         Ext.MessageBox.alert('Selection Error', 'At least one ").append(study.getSubjectNounSingular()).append(" must be selected from the checkboxes in order to use this feature.');");
-        sb.append("     }");
         sb.append("}");
 
         return sb.toString();
