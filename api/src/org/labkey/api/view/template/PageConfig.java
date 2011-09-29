@@ -46,6 +46,7 @@ public class PageConfig
         Print,
         Framed, // In an Iframe same as print except tries to maintain template on navigate
         Dialog,
+        Wizard,
         Custom  // must be handled by module
     }
 

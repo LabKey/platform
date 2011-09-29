@@ -1136,10 +1136,12 @@ api/src/org/labkey/api/view/template/MenuBarView.java -text
 api/src/org/labkey/api/view/template/PageConfig.java -text
 api/src/org/labkey/api/view/template/PrintTemplate.java -text
 api/src/org/labkey/api/view/template/TemplateHeaderView.java -text
+api/src/org/labkey/api/view/template/WizardTemplate.java -text
 api/src/org/labkey/api/view/template/appBar.jsp -text
 api/src/org/labkey/api/view/template/dialogTemplate.jsp -text
 api/src/org/labkey/api/view/template/header.jsp -text
 api/src/org/labkey/api/view/template/menuBar.jsp -text
+api/src/org/labkey/api/view/template/wizardTemplate.jsp -text
 api/src/org/labkey/api/visualization/TimeChartReport.java -text
 api/src/org/labkey/api/visualization/TimeChartReportDescriptor.java -text
 api/src/org/labkey/api/visualization/VisualizationReportDescriptor.java -text

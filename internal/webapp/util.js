@@ -639,8 +639,8 @@ LABKEY.addMarkup(
 '      <td title="Help" class="labkey-wp-title-left" nowrap>'+
 '        <div><span id="helpDivTitle" class="labkey-wp-title">Title</span></div>'+
 '      </td>'+
-'      <td class="labkey-wp-title-right" align="right" style="border-left:0px">'+
-'      <img alt="close" src="' + LABKEY.imagePath + '/partdelete.gif" onclick="hideHelpDiv(true)">'+
+'      <td class="labkey-wp-title-right" align="right" style="border-left:0; padding-bottom: 0;">'+
+'      <img alt="close" src="' + LABKEY.imagePath + '/partdelete.png" onclick="hideHelpDiv(true)">'+
 '      </td>'+
 '     </tr>'+
 '    <tr>'+

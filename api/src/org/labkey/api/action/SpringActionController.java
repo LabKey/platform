@@ -52,6 +52,7 @@ import org.labkey.api.view.template.DialogTemplate;
 import org.labkey.api.view.template.HomeTemplate;
 import org.labkey.api.view.template.PageConfig;
 import org.labkey.api.view.template.PrintTemplate;
+import org.labkey.api.view.template.WizardTemplate;
 import org.springframework.beans.BeansException;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.ApplicationContextAware;
@@ -462,13 +463,15 @@ public abstract class SpringActionController implements Controller, HasViewConte
                 NavTree[] children = root.getChildren();
                 if (children.length > 0 && page.getTitle() == null)
                     page.setTitle(children[children.length-1].getKey());
-                PrintTemplate template = new PrintTemplate(mv, page);
-                return template;
+                return new PrintTemplate(mv, page);
             }
             case Dialog:
             {
-                DialogTemplate template = new DialogTemplate(mv, page);
-                return template;
+                return new DialogTemplate(mv, page);
+            }
+            case Wizard:
+            {
+                return new WizardTemplate(mv, page);
             }
             case Home:
             default:
