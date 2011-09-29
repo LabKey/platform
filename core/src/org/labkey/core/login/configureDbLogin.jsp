@@ -36,7 +36,7 @@
             { %>
             <tr valign="center">
                 <td><input type="radio" name="strength" value="<%=rule.name()%>"<%=rule.equals(bean.currentRule) ? " checked" : ""%>><b><%=h(rule.name())%></b></td>
-                <td><%=rule.getRuleHTML()%></td>
+                <td><%=rule.getFullRuleHTML()%></td>
             </tr>
                 <%
             }
@@ -61,7 +61,7 @@
     </tr>
     <tr><td colspan="2">&nbsp;</td></tr>
     <tr>
-        <td colspan=2>[<%=bean.helpLink%>]</td>
+        <td colspan=2><%=bean.helpLink%></td>
     </tr>
 </table>
 </form>

@@ -28,6 +28,7 @@
 <%@ page import="org.labkey.core.user.UserController" %>
 <%@ page import="java.util.Map" %>
 <%@ page import="java.util.TreeMap" %>
+<%@ page import="org.labkey.api.util.GUID" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
     HttpView<AdminController.AdminBean> me = (HttpView<AdminController.AdminBean>) HttpView.currentView();
@@ -117,14 +118,18 @@
     <tr><td colspan="4"><b>Module Information</b></td></tr><%
 
     for (Module module : bean.modules)
-    {%>
+    {
+        String guid = GUID.makeGUID();
+        %>
     <tr class="labkey-header">
         <td valign="middle">
-            <a href="#" onclick="return toggleLink(this, false);">
+            <a id="<%= h(guid) %>" onclick="return toggleLink(this, false);">
                 <img src="<%= contextPath %>/_images/plus.gif">
             </a>
         </td>
-        <td><%=h(module.getName())%> <%=h(module.getFormattedVersion())%></td>
+        <td>
+            <span onclick="return toggleLink(document.getElementById('<%= h(guid) %>'), false);"><%=h(module.getName())%> <%=h(module.getFormattedVersion())%></span>
+        </td>
     </tr>
     <tr style="display:none">
         <td></td>

@@ -40,11 +40,18 @@ public enum PasswordRule
 
         @NotNull
         @Override
-        public String getRuleHTML()
+        public String getFullRuleHTML()
         {
             return "Passwords must be six characters or more and must not match your email address.";
         }
 
+        @NotNull
+        @Override
+        public String getSummaryRuleHTML()
+        {
+            return "six characters or more, cannot match email address";
+        }
+        
         @Override
         boolean isValidForLogin(@NotNull String password, @NotNull User user, @Nullable Collection<String> messages)
         {
@@ -86,7 +93,7 @@ public enum PasswordRule
 
         @NotNull
         @Override
-        public String getRuleHTML()
+        public String getFullRuleHTML()
         {
             return "Passwords follow these rules:<ul>\n" +
                     "<li>Must be eight characters or more.</li>\n" +
@@ -95,6 +102,12 @@ public enum PasswordRule
                     "<li>Must not match any of your 10 previously used passwords.</li>\n</ul>\n";
         }
 
+        @NotNull
+        @Override
+        public String getSummaryRuleHTML()
+        {
+            return "must be at least eight characters, include a mix of letters, numbers, and digits, and cannot include your email address";
+        }
         @Override
         boolean isValidForLogin(@NotNull String password, @NotNull User user, @Nullable Collection<String> messages)
         {
@@ -202,7 +215,9 @@ public enum PasswordRule
 
     abstract boolean isValidToStore(@NotNull String password, @NotNull User user, @Nullable Collection<String> messages);
 
-    public abstract @NotNull String getRuleHTML();
+    public abstract @NotNull String getFullRuleHTML();
+
+    public abstract @NotNull String getSummaryRuleHTML();
 
     // 100 most-used passwords on RockYou
     private static final String weakPasswords = "123456\n"+

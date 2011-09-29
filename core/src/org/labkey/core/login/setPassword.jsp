@@ -28,36 +28,47 @@
     String errors = formatMissedErrors("form");
 %>
 <form method="POST" action="<%=bean.actionName%>.post"><labkey:csrf />
-<table><%
+<%
     if (errors.length() > 0)
     { %>
-    <tr><td colspan=2><%=errors%></td></tr>
-    <tr><td colspan=2>&nbsp;</td></tr><%
+    <div><%=errors%></div><%
     }
 
     if (!bean.unrecoverableError)
     {
         if (null != bean.email)
         { %>
-    <tr><td colspan=2><%=h(bean.email)%>:</td></tr><%
+    <div><%=h(bean.email)%>:</div><%
         } %>
-    <tr><td colspan=2><%=h(bean.message)%></td></tr>
-    <tr><td colspan=2>&nbsp;</td></tr>
-    <tr><td colspan=2><%=DbLoginManager.getPasswordRule().getRuleHTML()%></td></tr>
-    <tr><td colspan=2>&nbsp;</td></tr><%
+    <div style="width: 50em;"><%=h(bean.message)%></div>
+    <div><br/></div><%
 
     for (NamedObject input : bean.nonPasswordInputs)
     { %>
-    <tr><td style="white-space: nowrap;"><%=h(input.getName())%>&nbsp;</td><td style="width:100%;"><input id="<%=input.getObject()%>" type="text" name="<%=input.getObject()%>" style="width:150px;"></td></tr><%
+    <div style="padding-top: 1em;">
+        <label for="<%=input.getObject()%>"><%=h(input.getName())%></label>
+        <br/>
+        <input id="<%=input.getObject()%>" type="text" name="<%=input.getObject()%>" style="width:40em;">
+    </div><%
     }
 
+    boolean firstPasswordInput = true;
     for (NamedObject input : bean.passwordInputs)
     { %>
-    <tr><td style="white-space: nowrap;"><%=h(input.getName())%>&nbsp;</td><td style="width:100%;"><input id="<%=input.getObject()%>" type="password" name="<%=input.getObject()%>" style="width:150px;"></td></tr><%
+    <div style="padding-top: 1em;">
+        <label for="<%=input.getObject()%>"><%=h(input.getName())%></label>
+        <% if (firstPasswordInput) {
+            firstPasswordInput= false; %>
+            <span style="font-size: smaller;">(<%=DbLoginManager.getPasswordRule().getSummaryRuleHTML()%>)</span>
+        <% } %>
+
+        <br/>
+        <input id="<%=input.getObject()%>" type="password" name="<%=input.getObject()%>" style="width:40em;">
+    </div><%
     }
     %>
-    <tr>
-        <td colspan="2"><%
+    <div>
+        <%
             if (null != bean.email)
             { %>
             <input type="hidden" name="email" value="<%=h(bean.email)%>"><%
@@ -83,9 +94,7 @@
             <%=generateReturnUrlFormField(bean.form)%><%
             }
         %>
-        </td>
-    </tr>
-    <tr><td></td><td height="50"><%=PageFlowUtil.generateSubmitButton(bean.buttonText, "", "name=\"set\"")%><%=bean.cancellable ? generateButton("Cancel", bean.form.getReturnURLHelper()) : ""%></td></tr><%
+        </div>
+    <div style="padding-top: 1em;"><%=PageFlowUtil.generateSubmitButton(bean.buttonText, "", "name=\"set\"")%><%=bean.cancellable ? generateButton("Cancel", bean.form.getReturnURLHelper()) : ""%></div><%
     } %>
-</table>
 </form>

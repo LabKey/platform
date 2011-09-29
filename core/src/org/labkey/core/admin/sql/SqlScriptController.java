@@ -17,6 +17,11 @@
 package org.labkey.core.admin.sql;
 
 import org.apache.commons.lang.ArrayUtils;
+import org.json.JSONArray;
+import org.json.JSONObject;
+import org.labkey.api.action.ApiAction;
+import org.labkey.api.action.ApiResponse;
+import org.labkey.api.action.ApiSimpleResponse;
 import org.labkey.api.action.FormViewAction;
 import org.labkey.api.action.SimpleViewAction;
 import org.labkey.api.action.SpringActionController;
@@ -29,7 +34,6 @@ import org.labkey.api.data.SqlScriptRunner;
 import org.labkey.api.data.SqlScriptRunner.SqlScript;
 import org.labkey.api.data.SqlScriptRunner.SqlScriptException;
 import org.labkey.api.data.SqlScriptRunner.SqlScriptProvider;
-import org.labkey.api.jsp.JspLoader;
 import org.labkey.api.module.AllowedDuringUpgrade;
 import org.labkey.api.module.DefaultModule;
 import org.labkey.api.module.Module;
@@ -43,10 +47,8 @@ import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.HtmlView;
 import org.labkey.api.view.HttpView;
-import org.labkey.api.view.JspView;
 import org.labkey.api.view.NavTree;
 import org.labkey.api.view.RedirectException;
-import org.labkey.api.view.WebPartView;
 import org.labkey.api.view.template.PageConfig;
 import org.springframework.validation.BindException;
 import org.springframework.validation.Errors;
@@ -76,87 +78,59 @@ public class SqlScriptController extends SpringActionController
         setActionResolver(_actionResolver);
     }
 
-
-    public static ActionURL getShowRunningScriptsURL(String moduleName)
-    {
-        ActionURL url = new ActionURL(ShowRunningScriptsAction.class, ContainerManager.getRoot());
-        url.addParameter("moduleName", moduleName);
-        return url;
-    }
-
-
     @RequiresSiteAdmin
     @AllowedDuringUpgrade
-    public class ShowRunningScriptsAction extends SimpleViewAction<SqlScriptForm>
+    public class GetModuleStatusAction extends ApiAction
     {
-        public ModelAndView getView(SqlScriptForm form, BindException errors) throws Exception
+        @Override
+        public ApiResponse execute(Object o, BindException errors) throws Exception
         {
-            List<SqlScript> scripts = SqlScriptRunner.getRunningScripts(form.getModuleName());
+            JSONObject result = new JSONObject();
+            JSONArray modulesJSON = new JSONArray();
 
-            if (scripts.isEmpty())
+            String currentModule = SqlScriptRunner.getCurrentModuleName();
+            result.put("currentModule", currentModule);
+            for (Module module : ModuleLoader.getInstance().getModules())
             {
-                throw new RedirectException(PageFlowUtil.urlProvider(AdminUrls.class).getModuleStatusURL());
+                JSONObject moduleJSON = new JSONObject();
+                ModuleContext ctx = ModuleLoader.getInstance().getModuleContext(module);
+                moduleJSON.put("name", module.getName());
+                moduleJSON.put("message", ctx.getMessage());
+                moduleJSON.put("state", ctx.getModuleState().toString());
+                moduleJSON.put("version", module.getVersion());
+                moduleJSON.put("originalVersion", ctx.getOriginalVersion());
+                moduleJSON.put("installedVersion", ctx.getInstalledVersion());
+
+                JSONArray scriptsJSON = new JSONArray();
+
+                if (module.getName().equals(currentModule))
+                {
+                    moduleJSON.put("currentlyUpgrading", true);
+                    List<SqlScript> sqlScripts = SqlScriptRunner.getRunningScripts(currentModule);
+                    for (SqlScript sqlScript : sqlScripts)
+                    {
+                        JSONObject scriptJSON = new JSONObject();
+                        scriptJSON.put("description", sqlScript.getDescription());
+                        scriptJSON.put("fromVersion", sqlScript.getFromVersion());
+                        scriptJSON.put("toVersion", sqlScript.getToVersion());
+                        scriptsJSON.put(scriptJSON);
+                    }
+                }
+                else
+                {
+                    moduleJSON.put("currentlyUpgrading", false);
+                }
+
+                moduleJSON.put("scripts", scriptsJSON);
+                modulesJSON.put(moduleJSON);
             }
+            result.put("modules", modulesJSON);
+            result.put("startupComplete", ModuleLoader.getInstance().isStartupComplete());
+            result.put("upgradeInProgress", ModuleLoader.getInstance().isUpgradeInProgress());
+            result.put("upgradeRequired", ModuleLoader.getInstance().isUpgradeRequired());
+            result.put("newInstall", ModuleLoader.getInstance().isNewInstall());
 
-            getPageConfig().setTemplate(PageConfig.Template.Dialog);
-
-            ShowRunningScriptsPage page = (ShowRunningScriptsPage) JspLoader.createPage(SqlScriptController.class, "showRunningScripts.jsp");
-            page.setWaitForScriptsURL(getWaitForScriptsURL(form.getModuleName()));
-            page.setCurrentURL(getViewContext().cloneActionURL());
-            page.setScripts(scripts);
-
-            return new JspView(page);
-        }
-
-        public NavTree appendNavTrail(NavTree root)
-        {
-            return null;
-        }
-    }
-
-
-    private static ActionURL getWaitForScriptsURL(String moduleName)
-    {
-        ActionURL url = new ActionURL(WaitForScriptsAction.class, ContainerManager.getRoot());
-        url.addParameter("moduleName", moduleName);
-        return url;
-    }
-
-
-    @RequiresSiteAdmin
-    @AllowedDuringUpgrade
-    public class WaitForScriptsAction extends SimpleViewAction<SqlScriptForm>
-    {
-        public ModelAndView getView(SqlScriptForm form, BindException errors) throws Exception
-        {
-            getViewContext().getResponse().setHeader("Cache-Control", "no-cache");
-
-            StringBuilder xml = new StringBuilder();
-
-            xml.append("<?xml version=\"1.0\" encoding=\"iso-8859-1\"?>\n");
-            xml.append("<status>");
-            if (SqlScriptRunner.waitForScriptToFinish(form.getModuleName(), 2000))
-            {
-                xml.append("complete");
-            }
-            else
-            {
-                xml.append("incomplete");
-            }
-            xml.append("</status>");
-
-            getPageConfig().setTemplate(PageConfig.Template.None);
-
-            HtmlView view = new HtmlView(xml.toString());
-            view.setFrame(WebPartView.FrameType.NONE);
-            view.setContentType("text/xml");
-
-            return view;
-        }
-
-        public NavTree appendNavTrail(NavTree root)
-        {
-            return null;
+            return new ApiSimpleResponse(result);
         }
     }
 

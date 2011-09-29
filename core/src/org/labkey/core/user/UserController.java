@@ -1526,7 +1526,7 @@ public class UserController extends SpringActionController
             User currentUser = getUser();
 
             if (container.isRoot() && !currentUser.isAdministrator())
-                throw new UnauthorizedException("Only system administrators may see users in the root container!");
+                throw new UnauthorizedException("Only site administrators may see users in the root container!");
 
             ApiSimpleResponse response = new ApiSimpleResponse();
             response.put("container", container.getPath());

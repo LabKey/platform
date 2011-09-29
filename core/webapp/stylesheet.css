@@ -48,6 +48,32 @@ img
     border: 0 none;
 }
 
+.labkey-fullscreen-wizard-background
+{
+    background-color: #E7EFF4;
+    height: 100%;
+    float: left;
+}
+
+.labkey-fullscreen-wizard-steps
+{
+    background-color: #E7EFF4;
+    list-style-position: inside;
+    padding: 3em 0;
+    margin: 0;
+}
+
+.labkey-fullscreen-wizard-steps li
+{
+    padding: 8px 6em 8px 4em;
+}
+
+li.labkey-fullscreen-wizard-active-step
+{
+    background-color: white;
+    font-weight: bold;
+}
+
 a, a:visited, .labkey-link, .labkey-link:visited
 {
     color: #126495;

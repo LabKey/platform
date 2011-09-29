@@ -625,3 +625,13 @@ li.labkey-tab-inactive a
 {
     background: #<%= grid %>;
 }
+
+.labkey-fullscreen-wizard-steps
+{
+    background-color: #<%= webpart %>;
+}
+
+.labkey-fullscreen-wizard-background
+{
+    background-color: #<%= webpart %>;
+}

@@ -18,7 +18,7 @@
 <%@ page import="org.labkey.api.admin.AdminUrls"%>
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.api.view.JspView" %>
-<%@ page import="org.labkey.core.admin.FilesSiteSettingsAction" %>
+<%@ page import="org.labkey.core.admin.FileSettingsForm" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 
@@ -29,7 +29,7 @@
 </script>
 
 <%
-    FilesSiteSettingsAction.FileSettingsForm bean = ((JspView<FilesSiteSettingsAction.FileSettingsForm>)HttpView.currentView()).getModelBean();
+    FileSettingsForm bean = ((JspView<FileSettingsForm>)HttpView.currentView()).getModelBean();
 %>
 
 <labkey:errors/>
@@ -41,7 +41,7 @@
 
         <% if (bean.isUpgrade()) { %>
         <tr><td colspan="2">Set the site-level root for this server installation, or use the default provided. If the
-            root does not exist, LabKey server will create it for you.<br/><br/>
+            location does not exist, LabKey Server will create it for you.<br/><br/>
             When a site-level file root is set, each folder for every project has a corresponding subdirectory in the file system.
             LabKey Server allows you to upload and process your data files, including flow, proteomics and
             study-related files. By default, LabKey stores your files in a standard directory structure. You can

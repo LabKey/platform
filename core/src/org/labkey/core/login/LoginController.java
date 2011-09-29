@@ -95,6 +95,7 @@ import java.net.URISyntaxException;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.LinkedList;
 import java.util.List;
 
@@ -421,7 +422,7 @@ public class LoginController extends SpringActionController
         {
             HtmlView updateMessageView = new HtmlView("Server upgrade in progress",
                     "This server is being upgraded to a new version of LabKey Server.<br/>" +
-                    "Only System Administrators are allowed to log in during the upgrade process.");
+                    "Only Site Administrators are permitted to log in during the upgrade process.");
             vBox.addView(updateMessageView);
         }
         else if (ModuleLoader.getInstance().isAdminOnlyMode())
@@ -985,7 +986,7 @@ public class LoginController extends SpringActionController
         {
             NamedObjectList list = new NamedObjectList();
             list.put(new SimpleNamedObject("Password", "password"));
-            list.put(new SimpleNamedObject("Retype Password", "password2"));
+            list.put(new SimpleNamedObject("Confirm Password", "password2"));
 
             return list;
         }
@@ -1021,6 +1022,8 @@ public class LoginController extends SpringActionController
             _unrecoverableError = false;
         }
 
+        
+
         @Override
         protected void verifyBeforeView(SetPasswordForm form, boolean reshow, BindException errors)
         {
@@ -1030,17 +1033,16 @@ public class LoginController extends SpringActionController
         @Override
         protected String getMessage(SetPasswordForm form)
         {
-            return "You are the first user of this LabKey Server installation.  Enter a valid email address to use as " +
-                "your id for logging into the system.  This email address will be added to the Site Administrators " +
-                "group, which will give you permission to add users to the system, add users to groups, assign permissions, " +
-                "create projects and folders, etc.";
+            return "Welcome! We see that this is your first time logging in. This wizard will guide you through " +
+                    "creating a Site Administrator account that has full control over this server, installing the modules " +
+                    "required to use LabKey Server, and setting some basic configuration.";
         }
 
         @Override
         protected NamedObjectList getNonPasswordInputs()
         {
             NamedObjectList list = new NamedObjectList();
-            list.put(new SimpleNamedObject("Email", "email"));
+            list.put(new SimpleNamedObject("Email Address", "email"));
 
             return list;
         }
@@ -1060,6 +1062,16 @@ public class LoginController extends SpringActionController
         {
             // Put it here to get ordering right... "Added to the system" gets logged before first login
             UserManager.addToUserHistory(user, "Added to the system via the initial user page.");
+        }
+
+        @Override
+        public ModelAndView getView(SetPasswordForm form, boolean reshow, BindException errors) throws Exception
+        {
+            ModelAndView result = super.getView(form, reshow, errors);
+            getPageConfig().setNavTrail(AdminController.getInstallUpgradeWizardSteps());
+            getPageConfig().setTitle("Account Setup");
+            getPageConfig().setTemplate(PageConfig.Template.Wizard);
+            return result;
         }
 
         @Override
@@ -1138,7 +1150,7 @@ public class LoginController extends SpringActionController
         @Override
         protected String getButtonText()
         {
-            return "Register";
+            return "Next";
         }
 
         @Override
@@ -1709,6 +1721,7 @@ public class LoginController extends SpringActionController
         public NavTree appendNavTrail(NavTree root)
         {
             PageFlowUtil.urlProvider(LoginUrls.class).appendAuthenticationNavTrail(root).addChild("Configure Database Authentication");
+            setHelpTopic(new HelpTopic("configDbLogin"));
             return root;
         }
 
@@ -1748,7 +1761,7 @@ public class LoginController extends SpringActionController
 
     public static class Config extends ReturnUrlForm
     {
-        public String helpLink = "<a href=\"" + (new HelpTopic("configDbLogin")).getHelpTopicLink() + "\" target=\"_new\">More information about database authentication</a>";
+        public String helpLink = PageFlowUtil.textLink("More information about database authentication", new HelpTopic("configDbLogin").getHelpTopicLink(), null, null, Collections.singletonMap("target", "_new"));
         public PasswordRule currentRule = DbLoginManager.getPasswordRule();
         public PasswordExpiration currentExpiration = DbLoginManager.getPasswordExpiration();
         public boolean reshow = false;

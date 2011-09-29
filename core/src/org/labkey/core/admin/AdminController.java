@@ -33,6 +33,7 @@ import org.labkey.api.action.ConfirmAction;
 import org.labkey.api.action.ExportAction;
 import org.labkey.api.action.FormViewAction;
 import org.labkey.api.action.HasValidator;
+import org.labkey.api.action.LabkeyError;
 import org.labkey.api.action.MutatingApiAction;
 import org.labkey.api.action.RedirectAction;
 import org.labkey.api.action.ReturnUrlForm;
@@ -58,7 +59,6 @@ import org.labkey.api.data.CoreSchema;
 import org.labkey.api.data.DbSchema;
 import org.labkey.api.data.DbScope;
 import org.labkey.api.data.QueryProfiler;
-import org.labkey.api.data.SqlScriptRunner;
 import org.labkey.api.data.TableXmlUtils;
 import org.labkey.api.exp.OntologyManager;
 import org.labkey.api.exp.api.StorageProvisioner;
@@ -87,6 +87,7 @@ import org.labkey.api.security.SecurityManager;
 import org.labkey.api.security.SecurityUrls;
 import org.labkey.api.security.User;
 import org.labkey.api.security.UserManager;
+import org.labkey.api.security.ValidEmail;
 import org.labkey.api.security.permissions.AdminPermission;
 import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.services.ServiceRegistry;
@@ -2877,29 +2878,10 @@ public class AdminController extends SpringActionController
     }
 
 
-    private static ActionURL getModuleUpgradeURL()
-    {
-        return new ActionURL(ModuleUpgradeAction.class, ContainerManager.getRoot());
-    }
-
-
-    @RequiresSiteAdmin
-    @AllowedDuringUpgrade
-    public class ModuleUpgradeAction extends SimpleRedirectAction
-    {
-        public ActionURL getRedirectURL(Object o) throws Exception
-        {
-            ModuleLoader.getInstance().startNonCoreUpgrade(getUser());
-            return getModuleStatusURL();
-        }
-    }
-
-
     private static ActionURL getModuleStatusURL()
     {
         return new ActionURL(ModuleStatusAction.class, ContainerManager.getRoot());
     }
-
 
     @RequiresSiteAdmin
     @AllowedDuringUpgrade
@@ -2907,25 +2889,17 @@ public class AdminController extends SpringActionController
     {
         public ModelAndView getView(Object o, BindException errors) throws Exception
         {
-            ModuleLoader loader = ModuleLoader.getInstance();
+            ModuleLoader.getInstance().startNonCoreUpgrade(getUser());
+
             VBox vbox = new VBox();
 
-            if (loader.isUpgradeRequired())
-            {
-                vbox.addView(new UpgradeButtonView(Location.top));
-                vbox.addView(new ModuleStatusView());
-                vbox.addView(new UpgradeButtonView(Location.bottom));
-            }
-            else
-            {
-                ActionURL nextURL = AppProps.getInstance().getFileSystemRoot() == null ? new AdminUrlsImpl().getFilesSiteSettingsURL(true) : new AdminUrlsImpl().getCustomizeSiteURL(true);
-                vbox.addView(new HtmlView("<p>All modules are up-to-date.<br><br>" + PageFlowUtil.generateButton("Next", nextURL) + "</p>"));
-                vbox.addView(new ModuleStatusView());
-                vbox.addView(new HtmlView("<p>All modules are up-to-date.<br><br>" + PageFlowUtil.generateButton("Next", nextURL) + PageFlowUtil.generateRedirectOnEnter(nextURL) + "</p>"));
-            }
+            JspView statusView = new JspView("/org/labkey/core/admin/moduleStatus.jsp");
+            vbox.addView(statusView);
 
-            getPageConfig().setTemplate(Template.Dialog);
-            getPageConfig().setTitle((loader.isNewInstall() ? "Install" : "Upgrade") + " Status");
+            getPageConfig().setNavTrail(getInstallUpgradeWizardSteps());
+
+            getPageConfig().setTemplate(Template.Wizard);
+            getPageConfig().setTitle((ModuleLoader.getInstance().isNewInstall() ? "Install" : "Upgrade") + " Modules");
 
             return vbox;
         }
@@ -2936,116 +2910,183 @@ public class AdminController extends SpringActionController
         }
     }
 
-
-    public static class ModuleStatusView extends HttpView
+    public static class NewInstallSiteSettingsForm extends FileSettingsForm
     {
-        @Override
-        protected void renderInternal(Object model, PrintWriter out) throws Exception
+        private String _notificationEmail;
+        private String _siteName;
+        private boolean _allowReporting;
+
+        public String getNotificationEmail()
         {
-            List<Module> modules = ModuleLoader.getInstance().getModules();
-            out.write("<table><tr><td><b>Module</b></td><td><b>Status</b></td></tr>");
-            for (Module module : modules)
-            {
-                ModuleContext ctx = ModuleLoader.getInstance().getModuleContext(module);
-                out.write("<tr><td>");
-                out.write(ctx.getName());
-                out.write("</td><td>");
-                out.write(ctx.getMessage());
-                out.write("</td></tr>\n");
-            }
-            out.write("</table>");
+            return _notificationEmail;
+        }
+
+        public void setNotificationEmail(String notificationEmail)
+        {
+            _notificationEmail = notificationEmail;
+        }
+
+        public String getSiteName()
+        {
+            return _siteName;
+        }
+
+        public void setSiteName(String siteName)
+        {
+            _siteName = siteName;
+        }
+
+        public boolean isAllowReporting()
+        {
+            return _allowReporting;
+        }
+
+        public void setAllowReporting(boolean allowReporting)
+        {
+            _allowReporting = allowReporting;
         }
     }
 
-
-    private static enum Location
+    @RequiresSiteAdmin
+    public class NewInstallSiteSettingsAction extends AbstractFileSiteSettingsAction<NewInstallSiteSettingsForm>
     {
-        top("padding-top:10px;padding-bottom:10px;"),
-        bottom("padding-top:10px;");
-
-        private String _style;
-
-        private Location(String style)
+        public NewInstallSiteSettingsAction()
         {
-            _style = style;
-        }
-
-        private String getStyle()
-        {
-            return _style;
-        }
-    }
-
-    public static class UpgradeButtonView extends HttpView
-    {
-        private final Location _location;
-
-        public UpgradeButtonView(Location location)
-        {
-            _location = location;
+            super(NewInstallSiteSettingsForm.class);
         }
 
         @Override
-        protected void renderInternal(Object model, PrintWriter out) throws Exception
+        public void validateCommand(NewInstallSiteSettingsForm form, Errors errors)
         {
-            ModuleLoader loader = ModuleLoader.getInstance();
+            super.validateCommand(form, errors);
 
-            String action;
-            String ing;
-
-            if (loader.isNewInstall())
+            if (StringUtils.isBlank(form.getNotificationEmail()))
             {
-                action = "Install";
-                ing = "Installing";
+                errors.reject(SpringActionController.ERROR_MSG, "Notification email address may not be blank.");
             }
-            else
+            try
             {
-                action = "Upgrade";
-                ing = "Upgrading";
+                ValidEmail email = new ValidEmail(form.getNotificationEmail());
             }
-
-            ActionURL continueURL = getContinueURL();
-
-            // Upgrade is not started
-            if (!loader.isUpgradeInProgress())
+            catch (ValidEmail.InvalidEmailException e)
             {
-                out.write("<div style='" + _location.getStyle() + "'>" + PageFlowUtil.generateButton(action, continueURL.toString()) + "</div>");
-
-                if (Location.bottom == _location)
-                    out.write(PageFlowUtil.generateRedirectOnEnter(continueURL));
+                errors.reject(SpringActionController.ERROR_MSG, e.getMessage());
             }
-            //I'm already upgrading
-            else
+        }
+
+        @Override
+        public boolean handlePost(NewInstallSiteSettingsForm form, BindException errors) throws Exception
+        {
+            boolean success = super.handlePost(form, errors);
+            if (success)
             {
-                if (Location.bottom == _location)
+                WriteableAppProps appProps = AppProps.getWriteableInstance();
+                if (form.isAllowReporting())
                 {
-                    out.write("<script type=\"text/javascript\">var timeout = window.setTimeout(\"doRefresh()\", 1000);" +
-                            "function doRefresh() {\n" +
-                            "   window.clearTimeout(timeout);\n" +
-                            "   window.location = '" + continueURL.getEncodedLocalURIString() + "';\n" +
-                            "}\n</script>");
+                    appProps.setExceptionReportingLevel(ExceptionReportingLevel.MEDIUM);
+                    appProps.setUsageReportingLevel(UsageReportingLevel.MEDIUM);
+                }
+                else
+                {
+                    appProps.setExceptionReportingLevel(ExceptionReportingLevel.NONE);
+                    appProps.setUsageReportingLevel(UsageReportingLevel.NONE);
                 }
 
-                out.write("<p>");
-                out.write(ing + "...");
-                out.write("<p>This page should refresh automatically. If the page does not refresh <a href=\"");
-                out.write(continueURL.getEncodedLocalURIString());
-                out.write("\">Click Here</a>");
+                WriteableLookAndFeelProperties lafProps = LookAndFeelProperties.getWriteableInstance(ContainerManager.getRoot());
+                try
+                {
+                    lafProps.setSystemEmailAddress(new ValidEmail(form.getNotificationEmail()));
+                }
+                catch (ValidEmail.InvalidEmailException e)
+                {
+                    errors.reject(SpringActionController.ERROR_MSG, e.getMessage());
+                    return false;
+                }
+                lafProps.setSystemShortName(form.getSiteName());
+
+                appProps.save();
+                lafProps.save();
+                return true;
             }
+            return false;
+        }
+
+        @Override
+        public ModelAndView getView(NewInstallSiteSettingsForm form, boolean reshow, BindException errors) throws Exception
+        {
+            if (!reshow)
+            {
+                File root = _svc.getSiteDefaultRoot();
+
+                if (root != null && root.exists())
+                    form.setRootPath(root.getCanonicalPath());
+
+                form.setAllowReporting(true);
+                LookAndFeelProperties props = LookAndFeelProperties.getInstance(ContainerManager.getRoot());
+                form.setSiteName(props.getShortName());
+                form.setNotificationEmail(props.getSystemEmailAddress());
+            }
+            
+            JspView<NewInstallSiteSettingsForm> view = new JspView<NewInstallSiteSettingsForm>("/org/labkey/core/admin/newInstallSiteSettings.jsp", form, errors);
+
+            getPageConfig().setNavTrail(getInstallUpgradeWizardSteps());
+            getPageConfig().setTitle("Set Defaults");
+            getPageConfig().setTemplate(Template.Wizard);
+
+            return view;
+        }
+
+        @Override
+        public URLHelper getSuccessURL(NewInstallSiteSettingsForm form)
+        {
+            return new ActionURL(InstallCompleteAction.class, ContainerManager.getRoot());
+        }
+
+        @Override
+        public NavTree appendNavTrail(NavTree root)
+        {
+            return root;
         }
     }
 
-
-    private static ActionURL getContinueURL()
+    @RequiresSiteAdmin
+    public class InstallCompleteAction extends SimpleViewAction
     {
-        String moduleName = SqlScriptRunner.getCurrentModuleName();
+        @Override
+        public ModelAndView getView(Object o, BindException errors) throws Exception
+        {
+            JspView view = new JspView("/org/labkey/core/admin/installComplete.jsp");
 
-        if (null == moduleName)
-            return getModuleUpgradeURL();
-        else
-            return SqlScriptController.getShowRunningScriptsURL(moduleName);
+            getPageConfig().setNavTrail(getInstallUpgradeWizardSteps());
+            getPageConfig().setTitle("Complete");
+            getPageConfig().setTemplate(Template.Wizard);
+
+            return view;
+        }
+
+        @Override
+        public NavTree appendNavTrail(NavTree root)
+        {
+            return root;
+        }
     }
 
+    public static List<NavTree> getInstallUpgradeWizardSteps()
+    {
+        List<NavTree> navTrail = new ArrayList<NavTree>();
+        if (ModuleLoader.getInstance().isNewInstall())
+        {
+            navTrail.add(new NavTree("Account Setup"));
+            navTrail.add(new NavTree("Install Modules"));
+        }
+        else
+        {
+            navTrail.add(new NavTree("Upgrade Modules"));
+        }
+        navTrail.add(new NavTree("Set Defaults"));
+        navTrail.add(new NavTree("Complete"));
+        return navTrail;
+    }
 
     @RequiresSiteAdmin
     public class DbCheckerAction extends SimpleViewAction
