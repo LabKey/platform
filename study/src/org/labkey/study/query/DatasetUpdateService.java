@@ -71,7 +71,11 @@ public class DatasetUpdateService extends AbstractQueryUpdateService
     public int importRows(User user, Container container, DataIterator rows, BatchValidationException errors, Map<String, Object> extraScriptContext) throws SQLException
     {
         int count = super._importRowsUsingETL(user, container, rows, null, errors, extraScriptContext, true);
-        resyncStudy(user, container);
+        if (count > 0)
+        {
+            StudyManager.fireDataSetChanged(_dataset);
+            resyncStudy(user, container);
+        }
         return count;
     }
 
@@ -80,7 +84,11 @@ public class DatasetUpdateService extends AbstractQueryUpdateService
             throws DuplicateKeyException, QueryUpdateServiceException, SQLException
     {
         List<Map<String, Object>> result = super._insertRowsUsingETL(user, container, rows, errors, extraScriptContext);
-        resyncStudy(user, container);
+        if (null != result && result.size() > 0)
+        {
+            StudyManager.fireDataSetChanged(_dataset);
+            resyncStudy(user, container);
+        }
         return result;
     }
 
