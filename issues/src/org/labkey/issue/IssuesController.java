@@ -16,14 +16,20 @@
 
 package org.labkey.issue;
 
+import org.apache.commons.collections15.BeanMap;
 import org.apache.commons.lang.BooleanUtils;
 import org.apache.commons.lang.StringUtils;
 import org.apache.commons.lang.math.NumberUtils;
 import org.apache.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
+import org.json.JSONArray;
+import org.json.JSONObject;
 import org.junit.Assert;
 import org.junit.Test;
 import org.labkey.api.action.AjaxCompletionAction;
+import org.labkey.api.action.ApiAction;
+import org.labkey.api.action.ApiResponse;
+import org.labkey.api.action.ApiSimpleResponse;
 import org.labkey.api.action.FormHandlerAction;
 import org.labkey.api.action.FormViewAction;
 import org.labkey.api.action.LabkeyError;
@@ -47,7 +53,6 @@ import org.labkey.api.data.TSVGridWriter;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.issues.IssuesSchema;
 import org.labkey.api.issues.IssuesUrls;
-import org.labkey.api.query.CustomView;
 import org.labkey.api.query.QueryForm;
 import org.labkey.api.query.QueryService;
 import org.labkey.api.query.QuerySettings;
@@ -93,19 +98,18 @@ import org.labkey.api.view.UnauthorizedException;
 import org.labkey.api.view.ViewContext;
 import org.labkey.api.view.WebPartView;
 import org.labkey.api.view.template.PageConfig;
-import org.labkey.api.wiki.WikiRenderer;
 import org.labkey.api.wiki.WikiRendererType;
 import org.labkey.api.wiki.WikiService;
 import org.labkey.issue.model.Issue;
 import org.labkey.issue.model.IssueManager;
 import org.labkey.issue.query.IssuesQuerySchema;
-import org.labkey.issue.query.IssuesQueryView;
 import org.springframework.validation.BindException;
 import org.springframework.validation.Errors;
 import org.springframework.validation.MapBindingResult;
 import org.springframework.validation.ObjectError;
 import org.springframework.web.servlet.ModelAndView;
 import org.springframework.web.servlet.mvc.Controller;
+import sun.java2d.pipe.SpanShapeRenderer;
 
 import javax.mail.Address;
 import javax.servlet.ServletException;
@@ -1807,6 +1811,61 @@ public class IssuesController extends SpringActionController
             _status = status;
             _print = isPrint;
             setModelBean(this);
+        }
+    }
+
+
+    @RequiresPermissionClass(ReadPermission.class)
+    public class GetIssueAction extends ApiAction<IssueIdForm>
+    {
+        @Override
+        public ApiResponse execute(IssueIdForm issueIdForm, BindException errors) throws Exception
+        {
+            User user = getUser();
+            Issue issue = getIssue(issueIdForm.getIssueId());
+            //IssuePage page = new IssuePage();
+
+            BeanMap wrapper = new BeanMap(issue);
+            JSONObject jsonIssue = new JSONObject(wrapper);
+            jsonIssue.remove("lastComment");
+            jsonIssue.remove("class");
+
+            Map<String,String> captions = getColumnCaptions();
+            for (Map.Entry<String,String> e : captions.entrySet())
+            {
+                jsonIssue.remove(e.getKey());
+                jsonIssue.put(e.getValue(), wrapper.get(e.getKey()));
+            }
+
+            JSONArray comments = new JSONArray();
+            jsonIssue.put("comments", comments);
+            for (Issue.Comment c : issue.getComments())
+            {
+                JSONObject jsonComment = new JSONObject(new BeanMap(c));
+                jsonComment.put("createdByName", c.getCreatedByName(user));
+                comments.put(jsonComment);
+                // ATTACHMENTS
+            }
+            jsonIssue.put("success", Boolean.TRUE);
+            return new ApiSimpleResponse(jsonIssue);
+        }
+    }
+
+
+    @RequiresPermissionClass(ReadPermission.class)
+    public class AppAction extends SimpleViewAction<Object>
+    {
+        @Override
+        public ModelAndView getView(Object o, BindException errors) throws Exception
+        {
+            getPageConfig().setTemplate(PageConfig.Template.Print);
+            return new JspView(IssuesController.class, "extjs4.jsp", null);
+        }
+
+        @Override
+        public NavTree appendNavTrail(NavTree root)
+        {
+            return root;
         }
     }
 
