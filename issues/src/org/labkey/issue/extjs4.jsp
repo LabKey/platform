@@ -4,11 +4,12 @@ var urlGetIssueApi = LABKEY.ActionURL.buildURL('issues', 'getIssue.api');
 
 var IssueApplication = Ext.extend(Ext.util.Observable,
 {
+    // globals
     viewport: null,
     issueStore:null,
     previewForm:null,
 
-    // properties
+    // properties (with change events)
     selectedIssueId:-1,
     selectedIssue:null,
 
@@ -20,33 +21,51 @@ var IssueApplication = Ext.extend(Ext.util.Observable,
         );
     },
 
-
-    setSelectedIssueId : function(issueId)
+    _eqIssue : function(a,b)
     {
-        if (this.selectedIssueId == issueId)
-            return;
+        if (!a || !b)
+            return false;
+        return a.issueId == b.issueId && this._eqDate(a.modified,b.modified);
+    },
+    _eqDate : function(a,b)
+    {
+        if (!a || !b)
+            return false;
+        if (!Ext.isDate(a))
+            a = new Date(a);
+        if (!Ext.isDate(b))
+            b = new Date(b);
+        return a.getTime() == b.getTime();
+    },
+
+    setSelectedIssueId : function(issueId, modified)
+    {
         this.selectedIssueId = issueId;
-        this.getIssue(issueId, function(issue)
+        this.getIssue(issueId, modified, function(issue)
         {
-            selectedIssue = issue;
+            if (this._eqIssue(this.selectedIssue,issue))
+                return;
+            this.selectedIssue = issue;
             this.fireEvent('selectIssue', issue);
         }, this);
     },
 
 
-    getIssue : function(issueId, successFn, scope)
+    getIssue : function(issueId, modified, successFn, scope)
     {
         // UNDONE: use extjs 4 provider interface
+        var issue;
         var key = urlGetIssueApi + "/" + issueId;
         var item = window.localStorage.getItem(key);
-        var issue;
         if (item)
         {
             issue = Ext.util.JSON.decode(item);
-            successFn.call(scope||this, issue);
-            return;
+            if (this._eqDate(issue.modified, modified))
+            {
+                successFn.call(scope||this, issue);
+                return;
+            }
         }
-
         var cb = function(response, options)
         {
             if (response.status == 200)
@@ -232,7 +251,8 @@ function startIssueApplication()
     app.issueStore = new LABKEY.ext.Store(
     {
         schemaName: 'issues',
-        queryName: 'Issues'
+        queryName: 'Issues',
+        columns: 'IssueId, Title, Status, Priority, AssignedTo, Milestone, Modified'
     });
 
     //create a grid using that store as the data source
@@ -250,7 +270,8 @@ function startIssueApplication()
     {
         var record = app.issueStore.getAt(rowIndex);
         var issueId = record.get("IssueId");
-        app.setSelectedIssueId(issueId);
+        var modified = record.get("Modified");
+        app.setSelectedIssueId(issueId, modified);
     });
 
 
