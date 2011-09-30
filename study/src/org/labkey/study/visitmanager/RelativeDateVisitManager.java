@@ -29,7 +29,7 @@ import org.labkey.study.model.QCStateSet;
 import org.labkey.study.model.StudyImpl;
 import org.labkey.study.model.StudyManager;
 import org.labkey.study.model.VisitImpl;
-import org.labkey.study.query.DataSetTable;
+import org.labkey.study.query.DataSetTableImpl;
 
 import java.sql.SQLException;
 import java.util.ArrayList;
@@ -75,7 +75,7 @@ public class RelativeDateVisitManager extends VisitManager
             sql.append("SELECT DatasetId, Day").append(statsSql).append("\n" + "FROM ").append(studyData.getFromSQL(alias))
                 .append("\n" + "JOIN ").append(participantVisit.getFromSQL("PV")).append(" ON ").append(alias)
                 .append(".ParticipantId = PV.ParticipantId AND ").append(alias).append(".SequenceNum = PV.SequenceNum AND ? = PV.Container\n")
-                .append(qcStates != null ? "WHERE " + qcStates.getStateInClause(DataSetTable.QCSTATE_ID_COLNAME) + "\n" : "")
+                .append(qcStates != null ? "WHERE " + qcStates.getStateInClause(DataSetTableImpl.QCSTATE_ID_COLNAME) + "\n" : "")
                 .append("GROUP BY DatasetId, Day\n" + "ORDER BY 1, 2");
             sql.add(getStudy().getContainer());
         }
@@ -92,7 +92,7 @@ public class RelativeDateVisitManager extends VisitManager
                         .append(".ParticipantId = PV.ParticipantId AND ").append(alias).append(".SequenceNum = PV.SequenceNum AND ? = PV.Container\n" + "JOIN ")
                         .append(participantTable.getFromSQL("P")).append(" ON ").append(alias).append(".ParticipantId = P.ParticipantId AND ? = P.Container\n" + "WHERE P.")
                         .append(cohortFilter.getType() == CohortFilter.Type.PTID_CURRENT ? "CurrentCohortId" : "InitialCohortId")
-                        .append(" = ?\n").append(qcStates != null ? "AND " + qcStates.getStateInClause(DataSetTable.QCSTATE_ID_COLNAME) + "\n" : "")
+                        .append(" = ?\n").append(qcStates != null ? "AND " + qcStates.getStateInClause(DataSetTableImpl.QCSTATE_ID_COLNAME) + "\n" : "")
                         .append("GROUP BY DatasetId, Day\n" + "ORDER BY 1, 2");
                     sql.add(getStudy().getContainer());
                     sql.add(getStudy().getContainer());

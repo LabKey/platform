@@ -5,6 +5,7 @@ import org.labkey.api.data.Container;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.query.*;
 import org.labkey.api.study.DataSet;
+import org.labkey.api.study.DataSetTable;
 import org.labkey.api.study.Study;
 import org.labkey.api.study.StudyService;
 import org.labkey.api.util.Pair;
@@ -130,6 +131,10 @@ public class StudyVisualizationProvider extends VisualizationProvider
     @Override
     protected boolean isValid(TableInfo table, QueryDefinition query, ColumnMatchType type)
     {
+        if (table instanceof DataSetTable)
+        {if (!((DataSetTable) table).getDataSet().isShowByDefault())
+                return false;
+        }
         if (type == ColumnMatchType.CONFIGURED_MEASURES)
         {
             return table != null && table.getColumnNameSet().contains("ParticipantSequenceKey");

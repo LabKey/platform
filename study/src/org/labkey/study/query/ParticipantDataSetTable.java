@@ -90,7 +90,7 @@ public class ParticipantDataSetTable extends VirtualTable
                 {
                     try
                     {
-                        DataSetTable dsTable = new DataSetTable(_schema, def);
+                        DataSetTableImpl dsTable = new DataSetTableImpl(_schema, def);
                         dsTable.hideParticipantLookups();
                         return dsTable;
                     }

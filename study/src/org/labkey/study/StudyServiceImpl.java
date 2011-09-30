@@ -46,7 +46,7 @@ import org.labkey.api.view.DataView;
 import org.labkey.study.controllers.StudyController;
 import org.labkey.study.dataset.DatasetAuditViewFactory;
 import org.labkey.study.model.*;
-import org.labkey.study.query.DataSetTable;
+import org.labkey.study.query.DataSetTableImpl;
 import org.labkey.study.query.StudyQuerySchema;
 import org.labkey.study.security.roles.SpecimenCoordinatorRole;
 import org.labkey.study.security.roles.SpecimenRequesterRole;
@@ -377,10 +377,10 @@ public class StudyServiceImpl implements StudyService.Service
             map.put(col.getPropertyURI(), value);
         }
 
-        if (origData.containsKey(DataSetTable.QCSTATE_LABEL_COLNAME))
+        if (origData.containsKey(DataSetTableImpl.QCSTATE_LABEL_COLNAME))
         {
             // DataSetDefinition.importDatasetData() pulls this one out by name instead of PropertyURI
-            map.put(DataSetTable.QCSTATE_LABEL_COLNAME, origData.get(DataSetTable.QCSTATE_LABEL_COLNAME));
+            map.put(DataSetTableImpl.QCSTATE_LABEL_COLNAME, origData.get(DataSetTableImpl.QCSTATE_LABEL_COLNAME));
         }
 
         List<Map<String, Object>> result = new ArrayList<Map<String, Object>>();
@@ -528,7 +528,7 @@ public class StudyServiceImpl implements StudyService.Service
                     filter = new SimpleFilter();
                     view.getRenderContext().setBaseFilter(filter);
                 }
-                FieldKey qcStateKey = FieldKey.fromParts(DataSetTable.QCSTATE_ID_COLNAME, "rowid");
+                FieldKey qcStateKey = FieldKey.fromParts(DataSetTableImpl.QCSTATE_ID_COLNAME, "rowid");
                 Map<FieldKey, ColumnInfo> qcStateColumnMap = QueryService.get().getColumns(view.getDataRegion().getTable(), Collections.singleton(qcStateKey));
                 ColumnInfo qcStateColumn = qcStateColumnMap.get(qcStateKey);
                 if (qcStateColumn != null)

@@ -243,7 +243,7 @@ public class ParticipantVisitDataSetTable extends VirtualTable
             {
                 try
                 {
-                    DataSetTable dsTable = new DataSetTable(_schema, _dataset);
+                    DataSetTableImpl dsTable = new DataSetTableImpl(_schema, _dataset);
                     dsTable.hideParticipantLookups();
                     return dsTable;
                 }

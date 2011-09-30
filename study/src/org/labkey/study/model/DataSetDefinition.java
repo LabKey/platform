@@ -80,7 +80,7 @@ import org.labkey.api.util.Pair;
 import org.labkey.api.util.ResultSetUtil;
 import org.labkey.api.view.UnauthorizedException;
 import org.labkey.study.StudySchema;
-import org.labkey.study.query.DataSetTable;
+import org.labkey.study.query.DataSetTableImpl;
 import org.labkey.study.query.StudyQuerySchema;
 
 import java.sql.Connection;
@@ -830,7 +830,7 @@ public class DataSetDefinition extends AbstractStudyEntity<DataSetDefinition> im
 
             // QCState
 
-            ColumnInfo qcStateCol = newDatasetColumnInfo(this, getStorageColumn(DataSetTable.QCSTATE_ID_COLNAME), getQCStateURI());
+            ColumnInfo qcStateCol = newDatasetColumnInfo(this, getStorageColumn(DataSetTableImpl.QCSTATE_ID_COLNAME), getQCStateURI());
             // UNDONE: make the QC column user editable.  This is turned off for now because DatasetSchemaTableInfo is not
             // a FilteredTable, so it doesn't know how to restrict QC options to those in the current container.
             // Note that QC state can still be modified via the standard update UI.
@@ -1197,7 +1197,7 @@ public class DataSetDefinition extends AbstractStudyEntity<DataSetDefinition> im
 
     public static String getQCStateURI()
     {
-        return uriForName(DataSetTable.QCSTATE_ID_COLNAME);
+        return uriForName(DataSetTableImpl.QCSTATE_ID_COLNAME);
     }
 
 
@@ -1629,7 +1629,7 @@ public class DataSetDefinition extends AbstractStudyEntity<DataSetDefinition> im
             {
                 String qcStatePropertyURI = DataSetDefinition.getQCStateURI();
                 Integer indexInputQCState = fromMap.get(qcStatePropertyURI);
-                Integer indexInputQCText = fromMap.get(DataSetTable.QCSTATE_LABEL_COLNAME);
+                Integer indexInputQCText = fromMap.get(DataSetTableImpl.QCSTATE_LABEL_COLNAME);
                 if (null == indexInputQCState)
                 {
                     int indexText = null==indexInputQCText ? -1 : indexInputQCText;
@@ -1949,7 +1949,7 @@ public class DataSetDefinition extends AbstractStudyEntity<DataSetDefinition> im
                         if (!_autoCreate)
                         {
                             if (notFound.add(currentStateLabel))
-                                getRowError().addFieldError(DataSetTable.QCSTATE_LABEL_COLNAME, "QC State not found: " + currentStateLabel);
+                                getRowError().addFieldError(DataSetTableImpl.QCSTATE_LABEL_COLNAME, "QC State not found: " + currentStateLabel);
                             return null;
                         }
                         else
@@ -2041,7 +2041,7 @@ public class DataSetDefinition extends AbstractStudyEntity<DataSetDefinition> im
         boolean forUpdate)
     {
         TableInfo table = getTableInfo(user, false);
-        boolean needToHandleQCState = table.getColumn(DataSetTable.QCSTATE_ID_COLNAME) != null;
+        boolean needToHandleQCState = table.getColumn(DataSetTableImpl.QCSTATE_ID_COLNAME) != null;
 
         DatasetDataIteratorBuilder b = new DatasetDataIteratorBuilder(
                 user,

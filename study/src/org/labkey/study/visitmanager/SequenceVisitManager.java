@@ -28,7 +28,7 @@ import org.labkey.study.StudySchema;
 import org.labkey.study.model.QCStateSet;
 import org.labkey.study.model.StudyImpl;
 import org.labkey.study.model.StudyManager;
-import org.labkey.study.query.DataSetTable;
+import org.labkey.study.query.DataSetTableImpl;
 
 import java.sql.SQLException;
 import java.util.ArrayList;
@@ -67,7 +67,7 @@ public class SequenceVisitManager extends VisitManager
         if (cohortFilter == null)
         {
             sql.append("SELECT DatasetId, SequenceNum").append(statsSql).append("\nFROM ").append(studyData.getFromSQL(alias))
-                .append("\n").append(qcStates != null ? "WHERE " + qcStates.getStateInClause(DataSetTable.QCSTATE_ID_COLNAME) + "\n" : "")
+                .append("\n").append(qcStates != null ? "WHERE " + qcStates.getStateInClause(DataSetTableImpl.QCSTATE_ID_COLNAME) + "\n" : "")
                 .append("GROUP BY DatasetId, SequenceNum\nORDER BY 1, 2");
         }
         else
@@ -79,7 +79,7 @@ public class SequenceVisitManager extends VisitManager
                         .append(studyData.getFromSQL(alias)).append("\n, study.ParticipantVisit PV\nWHERE ").append(alias)
                         .append(".Container = ? AND \n\tPV.ParticipantId = ").append(alias).append(".ParticipantId AND \n\tPV.SequenceNum = ")
                         .append(alias).append(".SequenceNum AND\n\tPV.Container = ? AND \n" + "\tPV.CohortID = ?\n")
-                        .append(qcStates != null ? "\tAND " + qcStates.getStateInClause(DataSetTable.QCSTATE_ID_COLNAME) + "\n" : "")
+                        .append(qcStates != null ? "\tAND " + qcStates.getStateInClause(DataSetTableImpl.QCSTATE_ID_COLNAME) + "\n" : "")
                         .append("GROUP BY DatasetId, ").append(alias).append(".SequenceNum\n" + "ORDER BY 1, 2");
                     sql.add(getStudy().getContainer());
                     sql.add(cohortFilter.getCohortId());
@@ -89,7 +89,7 @@ public class SequenceVisitManager extends VisitManager
                     sql.append("SELECT DatasetId, SequenceNum").append(statsSql).append("\nFROM ").append(studyData.getFromSQL(alias))
                         .append(", ").append(participantTable.getFromSQL("P")).append("\n" + "WHERE P.ParticipantId = ").append(alias)
                         .append(".ParticipantId AND P.Container = ? AND P.").append(cohortFilter.getType() == CohortFilter.Type.PTID_CURRENT ? "CurrentCohortId" : "InitialCohortId")
-                        .append(" = ?\n").append(qcStates != null ? "AND " + qcStates.getStateInClause(DataSetTable.QCSTATE_ID_COLNAME) + "\n" : "")
+                        .append(" = ?\n").append(qcStates != null ? "AND " + qcStates.getStateInClause(DataSetTableImpl.QCSTATE_ID_COLNAME) + "\n" : "")
                         .append("GROUP BY DatasetId, SequenceNum\n" + "ORDER BY 1, 2");
                     sql.add(getStudy().getContainer());
                     sql.add(cohortFilter.getCohortId());

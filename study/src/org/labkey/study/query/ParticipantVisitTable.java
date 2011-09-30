@@ -96,8 +96,8 @@ public class ParticipantVisitTable extends FilteredTable
 // it would be nice to avoid lookup back to source table
 // however, getLookupTableInfo does not pass in the foreigh key column
 //        int foreignDatasetId = -1;
-//        if (pv instanceof ParticipantVisitColumn && pv.getParentTable() instanceof DataSetTable)
-//            foreignDatasetId = ((DataSetTable)pv.getParentTable()).getDatasetDefinition().getDataSetId();
+//        if (pv instanceof ParticipantVisitColumn && pv.getParentTable() instanceof DataSetTableImpl)
+//            foreignDatasetId = ((DataSetTableImpl)pv.getParentTable()).getDatasetDefinition().getDataSetId();
 
         for (DataSetDefinition dataset : _schema.getStudy().getDataSets())
         {
@@ -148,11 +148,11 @@ public class ParticipantVisitTable extends FilteredTable
             this.dsd = dsd;
         }
         
-        public DataSetTable getLookupTableInfo()
+        public DataSetTableImpl getLookupTableInfo()
         {
             try
             {
-                DataSetTable ret = new DataSetTable(_schema, dsd);
+                DataSetTableImpl ret = new DataSetTableImpl(_schema, dsd);
                 ret.hideParticipantLookups();
                 return ret;
             }

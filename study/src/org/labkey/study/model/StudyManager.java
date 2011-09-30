@@ -132,7 +132,7 @@ import org.labkey.study.dataset.DatasetAuditViewFactory;
 import org.labkey.study.designer.StudyDesignManager;
 import org.labkey.study.importer.SchemaReader;
 import org.labkey.study.importer.StudyReload;
-import org.labkey.study.query.DataSetTable;
+import org.labkey.study.query.DataSetTableImpl;
 import org.labkey.study.query.StudyQuerySchema;
 import org.labkey.study.reports.ReportManager;
 import org.labkey.study.visitmanager.AbsoluteDateVisitManager;
@@ -1198,7 +1198,7 @@ public class StudyManager
         {
             String lsid = (String) row.get("lsid");
 
-            Integer oldStateId = (Integer) row.get(DataSetTable.QCSTATE_ID_COLNAME);
+            Integer oldStateId = (Integer) row.get(DataSetTableImpl.QCSTATE_ID_COLNAME);
             QCState oldState = null;
             if (oldStateId != null)
                 oldState = getQCStateForRowId(container, oldStateId.intValue());

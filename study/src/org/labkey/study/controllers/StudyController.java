@@ -47,6 +47,12 @@ import org.labkey.api.action.SimpleErrorView;
 import org.labkey.api.action.SimpleRedirectAction;
 import org.labkey.api.action.SimpleViewAction;
 import org.labkey.api.action.SpringActionController;
+import org.labkey.api.attachments.Attachment;
+import org.labkey.api.attachments.AttachmentFile;
+import org.labkey.api.attachments.AttachmentForm;
+import org.labkey.api.attachments.AttachmentParent;
+import org.labkey.api.attachments.AttachmentService;
+import org.labkey.api.attachments.FileAttachmentFile;
 import org.labkey.api.audit.AuditLogEvent;
 import org.labkey.api.audit.AuditLogService;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
@@ -186,6 +192,7 @@ import org.labkey.study.model.Participant;
 import org.labkey.study.model.ParticipantGroupManager;
 import org.labkey.study.model.QCState;
 import org.labkey.study.model.QCStateSet;
+import org.labkey.study.model.SampleRequestEvent;
 import org.labkey.study.model.SecurityType;
 import org.labkey.study.model.SiteImpl;
 import org.labkey.study.model.StudyImpl;
@@ -1489,6 +1496,7 @@ public class StudyController extends BaseStudyController
             study.setTimepointType(form.getTimepointType());
             study.setStartDate(form.getStartDate());
             study.setSecurityType(form.getSecurityType());
+            study.setDescription(form.getDescription());
             study.setSubjectNounSingular(form.getSubjectNounSingular());
             study.setSubjectNounPlural(form.getSubjectNounPlural());
             study.setSubjectColumnName(form.getSubjectColumnName());
@@ -1596,7 +1604,12 @@ public class StudyController extends BaseStudyController
             {
                 StudyImpl updated = getStudy().createMutable();
                 updated.setLabel(form.getLabel());
+                updated.setDescription(form.getDescription());
                 StudyManager.getInstance().updateStudy(getUser(), updated);
+
+                // Update protocol documents:
+                List<AttachmentFile> files = getAttachmentFileList();
+                updated.attachProtocolDocument(files, getUser());
             }
             return true;
         }
@@ -1609,9 +1622,51 @@ public class StudyController extends BaseStudyController
             }
             catch (ServletException e){}
 
-            return new ActionURL(ManageStudyAction.class, getContainer());
+            if (studyPropertiesForm.getReturnURL() != null)
+                return new ActionURL(studyPropertiesForm.getReturnURL());
+            else
+                return new ActionURL(ManageStudyAction.class, getContainer());
         }
     }
+
+    public static class RemoveProtocolDocumentForm
+    {
+        private String _name;
+
+        public String getName()
+        {
+            return _name;
+        }
+
+        public void setName(String name)
+        {
+            _name = name;
+        }
+    }
+
+    @RequiresPermissionClass(AdminPermission.class)
+    public class RemoveProtocolDocumentAction extends FormHandlerAction<RemoveProtocolDocumentForm>
+    {
+        @Override
+        public void validateCommand(RemoveProtocolDocumentForm target, Errors errors)
+        {
+        }
+
+        @Override
+        public boolean handlePost(RemoveProtocolDocumentForm removeProtocolDocumentForm, BindException errors) throws Exception
+        {
+            Study study = getStudy();
+            study.removeProtocolDocument(removeProtocolDocumentForm.getName(), getUser());
+            return true;
+        }
+
+        @Override
+        public URLHelper getSuccessURL(RemoveProtocolDocumentForm removeProtocolDocumentForm)
+        {
+            return new ActionURL(ManageStudyPropertiesAction.class, getContainer());
+        }
+    }
+
 
     @RequiresPermissionClass(AdminPermission.class)
     public class ManageStudyPropertiesAction extends SimpleViewAction<StudyPropertiesForm>
@@ -2814,6 +2869,22 @@ public class StudyController extends BaseStudyController
             ResultSetUtil.close(rs);
         }
         return false;
+    }
+
+    @RequiresPermissionClass(ReadPermission.class)
+    public class ProtocolDocumentDownloadAction extends SimpleViewAction<AttachmentForm>
+    {
+        public ModelAndView getView(AttachmentForm form, BindException errors) throws Exception
+        {
+            StudyImpl study = getStudy();
+            AttachmentService.get().download(getViewContext().getResponse(), study.getProtocolDocumentAttachmentParent(), form.getName());
+            return null;
+        }
+
+        public NavTree appendNavTrail(NavTree root)
+        {
+            return null;
+        }
     }
 
     private static final String PARTICIPANT_PROPS_CACHE = "Study_participants/propertyCache";
@@ -5808,6 +5879,7 @@ public class StudyController extends BaseStudyController
         private String _subjectNounSingular = "Participant";
         private String _subjectNounPlural = "Participants";
         private String _subjectColumnName = "ParticipantId";
+        private String _returnURL;
         private String _description;
 
         public String getLabel()
@@ -5818,6 +5890,16 @@ public class StudyController extends BaseStudyController
         public void setLabel(String label)
         {
             _label = label;
+        }
+
+        public String getReturnURL()
+        {
+            return _returnURL;
+        }
+
+        public void setReturnURL(String returnURL)
+        {
+            _returnURL = returnURL;
         }
 
         public TimepointType getTimepointType()

@@ -77,9 +77,9 @@
     </tr>
     <tr><td colspan="3" class="labkey-title-area-line"></td></tr>
     <tr>
-        <th align="left">Study Label</th>
+        <th align="left">Label and Description</th>
         <td><%= h(study.getLabel()) %></td>
-        <td><%= textLink("Change Label", ManageStudyPropertiesAction.class) %></td>
+        <td><%= textLink("Change Label or Description", ManageStudyPropertiesAction.class) %></td>
     </tr>
     <tr>
         <th align="left">Reloading</th>

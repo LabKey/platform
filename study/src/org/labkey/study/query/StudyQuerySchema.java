@@ -163,7 +163,7 @@ public class StudyQuerySchema extends UserSchema
     {
         try
         {
-            DataSetTable ret = new DataSetTable(this, definition);
+            DataSetTableImpl ret = new DataSetTableImpl(this, definition);
             return ret;
         }
         catch (UnauthorizedException e)

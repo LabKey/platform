@@ -2744,7 +2744,7 @@ study/src/org/labkey/study/query/CohortTable.java -text
 study/src/org/labkey/study/query/CohortUpdateService.java -text
 study/src/org/labkey/study/query/DataSetColumnsTable.java -text
 study/src/org/labkey/study/query/DataSetQueryView.java -text
-study/src/org/labkey/study/query/DataSetTable.java -text
+study/src/org/labkey/study/query/DataSetTableImpl.java -text
 study/src/org/labkey/study/query/DataSetsTable.java -text
 study/src/org/labkey/study/query/DatasetUpdateService.java -text
 study/src/org/labkey/study/query/DerivativeTypeTable.java -text
@@ -2876,7 +2876,6 @@ study/src/org/labkey/study/view/AssayResultsWebPartFactory.java -text
 study/src/org/labkey/study/view/AssayRunsWebPartFactory.java -text
 study/src/org/labkey/study/view/BaseStudyPage.java -text
 study/src/org/labkey/study/view/DataHeader.java -text
-study/src/org/labkey/study/view/DataSetSummaryPage.java -text
 study/src/org/labkey/study/view/DatasetsWebPartView.java -text
 study/src/org/labkey/study/view/StudyGWTView.java -text
 study/src/org/labkey/study/view/StudyListWebPartFactory.java -text

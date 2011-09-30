@@ -25,7 +25,7 @@ import org.labkey.api.writer.VirtualFile;
 import org.labkey.api.writer.Writer;
 import org.labkey.study.model.DataSetDefinition;
 import org.labkey.study.model.StudyManager;
-import org.labkey.study.query.DataSetTable;
+import org.labkey.study.query.DataSetTableImpl;
 import org.labkey.study.query.StudyQuerySchema;
 import org.labkey.study.xml.StudyDocument.Study.Datasets;
 
@@ -76,7 +76,7 @@ public class SchemaTsvWriter implements Writer<List<DataSetDefinition>, StudyCon
         {
             String prefix = def.getName() + '\t' + def.getLabel() + '\t' + def.getDataSetId() + '\t' + (def.isShowByDefault() ? "\t" : "true\t");
 
-            TableInfo tinfo = new DataSetTable(schema, def);
+            TableInfo tinfo = new DataSetTableImpl(schema, def);
             String visitDatePropertyName = def.getVisitDateColumnName();
 
             for (ColumnInfo col : DatasetWriter.getColumnsToExport(tinfo, def, true))

@@ -542,8 +542,13 @@ public class StudyImpl extends ExtensibleStudyEntity<StudyImpl> implements Study
 
     public List<Attachment> getProtocolDocuments()
     {
+        return new ArrayList<Attachment>(AttachmentService.get().getAttachments(getProtocolDocumentAttachmentParent()));
+    }
+
+    public void removeProtocolDocument(String name, User user)
+    {
         AttachmentParent parent = new ProtocolDocumentAttachmentParent(getContainer(), getProtocolDocumentEntityId());
-        return new ArrayList<Attachment>(AttachmentService.get().getAttachments(parent));
+        AttachmentService.get().deleteAttachment(parent, name, user);
     }
 
     public static class ProtocolDocumentAttachmentParent extends AttachmentParentEntity
@@ -553,6 +558,11 @@ public class StudyImpl extends ExtensibleStudyEntity<StudyImpl> implements Study
             setContainer(c.getId());
             setEntityId(null==entityId?null:entityId);
         }
+    }
+
+    public AttachmentParent getProtocolDocumentAttachmentParent()
+    {
+        return new ProtocolDocumentAttachmentParent(getContainer(), getProtocolDocumentEntityId());
     }
 
     @Override

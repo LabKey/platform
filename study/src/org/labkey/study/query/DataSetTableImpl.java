@@ -29,6 +29,7 @@ import org.labkey.api.query.*;
 import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.*;
 import org.labkey.api.study.DataSet;
+import org.labkey.api.study.DataSetTable;
 import org.labkey.api.study.StudyService;
 import org.labkey.api.study.TimepointType;
 import org.labkey.api.study.assay.AbstractAssayProvider;
@@ -49,7 +50,7 @@ import org.labkey.study.model.StudyManager;
 import java.util.*;
 
 /** Wraps a DatasetSchemaTableInfo and makes it Query-ized. Represents a single dataset's data */
-public class DataSetTable extends FilteredTable
+public class DataSetTableImpl extends FilteredTable implements DataSetTable
 {
     public static final String QCSTATE_ID_COLNAME = "QCState";
     public static final String QCSTATE_LABEL_COLNAME = "QCStateLabel";
@@ -57,7 +58,7 @@ public class DataSetTable extends FilteredTable
     DataSetDefinition _dsd;
     TableInfo _fromTable;
 
-    public DataSetTable(StudyQuerySchema schema, DataSetDefinition dsd)
+    public DataSetTableImpl(StudyQuerySchema schema, DataSetDefinition dsd)
     {
         super(dsd.getTableInfo(schema.getUser(), schema.getMustCheckPermissions()));
         setDescription("Contains up to one row of " + dsd.getLabel() + " data for each " +
@@ -300,6 +301,12 @@ public class DataSetTable extends FilteredTable
                 defaultVisibleCols.add(new FieldKey(provider.getTableMetadata().getRunFieldKeyFromResults(), ExpRunTable.Column.Comments.toString()));
             }
         }
+    }
+
+    @Override
+    public DataSet getDataSet()
+    {
+        return _dsd;
     }
 
     @Override

@@ -53,7 +53,7 @@ public class DatasetUpdateService extends AbstractQueryUpdateService
     private Set<String> _potentiallyDeletedParticipants = new HashSet<String>();
     private boolean _participantVisitResyncRequired = false;
 
-    public DatasetUpdateService(DataSetTable table)
+    public DatasetUpdateService(DataSetTableImpl table)
     {
         super(table);
         _dataset = table.getDatasetDefinition();

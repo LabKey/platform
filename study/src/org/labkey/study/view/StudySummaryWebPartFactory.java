@@ -16,14 +16,30 @@
 
 package org.labkey.study.view;
 
+import org.labkey.api.attachments.Attachment;
+import org.labkey.api.data.Container;
+import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.ReadPermission;
+import org.labkey.api.study.Cohort;
+import org.labkey.api.study.DataSet;
+import org.labkey.api.study.Site;
+import org.labkey.api.study.Study;
+import org.labkey.api.study.StudyService;
+import org.labkey.api.study.Visit;
 import org.labkey.api.view.*;
 import org.labkey.study.controllers.BaseStudyController;
+import org.labkey.study.controllers.StudyController;
+import org.labkey.study.model.CohortImpl;
+import org.labkey.study.model.DataSetDefinition;
+import org.labkey.study.model.SiteImpl;
 import org.labkey.study.model.StudyImpl;
 import org.labkey.study.model.StudyManager;
+import org.labkey.study.model.VisitImpl;
 import org.springframework.validation.BindException;
 
 import java.lang.reflect.InvocationTargetException;
+import java.sql.SQLException;
+import java.util.List;
 
 /**
  * User: Mark Igra
@@ -39,15 +55,68 @@ public class StudySummaryWebPartFactory extends BaseWebPartFactory
         super(NAME);
     }
 
+    public static class StudySummaryBean
+    {
+        private Container _container;
+        private StudyImpl _study;
+        private String _currentURL;
+
+        public StudySummaryBean(ViewContext portalCtx)
+        {
+            _container = portalCtx.getContainer();
+            _currentURL = portalCtx.getActionURL().getLocalURIString();
+        }
+
+        public StudyImpl getStudy()
+        {
+            if (_study == null)
+                _study = StudyManager.getInstance().getStudy(_container);
+            return _study;
+        }
+
+        public Visit[] getVisits(Visit.Order order)
+        {
+            return getStudy().getVisits(order);
+        }
+
+        public List<? extends DataSet> getDataSets()
+        {
+            return getStudy().getDataSets();
+        }
+
+        public Site[] getSites() throws SQLException
+        {
+            return getStudy().getSites();
+        }
+
+        public Cohort[] getCohorts(User user) throws SQLException
+        {
+            return getStudy().getCohorts(user);
+        }
+
+        public long getSubjectCount()
+        {
+            return StudyManager.getInstance().getParticipantCount(getStudy());
+        }
+
+        public List<Attachment> getProtocolDocuments()
+        {
+            return getStudy().getProtocolDocuments();
+        }
+
+        public String getCurrentURL()
+        {
+            return _currentURL;
+        }
+    }
+
     public WebPartView getWebPartView(ViewContext portalCtx, Portal.WebPart webPart) throws IllegalAccessException, InvocationTargetException
     {
         if (!portalCtx.hasPermission(ReadPermission.class))
             return new HtmlView(NAME, portalCtx.getUser().isGuest() ? "Please log in to see this data" : "You do not have permission to see this data");
 
-        StudyImpl study = StudyManager.getInstance().getStudy(portalCtx.getContainer());
-
         BindException errors = (BindException) HttpView.currentRequest().getAttribute("errors");
-        WebPartView v = new BaseStudyController.StudyJspView<Object>(study, "studySummary.jsp", null, errors);
+        WebPartView v = new JspView<StudySummaryBean>("/org/labkey/study/view/studySummary.jsp", new StudySummaryBean(portalCtx), errors);
         v.setTitle(NAME);
 
         return v;

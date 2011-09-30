@@ -29,12 +29,20 @@
 <%@ page import="org.labkey.study.model.StudyManager" %>
 <%@ page import="org.labkey.study.security.permissions.ManageRequestSettingsPermission" %>
 <%@ page import="org.labkey.study.controllers.BaseStudyController" %>
-<%@ page extends="org.labkey.study.view.BaseStudyPage" %>
+<%@ page import="org.labkey.api.view.JspView" %>
+<%@ page import="org.labkey.study.view.StudySummaryWebPartFactory" %>
+<%@ page import="org.labkey.api.study.StudyService" %>
+<%@ page import="org.labkey.api.attachments.Attachment" %>
+<%@ page import="java.util.List" %>
+<%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
+    JspView<StudySummaryWebPartFactory.StudySummaryBean> me = (JspView<StudySummaryWebPartFactory.StudySummaryBean>) org.labkey.api.view.HttpView.currentView();
+    StudySummaryWebPartFactory.StudySummaryBean bean = me.getModelBean();
+
     User user = (User)request.getUserPrincipal();
     Container c = getViewContext().getContainer();
 
-    if (null == getStudy())
+    if (null == bean.getStudy())
     {
         out.println("<p>This folder does not contain a study.</p>");
         if (c.hasPermission(user, AdminPermission.class))
@@ -63,36 +71,92 @@
         return;
     }
 
-    TimepointType timepointType = getStudy().getTimepointType();
+    TimepointType timepointType = bean.getStudy().getTimepointType();
     SecurityPolicy policy = c.getPolicy();
     boolean isAdmin = policy.hasPermission(user, AdminPermission.class);
-    ActionURL url = new ActionURL(StudyController.BeginAction.class, getStudy().getContainer());
-    String visitLabel = StudyManager.getInstance().getVisitManager(getStudy()).getPluralLabel();
+    ActionURL url = new ActionURL(StudyController.BeginAction.class, bean.getStudy().getContainer());
+    String visitLabel = StudyManager.getInstance().getVisitManager(bean.getStudy()).getPluralLabel();
+    String subjectNounSingular = StudyService.get().getSubjectNounSingular(c);
+    String subjectNounPlural = StudyService.get().getSubjectNounPlural(c);
+    long subjectCount = bean.getSubjectCount();
+    String title = bean.getStudy().getLabel();
+    String description = bean.getStudy().getDescription();
+    if (description == null || description.length() == 0)
+    {
+        description = title + " tracks data in " + bean.getDataSets().size() + " datasets over " + bean.getVisits(Visit.Order.DISPLAY).length + " " + (timepointType.isVisitBased() ? "visits" : "time points") +
+            ". Data is present for " + subjectCount + " " + (subjectCount == 1 ? subjectNounSingular : subjectNounPlural) + ".";
+    }
+    List<Attachment> protocolDocs = bean.getStudy().getProtocolDocuments();
+    ActionURL editMetadataURL = new ActionURL(StudyController.ManageStudyPropertiesAction.class, c);
+    editMetadataURL.addParameter("returnURL", bean.getCurrentURL());
 %>
+<script type="text/javascript">
+    LABKEY.requiresCss("editInPlaceElement.css");
+</script>
 <br>
 <table width="100%">
-    <tr><td valign="top">This study defines
-<ul>
-    <li><%= getDataSets().size() %> Datasets (Forms and Assays)&nbsp;<%= isAdmin ? textLink("Manage Datasets", url.setAction(StudyController.ManageTypesAction.class)) : "&nbsp;" %></li>
-    <% if (timepointType != TimepointType.CONTINUOUS) { %>
-    <li><%= getVisits(Visit.Order.DISPLAY).length %> <%=visitLabel%>&nbsp;<%=timepointType == TimepointType.VISIT && isAdmin && getVisits(Visit.Order.DISPLAY).length < 0 ?
-                        textLink("Import Visit Map", url.setAction(StudyController.UploadVisitMapAction.class)) : "" %><%=
-                        isAdmin ? textLink("Manage " + visitLabel, url.setAction(StudyController.ManageVisitsAction.class)) : "" %></li>
-    <% } %>
-    <li><%= getSites().length %> Labs and Sites&nbsp;<%= isAdmin ? textLink("Manage Labs/Sites", url.setAction(StudyController.ManageSitesAction.class)) : ""%></li>
-<%
-    if (StudyManager.getInstance().showCohorts(c, user))
-    {
-%>
-    <li><%= getCohorts(user).length %> Cohorts&nbsp;<%= isAdmin ? textLink("Manage Cohorts", url.setAction(CohortController.ManageCohortsAction.class)) : ""%></li>
-<%
-    }
-%>
-</ul>
-    </td>
+    <tr>
         <td valign="top">
-            <a href="<%=h(BaseStudyController.getStudyOverviewURL(getStudy().getContainer()))%>"><img src="<%=request.getContextPath()%>/_images/studyNavigator.gif" alt="Study Navigator"> </a><br>
-            <%=textLink("Study Navigator", BaseStudyController.getStudyOverviewURL(getStudy().getContainer()))%>
+            <p>
+                <%= h(description, true) %>
+            <%
+                if (isAdmin)
+                {
+            %>
+                <a href="<%= editMetadataURL.getLocalURIString() %>">
+                    <span class="labkey-edit-in-place-icon" title="Click to Edit"></span>
+                </a>
+            <%
+                }
+            %>
+            </p>
+            <p>
+                <%
+                    if (protocolDocs.size() == 0)
+                    {
+                %>
+                    <i>No protocol document provided.</i>
+                <%
+                    }
+                    else if (protocolDocs.size() == 1)
+                    {
+                        Attachment attachment = protocolDocs.get(0);
+                %>
+                <a href="<%= h(attachment.getDownloadUrl(StudyController.ProtocolDocumentDownloadAction.class).getLocalURIString()) %>">
+                    <img src="<%= getViewContext().getContextPath() + attachment.getFileIcon() %>" alt="[<%= h(attachment.getName()) %>]">
+                    Study Protocol Document
+                </a>
+                <%
+                    }
+                    else
+                    {
+                %>
+                Protocol documents:
+                <%
+                        for (Attachment doc : protocolDocs)
+                        {
+                %>
+                    <br><a href="<%= h(doc.getDownloadUrl(StudyController.ProtocolDocumentDownloadAction.class).getLocalURIString()) %>">
+                        <img src="<%= getViewContext().getContextPath() + doc.getFileIcon() %>" alt="[<%= h(doc.getName()) %>]">
+                        <%= h(h(doc.getName())) %>
+                    </a><%
+                        }
+                    }
+                    if (isAdmin)
+                    {
+                %>
+                    <a href="<%= editMetadataURL.getLocalURIString() %>">
+                        <span class="labkey-edit-in-place-icon" title="Click to Edit"></span>
+                    </a>
+                <%
+                    }
+                %>
+            </p>
+        </td>
+
+        <td valign="top">
+            <a href="<%=h(BaseStudyController.getStudyOverviewURL(bean.getStudy().getContainer()))%>"><img src="<%=request.getContextPath()%>/_images/studyNavigator.gif" alt="Study Navigator"> </a><br>
+            <%=textLink("Study Navigator", BaseStudyController.getStudyOverviewURL(bean.getStudy().getContainer()))%>
         </td>
     </tr>
     </table>
@@ -114,7 +178,7 @@
         out.write(textLink("Manage Files", pipelineUrl));
     }
     else if (policy.hasPermission(user, ManageRequestSettingsPermission.class) &&
-            getStudy().getRepositorySettings().isEnableRequests())
+            bean.getStudy().getRepositorySettings().isEnableRequests())
     {
         out.write(textLink("Manage Specimen Request Settings", url.setAction(StudyController.ManageStudyAction.class)));
     }
