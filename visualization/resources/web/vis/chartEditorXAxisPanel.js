@@ -58,6 +58,12 @@ LABKEY.vis.ChartEditorXAxisPanel = Ext.extend(Ext.FormPanel, {
                         this.time = "date"; //This will have to be changed to take into account the new data configuration.
                         this.zeroDateCombo.enable();
                         this.intervalCombo.enable();
+                        this.rangeAutomaticRadio.enable();
+                        this.rangeManualRadio.enable();
+                        if(this.rangeManualRadio.getValue()){
+                            this.rangeMaxNumberField.enable();
+                            this.rangeMinNumberField.enable();
+                        }
 
                         if(this.labelTextField.getValue()== "Visit") {
                             var newLabel = this.intervalCombo.getValue() + " Since " + this.zeroDateCombo.getStore().getAt(this.zeroDateCombo.getStore().find('longlabel', this.zeroDateCombo.getValue())).data.label;
@@ -84,6 +90,14 @@ LABKEY.vis.ChartEditorXAxisPanel = Ext.extend(Ext.FormPanel, {
                         this.time = "visit";
                         this.zeroDateCombo.disable();
                         this.intervalCombo.disable();
+                        this.rangeAutomaticRadio.disable();
+                        this.rangeManualRadio.disable();
+                        this.rangeMaxNumberField.disable();
+                        this.rangeMaxNumberField.setValue('');
+                        this.axis.range.max = undefined;
+                        this.rangeMinNumberField.disable();
+                        this.rangeMinNumberField.setValue('');
+                        this.axis.range.min = undefined;
 
                         var beginning = this.intervalCombo.getValue() + " Since ";
                         if(this.labelTextField.getValue().indexOf(beginning) == 0) {
@@ -213,6 +227,7 @@ LABKEY.vis.ChartEditorXAxisPanel = Ext.extend(Ext.FormPanel, {
             name: 'xaxis_range',
             fieldLabel: 'Range',
             inputValue: 'automatic',
+            disabled: this.time == "visit",
             boxLabel: 'Automatic',
             height: 1,
             checked: this.axis.range.type == "automatic",
@@ -233,6 +248,7 @@ LABKEY.vis.ChartEditorXAxisPanel = Ext.extend(Ext.FormPanel, {
         this.rangeManualRadio = new Ext.form.Radio({
             name: 'xaxis_range',
             inputValue: 'manual',
+            disabled: this.time == "visit",
             boxLabel: 'Manual',
             width: 85,
             height: 1,
@@ -253,7 +269,7 @@ LABKEY.vis.ChartEditorXAxisPanel = Ext.extend(Ext.FormPanel, {
             emptyText: 'Min',
             selectOnFocus: true,
             width: 75,
-            disabled: this.axis.range.type == "automatic",
+            disabled: this.axis.range.type == "automatic" || this.time == "visit",
             value: this.axis.range.min,
             listeners: {
                 scope: this,
@@ -277,7 +293,7 @@ LABKEY.vis.ChartEditorXAxisPanel = Ext.extend(Ext.FormPanel, {
             emptyText: 'Max',
             selectOnFocus: true,
             width: 75,
-            disabled: this.axis.range.type == "automatic",
+            disabled: this.axis.range.type == "automatic" || this.time == "visit",
             value: this.axis.range.max,
             listeners: {
                 scope: this,
@@ -297,7 +313,7 @@ LABKEY.vis.ChartEditorXAxisPanel = Ext.extend(Ext.FormPanel, {
             }
         });
 
-        columnTwoItems.push({
+        this.rangeCompositeField = new Ext.form.CompositeField({
             xtype: 'compositefield',
             defaults: {flex: 1},
             items: [
@@ -306,6 +322,8 @@ LABKEY.vis.ChartEditorXAxisPanel = Ext.extend(Ext.FormPanel, {
                 this.rangeMaxNumberField
             ]
         });
+
+        columnTwoItems.push(this.rangeCompositeField);
 
         this.items = [{
             border: false,
