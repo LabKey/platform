@@ -1843,7 +1843,8 @@ public class IssuesController extends SpringActionController
             {
                 JSONObject jsonComment = new JSONObject(new BeanMap(c));
                 jsonComment.put("createdByName", c.getCreatedByName(user));
-                comments.put(jsonComment);
+                jsonComment.put("comment", c.getComment().getSource());
+                comments.put(comments.length(),  jsonComment);
                 // ATTACHMENTS
             }
             jsonIssue.put("success", Boolean.TRUE);
