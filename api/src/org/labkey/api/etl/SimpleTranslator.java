@@ -137,7 +137,10 @@ public class SimpleTranslator extends AbstractDataIterator implements DataIterat
     {
         String msg;
         if (null != value && null != target)
-            msg = "Could not convert '" + value + "' for field " + fieldName + ", should be of type " + target.getJavaClass().getSimpleName();
+        {
+            String fromType = (value instanceof String) ? "" : "(" + (value.getClass().getSimpleName() + ") ");
+            msg = "Could not convert " + fromType + "'" + value + "' for field " + fieldName + ", should be of type " + target.getJavaClass().getSimpleName();
+        }
         else if (null != x)
             msg = StringUtils.defaultString(x.getMessage(), x.toString());
         else

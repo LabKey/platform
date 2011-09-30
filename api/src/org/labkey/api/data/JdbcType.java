@@ -25,6 +25,7 @@ import java.math.BigDecimal;
 import java.nio.ByteBuffer;
 import java.sql.Timestamp;
 import java.sql.Types;
+import java.util.Date;
 
 /**
  * ENUM version of java.sql.Types
@@ -145,7 +146,16 @@ public enum JdbcType
 
     TIME(Types.TIME, java.sql.Time.class, "timefield"),
 
-    TIMESTAMP(Types.TIMESTAMP, java.sql.Timestamp.class, "datefield"),
+    TIMESTAMP(Types.TIMESTAMP, java.sql.Timestamp.class, "datefield")
+        {
+            @Override
+            protected Object _fromDate(Date d)
+            {
+                // presumably we would be called if d instanceof Timestamp
+                assert !(d instanceof Timestamp);
+                return new Timestamp(d.getTime());
+            }
+        },
 
     TINYINT(Types.TINYINT, Short.class, "numberfield")
         {
@@ -297,6 +307,13 @@ public enum JdbcType
                 return r;
         }
 
+        if (o instanceof Date)
+        {
+            Object r = _fromDate((Date)o);
+            if (null != r)
+                return r;
+        }
+
         String s = o instanceof String ? (String)o : ConvertUtils.convert(o);
         if (cls == String.class)
             return s;
@@ -322,6 +339,11 @@ public enum JdbcType
     }
 
     protected Object _fromString(String s)
+    {
+        return null;
+    }
+
+    protected Object _fromDate(Date d)
     {
         return null;
     }
