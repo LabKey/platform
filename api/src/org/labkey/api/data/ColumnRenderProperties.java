@@ -300,10 +300,10 @@ public abstract class ColumnRenderProperties implements ImportAliasable
     {
         if (label != null)
         {
-            String[] parts = label.toLowerCase().split(" ");
+            String[] parts = label.toLowerCase().split("[ _]");
             for (String part : parts)
             {
-                if (part.equals("code") || part.equals("id"))
+                if (part.equals("code") || part.equals("id") || part.equals("identifier") || part.equals("datafax"))
                     return false;
             }
         }
