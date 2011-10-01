@@ -28,6 +28,12 @@ public class RecordedActionSet
     private final Set<RecordedAction> _actions;
     private final Map<URI, String> _otherInputs;
 
+    // No-args constructor to support de-serialization in Java 7
+    public RecordedActionSet()
+    {
+        this(Collections.<RecordedAction>emptyList());
+    }
+
     public RecordedActionSet(RecordedAction... actions)
     {
         this(Arrays.asList(actions));

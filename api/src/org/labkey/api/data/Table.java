@@ -617,7 +617,7 @@ public class Table
 
 
     /** return a result from a one column resultset. K should be a string or number type */
-    public static <K> K[] executeArray(TableInfo table, String column, Filter filter, Sort sort, Class<K> c)
+    public static <K> K[] executeArray(TableInfo table, String column, @Nullable Filter filter, @Nullable Sort sort, Class<K> c)
             throws SQLException
     {
         ColumnInfo col = table.getColumn(column);
@@ -625,7 +625,7 @@ public class Table
     }
 
     /** return a result from a one column resultset. K should be a string or number type */
-    public static <K> K[] executeArray(TableInfo table, ColumnInfo col, Filter filter, Sort sort, Class<K> c)
+    public static <K> K[] executeArray(TableInfo table, ColumnInfo col, @Nullable Filter filter, @Nullable Sort sort, Class<K> c)
             throws SQLException
     {
         Map<String,ColumnInfo> cols = new CaseInsensitiveHashMap<ColumnInfo>();

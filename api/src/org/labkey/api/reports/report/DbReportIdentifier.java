@@ -27,7 +27,14 @@ public class DbReportIdentifier extends AbstractReportIdentifier
 {
     protected static final String PREFIX = "db:";
 
-    private int _id = -1;
+    private final int _id;
+
+    // No-args constructor to support de-serialization in Java 7
+    @SuppressWarnings({"UnusedDeclaration"})
+    private DbReportIdentifier()
+    {
+        this(-1);
+    }
 
     public DbReportIdentifier(int id)
     {
