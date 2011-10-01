@@ -3016,6 +3016,7 @@ td.labkey-export-tab-buttons
 {
     vertical-align: bottom;
     text-align: right;
+    padding-left: 2em;
 }
 
 .labkey-file-browser-elem
