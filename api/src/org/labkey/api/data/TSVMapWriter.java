@@ -95,7 +95,7 @@ public class TSVMapWriter extends TSVWriter
     public static class Tests extends Assert
     {
         @Test
-        public void test()
+        public void test() throws Exception
         {
             Collection<String> columns = Arrays.asList("one", "two", "three");
             List<Map<String, Object>> rows = new ArrayList<Map<String, Object>>();
@@ -121,10 +121,7 @@ public class TSVMapWriter extends TSVWriter
             // Test
             {
                 StringBuilder sb = new StringBuilder();
-                PrintWriter pw = new PrintWriter(new StringBuilderWriter(sb));
-                writer.setPrintWriter(pw);
-                writer.write();
-                pw.flush();
+                writer.write(sb);
 
                 String expected = "# file header\n" +
                         "one,two,three\n" +
@@ -140,10 +137,7 @@ public class TSVMapWriter extends TSVWriter
                 writer.setHeaderRowVisible(false);
 
                 StringBuilder sb = new StringBuilder();
-                PrintWriter pw = new PrintWriter(new StringBuilderWriter(sb));
-                writer.setPrintWriter(pw);
-                writer.write();
-                pw.flush();
+                writer.write(sb);
 
                 String expected = "# file header\n" +
                         "1.1,TWO,'test,quoting'\n" +
