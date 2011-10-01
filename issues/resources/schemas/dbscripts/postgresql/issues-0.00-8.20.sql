@@ -14,10 +14,6 @@
  * limitations under the License.
  */
 
-/* issues-0.00-2.00.sql */
-
-/* issues-0.00-1.00.sql */
-
 CREATE SCHEMA issues;
 
 CREATE TABLE issues.Issues
@@ -56,6 +52,12 @@ CREATE TABLE issues.Issues
     ClosedBy USERID,
     Closed TIMESTAMP,
 
+    Int1 INT NULL,
+    Int2 INT NULL,
+    String1 VARCHAR(200) NULL,
+    String2 VARCHAR(200) NULL,
+    NotifyList TEXT,
+
     CONSTRAINT PK_Issues PRIMARY KEY (IssueId)
 );
 CREATE INDEX IX_Issues_AssignedTo ON issues.Issues (AssignedTo);
@@ -64,7 +66,7 @@ CREATE INDEX IX_Issues_Status ON issues.Issues (Status);
 
 CREATE TABLE issues.Comments
 (
-    -- EntityId ENTITYID DEFAULT CAST(NEXTVAL('guids') AS ENTITYID),    -- used for attachments
+    EntityId ENTITYID,
     CommentId SERIAL,
     IssueId INT,
     CreatedBy USERID,
@@ -81,22 +83,11 @@ CREATE TABLE issues.IssueKeywords
     Container ENTITYID NOT NULL,
     Type INT NOT NULL,    -- area or milestone (or whatever)
     Keyword VARCHAR(255) NOT NULL,
+    "default" BOOLEAN NOT NULL DEFAULT '0',
 
     CONSTRAINT PK_IssueKeywords PRIMARY KEY (Container, Type, Keyword)
 );
 
-/* issues-1.50-1.60.sql */
-
-ALTER TABLE issues.Issues
-    ADD COLUMN Int1 INT NULL,
-    ADD COLUMN Int2 INT NULL,
-    ADD COLUMN String1 VARCHAR(200) NULL,
-    ADD COLUMN String2 VARCHAR(200) NULL;
-
-/* issues-1.60-1.70.sql */
-
-ALTER TABLE issues.Issues
-    ADD COLUMN NotifyList TEXT;
 
 CREATE TABLE issues.EmailPrefs
 (
@@ -108,34 +99,3 @@ CREATE TABLE issues.EmailPrefs
     CONSTRAINT FK_EmailPrefs_Containers FOREIGN KEY (Container) REFERENCES core.Containers (EntityId),
     CONSTRAINT FK_EmailPrefs_Principals FOREIGN KEY (UserId) REFERENCES core.Principals (UserId)
 );
-
-/* issues-1.70-2.00.sql */
-
-ALTER TABLE issues.IssueKeywords
-    ADD COLUMN "default" BOOLEAN NOT NULL DEFAULT '0';
-
-/*
-    Old, hard-coded defaults were Priority="3", ResolutionType="Fixed"
-    Set these in the keywords table so existing issues lists continue to work as before
-*/
-UPDATE issues.IssueKeywords SET "default"='1' WHERE Type=6 AND Keyword='3';
-UPDATE issues.IssueKeywords SET "default"='1' WHERE Type=7 AND Keyword='Fixed';
-
-/* issues-2.30-8.10.sql */
-
-/* issues-2.30-2.31.sql */
-
--- clean up orphaned email prefs for deleted users (issue#5333)
-DELETE FROM issues.EmailPrefs WHERE UserID NOT IN
-    (
-    SELECT U1.UserId
-    FROM core.Users U1
-    );
-
-/* issues-8.10-8.20.sql */
-
-/* issues-8.10-8.11.sql */
-
--- Used to add attachments to issues
-ALTER TABLE issues.Comments
-    ADD COLUMN EntityId ENTITYID;

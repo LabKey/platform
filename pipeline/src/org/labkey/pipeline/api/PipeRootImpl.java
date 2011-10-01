@@ -63,6 +63,16 @@ public class PipeRootImpl implements PipeRoot
     /** true if this root is based on the site or project default file root */
     private boolean _isDefaultRoot;
 
+    // No-args constructor to support de-serialization in Java 7
+    @SuppressWarnings({"UnusedDeclaration"})
+    public PipeRootImpl() throws URISyntaxException
+    {
+        _uris = null;
+        _entityId = null;
+        _keyPair = null;
+        _searchable = false;
+    }
+
     public PipeRootImpl(PipelineRoot root, boolean isDefaultRoot) throws URISyntaxException
     {
         this(root);
