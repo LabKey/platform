@@ -24,6 +24,7 @@ import org.junit.Assert;
 import org.junit.Test;
 import org.labkey.api.security.Crypt;
 
+import java.io.ByteArrayInputStream;
 import java.io.DataOutput;
 import java.io.File;
 import java.io.FileInputStream;
@@ -107,16 +108,43 @@ public class FileUtil
      *  <li>C:\dir\name.ext1.ext2, 1 => name.ext1</li>
      * </ul>
      *
+     * @param fileName name of the file
+     * @param dots number of dots to remove
+     * @return base name
+     */
+    public static String getBaseName(String fileName, int dots)
+    {
+        String baseName = fileName;
+        while (dots-- > 0 && baseName.indexOf('.') != -1)
+            baseName = baseName.substring(0, baseName.lastIndexOf('.'));
+        return baseName;
+    }
+
+    /**
+     * Remove text right of and including the last period in a file's name.
+     * @param fileName name of the file
+     * @return base name
+     */
+    public static String getBaseName(String fileName)
+    {
+        return getBaseName(fileName, 1);
+    }
+
+    /**
+     * Remove text right of a specific number of periods, including the periods, from a file's name.
+     * <ul>
+     *  <li>C:\dir\name.ext, 1 => name</li>
+     *  <li>C:\dir\name.ext1.ext2, 2 => name</li>
+     *  <li>C:\dir\name.ext1.ext2, 1 => name.ext1</li>
+     * </ul>
+     *
      * @param file file from which to get the name
      * @param dots number of dots to remove
      * @return base name
      */
     public static String getBaseName(File file, int dots)
     {
-        String baseName = file.getName();
-        while (dots-- > 0 && baseName.indexOf('.') != -1)
-            baseName = baseName.substring(0, baseName.lastIndexOf('.'));
-        return baseName;
+        return getBaseName(file.getName(), dots);
     }
 
     /**
@@ -486,19 +514,30 @@ quickScan:
     }
 
 
-    public static String md5sum(InputStream is) throws IOException
+    private static String digest(MessageDigest md, InputStream is) throws IOException
     {
         DigestInputStream dis = null;
         try
         {
-            MessageDigest digest = MessageDigest.getInstance("MD5");
-            dis = new DigestInputStream(is, digest);
+            dis = new DigestInputStream(is, md);
             byte[] buf = new byte[8*1024];
             while (-1 != (dis.read(buf)))
             {
-               /* */
+                /* */
             }
-            return Crypt.encodeHex(digest.digest());
+            return Crypt.encodeHex(md.digest());
+        }
+        finally
+        {
+            IOUtils.closeQuietly(dis);
+        }
+    }
+
+    public static String sha1sum(InputStream is) throws IOException
+    {
+        try
+        {
+            return digest(MessageDigest.getInstance("SHA1"), is);
         }
         catch (NoSuchAlgorithmException e)
         {
@@ -507,16 +546,46 @@ quickScan:
         }
         finally
         {
-            IOUtils.closeQuietly(dis);
             IOUtils.closeQuietly(is);
         }
     }
-    
+
+    public static String sha1sum(byte[] bytes) throws IOException
+    {
+        return sha1sum(new ByteArrayInputStream(bytes));
+    }
+
+    public static String sha1sum(File file) throws IOException
+    {
+        return sha1sum(new FileInputStream(file));
+    }
+
+    public static String md5sum(InputStream is) throws IOException
+    {
+        try
+        {
+            return digest(MessageDigest.getInstance("MD5"), is);
+        }
+        catch (NoSuchAlgorithmException e)
+        {
+            Logger.getInstance(FileUtil.class).error("unexpected error", e);
+            return null;
+        }
+        finally
+        {
+            IOUtils.closeQuietly(is);
+        }
+    }
+
     public static String md5sum(File file) throws IOException
     {
         return md5sum(new FileInputStream(file));
     }
 
+    public static String md5sum(byte[] bytes) throws IOException
+    {
+        return md5sum(new ByteArrayInputStream(bytes));
+    }
 
 
     public static byte[] readHeader(@NotNull InputStream is, int len) throws IOException
