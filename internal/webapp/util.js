@@ -388,7 +388,7 @@ function removeFilePicker(tblId, linkId, rowId)
     updateInstructions(document.getElementById(linkId), table.rows.length);
 }
 
-function removeAttachment(eid, name, xid)
+function removeAnnouncementAttachment(eid, name, xid)
 {
     if (Ext)
     {
