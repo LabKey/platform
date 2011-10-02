@@ -2170,7 +2170,7 @@ public class DavController extends SpringActionController
                 File file = resource.getFile();
                 if (range != null)
                 {
-                    if (resource.getContentType().startsWith("text/html") && !UserManager.mayWriteScript(getUser()))
+                    if (resource.getContentType().startsWith("text/html") && !getUser().isDeveloper())
                         throw new DavException(WebdavStatus.SC_FORBIDDEN, "Partial writing of html files is not allowed");
                     if (range.start > raf.length() || (range.end - range.start) > Integer.MAX_VALUE)
                         throw new DavException(WebdavStatus.SC_REQUESTED_RANGE_NOT_SATISFIABLE);
@@ -2190,7 +2190,7 @@ public class DavController extends SpringActionController
                 }
                 else
                 {
-                    if (resource.getContentType().startsWith("text/html") && !UserManager.mayWriteScript(getUser()))
+                    if (resource.getContentType().startsWith("text/html") && !getUser().isDeveloper())
                     {
                         _ByteArrayOutputStream bos = new _ByteArrayOutputStream(4*1025);
                         FileUtil.copyData(getFileStream().openInputStream(), bos);
@@ -2686,7 +2686,7 @@ public class DavController extends SpringActionController
     boolean isSafeCopy(WebdavResource src, WebdavResource dest)
     {
         // Don't allow creating text/html via rename (circumventing script checking)
-        if (src.isFile() && !UserManager.mayWriteScript(getUser()))
+        if (src.isFile() && !getUser().isDeveloper())
         {
             String contentTypeSrc = StringUtils.defaultString(src.getContentType(),"");
             String contentTypeDest = StringUtils.defaultString(dest.getContentType(),"");

@@ -149,7 +149,7 @@ public class ListController extends SpringActionController
 
     public static NavTree appendRootNavTrail(NavTree root, Container c, User user)
     {
-        if (c.hasPermission(user, AdminPermission.class) || user.isDeveloper() || user.isAdministrator())
+        if (c.hasPermission(user, AdminPermission.class) || user.isDeveloper())
         {
             root.addChild("Lists", getBeginURL(c));
         }

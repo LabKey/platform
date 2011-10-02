@@ -4131,7 +4131,7 @@ public class AdminController extends SpringActionController
         {
             super.checkPermissions();
             User user = getUser();
-            if (!user.isDeveloper() && !user.isAdministrator())
+            if (!user.isDeveloper())
                 throw new UnauthorizedException();
         }
 

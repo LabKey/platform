@@ -518,7 +518,7 @@ public class FileContentController extends SpringActionController
        public boolean handlePost(AttachmentForm form, BindException errors) throws Exception
        {
            Map<String, MultipartFile> fileMap = getFileMap();
-           if (fileMap.size() > 0 && !UserManager.mayWriteScript(getUser()))
+           if (fileMap.size() > 0 && !getUser().isDeveloper())
            {
                for (MultipartFile formFile : fileMap.values())
                {

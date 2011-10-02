@@ -68,7 +68,7 @@
 
     Study study = StudyManager.getInstance().getStudy(context.getContainer());
     ActionURL customizeParticipantURL = new ActionURL(StudyController.CustomizeParticipantViewAction.class, study.getContainer());
-    boolean showCustomizeParticipant = context.getUser().isAdministrator() || (context.hasPermission(AdminPermission.class) && context.getUser().isDeveloper());
+    boolean showCustomizeParticipant = context.hasPermission(AdminPermission.class) && context.getUser().isDeveloper();
 
     // add a sample participant to our URL so that users can see the results of their customization.  This needs to be on the URL
     // since the default custom script reads the participant ID parameter from the URL:

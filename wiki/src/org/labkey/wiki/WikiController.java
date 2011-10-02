@@ -2249,7 +2249,7 @@ public class WikiController extends SpringActionController
                 String body = form.getBody();
                 ArrayList<String> tidyErrors = new ArrayList<String>();
 
-                if (UserManager.mayWriteScript(user))
+                if (user.isDeveloper())
                     contextualRoles.add(RoleManager.getRole(DeveloperRole.class));
 
                 PageFlowUtil.validateHtml(body, tidyErrors,

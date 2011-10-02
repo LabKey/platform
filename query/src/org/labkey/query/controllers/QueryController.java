@@ -471,7 +471,7 @@ public class QueryController extends SpringActionController
 
         public NavTree appendNavTrail(NavTree root)
         {
-            if (getContainer().hasPermission(getUser(), AdminPermission.class) || getUser().isDeveloper() || getUser().isAdministrator())
+            if (getContainer().hasPermission(getUser(), AdminPermission.class) || getUser().isDeveloper())
             {
                 // Don't show the full query nav trail to non-admin/non-developer users as they almost certainly don't
                 // want it

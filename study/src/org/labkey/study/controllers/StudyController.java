@@ -5020,9 +5020,8 @@ public class StudyController extends BaseStudyController
 
         public ModelAndView getView(CustomizeParticipantViewForm form, boolean reshow, BindException errors) throws Exception
         {
-            // We know that the user is at least a folder admin- they must also be either a site admin or
-            // a developer 
-            if (!(getUser().isAdministrator() || getUser().isDeveloper()))
+            // We know that the user is at least a folder admin - they must also be either a developer
+            if (!(getUser().isDeveloper()))
                 throw new UnauthorizedException();
             Study study = getStudy();
             CustomParticipantView view = StudyManager.getInstance().getCustomParticipantView(study);
@@ -6141,8 +6140,8 @@ public class StudyController extends BaseStudyController
                 out.print("&nbsp;");
             }
 
-            // Show customize link to site admins and folder admins who are developers: 
-            if (_showCustomizeLink && (getViewContext().getUser().isAdministrator() || (c.hasPermission(getViewContext().getUser(), AdminPermission.class) && getViewContext().getUser().isDeveloper())))
+            // Show customize link to site admins (who are always developers) and folder admins who are developers:
+            if (_showCustomizeLink && (c.hasPermission(getViewContext().getUser(), AdminPermission.class) && getViewContext().getUser().isDeveloper()))
             {
                 ActionURL customizeURL = new ActionURL(CustomizeParticipantViewAction.class, c);
                 customizeURL.addParameter(ActionURL.Param.returnUrl, getViewContext().getActionURL().getLocalURIString());

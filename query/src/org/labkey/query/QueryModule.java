@@ -183,7 +183,7 @@ public class QueryModule extends DefaultModule
     {
         // Don't show Query nav trails to users that aren't admins or developers since they almost certainly don't want
         // to go to those links
-        if (c.hasPermission(user, AdminPermission.class) || user.isDeveloper() || user.isAdministrator())
+        if (c.hasPermission(user, AdminPermission.class) || user.isDeveloper())
         {
             return super.getTabURL(c, user);
         }
