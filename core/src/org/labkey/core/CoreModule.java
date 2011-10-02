@@ -59,6 +59,7 @@ import org.labkey.api.module.SpringModule;
 import org.labkey.api.portal.ProjectUrls;
 import org.labkey.api.query.DefaultSchema;
 import org.labkey.api.query.QuerySchema;
+import org.labkey.api.reader.ExcelFactory;
 import org.labkey.api.reader.ExcelLoader;
 import org.labkey.api.reader.MapLoader;
 import org.labkey.api.reader.TabLoader;
@@ -504,50 +505,51 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
     public Set<Class> getJUnitTests()
     {
         Set<Class> testClasses = new HashSet<Class>(Arrays.asList(
-            org.labkey.api.data.Table.TestCase.class,
-            Table.DataIteratorTestCase.class,
-            org.labkey.api.data.DbSchema.TestCase.class,
-            org.labkey.api.data.TableViewFormTestCase.class,
-            ActionURL.TestCase.class,
-            org.labkey.api.security.SecurityManager.TestCase.class,
-            org.labkey.api.data.PropertyManager.TestCase.class,
-            org.labkey.api.util.DateUtil.TestCase.class,
-            org.labkey.api.data.ContainerManager.TestCase.class,
-            TabLoader.TabLoaderTestCase.class,
-            MapLoader.MapLoaderTestCase.class,
-            org.labkey.api.data.TSVWriter.TestCase.class,
-            ExcelLoader.ExcelLoaderTestCase.class,
-            ModuleDependencySorter.TestCase.class,
-            org.labkey.api.security.GroupManager.TestCase.class,
-            DateUtil.TestCase.class,
-            DatabaseCache.TestCase.class,
-            SecurityController.TestCase.class,
-            PasswordExpiration.TestCase.class,
-            AttachmentServiceImpl.TestCase.class,
-            BooleanFormat.TestCase.class,
-            XMLWriterTest.TestCase.class,
-            WebdavResolverImpl.TestCase.class,
-            org.labkey.api.exp.Lsid.TestCase.class,
-            MimeMap.TestCase.class,
-            FileUtil.TestCase.class,
-            FileType.TestCase.class,
-            MemTracker.TestCase.class,
-            HString.TestCase.class,
-            StringExpressionFactory.TestCase.class,
-            Path.TestCase.class,
-            ModuleStaticResolverImpl.TestCase.class,
-            PageFlowUtil.TestCase.class,
-            ResultSetUtil.TestCase.class,
-            StorageProvisioner.TestCase.class,
-            ArrayListMap.TestCase.class,
-            DbScope.DialectTestCase.class,
-            RhinoService.TestCase.class,
-            ValidEmail.TestCase.class
-            , SimpleTranslator.TranslateTestCase.class
-            , CachingDataIterator.ScrollTestCase.class
-            , ResultSetDataIterator.TestCase.class
-            , ExceptionUtil.TestCase.class
-            //,RateLimiter.TestCase.class
+                org.labkey.api.data.Table.TestCase.class,
+                Table.DataIteratorTestCase.class,
+                org.labkey.api.data.DbSchema.TestCase.class,
+                org.labkey.api.data.TableViewFormTestCase.class,
+                ActionURL.TestCase.class,
+                org.labkey.api.security.SecurityManager.TestCase.class,
+                org.labkey.api.data.PropertyManager.TestCase.class,
+                org.labkey.api.util.DateUtil.TestCase.class,
+                org.labkey.api.data.ContainerManager.TestCase.class,
+                TabLoader.TabLoaderTestCase.class,
+                MapLoader.MapLoaderTestCase.class,
+                org.labkey.api.data.TSVWriter.TestCase.class,
+                ExcelLoader.ExcelLoaderTestCase.class,
+                ExcelFactory.ExcelFactoryTestCase.class,
+                ModuleDependencySorter.TestCase.class,
+                org.labkey.api.security.GroupManager.TestCase.class,
+                DateUtil.TestCase.class,
+                DatabaseCache.TestCase.class,
+                SecurityController.TestCase.class,
+                PasswordExpiration.TestCase.class,
+                AttachmentServiceImpl.TestCase.class,
+                BooleanFormat.TestCase.class,
+                XMLWriterTest.TestCase.class,
+                WebdavResolverImpl.TestCase.class,
+                org.labkey.api.exp.Lsid.TestCase.class,
+                MimeMap.TestCase.class,
+                FileUtil.TestCase.class,
+                FileType.TestCase.class,
+                MemTracker.TestCase.class,
+                HString.TestCase.class,
+                StringExpressionFactory.TestCase.class,
+                Path.TestCase.class,
+                ModuleStaticResolverImpl.TestCase.class,
+                PageFlowUtil.TestCase.class,
+                ResultSetUtil.TestCase.class,
+                StorageProvisioner.TestCase.class,
+                ArrayListMap.TestCase.class,
+                DbScope.DialectTestCase.class,
+                RhinoService.TestCase.class,
+                ValidEmail.TestCase.class
+                , SimpleTranslator.TranslateTestCase.class
+                , CachingDataIterator.ScrollTestCase.class
+                , ResultSetDataIterator.TestCase.class
+                , ExceptionUtil.TestCase.class
+                //,RateLimiter.TestCase.class
         ));
 
         testClasses.addAll(SqlDialectManager.getAllJUnitTests());

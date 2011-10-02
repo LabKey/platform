@@ -112,7 +112,7 @@ if (settings.hasExpires())
                     x++;
                     %><tr id="attach-<%=x%>">
                         <td><img src="<%=request.getContextPath() + att.getFileIcon()%>" alt="logo"/>&nbsp;<%= h(att.getName()) %></td>
-                        <td><a onclick="removeAttachment(<%=PageFlowUtil.jsString(ann.getEntityId())%>, <%=PageFlowUtil.jsString(att.getName())%>, 'attach-<%=x%>'); ">remove</a></td>
+                        <td><a onclick="removeAnnouncementAttachment(<%=PageFlowUtil.jsString(ann.getEntityId())%>, <%=PageFlowUtil.jsString(att.getName())%>, 'attach-<%=x%>'); ">remove</a></td>
                     </tr><%
                 }
                 %>

@@ -16,18 +16,74 @@
 
 package org.labkey.experiment.controllers.exp;
 
-import jxl.*;
+import jxl.BooleanCell;
+import jxl.Cell;
+import jxl.DateCell;
+import jxl.NumberCell;
+import jxl.Sheet;
+import jxl.Workbook;
+import jxl.WorkbookSettings;
 import jxl.read.biff.BiffException;
-import jxl.write.*;
+import jxl.write.WritableWorkbook;
 import org.apache.commons.lang.StringUtils;
 import org.apache.log4j.Logger;
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
-import org.labkey.api.action.*;
-import org.labkey.api.data.*;
-import org.labkey.api.exp.*;
-import org.labkey.api.exp.api.*;
+import org.labkey.api.action.ApiAction;
+import org.labkey.api.action.ApiJsonWriter;
+import org.labkey.api.action.ApiResponse;
+import org.labkey.api.action.ApiSimpleResponse;
+import org.labkey.api.action.ApiVersion;
+import org.labkey.api.action.ExportAction;
+import org.labkey.api.action.FormHandlerAction;
+import org.labkey.api.action.FormViewAction;
+import org.labkey.api.action.FormattedError;
+import org.labkey.api.action.GWTServiceAction;
+import org.labkey.api.action.HasViewContext;
+import org.labkey.api.action.LabkeyError;
+import org.labkey.api.action.MutatingApiAction;
+import org.labkey.api.action.RedirectAction;
+import org.labkey.api.action.SimpleApiJsonForm;
+import org.labkey.api.action.SimpleViewAction;
+import org.labkey.api.action.SpringActionController;
+import org.labkey.api.data.ActionButton;
+import org.labkey.api.data.BeanViewForm;
+import org.labkey.api.data.ButtonBar;
+import org.labkey.api.data.ColumnInfo;
+import org.labkey.api.data.Container;
+import org.labkey.api.data.ContainerFilter;
+import org.labkey.api.data.ContainerManager;
+import org.labkey.api.data.DataRegion;
+import org.labkey.api.data.DataRegionSelection;
+import org.labkey.api.data.DisplayColumn;
+import org.labkey.api.data.RenderContext;
+import org.labkey.api.data.SimpleDisplayColumn;
+import org.labkey.api.data.SimpleFilter;
+import org.labkey.api.data.Table;
+import org.labkey.api.data.TableInfo;
+import org.labkey.api.exp.AbstractParameter;
+import org.labkey.api.exp.DuplicateMaterialException;
+import org.labkey.api.exp.ExperimentDataHandler;
+import org.labkey.api.exp.ExperimentException;
+import org.labkey.api.exp.ExperimentRunListView;
+import org.labkey.api.exp.ExperimentRunType;
+import org.labkey.api.exp.Lsid;
+import org.labkey.api.exp.LsidManager;
+import org.labkey.api.exp.ObjectProperty;
+import org.labkey.api.exp.OntologyManager;
+import org.labkey.api.exp.ProtocolApplicationParameter;
+import org.labkey.api.exp.XarContext;
+import org.labkey.api.exp.api.ExpData;
+import org.labkey.api.exp.api.ExpExperiment;
+import org.labkey.api.exp.api.ExpMaterial;
+import org.labkey.api.exp.api.ExpObject;
+import org.labkey.api.exp.api.ExpProtocol;
+import org.labkey.api.exp.api.ExpProtocolApplication;
+import org.labkey.api.exp.api.ExpRun;
+import org.labkey.api.exp.api.ExpSampleSet;
+import org.labkey.api.exp.api.ExperimentService;
+import org.labkey.api.exp.api.ExperimentUrls;
 import org.labkey.api.exp.property.DomainProperty;
 import org.labkey.api.exp.query.ExpInputTable;
 import org.labkey.api.exp.query.ExpMaterialTable;
@@ -40,8 +96,16 @@ import org.labkey.api.pipeline.PipelineRootContainerTree;
 import org.labkey.api.pipeline.PipelineService;
 import org.labkey.api.pipeline.PipelineUrls;
 import org.labkey.api.pipeline.browse.PipelinePathForm;
-import org.labkey.api.query.*;
+import org.labkey.api.query.FieldKey;
+import org.labkey.api.query.QueryAction;
+import org.labkey.api.query.QueryDefinition;
+import org.labkey.api.query.QueryService;
+import org.labkey.api.query.QuerySettings;
+import org.labkey.api.query.QueryView;
+import org.labkey.api.query.UserSchema;
+import org.labkey.api.query.ValidationException;
 import org.labkey.api.reader.ColumnDescriptor;
+import org.labkey.api.reader.ExcelFactory;
 import org.labkey.api.reader.MapLoader;
 import org.labkey.api.reader.TabLoader;
 import org.labkey.api.security.ActionNames;
@@ -59,11 +123,46 @@ import org.labkey.api.security.roles.RoleManager;
 import org.labkey.api.settings.AppProps;
 import org.labkey.api.study.ParticipantVisit;
 import org.labkey.api.study.actions.UploadWizardAction;
-import org.labkey.api.util.*;
-import org.labkey.api.view.*;
+import org.labkey.api.util.ExceptionUtil;
+import org.labkey.api.util.FileUtil;
+import org.labkey.api.util.HelpTopic;
+import org.labkey.api.util.ImageUtil;
+import org.labkey.api.util.NetworkDrive;
+import org.labkey.api.util.PageFlowUtil;
+import org.labkey.api.util.Pair;
+import org.labkey.api.util.StringExpression;
+import org.labkey.api.util.URLHelper;
+import org.labkey.api.util.UnexpectedException;
+import org.labkey.api.view.ActionURL;
+import org.labkey.api.view.DataView;
+import org.labkey.api.view.DetailsView;
+import org.labkey.api.view.HBox;
+import org.labkey.api.view.HtmlView;
+import org.labkey.api.view.HttpView;
+import org.labkey.api.view.InsertView;
+import org.labkey.api.view.JspView;
+import org.labkey.api.view.NavTree;
+import org.labkey.api.view.NotFoundException;
+import org.labkey.api.view.RedirectException;
+import org.labkey.api.view.UnauthorizedException;
+import org.labkey.api.view.UpdateView;
+import org.labkey.api.view.VBox;
+import org.labkey.api.view.ViewBackgroundInfo;
+import org.labkey.api.view.ViewContext;
+import org.labkey.api.view.ViewForm;
+import org.labkey.api.view.WebPartView;
 import org.labkey.api.view.template.PageConfig;
 import org.labkey.experiment.*;
-import org.labkey.experiment.api.*;
+import org.labkey.experiment.api.ExpDataImpl;
+import org.labkey.experiment.api.ExpExperimentImpl;
+import org.labkey.experiment.api.ExpMaterialImpl;
+import org.labkey.experiment.api.ExpProtocolApplicationImpl;
+import org.labkey.experiment.api.ExpRunImpl;
+import org.labkey.experiment.api.ExpSampleSetImpl;
+import org.labkey.experiment.api.Experiment;
+import org.labkey.experiment.api.ExperimentServiceImpl;
+import org.labkey.experiment.api.MaterialSource;
+import org.labkey.experiment.api.ProtocolActionStepDetail;
 import org.labkey.experiment.controllers.property.PropertyController;
 import org.labkey.experiment.pipeline.ExperimentPipelineJob;
 import org.labkey.experiment.samples.UploadMaterialSetForm;
@@ -80,15 +179,33 @@ import javax.imageio.ImageIO;
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletResponse;
 import java.awt.image.BufferedImage;
-import java.io.*;
-import java.lang.Boolean;
+import java.io.BufferedOutputStream;
+import java.io.ByteArrayOutputStream;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.OutputStream;
+import java.io.Writer;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.sql.SQLException;
 import java.text.DecimalFormat;
-import java.text.ParseException;
 import java.text.SimpleDateFormat;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.Comparator;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Iterator;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.TreeSet;
 
 /**
  * User: jeckels
@@ -1514,108 +1631,24 @@ public class ExperimentController extends SpringActionController
     @RequiresPermissionClass(ReadPermission.class)
     public class ConvertArraysToExcelAction extends ExportAction<ConvertArraysToExcelForm>
     {
+        @Override
+        public void validate(ConvertArraysToExcelForm form, BindException errors)
+        {
+            if (form.getJson() == null)
+            {
+                errors.reject(ERROR_MSG, "Unable to convert to Excel - no spreadsheet data given");
+            }
+        }
+
         public void export(ConvertArraysToExcelForm form, HttpServletResponse response, BindException errors) throws Exception
         {
             try
             {
-                if (form.getJson() == null)
-                {
-                    throw new NotFoundException("Unable to convert to Excel - no spreadsheet data given");
-                }
                 JSONObject rootObject = new JSONObject(form.getJson());
                 JSONArray sheetsArray = rootObject.getJSONArray("sheets");
-
                 String filename = rootObject.has("fileName") ? rootObject.getString("fileName") : "ExcelExport.xls";
 
-                WorkbookSettings settings = new WorkbookSettings();
-                settings.setArrayGrowSize(300000);
-                WritableWorkbook workbook = Workbook.createWorkbook(response.getOutputStream(), settings);
-
-                SimpleDateFormat dateFormat = new SimpleDateFormat(JSONObject.JAVASCRIPT_DATE_FORMAT);
-
-                for (int sheetIndex = 0; sheetIndex < sheetsArray.length(); sheetIndex++)
-                {
-                    JSONObject sheetObject = sheetsArray.getJSONObject(sheetIndex);
-                    String sheetName = sheetObject.has("name") ? sheetObject.getString("name") : "Sheet" + sheetIndex;
-                    sheetName = ExcelWriter.cleanSheetName(sheetName);
-                    WritableSheet sheet = workbook.createSheet(sheetName, sheetIndex);
-
-                    WritableCellFormat defaultFormat = new WritableCellFormat();
-                    WritableCellFormat defaultDateFormat = new WritableCellFormat(new DateFormat(DateUtil.getStandardDateFormatString()));
-                    WritableCellFormat errorFormat = new WritableCellFormat();
-                    errorFormat.setBackground(jxl.format.Colour.RED);
-
-                    JSONArray rowsArray = sheetObject.getJSONArray("data");
-                    for (int rowIndex = 0; rowIndex < rowsArray.length(); rowIndex++)
-                    {
-                        JSONArray rowArray = rowsArray.getJSONArray(rowIndex);
-                        for (int colIndex = 0; colIndex < rowArray.length(); colIndex++)
-                        {
-                            Object value = rowArray.get(colIndex);
-                            WritableCell cell = null;
-                            JSONObject metadataObject = null;
-                            WritableCellFormat cellFormat = defaultFormat;
-                            if (value instanceof JSONObject)
-                            {
-                                metadataObject = (JSONObject)value;
-                                value = metadataObject.get("value");
-                            }
-                            if (value instanceof java.lang.Number)
-                            {
-                                cell = new jxl.write.Number(colIndex, rowIndex, ((java.lang.Number) value).doubleValue());
-                                if (metadataObject != null && metadataObject.has("formatString"))
-                                {
-                                    cellFormat = new WritableCellFormat(new NumberFormat(metadataObject.getString("formatString")));
-                                }
-                            }
-                            else if (value instanceof Boolean)
-                            {
-                                cell = new jxl.write.Boolean(colIndex, rowIndex, ((Boolean) value).booleanValue());
-                            }
-                            else if (value instanceof String)
-                            {
-                                try
-                                {
-                                    // JSON has no date literal syntax so try to parse all Strings as dates
-                                    Date d = dateFormat.parse((String)value);
-                                    try
-                                    {
-                                        if (metadataObject != null && metadataObject.has("formatString"))
-                                        {
-                                            cellFormat = new WritableCellFormat(new DateFormat(metadataObject.getString("formatString")));
-                                        }
-                                        else
-                                        {
-                                            cellFormat = defaultDateFormat;
-                                        }
-                                        boolean timeOnly = metadataObject != null && metadataObject.has("timeOnly") && Boolean.TRUE.equals(metadataObject.get("timeOnly"));
-                                        cell = new DateTime(colIndex, rowIndex, d, cellFormat, timeOnly);
-                                    }
-                                    catch (IllegalArgumentException e)
-                                    {
-                                        // Invalid date format
-                                        cellFormat = errorFormat;
-                                        cell = new Label(colIndex, rowIndex, e.getMessage());
-                                    }
-                                }
-                                catch (ParseException e)
-                                {
-                                    // Not a date
-                                    cell = new Label(colIndex, rowIndex, (String)value);
-                                }
-                            }
-                            else if (value != null)
-                            {
-                                cell = new Label(colIndex, rowIndex, value.toString());
-                            }
-                            if (cell != null)
-                            {
-                                cell.setCellFormat(cellFormat);
-                                sheet.addCell(cell);
-                            }
-                        }
-                    }
-                }
+                WritableWorkbook workbook =  ExcelFactory.createFromArray(response.getOutputStream(), sheetsArray);
 
                 response.setContentType("application/vnd.ms-excel");
                 response.setHeader("Content-disposition", "attachment; filename=\"" + filename +"\"");

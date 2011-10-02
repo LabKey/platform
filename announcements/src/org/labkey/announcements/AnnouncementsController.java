@@ -633,6 +633,16 @@ public class AnnouncementsController extends SpringActionController
         }
     }
 
+    @RequiresNoPermission    // Permission checking done in verifyPermissions() to handle owner-update, etc.
+    public class DeleteAttachmentAction extends AttachmentAction
+    {
+        public ModelAndView getAttachmentView(AttachmentForm form, AttachmentParent parent) throws Exception
+        {
+            return AttachmentService.get().delete(parent, form.getName(), getUser());
+        }
+    }
+
+
     public static class MemberListRemovalForm
     {
         private int _userId;
