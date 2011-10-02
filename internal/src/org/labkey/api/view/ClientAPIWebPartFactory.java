@@ -75,8 +75,8 @@ public abstract class ClientAPIWebPartFactory extends BaseWebPartFactory
 
     public boolean isEditable()
     {
-        // We're only editable if the user is a site admin or developer
+        // We're only editable if the user can write scripts
         User user = HttpView.currentContext().getUser();
-        return user.isAdministrator() || user.isDeveloper();
+        return user.isDeveloper();
     }
 }

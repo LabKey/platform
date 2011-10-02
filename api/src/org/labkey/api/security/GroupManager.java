@@ -166,17 +166,21 @@ public class GroupManager
                 int id = recurse.removeFirst();
                 groupSet.add(id);
                 int[] groups = getGroupsForPrincipal(id);
+
                 for (int g : groups)
                     if (!groupSet.contains(g))
                         recurse.addLast(g);
             }
+
+            // Site administrators always get developer role as well
+            if (groupSet.contains(Group.groupAdministrators))
+                groupSet.add(Group.groupDevelopers);
 
             return _toIntArray(groupSet);
         }
         catch (SQLException e)
         {
             throw new RuntimeSQLException(e);
-            //_log.error("getAllGroupsFromDatabase() for " + userId,  e);
         }
     }
 

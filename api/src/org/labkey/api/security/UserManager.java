@@ -784,10 +784,4 @@ public class UserManager
 
         return completions;
     }
-
-    public static boolean mayWriteScript(User user)
-    {
-        //user may write script if user is a site admin or in the developers group
-        return user.isAdministrator() || user.isDeveloper();
-    }
 }

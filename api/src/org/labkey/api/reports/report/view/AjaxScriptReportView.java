@@ -53,7 +53,7 @@ public class AjaxScriptReportView extends JspView<ScriptReportBean>
 
         public boolean showSourceAndHelp(User user)
         {
-            return _allowSourceAndHelp && (UserManager.mayWriteScript(user));
+            return _allowSourceAndHelp && user.isDeveloper();
         }
 
         public String getUniqueID()

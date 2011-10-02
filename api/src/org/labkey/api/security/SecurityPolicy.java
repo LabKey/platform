@@ -381,13 +381,13 @@ public class SecurityPolicy
     protected Set<Role> getContextualRoles(UserPrincipal principal)
     {
         Set<Role> roles = new HashSet<Role>();
-        if(principal instanceof User)
+        if (principal instanceof User)
         {
             User user = (User)principal;
 
-            if(user.isAdministrator())
+            if (user.isAdministrator())
                 roles.add(RoleManager.siteAdminRole);
-            if(user.isDeveloper())
+            if (user.isDeveloper())
                 roles.add(RoleManager.getRole(DeveloperRole.class));
         }
 

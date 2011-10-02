@@ -141,7 +141,7 @@ public class PopupAdminView extends PopupMenuView
                 navTree.addChild(goToModuleMenu);
         }
 
-        if (user.isDeveloper() || user.isAdministrator())
+        if (user.isDeveloper())
         {
             NavTree devMenu = new NavTree("Developer Links");
             devMenu.addChildren(PopupDeveloperView.getNavTree(context));

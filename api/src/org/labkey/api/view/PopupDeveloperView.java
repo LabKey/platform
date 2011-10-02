@@ -24,7 +24,6 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * Created by IntelliJ IDEA.
  * User: dave
  * Date: Sep 10, 2009
  * Time: 3:13:32 PM

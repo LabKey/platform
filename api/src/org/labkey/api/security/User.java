@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2004-2010 Fred Hutchinson Cancer Research Center
+ * Copyright (c) 2004-2011 Fred Hutchinson Cancer Research Center
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -161,18 +161,18 @@ public class User extends UserPrincipal implements Serializable, Cloneable
     }
 
 
-    // Don't stash in User... need to check dynamically in case user's groups have changed
     public boolean isAdministrator()
     {
         return isAllowedRoles() && isInGroup(Group.groupAdministrators);
     }
 
+    // Note: site administrators are always developers; see GroupManager.computeAllGroups().
     public boolean isDeveloper()
     {
         return isAllowedRoles() && isInGroup(Group.groupDevelopers);
     }
 
-    // Never allow global roles (site admin, developer, etc.) if user is being impersonated within a project  
+    // Never allow global roles (site admin, developer, etc.) if user is being impersonated within a project
     public boolean isAllowedRoles()
     {
         return !isImpersonated() || null == getImpersonationProject();

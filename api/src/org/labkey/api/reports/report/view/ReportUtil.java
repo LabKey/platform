@@ -310,7 +310,7 @@ public class ReportUtil
 
     public static boolean canCreateScript(ViewContext context)
     {
-        return UserManager.mayWriteScript(context.getUser());
+        return context.getUser().isDeveloper();
     }
 
     public static interface ReportFilter
