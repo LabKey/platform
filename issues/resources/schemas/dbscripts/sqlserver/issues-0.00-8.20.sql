@@ -81,7 +81,7 @@ CREATE TABLE issues.IssueKeywords
     Container ENTITYID NOT NULL,
     Type INT NOT NULL,    -- area or milestone (or whatever)
     Keyword VARCHAR(255) NOT NULL,
-    "Default" BIT NOT NULL,
+    "Default" BIT NOT NULL DEFAULT 0,
 
     CONSTRAINT PK_IssueKeywords PRIMARY KEY (Container, Type, Keyword)
 );
