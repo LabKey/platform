@@ -112,13 +112,7 @@
             </p>
             <p>
                 <%
-                    if (protocolDocs.size() == 0)
-                    {
-                %>
-                    <i>No protocol document provided.</i>
-                <%
-                    }
-                    else if (protocolDocs.size() == 1)
+                    if (protocolDocs.size() == 1)
                     {
                         Attachment attachment = protocolDocs.get(0);
                 %>
@@ -128,7 +122,7 @@
                 </a>
                 <%
                     }
-                    else
+                    else if (protocolDocs.size() > 1)
                     {
                 %>
                 Protocol documents:
@@ -142,7 +136,7 @@
                     </a><%
                         }
                     }
-                    if (isAdmin)
+                    if (isAdmin && protocolDocs.size() > 0)
                     {
                 %>
                     <a href="<%= editMetadataURL.getLocalURIString() %>">
@@ -154,37 +148,45 @@
             </p>
         </td>
 
-        <td valign="top">
-            <a href="<%=h(BaseStudyController.getStudyOverviewURL(bean.getStudy().getContainer()))%>"><img src="<%=request.getContextPath()%>/_images/studyNavigator.gif" alt="Study Navigator"> </a><br>
-            <%=textLink("Study Navigator", BaseStudyController.getStudyOverviewURL(bean.getStudy().getContainer()))%>
+        <td style="vertical-align:top;border-left:solid #DDDDDD 1px;padding-left:1em">
+            <p>
+                <a href="<%=h(BaseStudyController.getStudyOverviewURL(bean.getStudy().getContainer()))%>"><img src="<%=request.getContextPath()%>/_images/studyNavigator.gif" alt="Study Navigator"> </a><br>
+                <%=textLink("Study Navigator", BaseStudyController.getStudyOverviewURL(bean.getStudy().getContainer()))%><br>
+            </p>
+            <%
+                if (isAdmin)
+                {
+                    out.write("<p>");
+                    out.write(textLink("Manage Study", url.setAction(StudyController.ManageStudyAction.class)));
+                    out.write("</p>");
+
+                    // if there is a pipeline override, show the pipeline view, else show the file browser
+                    ActionURL pipelineUrl;
+
+                    if (PipelineService.get().hasSiteDefaultRoot(c))
+                        pipelineUrl = urlProvider(PipelineUrls.class).urlBrowse(c, "pipeline");
+                    else
+                        pipelineUrl = urlProvider(PipelineUrls.class).urlBegin(c);
+
+                    out.write("<p>");
+                    out.write(textLink("Manage Files", pipelineUrl));
+                    out.write("</p>");
+                }
+                else if (policy.hasPermission(user, ManageRequestSettingsPermission.class) &&
+                        bean.getStudy().getRepositorySettings().isEnableRequests())
+                {
+                    out.write("<p>");
+                    out.write(textLink("Manage Specimen Request Settings", url.setAction(StudyController.ManageStudyAction.class)));
+                    out.write("</p>");
+                }
+                else if (policy.hasPermission(user, ManageRequestSettingsPermission.class))
+                {
+                    out.write("<p>");
+                    out.write(textLink("Manage Study", url.setAction(StudyController.ManageStudyAction.class)));
+                    out.write("</p>");
+                }
+            %>
+
         </td>
     </tr>
     </table>
-
-<%
-    if (isAdmin)
-    {
-        out.write(textLink("Manage Study", url.setAction(StudyController.ManageStudyAction.class)));
-        out.write("&nbsp;");
-
-        // if there is a pipeline override, show the pipeline view, else show the file browser
-        ActionURL pipelineUrl;
-
-        if (PipelineService.get().hasSiteDefaultRoot(c))
-            pipelineUrl = urlProvider(PipelineUrls.class).urlBrowse(c, "pipeline");
-        else
-            pipelineUrl = urlProvider(PipelineUrls.class).urlBegin(c);
-
-        out.write(textLink("Manage Files", pipelineUrl));
-    }
-    else if (policy.hasPermission(user, ManageRequestSettingsPermission.class) &&
-            bean.getStudy().getRepositorySettings().isEnableRequests())
-    {
-        out.write(textLink("Manage Specimen Request Settings", url.setAction(StudyController.ManageStudyAction.class)));
-    }
-    else if (policy.hasPermission(user, ManageRequestSettingsPermission.class))
-    {
-        out.write(textLink("Manage Study", url.setAction(StudyController.ManageStudyAction.class)));
-    }
-%>
-

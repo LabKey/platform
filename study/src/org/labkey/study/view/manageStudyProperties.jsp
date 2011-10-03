@@ -74,7 +74,7 @@
         <tr>
             <td class="labkey-form-label">Description</td>
             <td>
-                <textarea name="description" rows="20" cols="50"><%= h(getStudy().getDescription()) %></textarea>
+                <textarea name="description" rows="20" cols="80"><%= h(getStudy().getDescription()) %></textarea>
             </td>
         </tr>
         <tr>
