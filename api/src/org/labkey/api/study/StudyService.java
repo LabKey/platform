@@ -47,6 +47,8 @@ public class StudyService
 
     public static final String STUDY_REDESIGN_FOLDER_TYPE_NAME_CHAVI = "Study Redesign (CHAVI)";
     public static final String STUDY_REDESIGN_FOLDER_TYPE_NAME_ITN = "Study Redesign (ITN)";
+    public static String SPECIMEN_TOOLS_WEBPART_NAME = "Specimen Tools";
+    public static String DATA_TOOLS_WEBPART_NAME = "Study Data Tools";
 
 
     public interface Service
