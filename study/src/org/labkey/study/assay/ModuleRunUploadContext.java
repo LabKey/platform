@@ -62,7 +62,7 @@ public class ModuleRunUploadContext extends AssayRunUploadForm<ModuleAssayProvid
             if (_jsonObject.has(ExperimentJSONConverter.PROPERTIES))
             {
                 for (Map.Entry<DomainProperty, Object> entry : ExperimentJSONConverter.convertProperties(_jsonObject.getJSONObject(ExperimentJSONConverter.PROPERTIES),
-                        provider.getRunDomain(getProtocol()).getProperties()).entrySet())
+                        provider.getRunDomain(getProtocol()).getProperties(), getContainer()).entrySet())
                 {
                     _runProperties.put(entry.getKey(), String.valueOf(entry.getValue()));
                 }
@@ -82,7 +82,7 @@ public class ModuleRunUploadContext extends AssayRunUploadForm<ModuleAssayProvid
             if (_jsonObject.has(ExperimentJSONConverter.PROPERTIES))
             {
                 for (Map.Entry<DomainProperty, Object> entry : ExperimentJSONConverter.convertProperties(_jsonObject.getJSONObject(ExperimentJSONConverter.PROPERTIES),
-                        provider.getBatchDomain(getProtocol()).getProperties()).entrySet())
+                        provider.getBatchDomain(getProtocol()).getProperties(), getContainer()).entrySet())
                 {
                     _uploadSetProperties.put(entry.getKey(), String.valueOf(entry.getValue()));
                 }
