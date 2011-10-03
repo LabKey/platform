@@ -19,6 +19,9 @@ import org.labkey.api.security.User;
 import org.labkey.api.study.Study;
 
 import java.sql.SQLException;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.Comparator;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -66,22 +69,35 @@ public class DatasetReorderer
             updateDef(def);
     }
 
+    public void resetOrder() throws SQLException
+    {
+        DataSetDefinition[] defs = StudyManager.getInstance().getDataSetDefinitions(_study);
+        for (DataSetDefinition def : defs)
+            updateDef(def, 0);
+    }
     private void resetCounter()
     {
         _i = 0;
+    }
+
+    private void updateDef(DataSetDefinition def, int displayOrderIndex) throws SQLException
+    {
+        if (null != def)
+        {
+            if (def.getDisplayOrder() != displayOrderIndex)
+            {
+                def = def.createMutable();
+                def.setDisplayOrder(displayOrderIndex);
+                StudyManager.getInstance().updateDataSetDefinition(_user, def);
+            }
+        }
     }
 
     private void updateDef(DataSetDefinition def) throws SQLException
     {
         if (null != def)
         {
-            if (def.getDisplayOrder() != _i)
-            {
-                def = def.createMutable();
-                def.setDisplayOrder(_i);
-                StudyManager.getInstance().updateDataSetDefinition(_user, def);
-            }
-
+            updateDef(def, _i);
             _i++;
         }
     }

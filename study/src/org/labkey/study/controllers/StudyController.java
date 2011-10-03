@@ -213,6 +213,7 @@ import org.labkey.study.reports.StudyReportUIProvider;
 import org.labkey.study.samples.settings.RepositorySettings;
 import org.labkey.study.security.permissions.ManageStudyPermission;
 import org.labkey.study.view.StudyGWTView;
+import org.labkey.study.view.SubjectsWebPart;
 import org.labkey.study.visitmanager.VisitManager;
 import org.labkey.study.visitmanager.VisitManager.VisitStatistic;
 import org.labkey.study.writer.StudyExportContext;
@@ -4849,6 +4850,8 @@ public class StudyController extends BaseStudyController
 
             if (order != null && order.length() > 0)
             {
+                if (form.isResetOrder())
+                    throw new IllegalStateException("Cannot both set and reset order.");
                 String[] ids = order.split(",");
                 List<Integer> orderedIds = new ArrayList<Integer>(ids.length);
 
@@ -4857,6 +4860,11 @@ public class StudyController extends BaseStudyController
 
                 DatasetReorderer reorderer = new DatasetReorderer(getStudy(), getUser());
                 reorderer.reorderDatasets(orderedIds);
+            }
+            else if (form.isResetOrder())
+            {
+                DatasetReorderer reorderer = new DatasetReorderer(getStudy(), getUser());
+                reorderer.resetOrder();
             }
 
             return true;
@@ -5678,10 +5686,21 @@ public class StudyController extends BaseStudyController
     public static class DatasetReorderForm
     {
         private String order;
+        private boolean resetOrder = false;
 
         public String getOrder() {return order;}
 
         public void setOrder(String order) {this.order = order;}
+
+        public boolean isResetOrder()
+        {
+            return resetOrder;
+        }
+
+        public void setResetOrder(boolean resetOrder)
+        {
+            this.resetOrder = resetOrder;
+        }
     }
 
     public static class VisitReorderForm
@@ -6917,6 +6936,28 @@ public class StudyController extends BaseStudyController
             catch (ServletException e)
             {
             }
+            return root;
+        }
+    }
+
+    @RequiresPermissionClass(ReadPermission.class)
+    public class SubjectListAction extends SimpleViewAction
+    {
+        @Override
+        public ModelAndView getView(Object o, BindException errors) throws Exception
+        {
+            SubjectsWebPart.SubjectsBean bean = new SubjectsWebPart.SubjectsBean();
+            bean.setViewContext(getViewContext());
+            bean.setRows(15);
+            bean.setCols(8);
+            return new JspView<SubjectsWebPart.SubjectsBean>("/org/labkey/study/view/subjects.jsp", bean);
+        }
+
+        @Override
+        public NavTree appendNavTrail(NavTree root)
+        {
+            String title = StudyService.get().getSubjectNounPlural(getViewContext().getContainer());
+            root.addChild(title);
             return root;
         }
     }

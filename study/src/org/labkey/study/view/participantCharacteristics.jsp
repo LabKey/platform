@@ -84,8 +84,8 @@
     <%
         for (DataSetDefinition dataSet : datasets)
         {
-            // Only interested in demographic data
-            if (!dataSet.isDemographicData())
+            // Only interested in default-visible visible demographic data
+            if (!dataSet.isDemographicData() || !dataSet.isShowByDefault())
                 continue;
 
             String typeURI = dataSet.getTypeURI();
@@ -109,7 +109,11 @@
 
             %>
             <tr class="labkey-header">
-            <th nowrap colspan="<%=2%>" align="left" class="labkey-expandable-row-header"><a title="Click to expand" href="<%=new ActionURL(StudyController.ExpandStateNotifyAction.class, study.getContainer()).addParameter("datasetId", Integer.toString(datasetId)).addParameter("id", Integer.toString(bean.getDatasetId()))%>" onclick="return collapseExpand(this, true);"><%=h(dataSet.getDisplayString())%></a><%
+            <th nowrap colspan="<%=2%>" align="left" class="labkey-expandable-row-header">
+                <a title="Click to expand/collapse" href="<%=new ActionURL(StudyController.ExpandStateNotifyAction.class, study.getContainer()).addParameter("datasetId", Integer.toString(datasetId)).addParameter("id", Integer.toString(bean.getDatasetId()))%>" onclick="return toggleLink(this, true);">
+                    <img src="<%= context.getContextPath() %>/_images/<%= expanded ? "minus.gif" : "plus.gif" %>" alt="Click to expand/collapse">
+                    <%=h(dataSet.getDisplayString())%>
+                </a><%
             if (null != StringUtils.trimToNull(dataSet.getDescription()))
             {
                 %><%=PageFlowUtil.helpPopup(dataSet.getDisplayString(), dataSet.getDescription())%><%

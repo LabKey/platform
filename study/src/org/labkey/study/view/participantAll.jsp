@@ -102,7 +102,7 @@
     ArrayList<DataSetDefinition> datasets = new ArrayList<DataSetDefinition>(allDatasets.length);
     for (DataSetDefinition def : allDatasets)
     {
-        if (!def.canRead(user) || null == def.getStorageTableInfo() || def.isDemographicData())
+        if (!def.canRead(user) || !def.isShowByDefault() || null == def.getStorageTableInfo() || def.isDemographicData())
                 continue;
         datasets.add(def);
     }
@@ -277,7 +277,11 @@
 
             %>
             <tr class="labkey-header">
-            <th nowrap align="left" class="labkey-expandable-row-header"><a title="Click to expand" href="<%=new ActionURL(StudyController.ExpandStateNotifyAction.class, study.getContainer()).addParameter("datasetId", Integer.toString(datasetId)).addParameter("id", Integer.toString(bean.getDatasetId()))%>" onclick="return collapseExpand(this, true);"><%=h(dataset.getDisplayString())%></a><%
+            <th nowrap align="left" class="labkey-expandable-row-header">
+                <a title="Click to expand/collapse" href="<%=new ActionURL(StudyController.ExpandStateNotifyAction.class, study.getContainer()).addParameter("datasetId", Integer.toString(datasetId)).addParameter("id", Integer.toString(bean.getDatasetId()))%>" onclick="return toggleLink(this, true);">
+                    <img src="<%= context.getContextPath() %>/_images/<%= expanded ? "minus.gif" : "plus.gif" %>" alt="Click to expand/collapse">
+                    <%=h(dataset.getDisplayString())%>
+                </a><%
             if (null != StringUtils.trimToNull(dataset.getDescription()))
             {
                 %><%=PageFlowUtil.helpPopup(dataset.getDisplayString(), dataset.getDescription())%><%

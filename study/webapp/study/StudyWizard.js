@@ -585,6 +585,7 @@ LABKEY.study.CreateStudyWizard = Ext.extend(Ext.util.Observable, {
             store: new LABKEY.ext.Store({
                 schemaName: 'study',
                 queryName: 'Datasets',
+                filterArray: [ LABKEY.Filter.create('ShowByDefault', true) ],
                 columns: 'dataSetId, label, category, description',
                 sort: 'label'
             }),

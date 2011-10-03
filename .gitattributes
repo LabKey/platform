@@ -2882,6 +2882,8 @@ study/src/org/labkey/study/view/StudyGWTView.java -text
 study/src/org/labkey/study/view/StudyListWebPartFactory.java -text
 study/src/org/labkey/study/view/StudyNavigationView.java -text
 study/src/org/labkey/study/view/StudySummaryWebPartFactory.java -text
+study/src/org/labkey/study/view/StudyToolsWebPart.java -text
+study/src/org/labkey/study/view/StudyToolsWebPartFactory.java -text
 study/src/org/labkey/study/view/StudyViewLoader.java -text
 study/src/org/labkey/study/view/SubjectDetailsWebPartFactory.java -text
 study/src/org/labkey/study/view/SubjectsWebPart.java -text
@@ -2978,6 +2980,7 @@ study/src/org/labkey/study/view/securityTabHeader.jsp -text
 study/src/org/labkey/study/view/studyList.jsp -text
 study/src/org/labkey/study/view/studySummary.jsp -text
 study/src/org/labkey/study/view/subjects.jsp -text
+study/src/org/labkey/study/view/toolsWebPart.jsp -text
 study/src/org/labkey/study/view/typeNotFound.jsp -text
 study/src/org/labkey/study/view/typeSummary.jsp -text
 study/src/org/labkey/study/view/updateDatasetVisitMapping.jsp -text
@@ -3019,6 +3022,13 @@ study/webapp/sampleRequest.js -text
 study/webapp/study/ParticipantGroup.js -text
 study/webapp/study/StudyWizard.js -text
 study/webapp/study/assay/SampleLookupTemplate.xls -text
+study/webapp/study/tools/cart_icon.gif -text
+study/webapp/study/tools/overview_icon.gif -text
+study/webapp/study/tools/report_icon.gif -text
+study/webapp/study/tools/search_icon.gif -text
+study/webapp/study/tools/settings_icon.gif -text
+study/webapp/study/tools/subjectlist_icon.gif -text
+study/webapp/study/tools/timechart_icon.gif -text
 timeline/Timeline.iml -text
 timeline/build.xml -text
 timeline/module.properties -text

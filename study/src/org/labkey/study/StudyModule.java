@@ -162,6 +162,10 @@ public class StudyModule extends SpringModule implements SearchService.DocumentP
     public static final WebPartFactory subjectDetailsWebPartFactory = new SubjectDetailsWebPartFactory();
     public static final WebPartFactory assayList2WebPartFactory = new AssayList2WebPartFactory();
     public static final WebPartFactory studyListWebPartFactory = new StudyListWebPartFactory();
+    public static final WebPartFactory dataToolsWideWebPartFactory = new StudyToolsWebPartFactory.Data(HttpView.BODY);
+    public static final WebPartFactory dataToolsWebPartFactory = new StudyToolsWebPartFactory.Data("right");
+    public static final WebPartFactory specimenToolsWideWebPartFactory = new StudyToolsWebPartFactory.Specimens(HttpView.BODY);
+    public static final WebPartFactory specimenToolsWebPartFactory = new StudyToolsWebPartFactory.Specimens("right");
 
     public String getName()
     {
@@ -235,7 +239,8 @@ public class StudyModule extends SpringModule implements SearchService.DocumentP
                 enrollmentChartPartFactory, studyDesignsWebPartFactory, studyDesignSummaryWebPartFactory,
                 assayListWebPartFactory, assayBatchesWebPartFactory, assayRunsWebPartFactory, assayResultsWebPartFactory,
                 subjectDetailsWebPartFactory, assayList2WebPartFactory, studyListWebPartFactory, sampleSearchPartFactory,
-                subjectsWebPartFactory, subjectsWideWebPartFactory));
+                subjectsWebPartFactory, subjectsWideWebPartFactory, dataToolsWebPartFactory, dataToolsWideWebPartFactory,
+                specimenToolsWebPartFactory, specimenToolsWideWebPartFactory));
     }
 
     public Collection<String> getSummary(Container c)

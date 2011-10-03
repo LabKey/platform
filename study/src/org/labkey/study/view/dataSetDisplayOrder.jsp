@@ -34,6 +34,14 @@ function saveList(listName)
     document.reorder.order.value = itemList;
 }
 
+function submitReset()
+{
+    var form = document.reorder;
+    var itemSelect = form.resetOrder.value = true;
+    form.submit();
+    return false;
+}
+
 function orderModule(down)
 {
     var itemSelect = document.reorder.items;
@@ -71,6 +79,7 @@ function orderModule(down)
 }
 </script>
 <form method="post" name="reorder" action="dataSetDisplayOrder.post" enctype="multipart/form-data">
+    <input type="hidden" name="resetOrder" value="false">
     <table>
         <tr>
             <td>
@@ -110,5 +119,7 @@ function orderModule(down)
         </tr>
     </table>
     <input type="hidden" name="order" value="">
-    <%= generateSubmitButton("Save") %>&nbsp;<%= generateButton("Cancel", "manageTypes.view") %>
+    <%= generateSubmitButton("Save") %>
+    <%= generateButton("Cancel", "manageTypes.view") %>
+    <%= generateButton("Reset Order", "#", "if (confirm('Resetting will order the datasets by category, and then by their ID numbers within each category.  This cannot be undone.  Continue?')) return submitReset(); else return false;") %>
 </form>
