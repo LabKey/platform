@@ -464,6 +464,7 @@ public class ExceptionUtil
                 if (null != ss)
                     ss.notFound(url);
             }
+            unhandledException = null;
         }
         else if (ex instanceof UnauthorizedException)
         {
