@@ -361,6 +361,7 @@ public class AssayDesignerMainPanel extends VerticalPanel implements Saveable<GW
             }
         }, this);
         _nameBox.setRequired(true);
+        table.getFlexCellFormatter().setStyleName(row, 0, "labkey-form-label");
         if (assay.getProtocolId() == null || _copy)
         {
             table.setWidget(row, 1, _nameBox);
@@ -384,6 +385,7 @@ public class AssayDesignerMainPanel extends VerticalPanel implements Saveable<GW
             }
         }, this);
         table.setHTML(row, 0, "Description");
+        table.getFlexCellFormatter().setStyleName(row, 0, "labkey-form-label");
         table.setWidget(row++, 1, descriptionBox);
 
         HorizontalPanel autoCopyPanel = new HorizontalPanel();
@@ -468,6 +470,7 @@ public class AssayDesignerMainPanel extends VerticalPanel implements Saveable<GW
                         "identifies the script engine that will be used to run the transform script. For example: a script named test.pl will " +
                         "be run with the Perl scripting engine. The scripting engine must be configured from the Admin panel. For additional information " +
                         "refer to the <a href=\"https://www.labkey.org/wiki/home/Documentation/page.view?name=configureScripting\" target=\"_blank\">help documentation</a>."));
+                table.getFlexCellFormatter().setStyleName(row, 0, "labkey-form-label");
                 table.setWidget(row, 0, transformNamePanel);
                 table.setWidget(row++, 1, transformFile);
             }
@@ -480,12 +483,12 @@ public class AssayDesignerMainPanel extends VerticalPanel implements Saveable<GW
                 text.setReadOnly(true);
                 text.setVisibleLength(79);
 
-                FlowPanel namePanel = new FlowPanel();
-                namePanel.add(new InlineLabel("QC Validation"));
-                namePanel.add(new HelpPopup("QC Validation", "Validation scripts can be assigned by default by the assay type. Default scripts cannot be " +
+                FlowPanel validationPanel = new FlowPanel();
+                validationPanel.add(new InlineLabel("QC Validation"));
+                validationPanel.add(new HelpPopup("QC Validation", "Validation scripts can be assigned by default by the assay type. Default scripts cannot be " +
                         "removed from this view."));
-
-                table.setWidget(row, 0, namePanel);
+                table.setWidget(row, 0, validationPanel);
+                table.getFlexCellFormatter().setStyleName(row, 0, "labkey-form-label");
                 table.setWidget(row++, 1, text);
             }
 
@@ -502,13 +505,14 @@ public class AssayDesignerMainPanel extends VerticalPanel implements Saveable<GW
             }, this);
             scriptFile.getBox().setVisibleLength(79);
 
-            FlowPanel namePanel = new FlowPanel();
-            namePanel.add(new InlineHTML("QC Validation"));
-            namePanel.add(new HelpPopup("QC Validation", "The full path to the validation script file. The extension of the script file " +
+            FlowPanel validationPanel = new FlowPanel();
+            validationPanel.add(new InlineHTML("QC Validation"));
+            validationPanel.add(new HelpPopup("QC Validation", "The full path to the validation script file. The extension of the script file " +
                     "identifies the script engine that will be used to run the validation script. For example: a script named test.pl will " +
                     "be run with the Perl scripting engine. The scripting engine must be configured from the Admin panel. For additional information " +
                     "refer to the <a href=\"https://www.labkey.org/wiki/home/Documentation/page.view?name=configureScripting\" target=\"_blank\">help documentation</a>."));
-            table.setWidget(row, 0, namePanel);
+            table.setWidget(row, 0, validationPanel);
+            table.getFlexCellFormatter().setStyleName(row, 0, "labkey-form-label");
             table.setWidget(row, 1, scriptFile);
 
             // add a download sample data button if the protocol already exists
@@ -533,6 +537,7 @@ public class AssayDesignerMainPanel extends VerticalPanel implements Saveable<GW
                     "If this checkbox is checked, files will be saved to a subfolder named: \"TransformAndValidationFiles\", located in the same folder " +
                     "that the original script is located."));
             table.setWidget(row, 0, debugPanel);
+            table.getFlexCellFormatter().setStyleName(row, 0, "labkey-form-label");
             table.setWidget(row++, 1, debugScriptFilesCheckBox);
         }
 
@@ -543,6 +548,7 @@ public class AssayDesignerMainPanel extends VerticalPanel implements Saveable<GW
                 "edit values at the run level after the initial import is complete. " +
                 "These changes will be audited."));
         table.setWidget(row, 0, editableRunPanel);
+        table.getFlexCellFormatter().setStyleName(row, 0, "labkey-form-label");
         table.setWidget(row++, 1, new BoundCheckBox("id_editable_run_properties", _editableRuns, this));
 
         _editableResults.setBool(assay.isEditableRuns());
@@ -554,6 +560,7 @@ public class AssayDesignerMainPanel extends VerticalPanel implements Saveable<GW
                     "edit and delete at the individual results row level after the initial import is complete. " +
                     "These changes will be audited. New result rows cannot be added to existing runs."));
             table.setWidget(row, 0, editableResultsPanel);
+            table.getFlexCellFormatter().setStyleName(row, 0, "labkey-form-label");
             table.setWidget(row++, 1, new BoundCheckBox("id_editable_results_properties", _editableResults, this));
         }
 

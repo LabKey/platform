@@ -17,11 +17,15 @@ package org.labkey.api.exp.api;
 
 import org.json.JSONObject;
 import org.json.JSONArray;
+import org.labkey.api.data.Container;
+import org.labkey.api.exp.PropertyType;
 import org.labkey.api.exp.property.DomainProperty;
 import org.labkey.api.exp.property.Domain;
 import org.apache.commons.beanutils.ConvertUtils;
+import org.labkey.api.files.FileContentService;
 import org.labkey.api.pipeline.PipeRoot;
 import org.labkey.api.pipeline.PipelineService;
+import org.labkey.api.services.ServiceRegistry;
 import org.labkey.api.util.URIUtil;
 
 import java.io.File;
@@ -133,7 +137,32 @@ public class ExperimentJSONConverter
             JSONObject propertiesObject = new JSONObject();
             for (DomainProperty dp : properties)
             {
-                propertiesObject.put(dp.getName(), object.getProperty(dp));
+                Object value = object.getProperty(dp);
+                if (dp.getPropertyDescriptor().getPropertyType() == PropertyType.FILE_LINK && value instanceof File)
+                {
+                    // We need to return files not as simple string properties with the path, but as an Exp.Data object
+                    // with multiple values
+                    File f = (File)value;
+                    ExpData data = ExperimentService.get().getExpDataByURL(f, object.getContainer());
+                    if (data != null)
+                    {
+                        // If we can find a row in the data table, return that
+                        value = serializeData(data);
+                    }
+                    else
+                    {
+                        // Otherwise, return a subset of all the data fields that we know about
+                        JSONObject jsonFile = new JSONObject();
+                        jsonFile.put(ABSOLUTE_PATH, f.getAbsolutePath());
+                        PipeRoot pipeRoot = PipelineService.get().findPipelineRoot(object.getContainer());
+                        if (pipeRoot != null)
+                        {
+                            jsonFile.put(PIPELINE_PATH, pipeRoot.relativePath(f));
+                        }
+                        value = jsonFile;
+                    }
+                }
+                propertiesObject.put(dp.getName(), value);
             }
             jsonObject.put(PROPERTIES, propertiesObject);
         }
@@ -188,7 +217,7 @@ public class ExperimentJSONConverter
         return jsonObject;
     }
 
-    public static Map<DomainProperty, Object> convertProperties(JSONObject propertiesJsonObject, DomainProperty[] dps)
+    public static Map<DomainProperty, Object> convertProperties(JSONObject propertiesJsonObject, DomainProperty[] dps, Container container)
     {
         Map<DomainProperty, Object> properties = new HashMap<DomainProperty, Object>();
         for (DomainProperty dp : dps)
@@ -196,7 +225,27 @@ public class ExperimentJSONConverter
             if (propertiesJsonObject.has(dp.getName()))
             {
                 Class javaType = dp.getPropertyDescriptor().getPropertyType().getJavaType();
-                properties.put(dp, ConvertUtils.lookup(javaType).convert(javaType, propertiesJsonObject.get(dp.getName())));
+                Object convertedValue = ConvertUtils.lookup(javaType).convert(javaType, propertiesJsonObject.get(dp.getName()));
+
+                // We need to special case Files to apply extra checks based on the context from which they're being
+                // referenced
+                if (javaType.equals(File.class) && convertedValue instanceof File)
+                {
+                    File f = (File)convertedValue;
+                    PipeRoot root = PipelineService.get().getPipelineRootSetting(container);
+                    FileContentService fileService = ServiceRegistry.get().getService(FileContentService.class);
+                    File fileRoot = fileService == null ? null : fileService.getFileRoot(container);
+                    boolean acceptableFile = (root != null && root.isUnderRoot((File)convertedValue)) || (fileRoot != null && URIUtil.isDescendant(fileRoot.toURI(), f.toURI()));
+                    if (!acceptableFile)
+                    {
+                        // Don't let an assay reference a file that doesn't fall under this container's file root
+                        // and/or pipeline root.
+                        // This would be a security problem.
+                        convertedValue = null;
+                    }
+                }
+                
+                properties.put(dp, convertedValue);
             }
             else
             {

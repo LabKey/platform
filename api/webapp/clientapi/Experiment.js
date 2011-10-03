@@ -245,7 +245,7 @@ Ext.namespace('LABKEY', 'LABKEY.Exp');
  * characteristics of a protocol or an experimental run.  Many experiment classes (such as {@link LABKEY.Exp.Run},
  * {@link LABKEY.Exp.Data} and {@link LABKEY.Exp.Material}) are subclasses
  * of ExpObject, so they provide the fields defined by this object (e.g., name, lsid, etc).
- * In java, ExpObject is an abstract class.
+ * In a Java representation of these same classes, ExpObject is an abstract class.
  *            <p>Additional Documentation:
  *              <ul>
  *                  <li><a href="https://www.labkey.org/wiki/home/Documentation/page.view?name=experiment">LabKey Experiment</a></li>
@@ -264,7 +264,11 @@ Ext.namespace('LABKEY', 'LABKEY.Exp');
  * @param {String} config.createdBy The person who created the ExpObject.
  * @param {Date} config.modified When the ExpObject was last modified.
  * @param {String} config.modifiedBy The person who last modified the ExpObject.
- * @param {Object} config.properties Map of property descriptor names to values.
+ * @param {Object} config.properties Map of property descriptor names to values. Most types, such as strings and
+ * numbers, are just stored as simple properties. Properties of type FileLink will be returned by the server in the
+ * same format as {@link LABKEY.Exp.Data} objects (missing many properties such as id and createdBy if they exist on disk but
+ * have no row with metadata in the database). FileLink values are accepted from the client in the same way, or a simple value of the
+ * following three types:  the data's RowId, the data's LSID, or the full path on the server's file system. 
  */
 LABKEY.Exp.ExpObject = function (config) {
     config = config || {};

@@ -330,7 +330,10 @@ public class UploadWizardAction<FormType extends AssayRunUploadForm<ProviderType
         insertView.getDataRegion().addColumn(1, table.getColumn("Comments"));
 
         addSampleInputColumns(newRunForm, insertView);
-        insertView.getDataRegion().addDisplayColumn(new AssayDataCollectorDisplayColumn(newRunForm));
+        if (shouldShowDataCollectorUI(newRunForm))
+        {
+            insertView.getDataRegion().addDisplayColumn(new AssayDataCollectorDisplayColumn(newRunForm));
+        }
 
         if (warnings)
         {
@@ -349,6 +352,13 @@ public class UploadWizardAction<FormType extends AssayRunUploadForm<ProviderType
 
         JspView<AssayRunUploadForm> headerView = new JspView<AssayRunUploadForm>("/org/labkey/api/study/actions/newRunProperties.jsp", newRunForm);
         return new VBox(headerView, insertView);
+    }
+
+    /** Check the assay configuration to determine if we should prompt the user to upload or otherwise specify a data file */
+    protected boolean shouldShowDataCollectorUI(FormType newRunForm)
+    {
+        Domain resultsDomain = newRunForm.getProvider().getResultsDomain(newRunForm.getProtocol());
+        return resultsDomain == null || resultsDomain.getProperties().length > 0;
     }
 
     protected void addHiddenBatchProperties(FormType newRunForm, InsertView insertView)

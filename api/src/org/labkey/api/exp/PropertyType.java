@@ -123,6 +123,7 @@ public enum PropertyType
                 return ConvertUtils.convert(value.toString(), Integer.class);
         }
     },
+    /** Stored as a path to a file on the server's file system */
     FILE_LINK("http://cpas.fhcrc.org/exp/xml#fileLink", "FileLink", 's', JdbcType.VARCHAR, 100, "file", Cell.CELL_TYPE_STRING, File.class)
     {
         protected Object convertExcelValue(Cell cell) throws ConversionException
@@ -140,6 +141,7 @@ public enum PropertyType
                 return String.valueOf(value);
         }
     },
+    /** Stored in the database as a BLOB using AttachmentService */
     ATTACHMENT("http://www.labkey.org/exp/xml#attachment", "Attachment", 's', JdbcType.VARCHAR, 100, "file", Cell.CELL_TYPE_STRING, File.class)
     {
         protected Object convertExcelValue(Cell cell) throws ConversionException

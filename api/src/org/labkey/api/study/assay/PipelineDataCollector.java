@@ -55,6 +55,7 @@ public class PipelineDataCollector<ContextType extends AssayRunUploadContext> ex
         }
 
         StringBuilder sb = new StringBuilder();
+        sb.append("<ul>");
         for (File file : files.values())
         {
             sb.append("<li>");
@@ -107,7 +108,7 @@ public class PipelineDataCollector<ContextType extends AssayRunUploadContext> ex
             return "";
         }
         Map<String, File> files = allFiles.get(0);
-        return (files.size() > 1 ? files.size() + " files" : "File ") + " from the Data Pipeline in " + files.values().iterator().next().getParent();
+        return (files.size() > 1 ? files.size() + " files" : "One file ") + " from the Data Pipeline in " + files.values().iterator().next().getParent();
     }
 
     public static synchronized void setFileCollection(HttpSession session, Container c, ExpProtocol protocol, List<Map<String, File>> files)

@@ -304,10 +304,6 @@ public abstract class AbstractAssayProvider implements AssayProvider
         {
             throw new ExperimentException(e);
         }
-        if (files.size() == 0)
-        {
-            throw new IllegalStateException("AssayRunUploadContext " + context + " provided no upload data");
-        }
 
         for (Map.Entry<String, File> entry : files.entrySet())
         {

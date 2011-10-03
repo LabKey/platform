@@ -24,7 +24,8 @@
  *                  <li><a href="https://www.labkey.org/wiki/home/Documentation/page.view?name=createDatasetViaAssay">LabKey Assays</a></li>
  *              </ul>
  *           </p>
-*/
+ * @see LABKEY.Experiment
+ */
 LABKEY.Assay = new function()
 {
     function getAssays(config)

@@ -36,6 +36,7 @@ import org.springframework.beans.PropertyEditorRegistry;
 
 import java.awt.*;
 import java.beans.PropertyEditorSupport;
+import java.io.File;
 import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.sql.*;
@@ -126,6 +127,7 @@ public class ConvertHelper implements PropertyEditorRegistrar
         _register(new ShowRowsConverter(), ShowRows.class);
         _register(new EnumConverter(), DataSet.KeyManagementType.class);
         _register(new UserConverter(), User.class);
+        _register(new ExpDataFileConverter(), File.class);
     }
 
 

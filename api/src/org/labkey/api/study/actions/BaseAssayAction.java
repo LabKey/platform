@@ -21,8 +21,6 @@ import org.labkey.api.action.SimpleViewAction;
 import org.labkey.api.data.*;
 import org.labkey.api.exp.api.ExpProtocol;
 import org.labkey.api.exp.property.DomainProperty;
-import org.labkey.api.study.assay.AssayProvider;
-import org.labkey.api.study.assay.AssayService;
 import org.labkey.api.study.assay.AssayUrls;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.view.ActionURL;
@@ -76,11 +74,6 @@ public abstract class BaseAssayAction<T extends ProtocolIdForm> extends SimpleVi
             }
         }
         return rgn;
-    }
-
-    protected AssayProvider getProvider(ProtocolIdForm form)
-    {
-        return AssayService.get().getProvider(form.getProtocol());
     }
 
     public NavTree appendNavTrail(NavTree root)
