@@ -980,7 +980,7 @@ LABKEY.DataRegion = Ext.extend(Ext.Component,
     },
 
     _calculateHeaderLock : function() {
-        var el, src;
+        var el, z, s, src;
 
         this.suspendEvents();
 
@@ -988,7 +988,11 @@ LABKEY.DataRegion = Ext.extend(Ext.Component,
             src = Ext.get(this.firstRow[i]);
             el  = Ext.get(this.rowContent[i]);
 
-            el.setSize({width: src.getWidth(), height: el.getHeight()}); // note: width coming from data row not header
+            s = {width: src.getWidth(), height: el.getHeight()}; // note: width coming from data row not header
+            el.setSize(s);
+
+            z   = Ext.get(this.rowSpacerContent[i]); // must be done after 'el' is set (ext side-effect?)
+            z.setSize(s);
         }
 
         if (this.hdrCoord < 0) this.hdrCoord = this._findPos((this.includeHeader ? this.headerRow : this.colHeaderRow));
@@ -1414,7 +1418,7 @@ LABKEY.DataRegion = Ext.extend(Ext.Component,
                         else
                             this.hideMessage();
 
-                        var minWidth = Math.min(1200, headerOrFooter.getWidth(true)); // 1024x768
+                        var minWidth = Math.max(Math.min(1000, headerOrFooter.getWidth(true)), 700); // >= 700 && <= 1000
                         var renderTo = Ext.getBody().createChild({tag: "div", customizeView: true, style: {display: "none"}});
 
                         this.customizeView = new LABKEY.DataRegion.ViewDesigner({
