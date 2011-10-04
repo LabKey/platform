@@ -3031,6 +3031,7 @@ study/webapp/study/tools/subjectlist_icon.gif -text
 study/webapp/study/tools/timechart_icon.gif -text
 timeline/Timeline.iml -text
 timeline/build.xml -text
+timeline/minifyTimeline -text
 timeline/module.properties -text
 timeline/src/META-INF/timeline/scripts.txt -text
 timeline/src/org/labkey/timeline/TimelineController.java -text
