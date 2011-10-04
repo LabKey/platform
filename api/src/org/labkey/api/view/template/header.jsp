@@ -64,7 +64,7 @@
           else if (currentContext.getUser().isDeveloper())
           {
               include(new PopupDeveloperView(currentContext), out);
-              out.write("| ");
+              out.write(" | ");
           }
       %>
       <a href="<%= bean.pageConfig.getHelpTopic().getHelpTopicLink() %>" target="_new">Help<% if (AppProps.getInstance().isDevMode() && bean.pageConfig.getHelpTopic() == HelpTopic.DEFAULT_HELP_TOPIC) { %> (default)<% } %></a>

@@ -20,7 +20,6 @@ import org.labkey.api.util.Filter;
 
 
 /**
- * Created by IntelliJ IDEA.
  * User: matthewb
  * Date: Sep 16, 2010
  * Time: 4:42:07 PM
