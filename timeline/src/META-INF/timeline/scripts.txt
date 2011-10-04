@@ -1,0 +1,7 @@
+{table}
+Library|Version|Source|License|LabKey Dev|Purpose
+JQuery|1.6.1|http://jquery.com/|{link:MIT License|http://jquery.org/license}|nicka|Dependency of Sparklines
+jQuery Sparklines|1.6|http://omnipotent.net/jquery.sparkline/|{link:BSD|http://www.opensource.org/licenses/bsd-license.php}|nicka|Used in conjunction with Timeline
+Timeline|2.3|http://www.simile-widgets.org/timeline/|{link:BSD|http://simile.mit.edu/license.html}|nicka|DHTML-based AJAXy timeline
+{table}
+
