@@ -269,7 +269,7 @@ public class ParticipantGroupManager
         sb.append("         var dataRegionEl = Ext.get(").append(PageFlowUtil.jsString(dataRegionName)).append(");");
         sb.append("         dataRegionEl.mask('getting selections...', 'x-mask-loading');");
         sb.append("         Ext.Ajax.request({");
-        sb.append("             url: LABKEY.ActionURL.buildURL('participant-group', 'getParticipantsFromSelection'),");
+        sb.append("             url: LABKEY.ActionURL.buildURL('participant-group', 'getParticipantsFromSelection', null, LABKEY.ActionURL.getParameters(dataRegion.requestURL)),");
 
         // ask for either the selected participants or all the participants in the view
         if (fromSelection)
@@ -322,6 +322,9 @@ public class ParticipantGroupManager
             
             if (def.isNew())
             {
+                ParticipantCategory previous = getParticipantCategory(c, user, def.getLabel());
+                if (!previous.isNew())
+                    throw new RuntimeException("There is aready a group named: " + def.getLabel() + " within this study. Please choose a unique group name.");
                 ret = Table.insert(user, StudySchema.getInstance().getTableInfoParticipantCategory(), def);
             }
             else

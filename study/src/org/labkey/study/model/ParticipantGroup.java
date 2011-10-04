@@ -85,11 +85,44 @@ public class ParticipantGroup extends Entity
     public void setParticipantIds(String[] participantIds)
     {
         Set<String> participants = new LinkedHashSet<String>();
+        Set<String> duplicates = new LinkedHashSet<String>();
+
+        // validate that there are no duplicates
         for (String id : participantIds)
         {
             if (participants.contains(id))
-                throw new IllegalArgumentException("ID :" + id + " is specified more than once, duplicates are not allowed in a group.");
+                duplicates.add(id);
+
             participants.add(id);
+        }
+
+        if (!duplicates.isEmpty())
+        {
+            StringBuilder sb = new StringBuilder();
+
+            sb.append("the following duplicate ID(s): ");
+            String delim = "";
+            int i=0;
+
+            for (String id : duplicates)
+            {
+                sb.append(delim);
+                sb.append(id);
+                delim = ", ";
+
+                if (++i >= 5)
+                    break;
+            }
+
+            if (duplicates.size() > 5)
+            {
+                sb.append(" (5 shown out of a total of: ");
+                sb.append(duplicates.size());
+                sb.append(")");
+            }
+            sb.append(". Duplicates are not allowed in a group.");
+
+            throw new IllegalArgumentException(sb.toString());
         }
         _participantIds = participants;
     }

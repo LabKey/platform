@@ -22,6 +22,7 @@ LABKEY.study.CreateStudyWizard = Ext.extend(Ext.util.Observable, {
     show : function() {
         this.steps = [];
         this.currentStep = 0;
+        this.lastStep = 0;
         this.info = {};
 
         this.steps.push(this.getNamePanel());
@@ -29,6 +30,7 @@ LABKEY.study.CreateStudyWizard = Ext.extend(Ext.util.Observable, {
         this.steps.push(this.getDatasetsPanel());
 
         this.prevBtn = new Ext.Button({text: 'Previous', disabled: true, scope: this, handler: function(){
+            this.lastStep = this.currentStep;
             this.currentStep--;
             this.updateStep();
         }});
@@ -41,6 +43,7 @@ LABKEY.study.CreateStudyWizard = Ext.extend(Ext.util.Observable, {
         else
         {
             this.nextBtn = new Ext.Button({text: 'Next', scope: this, handler: function(){
+                this.lastStep = this.currentStep;
                 this.currentStep++;
                 this.updateStep();
             }});
@@ -379,6 +382,11 @@ LABKEY.study.CreateStudyWizard = Ext.extend(Ext.util.Observable, {
         });
 
         this.participantPanel.on('beforehide', function(cmp){
+
+            // if the prev button was pressed, we don't care about validation
+            if (this.lastStep > this.currentStep)
+                return;
+
             if (this.newGroupPanel && this.newGroupPanel.isVisible())
             {
                 if (!this.newGroupPanel.validate())

@@ -33,7 +33,9 @@ import org.springframework.validation.BindException;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 /**
  * Created by IntelliJ IDEA.
@@ -80,9 +82,17 @@ public class ParticipantGroupImporter implements InternalStudyImporter
 
                 scope.ensureTransaction();
 
+                Map<String, ParticipantCategory> existingGroups = new HashMap<String, ParticipantCategory>();
+                for (ParticipantCategory group : ParticipantGroupManager.getInstance().getParticipantCategories(ctx.getContainer(), ctx.getUser()))
+                    existingGroups.put(group.getLabel(), group);
+
                 // create the imported participant groups
                 for (CategoryType category : doc.getParticipantGroups().getParticipantCategoryArray())
                 {
+                    // overwrite any existing groups of the same name
+                    if (existingGroups.containsKey(category.getLabel()))
+                        ParticipantGroupManager.getInstance().deleteParticipantCategory(ctx.getContainer(), ctx.getUser(), existingGroups.get(category.getLabel()));
+                    
                     ParticipantCategory pc = new ParticipantCategory();
 
                     pc.setContainer(ctx.getContainer().getId());

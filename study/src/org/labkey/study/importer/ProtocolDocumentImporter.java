@@ -1,5 +1,6 @@
 package org.labkey.study.importer;
 
+import org.labkey.api.attachments.Attachment;
 import org.labkey.api.attachments.AttachmentFile;
 import org.labkey.api.attachments.InputStreamAttachmentFile;
 import org.labkey.api.writer.VirtualFile;
@@ -33,10 +34,18 @@ public class ProtocolDocumentImporter implements InternalStudyImporter
         {
             VirtualFile folder = root.getDir(protocolXml.getDir());
             List<AttachmentFile> attachments = new ArrayList<AttachmentFile>();
+            List<String> existing = new ArrayList<String>();
+
+            for (Attachment attachment : study.getProtocolDocuments())
+                existing.add(attachment.getName());
 
             for (String fileName : folder.list())
             {
                 ctx.getLogger().info("importing protocol document: " + fileName);
+
+                if (existing.contains(fileName))
+                    study.removeProtocolDocument(fileName, ctx.getUser());
+                
                 attachments.add(new InputStreamAttachmentFile(folder.getInputStream(fileName), fileName));
             }
 

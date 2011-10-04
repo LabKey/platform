@@ -218,15 +218,15 @@ public class ParticipantCategory extends Entity
         }
 
         // special case simple group list for now
+        JSONArray ptids = new JSONArray();
         if (_groups.length == 1)
         {
-            JSONArray ptids = new JSONArray();
             for (String ptid : _groups[0].getParticipantIds())
             {
                 ptids.put(ptid);
             }
-            json.put("participantIds", ptids);
         }
+        json.put("participantIds", ptids);
 
         return json;
     }
