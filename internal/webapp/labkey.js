@@ -81,8 +81,9 @@ LABKEY.init = function(config)
  * @param immediate True to load the script immediately; false will defer script loading until the page has been downloaded.
  * @param callback Called after the script files have been loaded.
  * @param scope Callback scope.
+ * @param inOrder True to load the scripts in the order they are passed in. Default is false.
  */
-LABKEY.requiresScript = function(file, immediate, callback, scope)
+LABKEY.requiresScript = function(file, immediate, callback, scope, inOrder)
 {
     if (arguments.length < 2)
         immediate = true;
@@ -91,15 +92,33 @@ LABKEY.requiresScript = function(file, immediate, callback, scope)
     {
         var requestedLength = file.length;
         var loaded = 0;
-        function allDone()
-        {
-            loaded++;
-            if (loaded == requestedLength && typeof callback == 'function')
-                callback.call(scope);
-        }
 
-        for (var i = 0; i < file.length; i++)
-            LABKEY.requiresScript(file[i], immediate, allDone);
+        if (inOrder)
+        {
+            function chain()
+            {
+                loaded++;
+                if (loaded == requestedLength && typeof callback == 'function')
+                {
+                    callback.call(scope);
+                }
+                else if (loaded < requestedLength)
+                    LABKEY.requiresScript(file[loaded], immediate, chain, true);
+            }
+            LABKEY.requiresScript(file[loaded], immediate, chain, true);
+        }
+        else
+        {
+            function allDone()
+            {
+                loaded++;
+                if (loaded == requestedLength && typeof callback == 'function')
+                    callback.call(scope);
+            }
+
+            for (var i = 0; i < file.length; i++)
+                LABKEY.requiresScript(file[i], immediate, allDone);
+        }
         return;
     }
 
