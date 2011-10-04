@@ -3141,6 +3141,8 @@ timeline/webapp/timeline/jquery/ui.tabs.css -text
 timeline/webapp/timeline/jquery/ui.tabs.js -text
 timeline/webapp/timeline/jquery/ui.theme.css -text
 timeline/webapp/timeline/loadTimeline.js -text
+timeline/webapp/timeline/timeline-all-min.js -text
+timeline/webapp/timeline/timeline-all-min.js.gz -text
 timeline/webapp/timeline/timeline_2.3.0/CHANGES.txt -text
 timeline/webapp/timeline/timeline_2.3.0/LICENSE.txt -text
 timeline/webapp/timeline/timeline_2.3.0/README.txt -text
