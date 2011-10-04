@@ -1,5 +1,6 @@
-Ext.namespace('LABKEY', 'LABKEY.timeline');
+Ext.namespace('LABKEY', 'LABKEY.ext', 'LABKEY.timeline');
 
+LABKEY.timeline.isLoaded = false;
 
 /*** for 11.2 only remove before 11.3 final ***/
 /**
@@ -167,4 +168,13 @@ LABKEY.requiresTimeline = function(fn)
     ];
 
     LABKEY._requiresScript(dependencies, true, fn, null, true);
+};
+
+LABKEY.onTimelineReady = function(fn)
+{
+    LABKEY.Utils.onTrue({
+        testCallback : function() {return LABKEY.timeline.isLoaded;},
+        success : fn,
+        maxTests : 1000000
+    });
 };

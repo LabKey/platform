@@ -280,3 +280,5 @@ LABKEY.ext.Timeline = Ext.extend(Ext.Panel, {
         return json;
     }
 });
+
+LABKEY.timeline.isLoaded = true;
