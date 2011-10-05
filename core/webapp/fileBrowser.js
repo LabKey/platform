@@ -3241,7 +3241,8 @@ LABKEY.FileBrowser = Ext.extend(Ext.Panel,
 
         actions.appletFileAction = new Ext.Action({
             text:'Choose File...', scope:this, disabled:false, iconCls:'iconFileNew',
-            handler:function(){
+            handler:function()
+            {
                 if (this.applet)
                 {
                     var a = this.applet.getApplet();
@@ -3252,7 +3253,8 @@ LABKEY.FileBrowser = Ext.extend(Ext.Panel,
 
         actions.appletDirAction = new Ext.Action({
             text:'Choose Folder...', scope:this, disabled:false,  iconCls:'iconFileOpen',
-            handler:function(){
+            handler:function()
+            {
                 if (this.applet)
                 {
                     var a = this.applet.getApplet();
@@ -3264,20 +3266,12 @@ LABKEY.FileBrowser = Ext.extend(Ext.Panel,
         actions.appletDragAndDropAction = new Ext.Action({
             text:'Open Drag and Drop Window...', scope:this, disabled:false,
             iconCls:'iconFileShare',
-            handler:function(){
+            handler:function()
+            {
                 if (this.applet)
                 {
                     var a = this.applet.getApplet();
-                    if (a)
-                    {
-                        // window might not show over the browser window,
-                        // but will show above the applet, so select the applet first
-                        this.applet.el.dom.focus();
-                        a.requestFocus();
-                        // give it a chance to get focus?
-                         window.setTimeout(function(){a.openDragAndDropWindow();}, 10);
-                        //a.openDragAndDropWindow();
-                    }
+                    if (a) a.openDragAndDropWindow();
                 }
             }
         });
