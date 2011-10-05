@@ -101,6 +101,7 @@ import org.labkey.study.model.DateDatasetDomainKind;
 import org.labkey.study.model.ParticipantGroupManager;
 import org.labkey.study.model.SecurityType;
 import org.labkey.study.model.StudyDomainKind;
+import org.labkey.study.model.StudyImpl;
 import org.labkey.study.model.StudyManager;
 import org.labkey.study.model.TestDatasetDomainKind;
 import org.labkey.study.model.VisitDatasetDomainKind;
@@ -535,6 +536,8 @@ public class StudyModule extends SpringModule implements SearchService.DocumentP
         set.add(SpecimenImporter.TestCase.class);
         set.add(StudyManager.DatasetImportTestCase.class);
         set.add(ParticipantGroupManager.ParticipantGroupTestCase.class);
+        set.add(StudyImpl.ProtocolDocumentTestCase.class);
+
         return set;
     }
 

@@ -18,13 +18,18 @@ package org.labkey.study.model;
 
 import org.apache.commons.lang.StringUtils;
 import org.jetbrains.annotations.NotNull;
+import org.junit.Assert;
+import org.junit.Test;
 import org.labkey.api.attachments.Attachment;
 import org.labkey.api.attachments.AttachmentFile;
 import org.labkey.api.attachments.AttachmentParent;
 import org.labkey.api.attachments.AttachmentService;
+import org.labkey.api.attachments.FileAttachmentFile;
 import org.labkey.api.data.AttachmentParentEntity;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
+import org.labkey.api.data.ContainerManager;
+import org.labkey.api.data.MvUtil;
 import org.labkey.api.exp.Lsid;
 import org.labkey.api.exp.PropertyDescriptor;
 import org.labkey.api.exp.property.Domain;
@@ -32,20 +37,26 @@ import org.labkey.api.exp.property.PropertyService;
 import org.labkey.api.security.MutableSecurityPolicy;
 import org.labkey.api.security.SecurableResource;
 import org.labkey.api.security.User;
+import org.labkey.api.settings.AppProps;
 import org.labkey.api.study.Site;
 import org.labkey.api.study.Study;
 import org.labkey.api.study.TimepointType;
 import org.labkey.api.study.Visit;
+import org.labkey.api.util.DateUtil;
 import org.labkey.api.util.GUID;
+import org.labkey.api.util.JunitUtil;
+import org.labkey.api.util.TestContext;
 import org.labkey.study.SampleManager;
 import org.labkey.study.query.StudyQuerySchema;
 import org.labkey.study.samples.settings.RepositorySettings;
 
+import java.io.File;
 import java.io.IOException;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.Date;
 import java.util.HashSet;
 import java.util.List;
@@ -526,8 +537,7 @@ public class StudyImpl extends ExtensibleStudyEntity<StudyImpl> implements Study
 
     public void attachProtocolDocument(List<AttachmentFile> files , User user)  throws SQLException, IOException
     {
-        AttachmentParent parent = new ProtocolDocumentAttachmentParent(getContainer(), getProtocolDocumentEntityId());
-        AttachmentService.get().addAttachments(parent, files, user);
+        AttachmentService.get().addAttachments(getProtocolDocumentAttachmentParent(), files, user);
     }
 
     public void updateProtocolDocument(List<AttachmentFile> files , User user)  throws SQLException, IOException
@@ -535,8 +545,7 @@ public class StudyImpl extends ExtensibleStudyEntity<StudyImpl> implements Study
         // Here we want to delete the current attachment, and then upload a new one. In the future this might
         // need to be changed to delete a specific protocol doc in the case that we have more than one doc, but
         // at the moment we only plan to have one document.
-        AttachmentParent parent = new ProtocolDocumentAttachmentParent(getContainer(), getProtocolDocumentEntityId());
-        AttachmentService.get().deleteAttachments(parent);
+        AttachmentService.get().deleteAttachments(getProtocolDocumentAttachmentParent());
         attachProtocolDocument(files, user);
     }
 
@@ -547,8 +556,7 @@ public class StudyImpl extends ExtensibleStudyEntity<StudyImpl> implements Study
 
     public void removeProtocolDocument(String name, User user)
     {
-        AttachmentParent parent = new ProtocolDocumentAttachmentParent(getContainer(), getProtocolDocumentEntityId());
-        AttachmentService.get().deleteAttachment(parent, name, user);
+        AttachmentService.get().deleteAttachment(getProtocolDocumentAttachmentParent(), name, user);
     }
 
     public static class ProtocolDocumentAttachmentParent extends AttachmentParentEntity
@@ -644,5 +652,85 @@ public class StudyImpl extends ExtensibleStudyEntity<StudyImpl> implements Study
     public int hashCode()
     {
         return getContainer() != null ? getContainer().hashCode() : 0;
+    }
+
+    public static class ProtocolDocumentTestCase extends Assert
+    {
+        Study _testStudy = null;
+        TestContext _context = null;
+
+//        @BeforeClass
+        public void createStudy() throws SQLException
+        {
+            _context = TestContext.get();
+            Container junit = JunitUtil.getTestContainer();
+
+            String name = GUID.makeHash();
+            Container c = ContainerManager.createContainer(junit, name);
+            StudyImpl s = new StudyImpl(c, "Junit Study");
+            s.setTimepointType(TimepointType.DATE);
+            s.setStartDate(new Date(DateUtil.parseDateTime("2001-01-01")));
+            s.setSubjectColumnName("SubjectID");
+            s.setSubjectNounPlural("Subjects");
+            s.setSubjectNounSingular("Subject");
+            s.setSecurityType(SecurityType.BASIC_WRITE);
+            s.setStartDate(new Date(DateUtil.parseDateTime("1 Jan 2000")));
+            _testStudy = StudyManager.getInstance().createStudy(_context.getUser(), s);
+
+            MvUtil.assignMvIndicators(c,
+                    new String[]{"X", "Y", "Z"},
+                    new String[]{"XXX", "YYY", "ZZZ"});
+
+        }
+
+//        @AfterClass
+        public void tearDown()
+        {
+            if (null != _testStudy)
+            {
+                ContainerManager.delete(_testStudy.getContainer(), _context.getUser());
+            }
+        }
+
+        @Test
+        public void test() throws Throwable
+        {
+            try
+            {
+                createStudy();
+                _testAttachProtocolDoc(_testStudy);
+                _testDeleteProtocolDoc(_testStudy);
+            }
+            catch (Throwable t)
+            {
+                throw t;
+            }
+            finally
+            {
+                tearDown();
+            }
+        }
+
+        public void _testAttachProtocolDoc(Study testStudy) throws SQLException, IOException
+        {
+            List<Attachment> attachedFiles = testStudy.getProtocolDocuments();
+            assertEquals("Expected 0 attached documents", 0, attachedFiles.size());
+
+            AttachmentFile file = new FileAttachmentFile(new File(AppProps.getInstance().getProjectRoot() + "/sampledata/study/Protocol.txt"));
+            testStudy.attachProtocolDocument(Collections.singletonList(file), _context.getUser());
+            attachedFiles = testStudy.getProtocolDocuments();
+            assertEquals("Expected 1 attached document", 1, attachedFiles.size());
+            assertTrue("Expected filename to be \"Protocol.txt\", but it was \"" + attachedFiles.get(0).getName() + "\"", attachedFiles.get(0).getName().equals("Protocol.txt"));
+        }
+
+        public void _testDeleteProtocolDoc(Study testStudy) throws SQLException, IOException
+        {
+            List<Attachment> attachedFiles = testStudy.getProtocolDocuments();
+            assertEquals("Expected 1 attached document", 1, attachedFiles.size());
+
+            testStudy.removeProtocolDocument("Protocol.txt", _context.getUser());
+            attachedFiles = testStudy.getProtocolDocuments();
+            assertEquals("Expected 0 attached documents", 0, attachedFiles.size());
+        }
     }
 }
