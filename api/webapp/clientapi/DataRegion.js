@@ -935,6 +935,7 @@ LABKEY.DataRegion = Ext.extend(Ext.Component,
         this.rowSpacerContent   = Ext.query(" > td[class*=labkey-column-header]",      this.colHeaderRowSpacer.id);
         this.firstRow           = Ext.query("tr[class=labkey-alternate-row]:first td", this.table.id);
 
+        // If no data rows exist just turn off header locking
         if (this.firstRow.length == 0)
         {
             this.firstRow = Ext.query("tr[class=labkey-row]:first td", this.table.id);
@@ -946,7 +947,7 @@ LABKEY.DataRegion = Ext.extend(Ext.Component,
         }
 
         // performance degradation
-        if (this.rowContent.length > 40 && !Ext.isWebKit)
+        if (((this.rowContent.length > 40) && !Ext.isWebKit) || (this.rowCount && this.rowCount > 1000))
         {
             this._allowHeaderLock = false;
             return;
@@ -956,7 +957,7 @@ LABKEY.DataRegion = Ext.extend(Ext.Component,
         Ext.EventManager.on(window,   'load',            this._resizeContainer, this, {single: true});
         Ext.EventManager.on(window,   'resize',          this._resizeContainer, this);
         Ext.EventManager.on(document, 'DOMNodeInserted', this._resizeContainer, this); // Issue #13121
-        Ext.EventManager.on(document, 'DOMNodeRemoved',  this._resizeContainer, this);
+        // Ext.EventManager.on(document, 'DOMNodeRemoved',  this._resizeContainer, this);
 
         // initialize panel listeners
         this.on('afterpanelshow', this._resizeContainer, this);
@@ -964,25 +965,25 @@ LABKEY.DataRegion = Ext.extend(Ext.Component,
         Ext.EventManager.on(window, "scroll", this._scrollContainer, this);
 
         // initialize timer task for resizing and scrolling
-        this.hdrCoord = -1;
+        this.hdrCoord = [];
         this.resizeTask = new Ext.util.DelayedTask(function(){
-            this.hdrCoord = -1;
             this._resetHeader();
-            this._calculateHeader();
+            this._calculateHeader(true);
         }, this);
 
-        this._calculateHeader();
+        this._calculateHeader(true);
     },
 
-    _calculateHeader : function() {
-        this._calculateHeaderLock();
+    _calculateHeader : function(recalcPosition) {
+        this._calculateHeaderLock(recalcPosition);
         this._scrollContainer();
     },
 
-    _calculateHeaderLock : function() {
+    /**
+     *
+     */
+    _calculateHeaderLock : function(recalcPosition) {
         var el, z, s, src;
-
-        this.suspendEvents();
 
         for (var i=0; i < this.rowContent.length; i++) {
             src = Ext.get(this.firstRow[i]);
@@ -995,12 +996,19 @@ LABKEY.DataRegion = Ext.extend(Ext.Component,
             z.setSize(s);
         }
 
-        if (this.hdrCoord < 0) this.hdrCoord = this._findPos((this.includeHeader ? this.headerRow : this.colHeaderRow));
+        if (recalcPosition === true) this.hdrCoord = this._findPos((this.includeHeader ? this.headerRow : this.colHeaderRow));
         this.hdrLocked = false;
-
-        this.resumeEvents();
     },
 
+    /**
+     * Returns an array of containing the following values:
+     * [0] - X-coordinate of the top of the object relative to the offset parent. See Ext.Element.getXY()
+     * [1] - Y-coordinate of the top of the object relative to the offset parent. See Ext.Element.getXY()
+     * [2] - Y-coordinate of the bottom of the object.
+     * [3] - The height of the header for this Data Region. This includes the button bar if it is present.
+     * This method assumes interaction with the Header of the Data Region.
+     * @param o - The Ext.Element object to be measured againt that is considered the top of the Data Region.
+     */
     _findPos : function(o) {
         var xy = o.getXY();
 
@@ -1012,26 +1020,35 @@ LABKEY.DataRegion = Ext.extend(Ext.Component,
         return [ xy[0], xy[1], curbottom, hdrOffset ];
     },
 
-    // WARNING: This function is called often. Performance implications for each line.
+    /**
+     * WARNING: This function is called often. Performance implications for each line.
+     * NOTE: window.pageYOffset and pageXOffset are not available in IE7-. For these document.documentElement.scrollTop
+     * and document.documentElement.scrollLeft could be used. Additionally, position: fixed is not recognized by
+     * IE7- and can be best approximated with position: absolute and explicit top/left.
+     */
     _scrollContainer : function() {
         // calculate Y scrolling
         if (window.pageYOffset > this.hdrCoord[1] && window.pageYOffset < this.hdrCoord[2]) {
-                var tWidth = this.table.getComputedWidth();
-                this.headerSpacer.dom.style.display = "table-row";
-                this.colHeaderRowSpacer.dom.style.display = "table-row";
-                this.headerRow.applyStyles("top: 0; position: fixed; " +
-                        "min-width: " + tWidth + "px; ");
-                this.headerRowContent.applyStyles("min-width: " + (tWidth-3) + "px; ");
-                this.colHeaderRow.applyStyles("position: fixed; background: white; top: " + this.hdrCoord[3] + "px;" +
-                        "min-width: " + tWidth + "px; box-shadow: -2px 5px 5px #DCDCDC;");
-                this.hdrLocked = true;
+            // The header has reached the top of the window and needs to be locked
+            var tWidth = this.table.getComputedWidth();
+            this.headerSpacer.dom.style.display = "table-row";
+            this.colHeaderRowSpacer.dom.style.display = "table-row";
+            this.headerRow.applyStyles("top: 0; position: fixed; " +
+                    "min-width: " + tWidth + "px; z-index: 10000;");
+            this.headerRowContent.applyStyles("min-width: " + (tWidth-3) + "px; ");
+            this.colHeaderRow.applyStyles("position: fixed; background: white; top: " + this.hdrCoord[3] + "px;" +
+                    "min-width: " + tWidth + "px; box-shadow: -2px 5px 5px #DCDCDC; z-index: 10000;");
+            this.hdrLocked = true;
         }
         else if (this.hdrLocked && window.pageYOffset >= this.hdrCoord[2]) {
+            // The bottom of the Data Region is near the top of the window and the locked header
+            // needs to start 'sliding' out of view.
             var top = this.hdrCoord[2]-window.pageYOffset;
             this.headerRow.applyStyles("top: " + top + "px;");
             this.colHeaderRow.applyStyles("top: " + (top + this.hdrCoord[3]) + "px;");
         }
-        else if (this.hdrLocked) {
+        else if (this.hdrLocked) { // only reset if the header is locked
+            // The header should not be locked
             this._resetHeader();
         }
 
@@ -1046,7 +1063,9 @@ LABKEY.DataRegion = Ext.extend(Ext.Component,
         }
     },
 
-    // puts header back in normal spot
+    /**
+     * Adjusts the header styling to the best approximate of what the defaults are when the header is not locked
+     */
     _resetHeader : function() {
         this.hdrLocked = false;
         this.headerRow.applyStyles("top: auto; position: static; min-width: 0;");
