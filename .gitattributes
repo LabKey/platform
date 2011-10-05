@@ -4526,6 +4526,7 @@ internal/webapp/_images/expand_folders.gif -text svneol=unset#unset
 internal/webapp/_images/favicon.ico -text
 internal/webapp/_images/filenew.png -text
 internal/webapp/_images/fileopen.png -text
+internal/webapp/_images/fileshare.png -text
 internal/webapp/_images/filter.gif -text
 internal/webapp/_images/filter.png -text
 internal/webapp/_images/filter_on.gif -text
