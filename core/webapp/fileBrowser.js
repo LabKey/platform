@@ -2375,7 +2375,8 @@ LABKEY.FileBrowser = Ext.extend(Ext.Panel,
     {
         var transfers = this.applet.getTransfers();
         var tr = transfers.getById(recordId);
-        if (tr) {
+        if (tr)
+        {
             transfers.remove(tr);
             var idx = this.applet.getApplet().transfer_getIndex(tr.get('transferId'));
             if (idx != -1)
@@ -2899,6 +2900,9 @@ LABKEY.FileBrowser = Ext.extend(Ext.Panel,
         this.applet.onReady(function()
         {
             this.updateAppletState(this.currentDirectory);
+            var el = Ext.get('testJavaLink');
+            if (el)
+                el.update("");
         }, this);
     },
 
@@ -3384,8 +3388,10 @@ LABKEY.FileBrowser = Ext.extend(Ext.Panel,
                 }]
             });
 
+            var qtipHtml =  '<span id="testJavaLink"><br>[<a target=_blank href="http://www.java.com/en/download/testjava.jsp">test java plugin</a>]</span>';
+
             this.appletPanel = new Ext.Panel({
-                fieldLabel: null, //File and Folder Drop Target',
+                fieldLabel: 'Java Applet' + qtipHtml,
                 isFormField: true,
                 height: 80,
                 width: 80,
@@ -3695,6 +3701,9 @@ LABKEY.FileBrowser = Ext.extend(Ext.Panel,
             this.applet.onReady(function()
             {
                 this.updateAppletState(this.currentDirectory);
+                var el = Ext.get('testJavaLink');
+                if (el)
+                    el.update("");
             }, this);
 
             this.appletPanel.removeAll();
