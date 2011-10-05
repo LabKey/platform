@@ -1510,7 +1510,8 @@ if (LABKEY.Applet)
                     overwrite : "true",
                     autoStart : "false",
                     enabled : !('enabled' in params) || params.enabled,
-                    dropFileLimit : 5000
+                    dropFileLimit : 5000,
+                    "Common.WindowMode":"true"
                 }
             };
             TransferApplet.superclass.constructor.call(this, config);
@@ -2864,7 +2865,7 @@ LABKEY.FileBrowser = Ext.extend(Ext.Panel,
     {
         var uri = new URI(this.fileSystem.prefixUrl);  // implementation leaking here
         var url = uri.toString();
-        this.applet = new TransferApplet({id: Ext.id(), url:url, directory:this.currentDirectory.data.path});
+        this.applet = new TransferApplet({id: Ext.id(), url:url, directory:this.currentDirectory.data.path, width:64, height:64});
         this.progressBar = new Ext.ProgressBar();
 
         var toolbar = new Ext.Toolbar({buttons:[
@@ -2911,6 +2912,8 @@ LABKEY.FileBrowser = Ext.extend(Ext.Panel,
         var canMkdir = this.fileSystem.ready && this.fileSystem.canMkdir(record);
         if (this.actions.appletFileAction)
             this.actions.appletFileAction[canWrite?'enable':'disable']();
+        if (this.actions.appletDragAndDropAction)
+            this.actions.appletDragAndDropAction[canWrite?'enable':'disable']();
         if (this.actions.appletDirAction)
             this.actions.appletDirAction[canMkdir?'enable':'disable']();
         try
@@ -3258,6 +3261,27 @@ LABKEY.FileBrowser = Ext.extend(Ext.Panel,
             }
         });
 
+        actions.appletDragAndDropAction = new Ext.Action({
+            text:'Open Drag and Drop Window...', scope:this, disabled:false,
+            iconCls:'iconFileShare',
+            handler:function(){
+                if (this.applet)
+                {
+                    var a = this.applet.getApplet();
+                    if (a)
+                    {
+                        // window might not show over the browser window,
+                        // but will show above the applet, so select the applet first
+                        this.applet.el.dom.focus();
+                        a.requestFocus();
+                        // give it a chance to get focus?
+                         window.setTimeout(function(){a.openDragAndDropWindow();}, 10);
+                        //a.openDragAndDropWindow();
+                    }
+                }
+            }
+        });
+
         actions.folderTreeToggle = new Ext.Action({
             text: 'Toggle Folder Tree',
             enableToggle: true,
@@ -3352,6 +3376,8 @@ LABKEY.FileBrowser = Ext.extend(Ext.Panel,
                 }
             });
 
+            var loadingImageSrc = LABKEY.contextPath + "/ext-3.4.0/resources/images/default/shared/large-loading.gif";
+
             this.progressBar = new Ext.ProgressBar();
             this.appletStatusBar = new LABKEY.ext.StatusBar({
                 defaultText:'', busyText:'Copying...',
@@ -3365,10 +3391,11 @@ LABKEY.FileBrowser = Ext.extend(Ext.Panel,
             });
 
             this.appletPanel = new Ext.Panel({
-                fieldLabel: 'File and Folder Drop Target',
+                fieldLabel: null, //File and Folder Drop Target',
                 isFormField: true,
-                height: 50,
-                width: 325
+                height: 80,
+                width: 80,
+                items : {html:'<img src="' + loadingImageSrc + '"><br>loading Java applet...'}
             });
 
             this.uploadMultiPanel = new Ext.FormPanel({
@@ -3376,13 +3403,18 @@ LABKEY.FileBrowser = Ext.extend(Ext.Panel,
                 stateful: false,
                 buttonAlign: 'left',
                 items: [
-                    {xtype:'compositefield', items:[this.appletPanel, {xtype:'displayfield', value:'&nbsp;OR&nbsp;'},
+                    {xtype:'compositefield',items:[
+                        this.appletPanel,
+                        //{xtype:'displayfield', value:'&nbsp;OR&nbsp;'},
                         new Ext.Panel({border:false, bodyStyle : 'background-color:#f0f0f0', items:[
                             new Ext.Button(this.actions.appletFileAction),
                             new Ext.menu.Separator(),
-                            new Ext.Button(this.actions.appletDirAction)]})]}
+                            new Ext.Button(this.actions.appletDirAction),
+                            new Ext.menu.Separator(),
+                            new Ext.Button(this.actions.appletDragAndDropAction)]})]}
                 ]
             });
+            this.uploadMultiPanel.doLayout();
 
             // default settings
             var defaults = {
@@ -3406,7 +3438,7 @@ LABKEY.FileBrowser = Ext.extend(Ext.Panel,
             // main panel with the radio button selectors and the upload panel
             this.singleFileId = Ext.id();
             var panel = new Ext.Panel({
-                border:false,
+                border: true,
                 stateful: false,
                 layout: 'form',
                 buttonAlign: 'left',
@@ -3438,7 +3470,7 @@ LABKEY.FileBrowser = Ext.extend(Ext.Panel,
             this.fileUploadPanel = new Ext.Panel({
                 region: 'north',
                 collapseMode: 'mini',
-                height: 115,
+                height: 140,
                 defaults: defaults,
                 header: false,
                 margins:'0 0 0 0',
@@ -3659,7 +3691,7 @@ LABKEY.FileBrowser = Ext.extend(Ext.Panel,
         {
             var uri = new URI(this.fileSystem.prefixUrl);  // implementation leaking here
             var url = uri.toString();
-            this.applet = new TransferApplet({id: Ext.id(), url:url, directory:this.currentDirectory.data.path, text:'initializing...'});
+            this.applet = new TransferApplet({id: Ext.id(), url:url, directory:this.currentDirectory.data.path, text:'initializing...', width:80, height:80});
 
             this.applet.on(TRANSFER_EVENTS.update, this.updateProgressBar, this);
             this.applet.on(TRANSFER_EVENTS.update, this.fireUploadEvents, this);
@@ -3671,6 +3703,7 @@ LABKEY.FileBrowser = Ext.extend(Ext.Panel,
                 this.updateAppletState(this.currentDirectory);
             }, this);
 
+            this.appletPanel.removeAll();
             this.appletPanel.add(this.applet);
             this.appletPanel.doLayout();
         }
