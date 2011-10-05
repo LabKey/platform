@@ -15,6 +15,7 @@
  */
 package org.labkey.api.collections;
 
+import java.io.Serializable;
 import java.util.Collection;
 import java.util.Map;
 import java.util.Set;
@@ -24,7 +25,7 @@ import java.util.Set;
  * Date: Aug 25, 2010
  * Time: 10:05:30 AM
  */
-public abstract class MapWrapper<K, V> implements Map<K, V>
+public abstract class MapWrapper<K, V> implements Map<K, V>, Serializable
 {
     protected final Map<K, V> _map;
 
