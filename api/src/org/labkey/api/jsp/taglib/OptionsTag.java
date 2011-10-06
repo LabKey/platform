@@ -22,32 +22,62 @@ import javax.servlet.jsp.JspException;
 import javax.servlet.jsp.JspWriter;
 import java.io.IOException;
 import java.util.Map;
+import java.util.Set;
 
 public class OptionsTag extends SimpleTagBase
 {
     Map<?, String> _map;
+    Set<String> _set;
     Object _value;
     public void doTag() throws JspException, IOException
     {
         JspWriter out = getOut();
-        for (Map.Entry<?, String> option : _map.entrySet())
+        if (_map != null)
         {
-            out.write("\n<option value=\"");
-            out.write(h(option.getKey()));
-            out.write("\"");
-            if (ObjectUtils.equals(option.getKey(), _value))
+            for (Map.Entry<?, String> option : _map.entrySet())
             {
-                out.write(" selected");
+                out.write("\n<option value=\"");
+                out.write(h(option.getKey()));
+                out.write("\"");
+                if (ObjectUtils.equals(option.getKey(), _value))
+                {
+                    out.write(" selected");
+                }
+                out.write(">");
+                out.write(h(option.getValue()));
+                out.write("</option>");
             }
-            out.write(">");
-            out.write(h(option.getValue()));
-            out.write("</option>");
+        }
+        else if (_set != null)
+        {
+            for (String value : _set)
+            {
+                out.write("\n<option value=\"");
+                out.write(h(value));
+                out.write("\"");
+                if (ObjectUtils.equals(value, _value))
+                {
+                    out.write(" selected");
+                }
+                out.write(">");
+                out.write(h(value));
+                out.write("</option>");
+            }
+        }
+        else
+        {
+            throw new IllegalArgumentException("Either 'map' or 'set' is required for the labkey:options tag.");
         }
     }
 
     public void setMap(Map<?, String> map)
     {
         _map = map;
+    }
+
+    public void setSet(Set<String> set)
+    {
+        _set = set;
     }
 
     public void setValue(Object value)

@@ -68,7 +68,10 @@
         </attribute>
         <attribute>
             <name>map</name>
-            <required>true</required>
+            <rtexprvalue>true</rtexprvalue>
+        </attribute>
+        <attribute>
+            <name>set</name>
             <rtexprvalue>true</rtexprvalue>
         </attribute>
     </tag>
