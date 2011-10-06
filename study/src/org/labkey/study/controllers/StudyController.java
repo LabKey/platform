@@ -241,6 +241,7 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.text.DecimalFormat;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Date;
@@ -6969,14 +6970,21 @@ public class StudyController extends BaseStudyController
         {
             boolean isAdmin = getContainer().hasPermission(getUser(), AdminPermission.class);
             JSONArray data = new JSONArray();
+            List<BrowseDataForm.DataType> types = Arrays.asList(form.getDataTypes());
 
             // get reports and queries
-            for (ViewInfo info : ReportManager.get().getViews(getViewContext(), null, null, isAdmin, true))
-                data.put(info.toJSON(getUser()));
+            if (types.isEmpty() || types.contains(BrowseDataForm.DataType.reports))
+            {
+                for (ViewInfo info : ReportManager.get().getViews(getViewContext(), null, null, isAdmin, true))
+                    data.put(info.toJSON(getUser()));
+            }
 
             // datasets
-            for (ViewInfo info : getDatasets())
-                data.put(info.toJSON(getUser()));
+            if (types.isEmpty() || types.contains(BrowseDataForm.DataType.datasets))
+            {
+                for (ViewInfo info : getDatasets())
+                    data.put(info.toJSON(getUser()));
+            }
 
             return new ApiSimpleResponse("data", data);
         }
@@ -7013,6 +7021,21 @@ public class StudyController extends BaseStudyController
 
     public static class BrowseDataForm
     {
-        
+        public enum DataType {
+            reports,
+            datasets,
+        }
+
+        private DataType[] _dataTypes = new DataType[0];
+
+        public DataType[] getDataTypes()
+        {
+            return _dataTypes;
+        }
+
+        public void setDataTypes(DataType[] dataTypes)
+        {
+            _dataTypes = dataTypes;
+        }
     }
 }
