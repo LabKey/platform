@@ -272,6 +272,41 @@ LABKEY.Utils = new function()
         },
 
         /**
+         * This method takes an object that is/extends an Ext.Container (e.g. Panels, Toolbars, Viewports, Menus) and
+         * resizes it so the Container fits inside the viewable region of the window. This is generally used in the case
+         * where the Container is not rendered to a webpart but rather displayed on the page itself (e.g. SchemaBrowser,
+         * manageFolders, etc).
+         * @param extContainer - (Required) outer container which is the target to be resized
+         * @param width - (Required) width of the viewport. In many cases, the window width.
+         * @param height - (Required) height of the viewport. In many cases, the window height.
+         * @param paddingX - distance from the right edge of the viewport. Defaults to 30.
+         * @param paddingY - distance from the bottom edge of the viewport. Defaults to 30.
+         */
+        resizeToViewport : function(extContainer, width, height, paddingX, paddingY)
+        {
+            if (!extContainer || !extContainer.rendered)
+                return;
+
+            var padding = [];
+            if (paddingX !== undefined && paddingX != null)
+                padding.push(paddingX);
+            else
+                padding.push(30);
+            if (paddingY !== undefined && paddingY != null)
+                padding.push(paddingY);
+            else
+                padding.push(30);
+
+            var xy = extContainer.el.getXY();
+            var size = {
+                width  : Math.max(100,width-xy[0]-padding[0]),
+                height : Math.max(100,height-xy[1]-padding[1])
+            };
+            extContainer.setSize(size);
+            extContainer.doLayout();
+        },
+
+        /**
          * Returns a URL to the appropriate file icon image based on the specified file name.
          * Note that file name can be a full path or just the file name and extension.
          * If the file name does not include an extension, the URL for a generic image will be returned
