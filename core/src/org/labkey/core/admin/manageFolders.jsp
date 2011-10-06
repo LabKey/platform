@@ -179,13 +179,9 @@ function init() {
     var _resize = function(w, h) {
         if (!folderPanel.rendered)
             return;
-        var padding = [60,60];
-        var xy = folderPanel.el.getXY();
-        var size = {
-            width : Math.max(100,w-xy[0]-padding[0]),
-            height : Math.max(100,h-xy[1]-padding[1])};
-        folderPanel.setSize(size);
-        folderPanel.doLayout();
+
+        LABKEY.Utils.resizeToViewport(folderPanel, w, h);
+
         if (selectedFolder){ ensureVisible(selectedFolder); }
     };
 

@@ -157,15 +157,7 @@
         });
 
         var _resize = function(w, h) {
-            if (!panel.rendered)
-                return;
-            var padding = [40,50];
-            var xy = panel.el.getXY();
-            var size = {
-                width : Math.max(100,w-xy[0]-padding[0]),
-                height : Math.max(100,h-xy[1]-padding[1])};
-            panel.setSize(size);
-            panel.doLayout();
+            LABKEY.Utils.resizeToViewport(panel, w, h, 40, 50);
         };
 
         Ext.EventManager.onWindowResize(_resize);

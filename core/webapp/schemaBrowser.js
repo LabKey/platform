@@ -1410,7 +1410,7 @@ LABKEY.ext.SchemaBrowser = Ext.extend(Ext.Panel, {
 
         if (this.autoResize)
         {
-            Ext.EventManager.onWindowResize(function(w,h){this.resizeToViewport(w,h);}, this);
+            Ext.EventManager.onWindowResize(function(w,h){ LABKEY.Utils.resizeToViewport(this, w, h, 46, 32); }, this);
             this.on("render", function(){Ext.EventManager.fireWindowResize();}, this);
         }
 
@@ -1510,18 +1510,6 @@ LABKEY.ext.SchemaBrowser = Ext.extend(Ext.Panel, {
             token = token.substring(this.historyPrefix.length);
 
         this.showPanel(token);
-    },
-
-    resizeToViewport : function(w,h) {
-        if (!this.rendered)
-            return;
-
-        var padding = [46,32];
-        var xy = this.el.getXY();
-        var size = {
-            width : Math.max(100,w-xy[0]-padding[0]),
-            height : Math.max(100,h-xy[1]-padding[1])};
-        this.setSize(size);
     },
 
     onCreateQueryClick : function() {

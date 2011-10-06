@@ -387,8 +387,6 @@ LABKEY.FilesWebPartPanel = Ext.extend(LABKEY.FileBrowser, {
 
     updateToolbarButtons : function()
     {
-        console.debug('Updating toolbar...');
-
         var toolbar = this.getTopToolbar();
         if (toolbar && toolbar.items)
         {

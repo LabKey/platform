@@ -3174,8 +3174,7 @@ LABKEY.FileBrowser = Ext.extend(Ext.Panel,
         {
             this.resizer = new Ext.Resizable(this.el, {pinned: false});
             this.resizer.on("resize", function(o, width, height){
-                this.setWidth(width);
-                this.setHeight(height)
+                LABKEY.Utils.resizeToViewport(this, width, height);
             }, this);
         }
     },
