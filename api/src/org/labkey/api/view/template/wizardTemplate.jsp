@@ -61,8 +61,8 @@
                         <% } %>
                     </ol>
                 </div>
-                <div style="padding-left: 20em;">
-                    <div id="dialogBody" class="labkey-dialog-body" style="padding: 3em; width: 60em;">
+                <div id="wizardBody" class="labkey-fullscreen-wizard-body">
+                    <div style="padding: 3em">
                         <span class="labkey-nav-page-header"><%= h(pageConfig.getTitle()) %></span>
                         <script type="text/javascript">
                             LABKEY.requiresClientAPI();
