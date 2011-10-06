@@ -260,7 +260,7 @@ LABKEY.requiresExt4Sandbox = function(immediate)
     if (arguments.length < 1) immediate = true;
 
     LABKEY.requiresCss(LABKEY.extJsRoot_40 + '/resources/css/ext-sandbox.css', true);
-    LABKEY.requiresScript(LABKEY.extJsRoot_40 + "/ext-all-dev.js", immediate);
+    LABKEY.requiresScript(LABKEY.extJsRoot_40 + "/ext-all-sandbox" + (LABKEY.devMode ?  "-debug.js" : ".js"), immediate);
     LABKEY.requiresScript(LABKEY.extJsRoot_40 + "/ext-patches.js", immediate);
 };
 
