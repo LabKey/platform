@@ -140,8 +140,6 @@ String verbing = loader.isNewInstall() ? "Installing" : "Upgrading";
 </script>
 <br/>
 <div id="completeDiv" style="visibility: hidden">
-    <%
-        org.labkey.api.view.ActionURL nextURL = org.labkey.api.settings.AppProps.getInstance().getFileSystemRoot() == null ? new ActionURL(AdminController.NewInstallSiteSettingsAction.class, org.labkey.api.data.ContainerManager.getRoot()) : new org.labkey.core.admin.AdminController.AdminUrlsImpl().getCustomizeSiteURL(true);
-    %>
-    <%= PageFlowUtil.generateButton("Next", nextURL) %>
+    <%--Could send install/upgrade paths to different pages for settings, but for now use the same simple one for both --%>
+    <%= PageFlowUtil.generateButton("Next", new ActionURL(AdminController.NewInstallSiteSettingsAction.class, org.labkey.api.data.ContainerManager.getRoot())) %>
 </div>
