@@ -16,6 +16,7 @@
 
 package org.labkey.api.files.view;
 
+import org.apache.commons.beanutils.BeanUtils;
 import org.apache.commons.lang.BooleanUtils;
 import org.apache.commons.lang.StringUtils;
 import org.apache.log4j.Logger;
@@ -41,6 +42,7 @@ import org.labkey.api.view.*;
 import org.labkey.api.webdav.WebdavService;
 
 import java.io.File;
+import java.lang.reflect.InvocationTargetException;
 import java.net.URLEncoder;
 import java.util.ArrayList;
 import java.util.List;
@@ -208,10 +210,27 @@ public class FilesWebPart extends JspView<FilesWebPart.FilesForm>
 
         CustomizeFilesWebPartView.CustomizeWebPartForm form = new CustomizeFilesWebPartView.CustomizeWebPartForm(webPartDescriptor);
         getModelBean().setFolderTreeCollapsed(!form.isFolderTreeVisible());
-        
+
         setWide(null == webPartDescriptor.getLocation() || HttpView.BODY.equals(webPartDescriptor.getLocation()));
         setShowAdmin(container.hasPermission(ctx.getUser(), AdminPermission.class));
-        String path = webPartDescriptor.getPropertyMap().get("path");
+
+        // apply any other client specified overrides
+        FilesForm bean = getModelBean();
+        if (bean != null)
+        {
+            try
+            {
+                BeanUtils.copyProperties(bean, ctx);
+            }
+            catch (IllegalAccessException e)
+            {
+                throw new RuntimeException(e);
+            }
+            catch (InvocationTargetException e)
+            {
+                throw new RuntimeException(e);
+            }
+        }
 
         if (!isWide())
         {
@@ -259,7 +278,7 @@ public class FilesWebPart extends JspView<FilesWebPart.FilesForm>
         try {
             if (_isPipelineFiles)
                 return true;
-            
+
             // since pipeline actions operate on the pipeline root, if the file content and pipeline roots do not
             // reference the same location, then import and customize actions should be disabled
 
@@ -281,7 +300,7 @@ public class FilesWebPart extends JspView<FilesWebPart.FilesForm>
 
     protected SecurableResource getSecurableResource()
     {
-        return getViewContext().getContainer(); 
+        return getViewContext().getContainer();
     }
 
     public boolean isWide()

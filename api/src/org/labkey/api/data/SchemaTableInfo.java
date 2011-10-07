@@ -229,7 +229,7 @@ public class SchemaTableInfo implements TableInfo, UpdateableTableInfo
     {
         if (columnName == null)
             return getSelectList();
-        
+
         ColumnInfo column = getColumn(columnName);
         if (column == null /*|| column.isKeyField()*/)
             return new NamedObjectList();
@@ -408,17 +408,26 @@ public class SchemaTableInfo implements TableInfo, UpdateableTableInfo
             else
                 _importURL = DetailsURL.fromString(xmlTable.getImportUrl());
         }
-        if (xmlTable.getInsertUrl() != null)
+        if (xmlTable.isSetInsertUrl())
         {
-            _insertURL = DetailsURL.fromString(xmlTable.getInsertUrl());
+            if (StringUtils.isBlank(xmlTable.getInsertUrl()))
+                _insertURL = LINK_DISABLER;
+            else
+                _insertURL = DetailsURL.fromString(xmlTable.getInsertUrl());
         }
-        if (xmlTable.getDeleteUrl() != null)
+        if (xmlTable.isSetDeleteUrl())
         {
-            _deleteURL = DetailsURL.fromString(xmlTable.getDeleteUrl());
+            if (StringUtils.isBlank(xmlTable.getDeleteUrl()))
+                _deleteURL = LINK_DISABLER;
+            else
+                _deleteURL = DetailsURL.fromString(xmlTable.getDeleteUrl());
         }
-        if (xmlTable.getUpdateUrl() != null)
+        if (xmlTable.isSetUpdateUrl())
         {
-            _updateURL = DetailsURL.fromString(xmlTable.getUpdateUrl());
+            if (StringUtils.isBlank(xmlTable.getUpdateUrl()))
+                _updateURL = LINK_DISABLER;
+            else
+                _updateURL = DetailsURL.fromString(xmlTable.getUpdateUrl());
         }
         if (xmlTable.getTableUrl() != null)
         {
@@ -448,9 +457,11 @@ public class SchemaTableInfo implements TableInfo, UpdateableTableInfo
 
     public ActionURL getInsertURL(Container container)
     {
-        if (_insertURL != null)
-            return _insertURL.copy(container).getActionURL();
-        return null;
+        if (_insertURL == null)
+            return null;
+        if (LINK_DISABLER == _insertURL)
+            return LINK_DISABLER_ACTION_URL;
+        return _insertURL.copy(container).getActionURL();
     }
 
     @Override
@@ -465,17 +476,21 @@ public class SchemaTableInfo implements TableInfo, UpdateableTableInfo
 
     public ActionURL getDeleteURL(Container container)
     {
-        if (_deleteURL != null)
-            return _deleteURL.copy(container).getActionURL();
-        return null;
+        if (_deleteURL == null)
+            return null;
+        if (LINK_DISABLER == _deleteURL)
+            return LINK_DISABLER_ACTION_URL;
+        return _deleteURL.copy(container).getActionURL();
     }
 
     public StringExpression getUpdateURL(Set<FieldKey> columns, Container container)
     {
-        if (_updateURL != null && _updateURL.validateFieldKeys(columns))
-        {
+        if (_updateURL == null)
+            return null;
+        if (LINK_DISABLER == _updateURL)
+            return LINK_DISABLER;
+        if (_updateURL.validateFieldKeys(columns))
             return _updateURL.copy(container);
-        }
         return null;
     }
 
@@ -596,7 +611,7 @@ public class SchemaTableInfo implements TableInfo, UpdateableTableInfo
 
     public void setDescription(String description)
     {
-        _description = description;        
+        _description = description;
     }
 
     @Nullable

@@ -383,7 +383,7 @@ public class ExcelColumn extends RenderColumn
     //
     // Calculates the "autosize" column width, the width that approximates the width of the contents of cells in
     // this column.  Several caveats here:
-    // 
+    //
     // 1. This assumes all data is in Arial 10-point normal font
     // 2. It only counts the number of characters; it doesn't know the exact font display width on the client PC.
     // 3. It's not very efficient; for each cell, it reads the contents, converts it to the appropriate
