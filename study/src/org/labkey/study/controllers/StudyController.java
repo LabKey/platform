@@ -6672,7 +6672,7 @@ public class StudyController extends BaseStudyController
         public NavTree appendNavTrail(NavTree root)
         {
             _appendNavTrailVisitAdmin(root);
-            return root.addChild("Import Visit Alises");
+            return root.addChild("Import Visit Aliases");
         }
     }
 

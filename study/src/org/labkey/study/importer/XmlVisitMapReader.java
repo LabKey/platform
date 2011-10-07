@@ -126,9 +126,9 @@ public class XmlVisitMapReader implements VisitMapReader
 
         if (null != importAliasesXml)
         {
-            Alias[] alises = importAliasesXml.getAliasArray();
+            Alias[] aliases = importAliasesXml.getAliasArray();
 
-            for (Alias alias : alises)
+            for (Alias alias : aliases)
                 ret.add(new StudyManager.VisitAlias(alias.getName(), alias.getSequenceNum()));
         }
 
