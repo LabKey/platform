@@ -549,7 +549,7 @@ public class QueryServiceImpl extends QueryService
         return viewFiles.length;
     }
 
-    
+
     public void updateCustomViewsAfterRename(@NotNull Container c, @NotNull String schema,
             @NotNull String oldQueryName, @NotNull String newQueryName)
     {

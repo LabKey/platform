@@ -615,7 +615,7 @@ public class QueryController extends SpringActionController
     public class RenameQueryAction extends FormViewAction<NewQueryForm>
     {
         NewQueryForm _form;
-        
+
         public void validateCommand(NewQueryForm form, Errors errors)
         {
 
@@ -624,7 +624,7 @@ public class QueryController extends SpringActionController
         public ModelAndView getView(NewQueryForm form, boolean reshow, BindException errors) throws Exception
         {
             _form = form;
-            return null; 
+            return null;
         }
 
         public boolean handlePost(NewQueryForm form, BindException errors) throws Exception
@@ -1223,7 +1223,7 @@ public class QueryController extends SpringActionController
         }
     }
 
-    
+
     @RequiresPermissionClass(ReadPermission.class)
     public class ExportExcelTemplateAction extends _ExportQuery<TemplateForm>
     {
@@ -1461,7 +1461,7 @@ public class QueryController extends SpringActionController
     {
         QueryDefinition _query = null;
         QueryForm _form = null;
-        
+
         public void validateCommand(QueryForm target, Errors errors)
         {
         }
@@ -1707,7 +1707,7 @@ public class QueryController extends SpringActionController
     {
         PropertiesForm _form = null;
         private String _queryName;
-        
+
         public void validateCommand(PropertiesForm target, Errors errors)
         {
         }
@@ -1727,7 +1727,7 @@ public class QueryController extends SpringActionController
             _form.setHidden(queryDef.isHidden());
             setHelpTopic(new HelpTopic("customSQL"));
             _queryName = form.getQueryName();
-            
+
             return new JspView<PropertiesForm>(QueryController.class, "propertiesQuery.jsp", form, errors);
         }
 
@@ -1745,7 +1745,7 @@ public class QueryController extends SpringActionController
                 throw new NotFoundException("Query not found");
 
 			_form = form;
-			
+
 			if (!StringUtils.isEmpty(form.rename) && !form.rename.equalsIgnoreCase(queryDef.getName()))
 			{
 				QueryService s = QueryService.get();
@@ -1793,7 +1793,7 @@ public class QueryController extends SpringActionController
     public class DeleteQueryRowsAction extends FormHandlerAction<QueryForm>
     {
         ActionURL _url = null;
-        
+
         public void validateCommand(QueryForm target, Errors errors)
         {
         }
@@ -1874,7 +1874,7 @@ public class QueryController extends SpringActionController
             {
                 dbSchema.getScope().closeConnection();
             }
-            
+
             return true;
         }
 
@@ -1969,7 +1969,7 @@ public class QueryController extends SpringActionController
             try
             {
                 dbschema.getScope().ensureTransaction();
-                
+
                 if (insert)
                 {
                     BatchValidationException batchErrors = new BatchValidationException();
@@ -2459,7 +2459,7 @@ public class QueryController extends SpringActionController
     public class ImportAction extends AbstractQueryImportAction<QueryForm>
     {
         QueryForm _form;
-        
+
         public ImportAction()
         {
             super(QueryForm.class);
@@ -2492,7 +2492,7 @@ public class QueryController extends SpringActionController
         {
             (new SchemaAction(_form)).appendNavTrail(root);
             root.addChild(_form.getQueryName(), _form.urlFor(QueryAction.executeQuery));
-            root.addChild(_form.getQueryName(), _form.urlFor(QueryAction.importData));
+            root.addChild("Import Data");
             return root;
         }
     }
@@ -2587,7 +2587,7 @@ public class QueryController extends SpringActionController
             view.setShowRecordSelectors(false);
             view.setShowExportButtons(false);
             view.setButtonBarPosition(DataRegion.ButtonBarPosition.NONE);
-            
+
             //export it
             response.setContentType("application/vnd.ms-excel");
             response.setHeader("Content-disposition", "attachment; filename=\"QueryResults.xls\"");
@@ -2979,7 +2979,7 @@ public class QueryController extends SpringActionController
         }
     }
 
-    
+
     @RequiresSiteAdmin
     public class InsertExternalSchemaAction extends FormViewAction<ExternalSchemaForm>
     {
@@ -3218,7 +3218,7 @@ public class QueryController extends SpringActionController
             {
                 def = form.getBean();
                 ExternalSchemaDef fromDb = QueryManager.get().getExternalSchemaDef(def.getExternalSchemaId());
-                defContainer = fromDb.lookupContainer();               
+                defContainer = fromDb.lookupContainer();
             }
             else
             {
@@ -3605,7 +3605,7 @@ public class QueryController extends SpringActionController
                 existingView.setColumns(view.getColumns());
                 existingView.setFilterAndSort(view.getFilterAndSort());
                 existingView.setColumnProperties(view.getColumnProperties());
-                
+
                 existingView.save(getUser(), getViewContext().getRequest());
             }
 
@@ -3742,7 +3742,7 @@ public class QueryController extends SpringActionController
     public class InternalNewViewAction extends FormViewAction<InternalNewViewForm>
     {
         int _customViewId = 0;
-        
+
         public void validateCommand(InternalNewViewForm form, Errors errors)
         {
             if (StringUtils.trimToNull(form.ff_schemaName) == null)
@@ -4004,7 +4004,7 @@ public class QueryController extends SpringActionController
 
                     Map<String, Object> schemaProps = new HashMap<String, Object>();
                     schemaProps.put("description", schema.getDescription());
-                    
+
                     resp.put(schema.getName(), schemaProps);
                 }
 
@@ -4424,7 +4424,7 @@ public class QueryController extends SpringActionController
         {
             return null;
         }
-        
+
         abstract QNode _parse(String e, List<QueryParseException> errors);
         abstract Tree _tree(String e) throws Exception;
     }
