@@ -47,12 +47,9 @@ import org.labkey.api.action.SimpleErrorView;
 import org.labkey.api.action.SimpleRedirectAction;
 import org.labkey.api.action.SimpleViewAction;
 import org.labkey.api.action.SpringActionController;
-import org.labkey.api.attachments.Attachment;
 import org.labkey.api.attachments.AttachmentFile;
 import org.labkey.api.attachments.AttachmentForm;
-import org.labkey.api.attachments.AttachmentParent;
 import org.labkey.api.attachments.AttachmentService;
-import org.labkey.api.attachments.FileAttachmentFile;
 import org.labkey.api.audit.AuditLogEvent;
 import org.labkey.api.audit.AuditLogService;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
@@ -131,8 +128,6 @@ import org.labkey.api.study.StudyUrls;
 import org.labkey.api.study.TimepointType;
 import org.labkey.api.study.Visit;
 import org.labkey.api.study.assay.AssayPublishService;
-import org.labkey.api.study.assay.AssayService;
-import org.labkey.api.study.assay.AssayUrls;
 import org.labkey.api.util.DateUtil;
 import org.labkey.api.util.DemoMode;
 import org.labkey.api.util.FileStream;
@@ -174,7 +169,6 @@ import org.labkey.study.StudyServiceImpl;
 import org.labkey.study.assay.AssayPublishManager;
 import org.labkey.study.assay.query.AssayAuditViewFactory;
 import org.labkey.study.controllers.reports.ReportsController;
-import org.labkey.study.controllers.samples.SpecimenController;
 import org.labkey.study.dataset.DatasetSnapshotProvider;
 import org.labkey.study.importer.DatasetImportUtils;
 import org.labkey.study.importer.SchemaReader;
@@ -189,10 +183,8 @@ import org.labkey.study.model.CustomParticipantView;
 import org.labkey.study.model.DataSetDefinition;
 import org.labkey.study.model.DatasetReorderer;
 import org.labkey.study.model.Participant;
-import org.labkey.study.model.ParticipantGroupManager;
 import org.labkey.study.model.QCState;
 import org.labkey.study.model.QCStateSet;
-import org.labkey.study.model.SampleRequestEvent;
 import org.labkey.study.model.SecurityType;
 import org.labkey.study.model.SiteImpl;
 import org.labkey.study.model.StudyImpl;
@@ -204,12 +196,12 @@ import org.labkey.study.model.VisitImpl;
 import org.labkey.study.model.VisitMapKey;
 import org.labkey.study.pipeline.DatasetFileReader;
 import org.labkey.study.pipeline.StudyPipeline;
+import org.labkey.study.query.DataSetQuerySettings;
 import org.labkey.study.query.DataSetQueryView;
 import org.labkey.study.query.PublishedRecordQueryView;
 import org.labkey.study.query.StudyPropertiesQueryView;
 import org.labkey.study.query.StudyQuerySchema;
 import org.labkey.study.reports.ReportManager;
-import org.labkey.study.reports.StudyReportUIProvider;
 import org.labkey.study.samples.settings.RepositorySettings;
 import org.labkey.study.security.permissions.ManageStudyPermission;
 import org.labkey.study.view.StudyGWTView;
@@ -334,7 +326,7 @@ public class StudyController extends BaseStudyController
 			setBody(body);
 			setView("right",right);
 		}
-		
+
 		@Override
 		protected void renderInternal(Object model, PrintWriter out) throws Exception
 		{
@@ -345,7 +337,7 @@ public class StudyController extends BaseStudyController
 			out.print("</td></tr></table>");
 		}
 	}
-	
+
 
     @RequiresPermissionClass(AdminPermission.class)
     public class DefineDatasetTypeAction extends FormViewAction<ImportTypeForm>
@@ -813,17 +805,14 @@ public class StudyController extends BaseStudyController
     public class DatasetAction extends QueryViewAction<DatasetFilterForm, QueryView>
     {
         private CohortFilter _cohortFilter;
-//        private int _datasetId;
         private int _visitId;
         private String _encodedQcState;
         private DataSetDefinition _def;
-        private Study _study;
 
         public DatasetAction()
         {
             super(DatasetFilterForm.class);
         }
-
 
         private DataSetDefinition getDataSetDefinition() throws ServletException
         {
@@ -859,15 +848,6 @@ public class StudyController extends BaseStudyController
                 throw new NotFoundException();
             return _def;
         }
-        
-
-        private Study getStudy() throws ServletException
-        {
-            if (null == _study)
-                _study = StudyController.this.getStudy();
-            return _study;
-        }
-
 
         @Override
         public ModelAndView getView(DatasetFilterForm form, BindException errors) throws Exception
@@ -913,7 +893,6 @@ public class StudyController extends BaseStudyController
             String export = StringUtils.trimToNull(context.getActionURL().getParameter("export"));
 
             String viewName = (String)context.get(DATASET_VIEW_NAME_PARAMETER_NAME);
-//            final DataSetDefinition def = StudyManager.getInstance().getDataSetDefinition(study, _datasetId);
             DataSetDefinition def = getDataSetDefinition();
             if (null == def)
                 return new TypeNotFoundAction().getView(form, errors);
@@ -931,19 +910,21 @@ public class StudyController extends BaseStudyController
                     throw new NotFoundException();
             }
 
-            final StudyQuerySchema querySchema = new StudyQuerySchema((StudyImpl)study, getUser(), true);
-            QuerySettings qs = querySchema.getSettings(context, DataSetQueryView.DATAREGION);
-            qs.setSchemaName(querySchema.getSchemaName());
-            qs.setQueryName(def.getLabel());
-            DataSetQueryView queryView = new DataSetQueryView(def, querySchema, qs, visit, _cohortFilter, qcStateSet);
-            queryView.setForExport(export != null);
-            queryView.disableContainerFilterSelection();
             boolean showEditLinks = !QueryService.get().isQuerySnapshot(getContainer(), StudyManager.getSchemaName(), def.getLabel()) &&
                 !def.isAssayData();
-            queryView.setShowEditLinks(showEditLinks);
+
+            UserSchema schema = QueryService.get().getUserSchema(getViewContext().getUser(), getViewContext().getContainer(), StudyQuerySchema.SCHEMA_NAME);
+            DataSetQuerySettings settings = (DataSetQuerySettings)schema.getSettings(getViewContext(), DataSetQueryView.DATAREGION, def.getLabel());
+
+            settings.setShowEditLinks(showEditLinks);
+            settings.setShowSourceLinks(true);
+
+            QueryView queryView = schema.createView(getViewContext(), settings, errors);
+
+            queryView.disableContainerFilterSelection();
 
             final ActionURL url = context.getActionURL();
-            setColumnURL(url, queryView, querySchema, def);
+            setColumnURL(url, queryView, schema, def);
 
             // clear the property map cache and the sort map cache
             getParticipantPropsMap(context).clear();
@@ -954,8 +935,6 @@ public class StudyController extends BaseStudyController
             {
                 addParticipantGroupToCache(context, def.getDataSetId(), viewName, generateParticipantGroup(queryView), _cohortFilter, form.getQCState());
                 getExpandedState(context, def.getDataSetId()).clear();
-
-                queryView.setShowSourceLinks(hasSourceLsids(table));
             }
 
             if (null != export)
@@ -966,10 +945,6 @@ public class StudyController extends BaseStudyController
                     queryView.exportToExcel(context.getResponse());
                 return null;
             }
-
-            List<ActionButton> buttonBar = new ArrayList<ActionButton>();
-            populateButtonBar(buttonBar, def, queryView, _cohortFilter, qcStateSet);
-            queryView.setButtons(buttonBar);
 
             StringBuffer sb = new StringBuffer();
             if (def.getDescription() != null && def.getDescription().length() > 0)
@@ -1006,191 +981,11 @@ public class StudyController extends BaseStudyController
             return null;
         }
 
-        private String getViewName()
-        {
-            QuerySettings qs = new QuerySettings(getViewContext(), DATASET_DATAREGION_NAME);
-            if (qs.getViewName() != null)
-                return qs.getViewName();
-            else
-            {
-                Report report = qs.getReportView();
-                if (report != null)
-                    return report.getDescriptor().getReportName();
-                else
-                    return "default";
-            }
-        }
-
-        private void populateButtonBar(List<ActionButton> buttonBar, DataSetDefinition def, DataSetQueryView queryView,
-                                       CohortFilter cohortFilter, QCStateSet currentStates) throws ServletException
-        {
-            createViewButton(buttonBar, queryView);
-            //createCohortButton(buttonBar, cohortFilter);
-            createParticipantGroupButton(buttonBar, queryView.getDataRegionName(), cohortFilter);
-            if (StudyManager.getInstance().showQCStates(queryView.getContainer()))
-                createQCStateButton(queryView, buttonBar, currentStates);
-
-            buttonBar.add(queryView.createExportButton(false));
-
-            buttonBar.add(queryView.createPageSizeMenuButton());
-
-            User user = getUser();
-            boolean canWrite = canWrite(def, user);
-            boolean isSnapshot = QueryService.get().isQuerySnapshot(getContainer(), StudyManager.getSchemaName(), def.getLabel());
-            boolean isAssayDataset = def.isAssayData();
-            ExpProtocol protocol = null;
-
-            if (isAssayDataset)
-            {
-                protocol = def.getAssayProtocol();
-                if (protocol == null)
-                    isAssayDataset = false;
-            }
-
-            if (!isSnapshot && canWrite && !isAssayDataset)
-            {
-                ActionButton insertButton = queryView.createInsertButton();
-                if (insertButton != null)
-                {
-                    buttonBar.add(insertButton);
-                }
-            }
-
-            if (!isSnapshot)
-            {
-                if (!isAssayDataset) // admins always get the import and manage buttons
-                {
-                    if ((user.isAdministrator() || canWrite))
-                    {
-                        // manage dataset
-                        ActionButton manageButton = new ActionButton(new ActionURL(DatasetDetailsAction.class, getContainer()).addParameter("id", getDataSetDefinition().getDataSetId()), "Manage Dataset");
-                        manageButton.setDisplayModes(DataRegion.MODE_GRID);
-                        manageButton.setActionType(ActionButton.Action.LINK);
-                        manageButton.setDisplayPermission(InsertPermission.class);
-                        buttonBar.add(manageButton);
-
-                        // bulk import
-                        ActionURL importURL = new ActionURL(StudyController.ImportAction.class, def.getContainer());
-                        importURL.addParameter(DataSetDefinition.DATASETKEY, def.getDataSetId());
-                        ActionButton uploadButton = new ActionButton(importURL, "Import Data", DataRegion.MODE_GRID, ActionButton.Action.LINK);
-                        uploadButton.setDisplayPermission(InsertPermission.class);
-                        buttonBar.add(uploadButton);
-                    }
-
-                    if (canWrite)
-                    {
-                        TableInfo tableInfo = new StudyQuerySchema(StudyController.this.getStudy(), getUser(), false).getTable(def.getLabel());
-                        ActionURL deleteRowsURL = tableInfo.getDeleteURL(getContainer());
-                        if (deleteRowsURL != AbstractTableInfo.LINK_DISABLER_ACTION_URL)
-                        {
-                            if (deleteRowsURL == null)
-                            {
-                                deleteRowsURL = new ActionURL(DeleteDatasetRowsAction.class, getContainer());
-                            }
-                            ActionButton deleteRows = new ActionButton(deleteRowsURL, "Delete");
-                            deleteRows.setRequiresSelection(true, "Delete selected row from this dataset?", "Delete selected rows from this dataset?");
-                            deleteRows.setActionType(ActionButton.Action.POST);
-                            deleteRows.setDisplayPermission(DeletePermission.class);
-                            buttonBar.add(deleteRows);
-                        }
-                    }
-                }
-                else if (isAssayDataset)
-                {
-                    List<ActionButton> buttons = AssayService.get().getImportButtons(protocol, getUser(), getContainer(), true);
-                    buttonBar.addAll(buttons);
-
-                    if (user.isAdministrator() || canWrite)
-                    {
-                        ActionURL deleteRowsURL = new ActionURL(DeletePublishedRowsAction.class, getContainer());
-                        deleteRowsURL.addParameter("protocolId", protocol.getRowId());
-                        ActionButton deleteRows = new ActionButton(deleteRowsURL, "Recall");
-                        deleteRows.setRequiresSelection(true, "Recall selected row of this dataset?", "Recall selected rows of this dataset?");
-                        deleteRows.setActionType(ActionButton.Action.POST);
-                        deleteRows.setDisplayPermission(DeletePermission.class);
-                        buttonBar.add(deleteRows);
-                    }
-                }
-            }
-
-            ActionURL viewSamplesURL = new ActionURL(SpecimenController.SelectedSamplesAction.class, getContainer());
-            ActionButton viewSamples = new ActionButton(viewSamplesURL, "View Specimens");
-            viewSamples.setRequiresSelection(true);
-            viewSamples.setActionType(ActionButton.Action.POST);
-            viewSamples.setDisplayPermission(ReadPermission.class);
-            buttonBar.add(viewSamples);
-
-            if (isAssayDataset)
-            {
-                // provide a link to the source assay
-                Container c = protocol.getContainer();
-                if (c.hasPermission(getUser(), ReadPermission.class))
-                {
-                    ActionURL url = PageFlowUtil.urlProvider(AssayUrls.class).getAssayRunsURL(
-                            c,
-                            protocol,
-                            new ContainerFilter.CurrentAndSubfolders(getUser()));
-                    ActionButton viewAssayButton = new ActionButton("View Source Assay", url);
-                    buttonBar.add(viewAssayButton);
-                }
-            }
-        }
-
-        private void createViewButton(List<ActionButton> buttonBar, DataSetQueryView queryView)
-        {
-            MenuButton button = queryView.createViewButton(StudyReportUIProvider.getItemFilter());
-            button.addMenuItem("Set Default View", getViewContext().cloneActionURL().setAction(ViewPreferencesAction.class));
-
-            buttonBar.add(button);
-        }
-
-        private void createCohortButton(List<ActionButton> buttonBar, CohortFilter currentCohortFilter) throws ServletException
-        {
-            ActionButton cohortButton = CohortManager.getInstance().createCohortButton(getViewContext(), currentCohortFilter);
-            if (cohortButton != null)
-                buttonBar.add(cohortButton);
-        }
-
-        private void createParticipantGroupButton(List<ActionButton> buttonBar, String dataRegionName, CohortFilter cohortFilter)
-        {
-            ActionButton listButton = ParticipantGroupManager.getInstance().createParticipantGroupButton(getViewContext(), dataRegionName, cohortFilter, true);
-            if (null != listButton)
-                buttonBar.add(listButton);
-        }
-
-        private void createQCStateButton(DataSetQueryView view, List<ActionButton> buttonBar, QCStateSet currentSet)
-        {
-            List<QCStateSet> stateSets = QCStateSet.getSelectableSets(getContainer());
-            MenuButton button = new MenuButton("QC State");
-
-            for (QCStateSet set : stateSets)
-            {
-                NavTree setItem = new NavTree(set.getLabel(), getViewContext().cloneActionURL().replaceParameter(SharedFormParameters.QCState, set.getFormValue()).toString());
-                setItem.setId("QCState:" + set.getLabel());
-                if (set.equals(currentSet))
-                    setItem.setSelected(true);
-                button.addMenuItem(setItem);
-            }
-            if (getContainer().hasPermission(getUser(), AdminPermission.class))
-            {
-                button.addSeparator();
-                ActionURL updateAction = new ActionURL(UpdateQCStateAction.class, getContainer());
-                NavTree updateItem = button.addMenuItem("Update state of selected rows", "#", "if (verifySelected(document.forms[\"" +
-                        view.getDataRegionName() + "\"], \"" + updateAction.getLocalURIString() + "\", \"post\", \"rows\")) document.forms[\"" +
-                        view.getDataRegionName() + "\"].submit()");
-                updateItem.setId("QCState:updateSelected");
-
-                button.addMenuItem("Manage states", new ActionURL(ManageQCStatesAction.class,
-                        getContainer()).addParameter(ActionURL.Param.returnUrl, getViewContext().getActionURL().getLocalURIString()));
-            }
-            buttonBar.add(button);
-        }
-
         public NavTree appendNavTrail(NavTree root)
         {
             try
             {
-            return _appendNavTrail(root, getDataSetDefinition().getDataSetId(), _visitId,  _cohortFilter, _encodedQcState);
+                return _appendNavTrail(root, getDataSetDefinition().getDataSetId(), _visitId,  _cohortFilter, _encodedQcState);
             }
             catch (ServletException x)
             {
@@ -1915,7 +1710,7 @@ public class StudyController extends BaseStudyController
                 StudyImpl study = getStudy();
                 if (study.getTimepointType() == TimepointType.CONTINUOUS)
                     errors.reject(null, "Unsupported operation for continuous date study");
-                
+
                 target.validate(errors, study);
                 if (errors.getErrorCount() > 0)
                     return;
@@ -2272,7 +2067,7 @@ public class StudyController extends BaseStudyController
         public ModelAndView getView(ImportDataSetForm form, BindException errors) throws Exception
         {
             initRequest(form);
-            
+
             if (_def.getTypeURI() == null)
                 return new HtmlView("Error", "Dataset is not yet defined. <a href=\"datasetDetails.view?id=%d\">Show Dataset Details</a>", form.getDatasetId());
 
@@ -2370,7 +2165,7 @@ public class StudyController extends BaseStudyController
 
             if (errors.hasErrors())
                 return false;
-            
+
             SchemaReader reader = new SchemaTsvReader(getStudy(), form.tsv, form.getLabelColumn(), form.getTypeNameColumn(), form.getTypeIdColumn(), errors);
             return StudyManager.getInstance().importDatasetSchemas(getStudy(), getUser(), reader, errors);
         }
@@ -2526,7 +2321,7 @@ public class StudyController extends BaseStudyController
             if (def != null)
             {
                 final StudyQuerySchema querySchema = new StudyQuerySchema(study, getUser(), true);
-                QuerySettings qs = querySchema.getSettings(context, DataSetQueryView.DATAREGION, def.getLabel());
+                DataSetQuerySettings qs = (DataSetQuerySettings)querySchema.getSettings(context, DataSetQueryView.DATAREGION, def.getLabel());
 
                 if (!def.canRead(getUser()))
                 {
@@ -2542,15 +2337,22 @@ public class StudyController extends BaseStudyController
                     ActionURL deleteURL = new ActionURL(DeletePublishedRowsAction.class, getContainer());
                     deleteURL.addParameter("protocolId", protocolId);
                     deleteURL.addParameter("sourceLsid", sourceLsid);
-                    ActionButton deleteRows = new ActionButton(deleteURL, "Recall Rows");
+                    final ActionButton deleteRows = new ActionButton(deleteURL, "Recall Rows");
 
                     deleteRows.setRequiresSelection(true, "Recall selected row of this dataset?", "Recall selected rows of this dataset?");
                     deleteRows.setActionType(ActionButton.Action.POST);
                     deleteRows.setDisplayPermission(DeletePermission.class);
 
-                    PublishedRecordQueryView qv = new PublishedRecordQueryView(def, querySchema, qs, sourceLsid,
-                            NumberUtils.toInt(protocolId), NumberUtils.toInt(recordCount));
-                    qv.setButtons(Collections.singletonList(deleteRows));
+                    PublishedRecordQueryView qv = new PublishedRecordQueryView(querySchema, qs, sourceLsid,
+                            NumberUtils.toInt(protocolId), NumberUtils.toInt(recordCount)) {
+
+                        @Override
+                        protected void populateButtonBar(DataView view, ButtonBar bar, boolean exportAsWebPage)
+                        {
+                            bar.add(deleteRows);
+                        }
+                    };
+
                     view.addView(qv);
                 }
             }
@@ -2649,7 +2451,7 @@ public class StudyController extends BaseStudyController
                 }
             }
             def.deleteRows(getUser(), allLsids);
-            
+
             ExpProtocol protocol = ExperimentService.get().getExpProtocol(NumberUtils.toInt(protocolId));
             if (protocol != null && originalSourceLsid != null)
             {
@@ -3060,7 +2862,8 @@ public class StudyController extends BaseStudyController
             StudyQuerySchema querySchema = new StudyQuerySchema(study, context.getUser(), true);
             QuerySettings qs = querySchema.getSettings(context, DataSetQueryView.DATAREGION, def.getLabel());
             qs.setViewName(viewName);
-            DataSetQueryView queryView = new DataSetQueryView(def, querySchema, qs, visit, cohortFilter, qcStateSet);
+
+            QueryView queryView = querySchema.createView(context, qs, null);
 
             return generateParticipantGroup(queryView);
         }
@@ -3486,7 +3289,7 @@ public class StudyController extends BaseStudyController
     {
         public ModelAndView getView(ManageQCStatesForm manageQCStatesForm, boolean reshow, BindException errors) throws Exception
         {
-            return new JspView<ManageQCStatesBean>("/org/labkey/study/view/manageQCStates.jsp", 
+            return new JspView<ManageQCStatesBean>("/org/labkey/study/view/manageQCStates.jsp",
                     new ManageQCStatesBean(getStudy(), manageQCStatesForm.getReturnUrl()), errors);
         }
 
@@ -3725,7 +3528,7 @@ public class StudyController extends BaseStudyController
             return _queryView;
         }
     }
-    
+
     @RequiresPermissionClass(AdminPermission.class)
     public class UpdateQCStateAction extends FormViewAction<UpdateQCStateForm>
     {
@@ -3755,12 +3558,17 @@ public class StudyController extends BaseStudyController
             if (lsids == null || lsids.isEmpty())
                 return new HtmlView("No data rows selected.  " + PageFlowUtil.textLink("back", "javascript:back()"));
             StudyQuerySchema querySchema = new StudyQuerySchema(study, getUser(), true);
-            QuerySettings qs = new QuerySettings(getViewContext(), DataSetQueryView.DATAREGION);
+            DataSetQuerySettings qs = new DataSetQuerySettings(getViewContext().getBindPropertyValues(), DataSetQueryView.DATAREGION);
+
             qs.setSchemaName(querySchema.getSchemaName());
             qs.setQueryName(def.getLabel());
             qs.setMaxRows(Table.ALL_ROWS);
+            qs.setShowSourceLinks(false);
+            qs.setShowEditLinks(false);
+
             final Set<String> finalLsids = lsids;
-            DataSetQueryView queryView = new DataSetQueryView(def, querySchema, qs, null, null, null)
+
+            DataSetQueryView queryView = new DataSetQueryView(querySchema, qs, errors)
             {
                 public DataView createDataView()
                 {
@@ -3780,8 +3588,6 @@ public class StudyController extends BaseStudyController
                 }
             };
             queryView.setShowDetailsColumn(false);
-            queryView.setShowSourceLinks(false);
-            queryView.setShowEditLinks(false);
             updateQCForm.setQueryView(queryView);
             updateQCForm.setDataRegionSelectionKey(DataRegionSelection.getSelectionKeyFromRequest(getViewContext()));
             return new JspView<UpdateQCStateForm>("/org/labkey/study/view/updateQCState.jsp", updateQCForm, errors);
@@ -3826,7 +3632,7 @@ public class StudyController extends BaseStudyController
             return root.addChild("Change QC State");
         }
     }
-    
+
     // GWT Action
     @RequiresPermissionClass(AdminPermission.class)
     public class DatasetServiceAction extends GWTServiceAction
@@ -4069,7 +3875,7 @@ public class StudyController extends BaseStudyController
 
             String label = def.getLabel() != null ? def.getLabel() : "" + def.getDataSetId();
             root.addChild(new NavTree(label, datasetURL.getLocalURIString()));
-            
+
             root.addChild(new NavTree("View Preferences"));
             return root;
         }
@@ -4355,7 +4161,7 @@ public class StudyController extends BaseStudyController
         public ModelAndView getView(ExportForm form, boolean reshow, BindException errors) throws Exception
         {
             // In export-to-browser case, base action will attempt to reshow the view since we returned null as the success
-            // URL; returning null here causes the base action to stop pestering the action. 
+            // URL; returning null here causes the base action to stop pestering the action.
             if (reshow)
                 return null;
 
@@ -5277,7 +5083,7 @@ public class StudyController extends BaseStudyController
         {
             if (StudySnapshotForm.CANCEL.equals(form.getAction()))
                 return;
-            
+
             String name = StringUtils.trimToNull(form.getSnapshotName());
 
             if (name != null)
@@ -5585,7 +5391,7 @@ public class StudyController extends BaseStudyController
             return root.addChild("Edit Query Snapshot");
         }
     }
-    
+
     public static class DatasetPropertyForm extends PropertyForm
     {
         private int[] _ids;

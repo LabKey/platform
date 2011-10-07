@@ -4812,9 +4812,10 @@ public class SpecimenController extends BaseStudyController
             if (def != null)
             {
                 StudyQuerySchema querySchema = new StudyQuerySchema(study, getUser(), true);
-                QuerySettings qs = querySchema.getSettings(getViewContext(), DataSetQueryView.DATAREGION, def.getLabel());
+                DataSetQuerySettings qs = (DataSetQuerySettings)querySchema.getSettings(getViewContext(), DataSetQueryView.DATAREGION, def.getLabel());
+                qs.setUseQCSet(false);
 
-                DataSetQueryView queryView = new DataSetQueryView(def, querySchema, qs, null, null, null)
+                DataSetQueryView queryView = new DataSetQueryView(querySchema, qs, errors)
                 {
                     @Override
                     public DataView createDataView()

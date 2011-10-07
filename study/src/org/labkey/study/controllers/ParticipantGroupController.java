@@ -22,6 +22,7 @@ import org.labkey.api.action.ApiResponse;
 import org.labkey.api.action.ApiSimpleResponse;
 import org.labkey.api.action.MutatingApiAction;
 import org.labkey.api.data.SimpleFilter;
+import org.labkey.api.data.Table;
 import org.labkey.api.query.DefaultSchema;
 import org.labkey.api.query.QueryForm;
 import org.labkey.api.query.QuerySchema;
@@ -30,7 +31,6 @@ import org.labkey.api.query.QueryView;
 import org.labkey.api.query.UserSchema;
 import org.labkey.api.security.RequiresPermissionClass;
 import org.labkey.api.security.permissions.ReadPermission;
-import org.labkey.api.view.ActionURL;
 import org.labkey.study.model.ParticipantCategory;
 import org.labkey.study.model.ParticipantDataset;
 import org.labkey.study.model.ParticipantGroupManager;
@@ -230,13 +230,8 @@ public class ParticipantGroupController extends BaseStudyController
                 if (form.isSelectAll())
                 {
                     QuerySettings settings = form.getQuerySettings();
-                    if (form.getRequestURL() != null)
-                    {
-                        ActionURL url = new ActionURL(form.getRequestURL());
+                    settings.setMaxRows(Table.ALL_ROWS);
 
-                        SimpleFilter filter = new SimpleFilter(url, form.getDataRegionName());
-                        settings.setBaseFilter(filter);
-                    }
                     QuerySchema querySchema = DefaultSchema.get(getUser(), getContainer()).getSchema(form.getSchemaName().toString());
                     QueryView view = ((UserSchema)querySchema).createView(getViewContext(), settings, errors);
 

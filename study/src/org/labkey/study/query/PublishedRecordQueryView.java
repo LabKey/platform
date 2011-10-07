@@ -50,13 +50,14 @@ public class PublishedRecordQueryView extends DataSetQueryView
     private int _protocolId;
     private int _recordCount;
 
-    public PublishedRecordQueryView(DataSetDefinition dataset, UserSchema schema, QuerySettings settings, String sourceLsid, int protocolId, int recordCount)
+    public PublishedRecordQueryView(UserSchema schema, DataSetQuerySettings settings, String sourceLsid, int protocolId, int recordCount)
     {
-        super(dataset, schema, settings, null, null, getStateSet(schema.getContainer()));
+        super(schema, settings, null);
         _sourceLsid = sourceLsid;
         _protocolId = protocolId;
         _recordCount = recordCount;
 
+        setQcStateSet(getStateSet(schema.getContainer()));
         if (_sourceLsid != null)
         {
             SimpleFilter filter = new SimpleFilter();

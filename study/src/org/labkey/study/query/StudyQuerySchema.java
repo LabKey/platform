@@ -20,6 +20,8 @@ import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.query.FilteredTable;
+import org.labkey.api.query.QuerySettings;
+import org.labkey.api.query.QueryView;
 import org.labkey.api.query.UserSchema;
 import org.labkey.api.security.User;
 import org.labkey.api.study.DataSet;
@@ -27,8 +29,10 @@ import org.labkey.api.study.Study;
 import org.labkey.api.study.StudyService;
 import org.labkey.api.study.TimepointType;
 import org.labkey.api.view.UnauthorizedException;
+import org.labkey.api.view.ViewContext;
 import org.labkey.study.StudySchema;
 import org.labkey.study.model.*;
+import org.springframework.validation.BindException;
 
 import java.util.*;
 
@@ -328,6 +332,30 @@ public class StudyQuerySchema extends UserSchema
             return getDataSetTable(dsd);
         
         return null;
+    }
+
+    @Override
+    protected QuerySettings createQuerySettings(String dataRegionName)
+    {
+        if (DataSetQueryView.DATAREGION.equals(dataRegionName))
+            return new DataSetQuerySettings(dataRegionName);
+
+        return super.createQuerySettings(dataRegionName);
+    }
+
+    @Override
+    public QueryView createView(ViewContext context, QuerySettings settings, BindException errors)
+    {
+        DataSetDefinition dsd = getDataSetDefinitions().get(settings.getQueryName());
+        if (dsd != null)
+        {
+            if (!(settings instanceof DataSetQuerySettings))
+                settings = new DataSetQuerySettings(settings);
+
+            return new DataSetQueryView(this, (DataSetQuerySettings)settings, errors);
+        }
+
+        return super.createView(context, settings, errors);
     }
 
     public SimpleSpecimenTable createSimpleSpecimenTable()

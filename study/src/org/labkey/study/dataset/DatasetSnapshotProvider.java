@@ -73,6 +73,7 @@ import org.labkey.study.model.ParticipantCategory;
 import org.labkey.study.model.ParticipantGroupManager;
 import org.labkey.study.model.StudyImpl;
 import org.labkey.study.model.StudyManager;
+import org.labkey.study.query.DataSetQuerySettings;
 import org.labkey.study.query.DataSetQueryView;
 import org.labkey.study.visitmanager.VisitManager;
 import org.springframework.validation.BindException;
@@ -229,7 +230,7 @@ public class DatasetSnapshotProvider extends AbstractSnapshotProvider implements
 
         if (querySchema instanceof UserSchema)
         {
-            QuerySettings settings = new QuerySettings(context, QueryView.DATAREGIONNAME_DEFAULT);
+            DataSetQuerySettings settings = new DataSetQuerySettings(context.getBindPropertyValues(), QueryView.DATAREGIONNAME_DEFAULT);
 
             settings.setQueryName(queryDef.getName());
 
