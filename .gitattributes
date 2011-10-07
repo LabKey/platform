@@ -997,7 +997,6 @@ api/src/org/labkey/api/study/reports/CrosstabReport.java -text
 api/src/org/labkey/api/study/reports/CrosstabReportDescriptor.java -text
 api/src/org/labkey/api/study/reports/CrosstabView.java -text
 api/src/org/labkey/api/unused/ApplicationContext.java -text
-api/src/org/labkey/api/unused/BasicStatistics.java -text
 api/src/org/labkey/api/unused/PropertyBag.java -text
 api/src/org/labkey/api/unused/Scan.java -text
 api/src/org/labkey/api/unused/TextProvider.java -text
