@@ -44,9 +44,9 @@ import org.labkey.api.pipeline.PipelineProvider;
 import org.springframework.web.servlet.ModelAndView;
 import org.springframework.web.servlet.mvc.Controller;
 
+import javax.servlet.http.HttpServletRequest;
 import java.io.File;
 import java.sql.SQLException;
-import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -225,6 +225,7 @@ public interface AssayProvider extends Handler<ExpProtocol>
      * Return the helper to handle data exchange between the server and external scripts.
      */
     DataExchangeHandler createDataExchangeHandler();
+    AssayRunDatabaseContext createRunDatabaseContext(ExpRun run, User user, HttpServletRequest request);
 
     DataTransformer getDataTransformer();
     DataValidator getDataValidator();

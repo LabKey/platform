@@ -57,6 +57,7 @@ public class AssayService
         public void registerAssayProvider(AssayProvider provider);
         public AssayProvider getProvider(String providerName);
         public AssayProvider getProvider(ExpProtocol protocol);
+        public AssayProvider getProvider(ExpRun run);
         public List<AssayProvider> getAssayProviders();
         public WebPartView createAssayListView(ViewContext context, boolean portalView);
 

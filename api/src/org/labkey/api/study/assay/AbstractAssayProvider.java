@@ -114,6 +114,7 @@ import org.springframework.web.servlet.mvc.Controller;
 
 import javax.script.ScriptEngine;
 import javax.script.ScriptEngineManager;
+import javax.servlet.http.HttpServletRequest;
 import java.io.File;
 import java.io.FileFilter;
 import java.io.IOException;
@@ -1740,6 +1741,12 @@ public abstract class AbstractAssayProvider implements AssayProvider
     public DataExchangeHandler createDataExchangeHandler()
     {
         return null;
+    }
+
+    @Override
+    public AssayRunDatabaseContext createRunDatabaseContext(ExpRun run, User user, HttpServletRequest request)
+    {
+        return new AssayRunDatabaseContext(run, user, request);
     }
 
     public TransformResult transform(AssayRunUploadContext context, ExpRun run) throws ValidationException

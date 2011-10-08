@@ -16,6 +16,7 @@
 
 package org.labkey.api.exp.api;
 
+import org.jetbrains.annotations.Nullable;
 import org.labkey.api.security.User;
 
 import java.io.File;
@@ -30,14 +31,18 @@ public interface ExpRun extends ExpObject
     /**
      * @param type an optional filter for the type of data
      */
-    public ExpData[] getOutputDatas(DataType type);
-    public ExpData[] getInputDatas(String inputRole, ExpProtocol.ApplicationType appType);
+    public ExpData[] getOutputDatas(@Nullable DataType type);
+    /**
+     * @param inputRole if null, don't filter by input role. If non-null, filter to only the specified role
+     * @param appType if null, don't filter by type. If non-null, filter to only the specified type
+     */
+    public ExpData[] getInputDatas(@Nullable String inputRole, @Nullable ExpProtocol.ApplicationType appType);
     public File getFilePathRoot();
     public void setFilePathRoot(File filePathRoot);
     public void setProtocol(ExpProtocol protocol);
     public ExpProtocolApplication addProtocolApplication(User user, ExpProtocolAction action, ExpProtocol.ApplicationType type, String name);
-
-    /** Stored in the exp.experiment table */
+    
+    /** Stored in the exp.experimentrun table */
     // TODO - Merge this with getComment() (backed by ontology manager) on ExpObject
     String getComments();
     /** Stored in the exp.experiment table */

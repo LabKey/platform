@@ -939,6 +939,7 @@ api/src/org/labkey/api/study/assay/AssayPublishService.java -text
 api/src/org/labkey/api/study/assay/AssayResultTable.java -text
 api/src/org/labkey/api/study/assay/AssayResultUpdateService.java -text
 api/src/org/labkey/api/study/assay/AssayResultsView.java -text
+api/src/org/labkey/api/study/assay/AssayRunDatabaseContext.java -text
 api/src/org/labkey/api/study/assay/AssayRunType.java -text
 api/src/org/labkey/api/study/assay/AssayRunUploadContext.java -text
 api/src/org/labkey/api/study/assay/AssayRunsView.java -text

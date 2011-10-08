@@ -166,7 +166,7 @@ public class DefaultDataTransformer implements DataTransformer, DataValidator
                 finally
                 {
                     if (br != null)
-                        try {br.close();} catch(IOException ioe) {}
+                        try {br.close();} catch(IOException ignored) {}
                 }
 
                 ScriptEngine engine = ServiceRegistry.get().getService(ScriptEngineManager.class).getEngineByExtension(FileUtil.getExtension(scriptFile));
