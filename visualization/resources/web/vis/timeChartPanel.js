@@ -24,13 +24,17 @@ LABKEY.vis.TimeChartPanel = Ext.extend(Ext.Panel, {
         // properties for this panel
         Ext.apply(config, {
             layout: 'border',
+            monitorResize: true,
             maxCharts: 30
         });
 
         // support backwards compatibility for charts saved prior to chartInfo reconfig (2011-08-31)
         if (config.chartInfo)
         {
-            Ext.applyIf(config.chartInfo, {axis: []});
+            Ext.applyIf(config.chartInfo, {
+                axis: [],
+                chartSubjectSelection: config.chartInfo.chartLayout == 'per_group' ? 'groups' : 'subjects'
+            });
             for (var i = 0; i < config.chartInfo.measures.length; i++)
             {
                 var md = config.chartInfo.measures[i];
@@ -238,10 +242,12 @@ LABKEY.vis.TimeChartPanel = Ext.extend(Ext.Panel, {
             this.editorChartsPanel = new LABKEY.vis.ChartEditorChartsPanel({
                 disabled: true,
                 chartLayout: this.chartInfo.chartLayout,
+                chartSubjectSelection: this.chartInfo.chartSubjectSelection,
                 mainTitle: this.chartInfo.title,
                 lineWidth: this.chartInfo.lineWidth,
                 hideDataPoints: this.chartInfo.hideDataPoints,
                 subjectNounSingular: this.viewInfo.subjectNounSingular,
+                subjectNounPlural: this.viewInfo.subjectNounPlural,
                 listeners: {
                     scope: this,
                     'chartDefinitionChanged': function(requiresDataRefresh){
@@ -278,7 +284,7 @@ LABKEY.vis.TimeChartPanel = Ext.extend(Ext.Panel, {
                 layout: 'fit',
                 header: false,
                 region: 'north',
-                height: 210,
+                height: 220,
                 border: false,
                 split: true,
                 collapsible: true,
@@ -542,12 +548,37 @@ LABKEY.vis.TimeChartPanel = Ext.extend(Ext.Panel, {
             // other chart types
         }
 
+        Ext.applyIf(this, {
+            autoResize: true
+        });
+
+        if (this.autoResize)
+        {
+            Ext.EventManager.onWindowResize(function(w,h){
+                this.resizeToViewport(w,h);
+            }, this);
+            this.on("render", function(){Ext.EventManager.fireWindowResize();}, this);
+        }
+
         this.items = items;
 
         this.markDirty(false);
         window.onbeforeunload = LABKEY.beforeunload(this.isDirty, this);
 
         LABKEY.vis.TimeChartPanel.superclass.initComponent.apply(this, arguments);
+    },
+
+    resizeToViewport : function(w,h) {
+        if (!this.rendered)
+            return;
+
+        var padding = [40,0];
+        var xy = this.el.getXY();
+        var size = {
+            width : Math.max(100,w-xy[0]-padding[0])//,
+//            height : Math.max(100,h-xy[1]-padding[1])
+        };
+        this.setWidth(size);
     },
 
     getFilterQuery :  function()
@@ -649,7 +680,7 @@ LABKEY.vis.TimeChartPanel = Ext.extend(Ext.Panel, {
             return;
         }
 
-        // get the updated chart information from the varios tabs of the chartEditor
+        // get the updated chart information from the various tabs of the chartEditor
         this.chartInfo = this.getChartInfoFromEditorTabs();
 
         if(this.chartInfo.measures.length == 0){
@@ -1107,6 +1138,7 @@ LABKEY.vis.TimeChartPanel = Ext.extend(Ext.Panel, {
         }
         else if (this.chartInfo.chartLayout == "single")
         {
+            //Single Line Chart, with all participants or groups.
             charts.push(this.newLineChart(size, series, null, null));
         }
 
@@ -1426,6 +1458,7 @@ LABKEY.vis.TimeChartPanel = Ext.extend(Ext.Panel, {
         var config = {
             title: this.editorChartsPanel.getMainTitle(),
             chartLayout: this.editorChartsPanel.getChartLayout(),
+            chartSubjectSelection: this.editorChartsPanel.getChartSubjectSelection(),
             lineWidth: this.editorChartsPanel.getLineWidth(),
             hideDataPoints: this.editorChartsPanel.getHideDataPoints(),
             displayIndividual: this.displayIndividualCheckbox.getValue(),
@@ -1437,7 +1470,7 @@ LABKEY.vis.TimeChartPanel = Ext.extend(Ext.Panel, {
         };
 
         // get the subject info based on the selected chart layout
-        if (config.chartLayout == 'per_group')
+        if (config.chartSubjectSelection == 'groups')
             config.subject = this.groupsSelector.getSubject();
         else
             config.subject = this.subjectSelector.getSubject();

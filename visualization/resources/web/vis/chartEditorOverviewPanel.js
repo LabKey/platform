@@ -13,6 +13,7 @@ LABKEY.vis.ChartEditorOverviewPanel = Ext.extend(Ext.Panel, {
         Ext.applyIf(config, {
             title: 'Overview',
             layout: 'card',
+            autoWidth: true,
             bodyStyle: 'padding:5px',
             autoScroll: true,
             monitorValid: true,
@@ -108,6 +109,7 @@ LABKEY.vis.ChartEditorOverviewPanel = Ext.extend(Ext.Panel, {
             title: '',
             autoHeight: true,
             autoWidth: true,
+            monitorResize: true,
             buttonAlign: 'right',
             border: false,
             labelWidth: 125,
@@ -168,12 +170,12 @@ LABKEY.vis.ChartEditorOverviewPanel = Ext.extend(Ext.Panel, {
             autoWidth: true,
             border: false,
             items: [{
-                columnWidth: 0.6,
+                columnWidth: 0.45,
                 border: false,
                 bodyStyle: 'padding: 5px 20px 5px 5px',
                 html: chartEditorDescription
             },{
-                columnWidth: 0.4,
+                columnWidth: 0.55,
                 layout: 'form',
                 border: false,
                 bodyStyle: 'padding: 5px',

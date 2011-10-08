@@ -168,7 +168,7 @@ LABKEY.vis.XYChartComponent = Ext.extend(Ext.BoxComponent, {
     initSeries: function() {
          var chartComponent = this;
          var seriesIndex = 0;
-         this.series.forEach(function (series) {
+         Ext.each(this.series, function(series){
             series.style = series.style || LABKEY.vis.SeriesStyleMap[series.caption] || {};
             var style = series.style;
             Ext.applyIf(style, chartComponent.seriesStyle);
@@ -183,9 +183,18 @@ LABKEY.vis.XYChartComponent = Ext.extend(Ext.BoxComponent, {
              if (series.yProperty && !series.getY)
                  series.getY = chartComponent.createGetter(series.yProperty, false);
 
-             if (!series.getTitle)
-                series.getTitle = function (d) {return series.caption + ": " + series.getX(d) + ",  " + series.getY(d)};
-
+             if (!series.getTitle){
+                 if(!this.labels){
+                     series.getTitle = function (d) {return series.caption + ": " + series.getX(d) + ",  " + series.getY(d)};
+                 } else {
+                     series.getTitle = hoverTitle(this.labels, series);
+                 }
+             }
+             function hoverTitle(labels, series){
+                 return function (d){
+                     return series.caption + ": " + labels[d.interval] + ",  " + series.getY(d);
+                 }
+             }
             //The graphing doesn't work with missing values, so we strip them out of the series in the first place.
             //Consider, replace series data with static x/y values so don't have to call the getter so often
             var cleanData = [];
@@ -199,7 +208,7 @@ LABKEY.vis.XYChartComponent = Ext.extend(Ext.BoxComponent, {
             series.data = cleanData;
 
             seriesIndex++;
-         });  
+         }, this);
     },
 
     render : function (container, position) {
@@ -376,6 +385,10 @@ LABKEY.vis.XYChartComponent = Ext.extend(Ext.BoxComponent, {
         }
     },
 
+    /**
+     * Generate a renderer that returns the proper sequence number instead of the display order.
+     * @param labels is a map of display order values to sequence numbers.
+     */
     getVisitBasedRenderer: function (labels) {
             return function(n){
                 return labels[n];
