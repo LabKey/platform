@@ -117,6 +117,17 @@ public class AssayManager implements AssayService.Interface
         return Handler.Priority.findBestHandler(_providers, protocol);
     }
 
+    @Override
+    public AssayProvider getProvider(ExpRun run)
+    {
+        ExpProtocol protocol = run.getProtocol();
+        if (protocol == null)
+        {
+            return null;
+        }
+        return getProvider(protocol);
+    }
+
     public List<AssayProvider> getAssayProviders()
     {
         return Collections.unmodifiableList(_providers);

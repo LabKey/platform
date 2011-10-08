@@ -40,6 +40,7 @@ import org.labkey.api.exp.PropertyDescriptor;
 import org.labkey.api.exp.PropertyType;
 import org.labkey.api.exp.api.ExpData;
 import org.labkey.api.exp.api.ExpProtocol;
+import org.labkey.api.exp.api.ExpRun;
 import org.labkey.api.exp.api.ExperimentJSONConverter;
 import org.labkey.api.exp.api.ExperimentService;
 import org.labkey.api.exp.property.Domain;
@@ -49,10 +50,12 @@ import org.labkey.api.gwt.server.BaseRemoteService;
 import org.labkey.api.pipeline.PipelineService;
 import org.labkey.api.portal.ProjectUrls;
 import org.labkey.api.qc.DataExchangeHandler;
+import org.labkey.api.qc.DataTransformer;
 import org.labkey.api.query.QueryParam;
 import org.labkey.api.query.QueryService;
 import org.labkey.api.query.UserSchema;
 import org.labkey.api.security.RequiresPermissionClass;
+import org.labkey.api.security.RequiresSiteAdmin;
 import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.InsertPermission;
 import org.labkey.api.security.permissions.ReadPermission;
@@ -60,6 +63,7 @@ import org.labkey.api.study.actions.*;
 import org.labkey.api.study.assay.AbstractAssayProvider;
 import org.labkey.api.study.assay.AssayFileWriter;
 import org.labkey.api.study.assay.AssayProvider;
+import org.labkey.api.study.assay.AssayRunDatabaseContext;
 import org.labkey.api.study.assay.AssayRunsView;
 import org.labkey.api.study.assay.AssayService;
 import org.labkey.api.study.assay.AssayUrls;
@@ -142,6 +146,49 @@ public class AssayController extends SpringActionController
     {
         super();
         setActionResolver(_resolver);
+    }
+
+    public static class RunForm
+    {
+        private int _runId;
+
+        public int getRunId()
+        {
+            return _runId;
+        }
+
+        public void setRunId(int runId)
+        {
+            _runId = runId;
+        }
+    }
+
+    /**
+     * Temporary test access to rerun a transform script for a run that's already been imported. Delete as soon
+     * as a real API exists
+     */
+    @RequiresSiteAdmin
+    public class RerunTransformAction extends SimpleViewAction<RunForm>
+    {
+        @Override
+        public ModelAndView getView(RunForm runForm, BindException errors) throws Exception
+        {
+            ExpRun run = ExperimentService.get().getExpRun(runForm.getRunId());
+            AssayProvider provider = AssayService.get().getProvider(run);
+
+            AssayRunDatabaseContext context = provider.createRunDatabaseContext(run, getUser(), getViewContext().getRequest());
+
+            DataTransformer transformer = context.getProvider().getDataTransformer();
+            transformer.transform(context, run);
+
+            return new HtmlView("Success");
+        }
+
+        @Override
+        public NavTree appendNavTrail(NavTree root)
+        {
+            return root;
+        }
     }
 
     /**

@@ -16,6 +16,7 @@
 
 package org.labkey.experiment.api;
 
+import org.jetbrains.annotations.Nullable;
 import org.labkey.api.attachments.Attachment;
 import org.labkey.api.attachments.AttachmentParent;
 import org.labkey.api.cache.DbCache;
@@ -98,7 +99,7 @@ public class ExpRunImpl extends ExpIdentifiableEntityImpl<ExperimentRun> impleme
         return ExperimentServiceImpl.get().getExpProtocol(_object.getProtocolLSID());
     }
 
-    public ExpData[] getOutputDatas(DataType type)
+    public ExpData[] getOutputDatas(@Nullable DataType type)
     {
         try
         {
@@ -116,7 +117,7 @@ public class ExpRunImpl extends ExpIdentifiableEntityImpl<ExperimentRun> impleme
         }
     }
 
-    public ExpData[] getInputDatas(String inputRole, ExpProtocol.ApplicationType applicationType)
+    public ExpData[] getInputDatas(@Nullable String inputRole, @Nullable ExpProtocol.ApplicationType applicationType)
     {
         try
         {
