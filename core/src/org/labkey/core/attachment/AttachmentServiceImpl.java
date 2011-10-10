@@ -707,6 +707,7 @@ public class AttachmentServiceImpl implements AttachmentService.Service, Contain
 
             OutputStream out;
             InputStream s;
+
             if (parent instanceof AttachmentDirectory)
             {
                 File parentDir = ((AttachmentDirectory) parent).getFileSystemDirectory();
@@ -739,7 +740,9 @@ public class AttachmentServiceImpl implements AttachmentService.Service, Contain
                 if (null == s)
                     return;
             }
+
             out = writer.getOutputStream();
+
             try
             {
                 byte[] buf = new byte[4096];
@@ -759,27 +762,9 @@ public class AttachmentServiceImpl implements AttachmentService.Service, Contain
         }
         finally
         {
-            try
-            {
-                if (null != rs) rs.close();
-            }
-            catch (Exception x)
-            {
-            }
-            try
-            {
-                if (null != stmt) stmt.close();
-            }
-            catch (Exception x)
-            {
-            }
-            try
-            {
-                if (null != conn) schema.getScope().releaseConnection(conn);
-            }
-            catch (Exception x)
-            {
-            }
+            ResultSetUtil.close(rs);
+            ResultSetUtil.close(stmt);
+            schema.getScope().releaseConnection(conn);
         }
     }
 
@@ -1191,11 +1176,6 @@ public class AttachmentServiceImpl implements AttachmentService.Service, Contain
                     public String getContentType()
                     {
                         return PageFlowUtil.getContentTypeFor(getFilename());
-                    }
-
-                    public byte[] getBytes() throws IOException
-                    {
-                        throw new UnsupportedOperationException();
                     }
 
                     public InputStream openInputStream() throws IOException

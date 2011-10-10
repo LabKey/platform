@@ -45,11 +45,6 @@ public class ByteArrayAttachmentFile implements AttachmentFile
         return _contentType;
     }
 
-    public byte[] getBytes()
-    {
-        return _content;
-    }
-
     public String getFilename()
     {
         return _fileName;

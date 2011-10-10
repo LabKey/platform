@@ -85,6 +85,7 @@ import org.labkey.api.settings.AppProps;
 import org.labkey.api.settings.WriteableAppProps;
 import org.labkey.api.study.Study;
 import org.labkey.api.study.StudyService;
+import org.labkey.api.thumbnails.ThumbnailService;
 import org.labkey.api.util.ContextListener;
 import org.labkey.api.util.DateUtil;
 import org.labkey.api.util.ExceptionUtil;
@@ -135,6 +136,7 @@ import org.labkey.core.query.GroupAuditViewFactory;
 import org.labkey.core.query.UserAuditViewFactory;
 import org.labkey.core.security.SecurityController;
 import org.labkey.core.test.TestController;
+import org.labkey.core.thumbnail.ThumbnailServiceImpl;
 import org.labkey.core.user.UserController;
 import org.labkey.core.webdav.DavController;
 import org.labkey.core.workbook.WorkbookFolderType;
@@ -209,6 +211,7 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
         AnalyticsServiceImpl.register();
         FirstRequestHandler.addFirstRequestListener(new CoreFirstRequestHandler());
         RhinoService.register();
+        ServiceRegistry.get().registerService(ThumbnailService.class, new ThumbnailServiceImpl());
 
         DefaultSchema.registerProvider("core", new DefaultSchema.SchemaProvider()
         {

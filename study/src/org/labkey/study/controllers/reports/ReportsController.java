@@ -275,7 +275,8 @@ public class ReportsController extends BaseStudyController
             _newReportName =  form.getReportName();
             if (!StringUtils.isEmpty(_newReportName))
             {
-                try {
+                try
+                {
                     _report = ReportService.get().getReport(reportId);
                     if (_report != null)
                     {

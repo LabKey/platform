@@ -24,6 +24,7 @@ import org.json.JSONArray;
 import org.labkey.api.action.ApiAction;
 import org.labkey.api.action.ApiResponse;
 import org.labkey.api.action.ApiSimpleResponse;
+import org.labkey.api.action.ExportAction;
 import org.labkey.api.action.ExtFormAction;
 import org.labkey.api.action.FormViewAction;
 import org.labkey.api.action.GWTServiceAction;
@@ -32,6 +33,7 @@ import org.labkey.api.action.SpringActionController;
 import org.labkey.api.admin.AdminUrls;
 import org.labkey.api.attachments.AttachmentForm;
 import org.labkey.api.attachments.AttachmentService;
+import org.labkey.api.data.CacheableWriter;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.ExcelWriter;
@@ -88,6 +90,7 @@ import org.labkey.api.services.ServiceRegistry;
 import org.labkey.api.settings.AdminConsole;
 import org.labkey.api.settings.AdminConsole.SettingsLinkType;
 import org.labkey.api.study.reports.CrosstabReport;
+import org.labkey.api.thumbnails.ThumbnailService;
 import org.labkey.api.util.IdentifierString;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.Pair;
@@ -113,12 +116,15 @@ import org.springframework.web.servlet.mvc.Controller;
 import javax.script.ScriptEngineFactory;
 import javax.script.ScriptEngineManager;
 import javax.servlet.ServletException;
+import javax.servlet.http.HttpServletResponse;
 import java.io.File;
 import java.io.PrintWriter;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Calendar;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.GregorianCalendar;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -211,6 +217,14 @@ public class ReportsController extends SpringActionController
         public ActionURL urlExportCrosstab(Container c)
         {
             return new ActionURL(CrosstabExportAction.class, c);
+        }
+
+        @Override
+        public ActionURL urlThumbnail(Container c, Report r)
+        {
+            ActionURL url = new ActionURL(ThumbnailAction.class, c);
+            url.addParameter("reportId", r.getDescriptor().getReportId().toString());
+            return url;
         }
 
         @Override
@@ -1488,13 +1502,16 @@ public class ReportsController extends SpringActionController
     @RequiresPermissionClass(ReadPermission.class)
     public class ReportDescriptionAction extends FormViewAction<ReportDesignBean>
     {
-        Report _report;
+        private Report _report;
+
         public void validateCommand(ReportDesignBean form, Errors errors)
         {
             ReportIdentifier reportId =  form.getReportId();
-            try {
-                if(null != reportId)
+            try
+            {
+                if (null != reportId)
                     _report = reportId.getReport();
+
                 if (_report != null)
                 {
                     if (!_report.getDescriptor().canEdit(getViewContext().getUser(), getViewContext().getContainer()))
@@ -1518,6 +1535,7 @@ public class ReportsController extends SpringActionController
         public boolean handlePost(ReportDesignBean form, BindException errors) throws Exception
         {
             String reportDescription =  form.getReportDescription();
+
             if (_report != null)
             {
                 _report.getDescriptor().setReportDescription(StringUtils.trimToNull(reportDescription));
@@ -1636,6 +1654,46 @@ public class ReportsController extends SpringActionController
         public NavTree appendNavTrail(NavTree root)
         {
             return null;
+        }
+    }
+
+
+    @RequiresPermissionClass(ReadPermission.class)
+    public class ThumbnailAction extends ExportAction<ThumbnailForm>
+    {
+        @Override
+        public void export(ThumbnailForm form, HttpServletResponse response, BindException errors) throws Exception
+        {
+            ThumbnailService svc = ServiceRegistry.get().getService(ThumbnailService.class);
+
+            if (null == svc)
+                return;
+
+            Report report = form.getReportId().getReport();
+            CacheableWriter writer = svc.getThumbnailWriter(report);
+
+            // TODO: need to handle client caching better -- use long expiration and _dc to default
+            Calendar expiration = new GregorianCalendar();
+            expiration.add(Calendar.SECOND, 5);
+
+            writer.writeToResponse(response, expiration);
+        }
+    }
+
+
+    public static class ThumbnailForm
+    {
+        private ReportIdentifier _reportId;
+
+        public ReportIdentifier getReportId()
+        {
+            return _reportId;
+        }
+
+        @SuppressWarnings({"UnusedDeclaration"})
+        public void setReportId(ReportIdentifier reportId)
+        {
+            _reportId = reportId;
         }
     }
 }

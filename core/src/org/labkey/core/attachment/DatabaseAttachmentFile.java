@@ -94,11 +94,6 @@ public class DatabaseAttachmentFile implements AttachmentFile
         _fileSize = fileSize;
     }
 
-    public byte[] getBytes() throws IOException
-    {
-        throw new UnsupportedOperationException();
-    }
-
     public String getError()
     {
         return null;
