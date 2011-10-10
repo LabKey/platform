@@ -16,13 +16,11 @@
 
 package org.labkey.study.view;
 
-import org.labkey.api.view.ViewContext;
 import org.labkey.api.view.JspView;
 
 import javax.servlet.ServletException;
 
 /**
- * Created by IntelliJ IDEA.
  * User: Mark Igra
  * Date: Aug 8, 2006
  * Time: 3:54:21 PM

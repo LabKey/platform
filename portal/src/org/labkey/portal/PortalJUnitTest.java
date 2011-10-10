@@ -34,7 +34,6 @@ import java.util.Collection;
 import java.util.Map;
 
 /**
- * Created by IntelliJ IDEA.
  * User: marki
  * Date: May 31, 2011
  * Time: 3:18:15 PM

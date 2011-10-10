@@ -33,7 +33,6 @@ import java.util.*;
 import java.text.ParseException;
 
 /**
- * Created by IntelliJ IDEA.
  * User: Karl Lum
  * Date: Jan 24, 2007
  */

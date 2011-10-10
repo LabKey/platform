@@ -30,7 +30,6 @@ import javax.servlet.ServletContextEvent;
 import java.util.*;
 
 /**
- * Created by IntelliJ IDEA.
  * User: Karl Lum
  * Date: Apr 2, 2007
  */
