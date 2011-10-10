@@ -164,7 +164,7 @@ public class RecompilingJspClassLoader extends JspClassLoader
     {
         ByteArrayOutputStream errorStream = new ByteArrayOutputStream();
         JavaCompiler compiler = ToolProvider.getSystemJavaCompiler();
-        int ret = compiler.run(null, null, errorStream, filePath, "-cp", classPath);
+        int ret = compiler.run(null, null, errorStream, filePath, "-cp", classPath, "-g");
 
         if (0 != ret)
             throw new JspCompilationException(jspFilename, errorStream.toString());
