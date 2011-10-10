@@ -39,7 +39,8 @@ LABKEY.vis.ChartEditorChartsPanel = Ext.extend(Ext.FormPanel, {
         var colThreeItems = [];
 
         this.subjectRadio = new Ext.form.Radio({
-            name: 'participant_selection',
+            name: 'subject_selection',
+            inputValue: 'subjects',
             fieldLabel: this.subjectNounSingular + ' Selection',
             boxLabel: this.subjectNounPlural,
             checked: this.chartSubjectSelection == 'subjects',
@@ -60,7 +61,8 @@ LABKEY.vis.ChartEditorChartsPanel = Ext.extend(Ext.FormPanel, {
             }
         });
         this.groupsRadio =  new Ext.form.Radio({
-            name: 'participant_selection',
+            name: 'subject_selection',
+            inputValue: 'groups',
             boxLabel: 'Participant Groups',
             checked: this.chartSubjectSelection == 'groups',
             listeners: {
@@ -80,7 +82,7 @@ LABKEY.vis.ChartEditorChartsPanel = Ext.extend(Ext.FormPanel, {
             }
         });
         this.subjectSelection = new Ext.form.RadioGroup({
-            name: 'participant_selection',
+            name: 'subject_selection',
             fieldLabel: 'Participant Selection',
             columns: 1,
             items:[
