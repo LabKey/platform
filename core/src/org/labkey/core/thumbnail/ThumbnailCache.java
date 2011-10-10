@@ -7,10 +7,10 @@ import org.labkey.api.cache.CacheLoader;
 import org.labkey.api.cache.CacheManager;
 import org.labkey.api.data.CacheableWriter;
 import org.labkey.api.services.ServiceRegistry;
-import org.labkey.api.thumbnails.DynamicThumbnailProvider;
-import org.labkey.api.thumbnails.StaticThumbnailProvider;
-import org.labkey.api.thumbnails.Thumbnail;
-import org.labkey.api.thumbnails.ThumbnailService;
+import org.labkey.api.thumbnail.DynamicThumbnailProvider;
+import org.labkey.api.thumbnail.StaticThumbnailProvider;
+import org.labkey.api.thumbnail.Thumbnail;
+import org.labkey.api.thumbnail.ThumbnailService;
 
 import java.io.IOException;
 

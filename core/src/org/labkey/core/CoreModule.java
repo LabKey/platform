@@ -85,7 +85,7 @@ import org.labkey.api.settings.AppProps;
 import org.labkey.api.settings.WriteableAppProps;
 import org.labkey.api.study.Study;
 import org.labkey.api.study.StudyService;
-import org.labkey.api.thumbnails.ThumbnailService;
+import org.labkey.api.thumbnail.ThumbnailService;
 import org.labkey.api.util.ContextListener;
 import org.labkey.api.util.DateUtil;
 import org.labkey.api.util.ExceptionUtil;

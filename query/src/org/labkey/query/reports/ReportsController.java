@@ -90,7 +90,7 @@ import org.labkey.api.services.ServiceRegistry;
 import org.labkey.api.settings.AdminConsole;
 import org.labkey.api.settings.AdminConsole.SettingsLinkType;
 import org.labkey.api.study.reports.CrosstabReport;
-import org.labkey.api.thumbnails.ThumbnailService;
+import org.labkey.api.thumbnail.ThumbnailService;
 import org.labkey.api.util.IdentifierString;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.Pair;
