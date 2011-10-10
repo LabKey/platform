@@ -46,11 +46,6 @@ public class FileAttachmentFile implements AttachmentFile
         _filename = null != originalName ? originalName : file.getName();
     }
 
-    public byte[] getBytes() throws IOException
-    {
-        throw new UnsupportedOperationException();
-    }
-
     public String getContentType()
     {
         return PageFlowUtil.getContentTypeFor(getFilename());

@@ -18,6 +18,7 @@ package org.labkey.api.reports;
 
 import org.labkey.api.data.Results;
 import org.labkey.api.reports.report.ReportDescriptor;
+import org.labkey.api.thumbnails.StaticThumbnailProvider;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.HttpView;
 import org.labkey.api.view.ViewContext;
@@ -28,12 +29,11 @@ import java.io.File;
 import java.io.IOException;
 
 /**
- * Created by IntelliJ IDEA.
  * User: Mark Igra
  * Date: May 10, 2006
  * Time: 1:01:50 PM
  */
-public interface Report
+public interface Report extends StaticThumbnailProvider
 {
     String getType();
     String getTypeDescription();

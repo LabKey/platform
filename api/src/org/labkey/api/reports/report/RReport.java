@@ -24,6 +24,8 @@ import org.labkey.api.reports.report.r.ParamReplacement;
 import org.labkey.api.reports.report.view.ReportUtil;
 import org.labkey.api.reports.report.view.ScriptReportBean;
 import org.labkey.api.services.ServiceRegistry;
+import org.labkey.api.thumbnails.DynamicThumbnailProvider;
+import org.labkey.api.thumbnails.Thumbnail;
 import org.labkey.api.util.ExceptionUtil;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.Pair;
@@ -39,11 +41,12 @@ import java.io.File;
 import java.io.FileWriter;
 import java.io.FilenameFilter;
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.PrintWriter;
 import java.util.ArrayList;
 import java.util.List;
 
-public class RReport extends ExternalScriptEngineReport implements AttachmentParent
+public class RReport extends ExternalScriptEngineReport implements AttachmentParent, DynamicThumbnailProvider
 {
     public static final String TYPE = "ReportService.rReport";
     private static String DEFAULT_APP_PATH;
@@ -273,6 +276,33 @@ public class RReport extends ExternalScriptEngineReport implements AttachmentPar
         return "# This sample code returns the query data in tab-separated values format, which LabKey then\n" +
                "# renders as HTML. Replace this code with your R script. See the Help tab for more details.\n" +
                "write.table(labkey.data, file = \"${tsvout:tsvfile}\", sep = \"\\t\", qmethod = \"double\", col.names=NA)\n";
+    }
+
+    @Override
+    public Thumbnail getStaticThumbnail()
+    {
+        InputStream is = RReport.class.getResourceAsStream("Rlogo.jpg");
+        return new Thumbnail(is, "image/jpg");
+    }
+
+    @Override
+    public String getStaticThumbnailCacheKey()
+    {
+        return "Reports:RReportStatic";
+    }
+
+    @Override
+    public Thumbnail generateDynamicThumbnail(ViewContext context)
+    {
+        // TODO: Temporary -- need to generate based on the content & context
+        InputStream is = RReport.class.getResourceAsStream("rreportThumbnail.jpg");
+        return new Thumbnail(is, "image/jpg");
+    }
+
+    @Override
+    public String getDynamicThumbnailCacheKey()
+    {
+        return "Reports:" + getReportId();
     }
 }
 

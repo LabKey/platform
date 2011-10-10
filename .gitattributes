@@ -727,9 +727,11 @@ api/src/org/labkey/api/reports/report/ReportDescriptor.java -text
 api/src/org/labkey/api/reports/report/ReportIdentifier.java -text
 api/src/org/labkey/api/reports/report/ReportIdentifierConverter.java -text
 api/src/org/labkey/api/reports/report/ReportUrls.java -text
+api/src/org/labkey/api/reports/report/Rlogo.jpg -text
 api/src/org/labkey/api/reports/report/ScriptEngineReport.java -text
 api/src/org/labkey/api/reports/report/ScriptReport.java -text
 api/src/org/labkey/api/reports/report/ScriptReportDescriptor.java -text
+api/src/org/labkey/api/reports/report/genericReportThumbnail.png -text
 api/src/org/labkey/api/reports/report/r/AbstractParamReplacement.java -text
 api/src/org/labkey/api/reports/report/r/ParamReplacement.java -text
 api/src/org/labkey/api/reports/report/r/ParamReplacementSvc.java -text
@@ -743,6 +745,7 @@ api/src/org/labkey/api/reports/report/r/view/PostscriptOutput.java -text
 api/src/org/labkey/api/reports/report/r/view/ROutputView.java -text
 api/src/org/labkey/api/reports/report/r/view/TextOutput.java -text
 api/src/org/labkey/api/reports/report/r/view/TsvOutput.java -text
+api/src/org/labkey/api/reports/report/rreportThumbnail.jpg -text
 api/src/org/labkey/api/reports/report/view/AjaxRunScriptReportView.java -text
 api/src/org/labkey/api/reports/report/view/AjaxScriptReportView.java -text
 api/src/org/labkey/api/reports/report/view/ChartDesignerBean.java -text
@@ -997,6 +1000,10 @@ api/src/org/labkey/api/study/reports/Crosstab.java -text
 api/src/org/labkey/api/study/reports/CrosstabReport.java -text
 api/src/org/labkey/api/study/reports/CrosstabReportDescriptor.java -text
 api/src/org/labkey/api/study/reports/CrosstabView.java -text
+api/src/org/labkey/api/thumbnails/DynamicThumbnailProvider.java -text
+api/src/org/labkey/api/thumbnails/StaticThumbnailProvider.java -text
+api/src/org/labkey/api/thumbnails/Thumbnail.java -text
+api/src/org/labkey/api/thumbnails/ThumbnailService.java -text
 api/src/org/labkey/api/util/BreakpointThread.java -text
 api/src/org/labkey/api/util/ButtonBarRenderer.java -text
 api/src/org/labkey/api/util/CPUTimer.java -text

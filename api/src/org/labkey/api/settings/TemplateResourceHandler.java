@@ -59,7 +59,7 @@ public enum TemplateResourceHandler
 
             if (writer == null)
             {
-                writer = noDocument;
+                writer = CacheableWriter.noDocument;
 
                 if (c != null)
                 {
@@ -96,7 +96,7 @@ public enum TemplateResourceHandler
             CacheableWriter writer = (null == c ? null : AttachmentCache.getCachedFavIcon(c));
             if (writer == null)
             {
-                writer = noDocument;
+                writer = CacheableWriter.noDocument;
 
                 if (c != null)
                 {
@@ -119,8 +119,6 @@ public enum TemplateResourceHandler
     abstract protected String getDefaultLink();
     abstract protected CacheableWriter getWriterForContainer(Container c) throws SQLException, IOException, ServletException;
 
-    public static final CacheableWriter noDocument = new CacheableWriter();
-
     private Calendar getExpiration()
     {
         Calendar cal = new GregorianCalendar();
@@ -136,7 +134,7 @@ public enum TemplateResourceHandler
             Container settingsContainer = LookAndFeelProperties.getSettingsContainer(c);
             CacheableWriter writer = getWriterForContainer(settingsContainer);
 
-            if (noDocument == writer)
+            if (CacheableWriter.noDocument == writer)
                 settingsContainer = ContainerManager.getRoot();
 
             return new ResourceURL(getResourceName(), settingsContainer);
@@ -164,7 +162,7 @@ public enum TemplateResourceHandler
 
         CacheableWriter writer = getWriter(c);
 
-        if (writer != noDocument)
+        if (writer != CacheableWriter.noDocument)
         {
             writer.writeToResponse(response, getExpiration());
         }
@@ -180,7 +178,7 @@ public enum TemplateResourceHandler
     {
         CacheableWriter writer = getWriterForContainer(c);
 
-        if (noDocument == writer && !c.isRoot())
+        if (CacheableWriter.noDocument == writer && !c.isRoot())
             writer = getWriter(c.getParent());
 
         return writer;

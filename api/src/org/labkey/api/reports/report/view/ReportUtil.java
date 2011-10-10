@@ -60,7 +60,6 @@ import java.util.Map;
 import java.util.regex.Pattern;
 
 /**
- * Created by IntelliJ IDEA.
  * User: Karl Lum
  * Date: Apr 20, 2007
  */
@@ -428,10 +427,12 @@ public class ReportUtil
                     security = "public";
 
                 info.setPermissions(security);
-                
+
                 String iconPath = ReportService.get().getReportIcon(context, r.getType());  
                 if (!StringUtils.isEmpty(iconPath))
                     info.setIcon(iconPath);
+
+                info.setThumbnailUrl(PageFlowUtil.urlProvider(ReportUrls.class).urlThumbnail(c, r).toString());
 
                 views.add(info);
             }

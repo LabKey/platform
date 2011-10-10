@@ -31,10 +31,10 @@ public interface AttachmentFile extends FileStream
     public long getSize() throws IOException;
     public String getError();
     public String getFilename();
-    public void setFilename(String filename);
     public String getContentType();
-    @Deprecated
-    public byte[] getBytes() throws IOException;
     public InputStream openInputStream() throws IOException;
     public void closeInputStream() throws IOException;
+
+    @Deprecated // remove from interface, add as (final) param to implementations' constructors
+    public void setFilename(String filename);
 }

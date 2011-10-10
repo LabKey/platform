@@ -75,11 +75,6 @@ public class SpringAttachmentFile implements AttachmentFile
         return "250MB";
     }
 
-    public byte[] getBytes() throws IOException
-    {
-        return _file.getBytes();
-    }
-
     public InputStream openInputStream() throws IOException
     {
         _in = _file.getInputStream();

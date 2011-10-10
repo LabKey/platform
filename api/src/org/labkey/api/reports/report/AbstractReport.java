@@ -18,6 +18,7 @@ package org.labkey.api.reports.report;
 import org.labkey.api.reports.Report;
 import org.labkey.api.reports.ReportService;
 import org.labkey.api.reports.report.view.ReportUtil;
+import org.labkey.api.thumbnails.Thumbnail;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.Pair;
 import org.labkey.api.view.ActionURL;
@@ -29,6 +30,7 @@ import org.labkey.api.writer.ContainerUser;
 
 import java.io.File;
 import java.io.IOException;
+import java.io.InputStream;
 
 /**
  * User: migra
@@ -138,5 +140,18 @@ public abstract class AbstractReport implements Report
 
     public void afterDeserializeFromFile(File reportFile) throws IOException
     {
+    }
+
+    @Override
+    public Thumbnail getStaticThumbnail()
+    {
+        InputStream is = AbstractReport.class.getResourceAsStream("genericReportThumbnail.png");
+        return new Thumbnail(is, "image/png");
+    }
+
+    @Override
+    public String getStaticThumbnailCacheKey()
+    {
+        return "Reports:ReportStatic";
     }
 }

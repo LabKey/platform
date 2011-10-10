@@ -64,7 +64,7 @@ public class SchemaTableInfoCache
     }
 
 
-    private class SchemaTableLoader implements CacheLoader<String, SchemaTableInfo>
+    private static class SchemaTableLoader implements CacheLoader<String, SchemaTableInfo>
     {
         @Override
         public SchemaTableInfo load(String key, Object argument)
@@ -85,7 +85,7 @@ public class SchemaTableInfoCache
     }
 
 
-    private class SchemaTableInfoBlockingCache extends BlockingCache<String, SchemaTableInfo>
+    private static class SchemaTableInfoBlockingCache extends BlockingCache<String, SchemaTableInfo>
     {
         private SchemaTableInfoBlockingCache()
         {

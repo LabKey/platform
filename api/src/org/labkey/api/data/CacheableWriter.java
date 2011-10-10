@@ -16,12 +16,14 @@
 
 package org.labkey.api.data;
 
+import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang.time.FastDateFormat;
 import org.labkey.api.attachments.DocumentWriter;
 
 import javax.servlet.http.HttpServletResponse;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.OutputStream;
 import java.util.Calendar;
 import java.util.TimeZone;
@@ -32,6 +34,14 @@ import java.util.TimeZone;
  */
 public class CacheableWriter implements DocumentWriter
 {
+    public static final CacheableWriter noDocument = new CacheableWriter() {
+        @Override
+        public String toString()
+        {
+            return "No Document";
+        }
+    };
+
     private String _contentType;
     private String _disposition;
     private int _size;
@@ -40,6 +50,11 @@ public class CacheableWriter implements DocumentWriter
 
     public CacheableWriter()
     {
+    }
+
+    public CacheableWriter(String contentType, InputStream is) throws IOException
+    {
+        this(contentType, IOUtils.toByteArray(is));
     }
 
     public CacheableWriter(String contentType, byte[] bytes)

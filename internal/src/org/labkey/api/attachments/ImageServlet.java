@@ -85,7 +85,7 @@ public class ImageServlet extends HttpServlet
 
         if (writer == null)
         {
-            writer = TemplateResourceHandler.noDocument;
+            writer = CacheableWriter.noDocument;
 
             // rootContainer will be null if the database isn't bootstrapped yet
             RootContainer rootContainer = RootContainer.get();
@@ -101,7 +101,7 @@ public class ImageServlet extends HttpServlet
             }
         }
 
-        if (writer != TemplateResourceHandler.noDocument)
+        if (writer != CacheableWriter.noDocument)
         {
             writer.writeToResponse(response, getExpiration());
         }

@@ -15,7 +15,6 @@
  */
 package org.labkey.api.reports.model;
 
-import org.apache.commons.lang.StringUtils;
 import org.json.JSONObject;
 import org.labkey.api.data.Container;
 import org.labkey.api.reports.report.ReportIdentifier;
@@ -26,7 +25,6 @@ import org.labkey.api.view.ActionURL;
 import java.util.Date;
 
 /**
- * Created by IntelliJ IDEA.
  * User: klum
  * Date: Aug 12, 2011
  * Time: 1:02:57 PM
@@ -55,6 +53,7 @@ public class ViewInfo
     private Container _container;
     private String _permissions;
     private String _icon;
+    private String _thumbnailUrl;
 
     public ViewInfo(String name, String type)
     {
@@ -242,6 +241,16 @@ public class ViewInfo
         _icon = icon;
     }
 
+    public String getThumbnailUrl()
+    {
+        return _thumbnailUrl;
+    }
+
+    public void setThumbnailUrl(String thumbnailUrl)
+    {
+        _thumbnailUrl = thumbnailUrl;
+    }
+
     public String getCategory()
     {
         return _category;
@@ -313,6 +322,8 @@ public class ViewInfo
             o.put("permissions", getPermissions());
         if (getIcon() != null)
             o.put("icon", getIcon());
+        if (getThumbnailUrl() != null)
+            o.put("thumbnail", getThumbnailUrl());
 
         return o;
     }
