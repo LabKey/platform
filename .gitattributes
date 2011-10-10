@@ -1000,10 +1000,10 @@ api/src/org/labkey/api/study/reports/Crosstab.java -text
 api/src/org/labkey/api/study/reports/CrosstabReport.java -text
 api/src/org/labkey/api/study/reports/CrosstabReportDescriptor.java -text
 api/src/org/labkey/api/study/reports/CrosstabView.java -text
-api/src/org/labkey/api/thumbnails/DynamicThumbnailProvider.java -text
-api/src/org/labkey/api/thumbnails/StaticThumbnailProvider.java -text
-api/src/org/labkey/api/thumbnails/Thumbnail.java -text
-api/src/org/labkey/api/thumbnails/ThumbnailService.java -text
+api/src/org/labkey/api/thumbnail/DynamicThumbnailProvider.java -text
+api/src/org/labkey/api/thumbnail/StaticThumbnailProvider.java -text
+api/src/org/labkey/api/thumbnail/Thumbnail.java -text
+api/src/org/labkey/api/thumbnail/ThumbnailService.java -text
 api/src/org/labkey/api/util/BreakpointThread.java -text
 api/src/org/labkey/api/util/ButtonBarRenderer.java -text
 api/src/org/labkey/api/util/CPUTimer.java -text

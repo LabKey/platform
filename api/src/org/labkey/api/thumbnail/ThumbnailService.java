@@ -1,8 +1,6 @@
-package org.labkey.api.thumbnails;
+package org.labkey.api.thumbnail;
 
 import org.labkey.api.data.CacheableWriter;
-
-import java.io.IOException;
 
 /**
  * User: adam

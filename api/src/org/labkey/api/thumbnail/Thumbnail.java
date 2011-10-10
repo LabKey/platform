@@ -1,4 +1,4 @@
-package org.labkey.api.thumbnails;
+package org.labkey.api.thumbnail;
 
 import java.io.InputStream;
 

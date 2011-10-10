@@ -18,7 +18,7 @@ package org.labkey.api.reports;
 
 import org.labkey.api.data.Results;
 import org.labkey.api.reports.report.ReportDescriptor;
-import org.labkey.api.thumbnails.StaticThumbnailProvider;
+import org.labkey.api.thumbnail.StaticThumbnailProvider;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.HttpView;
 import org.labkey.api.view.ViewContext;
