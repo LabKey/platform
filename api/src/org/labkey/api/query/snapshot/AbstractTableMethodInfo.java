@@ -21,7 +21,6 @@ import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.DbSchema;
 
 /**
- * Created by IntelliJ IDEA.
  * User: Matthew
  * Date: Mar 23, 2009
  * Time: 9:29:03 AM

@@ -25,7 +25,6 @@ import org.labkey.api.util.MemTracker;
 import org.labkey.api.util.MimeMap;
 import org.labkey.api.util.Path;
 import org.labkey.api.view.ActionURL;
-import org.labkey.api.view.ViewContext;
 import org.labkey.api.view.ViewServlet;
 import org.labkey.api.webdav.WebdavResolver;
 import org.springframework.web.servlet.mvc.Controller;

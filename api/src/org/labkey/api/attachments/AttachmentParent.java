@@ -16,9 +16,6 @@
 
 package org.labkey.api.attachments;
 
-import java.util.Collection;
-import java.io.File;
-
 /**
  * User: adam
  * Date: Jan 18, 2007

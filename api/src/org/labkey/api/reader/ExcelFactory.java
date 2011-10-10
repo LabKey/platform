@@ -54,7 +54,6 @@ import java.text.SimpleDateFormat;
 import java.util.Date;
 
 /**
- * Created by IntelliJ IDEA.
  * User: klum
  * Date: May 2, 2011
  * Time: 6:24:37 PM

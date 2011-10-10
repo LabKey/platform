@@ -35,7 +35,6 @@ import java.util.List;
 import java.util.Set;
 
 /**
- * Created by IntelliJ IDEA.
  * User: Karl Lum
  * Date: Nov 5, 2007
  *
