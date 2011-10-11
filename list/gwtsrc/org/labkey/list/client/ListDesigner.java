@@ -254,7 +254,7 @@ public class ListDesigner implements EntryPoint, Saveable<GWTList>
                     _buttons.setWidget(0, col++, (new ImageButton("Delete List", new ClickHandler(){
                         public void onClick(ClickEvent event)
                         {
-                            WindowUtil.setLocation("deleteListDefinition.view?listId=" + _listId);
+                            WindowUtil.setLocation(PropertyUtil.getRelativeURL("deleteListDefinition.view") + "?listId=" + _listId);
                         }
                     })));
                 }
@@ -265,7 +265,7 @@ public class ListDesigner implements EntryPoint, Saveable<GWTList>
                 _buttons.setWidget(0, col++, new ImageButton("Import Data", new ClickHandler(){
                     public void onClick(ClickEvent event)
                     {
-                        WindowUtil.setLocation("uploadListItems.view?listId=" + _listId);
+                        WindowUtil.setLocation(PropertyUtil.getRelativeURL("uploadListItems.view") + "?listId=" + _listId);
                     }
                 }));
             }
@@ -553,7 +553,7 @@ public class ListDesigner implements EntryPoint, Saveable<GWTList>
         if (!isEmpty(_cancelURL))
             WindowUtil.setLocation(_cancelURL);
         else
-            WindowUtil.setLocation("begin.view");
+            WindowUtil.setLocation(PropertyUtil.getRelativeURL("begin.view"));
     }
 
 
@@ -568,7 +568,7 @@ public class ListDesigner implements EntryPoint, Saveable<GWTList>
         if (!isEmpty(_returnURL))
             WindowUtil.setLocation(_returnURL);
         else
-            WindowUtil.setLocation("begin.view");
+            WindowUtil.setLocation(PropertyUtil.getRelativeURL("begin.view"));
     }
 
 
