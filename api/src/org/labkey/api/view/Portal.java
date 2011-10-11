@@ -18,6 +18,7 @@ package org.labkey.api.view;
 
 import org.apache.commons.collections15.MultiMap;
 import org.apache.commons.collections15.multimap.MultiHashMap;
+import org.jetbrains.annotations.Nullable;
 import org.labkey.api.cache.CacheManager;
 import org.labkey.api.cache.StringKeyCache;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
@@ -325,6 +326,7 @@ public class Portal
         return Table.selectObject(getTableInfoPortalWebParts(), webPartRowId, WebPart.class);
     }
 
+    @Nullable
     public static WebPart getPart(Container c, String pageId, int index)
     {
         try
@@ -626,8 +628,8 @@ public class Portal
                 if (canCustomize)
                 {
 
-                    if (desc.isEditable())
-                        view.setCustomizeLink(getCustomizeURL(context, part));                    
+                    if (desc.isEditable() && view.getCustomize() == null)
+                        view.setCustomize(new NavTree("", getCustomizeURL(context, part)));
 
                     if (i > 0)
                         navTree.addChild("Move Up", getMoveURL(context, part, MOVE_UP), contextPath + "/_images/partup.png");

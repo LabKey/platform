@@ -50,7 +50,7 @@ public abstract class WebPartView<ModelBean> extends HttpView<ModelBean>
     private NavTree _navMenu = null;
     private List<NavTree> _customMenus = null;
     private String _defaultLocation;
-    private String _customize;
+    private NavTree _custom;
 
     public static enum FrameType
     {
@@ -134,6 +134,16 @@ public abstract class WebPartView<ModelBean> extends HttpView<ModelBean>
     public String getTitle()
     {
         Object ret = getViewContext().get("title");
+
+        // If a webpart provides a title override use it
+        Portal.WebPart wp = Portal.getPart(getWebPartRowId());
+        if (wp != null)
+        {
+            Map<String, String> props = wp.getPropertyMap();
+            if (props.containsKey("webpart.title"))
+                return props.get("webpart.title");
+        }
+
         if (ret != null && !(ret instanceof String))
         {
             return ret.toString();
@@ -191,16 +201,16 @@ public abstract class WebPartView<ModelBean> extends HttpView<ModelBean>
         addObject("customizeLinks", navTree);
     }
 
-    public void setCustomizeLink(String link)
+    public void setCustomize(NavTree tree)
     {
-        _customize = link;
+       _custom = tree;
     }
 
-    public String getCustomizeLink()
+    public NavTree getCustomize()
     {
-        return _customize;
+        return _custom;
     }
-    
+
     public void enableExpandCollapse(String rootId, boolean collapsed)
     {
         addObject("collapsed", Boolean.valueOf(collapsed));
@@ -388,8 +398,8 @@ public abstract class WebPartView<ModelBean> extends HttpView<ModelBean>
         String contextPath = context.getContextPath();
         FrameType frameType = getFrame();
 
-        String title = (String) context.get("title");
-        String href = (String) context.get("href");
+        String title = getTitle();
+        String href = getTitleHref();
 
         // HACK for backwards compatibility
         if (null == title && frameType==FrameType.PORTAL)
@@ -500,8 +510,12 @@ public abstract class WebPartView<ModelBean> extends HttpView<ModelBean>
                     if (nMenu == null)
                         nMenu = new NavTree("More");  // // 11730 : Customize link missing on many webparts
 
-                    if (getCustomizeLink() != null)
-                        nMenu.addChild("Customize", getCustomizeLink());
+                    if (getCustomize() != null)
+                    {
+                        NavTree customize = getCustomize();
+                        customize.setKey("Customize");
+                        nMenu.addChild(customize);
+                    }
                     
                     if(getLocation() != null && getLocation().equals(WebPartFactory.LOCATION_RIGHT))
                     {
