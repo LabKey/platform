@@ -745,6 +745,30 @@ public class ProjectController extends SpringActionController
     }
 
     @RequiresPermissionClass(AdminPermission.class)
+    @ApiVersion(11.3)
+    public class CustomizeWebPartAsyncAction extends ApiAction<CustomizePortletApiForm>
+    {
+        @Override
+        public ApiResponse execute(CustomizePortletApiForm form, BindException errors) throws Exception
+        {
+            Portal.WebPart webPart = Portal.getPart(form.getWebPartId());
+
+            if (webPart != null)
+            {
+                CustomizeWebPartHelper.populatePropertyMap(getViewContext().getRequest(), webPart);
+                Portal.updatePart(getUser(), webPart);
+            }
+            else
+            {
+                errors.reject(ERROR_MSG, "The web part you are trying to customize no longer exists. It may have been removed by another administrator.");
+                return new ApiSimpleResponse("success", false);
+            }
+
+            return new ApiSimpleResponse("success", true);
+        }
+    }
+
+    @RequiresPermissionClass(AdminPermission.class)
     public class CustomizeWebPartAction extends FormViewAction<CustomizePortletForm>
     {
         Portal.WebPart _webPart;
@@ -792,13 +816,26 @@ public class ProjectController extends SpringActionController
             if (!desc.isEditable())
                 throw new IllegalStateException("This is not an editable web part");
 
-            populatePropertyMap(getViewContext().getRequest(), webPart);
+            CustomizeWebPartHelper.populatePropertyMap(getViewContext().getRequest(), webPart);
             Portal.updatePart(getUser(), webPart);
             return true;
         }
 
-        // UNDONE: use getBindPropertyValues()
-        protected void populatePropertyMap(HttpServletRequest request, Portal.WebPart webPart)
+        public ActionURL getSuccessURL(CustomizePortletForm form)
+        {
+            return null != form.getReturnActionURL() ? form.getReturnActionURL() : beginURL();
+        }
+
+        public NavTree appendNavTrail(NavTree root)
+        {
+            return (new BeginAction()).appendNavTrail(root)
+                    .addChild("Customize " + (null != _webPart ? _webPart.getName() : "Web Part"));
+        }
+    }
+
+    public static class CustomizeWebPartHelper
+    {
+        public static void populatePropertyMap(HttpServletRequest request, Portal.WebPart webPart)
         {
             Map<String, String> props = webPart.getPropertyMap();
             props.clear();
@@ -827,18 +864,6 @@ public class ProjectController extends SpringActionController
                         webPart.getPropertyMap().put(s, value.trim());
                 }
             }
-        }
-
-        public ActionURL getSuccessURL(CustomizePortletForm customizePortletForm)
-        {
-            Portal.WebPart webPart = Portal.getPart(getViewContext().getContainer(), customizePortletForm.getPageId(), customizePortletForm.getIndex());
-            return null != customizePortletForm.getReturnActionURL() ? customizePortletForm.getReturnActionURL() : beginURL();
-        }
-
-        public NavTree appendNavTrail(NavTree root)
-        {
-            return (new BeginAction()).appendNavTrail(root)
-                    .addChild("Customize " + (null != _webPart ? _webPart.getName() : "Web Part"));
         }
     }
 

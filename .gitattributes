@@ -2905,10 +2905,12 @@ study/src/org/labkey/study/view/createTimepoint.jsp -text
 study/src/org/labkey/study/view/createVisit.jsp -text
 study/src/org/labkey/study/view/crosstabDesigner.jsp -text
 study/src/org/labkey/study/view/customizeAssayDetailsWebPart.jsp -text
+study/src/org/labkey/study/view/customizeDataViews.jsp -text
 study/src/org/labkey/study/view/customizeParticipantView.jsp -text
 study/src/org/labkey/study/view/customizeParticipantWebPart.jsp -text
 study/src/org/labkey/study/view/dataSetDisplayOrder.jsp -text
 study/src/org/labkey/study/view/dataSetVisibility.jsp -text
+study/src/org/labkey/study/view/dataViews.jsp -text
 study/src/org/labkey/study/view/datasetCharts.jsp -text
 study/src/org/labkey/study/view/datasetDetails.jsp -text
 study/src/org/labkey/study/view/datasetInfo.jsp -text

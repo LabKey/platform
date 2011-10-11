@@ -42,6 +42,7 @@ import org.labkey.api.reports.Report;
 import org.labkey.api.reports.ReportService;
 import org.labkey.api.search.SearchService;
 import org.labkey.api.security.SecurityManager;
+import org.labkey.api.security.permissions.AdminPermission;
 import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.security.roles.RoleManager;
 import org.labkey.api.services.ServiceRegistry;
@@ -63,6 +64,7 @@ import org.labkey.api.view.DefaultWebPartFactory;
 import org.labkey.api.view.HtmlView;
 import org.labkey.api.view.HttpView;
 import org.labkey.api.view.JspView;
+import org.labkey.api.view.NavTree;
 import org.labkey.api.view.Portal;
 import org.labkey.api.view.ViewContext;
 import org.labkey.api.view.WebPartFactory;
@@ -164,6 +166,7 @@ public class StudyModule extends SpringModule implements SearchService.DocumentP
     public static final WebPartFactory assayList2WebPartFactory = new AssayList2WebPartFactory();
     public static final WebPartFactory studyListWebPartFactory = new StudyListWebPartFactory();
     public static final WebPartFactory dataToolsWideWebPartFactory = new StudyToolsWebPartFactory.Data(HttpView.BODY);
+    public static final WebPartFactory dataViewsWebPartFactory = new DataViewsWebPartFactory();
     public static final WebPartFactory dataToolsWebPartFactory = new StudyToolsWebPartFactory.Data("right");
     public static final WebPartFactory specimenToolsWideWebPartFactory = new StudyToolsWebPartFactory.Specimens(HttpView.BODY);
     public static final WebPartFactory specimenToolsWebPartFactory = new StudyToolsWebPartFactory.Specimens("right");
@@ -240,8 +243,8 @@ public class StudyModule extends SpringModule implements SearchService.DocumentP
                 enrollmentChartPartFactory, studyDesignsWebPartFactory, studyDesignSummaryWebPartFactory,
                 assayListWebPartFactory, assayBatchesWebPartFactory, assayRunsWebPartFactory, assayResultsWebPartFactory,
                 subjectDetailsWebPartFactory, assayList2WebPartFactory, studyListWebPartFactory, sampleSearchPartFactory,
-                subjectsWebPartFactory, subjectsWideWebPartFactory, dataToolsWebPartFactory, dataToolsWideWebPartFactory,
-                specimenToolsWebPartFactory, specimenToolsWideWebPartFactory));
+                subjectsWebPartFactory, subjectsWideWebPartFactory, dataViewsWebPartFactory, dataToolsWebPartFactory,
+                dataToolsWideWebPartFactory, specimenToolsWebPartFactory, specimenToolsWideWebPartFactory));
     }
 
     public Collection<String> getSummary(Container c)
@@ -401,6 +404,30 @@ public class StudyModule extends SpringModule implements SearchService.DocumentP
                 return new HtmlView("Views", "This folder does not contain a study");
 
             return new ReportsController.ReportsWebPart(!"right".equalsIgnoreCase(webPart.getLocation()));
+        }
+    }
+
+    private static class DataViewsWebPartFactory extends BaseWebPartFactory
+    {
+        public DataViewsWebPartFactory()
+        {
+            super("Data Views", WebPartFactory.LOCATION_BODY, true, false); // is editable
+            addLegacyNames("Dataset Browse", "Dataset Browse (Experimental)");
+        }
+
+        @Override
+        public WebPartView getWebPartView(ViewContext portalCtx, Portal.WebPart webPart) throws Exception
+        {
+            JspView<Portal.WebPart> view = new JspView<Portal.WebPart>("/org/labkey/study/view/dataViews.jsp", webPart);
+            view.setTitle("Data Views");
+            view.setFrame(WebPartView.FrameType.PORTAL);
+            if (portalCtx.hasPermission(AdminPermission.class))
+            {
+                NavTree customize = new NavTree("", "#");
+                customize.setScript("customizeDataViews(\'" + webPart.getPageId() + "\', " + webPart.getIndex() + ");");
+                view.setCustomize(customize);
+            }
+            return view;
         }
     }
 

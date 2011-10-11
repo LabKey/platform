@@ -2226,7 +2226,7 @@ public class AnnouncementsController extends SpringActionController
             }
 
             if (bean.customizeURL != null)
-                setCustomizeLink(bean.customizeURL.toString());
+                setCustomize(new NavTree("", bean.customizeURL.toString()));
 
             setIsWebPart(asWebPart);
             setNavMenu(menu);

@@ -6775,24 +6775,55 @@ public class StudyController extends BaseStudyController
         public ApiResponse execute(BrowseDataForm form, BindException errors) throws Exception
         {
             boolean isAdmin = getContainer().hasPermission(getUser(), AdminPermission.class);
-            JSONArray data = new JSONArray();
-            List<BrowseDataForm.DataType> types = Arrays.asList(form.getDataTypes());
+            Map<String, Boolean> types = new HashMap<String, Boolean>();
+            ApiSimpleResponse response = new ApiSimpleResponse();
 
-            // get reports and queries
-            if (types.isEmpty() || types.contains(BrowseDataForm.DataType.reports))
+            Portal.WebPart webPart = Portal.getPart(getViewContext().getContainer(), form.getPageId(), form.getIndex());
+
+            Map<String, String> props = new HashMap<String, String>();
+            if (webPart != null)
             {
-                for (ViewInfo info : ReportManager.get().getViews(getViewContext(), null, null, isAdmin, true))
-                    data.put(info.toJSON(getUser()));
+                props = webPart.getPropertyMap();
+                Map<String, String> webPartProps = new HashMap<String, String>();
+                webPartProps.put("name", webPart.getName());
+                if (props.containsKey("webpart.title"))
+                    webPartProps.put("title", props.get("webpart.title"));
+                response.put("webpart", new JSONObject(webPartProps));
             }
 
-            // datasets
-            if (types.isEmpty() || types.contains(BrowseDataForm.DataType.datasets))
+            for (BrowseDataForm.DataType type : BrowseDataForm.DataType.values())
             {
-                for (ViewInfo info : getDatasets())
-                    data.put(info.toJSON(getUser()));
+                // only if it is explicitly excluded does it not get included
+                if (props.containsKey(type.name()) && props.get(type.name()).equals("0"))
+                    types.put(type.name(), false);
+                else
+                    types.put(type.name(), true);
             }
 
-            return new ApiSimpleResponse("data", data);
+            response.put("types", new JSONObject(types));
+
+            if (form.includeData())
+            {
+                JSONArray data = new JSONArray();
+
+                // get reports and queries
+                if (types.isEmpty() || types.get(BrowseDataForm.DataType.reports.name()))
+                {
+                    for (ViewInfo info : ReportManager.get().getViews(getViewContext(), null, null, isAdmin, true))
+                        data.put(info.toJSON(getUser()));
+                }
+
+                // datasets
+                if (types.isEmpty() || types.get(BrowseDataForm.DataType.datasets.name()))
+                {
+                    for (ViewInfo info : getDatasets())
+                        data.put(info.toJSON(getUser()));
+                }
+
+                response.put("data", data);
+            }
+
+            return response;
         }
 
         private List<ViewInfo> getDatasets()
@@ -6827,12 +6858,16 @@ public class StudyController extends BaseStudyController
 
     public static class BrowseDataForm
     {
+        private int index;
+        private String pageId;
+        private boolean includeData = true;
+
         public enum DataType {
             reports,
             datasets,
         }
 
-        private DataType[] _dataTypes = new DataType[0];
+        private DataType[] _dataTypes = new DataType[]{DataType.reports, DataType.datasets};
 
         public DataType[] getDataTypes()
         {
@@ -6842,6 +6877,36 @@ public class StudyController extends BaseStudyController
         public void setDataTypes(DataType[] dataTypes)
         {
             _dataTypes = dataTypes;
+        }
+
+        public int getIndex()
+        {
+            return index;
+        }
+
+        public void setIndex(int index)
+        {
+            this.index = index;
+        }
+
+        public String getPageId()
+        {
+            return pageId;
+        }
+
+        public void setPageId(String pageId)
+        {
+            this.pageId = pageId;
+        }
+
+        public boolean includeData()
+        {
+            return includeData;
+        }
+
+        public void setIncludeData(boolean includedata)
+        {
+            includeData = includedata;
         }
     }
 }
