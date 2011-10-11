@@ -1218,6 +1218,7 @@ issues/src/org/labkey/issue/searchExt.jsp -text
 issues/src/org/labkey/issue/summaryWebpart.jsp -text
 issues/src/org/labkey/issue/updateEmail.jsp -text
 issues/src/org/labkey/issue/updateView.jsp -text
+issues/webapp/issues/hashbang.js -text
 list/List.iml -text
 list/ListGWT.iml -text
 list/build.xml -text
