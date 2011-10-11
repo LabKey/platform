@@ -31,6 +31,7 @@
 <%
     JspView<IssuePage> me = (JspView<IssuePage>) HttpView.currentView();
     ViewContext context = me.getViewContext();
+    String contextPath = context.getContextPath();
     IssuePage bean = me.getModelBean();
     final Issue issue = bean.getIssue();
     final Container c = context.getContainer();
@@ -41,7 +42,9 @@
 %>
 <% if (!bean.isPrint())
 {
-%><form name="jumpToIssue" action="jumpToIssue.view" method="get">
+%>
+<%--<script src="<%=contextPath%>/issues/hashbang.js" type="text/javascript"></script>--%>
+<form name="jumpToIssue" action="jumpToIssue.view" method="get">
     <table><tr><%
 
     if (bean.getHasUpdatePermissions())
@@ -49,7 +52,7 @@
         %><td><%= textLink("new " + names.singularName.toLowerCase(), PageFlowUtil.getLastFilter(context, IssuesController.issueURL(context.getContainer(), IssuesController.InsertAction.class)))%></td><%
     }%>
 
-    <td><%= textLink("return to grid", PageFlowUtil.getLastFilter(context, IssuesController.issueURL(context.getContainer(), IssuesController.ListAction.class)))%></td><%
+    <td><%= textLink("return to grid", PageFlowUtil.getLastFilter(context, IssuesController.issueURL(context.getContainer(), IssuesController.ListAction.class)).deleteParameter("error"))%></td><%
 
     if (bean.getHasUpdatePermissions())
     {
