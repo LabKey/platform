@@ -4988,4 +4988,29 @@ public class SpecimenController extends BaseStudyController
             return root;
         }
     }
+
+
+
+    /** WEB PARTS **/
+
+    public static class SpecimenReportWebPartFactory extends BaseWebPartFactory
+    {
+        public SpecimenReportWebPartFactory()
+        {
+            super("Specimen Report", LOCATION_BODY, false, false);
+        }
+
+        @Override
+        public WebPartView getWebPartView(ViewContext portalCtx, Portal.WebPart webPart) throws Exception
+        {
+            TypeSummaryReportFactory specimenVisitReportForm = new TypeSummaryReportFactory();
+            JspView<TypeSummaryReportFactory> reportView = new JspView<TypeSummaryReportFactory>("/org/labkey/study/view/samples/specimenVisitReport.jsp", specimenVisitReportForm);
+            VBox vbox =  new VBox(
+                    new JspView<ReportConfigurationBean>("/org/labkey/study/view/samples/autoReportList.jsp", new ReportConfigurationBean(specimenVisitReportForm, false)),
+                    reportView);
+            vbox.setFrame(WebPartView.FrameType.PORTAL);
+            vbox.setTitle("Specimen Report (Experimental)");
+            return vbox;
+        }
+    }
 }
