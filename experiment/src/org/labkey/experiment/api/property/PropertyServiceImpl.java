@@ -244,6 +244,7 @@ public class PropertyServiceImpl implements PropertyService.Interface
             }
             prop.getPropertyDescriptor().setOntologyURI(uri);
         }
+        
         prop.getPropertyDescriptor().setSearchTerms(xProp.getSearchTerms());
         prop.getPropertyDescriptor().setSemanticType(xProp.getSemanticType());
         prop.setURL(xProp.getURL());

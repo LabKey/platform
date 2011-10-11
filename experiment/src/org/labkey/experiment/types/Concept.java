@@ -170,6 +170,7 @@ public class Concept
             if (searchTerms.length() > 999)
                 searchTerms.setLength(999);
             searchTerms.append('|');
+            
             pd.setSearchTerms(searchTerms.toString());
         }
 

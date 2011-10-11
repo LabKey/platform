@@ -426,7 +426,38 @@ table.labkey-button-bar
 	/* For IE */
 	filter: progid:DXImageTransform.Microsoft.gradient(GradientType=0, startColorstr=#ffffff, endColorstr=#e5e5e5);
 	-ms-filter: "progid:DXImageTransform.Microsoft.gradient(GradientType=0, startColorstr=#ffffff, endColorstr=#e5e5e5)";
+}
 
+/*Darker background when it's being clicked on, or it's the parent of an expanded menu or panel on the ribbon.*/
+.labkey-button-bar .labkey-menu-button-active,
+.labkey-button-bar .labkey-menu-button:active {
+	background-color: #FFFFFF;
+    border: 1px solid #676767 !important;
+
+    margin: 0.1em 0.8em 0.5em 0;
+    padding: 4px;
+    position: relative;
+    vertical-align: middle;
+    white-space: nowrap;
+
+    color: #000000;
+    cursor:pointer;
+
+    border-radius: 5px;
+    -moz-border-radius: 5px;
+    -webkit-border-radius: 5px;
+
+    *position: relative;
+    white-space: nowrap;
+    *display: inline;
+
+	/* For WebKit (Safari, Google Chrome etc) */
+    background: -webkit-gradient(linear, left top, left bottom, from(#e5e5e5), to(#c5c5c5));
+    /* For Mozilla/Gecko (Firefox etc) */
+    background: -moz-linear-gradient(top, #e5e5e5, #c5c5c5);
+	/* For IE */
+	filter: progid:DXImageTransform.Microsoft.gradient(GradientType=0, startColorstr=#e5e5e5, endColorstr=#c5c5c5);
+	-ms-filter: "progid:DXImageTransform.Microsoft.gradient(GradientType=0, startColorstr=#e5e5e5, endColorstr=#c5c5c5)";
 }
 
 .labkey-button-bar .labkey-disabled-button,
