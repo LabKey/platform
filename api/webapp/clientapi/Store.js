@@ -669,7 +669,7 @@ LABKEY.ext.Store = Ext.extend(Ext.data.Store, {
             if(record.json && record.json[field])
             {
                 delete record.json[field].displayValue;
-                delete record.json[field].qcValue;
+                delete record.json[field].mvValue;
             }
         }
     },

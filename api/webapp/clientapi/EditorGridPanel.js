@@ -479,16 +479,16 @@ LABKEY.ext.EditorGridPanel = Ext.extend(Ext.grid.EditorGridPanel, {
 
         return function(data, cellMetaData, record, rowIndex, colIndex, store)
         {
-            if(record.json && record.json[meta.name] && record.json[meta.name].qcValue)
+            if(record.json && record.json[meta.name] && record.json[meta.name].mvValue)
             {
-                var qcValue = record.json[meta.name].qcValue;
+                var mvValue = record.json[meta.name].mvValue;
                 //get corresponding message from qcInfo section of JSON and set up a qtip
-                if(store.reader.jsonData.qcInfo && store.reader.jsonData.qcInfo[qcValue])
+                if(store.reader.jsonData.qcInfo && store.reader.jsonData.qcInfo[mvValue])
                 {
-                    cellMetaData.attr = "ext:qtip=\"" + Ext.util.Format.htmlEncode(store.reader.jsonData.qcInfo[qcValue]) + "\"";
+                    cellMetaData.attr = "ext:qtip=\"" + Ext.util.Format.htmlEncode(store.reader.jsonData.qcInfo[mvValue]) + "\"";
                     cellMetaData.css = "labkey-mv";
                 }
-                return qcValue;
+                return mvValue;
             }
 
             if(record.json && record.json[meta.name] && record.json[meta.name].displayValue)
