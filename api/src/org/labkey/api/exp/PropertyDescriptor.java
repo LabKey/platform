@@ -212,9 +212,9 @@ public class PropertyDescriptor extends ColumnRenderProperties implements Serial
         return searchTerms;
     }
 
-    public void setSearchTerms(CharSequence searchTerms)
+    public void setSearchTerms(String searchTerms)
     {
-        this.searchTerms = searchTerms == null ? null : searchTerms.toString();
+        this.searchTerms = searchTerms;
     }
 
     public String getNonBlankCaption()

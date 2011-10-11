@@ -625,7 +625,19 @@ function showMenu(parent, menuElementId, align) {
         align = "tl-bl?";
     var menu = Ext.menu.MenuMgr.get(menuElementId);
     if (menu)
+    {
+        // While the menu's open, highlight the button that caused it to open
+        Ext.get(parent).addClass('labkey-menu-button-active');
         menu.show(parent, align);
+        var listener = function()
+        {
+            // Get rid of the highlight when the menu disappears, and remove the listener since the menu
+            // can be reused
+            menu.removeListener('beforehide', listener);
+            Ext.get(parent).removeClass('labkey-menu-button-active');
+        };
+        menu.on('beforehide', listener);
+    }
     else
         console.error("No menu registered :" + menuElementId);
 }

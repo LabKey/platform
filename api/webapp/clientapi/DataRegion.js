@@ -1245,10 +1245,10 @@ LABKEY.DataRegion = Ext.extend(Ext.Component,
      */
     showButtonPanel : function (panelButton, tabPanelConfig)
     {
-        this._showButtonPanel(this.header, panelButton.getAttribute("panelId"), true, tabPanelConfig);
+        this._showButtonPanel(this.header, panelButton.getAttribute("panelId"), true, tabPanelConfig, panelButton);
     },
 
-    _showButtonPanel : function(headerOrFooter, panelId, animate, tabPanelConfig)
+    _showButtonPanel : function(headerOrFooter, panelId, animate, tabPanelConfig, button)
     {
         var panelDiv = headerOrFooter.child(".labkey-ribbon");
         if (panelDiv)
@@ -1259,6 +1259,16 @@ LABKEY.DataRegion = Ext.extend(Ext.Component,
             {
                 // We're currently showing a ribbon panel, so remember that we need to hide it
                 panelToHide = this.panelButtonContents[this.currentPanelId];
+                if (panelToHide && panelToHide.button)
+                {
+                    var buttonToHideElement = Ext.get(panelToHide.button);
+                    if (buttonToHideElement)
+                    {
+                        // Remove the highlight from the button that opened up the panel, since the panel is being closed 
+                        buttonToHideElement.removeClass('labkey-menu-button-active');
+                    }
+                    panelToHide.button = undefined;
+                }
             }
 
             var _duration = 0.4, y, h;
@@ -1323,6 +1333,15 @@ LABKEY.DataRegion = Ext.extend(Ext.Component,
                         this.panelButtonContents[panelId].getEl().appendTo(Ext.get(panelDiv));
                     }
 
+                    var buttonElement = Ext.get(button);
+                    if (buttonElement)
+                    {
+                        // Highlight the button that opened up the panel, if it's directly on the button bar
+                        buttonElement.addClass('labkey-menu-button-active');
+                    }
+
+                    this.panelButtonContents[panelId].button = button;
+                    
                     this.currentPanelId = panelId;
 
                     // Slide it into place
