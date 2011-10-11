@@ -119,6 +119,9 @@ public class WindowUtil
      * Navigates to a different URL (leaving this app) using
      * window.location=loc
      * @param loc
+     *
+     * Does NOT work with simple action names like "begin.view" (this breaks on IE).  See PropertyUtil.getRelativeURL()
+     * and PropertyUtil.getContextPath().
      */
     public static native void setLocation(String loc) /*-{
          $wnd.location = loc;
