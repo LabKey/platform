@@ -364,9 +364,16 @@ public class Protocol extends IdentifiableEntity
 
     public void storeObjectProperties(Map<String, ObjectProperty> props)
     {
-        Map<String, ObjectProperty> newParams = new HashMap<String, ObjectProperty>();
-        newParams.putAll(props);
-        _objectProperties = Collections.unmodifiableMap(newParams);
+        if (props == null)
+        {
+            _objectProperties = null;
+        }
+        else
+        {
+            Map<String, ObjectProperty> newParams = new HashMap<String, ObjectProperty>();
+            newParams.putAll(props);
+            _objectProperties = Collections.unmodifiableMap(newParams);
+        }
     }
 
     public void storeProtocolParameters(Collection<ProtocolParameter> protocolParameters)

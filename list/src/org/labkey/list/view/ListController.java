@@ -411,7 +411,7 @@ public class ListController extends SpringActionController
                             if (column.isMvEnabled())
                             {
                                 ColumnInfo mvColumn = tableForm.getTable().getColumn(column.getMvColumnName());
-                                mvIndicator = (String)newValues.get(mvColumn.getPropertyName());
+                                mvIndicator = (String)newValues.get(mvColumn.getName());
                             }
                             DomainProperty property = domain.getPropertyByName(column.getName());
                             if (column.getName().equals(list.getKeyName()))
