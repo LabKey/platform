@@ -51,7 +51,7 @@ public class HBox extends VBox
                 if (null == view)
                     continue;
                 String width = _widths.get(view);
-                out.write("<td valign=top" + (width != null ? " width=" + width : "") + ">");
+                out.write("<td valign=top align=left" + (width != null ? " width=" + width : "") + ">");
                 include(view);
                 out.write("</td>");
             }
