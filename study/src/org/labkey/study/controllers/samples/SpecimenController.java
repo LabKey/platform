@@ -5004,14 +5004,20 @@ public class SpecimenController extends BaseStudyController
         public WebPartView getWebPartView(ViewContext portalCtx, Portal.WebPart webPart) throws Exception
         {
             TypeSummaryReportFactory specimenVisitReportForm = new TypeSummaryReportFactory();
+
             JspView<TypeSummaryReportFactory> reportView = new JspView<TypeSummaryReportFactory>("/org/labkey/study/view/samples/specimenVisitReport.jsp", specimenVisitReportForm);
-            VBox vbox =  new VBox(
-                    new JspView<ReportConfigurationBean>("/org/labkey/study/view/samples/autoReportList.jsp", new ReportConfigurationBean(specimenVisitReportForm, false)),
-                    reportView);
-            vbox.setFrame(WebPartView.FrameType.PORTAL);
-            vbox.setTitle("Specimen Report (Experimental)");
-            vbox.setTitleHref(new ActionURL(TypeSummaryReportAction.class, portalCtx.getContainer()));
-            return vbox;
+            WebPartView configView = new JspView<ReportConfigurationBean>("/org/labkey/study/view/samples/autoReportList.jsp", new ReportConfigurationBean(specimenVisitReportForm, false));
+            HtmlView emptySpace = new HtmlView("<div id=\"specimenReportEmptySpace\">&nbsp;</div>");
+
+            HBox hbox = new HBox();
+            hbox.addView(configView,"400px");
+            hbox.addView(emptySpace,"100%");
+            VBox outer = new VBox(hbox, reportView);
+
+            outer.setFrame(WebPartView.FrameType.PORTAL);
+            outer.setTitle("Specimen Report (Experimental)");
+            outer.setTitleHref(new ActionURL(TypeSummaryReportAction.class, portalCtx.getContainer()));
+            return outer;
         }
     }
 }
