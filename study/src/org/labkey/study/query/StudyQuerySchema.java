@@ -346,15 +346,17 @@ public class StudyQuerySchema extends UserSchema
     @Override
     public QueryView createView(ViewContext context, QuerySettings settings, BindException errors)
     {
-        DataSetDefinition dsd = getDataSetDefinitions().get(settings.getQueryName());
-        if (dsd != null)
+        if (getStudy() != null)
         {
-            if (!(settings instanceof DataSetQuerySettings))
-                settings = new DataSetQuerySettings(settings);
+            DataSetDefinition dsd = getDataSetDefinitions().get(settings.getQueryName());
+            if (dsd != null)
+            {
+                if (!(settings instanceof DataSetQuerySettings))
+                    settings = new DataSetQuerySettings(settings);
 
-            return new DataSetQueryView(this, (DataSetQuerySettings)settings, errors);
+                return new DataSetQueryView(this, (DataSetQuerySettings)settings, errors);
+            }
         }
-
         return super.createView(context, settings, errors);
     }
 
