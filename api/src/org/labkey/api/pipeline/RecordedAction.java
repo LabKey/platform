@@ -38,6 +38,12 @@ public class RecordedAction
     private String _name;
     private String _description;
 
+    // No-args constructor to support de-serialization in Java 7
+    @SuppressWarnings({"UnusedDeclaration"})
+    public RecordedAction()
+    {
+    }
+
     public RecordedAction(String name)
     {
         setName(name);
@@ -110,6 +116,12 @@ public class RecordedAction
         private String _name;
         private SimpleTypeNames.Enum _type;
 
+        // No-args constructor to support de-serialization in Java 7
+        @SuppressWarnings({"UnusedDeclaration"})
+        public ParameterType()
+        {
+        }
+
         public ParameterType(String name, String uri, SimpleTypeNames.Enum type)
         {
             _name = name;
@@ -138,6 +150,12 @@ public class RecordedAction
         private URI _uri;
         private String _role;
         private boolean _transient;
+
+        // No-args constructor to support de-serialization in Java 7
+        @SuppressWarnings({"UnusedDeclaration"})
+        public DataFile()
+        {
+        }
 
         public DataFile(URI uri, String role, boolean transientFile)
         {
