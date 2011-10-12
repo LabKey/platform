@@ -428,10 +428,11 @@ public class ExceptionUtil
         if (ex instanceof UnauthorizedException && isGET)
         {
             UnauthorizedException uae = (UnauthorizedException)ex;
+            String headerHint = request.getHeader("X-ONUNAUTHORIZED");
 
             // If user has not logged in or agreed to terms, not really unauthorized yet...
             if (!(uae instanceof CSRFException) && !uae.getUseBasicAuthentication() &&
-                (user.isGuest() || ex instanceof TermsOfUseException))
+                (user.isGuest() || ex instanceof TermsOfUseException) && !"UNAUTHORIZED".equals(headerHint))
             {
                 ActionURL redirect;
 
