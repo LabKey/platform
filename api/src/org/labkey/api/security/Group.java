@@ -19,7 +19,6 @@ import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
 
 /**
- * Created by IntelliJ IDEA.
  * User: arauch
  * Date: Jul 5, 2005
  * Time: 10:34:01 AM

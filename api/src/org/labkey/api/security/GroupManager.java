@@ -22,12 +22,9 @@ import org.junit.Assert;
 import org.junit.Test;
 import org.labkey.api.audit.AuditLogEvent;
 import org.labkey.api.audit.AuditLogService;
-import org.labkey.api.cache.CacheManager;
-import org.labkey.api.cache.StringKeyCache;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.CoreSchema;
-import org.labkey.api.data.RuntimeSQLException;
 import org.labkey.api.data.Table;
 import org.labkey.api.util.JunitUtil;
 import org.labkey.api.util.TestContext;
@@ -36,10 +33,6 @@ import org.labkey.api.view.ViewContext;
 
 import java.beans.PropertyChangeEvent;
 import java.sql.SQLException;
-import java.util.Arrays;
-import java.util.HashSet;
-import java.util.LinkedList;
-import java.util.Set;
 
 /**
  * User: adam
@@ -50,12 +43,9 @@ public class GroupManager
 {
     private static final Logger _log = Logger.getLogger(GroupManager.class);
     private static final CoreSchema _core = CoreSchema.getInstance();
-    private static final String USER_CACHE_PREFIX = "Groups/AllGroups=";
-    private static final String GROUP_CACHE_PREFIX = "Groups/Groups=";
-    public static final String GROUP_AUDIT_EVENT = "GroupAuditEvent";
-
-    private static final StringKeyCache<int[]> GROUP_ID_CACHE = CacheManager.getSharedCache();
     private static final int[] EMPTY_INT_ARRAY = new int[0];
+
+    public static final String GROUP_AUDIT_EVENT = "GroupAuditEvent";
 
     public enum PrincipalType
     {
@@ -85,109 +75,19 @@ public class GroupManager
 
     static
     {
-        SecurityManager.addGroupListener(new GroupCacheListener());
-        UserManager.addUserListener(new GroupUserListener());
+        SecurityManager.addGroupListener(new GroupListener());
     }
 
-    /** this method returns the FLATTENED group list for this principal */
+    // Returns the FLATTENED group list for this principal
     static int[] getAllGroupsForPrincipal(@Nullable UserPrincipal user)
     {
         if (user == null)
             return EMPTY_INT_ARRAY;
 
-        int userId = user.getUserId();
-        int[] groups = GROUP_ID_CACHE.get(USER_CACHE_PREFIX + userId);
-
-        if (null == groups)
-        {
-            groups = computeAllGroups(user);
-            GROUP_ID_CACHE.put(USER_CACHE_PREFIX + userId, groups);
-        }
-
-        return groups;
+        return GroupMembershipCache.getAllGroupsForPrincipal(user);
     }
 
-    private static void removeFromCache(UserPrincipal principal)
-    {
-        GROUP_ID_CACHE.remove(USER_CACHE_PREFIX + principal.getUserId());
-        GROUP_ID_CACHE.remove(GROUP_CACHE_PREFIX + principal.getUserId());
-    }
-
-
-    /** this method returns the immediate group membership for this principal (non-recursive) */
-    public static int[] getGroupsForPrincipal(int groupId) throws SQLException
-    {
-        int[] groups = GROUP_ID_CACHE.get(GROUP_CACHE_PREFIX + groupId);
-        if (null == groups)
-        {
-            Integer[] groupsInt = Table.executeArray(_core.getSchema(), "SELECT GroupId FROM " + _core.getTableInfoMembers() + " WHERE UserId = ?", new Object[]{groupId}, Integer.class);
-            groups = _toIntArray(groupsInt);
-            GROUP_ID_CACHE.put(GROUP_CACHE_PREFIX + groupId, groups);
-        }
-        return groups;
-    }
-
-
-    private static int[] _toIntArray(Integer[] groupsInt)
-    {
-        int[] arr = new int[groupsInt.length];
-        for (int i=0 ; i<groupsInt.length ; i++)
-            arr[i] = groupsInt[i];
-        return arr;
-    }
-
-
-    private static int[] _toIntArray(Set<Integer> groupsInt)
-    {
-        int[] arr = new int[groupsInt.size()];
-        int i = 0;
-        for (int group : groupsInt)
-            arr[i++] = group;
-        Arrays.sort(arr);
-        return arr;
-    }
-
-
-    private static int[] computeAllGroups(UserPrincipal user)
-    {
-        int userId = user.getUserId();
-
-        try
-        {
-            HashSet<Integer> groupSet = new HashSet<Integer>();
-            LinkedList<Integer> recurse = new LinkedList<Integer>();
-            recurse.add(Group.groupGuests);
-            if (user.getUserId() != User.guest.getUserId())
-                recurse.add(Group.groupUsers);
-            recurse.add(userId);
-
-            while (!recurse.isEmpty())
-            {
-                int id = recurse.removeFirst();
-                groupSet.add(id);
-                int[] groups = getGroupsForPrincipal(id);
-
-                for (int g : groups)
-                    if (!groupSet.contains(g))
-                        recurse.addLast(g);
-            }
-
-            // Site administrators always get developer role as well
-            if (groupSet.contains(Group.groupAdministrators))
-                groupSet.add(Group.groupDevelopers);
-
-            return _toIntArray(groupSet);
-        }
-        catch (SQLException e)
-        {
-            throw new RuntimeSQLException(e);
-        }
-    }
-
-
-    /**
-     * Create an initial group; warn if userId of created group does not match desired userId.
-     */
+    // Create an initial group; warn if userId of created group does not match desired userId.
     public static void bootstrapGroup(int userId, String name)
     {
         bootstrapGroup(userId, name, PrincipalType.GROUP);
@@ -221,11 +121,8 @@ public class GroupManager
     }
 
 
-    /**
-     * Create a group in the Principals table
-     */
-    private static int createSystemGroup(int userId, String name, PrincipalType type)
-            throws SQLException
+    // Create a group in the Principals table
+    private static int createSystemGroup(int userId, String name, PrincipalType type) throws SQLException
     {
         // See if principal with the given name already exists
         Integer id = Table.executeSingleton(_core.getSchema(),
@@ -233,7 +130,7 @@ public class GroupManager
                 new Object[]{name}, Integer.class);
 
         if (id != null)
-            return id.intValue();
+            return id;
 
         Table.execute(_core.getSchema(), _insertGroupSql, userId, name, type.typeChar);
 
@@ -241,28 +138,17 @@ public class GroupManager
     }
 
 
-    public static class GroupCacheListener implements SecurityManager.GroupListener
+    public static class GroupListener implements SecurityManager.GroupListener
     {
-        private void handleChange(Group group, UserPrincipal principal)
-        {
-            // very slight overkill
-            removeFromCache(group);
-            removeFromCache(principal);
-
-            // invalidate all computed group lists (getAllGroups())
-            if (principal instanceof Group)
-                GROUP_ID_CACHE.removeUsingPrefix(USER_CACHE_PREFIX);
-        }
-
         public void principalAddedToGroup(Group group, UserPrincipal user)
         {
-            handleChange(group, user);
+            GroupMembershipCache.handleGroupChange(group, user);
             addAuditEvent(group, user, "User: " + user.getName() + " was added as a member to Group: " + group.getName());
         }
 
         public void principalDeletedFromGroup(Group group, UserPrincipal user)
         {
-            handleChange(group, user);
+            GroupMembershipCache.handleGroupChange(group, user);
             addAuditEvent(group, user, "User: " + user.getName() + " was deleted from Group: " + group.getName());
         }
 
@@ -277,7 +163,10 @@ public class GroupManager
                     user = context.getUser();
                 }
             }
-            catch (RuntimeException e){}
+            catch (RuntimeException e)
+            {
+                // ignore
+            }
 
             AuditLogEvent event = new AuditLogEvent();
 
@@ -294,36 +183,6 @@ public class GroupManager
             event.setComment(message);
 
             AuditLogService.get().addEvent(event);
-        }
-
-        public void propertyChange(PropertyChangeEvent evt)
-        {
-        }
-    }
-
-
-    public static class GroupUserListener implements UserManager.UserListener
-    {
-        public void userAddedToSite(User user)
-        {
-        }
-
-        public void userDeletedFromSite(User user)
-        {
-            // Blow away groups immediately after user is deleted (otherwise this user's groups, and therefore permissions, will remain active
-            // until the user choses to sign out.
-            removeFromCache(user);
-        }
-
-        public void userAccountDisabled(User user)
-        {
-            removeFromCache(user);
-
-        }
-
-        public void userAccountEnabled(User user)
-        {
-            removeFromCache(user);
         }
 
         public void propertyChange(PropertyChangeEvent evt)

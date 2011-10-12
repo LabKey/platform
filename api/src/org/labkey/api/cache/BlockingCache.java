@@ -70,7 +70,7 @@ public class BlockingCache<K, V> implements BasicCache<K, V>
     }
 
 
-    public BlockingCache(Cache<K, Object> cache, @Nullable CacheLoader<K,V> loader)
+    public BlockingCache(Cache<K, Object> cache, @Nullable CacheLoader<K, V> loader)
     {
         _cache = cache;
         _loader = loader;
