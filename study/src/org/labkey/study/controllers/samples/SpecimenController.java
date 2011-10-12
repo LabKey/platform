@@ -5015,7 +5015,7 @@ public class SpecimenController extends BaseStudyController
             VBox outer = new VBox(hbox, reportView);
 
             outer.setFrame(WebPartView.FrameType.PORTAL);
-            outer.setTitle("Specimen Report (Experimental)");
+            outer.setTitle("Specimen Report");
             outer.setTitleHref(new ActionURL(TypeSummaryReportAction.class, portalCtx.getContainer()));
             return outer;
         }
