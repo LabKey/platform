@@ -21,6 +21,8 @@
 <%@ page import="org.labkey.study.samples.report.SpecimenVisitReport" %>
 <%@ page import="org.labkey.study.samples.report.SpecimenVisitReportParameters" %>
 <%@ page import="java.util.Collection" %>
+<%@ page import="org.labkey.api.util.Pair" %>
+<%@ page import="org.apache.commons.lang.StringUtils" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
     JspView<SpecimenVisitReportParameters> me = (JspView<SpecimenVisitReportParameters>) HttpView.currentView();
@@ -33,85 +35,88 @@
 %>
 <table class="labkey-data-region labkey-show-borders"><colgroup>
     <%
-        for (int i = 0; i < colCount; i++)
-        {
-    %>
-        <col>
-    <%
-        }
+    for (int i = 0; i < colCount; i++)
+    {
+        %><col><%
+    }
     %></colgroup>
     <tr>
-        <th style="text-align:left" class="labkey-data-region-title" colspan="<%= colCount %>"><%= h(report.getTitle())%></th>
+        <th style="text-align:left; border-bottom:solid 1px #AAAAAA;" class="labkey-data-region-title" colspan="<%= colCount %>"><%= h(report.getTitle())%></th>
     </tr>
 
     <tr class="labkey-alternate-row">
         <%
         if (report.getLabelDepth() > 0)
         {
-        %>
-        <th class="labkey-data-region-title" colspan="<%= report.getLabelDepth() %>">&nbsp;</th>
-        <%
+            %><td class="labkey-column-header" colspan="<%= report.getLabelDepth() %>">&nbsp;</td><%
         }
         for (VisitImpl visit : visits)
         {
             String label = visit.getDisplayString();
-            %><th class="labkey-col-header" align="center"><%= h(label) %></th><%
+            %><td class="labkey-column-header" align="center"><%= h(label) %></td><%
         }
-        %>
+    %>
     </tr>
-        <%
-            if (report.getRows() == null || report.getRows().isEmpty())
-            {
-                %>
-            <tr>
+    <%
+        if (report.getRows() == null || report.getRows().isEmpty())
+        {
+            %><tr>
                 <td colspan="<%= colCount %>"><em>No data to show.</em></td>
-            </tr>
-                <%
-            }
-            else
+            </tr><%
+        }
+        else
+        {
+            // pre-compuyte layout for header rows (Pair<text,rowspan>)
+            int width = report.getLabelDepth();
+            int rows = report.getRows().size();
+            Pair<String,Integer>[][] rowtitles = new Pair[rows][];
+            int rowIndex = -1;
+            for (SpecimenVisitReport.Row row : (Collection<SpecimenVisitReport.Row>) report.getRows())
             {
-                int rowIndex = 0;
-                String[] previousTitleHierarchy = null;
-
-                for (SpecimenVisitReport.Row row : (Collection<SpecimenVisitReport.Row>) report.getRows())
+                rowIndex++;
+                String[] currentTitleHierarchy = row.getTitleHierarchy();
+                Pair<String,Integer>[] titles = rowtitles[rowIndex] = new Pair[width];
+                for (int i=0 ; i<width ; i++)
+                    titles[i] = new Pair(StringUtils.trimToEmpty(currentTitleHierarchy[i]), 1);
+            }
+            for (int row = rows-1 ; row > 0 ; row--)
+            {
+                for (int col=0 ; col < width ; col++)
                 {
-                    String[] currentTitleHierarchy = row.getTitleHierarchy();
-                    %><tr class="<%= (rowIndex++)%2==1 ? "labkey-alternate-row" : "labkey-row" %>"  style="vertical-align:top">
-                    <%
-                    for (int i = 0; i < currentTitleHierarchy.length; i++)
-                    {
-                        String titleElement = currentTitleHierarchy[i];
-                        boolean outputElement = previousTitleHierarchy == null;
-
-                        for (int j = i; j >= 0 && !outputElement; j--)
-                        {
-                            String currentRow = currentTitleHierarchy[j];
-                            String previousRow = previousTitleHierarchy[j];
-                            if (currentRow == null)
-                                currentRow = "]";
-                            if (previousRow == null)
-                                previousRow = "";
-                            outputElement = !currentRow.equals(previousRow);
-                        }
-                        String style = "border-bottom:0;border-right:1px solid #E0E0E0;border-top:solid " + (outputElement ? "1px" : "0px") + " #808080";
-                    %>
-                        <td <%= i < currentTitleHierarchy.length - 1 ? "class=\"labkey-blank-cell\"" : ""%> style="<%= style %>">
-                            <%= outputElement ? h(titleElement != null ? titleElement : "[unspecified]") : "&nbsp;" %>
-                        </td>
-                    <%
-                    }
-
-                    previousTitleHierarchy = currentTitleHierarchy;
-
-                    for (VisitImpl visit : visits)
-                    {
-                        %><td align="center"><%
-                            %><%= row.getCellHtml(visit) %><%
-                        %></td><%
-                    }
-                    %></tr><%
+                    if (!StringUtils.equals(rowtitles[row][col].first,rowtitles[row-1][col].first))
+                        break;
+                    rowtitles[row-1][col].second += rowtitles[row][col].second;
+                    rowtitles[row][col].second = 0;
                 }
             }
+
+            rowIndex = -1;
+            for (SpecimenVisitReport.Row row : (Collection<SpecimenVisitReport.Row>) report.getRows())
+            {
+                rowIndex++;
+                %><tr class="<%=rowIndex%2==1 ? "labkey-alternate-row" : "labkey-row" %>"  style="vertical-align:top"><%
+                for (int col = 0; col<width ; col++)
+                {
+                    String title = StringUtils.defaultString(rowtitles[rowIndex][col].first,"[unspecified]");
+                    int rowspan = rowtitles[rowIndex][col].second;
+                    if (rowspan==0)
+                        continue;
+                    String className="";
+                    String style=col<width-1 ? "background:#FFFFFF" : "";
+                    %><td class="<%=className%>" style="<%=style%>" rowspan="<%=rowspan%>">
+                        <%= h(title) %>
+                    </td><%
+                }
+
+                for (VisitImpl visit : visits)
+                {
+                    %><td align="center"><%
+                        %><%= row.getCellHtml(visit) %><%
+                    %></td><%
+                }
+                %></tr><%
+            }
+        }
 %>
         </table><br><br>
 <%

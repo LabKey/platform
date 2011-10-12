@@ -7,6 +7,7 @@ import org.labkey.api.view.ActionURL;
 import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.util.PageFlowUtil;
 
+import java.text.DecimalFormat;
 import java.util.Map;
 import java.util.Collection;
 import java.util.TreeMap;
@@ -69,6 +70,7 @@ public class SpecimenTypeVisitReport extends SpecimenVisitReport<SampleManager.S
         }
     }
 
+    DecimalFormat format = new DecimalFormat("0.00");
     private String getCellSummaryText(SampleManager.SummaryByVisitType summary)
     {
         StringBuilder summaryString = new StringBuilder();
@@ -84,7 +86,8 @@ public class SpecimenTypeVisitReport extends SpecimenVisitReport<SampleManager.S
         {
             if (summaryString.length() > 0)
                 summaryString.append("/");
-            summaryString.append(summary.getTotalVolume());
+            //summaryString.append(summary.getTotalVolume());
+            summaryString.append(format.format(summary.getTotalVolume()));
         }
         return summaryString.toString();
     }

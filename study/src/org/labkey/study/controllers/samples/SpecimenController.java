@@ -5010,6 +5010,7 @@ public class SpecimenController extends BaseStudyController
                     reportView);
             vbox.setFrame(WebPartView.FrameType.PORTAL);
             vbox.setTitle("Specimen Report (Experimental)");
+            vbox.setTitleHref(new ActionURL(TypeSummaryReportAction.class, portalCtx.getContainer()));
             return vbox;
         }
     }
