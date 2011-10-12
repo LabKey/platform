@@ -79,8 +79,6 @@ public class ReportDataRegion extends AbstractDataRegion
             if (filter.length() > 0)
                 messages.put(MessagePart.filter.name(), filter.toString());
 
-            renderHeaderScript(ctx, out, messages);
-
             // for now set the width to 100%, but we want to be smarter about calculating the viewport width less scroll
             out.write("\n<table width=\"100%\" class=\"labkey-data-region");
             out.write(" labkey-show-borders\"");
@@ -95,6 +93,8 @@ public class ReportDataRegion extends AbstractDataRegion
             out.write("</td></tr>");
 
             out.write("</table>");
+
+            renderHeaderScript(ctx, out, messages);
         }
         catch (Exception e)
         {

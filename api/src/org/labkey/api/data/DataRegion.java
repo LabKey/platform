@@ -782,8 +782,6 @@ public class DataRegion extends AbstractDataRegion
             if (filterMsg.length() > 0)
                 messages.put(MessagePart.filter.name(), filterMsg.toString());
 
-            renderHeaderScript(ctx, out, messages, showRecordSelectors);
-
             if (showParameterForm)
             {
                 try
@@ -838,6 +836,8 @@ public class DataRegion extends AbstractDataRegion
             renderFooter(ctx, out, renderButtons, colCount);
 
             renderRegionEnd(ctx, out, renderButtons, renderers);
+
+            renderHeaderScript(ctx, out, messages, showRecordSelectors);
         }
         finally
         {
