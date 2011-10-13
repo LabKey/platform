@@ -148,9 +148,10 @@ LABKEY.NavigateInPlaceStrategy = Ext.extend(Object,
     /** private */
     _navigateInPlaceComplete : function(hashbang, href, pushNewState)
     {
-        this._cachedPage = this._emptyPage;
         var el = this.getPageBodyElement();
         var page = {hashbang : hashbang, href : href};
+        if (this.cacheable(hashbang))
+            this._cachedPage = this._emptyPage;
         if (this.cacheable(hashbang, el))
             this._cachedPage = {hashbang : hashbang, href : href, html : el.dom.innerHTML};
         this._hijackAnchorTags(el);
@@ -179,7 +180,7 @@ LABKEY.NavigateInPlaceStrategy = Ext.extend(Object,
             el.update(this._cachedPage.html);
             this._hijackAnchorTags(el);
             if (pushNewState)
-                pushState(this._cachedPage, "", hashbang);
+                this._pushState(this._cachedPage);
         }
         else
         {

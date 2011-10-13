@@ -84,7 +84,7 @@ if (!Ext.isDefined(window.navigationStrategy))
             "emailPrefs" : true,
             "resolve" : true
         }
-//        , cacheable : cacheablePage
+        , cacheable : cacheablePage
     });
 }
 </script><%
