@@ -83,6 +83,29 @@ li.labkey-fullscreen-wizard-active-step
     width: 75%
 }
 
+.labkey-ancillary-wizard-steps
+{
+    list-style-position: inside;
+}
+
+.labkey-ancillary-wizard-steps li
+{
+    padding: 8px 2em 8px 3em;
+}
+
+.labkey-ancillary-wizard-background
+{
+    background-color: #E7EFF4;
+    height: 100%;
+    /*padding-top: 25px;*/
+}
+
+li.labkey-ancillary-wizard-active-step
+{
+    background-color: white;
+    font-weight: bold;
+}
+
 a, a:visited, .labkey-link, .labkey-link:visited
 {
     color: #126495;

@@ -17,6 +17,25 @@ LABKEY.study.CreateStudyWizard = Ext.extend(Ext.util.Observable, {
     {
         Ext.apply(this, config);
         Ext.util.Observable.prototype.constructor.call(this, config);
+        this.sideBarTemplate = new Ext.XTemplate(
+                '<div class="labkey-ancillary-wizard-background">',
+                '<ol class="labkey-ancillary-wizard-steps">',
+                '<tpl for="steps">',
+
+                    '<tpl if="values.currentStep == true">',
+                    '<li class="labkey-fullscreen-wizard-active-step">{value}</li>',
+                    '</tpl>',
+
+                    '<tpl if="values.currentStep == false">',
+                    '<li>{value}</li>',
+                    '</tpl>',
+
+                '</tpl>',
+                '</ol>',
+                '</div>'
+
+        );
+        this.sideBarTemplate.compile();
     },
 
     show : function() {
@@ -49,18 +68,44 @@ LABKEY.study.CreateStudyWizard = Ext.extend(Ext.util.Observable, {
             }});
         }
 
-        this.wizard = new Ext.Panel({
+        this.pages = new Ext.Panel({
             border: false,
             layout: 'card',
             layoutConfig: {deferredRender:true},
             activeItem: 0,
             bodyStyle : 'padding: 25px;',
+            flex: 1,
             items: this.steps,
             bbar: ['->', this.prevBtn, this.nextBtn]
         });
 
+        this.sideBar = new Ext.Panel({
+            //This is going to be where the sidebar content goes.
+            name: 'sidebar',
+            width: 175,
+            border: false,
+            tpl: this.sideBarTemplate,
+            data: {
+                steps: [{value: 'Initial Setup', currentStep: true}, {value: this.subject.nounPlural, currentStep: false}, {value: 'Datasets', currentStep: false}]
+            }
+        });
+
+        this.wizard = new Ext.Panel({
+            layout: 'hbox',
+            layoutConfig: {
+                pack: 'start',
+                align: 'stretch'
+            },
+            defaults: {
+                border: false
+            },
+            items: [this.sideBar, this.pages]
+        });
+
+        //To update the sideBar call this.sideBar.update({steps: [], currentStepIndex: int});
+
         this.win = new Ext.Window({
-            title: 'Create New Study',
+            title: 'Create Ancillary Study',
             width: 875,
             height: 600,
             cls: 'extContainer',
@@ -76,6 +121,17 @@ LABKEY.study.CreateStudyWizard = Ext.extend(Ext.util.Observable, {
 
     updateStep : function() {
 
+        var sideBarData = [];
+        for(var i = 0; i < this.steps.length; i++){
+            var value = this.steps[i].name;
+            var isCurrentStep = i == this.currentStep;
+            sideBarData.push({
+                value: value,
+                currentStep: isCurrentStep
+            });
+        }
+        this.sideBar.update({steps: sideBarData});
+
         this.prevBtn.setDisabled(this.currentStep == 0);
         if (this.currentStep == this.steps.length-1)
         {
@@ -90,7 +146,7 @@ LABKEY.study.CreateStudyWizard = Ext.extend(Ext.util.Observable, {
                 this.updateStep();
             }, this);
         }
-        this.wizard.getLayout().setActiveItem(this.currentStep);
+        this.pages.getLayout().setActiveItem(this.currentStep);
     },
 
     getNamePanel : function() {
@@ -101,9 +157,8 @@ LABKEY.study.CreateStudyWizard = Ext.extend(Ext.util.Observable, {
         this.info.dstPath = LABKEY.ActionURL.getContainer() + '/' + this.info.name;
 
         var studyLocation = new Ext.form.DisplayField({
-            fieldLabel: 'New Study Location',
+            fieldLabel: 'Location',
             name: 'studyFolder',
-            width: 650,
             readOnly: true,
             value: this.info.dstPath,
             scope: this
@@ -122,7 +177,7 @@ LABKEY.study.CreateStudyWizard = Ext.extend(Ext.util.Observable, {
 
         var protocolDocField = new Ext.form.FileUploadField({
             emptyText: 'Select a protocol document',
-            fieldLabel: 'Protocol Document',
+            fieldLabel: 'Protocol',
             name: 'protocolDoc',
             buttonText: 'Browse',
             buttonCfg: { cls: "labkey-button" },
@@ -140,7 +195,7 @@ LABKEY.study.CreateStudyWizard = Ext.extend(Ext.util.Observable, {
         var formItems = [
             {
                 xtype: 'textfield',
-                fieldLabel: 'Study Name',
+                fieldLabel: 'Name',
                 allowBlank: false,
                 name: 'studyName',
                 value: this.info.name,
@@ -148,6 +203,7 @@ LABKEY.study.CreateStudyWizard = Ext.extend(Ext.util.Observable, {
                 listeners: {change: blurChange, keyup:nameChange, scope:this}
             },{
                 xtype: 'textarea',
+                fieldLabel: 'Description',
                 name: 'studyDescription',
                 height: '200',
                 emptyText: 'Type Description here',
@@ -279,7 +335,7 @@ LABKEY.study.CreateStudyWizard = Ext.extend(Ext.util.Observable, {
             border: false,
             defaults: {
                 labelSeparator: '',
-                width: 710
+                width: 510
             },
             flex: 1,
             layout: 'form',
@@ -292,13 +348,13 @@ LABKEY.study.CreateStudyWizard = Ext.extend(Ext.util.Observable, {
 
         var panel = new Ext.Panel({
             border: false,
+            name: "Initial Setup",
             layout: 'vbox',
             layoutConfig: {
                 align: 'stretch',
                 pack: 'start'
             },
             items: items
-//            buttons: [{text: 'Change Folder', scope: this, handler: function(){Ext.MessageBox.alert('Coming Soon', 'This feature has not been implemented yet.');}}]
         });
 
         panel.on('beforehide', function(cmp){
@@ -373,6 +429,7 @@ LABKEY.study.CreateStudyWizard = Ext.extend(Ext.util.Observable, {
 
         this.participantPanel = new Ext.Panel({
             border: false,
+            name: this.subject.nounPlural,
             layout: 'vbox',
             items: items,
             layoutConfig: {
@@ -635,6 +692,7 @@ LABKEY.study.CreateStudyWizard = Ext.extend(Ext.util.Observable, {
 
         var panel = new Ext.Panel({
             border: false,
+            name: "Datasets",
             layout: 'vbox',
             items: items,
             layoutConfig: {
