@@ -944,6 +944,7 @@ api/src/org/labkey/api/study/assay/AssayPublishService.java -text
 api/src/org/labkey/api/study/assay/AssayResultTable.java -text
 api/src/org/labkey/api/study/assay/AssayResultUpdateService.java -text
 api/src/org/labkey/api/study/assay/AssayResultsView.java -text
+api/src/org/labkey/api/study/assay/AssayRunCreator.java -text
 api/src/org/labkey/api/study/assay/AssayRunDatabaseContext.java -text
 api/src/org/labkey/api/study/assay/AssayRunType.java -text
 api/src/org/labkey/api/study/assay/AssayRunUploadContext.java -text
@@ -956,6 +957,7 @@ api/src/org/labkey/api/study/assay/AssayUrls.java -text
 api/src/org/labkey/api/study/assay/AssayWarningsDisplayColumn.java -text
 api/src/org/labkey/api/study/assay/BatchListQueryView.java -text
 api/src/org/labkey/api/study/assay/BulkPropertiesUploadWizardAction.java -text
+api/src/org/labkey/api/study/assay/DefaultAssayRunCreator.java -text
 api/src/org/labkey/api/study/assay/DefaultDataTransformer.java -text
 api/src/org/labkey/api/study/assay/FileLinkDisplayColumn.java -text
 api/src/org/labkey/api/study/assay/FileUploadDataCollector.java -text
@@ -965,6 +967,7 @@ api/src/org/labkey/api/study/assay/ParticipantVisitResolverType.java -text
 api/src/org/labkey/api/study/assay/PipelineDataCollector.java -text
 api/src/org/labkey/api/study/assay/PipelineDataCollectorRedirectAction.java -text
 api/src/org/labkey/api/study/assay/PlateBasedAssayProvider.java -text
+api/src/org/labkey/api/study/assay/PlateBasedRunCreator.java -text
 api/src/org/labkey/api/study/assay/PlateSampleFilePropertyHelper.java -text
 api/src/org/labkey/api/study/assay/PlateSamplePropertyHelper.java -text
 api/src/org/labkey/api/study/assay/PlateUrls.java -text

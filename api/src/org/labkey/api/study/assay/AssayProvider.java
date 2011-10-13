@@ -29,7 +29,6 @@ import org.labkey.api.exp.query.ExpRunTable;
 import org.labkey.api.qc.DataExchangeHandler;
 import org.labkey.api.qc.DataTransformer;
 import org.labkey.api.qc.DataValidator;
-import org.labkey.api.query.ValidationException;
 import org.labkey.api.security.User;
 import org.labkey.api.study.actions.AssayRunUploadForm;
 import org.labkey.api.study.query.ResultsQueryView;
@@ -67,12 +66,7 @@ public interface AssayProvider extends Handler<ExpProtocol>
 
     Domain getResultsDomain(ExpProtocol protocol);
 
-    /**
-     * Creates a run, but does not persist it to the database. Creates the run only, no protocol applications, etc.
-     */
-    ExpRun createExperimentRun(String name, Container container, ExpProtocol protocol);
-
-    Pair<ExpRun, ExpExperiment> saveExperimentRun(AssayRunUploadContext context, ExpExperiment batch) throws ExperimentException, ValidationException;
+    AssayRunCreator getRunCreator();
 
     List<AssayDataCollector> getDataCollectors(Map<String, File> uploadedFiles, AssayRunUploadForm context);
 
@@ -161,7 +155,6 @@ public interface AssayProvider extends Handler<ExpProtocol>
     /**
      * Returns true if the given provider can display a useful details page for dataset data that has been copied.
      * If a provider is a simple GPAT, then it does not have a useful details page
-     * @return
      */
     boolean hasUsefulDetailsPage();
 
@@ -226,7 +219,4 @@ public interface AssayProvider extends Handler<ExpProtocol>
      */
     DataExchangeHandler createDataExchangeHandler();
     AssayRunDatabaseContext createRunDatabaseContext(ExpRun run, User user, HttpServletRequest request);
-
-    DataTransformer getDataTransformer();
-    DataValidator getDataValidator();
 }

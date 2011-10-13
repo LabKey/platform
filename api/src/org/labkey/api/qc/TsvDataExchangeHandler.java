@@ -587,7 +587,7 @@ public class TsvDataExchangeHandler implements DataExchangeHandler
                         FileUtils.moveFile(file, targetFile);
 
                         // Add the file as an output to the run
-                        Pair<ExpData,String> outputData = AbstractAssayProvider.createdRelatedOutputData(context.getContainer(), Collections.<AssayDataType>emptyList(), baseName, targetFile);
+                        Pair<ExpData,String> outputData = DefaultAssayRunCreator.createdRelatedOutputData(context.getContainer(), Collections.<AssayDataType>emptyList(), baseName, targetFile);
                         for (ExpProtocolApplication protocolApplication : run.getProtocolApplications())
                         {
                             if (protocolApplication.getApplicationType() == ExpProtocol.ApplicationType.ExperimentRunOutput)
@@ -607,7 +607,7 @@ public class TsvDataExchangeHandler implements DataExchangeHandler
 
                     for (Map.Entry<String, File> entry : transformedData.entrySet())
                     {
-                        ExpData data = AbstractAssayProvider.createData(context.getContainer(), entry.getValue(), "transformed output", new DataType(entry.getKey()));
+                        ExpData data = DefaultAssayRunCreator.createData(context.getContainer(), entry.getValue(), "transformed output", new DataType(entry.getKey()));
                         data.setName(entry.getKey());
 
                         dataMap.put(data, getDataSerializer().importRunData(context.getProtocol(), entry.getValue()));

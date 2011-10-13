@@ -481,7 +481,7 @@ public class UploadWizardAction<FormType extends AssayRunUploadForm<ProviderType
 
     public static boolean validatePostedProperties(Map<DomainProperty, String> properties, BindException errors)
     {
-        for (ValidationError error : AbstractAssayProvider.validateProperties(properties))
+        for (ValidationError error : DefaultAssayRunCreator.validateProperties(properties))
             errors.reject(SpringActionController.ERROR_MSG, error.getMessage());
 
 /*
@@ -617,7 +617,7 @@ public class UploadWizardAction<FormType extends AssayRunUploadForm<ProviderType
                 exp = ExperimentService.get().getExpExperiment(form.getBatchId().intValue());
             }
 
-            Pair<ExpRun, ExpExperiment> insertedValues = form.getProvider().saveExperimentRun(form, exp);
+            Pair<ExpRun, ExpExperiment> insertedValues = form.getProvider().getRunCreator().saveExperimentRun(form, exp);
 
             ExpRun run = insertedValues.getKey();
             form.setBatchId(insertedValues.getValue().getRowId());
