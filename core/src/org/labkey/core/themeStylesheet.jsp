@@ -635,3 +635,8 @@ li.labkey-tab-inactive a
 {
     background-color: #<%= webpart %>;
 }
+
+.labkey-ancillary-wizard-background
+{
+    background-color: #<%= grid %>;
+}

@@ -23,7 +23,7 @@ LABKEY.study.CreateStudyWizard = Ext.extend(Ext.util.Observable, {
                 '<tpl for="steps">',
 
                     '<tpl if="values.currentStep == true">',
-                    '<li class="labkey-fullscreen-wizard-active-step">{value}</li>',
+                    '<li class="labkey-ancillary-wizard-active-step">{value}</li>',
                     '</tpl>',
 
                     '<tpl if="values.currentStep == false">',

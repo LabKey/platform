@@ -259,6 +259,10 @@ public class CoreController extends SpringActionController
             Content content = _themeStylesheetCache.get(c);
             Integer dependsOn = AppProps.getInstance().getLookAndFeelRevision();
 
+            if(AppProps.getInstance().isDevMode()){
+                content = null;
+            }
+            
             if (null == content || !dependsOn.equals(content.dependencies))
             {
                 JspView view = new JspView("/org/labkey/core/themeStylesheet.jsp");
