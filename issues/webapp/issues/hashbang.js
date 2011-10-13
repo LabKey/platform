@@ -184,13 +184,13 @@ LABKEY.NavigateInPlaceStrategy = Ext.extend(Object,
         else
         {
             console.log("FETCH:  " + hashbang);
-            if (-1 == href.indexOf("_template=None"))
-                href += ((-1 == href.indexOf('?')) ? '?' : '&') + "_template=None";
+//            if (-1 == href.indexOf("_template=None"))
+//                href += ((-1 == href.indexOf('?')) ? '?' : '&') + "_template=None";
             el.getUpdater().update(
             {
                 url: href,
                 scripts: true,
-                headers : {"X-ONUNAUTHORIZED":"UNAUTHORIZED"},  // hint: BASIC, UNAUTHORIZED, LOGIN
+                headers : {"X-ONUNAUTHORIZED":"UNAUTHORIZED", "X-TEMPLATE":"None"},  // hint: BASIC, UNAUTHORIZED, LOGIN
                 callback : function(el, success, response, options)
                 {
                     if (success)

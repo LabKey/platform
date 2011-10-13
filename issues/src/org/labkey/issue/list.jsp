@@ -23,9 +23,9 @@
 <%@ page import="org.labkey.issue.IssuesController" %>
 <%@ page import="org.labkey.api.view.ActionURL" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
-
 <%
     ViewContext context = HttpView.getRootContext();
+    String contextPath = context.getContextPath();
     IssueManager.EntryTypeNames names = IssueManager.getEntryTypeNames(getViewContext().getContainer());
 
     if (request.getParameter("error") != null)
@@ -52,3 +52,41 @@
         <input type="text" size="30" name="q" value="">
         <%=PageFlowUtil.generateSubmitButton("Search", "", "align=\"top\" vspace=\"2\"")%></form></td>
 </tr></table>
+
+<%
+if ("true".equals(context.getActionURL().getParameter("navigateInPlace")))
+{
+%><script src="<%=contextPath%>/issues/hashbang.js"></script>
+<script>
+if (!Ext.isDefined(window.navigationStrategy))
+{
+    function cacheablePage(hash, el)
+    {
+        if (-1 == hash.indexOf("_action=list"))
+            return false;
+        if (!el)
+            return true;
+        var errors = Ext.DomQuery.jsSelect(".labkey-error", el.dom);
+        var hasErrors = errors && errors.length > 0;
+        return !hasErrors;
+    }
+
+    window.navigationStrategy = new LABKEY.NavigateInPlaceStrategy(
+    {
+        controller : "issues",
+        actions :
+        {
+            "details": true,
+            "list" : true,
+            "insert" : true,
+            "update" : true,
+            "admin" : true,
+            "emailPrefs" : true,
+            "resolve" : true
+        }
+//        , cacheable : cacheablePage
+    });
+}
+</script><%
+}
+%>

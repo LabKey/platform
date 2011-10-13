@@ -195,6 +195,13 @@ public class IssuesController extends SpringActionController
     {
         PageConfig config = super.defaultPageConfig();
         config.setHelpTopic(new HelpTopic(helpTopic));
+
+        String templateHeader = getViewContext().getRequest().getHeader("X-TEMPLATE");
+        if (!StringUtils.isEmpty(templateHeader))
+        {
+            try { config.setTemplate(PageConfig.Template.valueOf(templateHeader)); } catch (IllegalArgumentException x) { /* */ }
+        }
+
         return config;
     }
 
