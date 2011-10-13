@@ -922,6 +922,8 @@ LABKEY.DataRegion = Ext.extend(Ext.Component,
     _initHeaderLock : function() {
         // initialize constants
         this.headerRow          = Ext.get('dataregion_header_row_' + this.name);
+        if (!this.headerRow)
+            return;  // too early?
         this.headerRowContent   = this.headerRow.child('td');
         this.headerSpacer       = Ext.get('dataregion_header_row_spacer_' + this.name);
         this.colHeaderRow       = Ext.get('dataregion_column_header_row_' + this.name);
