@@ -51,6 +51,7 @@ import org.labkey.api.pipeline.PipelineService;
 import org.labkey.api.portal.ProjectUrls;
 import org.labkey.api.qc.DataExchangeHandler;
 import org.labkey.api.qc.DataTransformer;
+import org.labkey.api.qc.TransformResult;
 import org.labkey.api.query.QueryParam;
 import org.labkey.api.query.QueryService;
 import org.labkey.api.query.UserSchema;
@@ -178,8 +179,10 @@ public class AssayController extends SpringActionController
 
             AssayRunDatabaseContext context = provider.createRunDatabaseContext(run, getUser(), getViewContext().getRequest());
 
-            DataTransformer transformer = context.getProvider().getDataTransformer();
-            transformer.transform(context, run);
+            DataTransformer transformer = context.getProvider().getRunCreator().getDataTransformer();
+            TransformResult result = transformer.transform(context, run);
+
+            
 
             return new HtmlView("Success");
         }

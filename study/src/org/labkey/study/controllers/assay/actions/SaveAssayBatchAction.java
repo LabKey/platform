@@ -33,10 +33,10 @@ import org.labkey.api.qc.DataValidator;
 import org.labkey.api.query.ValidationException;
 import org.labkey.api.security.RequiresPermissionClass;
 import org.labkey.api.security.permissions.*;
-import org.labkey.api.study.assay.AbstractAssayProvider;
 import org.labkey.api.study.assay.AssayProvider;
 import org.labkey.api.study.assay.AssayPublishService;
 import org.labkey.api.study.assay.AssayService;
+import org.labkey.api.study.assay.DefaultAssayRunCreator;
 import org.labkey.api.view.NotFoundException;
 import org.labkey.api.view.ViewBackgroundInfo;
 import org.labkey.api.view.ViewContext;
@@ -109,7 +109,7 @@ public class SaveAssayBatchAction extends AbstractAssayAPIAction<SimpleApiJsonFo
         }
         else
         {
-            run = provider.createExperimentRun(name, getViewContext().getContainer(), protocol);
+            run = provider.getRunCreator().createExperimentRun(name, getViewContext().getContainer(), protocol);
         }
         PipeRoot pipeRoot = PipelineService.get().findPipelineRoot(getViewContext().getContainer());
         if (pipeRoot == null)
@@ -247,7 +247,7 @@ public class SaveAssayBatchAction extends AbstractAssayAPIAction<SimpleApiJsonFo
         // include any data rows
         if (dataArray.length() > 0 && outputData.isEmpty())
         {
-            newData = AbstractAssayProvider.createData(run.getContainer(), null, "Analysis Results", provider.getDataType());
+            newData = DefaultAssayRunCreator.createData(run.getContainer(), null, "Analysis Results", provider.getDataType());
             newData.save(getViewContext().getUser());
             outputData.put(newData, "Data");
         }
@@ -275,7 +275,7 @@ public class SaveAssayBatchAction extends AbstractAssayAPIAction<SimpleApiJsonFo
         if (newData != null)
         {
             // programmatic qc validation
-            DataValidator dataValidator = provider.getDataValidator();
+            DataValidator dataValidator = provider.getRunCreator().getDataValidator();
             if (dataValidator != null)
                 dataValidator.validate(new ModuleRunUploadContext(getViewContext(), protocol.getRowId(), runJsonObject, rawData), run);
 
