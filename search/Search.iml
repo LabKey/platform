@@ -39,9 +39,9 @@
       </library>
     </orderEntry>
     <orderEntry type="module-library">
-      <library name="tika 0.9">
+      <library name="tika 0.10">
         <CLASSES>
-          <root url="jar://$MODULE_DIR$/lib/tika-app-0.9.jar!/" />
+          <root url="jar://$MODULE_DIR$/lib/tika-app-0.10.jar!/" />
         </CLASSES>
         <JAVADOC />
         <SOURCES />
