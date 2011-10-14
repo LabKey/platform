@@ -1829,7 +1829,7 @@ public class ContainerManager
                 ContainerManager.deleteAll(_testRoot, TestContext.get().getUser());
         }
 
-//        @Test
+        @Test
         public void testImproperFolderNamesBlocked() throws Exception
         {
             String[] badnames = {"", "f\\o", "f/o", "f\\\\o", "foo;", "@foo", "foo" + '\u001F', '\u0000' + "foo", "fo" + '\u007F' + "o", "" + '\u009F'};
