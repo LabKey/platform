@@ -1,0 +1,52 @@
+/*div.x4-grid-cell-inner.x4-unselectable {cursor:pointer}*/
+
+.edit-views-link
+{
+    background: url("/labkey/_images/pencil2.png") left top no-repeat;
+    position: absolute;
+    height: 18px;
+    width: 23px;
+}
+
+.edit-views-link:hover
+{
+    background: url("/labkey/_images/pencil2.png") center top no-repeat !important;
+    cursor: pointer;
+}
+
+.iScroll ::-webkit-scrollbar
+{
+    width: 7px;
+    height: 9px;
+}
+
+.iScroll ::-webkit-scrollbar-button:start:decrement,
+.iScroll ::-webkit-scrollbar-button:end:increment
+{
+    display: block;
+    height: 0;
+    background-color: transparent;
+}
+
+.iScroll ::-webkit-scrollbar-track-piece
+{
+    -webkit-border-radius: 0;
+    -webkit-border-bottom-right-radius: 4px;
+    -webkit-border-bottom-left-radius: 4px;
+}
+
+.iScroll ::-webkit-scrollbar-thumb
+{
+    background-color: rgba(0, 0, 0, 0.3);
+    -webkit-border-radius: 4px;
+}
+
+.iScroll ::-webkit-scrollbar-thumb:vertical
+{
+    height: 50px;
+}
+
+.iScroll ::-webkit-scrollbar-thumb:horizontal
+{
+    width: 50px;
+}

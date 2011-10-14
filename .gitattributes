@@ -2906,7 +2906,6 @@ study/src/org/labkey/study/view/createTimepoint.jsp -text
 study/src/org/labkey/study/view/createVisit.jsp -text
 study/src/org/labkey/study/view/crosstabDesigner.jsp -text
 study/src/org/labkey/study/view/customizeAssayDetailsWebPart.jsp -text
-study/src/org/labkey/study/view/customizeDataViews.jsp -text
 study/src/org/labkey/study/view/customizeParticipantView.jsp -text
 study/src/org/labkey/study/view/customizeParticipantWebPart.jsp -text
 study/src/org/labkey/study/view/dataSetDisplayOrder.jsp -text
@@ -3025,6 +3024,8 @@ study/src/org/labkey/study/writer/VisitMapWriter.java -text
 study/src/org/labkey/study/writer/XmlVisitMapWriter.java -text
 study/webapp/WEB-INF/study/studyContext.xml -text
 study/webapp/sampleRequest.js -text
+study/webapp/study/DataViewsPanel.css -text
+study/webapp/study/DataViewsPanel.js -text
 study/webapp/study/ParticipantGroup.js -text
 study/webapp/study/StudyWizard.js -text
 study/webapp/study/assay/SampleLookupTemplate.xls -text
