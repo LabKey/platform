@@ -303,6 +303,7 @@ LABKEY.vis.XYChartComponent = Ext.extend(Ext.BoxComponent, {
                 break;
             case "bottom":
                 rule.left(scale);
+                angle = 0;
                 if(this.labels){
                     textRenderer = this.getVisitBasedRenderer(this.labels);
                     if(this.longLabels){
