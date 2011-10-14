@@ -41,6 +41,8 @@ import org.labkey.api.reports.report.ScriptReportDescriptor;
 import org.labkey.api.security.SecurityManager;
 import org.labkey.api.security.User;
 import org.labkey.api.security.UserManager;
+import org.labkey.api.study.DataSet;
+import org.labkey.api.study.StudyService;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.Pair;
 import org.labkey.api.view.ActionURL;
@@ -347,6 +349,19 @@ public class ReportUtil
         return getViews(context, schemaName, queryName, includeQueries, new DefaultReportFilter());
     }
 
+    private static String getDefaultCategory(Container c, String query)
+    {
+        String category = query;
+        int datasetId = StudyService.get().getDatasetId(c, query);
+        if (datasetId >= 0)
+        {
+            DataSet ds = StudyService.get().getDataSet(c, datasetId);
+            if (ds != null)
+                category = ds.getCategory();
+        }
+        return StringUtils.defaultIfEmpty(category, "Uncategorized");
+    }
+
     public static List<ViewInfo> getViews(ViewContext context, String schemaName, String queryName, boolean includeQueries, ReportFilter filter)
     {
         Container c = context.getContainer();
@@ -387,7 +402,10 @@ public class ReportUtil
                     info.setCategory(descriptor.getCategory().getLabel());
                     info.setCategoryDisplayOrder(descriptor.getCategory().getDisplayOrder());
                 }
-                //info.setCategory(StringUtils.defaultIfEmpty(query, "Stand-alone views"));
+                else
+                {
+                    info.setCategory(getDefaultCategory(c, query));
+                }
                 info.setSchema(schema);
                 info.setCreatedBy(createdBy);
                 info.setCreated(descriptor.getCreated());
@@ -466,7 +484,7 @@ public class ReportUtil
                         QueryParam.viewName.name(), view.getName());
 
                 info.setQueryView(true);
-                info.setCategory(view.getQueryName());
+                info.setCategory(getDefaultCategory(c, view.getQueryName()));
                 info.setReportId(new QueryViewReportId(viewId));
                 info.setQuery(view.getQueryName());
                 info.setSchema(view.getSchemaName());

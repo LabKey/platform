@@ -65,6 +65,11 @@ public abstract class AbstractSnapshotProvider implements QuerySnapshotService.I
 
     public ActionURL updateSnapshot(QuerySnapshotForm form, BindException errors) throws Exception
     {
+        return updateSnapshot(form, errors, false);
+    }
+
+    public ActionURL updateSnapshot(QuerySnapshotForm form, BindException errors, boolean suppressVisitManagerRecalc) throws Exception
+    {
         throw new UnsupportedOperationException();
     }
 

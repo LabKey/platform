@@ -18,6 +18,8 @@ package org.labkey.api.data;
 import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.Permission;
 import org.labkey.api.security.permissions.ReadPermission;
+import org.labkey.api.study.Study;
+import org.labkey.api.study.StudyService;
 
 import java.util.Collection;
 import java.util.Collections;
@@ -103,6 +105,13 @@ public abstract class ContainerFilter
             public ContainerFilter create(User user)
             {
                 return new WorkbookAndParent(user);
+            }
+        },
+        StudyAndSourceStudy("Current study and its source/parent study")
+        {
+            public ContainerFilter create(User user)
+            {
+                return new StudyAndSourceStudy(user, false);
             }
         },
         AllFolders("All folders")
@@ -379,6 +388,53 @@ public abstract class ContainerFilter
         public Type getType()
         {
             return Type.WorkbookAndParent;
+        }
+    }
+
+    public static class StudyAndSourceStudy extends ContainerFilterWithUser
+    {
+        private boolean _skipPermissionChecks;
+
+        public StudyAndSourceStudy(User user, boolean skipPermissionChecks)
+        {
+            this(user, ReadPermission.class, skipPermissionChecks);
+        }
+
+        public StudyAndSourceStudy(User user, Class<? extends Permission> perm)
+        {
+            this(user, perm, false);
+        }
+
+        protected StudyAndSourceStudy(User user, Class<? extends Permission> perm, boolean skipPermissionChecks)
+        {
+            super(user, perm);
+            _skipPermissionChecks = skipPermissionChecks;
+        }
+
+        @Override
+        public Collection<String> getIds(Container currentContainer)
+        {
+            Set<String> result = new HashSet<String>();
+            if (_skipPermissionChecks || currentContainer.hasPermission(_user, _perm))
+            {
+                result.add(currentContainer.getId());
+            }
+            Study study = StudyService.get().getStudy(currentContainer);
+            if (study != null && study.isAncillaryStudy())
+            {
+                Study sourceStudy = study.getSourceStudy();
+                if (sourceStudy != null && (_skipPermissionChecks || sourceStudy.getContainer().hasPermission(_user, _perm)))
+                {
+                    result.add(sourceStudy.getContainer().getId());
+                }
+            }
+            return result;
+        }
+
+        @Override
+        public Type getType()
+        {
+            return Type.StudyAndSourceStudy;
         }
     }
 
