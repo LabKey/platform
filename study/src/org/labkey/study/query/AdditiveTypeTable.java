@@ -23,7 +23,7 @@ public class AdditiveTypeTable extends BaseStudyTable
 {
     public AdditiveTypeTable(StudyQuerySchema schema)
     {
-        super(schema, StudySchema.getInstance().getTableInfoSpecimenAdditive());
+        super(schema, StudySchema.getInstance().getTableInfoSpecimenAdditive(), true);
         addWrapColumn(_rootTable.getColumn("RowId")).setHidden(true);
         addWrapColumn(_rootTable.getColumn("ExternalId")).setHidden(true);
         addColumn(new AliasedColumn(this, "LdmsCode", _rootTable.getColumn("LdmsAdditiveCode")));

@@ -461,6 +461,23 @@ public class ParticipantGroupManager
         return null;
     }
 
+    public String[] getAllGroupedParticipants(Container container)
+    {
+        SQLFragment sql = new SQLFragment("SELECT DISTINCT ParticipantId FROM ");
+        sql.append(getTableInfoParticipantGroupMap(), "GroupMap");
+        sql.append(" WHERE Container = ? ORDER BY ParticipantId");
+        sql.add(container);
+        try
+        {
+            return Table.executeArray(StudySchema.getInstance().getSchema(), sql, String.class);
+        }
+        catch (SQLException e)
+        {
+            throw new RuntimeSQLException(e);
+        }
+    }
+
+
     public ParticipantGroup[] getParticipantGroups(Container c, User user, ParticipantCategory def)
     {
         if (!def.isNew())

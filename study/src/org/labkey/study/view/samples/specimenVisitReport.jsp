@@ -97,7 +97,9 @@
                 %><tr class="<%=rowIndex%2==1 ? "labkey-alternate-row" : "labkey-row" %>"  style="vertical-align:top"><%
                 for (int col = 0; col<width ; col++)
                 {
-                    String title = StringUtils.defaultString(rowtitles[rowIndex][col].first,"[unspecified]");
+                    String title = rowtitles[rowIndex][col].first;
+                    if (title == null || title.length() == 0)
+                        title = "[unspecified]";
                     int rowspan = rowtitles[rowIndex][col].second;
                     if (rowspan==0)
                         continue;

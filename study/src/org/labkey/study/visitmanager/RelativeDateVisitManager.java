@@ -110,7 +110,7 @@ public class RelativeDateVisitManager extends VisitManager
         DbSchema schema = StudySchema.getInstance().getSchema();
         TableInfo tableParticipantVisit = StudySchema.getInstance().getTableInfoParticipantVisit();
         TableInfo tableStudyData = StudySchema.getInstance().getTableInfoStudyData(getStudy(), user);
-        TableInfo tableSpecimen = StudySchema.getInstance().getTableInfoSpecimen();
+        TableInfo tableSpecimen = getSpecimenTable(getStudy());
         TableInfo tableParticipant = StudySchema.getInstance().getTableInfoParticipant();
 
         try
@@ -119,28 +119,31 @@ public class RelativeDateVisitManager extends VisitManager
             // populate ParticipantVisit
             //
             SQLFragment sqlInsertParticipantVisit = new SQLFragment();
-            sqlInsertParticipantVisit.append("INSERT INTO " + tableParticipantVisit +
-                    " (Container, ParticipantId, SequenceNum, VisitDate, ParticipantSequenceKey)\n" +
-                    "SELECT DISTINCT ? as Container, ParticipantId, SequenceNum, _VisitDate, \n(").append(
-                    getParticipantSequenceKeyExpr(schema, "ParticipantId", "SequenceNum") + ") AS ParticipantSequenceKey\n" +
-                    "FROM ").append(tableStudyData.getFromSQL("SD")).append("\n" +
-                    "WHERE NOT EXISTS (" +
-                    "  SELECT ParticipantId, SequenceNum FROM " + tableParticipantVisit + " PV\n" +
-                    "  WHERE Container = ? AND SD.ParticipantId=PV.ParticipantId AND SD.SequenceNum=PV.SequenceNum)");
+            sqlInsertParticipantVisit.append("INSERT INTO ").append(tableParticipantVisit.getSelectName());
+            sqlInsertParticipantVisit.append(" (Container, ParticipantId, SequenceNum, VisitDate, ParticipantSequenceKey)\n");
+            sqlInsertParticipantVisit.append("SELECT DISTINCT ? as Container, ParticipantId, SequenceNum, _VisitDate, \n(");
             sqlInsertParticipantVisit.add(getStudy().getContainer());
+            sqlInsertParticipantVisit.append(getParticipantSequenceKeyExpr(schema, "ParticipantId", "SequenceNum")).append(") AS ParticipantSequenceKey\n");
+            sqlInsertParticipantVisit.append("FROM ").append(tableStudyData.getFromSQL("SD")).append("\n");
+            sqlInsertParticipantVisit.append("WHERE NOT EXISTS (SELECT ParticipantId, SequenceNum FROM ");
+            sqlInsertParticipantVisit.append(tableParticipantVisit, "PV").append("\n");
+            sqlInsertParticipantVisit.append("WHERE Container = ? AND SD.ParticipantId = PV.ParticipantId AND SD.SequenceNum = PV.SequenceNum)");
             sqlInsertParticipantVisit.add(getStudy().getContainer());
             Table.execute(schema, sqlInsertParticipantVisit);
 
-            String sqlInsertParticipantVisit2 = "INSERT INTO " + tableParticipantVisit +
-                    " (Container, ParticipantId, SequenceNum, VisitDate, ParticipantSequenceKey)\n" +
-                    "SELECT DISTINCT Container, Ptid AS ParticipantId, VisitValue AS SequenceNum, " +
-                    schema.getSqlDialect().getDateTimeToDateCast("DrawTimestamp") + " AS VisitDate, \n(" +
-                    getParticipantSequenceKeyExpr(schema, "Ptid", "VisitValue") + ") AS ParticipantSequenceKey\n" +
-                    "FROM " + tableSpecimen + " AS Specimen\n" +
-                    "WHERE Container = ?  AND Ptid IS NOT NULL AND VisitValue IS NOT NULL AND NOT EXISTS (" +
-                    "  SELECT ParticipantId, SequenceNum FROM " + tableParticipantVisit + " PV\n" +
-                    "  WHERE Container = ? AND Specimen.Ptid=PV.ParticipantId AND Specimen.VisitValue=PV.SequenceNum)";
-            Table.execute(schema, sqlInsertParticipantVisit2, getStudy().getContainer(), getStudy().getContainer());
+            SQLFragment sqlInsertParticipantVisit2 = new SQLFragment();
+            sqlInsertParticipantVisit2.append("INSERT INTO ").append(tableParticipantVisit.getSelectName());
+            sqlInsertParticipantVisit2.append(" (Container, ParticipantId, SequenceNum, VisitDate, ParticipantSequenceKey)\n");
+            sqlInsertParticipantVisit2.append("SELECT DISTINCT Container, Ptid AS ParticipantId, VisitValue AS SequenceNum, ");
+            sqlInsertParticipantVisit2.append(schema.getSqlDialect().getDateTimeToDateCast("DrawTimestamp")).append(" AS VisitDate, \n");
+            sqlInsertParticipantVisit2.append("(").append(getParticipantSequenceKeyExpr(schema, "Ptid", "VisitValue")).append(") AS ParticipantSequenceKey\n");
+            sqlInsertParticipantVisit2.append("FROM ").append(tableSpecimen, "Specimen").append("\n");
+            sqlInsertParticipantVisit2.append("WHERE Container = ?  AND Ptid IS NOT NULL AND VisitValue IS NOT NULL AND NOT EXISTS (\n");
+            sqlInsertParticipantVisit2.add(getStudy().getContainer());
+            sqlInsertParticipantVisit2.append("SELECT ParticipantId, SequenceNum FROM ").append(tableParticipantVisit.getFromSQL("PV")).append("\n");
+            sqlInsertParticipantVisit2.append("WHERE Container = ? AND Specimen.Ptid=PV.ParticipantId AND Specimen.VisitValue=PV.SequenceNum)");
+            sqlInsertParticipantVisit2.add(getStudy().getContainer());
+            Table.execute(schema, sqlInsertParticipantVisit2);
             //
             // Delete ParticipantVisit where the participant does not exist anymore
             //

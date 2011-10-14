@@ -38,6 +38,7 @@ import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.AdminPermission;
 import org.labkey.api.security.permissions.InsertPermission;
 import org.labkey.api.security.permissions.ReadPermission;
+import org.labkey.api.study.DataSetTable;
 import org.labkey.api.study.StudyService;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.ResultSetUtil;
@@ -408,7 +409,14 @@ public class VisualizationController extends SpringActionController
 
             props.put("name", col.getName());
             props.put("label", col.getLabel());
-            props.put("longlabel", col.getLabel() + " (" + query.getName() + ")");
+            List<QueryException> errors = new ArrayList<QueryException>();
+            TableInfo table = query.getTable(errors, false);
+            String queryName;
+            if (table instanceof DataSetTable && errors.isEmpty())
+                queryName = ((DataSetTable) table).getDataSet().getLabel();
+            else
+                queryName = query.getName();
+            props.put("longlabel", col.getLabel() + " (" + queryName + ")");
             props.put("type", col.getJdbcType().name());
             props.put("description", StringUtils.trimToEmpty(col.getDescription()));
 

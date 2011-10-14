@@ -1037,6 +1037,8 @@ public class StudyManager
     {
         _visitHelper.clearCache(study.getContainer());
         DbCache.clear(StudySchema.getInstance().getTableInfoParticipant());
+        for (StudyImpl substudy : StudyManager.getInstance().getAncillaryStudies(study.getContainer()))
+            clearParticipantVisitCaches(substudy);
     }
 
 
@@ -2010,6 +2012,9 @@ public class StudyManager
 
         DbCache.clear(StudySchema.getInstance().getTableInfoQCState());
         DbCache.clear(StudySchema.getInstance().getTableInfoParticipant());
+
+        for (StudyImpl substudy : StudyManager.getInstance().getAncillaryStudies(c))
+            clearCaches(substudy.getContainer(), unmaterializeDatasets);
     }
 
     public void deleteAllStudyData(Container c) throws SQLException
@@ -3255,9 +3260,27 @@ public class StudyManager
 
 
 
-
-
-
+    public StudyImpl[] getAncillaryStudies(Container sourceStudyContainer)
+    {
+        try
+        {
+            return Table.select(StudySchema.getInstance().getTableInfoStudy(), Table.ALL_COLUMNS,
+                    new SimpleFilter("SourceStudyContainerId", sourceStudyContainer), null, StudyImpl.class);
+        }
+        catch (SQLException e)
+        {
+            throw new RuntimeSQLException(e);
+        }
+    }
+/*
+    public void forceDatasetSnapshotRefresh(Study study)
+    {
+        for (DataSetDefinition ds : getDataSetDefinitions(study))
+        {
+            ds.is
+        }
+    }
+*/
 
     public static class DatasetImportTestCase extends Assert
     {
@@ -3413,7 +3436,6 @@ public class StudyManager
 
             return study.getDataSet(id);
         }
-
 
         @Test
         public void test() throws Throwable

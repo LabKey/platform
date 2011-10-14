@@ -91,13 +91,11 @@ public class SamplesWebPart extends JspView<SamplesWebPart.SamplesWebPartBean>
 
                 if (count.getLabel() != null && count.getLabel().length() > 0)
                 {
-                    url.addFilter("SpecimenDetail", FieldKey.fromParts(count.getSpecimenViewFilterColumn(),
-                            "Description"), CompareType.EQUAL, count.getLabel());
+                    url.addFilter("SpecimenDetail", FieldKey.fromString(count.getSpecimenViewFilterColumn()), CompareType.EQUAL, count.getLabel());
                 }
                 else
                 {
-                    url.addFilter("SpecimenDetail", FieldKey.fromParts(count.getSpecimenViewFilterColumn(),
-                            "Description"), CompareType.ISBLANK, null);
+                    url.addFilter("SpecimenDetail", FieldKey.fromString(count.getSpecimenViewFilterColumn()), CompareType.ISBLANK, null);
                 }
 
                 builder.append("<td class=\"labkey-nav-tree-text\" width=\"100%\"><a href=\"").append(url.getEncodedLocalURIString()).append("\">");

@@ -162,6 +162,11 @@
         <td><%=textLink("Demo Mode",
                 new ActionURL(StudyController.DemoModeAction.class, c)) %></td>
     </tr>
+<%
+        if (!study.isAncillaryStudy())
+        {
+%>
+
     <tr>
         <td colspan="3" class="labkey-announcement-title"><span>Specimen Repository Settings</span></td>
     </tr>
@@ -178,6 +183,17 @@
                 new ActionURL(SpecimenController.ManageDisplaySettingsAction.class, c)) %></td>
     </tr>
 <%
+        }
+        else
+        {
+%>
+    <tr>
+        <td colspan="3">
+            <p><em>NOTE: specimen repository and request settings are not available for ancillary studies.</em></p>
+        </td>
+    </tr>
+<%
+        }
     } // admin permission
 
     if (c.hasPermission(user, ManageRequestSettingsPermission.class))

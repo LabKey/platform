@@ -3009,15 +3009,19 @@ public class SpecimenController extends BaseStudyController
 
         public ReportConfigurationBean(ViewContext viewContext)
         {
+            Study study = StudyManager.getInstance().getStudy(viewContext.getContainer());
             _viewContext = viewContext;
             registerReportFactory(COUNTS_BY_DERIVATIVE_TYPE_TITLE, new TypeSummaryReportFactory());
             registerReportFactory(COUNTS_BY_DERIVATIVE_TYPE_TITLE, new TypeParticipantReportFactory());
             if (StudyManager.getInstance().showCohorts(_viewContext.getContainer(), _viewContext.getUser()))
                 registerReportFactory(COUNTS_BY_DERIVATIVE_TYPE_TITLE, new TypeCohortReportFactory());
-            registerReportFactory(REQUESTS_BY_DERIVATIVE_TYPE_TITLE, new RequestReportFactory());
-            registerReportFactory(REQUESTS_BY_DERIVATIVE_TYPE_TITLE, new RequestSiteReportFactory());
-            registerReportFactory(REQUESTS_BY_DERIVATIVE_TYPE_TITLE, new RequestEnrollmentSiteReportFactory());
-            registerReportFactory(REQUESTS_BY_DERIVATIVE_TYPE_TITLE, new RequestParticipantReportFactory());
+            if (study != null && !study.isAncillaryStudy())
+            {
+                registerReportFactory(REQUESTS_BY_DERIVATIVE_TYPE_TITLE, new RequestReportFactory());
+                registerReportFactory(REQUESTS_BY_DERIVATIVE_TYPE_TITLE, new RequestSiteReportFactory());
+                registerReportFactory(REQUESTS_BY_DERIVATIVE_TYPE_TITLE, new RequestEnrollmentSiteReportFactory());
+                registerReportFactory(REQUESTS_BY_DERIVATIVE_TYPE_TITLE, new RequestParticipantReportFactory());
+            }
             String subjectNoun = StudyService.get().getSubjectNounSingular(viewContext.getContainer());
             registerReportFactory("Collected Vials by " + subjectNoun + " By Timepoint", new ParticipantSummaryReportFactory());
             registerReportFactory("Collected Vials by " + subjectNoun + " By Timepoint", new ParticipantTypeReportFactory());

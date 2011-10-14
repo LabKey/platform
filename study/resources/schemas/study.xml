@@ -105,6 +105,9 @@
       <ns:column columnName="ProtocolDocumentEntityId">
         <ns:description>The entity id used to generate the attachment parent for the study protocol document.</ns:description>
       </ns:column>
+      <ns:column columnName="SourceStudyContainerId">
+        <ns:description>The entity id of the study container from which this study was derived.  Will be null if a study is not an ancillary study.</ns:description>
+      </ns:column>
     </ns:columns>
   </ns:table>
   <ns:table tableName="Site" tableDbType="TABLE">

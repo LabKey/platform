@@ -1,5 +1,6 @@
 package org.labkey.study.samples.report.participant;
 
+import org.labkey.api.data.CompareType;
 import org.labkey.study.samples.report.SpecimenVisitReportParameters;
 import org.labkey.study.samples.report.SpecimenVisitReport;
 import org.labkey.study.model.SpecimenTypeSummary;
@@ -43,17 +44,18 @@ public class ParticipantTypeReportFactory extends SpecimenVisitReportParameters
         List<ParticipantVisitReport> reports = new ArrayList<ParticipantVisitReport>();
         for (SpecimenTypeSummary.TypeCount type : types)
         {
-            if (type == null || type.getLabel() == null || type.getLabel().length() == 0)
-                continue;
-            String label = type.getFullLabel();
+            String displayLabel = type.geDisplayLabel();
             SimpleFilter filter = new SimpleFilter();
             addBaseFilters(filter);
             while (type != null)
             {
-                filter.addCondition(type.getSpecimenViewFilterColumn(), type.getRowId());
+                if (type.getLabel() != null)
+                    filter.addCondition(type.getSpecimenViewFilterColumn(), type.getLabel());
+                else
+                    filter.addCondition(type.getSpecimenViewFilterColumn(), type.getLabel(), CompareType.ISBLANK);
                 type = type.getParent();
             }
-            reports.add(new ParticipantVisitReport(label, visits, filter, this));
+            reports.add(new ParticipantVisitReport(displayLabel, visits, filter, this));
         }
         return reports;
     }
@@ -72,13 +74,8 @@ public class ParticipantTypeReportFactory extends SpecimenVisitReportParameters
     {
         for (SpecimenTypeSummary.TypeCount type : types)
         {
-            String label;
-            if (type.getLabel() == null || type.getLabel().length() == 0)
-                label = "[unknown]";
-            else
-                label = type.getLabel();
-
-            String id = parentId != null ? parentId + "," + type.getRowId() : "" + type.getRowId();
+            String label = getLabel(type);
+            String id = parentId != null ? parentId + TYPE_COMPONENT_SEPARATOR + label : label;
             builder.append("<option value=\"").append(id).append("\"");
             if (id.equals(selectedId))
                 builder.append(" SELECTED");
@@ -103,6 +100,7 @@ public class ParticipantTypeReportFactory extends SpecimenVisitReportParameters
     private static final String ALL_PRIMARY_TYPES_FORM_VALUE = "allPrimary";
     private static final String ALL_DERIVATIVE_TYPES_FORM_VALUE = "allDerivative";
     private static final String ALL_ADDITIVE_TYPES_FORM_VALUE = "allAdditive";
+    private static final String TYPE_COMPONENT_SEPARATOR = "~#~";
 
     protected List<? extends SpecimenTypeSummary.TypeCount> getSelectedTypes()
     {
@@ -113,26 +111,33 @@ public class ParticipantTypeReportFactory extends SpecimenVisitReportParameters
             return summary.getDerivatives();
         if (_selectedType.equals(ALL_ADDITIVE_TYPES_FORM_VALUE))
             return summary.getAdditives();
-        String[] typeRowIdStrings = _selectedType.split(",");
-        int[] typeRowIds = new int[typeRowIdStrings.length];
-        for (int i = 0; i < typeRowIds.length; i++)
-            typeRowIds[i] = Integer.parseInt(typeRowIdStrings[i]);
+        String[] typeLabels = _selectedType.split(TYPE_COMPONENT_SEPARATOR);
 
         List<? extends SpecimenTypeSummary.TypeCount> types = summary.getPrimaryTypes();
         SpecimenTypeSummary.TypeCount selected = null;
-        for (int typeRowId : typeRowIds)
+        for (String typeLabel : typeLabels)
         {
-            selected = getTypeCountByRowId(types, typeRowId);
+            selected = getTypeCountByLabel(types, typeLabel);
             types = selected.getChildren();
         }
         return Collections.singletonList(selected);
     }
 
-    private SpecimenTypeSummary.TypeCount getTypeCountByRowId(List<? extends SpecimenTypeSummary.TypeCount> counts, int rowid)
+    private String getLabel(SpecimenTypeSummary.TypeCount type)
     {
+        if (type.getLabel() == null || type.getLabel().length() == 0)
+            return "[unknown]";
+        else
+            return type.getLabel();
+
+    }
+
+    private SpecimenTypeSummary.TypeCount getTypeCountByLabel(List<? extends SpecimenTypeSummary.TypeCount> counts, String label)
+    {
+        boolean unknown = "[unknown]".equals(label);
         for (SpecimenTypeSummary.TypeCount count : counts)
         {
-            if (count.getRowId().intValue() == rowid)
+            if (getLabel(count).equals(label) || (unknown && (count.getLabel() == null || count.getLabel().length() == 0)))
                 return count;
         }
         return null;

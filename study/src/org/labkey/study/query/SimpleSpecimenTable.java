@@ -25,9 +25,9 @@ import org.labkey.api.study.StudyService;
  */
 public class SimpleSpecimenTable extends AbstractSpecimenTable
 {
-    public SimpleSpecimenTable(StudyQuerySchema schema)
+    public SimpleSpecimenTable(StudyQuerySchema schema, boolean skipPermissionChecks)
     {
-        super(schema, StudySchema.getInstance().getTableInfoSpecimen());
+        super(schema, StudySchema.getInstance().getTableInfoSpecimen(), skipPermissionChecks);
 
         getColumn(StudyService.get().getSubjectColumnName(getContainer())).setFk(null);
 

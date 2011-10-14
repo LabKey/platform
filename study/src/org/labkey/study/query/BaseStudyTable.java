@@ -25,26 +25,32 @@ import org.labkey.api.data.DisplayColumnFactory;
 import org.labkey.api.data.JdbcType;
 import org.labkey.api.data.RenderContext;
 import org.labkey.api.data.SQLFragment;
+import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.query.AliasedColumn;
 import org.labkey.api.query.ExprColumn;
 import org.labkey.api.query.FilteredTable;
 import org.labkey.api.query.LookupForeignKey;
 import org.labkey.api.query.QueryForeignKey;
+import org.labkey.api.study.Study;
 import org.labkey.api.study.StudyService;
 import org.labkey.api.study.TimepointType;
 import org.labkey.api.util.DemoMode;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.study.StudySchema;
 import org.labkey.study.model.DataSetDefinition;
+import org.labkey.study.model.ParticipantGroupManager;
 import org.labkey.study.model.StudyImpl;
 import org.labkey.study.model.StudyManager;
 
 import java.io.IOException;
 import java.io.Writer;
 import java.util.ArrayList;
+import java.util.Collections;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 public abstract class BaseStudyTable extends FilteredTable
 {
@@ -52,8 +58,53 @@ public abstract class BaseStudyTable extends FilteredTable
 
     public BaseStudyTable(StudyQuerySchema schema, TableInfo realTable)
     {
-        super(realTable, schema.getContainer());
+        this(schema, realTable, false);
+    }
+
+    public BaseStudyTable(StudyQuerySchema schema, TableInfo realTable, boolean includeSourceStudyData)
+    {
+        this(schema, realTable, includeSourceStudyData, false);
+    }
+
+    public BaseStudyTable(StudyQuerySchema schema, TableInfo realTable, boolean includeSourceStudyData, boolean skipPermissionChecks)
+    {
+        super(realTable, schema.getContainer(), includeSourceStudyData ? new ContainerFilter.StudyAndSourceStudy(schema.getUser(), skipPermissionChecks) : null);
+        if (!includeSourceStudyData && skipPermissionChecks)
+            throw new IllegalArgumentException("Skipping permission checks only applies when including source study data");
+        if (includeSourceStudyData && getParticipantColumnName() != null)
+        {
+            // If we're in an ancillary study, show the parent folder's specimens, but filter to include only those
+            // that relate to subjects in the ancillary study.  This filter will have no effect on samples uploaded
+            // directly in this this study folder (since all local specimens should have an associated subject ID
+            // already in the participant table.
+            Study currentStudy = StudyManager.getInstance().getStudy(schema.getContainer());
+            if (currentStudy != null && currentStudy.isAncillaryStudy())
+            {
+                String[] ptids = ParticipantGroupManager.getInstance().getAllGroupedParticipants(schema.getContainer());
+                if (ptids.length > 0)
+                {
+                    Study sourceStudy = currentStudy.getSourceStudy();
+                    SQLFragment condition = new SQLFragment("(Container = ? AND " + getParticipantColumnName() + " IN (");
+                    condition.add(sourceStudy.getContainer());
+                    String comma = "";
+                    for (String ptid : ptids)
+                    {
+                        condition.append(comma).append("?");
+                        condition.add(ptid);
+                        comma = ", ";
+                    }
+                    condition.append(")) OR Container = ?");
+                    condition.add(currentStudy.getContainer());
+                    addCondition(condition, "Container", getParticipantColumnName());
+                }
+            }
+        }
         _schema = schema;
+    }
+
+    protected String getParticipantColumnName()
+    {
+        return null;
     }
 
     protected ColumnInfo addWrapParticipantColumn(String rootTableColumnName)

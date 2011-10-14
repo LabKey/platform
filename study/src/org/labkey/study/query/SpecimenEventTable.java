@@ -27,7 +27,7 @@ public class SpecimenEventTable extends BaseStudyTable
 {
     public SpecimenEventTable(StudyQuerySchema schema)
     {
-        super(schema, StudySchema.getInstance().getTableInfoSpecimenEvent());
+        super(schema, StudySchema.getInstance().getTableInfoSpecimenEvent(), true);
 
         addWrapColumn(_rootTable.getColumn("VialId"));
         addWrapColumn(_rootTable.getColumn("SpecimenNumber"));
@@ -75,4 +75,11 @@ public class SpecimenEventTable extends BaseStudyTable
         addWrapColumn(_rootTable.getColumn("TotalCellCount"));
         addWrapColumn(_rootTable.getColumn("TubeType"));
     }
+
+    @Override
+    protected String getParticipantColumnName()
+    {
+        return "PTID";
+    }
+
 }

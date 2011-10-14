@@ -50,6 +50,7 @@ import org.labkey.study.model.StudyImpl;
 import org.labkey.study.model.StudyManager;
 import org.labkey.study.model.VisitImpl;
 import org.labkey.study.model.VisitMapKey;
+import org.labkey.study.query.StudyQuerySchema;
 
 import javax.servlet.ServletContextEvent;
 import java.sql.ResultSet;
@@ -607,6 +608,20 @@ public abstract class VisitManager
         Table.execute(schema, sqlUpdateStartDates, startDateParam, getStudy().getContainer());
     }
 
+    protected static TableInfo getSpecimenTable(StudyImpl study)
+    {
+        // If this is an ancillary study, the specimen table may be subject to special filtering, so we need to use
+        // the query table, rather than the underlying database table.  We don't do this in all cases for performance
+        // reasons.
+        if (study.isAncillaryStudy())
+        {
+            StudyQuerySchema studyQuerySchema = new StudyQuerySchema(study, null, false);
+            return studyQuerySchema.getTable(StudyQuerySchema.SIMPLE_SPECIMEN_TABLE_NAME);
+        }
+        else
+            return StudySchema.getInstance().getTableInfoSpecimen();
+    }
+
     /** @param potentiallyDeletedParticipants null if all participants should be examined,
      * or the subset of all participants that might have been deleted and should be checked */
     public static void performParticipantPurge(@NotNull StudyImpl study, @Nullable Set<String> potentiallyDeletedParticipants)
@@ -620,7 +635,7 @@ public abstract class VisitManager
         {
             DbSchema schema = StudySchema.getInstance().getSchema();
             TableInfo tableParticipant = StudySchema.getInstance().getTableInfoParticipant();
-            TableInfo tableSpecimen = StudySchema.getInstance().getTableInfoSpecimen();
+            TableInfo tableSpecimen = getSpecimenTable(study);
 
             SQLFragment ptids = new SQLFragment();
             SQLFragment studyDataPtids = studyDataPtids(study.getDataSets());
@@ -629,11 +644,13 @@ public abstract class VisitManager
                 ptids.append(studyDataPtids);
                 ptids.append(" UNION\n");
             }
-            ptids.append("SELECT ptid FROM " + tableSpecimen.getFromSQL("spec") + " WHERE spec.container=?");
+            ptids.append("SELECT ptid FROM ");
+            ptids.append(tableSpecimen, "spec");
+            ptids.append(" WHERE spec.container=?");
             ptids.add(study.getContainer().getId());
 
             SQLFragment del = new SQLFragment();
-            del.append("DELETE FROM " + tableParticipant + " WHERE container=? ");
+            del.append("DELETE FROM ").append(tableParticipant, "Participant").append(" WHERE container=? ");
             del.add(study.getContainer().getId());
             del.append(" AND participantid NOT IN (\n");
             del.append(ptids);

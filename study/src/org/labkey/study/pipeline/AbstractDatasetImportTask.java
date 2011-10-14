@@ -21,6 +21,7 @@ import org.labkey.api.pipeline.PipelineJob;
 import org.labkey.api.pipeline.RecordedActionSet;
 import org.labkey.api.pipeline.TaskFactory;
 import org.labkey.api.pipeline.PipelineJobException;
+import org.labkey.api.query.snapshot.QuerySnapshotService;
 import org.labkey.study.model.DataSetDefinition;
 import org.labkey.study.model.StudyImpl;
 import org.labkey.study.model.StudyManager;
@@ -78,6 +79,7 @@ public abstract class AbstractDatasetImportTask<FactoryType extends AbstractData
         {
             try
             {
+                QuerySnapshotService.get(StudyManager.getSchemaName()).pauseUpdates(getStudy().getContainer());
                 DatasetFileReader reader = new DatasetFileReader(datasetsFile, getStudy(), this);
                 List<String> errors = new ArrayList<String>();
 
@@ -142,6 +144,7 @@ public abstract class AbstractDatasetImportTask<FactoryType extends AbstractData
             }
             finally
             {
+                QuerySnapshotService.get(StudyManager.getSchemaName()).resumeUpdates(getJob().getUser(), getStudy().getContainer());
                 File lock = StudyPipeline.lockForDataset(getStudy(), datasetsFile);
                 if (lock.exists() && lock.canRead() && lock.canWrite())
                     lock.delete();

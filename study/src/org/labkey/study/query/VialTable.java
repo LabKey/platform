@@ -30,7 +30,7 @@ public class VialTable extends BaseStudyTable
 {
     public VialTable(final StudyQuerySchema schema)
     {
-        super(schema, StudySchema.getInstance().getTableInfoVial());
+        super(schema, StudySchema.getInstance().getTableInfoVial(), true);
 
         addWrapColumn(getRealTable().getColumn("RowID")).setHidden(true);
         

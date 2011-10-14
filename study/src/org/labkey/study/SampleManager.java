@@ -851,7 +851,7 @@ public class SampleManager
             "request.RowId = ? AND request.Container = ?;";
 
     public Specimen[] getRequestSpecimens(SampleRequest request) throws SQLException
-    {
+    { 
         return Table.executeQuery(StudySchema.getInstance().getSchema(), REQUEST_SPECIMEN_JOIN,
                 new Object[]{request.getRowId(), request.getContainer().getId()}, Specimen.class);
     }
@@ -867,7 +867,7 @@ public class SampleManager
             return defaults;
         }
         else
-            return new RepositorySettings(settingsMap);
+            return new RepositorySettings(container, settingsMap);
     }
 
     public void saveRepositorySettings(Container container, RepositorySettings settings) throws SQLException
@@ -1369,34 +1369,6 @@ public class SampleManager
         return rowIdList.toArray(new Integer[rowIdList.size()]);
     }
 
-    private static final String SPECIMEN_TYPE_SUMMARY_SQL = "SELECT Specimens.*,\n" +
-            "study.SpecimenPrimaryType.PrimaryType AS PrimaryType,\n" +
-            "study.SpecimenDerivative.Derivative AS Derivative,\n" +
-            "study.SpecimenAdditive.Additive AS Additive\n" +
-            "FROM\n" +
-            "\t(SELECT study.Specimen.PrimaryTypeId,\n" +
-            "\t\tstudy.Specimen.DerivativeTypeId,\n" +
-            "\t\tstudy.Specimen.AdditiveTypeId,\n" +
-            "\t\t? AS Container,\n" +
-            "\t\tSUM(study.Specimen.VialCount) AS VialCount\n" +
-            "\tFROM study.Specimen\n" +
-            "\tWHERE study.Specimen.Container = ?\n" +
-            "\tGROUP BY study.Specimen.PrimaryTypeId,\n" +
-            "\t\tstudy.Specimen.DerivativeTypeId,\n" +
-            "\t\tstudy.Specimen.AdditiveTypeId) Specimens\n" +
-            "LEFT OUTER JOIN study.SpecimenPrimaryType ON\n" +
-            "\tstudy.SpecimenPrimaryType.RowId = Specimens.PrimaryTypeId AND\n" +
-            "\tstudy.SpecimenPrimaryType.Container = Specimens.Container\n" +
-            "LEFT OUTER JOIN study.SpecimenDerivative ON\n" +
-            "\tstudy.SpecimenDerivative.RowId = Specimens.DerivativeTypeId AND\n" +
-            "\tstudy.SpecimenDerivative.Container = Specimens.Container\n" +
-            "LEFT OUTER JOIN study.SpecimenAdditive ON\n" +
-            "\tstudy.SpecimenAdditive.RowId = Specimens.AdditiveTypeId AND\n" +
-            "\tstudy.SpecimenAdditive.Container = Specimens.Container\n" +
-            "ORDER BY study.SpecimenPrimaryType.PrimaryType,\n" +
-            "study.SpecimenDerivative.Derivative,\n" +
-            "study.SpecimenAdditive.Additive";
-
     public SpecimenTypeSummary getSpecimenTypeSummary(Container container)
     {
         String cacheKey = container.getId() + "/SpecimenTypeSummary";
@@ -1407,8 +1379,74 @@ public class SampleManager
 
         try
         {
-            SpecimenTypeSummaryRow[] rows = Table.executeQuery(StudySchema.getInstance().getSchema(), SPECIMEN_TYPE_SUMMARY_SQL,
-                    new Object[] { container.getId(), container.getId() }, SpecimenTypeSummaryRow.class);
+            StudyImpl study = StudyManager.getInstance().getStudy(container);
+            if (study == null)
+                return null;
+
+            SQLFragment specimenTypeSummarySQL = new SQLFragment("SELECT\n" +
+                "\tPrimaryType,\n" +
+                "\tDerivative,\n" +
+                "\tAdditive,\n" +
+                "\tSUM(VialCount) AS VialCount\n" +
+                "FROM (\n" +
+                "\tSELECT\n" +
+                "\tstudy.SpecimenPrimaryType.PrimaryType AS PrimaryType,\n" +
+                "\tstudy.SpecimenDerivative.Derivative AS Derivative,\n" +
+                "\tstudy.SpecimenAdditive.Additive AS Additive,\n" +
+                "\tSpecimens.VialCount\n" +
+                "\tFROM\n" +
+                "\t\t(SELECT study.Specimen.PrimaryTypeId,\n" +
+                "\t\t\tstudy.Specimen.DerivativeTypeId,\n" +
+                "\t\t\tstudy.Specimen.AdditiveTypeId,\n" +
+                "\t\t\tstudy.Specimen.Container,\n" +
+                "\t\t\tSUM(study.Specimen.VialCount) AS VialCount\n" +
+                "\t\tFROM study.Specimen\n");
+
+            if (study.isAncillaryStudy())
+            {
+                specimenTypeSummarySQL.append("\t\tWHERE study.Specimen.Container IN (?, ?)\n");
+                specimenTypeSummarySQL.add(study.getSourceStudy().getContainer().getId());
+                specimenTypeSummarySQL.add(container.getId());
+                String[] ptids = StudyManager.getInstance().getParticipantIds(study);
+                specimenTypeSummarySQL.append("\t\t\tAND study.Specimen.PTID IN (");
+                if (ptids == null || ptids.length == 0)
+                    specimenTypeSummarySQL.append("NULL");
+                else
+                {
+                    String comma = "";
+                    for (String ptid : ptids)
+                    {
+                        specimenTypeSummarySQL.append(comma).append("?");
+                        specimenTypeSummarySQL.add(ptid);
+                        comma = ", ";
+                    }
+                }
+                specimenTypeSummarySQL.append(")\n");
+            }
+            else
+            {
+                specimenTypeSummarySQL.append("\t\tWHERE study.Specimen.Container = ?\n");
+                specimenTypeSummarySQL.add(container.getId());
+            }
+
+            specimenTypeSummarySQL.append("\t\tGROUP BY study.Specimen.PrimaryTypeId,\n" +
+                "\t\t\tstudy.Specimen.DerivativeTypeId,\n" +
+                "\t\t\tstudy.Specimen.AdditiveTypeId,\n" +
+                "\t\t\tstudy.Specimen.Container) Specimens\n" +
+                "\tLEFT OUTER JOIN study.SpecimenPrimaryType ON\n" +
+                "\t\tstudy.SpecimenPrimaryType.RowId = Specimens.PrimaryTypeId AND\n" +
+                "\t\tstudy.SpecimenPrimaryType.Container = Specimens.Container\n" +
+                "\tLEFT OUTER JOIN study.SpecimenDerivative ON\n" +
+                "\t\tstudy.SpecimenDerivative.RowId = Specimens.DerivativeTypeId AND\n" +
+                "\t\tstudy.SpecimenDerivative.Container = Specimens.Container\n" +
+                "\tLEFT OUTER JOIN study.SpecimenAdditive ON\n" +
+                "\t\tstudy.SpecimenAdditive.RowId = Specimens.AdditiveTypeId AND\n" +
+                "\t\tstudy.SpecimenAdditive.Container = Specimens.Container\n" +
+                ") ContainerTotals\n" +
+                "GROUP BY PrimaryType, Derivative, Additive\n" +
+                "ORDER BY PrimaryType, Derivative, Additive");
+
+            SpecimenTypeSummaryRow[] rows = Table.executeQuery(StudySchema.getInstance().getSchema(), specimenTypeSummarySQL, SpecimenTypeSummaryRow.class);
 
             summary = new SpecimenTypeSummary(container, rows);
             DbCache.put(StudySchema.getInstance().getTableInfoVial(), cacheKey, summary, 8 * CacheManager.HOUR);
@@ -1770,6 +1808,8 @@ public class SampleManager
         StudyCache.clearCache(StudySchema.getInstance().getTableInfoSpecimenAdditive(), c.getId());
         StudyCache.clearCache(StudySchema.getInstance().getTableInfoSpecimenDerivative(), c.getId());
         StudyCache.clearCache(StudySchema.getInstance().getTableInfoSpecimenPrimaryType(), c.getId());
+        for (StudyImpl study : StudyManager.getInstance().getAncillaryStudies(c))
+            clearCaches(study.getContainer());
     }
 
     public VisitImpl[] getVisitsWithSpecimens(Container container, User user)

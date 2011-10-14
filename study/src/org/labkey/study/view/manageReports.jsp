@@ -15,7 +15,6 @@
  * limitations under the License.
  */
 %>
-<%@ page import="org.apache.commons.lang.StringUtils" %>
 <%@ page import="org.labkey.api.security.User" %>
 <%@ page import="org.labkey.api.security.permissions.AdminPermission" %>
 <%@ page import="org.labkey.api.view.ActionURL" %>

@@ -19,6 +19,8 @@ import org.apache.log4j.Logger;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.security.User;
+import org.labkey.api.study.Study;
+import org.labkey.study.model.StudyImpl;
 import org.labkey.study.model.StudyManager;
 
 import java.beans.PropertyChangeEvent;
@@ -44,6 +46,12 @@ public class StudyContainerListener implements ContainerManager.ContainerListene
         try
         {
             StudyManager.getInstance().deleteAllStudyData(c);
+            for (StudyImpl ancillaryStudy : StudyManager.getInstance().getAncillaryStudies(c))
+            {
+                // Explicitly break the link between any ancillary studies dependent on this container:
+                ancillaryStudy.setSourceStudyContainerId(null);
+                StudyManager.getInstance().updateStudy(user, ancillaryStudy);
+            }
         }
         catch (SQLException e)
         {

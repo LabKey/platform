@@ -20,23 +20,10 @@ package org.labkey.study.model;
  */
 public class SpecimenTypeSummaryRow
 {
-    private Integer _primaryTypeId;
     private String _primaryType;
-    private Integer _derivativeTypeId;
     private String _derivative;
-    private Integer _additiveTypeId;
     private String _additive;
     private Integer _vialCount;
-
-    public Integer getPrimaryTypeId()
-    {
-        return _primaryTypeId;
-    }
-
-    public void setPrimaryTypeId(Integer primaryTypeId)
-    {
-        _primaryTypeId = primaryTypeId;
-    }
 
     public String getPrimaryType()
     {
@@ -48,16 +35,6 @@ public class SpecimenTypeSummaryRow
         _primaryType = primaryType;
     }
 
-    public Integer getDerivativeTypeId()
-    {
-        return _derivativeTypeId;
-    }
-
-    public void setDerivativeTypeId(Integer derivativeTypeId)
-    {
-        _derivativeTypeId = derivativeTypeId;
-    }
-
     public String getDerivative()
     {
         return _derivative;
@@ -66,16 +43,6 @@ public class SpecimenTypeSummaryRow
     public void setDerivative(String derivative)
     {
         _derivative = derivative;
-    }
-
-    public Integer getAdditiveTypeId()
-    {
-        return _additiveTypeId;
-    }
-
-    public void setAdditiveTypeId(Integer additiveTypeId)
-    {
-        _additiveTypeId = additiveTypeId;
     }
 
     public String getAdditive()

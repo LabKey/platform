@@ -20,7 +20,11 @@ import org.labkey.api.pipeline.*;
 import org.labkey.api.util.DateUtil;
 import org.labkey.api.writer.ZipUtil;
 import org.labkey.study.importer.SpecimenImporter;
+import org.labkey.study.model.DataSetDefinition;
+import org.labkey.study.model.StudyImpl;
+import org.labkey.study.model.StudyManager;
 
+import java.util.Collections;
 import java.util.List;
 import java.util.Date;
 import java.io.File;
@@ -85,6 +89,11 @@ public abstract class AbstractSpecimenTask<FactoryType extends AbstractSpecimenT
             finally
             {
                 delete(unzipDir);
+                // Since changing specimens in this study will impact specimens in ancillary studies dependent on this study,
+                // we need to force a participant/visit refresh in those study containers (if any):
+                StudyImpl[] dependentStudies = StudyManager.getInstance().getAncillaryStudies(job.getContainer());
+                for (StudyImpl dependentStudy : dependentStudies)
+                    StudyManager.getInstance().getVisitManager(dependentStudy).updateParticipantVisits(job.getUser(), Collections.<DataSetDefinition>emptySet());
             }
         }
 

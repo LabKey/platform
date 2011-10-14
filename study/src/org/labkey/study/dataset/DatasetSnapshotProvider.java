@@ -38,7 +38,6 @@ import org.labkey.api.query.CustomView;
 import org.labkey.api.query.DefaultSchema;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.QueryDefinition;
-import org.labkey.api.query.QueryException;
 import org.labkey.api.query.QueryForm;
 import org.labkey.api.query.QueryParam;
 import org.labkey.api.query.QuerySchema;
@@ -59,13 +58,11 @@ import org.labkey.api.study.Study;
 import org.labkey.api.study.StudyService;
 import org.labkey.api.util.ContextListener;
 import org.labkey.api.util.ExceptionUtil;
-import org.labkey.api.util.IdentifierString;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.ShutdownListener;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.HttpView;
 import org.labkey.api.view.ViewContext;
-import org.labkey.api.writer.ContainerUser;
 import org.labkey.study.StudyServiceImpl;
 import org.labkey.study.controllers.StudyController;
 import org.labkey.study.model.DataSetDefinition;
@@ -74,8 +71,6 @@ import org.labkey.study.model.ParticipantGroupManager;
 import org.labkey.study.model.StudyImpl;
 import org.labkey.study.model.StudyManager;
 import org.labkey.study.query.DataSetQuerySettings;
-import org.labkey.study.query.DataSetQueryView;
-import org.labkey.study.visitmanager.VisitManager;
 import org.springframework.validation.BindException;
 
 import javax.servlet.ServletContextEvent;
@@ -86,8 +81,11 @@ import java.util.Calendar;
 import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
+import java.util.HashSet;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.Timer;
 import java.util.TimerTask;
 import java.util.concurrent.BlockingQueue;
@@ -318,12 +316,12 @@ public class DatasetSnapshotProvider extends AbstractSnapshotProvider implements
         return columnMap;
     }
 
-    public synchronized ActionURL updateSnapshot(QuerySnapshotForm form, BindException errors) throws Exception
+    public synchronized ActionURL updateSnapshot(QuerySnapshotForm form, BindException errors, boolean suppressVisitManagerRecalc) throws Exception
     {
         QuerySnapshotDefinition def = QueryService.get().getSnapshotDef(form.getViewContext().getContainer(), form.getSchemaName().toString(), form.getSnapshotName());
         if (def != null)
         {
-            Study study = StudyManager.getInstance().getStudy(form.getViewContext().getContainer());
+            StudyImpl study = StudyManager.getInstance().getStudy(form.getViewContext().getContainer());
 
             // purge the dataset rows then recreate the new one...
             DataSetDefinition dsDef = StudyManager.getInstance().getDataSetDefinition(study, def.getName());
@@ -361,6 +359,9 @@ public class DatasetSnapshotProvider extends AbstractSnapshotProvider implements
 
                         if (errors.hasErrors())
                             return null;
+
+                        if (!suppressVisitManagerRecalc)
+                            StudyManager.getInstance().getVisitManager(study).updateParticipantVisits(form.getViewContext().getUser(), Collections.singleton(dsDef));
 
                         schema.getScope().commitTransaction();
 
@@ -559,7 +560,25 @@ public class DatasetSnapshotProvider extends AbstractSnapshotProvider implements
 
     public void dataSetChanged(final DataSet def)
     {
-        _queue.add(def);
+        if (_coalesceMap.containsKey(def.getContainer()))
+            deferReload(def);
+        else
+            _queue.add(def);
+    }
+
+    private void deferReload(DataSet def)
+    {
+        Map<Container, List<QuerySnapshotDefinition>> deferredStudies = _coalesceMap.get(def.getContainer());
+        for (QuerySnapshotDefinition snapshotDef : getDependencies(def))
+        {
+            List<QuerySnapshotDefinition> deferredQuerySnapshots = deferredStudies.get(snapshotDef.getContainer());
+            if (deferredQuerySnapshots == null)
+            {
+                deferredQuerySnapshots = new LinkedList<QuerySnapshotDefinition>();
+                deferredStudies.put(snapshotDef.getContainer(), deferredQuerySnapshots);
+            }
+            deferredQuerySnapshots.add(snapshotDef);
+        }
     }
 
     private static class QuerySnapshotDependencyThread extends Thread implements ShutdownListener
@@ -586,7 +605,7 @@ public class DatasetSnapshotProvider extends AbstractSnapshotProvider implements
                             for (QuerySnapshotDefinition snapshotDef : getDependencies(def))
                             {
                                 _log.debug("Updating snapshot definition : " + snapshotDef.getName());
-                                autoUpdateSnapshot(snapshotDef, null);//HttpView.currentContext().getActionURL());
+                                autoUpdateSnapshot(snapshotDef);
                             }
                         }
                         catch (Throwable e)
@@ -613,7 +632,42 @@ public class DatasetSnapshotProvider extends AbstractSnapshotProvider implements
         }
     }
 
-    private static void autoUpdateSnapshot(QuerySnapshotDefinition def, ActionURL url) throws Exception
+    // Unfortunately complex generics here.  In English, the container key of the outer map is the source
+    // container where the dataset change events are generated.  The value is a map from the study that
+    // contains the snapshot datasets to a list of snapshots that need to be refreshed.
+    private static final Map<Container, Map<Container, List<QuerySnapshotDefinition>>> _coalesceMap =
+            new HashMap<Container, Map<Container, List<QuerySnapshotDefinition>>>();
+
+    public void pauseUpdates(Container sourceContainer)
+    {
+        if (_coalesceMap.containsKey(sourceContainer))
+            throw new IllegalStateException("Already coalescing for container " + sourceContainer.getPath());
+        _coalesceMap.put(sourceContainer, new HashMap<Container, List<QuerySnapshotDefinition>>());
+    }
+
+    public void resumeUpdates(User user, Container sourceContainer)
+    {
+        if (!_coalesceMap.containsKey(sourceContainer))
+            throw new IllegalStateException("Not coalescing for container " + sourceContainer.getPath());
+        Map<Container, List<QuerySnapshotDefinition>> snapshotDefSet = _coalesceMap.remove(sourceContainer);
+        // update each study container than contains relevant snapshots
+        for (Map.Entry<Container, List<QuerySnapshotDefinition>> snapshotEntry : snapshotDefSet.entrySet())
+        {
+            Container snapshotContainer = snapshotEntry.getKey();
+            StudyImpl study = StudyManager.getInstance().getStudy(snapshotContainer);
+            List<QuerySnapshotDefinition> snapshotDefs = snapshotEntry.getValue();
+            Set<DataSetDefinition> deferredDatasets = new HashSet<DataSetDefinition>(snapshotDefs.size());
+            for (QuerySnapshotDefinition def : snapshotDefs)
+            {
+                deferredDatasets.add(StudyManager.getInstance().getDataSetDefinition(study, def.getName()));
+                TimerTask task = new SnapshotUpdateTask(def, true);
+                task.run();
+            }
+            StudyManager.getInstance().getVisitManager(study).updateParticipantVisits(user, deferredDatasets);
+        }
+    }
+
+    private static void autoUpdateSnapshot(QuerySnapshotDefinition def) throws Exception
     {
         Calendar startTime = Calendar.getInstance();
         startTime.setTime(new Date());
@@ -634,7 +688,7 @@ public class DatasetSnapshotProvider extends AbstractSnapshotProvider implements
             {
                 def.save(user);
 
-                TimerTask task = new SnapshotUpdateTask(def, url);
+                TimerTask task = new SnapshotUpdateTask(def, false);
                 Timer timer = new Timer("QuerySnapshot Update Timer", true);
                 timer.schedule(task, startTime.getTime());
             }
@@ -644,12 +698,12 @@ public class DatasetSnapshotProvider extends AbstractSnapshotProvider implements
     private static class SnapshotUpdateTask extends TimerTask
     {
         private QuerySnapshotDefinition _def;
-        private ActionURL _url;
+        private boolean _suppressVisitManagerRecalc;
 
-        public SnapshotUpdateTask(QuerySnapshotDefinition def, ActionURL url)
+        public SnapshotUpdateTask(QuerySnapshotDefinition def, boolean suppressVisitManagerRecalc)
         {
             _def = def;
-            _url = url;
+            _suppressVisitManagerRecalc = suppressVisitManagerRecalc;
         }
 
         public void run()
@@ -668,7 +722,7 @@ public class DatasetSnapshotProvider extends AbstractSnapshotProvider implements
                 form.init(_def, _def.getCreatedBy());
 
                 BindException errors = new NullSafeBindException(new Object(), "command");
-                QuerySnapshotService.get(StudyManager.getSchemaName()).updateSnapshot(form, errors);
+                QuerySnapshotService.get(StudyManager.getSchemaName()).updateSnapshot(form, errors, _suppressVisitManagerRecalc);
             }
             catch(Exception e)
             {

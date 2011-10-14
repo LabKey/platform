@@ -196,7 +196,7 @@ public class StudyVisualizationProvider extends VisualizationProvider
             UserSchema schema = getUserSchema(context.getContainer(), context.getUser());
             for (DataSet ds : study.getDataSets())
             {
-                if (ds.isDemographicData())
+                if (ds.isDemographicData() && ds.isShowByDefault())
                 {
                     Pair<QueryDefinition, TableInfo> entry = getTableAndQueryDef(context, schema, ds.getName(), ColumnMatchType.DATETIME_COLS, false);
                     if (entry != null)

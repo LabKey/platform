@@ -28,13 +28,24 @@ public abstract class AbstractSpecimenTable extends BaseStudyTable
 {
     public AbstractSpecimenTable(StudyQuerySchema schema, TableInfo realTable)
     {
-        super(schema, realTable);
+        this(schema, realTable, false);
+    }
+
+    public AbstractSpecimenTable(StudyQuerySchema schema, TableInfo realTable, boolean skipPermissionChecks)
+    {
+        super(schema, realTable, true, skipPermissionChecks);
 
         ColumnInfo rowIdColumn = addWrapColumn(_rootTable.getColumn("RowId"));
         rowIdColumn.setKeyField(true);
         addWrapColumn(_rootTable.getColumn("Container")).setFk(new ContainerForeignKey());
         addWrapColumn(_rootTable.getColumn("SpecimenHash")).setHidden(true);
         addWrapParticipantColumn("PTID").setKeyField(true);
+    }
+
+    @Override
+    protected String getParticipantColumnName()
+    {
+        return "PTID";
     }
 
     protected void addSpecimenTypeColumns()

@@ -99,6 +99,7 @@ public class StudyImpl extends ExtensibleStudyEntity<StudyImpl> implements Study
     private String _subjectColumnName;
     private String _description;
     private String _protocolDocumentEntityId;
+    private String _sourceStudyContainerId;
 
     public StudyImpl()
     {
@@ -552,6 +553,32 @@ public class StudyImpl extends ExtensibleStudyEntity<StudyImpl> implements Study
     public List<Attachment> getProtocolDocuments()
     {
         return new ArrayList<Attachment>(AttachmentService.get().getAttachments(getProtocolDocumentAttachmentParent()));
+    }
+
+    public String getSourceStudyContainerId()
+    {
+        return _sourceStudyContainerId;
+    }
+
+    public void setSourceStudyContainerId(String sourceStudyContainerId)
+    {
+        _sourceStudyContainerId = sourceStudyContainerId;
+    }
+
+    @Override
+    public boolean isAncillaryStudy()
+    {
+        return getSourceStudy() != null;
+    }
+
+    public StudyImpl getSourceStudy()
+    {
+        if (getSourceStudyContainerId() == null)
+            return null;
+        Container sourceContainer = ContainerManager.getForId(getSourceStudyContainerId());
+        if (sourceContainer == null)
+            return null;
+        return StudyManager.getInstance().getStudy(sourceContainer);
     }
 
     public void removeProtocolDocument(String name, User user)

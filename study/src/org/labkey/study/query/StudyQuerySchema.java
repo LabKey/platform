@@ -362,7 +362,7 @@ public class StudyQuerySchema extends UserSchema
 
     public SimpleSpecimenTable createSimpleSpecimenTable()
     {
-        return new SimpleSpecimenTable(this);
+        return new SimpleSpecimenTable(this, !_mustCheckPermissions);
     }
 
     @Nullable

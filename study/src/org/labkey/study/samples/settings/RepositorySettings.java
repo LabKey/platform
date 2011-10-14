@@ -15,6 +15,8 @@
  */
 package org.labkey.study.samples.settings;
 
+import org.labkey.api.study.Study;
+import org.labkey.api.study.StudyService;
 import org.labkey.study.model.StudyManager;
 import org.labkey.api.data.Container;
 
@@ -32,15 +34,16 @@ public class RepositorySettings
     private static final String KEY_ENABLE_REQUESTS = "EnableRequests";
     private boolean _simple;
     private boolean _enableRequests;
+    private Container _container;
 
-    public RepositorySettings()
+    public RepositorySettings(Container container)
     {
-        //no-arg constructor for struts reflection
+        _container = container;
     }
 
-    public RepositorySettings(Map<String, String> map)
+    public RepositorySettings(Container container, Map<String, String> map)
     {
-        this();
+        this(container);
         String simple = map.get(KEY_SIMPLE);
         _simple = null != simple && Boolean.parseBoolean(simple);
         String enableRequests = map.get(KEY_ENABLE_REQUESTS);
@@ -65,6 +68,9 @@ public class RepositorySettings
 
     public boolean isEnableRequests()
     {
+        Study study = StudyService.get().getStudy(_container);
+        if (study != null && study.isAncillaryStudy())
+            return false;
         return _enableRequests;
     }
 
@@ -75,7 +81,7 @@ public class RepositorySettings
 
     public static RepositorySettings getDefaultSettings(Container container)
     {
-        RepositorySettings settings = new RepositorySettings();
+        RepositorySettings settings = new RepositorySettings(container);
         if (null != StudyManager.getInstance().getStudy(container))
         {
             settings.setSimple(false);

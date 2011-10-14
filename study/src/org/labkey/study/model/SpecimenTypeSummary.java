@@ -34,14 +34,12 @@ public class SpecimenTypeSummary
         private Container _container;
         private TypeCount _parent;
         private String _label;
-        private Integer _rowId;
         private int _vialCount = 0;
 
-        private TypeCount(Container container, SpecimenTypeSummary.TypeCount parent, Integer rowId, String label)
+        private TypeCount(Container container, SpecimenTypeSummary.TypeCount parent, String label)
         {
             _container = container;
             _parent = parent;
-            _rowId = rowId;
             _label = label;
         }
 
@@ -60,31 +58,27 @@ public class SpecimenTypeSummary
             return _label;
         }
 
-        public Integer getRowId()
-        {
-            return _rowId;
-        }
-
         public TypeCount getParent()
         {
             return _parent;
         }
 
-        public String getFullLabel()
+        public String geDisplayLabel()
         {
             StringBuilder label = new StringBuilder();
-            buildFullLabel(label);
+            buildDisplayLabel(label);
             return label.toString();
         }
 
-        private void buildFullLabel(StringBuilder label)
+        private void buildDisplayLabel(StringBuilder label)
         {
             if (_parent != null)
             {
-                _parent.buildFullLabel(label);
+                _parent.buildDisplayLabel(label);
                 label.append(", ");
             }
-            label.append(getLabel());
+            String currentLable = getLabel();
+            label.append(currentLable != null ? currentLable : "[unknown]");
         }
 
         public ActionURL getURL()
@@ -97,7 +91,7 @@ public class SpecimenTypeSummary
 
         private void addFilterParameters(String dataRegionName, ActionURL url)
         {
-            url.addParameter(dataRegionName + "." + getSpecimenViewFilterColumn() + "/Description~eq", getLabel());
+            url.addParameter(dataRegionName + "." + getSpecimenViewFilterColumn() + "~eq", getLabel());
             if (_parent != null)
                 _parent.addFilterParameters(dataRegionName, url);
         }
@@ -109,9 +103,9 @@ public class SpecimenTypeSummary
 
     private class PrimaryTypeCount extends TypeCount
     {
-        private PrimaryTypeCount(Container container, Integer rowId, String label)
+        private PrimaryTypeCount(Container container, String label)
         {
-            super(container, null, rowId, label);
+            super(container, null, label);
         }
 
         public List<? extends TypeCount> getChildren()
@@ -121,16 +115,16 @@ public class SpecimenTypeSummary
 
         public String getSpecimenViewFilterColumn()
         {
-            return "PrimaryType";
+            return "PrimaryType/Description";
         }
     }
 
     private class DerivativeTypeCount extends TypeCount
     {
         private PrimaryTypeCount _parent;
-        private DerivativeTypeCount(Container container, SpecimenTypeSummary.PrimaryTypeCount parent, Integer rowId, String label)
+        private DerivativeTypeCount(Container container, SpecimenTypeSummary.PrimaryTypeCount parent, String label)
         {
-            super(container, parent, rowId, label);
+            super(container, parent, label);
             _parent = parent;
         }
 
@@ -141,15 +135,15 @@ public class SpecimenTypeSummary
 
         public String getSpecimenViewFilterColumn()
         {
-            return "DerivativeType";
+            return "DerivativeType/Description";
         }
     }
 
     private class AdditiveTypeCount extends TypeCount
     {
-        private AdditiveTypeCount(Container container, SpecimenTypeSummary.DerivativeTypeCount parent, Integer rowId, String label)
+        private AdditiveTypeCount(Container container, SpecimenTypeSummary.DerivativeTypeCount parent, String label)
         {
-            super(container, parent, rowId, label);
+            super(container, parent, label);
         }
 
         public List<TypeCount> getChildren()
@@ -159,7 +153,7 @@ public class SpecimenTypeSummary
 
         public String getSpecimenViewFilterColumn()
         {
-            return "AdditiveType";
+            return "AdditiveType/Description";
         }
     }
 
@@ -172,7 +166,7 @@ public class SpecimenTypeSummary
         _rows = rows;
     }
 
-    private boolean integersEqual(Integer first, Integer second)
+    private boolean safeEqual(Object first, Object second)
     {
         if (first == null && second == null)
             return true;
@@ -187,9 +181,9 @@ public class SpecimenTypeSummary
         PrimaryTypeCount current = null;
         for (SpecimenTypeSummaryRow row : _rows)
         {
-            if (current == null || !integersEqual(row.getPrimaryTypeId(), current.getRowId()))
+            if (current == null || !safeEqual(row.getPrimaryType(), current.getLabel()))
             {
-                current = new PrimaryTypeCount(_container, row.getPrimaryTypeId(), row.getPrimaryType());
+                current = new PrimaryTypeCount(_container, row.getPrimaryType());
                 counts.add(current);
             }
             current.setVialCount(current.getVialCount() + row.getVialCount().intValue());
@@ -208,13 +202,13 @@ public class SpecimenTypeSummary
         DerivativeTypeCount current;
         for (SpecimenTypeSummaryRow row : _rows)
         {
-            if (primaryType == null || integersEqual(primaryType.getRowId(), row.getPrimaryTypeId()))
+            if (primaryType == null || safeEqual(primaryType.getLabel(), row.getPrimaryType()))
             {
-                String key = row.getDerivative() + "/" + row.getDerivativeTypeId();
+                String key = row.getDerivative() + "/" + row.getDerivative();
                 current = counts.get(key);
                 if (current == null)
                 {
-                    current = new DerivativeTypeCount(_container, primaryType, row.getDerivativeTypeId(), row.getDerivative());
+                    current = new DerivativeTypeCount(_container, primaryType, row.getDerivative());
                     counts.put(key, current);
                 }
                 current.setVialCount(current.getVialCount() + row.getVialCount().intValue());
@@ -241,14 +235,14 @@ public class SpecimenTypeSummary
         AdditiveTypeCount current;
         for (SpecimenTypeSummaryRow row : _rows)
         {
-            if ((derivativeType == null || integersEqual(derivativeType.getRowId(), row.getDerivativeTypeId())) &&
-                 (primaryType == null || integersEqual(primaryType.getRowId(), row.getPrimaryTypeId())))
+            if ((derivativeType == null || safeEqual(derivativeType.getLabel(), row.getDerivative())) &&
+                 (primaryType == null || safeEqual(primaryType.getLabel(), row.getPrimaryType())))
             {
-                String key = row.getAdditive() + "/" + row.getAdditiveTypeId();
+                String key = row.getAdditive() + "/" + row.getAdditive();
                 current = counts.get(key);
                 if (current == null)
                 {
-                    current = new AdditiveTypeCount(_container, derivativeType, row.getAdditiveTypeId(), row.getAdditive());
+                    current = new AdditiveTypeCount(_container, derivativeType, row.getAdditive());
                     counts.put(key, current);
                 }
                 current.setVialCount(current.getVialCount() + row.getVialCount().intValue());

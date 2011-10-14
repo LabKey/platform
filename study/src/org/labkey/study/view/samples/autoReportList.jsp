@@ -28,7 +28,6 @@
 <%@ page import="org.labkey.api.util.Pair" %>
 <%@ page import="org.labkey.study.CohortFilter" %>
 <%@ page import="java.util.Map" %>
-<%@ page import="java.util.LinkedHashMap" %>
 <%@ page import="org.labkey.api.study.Study" %>
 <%@ page import="org.labkey.api.query.CustomView" %>
 <%@ page import="org.labkey.api.study.StudyService" %>

@@ -68,7 +68,7 @@ public class QuerySnapshotDefImpl implements QuerySnapshotDefinition
         if (queryDef.isTableQueryDefinition())
         {
             _snapshotDef.setQueryTableName(queryDef.getName());
-            _snapshotDef.setQueryTableContainer(queryDef.getContainer());
+            _snapshotDef.setQueryTableContainer(queryDef.getContainer().getId());
         }
         else
         {
@@ -135,7 +135,8 @@ public class QuerySnapshotDefImpl implements QuerySnapshotDefinition
         }
         else if (_snapshotDef.getQueryTableName() != null)
         {
-            UserSchema schema = QueryService.get().getUserSchema(user, _snapshotDef.getQueryTableContainer(), _snapshotDef.getSchema());
+            Container queryTableContainer = ContainerManager.getForId(_snapshotDef.getQueryTableContainer());
+            UserSchema schema = QueryService.get().getUserSchema(user, queryTableContainer, _snapshotDef.getSchema());
             return schema.getQueryDefForTable(_snapshotDef.getQueryTableName());
         }
         return null;

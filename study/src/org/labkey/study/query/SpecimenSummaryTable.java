@@ -55,7 +55,7 @@ public class SpecimenSummaryTable extends BaseStudyTable
 {
     public SpecimenSummaryTable(StudyQuerySchema schema)
     {
-        super(schema, StudySchema.getInstance().getTableInfoSpecimenSummary());
+        super(schema, StudySchema.getInstance().getTableInfoSpecimenSummary(), true);
         addWrapParticipantColumn("PTID").setKeyField(true);
         addWrapColumn(_rootTable.getColumn("Container")).setFk(new ContainerForeignKey());
 
@@ -140,6 +140,12 @@ public class SpecimenSummaryTable extends BaseStudyTable
         // (We're using a custom display column to output the text of the comment in this col, even though
         // the SQL expression returns an integer.)
         addColumn(new ExprColumn(this, "QualityControlFlag", sqlFragConflicts, JdbcType.BOOLEAN));
+    }
+
+    @Override
+    protected String getParticipantColumnName()
+    {
+        return "PTID";
     }
 
     public static class CommentDisplayColumn extends DataColumn

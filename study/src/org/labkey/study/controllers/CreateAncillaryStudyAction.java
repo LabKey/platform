@@ -29,7 +29,6 @@ import org.labkey.api.data.TableInfo;
 import org.labkey.api.module.FolderType;
 import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.portal.ProjectUrls;
-import org.labkey.api.query.CustomView;
 import org.labkey.api.query.QueryDefinition;
 import org.labkey.api.query.QueryService;
 import org.labkey.api.query.snapshot.QuerySnapshotDefinition;
@@ -39,10 +38,10 @@ import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.AdminPermission;
 import org.labkey.api.study.Study;
 import org.labkey.api.study.StudyService;
+import org.labkey.api.study.Visit;
 import org.labkey.api.util.FileUtil;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.XmlBeansUtil;
-import org.labkey.api.view.ActionURL;
 import org.labkey.api.writer.Archive;
 import org.labkey.api.writer.VirtualFile;
 import org.labkey.study.StudyFolderType;
@@ -56,12 +55,10 @@ import org.labkey.study.importer.VisitImporter;
 import org.labkey.study.model.DataSetDefinition;
 import org.labkey.study.model.EmphasisStudyDefinition;
 import org.labkey.study.model.ParticipantCategory;
-import org.labkey.study.model.ParticipantGroup;
 import org.labkey.study.model.ParticipantGroupManager;
 import org.labkey.study.model.SecurityType;
 import org.labkey.study.model.StudyImpl;
 import org.labkey.study.model.StudyManager;
-import org.labkey.study.query.DataSetQueryView;
 import org.labkey.study.query.StudyQuerySchema;
 import org.labkey.study.writer.CohortWriter;
 import org.labkey.study.writer.DatasetWriter;
@@ -100,8 +97,8 @@ import java.util.Set;
 public class CreateAncillaryStudyAction extends MutatingApiAction<EmphasisStudyDefinition>
 {
     private Container _dstContainer;
-    private StudyImpl _parentStudy;
-    private List<DataSetDefinition> _datasets = new ArrayList<DataSetDefinition>();
+    private StudyImpl _sourceStudy;
+    private Set<DataSetDefinition> _datasets = new HashSet<DataSetDefinition>();
     private List<ParticipantCategory> _participantCategories = new ArrayList<ParticipantCategory>();
 
     public CreateAncillaryStudyAction()
@@ -129,7 +126,7 @@ public class CreateAncillaryStudyAction extends MutatingApiAction<EmphasisStudyD
                 // get the list of datasets to export
                 for (int datasetId : form.getDatasets())
                 {
-                    DataSetDefinition def = StudyManager.getInstance().getDataSetDefinition(getParentStudy(), datasetId);
+                    DataSetDefinition def = StudyManager.getInstance().getDataSetDefinition(getSourceStudy(), datasetId);
 
                     if (def != null)
                         _datasets.add(def);
@@ -137,9 +134,21 @@ public class CreateAncillaryStudyAction extends MutatingApiAction<EmphasisStudyD
 
                 for (int rowId : form.getCategories())
                 {
-                    ParticipantCategory pc = ParticipantGroupManager.getInstance().getParticipantCategory(_parentStudy.getContainer(), getViewContext().getUser(), rowId);
+                    ParticipantCategory pc = ParticipantGroupManager.getInstance().getParticipantCategory(_sourceStudy.getContainer(), getViewContext().getUser(), rowId);
                     if (pc != null)
                         _participantCategories.add(pc);
+                }
+
+                // Force snapshots for datasets referenced by the parent study's visit map.  This ensures that
+                // we'll be able to calculate visit dates for all data:
+                for (Visit visit : getSourceStudy().getVisits(Visit.Order.SEQUENCE_NUM))
+                {
+                    if (visit.getVisitDateDatasetId() != null)
+                    {
+                        DataSetDefinition def = StudyManager.getInstance().getDataSetDefinition(getSourceStudy(), visit.getVisitDateDatasetId());
+                        if (def != null)
+                            _datasets.add(def);
+                    }
                 }
 
                 MemoryVirtualFile vf = new MemoryVirtualFile();
@@ -168,9 +177,9 @@ public class CreateAncillaryStudyAction extends MutatingApiAction<EmphasisStudyD
         return resp;
     }
 
-    private StudyImpl getParentStudy()
+    private StudyImpl getSourceStudy()
     {
-        return _parentStudy;
+        return _sourceStudy;
     }
 
     private void exportFromParentStudy(EmphasisStudyDefinition form, BindException errors, VirtualFile vf) throws Exception
@@ -187,12 +196,12 @@ public class CreateAncillaryStudyAction extends MutatingApiAction<EmphasisStudyD
         dataTypes.add(DatasetWriter.SELECTION_TEXT);
 
         StudyWriter writer = new StudyWriter();
-        StudyExportContext ctx = new StudyExportContext(_parentStudy, user, _parentStudy.getContainer(), false, dataTypes, Logger.getLogger(StudyWriter.class));
+        StudyExportContext ctx = new StudyExportContext(_sourceStudy, user, _sourceStudy.getContainer(), false, dataTypes, Logger.getLogger(StudyWriter.class));
 
         ctx.getDatasets().clear();
         ctx.getDatasets().addAll(_datasets);
 
-        writer.write(getParentStudy(), ctx, vf);
+        writer.write(getSourceStudy(), ctx, vf);
     }
 
     private void importToDestinationStudy(EmphasisStudyDefinition form, BindException errors, StudyImpl newStudy, VirtualFile vf) throws Exception
@@ -240,13 +249,13 @@ public class CreateAncillaryStudyAction extends MutatingApiAction<EmphasisStudyD
 
         for (DataSetDefinition def : _datasets)
         {
-            StudyQuerySchema schema = new StudyQuerySchema(getParentStudy(), user, true);
+            StudyQuerySchema schema = new StudyQuerySchema(getSourceStudy(), user, true);
             TableInfo table = def.getTableInfo(user);
             QueryDefinition queryDef = QueryService.get().createQueryDefForTable(schema, table.getName());
 
             if (queryDef != null)
             {
-                queryDef.setContainer(getParentStudy().getContainer());
+                queryDef.setContainer(getSourceStudy().getContainer());
 
                 QuerySnapshotDefinition qsDef = QueryService.get().createQuerySnapshotDef(newStudy.getContainer(), queryDef, def.getLabel());
                 qsDef.setUpdateDelay(form.getUpdateDelay());
@@ -283,7 +292,7 @@ public class CreateAncillaryStudyAction extends MutatingApiAction<EmphasisStudyD
             else
             {
                 // existing groups from the parent study, use export to copy them over
-                ParticipantCategory pc = ParticipantGroupManager.getInstance().getParticipantCategory(_parentStudy.getContainer(), user, category.getRowId());
+                ParticipantCategory pc = ParticipantGroupManager.getInstance().getParticipantCategory(_sourceStudy.getContainer(), user, category.getRowId());
                 if (pc != null)
                     categoriesToCopy.add(pc);
             }
@@ -294,12 +303,12 @@ public class CreateAncillaryStudyAction extends MutatingApiAction<EmphasisStudyD
         {
             Set<String> dataTypes = new HashSet<String>();
             dataTypes.add(ParticipantGroupWriter.DATA_TYPE);
-            StudyExportContext ctx = new StudyExportContext(_parentStudy, user, _parentStudy.getContainer(), false, dataTypes, Logger.getLogger(ParticipantGroupWriter.class));
+            StudyExportContext ctx = new StudyExportContext(_sourceStudy, user, _sourceStudy.getContainer(), false, dataTypes, Logger.getLogger(ParticipantGroupWriter.class));
 
             ParticipantGroupWriter groupWriter = new ParticipantGroupWriter();
 
             groupWriter.setCategoriesToCopy(categoriesToCopy);
-            groupWriter.write(_parentStudy, ctx, vf);
+            groupWriter.write(_sourceStudy, ctx, vf);
 
             XmlObject studyXml = vf.getXmlBean("study.xml");
 
@@ -335,9 +344,9 @@ public class CreateAncillaryStudyAction extends MutatingApiAction<EmphasisStudyD
             errors.reject(SpringActionController.ERROR_MSG, "Invalid destination folder.");
 
         Container sourceContainer = ContainerManager.getForPath(form.getSrcPath());
-        _parentStudy = StudyManager.getInstance().getStudy(sourceContainer);
+        _sourceStudy = StudyManager.getInstance().getStudy(sourceContainer);
 
-        if (_parentStudy == null)
+        if (_sourceStudy == null)
             errors.reject(SpringActionController.ERROR_MSG, "Unable to locate the parent study from location : " + form.getSrcPath());
     }
 
@@ -346,8 +355,8 @@ public class CreateAncillaryStudyAction extends MutatingApiAction<EmphasisStudyD
         StudyImpl study = new StudyImpl(_dstContainer, form.getName());
 
         // new studies should default to read only
-        SecurityType securityType = _parentStudy.getSecurityType();
-        switch (_parentStudy.getSecurityType())
+        SecurityType securityType = _sourceStudy.getSecurityType();
+        switch (_sourceStudy.getSecurityType())
         {
             case BASIC_WRITE:
                 securityType = SecurityType.BASIC_READ;
@@ -356,12 +365,14 @@ public class CreateAncillaryStudyAction extends MutatingApiAction<EmphasisStudyD
                 securityType = SecurityType.ADVANCED_READ;
                 break;
         }
-        study.setTimepointType(_parentStudy.getTimepointType());
-        study.setStartDate(_parentStudy.getStartDate());
+        study.setTimepointType(_sourceStudy.getTimepointType());
+        study.setStartDate(_sourceStudy.getStartDate());
         study.setSecurityType(securityType);
-        study.setSubjectNounSingular(_parentStudy.getSubjectNounSingular());
-        study.setSubjectNounPlural(_parentStudy.getSubjectNounPlural());
-        study.setSubjectColumnName(_parentStudy.getSubjectColumnName());
+        Container sourceContainer = ContainerManager.getForPath(form.getSrcPath());
+        study.setSourceStudyContainerId(sourceContainer.getId());
+        study.setSubjectNounSingular(_sourceStudy.getSubjectNounSingular());
+        study.setSubjectNounPlural(_sourceStudy.getSubjectNounPlural());
+        study.setSubjectColumnName(_sourceStudy.getSubjectColumnName());
         study.setDescription(form.getDescription());
 
         StudyManager.getInstance().createStudy(getViewContext().getUser(), study);
