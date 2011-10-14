@@ -23,7 +23,7 @@ ALTER TABLE study.Dataset ADD CategoryId INT
 GO
 
 UPDATE study.Dataset
-    SET CategoryId = (SELECT rowId FROM core.ViewCategory vc WHERE container = vc.container AND category = vc.label)
+    SET CategoryId = (SELECT rowId FROM core.ViewCategory vc WHERE Dataset.container = vc.container AND Dataset.category = vc.label)
 GO    
 
 -- drop the category column
