@@ -79,16 +79,42 @@ function endsWith(s, f)
         return true;
     return s.charAt(slen-len) == f.charAt(0) && s.charAt(slen-1) == f.charAt(len-1) && s.indexOf(f) == slen-len;
 }
-
-
+function moveChildren(from,to)
+{
+    to = Ext.getDom(to);
+    from = Ext.getDom(from);
+    var childNodes =  from.childNodes;
+    var length = childNodes.length;
+    for (var i=0 ; i < length ; i++)
+        to.appendChild(childNodes[i]);
+}
+function clearChildren(el)
+{
+    el = Ext.getDom(el);
+    var childNodes =  el.childNodes;
+    var length = childNodes.length;
+    for (var i=0 ; i < length ; i++)
+        Ext.EventManager.purgeElement(childNodes[i], true);
+    el.innerHTML = "";
+}
 
 
 //
-// HashBang in-place navigation
+// Navigation strategies
 //
 
 
-LABKEY.NavigateInPlaceStrategy = Ext.extend(Object,
+LABKEY.DefaultNavigationStrategy = Ext.extend(Object,
+{
+    navigateTo : function(href)
+    {
+        window.location = href;
+    }
+});
+
+
+
+LABKEY.NavigateInPlaceStrategy = Ext.extend(LABKEY.DefaultNavigationStrategy,
 {
     // config defaults
     bodySelector : "TD.labkey-body-panel[id=bodypanel]",
@@ -104,6 +130,14 @@ LABKEY.NavigateInPlaceStrategy = Ext.extend(Object,
 
         Ext.onReady(this.init, this);
     },
+
+
+    /* private */
+    _superNavigateTo : function(href)
+    {
+        LABKEY.NavigateInPlaceStrategy.prototype.superclass.navigateTo.call(this, href);
+    },
+
 
     _pageBodyEl : null,
 
@@ -165,14 +199,16 @@ LABKEY.NavigateInPlaceStrategy = Ext.extend(Object,
     {
         var hashbang = this.getActionHashBang(href);
         if (!hashbang)
+        {
+            this._superNavigateTo(href);
             return;
+        }
 
         if (event)
             event.stopEvent();
 
         var el = this.getPageBodyElement();
-        Ext.EventManager.purgeElement(el, true);
-        el.update("");
+        clearChildren(el);
 
         if (this.cacheable(hashbang) && this._cachedPage.hashbang==hashbang && this._cachedPage.html)
         {
@@ -318,5 +354,20 @@ LABKEY.NavigateInPlaceStrategy = Ext.extend(Object,
         {
             this._navigateInPlaceComplete(hashbang, window.location.href, true);
         }
+    },
+
+    /* public */
+    navigateTo : function(href)
+    {
+        try
+        {
+            var uri = new URI(href);
+            if (startsWith(uri.hash, "#!"))
+                href = this._translateHashBangToHref();
+        }
+        catch (x)
+        {
+        }
+        this._navigateInPlace(null, href, true);
     }
 });
