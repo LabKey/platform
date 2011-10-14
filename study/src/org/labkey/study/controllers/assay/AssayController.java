@@ -175,6 +175,10 @@ public class AssayController extends SpringActionController
         public ModelAndView getView(RunForm runForm, BindException errors) throws Exception
         {
             ExpRun run = ExperimentService.get().getExpRun(runForm.getRunId());
+            if (run == null)
+            {
+                throw new NotFoundException();
+            }
             AssayProvider provider = AssayService.get().getProvider(run);
 
             AssayRunDatabaseContext context = provider.createRunDatabaseContext(run, getUser(), getViewContext().getRequest());
