@@ -15,6 +15,9 @@
  */
 package org.labkey.api.util;
 
+import org.labkey.api.thumbnail.Thumbnail;
+import org.labkey.api.thumbnail.ThumbnailOutputStream;
+
 import javax.imageio.ImageIO;
 import java.awt.image.BufferedImage;
 import java.awt.*;
@@ -60,5 +63,24 @@ public class ImageUtil
 
         ImageIO.write(bufferedResizedImage, "png", outputStream);
         return finalScale;
+    }
+
+
+    // Standard thumbnail height in pixels.
+    private static final double THUMBNAIL_HEIGHT = 256.0;
+
+    public static Thumbnail renderThumbnail(BufferedImage image) throws IOException
+    {
+        // TODO: Check size -- don't scale up if smaller than THUMBNAIL_HEIGHT
+
+        if (null != image)
+        {
+            ThumbnailOutputStream os = new ThumbnailOutputStream();
+            ImageUtil.resizeImage(image, os, THUMBNAIL_HEIGHT/image.getHeight(), 1);
+
+            return os.getThumbnail("image/png");
+        }
+
+        return null;
     }
 }

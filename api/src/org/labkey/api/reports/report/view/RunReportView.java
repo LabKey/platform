@@ -121,14 +121,6 @@ public abstract class RunReportView extends TabStripView
 
     protected abstract Report getReport();
 
-    protected static class ReportTabInfo extends TabInfo
-    {
-        public ReportTabInfo(String name, String id, URLHelper url)
-        {
-            super(name, id, url.deleteParameter(MSG_PARAM));
-        }
-    }
-
     protected URLHelper getBaseUrl()
     {
         ActionURL url = getViewContext().getActionURL();
