@@ -45,7 +45,7 @@ import java.net.BindException;
 * Date: Jul 11, 2007
 * Time: 2:52:54 PM
 */
-public class AssayRunUploadForm<ProviderType extends AssayProvider> extends ProtocolIdForm implements AssayRunUploadContext
+public class AssayRunUploadForm<ProviderType extends AssayProvider> extends ProtocolIdForm implements AssayRunUploadContext<ProviderType>
 {
     protected Map<DomainProperty, String> _uploadSetProperties = null;
     protected Map<DomainProperty, String> _runProperties = null;

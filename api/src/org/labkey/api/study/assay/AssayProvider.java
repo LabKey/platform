@@ -219,4 +219,5 @@ public interface AssayProvider extends Handler<ExpProtocol>
      */
     DataExchangeHandler createDataExchangeHandler();
     AssayRunDatabaseContext createRunDatabaseContext(ExpRun run, User user, HttpServletRequest request);
+    String getRunLSIDPrefix();
 }

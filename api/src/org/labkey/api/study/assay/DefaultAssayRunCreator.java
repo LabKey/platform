@@ -3,6 +3,7 @@ package org.labkey.api.study.assay;
 import org.apache.commons.beanutils.ConversionException;
 import org.apache.commons.beanutils.ConvertUtils;
 import org.apache.log4j.Logger;
+import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
@@ -11,19 +12,16 @@ import org.labkey.api.data.RuntimeSQLException;
 import org.labkey.api.exp.ExperimentDataHandler;
 import org.labkey.api.exp.ExperimentException;
 import org.labkey.api.exp.Lsid;
-import org.labkey.api.exp.ObjectProperty;
-import org.labkey.api.exp.OntologyManager;
 import org.labkey.api.exp.PropertyType;
 import org.labkey.api.exp.XarContext;
 import org.labkey.api.exp.api.DataType;
 import org.labkey.api.exp.api.ExpData;
 import org.labkey.api.exp.api.ExpExperiment;
 import org.labkey.api.exp.api.ExpMaterial;
-import org.labkey.api.exp.api.ExpProtocol;
+import org.labkey.api.exp.api.ExpObject;
 import org.labkey.api.exp.api.ExpRun;
 import org.labkey.api.exp.api.ExperimentService;
 import org.labkey.api.exp.property.DomainProperty;
-import org.labkey.api.pipeline.PipelineService;
 import org.labkey.api.qc.DataTransformer;
 import org.labkey.api.qc.DataValidator;
 import org.labkey.api.qc.DefaultTransformResult;
@@ -32,9 +30,9 @@ import org.labkey.api.qc.TransformResult;
 import org.labkey.api.query.SimpleValidationError;
 import org.labkey.api.query.ValidationError;
 import org.labkey.api.query.ValidationException;
+import org.labkey.api.security.User;
 import org.labkey.api.study.actions.AssayRunUploadForm;
 import org.labkey.api.util.FileUtil;
-import org.labkey.api.util.GUID;
 import org.labkey.api.util.Pair;
 import org.labkey.api.view.ViewBackgroundInfo;
 
@@ -63,59 +61,6 @@ public class DefaultAssayRunCreator<ProviderType extends AbstractAssayProvider> 
         _provider = provider;
     }
 
-    public ExpRun createExperimentRun(String name, Container container, ExpProtocol protocol)
-    {
-        if (name == null)
-        {
-            name = "[Untitled]";
-        }
-
-        String entityId = GUID.makeGUID();
-        ExpRun run = ExperimentService.get().createExperimentRun(container, name);
-
-        Lsid lsid = new Lsid(getProvider().getRunLSIDPrefix(), "Folder-" + container.getRowId(), entityId);
-        run.setLSID(lsid.toString());
-        run.setProtocol(ExperimentService.get().getExpProtocol(protocol.getRowId()));
-        run.setEntityId(entityId);
-        return run;
-    }
-
-    protected ExpRun createExperimentRun(AssayRunUploadContext context) throws ExperimentException
-    {
-        String runName = context.getName();
-        File file = null;
-        {
-            try
-            {
-                Map<String, File> uploadedData = context.getUploadedData();
-                if (uploadedData.size() != 0)
-                {
-                    file = uploadedData.get(AssayDataCollector.PRIMARY_FILE);
-                    if (runName == null)
-                    {
-                        runName = file.getName();
-                    }
-                }
-            }
-            catch (IOException e)
-            {
-                throw new ExperimentException(e);
-            }
-        }
-        ExpRun run = createExperimentRun(runName, context.getContainer(), context.getProtocol());
-
-        run.setComments(context.getComments());
-        if (file != null)
-        {
-            run.setFilePathRoot(file.getParentFile());
-        }
-        else
-        {
-            run.setFilePathRoot(PipelineService.get().findPipelineRoot(context.getContainer()).getRootPath());
-        }
-        return run;
-    }
-
     public TransformResult transform(AssayRunUploadContext context, ExpRun run) throws ValidationException
     {
         DataTransformer transformer = getDataTransformer();
@@ -128,12 +73,9 @@ public class DefaultAssayRunCreator<ProviderType extends AbstractAssayProvider> 
     /**
      * @param batch if not null, the run group that's already created for this batch. If null, a new one needs to be created
      * @return the run and batch that were inserted
-     * @throws org.labkey.api.exp.ExperimentException
      */
-    public Pair<ExpRun, ExpExperiment> saveExperimentRun(AssayRunUploadContext context, ExpExperiment batch) throws ExperimentException, ValidationException
+    public ExpExperiment saveExperimentRun(AssayRunUploadContext context, @Nullable ExpExperiment batch, ExpRun run) throws ExperimentException, ValidationException
     {
-        ExpRun run = createExperimentRun(context);
-
         Map<ExpMaterial, String> inputMaterials = new HashMap<ExpMaterial, String>();
         Map<ExpData, String> inputDatas = new HashMap<ExpData, String>();
         Map<ExpMaterial, String> outputMaterials = new HashMap<ExpMaterial, String>();
@@ -153,7 +95,10 @@ public class DefaultAssayRunCreator<ProviderType extends AbstractAssayProvider> 
             if (entry.getKey().getName().equals(AbstractAssayProvider.PARTICIPANT_VISIT_RESOLVER_PROPERTY_NAME))
             {
                 resolverType = AbstractAssayProvider.findType(entry.getValue(), getProvider().getParticipantVisitResolverTypes());
-                resolverType.configureRun(context, run, inputDatas);
+                if (resolverType != null)
+                {
+                    resolverType.configureRun(context, run, inputDatas);
+                }
                 break;
             }
         }
@@ -216,7 +161,7 @@ public class DefaultAssayRunCreator<ProviderType extends AbstractAssayProvider> 
             ViewBackgroundInfo info = new ViewBackgroundInfo(context.getContainer(), context.getUser(), context.getActionURL());
             XarContext xarContext = new AssayUploadXarContext("Simple Run Creation", context);
 
-            run = ExperimentService.get().insertSimpleExperimentRun(run,
+            run = ExperimentService.get().saveSimpleExperimentRun(run,
                     inputMaterials,
                     inputDatas,
                     outputMaterials,
@@ -240,10 +185,10 @@ public class DefaultAssayRunCreator<ProviderType extends AbstractAssayProvider> 
                     List<ValidationError> errors = validateProperties(props);
                     if (!errors.isEmpty())
                         throw new ValidationException(errors);
-                    savePropertyObject(batch.getLSID(), props, context.getContainer());
+                    savePropertyObject(batch, props, context.getUser());
                 }
                 else
-                    savePropertyObject(batch.getLSID(), batchProperties, context.getContainer());
+                    savePropertyObject(batch, batchProperties, context.getUser());
             }
 
             if (!transformResult.getRunProperties().isEmpty())
@@ -252,10 +197,10 @@ public class DefaultAssayRunCreator<ProviderType extends AbstractAssayProvider> 
                 List<ValidationError> errors = validateProperties(props);
                 if (!errors.isEmpty())
                     throw new ValidationException(errors);
-                savePropertyObject(run.getLSID(), props, context.getContainer());
+                savePropertyObject(run, props, context.getUser());
             }
             else
-                savePropertyObject(run.getLSID(), runProperties, context.getContainer());
+                savePropertyObject(run, runProperties, context.getUser());
 
             if (transformResult.getTransformedData().isEmpty())
             {
@@ -296,8 +241,8 @@ public class DefaultAssayRunCreator<ProviderType extends AbstractAssayProvider> 
             scope.commitTransaction();
 
             AssayService.get().ensureUniqueBatchName(batch, context.getProtocol(), context.getUser());
-
-            return new Pair<ExpRun, ExpExperiment>(run, batch);
+            
+            return batch;
         }
         catch (SQLException e)
         {
@@ -445,11 +390,10 @@ public class DefaultAssayRunCreator<ProviderType extends AbstractAssayProvider> 
         return new Pair<ExpData, String>(createData(container, relatedFile, relatedFile.getName(), dataType), roleName);
     }
 
-    protected void savePropertyObject(String parentLSID, Map<DomainProperty, String> properties, Container container) throws ExperimentException
+    protected void savePropertyObject(ExpObject object, Map<DomainProperty, String> properties, User user) throws ExperimentException
     {
         try
         {
-            List<ObjectProperty> objProperties = new ArrayList<ObjectProperty>(properties.size());
             for (Map.Entry<DomainProperty, String> entry : properties.entrySet())
             {
                 // Treat the empty string as a null in the database, which is our normal behavior when receiving data
@@ -458,14 +402,9 @@ public class DefaultAssayRunCreator<ProviderType extends AbstractAssayProvider> 
                 if (value != null && !value.equals(""))
                 {
                     DomainProperty pd = entry.getKey();
-                    ObjectProperty property = new ObjectProperty(parentLSID,
-                            container, pd.getPropertyURI(),
-                            value, pd.getPropertyDescriptor().getPropertyType());
-                    property.setName(pd.getName());
-                    objProperties.add(property);
+                    object.setProperty(user, pd.getPropertyDescriptor(), value);
                 }
             }
-            OntologyManager.insertProperties(container, parentLSID, objProperties.toArray(new ObjectProperty[objProperties.size()]));
         }
         catch (ValidationException ve)
         {

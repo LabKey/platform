@@ -30,12 +30,12 @@ import java.util.Map;
  * User: jeckels
  * Date: Oct 7, 2011
  */
-public class AssayRunDatabaseContext implements AssayRunUploadContext
+public class AssayRunDatabaseContext<ProviderType extends AssayProvider> implements AssayRunUploadContext<ProviderType>
 {
     protected final ExpRun _run;
     protected final User _user;
     protected final ExpProtocol _protocol;
-    protected final AssayProvider _provider;
+    protected final ProviderType _provider;
     private final HttpServletRequest _request;
 
     public AssayRunDatabaseContext(ExpRun run, User user, HttpServletRequest request)
@@ -43,7 +43,7 @@ public class AssayRunDatabaseContext implements AssayRunUploadContext
         _run = run;
         _user = user;
         _protocol = _run.getProtocol();
-        _provider = AssayService.get().getProvider(_protocol);
+        _provider = (ProviderType)AssayService.get().getProvider(_protocol);
         _request = request;
     }
 
@@ -57,7 +57,7 @@ public class AssayRunDatabaseContext implements AssayRunUploadContext
     @Override
     public Map<DomainProperty, String> getRunProperties() throws ExperimentException
     {
-        return getProperties(_provider.getBatchDomain(_protocol), _run.getObjectProperties());
+        return getProperties(_provider.getRunDomain(_protocol), _run.getObjectProperties());
     }
 
     @Override
@@ -80,10 +80,14 @@ public class AssayRunDatabaseContext implements AssayRunUploadContext
         Map<DomainProperty, String> result = new HashMap<DomainProperty, String>();
         for (DomainProperty dp : domain.getProperties())
         {
-            ObjectProperty op = props.get(dp.getName());
-            if (op != null && op.getPropertyId() == dp.getPropertyId())
+            ObjectProperty op = props.get(dp.getPropertyURI());
+            if (op != null)
             {
-                result.put(dp, ConvertUtils.convert(op.getObjectValue()));
+                result.put(dp, ConvertUtils.convert(op.value()));
+            }
+            else
+            {
+                result.put(dp, null);
             }
         }
         return result;
@@ -127,7 +131,7 @@ public class AssayRunDatabaseContext implements AssayRunUploadContext
 
     @NotNull
     @Override
-    public Map<String, File> getUploadedData() throws IOException, ExperimentException
+    public Map<String, File> getUploadedData() throws ExperimentException
     {
         Map<String, File> result = new HashMap<String, File>();
         for (ExpData data : _run.getOutputDatas(_provider.getDataType()))
@@ -143,7 +147,7 @@ public class AssayRunDatabaseContext implements AssayRunUploadContext
     }
 
     @Override
-    public AssayProvider getProvider()
+    public ProviderType getProvider()
     {
         return _provider;
     }

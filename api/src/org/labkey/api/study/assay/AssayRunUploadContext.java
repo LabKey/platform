@@ -36,7 +36,7 @@ import java.util.Map;
 * Date: Jul 11, 2007
 * Time: 1:24:10 PM
 */
-public interface AssayRunUploadContext
+public interface AssayRunUploadContext<ProviderType extends AssayProvider>
 {
     @NotNull
     ExpProtocol getProtocol();
@@ -61,7 +61,7 @@ public interface AssayRunUploadContext
     @NotNull
     Map<String, File> getUploadedData() throws IOException, ExperimentException;
 
-    AssayProvider getProvider();
+    ProviderType getProvider();
 
     Map<DomainProperty, Object> getDefaultValues(Domain domain, String scope) throws ExperimentException;
 

@@ -60,5 +60,13 @@ public interface ExpProtocolApplication extends ExpObject
 
     String getComments();
 
+    public void setRun(ExpRun run);
+
+    public void setActionSequence(int actionSequence);
+
+    public void setProtocol(ExpProtocol protocol);
+
+    public void setActivityDate(Date date);
+    
     void save(User user);
 }

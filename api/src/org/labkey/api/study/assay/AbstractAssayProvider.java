@@ -62,8 +62,6 @@ import org.labkey.api.exp.query.ExpRunTable;
 import org.labkey.api.gwt.client.DefaultValueType;
 import org.labkey.api.gwt.client.ui.PropertiesEditorUtil;
 import org.labkey.api.qc.DataExchangeHandler;
-import org.labkey.api.qc.DataTransformer;
-import org.labkey.api.qc.DataValidator;
 import org.labkey.api.query.DetailsURL;
 import org.labkey.api.query.ExprColumn;
 import org.labkey.api.query.FieldKey;
@@ -638,6 +636,10 @@ public abstract class AbstractAssayProvider implements AssayProvider
     
     public static ParticipantVisitResolverType findType(String name, List<ParticipantVisitResolverType> types)
     {
+        if (name == null)
+        {
+            return null;
+        }
         for (ParticipantVisitResolverType type : types)
         {
             if (name.equals(type.getName()))

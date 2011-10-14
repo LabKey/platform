@@ -37,7 +37,6 @@ import org.labkey.api.security.RequiresPermissionClass;
 import org.labkey.api.security.permissions.*;
 import org.labkey.api.study.assay.*;
 import org.labkey.api.util.PageFlowUtil;
-import org.labkey.api.util.Pair;
 import org.labkey.api.view.*;
 import org.labkey.api.view.template.AppBar;
 import org.springframework.context.MessageSourceResolvable;
@@ -271,8 +270,8 @@ public class UploadWizardAction<FormType extends AssayRunUploadForm<ProviderType
 
     protected void addNextButton(ButtonBar bbar)
     {
-        ActionButton newRunButton = new ActionButton(getViewContext().getActionURL().getAction() + ".view", "Next",
-                DataRegion.MODE_INSERT, ActionButton.Action.POST);
+        ActionURL targetURL = getViewContext().getActionURL().clone().deleteParameters();
+        ActionButton newRunButton = new ActionButton(targetURL, "Next", DataRegion.MODE_INSERT, ActionButton.Action.POST);
         bbar.add(newRunButton);
     }
 
@@ -412,7 +411,7 @@ public class UploadWizardAction<FormType extends AssayRunUploadForm<ProviderType
 
     protected void addFinishButtons(FormType newRunForm, InsertView insertView, ButtonBar bbar)
     {
-        ActionButton saveFinishButton = new ActionButton(getViewContext().getActionURL().getAction() + ".view", "Save and Finish");
+        ActionButton saveFinishButton = new ActionButton(getViewContext().getActionURL().clone().deleteParameters(), "Save and Finish");
         saveFinishButton.setScript(insertView.getDataRegion().getJavascriptFormReference(false) + ".multiRunUpload.value = \"false\";");
         saveFinishButton.setActionType(ActionButton.Action.POST);
         bbar.add(saveFinishButton);
@@ -423,7 +422,7 @@ public class UploadWizardAction<FormType extends AssayRunUploadForm<ProviderType
             AssayDataCollector.AdditionalUploadType t = collector.getAdditionalUploadType(newRunForm);
             if (t != AssayDataCollector.AdditionalUploadType.Disallowed)
             {
-                ActionButton saveUploadAnotherButton = new ActionButton(getViewContext().getActionURL().getAction() + ".view", t.getButtonText());
+                ActionButton saveUploadAnotherButton = new ActionButton(getViewContext().getActionURL().clone().deleteParameters(), t.getButtonText());
                 saveUploadAnotherButton.setScript(insertView.getDataRegion().getJavascriptFormReference(false) + ".multiRunUpload.value = \"true\";");
                 saveUploadAnotherButton.setActionType(ActionButton.Action.POST);
                 bbar.add(saveUploadAnotherButton);
@@ -609,6 +608,23 @@ public class UploadWizardAction<FormType extends AssayRunUploadForm<ProviderType
             return afterRunCreation(form, run, errors);
         }
 
+        protected File getPrimaryFile(AssayRunUploadContext context) throws ExperimentException
+        {
+            try
+            {
+                Map<String, File> uploadedData = context.getUploadedData();
+                if (uploadedData.size() != 0)
+                {
+                    return uploadedData.get(AssayDataCollector.PRIMARY_FILE);
+                }
+            }
+            catch (IOException e)
+            {
+                throw new ExperimentException(e);
+            }
+            return null;
+        }
+        
         public ExpRun saveExperimentRun(FormType form) throws ExperimentException, ValidationException
         {
             ExpExperiment exp = null;
@@ -617,14 +633,17 @@ public class UploadWizardAction<FormType extends AssayRunUploadForm<ProviderType
                 exp = ExperimentService.get().getExpExperiment(form.getBatchId().intValue());
             }
 
-            Pair<ExpRun, ExpExperiment> insertedValues = form.getProvider().getRunCreator().saveExperimentRun(form, exp);
+            ExpRun run = AssayService.get().createExperimentRun(form.getName(), getViewContext().getContainer(), form.getProtocol(), getPrimaryFile(form));
+            run.setComments(form.getComments());
 
-            ExpRun run = insertedValues.getKey();
-            form.setBatchId(insertedValues.getValue().getRowId());
+            exp = form.getProvider().getRunCreator().saveExperimentRun(form, exp, run);
 
+            form.setBatchId(exp.getRowId());
             form.saveDefaultBatchValues();
             form.saveDefaultRunValues();
+
             getCompletedUploadAttemptIDs().add(form.getUploadAttemptID());
+            
             AssayDataCollector<FormType> collector = form.getSelectedDataCollector();
             if (collector != null)
             {

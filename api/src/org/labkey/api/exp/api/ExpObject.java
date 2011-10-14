@@ -40,6 +40,7 @@ public interface ExpObject extends Identifiable, Comparable<ExpObject>
     Container getContainer();
     void setContainer(Container container);
 
+    /** Will perform type conversion if needed */
     void setProperty(User user, PropertyDescriptor pd, Object value) throws ValidationException;
     Object getProperty(PropertyDescriptor pd);
     Object getProperty(DomainProperty prop);

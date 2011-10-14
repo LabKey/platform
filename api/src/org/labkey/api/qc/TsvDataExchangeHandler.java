@@ -492,7 +492,7 @@ public class TsvDataExchangeHandler implements DataExchangeHandler
         };
     }
 
-    public File createTransformationRunInfo(AssayRunUploadContext context, ExpRun run, File scriptDir) throws Exception
+    public File createTransformationRunInfo(AssayRunUploadContext<? extends AssayProvider> context, ExpRun run, File scriptDir) throws Exception
     {
         // include all of the batch and run properties
         return createValidationRunInfo(context, run, scriptDir);
@@ -525,7 +525,7 @@ public class TsvDataExchangeHandler implements DataExchangeHandler
         return _filesToIgnore.contains(file);
     }
 
-    public TransformResult processTransformationOutput(AssayRunUploadContext context, File runInfo, ExpRun run, File scriptFile) throws ValidationException
+    public TransformResult processTransformationOutput(AssayRunUploadContext<? extends AssayProvider> context, File runInfo, ExpRun run, File scriptFile) throws ValidationException
     {
         DefaultTransformResult result = new DefaultTransformResult();
         _filesToIgnore.add(scriptFile);
@@ -693,7 +693,7 @@ public class TsvDataExchangeHandler implements DataExchangeHandler
         }
     }
 
-    private static class SampleRunUploadContext implements AssayRunUploadContext
+    private static class SampleRunUploadContext implements AssayRunUploadContext<AssayProvider>
     {
         ExpProtocol _protocol;
         ViewContext _context;

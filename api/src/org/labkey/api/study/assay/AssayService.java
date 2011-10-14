@@ -29,6 +29,7 @@ import org.labkey.api.view.ViewContext;
 import org.labkey.api.view.WebPartView;
 import org.springframework.web.servlet.ModelAndView;
 
+import java.io.File;
 import java.util.List;
 import java.util.Map;
 
@@ -101,5 +102,10 @@ public class AssayService
         public void indexAssays(SearchService.IndexTask task, Container c);
 
         void upgradeAssayDefinitions(User upgradeUser, double targetVersion);
+
+        /**
+         * Creates a run, but does not persist it to the database. Creates the run only, no protocol applications, etc.
+         */
+        public ExpRun createExperimentRun(@Nullable String name, Container container, ExpProtocol protocol, @Nullable File file);
     }
 }

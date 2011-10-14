@@ -113,7 +113,7 @@ public class ExpDataFileConverter implements Converter
             return data;
         }
         else
-            throw new IllegalArgumentException("Data input must have an id, pipelinePath, dataFileURL, or absolutePath property.");
+            throw new IllegalArgumentException("Data must have an id, pipelinePath, dataFileURL, or absolutePath property. " + dataObject);
     }
 
     @Override
