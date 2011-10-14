@@ -106,9 +106,6 @@ public interface UpdateableTableInfo
      * Try to use generic code paths to get the input data iterator to match the parameters when possible.
      *
      * This method is _NOT_ usually called directly. See TableInfo.getUpdateService(), and StandardETL.
-     * 
-     * @param data
-     * @param errors
      */
     DataIteratorBuilder persistRows(DataIteratorBuilder data, BatchValidationException errors);
 
@@ -122,11 +119,6 @@ public interface UpdateableTableInfo
      * The ParameterMap (better name?) should act pretty much like a PreparedStatement with
      * names parameters (rather than ordinal parameters).  Might actually execute java code
      * but that shouldn't make a difference to the caller.
-     * 
-     * @param conn
-     * @param user
-     * @return
-     * @throws SQLException
      */
     Parameter.ParameterMap insertStatement(Connection conn, User user) throws SQLException;
     Parameter.ParameterMap updateStatement(Connection conn, User user, Set<String> columns) throws SQLException;

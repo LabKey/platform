@@ -90,6 +90,7 @@ abstract public class AbstractTableInfo implements TableInfo, ContainerContext
     protected ButtonBarConfig _buttonBarConfig;
     private List<DetailsURL> _detailsURLs = new ArrayList<DetailsURL>(1);
 
+    @NotNull
     public List<ColumnInfo> getPkColumns()
     {
         List<ColumnInfo> ret = new ArrayList<ColumnInfo>();

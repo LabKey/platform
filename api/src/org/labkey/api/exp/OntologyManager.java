@@ -59,7 +59,6 @@ import org.labkey.api.security.User;
 import org.labkey.api.services.ServiceRegistry;
 import org.labkey.api.util.CPUTimer;
 import org.labkey.api.util.MemTracker;
-import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.Pair;
 import org.labkey.api.util.Path;
 import org.labkey.api.util.ResultSetUtil;
@@ -298,14 +297,39 @@ public class OntologyManager
             Logger logger)
         throws SQLException, ValidationException
     {
-        if (!(tableInsert instanceof UpdateableTableInfo))
+        return saveTabDelimited(tableInsert, c, user, helper, rows, logger, true);
+    }
+
+    public static List<String> updateTabDelimited(TableInfo tableInsert, Container c, User user,
+            UpdateableTableImportHelper helper,
+            List<Map<String, Object>> rows,
+            Logger logger)
+        throws SQLException, ValidationException
+    {
+        return saveTabDelimited(tableInsert, c, user, helper, rows, logger, false);
+    }
+
+    private static List<String> saveTabDelimited(TableInfo table, Container c, User user,
+            UpdateableTableImportHelper helper,
+            List<Map<String, Object>> rows,
+            Logger logger,
+            boolean insert)
+        throws SQLException, ValidationException
+    {
+        if (!(table instanceof UpdateableTableInfo))
             throw new IllegalArgumentException();
-        DbScope scope = tableInsert.getSchema().getScope();
+
+        if (rows.isEmpty())
+        {
+            return Collections.emptyList();
+        }
+
+        DbScope scope = table.getSchema().getScope();
         
 		assert scope.isTransactionActive();
 		List<String> resultingLsids = new ArrayList<String>(rows.size());
 
-        Domain d = tableInsert.getDomain();
+        Domain d = table.getDomain();
         DomainProperty[] properties = null == d ? new DomainProperty[0] : d.getProperties();
         
         ValidatorContext validatorCache = new ValidatorContext(c, user);
@@ -313,12 +337,19 @@ public class OntologyManager
         Connection conn = null;
         Parameter.ParameterMap parameterMap = null;
 
-        Map currentRow = null;
+        Map<String, Object> currentRow = null;
 
 		try
 		{
             conn = scope.getConnection();
-            parameterMap = ((UpdateableTableInfo)tableInsert).insertStatement(conn, user);
+            if (insert)
+            {
+                parameterMap = ((UpdateableTableInfo)table).insertStatement(conn, user);
+            }
+            else
+            {
+                parameterMap = ((UpdateableTableInfo)table).updateStatement(conn, user, null);
+            }
             List<ValidationError> errors = new ArrayList<ValidationError>();
 
             Map<String, IPropertyValidator[]> validatorMap = new HashMap<String, IPropertyValidator[]>();
@@ -333,7 +364,7 @@ public class OntologyManager
                     validatorMap.put(dp.getPropertyURI(), validators);
             }
 
-            ColumnInfo[] columns = tableInsert.getColumns().toArray(new ColumnInfo[tableInsert.getColumns().size()]);
+            ColumnInfo[] columns = table.getColumns().toArray(new ColumnInfo[table.getColumns().size()]);
             PropertyType[] propertyTypes = new PropertyType[columns.length];
             for (int i = 0; i < columns.length; i++)
             {

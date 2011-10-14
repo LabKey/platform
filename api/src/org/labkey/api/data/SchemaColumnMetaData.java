@@ -310,6 +310,7 @@ public class SchemaColumnMetaData
         return _hasDefaultTitleColumn;
     }
 
+    @NotNull 
     public List<ColumnInfo> getPkColumns()
     {
         if (null == _pkColumns)

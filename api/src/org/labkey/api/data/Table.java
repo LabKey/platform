@@ -996,15 +996,27 @@ public class Table
 
         // UNDONE -- rowVersion
         List<ColumnInfo> columnPK = table.getPkColumns();
-        Object[] pkValsArray;
 
-        assert null != columnPK;
-        assert columnPK.size() == 1 || ((Object[]) pkVals).length == columnPK.size();
+        // Name-value pairs for the PK columns for this row
+        Map<String, Object> keys = new CaseInsensitiveHashMap<Object>();
 
         if (columnPK.size() == 1 && !pkVals.getClass().isArray())
-            pkValsArray = new Object[]{pkVals};
+            keys.put(columnPK.get(0).getName(), pkVals);
+        else if (pkVals instanceof Map)
+            keys.putAll((Map)pkVals);
         else
-            pkValsArray = (Object[]) pkVals;
+        {
+            Object[] pkValueArray = (Object[]) pkVals;
+            if (pkValueArray.length != columnPK.size())
+            {
+                throw new IllegalArgumentException("Expected to get " + columnPK.size() + " key values, but got " + pkValueArray.length);
+            }
+            // Assume that the key values are in the same order as the key columns returned from getPkColumns()
+            for (int i = 0; i < columnPK.size(); i++)
+            {
+                keys.put(columnPK.get(i).getName(), pkValueArray[i]);
+            }
+        }
 
         String whereAND = "WHERE ";
 
@@ -1016,12 +1028,12 @@ public class Table
             whereAND = " AND ";
         }
 
-        for (int i = 0; i < columnPK.size(); i++)
+        for (ColumnInfo col : columnPK)
         {
             whereSQL.append(whereAND);
-            whereSQL.append(columnPK.get(i).getSelectName());
+            whereSQL.append(col.getSelectName());
             whereSQL.append("=?");
-            parametersWhere.add(pkValsArray[i]);
+            parametersWhere.add(keys.get(col.getName()));
             whereAND = " AND ";
         }
 
@@ -2108,7 +2120,7 @@ public class Table
 
 
 
-    private static void appendParameterOrVariable(SQLFragment f, SqlDialect d, boolean useVariable, Parameter p, Map<Parameter,String> names)
+    private static SQLFragment appendParameterOrVariable(SQLFragment f, SqlDialect d, boolean useVariable, Parameter p, Map<Parameter,String> names)
     {
         if (!useVariable)
         {
@@ -2125,6 +2137,7 @@ public class Table
             }
             f.append(v);
         }
+        return f;
     }
 
 
@@ -2139,12 +2152,33 @@ public class Table
      * This shouldn't be a big problem since we don't usually need to optimize the one row case, and we're moving
      * to provisioned tables for major datatypes.
      */
-    public static Parameter.ParameterMap insertStatement(Connection conn, TableInfo tableInsert, @Nullable Container c, User user, boolean selectIds, boolean autoFillDefaultColumns) throws SQLException
+    public static Parameter.ParameterMap insertStatement(Connection conn, TableInfo table, @Nullable Container c, User user, boolean selectIds, boolean autoFillDefaultColumns) throws SQLException
     {
-        if (!(tableInsert instanceof UpdateableTableInfo))
-            throw new IllegalArgumentException();
+        return createStatement(conn, table, c, user, selectIds, autoFillDefaultColumns, true);
+    }
 
-        UpdateableTableInfo updatable = (UpdateableTableInfo)tableInsert;
+    /**
+     * Create a reusable SQL Statement for updating rows into an labkey relationship.  The relationship
+     * persisted directly in the database (SchemaTableInfo), or via the OnotologyManager tables.
+     *
+     * QueryService shouldn't really know about the internals of exp.Object and exp.ObjectProperty etc.
+     * However, I can only keep so many levels of abstraction in my head at once.
+     *
+     * NOTE: this is currently fairly expensive for updating one row into an Ontology stored relationship on Postgres.
+     * This shouldn't be a big problem since we don't usually need to optimize the one row case, and we're moving
+     * to provisioned tables for major datatypes.
+     */
+    public static Parameter.ParameterMap updateStatement(Connection conn, TableInfo table, @Nullable Container c, User user, boolean selectIds, boolean autoFillDefaultColumns) throws SQLException
+    {
+        return createStatement(conn, table, c, user, selectIds, autoFillDefaultColumns, false);
+    }
+
+    private static Parameter.ParameterMap createStatement(Connection conn, TableInfo t, @Nullable Container c, User user, boolean selectIds, boolean autoFillDefaultColumns, boolean insert) throws SQLException
+    {
+        if (!(t instanceof UpdateableTableInfo))
+            throw new IllegalArgumentException("Table must be an UpdatedableTableInfo");
+
+        UpdateableTableInfo updatable = (UpdateableTableInfo)t;
         TableInfo table = updatable.getSchemaTableInfo();
 
         if (!(table instanceof SchemaTableInfo))
@@ -2152,7 +2186,7 @@ public class Table
         if (null == ((SchemaTableInfo)table).getMetaDataName())
             throw new IllegalArgumentException();
 
-        SqlDialect d = tableInsert.getSqlDialect();
+        SqlDialect d = t.getSqlDialect();
         boolean useVariables = false;
 
         // helper for generating procedure/function variation
@@ -2160,7 +2194,10 @@ public class Table
         
         Timestamp ts = new Timestamp(System.currentTimeMillis());
         Parameter containerParameter = null;
-        Parameter objecturiParameter = null;
+        String objectURIColumnName = updatable.getObjectUriType() == UpdateableTableInfo.ObjectUriType.schemaColumn
+                ? updatable.getObjectURIColumnName()
+                : "objecturi";
+        Parameter objecturiParameter = new Parameter(objectURIColumnName, JdbcType.VARCHAR);
 
         String comma = "";
         Set<String> done = Sets.newCaseInsensitiveHashSet();
@@ -2176,8 +2213,8 @@ public class Table
         SQLFragment sqlfObject = new SQLFragment();
         SQLFragment sqlfObjectProperty = new SQLFragment();
 
-        Domain domain = tableInsert.getDomain();
-        DomainKind domainKind = tableInsert.getDomainKind();
+        Domain domain = t.getDomain();
+        DomainKind domainKind = t.getDomainKind();
         DomainProperty[] properties = null;
         if (null != domain && null != domainKind && StringUtils.isEmpty(domainKind.getStorageSchemaName()))
         {
@@ -2196,19 +2233,45 @@ public class Table
                 containerParameter = new Parameter("container", JdbcType.VARCHAR);
 //                if (autoFillDefaultColumns && null != c)
 //                    containerParameter.setValue(c.getId(), true);
-                String parameterName = updatable.getObjectUriType() == UpdateableTableInfo.ObjectUriType.schemaColumn
-                        ? updatable.getObjectURIColumnName()
-                        : "objecturi";
-                objecturiParameter = new Parameter(parameterName,JdbcType.VARCHAR);
+
+                // Insert a new row in exp.Object if there isn't already a row for this object
+
+                // In the update case, it's still possible that there isn't a row in exp.Object - there might have been
+                // no properties in the domain when the row was originally inserted
                 sqlfObject.append("INSERT INTO exp.Object (container, objecturi) ");
-                sqlfObject.append("VALUES(");
+                sqlfObject.append("SELECT ");
                 appendParameterOrVariable(sqlfObject, d, useVariables, containerParameter, parameterToVariable);
-                sqlfObject.append(",");
+                sqlfObject.append(" AS ObjectURI,");
+                appendParameterOrVariable(sqlfObject, d, useVariables, objecturiParameter, parameterToVariable);
+                sqlfObject.append(" AS Container WHERE NOT EXISTS (SELECT ObjectURI FROM exp.Object WHERE Container = ");
+                appendParameterOrVariable(sqlfObject, d, useVariables, containerParameter, parameterToVariable);
+                sqlfObject.append(" AND ObjectURI = ");
                 appendParameterOrVariable(sqlfObject, d, useVariables, objecturiParameter, parameterToVariable);
                 sqlfObject.append(");\n");
+
+                // Grab the object's ObjectId
                 sqlfObject.append(setKeyword + objectIdVar + " = (");
-                appendSelectAutoIncrement(d, sqlfObject, DbSchema.get("exp").getTable("object"), "objectid");
+                sqlfObject.append("SELECT ObjectId FROM exp.Object WHERE Container = ");
+                appendParameterOrVariable(sqlfObject, d, useVariables, containerParameter, parameterToVariable);
+                sqlfObject.append(" AND ObjectURI = ");
+                appendParameterOrVariable(sqlfObject, d, useVariables, objecturiParameter, parameterToVariable);
                 sqlfObject.append(");\n");
+
+                if (!insert)
+                {
+                    // Clear out any existing property values for this domain
+                    sqlfObject.append("DELETE FROM exp.ObjectProperty WHERE ObjectId = ");
+                    sqlfObject.append(objectIdVar);
+                    sqlfObject.append(" AND PropertyId IN (");
+                    String separator = "";
+                    for (DomainProperty property : properties)
+                    {
+                        sqlfObject.append(separator);
+                        separator = ", ";
+                        sqlfObject.append(property.getPropertyId());
+                    }
+                    sqlfObject.append(");\n");
+                }
             }
         }
 
@@ -2216,71 +2279,67 @@ public class Table
         // BASE TABLE INSERT()
         //
 
-        SQLFragment cols = new SQLFragment();
-        SQLFragment values = new SQLFragment();
+        List<SQLFragment> cols = new ArrayList<SQLFragment>();
+        List<SQLFragment> values = new ArrayList<SQLFragment>();
         ColumnInfo col;
 
         col = table.getColumn("Container");
         if (null != col && null != user)
         {
-            cols.append(comma).append("Container");
+            cols.add(new SQLFragment("Container"));
             if (null == containerParameter)
             {
                 containerParameter = new Parameter("container", JdbcType.VARCHAR);
 //                if (autoFillDefaultColumns && null != c)
 //                    containerParameter.setValue(c.getId(), true);
             }
-            appendParameterOrVariable(values, d, useVariables, containerParameter, parameterToVariable);
+            values.add(appendParameterOrVariable(new SQLFragment(), d, useVariables, containerParameter, parameterToVariable));
             done.add("Container");
-            comma = ",";
         }
-        col = table.getColumn("Owner");
-        if (autoFillDefaultColumns && null != col && null != user)
+        if (insert)
         {
-            cols.append(comma).append("Owner");
-            values.append(comma).append(user.getUserId());
-            done.add("Owner");
-            comma = ",";
-        }
-        col = table.getColumn("CreatedBy");
-        if (autoFillDefaultColumns && null != col && null != user)
-        {
-            cols.append(comma).append("CreatedBy");
-            values.append(comma).append(user.getUserId());
-            done.add("CreatedBy");
-            comma = ",";
-        }
-        col = table.getColumn("Created");
-        if (autoFillDefaultColumns && null != col)
-        {
-            cols.append(comma).append("Created");
-            values.append(comma).append("CAST('" + ts + "' AS " + d.getDefaultDateTimeDataType() + ")");
-            done.add("Created");
-            comma = ",";
+            col = table.getColumn("Owner");
+            if (autoFillDefaultColumns && null != col && null != user)
+            {
+                cols.add(new SQLFragment("Owner"));
+                values.add(new SQLFragment().append(user.getUserId()));
+                done.add("Owner");
+            }
+            col = table.getColumn("CreatedBy");
+            if (autoFillDefaultColumns && null != col && null != user)
+            {
+                cols.add(new SQLFragment("CreatedBy"));
+                values.add(new SQLFragment().append(user.getUserId()));
+                done.add("CreatedBy");
+            }
+            col = table.getColumn("Created");
+            if (autoFillDefaultColumns && null != col)
+            {
+                cols.add(new SQLFragment("Created"));
+                values.add(new SQLFragment("CAST('" + ts + "' AS " + d.getDefaultDateTimeDataType() + ")"));
+                done.add("Created");
+            }
         }
         ColumnInfo colModifiedBy = table.getColumn("Modified");
         if (autoFillDefaultColumns && null != colModifiedBy && null != user)
         {
-            cols.append(comma).append("ModifiedBy");
-            values.append(comma).append(user.getUserId());
+            cols.add(new SQLFragment("ModifiedBy"));
+            values.add(new SQLFragment().append(user.getUserId()));
             done.add("ModifiedBy");
-            comma = ",";
         }
         ColumnInfo colModified = table.getColumn("Modified");
         if (autoFillDefaultColumns && null != colModified)
         {
-            cols.append(comma).append("Modified");
-            values.append(comma).append("CAST('" + ts + "' AS " + d.getDefaultDateTimeDataType() + ")");
+            cols.add(new SQLFragment("Modified"));
+            values.add(new SQLFragment("CAST('" + ts + "' AS " + d.getDefaultDateTimeDataType() + ")"));
             done.add("Modified");
-            comma = ",";
         }
         ColumnInfo colVersion = table.getVersionColumn();
         if (autoFillDefaultColumns && null != colVersion && !done.contains(colVersion.getName()) && colVersion.getJdbcType() == JdbcType.TIMESTAMP)
         {
-            cols.append(comma).append(colVersion.getSelectName());
-            values.append(comma).append("CAST('" + ts + "' AS " + d.getDefaultDateTimeDataType() + ")");
+            cols.add(new SQLFragment(colVersion.getSelectName()));
+            values.add(new SQLFragment("CAST('" + ts + "' AS " + d.getDefaultDateTimeDataType() + ")"));
             done.add(colVersion.getName());
-            comma = ",";
         }
 
         String objectIdColumnName = StringUtils.trimToNull(updatable.getObjectIdColumnName());
@@ -2299,23 +2358,22 @@ public class Table
                 continue;
             done.add(column.getName());
 
-            cols.append(comma).append(column.getSelectName());
+            cols.add(new SQLFragment(column.getSelectName()));
+            SQLFragment valueSQL = new SQLFragment();
             if (column.getName().equalsIgnoreCase(objectIdColumnName))
             {
-                values.append(comma).append(objectIdVar);
+                valueSQL.append(objectIdVar);
             }
             else if (column.getName().equalsIgnoreCase(updatable.getObjectURIColumnName()) && null != objecturiParameter)
             {
-                values.append(comma);
-                appendParameterOrVariable(values, d, useVariables, objecturiParameter, parameterToVariable);
+                appendParameterOrVariable(valueSQL, d, useVariables, objecturiParameter, parameterToVariable);
             }
             else
             {
                 Parameter p = new Parameter(column, null);
-                values.append(comma);
-                appendParameterOrVariable(values, d, useVariables, p, parameterToVariable);
+                appendParameterOrVariable(valueSQL, d, useVariables, p, parameterToVariable);
             }
-            comma = ", ";
+            values.add(valueSQL);
         }
 
         SQLFragment sqlfSelectIds = null;
@@ -2326,7 +2384,6 @@ public class Table
         {
             sqlfSelectIds = new SQLFragment("");
             String prefix = "SELECT ";
-            int index = 1;
             if (null != autoIncrementColumn)
             {
                 appendSelectAutoIncrement(d, sqlfSelectIds, table, autoIncrementColumn.getName());
@@ -2343,8 +2400,49 @@ public class Table
         }
 
         SQLFragment sqlfInsertInto = new SQLFragment();
-        sqlfInsertInto.append("INSERT INTO " + table + " (");
-        sqlfInsertInto.append(cols).append(")\nVALUES (").append(values).append(");\n");
+
+        assert cols.size() == values.size() : cols.size() + " columns and " + values.size() + " values - should match";
+
+        if (insert)
+        {
+            // Create a standard INSERT INTO table (col1, col2) VALUES (val1, val2) statement
+            sqlfInsertInto.append("INSERT INTO " + table + " (");
+            comma = "";
+            for (SQLFragment colSQL : cols)
+            {
+                sqlfInsertInto.append(comma);
+                comma = ", ";
+                sqlfInsertInto.append(colSQL);
+            }
+            sqlfInsertInto.append(")\nVALUES (");
+            comma = "";
+            for (SQLFragment valueSQL : values)
+            {
+                sqlfInsertInto.append(comma);
+                comma = ", ";
+                sqlfInsertInto.append(valueSQL);
+            }
+            sqlfInsertInto.append(");\n");
+        }
+        else
+        {
+            // Create a standard UPDATE table SET col1 = val1, col2 = val2 statement
+            sqlfInsertInto.append("UPDATE " + table + " SET ");
+            comma = "";
+            for (int i = 0; i < cols.size(); i++)
+            {
+                sqlfInsertInto.append(comma);
+                comma = ", ";
+                sqlfInsertInto.append(cols.get(i));
+                sqlfInsertInto.append(" = ");
+                sqlfInsertInto.append(values.get(i));
+            }
+            sqlfInsertInto.append(" WHERE ");
+            sqlfInsertInto.append(objectURIColumnName);
+            sqlfInsertInto.append(" = ");
+            appendParameterOrVariable(sqlfInsertInto, d, useVariables, objecturiParameter, parameterToVariable);
+            sqlfInsertInto.append(";\n");
+        }
 
         //
         // ObjectProperty
@@ -2352,11 +2450,11 @@ public class Table
 
         if (null != properties)
         {
-            Set<String> skip = ((UpdateableTableInfo)tableInsert).skipProperties();
+            Set<String> skip = ((UpdateableTableInfo)table).skipProperties();
             if (null != skip)
                 done.addAll(skip);
 
-            for (DomainProperty dp : domain.getProperties())
+            for (DomainProperty dp : properties)
             {
                 // ignore property that 'wraps' a hard column
                 if (done.contains(dp.getName()))

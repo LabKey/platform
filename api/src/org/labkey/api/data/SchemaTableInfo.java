@@ -166,7 +166,7 @@ public class SchemaTableInfo implements TableInfo, UpdateableTableInfo
         return getColumnMetaData().getPkColumnNames();
     }
 
-    @Override
+    @Override @NotNull
     public List<ColumnInfo> getPkColumns()
     {
         return getColumnMetaData().getPkColumns();

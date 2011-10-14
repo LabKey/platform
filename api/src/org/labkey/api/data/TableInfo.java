@@ -79,7 +79,7 @@ public interface TableInfo
 
     List<String> getPkColumnNames();
 
-    List<ColumnInfo> getPkColumns();
+    @NotNull List<ColumnInfo> getPkColumns();
 
     ColumnInfo getVersionColumn();
 
