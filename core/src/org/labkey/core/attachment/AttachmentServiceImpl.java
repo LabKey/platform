@@ -193,7 +193,6 @@ public class AttachmentServiceImpl implements AttachmentService.Service, Contain
         {
             addAuditEvent(user, parent, filename, "The attachment " + filename + " was downloaded");
         }
-
     }
 
 

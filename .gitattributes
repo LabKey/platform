@@ -2099,6 +2099,7 @@ search/src/org/labkey/search/model/AbstractIndexTask.java -text
 search/src/org/labkey/search/model/AbstractSearchService.java -text
 search/src/org/labkey/search/model/CrawlerTest.java -text
 search/src/org/labkey/search/model/DavCrawler.java -text
+search/src/org/labkey/search/model/DocumentConversionServiceImpl.java -text
 search/src/org/labkey/search/model/ExternalAnalyzer.java -text
 search/src/org/labkey/search/model/ExternalIndex.java -text
 search/src/org/labkey/search/model/ExternalIndexProperties.java -text

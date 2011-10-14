@@ -16,21 +16,37 @@
 
 package org.labkey.study.reports;
 
+import org.apache.commons.collections15.IteratorUtils;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.attachments.Attachment;
 import org.labkey.api.attachments.AttachmentParent;
 import org.labkey.api.attachments.AttachmentService;
+import org.labkey.api.attachments.DocumentConversionService;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
+import org.labkey.api.iterator.IteratorUtil;
+import org.labkey.api.services.ServiceRegistry;
+import org.labkey.api.thumbnail.DynamicThumbnailProvider;
+import org.labkey.api.thumbnail.Thumbnail;
+import org.labkey.api.thumbnail.ThumbnailOutputStream;
+import org.labkey.api.thumbnail.ThumbnailService;
 import org.labkey.api.util.DateUtil;
+import org.labkey.api.util.ExceptionUtil;
+import org.labkey.api.util.ImageUtil;
+import org.labkey.api.util.MimeMap;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.ViewContext;
 import org.labkey.study.controllers.reports.ReportsController.DownloadAction;
 import org.labkey.study.controllers.reports.ReportsController.DownloadReportFileAction;
+import sun.rmi.runtime.Log;
 
+import javax.imageio.ImageIO;
+import java.awt.image.BufferedImage;
+import java.io.InputStream;
 import java.util.Date;
 import java.util.List;
+import java.util.ListIterator;
 import java.util.Map;
 
 /**
@@ -38,7 +54,7 @@ import java.util.Map;
  * Date: Jul 6, 2006
  * Time: 5:08:19 PM
  */
-public class AttachmentReport extends RedirectReport implements AttachmentParent
+public class AttachmentReport extends RedirectReport implements AttachmentParent, DynamicThumbnailProvider
 {
     public static final String TYPE = "Study.attachmentReport";
     public static final String FILE_PATH = "filePath";
@@ -82,12 +98,6 @@ public class AttachmentReport extends RedirectReport implements AttachmentParent
         }
     }
 
-//    @Override
-    public boolean canHavePermissions()
-    {
-        return true;
-    }
-
     protected Container getContainer()
     {
         return ContainerManager.getForId(getDescriptor().getContainerId());
@@ -125,6 +135,17 @@ public class AttachmentReport extends RedirectReport implements AttachmentParent
         if (attachments.isEmpty())
             return null;
 
+        ListIterator<Attachment> iter = attachments.listIterator(attachments.size());
+
+        // Iterate in reverse order and return the first non-thumbnail attachment we find
+        while (iter.hasPrevious())
+        {
+            Attachment current = iter.previous();
+            if (!current.getName().equals(ThumbnailService.THUMBNAIL_FILENAME))
+                return current;
+        }
+
+        // Something went horribly wrong... I guess we only have a thumbnail
         return attachments.get(attachments.size() - 1);
     }
 
@@ -141,5 +162,56 @@ public class AttachmentReport extends RedirectReport implements AttachmentParent
     public void setModified(Date modified)
     {
         getDescriptor().setProperty(MODIFIED, DateUtil.formatDate(modified));
+    }
+
+    @Override
+    public Thumbnail generateDynamicThumbnail(ViewContext context)
+    {
+        Attachment latest = getLatestVersion();
+
+        if (null != latest)
+        {
+            String extension = latest.getFileExtension();
+            MimeMap mm = new MimeMap();
+            String contentType = mm.getContentType(extension);
+
+            try
+            {
+                if ("pdf".equals(extension))
+                {
+                    DocumentConversionService svc = ServiceRegistry.get().getService(DocumentConversionService.class);
+
+                    if (null != svc)
+                    {
+                        InputStream pdfStream = AttachmentService.get().getInputStream(this, latest.getName());
+                        BufferedImage image = svc.pdfToImage(pdfStream, 0);
+
+                        return ImageUtil.renderThumbnail(image);
+                    }
+
+                    return null;
+                }
+
+                if (contentType.startsWith("image/"))
+                {
+                    InputStream imageSteam = AttachmentService.get().getInputStream(this, latest.getName());
+                    BufferedImage image = ImageIO.read(imageSteam);
+
+                    return ImageUtil.renderThumbnail(image);
+                }
+            }
+            catch (Exception e)
+            {
+                ExceptionUtil.logExceptionToMothership(null, e);
+            }
+        }
+
+        return null;
+    }
+
+    @Override
+    public String getDynamicThumbnailCacheKey()
+    {
+        return "Reports:" + getReportId();
     }
 }

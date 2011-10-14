@@ -17,6 +17,7 @@
 package org.labkey.search;
 
 import org.jetbrains.annotations.NotNull;
+import org.labkey.api.attachments.DocumentConversionService;
 import org.labkey.api.audit.AuditLogService;
 import org.labkey.api.audit.SimpleAuditViewFactory;
 import org.labkey.api.audit.query.AuditLogQueryView;
@@ -40,6 +41,7 @@ import org.labkey.api.webdav.WebdavResource;
 import org.labkey.api.webdav.WebdavService;
 import org.labkey.search.model.AbstractSearchService;
 import org.labkey.search.model.DavCrawler;
+import org.labkey.search.model.DocumentConversionServiceImpl;
 import org.labkey.search.model.LuceneSearchServiceImpl;
 import org.labkey.search.umls.UmlsController;
 import org.labkey.search.view.SearchWebPartFactory;
@@ -110,6 +112,7 @@ public class SearchModule extends DefaultModule
             }
         });
         ServiceRegistry.get().registerService(SearchService.class, ss);
+        ServiceRegistry.get().registerService(DocumentConversionService.class, new DocumentConversionServiceImpl());
     }
 
 

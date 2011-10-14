@@ -74,19 +74,29 @@ public class ThumbnailServiceImpl implements ThumbnailService
                 while (!interrupted())
                 {
                     DynamicThumbnailProvider provider = QUEUE.take();
-                    // TODO: Real ViewContext
-                    Thumbnail thumnail = provider.generateDynamicThumbnail(null);
-                    AttachmentFile file = new InputStreamAttachmentFile(thumnail.getInputStream(), THUMBNAIL_FILENAME, thumnail.getContentType());
 
                     try
                     {
-                        // TODO: Delete thumbnail attachment first? Or does add do a replace?
-                        AttachmentService.get().addAttachments(provider, Collections.singletonList(file), User.guest);
-                        ThumbnailCache.remove(provider);
+                        // TODO: Real ViewContext
+                        Thumbnail thumbnail = provider.generateDynamicThumbnail(null);
+
+                        if (null != thumbnail)
+                        {
+                            AttachmentFile file = new InputStreamAttachmentFile(thumbnail.getInputStream(), THUMBNAIL_FILENAME, thumbnail.getContentType());
+
+                            // TODO: Delete thumbnail attachment first? Or does add do a replace?
+                            // TODO: Actually, adding a "replace" would be helpful for adding revision numbers, which would help with client-side caching (_dc=rev)
+                            AttachmentService.get().addAttachments(provider, Collections.singletonList(file), User.guest);
+                        }
                     }
                     catch (IOException e)
                     {
                         ExceptionUtil.logExceptionToMothership(null, e);
+                    }
+                    finally
+                    {
+                        // No matter what, clear this entry from the cache.
+                        ThumbnailCache.remove(provider);
                     }
                 }
             }

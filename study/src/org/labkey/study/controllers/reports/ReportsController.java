@@ -44,8 +44,10 @@ import org.labkey.api.security.RequiresPermissionClass;
 import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.AdminPermission;
 import org.labkey.api.security.permissions.ReadPermission;
+import org.labkey.api.services.ServiceRegistry;
 import org.labkey.api.study.*;
 import org.labkey.api.study.reports.CrosstabReportDescriptor;
+import org.labkey.api.thumbnail.ThumbnailService;
 import org.labkey.api.util.DateUtil;
 import org.labkey.api.util.HelpTopic;
 import org.labkey.api.util.PageFlowUtil;
@@ -1018,6 +1020,11 @@ public class ReportsController extends BaseStudyController
 
             report = (AttachmentReport)ReportService.get().getReport(id);
             AttachmentService.get().addAttachments(report, getAttachmentFileList(), getViewContext().getUser());
+
+            ThumbnailService svc = ServiceRegistry.get().getService(ThumbnailService.class);
+
+            if (null != svc)
+                svc.queueThumbnailRendering(report);
 
             return true;
         }
