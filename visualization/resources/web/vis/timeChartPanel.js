@@ -206,6 +206,7 @@ LABKEY.vis.TimeChartPanel = Ext.extend(Ext.Panel, {
                 disabled: !this.chartInfo.axis[leftAxisIndex],
                 title: "Left-Axis",
                 axis: this.chartInfo.axis[leftAxisIndex] ? this.chartInfo.axis[leftAxisIndex] : {side: "left"},
+                defaultLabel: this.editorMeasurePanel.getDefaultLabel("left"),
                 listeners: {
                     scope: this,
                     'chartDefinitionChanged': function(requiresDataRefresh){
@@ -540,7 +541,7 @@ LABKEY.vis.TimeChartPanel = Ext.extend(Ext.Panel, {
                     scope: this,
                     'resize': function(cmp){
                         // only call loader if the data object is available and the loader equals renderLineChart
-                        if(this.individualChartSubjectData && this.loaderName == 'renderLineChart') {
+                        if((this.individualChartSubjectData || this.aggregateChartSubjectData) && this.loaderName == 'renderLineChart') {
                             this.loader();
                         }
                     }
@@ -971,7 +972,6 @@ LABKEY.vis.TimeChartPanel = Ext.extend(Ext.Panel, {
                 currentDisplayOrder.push(rows[i][data.measureToColumn[this.viewInfo.subjectNounSingular + "Visit/Visit/DisplayOrder"]].value);
             }
             if(rows[i][data.measureToColumn[this.viewInfo.subjectNounSingular + "Visit/Visit/Label"]].value.length > 12){
-                console.info(rows[i][data.measureToColumn[this.viewInfo.subjectNounSingular + "Visit/Visit/Label"]].value);
                 this.longLabels = true;
             }
         }
@@ -981,7 +981,6 @@ LABKEY.vis.TimeChartPanel = Ext.extend(Ext.Panel, {
             //renumber the display order.
             newDisplayOrderMap[currentDisplayOrder[i]] = i;
         }
-        console.info(newDisplayOrderMap);
         // generate displayLabels and displayOrder maps.
         for(var i = 0; i < rows.length; i++){
             rows[i][data.measureToColumn[this.viewInfo.subjectNounSingular + "Visit/Visit/DisplayOrder"]].value = newDisplayOrderMap[rows[i][data.measureToColumn[this.viewInfo.subjectNounSingular + "Visit/Visit/DisplayOrder"]].value];
@@ -1163,26 +1162,42 @@ LABKEY.vis.TimeChartPanel = Ext.extend(Ext.Panel, {
         }
         else if (this.chartInfo.chartLayout == "per_dimension")
         {
-        	for (var i = 0; i < (seriesList.length > this.maxCharts ? this.maxCharts : seriesList.length); i++)
+            if (this.chartInfo.chartSubjectSelection == "subjects" && this.chartInfo.subject.values.length == 0)
             {
-        	    var md = seriesList[i].name;
-        		charts.push(this.newLineChart(size, series, {parameter: "yAxisSeries", value: md}, md));
-        	}
+                this.addWarningText("Please select at least one " + this.viewInfo.subjectNounSingular.toLowerCase() + '.');
+            } else if(this.chartInfo.chartSubjectSelection == "groups" && this.chartInfo.subject.groups.length < 1){
+                this.addWarningText("Please select at least one group.");
+            } else {
+                for (var i = 0; i < (seriesList.length > this.maxCharts ? this.maxCharts : seriesList.length); i++)
+                {
+                    var md = seriesList[i].name;
+                    charts.push(this.newLineChart(size, series, {parameter: "yAxisSeries", value: md}, md));
+                }
 
-            // warn if user doesn't have an dimension values selected or if the max number has been exceeded
-            if (seriesList.length == 0)
-            {
-                this.addWarningText("Please select at least one dimension value.");
+                // warn if user doesn't have an dimension values selected or if the max number has been exceeded
+                if (seriesList.length == 0)
+                {
+                    this.addWarningText("Please select at least one dimension value.");
+                }
+                else if (seriesList.length > this.maxCharts)
+                {
+                    this.addWarningText("Only showing the first " + this.maxCharts + " charts");
+                }
             }
-        	else if (seriesList.length > this.maxCharts)
-            {
-        	    this.addWarningText("Only showing the first " + this.maxCharts + " charts");
-        	}
         }
         else if (this.chartInfo.chartLayout == "single")
         {
-            //Single Line Chart, with all participants or groups.
-            charts.push(this.newLineChart(size, series, null, null));
+            if (this.chartInfo.chartSubjectSelection == "subjects" && this.chartInfo.subject.values.length == 0)
+            {
+                this.addWarningText("Please select at least one " + this.viewInfo.subjectNounSingular.toLowerCase() + '.');
+            } else if(this.chartInfo.chartSubjectSelection == "groups" && this.chartInfo.subject.groups.length < 1){
+                this.addWarningText("Please select at least one group.");
+            } else if(series.length == 0) {
+                this.addWarningText("Please select at least one dimension value.")
+            } else {
+                //Single Line Chart, with all participants or groups.
+                charts.push(this.newLineChart(size, series, null, null));
+            }
         }
 
         // if the user has selected more charts than the max allowed, show warning

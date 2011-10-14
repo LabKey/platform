@@ -27,7 +27,7 @@ LABKEY.vis.ChartEditorYAxisPanel = Ext.extend(Ext.FormPanel, {
         });
 
         // track if the axis label is something other than the default
-        config.userEditedLabel = (config.axis.label ? true : false);
+        config.userEditedLabel = (config.axis.label == config.defaultLabel ? false : true);
 
         this.addEvents('chartDefinitionChanged');
 
