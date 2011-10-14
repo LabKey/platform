@@ -83,10 +83,13 @@ function moveChildren(from,to)
 {
     to = Ext.getDom(to);
     from = Ext.getDom(from);
-    var childNodes =  from.childNodes;
+    var childNodes = from.childNodes;
     var length = childNodes.length;
+    var copy = [];
     for (var i=0 ; i < length ; i++)
-        to.appendChild(childNodes[i]);
+        copy.push(childNodes[i]);
+    for (var i=0 ; i < length ; i++)
+        to.appendChild(copy[i]);
 }
 function clearChildren(el)
 {
@@ -127,6 +130,7 @@ LABKEY.NavigateInPlaceStrategy = Ext.extend(LABKEY.DefaultNavigationStrategy,
         config = config || {};
         Ext.apply(this, config);
         this._cachedPage = this._emptyPage;
+        this._currentPage = this._emptyPage;
 
         Ext.onReady(this.init, this);
     },
@@ -144,7 +148,9 @@ LABKEY.NavigateInPlaceStrategy = Ext.extend(LABKEY.DefaultNavigationStrategy,
     getPageBodyElement : function()
     {
         if (!this._pageBodyEl)
+        {
             this._pageBodyEl = Ext.get(Ext.DomQuery.selectNode(this.bodySelector));
+        }
         return this._pageBodyEl;
     },
 
@@ -154,7 +160,7 @@ LABKEY.NavigateInPlaceStrategy = Ext.extend(LABKEY.DefaultNavigationStrategy,
         var uri = new URI(href);
         if (!startsWith(uri.pathname,LABKEY.contextPath + "/" + this.controller + "/"))
             return null;
-        if (-1 != uri.search.indexOf("_print="))
+        if (-1 != uri.search.indexOf("_print=") || -1 != uri.search.indexOf("_template"))
             return null;
         if (!endsWith(uri.file,".view"))
             return null;
@@ -162,14 +168,16 @@ LABKEY.NavigateInPlaceStrategy = Ext.extend(LABKEY.DefaultNavigationStrategy,
         if (!(action in this.actions))
             return null;
         var obj = LABKEY.ActionURL.getParameters("?" + uri.search);
-        delete obj["_template"];
         obj["_action"] = action;
         var search = LABKEY.ActionURL.queryString(obj);
         return "#!" + search;
     },
 
+
     _emptyPage : {hashbang: null, html:null},
     _cachedPage : null,
+    _currentPage : null,
+    _cachedElParent : null,
 
 
     _pushState : function(state)
@@ -180,23 +188,25 @@ LABKEY.NavigateInPlaceStrategy = Ext.extend(LABKEY.DefaultNavigationStrategy,
 
 
     /** private */
-    _navigateInPlaceComplete : function(hashbang, href, pushNewState)
+    _navigateInPlaceComplete : function(href, hashbang, pushNewState)
     {
-        var el = this.getPageBodyElement();
-        var page = {hashbang : hashbang, href : href};
+        var pageEl = this.getPageBodyElement();
+        this._currentPage = {hashbang : hashbang, href : href};
         if (this.cacheable(hashbang))
+        {
             this._cachedPage = this._emptyPage;
-        if (this.cacheable(hashbang, el))
-            this._cachedPage = {hashbang : hashbang, href : href, html : el.dom.innerHTML};
-        this._hijackAnchorTags(el);
-        if (pushNewState)
-            this._pushState(page);
+            clearChildren(this._cachedElParent);
+        }
+        this._hijackAnchorTags(pageEl);
+        if (pushNewState !== false)
+            this._pushState(this._currentPage);
     },
 
 
     /** private */
-    _navigateInPlace : function(event, href, pushNewState)
+    _navigateInPlace : function(href, event, pushNewState)
     {
+        pushNewState = (pushNewState !== false);
         var hashbang = this.getActionHashBang(href);
         if (!hashbang)
         {
@@ -208,21 +218,33 @@ LABKEY.NavigateInPlaceStrategy = Ext.extend(LABKEY.DefaultNavigationStrategy,
             event.stopEvent();
 
         var el = this.getPageBodyElement();
+
+        // if the current page is cacheable save it
+        if (this.cacheable(this._currentPage.hashbang))
+        {
+            this._cachedPage = this._emptyPage;
+            if (this.cacheable(this._currentPage.hashbang, el))
+            {
+                clearChildren(this._cachedElParent);
+                moveChildren(el, this._cachedElParent);
+                this._cachedPage = this._currentPage;
+            }
+        }
         clearChildren(el);
 
-        if (this.cacheable(hashbang) && this._cachedPage.hashbang==hashbang && this._cachedPage.html)
+
+        // is the target page cacheable? does it match the cached page?
+        if (this.cacheable(hashbang) && this._cachedPage.hashbang==hashbang)
         {
             console.log("CACHED: " + hashbang);
-            el.update(this._cachedPage.html);
-            this._hijackAnchorTags(el);
+            moveChildren(this._cachedElParent, el);
             if (pushNewState)
                 this._pushState(this._cachedPage);
+            this._currentPage = this._cachedPage;
         }
         else
         {
             console.log("FETCH:  " + hashbang);
-//            if (-1 == href.indexOf("_template=None"))
-//                href += ((-1 == href.indexOf('?')) ? '?' : '&') + "_template=None";
             el.getUpdater().update(
             {
                 url: href,
@@ -232,7 +254,7 @@ LABKEY.NavigateInPlaceStrategy = Ext.extend(LABKEY.DefaultNavigationStrategy,
                 {
                     if (success)
                     {
-                        this._navigateInPlaceComplete(hashbang, href, pushNewState);
+                        this._navigateInPlaceComplete(href, hashbang, pushNewState);
                         return;
                     }
                     else if (401 == response.status) // unauthorized
@@ -259,7 +281,7 @@ LABKEY.NavigateInPlaceStrategy = Ext.extend(LABKEY.DefaultNavigationStrategy,
     {
         if (event.state && event.state.href)
         {
-            this._navigateInPlace(null, event.state.href, false);
+            this._navigateInPlace(event.state.href, event, false);
         }
     },
 
@@ -274,7 +296,7 @@ LABKEY.NavigateInPlaceStrategy = Ext.extend(LABKEY.DefaultNavigationStrategy,
         var target = Ext.get(event.target);
         var anchor = target.findParent("A");
         var href = anchor.href;
-        this._navigateInPlace(event, href, true);
+        this._navigateInPlace(href, event, true);
     },
 
 
@@ -286,7 +308,6 @@ LABKEY.NavigateInPlaceStrategy = Ext.extend(LABKEY.DefaultNavigationStrategy,
         var controller = LABKEY.ActionURL.getController();
         var action = LABKEY.ActionURL.getAction();
         var container = LABKEY.ActionURL.getContainer();
-        //var parameters = LABKEY.ActionURL.getParameters(uri.search);
         var hash = {};
         var hashStr = uri.hash;
         if (startsWith(hashStr,"#!"))
@@ -296,7 +317,7 @@ LABKEY.NavigateInPlaceStrategy = Ext.extend(LABKEY.DefaultNavigationStrategy,
         delete hash["_action"];
         if (hash["_controller"])
             controller = hash["_controller"];
-        //Ext.apply(parameters,hash);
+        delete hash["_controller"];
         var url = LABKEY.ActionURL.buildURL(controller, action, container, hash);
         return url;
     },
@@ -325,11 +346,16 @@ LABKEY.NavigateInPlaceStrategy = Ext.extend(LABKEY.DefaultNavigationStrategy,
         Ext.each(anchors, this._hijackAnchorTag, this);
     },
 
+
     /* public */
     init : function()
     {
 	    if (!this.getPageBodyElement())
 		    return;
+
+        //create a place to stached cached nodes
+        var d = Ext.DomHelper.append(Ext.getBody(), {tag:'div', class:'x-hidden'});
+        this._cachedElParent = Ext.get(d);
 
         // verify that we're in an expected action (e.g. not a portal page) by trying to parse the current location
         // if not, then don't wire up in-place navigation
@@ -340,21 +366,17 @@ LABKEY.NavigateInPlaceStrategy = Ext.extend(LABKEY.DefaultNavigationStrategy,
         window.addEventListener("hashchange", this.onWindowHashChange.createDelegate(this), false);
         window.addEventListener("popstate",   this.onWindowPopState.createDelegate(this), false);
 
-        // If there is a #! on the URL at load time handle it now
+        // if there is a #! on the URL at load time handle it now
         if (startsWith(window.location.hash, "#!"))
         {
+            // TODO if url is unchanged don't call _navigateInPlace()
             var url = this._translateHashBangToHref();
-            if (this.getActionHashBang(url))
-            {
-                this._navigateInPlace(null, url, true);
-                return;
-            }
+            this._navigateInPlace(url, null, true);
+            return
         }
-        // otherwise fake up the initial state for this page (as if we called navigateInPlace())
-        {
-            this._navigateInPlaceComplete(hashbang, window.location.href, true);
-        }
+        this._navigateInPlaceComplete(window.location.href, hashbang, true);
     },
+
 
     /* public */
     navigateTo : function(href)
@@ -368,6 +390,6 @@ LABKEY.NavigateInPlaceStrategy = Ext.extend(LABKEY.DefaultNavigationStrategy,
         catch (x)
         {
         }
-        this._navigateInPlace(null, href, true);
+        this._navigateInPlace(href, null, true);
     }
 });
