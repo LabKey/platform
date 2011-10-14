@@ -17,6 +17,7 @@
 package org.labkey.api.reports.report;
 
 import org.labkey.api.data.Container;
+import org.labkey.api.reports.model.ViewCategory;
 
 import java.io.IOException;
 import java.util.Date;
@@ -38,6 +39,8 @@ public class ReportDB
     private String _entityId;
     private Integer _reportOwner;
     private int _flags;
+    private Integer _categoryId;
+    private Integer _displayOrder;
 
     public ReportDB(){}
 
@@ -53,6 +56,11 @@ public class ReportDB
             _descriptorXML = descriptor.serialize();
             _reportOwner = descriptor.getOwner();
             _flags = descriptor.getFlags();
+            _displayOrder = descriptor.getDisplayOrder();
+
+            ViewCategory category = descriptor.getCategory();
+            if (category != null)
+                _categoryId = category.getRowId();
         }
         catch (IOException e)
         {
@@ -80,6 +88,26 @@ public class ReportDB
     public String getEntityId(){return _entityId;}
     public Integer getReportOwner(){return _reportOwner;}
     public void setReportOwner(Integer owner){_reportOwner = owner;}
+
+    public Integer getCategoryId()
+    {
+        return _categoryId;
+    }
+
+    public void setCategoryId(Integer categoryId)
+    {
+        _categoryId = categoryId;
+    }
+
+    public Integer getDisplayOrder()
+    {
+        return _displayOrder;
+    }
+
+    public void setDisplayOrder(Integer displayOrder)
+    {
+        _displayOrder = displayOrder;
+    }
 
     public int getFlags()
     {

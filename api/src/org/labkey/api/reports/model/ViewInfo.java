@@ -36,6 +36,7 @@ public class ViewInfo
     private String _query;
     private String _schema;
     private String _category;
+    private int _categoryDisplayOrder;
     private User _createdBy;
     private User _modifiedBy;
     private Date _created;
@@ -54,6 +55,8 @@ public class ViewInfo
     private String _permissions;
     private String _icon;
     private String _thumbnailUrl;
+    private boolean _hidden;
+    private int _displayOrder;
 
     public ViewInfo(String name, String type)
     {
@@ -261,6 +264,16 @@ public class ViewInfo
         _category = category;
     }
 
+    public int getCategoryDisplayOrder()
+    {
+        return _categoryDisplayOrder;
+    }
+
+    public void setCategoryDisplayOrder(int categoryDisplayOrder)
+    {
+        _categoryDisplayOrder = categoryDisplayOrder;
+    }
+
     public Boolean getQueryView()
     {
         return _queryView;
@@ -271,12 +284,34 @@ public class ViewInfo
         _queryView = queryView;
     }
 
+    public boolean isHidden()
+    {
+        return _hidden;
+    }
+
+    public void setHidden(boolean hidden)
+    {
+        _hidden = hidden;
+    }
+
+    public int getDisplayOrder()
+    {
+        return _displayOrder;
+    }
+
+    public void setDisplayOrder(int displayOrder)
+    {
+        _displayOrder = displayOrder;
+    }
+
     public JSONObject toJSON(User user)
     {
         JSONObject o = new JSONObject();
 
         o.put("name", getName());
         o.put("type", getType());
+        o.put("hidden", isHidden());
+        o.put("displayOrder", getDisplayOrder());
 
         if (getEditable() != null)
             o.put("editable", getEditable());
@@ -313,7 +348,10 @@ public class ViewInfo
         if (getDescription() != null)
             o.put("description", getDescription());
         if (getCategory() != null)
+        {
             o.put("category", getCategory());
+            o.put("categoryDisplayOrder", getCategoryDisplayOrder());
+        }
         
         if (getContainer() != null)
             o.put("container", getContainer().getPath());

@@ -26,6 +26,7 @@ import org.labkey.api.data.Entity;
 import org.labkey.api.module.Module;
 import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.reports.ReportService;
+import org.labkey.api.reports.model.ViewCategory;
 import org.labkey.api.security.*;
 import org.labkey.api.security.SecurityManager;
 import org.labkey.api.security.permissions.Permission;
@@ -56,10 +57,13 @@ public class ReportDescriptor extends Entity implements SecurableResource
     private static final Logger _log = Logger.getLogger(ReportDescriptor.class);
     public static final String TYPE = "reportDescriptor";
     public static final int FLAG_INHERITABLE = 0x01;
+    final static public int FLAG_HIDDEN = 0x02;
 
     private String _reportKey;
     private Integer _owner;
     private int _flags;
+    private ViewCategory _category;
+    private int _displayOrder;
 
     protected Map<String, Object> _props = new LinkedHashMap<String, Object>();
 
@@ -489,6 +493,19 @@ public class ReportDescriptor extends Entity implements SecurableResource
         return false;
     }
 
+    public void setHidden(boolean hidden)
+    {
+        if (hidden)
+            _flags = _flags | ReportDescriptor.FLAG_HIDDEN;
+        else
+            _flags = _flags  & ~ReportDescriptor.FLAG_HIDDEN;
+    }
+
+    public boolean isHidden()
+    {
+        return (getFlags() & ReportDescriptor.FLAG_HIDDEN) != 0;
+    }
+
     @NotNull
     public String getResourceId()
     {
@@ -539,5 +556,25 @@ public class ReportDescriptor extends Entity implements SecurableResource
     public boolean mayInheritPolicy()
     {
         return true;
+    }
+
+    public ViewCategory getCategory()
+    {
+        return _category;
+    }
+
+    public void setCategory(ViewCategory category)
+    {
+        _category = category;
+    }
+
+    public int getDisplayOrder()
+    {
+        return _displayOrder;
+    }
+
+    public void setDisplayOrder(int displayOrder)
+    {
+        _displayOrder = displayOrder;
     }
 }

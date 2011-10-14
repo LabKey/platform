@@ -381,7 +381,13 @@ public class ReportUtil
 
                 info.setReportId(descriptor.getReportId());
                 info.setQuery(StringUtils.defaultIfEmpty(query, "Stand-alone views"));
-                info.setCategory(StringUtils.defaultIfEmpty(query, "Stand-alone views"));
+
+                if (descriptor.getCategory() != null)
+                {
+                    info.setCategory(descriptor.getCategory().getLabel());
+                    info.setCategoryDisplayOrder(descriptor.getCategory().getDisplayOrder());
+                }
+                //info.setCategory(StringUtils.defaultIfEmpty(query, "Stand-alone views"));
                 info.setSchema(schema);
                 info.setCreatedBy(createdBy);
                 info.setCreated(descriptor.getCreated());
@@ -390,6 +396,8 @@ public class ReportUtil
                 info.setEditable(descriptor.canEdit(user, c));
                 info.setInherited(inherited);
                 info.setVersion(descriptor.getVersionString());
+                info.setHidden(descriptor.isHidden());
+                info.setDisplayOrder(descriptor.getDisplayOrder());
 
                 /**
                  * shared reports are only available if there is a query/schema available in the container that matches
