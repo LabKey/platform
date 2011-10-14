@@ -83,6 +83,7 @@ LABKEY.vis.ChartEditorXAxisPanel = Ext.extend(Ext.FormPanel, {
             inputValue: 'visit',
             boxLabel: 'Visit Based Chart',
             checked: this.time == "visit",
+            disabled: this.timepointType == "date",
             listeners: {
                 scope: this,
                 'check': function(field, checked){

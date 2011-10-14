@@ -288,6 +288,8 @@ LABKEY.vis.XYChartComponent = Ext.extend(Ext.BoxComponent, {
                 return this.index % 9 == 0}); //Don't like this rule, but works with ticks that protovis generates
 
         var angle;
+        var tickAngle; //Angle of the tick marks.
+        var textAlign;
         var textRenderer;
 
         switch (edge)
@@ -295,20 +297,31 @@ LABKEY.vis.XYChartComponent = Ext.extend(Ext.BoxComponent, {
             case "left":
                 rule.bottom(scale);
                 angle = - Math.PI / 2;
+                tickAngle = 0;
+                textAlign = "right";
                 textRenderer = this.getTickRenderer(scale);
                 break;
             case "bottom":
                 rule.left(scale);
-                angle = 0;
                 if(this.labels){
                     textRenderer = this.getVisitBasedRenderer(this.labels);
+                    if(this.longLabels){
+                        tickAngle = (Math.PI / 12);
+                        textAlign = "left";
+                    } else {
+                        textAlign = "center";
+                    }
                 } else {
                     textRenderer = this.getTickRenderer(scale);
+                    tickAngle = 0;
+                    textAlign = "center";
                 }
                 break;
             case "right":
                 rule.bottom(scale);
                 angle = Math.PI / 2;
+                tickAngle = 0;
+                textAlign = "left";
                 textRenderer = this.getTickRenderer(scale);
                 break;
             case "top":
@@ -321,6 +334,8 @@ LABKEY.vis.XYChartComponent = Ext.extend(Ext.BoxComponent, {
         rule.anchor(edge).add(pv.Label)
             //See issue 11789. Work around bug with pv number formatting
                 .text(textRenderer)
+                .textAlign(textAlign)
+                .textAngle(tickAngle)
                 .visible(function (d) {
                     if (axis.scale == "log")
                         return this.index % 9 == 0;

@@ -513,6 +513,7 @@ public class VisualizationController extends SpringActionController
             properties.put("subjectColumn", StudyService.get().getSubjectColumnName(getContainer()));
             properties.put("subjectNounSingular", StudyService.get().getSubjectNounSingular(getContainer()));
             properties.put("subjectNounPlural", StudyService.get().getSubjectNounPlural(getContainer()));
+            properties.put("TimepointType", StudyService.get().getStudy(getContainer()).getTimepointType().toString().toLowerCase());
             return properties;
         }
 

@@ -181,6 +181,7 @@ LABKEY.vis.TimeChartPanel = Ext.extend(Ext.Panel, {
                 zeroDateCol: this.chartInfo.measures.length > 0 && this.chartInfo.measures[0].dateOptions ? this.chartInfo.measures[0].dateOptions.zeroDateCol : {},
                 interval: this.chartInfo.measures.length > 0 && this.chartInfo.measures[0].dateOptions ? this.chartInfo.measures[0].dateOptions.interval : "Days",
                 time: this.chartInfo.measures.length > 0 && this.chartInfo.measures[0].time ? this.chartInfo.measures[0].time : 'date',
+                timepointType: this.viewInfo.TimepointType,
                 subjectNounSingular: this.viewInfo.subjectNounSingular,
                 listeners: {
                     scope: this,
@@ -717,7 +718,7 @@ LABKEY.vis.TimeChartPanel = Ext.extend(Ext.Panel, {
                     var displayOrder = false;
                     if (this.editorXAxisPanel.getTime() == "visit"){
                         displayOrder = this.hasDisplayOrder(data);
-                        if(!displayOrder){
+                        if(displayOrder == false){
                             //If there is no explicitly set displayOrder then we must make one.
                             this.generateDisplayOrderAndLabels(data);
                         } else {
@@ -771,8 +772,8 @@ LABKEY.vis.TimeChartPanel = Ext.extend(Ext.Panel, {
                                         gridSortCols.push(measureIntervalKey);
                                 } else {
                                     var intervalValue;
-                                    if(!displayOrder){
-                                        intervalValue = this.displayOrder[row[this.individualData.measureToColumn[this.viewInfo.subjectNounSingular + "Visit/sequencenum"]].value];
+                                    if(displayOrder == false){
+                                        intervalValue = this.displayOrder[row[this.individualData.measureToColumn[this.viewInfo.subjectNounSingular + "Visit/Visit/Label"]].value];
                                     } else{
                                         intervalValue = row[data.measureToColumn[this.viewInfo.subjectNounSingular + "Visit/Visit/DisplayOrder"]].value;
                                     }
@@ -871,7 +872,7 @@ LABKEY.vis.TimeChartPanel = Ext.extend(Ext.Panel, {
                             if (dataValue.value) this.aggregateHasData[s.name] = true;
 
                             if (this.editorXAxisPanel.getTime() == "visit"){
-                                measureIntervalKey = this.aggregateData.measureToColumn[this.viewInfo.subjectNounSingular + "Visit/sequencenum"];
+                                measureIntervalKey = this.aggregateData.measureToColumn[this.viewInfo.subjectNounSingular + "Visit/Visit/Label"];
                             } else {
                                 measureIntervalKey = this.chartInfo.measures[s.measureIndex].dateOptions.interval;
                             }
@@ -922,6 +923,8 @@ LABKEY.vis.TimeChartPanel = Ext.extend(Ext.Panel, {
 
     generateDisplayOrderAndLabels: function(data){
         //Generates the labels used for tickmarks, Used when no explicit Display order has been set by the user.
+        this.longLabels = false;
+        var seqAndLabels = [];
         var sequenceNums = [];
         this.displayOrder = {};
         this.displayLabels = {};
@@ -929,24 +932,59 @@ LABKEY.vis.TimeChartPanel = Ext.extend(Ext.Panel, {
         for(var i = 0; i < rows.length; i++){
             if(sequenceNums.indexOf(rows[i][data.measureToColumn[this.viewInfo.subjectNounSingular + "Visit/sequencenum"]].value) == -1){
                 sequenceNums.push(rows[i][data.measureToColumn[this.viewInfo.subjectNounSingular + "Visit/sequencenum"]].value);
+                seqAndLabels.push({
+                    displayLabel: rows[i][data.measureToColumn[this.viewInfo.subjectNounSingular + "Visit/Visit/Label"]].value,
+                    sequenceNumber: rows[i][data.measureToColumn[this.viewInfo.subjectNounSingular + "Visit/sequencenum"]].value
+                });
+            }
+            if(rows[i][data.measureToColumn[this.viewInfo.subjectNounSingular + "Visit/Visit/Label"]].value.length > 4){
+                this.longLabels = true;
             }
         }
-        sequenceNums.sort(function (a,b) { return a-b });
-        for(var i = 0; i < sequenceNums.length; i++){
-            this.displayOrder[sequenceNums[i]] = i;
-            this.displayLabels[i] = sequenceNums[i];
+
+        //Sort the labels by sequence number.
+        seqAndLabels.sort(function (a,b) { return a.sequenceNumber-b.sequenceNumber });
+        for(var i = 0; i < seqAndLabels.length; i++){
+            this.displayOrder[seqAndLabels[i].displayLabel] = i; //Display Label to Order map.
+            this.displayLabels[i] = seqAndLabels[i].displayLabel; //Display Order to Label map.
         }
     },
 
     generateDisplayLabels: function(data){
-      //Generates the labels used for tickmarks, used when an explicit display order has been set.
+        // Generates the labels used for tickmarks, used when an explicit display order has been set.
+        // Also generates a new display order form 0 to n-1 so it plays nicely with protovis.
+        this.longLabels = false;
         var rows = data.rows;
+        var currentDisplayOrder = [];
+        var newDisplayOrderMap = {};
         this.displayLabels = {};
         this.displayOrder = {};
+
+        // re-map display order to be from 0 to n-1 so it plays nicely with protovis.
         for(var i = 0; i < rows.length; i++){
-                this.displayLabels[rows[i][data.measureToColumn[this.viewInfo.subjectNounSingular + "Visit/Visit/DisplayOrder"]].value] = rows[i][data.measureToColumn[this.viewInfo.subjectNounSingular + "Visit/sequencenum"]].value;
-                this.displayOrder[rows[i][data.measureToColumn[this.viewInfo.subjectNounSingular + "Visit/sequencenum"]].value] = rows[i][data.measureToColumn[this.viewInfo.subjectNounSingular + "Visit/Visit/DisplayOrder"]].value;
+            //Store all of the unique display order values.
+            if(currentDisplayOrder.indexOf(rows[i][data.measureToColumn[this.viewInfo.subjectNounSingular + "Visit/Visit/DisplayOrder"]].value) == -1){
+                currentDisplayOrder.push(rows[i][data.measureToColumn[this.viewInfo.subjectNounSingular + "Visit/Visit/DisplayOrder"]].value);
+            }
+            if(rows[i][data.measureToColumn[this.viewInfo.subjectNounSingular + "Visit/Visit/Label"]].value.length > 12){
+                console.info(rows[i][data.measureToColumn[this.viewInfo.subjectNounSingular + "Visit/Visit/Label"]].value);
+                this.longLabels = true;
+            }
         }
+        //sort the display order values.
+        currentDisplayOrder.sort(function (a,b) { return a-b});
+        for(var i = 0; i < currentDisplayOrder.length; i++){
+            //renumber the display order.
+            newDisplayOrderMap[currentDisplayOrder[i]] = i;
+        }
+        console.info(newDisplayOrderMap);
+        // generate displayLabels and displayOrder maps.
+        for(var i = 0; i < rows.length; i++){
+            rows[i][data.measureToColumn[this.viewInfo.subjectNounSingular + "Visit/Visit/DisplayOrder"]].value = newDisplayOrderMap[rows[i][data.measureToColumn[this.viewInfo.subjectNounSingular + "Visit/Visit/DisplayOrder"]].value];
+            this.displayLabels[rows[i][data.measureToColumn[this.viewInfo.subjectNounSingular + "Visit/Visit/DisplayOrder"]].value] = rows[i][data.measureToColumn[this.viewInfo.subjectNounSingular + "Visit/Visit/Label"]].value;
+            this.displayOrder[rows[i][data.measureToColumn[this.viewInfo.subjectNounSingular + "Visit/Visit/Label"]].value] = rows[i][data.measureToColumn[this.viewInfo.subjectNounSingular + "Visit/Visit/DisplayOrder"]].value;
+        }
+        
     },
 
     renderLineChart: function(force)
@@ -1300,6 +1338,7 @@ LABKEY.vis.TimeChartPanel = Ext.extend(Ext.Panel, {
 
         if(this.displayLabels){
             lineChartConfig.labels = this.displayLabels;
+            lineChartConfig.longLabels = this.longLabels;
         }
 
         var chartComponent = new LABKEY.vis.LineChart(lineChartConfig);
