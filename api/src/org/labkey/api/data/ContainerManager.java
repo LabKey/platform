@@ -1829,6 +1829,32 @@ public class ContainerManager
                 ContainerManager.deleteAll(_testRoot, TestContext.get().getUser());
         }
 
+//        @Test
+        public void testImproperFolderNamesBlocked() throws Exception
+        {
+            String[] badnames = {"", "f\\o", "f/o", "f\\\\o", "foo;", "@foo", "foo" + '\u001F', '\u0000' + "foo", "fo" + '\u007F' + "o", "" + '\u009F'};
+
+            for(String name: badnames)
+            {
+                try
+                {
+                    Container c = createContainer(_testRoot, name);
+                    try
+                    {
+                        delete(c, TestContext.get().getUser());
+                    }
+                    catch(Exception e){}
+                    fail("Should have thrown illegal argument when trying to create container with name: " + name);
+                }
+                catch(IllegalArgumentException e)
+                {
+                        //Do nothing, this is expected
+                }
+            }
+        }
+
+
+
 
         @Test
         public void testCreateDeleteContainers() throws Exception
@@ -1846,10 +1872,13 @@ public class ContainerManager
             }
 
             logNode(mm, _testRoot.getName(), 0);
-            createContainers(mm, _testRoot.getName(), _testRoot);
-            assertEquals(count, _containers.size());
-            cleanUpChildren(mm, _testRoot.getName(), _testRoot);
-            assertEquals(0, _containers.size());
+            for(int i=0; i<2; i++) //do this twice to make sure the containers were *really* deleted
+            {
+                createContainers(mm, _testRoot.getName(), _testRoot);
+                assertEquals(count, _containers.size());
+                cleanUpChildren(mm, _testRoot.getName(), _testRoot);
+                assertEquals(0, _containers.size());
+            }
         }
 
 
