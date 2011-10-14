@@ -1116,6 +1116,7 @@ LABKEY.vis.TimeChartPanel = Ext.extend(Ext.Panel, {
 
 	    // four options: all series on one chart, one chart per subject, one chart per group, or one chart per measure/dimension
         var charts = [];
+        this.firstChartComponent = null;
         if (this.chartInfo.chartLayout == "per_subject")
         {
             // warn if user doesn't have an subjects selected
@@ -1368,6 +1369,9 @@ LABKEY.vis.TimeChartPanel = Ext.extend(Ext.Panel, {
                 this.toggleExportPdfBtns(false);
             }
         }
+
+        if (!this.firstChartComponent)
+            this.firstChartComponent = chartComponent;
         
         return new Ext.Panel({items: chartComponent});
     },
@@ -1579,11 +1583,6 @@ LABKEY.vis.TimeChartPanel = Ext.extend(Ext.Panel, {
         var schema = LABKEY.ActionURL.getParameter("schemaName") || null;
         var query = LABKEY.ActionURL.getParameter("queryName") || null;
 
-        // get the chart component that would be used for the report thumbnail
-        var svgComp = null;
-        if (this.chart.getComponent(0))
-            svgComp = this.chart.getComponent(0).getComponent(0);
-
         // if the Save button was clicked, save the report using the name and description provided
         if(saveBtnName == 'Save'){
             var config = {
@@ -1591,7 +1590,7 @@ LABKEY.vis.TimeChartPanel = Ext.extend(Ext.Panel, {
                 reportName: reportName,
                 reportDescription: reportDescription,
                 reportShared: reportShared,
-                reportSvg: this.chartInfo.saveThumbnail ? LABKEY.vis.SVGConverter.svgToStr(svgComp.rootVisPanel.scene.$g) : null,
+                reportSvg: this.chartInfo.saveThumbnail && this.firstChartComponent ? LABKEY.vis.SVGConverter.svgToStr(this.firstChartComponent.rootVisPanel.scene.$g) : null,
                 createdBy: createdBy,
                 query: query,
                 schema: schema
@@ -1666,7 +1665,7 @@ LABKEY.vis.TimeChartPanel = Ext.extend(Ext.Panel, {
                             reportName: formValues.reportName,
                             reportDescription: formValues.reportDescription,
                             reportShared: shared,
-                            reportSvg: this.chartInfo.saveThumbnail ? LABKEY.vis.SVGConverter.svgToStr(svgComp.rootVisPanel.scene.$g) : null,
+                            reportSvg: this.chartInfo.saveThumbnail && this.firstChartComponent ? LABKEY.vis.SVGConverter.svgToStr(this.firstChartComponent.rootVisPanel.scene.$g) : null,
                             query: query,
                             schema: schema
                         });
