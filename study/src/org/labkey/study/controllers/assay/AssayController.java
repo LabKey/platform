@@ -179,10 +179,7 @@ public class AssayController extends SpringActionController
 
             AssayRunDatabaseContext context = provider.createRunDatabaseContext(run, getUser(), getViewContext().getRequest());
 
-            DataTransformer transformer = context.getProvider().getRunCreator().getDataTransformer();
-            TransformResult result = transformer.transform(context, run);
-
-            
+            provider.getRunCreator().saveExperimentRun(context, AssayService.get().findBatch(run), run);
 
             return new HtmlView("Success");
         }

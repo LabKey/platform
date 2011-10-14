@@ -36,4 +36,10 @@ public class MaterialInput extends AbstractRunInput
     {
         _materialId = materialId;
     }
+
+    @Override
+    protected int getInputKey()
+    {
+        return _materialId;
+    }
 }

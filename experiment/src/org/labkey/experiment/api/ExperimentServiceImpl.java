@@ -24,17 +24,69 @@ import org.jetbrains.annotations.Nullable;
 import org.labkey.api.attachments.AttachmentService;
 import org.labkey.api.audit.AuditLogEvent;
 import org.labkey.api.audit.AuditLogService;
-import org.labkey.api.data.DatabaseCache;
 import org.labkey.api.cache.DbCache;
-import org.labkey.api.data.*;
+import org.labkey.api.collections.CaseInsensitiveHashSet;
+import org.labkey.api.data.BeanObjectFactory;
+import org.labkey.api.data.ColumnInfo;
+import org.labkey.api.data.CompareType;
+import org.labkey.api.data.Container;
+import org.labkey.api.data.ContainerFilter;
+import org.labkey.api.data.ContainerManager;
+import org.labkey.api.data.DatabaseCache;
+import org.labkey.api.data.DbSchema;
 import org.labkey.api.data.Filter;
+import org.labkey.api.data.RuntimeSQLException;
+import org.labkey.api.data.SQLFragment;
+import org.labkey.api.data.SimpleFilter;
+import org.labkey.api.data.Sort;
+import org.labkey.api.data.Table;
+import org.labkey.api.data.TableInfo;
 import org.labkey.api.defaults.DefaultValueService;
-import org.labkey.api.exp.*;
-import org.labkey.api.exp.api.*;
+import org.labkey.api.exp.AbstractParameter;
+import org.labkey.api.exp.DomainNotFoundException;
+import org.labkey.api.exp.ExperimentDataHandler;
+import org.labkey.api.exp.ExperimentException;
+import org.labkey.api.exp.ExperimentRunListView;
+import org.labkey.api.exp.ExperimentRunType;
+import org.labkey.api.exp.ExperimentRunTypeSource;
+import org.labkey.api.exp.Identifiable;
+import org.labkey.api.exp.Lsid;
+import org.labkey.api.exp.LsidManager;
+import org.labkey.api.exp.LsidType;
+import org.labkey.api.exp.ObjectProperty;
+import org.labkey.api.exp.OntologyManager;
+import org.labkey.api.exp.ProtocolApplicationParameter;
+import org.labkey.api.exp.ProtocolParameter;
+import org.labkey.api.exp.XarContext;
+import org.labkey.api.exp.XarFormatException;
+import org.labkey.api.exp.XarSource;
+import org.labkey.api.exp.api.DataType;
+import org.labkey.api.exp.api.ExpData;
+import org.labkey.api.exp.api.ExpExperiment;
+import org.labkey.api.exp.api.ExpMaterial;
+import org.labkey.api.exp.api.ExpObject;
+import org.labkey.api.exp.api.ExpProtocol;
+import org.labkey.api.exp.api.ExpProtocolApplication;
+import org.labkey.api.exp.api.ExpRun;
+import org.labkey.api.exp.api.ExpSampleSet;
+import org.labkey.api.exp.api.ExperimentService;
+import org.labkey.api.exp.api.ProtocolImplementation;
 import org.labkey.api.exp.list.ListDefinition;
 import org.labkey.api.exp.list.ListService;
-import org.labkey.api.exp.property.*;
-import org.labkey.api.exp.query.*;
+import org.labkey.api.exp.property.Domain;
+import org.labkey.api.exp.property.DomainKind;
+import org.labkey.api.exp.property.DomainProperty;
+import org.labkey.api.exp.property.DomainUtil;
+import org.labkey.api.exp.property.PropertyService;
+import org.labkey.api.exp.query.ExpDataInputTable;
+import org.labkey.api.exp.query.ExpDataTable;
+import org.labkey.api.exp.query.ExpMaterialInputTable;
+import org.labkey.api.exp.query.ExpMaterialTable;
+import org.labkey.api.exp.query.ExpProtocolApplicationTable;
+import org.labkey.api.exp.query.ExpRunGroupMapTable;
+import org.labkey.api.exp.query.ExpRunTable;
+import org.labkey.api.exp.query.ExpSampleSetTable;
+import org.labkey.api.exp.query.ExpSchema;
 import org.labkey.api.exp.xar.LsidUtils;
 import org.labkey.api.exp.xar.XarConstants;
 import org.labkey.api.gwt.client.model.GWTPropertyDescriptor;
@@ -51,13 +103,19 @@ import org.labkey.api.settings.AppProps;
 import org.labkey.api.study.StudyService;
 import org.labkey.api.study.assay.AssayProvider;
 import org.labkey.api.study.assay.AssayService;
-import org.labkey.api.util.*;
-import org.labkey.api.view.*;
-import org.labkey.api.collections.CaseInsensitiveHashSet;
+import org.labkey.api.util.FileUtil;
+import org.labkey.api.util.GUID;
+import org.labkey.api.util.PageFlowUtil;
+import org.labkey.api.util.UnexpectedException;
+import org.labkey.api.view.ActionURL;
+import org.labkey.api.view.HttpView;
+import org.labkey.api.view.JspView;
+import org.labkey.api.view.ViewBackgroundInfo;
+import org.labkey.api.view.ViewContext;
 import org.labkey.experiment.ExperimentAuditViewFactory;
-import org.labkey.experiment.XarReader;
 import org.labkey.experiment.LSIDRelativizer;
 import org.labkey.experiment.XarExportType;
+import org.labkey.experiment.XarReader;
 import org.labkey.experiment.controllers.exp.ExperimentController;
 import org.labkey.experiment.pipeline.ExperimentPipelineJob;
 import org.labkey.experiment.pipeline.MoveRunsPipelineJob;
@@ -70,7 +128,20 @@ import java.net.URI;
 import java.net.URISyntaxException;
 import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Iterator;
+import java.util.LinkedHashMap;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.TreeSet;
 
 public class ExperimentServiceImpl implements ExperimentService.Interface
 {
@@ -2646,14 +2717,11 @@ public class ExperimentServiceImpl implements ExperimentService.Interface
         }
     }
 
-    public ExpRun insertSimpleExperimentRun(ExpRun baseRun, Map<ExpMaterial, String> inputMaterials, Map<ExpData, String> inputDatas, Map<ExpMaterial, String> outputMaterials,
+    public ExpRun saveSimpleExperimentRun(ExpRun baseRun, Map<ExpMaterial, String> inputMaterials, Map<ExpData, String> inputDatas, Map<ExpMaterial, String> outputMaterials,
                                             Map<ExpData, String> outputDatas, Map<ExpData, String> transformedDatas, ViewBackgroundInfo info, Logger log, boolean loadDataFiles) throws ExperimentException
     {
         ExpRunImpl run = (ExpRunImpl)baseRun;
-//        if (outputMaterials.isEmpty() && outputDatas.isEmpty())
-//        {
-//            throw new IllegalArgumentException("You must have at least one output to the run");
-//        }
+
         if (run.getFilePathRoot() == null)
         {
             throw new IllegalArgumentException("You must set the file path root on the experiment run");
@@ -2697,12 +2765,43 @@ public class ExperimentServiceImpl implements ExperimentService.Interface
 
                     Date date = new Date();
 
-                    ProtocolApplication protApp1 = new ProtocolApplication();
+                    ProtocolAction action2 = actions[1];
+                    assert action2.getSequence() == 10;
+                    ExpProtocol protocol2 = getExpProtocol(action2.getChildProtocolId());
+
+                    ProtocolAction action3 = actions[2];
+                    assert action3.getSequence() == 20;
+                    ExpProtocol outputProtocol = getExpProtocol(action3.getChildProtocolId());
+                    assert outputProtocol.getApplicationType() == ExpProtocol.ApplicationType.ExperimentRunOutput : "Expected third protocol to be of type ExperimentRunOutput but was " + outputProtocol.getApplicationType();
+
+                    ExpProtocolApplicationImpl protApp1 = new ExpProtocolApplicationImpl(new ProtocolApplication());
+                    ExpProtocolApplicationImpl protApp2 = new ExpProtocolApplicationImpl(new ProtocolApplication());
+                    ExpProtocolApplicationImpl protApp3 = new ExpProtocolApplicationImpl(new ProtocolApplication());
+
+                    for (ExpProtocolApplicationImpl existingProtApp : run.getProtocolApplications())
+                    {
+                        if (existingProtApp.getProtocol().equals(parentProtocol))
+                        {
+                            protApp1 = existingProtApp;
+                        }
+                        else if (existingProtApp.getProtocol().equals(protocol2))
+                        {
+                            protApp2 = existingProtApp;
+                        }
+                        else if (existingProtApp.getProtocol().equals(outputProtocol))
+                        {
+                            protApp3 = existingProtApp;
+                        }
+                        else
+                        {
+                            throw new IllegalStateException("Unexpected existing protocol application: " + existingProtApp.getLSID());
+                        }
+                    }
+
                     protApp1.setActivityDate(date);
                     protApp1.setActionSequence(action1.getSequence());
-                    protApp1.setCpasType(parentProtocol.getApplicationType().toString());
-                    protApp1.setRunId(run.getRowId());
-                    protApp1.setProtocolLSID(parentProtocol.getLSID());
+                    protApp1.setRun(run);
+                    protApp1.setProtocol(parentProtocol);
                     Map<String, ProtocolParameter> parentParams = parentProtocol.getProtocolParameters();
                     ProtocolParameter parentLSIDTemplateParam = parentParams.get(XarConstants.APPLICATION_LSID_TEMPLATE_URI);
                     ProtocolParameter parentNameTemplateParam = parentParams.get(XarConstants.APPLICATION_NAME_TEMPLATE_URI);
@@ -2711,21 +2810,15 @@ public class ExperimentServiceImpl implements ExperimentService.Interface
                     protApp1.setLSID(LsidUtils.resolveLsidFromTemplate(parentLSIDTemplateParam.getStringValue(), context, "ProtocolApplication"));
                     protApp1.setName(parentNameTemplateParam.getStringValue());
 
-                    protApp1 = Table.insert(user, getTinfoProtocolApplication(), protApp1);
+                    protApp1.save(user);
 
-                    addDataInputs(inputDatas, protApp1, user);
-                    addMaterialInputs(inputMaterials, protApp1, user);
+                    addDataInputs(inputDatas, protApp1._object, user);
+                    addMaterialInputs(inputMaterials, protApp1._object, user);
 
-                    ProtocolAction action2 = actions[1];
-                    assert action2.getSequence() == 10;
-                    ExpProtocol protocol2 = getExpProtocol(action2.getChildProtocolId());
-
-                    ProtocolApplication protApp2 = new ProtocolApplication();
                     protApp2.setActivityDate(date);
                     protApp2.setActionSequence(action2.getSequence());
-                    protApp2.setCpasType(protocol2.getApplicationType().toString());
-                    protApp2.setRunId(run.getRowId());
-                    protApp2.setProtocolLSID(protocol2.getLSID());
+                    protApp2.setRun(run);
+                    protApp2.setProtocol(protocol2);
 
                     Map<String, ProtocolParameter> coreParams = protocol2.getProtocolParameters();
                     ProtocolParameter coreLSIDTemplateParam = coreParams.get(XarConstants.APPLICATION_LSID_TEMPLATE_URI);
@@ -2735,10 +2828,10 @@ public class ExperimentServiceImpl implements ExperimentService.Interface
                     protApp2.setLSID(LsidUtils.resolveLsidFromTemplate(coreLSIDTemplateParam.getStringValue(), context, "ProtocolApplication"));
                     protApp2.setName(coreNameTemplateParam.getStringValue());
 
-                    protApp2 = Table.insert(user, getTinfoProtocolApplication(), protApp2);
+                    protApp2.save(user);
 
-                    addDataInputs(inputDatas, protApp2, user);
-                    addMaterialInputs(inputMaterials, protApp2, user);
+                    addDataInputs(inputDatas, protApp2._object, user);
+                    addMaterialInputs(inputMaterials, protApp2._object, user);
 
                     for (ExpMaterial outputMaterial : outputMaterials.keySet())
                     {
@@ -2750,38 +2843,32 @@ public class ExperimentServiceImpl implements ExperimentService.Interface
                         {
                             throw new IllegalArgumentException("Output material " + outputMaterial.getName() + " is already marked as being created by another run");
                         }
-                        outputMaterial.setSourceApplication(new ExpProtocolApplicationImpl(protApp2));
+                        outputMaterial.setSourceApplication(protApp2);
                         outputMaterial.setRun(run);
                         Table.update(user, getTinfoMaterial(), ((ExpMaterialImpl)outputMaterial)._object, outputMaterial.getRowId());
                     }
 
                     for (ExpData outputData : outputDatas.keySet())
                     {
-                        if (outputData.getRun() != null)
+                        ExpRun existingRun = outputData.getRun();
+                        if (existingRun != null && !existingRun.equals(run))
                         {
                             throw new IllegalArgumentException("Output data " + outputData.getName() + " (RowId " + outputData.getRowId() + ") is already marked as being created by another run '" + outputData.getRun().getName() + "' (RowId " + outputData.getRunId() + ")");
                         }
-                        if (outputData.getSourceApplication() != null)
+                        ExpProtocolApplication existingProtApp = outputData.getSourceApplication();
+                        if (existingProtApp != null && !existingProtApp.equals(protApp2))
                         {
                             throw new IllegalArgumentException("Output data " + outputData.getName() + " (RowId " + outputData.getRowId() + ") is already marked as being created by another protocol application");
                         }
-                        outputData.setSourceApplication(new ExpProtocolApplicationImpl(protApp2));
+                        outputData.setSourceApplication(protApp2);
                         outputData.setRun(run);
                         Table.update(user, getTinfoData(), ((ExpDataImpl)outputData).getDataObject(), outputData.getRowId());
                     }
 
-                    ProtocolAction action3 = actions[2];
-                    assert action3.getSequence() == 20;
-
-                    ExpProtocol outputProtocol = getExpProtocol(action3.getChildProtocolId());
-                    assert outputProtocol.getApplicationType() == ExpProtocol.ApplicationType.ExperimentRunOutput : "Expected third protocol to be of type ExperimentRunOutput but was " + outputProtocol.getApplicationType();
-
-                    ProtocolApplication protApp3 = new ProtocolApplication();
                     protApp3.setActivityDate(date);
                     protApp3.setActionSequence(action3.getSequence());
-                    protApp3.setCpasType(outputProtocol.getApplicationType().toString());
-                    protApp3.setRunId(run.getRowId());
-                    protApp3.setProtocolLSID(outputProtocol.getLSID());
+                    protApp3.setRun(run);
+                    protApp3.setProtocol(outputProtocol);
 
                     Map<String, ProtocolParameter> outputParams = outputProtocol.getProtocolParameters();
                     ProtocolParameter outputLSIDTemplateParam = outputParams.get(XarConstants.APPLICATION_LSID_TEMPLATE_URI);
@@ -2790,10 +2877,10 @@ public class ExperimentServiceImpl implements ExperimentService.Interface
                     assert outputNameTemplateParam != null;
                     protApp3.setLSID(LsidUtils.resolveLsidFromTemplate(outputLSIDTemplateParam.getStringValue(), context, "ProtocolApplication"));
                     protApp3.setName(outputNameTemplateParam.getStringValue());
-                    protApp3 = Table.insert(user, getTinfoProtocolApplication(), protApp3);
+                    protApp3.save(user);
 
-                    addDataInputs(outputDatas, protApp3, user);
-                    addMaterialInputs(outputMaterials, protApp3, user);
+                    addDataInputs(outputDatas, protApp3._object, user);
+                    addMaterialInputs(outputMaterials, protApp3._object, user);
 
                     getSchema().getScope().commitTransaction();
                 }
@@ -2809,6 +2896,8 @@ public class ExperimentServiceImpl implements ExperimentService.Interface
                         insertedData.findDataHandler().importFile(getExpData(insertedData.getRowId()), insertedData.getFile(), info, log, context);
                     }
                 }
+
+                run.clearCache();
 
                 return run;
             }
@@ -2866,7 +2955,7 @@ public class ExperimentServiceImpl implements ExperimentService.Interface
         run.setProtocol(protocol);
         run.setFilePathRoot(pipeRoot.getRootPath());
 
-        return insertSimpleExperimentRun(run, inputMaterials, Collections.<ExpData, String>emptyMap(), outputMaterials, Collections.<ExpData, String>emptyMap(),
+        return saveSimpleExperimentRun(run, inputMaterials, Collections.<ExpData, String>emptyMap(), outputMaterials, Collections.<ExpData, String>emptyMap(),
                 Collections.<ExpData, String>emptyMap(), info, log, true);
     }
 
@@ -3114,26 +3203,58 @@ public class ExperimentServiceImpl implements ExperimentService.Interface
     private void addMaterialInputs(Map<ExpMaterial, String> inputMaterials, ProtocolApplication protApp1, User user)
             throws SQLException
     {
+        Set<MaterialInput> existingInputs = new HashSet<MaterialInput>(Arrays.asList(getMaterialInputsForApplication(protApp1.getRowId())));
+
+        Set<MaterialInput> desiredInputs = new HashSet<MaterialInput>();
+
         for (Map.Entry<ExpMaterial, String> entry : inputMaterials.entrySet())
         {
             MaterialInput input = new MaterialInput();
             input.setRole(entry.getValue());
             input.setMaterialId(entry.getKey().getRowId());
             input.setTargetApplicationId(protApp1.getRowId());
-            Table.insert(user, getTinfoMaterialInput(), input);
+            desiredInputs.add(input);
         }
+
+        syncInputs(user, existingInputs, desiredInputs, "MaterialId", getTinfoMaterialInput());
     }
 
     private void addDataInputs(Map<ExpData, String> inputDatas, ProtocolApplication protApp1, User user)
             throws SQLException
     {
+        Set<DataInput> existingInputs = new HashSet<DataInput>(Arrays.asList(getDataInputsForApplication(protApp1.getRowId())));
+
+        Set<DataInput> desiredInputs = new HashSet<DataInput>();
+
         for (Map.Entry<ExpData, String> entry : inputDatas.entrySet())
         {
             DataInput input = new DataInput();
             input.setRole(entry.getValue());
             input.setDataId(entry.getKey().getRowId());
             input.setTargetApplicationId(protApp1.getRowId());
-            Table.insert(user, getTinfoDataInput(), input);
+            desiredInputs.add(input);
+        }
+
+        syncInputs(user, existingInputs, desiredInputs, "DataId", getTinfoDataInput());
+    }
+
+    private void syncInputs(User user, Set<? extends AbstractRunInput> existingInputs, Set<? extends AbstractRunInput> desiredInputs, String keyName, TableInfo table)
+            throws SQLException
+    {
+        Set<AbstractRunInput> inputsToDelete = new HashSet<AbstractRunInput>(existingInputs);
+        inputsToDelete.removeAll(desiredInputs);
+        for (AbstractRunInput input : inputsToDelete)
+        {
+            SimpleFilter filter = new SimpleFilter(keyName, input.getInputKey());
+            filter.addCondition("TargetApplicationId", input.getTargetApplicationId());
+            Table.delete(table, filter);
+        }
+
+        Set<AbstractRunInput> inputsToInsert = new HashSet<AbstractRunInput>(desiredInputs);
+        inputsToInsert.removeAll(existingInputs);
+        for (AbstractRunInput input : inputsToInsert)
+        {
+            Table.insert(user, table, input);
         }
     }
 

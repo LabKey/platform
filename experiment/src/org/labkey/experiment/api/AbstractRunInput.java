@@ -15,6 +15,8 @@
  */
 package org.labkey.experiment.api;
 
+import org.apache.commons.lang.ObjectUtils;
+
 /**
  * User: jeckels
  * Date: Oct 31, 2008
@@ -53,5 +55,29 @@ public abstract class AbstractRunInput
             role = _defaultRole;
         }
         _role = role;
+    }
+
+    protected abstract int getInputKey();
+
+    @Override
+    public boolean equals(Object o)
+    {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+
+        AbstractRunInput input = (AbstractRunInput) o;
+
+        return getInputKey() == input.getInputKey() &&
+            ObjectUtils.equals(_role, input._role) &&
+            _targetApplicationId == input._targetApplicationId;
+    }
+
+    @Override
+    public int hashCode()
+    {
+        int result = getInputKey();
+        result = 31 * result + _targetApplicationId;
+        result = 31 * result + (_role == null ? 0 : _role.hashCode());
+        return result;
     }
 }

@@ -36,4 +36,10 @@ public class DataInput extends AbstractRunInput
     {
         _dataId = id;
     }
+
+    @Override
+    protected int getInputKey()
+    {
+        return _dataId;
+    }
 }

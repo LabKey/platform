@@ -161,6 +161,27 @@ public class ExpProtocolApplicationImpl extends ExpIdentifiableBaseImpl<Protocol
         return runId == null ? null : ExperimentServiceImpl.get().getExpRun(runId.intValue());
     }
 
+    public void setRun(ExpRun run)
+    {
+        _object.setRunId(run.getRowId());
+    }
+
+    public void setActionSequence(int actionSequence)
+    {
+        _object.setActionSequence(actionSequence);
+    }
+
+    public void setProtocol(ExpProtocol protocol)
+    {
+        _object.setProtocolLSID(protocol.getLSID());
+        _object.setCpasType(protocol.getApplicationType().toString());
+    }
+
+    public void setActivityDate(Date date)
+    {
+        _object.setActivityDate(date);
+    }
+
     public int getActionSequence()
     {
         return _object.getActionSequence();

@@ -17,7 +17,6 @@
 package org.labkey.experiment.api;
 
 import org.jetbrains.annotations.Nullable;
-import org.labkey.api.attachments.Attachment;
 import org.labkey.api.attachments.AttachmentParent;
 import org.labkey.api.cache.DbCache;
 import org.labkey.api.data.*;
@@ -643,5 +642,15 @@ public class ExpRunImpl extends ExpIdentifiableEntityImpl<ExperimentRun> impleme
     public String getContainerId()
     {
         return _object.getContainer().getId();
+    }
+
+    public void clearCache()
+    {
+        _populated = false;
+        _dataInputs = new HashMap<ExpData, String>();
+        _materialInputs = new HashMap<ExpMaterial, String>();
+        _materialOutputs = new ArrayList<ExpMaterial>();
+        _dataOutputs = new ArrayList<ExpData>();
+        _protocolSteps = null;
     }
 }

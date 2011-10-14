@@ -23,16 +23,26 @@ import org.labkey.api.action.ApiResponse;
 import org.labkey.api.action.ApiVersion;
 import org.labkey.api.action.SimpleApiJsonForm;
 import org.labkey.api.data.ExpDataFileConverter;
-import org.labkey.api.exp.*;
-import org.labkey.api.exp.api.*;
+import org.labkey.api.exp.ExperimentException;
+import org.labkey.api.exp.Lsid;
+import org.labkey.api.exp.OntologyManager;
+import org.labkey.api.exp.XarContext;
+import org.labkey.api.exp.XarFormatException;
+import org.labkey.api.exp.api.ExpData;
+import org.labkey.api.exp.api.ExpExperiment;
+import org.labkey.api.exp.api.ExpMaterial;
+import org.labkey.api.exp.api.ExpObject;
+import org.labkey.api.exp.api.ExpProtocol;
+import org.labkey.api.exp.api.ExpRun;
+import org.labkey.api.exp.api.ExpSampleSet;
+import org.labkey.api.exp.api.ExperimentJSONConverter;
+import org.labkey.api.exp.api.ExperimentService;
 import org.labkey.api.exp.property.DomainProperty;
 import org.labkey.api.exp.xar.LsidUtils;
-import org.labkey.api.pipeline.PipeRoot;
-import org.labkey.api.pipeline.PipelineService;
 import org.labkey.api.qc.DataValidator;
 import org.labkey.api.query.ValidationException;
 import org.labkey.api.security.RequiresPermissionClass;
-import org.labkey.api.security.permissions.*;
+import org.labkey.api.security.permissions.InsertPermission;
 import org.labkey.api.study.assay.AssayProvider;
 import org.labkey.api.study.assay.AssayPublishService;
 import org.labkey.api.study.assay.AssayService;
@@ -46,7 +56,12 @@ import org.labkey.study.assay.TsvDataHandler;
 import org.springframework.validation.BindException;
 
 import java.sql.SQLException;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
 /**
  * User: jeckels
@@ -109,14 +124,9 @@ public class SaveAssayBatchAction extends AbstractAssayAPIAction<SimpleApiJsonFo
         }
         else
         {
-            run = provider.getRunCreator().createExperimentRun(name, getViewContext().getContainer(), protocol);
+            run = AssayService.get().createExperimentRun(name, getViewContext().getContainer(), protocol, null);
         }
-        PipeRoot pipeRoot = PipelineService.get().findPipelineRoot(getViewContext().getContainer());
-        if (pipeRoot == null)
-        {
-            throw new NotFoundException("Pipeline root is not configured for folder " + getViewContext().getContainer());
-        }
-        run.setFilePathRoot(pipeRoot.getRootPath());
+
         if (runJsonObject.has(ExperimentJSONConverter.COMMENT))
         {
             run.setComments(runJsonObject.getString(ExperimentJSONConverter.COMMENT));
@@ -263,7 +273,7 @@ public class SaveAssayBatchAction extends AbstractAssayAPIAction<SimpleApiJsonFo
 
         List<Map<String, Object>> rawData = dataArray.toMapList();
 
-        run = ExperimentService.get().insertSimpleExperimentRun(run,
+        run = ExperimentService.get().saveSimpleExperimentRun(run,
             inputMaterial,
             inputData,
             outputMaterial,

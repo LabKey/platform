@@ -18,6 +18,7 @@ package org.labkey.study.assay;
 
 import gwt.client.org.labkey.study.StudyApplication;
 import org.apache.commons.lang.StringUtils;
+import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.ActionButton;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
@@ -25,12 +26,14 @@ import org.labkey.api.data.MenuButton;
 import org.labkey.api.data.RuntimeSQLException;
 import org.labkey.api.exp.ExperimentException;
 import org.labkey.api.exp.Handler;
+import org.labkey.api.exp.Lsid;
 import org.labkey.api.exp.api.ExpExperiment;
 import org.labkey.api.exp.api.ExpProtocol;
 import org.labkey.api.exp.api.ExpRun;
 import org.labkey.api.exp.api.ExperimentService;
 import org.labkey.api.exp.query.ExpRunTable;
 import org.labkey.api.gwt.client.assay.model.GWTProtocol;
+import org.labkey.api.pipeline.PipeRoot;
 import org.labkey.api.pipeline.PipelineProvider;
 import org.labkey.api.pipeline.PipelineService;
 import org.labkey.api.query.QuerySettings;
@@ -55,6 +58,7 @@ import org.labkey.study.model.StudyManager;
 import org.labkey.study.view.StudyGWTView;
 import org.springframework.web.servlet.ModelAndView;
 
+import java.io.File;
 import java.sql.SQLException;
 import java.util.*;
 
@@ -436,5 +440,51 @@ public class AssayManager implements AssayService.Interface
         {
             throw new RuntimeSQLException(e);
         }
+    }
+
+    public ExpRun createExperimentRun(@Nullable String name, Container container, ExpProtocol protocol, @Nullable File file)
+    {
+        if (name == null)
+        {
+            // Check if we have a file to use
+            if (file == null || !file.isFile())
+            {
+                name = "[Untitled]";
+            }
+            else
+            {
+                name = file.getName();
+            }
+        }
+
+        String entityId = GUID.makeGUID();
+        ExpRun run = ExperimentService.get().createExperimentRun(container, name);
+
+        Lsid lsid = new Lsid(getProvider(protocol).getRunLSIDPrefix(), "Folder-" + container.getRowId(), entityId);
+        run.setLSID(lsid.toString());
+        run.setProtocol(ExperimentService.get().getExpProtocol(protocol.getRowId()));
+        run.setEntityId(entityId);
+
+        File runRoot;
+        if (file == null)
+        {
+            PipeRoot pipeRoot = PipelineService.get().findPipelineRoot(container);
+            if (pipeRoot == null)
+            {
+                throw new NotFoundException("Pipeline root is not configured for folder " + container);
+            }
+            runRoot = pipeRoot.getRootPath();
+        }
+        else if (file.isFile())
+        {
+            runRoot = file.getParentFile();
+        }
+        else
+        {
+            runRoot = file;
+        }
+        run.setFilePathRoot(runRoot);
+
+        return run;
     }
 }
