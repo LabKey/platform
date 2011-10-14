@@ -141,7 +141,6 @@
      * Enable/disable the add and remove buttons according to how many table rows are present
      * also, check to see if the user has selected the same file more than once
      */
-    var _duplicateFileAlert = false;
     function toggleAddRemoveButtons()
     {
         var filePaths = [];
@@ -167,10 +166,9 @@
             }
 
             // alert the user (only once) if the same file name has already been uploaded
-            if (!_duplicateFileAlert && filePaths.indexOf(inputEl.value) > -1)
+            if (filePaths.indexOf(inputEl.value) != -1)
             {
                 alert('Warning: A file with the same name has already been selected for this run.');
-                _duplicateFileAlert = true;
             }
             filePaths.push(inputEl.value);
         }
