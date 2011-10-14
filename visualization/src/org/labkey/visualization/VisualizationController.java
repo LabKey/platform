@@ -814,6 +814,7 @@ public class VisualizationController extends SpringActionController
         private String _type;
         private boolean _replace;
         private boolean _shared = true;
+        private String _svg;
 
         public String getJson()
         {
@@ -863,6 +864,16 @@ public class VisualizationController extends SpringActionController
         public void setShared(boolean shared)
         {
             _shared = shared;
+        }
+
+        public String getSvg()
+        {
+            return _svg;
+        }
+
+        public void setSvg(String svg)
+        {
+            _svg = svg;
         }
     }
 
@@ -1084,6 +1095,9 @@ public class VisualizationController extends SpringActionController
                 vizDescriptor.setReportId(_currentReport.getDescriptor().getReportId());
             vizDescriptor.setOwner(form.isShared() ? null : getViewContext().getUser().getUserId());
             int reportId = ReportService.get().saveReport(getViewContext(), vizDescriptor.getReportKey(), _currentReport);
+
+            // TODO: the SVG for the thumbnail is available as a string via form.getSvg()
+            
             ApiSimpleResponse resp = new ApiSimpleResponse();
             resp.put("visualizationId", reportId);
             resp.put("name", _currentReport.getDescriptor().getReportName());

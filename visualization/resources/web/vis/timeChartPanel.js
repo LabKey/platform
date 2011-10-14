@@ -117,6 +117,7 @@ LABKEY.vis.TimeChartPanel = Ext.extend(Ext.Panel, {
         if(this.viewInfo.type == "line") {
             this.editorOverviewPanel = new LABKEY.vis.ChartEditorOverviewPanel({
                 reportInfo: this.saveReportInfo,
+                saveThumbnail: this.chartInfo.saveThumbnail == undefined ? true : this.chartInfo.saveThumbnail,
                 listeners: {
                     scope: this,
                     'initialMeasuresStoreLoaded': function(data) {
@@ -126,6 +127,9 @@ LABKEY.vis.TimeChartPanel = Ext.extend(Ext.Panel, {
                     'initialMeasureSelected': function(initMeasure) {
                         Ext.getCmp('chart-editor-tabpanel').activate(this.editorMeasurePanel.getId());
                         this.measureSelected(initMeasure, true);
+                    },
+                    'saveThumbnailChecked': function(checked) {
+                        this.chartInfo.saveThumbnail = checked;
                     },
                     'saveChart': this.saveChart
                 }
@@ -609,7 +613,7 @@ LABKEY.vis.TimeChartPanel = Ext.extend(Ext.Panel, {
             this.editorXAxisPanel.setZeroDateStore(measure.schemaName);
 
             if(userSelectedMeasure){
-                this.editorOverviewPanel.updateOverview(this.saveReportInfo);
+                this.editorOverviewPanel.updateOverview(this.saveReportInfo, this.chartInfo.saveThumbnail);
             }
         }
 
@@ -1505,7 +1509,8 @@ LABKEY.vis.TimeChartPanel = Ext.extend(Ext.Panel, {
             measures: [],
             axis: [this.editorXAxisPanel.getAxis()],
             filterUrl: this.editorMeasurePanel.getDataFilterUrl(),
-            filterQuery: this.editorMeasurePanel.getDataFilterQuery()
+            filterQuery: this.editorMeasurePanel.getDataFilterQuery(),
+            saveThumbnail: this.editorOverviewPanel.getSaveThumbnail()
         };
 
         // get the subject info based on the selected chart layout
@@ -1574,6 +1579,11 @@ LABKEY.vis.TimeChartPanel = Ext.extend(Ext.Panel, {
         var schema = LABKEY.ActionURL.getParameter("schemaName") || null;
         var query = LABKEY.ActionURL.getParameter("queryName") || null;
 
+        // get the chart component that would be used for the report thumbnail
+        var svgComp = null;
+        if (this.chart.getComponent(0))
+            svgComp = this.chart.getComponent(0).getComponent(0);
+
         // if the Save button was clicked, save the report using the name and description provided
         if(saveBtnName == 'Save'){
             var config = {
@@ -1581,6 +1591,7 @@ LABKEY.vis.TimeChartPanel = Ext.extend(Ext.Panel, {
                 reportName: reportName,
                 reportDescription: reportDescription,
                 reportShared: reportShared,
+                reportSvg: this.chartInfo.saveThumbnail ? LABKEY.vis.SVGConverter.svgToStr(svgComp.rootVisPanel.scene.$g) : null,
                 createdBy: createdBy,
                 query: query,
                 schema: schema
@@ -1632,6 +1643,14 @@ LABKEY.vis.TimeChartPanel = Ext.extend(Ext.Panel, {
                             { name: 'reportShared', id: 'reportSharedAllSaveAs', boxLabel: 'All readers', inputValue: 'true', checked: reportShared, disabled: !canSaveSharedCharts },
                             { name: 'reportShared', id: 'reportSharedMeSaveAs', boxLabel: 'Only me', inputValue: 'false', checked: !reportShared, disabled: !canSaveSharedCharts }
                         ]
+                }),
+                new Ext.form.Checkbox({
+                    name: 'reportSaveThumbnail',
+                    id: 'reportSaveThumbnailSaveAs',
+                    fieldLabel: 'Save Thumbnail',
+                    anchor: '100%',
+                    checked: this.chartInfo.saveThumbnail,
+                    value: this.chartInfo.saveThumbnail
                 })],
                 buttons: [{
                     text: 'Save',
@@ -1639,6 +1658,7 @@ LABKEY.vis.TimeChartPanel = Ext.extend(Ext.Panel, {
                     handler: function(btn, evnt){
                         var formValues = vizSaveForm.getForm().getValues();
                         var shared = typeof formValues.reportShared == "string" ? 'true' == formValues.reportShared : new Boolean(formValues.reportShared).valueOf();
+                        this.chartInfo.saveThumbnail = formValues.reportSaveThumbnail == "on";
 
                         // call fnctn to check if a report of that name already exists
                         this.checkSaveChart({
@@ -1646,6 +1666,7 @@ LABKEY.vis.TimeChartPanel = Ext.extend(Ext.Panel, {
                             reportName: formValues.reportName,
                             reportDescription: formValues.reportDescription,
                             reportShared: shared,
+                            reportSvg: this.chartInfo.saveThumbnail ? LABKEY.vis.SVGConverter.svgToStr(svgComp.rootVisPanel.scene.$g) : null,
                             query: query,
                             schema: schema
                         });
@@ -1666,7 +1687,7 @@ LABKEY.vis.TimeChartPanel = Ext.extend(Ext.Panel, {
             var win = new Ext.Window({
                 layout:'fit',
                 width:475,
-                height:230,
+                height:255,
                 closeAction:'close',
                 modal: true,
                 padding: 15,
@@ -1721,6 +1742,7 @@ LABKEY.vis.TimeChartPanel = Ext.extend(Ext.Panel, {
             description: config.reportDescription,
             shared: config.reportShared,
             visualizationConfig: this.chartInfo,
+            svg: config.reportSvg,
             replace: config.replace,
             type: LABKEY.Visualization.Type.TimeChart,
             success: this.saveChartSuccess(config.replace,
@@ -1747,7 +1769,13 @@ LABKEY.vis.TimeChartPanel = Ext.extend(Ext.Panel, {
             }
             else
             {
-                this.editorOverviewPanel.updateOverview({name: reportName, description: reportDescription, shared: reportShared, ownerId: ownerId, createdBy: createdBy});
+                this.editorOverviewPanel.updateOverview({
+                    name: reportName,
+                    description: reportDescription,
+                    shared: reportShared,
+                    ownerId: ownerId,
+                    createdBy: createdBy
+                }, this.chartInfo.saveThumbnail);
             }
         }
     },
