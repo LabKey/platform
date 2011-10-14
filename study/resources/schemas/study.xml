@@ -213,7 +213,7 @@
       <ns:column columnName="Label">
         <ns:description>The label to be presented to users for each dataset.</ns:description>
       </ns:column>
-      <ns:column columnName="Category">
+      <ns:column columnName="CategoryId">
         <ns:description>The category of each dataset.</ns:description>
       </ns:column>
       <ns:column columnName="DisplayOrder">

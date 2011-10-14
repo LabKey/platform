@@ -29,24 +29,7 @@ import org.apache.log4j.Logger;
 import org.apache.xmlbeans.XmlException;
 import org.json.JSONArray;
 import org.json.JSONObject;
-import org.labkey.api.action.ApiAction;
-import org.labkey.api.action.ApiResponse;
-import org.labkey.api.action.ApiSimpleResponse;
-import org.labkey.api.action.ConfirmAction;
-import org.labkey.api.action.ExportAction;
-import org.labkey.api.action.FormHandlerAction;
-import org.labkey.api.action.FormViewAction;
-import org.labkey.api.action.GWTServiceAction;
-import org.labkey.api.action.HasViewContext;
-import org.labkey.api.action.NullSafeBindException;
-import org.labkey.api.action.QueryViewAction;
-import org.labkey.api.action.RedirectAction;
-import org.labkey.api.action.ReturnUrlForm;
-import org.labkey.api.action.SimpleApiJsonForm;
-import org.labkey.api.action.SimpleErrorView;
-import org.labkey.api.action.SimpleRedirectAction;
-import org.labkey.api.action.SimpleViewAction;
-import org.labkey.api.action.SpringActionController;
+import org.labkey.api.action.*;
 import org.labkey.api.attachments.AttachmentFile;
 import org.labkey.api.attachments.AttachmentForm;
 import org.labkey.api.attachments.AttachmentService;
@@ -97,6 +80,8 @@ import org.labkey.api.reader.DataLoader;
 import org.labkey.api.reader.TabLoader;
 import org.labkey.api.reports.Report;
 import org.labkey.api.reports.ReportService;
+import org.labkey.api.reports.model.ViewCategory;
+import org.labkey.api.reports.model.ViewCategoryManager;
 import org.labkey.api.reports.model.ViewInfo;
 import org.labkey.api.reports.report.AbstractReportIdentifier;
 import org.labkey.api.reports.report.ChartQueryReport;
@@ -6835,18 +6820,28 @@ public class StudyController extends BaseStudyController
             {
                 for (DataSet ds : study.getDataSets())
                 {
+/*
                     if (!ds.isShowByDefault())
                         continue;
+*/
 
                     if (ds.canRead(getUser()))
                     {
                         ViewInfo view = new ViewInfo(ds.getLabel(), "Dataset");
 
-                        view.setCategory(ds.getCategory());
+                        if (ds.getCategory() != null)
+                        {
+                            view.setCategory(ds.getCategory());
+
+                            ViewCategory vc = ViewCategoryManager.getInstance().getCategory(getContainer(), ds.getCategory());
+                            if (vc != null)
+                                view.setCategoryDisplayOrder(vc.getDisplayOrder());
+                        }
                         view.setDescription(ds.getDescription());
                         view.setIcon(getViewContext().getContextPath() + "/reports/grid.gif");
                         view.setRunUrl(new ActionURL(DefaultDatasetReportAction.class, getContainer()).addParameter("datasetId", ds.getDataSetId()));
                         view.setContainer(ds.getContainer());
+                        view.setHidden(!ds.isShowByDefault());
 
                         datasets.add(view);
                     }
@@ -6907,6 +6902,103 @@ public class StudyController extends BaseStudyController
         public void setIncludeData(boolean includedata)
         {
             includeData = includedata;
+        }
+    }
+
+    @RequiresPermissionClass(ReadPermission.class)
+    public class GetCategoriesAction extends ApiAction<Object>
+    {
+        public ApiResponse execute(Object form, BindException errors) throws Exception
+        {
+            ApiSimpleResponse response = new ApiSimpleResponse();
+            List<JSONObject> categoryList = new ArrayList<JSONObject>();
+
+            for (ViewCategory category : ViewCategoryManager.getInstance().getCategories(getContainer(), getUser()))
+                categoryList.add(category.toJSON(getUser()));
+
+            response.put("categories", categoryList);
+
+            return response;
+        }
+    }
+
+    public static class CategoriesForm implements CustomApiForm
+    {
+        List<ViewCategory> _categories = new ArrayList<ViewCategory>();
+
+        public List<ViewCategory> getCategories()
+        {
+            return _categories;
+        }
+
+        public void setCategories(List<ViewCategory> categories)
+        {
+            _categories = categories;
+        }
+
+        @Override
+        public void bindProperties(Map<String, Object> props)
+        {
+            Object categoriesProp = props.get("categories");
+            if (categoriesProp != null)
+            {
+                for (JSONObject categoryInfo : ((JSONArray) categoriesProp).toJSONObjectArray())
+                {
+                    _categories.add(ViewCategory.fromJSON(categoryInfo));
+                }
+            }
+        }
+    }
+
+    @RequiresPermissionClass(AdminPermission.class)
+    public class SaveCategoriesAction extends MutatingApiAction<CategoriesForm>
+    {
+        public ApiResponse execute(CategoriesForm form, BindException errors) throws Exception
+        {
+            ApiSimpleResponse response = new ApiSimpleResponse();
+            DbScope scope = StudySchema.getInstance().getSchema().getScope();
+
+            try {
+                scope.ensureTransaction();
+
+                for (ViewCategory category : form.getCategories())
+                    ViewCategoryManager.getInstance().saveCategory(getContainer(), getUser(), category);
+
+                scope.commitTransaction();
+
+                response.put("success", true);
+                return response;
+            }
+            finally
+            {
+                scope.closeConnection();
+            }
+        }
+    }
+
+    @RequiresPermissionClass(AdminPermission.class)
+    public class DeleteCategoriesAction extends MutatingApiAction<CategoriesForm>
+    {
+        public ApiResponse execute(CategoriesForm form, BindException errors) throws Exception
+        {
+            ApiSimpleResponse response = new ApiSimpleResponse();
+            DbScope scope = StudySchema.getInstance().getSchema().getScope();
+
+            try {
+                scope.ensureTransaction();
+
+                for (ViewCategory category : form.getCategories())
+                    ViewCategoryManager.getInstance().deleteCategory(getContainer(), getUser(), category);
+
+                scope.commitTransaction();
+                
+                response.put("success", true);
+                return response;
+            }
+            finally
+            {
+                scope.closeConnection();
+            }
         }
     }
 }

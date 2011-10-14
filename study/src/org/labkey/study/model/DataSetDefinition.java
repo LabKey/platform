@@ -56,6 +56,8 @@ import org.labkey.api.query.ExprColumn;
 import org.labkey.api.query.LookupForeignKey;
 import org.labkey.api.query.PdLookupForeignKey;
 import org.labkey.api.query.ValidationException;
+import org.labkey.api.reports.model.ViewCategory;
+import org.labkey.api.reports.model.ViewCategoryManager;
 import org.labkey.api.security.SecurityManager;
 import org.labkey.api.security.SecurityPolicy;
 import org.labkey.api.security.User;
@@ -122,6 +124,7 @@ public class DataSetDefinition extends AbstractStudyEntity<DataSetDefinition> im
     private String _name;
     private String _typeURI;
     private String _category;
+    private Integer _categoryId;
     private String _visitDatePropertyName;
     private String _keyPropertyName;
     private @NotNull KeyManagementType _keyManagementType = KeyManagementType.None;
@@ -292,7 +295,27 @@ public class DataSetDefinition extends AbstractStudyEntity<DataSetDefinition> im
     public void setCategory(String category)
     {
         verifyMutability();
-        _category = category;
+
+        if (category != null)
+            _category = category;
+    }
+
+    public Integer getCategoryId()
+    {
+        return _categoryId;
+    }
+
+    public void setCategoryId(Integer categoryId)
+    {
+        verifyMutability();
+        _categoryId = categoryId;
+
+        if (_categoryId != null)
+        {
+            ViewCategory category = ViewCategoryManager.getInstance().getCategory(_categoryId);
+            if (category != null)
+                _category = category.getLabel();
+        }
     }
 
     public int getDataSetId()

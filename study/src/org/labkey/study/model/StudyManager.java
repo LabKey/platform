@@ -85,6 +85,8 @@ import org.labkey.api.query.snapshot.QuerySnapshotDefinition;
 import org.labkey.api.reader.ColumnDescriptor;
 import org.labkey.api.reader.DataLoader;
 import org.labkey.api.reader.MapLoader;
+import org.labkey.api.reports.model.ViewCategory;
+import org.labkey.api.reports.model.ViewCategoryManager;
 import org.labkey.api.resource.Resource;
 import org.labkey.api.search.SearchService;
 import org.labkey.api.security.RoleAssignment;
@@ -476,10 +478,46 @@ public class StudyManager
     {
         if (dataSetDefinition.getDataSetId() <= 0)
             throw new IllegalArgumentException("datasetId must be greater than zero.");
-        _dataSetHelper.create(user, dataSetDefinition);
-        indexDataset(null, dataSetDefinition);
+        DbScope scope = getSchema().getScope();
+
+        try
+        {
+            scope.ensureTransaction();
+
+            ensureViewCategory(user, dataSetDefinition);
+            _dataSetHelper.create(user, dataSetDefinition);
+
+            scope.commitTransaction();
+            indexDataset(null, dataSetDefinition);
+        }
+        finally
+        {
+            scope.closeConnection();
+        }
     }
 
+    /**
+     * Temporary shim until we can redo the dataset category UI
+     */
+    private void ensureViewCategory(User user, DataSetDefinition def)
+    {
+        if (def.getCategory() != null)
+        {
+            ViewCategory category = ViewCategoryManager.getInstance().getCategory(def.getContainer(), def.getCategory());
+            if (category == null)
+            {
+                category = new ViewCategory();
+
+                category.setContainer(def.getContainer().getId());
+                category.setLabel(def.getCategory());
+
+                category = ViewCategoryManager.getInstance().saveCategory(def.getContainer(), user, category);
+            }
+
+            if (category != null)
+                def.setCategoryId(category.getRowId());
+        }
+    }
 
     public void updateDataSetDefinition(User user, DataSetDefinition dataSetDefinition) throws SQLException
     {
@@ -525,6 +563,7 @@ public class StudyManager
                 // TODO add PK
             }   
             Object[] pk = new Object[]{dataSetDefinition.getContainer().getId(), dataSetDefinition.getDataSetId()};
+            ensureViewCategory(user, dataSetDefinition);
             _dataSetHelper.update(user, dataSetDefinition, pk);
 
             if (!old.getLabel().equals(dataSetDefinition.getLabel()))
@@ -1492,7 +1531,7 @@ public class StudyManager
                 filter = new SimpleFilter("Container", study.getContainer().getId());
                 filter.addWhereClause("(CohortId IS NULL OR CohortId = ?)", new Object[] { cohort.getRowId() });
             }
-            return _dataSetHelper.get(study.getContainer(), filter, "DisplayOrder,Category,DataSetId");
+            return _dataSetHelper.get(study.getContainer(), filter, "DisplayOrder,DataSetId");
         }
         catch (SQLException x)
         {

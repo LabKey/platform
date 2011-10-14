@@ -143,8 +143,10 @@ public class TsvDataHandler extends AbstractAssayTsvDataHandler implements Trans
                 column.errorValues = ERROR_VALUE;
             }
             Map<DataType, List<Map<String, Object>>> datas = new HashMap<DataType, List<Map<String, Object>>>();
+            List<Map<String, Object>> dataRows = loader.load();
+            adjustFirstRowOrder(dataRows, loader);
 
-            datas.put(DATA_TYPE, loader.load());
+            datas.put(DATA_TYPE, dataRows);
             return datas;
         }
         catch (IOException ioe)
@@ -156,6 +158,24 @@ public class TsvDataHandler extends AbstractAssayTsvDataHandler implements Trans
             if (loader != null)
                 loader.close();
         }
+    }
+
+    /**
+     * Reorders the first row of the list of rows to be in original column order. This is usually enough
+     * to cause serializers for tsv formats to respect the original file column order. A bit of a hack but
+     * the way row maps are generated make it difficult to preserve order at row map generation time.
+     */
+    private void adjustFirstRowOrder(List<Map<String, Object>> dataRows, DataLoader loader) throws IOException
+    {
+        Map<String, Object> firstRow = dataRows.remove(0);
+        Map<String, Object> newRow = new LinkedHashMap<String, Object>();
+
+        for (ColumnDescriptor column : loader.getColumns())
+        {
+            if (firstRow.containsKey(column.name))
+                newRow.put(column.name, firstRow.get(column.name));
+        }
+        dataRows.add(0, newRow);
     }
 
     public void importTransformDataMap(ExpData data, AssayRunUploadContext context, ExpRun run, List<Map<String, Object>> dataMap) throws ExperimentException

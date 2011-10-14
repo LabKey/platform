@@ -35,6 +35,8 @@ import org.labkey.api.query.QueryDefinition;
 import org.labkey.api.query.QueryService;
 import org.labkey.api.reports.Report;
 import org.labkey.api.reports.ReportService;
+import org.labkey.api.reports.model.ViewCategory;
+import org.labkey.api.reports.model.ViewCategoryManager;
 import org.labkey.api.reports.report.AbstractReportIdentifier;
 import org.labkey.api.reports.report.DbReportIdentifier;
 import org.labkey.api.reports.report.ReportDB;
@@ -70,7 +72,7 @@ import java.util.concurrent.ConcurrentMap;
  * User: Karl Lum
  * Date: Dec 21, 2007
  */
-public class ReportServiceImpl implements ReportService.I, ContainerManager.ContainerListener, QueryService.QueryListener
+public class ReportServiceImpl implements ReportService.I, ContainerManager.ContainerListener, QueryService.QueryListener, ViewCategoryManager.ViewCategoryListener
 {
     private static final String SCHEMA_NAME = "core";
     private static final String TABLE_NAME = "Report";
@@ -91,6 +93,7 @@ public class ReportServiceImpl implements ReportService.I, ContainerManager.Cont
         ConvertUtils.register(new ReportIdentifierConverter(), ReportIdentifier.class);
         QueryService.get().addQueryListener(this);
         SystemMaintenance.addTask(new ReportServiceMaintenanceTask());
+        ViewCategoryManager.addCategoryListener(this);
     }
 
     private DbSchema getSchema()
@@ -331,6 +334,10 @@ public class ReportServiceImpl implements ReportService.I, ContainerManager.Cont
                     BeanUtils.copyProperties(descriptor, r);
                     descriptor.setReportId(new DbReportIdentifier(r.getRowId()));
                     descriptor.setOwner(r.getReportOwner());
+                    descriptor.setDisplayOrder(r.getDisplayOrder());
+
+                    if (r.getCategoryId() != null)
+                        descriptor.setCategory(ViewCategoryManager.getInstance().getCategory(r.getCategoryId()));
 
                     String type = descriptor.getReportType();
                     Report report = createReportInstance(type);
@@ -621,6 +628,11 @@ public class ReportServiceImpl implements ReportService.I, ContainerManager.Cont
     public void maintenance()
     {
         ScriptEngineReport.scheduledFileCleanup();
+    }
+
+    @Override
+    public void categoryDeleted(User user, ViewCategory category)
+    {
     }
 
     private static class ReportComparator implements Comparator<Report>

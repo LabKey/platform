@@ -63,6 +63,7 @@ import org.labkey.api.reader.ExcelFactory;
 import org.labkey.api.reader.ExcelLoader;
 import org.labkey.api.reader.MapLoader;
 import org.labkey.api.reader.TabLoader;
+import org.labkey.api.reports.model.ViewCategoryManager;
 import org.labkey.api.script.RhinoService;
 import org.labkey.api.search.SearchService;
 import org.labkey.api.security.AuthenticationManager;
@@ -175,7 +176,7 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
 
     public double getVersion()
     {
-        return 11.22;
+        return 11.23;
     }
 
     @Override
@@ -552,6 +553,7 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
                 , CachingDataIterator.ScrollTestCase.class
                 , ResultSetDataIterator.TestCase.class
                 , ExceptionUtil.TestCase.class
+                , ViewCategoryManager.TestCase.class
                 //,RateLimiter.TestCase.class
         ));
 
