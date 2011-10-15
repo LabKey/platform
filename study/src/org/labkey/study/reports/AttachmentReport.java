@@ -16,7 +16,6 @@
 
 package org.labkey.study.reports;
 
-import org.apache.commons.collections15.IteratorUtils;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.attachments.Attachment;
 import org.labkey.api.attachments.AttachmentParent;
@@ -24,11 +23,9 @@ import org.labkey.api.attachments.AttachmentService;
 import org.labkey.api.attachments.DocumentConversionService;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
-import org.labkey.api.iterator.IteratorUtil;
 import org.labkey.api.services.ServiceRegistry;
 import org.labkey.api.thumbnail.DynamicThumbnailProvider;
 import org.labkey.api.thumbnail.Thumbnail;
-import org.labkey.api.thumbnail.ThumbnailOutputStream;
 import org.labkey.api.thumbnail.ThumbnailService;
 import org.labkey.api.util.DateUtil;
 import org.labkey.api.util.ExceptionUtil;
@@ -39,7 +36,6 @@ import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.ViewContext;
 import org.labkey.study.controllers.reports.ReportsController.DownloadAction;
 import org.labkey.study.controllers.reports.ReportsController.DownloadReportFileAction;
-import sun.rmi.runtime.Log;
 
 import javax.imageio.ImageIO;
 import java.awt.image.BufferedImage;
@@ -54,7 +50,7 @@ import java.util.Map;
  * Date: Jul 6, 2006
  * Time: 5:08:19 PM
  */
-public class AttachmentReport extends RedirectReport implements AttachmentParent, DynamicThumbnailProvider
+public class AttachmentReport extends RedirectReport implements DynamicThumbnailProvider
 {
     public static final String TYPE = "Study.attachmentReport";
     public static final String FILE_PATH = "filePath";
@@ -68,16 +64,6 @@ public class AttachmentReport extends RedirectReport implements AttachmentParent
     public String getTypeDescription()
     {
         return "Study Attachment Report";
-    }
-
-    public String getEntityId()
-    {
-        return getDescriptor().getEntityId();
-    }
-
-    public String getContainerId()
-    {
-        return getDescriptor().getContainerId();
     }
 
     @Override

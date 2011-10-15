@@ -1670,13 +1670,17 @@ public class ReportsController extends SpringActionController
                 return;
 
             Report report = form.getReportId().getReport();
-            CacheableWriter writer = svc.getThumbnailWriter(report);
 
-            // TODO: need to handle client caching better -- use long expiration and _dc to default
-            Calendar expiration = new GregorianCalendar();
-            expiration.add(Calendar.SECOND, 5);
+            if (null != report && report.getDescriptor().canRead(getUser()))
+            {
+                CacheableWriter writer = svc.getThumbnailWriter(report);
 
-            writer.writeToResponse(response, expiration);
+                // TODO: need to handle client caching better -- use long expiration and _dc to defeat caching
+                Calendar expiration = new GregorianCalendar();
+                expiration.add(Calendar.SECOND, 5);
+
+                writer.writeToResponse(response, expiration);
+            }
         }
     }
 

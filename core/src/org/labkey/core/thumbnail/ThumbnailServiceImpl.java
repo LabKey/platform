@@ -86,7 +86,9 @@ public class ThumbnailServiceImpl implements ThumbnailService
 
                             // TODO: Delete thumbnail attachment first? Or does add do a replace?
                             // TODO: Actually, adding a "replace" would be helpful for adding revision numbers, which would help with client-side caching (_dc=rev)
-                            AttachmentService.get().addAttachments(provider, Collections.singletonList(file), User.guest);
+                            AttachmentService.Service svc = AttachmentService.get();
+                            svc.deleteAttachment(provider, THUMBNAIL_FILENAME, null);
+                            svc.addAttachments(provider, Collections.singletonList(file), User.guest);
                         }
                     }
                     catch (IOException e)
