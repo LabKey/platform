@@ -503,17 +503,7 @@ public class StudyManager
     {
         if (def.getCategory() != null)
         {
-            ViewCategory category = ViewCategoryManager.getInstance().getCategory(def.getContainer(), def.getCategory());
-            if (category == null)
-            {
-                category = new ViewCategory();
-
-                category.setContainer(def.getContainer().getId());
-                category.setLabel(def.getCategory());
-
-                category = ViewCategoryManager.getInstance().saveCategory(def.getContainer(), user, category);
-            }
-
+            ViewCategory category = ViewCategoryManager.getInstance().ensureViewCategory(def.getContainer(), user, def.getCategory());
             if (category != null)
                 def.setCategoryId(category.getRowId());
         }

@@ -7001,4 +7001,115 @@ public class StudyController extends BaseStudyController
             }
         }
     }
+
+    public static class EditViewsForm
+    {
+        ReportIdentifier _reportId;
+        String _category;
+        String _description;
+        boolean _hidden;
+
+        public ReportIdentifier getReportId()
+        {
+            return _reportId;
+        }
+
+        public void setReportId(ReportIdentifier reportId)
+        {
+            _reportId = reportId;
+        }
+
+        public String getCategory()
+        {
+            return _category;
+        }
+
+        public void setCategory(String category)
+        {
+            _category = category;
+        }
+
+        public String getDescription()
+        {
+            return _description;
+        }
+
+        public void setDescription(String description)
+        {
+            _description = description;
+        }
+
+        public boolean isHidden()
+        {
+            return _hidden;
+        }
+
+        public void setHidden(boolean hidden)
+        {
+            _hidden = hidden;
+        }
+    }
+
+    @RequiresPermissionClass(ReadPermission.class)
+    public class EditViewAction extends MutatingApiAction<EditViewsForm>
+    {
+        private Report _report;
+
+        @Override
+        public void validateForm(EditViewsForm form, Errors errors)
+        {
+            ReportIdentifier id = form.getReportId();
+
+            if (id != null)
+            {
+                try {
+                    _report = id.getReport();
+
+                    if (_report != null)
+                    {
+                        if (!_report.getDescriptor().canEdit(getUser(), getContainer()))
+                            errors.reject(ERROR_MSG, "Unauthorized operation");
+
+                        _report.getDescriptor().setReportDescription(StringUtils.trimToNull(form.getDescription()));
+                        _report.getDescriptor().setHidden(form.isHidden());
+                    }
+                }
+                catch (Exception e)
+                {
+                    _log.error("failed to get report from identifier", e);
+                    errors.reject(ERROR_MSG, "Unable to find the specified report");
+                }
+            }
+            else
+                errors.reject(ERROR_MSG, "Unable to find the specified report");
+        }
+
+        public ApiResponse execute(EditViewsForm form, BindException errors) throws Exception
+        {
+            ApiSimpleResponse response = new ApiSimpleResponse();
+            DbScope scope = StudySchema.getInstance().getSchema().getScope();
+
+            try {
+                scope.ensureTransaction();
+
+                // save the category information then the report
+                if (form.getCategory() != null)
+                {
+                    ViewCategory category = ViewCategoryManager.getInstance().ensureViewCategory(getContainer(), getUser(), form.getCategory());
+
+                    _report.getDescriptor().setCategory(category);
+                }
+                ReportService.get().saveReport(getViewContext(), _report.getDescriptor().getReportKey(), _report);
+
+                scope.commitTransaction();
+
+                response.put("success", true);
+                return response;
+            }
+            finally
+            {
+                scope.closeConnection();
+            }
+        }
+    }
 }
