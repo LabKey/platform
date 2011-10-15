@@ -14,18 +14,20 @@
  * limitations under the License.
  */
 
--- populate the view category table with the dataset categories
-INSERT INTO core.ViewCategory (Container, Label, CreatedBy, ModifiedBy)
-  SELECT Container, Category, 0, 0 FROM study.Dataset WHERE LEN(Category) > 0 GROUP BY Container, Category
-GO
+-- populate the view category table with the dataset categories (need the special conditional to work around a mid-script failure that
+-- was checked in earlier
 
-ALTER TABLE study.Dataset ADD CategoryId INT
+IF NOT EXISTS (SELECT * FROM INFORMATION_SCHEMA.COLUMNS WHERE table_schema = 'study' AND table_name = 'DataSet' AND column_name = 'CategoryId')
+BEGIN
+  INSERT INTO core.ViewCategory (Container, Label, CreatedBy, ModifiedBy)
+    SELECT Container, Category, 0, 0 FROM study.Dataset WHERE LEN(Category) > 0 GROUP BY Container, Category;
+
+  ALTER TABLE study.Dataset ADD CategoryId INT;
+END
 GO
 
 UPDATE study.Dataset
-    SET CategoryId = (SELECT rowId FROM core.ViewCategory vc WHERE Dataset.container = vc.container AND Dataset.category = vc.label)
-GO    
+    SET CategoryId = (SELECT rowId FROM core.ViewCategory vc WHERE Dataset.container = vc.container AND Dataset.category = vc.label);
 
 -- drop the category column
-ALTER TABLE study.Dataset DROP COLUMN Category
-GO
+ALTER TABLE study.Dataset DROP COLUMN Category;
