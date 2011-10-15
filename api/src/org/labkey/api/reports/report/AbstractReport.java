@@ -143,6 +143,18 @@ public abstract class AbstractReport implements Report
     }
 
     @Override
+    public String getEntityId()
+    {
+        return getDescriptor().getEntityId();
+    }
+
+    @Override
+    public String getContainerId()
+    {
+        return getDescriptor().getContainerId();
+    }
+
+    @Override
     public Thumbnail getStaticThumbnail()
     {
         InputStream is = AbstractReport.class.getResourceAsStream("genericReportThumbnail.png");

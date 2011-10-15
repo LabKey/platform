@@ -46,7 +46,7 @@ import java.io.PrintWriter;
 import java.util.ArrayList;
 import java.util.List;
 
-public class RReport extends ExternalScriptEngineReport implements AttachmentParent, DynamicThumbnailProvider
+public class RReport extends ExternalScriptEngineReport implements DynamicThumbnailProvider
 {
     public static final String TYPE = "ReportService.rReport";
     private static String DEFAULT_APP_PATH;

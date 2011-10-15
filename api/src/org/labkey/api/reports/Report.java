@@ -16,6 +16,7 @@
 
 package org.labkey.api.reports;
 
+import org.labkey.api.attachments.AttachmentParent;
 import org.labkey.api.data.Results;
 import org.labkey.api.reports.report.ReportDescriptor;
 import org.labkey.api.thumbnail.StaticThumbnailProvider;
@@ -33,7 +34,7 @@ import java.io.IOException;
  * Date: May 10, 2006
  * Time: 1:01:50 PM
  */
-public interface Report extends StaticThumbnailProvider
+public interface Report extends AttachmentParent, StaticThumbnailProvider
 {
     String getType();
     String getTypeDescription();

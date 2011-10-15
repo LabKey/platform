@@ -304,7 +304,8 @@ public class ExternalScriptEngineReport extends ScriptEngineReport implements At
      */
     public void beforeDelete(ContainerUser context)
     {
-        try {
+        try
+        {
             // clean up any temp files
             clearCache();
             deleteReportDir();
@@ -327,16 +328,6 @@ public class ExternalScriptEngineReport extends ScriptEngineReport implements At
             cacheDir.mkdirs();
 
         return cacheDir;
-    }
-
-    public String getEntityId()
-    {
-        return getDescriptor().getEntityId();
-    }
-
-    public String getContainerId()
-    {
-        return getDescriptor().getContainerId();
     }
 
     public HttpView renderDataView(ViewContext context) throws Exception
