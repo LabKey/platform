@@ -29,13 +29,13 @@ import org.apache.poi.ss.usermodel.Header;
 import org.apache.poi.ss.usermodel.PrintSetup;
 import org.apache.poi.ss.usermodel.Row;
 import org.apache.poi.ss.usermodel.Sheet;
+import org.apache.poi.ss.usermodel.SheetConditionalFormatting;
 import org.apache.poi.ss.usermodel.Workbook;
 import org.apache.poi.ss.util.CellRangeAddress;
 
 import java.util.Iterator;
 
 /**
- * Created by IntelliJ IDEA.
  * User: klum
  * Date: May 2, 2011
  * Time: 6:52:27 PM
@@ -611,6 +611,36 @@ public class JxlSheet implements Sheet
     public Iterator<Row> iterator()
     {
         return new JxlRowIterator();
+    }
+
+    @Override
+    public void setRightToLeft(boolean b)
+    {
+        throw new UnsupportedOperationException("method not yet supported");
+    }
+
+    @Override
+    public boolean isRightToLeft()
+    {
+        throw new UnsupportedOperationException("method not yet supported");
+    }
+
+    @Override
+    public void setForceFormulaRecalculation(boolean b)
+    {
+        throw new UnsupportedOperationException("method not yet supported");
+    }
+
+    @Override
+    public boolean getForceFormulaRecalculation()
+    {
+        throw new UnsupportedOperationException("method not yet supported");
+    }
+
+    @Override
+    public SheetConditionalFormatting getSheetConditionalFormatting()
+    {
+        throw new UnsupportedOperationException("method not yet supported");
     }
 
     protected class JxlRowIterator implements Iterator<Row>

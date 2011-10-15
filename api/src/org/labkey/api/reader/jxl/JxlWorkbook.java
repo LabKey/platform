@@ -18,6 +18,7 @@ package org.labkey.api.reader.jxl;
 import jxl.WorkbookSettings;
 import jxl.read.biff.BiffException;
 import org.apache.poi.openxml4j.exceptions.InvalidFormatException;
+import org.apache.poi.ss.formula.udf.UDFFinder;
 import org.apache.poi.ss.usermodel.CellStyle;
 import org.apache.poi.ss.usermodel.CreationHelper;
 import org.apache.poi.ss.usermodel.DataFormat;
@@ -35,7 +36,6 @@ import java.io.OutputStream;
 import java.util.List;
 
 /**
- * Created by IntelliJ IDEA.
  * User: klum
  * Date: May 2, 2011
  * Time: 6:49:35 PM
@@ -386,6 +386,24 @@ public class JxlWorkbook implements Workbook
 
     @Override
     public void setSheetHidden(int sheetIx, int hidden)
+    {
+        throw new UnsupportedOperationException("method not yet supported");
+    }
+
+    @Override
+    public void addToolPack(UDFFinder udfFinder)
+    {
+        throw new UnsupportedOperationException("method not yet supported");
+    }
+
+    @Override
+    public void setForceFormulaRecalculation(boolean b)
+    {
+        throw new UnsupportedOperationException("method not yet supported");
+    }
+
+    @Override
+    public boolean getForceFormulaRecalculation()
     {
         throw new UnsupportedOperationException("method not yet supported");
     }

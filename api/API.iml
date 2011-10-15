@@ -25,8 +25,6 @@
     <content url="file://$MODULE_DIR$">
       <sourceFolder url="file://$MODULE_DIR$/remotesrc" isTestSource="false" />
       <sourceFolder url="file://$MODULE_DIR$/src" isTestSource="false" />
-      <excludeFolder url="file://$MODULE_DIR$/webapp/ext-3.2.2/adapter" />
-      <excludeFolder url="file://$MODULE_DIR$/webapp/ext-3.2.2/pkgs" />
     </content>
     <orderEntry type="inheritedJdk" />
     <orderEntry type="sourceFolder" forTests="false" />
@@ -345,15 +343,6 @@
     <orderEntry type="module-library" exported="">
       <library>
         <CLASSES>
-          <root url="jar://$MODULE_DIR$/../../external/lib/server/radeox.jar!/" />
-        </CLASSES>
-        <JAVADOC />
-        <SOURCES />
-      </library>
-    </orderEntry>
-    <orderEntry type="module-library" exported="">
-      <library>
-        <CLASSES>
           <root url="jar://$MODULE_DIR$/../../external/lib/server/spring-2.5.5.jar!/" />
         </CLASSES>
         <JAVADOC>
@@ -527,7 +516,7 @@
     <orderEntry type="module-library" exported="">
       <library>
         <CLASSES>
-          <root url="jar://$MODULE_DIR$/../../external/lib/server/poi-ooxml-schemas-3.7.jar!/" />
+          <root url="jar://$MODULE_DIR$/../../external/lib/server/poi-3.8-beta4-20110826.jar!/" />
         </CLASSES>
         <JAVADOC />
         <SOURCES />
@@ -536,7 +525,7 @@
     <orderEntry type="module-library" exported="">
       <library>
         <CLASSES>
-          <root url="jar://$MODULE_DIR$/../../external/lib/server/poi-3.7.jar!/" />
+          <root url="jar://$MODULE_DIR$/../../external/lib/server/poi-ooxml-3.8-beta4-20110826.jar!/" />
         </CLASSES>
         <JAVADOC />
         <SOURCES />
@@ -545,7 +534,7 @@
     <orderEntry type="module-library" exported="">
       <library>
         <CLASSES>
-          <root url="jar://$MODULE_DIR$/../../external/lib/server/poi-ooxml-3.7.jar!/" />
+          <root url="jar://$MODULE_DIR$/../../external/lib/server/poi-ooxml-schemas-3.8-beta4-20110826.jar!/" />
         </CLASSES>
         <JAVADOC />
         <SOURCES />

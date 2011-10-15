@@ -16,13 +16,13 @@
 package org.labkey.api.reader.jxl;
 
 import org.apache.poi.ss.usermodel.Cell;
+import org.apache.poi.ss.usermodel.CellStyle;
 import org.apache.poi.ss.usermodel.Row;
 import org.apache.poi.ss.usermodel.Sheet;
 
 import java.util.Iterator;
 
 /**
- * Created by IntelliJ IDEA.
  * User: klum
  * Date: May 2, 2011
  * Time: 6:53:29 PM
@@ -155,6 +155,24 @@ public class JxlRow implements Row
     public Iterator<Cell> iterator()
     {
         return new JxlCellIterator();
+    }
+
+    @Override
+    public boolean isFormatted()
+    {
+        throw new UnsupportedOperationException("method not yet supported");
+    }
+
+    @Override
+    public CellStyle getRowStyle()
+    {
+        throw new UnsupportedOperationException("method not yet supported");
+    }
+
+    @Override
+    public void setRowStyle(CellStyle cellStyle)
+    {
+        throw new UnsupportedOperationException("method not yet supported");
     }
 
     protected class JxlCellIterator implements Iterator<Cell>
