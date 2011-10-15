@@ -38,6 +38,7 @@ import org.labkey.api.data.RuntimeSQLException;
 import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.TSVWriter;
 import org.labkey.api.data.Table;
+import org.labkey.api.data.TableSelector;
 import org.labkey.api.data.TempTableTracker;
 import org.labkey.api.data.TestSchema;
 import org.labkey.api.data.XMLWriterTest;
@@ -192,6 +193,7 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
         return true;
     }
 
+    @Override
     protected void init()
     {
         ServiceRegistry.get().registerService(ContainerService.class, ContainerManager.getContainerService());
@@ -253,6 +255,7 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
         return Collections.<ModuleResourceLoader>singleton(new FolderTypeResourceLoader());
     }
 
+    @Override
     protected Collection<WebPartFactory> createWebPartFactories()
     {
         return new ArrayList<WebPartFactory>(Arrays.asList(new AlwaysAvailableWebPartFactory("Contacts")
@@ -397,6 +400,7 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
     }
 
 
+    @Override
     public void startupAfterSpringConfig(ModuleContext moduleContext)
     {
         // Any containers in the cache have bogus folder types since they aren't registered until startup().  See #10310
@@ -548,12 +552,13 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
                 ArrayListMap.TestCase.class,
                 DbScope.DialectTestCase.class,
                 RhinoService.TestCase.class,
-                ValidEmail.TestCase.class
-                , SimpleTranslator.TranslateTestCase.class
-                , CachingDataIterator.ScrollTestCase.class
-                , ResultSetDataIterator.TestCase.class
-                , ExceptionUtil.TestCase.class
-                , ViewCategoryManager.TestCase.class
+                ValidEmail.TestCase.class,
+                SimpleTranslator.TranslateTestCase.class,
+                CachingDataIterator.ScrollTestCase.class,
+                ResultSetDataIterator.TestCase.class,
+                ExceptionUtil.TestCase.class,
+                ViewCategoryManager.TestCase.class,
+                TableSelector.TestCase.class
                 //,RateLimiter.TestCase.class
         ));
 
@@ -568,12 +573,12 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
     public Set<DbSchema> getSchemasToTest()
     {
         return PageFlowUtil.set
-            (
-                CoreSchema.getInstance().getSchema(),       // core
-                Portal.getSchema(),                         // portal
-                PropertyManager.getSchema(),                // prop
-                TestSchema.getInstance().getSchema()        // test
-            );
+        (
+            CoreSchema.getInstance().getSchema(),       // core
+            Portal.getSchema(),                         // portal
+            PropertyManager.getSchema(),                // prop
+            TestSchema.getInstance().getSchema()        // test
+        );
     }
 
     @Override

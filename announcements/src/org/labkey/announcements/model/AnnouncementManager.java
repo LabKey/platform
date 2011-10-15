@@ -430,6 +430,7 @@ public class AnnouncementManager
 
     public static Set<User> getAuthors(Container c, AnnouncementModel a) throws SQLException
     {
+        assert c.equals(a.lookupContainer());
         Set<User> responderSet = new HashSet<User>();
         boolean isResponse = null != a.getParent();
 

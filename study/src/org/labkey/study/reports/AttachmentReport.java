@@ -18,7 +18,6 @@ package org.labkey.study.reports;
 
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.attachments.Attachment;
-import org.labkey.api.attachments.AttachmentParent;
 import org.labkey.api.attachments.AttachmentService;
 import org.labkey.api.attachments.DocumentConversionService;
 import org.labkey.api.data.Container;

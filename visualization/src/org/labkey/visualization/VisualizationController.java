@@ -18,14 +18,37 @@ package org.labkey.visualization;
 import org.apache.batik.dom.svg.SVGDOMImplementation;
 import org.apache.batik.transcoder.TranscoderInput;
 import org.apache.batik.transcoder.TranscoderOutput;
-import org.apache.batik.transcoder.image.PNGTranscoder;
 import org.apache.commons.beanutils.ConvertUtils;
 import org.apache.commons.lang.StringUtils;
 import org.apache.fop.svg.PDFTranscoder;
 import org.apache.log4j.Logger;
-import org.labkey.api.action.*;
-import org.labkey.api.data.*;
-import org.labkey.api.query.*;
+import org.labkey.api.action.ApiAction;
+import org.labkey.api.action.ApiQueryResponse;
+import org.labkey.api.action.ApiResponse;
+import org.labkey.api.action.ApiSimpleResponse;
+import org.labkey.api.action.BaseViewAction;
+import org.labkey.api.action.ExtendedApiQueryResponse;
+import org.labkey.api.action.RedirectAction;
+import org.labkey.api.action.SpringActionController;
+import org.labkey.api.data.ColumnInfo;
+import org.labkey.api.data.Container;
+import org.labkey.api.data.DataRegion;
+import org.labkey.api.data.RuntimeSQLException;
+import org.labkey.api.data.SQLFragment;
+import org.labkey.api.data.ShowRows;
+import org.labkey.api.data.SimpleFilter;
+import org.labkey.api.data.Table;
+import org.labkey.api.data.TableInfo;
+import org.labkey.api.query.CustomView;
+import org.labkey.api.query.DefaultSchema;
+import org.labkey.api.query.FieldKey;
+import org.labkey.api.query.QueryDefinition;
+import org.labkey.api.query.QueryException;
+import org.labkey.api.query.QuerySchema;
+import org.labkey.api.query.QueryService;
+import org.labkey.api.query.QuerySettings;
+import org.labkey.api.query.QueryView;
+import org.labkey.api.query.UserSchema;
 import org.labkey.api.reports.Report;
 import org.labkey.api.reports.ReportService;
 import org.labkey.api.reports.report.DbReportIdentifier;
@@ -38,8 +61,10 @@ import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.AdminPermission;
 import org.labkey.api.security.permissions.InsertPermission;
 import org.labkey.api.security.permissions.ReadPermission;
+import org.labkey.api.services.ServiceRegistry;
 import org.labkey.api.study.DataSetTable;
 import org.labkey.api.study.StudyService;
+import org.labkey.api.thumbnail.ThumbnailService;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.ResultSetUtil;
 import org.labkey.api.util.URLHelper;
@@ -47,6 +72,7 @@ import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.ViewContext;
 import org.labkey.api.visualization.VisualizationReportDescriptor;
 import org.labkey.api.visualization.VisualizationUrls;
+import org.labkey.visualization.report.TimeChartReportImpl;
 import org.labkey.visualization.sql.StudyVisualizationProvider;
 import org.labkey.visualization.sql.VisualizationProvider;
 import org.labkey.visualization.sql.VisualizationSQLGenerator;
@@ -58,7 +84,12 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.StringReader;
 import java.sql.SQLException;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Map;
 
 /*
  * User: brittp
@@ -79,6 +110,7 @@ public class VisualizationController extends SpringActionController
         private static final String VISUALIZATION_FILTER_URL = "filterUrl";
         private static final String VISUALIZATION_QUERY_PARAM = "queryName";
         private static final String VISUALIZATION_EDIT_PARAM = "edit";
+
         @Override
         public ActionURL getTimeChartDesignerURL(Container container)
         {
@@ -770,7 +802,6 @@ public class VisualizationController extends SpringActionController
     @RequiresPermissionClass(ReadPermission.class)
     public class ExportImageAction extends ExportSVGAction
     {
-
         @Override
         public ModelAndView handleRequest() throws Exception
         {
@@ -778,13 +809,7 @@ public class VisualizationController extends SpringActionController
             response.setContentType("image/png");
             response.addHeader("Content-Disposition", "attachment; filename=visualization.png");
 
-
-            TranscoderInput xIn = new TranscoderInput(new StringReader(getSVGSource()));
-            TranscoderOutput xOut = new TranscoderOutput(response.getOutputStream());
-
-            PNGTranscoder transcoder = new PNGTranscoder();
-            transcoder.addTranscodingHint(PNGTranscoder.KEY_BACKGROUND_COLOR, java.awt.Color.WHITE);
-            transcoder.transcode(xIn, xOut);
+            VisualizationUtil.svgToPng(getSVGSource(), response.getOutputStream());
 
             return null;
         }
@@ -798,7 +823,6 @@ public class VisualizationController extends SpringActionController
     @RequiresPermissionClass(ReadPermission.class)
     public class ExportPDFAction extends ExportSVGAction
     {
-
         @Override
         public ModelAndView handleRequest() throws Exception
         {
@@ -947,10 +971,12 @@ public class VisualizationController extends SpringActionController
     private Report getReport(GetVisualizationForm form) throws SQLException
     {
         Report[] currentReports;
+
         if (form.getSchemaName() != null && form.getQueryName() != null)
             currentReports = ReportService.get().getReports(getUser(), getContainer(), getReportKey(form));
         else
             currentReports = ReportService.get().getReports(getUser(), getContainer());
+
         for (Report report : currentReports)
         {
             if (form.getReportId() != null)
@@ -965,6 +991,7 @@ public class VisualizationController extends SpringActionController
                 return report;
             }
         }
+
         return null;
     }
 
@@ -1030,6 +1057,7 @@ public class VisualizationController extends SpringActionController
     public class SaveVisualizationAction extends ApiAction<SaveVisualizationForm>
     {
         private Report _currentReport;
+
         @Override
         public void validateForm(SaveVisualizationForm form, Errors errors)
         {
@@ -1104,7 +1132,20 @@ public class VisualizationController extends SpringActionController
             vizDescriptor.setOwner(form.isShared() ? null : getViewContext().getUser().getUserId());
             int reportId = ReportService.get().saveReport(getViewContext(), vizDescriptor.getReportKey(), _currentReport);
 
-            // TODO: the SVG for the thumbnail is available as a string via form.getSvg()
+            // Re-select the saved report to make sure it has an entityId
+            Report report = ReportService.get().getReport(reportId);
+
+            if (report instanceof TimeChartReportImpl)
+            {
+                ThumbnailService svc = ServiceRegistry.get().getService(ThumbnailService.class);
+
+                if (null != svc)
+                {
+                    TimeChartReportImpl tcReport = (TimeChartReportImpl)report;
+                    tcReport.setSvg(form.getSvg());
+                    svc.queueThumbnailRendering(tcReport);
+                }
+            }
             
             ApiSimpleResponse resp = new ApiSimpleResponse();
             resp.put("visualizationId", reportId);

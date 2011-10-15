@@ -16,7 +16,6 @@
 
 package org.labkey.announcements.model;
 
-import org.labkey.announcements.model.MessageConfigManager.EmailPref;
 import org.labkey.api.data.Container;
 import org.labkey.api.message.settings.MessageConfigService;
 import org.labkey.api.security.User;
