@@ -33,13 +33,35 @@ Ext4.define('LABKEY.ext4.DataViewsPanel', {
             }
         });
 
+        var fields = [
+            {name : 'category'},
+            {name : 'categoryDisplayOrder', type : 'int'},
+            {name : 'created',              type : 'date'},
+            {name : 'createdBy'},
+            {name : 'container'},
+            {name : 'editable',             type : 'boolean'},
+            {name : 'editUrl'},
+            {name : 'description'},
+            {name : 'displayOrder',         type : 'int'},
+            {name : 'hidden',               type : 'boolean'},
+            {name : 'icon'},
+            {name : 'inherited',            type : 'boolean'},
+            {name : 'modfied',              type : 'date'},
+            {name : 'modifiedBy'},
+            {name : 'name'},
+            {name : 'permissions'},
+            {name : 'reportId'},
+            {name : 'runUrl'},
+            {name : 'schema'},
+            {name : 'thumbnail'},
+            {name : 'type'},
+            {name : 'version'}
+        ];
+
         // define Model
         Ext4.define('Dataset.Browser.View', {
             extend : 'Ext.data.Model',
-            fields : ['modifiedBy', 'category', 'editUrl', 'inherited', 'type',
-                'runUrl', 'reportId', 'editable', 'version', 'modified', 'schema', 'createdBy',
-                'created', 'description', 'container', 'name', 'permissions',
-                'icon', 'thumbnail']
+            fields : fields
         });
 
         this.callParent([config]);
@@ -193,7 +215,8 @@ Ext4.define('LABKEY.ext4.DataViewsPanel', {
                 '</div>' +
                 '</tpl>').compile();
 
-        var _tipID = Ext4.id();
+        this._tipID = Ext4.id();
+        var _tipID = this._tipID;
 
         function getTipPanel()
         {
@@ -275,8 +298,8 @@ Ext4.define('LABKEY.ext4.DataViewsPanel', {
             store    : this.store,
             border   : false, frame: false,
             layout   : 'fit',
-//            height   : 550,
-//            cls      : 'iScroll', // webkit custom scroll bars
+            height   : 550,
+            cls      : 'iScroll', // webkit custom scroll bars
             autoScroll: true,
             columns  : this.initGridColumns(),
             multiSelect: true,
@@ -294,8 +317,10 @@ Ext4.define('LABKEY.ext4.DataViewsPanel', {
             features  : [groupingFeature],
             listeners : {
                 itemclick : function(view, record, item, index, e, opts) {
-                    if (e.target.className == this.editLinkCls && onEditClick)
-                        onEditClick(view, record);
+                    // TODO: Need a better way to determine the clicked item
+                    var cls = e.target.className;
+                    if (cls.search(/edit-views-link/i) >= 0)
+                        this.onEditClick(view, record);
                 },
                 afterlayout : function(p) {
                     grid.setLoading(false);
@@ -311,6 +336,7 @@ Ext4.define('LABKEY.ext4.DataViewsPanel', {
                 reconfigure : function() {
 //                    var s = groupingFeature.view.getStore();
                     this.store.sort('category', 'DESC');
+                    this.customize();
                 },
                 scope : this
             },
@@ -374,7 +400,7 @@ Ext4.define('LABKEY.ext4.DataViewsPanel', {
     initCustomization : function() {
 
          var customPanel = Ext4.create('Ext.panel.Panel', {
-            height : 150,
+            height : 130,
             layout : 'fit',
             border : false, frame : false,
             hidden : true,
@@ -460,10 +486,15 @@ Ext4.define('LABKEY.ext4.DataViewsPanel', {
         }
 
         var panel = Ext4.create('Ext.form.Panel',{
-            layout   : 'anchor',
             bodyPadding: 10,
-            defaults : {
-                anchor : '100%'
+            layout: {
+                type: 'table',
+                columns: 3,
+                tableAttrs: {
+                    style: {
+                        width: '100%'
+                    }
+                }
             },
             fieldDefaults  :{
                 labelAlign : 'top',
@@ -474,16 +505,21 @@ Ext4.define('LABKEY.ext4.DataViewsPanel', {
                 xtype      : 'textfield',
                 fieldLabel : 'Data Views Name',
                 name       : 'webpart.title',
+                colspan    : 1,
                 allowBlank : false,
-                maxWidth   : 250,
+                width      : 250,
                 style      : 'padding-bottom: 10px;',
                 value      : data.webpart.title ? data.webpart.title : data.webpart.name
             },{
                 xtype      : 'checkboxgroup',
                 fieldLabel : 'Data Types to Display in this Data Views (All Users)',
-                maxWidth   : 400,
+                colspan    : 2,
+                width      : 400,
                 columns    : 2,
                 items      : cbItems
+            },{
+                xtype   : 'button',
+                text    : 'Order Categories'
             },{
                 xtype   : 'hidden',
                 name    : 'webPartId',
@@ -496,7 +532,7 @@ Ext4.define('LABKEY.ext4.DataViewsPanel', {
                 },
                 scope : this
             },{
-                text     : 'Submit',
+                text     : 'Save',
                 formBind : true,
                 handler  : function() {
                     var form = panel.getForm(); // this.up('form')
@@ -510,7 +546,7 @@ Ext4.define('LABKEY.ext4.DataViewsPanel', {
                                 this.store.load();
 
                                 // Modify Title
-                                var titleEl = Ext.query('th[class=labkey-wp-title-left]:first', 'webpart_<%= webPartId %>');
+                                var titleEl = Ext.query('th[class=labkey-wp-title-left]:first', 'webpart_' + this.webpartId);
                                 if (titleEl && (titleEl.length >= 1))
                                 {
                                     titleEl[0].innerHTML = form.findField('webpart.title').getValue();
@@ -556,5 +592,88 @@ Ext4.define('LABKEY.ext4.DataViewsPanel', {
             return false;
 
         this.fireEvent((this._inCustomMode() ? 'disableCustomMode' : 'enableCustomMode'), this);
+    },
+
+    onEditClick : function(view, record) {
+
+        var tip = Ext.getCmp(this._tipID);
+        if (tip)
+            tip.hide();
+
+        var formItems = [];
+        formItems.push({
+            xtype      : (record.data.type.toLowerCase() == 'report' ? 'textfield' : 'displayfield'),
+            fieldLabel : 'Name',
+            value      : record.data.name
+        },{
+            xtype      : 'textfield',
+            fieldLabel : 'Category',
+            value      : record.data.category
+        },{
+            xtype      : 'textarea',
+            fieldLabel : 'Description',
+            value      : record.data.description
+        },{
+            xtype      : 'displayfield',
+            fieldLabel : 'Type',
+            value      : record.data.type,
+            readOnly   : true
+        },{
+            xtype      : 'radiogroup',
+            fieldLabel : 'Visibility',
+            items      : [{boxLabel : 'Public',  name : 'visibility', checked : true},
+                          {boxLabel : 'Private', name : 'visibility', checked : false}]
+        });
+
+        if (record.data.created) {
+            formItems.push({
+                xtype      : 'displayfield',
+                fieldLabel : 'Created On',
+                value      : record.data.created,
+                readOnly   : true
+            });
+        }
+
+        if (record.data.modified) {
+            formItems.push({
+                xtype      : 'displayfield',
+                fieldLabel : 'Last Modified',
+                value      : record.data.modified,
+                readOnly   : true
+            });
+        }
+
+        var editWindow = Ext4.create('Ext.window.Window', {
+            width  : 450,
+            height : 500,
+            layout : 'fit',
+            draggable : false,
+            modal  : true,
+            title  : record.data.name,
+            defaults: {
+                border: false, frame: false
+            },
+            bodyPadding : 20,
+            items  : [{
+                xtype : 'form',
+                fieldDefaults  : {
+                    labelWidth : 100,
+                    width      : 375,
+                    style      : 'padding: 4px 0',
+                    labelSeparator : ''
+                },
+                items : formItems,
+                buttonAlign : 'left',
+                buttons : [{
+                    text : 'Save',
+                    formBind: true,
+                    handler : function() {
+                        editWindow.close();
+                    }
+                }]
+            }]
+        });
+
+        editWindow.show();
     }
 });

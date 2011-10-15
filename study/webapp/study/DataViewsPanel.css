@@ -50,3 +50,23 @@
 {
     width: 50px;
 }
+
+/* Ext4 Windows */
+.x4-reset .x4-window-default,
+.x4-reset .x4-window-header-default-top,
+.x4-reset .x4-window-body-default
+{
+    border-color: transparent !important;
+    background-color: white;
+}
+
+/* Ext4 Forms */
+.x4-reset .x4-form-text
+{
+    height : 24px;
+}
+
+.x4-reset .x4-form-checkbox, .x4-reset .x4-form-radio
+{
+    float : left;
+}

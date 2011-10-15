@@ -426,7 +426,7 @@ public class StudyModule extends SpringModule implements SearchService.DocumentP
             if (portalCtx.hasPermission(AdminPermission.class))
             {
                 NavTree customize = new NavTree("", "#");
-                customize.setScript("customizeDataViews(\'" + webPart.getPageId() + "\', " + webPart.getIndex() + ");");
+                customize.setScript("customizeDataViews(" + webPart.getRowId() + ", \'" + webPart.getPageId() + "\', " + webPart.getIndex() + ");");
                 view.setCustomize(customize);
             }
             return view;

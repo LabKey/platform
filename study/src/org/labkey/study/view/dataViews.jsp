@@ -41,10 +41,10 @@
      * Called by Server to handle cusomization actions. NOTE: The panel must be set to allow customization
      * See LABKEY.ext4.DataViewsPanel.isCustomizable()
      */
-    function customizeDataViews(pageId, index) {
+    function customizeDataViews(webpartId, pageId, index) {
 
         // eew, should find better way to access global scope
-        var panel = Ext4.getCmp('data-views-panel-<%= webPartId %>');
+        var panel = Ext4.getCmp('data-views-panel-' + webpartId);
 
         if (panel) { panel.customize(); }
     }
