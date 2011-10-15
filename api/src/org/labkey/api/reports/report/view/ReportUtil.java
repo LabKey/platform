@@ -352,12 +352,15 @@ public class ReportUtil
     private static String getDefaultCategory(Container c, String query)
     {
         String category = query;
-        int datasetId = StudyService.get().getDatasetId(c, query);
-        if (datasetId >= 0)
+        if (null != query)
         {
-            DataSet ds = StudyService.get().getDataSet(c, datasetId);
-            if (ds != null)
-                category = ds.getCategory();
+            int datasetId = StudyService.get().getDatasetId(c, query);
+            if (datasetId >= 0)
+            {
+                DataSet ds = StudyService.get().getDataSet(c, datasetId);
+                if (ds != null)
+                    category = ds.getCategory();
+            }
         }
         return StringUtils.defaultIfEmpty(category, "Uncategorized");
     }
