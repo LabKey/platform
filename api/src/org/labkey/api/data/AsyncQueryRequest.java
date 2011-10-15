@@ -17,6 +17,7 @@
 package org.labkey.api.data;
 
 import org.apache.log4j.Logger;
+import org.jetbrains.annotations.Nullable;
 import org.labkey.api.query.QueryService;
 import org.labkey.api.util.UnexpectedException;
 
@@ -39,7 +40,7 @@ public class AsyncQueryRequest<T>
     private final HttpServletResponse _rootResponse;
 
     boolean _cancelled;
-    Statement _statement;
+    @Nullable Statement _statement;
 
     T _result;
     Throwable _exception;
@@ -56,7 +57,7 @@ public class AsyncQueryRequest<T>
         _rootResponse = response;
     }
 
-    synchronized public void setStatement(Statement statement)
+    synchronized public void setStatement(@Nullable Statement statement)
     {
         if (_cancelled)
             throw new CancelledException();

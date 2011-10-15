@@ -24,9 +24,7 @@ import org.junit.Assert;
 import org.junit.Test;
 import org.labkey.api.audit.AuditLogEvent;
 import org.labkey.api.audit.AuditLogService;
-import org.labkey.api.cache.CacheManager;
 import org.labkey.api.cache.DbCache;
-import org.labkey.api.cache.StringKeyCache;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.CoreSchema;
@@ -101,8 +99,6 @@ public class SecurityManager
     private static final Logger _log = Logger.getLogger(SecurityManager.class);
     private static final CoreSchema core = CoreSchema.getInstance();
     private static final List<ViewFactory> _viewFactories = new ArrayList<ViewFactory>();
-    private static final String GROUP_CACHE_PREFIX = "Groups/MetaData=";
-    private static final StringKeyCache<Group> GROUP_CACHE = CacheManager.getSharedCache();
 
     public static final String TERMS_OF_USE_WIKI_NAME = "_termsOfUse";
 
@@ -126,6 +122,7 @@ public class SecurityManager
 
         private int _permissions;
         private String _label;
+
         private PermissionSet(String label, int permissions)
         {
             // the following must be true for normalization to work:
@@ -1061,7 +1058,7 @@ public class SecurityManager
         try
         {
             Table.update(currentUser, core.getTableInfoPrincipals(), Collections.singletonMap("name", newName), group.getUserId());
-            removeGroupFromCache(group.getUserId());
+            GroupCache.uncache(group.getUserId());
         }
         catch(SQLException e)
         {
@@ -1084,7 +1081,7 @@ public class SecurityManager
 
         try
         {
-            removeGroupFromCache(groupId);
+            GroupCache.uncache(groupId);
 
             Table.delete(core.getTableInfoRoleAssignments(), new SimpleFilter("UserId", groupId));
 
@@ -1111,7 +1108,8 @@ public class SecurityManager
 
         try
         {
-            removeAllGroupsFromCache();
+            // Consider: query for groups in this container and uncache just those.
+            GroupCache.uncacheAll();
 
             Table.execute(core.getSchema(), "DELETE FROM " + core.getTableInfoRoleAssignments() + "\n"+
                     "WHERE UserId in (SELECT UserId FROM " + core.getTableInfoPrincipals() +
@@ -1287,35 +1285,9 @@ public class SecurityManager
     }
 
 
-    // Marker to cache misses
-    private static final Group NULL_GROUP = new Group();
-
     public static Group getGroup(int groupId)
     {
-        Group group = GROUP_CACHE.get(GROUP_CACHE_PREFIX + groupId);
-
-        if (null == group)
-        {
-            try
-            {
-                Group[] groups = Table.executeQuery(
-                        core.getSchema(),
-                        "SELECT Name, UserId, Container, OwnerId FROM " + core.getTableInfoPrincipals() + " WHERE type <> 'u' AND userId=?",
-                        new Object[] {groupId},
-                        Group.class);
-                assert groups.length <= 1;
-                group = groups.length == 0 ? NULL_GROUP : groups[0];
-
-                GROUP_CACHE.put(GROUP_CACHE_PREFIX + groupId, group);
-            }
-            catch (SQLException e)
-            {
-                _log.error("unexpected exception", e);
-                throw new RuntimeSQLException(e);
-            }
-        }
-
-        return NULL_GROUP != group ? group : null;
+        return GroupCache.get(groupId);
     }
 
     public static UserPrincipal getPrincipal(int id)
@@ -1342,25 +1314,13 @@ public class SecurityManager
         }
     }
 
-    private static void removeGroupFromCache(int groupId)
-    {
-        GROUP_CACHE.remove(GROUP_CACHE_PREFIX + groupId);
-    }
-
-
-    private static void removeAllGroupsFromCache()
-    {
-        GROUP_CACHE.removeUsingPrefix(GROUP_CACHE_PREFIX);
-    }
-
-
     public static List<User> getProjectUsers(Container c)
     {
         return getProjectUsers(c, false);
     }
 
     /**
-     * Returns a list of Group object to which the user belongs in the specified container.
+     * Returns a list of Group objects to which the user belongs in the specified container.
      * @param c The container
      * @param u The user
      * @return The list of groups that u belong to in container c
@@ -2140,11 +2100,6 @@ public class SecurityManager
     private static String cacheNameForResourceId(String resourceId)
     {
         return _policyPrefix + "resource/" + resourceId;
-    }
-
-    private static String cacheName(UserPrincipal principal)
-    {
-        return cacheNameForUserId(principal.getUserId());
     }
 
     private static String cacheNameForUserId(int userId)

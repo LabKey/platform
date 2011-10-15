@@ -25,7 +25,7 @@ public class GroupMembershipCache
 {
     private static final String ALL_GROUPS_PREFIX = "AllGroups=";
     private static final String IMMEDIATE_GROUPS_PREFIX = "ImmGroups=";
-    private static final CoreSchema _core = CoreSchema.getInstance();
+    private static final CoreSchema CORE = CoreSchema.getInstance();
     private static final StringKeyCache<int[]> CACHE = CacheManager.getStringKeyCache(10000, CacheManager.DAY, "Group Memberships");
 
     static
@@ -51,7 +51,7 @@ public class GroupMembershipCache
         public int[] load(String key, Object argument)
         {
             int groupId = (Integer)argument;
-            SqlSelector selector = new SqlSelector(_core.getSchema(), new SQLFragment("SELECT GroupId FROM " + _core.getTableInfoMembers() + " WHERE UserId = ?", groupId));
+            SqlSelector selector = new SqlSelector(CORE.getSchema(), new SQLFragment("SELECT GroupId FROM " + CORE.getTableInfoMembers() + " WHERE UserId = ?", groupId));
             Integer[] groupsInt = selector.getArray(Integer.class);
             return _toIntArray(groupsInt);
         }

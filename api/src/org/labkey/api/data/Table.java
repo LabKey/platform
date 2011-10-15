@@ -583,7 +583,7 @@ public class Table
 
 
     // Typical finally block cleanup
-    static void doFinally(ResultSet rs, Statement stmt, Connection conn, DbScope scope)
+    static void doFinally(@Nullable ResultSet rs, @Nullable Statement stmt, @Nullable Connection conn, @NotNull DbScope scope)
     {
         try
         {
@@ -664,7 +664,7 @@ public class Table
         }
     }
     
-    /** return a result from a one column resultset. K should be a string or number type */
+    // return a result from a one column resultset. K should be a string or number type
     public static <K> K[] executeArray(DbSchema schema, SQLFragment sql, Class<K> c) throws SQLException
     {
         return new LegacySqlSelector(schema, sql).getArray(c);
@@ -677,7 +677,7 @@ public class Table
     }
 
 
-    /** return a result from a one column resultset. K should be a string or number type */
+    // return a result from a one column resultset. K should be a string or number type
     public static <K> K[] executeArray(DbSchema schema, String sql, Object[] parameters, Class<K> c) throws SQLException
     {
         return new LegacySqlSelector(schema, fragment(sql, parameters)).getArray(c);
@@ -834,7 +834,7 @@ public class Table
     {
         if (fields instanceof Map)
         {
-            ((Map<String,Object>) fields).put(propName, value);
+            ((Map<String, Object>) fields).put(propName, value);
         }
         else
         {
@@ -1502,7 +1502,7 @@ public class Table
     }
 
 
-    public static void ensureRequiredColumns(TableInfo table, Map<String, ColumnInfo> cols, Filter filter, Sort sort, List<Aggregate> aggregates)
+    public static void ensureRequiredColumns(TableInfo table, Map<String, ColumnInfo> cols, @Nullable Filter filter, @Nullable Sort sort, @Nullable List<Aggregate> aggregates)
     {
         List<ColumnInfo> allColumns = table.getColumns();
         Set<String> requiredColumns = new CaseInsensitiveHashSet();

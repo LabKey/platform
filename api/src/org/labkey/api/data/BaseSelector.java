@@ -31,13 +31,27 @@ import java.util.Map;
 
 public abstract class BaseSelector implements Selector
 {
+    private final DbScope _scope;
     private Connection _conn = null;
     private SQLFragment _sql = null;
     private ExceptionFramework _exceptionFramework = ExceptionFramework.Spring;
 
-    abstract Connection getConnection() throws SQLException;
-    abstract DbScope getScope();
     abstract SQLFragment getSql();
+
+    protected BaseSelector(DbScope scope)
+    {
+        _scope = scope;
+    }
+
+    public Connection getConnection() throws SQLException
+    {
+        return _scope.getConnection();
+    }
+
+    public DbScope getScope()
+    {
+        return _scope;
+    }
 
     protected void setExceptionFramework(ExceptionFramework exceptionFramework)
     {
@@ -120,12 +134,12 @@ public abstract class BaseSelector implements Selector
     {
         List<K> list = getArrayList(clazz);
 
-        if (list.isEmpty())
+        if (list.size() == 1)
+            return list.get(0);
+        else if (list.isEmpty())
             return null;
         else
-            return list.get(0);
-
-        // TODO: Throw if size() > 1?
+            throw new IllegalStateException("Query returned " + list.size() + " " + clazz.getSimpleName() + " objects; expected 1 or 0.");
     }
 
     @Override

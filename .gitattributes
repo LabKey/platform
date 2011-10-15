@@ -797,6 +797,7 @@ api/src/org/labkey/api/security/AuthenticationProvider.java -text
 api/src/org/labkey/api/security/CSRF.java -text
 api/src/org/labkey/api/security/ContextualRoles.java -text
 api/src/org/labkey/api/security/Group.java -text
+api/src/org/labkey/api/security/GroupCache.java -text
 api/src/org/labkey/api/security/GroupManager.java -text
 api/src/org/labkey/api/security/GroupMembershipCache.java -text
 api/src/org/labkey/api/security/GuestUser.java -text

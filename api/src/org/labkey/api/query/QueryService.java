@@ -17,6 +17,7 @@
 package org.labkey.api.query;
 
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.DbSchema;
@@ -118,7 +119,7 @@ abstract public class QueryService
 	abstract public ResultSet select(QuerySchema schema, String sql) throws SQLException;
     public Results select(TableInfo table, Collection<ColumnInfo> columns, Filter filter, Sort sort) throws SQLException
     {
-        return select(table,columns,filter,sort,Collections.EMPTY_MAP);
+        return select(table, columns, filter, sort, Collections.<String, Object>emptyMap());
     }
 	abstract public Results select(TableInfo table, Collection<ColumnInfo> columns, Filter filter, Sort sort, Map<String,Object> parameters) throws SQLException;
 
@@ -127,7 +128,7 @@ abstract public class QueryService
      * be used as a subselect, as some databases don't allow you to do ORDER BY on a subselect if there is no LIMIT/TOP
      * clause 
      */
-    abstract public SQLFragment getSelectSQL(TableInfo table, Collection<ColumnInfo> columns, Filter filter, Sort sort, int rowCount, long offset, boolean forceSort);
+    abstract public SQLFragment getSelectSQL(TableInfo table, Collection<ColumnInfo> columns, @Nullable Filter filter, @Nullable Sort sort, int rowCount, long offset, boolean forceSort);
 
 
     public interface QueryListener

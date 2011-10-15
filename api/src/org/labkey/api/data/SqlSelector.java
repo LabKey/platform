@@ -16,44 +16,27 @@
 
 package org.labkey.api.data;
 
-import java.sql.Connection;
-import java.sql.SQLException;
-
 public class SqlSelector extends BaseSelector
 {
-    private final DbScope _scope;
     private final SQLFragment _sql;
-
-    // Execute select SQL against a schema
-    public SqlSelector(DbSchema schema, SQLFragment sql)
-    {
-        this(schema.getScope(), sql);
-    }
 
     // Execute select SQL against a scope
     public SqlSelector(DbScope scope, SQLFragment sql)
     {
-        _scope = scope;
+        super(scope);
         _sql = sql;
     }
 
     // Execute select SQL against a scope
     public SqlSelector(DbScope scope, String sql)
     {
-        _scope = scope;
-        _sql = new SQLFragment(sql);
+        this(scope, new SQLFragment(sql));
     }
 
-    @Override
-    public Connection getConnection() throws SQLException
+    // Execute select SQL against a schema
+    public SqlSelector(DbSchema schema, SQLFragment sql)
     {
-        return _scope.getConnection();
-    }
-
-    @Override
-    public DbScope getScope()
-    {
-        return _scope;
+        this(schema.getScope(), sql);
     }
 
     @Override
