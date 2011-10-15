@@ -237,6 +237,24 @@ public class ViewCategoryManager
         return errors;
     }
 
+    /**
+     * Returns an existing category or creates a new one.
+     */
+    public ViewCategory ensureViewCategory(Container c, User user, String label)
+    {
+        ViewCategory category = getCategory(c, label);
+        if (category == null)
+        {
+            category = new ViewCategory();
+
+            category.setContainer(c.getId());
+            category.setLabel(label);
+
+            category = saveCategory(c, user, category);
+        }
+        return category;
+    }
+
     public static class TestCase extends Assert
     {
         private static final String[] labels = {"Demographics", "Exam", "Discharge", "Final Exam"};
