@@ -1142,8 +1142,19 @@ public class VisualizationController extends SpringActionController
                 if (null != svc)
                 {
                     TimeChartReportImpl tcReport = (TimeChartReportImpl)report;
-                    tcReport.setSvg(form.getSvg());
-                    svc.queueThumbnailRendering(tcReport);
+                    String svg = form.getSvg();
+
+                    if (svg == null)
+                    {
+                        // User checked the "no thumbnail" checkbox... need to proactively delete the thumbnail
+                        svc.deleteThumbnail(tcReport);
+                    }
+                    else
+                    {
+                        // Generate and save the thumbnail (in the background)
+                        tcReport.setSvg(form.getSvg());
+                        svc.queueThumbnailRendering(tcReport);
+                    }
                 }
             }
             

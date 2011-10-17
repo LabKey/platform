@@ -6,6 +6,7 @@ import org.labkey.api.attachments.AttachmentService;
 import org.labkey.api.attachments.InputStreamAttachmentFile;
 import org.labkey.api.data.CacheableWriter;
 import org.labkey.api.security.User;
+import org.labkey.api.services.ServiceRegistry;
 import org.labkey.api.thumbnail.DynamicThumbnailProvider;
 import org.labkey.api.thumbnail.StaticThumbnailProvider;
 import org.labkey.api.thumbnail.Thumbnail;
@@ -55,6 +56,23 @@ public class ThumbnailServiceImpl implements ThumbnailService
         QUEUE.offer(provider);
     }
 
+    @Override
+    public void deleteThumbnail(DynamicThumbnailProvider provider)
+    {
+        AttachmentService.Service svc = AttachmentService.get();
+        svc.deleteAttachment(provider, THUMBNAIL_FILENAME, null);
+        ThumbnailCache.remove(provider);
+    }
+
+    @Override
+    // Deletes existing thumbnail before saving
+    public void replaceThumbnail(DynamicThumbnailProvider provider, AttachmentFile thumbnailFile) throws IOException
+    {
+        deleteThumbnail(provider);
+        AttachmentService.Service svc = AttachmentService.get();
+        svc.addAttachments(provider, Collections.singletonList(thumbnailFile), User.guest);
+        ThumbnailCache.remove(provider);   // Just in case (delete already cleared the old thumbnail from the cache)
+    }
 
     private static class ThumbnailGeneratingThread extends Thread implements ShutdownListener
     {
@@ -82,16 +100,12 @@ public class ThumbnailServiceImpl implements ThumbnailService
 
                         if (null != thumbnail)
                         {
+                            ThumbnailService svc = ServiceRegistry.get().getService(ThumbnailService.class);
                             AttachmentFile file = new InputStreamAttachmentFile(thumbnail.getInputStream(), THUMBNAIL_FILENAME, thumbnail.getContentType());
-
-                            // TODO: Delete thumbnail attachment first? Or does add do a replace?
-                            // TODO: Actually, adding a "replace" would be helpful for adding revision numbers, which would help with client-side caching (_dc=rev)
-                            AttachmentService.Service svc = AttachmentService.get();
-                            svc.deleteAttachment(provider, THUMBNAIL_FILENAME, null);
-                            svc.addAttachments(provider, Collections.singletonList(file), User.guest);
+                            svc.replaceThumbnail(provider, file);
                         }
                     }
-                    catch (IOException e)
+                    catch (Exception e)  // Make sure exceptions don't kill the background thread
                     {
                         ExceptionUtil.logExceptionToMothership(null, e);
                     }
