@@ -148,7 +148,7 @@ public class QueryServiceImpl extends QueryService
         return urlFor(user, container, QueryAction.begin, schema, null);
     }
 
-    public ActionURL urlFor(User user, Container container, QueryAction action, String schema, String query)
+    public ActionURL urlFor(User user, Container container, QueryAction action, @Nullable String schema, @Nullable String query)
     {
         ActionURL ret = null;
 
@@ -865,7 +865,7 @@ public class QueryServiceImpl extends QueryService
     }
 
 
-    public Collection<ColumnInfo> ensureRequiredColumns(TableInfo table, Collection<ColumnInfo> columns, Filter filter, Sort sort, Set<String> unresolvedColumns)
+    public Collection<ColumnInfo> ensureRequiredColumns(TableInfo table, @NotNull Collection<ColumnInfo> columns, @Nullable Filter filter, @Nullable Sort sort, @Nullable Set<String> unresolvedColumns)
     {
         AliasManager manager = new AliasManager(table, columns);
         Set<FieldKey> selectedColumns = new HashSet<FieldKey>();
@@ -1146,9 +1146,9 @@ public class QueryServiceImpl extends QueryService
 	}
 
 
-    public void bindNamedParameters(SQLFragment frag, Map<String,Object> in)
+    public void bindNamedParameters(SQLFragment frag, @Nullable Map<String,Object> in)
     {
-        Map<String,Object> params = null==in ? Collections.<String, Object>emptyMap() :
+        Map<String, Object> params = null == in ? Collections.<String, Object>emptyMap() :
                 in instanceof CaseInsensitiveHashMap ? in :
                 new CaseInsensitiveHashMap<Object>(in);
 
@@ -1207,7 +1207,7 @@ public class QueryServiceImpl extends QueryService
     }
 
 
-	public SQLFragment getSelectSQL(TableInfo table, Collection<ColumnInfo> selectColumns, @Nullable Filter filter, @Nullable Sort sort,
+	public SQLFragment getSelectSQL(TableInfo table, @Nullable Collection<ColumnInfo> selectColumns, @Nullable Filter filter, @Nullable Sort sort,
                                     int rowCount, long offset, boolean forceSort)
 	{
         assert Table.validMaxRows(rowCount) : rowCount + " is an illegal value for rowCount; should be positive, Table.ALL_ROWS or Table.NO_ROWS";

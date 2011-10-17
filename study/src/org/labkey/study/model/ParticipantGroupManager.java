@@ -230,10 +230,10 @@ public class ParticipantGroupManager
                 NavTree item = new NavTree("Create " + study.getSubjectNounSingular() + " Group");
                 button.addMenuItem(item);
 
-                NavTree fromSeletion = item.addChild("From selection");
+                NavTree fromSeletion = item.addChild("From Selected " + study.getSubjectNounPlural());
                 fromSeletion.setScript(createNewParticipantGroupScript(context, dataRegionName, true));
 
-                NavTree fromGrid = item.addChild("From all " + study.getSubjectNounPlural());
+                NavTree fromGrid = item.addChild("From All " + study.getSubjectNounPlural());
                 fromGrid.setScript(createNewParticipantGroupScript(context, dataRegionName, false));
             }
             return button;

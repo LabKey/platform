@@ -3652,8 +3652,8 @@ public class StudyManager
                 List<String> errors = new ArrayList<String>();
 
                 String guid = "GUUUUID";
-                Map map =PageFlowUtil.map("SubjectId", "A1", "Date", Jan1, "Measure", "Test" + (++counterRow), "Value", 1.0, "SequenceNum", sequenceNum++, "GUID", guid);
-                importRowVerifyGuid((String[]) null, def,  map, tt);
+                Map map = PageFlowUtil.map("SubjectId", "A1", "Date", Jan1, "Measure", "Test" + (++counterRow), "Value", 1.0, "SequenceNum", sequenceNum++, "GUID", guid);
+                importRowVerifyGuid(null, def,  map, tt);
 
                 // duplicate row
                 // Issue 12985
@@ -3665,12 +3665,10 @@ public class StudyManager
                 }
                 catch(Exception e)
                 {
-                    assertTrue("Unexpected Exception", e.getMessage().indexOf("duplicate key")>-1);
+                    assertTrue("Unexpected Exception", e.getMessage().contains("duplicate key"));
                 }
                 //study:Label: Only one row is allowed for each Subject/Visit/Measure Triple.  Duplicates were found in the database or imported data.; Duplicate: Subject = A1Date = Sat Jan 01 00:00:00 PST 2011, Measure = Test1
 //                assertTrue(-1 != errors.get(0).indexOf("duplicate key value violates unique constraint"));
-
-
 
                 //same participant, guid, different sequenceNum
                 importRowVerifyGuid((String[]) null, def, PageFlowUtil.map("SubjectId", "A1", "Date", Jan1, "Measure", "Test" + (++counterRow), "Value", 1.0, "SequenceNum", sequenceNum++, "GUID", guid), tt);
@@ -3707,12 +3705,12 @@ public class StudyManager
 
                 Date Jan1 = new Date(DateUtil.parseDateTime("1/1/2011"));
                 Date Jan2 = new Date(DateUtil.parseDateTime("2/1/2011"));
-                List rows = new ArrayList();
+                List<Object> rows = new ArrayList<Object>();
                 List<String> errors = new ArrayList<String>(){
                     @Override
                     public boolean add(String s)
                     {
-                        return super.add(s);    //To change body of overridden methods use File | Settings | File Templates.
+                        return super.add(s);
                     }
                 };
 
@@ -3731,7 +3729,7 @@ public class StudyManager
                 // duplicate row
                 _import(def, rows, errors);
                 //study:Label: Only one row is allowed for each Subject/Visit/Measure Triple.  Duplicates were found in the database or imported data.; Duplicate: Subject = A1Date = Sat Jan 01 00:00:00 PST 2011, Measure = Test1
-                assertTrue(-1 != errors.get(0).indexOf("Duplicates were found"));
+                assertTrue(errors.get(0).contains("Duplicates were found"));
 
                 // different participant
                 importRow( (String[]) null, def,PageFlowUtil.map("SubjectId", "B2", "Date", Jan1, "Measure", "Test"+(counterRow), "Value", 2.0, "SequenceNum", sequenceNum++));
@@ -3751,7 +3749,7 @@ public class StudyManager
                 rows.add(PageFlowUtil.map("SubjectId", "A1", "Date", Jan1, "Measure", "Test"+(counterRow), "Value", 1.0, "SequenceNum", sequenceNum++));
                 _import(def, rows, errors);
                 //study:Label: Only one row is allowed for each Subject/Visit/Measure Triple.  Duplicates were found in the database or imported data.; Duplicate: Subject = A1Date = Sat Jan 01 00:00:00 PST 2011, Measure = Test3
-                assertTrue(-1 != errors.get(0).indexOf("Duplicates were found in the database or imported data"));
+                assertTrue(errors.get(0).contains("Duplicates were found in the database or imported data"));
 
 
                 // missing participantid
@@ -3837,12 +3835,12 @@ public class StudyManager
             {
                 importRow(expectedErrors, def, map);
 
-                ResultSet rs = Table.select(tt, Table.ALL_COLUMNS, null,null);
+                ResultSet rs = Table.select(tt, Table.ALL_COLUMNS, null, null);
                 rs.last();
-                String actualKey= rs.getString("GUID");
+                String actualKey = rs.getString("GUID");
                 rs.close();
 
-                assertTrue( "No GUID generated when null GUID provided", actualKey.length()>0);
+                assertTrue("No GUID generated when null GUID provided", actualKey.length() > 0);
             }
         }
 
@@ -3861,7 +3859,7 @@ public class StudyManager
             else
             {
                 for(String expectedError : expectedErrors)
-                    assertTrue(-1 != errors.get(0).indexOf(expectedError));
+                    assertTrue(errors.get(0).contains(expectedError));
             }
 
         }
