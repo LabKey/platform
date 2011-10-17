@@ -34,7 +34,7 @@ import java.util.Map;
 // its RuntimeSQLExceptions to checked SQLExceptions.
 public class LegacySelector
 {
-    private final Selector _selector;
+    protected final Selector _selector;
 
     public LegacySelector(BaseSelector selector)
     {
@@ -44,6 +44,12 @@ public class LegacySelector
 
     // All the results-gathering methods are below
 
+    /* TODO: Fix up caching and connection closing, then expose this
+    public ResultSet getResultSet() throws SQLException
+    {
+        return _selector.getResultSet();
+    }
+    */
     public <K> void forEach(Selector.ForEachBlock<K> block, Class<K> clazz) throws SQLException
     {
         try

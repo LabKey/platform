@@ -480,25 +480,21 @@ public class Table
     }
 
 
-    /**
-     * return a result from a one row one column resultset or null.
-     * K should be a string or number type.
-     */
-    // TODO: why is there a sort parameter here?
-    public static <K> K executeSingleton(TableInfo table, String column, Filter filter, Sort sort, Class<K> c)
+    // return a result from a one row one column resultset or null.
+    // K should be a string or number type.
+    public static <K> K executeSingleton(TableInfo table, String column, Filter filter, Class<K> c)
     {
         ColumnInfo col = table.getColumn(column);
-        return executeSingleton(table, col, filter, sort, c);
+        return executeSingleton(table, col, filter, c);
     }
 
     // return a result from a one row one column resultset or null.
     // K should be a string or number type.
-    // TODO: why is there a sort parameter here?
-    public static <K> K executeSingleton(TableInfo table, ColumnInfo column, Filter filter, Sort sort, Class<K> c)
+    public static <K> K executeSingleton(TableInfo table, ColumnInfo column, Filter filter, Class<K> c)
     {
         try
         {
-            K[] values = executeArray(table, column, filter, sort, c);
+            K[] values = executeArray(table, column, filter, null, c);
             assert (values.length == 0 || values.length == 1);
             if (values.length == 0)
                 return null;
@@ -563,7 +559,7 @@ public class Table
 
 
     // Standard SQLException catch block: log exception, query SQL, and params
-    static void doCatch(String sql, Object[] parameters, Connection conn, SQLException e)
+    static void doCatch(String sql, @Nullable Object[] parameters, Connection conn, SQLException e)
     {
         if (SqlDialect.isCancelException(e))
         {
@@ -616,7 +612,7 @@ public class Table
     }
 
 
-    /** return a result from a one column resultset. K should be a string or number type */
+    // return a result from a one column resultset. K should be a string or number type
     public static <K> K[] executeArray(TableInfo table, String column, @Nullable Filter filter, @Nullable Sort sort, Class<K> c)
             throws SQLException
     {
@@ -624,7 +620,7 @@ public class Table
         return executeArray(table, col, filter, sort, c);
     }
 
-    /** return a result from a one column resultset. K should be a string or number type */
+    // return a result from a one column resultset. K should be a string or number type
     public static <K> K[] executeArray(TableInfo table, ColumnInfo col, @Nullable Filter filter, @Nullable Sort sort, Class<K> c)
             throws SQLException
     {
@@ -1135,8 +1131,7 @@ public class Table
     }
 
 
-    public static int delete(TableInfo table, Filter filter)
-            throws SQLException
+    public static int delete(TableInfo table, Filter filter) throws SQLException
     {
         assert (table.getTableType() != DatabaseTableType.NOT_IN_DB): (table.getName() + " is not in the physical database.");
 
@@ -1198,30 +1193,28 @@ public class Table
     }
 
 
-    public static Map<String, Object>[] selectMaps(TableInfo table, Set<String> select, Filter filter, Sort sort) throws SQLException
+    public static Map<String, Object>[] selectMaps(TableInfo table, Set<String> select, @Nullable Filter filter, @Nullable Sort sort) throws SQLException
     {
+        LegacySelector selector = new LegacyTableSelector(table, select, filter, sort);
+
         //noinspection unchecked
-        return (Map<String, Object>[]) select(table, select, filter, sort, Map.class);
+        return selector.getArray(Map.class);
     }
 
 
     public static <K> K selectObject(TableInfo table, Filter filter, Sort sort, Class<K> clss) throws SQLException
     {
-        return selectObject(table, ALL_COLUMNS, filter, sort, clss);
+        return new LegacyTableSelector(table, filter, sort).getObject(clss);
     }
 
 
-    public static <K> K selectObject(TableInfo table, Set<String> select, Filter filter, Sort sort, Class<K> clss)
-            throws SQLException
+    public static <K> K selectObject(TableInfo table, Set<String> select, Filter filter, Sort sort, Class<K> clss) throws SQLException
     {
-        K[] results = select(table, select, filter, sort, clss);
-        if (results.length == 0)
-            return null;
-        return results[0];
+        return new LegacyTableSelector(table, select, filter, sort).getObject(clss);
     }
 
 
-    private static int decideRowCount(int rowcount, Class clazz)
+    private static int decideRowCount(int rowcount, @Nullable Class clazz)
     {
         if (ALL_ROWS == rowcount || Table.NO_ROWS == rowcount)
             return rowcount;
@@ -1240,36 +1233,40 @@ public class Table
     }
 
 
-    public static SQLFragment getSelectSQL(TableInfo table, Collection<ColumnInfo> columns, Filter filter, Sort sort)
+    public static SQLFragment getSelectSQL(TableInfo table, Collection<ColumnInfo> columns, @Nullable Filter filter, @Nullable Sort sort)
     {
         return QueryService.get().getSelectSQL(table, columns, filter, sort, ALL_ROWS, NO_OFFSET, false);
     }
 
 
-    public static ResultSet select(TableInfo table, Set<String> select, Filter filter, Sort sort)
-            throws SQLException
+    public static ResultSet select(TableInfo table, Set<String> select, @Nullable Filter filter, @Nullable Sort sort) throws SQLException
     {
         return select(table, columnInfosList(table, select), filter, sort);
     }
 
 
-    public static Results select(TableInfo table, Collection<ColumnInfo> columns, Filter filter, Sort sort)
-            throws SQLException
+    public static Results select(TableInfo table, Collection<ColumnInfo> columns, @Nullable Filter filter, @Nullable Sort sort) throws SQLException
     {
         return QueryService.get().select(table, columns, filter, sort);
     }
 
 
     @NotNull
-    public static <K> K[] select(TableInfo table, Set<String> select, Filter filter, Sort sort, Class<K> clss)
-            throws SQLException
+    public static <K> K[] select(TableInfo table, Set<String> select, @Nullable Filter filter, @Nullable Sort sort, Class<K> clss) throws SQLException
     {
-        return select(table, select, filter, sort, clss, ALL_ROWS, NO_OFFSET);
+        return new LegacyTableSelector(table, select, filter, sort).getArray(clss);
     }
 
 
     @NotNull
-    public static <K> K[] select(TableInfo table, Set<String> select, Filter filter, Sort sort, Class<K> clss, int rowCount, long offset)
+    public static <K> K[] select(TableInfo table, Collection<ColumnInfo> columns, @Nullable Filter filter, @Nullable Sort sort, Class<K> clss) throws SQLException
+    {
+        return new LegacyTableSelector(table, columns, filter, sort).getArray(clss);
+    }
+
+
+    @NotNull
+    public static <K> K[] select(TableInfo table, Set<String> select, @Nullable Filter filter, @Nullable Sort sort, Class<K> clss, int rowCount, long offset)
             throws SQLException
     {
         return select(table, columnInfosList(table, select), filter, sort, clss, rowCount, offset);
@@ -1277,18 +1274,12 @@ public class Table
 
 
     @NotNull
-    public static <K> K[] select(TableInfo table, Collection<ColumnInfo> columns, Filter filter, Sort sort, Class<K> clss)
-            throws SQLException
-    {
-        return select(table, columns, filter, sort, clss, ALL_ROWS, NO_OFFSET);
-    }
-
-    @NotNull
-    public static <K> K[] select(TableInfo table, Collection<ColumnInfo> columns, Filter filter, Sort sort, Class<K> clss, int rowCount, long offset)
+    public static <K> K[] select(TableInfo table, Collection<ColumnInfo> columns, @Nullable Filter filter, @Nullable Sort sort, Class<K> clss, int rowCount, long offset)
             throws SQLException
     {
         long queryOffset = offset, scrollOffset = 0;
         int queryRowCount = rowCount;
+
         if (offset > 0 && !table.getSqlDialect().supportsOffset())
         {
             queryOffset = 0;
@@ -1302,27 +1293,27 @@ public class Table
     }
 
 
-    public static Results selectForDisplay(TableInfo table, Set<String> select, Map<String,Object> parameters, Filter filter, Sort sort, int rowCount, long offset)
+    public static Results selectForDisplay(TableInfo table, Set<String> select, @Nullable Map<String, Object> parameters, @Nullable Filter filter, @Nullable Sort sort, int rowCount, long offset)
             throws SQLException
     {
         return selectForDisplay(table, columnInfosList(table, select), parameters, filter, sort, rowCount, offset);
     }
 
 
-    public static Results selectForDisplay(TableInfo table, Collection<ColumnInfo> select, Map<String,Object> parameters, Filter filter, Sort sort, int rowCount, long offset)
+    public static Results selectForDisplay(TableInfo table, Collection<ColumnInfo> select, Map<String, Object> parameters, @Nullable Filter filter, @Nullable Sort sort, int rowCount, long offset)
             throws SQLException
     {
         return selectForDisplay(table, select, parameters, filter, sort, rowCount, offset, true, false);
     }
 
     public static Map<String, Aggregate.Result>selectAggregatesForDisplay(TableInfo table, List<Aggregate> aggregates,
-            Collection<ColumnInfo> select, Map<String,Object> parameters, Filter filter, boolean cache) throws SQLException
+            Collection<ColumnInfo> select, @Nullable Map<String, Object> parameters, Filter filter, boolean cache) throws SQLException
     {
         return selectAggregatesForDisplay(table, aggregates, select, parameters, filter, cache, null);
     }
 
     private static Map<String, Aggregate.Result> selectAggregatesForDisplay(TableInfo table, List<Aggregate> aggregates,
-            Collection<ColumnInfo> select, Map<String,Object> parameters, Filter filter, boolean cache, @Nullable AsyncQueryRequest asyncRequest)
+            Collection<ColumnInfo> select, Map<String, Object> parameters, Filter filter, boolean cache, @Nullable AsyncQueryRequest asyncRequest)
             throws SQLException
     {
         Map<String, ColumnInfo> columns = getDisplayColumnsList(select);
@@ -1375,7 +1366,7 @@ public class Table
     }
 
     public static Map<String, Aggregate.Result> selectAggregatesForDisplayAsync(final TableInfo table, final List<Aggregate> aggregates,
-            final Collection<ColumnInfo> select, final Map<String,Object> parameters, final Filter filter, final boolean cache, HttpServletResponse response)
+            final Collection<ColumnInfo> select, final @Nullable Map<String,Object> parameters, final Filter filter, final boolean cache, HttpServletResponse response)
             throws SQLException, IOException
     {
         final AsyncQueryRequest<Map<String, Aggregate.Result>> asyncRequest = new AsyncQueryRequest<Map<String, Aggregate.Result>>(response);
@@ -1388,14 +1379,14 @@ public class Table
     }
 
 
-    public static Results selectForDisplay(TableInfo table, Collection<ColumnInfo> select, Map<String,Object> parameters, Filter filter, Sort sort, int rowCount, long offset, boolean cache, boolean scrollable)
+    public static Results selectForDisplay(TableInfo table, Collection<ColumnInfo> select, Map<String,Object> parameters, @Nullable Filter filter, @Nullable Sort sort, int rowCount, long offset, boolean cache, boolean scrollable)
             throws SQLException
     {
         return selectForDisplay(table, select, parameters, filter, sort, rowCount, offset, cache, scrollable, null, null);
     }
 
 
-    private static Results selectForDisplay(TableInfo table, Collection<ColumnInfo> select, Map<String,Object> parameters, Filter filter, Sort sort, int rowCount, long offset, boolean cache, boolean scrollable, @Nullable AsyncQueryRequest asyncRequest, @Nullable Logger log)
+    private static Results selectForDisplay(TableInfo table, Collection<ColumnInfo> select, Map<String,Object> parameters, @Nullable Filter filter, @Nullable Sort sort, int rowCount, long offset, boolean cache, boolean scrollable, @Nullable AsyncQueryRequest asyncRequest, @Nullable Logger log)
             throws SQLException
     {
         assert Table.checkAllColumns(table, select, "selectForDisplay() select columns");
@@ -1406,6 +1397,7 @@ public class Table
 
         long queryOffset = offset, scrollOffset = 0;
         int queryRowCount = rowCount;
+
         if (offset > 0 && !table.getSqlDialect().supportsOffset())
         {
             queryOffset = 0;
@@ -1424,7 +1416,7 @@ public class Table
     }
 
 
-    public static Results selectForDisplayAsync(final TableInfo table, final Collection<ColumnInfo> select, Map<String,Object> parameters, final Filter filter, final Sort sort, final int rowCount, final long offset, final boolean cache, final boolean scrollable, HttpServletResponse response) throws SQLException, IOException
+    public static Results selectForDisplayAsync(final TableInfo table, final Collection<ColumnInfo> select, Map<String,Object> parameters, final @Nullable Filter filter, final @Nullable Sort sort, final int rowCount, final long offset, final boolean cache, final boolean scrollable, HttpServletResponse response) throws SQLException, IOException
     {
         final Logger log = ConnectionWrapper.getConnectionLogger();
         final AsyncQueryRequest<Results> asyncRequest = new AsyncQueryRequest<Results>(response);
@@ -1441,14 +1433,14 @@ public class Table
     }
 
 
-    public static <K> K[] selectForDisplay(TableInfo table, Set<String> select, Filter filter, Sort sort, Class<K> clss)
+    public static <K> K[] selectForDisplay(TableInfo table, Set<String> select, @Nullable Filter filter, @Nullable Sort sort, Class<K> clss)
             throws SQLException
     {
         return selectForDisplay(table, columnInfosList(table, select), filter, sort, clss);
     }
 
 
-    public static <K> K[] selectForDisplay(TableInfo table, Collection<ColumnInfo> select, Filter filter, Sort sort, Class<K> clss)
+    public static <K> K[] selectForDisplay(TableInfo table, Collection<ColumnInfo> select, @Nullable Filter filter, @Nullable Sort sort, Class<K> clss)
             throws SQLException
     {
         Map<String, ColumnInfo> columns = getDisplayColumnsList(select);
@@ -1760,7 +1752,7 @@ public class Table
     }
 
 
-    private static void _logQuery(Level level, String sql, Object[] parameters, Connection conn)
+    private static void _logQuery(Level level, String sql, @Nullable Object[] parameters, Connection conn)
     {
         if (!_log.isEnabledFor(level))
             return;
@@ -2229,7 +2221,7 @@ public class Table
                 objectIdVar = d.isPostgreSQL() ? "_$objectid$_" : "@_objectid_";
 
                 useVariables = d.isPostgreSQL();
-                sqlfDeclare.append("DECLARE " + objectIdVar + " INT;\n");
+                sqlfDeclare.append("DECLARE ").append(objectIdVar).append(" INT;\n");
                 containerParameter = new Parameter("container", JdbcType.VARCHAR);
 //                if (autoFillDefaultColumns && null != c)
 //                    containerParameter.setValue(c.getId(), true);

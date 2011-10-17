@@ -16,6 +16,7 @@
 
 package org.labkey.api.data;
 
+import org.jetbrains.annotations.Nullable;
 import org.junit.Assert;
 import org.junit.Test;
 import org.labkey.api.query.QueryService;
@@ -29,42 +30,51 @@ import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicInteger;
 
-// TODO: Filter, Sort, Offset, Limit, etc.
+// TODO: offset, limit, cache, SelectForDisplay, SelectObject via PK, async, etc.
 public class TableSelector extends BaseSelector
 {
     private final TableInfo _table;
     private final Collection<ColumnInfo> _columns;
+    private final Filter _filter;
+    private final Sort _sort;
 
     // Select specified columns from a table
-    public TableSelector(TableInfo table, Collection<ColumnInfo> columns)
+    public TableSelector(TableInfo table, Collection<ColumnInfo> columns, @Nullable Filter filter, @Nullable Sort sort)
     {
         super(table.getSchema().getScope());
         _table = table;
         _columns = columns;
+        _filter = filter;
+        _sort = sort;
     }
 
     // Select all columns from a table
-    public TableSelector(TableInfo table)
+    public TableSelector(TableInfo table, @Nullable Filter filter, @Nullable Sort sort)
     {
-        this(table, Table.ALL_COLUMNS);
+        this(table, Table.ALL_COLUMNS, filter, sort);
     }
 
     // Select specified columns from a table
-    public TableSelector(TableInfo table, Set<String> columnNames)
+    public TableSelector(TableInfo table, Set<String> columnNames, @Nullable Filter filter, @Nullable Sort sort)
     {
-        this(table, Table.columnInfosList(table, columnNames));
+        this(table, Table.columnInfosList(table, columnNames), filter, sort);
     }
 
     // Select a single column -- not sure this is useful
-    public TableSelector(ColumnInfo column)
+    public TableSelector(ColumnInfo column, @Nullable Filter filter, @Nullable Sort sort)
     {
-        this(column.getParentTable(), PageFlowUtil.set(column));
+        this(column.getParentTable(), PageFlowUtil.set(column), filter, sort);
+    }
+
+    public Collection<ColumnInfo> getColumns()
+    {
+        return _columns;
     }
 
     @Override
     SQLFragment getSql()
     {
-        return QueryService.get().getSelectSQL(_table, _columns, null, null, Table.ALL_ROWS, Table.NO_OFFSET, false);
+        return QueryService.get().getSelectSQL(_table, _columns, _filter, _sort, Table.ALL_ROWS, Table.NO_OFFSET, false);
     }
 
     public static class TestCase extends Assert
@@ -72,7 +82,7 @@ public class TableSelector extends BaseSelector
         @Test
         public void testTableSelector()
         {
-            TableSelector userSelector = new TableSelector(CoreSchema.getInstance().getTableInfoActiveUsers());
+            TableSelector userSelector = new TableSelector(CoreSchema.getInstance().getTableInfoActiveUsers(), null, null);
 
             testSelectorMethods(userSelector, User.class);
         }

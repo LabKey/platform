@@ -179,6 +179,6 @@ abstract public class QueryService
         }
     }
 
-    abstract public void bindNamedParameters(SQLFragment frag, Map<String,Object> in);
+    abstract public void bindNamedParameters(SQLFragment frag, Map<String, Object> in);
     abstract public void validateNamedParameters(SQLFragment frag) throws SQLException;
 }

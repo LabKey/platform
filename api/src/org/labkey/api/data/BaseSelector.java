@@ -58,7 +58,7 @@ public abstract class BaseSelector implements Selector
         _exceptionFramework = exceptionFramework;
     }
 
-    @Override
+    @Override      // TODO: Not valid to call directly at the moment since connection never gets closed
     public ResultSet getResultSet() throws SQLException
     {
         _sql = getSql();
@@ -90,7 +90,7 @@ public abstract class BaseSelector implements Selector
                 @Override
                 public ArrayList<K> handle(ResultSet rs) throws SQLException
                 {
-                    if (Map.class.isAssignableFrom(clazz))
+                    if (Map.class == clazz)
                     {
                         CachedResultSet copy = (CachedResultSet) Table.cacheResultSet(getScope().getSqlDialect(), rs, Table.ALL_ROWS, null);
                         //noinspection unchecked
