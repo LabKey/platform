@@ -1598,6 +1598,8 @@ LABKEY.vis.TimeChartPanel = Ext.extend(Ext.Panel, {
         var schema = LABKEY.ActionURL.getParameter("schemaName") || null;
         var query = LABKEY.ActionURL.getParameter("queryName") || null;
 
+        var reportSvg = (this.firstChartComponent && this.firstChartComponent.canExport() ? LABKEY.vis.SVGConverter.svgToStr(this.firstChartComponent.rootVisPanel.scene.$g) : null);
+
         // if the Save button was clicked, save the report using the name and description provided
         if(saveBtnName == 'Save'){
             var config = {
@@ -1605,7 +1607,7 @@ LABKEY.vis.TimeChartPanel = Ext.extend(Ext.Panel, {
                 reportName: reportName,
                 reportDescription: reportDescription,
                 reportShared: reportShared,
-                reportSvg: this.chartInfo.saveThumbnail && this.firstChartComponent ? LABKEY.vis.SVGConverter.svgToStr(this.firstChartComponent.rootVisPanel.scene.$g) : null,
+                reportSvg: this.chartInfo.saveThumbnail ? reportSvg : null,
                 createdBy: createdBy,
                 query: query,
                 schema: schema
@@ -1680,7 +1682,7 @@ LABKEY.vis.TimeChartPanel = Ext.extend(Ext.Panel, {
                             reportName: formValues.reportName,
                             reportDescription: formValues.reportDescription,
                             reportShared: shared,
-                            reportSvg: this.chartInfo.saveThumbnail && this.firstChartComponent ? LABKEY.vis.SVGConverter.svgToStr(this.firstChartComponent.rootVisPanel.scene.$g) : null,
+                            reportSvg: this.chartInfo.saveThumbnail ? reportSvg : null,
                             query: query,
                             schema: schema
                         });
@@ -1818,6 +1820,6 @@ LABKEY.vis.TimeChartPanel = Ext.extend(Ext.Panel, {
     addWarningText: function(message){
         if (this.warningText.length > 0)
             this.warningText += "<BR/>";
-        this.warningText += message; 
+        this.warningText += message;
     }
 });
