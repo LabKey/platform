@@ -119,7 +119,7 @@ LABKEY._requiresScript = function(file, immediate, callback, scope, inOrder)
 
 LABKEY.requiresTimeline = function(fn)
 {
-    var prefix  = "/timeline/";
+    var prefix  = "timeline/";
     var context = LABKEY.ActionURL.getContextPath();
     var timeline_prefix      = prefix + "timeline_2.3.0/";
     var jquery_urlPrefix     = prefix + "jquery/";
@@ -127,8 +127,8 @@ LABKEY.requiresTimeline = function(fn)
     var Timeline_urlPrefix   = timeline_prefix + "timeline_js/";
     var Timeplot_urlPrefix   = timeline_prefix + "timeplot_js/";
     var Timeline_parameters  = 'bundle=true';
-    var ctx_timeline_url     = context + Timeline_urlPrefix;
-    var ctx_timeplot_url     = context + Timeplot_urlPrefix;
+    var ctx_timeline_url     = context + "/" + Timeline_urlPrefix;
+    var ctx_timeplot_url     = context + "/" + Timeplot_urlPrefix;
     LABKEY.timeline.directory= timeline_prefix; // so others can use
 
     // avoid crazy timeline-api loading
