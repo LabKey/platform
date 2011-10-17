@@ -82,6 +82,7 @@ public class ReportService
         public int saveReport(ContainerUser context, String key, Report report) throws SQLException;
 
         public Report getReport(int reportId) throws SQLException;
+        public Report getReportByEntityId(Container c, String entityId) throws SQLException;
         public ReportIdentifier getReportIdentifier(String reportId);
         public Report[] getReports(User user) throws SQLException;
         public Report[] getReports(User user, Container c) throws SQLException;

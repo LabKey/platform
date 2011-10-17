@@ -33,6 +33,7 @@ public class ViewInfo
 {
     private String _name;
     private ReportIdentifier _reportId;
+    private String _entityId;
     private String _query;
     private String _schema;
     private String _category;
@@ -41,6 +42,7 @@ public class ViewInfo
     private User _modifiedBy;
     private Date _created;
     private Date _modified;
+    private DataType _dataType;
     private String _type;
     private Boolean _editable;
     private Boolean _inherited;
@@ -57,6 +59,11 @@ public class ViewInfo
     private String _thumbnailUrl;
     private boolean _hidden;
     private int _displayOrder;
+
+    public enum DataType {
+        reports,
+        datasets,
+    }
 
     public ViewInfo(String name, String type)
     {
@@ -82,6 +89,16 @@ public class ViewInfo
     public void setReportId(ReportIdentifier reportId)
     {
         _reportId = reportId;
+    }
+
+    public String getEntityId()
+    {
+        return _entityId;
+    }
+
+    public void setEntityId(String entityId)
+    {
+        _entityId = entityId;
     }
 
     public String getQuery()
@@ -304,12 +321,23 @@ public class ViewInfo
         _displayOrder = displayOrder;
     }
 
+    public DataType getDataType()
+    {
+        return _dataType;
+    }
+
+    public void setDataType(DataType dataType)
+    {
+        _dataType = dataType;
+    }
+
     public JSONObject toJSON(User user)
     {
         JSONObject o = new JSONObject();
 
         o.put("name", getName());
         o.put("type", getType());
+        o.put("dataType", getDataType());
         o.put("hidden", isHidden());
         o.put("displayOrder", getDisplayOrder());
 

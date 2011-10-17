@@ -398,6 +398,8 @@ public class ReportUtil
                 ViewInfo info = new ViewInfo(descriptor.getReportName(), r.getTypeDescription());
 
                 info.setReportId(descriptor.getReportId());
+                info.setEntityId(descriptor.getEntityId());
+                info.setDataType(ViewInfo.DataType.reports);
                 info.setQuery(StringUtils.defaultIfEmpty(query, "Stand-alone views"));
 
                 if (descriptor.getCategory() != null)
