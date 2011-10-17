@@ -1,6 +1,9 @@
 package org.labkey.api.thumbnail;
 
+import org.labkey.api.attachments.AttachmentFile;
 import org.labkey.api.data.CacheableWriter;
+
+import java.io.IOException;
 
 /**
  * User: adam
@@ -13,4 +16,6 @@ public interface ThumbnailService
 
     CacheableWriter getThumbnailWriter(StaticThumbnailProvider provider);
     void queueThumbnailRendering(DynamicThumbnailProvider provider);
+    void deleteThumbnail(DynamicThumbnailProvider provider);
+    void replaceThumbnail(DynamicThumbnailProvider provider, AttachmentFile thumbnailFile) throws IOException;
 }
