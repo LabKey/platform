@@ -355,7 +355,7 @@ public class ReportServiceImpl implements ReportService.I, ContainerManager.Cont
         return null;
     }
 
-    public Report getReportByEntityId(Container c, String entityId) throws Exception
+    public Report getReportByEntityId(Container c, String entityId) throws SQLException
     {
         SimpleFilter filter = new SimpleFilter("ContainerId", c.getId());
         filter.addCondition("EntityId", entityId);

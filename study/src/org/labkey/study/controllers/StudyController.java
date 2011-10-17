@@ -6776,7 +6776,7 @@ public class StudyController extends BaseStudyController
                 response.put("webpart", new JSONObject(webPartProps));
             }
 
-            for (BrowseDataForm.DataType type : BrowseDataForm.DataType.values())
+            for (ViewInfo.DataType type : ViewInfo.DataType.values())
             {
                 // only if it is explicitly excluded does it not get included
                 if (props.containsKey(type.name()) && props.get(type.name()).equals("0"))
@@ -6792,14 +6792,14 @@ public class StudyController extends BaseStudyController
                 JSONArray data = new JSONArray();
 
                 // get reports and queries
-                if (types.isEmpty() || types.get(BrowseDataForm.DataType.reports.name()))
+                if (types.isEmpty() || types.get(ViewInfo.DataType.reports.name()))
                 {
                     for (ViewInfo info : ReportManager.get().getViews(getViewContext(), null, null, isAdmin, true))
                         data.put(info.toJSON(getUser()));
                 }
 
                 // datasets
-                if (types.isEmpty() || types.get(BrowseDataForm.DataType.datasets.name()))
+                if (types.isEmpty() || types.get(ViewInfo.DataType.datasets.name()))
                 {
                     for (ViewInfo info : getDatasets())
                         data.put(info.toJSON(getUser()));
@@ -6838,6 +6838,8 @@ public class StudyController extends BaseStudyController
                                 view.setCategoryDisplayOrder(vc.getDisplayOrder());
                         }
                         view.setDescription(ds.getDescription());
+                        view.setEntityId(ds.getEntityId());
+                        view.setDataType(ViewInfo.DataType.datasets);
                         view.setIcon(getViewContext().getContextPath() + "/reports/grid.gif");
                         view.setRunUrl(new ActionURL(DefaultDatasetReportAction.class, getContainer()).addParameter("datasetId", ds.getDataSetId()));
                         view.setContainer(ds.getContainer());
@@ -6857,19 +6859,14 @@ public class StudyController extends BaseStudyController
         private String pageId;
         private boolean includeData = true;
 
-        public enum DataType {
-            reports,
-            datasets,
-        }
+        private ViewInfo.DataType[] _dataTypes = new ViewInfo.DataType[]{ViewInfo.DataType.reports, ViewInfo.DataType.datasets};
 
-        private DataType[] _dataTypes = new DataType[]{DataType.reports, DataType.datasets};
-
-        public DataType[] getDataTypes()
+        public ViewInfo.DataType[] getDataTypes()
         {
             return _dataTypes;
         }
 
-        public void setDataTypes(DataType[] dataTypes)
+        public void setDataTypes(ViewInfo.DataType[] dataTypes)
         {
             _dataTypes = dataTypes;
         }
@@ -7005,9 +7002,11 @@ public class StudyController extends BaseStudyController
     public static class EditViewsForm
     {
         ReportIdentifier _reportId;
+        String _entityId;
         String _category;
         String _description;
         boolean _hidden;
+        ViewInfo.DataType _dataType;
 
         public ReportIdentifier getReportId()
         {
@@ -7048,6 +7047,26 @@ public class StudyController extends BaseStudyController
         {
             _hidden = hidden;
         }
+
+        public ViewInfo.DataType getDataType()
+        {
+            return _dataType;
+        }
+
+        public void setDataType(ViewInfo.DataType dataType)
+        {
+            _dataType = dataType;
+        }
+
+        public String getEntityId()
+        {
+            return _entityId;
+        }
+
+        public void setEntityId(String entityId)
+        {
+            _entityId = entityId;
+        }
     }
 
     @RequiresPermissionClass(ReadPermission.class)
@@ -7058,30 +7077,38 @@ public class StudyController extends BaseStudyController
         @Override
         public void validateForm(EditViewsForm form, Errors errors)
         {
-            ReportIdentifier id = form.getReportId();
+            String id = form.getEntityId();
+            ViewInfo.DataType dataType = form.getDataType();
 
-            if (id != null)
+            if (id != null && dataType != null)
             {
                 try {
-                    _report = id.getReport();
-
-                    if (_report != null)
+                    switch (dataType)
                     {
-                        if (!_report.getDescriptor().canEdit(getUser(), getContainer()))
-                            errors.reject(ERROR_MSG, "Unauthorized operation");
+                        case reports:
+                            _report = ReportService.get().getReportByEntityId(getContainer(), id);
 
-                        _report.getDescriptor().setReportDescription(StringUtils.trimToNull(form.getDescription()));
-                        _report.getDescriptor().setHidden(form.isHidden());
+                            if (_report != null)
+                            {
+                                if (!_report.getDescriptor().canEdit(getUser(), getContainer()))
+                                    errors.reject(ERROR_MSG, "Unauthorized operation");
+
+                                _report.getDescriptor().setReportDescription(StringUtils.trimToNull(form.getDescription()));
+                                _report.getDescriptor().setHidden(form.isHidden());
+                            }
+                            break;
+                        default:
+                            errors.reject(ERROR_MSG, "Editing this data type not yet supported.");
                     }
                 }
                 catch (Exception e)
                 {
-                    _log.error("failed to get report from identifier", e);
-                    errors.reject(ERROR_MSG, "Unable to find the specified report");
+                    _log.error("failed to get data view from identifier", e);
+                    errors.reject(ERROR_MSG, "Unable to find the specified data view");
                 }
             }
             else
-                errors.reject(ERROR_MSG, "Unable to find the specified report");
+                errors.reject(ERROR_MSG, "Unable to find the specified data view");
         }
 
         public ApiResponse execute(EditViewsForm form, BindException errors) throws Exception
