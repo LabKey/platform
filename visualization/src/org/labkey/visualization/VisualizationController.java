@@ -846,6 +846,7 @@ public class VisualizationController extends SpringActionController
         private String _type;
         private boolean _replace;
         private boolean _shared = true;
+        private boolean _saveThumbnail;
         private String _svg;
 
         public String getJson()
@@ -896,6 +897,16 @@ public class VisualizationController extends SpringActionController
         public void setShared(boolean shared)
         {
             _shared = shared;
+        }
+
+        public boolean isSaveThumbnail()
+        {
+            return _saveThumbnail;
+        }
+
+        public void setSaveThumbnail(boolean saveThumbnail)
+        {
+            _saveThumbnail = saveThumbnail;
         }
 
         public String getSvg()
@@ -1144,12 +1155,12 @@ public class VisualizationController extends SpringActionController
                     TimeChartReportImpl tcReport = (TimeChartReportImpl)report;
                     String svg = form.getSvg();
 
-                    if (svg == null)
+                    if (!form.isSaveThumbnail())
                     {
                         // User checked the "no thumbnail" checkbox... need to proactively delete the thumbnail
                         svc.deleteThumbnail(tcReport);
                     }
-                    else
+                    else if (svg != null)
                     {
                         // Generate and save the thumbnail (in the background)
                         tcReport.setSvg(form.getSvg());

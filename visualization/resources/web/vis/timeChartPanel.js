@@ -1607,6 +1607,7 @@ LABKEY.vis.TimeChartPanel = Ext.extend(Ext.Panel, {
                 reportName: reportName,
                 reportDescription: reportDescription,
                 reportShared: reportShared,
+                reportSaveThumbnail: this.chartInfo.saveThumbnail,
                 reportSvg: this.chartInfo.saveThumbnail ? reportSvg : null,
                 createdBy: createdBy,
                 query: query,
@@ -1666,7 +1667,8 @@ LABKEY.vis.TimeChartPanel = Ext.extend(Ext.Panel, {
                     fieldLabel: 'Save Thumbnail',
                     anchor: '100%',
                     checked: this.chartInfo.saveThumbnail,
-                    value: this.chartInfo.saveThumbnail
+                    value: this.chartInfo.saveThumbnail,
+                    hidden: (Ext.isIE6 || Ext.isIE7 || Ext.isIE8)
                 })],
                 buttons: [{
                     text: 'Save',
@@ -1682,6 +1684,7 @@ LABKEY.vis.TimeChartPanel = Ext.extend(Ext.Panel, {
                             reportName: formValues.reportName,
                             reportDescription: formValues.reportDescription,
                             reportShared: shared,
+                            reportSaveThumbnail: this.chartInfo.saveThumbnail, 
                             reportSvg: this.chartInfo.saveThumbnail ? reportSvg : null,
                             query: query,
                             schema: schema
@@ -1758,6 +1761,7 @@ LABKEY.vis.TimeChartPanel = Ext.extend(Ext.Panel, {
             description: config.reportDescription,
             shared: config.reportShared,
             visualizationConfig: this.chartInfo,
+            saveThumbnail: config.reportSaveThumbnail,
             svg: config.reportSvg,
             replace: config.replace,
             type: LABKEY.Visualization.Type.TimeChart,

@@ -169,6 +169,7 @@ LABKEY.vis.ChartEditorOverviewPanel = Ext.extend(Ext.Panel, {
                     anchor: '100%',
                     checked: this.saveThumbnail,
                     value: this.saveThumbnail,
+                    hidden: (Ext.isIE6 || Ext.isIE7 || Ext.isIE8),
                     listeners: {
                         scope: this,
                         'check': function(cmp, checked){
