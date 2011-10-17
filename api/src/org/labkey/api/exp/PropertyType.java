@@ -20,8 +20,8 @@ import org.apache.commons.beanutils.ConversionException;
 import org.apache.commons.beanutils.ConvertUtils;
 import org.apache.poi.ss.usermodel.Cell;
 import org.apache.poi.ss.usermodel.DateUtil;
+import org.fhcrc.cpas.exp.xml.SimpleTypeNames;
 import org.labkey.api.data.JdbcType;
-import org.labkey.api.reader.ColumnDescriptor;
 import org.labkey.api.reader.ExcelFactory;
 
 import java.io.File;
@@ -58,6 +58,11 @@ public enum PropertyType
                 boolValue = (Boolean) ConvertUtils.convert(value.toString(), Boolean.class);
             return boolValue;
         }
+
+        public SimpleTypeNames.Enum getXmlBeanType()
+        {
+            return SimpleTypeNames.BOOLEAN;
+        }
     },
     STRING("http://www.w3.org/2001/XMLSchema#string", "String", 's', JdbcType.VARCHAR, 100, null, Cell.CELL_TYPE_STRING, String.class)
     {
@@ -73,6 +78,11 @@ public enum PropertyType
             else
                 return ConvertUtils.convert(value);
         }
+
+        public SimpleTypeNames.Enum getXmlBeanType()
+        {
+            return SimpleTypeNames.STRING;
+        }
     },
     MULTI_LINE("http://www.w3.org/2001/XMLSchema#multiLine", "MultiLine", 's', JdbcType.VARCHAR, 1000, "textarea", Cell.CELL_TYPE_STRING, String.class)
     {
@@ -87,6 +97,11 @@ public enum PropertyType
                 return value;
             else
                 return ConvertUtils.convert(value);
+        }
+
+        public SimpleTypeNames.Enum getXmlBeanType()
+        {
+            return SimpleTypeNames.STRING;
         }
     },
     RESOURCE("http://www.w3.org/2000/01/rdf-schema#Resource", "PropertyURI", 's', JdbcType.VARCHAR, 100, null, Cell.CELL_TYPE_STRING, Identifiable.class)
@@ -105,6 +120,11 @@ public enum PropertyType
             else
                 return value.toString();
         }
+
+        public SimpleTypeNames.Enum getXmlBeanType()
+        {
+            return SimpleTypeNames.STRING;
+        }
     },
     INTEGER("http://www.w3.org/2001/XMLSchema#int", "Integer", 'f', JdbcType.INTEGER, 10, null, Cell.CELL_TYPE_NUMERIC, Integer.class, Long.class)
     {
@@ -121,6 +141,11 @@ public enum PropertyType
                 return value;
             else
                 return ConvertUtils.convert(value.toString(), Integer.class);
+        }
+
+        public SimpleTypeNames.Enum getXmlBeanType()
+        {
+            return SimpleTypeNames.INTEGER;
         }
     },
     /** Stored as a path to a file on the server's file system */
@@ -140,6 +165,11 @@ public enum PropertyType
             else
                 return String.valueOf(value);
         }
+
+        public SimpleTypeNames.Enum getXmlBeanType()
+        {
+            return SimpleTypeNames.FILE_LINK;
+        }
     },
     /** Stored in the database as a BLOB using AttachmentService */
     ATTACHMENT("http://www.labkey.org/exp/xml#attachment", "Attachment", 's', JdbcType.VARCHAR, 100, "file", Cell.CELL_TYPE_STRING, File.class)
@@ -157,6 +187,11 @@ public enum PropertyType
                 return ((File) value).getPath();
             else
                 return String.valueOf(value);
+        }
+
+        public SimpleTypeNames.Enum getXmlBeanType()
+        {
+            throw new UnsupportedOperationException();
         }
     },
     DATE_TIME("http://www.w3.org/2001/XMLSchema#dateTime", "DateTime", 'd', JdbcType.TIMESTAMP, 100, null, Cell.CELL_TYPE_NUMERIC, Date.class)
@@ -192,6 +227,11 @@ public enum PropertyType
             else
                 return ConvertUtils.convert(value.toString(), Date.class);
         }
+
+        public SimpleTypeNames.Enum getXmlBeanType()
+        {
+            return SimpleTypeNames.DATE_TIME;
+        }
     },
     DOUBLE("http://www.w3.org/2001/XMLSchema#double", "Double", 'f', JdbcType.DOUBLE, 20, null, Cell.CELL_TYPE_NUMERIC, Double.class, Float.class)
     {
@@ -209,6 +249,11 @@ public enum PropertyType
             else
                 return ConvertUtils.convert(String.valueOf(value), Double.class);
         }
+
+        public SimpleTypeNames.Enum getXmlBeanType()
+        {
+            return SimpleTypeNames.DOUBLE;
+        }
     },
     XML_TEXT("http://cpas.fhcrc.org/exp/xml#text-xml", "XmlText", 's', JdbcType.LONGVARCHAR, 100, null, Cell.CELL_TYPE_STRING, null)
     {
@@ -223,6 +268,11 @@ public enum PropertyType
                 return value;
             else
                 return ConvertUtils.convert(value);
+        }
+
+        public SimpleTypeNames.Enum getXmlBeanType()
+        {
+            throw new UnsupportedOperationException();
         }
     };
 
@@ -392,6 +442,8 @@ public enum PropertyType
         throw new IllegalArgumentException("No such class mapping: " + clazz.getName());
     }
 
+    public abstract SimpleTypeNames.Enum getXmlBeanType();
+
     protected abstract Object convertExcelValue(Cell cell) throws ConversionException;
 
     public abstract Object convert(Object value) throws ConversionException;
@@ -416,4 +468,5 @@ public enum PropertyType
         }
         return ExcelFactory.getCellStringValue(cell);
     }
+
 }

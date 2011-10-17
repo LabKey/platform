@@ -152,7 +152,32 @@ public abstract class AbstractParameter extends BoundMap
         }
         else
         {
-            handleOtherValueTypesSetter(type, value);
+            throw new IllegalArgumentException("Unknown property type " + type);
+        }
+    }
+
+    public void setValue(PropertyType type, Object value)
+    {
+        setValueType(type.getXmlBeanType().toString());
+        switch (type)
+        {
+            case STRING:
+                setStringValue((String) value);
+                break;
+            case INTEGER:
+                setIntegerValue((Integer) value);
+                break;
+            case DOUBLE:
+                setDoubleValue((Double) value);
+                break;
+            case DATE_TIME:
+                setDateTimeValue((Date) value);
+                break;
+            case FILE_LINK:
+                setStringValue((String) value);
+                break;
+            default:
+                throw new IllegalArgumentException("Unknown property type " + type);
         }
     }
 

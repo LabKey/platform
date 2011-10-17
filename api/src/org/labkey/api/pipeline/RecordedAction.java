@@ -15,11 +15,15 @@
  */
 package org.labkey.api.pipeline;
 
-import org.fhcrc.cpas.exp.xml.SimpleTypeNames;
+import org.labkey.api.exp.PropertyType;
 
-import java.net.URI;
-import java.util.*;
 import java.io.File;
+import java.net.URI;
+import java.util.Collections;
+import java.util.LinkedHashMap;
+import java.util.LinkedHashSet;
+import java.util.Map;
+import java.util.Set;
 
 /**
  * Used to record an action performed by the pipeline. Consumed by XarGeneratorTask, which will create a full
@@ -29,7 +33,7 @@ import java.io.File;
  */
 public class RecordedAction
 {
-    public static final ParameterType COMMAND_LINE_PARAM = new ParameterType("Command line", "terms.labkey.org#CommandLine", SimpleTypeNames.STRING);
+    public static final ParameterType COMMAND_LINE_PARAM = new ParameterType("Command line", "terms.labkey.org#CommandLine", PropertyType.STRING);
 
     private Set<DataFile> _inputs = new LinkedHashSet<DataFile>();
     private Set<DataFile> _outputs = new LinkedHashSet<DataFile>();
@@ -114,7 +118,7 @@ public class RecordedAction
     {
         private String _uri;
         private String _name;
-        private SimpleTypeNames.Enum _type;
+        private PropertyType _type;
 
         // No-args constructor to support de-serialization in Java 7
         @SuppressWarnings({"UnusedDeclaration"})
@@ -122,7 +126,7 @@ public class RecordedAction
         {
         }
 
-        public ParameterType(String name, String uri, SimpleTypeNames.Enum type)
+        public ParameterType(String name, String uri, PropertyType type)
         {
             _name = name;
             _uri = uri;
@@ -139,7 +143,7 @@ public class RecordedAction
             return _name;
         }
 
-        public SimpleTypeNames.Enum getType()
+        public PropertyType getType()
         {
             return _type;
         }
