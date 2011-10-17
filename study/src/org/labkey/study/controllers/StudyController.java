@@ -1387,6 +1387,7 @@ public class StudyController extends BaseStudyController
                 StudyImpl updated = getStudy().createMutable();
                 updated.setLabel(form.getLabel());
                 updated.setDescription(form.getDescription());
+                updated.setDescriptionRendererType(form.getDescriptionRendererType());
                 StudyManager.getInstance().updateStudy(getUser(), updated);
 
                 // Update protocol documents:
@@ -5691,6 +5692,7 @@ public class StudyController extends BaseStudyController
         private String _subjectColumnName = "ParticipantId";
         private String _returnURL;
         private String _description;
+        private String _descriptionRendererType;
 
         public String getLabel()
         {
@@ -5800,6 +5802,16 @@ public class StudyController extends BaseStudyController
         public void setDescription(String description)
         {
             _description = description;
+        }
+
+        public String getDescriptionRendererType()
+        {
+            return _descriptionRendererType;
+        }
+
+        public void setDescriptionRendererType(String descriptionRendererType)
+        {
+            _descriptionRendererType = descriptionRendererType;
         }
     }
 

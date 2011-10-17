@@ -919,7 +919,7 @@ public class WikiManager implements WikiService
     }
 
     @Override
-    public String getFormattedHtml(WikiRendererType rendererType, String source, String attachPrefix, Collection<? extends Attachment> attachments)
+    public String getFormattedHtml(WikiRendererType rendererType, String source, @Nullable String attachPrefix, @Nullable Collection<? extends Attachment> attachments)
     {
         return "<div class=\"labkey-wiki\">" + getRenderer(rendererType, attachPrefix, attachments).format(source).getHtml() + "</div>";
     }

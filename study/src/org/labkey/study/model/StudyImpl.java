@@ -46,6 +46,7 @@ import org.labkey.api.util.DateUtil;
 import org.labkey.api.util.GUID;
 import org.labkey.api.util.JunitUtil;
 import org.labkey.api.util.TestContext;
+import org.labkey.api.wiki.WikiRendererType;
 import org.labkey.study.SampleManager;
 import org.labkey.study.query.StudyQuerySchema;
 import org.labkey.study.samples.settings.RepositorySettings;
@@ -98,6 +99,7 @@ public class StudyImpl extends ExtensibleStudyEntity<StudyImpl> implements Study
     private String _subjectNounPlural;
     private String _subjectColumnName;
     private String _description;
+    private String _descriptionRendererType = WikiRendererType.TEXT_WITH_LINKS.name();
     private String _protocolDocumentEntityId;
     private String _sourceStudyContainerId;
 
@@ -524,6 +526,21 @@ public class StudyImpl extends ExtensibleStudyEntity<StudyImpl> implements Study
     public void setDescription(String description)
     {
         _description = description;
+    }
+
+    public String getDescriptionRendererType()
+    {
+        return _descriptionRendererType;
+    }
+
+    public void setDescriptionRendererType(String descriptionRendererType)
+    {
+        _descriptionRendererType = descriptionRendererType;
+    }
+
+    public WikiRendererType getDescriptionWikiRendererType()
+    {
+        return WikiRendererType.valueOf(_descriptionRendererType);
     }
 
     public String getProtocolDocumentEntityId()

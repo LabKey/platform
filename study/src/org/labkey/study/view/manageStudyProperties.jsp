@@ -17,6 +17,7 @@
 %>
 <%@ page import="org.labkey.api.attachments.Attachment" %>
 <%@ page import="org.labkey.api.util.PageFlowUtil" %>
+<%@ page import="org.labkey.api.wiki.WikiRendererType" %>
 <%@ page extends="org.labkey.study.view.BaseStudyPage" %>
 <%
     String cancelLink = getViewContext().getActionURL().getParameter("returnURL");
@@ -75,6 +76,23 @@
             <td class="labkey-form-label">Description</td>
             <td>
                 <textarea name="description" rows="20" cols="80"><%= h(getStudy().getDescription()) %></textarea>
+            </td>
+        </tr>
+        <tr>
+            <td class="labkey-form-label">Render&nbsp;As</td>
+            <td>
+                <select name="descriptionRendererType">
+                      <%
+                          for (WikiRendererType type : getRendererTypes())
+                          {
+                              String value = type.name();
+                              String displayName = type.getDisplayName();
+                              String selected = type == currentRendererType() ? "selected " : "";
+                          %>
+                              <option <%=selected%> value="<%=h(value)%>"><%=h(displayName)%></option>
+                          <%
+                      }%>
+                </select>
             </td>
         </tr>
         <tr>

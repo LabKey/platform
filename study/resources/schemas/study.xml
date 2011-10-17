@@ -102,6 +102,9 @@
       <ns:column columnName="Description">
         <ns:description>A short description of the study.</ns:description>
       </ns:column>
+      <ns:column columnName="DescriptionRendererType">
+        <ns:description>Format of description.</ns:description>
+      </ns:column>
       <ns:column columnName="ProtocolDocumentEntityId">
         <ns:description>The entity id used to generate the attachment parent for the study protocol document.</ns:description>
       </ns:column>

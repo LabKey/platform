@@ -15,24 +15,19 @@
  * limitations under the License.
  */
 %>
+<%@ page import="org.labkey.api.attachments.Attachment"%>
 <%@ page import="org.labkey.api.data.Container"%>
 <%@ page import="org.labkey.api.pipeline.PipelineService"%>
-<%@ page import="org.labkey.api.pipeline.PipelineUrls"%>
+<%@ page import="org.labkey.api.pipeline.PipelineUrls" %>
 <%@ page import="org.labkey.api.security.SecurityPolicy" %>
 <%@ page import="org.labkey.api.security.User" %>
 <%@ page import="org.labkey.api.security.permissions.AdminPermission" %>
-<%@ page import="org.labkey.api.study.TimepointType" %>
-<%@ page import="org.labkey.api.study.Visit" %>
 <%@ page import="org.labkey.api.view.ActionURL" %>
-<%@ page import="org.labkey.study.controllers.CohortController" %>
-<%@ page import="org.labkey.study.controllers.StudyController" %>
-<%@ page import="org.labkey.study.model.StudyManager" %>
-<%@ page import="org.labkey.study.security.permissions.ManageRequestSettingsPermission" %>
-<%@ page import="org.labkey.study.controllers.BaseStudyController" %>
 <%@ page import="org.labkey.api.view.JspView" %>
+<%@ page import="org.labkey.study.controllers.BaseStudyController" %>
+<%@ page import="org.labkey.study.controllers.StudyController" %>
+<%@ page import="org.labkey.study.security.permissions.ManageRequestSettingsPermission" %>
 <%@ page import="org.labkey.study.view.StudySummaryWebPartFactory" %>
-<%@ page import="org.labkey.api.study.StudyService" %>
-<%@ page import="org.labkey.api.attachments.Attachment" %>
 <%@ page import="java.util.List" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
@@ -71,22 +66,11 @@
         return;
     }
 
-    TimepointType timepointType = bean.getStudy().getTimepointType();
     SecurityPolicy policy = c.getPolicy();
     boolean isAdmin = policy.hasPermission(user, AdminPermission.class);
     ActionURL url = new ActionURL(StudyController.BeginAction.class, bean.getStudy().getContainer());
-    String visitLabel = StudyManager.getInstance().getVisitManager(bean.getStudy()).getPluralLabel();
-    String subjectNounSingular = StudyService.get().getSubjectNounSingular(c);
-    String subjectNounPlural = StudyService.get().getSubjectNounPlural(c);
-    long subjectCount = bean.getSubjectCount();
-    String title = bean.getStudy().getLabel();
-    String description = bean.getStudy().getDescription();
-    if (description == null || description.length() == 0)
-    {
-        description = title + " tracks data in " + bean.getDataSets().size() + " datasets over " + bean.getVisits(Visit.Order.DISPLAY).length + " " + (timepointType.isVisitBased() ? "visits" : "time points") +
-            ". Data is present for " + subjectCount + " " + (subjectCount == 1 ? subjectNounSingular : subjectNounPlural) + ".";
-    }
-    List<Attachment> protocolDocs = bean.getStudy().getProtocolDocuments();
+    String descriptionHtml = bean.getDescriptionHtml();
+    List<Attachment> protocolDocs = bean.getProtocolDocuments();
     ActionURL editMetadataURL = new ActionURL(StudyController.ManageStudyPropertiesAction.class, c);
     editMetadataURL.addParameter("returnURL", bean.getCurrentURL());
 %>
@@ -98,7 +82,8 @@
     <tr>
         <td valign="top">
             <p>
-                <%= h(description, true) %>
+                <div>
+                <%=descriptionHtml%>
             <%
                 if (isAdmin)
                 {
@@ -109,6 +94,7 @@
             <%
                 }
             %>
+                </div>
             </p>
             <p>
                 <%

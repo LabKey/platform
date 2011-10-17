@@ -20,21 +20,24 @@ import org.labkey.api.attachments.Attachment;
 import org.labkey.api.data.Container;
 import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.ReadPermission;
+import org.labkey.api.services.ServiceRegistry;
 import org.labkey.api.study.Cohort;
 import org.labkey.api.study.DataSet;
 import org.labkey.api.study.Site;
-import org.labkey.api.study.Study;
 import org.labkey.api.study.StudyService;
+import org.labkey.api.study.TimepointType;
 import org.labkey.api.study.Visit;
-import org.labkey.api.view.*;
-import org.labkey.study.controllers.BaseStudyController;
-import org.labkey.study.controllers.StudyController;
-import org.labkey.study.model.CohortImpl;
-import org.labkey.study.model.DataSetDefinition;
-import org.labkey.study.model.SiteImpl;
+import org.labkey.api.util.PageFlowUtil;
+import org.labkey.api.view.BaseWebPartFactory;
+import org.labkey.api.view.HtmlView;
+import org.labkey.api.view.HttpView;
+import org.labkey.api.view.JspView;
+import org.labkey.api.view.Portal;
+import org.labkey.api.view.ViewContext;
+import org.labkey.api.view.WebPartView;
+import org.labkey.api.wiki.WikiService;
 import org.labkey.study.model.StudyImpl;
 import org.labkey.study.model.StudyManager;
-import org.labkey.study.model.VisitImpl;
 import org.springframework.validation.BindException;
 
 import java.lang.reflect.InvocationTargetException;
@@ -107,6 +110,44 @@ public class StudySummaryWebPartFactory extends BaseWebPartFactory
         public String getCurrentURL()
         {
             return _currentURL;
+        }
+
+        public String getDescriptionHtml()
+        {
+            StudyImpl study = getStudy();
+            String description = study.getDescription();
+
+            if (description == null || description.length() == 0)
+            {
+                long count = getSubjectCount();
+                String subjectNoun = (count == 1 ? StudyService.get().getSubjectNounSingular(_container) : StudyService.get().getSubjectNounPlural(_container));
+                TimepointType timepointType = study.getTimepointType();
+                String madeUpDescription = study.getLabel() + " tracks data in " + getDataSets().size() + " datasets over " + getVisits(Visit.Order.DISPLAY).length + " " + (timepointType.isVisitBased() ? "visits" : "time points") +
+                    ". Data is present for " + count + " " + subjectNoun + ".";
+                return PageFlowUtil.filter(madeUpDescription);
+            }
+            else
+            {
+                WikiService ws = ServiceRegistry.get().getService(WikiService.class);
+
+                if (null != ws)
+                {
+                    String html = ws.getFormattedHtml(study.getDescriptionWikiRendererType(), description);
+
+                    // Hack!  Remove div so we can nestle the edit icon up to the text
+                    if (html.endsWith("</div>"))
+                    {
+                        html = html.replaceFirst("<div .*?>", "");
+                        html = html.substring(0, html.length() - 6);
+                    }
+
+                    return html;
+                }
+                else
+                {
+                    return PageFlowUtil.filter(description, true);
+                }
+            }
         }
     }
 

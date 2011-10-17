@@ -16,6 +16,7 @@
 
 package org.labkey.study.view;
 
+import org.labkey.api.wiki.WikiRendererType;
 import org.labkey.study.model.*;
 import org.labkey.api.jsp.JspBase;
 import org.labkey.api.data.Container;
@@ -59,6 +60,16 @@ public abstract class BaseStudyPage extends JspBase
     protected CohortImpl[] getCohorts(User user) throws SQLException
     {
         return getStudy().getCohorts(user);
+    }
+
+    protected WikiRendererType[] getRendererTypes()
+    {
+        return WikiRendererType.values();
+    }
+
+    protected WikiRendererType currentRendererType()
+    {
+        return getStudy().getDescriptionWikiRendererType();
     }
 
     public void init(Container c)
