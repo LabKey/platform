@@ -480,33 +480,6 @@ public class Table
     }
 
 
-    // return a result from a one row one column resultset or null.
-    // K should be a string or number type.
-    public static <K> K executeSingleton(TableInfo table, String column, Filter filter, Class<K> c)
-    {
-        ColumnInfo col = table.getColumn(column);
-        return executeSingleton(table, col, filter, c);
-    }
-
-    // return a result from a one row one column resultset or null.
-    // K should be a string or number type.
-    public static <K> K executeSingleton(TableInfo table, ColumnInfo column, Filter filter, Class<K> c)
-    {
-        try
-        {
-            K[] values = executeArray(table, column, filter, null, c);
-            assert (values.length == 0 || values.length == 1);
-            if (values.length == 0)
-                return null;
-
-            return values[0];
-        }
-        catch (SQLException e)
-        {
-            throw new RuntimeSQLException(e);
-        }
-    }
-
     // return a result from a one row one column resultset
     // does not distinguish between not found, and set NULL
     public static <K> K executeSingleton(DbSchema schema, String sql, Object[] parameters, Class<K> c) throws SQLException
