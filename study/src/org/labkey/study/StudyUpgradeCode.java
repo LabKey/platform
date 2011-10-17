@@ -43,6 +43,7 @@ import org.labkey.study.model.DataSetDefinition;
 import javax.servlet.ServletContext;
 import javax.servlet.http.HttpServletResponse;
 import java.sql.SQLException;
+import java.util.Collections;
 import java.util.Map;
 
 /**
@@ -80,7 +81,7 @@ public class StudyUpgradeCode implements UpgradeCode
     {
         TableInfo tinfo = StudySchema.getInstance().getTableInfoStudy();
         String sql = "UPDATE " + tinfo + " SET ProtocolDocumentEntityId = ? WHERE Container = ?";
-        Map<String, Object>[] rows = Table.selectMaps(tinfo, Table.ALL_COLUMNS, null, null);
+        Map<String, Object>[] rows = Table.selectMaps(tinfo, Collections.singleton("Container"), null, null);
         for (Map<String, Object> row : rows)
         {
             String container = (String)row.get("Container");

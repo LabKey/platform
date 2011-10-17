@@ -650,7 +650,7 @@ public abstract class VisitManager
             ptids.add(study.getContainer().getId());
 
             SQLFragment del = new SQLFragment();
-            del.append("DELETE FROM ").append(tableParticipant, "Participant").append(" WHERE container=? ");
+            del.append("DELETE FROM ").append(tableParticipant.getSelectName()).append(" WHERE container=? ");
             del.add(study.getContainer().getId());
             del.append(" AND participantid NOT IN (\n");
             del.append(ptids);
