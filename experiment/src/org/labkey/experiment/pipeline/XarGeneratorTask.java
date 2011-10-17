@@ -364,6 +364,7 @@ public class XarGeneratorTask extends PipelineJob.Task<XarGeneratorTask.Factory>
                 RecordedAction.ParameterType paramType = param.getKey();
                 protAppParam.setName(paramType.getName());
                 protAppParam.setOntologyEntryURI(paramType.getURI());
+                
                 protAppParam.setValue(paramType.getType(), param.getValue());
 
                 ExperimentServiceImpl.get().loadParameter(getJob().getUser(), protAppParam, ExperimentServiceImpl.get().getTinfoProtocolApplicationParameter(), "ProtocolApplicationId", app.getRowId());
