@@ -210,7 +210,17 @@ public class SystemMaintenance extends TimerTask implements ShutdownListener, St
             {
                 _log.info(task.getMaintenanceTaskName() + " started");
                 long start = System.currentTimeMillis();
-                task.run();
+
+                try
+                {
+                    task.run();
+                }
+                catch (Exception e)
+                {
+                    // Log if one of these tasks throws... but continue with other tasks
+                    ExceptionUtil.logExceptionToMothership(null, e);
+                }
+
                 long elapsed = System.currentTimeMillis() - start;
                 _log.info(task.getMaintenanceTaskName() + " complete; elapsed time " + elapsed/1000 + " seconds");
             }
