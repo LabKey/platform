@@ -245,8 +245,8 @@ Ext4.define('LABKEY.ext4.DataViewsPanel', {
 
         function initToolTip(view)
         {
-            var _w = 200;
-            var _h = 200;
+            var _w = 500;
+            var _h = 300;
             var _active;
 
             function renderToolTip(tip)
