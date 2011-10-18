@@ -348,6 +348,8 @@ public class ViewInfo
         if (getQueryView() != null)
             o.put("queryView", getQueryView());
 
+        if (getEntityId() != null)
+            o.put("entityId", getEntityId().toString());
         if (getReportId() != null)
             o.put("reportId", getReportId().toString());
         if (getQuery() != null)
