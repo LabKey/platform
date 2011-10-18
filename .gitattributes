@@ -4750,6 +4750,16 @@ internal/webapp/editarea/resize_area.js -text
 internal/webapp/editarea/search_replace.js -text
 internal/webapp/editarea/template.html -text
 internal/webapp/ext-exploded.js -text
+internal/webapp/extWidgets/AssayUploadPanel.js -text
+internal/webapp/extWidgets/DetailsPanel.js -text
+internal/webapp/extWidgets/ExcelUploadPanel.js -text
+internal/webapp/extWidgets/Ext4FormPanel.js -text
+internal/webapp/extWidgets/Ext4GridPanel.js -text
+internal/webapp/extWidgets/Ext4Store.js -text
+internal/webapp/extWidgets/ExtComponents.js -text
+internal/webapp/extWidgets/MetaHelper.js -text
+internal/webapp/extWidgets/NavPanel.js -text
+internal/webapp/extWidgets/SearchPanel.js -text
 internal/webapp/index.html -text
 internal/webapp/index.jsp -text
 internal/webapp/js_color_picker_v2.css -text

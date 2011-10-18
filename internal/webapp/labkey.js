@@ -317,6 +317,21 @@ LABKEY.requiresClientAPI = function(immediate)
 };
 
 
+LABKEY.requiresExt4ClientAPI = function(immediate)
+{
+    if (arguments.length < 1) immediate = true;
+
+    //for now we assume this is only dev mode
+    LABKEY.requiresExt4Sandbox(immediate);
+
+    //load individual scripts so that they get loaded from source tree
+    LABKEY.requiresScript("extWidgets/MetaHelper.js", immediate);
+    LABKEY.requiresScript("extWidgets/Ext4Store.js", immediate);
+    LABKEY.requiresScript("extWidgets/ExtComponents.js", immediate);
+    LABKEY.requiresScript("extWidgets/Ext4FormPanel.js", immediate);
+    LABKEY.requiresScript("extWidgets/Ext4GridPanel.js", immediate);
+};
+
 /** Pull in the required JS files and invoke the callback when they're loaded */
 LABKEY.initializeViewDesigner = function(dependenciesCallback, scope)
 {
