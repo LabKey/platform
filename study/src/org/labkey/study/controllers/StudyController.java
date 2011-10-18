@@ -221,6 +221,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.Comparator;
 import java.util.Date;
 import java.util.EnumSet;
 import java.util.HashMap;
@@ -6922,9 +6923,45 @@ public class StudyController extends BaseStudyController
             ApiSimpleResponse response = new ApiSimpleResponse();
             List<JSONObject> categoryList = new ArrayList<JSONObject>();
 
-            for (ViewCategory category : ViewCategoryManager.getInstance().getCategories(getContainer(), getUser()))
-                categoryList.add(category.toJSON(getUser()));
+            List<ViewCategory> categoriesWithDisplayOrder = new ArrayList<ViewCategory>();
+            List<ViewCategory> categoriesWithoutDisplayOrder = new ArrayList<ViewCategory>();
 
+            for (ViewCategory c : ViewCategoryManager.getInstance().getCategories(getContainer(), getUser()))
+            {
+                if (c.getDisplayOrder() != 0)
+                    categoriesWithDisplayOrder.add(c);
+                else
+                    categoriesWithoutDisplayOrder.add(c);
+            }
+
+            Collections.sort(categoriesWithDisplayOrder, new Comparator<ViewCategory>(){
+                @Override
+                public int compare(ViewCategory c1, ViewCategory c2)
+                {
+                    return c1.getDisplayOrder() - c2.getDisplayOrder();
+                }
+            });
+
+            if (!categoriesWithoutDisplayOrder.isEmpty())
+            {
+                Collections.sort(categoriesWithoutDisplayOrder, new Comparator<ViewCategory>(){
+                    @Override
+                    public int compare(ViewCategory c1, ViewCategory c2)
+                    {
+                        return c1.getLabel().compareToIgnoreCase(c2.getLabel());
+                    }
+                });
+            }
+            for (ViewCategory vc : categoriesWithDisplayOrder)
+                categoryList.add(vc.toJSON(getUser()));
+
+            // assign an order to all categories returned to the client
+            int count = categoriesWithDisplayOrder.size() + 1;
+            for (ViewCategory vc : categoriesWithoutDisplayOrder)
+            {
+                vc.setDisplayOrder(count++);
+                categoryList.add(vc.toJSON(getUser()));
+            }
             response.put("categories", categoryList);
 
             return response;
