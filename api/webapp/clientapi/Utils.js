@@ -792,7 +792,147 @@ LABKEY.Utils.convertToExcel(
         disableButton : function (elem)
         {
             return Ext.get(elem).replaceClass("labkey-button", "labkey-disabled-button");
-        }
+        },
 
+        /**
+         * Provides a generic error callback.  This helper will call Ext.Msg.hide(), log the error to the console
+         * and will log the error to the audit log table. The user must have insert permissions on the selected container for
+         * this to work.  By default, it will insert the error into the Shared project.  A containerPath param can be passed to
+         * use a different container.  The intent of this helper is to provide site admins with a mechanism to identify errors associated
+         * with client-side code.  If noAuditLog=true is used, the helper will not log the error.
+         *
+         * @param {Object} error The error object passed to the callback function
+         * @param {String} error.containerPath Optional. container where errors will be logged. Defaults to /shared
+         * @param {Boolean} error.noAuditLog Optional. If false, the errors will not be logged in the audit table.  Defaults to true
+         *
+         * @example &lt;script type="text/javascript"&gt;
+        //basic usage
+        LABKEY.Query.selectRows({
+            schemaName: 'core',
+            queryName: 'users',
+            success: function(){}
+            failure: LABKEY.Utils.onError
+        });
+
+        //custom container and turning off logging
+        LABKEY.Query.selectRows({
+            schemaName: 'core',
+            queryName: 'users',
+            success: function(){}
+            failure: function(error){
+                 error.containerPath = 'myContainer';
+                 error.noAuditLog = true;
+                 LABKEY.Utils.onError(error);
+            }
+        });
+        &lt;/script&gt;
+        */
+        onError : function(error){
+            Ext.Msg.hide();
+
+            if(!error)
+                return;
+
+            console.log('ERROR: ' + error.exception);
+            console.log(error);
+
+            if(!error.noAuditLog){
+                LABKEY.Query.insertRows({
+                     //it would be nice to store them in the current folder, but we cant guarantee the user has write access..
+                     containerPath: error.containerPath || '/shared',
+                     schemaName: 'auditlog',
+                     queryName: 'audit',
+                     rows: [{
+                        EventType: "Client API Actions",
+                        Key1: "Client Error",
+                        Key2: window.location.href.substr(0,200),
+                        Key3: window.location.hash.substr(0,200),
+                        Comment: (error.exception || error.statusText).substr(0,500),
+                        Date: new Date()
+                     }],
+                     success: function(){
+                         console.log('Error successfully logged')
+                     },
+                     failure: function(error){
+                        console.log('Problem logging error');
+                        console.log(error)
+                     }
+                });
+            }
+        },
+
+        /**
+         * Returns true if the passed object is empty (ie. {}) and false if not.
+         *
+         * @param {Object} object The object to test
+         * @return {Boolean} the result of the test
+        */
+        isEmptyObj : function(ob){
+           for(var i in ob){ return false;}
+           return true;
+        },
+
+        /**
+         * Rounds the passed number to the specified number of decimals
+         *
+         * @param {Number} input The number to round
+         * @param {Number} dec The number of decimal places to use
+         * @return {Number} The rounded number
+        */
+        roundNumber : function(input, dec){
+            return Math.round(input*Math.pow(10,dec))/Math.pow(10,dec);
+        },
+
+        /**
+         * Will pad the input string with zeros to the desired length.
+         *
+         * @param {Number/String} input The input string / number
+         * @param {Integer} length The desired length
+         * @param {String} padChar The character to use for padding.
+         * @return {String} The padded string
+        **/
+        padString : function(input, length, padChar){
+            if(typeof input != 'string')
+                input = input.toString();
+
+            var pd = '';
+            if (length > input.length){
+                for (var i=0; i < (length-input.length); i++){
+                    pd += padChar;
+                }
+            }
+            return pd + input;
+        },
+
+        //private.  compare to Ext4.Object.merge(), except this does mergeIf()
+        rApplyIf : function(a, b){
+            a = a || {};
+
+            for(var p in b){
+                if(!a.hasOwnProperty(p))
+                    a[p] = b[p];
+                else if (Ext.isObject(a[p]))
+                    LABKEY.Utils.rApplyIf(a[p], b[p]);
+            }
+
+            return a;
+        },
+
+        /**
+         * Returns true if the arguments are case-insensitive equal.  Note: the method converts arguments to strings for the purposes of comparing numbers, which means that it will return odd behaviors with objects (ie. LABKEY.Utils.caseInsensitiveEquals({t: 3}, '[object Object]') returns true)
+         *
+         * @param {String/Number} a The first item to test
+         * @param {String/Number} b The second item to test
+         * @return {boolean} True if arguments are case-insensitive equal, false if not
+        */
+        caseInsensitiveEquals: function(a, b){
+            a = String(a);
+            b = String(b);
+
+            if (a.toLowerCase() == b.toLowerCase())
+                return true;
+            else
+                return false;
+        }
     };
 };

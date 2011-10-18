@@ -291,13 +291,14 @@ that points back to the current page:
 
 
         /**
-         * Get the current base URL, which includes context path
+         * Get the current base URL, which includes context path by default
          * for example: http://labkey.org/labkey/
+         * @param {boolean} [noContextPath] Set true to omit the context path.  Defaults to false.
          * @return {String} Current base URL.
          */
-        getBaseURL : function()
+        getBaseURL : function(noContextPath)
         {
-            return window.location.protocol + '//' + window.location.host + LABKEY.ActionURL.getContextPath() + '/';
+            return window.location.protocol + '//' + window.location.host + (noContextPath ? '' : LABKEY.ActionURL.getContextPath() + '/');
         }
     };
 };
