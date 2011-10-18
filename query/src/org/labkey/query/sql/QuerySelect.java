@@ -1508,7 +1508,7 @@ groupByLoop:
 
         public JdbcType getJdbcType()
         {
-            return JdbcType.NULL;
+            return null != _resolved ? _resolved.getSqlType() : JdbcType.NULL;
         }
 
 
