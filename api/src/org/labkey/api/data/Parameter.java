@@ -18,6 +18,7 @@ package org.labkey.api.data;
 
 import com.google.common.primitives.Ints;
 import org.apache.log4j.Logger;
+import org.jetbrains.annotations.Nullable;
 import org.labkey.api.arrays.IntegerArray;
 import org.labkey.api.attachments.AttachmentFile;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
@@ -188,7 +189,7 @@ public class Parameter
         _constant = constant;
     }
 
-    public void setValue(Object in) throws SQLException
+    public void setValue(@Nullable Object in) throws SQLException
     {
         if (_constant)
             throw new IllegalStateException("Can't set constant parameter");
@@ -261,7 +262,7 @@ public class Parameter
     }
 
     
-    public static Object getValueToBind(Object value) throws SQLException
+    public static Object getValueToBind(@Nullable Object value) throws SQLException
     {
         if (value instanceof Callable)
         {

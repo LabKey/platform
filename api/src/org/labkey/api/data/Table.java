@@ -95,7 +95,13 @@ import static org.apache.commons.lang.StringUtils.stripEnd;
 
 public class Table
 {
-    public static Set<String> ALL_COLUMNS = Collections.unmodifiableSet(Collections.<String>emptySet());
+    public static final Set<String> ALL_COLUMNS = Collections.unmodifiableSet(Collections.<String>emptySet());
+
+    public static final String SQLSTATE_TRANSACTION_STATE = "25000";
+    public static final int ERROR_ROWVERSION = 10001;
+    public static final int ERROR_DELETED = 10002;
+
+    private static final Logger _log = Logger.getLogger(Table.class);
 
     // Return all rows instead of limiting to the top n
     public static final int ALL_ROWS = -1;
@@ -104,6 +110,10 @@ public class Table
 
     // Makes long parameter lists easier to read
     public static final int NO_OFFSET = 0;
+
+    private Table()
+    {
+    }
 
     public static boolean validMaxRows(int maxRows)
     {
@@ -114,17 +124,6 @@ public class Table
     {
         return offset >= 0;
     }
-
-    public static String SQLSTATE_TRANSACTION_STATE = "25000";
-    public static final int ERROR_ROWVERSION = 10001;
-    public static final int ERROR_DELETED = 10002;
-
-    private static Logger _log = Logger.getLogger(Table.class);
-
-    private Table()
-    {
-    }
-
 
     // Careful: caller must track and clean up parameters (e.g., close InputStreams) after execution is complete
     public static PreparedStatement prepareStatement(Connection conn, String sql, Object[] parameters)
@@ -355,16 +354,17 @@ public class Table
     }
 
 
-    public static <K> K[] executeQuery(DbSchema schema, SQLFragment sqlf, Class<K> clss)
-            throws SQLException
+    @NotNull
+    public static <K> K[] executeQuery(DbSchema schema, SQLFragment sqlf, Class<K> clss) throws SQLException
     {
-        return internalExecuteQueryArray(schema, sqlf.getSQL(), sqlf.getParamsArray(), clss, NO_OFFSET);
+        return new LegacySqlSelector(schema, sqlf).getArray(clss);
     }
 
 
-    public static <K> K[] executeQuery(DbSchema schema, String sql, Object[] parameters, Class<K> clss) throws SQLException
+    @NotNull
+    public static <K> K[] executeQuery(DbSchema schema, String sql, @Nullable Object[] parameters, Class<K> clss) throws SQLException
     {
-        return internalExecuteQueryArray(schema, sql, parameters, clss, NO_OFFSET);
+        return new LegacySqlSelector(schema, fragment(sql, parameters)).getArray(clss);
     }
 
     @NotNull
@@ -597,7 +597,7 @@ public class Table
     public static <K> K[] executeArray(TableInfo table, ColumnInfo col, @Nullable Filter filter, @Nullable Sort sort, Class<K> c)
             throws SQLException
     {
-        Map<String,ColumnInfo> cols = new CaseInsensitiveHashMap<ColumnInfo>();
+        Map<String, ColumnInfo> cols = new CaseInsensitiveHashMap<ColumnInfo>();
         cols.put(col.getName(), col);
         if (filter != null || sort != null)
             ensureRequiredColumns(table, cols, filter, sort, null);
@@ -640,7 +640,7 @@ public class Table
     }
 
     // TODO: Matt: Table layer allows parameters == null, but SQLFragment doesn't... change SQLFragment?  Or change Table callers?
-    private static SQLFragment fragment(String sql, Object[] parameters)
+    private static SQLFragment fragment(String sql, @Nullable Object[] parameters)
     {
         return new SQLFragment(sql, null == parameters ? new Object[0] : parameters);
     }
@@ -1195,14 +1195,8 @@ public class Table
         // add 1 to count so we can set isComplete()
         if (null == clazz || java.sql.ResultSet.class.isAssignableFrom(clazz))
             return rowcount + 1;
+
         return rowcount;
-    }
-
-
-    public static SQLFragment getFullSelectSQL(TableInfo table, List<ColumnInfo> select, Filter filter, Sort sort)
-    {
-        List<ColumnInfo> allColumns = new ArrayList<ColumnInfo>(select);
-        return QueryService.get().getSelectSQL(table, allColumns, filter, sort, ALL_ROWS, NO_OFFSET, false);
     }
 
 
@@ -2164,7 +2158,7 @@ public class Table
                 : "objecturi";
         Parameter objecturiParameter = new Parameter(objectURIColumnName, JdbcType.VARCHAR);
 
-        String comma = "";
+        String comma;
         Set<String> done = Sets.newCaseInsensitiveHashSet();
 
         String objectIdVar = null;
@@ -2215,7 +2209,7 @@ public class Table
                 sqlfObject.append(");\n");
 
                 // Grab the object's ObjectId
-                sqlfObject.append(setKeyword + objectIdVar + " = (");
+                sqlfObject.append(setKeyword).append(objectIdVar).append(" = (");
                 sqlfObject.append("SELECT ObjectId FROM exp.Object WHERE Container = ");
                 appendParameterOrVariable(sqlfObject, d, useVariables, containerParameter, parameterToVariable);
                 sqlfObject.append(" AND ObjectURI = ");
@@ -2371,7 +2365,7 @@ public class Table
         if (insert)
         {
             // Create a standard INSERT INTO table (col1, col2) VALUES (val1, val2) statement
-            sqlfInsertInto.append("INSERT INTO " + table + " (");
+            sqlfInsertInto.append("INSERT INTO ").append(String.valueOf(table)).append(" (");
             comma = "";
             for (SQLFragment colSQL : cols)
             {
@@ -2392,7 +2386,7 @@ public class Table
         else
         {
             // Create a standard UPDATE table SET col1 = val1, col2 = val2 statement
-            sqlfInsertInto.append("UPDATE " + table + " SET ");
+            sqlfInsertInto.append("UPDATE ").append(String.valueOf(table)).append(" SET ");
             comma = "";
             for (int i = 0; i < cols.size(); i++)
             {
@@ -2477,12 +2471,12 @@ public class Table
             // wrap in a function
             SQLFragment fn = new SQLFragment();
             String fnName = d.getGlobalTempTablePrefix() + "fn_" + GUID.makeHash();
-            fn.append("CREATE FUNCTION " + fnName + "(");
+            fn.append("CREATE FUNCTION ").append(fnName).append("(");
             // TODO d.execute() doesn't handle temp schema
             SQLFragment call = new SQLFragment("SELECT ");
             if (countReturnIds > 0)
                 call.append("* FROM ");
-            call.append(fnName + "(");
+            call.append(fnName).append("(");
             final SQLFragment drop = new SQLFragment("DROP FUNCTION " + fnName + "(");
             comma = "";
             for (Map.Entry<Parameter,String> e : parameterToVariable.entrySet())
@@ -2494,7 +2488,7 @@ public class Table
                 fn.append(variable);
                 fn.append(" ");
                 fn.append(type);
-                fn.append(" -- " + p.getName());
+                fn.append(" -- ").append(p.getName());
                 drop.append(comma).append(type);
                 call.append(comma).append("?");
                 call.add(p);
