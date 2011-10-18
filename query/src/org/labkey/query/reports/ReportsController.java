@@ -24,7 +24,6 @@ import org.json.JSONArray;
 import org.labkey.api.action.ApiAction;
 import org.labkey.api.action.ApiResponse;
 import org.labkey.api.action.ApiSimpleResponse;
-import org.labkey.api.action.ExportAction;
 import org.labkey.api.action.ExtFormAction;
 import org.labkey.api.action.FormViewAction;
 import org.labkey.api.action.GWTServiceAction;
@@ -33,7 +32,6 @@ import org.labkey.api.action.SpringActionController;
 import org.labkey.api.admin.AdminUrls;
 import org.labkey.api.attachments.AttachmentForm;
 import org.labkey.api.attachments.AttachmentService;
-import org.labkey.api.data.CacheableWriter;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.ExcelWriter;
@@ -90,7 +88,8 @@ import org.labkey.api.services.ServiceRegistry;
 import org.labkey.api.settings.AdminConsole;
 import org.labkey.api.settings.AdminConsole.SettingsLinkType;
 import org.labkey.api.study.reports.CrosstabReport;
-import org.labkey.api.thumbnail.ThumbnailService;
+import org.labkey.api.thumbnail.BaseThumbnailAction;
+import org.labkey.api.thumbnail.StaticThumbnailProvider;
 import org.labkey.api.util.IdentifierString;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.Pair;
@@ -121,10 +120,8 @@ import java.io.File;
 import java.io.PrintWriter;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Calendar;
 import java.util.Collection;
 import java.util.Collections;
-import java.util.GregorianCalendar;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -1659,28 +1656,23 @@ public class ReportsController extends SpringActionController
 
 
     @RequiresPermissionClass(ReadPermission.class)
-    public class ThumbnailAction extends ExportAction<ThumbnailForm>
+    public class ThumbnailAction extends BaseThumbnailAction<ThumbnailForm>
     {
         @Override
-        public void export(ThumbnailForm form, HttpServletResponse response, BindException errors) throws Exception
+        public void export(ThumbnailForm thumbnailForm, HttpServletResponse response, BindException errors) throws Exception
         {
-            ThumbnailService svc = ServiceRegistry.get().getService(ThumbnailService.class);
+            super.export(thumbnailForm, response, errors);
+        }
 
-            if (null == svc)
-                return;
-
+        @Override
+        public StaticThumbnailProvider getProvider(ThumbnailForm form) throws Exception
+        {
             Report report = form.getReportId().getReport();
 
             if (null != report && report.getDescriptor().canRead(getUser()))
-            {
-                CacheableWriter writer = svc.getThumbnailWriter(report);
-
-                // TODO: need to handle client caching better -- use long expiration and _dc to defeat caching
-                Calendar expiration = new GregorianCalendar();
-                expiration.add(Calendar.SECOND, 5);
-
-                writer.writeToResponse(response, expiration);
-            }
+                return report;
+            else
+                return null;
         }
     }
 

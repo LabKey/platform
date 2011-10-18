@@ -2824,7 +2824,6 @@ study/src/org/labkey/study/requirements/RequirementProvider.java -text
 study/src/org/labkey/study/requirements/RequirementType.java -text
 study/src/org/labkey/study/requirements/SpecimenRequestRequirementProvider.java -text
 study/src/org/labkey/study/requirements/SpecimenRequestRequirementType.java -text
-study/src/org/labkey/study/samples/ByteArrayAttachmentFile.java -text
 study/src/org/labkey/study/samples/SampleSearchBean.java -text
 study/src/org/labkey/study/samples/SampleSearchWebPart.java -text
 study/src/org/labkey/study/samples/SamplesWebPart.java -text

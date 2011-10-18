@@ -18,6 +18,7 @@ package org.labkey.core.thumbnail;
 import org.apache.log4j.Logger;
 import org.labkey.api.attachments.AttachmentFile;
 import org.labkey.api.attachments.AttachmentService;
+import org.labkey.api.attachments.ByteArrayAttachmentFile;
 import org.labkey.api.attachments.InputStreamAttachmentFile;
 import org.labkey.api.data.CacheableWriter;
 import org.labkey.api.security.User;

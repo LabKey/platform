@@ -55,7 +55,7 @@ import org.labkey.api.security.permissions.*;
 import org.labkey.api.services.ServiceRegistry;
 import org.labkey.api.files.FileContentService;
 import org.labkey.study.requirements.SpecimenRequestRequirementType;
-import org.labkey.study.samples.ByteArrayAttachmentFile;
+import org.labkey.api.attachments.ByteArrayAttachmentFile;
 import org.labkey.study.samples.SampleSearchWebPart;
 import org.labkey.study.samples.SamplesWebPart;
 import org.labkey.study.samples.notifications.ActorNotificationRecipientSet;
