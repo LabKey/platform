@@ -38,14 +38,17 @@ Ext4.define('LABKEY.ext4.DataViewsPanel', {
             }
         });
 
+        // The following default to type 'string'
         var fields = [
             {name : 'category'},
             {name : 'categoryDisplayOrder', type : 'int'},
             {name : 'created',              type : 'date'},
             {name : 'createdBy'},
             {name : 'container'},
+            {name : 'dataType'},
             {name : 'editable',             type : 'boolean'},
             {name : 'editUrl'},
+            {name : 'entityId'},
             {name : 'description'},
             {name : 'displayOrder',         type : 'int'},
             {name : 'hidden',               type : 'boolean'},
@@ -63,10 +66,23 @@ Ext4.define('LABKEY.ext4.DataViewsPanel', {
             {name : 'version'}
         ];
 
-        // define Model
+        // define Models
         Ext4.define('Dataset.Browser.View', {
             extend : 'Ext.data.Model',
             fields : fields
+        });
+
+        Ext4.define('Dataset.Browser.Category', {
+            extend : 'Ext.data.Model',
+            fields : [
+                {name : 'created',      type : 'date'},
+                {name : 'createdBy'                  },
+                {name : 'displayOrder', type : 'int' },
+                {name : 'label'                      },
+                {name : 'modfied',      type : 'date'},
+                {name : 'modifiedBy'                 },
+                {name : 'rowid',        type : 'int' }
+            ]
         });
 
         this.callParent([config]);
@@ -79,10 +95,11 @@ Ext4.define('LABKEY.ext4.DataViewsPanel', {
 
         this.customMode = false;
         this.editLinkCls = 'edit-views-link';
+        this.searchVal = "";
 
         this.items = [];
 
-        this.store  = this.initializeViewStore();
+        this.store  = this.initializeViewStore(true);
         this.searchPanel = this.initSearch();
         this.gridPanel   = this.initGrid();
         this.customPanel = this.initCustomization();
@@ -92,9 +109,9 @@ Ext4.define('LABKEY.ext4.DataViewsPanel', {
         this.callParent([arguments]);
     },
 
-    initializeViewStore : function() {
+    initializeViewStore : function(useGrouping) {
 
-        return Ext4.create('Ext.data.Store', {
+        var config = {
             pageSize: 100,
             model   : 'Dataset.Browser.View',
             autoLoad: true,
@@ -111,39 +128,74 @@ Ext4.define('LABKEY.ext4.DataViewsPanel', {
                     root : 'data'
                 }
             },
-            groupField : 'category', // this applies to the grouping feature
+            listeners : {
+                load : this.onViewLoad,
+                scope: this
+            },
+            scope : this
+        };
+
+        if (useGrouping)
+            config["groupField"] = 'category';
+
+        return Ext4.create('Ext.data.Store', config);
+    },
+
+    initializeCategoriesStore : function(useGrouping)
+    {
+        var config = {
+            pageSize: 100,
+            model   : 'Dataset.Browser.Category',
+            autoLoad: true,
+            autoSync: true,
+            proxy   : {
+                type   : 'ajax',
+                api    : {
+                    create  : LABKEY.ActionURL.buildURL('study', 'saveCategories.api'),
+                    read    : LABKEY.ActionURL.buildURL('study', 'getCategories.api'),
+                    update  : LABKEY.ActionURL.buildURL('study', 'saveCategories.api'),
+                    destroy : LABKEY.ActionURL.buildURL('study', 'deleteCategories.api')
+                },
+                extraParams : {
+                    // These parameters are required for specific webpart filtering
+                    pageId : this.pageId,
+                    index  : this.index
+                },
+                reader : {
+                    type : 'json',
+                    root : 'categories'
+                },
+                writer: {
+                    type : 'json',
+                    root : 'categories'
+                },
+                listeners : {
+                    exception : function(p, response, operations, eOpts)
+                    {
+                        var x = 1;
+                    }
+                }
+            },
             listeners : {
                 load : function(s, recs, success, operation, ops) {
-                    s.sort('category', 'ASC');
-                    s.sort('name', 'ASC');
+                    s.sort('displayOrder', 'ASC');
                 }
             }
-        });
+        };
+
+        if (useGrouping)
+            config["groupField"] = 'category';
+
+        return Ext4.create('Ext.data.Store', config);
     },
 
     initSearch : function() {
 
         function filterSearch() {
-            var val = searchField.getValue();
-            var s   = this.store;
-            s.clearFilter();
-            if (val) {
-                s.filter([{
-                    fn : function(rec) {
-                        if (rec.data)
-                        {
-                            var t = new RegExp(Ext4.escapeRe(val), 'i');
-                            var s = '';
-                            if (rec.data.name)
-                                s += rec.data.name;
-                            if (rec.data.category)
-                                s += rec.data.category;
-                            if (rec.data.type)
-                                s += rec.data.type;
-                            return t.test(s);
-                        }
-                    }
-                }]);
+            this.searchVal = searchField.getValue();
+            if (this.searchVal && this.searchVal != "")
+            {
+                this.hiddenFilter();
             }
         }
 
@@ -190,7 +242,7 @@ Ext4.define('LABKEY.ext4.DataViewsPanel', {
          * Enable Grouping by Category
          */
         var groupingFeature = Ext4.create('Ext4.grid.feature.Grouping', {
-            groupHeaderTpl : 'Category: {name}'
+            groupHeaderTpl : '&nbsp;{name}' // &nbsp; allows '+/-' to show up
         });
 
         /**
@@ -206,9 +258,7 @@ Ext4.define('LABKEY.ext4.DataViewsPanel', {
                 '<tr><td>Author:</td><td>{data.createdBy}</td></tr>' +
                 '</tpl>' +
                 '<tpl if="data.type != undefined && data.type.length">' +
-                '<tr><td>Type:</td><td>{data.type}&nbsp;&nbsp;' +
-                '<tpl if="data.icon != undefined && data.icon.length"><img src="{data.icon}"/></tpl>' +
-                '</td></tr>' +
+                '<tr><td>Type:</td><td>{data.type}</td></tr>' +
                 '</tpl>' +
                 '<tpl if="data.description != undefined && data.description.length">' +
                 '<tr><td valign="top">Description:</td><td>{data.description}</td></tr>' +
@@ -310,9 +360,6 @@ Ext4.define('LABKEY.ext4.DataViewsPanel', {
             multiSelect: true,
             viewConfig : {
                 stripRows : true,
-                plugins   : {
-                    ptype : 'gridviewdragdrop'
-                },
                 listeners : {
                     render : initToolTip,
                     scope : this
@@ -339,8 +386,7 @@ Ext4.define('LABKEY.ext4.DataViewsPanel', {
                     }
                 },
                 reconfigure : function() {
-//                    var s = groupingFeature.view.getStore();
-                    this.store.sort('category', 'DESC');
+                    this.store.sort('categoryDisplayOrder', 'ASC');
                     this.customize();
                 },
                 scope : this
@@ -427,6 +473,12 @@ Ext4.define('LABKEY.ext4.DataViewsPanel', {
         return this.customMode;
     },
 
+    onViewLoad : function(s, recs, success, operation, ops) {
+        this.hiddenFilter();
+        this.store.sort('categoryDisplayOrder', 'ASC');
+        this.store.sort('name', 'ASC');
+    },
+
     onEnableCustomMode : function() {
 
         this.customMode = true;
@@ -457,6 +509,10 @@ Ext4.define('LABKEY.ext4.DataViewsPanel', {
             this.customPanel.hide();
         }
 
+        this.customMode = false;
+
+        this.hiddenFilter();
+
         // show edit column
         var editColumn = Ext4.getCmp('edit-column-' + this.webpartId);
         if (editColumn)
@@ -469,8 +525,6 @@ Ext4.define('LABKEY.ext4.DataViewsPanel', {
             editColumn.hide();
             this.gridPanel.doLayout(false, true);
         }
-
-        this.customMode = false;
     },
 
     // private
@@ -524,7 +578,9 @@ Ext4.define('LABKEY.ext4.DataViewsPanel', {
                 items      : cbItems
             },{
                 xtype   : 'button',
-                text    : 'Order Categories'
+                text    : 'Manage Categories',
+                handler : this.onManageCategories,
+                scope   : this
             },{
                 xtype   : 'hidden',
                 name    : 'webPartId',
@@ -572,6 +628,8 @@ Ext4.define('LABKEY.ext4.DataViewsPanel', {
             scope : this
         });
 
+        this.hiddenFilter();
+
         // show edit column
         var editColumn = Ext4.getCmp('edit-column-' + this.webpartId);
         if (editColumn)
@@ -582,6 +640,7 @@ Ext4.define('LABKEY.ext4.DataViewsPanel', {
                     var _el = Ext.get(el);
                     _el.addClass(this.editLinkCls);
                 }, this);
+
                 this.gridPanel.doLayout(false, true);
             }, this);
         }
@@ -599,6 +658,37 @@ Ext4.define('LABKEY.ext4.DataViewsPanel', {
         this.fireEvent((this._inCustomMode() ? 'disableCustomMode' : 'enableCustomMode'), this);
     },
 
+    hiddenFilter : function() {
+        this.store.clearFilter();
+        var _custom = this._inCustomMode();
+        this.store.filterBy(function(rec, id){
+
+            var answer = true;
+            if (rec.data && this.searchVal && this.searchVal != "")
+            {
+                var t = new RegExp(Ext4.escapeRe(this.searchVal), 'i');
+                var s = '';
+                if (rec.data.name)
+                    s += rec.data.name;
+                if (rec.data.category)
+                    s += rec.data.category;
+                if (rec.data.type)
+                    s += rec.data.type;
+                answer = t.test(s);
+            }
+
+            // custom mode will show hidden
+            if (_custom)
+                return answer;
+
+            // otherwise never show hidden records
+            if (rec.data.hidden)
+                return false;
+
+            return answer;
+        }, this);
+    },
+
     onEditClick : function(view, record) {
 
         var tip = Ext.getCmp(this._tipID);
@@ -606,6 +696,31 @@ Ext4.define('LABKEY.ext4.DataViewsPanel', {
             tip.hide();
 
         var formItems = [];
+
+        /* Record 'entityId' is required*/
+        var editable = true;
+        if (record.data.reportId == undefined || record.data.reportId == "")
+        {
+            console.warn('Only reports are currently editable');
+            editable = false;
+        }
+
+        // hidden items
+        formItems.push({
+            xtype : 'hidden',
+            name  : 'reportId',
+            value : record.data.reportId
+        },{
+            xtype : 'hidden',
+            name  : 'entityId',
+            value : record.data.entityId
+        },{
+            xtype : 'hidden',
+            name  : 'dataType',
+            value : record.data.dataType
+        });
+
+        // displayed items
         formItems.push({
             xtype      : (record.data.type.toLowerCase() == 'report' ? 'textfield' : 'displayfield'),
             fieldLabel : 'Name',
@@ -613,10 +728,12 @@ Ext4.define('LABKEY.ext4.DataViewsPanel', {
         },{
             xtype      : 'textfield',
             fieldLabel : 'Category',
+            name       : 'category',
             value      : record.data.category
         },{
-            xtype      : 'textarea',
+            xtype      : (editable == true ? 'textarea' : 'displayfield'),
             fieldLabel : 'Description',
+            name       : 'description',
             value      : record.data.description
         },{
             xtype      : 'displayfield',
@@ -626,8 +743,8 @@ Ext4.define('LABKEY.ext4.DataViewsPanel', {
         },{
             xtype      : 'radiogroup',
             fieldLabel : 'Visibility',
-            items      : [{boxLabel : 'Public',  name : 'visibility', checked : true},
-                          {boxLabel : 'Private', name : 'visibility', checked : false}]
+            items      : [{boxLabel : 'Visible',  name : 'hidden', checked : !record.data.hidden, inputValue : false},
+                          {boxLabel : 'Hidden',   name : 'hidden', checked : record.data.hidden,  inputValue : true}]
         });
 
         if (record.data.created) {
@@ -667,18 +784,178 @@ Ext4.define('LABKEY.ext4.DataViewsPanel', {
                     style      : 'padding: 4px 0',
                     labelSeparator : ''
                 },
-                items : formItems,
+                items       : formItems,
                 buttonAlign : 'left',
-                buttons : [{
+                buttons     : [{
                     text : 'Save',
                     formBind: true,
-                    handler : function() {
-                        editWindow.close();
-                    }
+                    handler : function(btn) {
+                        var form = btn.up('form').getForm();
+                        if (form.isValid())
+                        {
+                            Ext4.Ajax.request({
+                                url     : LABKEY.ActionURL.buildURL('study', 'editView.api'),
+                                method  : 'POST',
+                                params  : form.getValues(),
+                                success : function(){
+                                    this.onEditSave(record, form.getValues());
+                                    editWindow.close();
+                                },
+                                failure : function(response){
+                                    Ext4.Msg.alert('Failure', Ext4.decode(response.responseText).exception);
+                                },
+                                scope : this
+                            });
+                        }
+                    },
+                    scope   : this
                 }]
-            }]
+            }],
+            scope : this
         });
 
         editWindow.show();
+    },
+
+    onEditSave : function(record, values) {
+        this.store.load();
+    },
+
+    onManageCategories : function(btn) {
+
+        var cellEditing = Ext4.create('Ext.grid.plugin.CellEditing', {
+            clicksToEdit: 2
+        });
+
+        var confirm = false;
+        var store = this.initializeCategoriesStore();
+        store.on('update', function(){
+            console.info('update requested');
+            confirm = true;
+        }, this);
+        store.on('remove', function(){
+            console.info('remove requested');
+            confirm = true;
+        }, this);
+
+        var grid = Ext4.create('Ext.grid.Panel', {
+            store    : store,
+            border   : false, frame: false,
+            autoScroll : true,
+            columns  : [{
+                text     : 'Category',
+                flex     : 1,
+                sortable : true,
+                dataIndex: 'label',
+                editor   : {
+                    xtype:'textfield',
+                    allowBlank:false
+                }
+            },{
+                text     : 'Order',
+                sortable : true,
+                width    : 50,
+                dataIndex: 'displayOrder'
+            },{
+                xtype    : 'actioncolumn',
+                width    : 50,
+                align    : 'center',
+                sortable : false,
+                items : [{
+                    icon    : LABKEY.contextPath + '/ext-4.0.2a/resources/themes/images/access/qtip/close.gif',
+                    tooltip : 'Delete',
+                    handler : function(grid, rowIndex, colIndex) {
+                        var rec = store.getAt(rowIndex);
+                        alert("Sell " + rec.get('company'));
+                    }
+                }],
+                listeners : {
+                    click : function(col, grid, idx, evt, x, y, z)
+                    {
+                        var label = store.getAt(idx).data.label;
+                        var id    = store.getAt(idx).data.rowid;
+
+                        var cats = {
+                            categories : [{label : label, rowid: id}]
+                        };
+
+                        Ext4.Msg.show({
+                            title : 'Delete Category',
+                            msg   : 'Please confirm you would like to <b>DELETE</b> \'' + label + '\' from the set of categories.',
+                            buttons : Ext4.MessageBox.OKCANCEL,
+                            icon    : Ext4.MessageBox.WARNING,
+                            fn      : function(btn){
+                                if (btn == 'ok') {
+                                    Ext4.Ajax.request({
+                                        url    : LABKEY.ActionURL.buildURL('study', 'deleteCategories.api'),
+                                        method : 'POST',
+                                        jsonData : cats, // TODO: This is deprected -- should use proxy 'destroy' api
+                                        success: function() {
+                                            store.load();
+                                        },
+                                        failure: function(response) {
+                                           Ext4.Msg.alert('Failure', Ext4.decode(response.responseText).exception);
+                                        }
+                                    });
+                                }
+                            },
+                            scope  : this
+                        });
+                    },
+                    scope : this
+                }
+            }],
+            multiSelect : true,
+            cls         : 'iScroll', // webkit custom scroll bars
+            viewConfig : {
+                stripRows : true,
+                plugins   : [{
+                    ptype : 'gridviewdragdrop',
+                    dragText: 'Drag and drop to reorganize'
+                }]
+            },
+            plugins   : [cellEditing],
+            selType   : 'rowmodelfixed',
+            scope     : this
+        });
+
+        var categoryOrderWindow = Ext4.create('Ext.window.Window', {
+            title  : 'Manage Categories',
+            width  : 550,
+            height : 400,
+            layout : 'fit',
+            modal  : true,
+            defaults  : {
+                frame : false
+            },
+            items   : [grid],
+            buttons : [{
+                text    : 'Create New Category',
+                handler : function(btn) {
+                    var r = Ext4.ModelManager.create({
+                        label        : 'New Category',
+                        displayOrder : 0
+                    }, 'Dataset.Browser.Category');
+                    store.insert(0, r);
+                    cellEditing.startEditByPosition({row : 0, column : 0});
+                }
+            },{
+                text    : 'Done',
+                handler : function(btn) {
+                    categoryOrderWindow.close();
+                }
+            }],
+            listeners : {
+                beforeclose : function()
+                {
+                    if (confirm)
+                        this.onEditSave();
+                },
+                scope : this
+            },
+            scope     : this
+        });
+
+        categoryOrderWindow.show();
     }
 });

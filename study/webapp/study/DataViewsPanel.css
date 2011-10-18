@@ -60,6 +60,11 @@
     background-color: white;
 }
 
+.x4-reset .x4-message-box .x4-window-body
+{
+    background-color: transparent;
+}
+
 /* Ext4 Forms */
 .x4-reset .x4-form-text
 {
@@ -69,4 +74,9 @@
 .x4-reset .x4-form-checkbox, .x4-reset .x4-form-radio
 {
     float : left;
+}
+
+.x4-action-col-icon
+{
+    cursor: pointer;
 }
