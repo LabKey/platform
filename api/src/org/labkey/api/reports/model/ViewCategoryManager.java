@@ -16,6 +16,7 @@
 package org.labkey.api.reports.model;
 
 import junit.framework.Assert;
+import org.apache.log4j.Logger;
 import org.junit.Test;
 import org.labkey.api.cache.DbCache;
 import org.labkey.api.data.Container;
@@ -26,9 +27,12 @@ import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.Table;
 import org.labkey.api.data.TableInfo;
+import org.labkey.api.reports.ReportService;
 import org.labkey.api.security.User;
+import org.labkey.api.util.ContainerUtil;
 import org.labkey.api.util.TestContext;
 
+import java.beans.PropertyChangeEvent;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -42,12 +46,16 @@ import java.util.concurrent.CopyOnWriteArrayList;
  * Date: Oct 12, 2011
  * Time: 7:13:20 PM
  */
-public class ViewCategoryManager
+public class ViewCategoryManager implements ContainerManager.ContainerListener
 {
+    private static final Logger _log = Logger.getLogger(ViewCategoryManager.class);
     private static final ViewCategoryManager _instance = new ViewCategoryManager();
     private static final List<ViewCategoryListener> _listeners = new CopyOnWriteArrayList<ViewCategoryListener>();
 
-    private ViewCategoryManager(){}
+    private ViewCategoryManager()
+    {
+        ContainerManager.addContainerListener(this);
+    }
 
     public static ViewCategoryManager getInstance()
     {
@@ -324,6 +332,25 @@ public class ViewCategoryManager
             // make sure all the listeners were invoked correctly
             assertTrue(notifications.isEmpty());
             ViewCategoryManager.removeCategoryListener(listener);
+        }
+    }
+
+    @Override
+    public void containerCreated(Container c, User user){}
+    @Override
+    public void containerMoved(Container c, Container oldParent, User user){}
+    @Override
+    public void propertyChange(PropertyChangeEvent evt){}
+
+    @Override
+    public void containerDeleted(Container c, User user)
+    {
+        try {
+            ContainerUtil.purgeTable(getTableInfoCategories(), c, "Container");
+        }
+        catch (SQLException x)
+        {
+            _log.error("Error occurred deleting categories for container", x);
         }
     }
 }
