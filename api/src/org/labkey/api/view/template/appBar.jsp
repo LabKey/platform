@@ -35,8 +35,7 @@
 <div class="labkey-app-bar">
 <table class="folder-header">
     <tr>
-        <td class="folder-title"><a href="<%=h(startUrl.getLocalURIString())%>"><%=h(bean.getFolderTitle())%></a><br/>
-        <span style="font-size: 11px; line-height: 15px;"></span></td>
+        <td class="folder-title"><a href="<%=h(startUrl.getLocalURIString())%>"><%=h(bean.getFolderTitle())%></a></td>
         <td class="button-bar">
             <ul class="labkey-tab-strip">
                 <%
