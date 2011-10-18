@@ -27,10 +27,13 @@ import org.labkey.api.view.Portal;
 import org.labkey.api.view.ViewContext;
 import org.labkey.api.view.NavTree;
 import org.labkey.api.view.template.AppBar;
+import org.labkey.api.view.template.PageConfig;
 
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Set;
+import java.util.TreeSet;
 
 /**
  * User: Mark Igra
@@ -122,7 +125,7 @@ public interface FolderType
      */
     public void addManageLinks(NavTree adminNavTree, Container container);
 
-    public AppBar getAppBar(ViewContext context);
+    public AppBar getAppBar(ViewContext context, PageConfig pageConfig);
 
     /** @return whether this is intended to be used exclusively for workbooks */
     public boolean isWorkbookType();
@@ -171,9 +174,35 @@ public interface FolderType
             DefaultFolderType.addStandardManageLinks(adminNavTree, container);
         }
 
-        public AppBar getAppBar(ViewContext context)
+        public AppBar getAppBar(ViewContext context, PageConfig pageConfig)
         {
-            return null;
+            List<NavTree> tabs = new ArrayList<NavTree>();
+
+            if (!context.getContainer().isRoot())
+            {
+                Module curModule = pageConfig.getModuleOwner();
+                if (curModule == null)
+                    curModule = ModuleLoader.getInstance().getModuleForController(context.getActionURL().getPageFlow());
+
+
+                Set<Module> moduleForTabs = new TreeSet<Module>(context.getContainer().getActiveModules());
+                if (curModule != null)
+                {
+                    moduleForTabs.add(curModule);
+                }
+
+                for (Module module : moduleForTabs)
+                {
+                    NavTree moduleTab = new NavTree(module.getTabName(context), module.getTabURL(context.getContainer(), context.getUser()));
+                    if (module.equals(curModule))
+                    {
+                        moduleTab.setSelected(true);
+                    }
+                    tabs.add(moduleTab);
+                }
+            }
+            
+            return new AppBar(context.getContainer().getName(), tabs);
         }
 
         @Override

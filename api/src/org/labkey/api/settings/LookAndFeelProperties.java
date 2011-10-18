@@ -40,7 +40,6 @@ public class LookAndFeelProperties extends AbstractWriteableSettingsGroup
     protected static final String LOGO_HREF_PROP = "logoHref";
     protected static final String THEME_FONT_PROP = "themeFont";
     protected static final String MENU_UI_ENABLED_PROP = "menuUIEnabled";
-    protected static final String APP_BAR_UI_ENABLED_PROP = "appBarUIEnabled";
 
     protected static final String COMPANY_NAME_PROP = "companyName";
     protected static final String SYSTEM_EMAIL_ADDRESS_PROP = "systemEmailAddress";
@@ -187,11 +186,6 @@ public class LookAndFeelProperties extends AbstractWriteableSettingsGroup
         }
 
         return path.replace("${contextPath}", AppProps.getInstance().getContextPath());
-    }
-
-    public boolean isAppBarUIEnabled()
-    {
-        return lookupBooleanValue(APP_BAR_UI_ENABLED_PROP, false);
     }
 
     public boolean isMenuUIEnabled()

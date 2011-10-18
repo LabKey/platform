@@ -86,9 +86,7 @@ public class HomeTemplate extends PrintTemplate
 
         setView("topmenu", new MenuBarView(context.getContainer()));
 
-        LookAndFeelProperties laf = LookAndFeelProperties.getInstance(context.getContainer());
-        if (laf.isAppBarUIEnabled())
-            setView("appbar", getAppBarView(context, page, page.getTitle()));
+        setView("appbar", getAppBarView(context, page, page.getTitle()));
         setBody(body);
     }
 
@@ -136,17 +134,14 @@ public class HomeTemplate extends PrintTemplate
 
         if (null == appBar)
         {
-            appBar = context.getContainer().getFolderType().getAppBar(context);
+            appBar = context.getContainer().getFolderType().getAppBar(context, page);
             page.setAppBar(appBar);
         }
 
         //HACK to fix up navTrail to delete navBar items
         if (null != appBar)
-            page.setNavTrail(appBar.fixCrumbTrail(page.getNavTrail(), context.getActionURL()));
+            page.setNavTrail(appBar.setNavTrail(page.getNavTrail(), context.getActionURL()));
 
-        if (null == appBar)
-            return null;
-        
         return new AppBarView(appBar);
     }
 

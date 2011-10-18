@@ -31,6 +31,8 @@ import org.labkey.api.study.assay.AssayUrls;
 import org.labkey.api.exp.list.ListService;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.reports.report.ReportUrls;
+import org.labkey.api.view.template.PageConfig;
+import org.springframework.web.servlet.mvc.Controller;
 
 import java.sql.SQLException;
 import java.util.*;
@@ -282,9 +284,14 @@ public class DefaultFolderType implements FolderType
         addStandardManageLinks(adminNavTree, container);
     }
 
-    public AppBar getAppBar(ViewContext context)
+    public AppBar getAppBar(ViewContext context, PageConfig pageConfig)
     {
-        return null;
+        ActionURL startURL = getStartURL(context.getContainer(), context.getUser());
+        NavTree startPage = new NavTree(getStartPageLabel(context), startURL);
+        String controllerName = context.getActionURL().getPageFlow();
+        Module currentModule = ModuleLoader.getInstance().getModuleForController(controllerName);
+        startPage.setSelected(currentModule == getDefaultModule());
+        return new AppBar(context.getContainer().getName(), startPage);
     }
 
     public boolean isWorkbookType()

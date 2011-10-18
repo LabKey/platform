@@ -203,7 +203,7 @@ public class ThawListResolverType extends AssayFileWriter implements Participant
 
     public void configureRun(AssayRunUploadContext context, ExpRun run, Map<ExpData, String> inputDatas) throws ExperimentException
     {
-        String type = context.getRequest().getParameter(THAW_LIST_TYPE_INPUT_NAME);
+        String type = context.getRequest() == null ? null : context.getRequest().getParameter(THAW_LIST_TYPE_INPUT_NAME);
 
         InputStream in = null;
 

@@ -35,14 +35,15 @@
 <div class="labkey-app-bar">
 <table class="folder-header">
     <tr>
-        <td class="folder-title"><a href="<%=h(startUrl.getLocalURIString())%>"><%=h(bean.getFolderTitle())%></a></td>
+        <td class="folder-title"><a href="<%=h(startUrl.getLocalURIString())%>"><%=h(bean.getFolderTitle())%></a><br/>
+        <span style="font-size: 11px; line-height: 15px;"></span></td>
         <td class="button-bar">
             <ul class="labkey-tab-strip">
                 <%
                     for (NavTree navTree : bean.getButtons())
                     {
                 %>
-                        <li class="<%=navTree.isSelected() ? "labkey-tab-active" : "labkey-tab-inactive"%>"><a href="<%=h(navTree.getValue())%>"><%=h(navTree.getKey())%></a>
+                        <li class="<%=navTree.isSelected() ? "labkey-tab-active" : "labkey-tab-inactive"%>"><a href="<%=h(navTree.getValue())%>" id="<%=h(navTree.getKey())%>Tab"><%=h(navTree.getKey())%></a>
                 <%
                     }
                 %>
@@ -52,6 +53,17 @@
 </table>
 <%if(null != bean.getPageTitle()) {%>
 <table class="labkey-nav-trail">
+    <%if (null != bean.getNavTrail() && bean.getNavTrail().size() > 0) {
+        %>
+        <tr>
+            <td colspan=1 class="labkey-crumb-trail"><span id="navTrailAncestors" style="visibility:hidden">
+                <% for(NavTree curLink : bean.getNavTrail()) {%>
+                    <a href="<%=curLink.getValue()%>"><%=h(curLink.getKey())%></a>&nbsp;&gt;&nbsp;
+                <%
+                    }%>
+            </span></td></tr>
+
+    <%}%>
     <tr>
     <td class="labkey-nav-page-header-container">
     <span class="labkey-nav-page-header" id="labkey-nav-trail-current-page" style="visibility:hidden"><%=h(bean.getPageTitle())%></span>

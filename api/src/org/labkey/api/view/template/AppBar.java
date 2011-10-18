@@ -18,8 +18,8 @@ package org.labkey.api.view.template;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.NavTree;
 
-import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 
 /*
@@ -30,6 +30,7 @@ import java.util.List;
 public class AppBar extends NavTree
 {
     private String _pageTitle;
+    private List<NavTree> _navTrail;
 
     public AppBar(String folderTitle, NavTree... buttons)
     {
@@ -45,7 +46,7 @@ public class AppBar extends NavTree
     public AppBar(List<NavTree> navTrail, List<NavTree> buttons)
     {
         this(navTrail.size() > 0 ? navTrail.get(0).getKey(): "No Page Title...", buttons);
-        fixCrumbTrail(navTrail, null);
+        this._navTrail = fixCrumbTrail(navTrail, null);
     }
 
     public String getFolderTitle()
@@ -77,16 +78,28 @@ public class AppBar extends NavTree
         return null;
     }
 
+    public List<NavTree> getNavTrail()
+    {
+        return _navTrail;
+    }
+
+    public void setNavTrail(List<NavTree> navTrail)
+    {
+        _navTrail = setNavTrail(navTrail, null);
+    }
+
+    public List<NavTree> setNavTrail(List<NavTree> navTrail, ActionURL actionURL)
+    {
+        _navTrail = fixCrumbTrail(navTrail, actionURL);
+        return _navTrail;
+    }
+
     /**
      * Merges an existing NavTrail into the app bar, allows us to highlight the appBar based on existing NavTree code
-     * Some tab in the app bar must always be selected.
-     * Select the last tab with a matching name or link is on the navTrail
      * If the name or url of a tab is the last thing on the navTrail, don't show a page title (just folder title)
      * Otherwise, if the NavTrail is more than length 1, use the last thing on the navTrail as the page title
-     * If nothing on the NavTrail matches, set the last tab to selected
-     * @param crumbTrail
      */
-    public List<NavTree> fixCrumbTrail(List<NavTree> crumbTrail, ActionURL actionURL)
+    private List<NavTree> fixCrumbTrail(List<NavTree> crumbTrail, ActionURL actionURL)
     {
         NavTree[] buttons = getButtons();
         boolean hideTitle = false;
@@ -119,12 +132,17 @@ public class AppBar extends NavTree
         if (hideTitle)
         {
             setPageTitle(null);
-            return new ArrayList<NavTree>(0);
+            return Collections.emptyList();
         }
         else if (crumbTrail.size() >= 1)
         {
+            //First item in crumb trail is home page. Last item is page title.
+            //We don't want either of them in the crumb trail.
             setPageTitle(crumbTrail.get(crumbTrail.size() - 1).getKey());
-            return crumbTrail.subList(crumbTrail.size() -1, crumbTrail.size());
+            if (null != getSelected() && crumbTrail.size() > 1)
+                return crumbTrail.subList(1, crumbTrail.size() - 1);
+            else
+                return Collections.emptyList();
         }
         else
             return crumbTrail;

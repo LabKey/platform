@@ -104,9 +104,4 @@ public class WriteableLookAndFeelProperties extends LookAndFeelProperties
     {
         storeBooleanValue(MENU_UI_ENABLED_PROP, enabled);
     }
-
-    public void setAppBarUIEnabled(boolean enabled)
-    {
-        storeBooleanValue(APP_BAR_UI_ENABLED_PROP, enabled);
-    }
 }
