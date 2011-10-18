@@ -214,7 +214,7 @@ Ext4.define('LABKEY.ext4.DataViewsPanel', {
                 '<tr><td valign="top">Description:</td><td>{data.description}</td></tr>' +
                 '</tpl>' +
                 '<tpl if="data.thumbnail != undefined && data.thumbnail.length">' +
-                '<tr><td colspan="2" align="center"><img style="height:100px;" src="{data.thumbnail}"/></td></tr>' +
+                '<tr><td colspan="2" align="center"><img style="height:200px;max-width:300px;" src="{data.thumbnail}"/></td></tr>' +
                 '</tpl>' +
                 '</table>' +
                 '</div>' +
@@ -528,7 +528,7 @@ Ext4.define('LABKEY.ext4.DataViewsPanel', {
             },{
                 xtype   : 'hidden',
                 name    : 'webPartId',
-                value   : this.webpartId,
+                value   : this.webpartId
             }],
             buttons : [{
                 text     : 'Cancel',
