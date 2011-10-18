@@ -330,7 +330,7 @@ LABKEY.vis.TimeChartPanel = Ext.extend(Ext.Panel, {
             items.push(this.chartEditor);
 
             this.subjectSelector = new LABKEY.vis.SubjectSeriesSelector({
-                subject: (this.chartInfo.chartLayout != "per_group" ? this.chartInfo.subject : {}),
+                subject: (this.chartInfo.chartSubjectSelection != "groups" ? this.chartInfo.subject : {}),
                 subjectNounPlural: this.viewInfo.subjectNounPlural,
                 subjectNounSingular: this.viewInfo.subjectNounSingular,
                 subjectColumn: this.viewInfo.subjectColumn,
@@ -350,7 +350,7 @@ LABKEY.vis.TimeChartPanel = Ext.extend(Ext.Panel, {
             });
 
             this.groupsSelector = new LABKEY.vis.GroupSelector({
-                subject: (this.chartInfo.chartLayout == "per_group" ? this.chartInfo.subject : {}),
+                subject: (this.chartInfo.chartSubjectSelection == "groups" ? this.chartInfo.subject : {}),
                 listeners: {
                     scope: this,
                     'chartDefinitionChanged': function(requiresDataRefresh){
@@ -366,7 +366,7 @@ LABKEY.vis.TimeChartPanel = Ext.extend(Ext.Panel, {
 
             this.seriesSelectorTabPanel = new Ext.TabPanel({
                 id: 'series-selector-tabpanel',
-                activeTab: (this.chartInfo.chartLayout != "per_group" ? 0 : 1),
+                activeTab: (this.chartInfo.chartSubjectSelection == "subjects" ? 0 : 1),
                 padding: 5,
                 enablePanelScroll: true,
                 enableTabScroll: true,
@@ -377,7 +377,7 @@ LABKEY.vis.TimeChartPanel = Ext.extend(Ext.Panel, {
                 listeners: {
                     scope: this,
                     'afterRender': function(){
-                        if(this.chartInfo.chartLayout == "per_group"){
+                        if(this.chartInfo.chartSubjectSelection == "groups"){
                             this.seriesSelectorTabPanel.unhideTabStripItem(this.groupsSelector);
                             this.seriesSelectorTabPanel.hideTabStripItem(this.subjectSelector);
                             this.disableAggregateSelection(false);
@@ -578,11 +578,10 @@ LABKEY.vis.TimeChartPanel = Ext.extend(Ext.Panel, {
         if (!this.rendered)
             return;
 
-        var padding = [40,0];
+        var padding = [55,0];
         var xy = this.el.getXY();
         var size = {
             width : Math.max(100,w-xy[0]-padding[0])//,
-//            height : Math.max(100,h-xy[1]-padding[1])
         };
         this.setWidth(size);
     },
@@ -1492,7 +1491,7 @@ LABKEY.vis.TimeChartPanel = Ext.extend(Ext.Panel, {
                 
                 // unmask the panel if needed
                 if (this.getEl().isMasked())
-                    this.getEl().unmask();                
+                    this.getEl().unmask();
             }, this);
 
             this.chart.removeAll();
