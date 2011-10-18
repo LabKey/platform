@@ -270,6 +270,7 @@ LABKEY.Visualization = new function() {
                 json : Ext.util.JSON.encode(config.visualizationConfig),
                 replace: config.replace,
                 shared: config.shared,
+                saveThumbnail: config.saveThumbnail,
                 svg : config.svg,
                 type : config.type,
                 schemaName: config.schemaName,
