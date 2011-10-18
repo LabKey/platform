@@ -89,6 +89,7 @@ api/src/org/labkey/api/attachments/AttachmentFile.java -text
 api/src/org/labkey/api/attachments/AttachmentForm.java -text
 api/src/org/labkey/api/attachments/AttachmentParent.java -text
 api/src/org/labkey/api/attachments/AttachmentService.java -text
+api/src/org/labkey/api/attachments/ByteArrayAttachmentFile.java -text
 api/src/org/labkey/api/attachments/DocumentConversionService.java -text
 api/src/org/labkey/api/attachments/DocumentWriter.java -text
 api/src/org/labkey/api/attachments/DownloadURL.java -text
@@ -1010,6 +1011,7 @@ api/src/org/labkey/api/study/reports/Crosstab.java -text
 api/src/org/labkey/api/study/reports/CrosstabReport.java -text
 api/src/org/labkey/api/study/reports/CrosstabReportDescriptor.java -text
 api/src/org/labkey/api/study/reports/CrosstabView.java -text
+api/src/org/labkey/api/thumbnail/BaseThumbnailAction.java -text
 api/src/org/labkey/api/thumbnail/DynamicThumbnailProvider.java -text
 api/src/org/labkey/api/thumbnail/StaticThumbnailProvider.java -text
 api/src/org/labkey/api/thumbnail/Thumbnail.java -text

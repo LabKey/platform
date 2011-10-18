@@ -15,9 +15,9 @@
  */
 package org.labkey.api.attachments;
 
+import org.apache.commons.io.IOUtils;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.util.PageFlowUtil;
-import org.systemsbiology.jrap.ByteAppender;
 
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
@@ -31,8 +31,8 @@ import java.io.InputStream;
 public class InputStreamAttachmentFile implements AttachmentFile
 {
     private final InputStream _is;
-    private String _filename;      // TODO: Make final
-    private final ByteAppender _byteBuffer = new ByteAppender();
+    private String _filename;      // TODO: Make final... once setFilename() is removed from interface
+    private final byte[] _bytes;
     private final String _contentType;     // Null means infer from filename
 
     public InputStreamAttachmentFile(InputStream is, String filename)
@@ -47,13 +47,9 @@ public class InputStreamAttachmentFile implements AttachmentFile
 
         try
         {
-            byte[] buffer = new byte[4096];
-            int len;
-
-            while ((len = is.read(buffer)) > 0)
-                _byteBuffer.append(buffer, 0, len);
-
-            _is = new ByteArrayInputStream(_byteBuffer.getBuffer());
+            // TODO: Check for ByteArrayInputStream and short-circuit
+            _bytes = IOUtils.toByteArray(is);
+            _is = new ByteArrayInputStream(_bytes);
         }
         catch (IOException e)
         {
@@ -64,7 +60,7 @@ public class InputStreamAttachmentFile implements AttachmentFile
     @Override
     public long getSize() throws IOException
     {
-        return _byteBuffer.getCount();
+        return _bytes.length;
     }
 
     @Override
