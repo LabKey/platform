@@ -1090,7 +1090,6 @@ public class AdminController extends SpringActionController
         private String _companyName;
         private String _systemEmailAddress;
         private String _reportAProblemPath;
-        private boolean _appBarUIEnabled;
         private boolean _enableMenuBar;
         private String _tabId;
         private String _projectRootPath;
@@ -1270,17 +1269,6 @@ public class AdminController extends SpringActionController
         public void setEnableMenuBar(boolean enableMenuBar)
         {
             _enableMenuBar = enableMenuBar;
-        }
-
-        public boolean isAppBarUIEnabled()
-        {
-            return _appBarUIEnabled;
-        }
-
-        @SuppressWarnings({"UnusedDeclaration"})
-        public void setAppBarUIEnabled(boolean appBarUIEnabled)
-        {
-            _appBarUIEnabled = appBarUIEnabled;
         }
 
         public String getProjectRootPath()

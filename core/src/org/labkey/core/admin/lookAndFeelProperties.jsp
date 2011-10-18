@@ -126,16 +126,6 @@
         <input type="radio" name="folderDisplayMode" value="<%=FolderDisplayMode.ADMIN.toString()%>" <%=currentMode == FolderDisplayMode.ADMIN ? "CHECKED" : ""%>> <%=h(FolderDisplayMode.ADMIN.getDisplayString())%><br>
     </td>
 </tr>
-<%
-if (AppProps.getInstance().isDevMode())
-{ %>
-    <tr>
-        <td class="labkey-form-label">Show Button Bar (experimental, devMode)</td>
-        <td>
-            <input name="appBarUIEnabled" value="true" type="checkbox" <%=laf.isAppBarUIEnabled() ? "CHECKED" : ""%>>
-        </td>
-    </tr><%
-}%>
 
 <tr>
     <td class="labkey-form-label">Logo link (specifies page that header logo links to)</td>

@@ -20,14 +20,7 @@ import org.labkey.api.module.DefaultFolderType;
 import org.labkey.api.module.Module;
 import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.pipeline.PipelineService;
-import org.labkey.api.study.assay.AssayUrls;
-import org.labkey.api.util.PageFlowUtil;
-import org.labkey.api.view.NavTree;
 import org.labkey.api.view.Portal;
-import org.labkey.api.view.ViewContext;
-import org.labkey.api.view.template.AppBar;
-import org.labkey.api.view.template.PageConfig;
-import org.labkey.study.controllers.assay.AssayController;
 
 import java.util.Arrays;
 import java.util.Collections;
@@ -50,14 +43,6 @@ public class AssayFolderType extends DefaultFolderType
                 Arrays.asList(StudyModule.assayListWebPartFactory.createWebPart()),
                 getActiveModulesForOwnedFolder(module),
                 module);
-    }
-
-    @Override
-    public AppBar getAppBar(ViewContext context)
-    {
-        AssayController controller = new AssayController();
-        controller.setViewContext(context);
-        return new AppBar("Assays", new NavTree("Add Runs", "#"), new NavTree("View Assay Types", PageFlowUtil.urlProvider(AssayUrls.class).getAssayListURL(context.getContainer())));
     }
 
     protected static Set<Module> getActiveModulesForOwnedFolder(StudyModule module)

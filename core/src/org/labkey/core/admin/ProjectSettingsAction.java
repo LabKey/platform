@@ -175,7 +175,6 @@ public class ProjectSettingsAction extends FormViewAction<AdminController.Projec
         {
             props.setSupportEmail(null);
         }
-        props.setAppBarUIEnabled(form.isAppBarUIEnabled());
 
         FolderDisplayMode folderDisplayMode = FolderDisplayMode.ALWAYS;
         try

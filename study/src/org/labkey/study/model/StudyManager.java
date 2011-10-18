@@ -1570,6 +1570,11 @@ public class StudyManager
     @Nullable
     public DataSetDefinition getDataSetDefinition(Study s, String label)
     {
+        if (label == null)
+        {
+            return null;
+        }
+        
         try
         {
             SimpleFilter filter = new SimpleFilter("Container", s.getContainer().getId());

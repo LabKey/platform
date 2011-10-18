@@ -34,6 +34,7 @@ import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.NavTree;
 import org.labkey.api.view.ViewContext;
 import org.labkey.api.view.template.AppBar;
+import org.labkey.api.view.template.PageConfig;
 import org.labkey.study.controllers.StudyController;
 import org.labkey.study.controllers.reports.ReportsController;
 import org.labkey.study.model.StudyManager;
@@ -74,6 +75,18 @@ public class StudyFolderType extends DefaultFolderType
     {
         Study study = StudyManager.getInstance().getStudy(ctx.getContainer());
         return study == null ? "New Study" : study.getLabel();
+    }
+
+    @Override
+    public AppBar getAppBar(ViewContext context, PageConfig pageConfig)
+    {
+        ActionURL startURL = getStartURL(context.getContainer(), context.getUser());
+        NavTree startPage = new NavTree("Study Overview", startURL);
+        String controllerName = context.getActionURL().getPageFlow();
+        Module currentModule = ModuleLoader.getInstance().getModuleForController(controllerName);
+        startPage.setSelected(currentModule == getDefaultModule());
+        return new AppBar(getStartPageLabel(context), startPage);
+
     }
 
     @Override
