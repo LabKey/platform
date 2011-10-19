@@ -49,12 +49,12 @@ LABKEY.vis.ChartEditorChartsPanel = Ext.extend(Ext.FormPanel, {
                 'check': function(cmp, checked){
                     if(checked){
                         this.oneChartPerGroupRadio.setVisible(false);
+                        this.fireEvent('groupLayoutSelectionChanged', false);
                         this.oneChartPerSubjectRadio.setVisible(true);
                         if(this.oneChartPerGroupRadio.getValue()){
                             this.oneChartPerSubjectRadio.setValue(true);
                         }
                         this.chartSubjectSelection = "subjects";
-                        this.fireEvent('groupLayoutSelectionChanged', false);
                         this.fireEvent('chartDefinitionChanged', true);
                     }
                 }

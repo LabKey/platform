@@ -171,10 +171,12 @@ LABKEY.vis.GroupSelector = Ext.extend(Ext.Panel, {
 
                     // check selected groups in grid panel (but suspend events during selection)
                     sm.suspendEvents(false);
-                    for (var i = 0; i < this.subject.groups.length; i++)
-                    {
-                        var index = grid.getStore().find('label', this.subject.groups[i].label);
-                        sm.selectRow(index, true);
+                    if(this.subject.groups){
+                        for (var i = 0; i < this.subject.groups.length; i++)
+                        {
+                            var index = grid.getStore().find('label', this.subject.groups[i].label);
+                            sm.selectRow(index, true);
+                        }
                     }
                     sm.resumeEvents();
                 }
