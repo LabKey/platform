@@ -113,6 +113,9 @@ import org.labkey.api.study.StudyUrls;
 import org.labkey.api.study.TimepointType;
 import org.labkey.api.study.Visit;
 import org.labkey.api.study.assay.AssayPublishService;
+import org.labkey.api.thumbnail.BaseThumbnailAction;
+import org.labkey.api.thumbnail.StaticThumbnailProvider;
+import org.labkey.api.thumbnail.Thumbnail;
 import org.labkey.api.util.DateUtil;
 import org.labkey.api.util.DemoMode;
 import org.labkey.api.util.FileStream;
@@ -258,19 +261,25 @@ public class StudyController extends BaseStudyController
         @Override
         public ActionURL getCreateStudyURL(Container container)
         {
-            return new ActionURL(CreateStudyAction.class,  container);
+            return new ActionURL(CreateStudyAction.class, container);
         }
 
         @Override
         public ActionURL getManageStudyURL(Container container)
         {
-            return new ActionURL(ManageStudyAction.class,  container);
+            return new ActionURL(ManageStudyAction.class, container);
         }
 
         @Override
         public ActionURL getStudyOverviewURL(Container container)
         {
-            return new ActionURL(OverviewAction.class,  container);
+            return new ActionURL(OverviewAction.class, container);
+        }
+
+        @Override
+        public ActionURL getThumbnailURL(Container container)
+        {
+            return new ActionURL(ThumbnailAction.class, container);
         }
     }
 
@@ -779,7 +788,7 @@ public class StudyController extends BaseStudyController
     }
 
 
-    // TODO I don't think this is quite correct, however this is the the check currently used by import and delete
+    // TODO I don't think this is quite correct, however this is the check currently used by import and delete
     // moved here to call it out instead of embedding it
     private static boolean canWrite(DataSetDefinition def, User user)
     {
@@ -979,6 +988,32 @@ public class StudyController extends BaseStudyController
             }
         }
     }
+
+
+    @RequiresPermissionClass(ReadPermission.class)
+    public class ThumbnailAction extends BaseThumbnailAction
+    {
+        @Override
+        public StaticThumbnailProvider getProvider(Object o) throws Exception
+        {
+            return new StaticThumbnailProvider()
+            {
+                @Override
+                public Thumbnail getStaticThumbnail()
+                {
+                    InputStream is = StudyController.class.getResourceAsStream("dataset.png");
+                    return new Thumbnail(is, "image/png");
+                }
+
+                @Override
+                public String getStaticThumbnailCacheKey()
+                {
+                    return "Dataset";
+                }
+            };
+        }
+    }
+
 
     @RequiresNoPermission
     public class ExpandStateNotifyAction extends SimpleViewAction
@@ -1400,7 +1435,8 @@ public class StudyController extends BaseStudyController
 
         public ActionURL getSuccessURL(StudyPropertiesForm studyPropertiesForm)
         {
-            try {
+            try
+            {
                 if (getStudy(true) == null)
                     return new ActionURL(CreateStudyAction.class, getContainer());
             }

@@ -46,7 +46,6 @@ import org.labkey.api.action.SimpleRedirectAction;
 import org.labkey.api.action.SimpleViewAction;
 import org.labkey.api.action.SpringActionController;
 import org.labkey.api.admin.AdminUrls;
-import org.labkey.api.collections.ArrayListMap;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.collections.CaseInsensitiveMapWrapper;
 import org.labkey.api.collections.RowMapFactory;
@@ -89,6 +88,9 @@ import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.security.permissions.UpdatePermission;
 import org.labkey.api.settings.AdminConsole;
 import org.labkey.api.settings.LookAndFeelProperties;
+import org.labkey.api.thumbnail.BaseThumbnailAction;
+import org.labkey.api.thumbnail.StaticThumbnailProvider;
+import org.labkey.api.thumbnail.Thumbnail;
 import org.labkey.api.util.ExceptionUtil;
 import org.labkey.api.util.FileUtil;
 import org.labkey.api.util.HelpTopic;
@@ -137,6 +139,7 @@ import org.springframework.web.servlet.ModelAndView;
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
+import java.io.InputStream;
 import java.io.PrintWriter;
 import java.sql.Connection;
 import java.sql.DatabaseMetaData;
@@ -243,6 +246,12 @@ public class QueryController extends SpringActionController
             return new ActionURL(ExportExcelTemplateAction.class, c)
                     .addParameter(QueryParam.schemaName, schemaName)
                     .addParameter("query.queryName", queryName);
+        }
+
+        @Override
+        public ActionURL urlThumbnail(Container c)
+        {
+            return new ActionURL(ThumbnailAction.class, c);
         }
     }
 
@@ -4456,6 +4465,31 @@ public class QueryController extends SpringActionController
         Tree _tree(String s) throws Exception
         {
             return new SqlParser().rawQuery(s);
+        }
+    }
+
+
+    @RequiresPermissionClass(ReadPermission.class)
+    public class ThumbnailAction extends BaseThumbnailAction
+    {
+        @Override
+        public StaticThumbnailProvider getProvider(Object o) throws Exception
+        {
+            return new StaticThumbnailProvider()
+            {
+                @Override
+                public Thumbnail getStaticThumbnail()
+                {
+                    InputStream is = QueryController.class.getResourceAsStream("query.png");
+                    return new Thumbnail(is, "image/png");
+                }
+
+                @Override
+                public String getStaticThumbnailCacheKey()
+                {
+                    return "Query";
+                }
+            };
         }
     }
 }

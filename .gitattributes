@@ -1954,6 +1954,7 @@ query/src/org/labkey/query/controllers/manageViews.jsp -text
 query/src/org/labkey/query/controllers/multipleSchemas.jsp -text
 query/src/org/labkey/query/controllers/newQuery.jsp -text
 query/src/org/labkey/query/controllers/propertiesQuery.jsp -text
+query/src/org/labkey/query/controllers/query.png -text
 query/src/org/labkey/query/controllers/sourceQuery.jsp -text
 query/src/org/labkey/query/data/ExternalSchemaTable.java -text
 query/src/org/labkey/query/data/SimpleQueryUpdateService.java -text
@@ -2603,6 +2604,7 @@ study/src/org/labkey/study/controllers/assay/AssayController.java -text
 study/src/org/labkey/study/controllers/assay/actions/AbstractAssayAPIAction.java -text
 study/src/org/labkey/study/controllers/assay/actions/GetAssayBatchAction.java -text
 study/src/org/labkey/study/controllers/assay/actions/SaveAssayBatchAction.java -text
+study/src/org/labkey/study/controllers/dataset.png -text
 study/src/org/labkey/study/controllers/designer/DesignerController.java -text
 study/src/org/labkey/study/controllers/plate/PlateController.java -text
 study/src/org/labkey/study/controllers/reports/ReportsController.java -text
