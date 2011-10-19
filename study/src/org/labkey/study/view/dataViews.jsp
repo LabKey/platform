@@ -60,10 +60,14 @@
      */
     function customizeDataViews(webpartId, pageId, index) {
 
-        // eew, should find better way to access global scope
-        var panel = Ext4.getCmp('data-views-panel-' + webpartId);
+        function initPanel() {
+            // eew, should find better way to access global scope
+            var panel = Ext4.getCmp('data-views-panel-' + webpartId);
 
-        if (panel) { panel.customize(); }
+            if (panel) { panel.customize(); }
+        }
+
+        Ext4.onReady(initPanel);
     }
 
     Ext4.onReady(init);

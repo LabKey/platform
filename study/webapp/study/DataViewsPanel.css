@@ -71,6 +71,11 @@
     height : 24px;
 }
 
+.x4-reset .x4-form-cb-label-after
+{
+    position: absolute;
+}
+
 .x4-reset .x4-form-checkbox, .x4-reset .x4-form-radio
 {
     float : left;

@@ -94,7 +94,6 @@ Ext4.define('LABKEY.ext4.DataViewsPanel', {
     initComponent : function() {
 
         this.customMode = false;
-        this.editLinkCls = 'edit-views-link';
         this.searchVal = "";
 
         this.items = [];
@@ -172,7 +171,6 @@ Ext4.define('LABKEY.ext4.DataViewsPanel', {
                 listeners : {
                     exception : function(p, response, operations, eOpts)
                     {
-                        var x = 1;
                     }
                 }
             },
@@ -193,10 +191,7 @@ Ext4.define('LABKEY.ext4.DataViewsPanel', {
 
         function filterSearch() {
             this.searchVal = searchField.getValue();
-            if (this.searchVal && this.searchVal != "")
-            {
-                this.hiddenFilter();
-            }
+            this.hiddenFilter();
         }
 
         var filterTask = new Ext.util.DelayedTask(filterSearch, this);
@@ -353,8 +348,8 @@ Ext4.define('LABKEY.ext4.DataViewsPanel', {
             store    : this.store,
             border   : false, frame: false,
             layout   : 'fit',
-            height   : 550,
-            cls      : 'iScroll', // webkit custom scroll bars
+//            height   : 550,
+//            cls      : 'iScroll', // webkit custom scroll bars
             autoScroll: true,
             columns  : this.initGridColumns(),
             multiSelect: true,
@@ -363,7 +358,8 @@ Ext4.define('LABKEY.ext4.DataViewsPanel', {
                 listeners : {
                     render : initToolTip,
                     scope : this
-                }
+                },
+                emptyText : '0 Matching Results'
             },
             selType   : 'rowmodelfixed',
             features  : [groupingFeature],
@@ -407,11 +403,14 @@ Ext4.define('LABKEY.ext4.DataViewsPanel', {
 
         _columns.push({
             id       : 'edit-column-' + this.webpartId,
-            xtype    : 'templatecolumn',
             text     : '',
             width    : 40,
             sortable : false,
-            tpl      : '<span height="18px" class="edit-link-cls-' + this.webpartId + '"></span>', // see this.editLinkCls usage
+            renderer : function(view, meta, rec, idx, colIdx, store) {
+                if (!this._inCustomMode())
+                    meta.style = 'display: none;';  // what a nightmare
+                return '<span height="18px" class="edit-link-cls-' + this.webpartId + ' edit-views-link"></span>';
+            },
             hidden   : true,
             scope    : this
         },{
@@ -451,7 +450,6 @@ Ext4.define('LABKEY.ext4.DataViewsPanel', {
     initCustomization : function() {
 
          var customPanel = Ext4.create('Ext.panel.Panel', {
-            height : 130,
             layout : 'fit',
             border : false, frame : false,
             hidden : true,
@@ -477,6 +475,7 @@ Ext4.define('LABKEY.ext4.DataViewsPanel', {
         this.hiddenFilter();
         this.store.sort('categoryDisplayOrder', 'ASC');
         this.store.sort('name', 'ASC');
+        this.doLayout(false, true);
     },
 
     onEnableCustomMode : function() {
@@ -513,24 +512,33 @@ Ext4.define('LABKEY.ext4.DataViewsPanel', {
 
         this.hiddenFilter();
 
-        // show edit column
+        // hide edit column
         var editColumn = Ext4.getCmp('edit-column-' + this.webpartId);
         if (editColumn)
         {
-            var els = Ext.query('span[class=edit-link-cls-' + this.webpartId + ' edit-views-link]');
-            Ext.each(els, function(el){
-                var _el = Ext.get(el);
-                _el.removeClass(this.editLinkCls);
-            }, this);
             editColumn.hide();
-            this.gridPanel.doLayout(false, true);
         }
     },
 
     // private
     _displayCustomMode : function(data) {
 
-        var target = this.customPanel;
+        // panel might already exist
+        if (this.customPanel && this.customPanel.items.length > 0)
+        {
+            this.hiddenFilter();
+
+            // show edit column
+            var editColumn = Ext4.getCmp('edit-column-' + this.webpartId);
+            if (editColumn)
+            {
+                editColumn.show();
+            }
+
+            this.customPanel.show();
+            this.doLayout(false, true);
+            return;
+        }
 
         var cbItems = [];
 
@@ -548,12 +556,7 @@ Ext4.define('LABKEY.ext4.DataViewsPanel', {
             bodyPadding: 10,
             layout: {
                 type: 'table',
-                columns: 3,
-                tableAttrs: {
-                    style: {
-                        width: '100%'
-                    }
-                }
+                columns: 2
             },
             fieldDefaults  :{
                 labelAlign : 'top',
@@ -572,14 +575,16 @@ Ext4.define('LABKEY.ext4.DataViewsPanel', {
             },{
                 xtype      : 'checkboxgroup',
                 fieldLabel : 'Data Types to Display in this Data Views (All Users)',
-                colspan    : 2,
-                width      : 400,
+                colspan    : 1,
                 columns    : 2,
+                width      : 325,
+                style      : 'padding-left: 25px;',
                 items      : cbItems
             },{
                 xtype   : 'button',
                 text    : 'Manage Categories',
                 handler : this.onManageCategories,
+                colspan : 1,
                 scope   : this
             },{
                 xtype   : 'hidden',
@@ -587,11 +592,11 @@ Ext4.define('LABKEY.ext4.DataViewsPanel', {
                 value   : this.webpartId
             }],
             buttons : [{
-                text     : 'Cancel',
-                handler  : function() {
+                text    : 'Cancel',
+                handler : function() {
                     this.fireEvent('disableCustomMode');
                 },
-                scope : this
+                scope   : this
             },{
                 text     : 'Save',
                 formBind : true,
@@ -603,7 +608,7 @@ Ext4.define('LABKEY.ext4.DataViewsPanel', {
                             url    : LABKEY.ActionURL.buildURL('project', 'customizeWebPartAsync.api', null, form.getValues()),
                             method : 'POST',
                             success : function(){
-                                target.hide();
+                                this.customPanel.hide();
                                 this.store.load();
 
                                 // Modify Title
@@ -634,20 +639,12 @@ Ext4.define('LABKEY.ext4.DataViewsPanel', {
         var editColumn = Ext4.getCmp('edit-column-' + this.webpartId);
         if (editColumn)
         {
-            editColumn.show(null, function(){
-                var els = Ext.query('span[class=edit-link-cls-' + this.webpartId + ']');
-                Ext.each(els, function(el){
-                    var _el = Ext.get(el);
-                    _el.addClass(this.editLinkCls);
-                }, this);
-
-                this.gridPanel.doLayout(false, true);
-            }, this);
+            editColumn.show();
         }
 
-        target.add(panel);
-        target.doLayout(false, true);
-        target.show();
+        this.customPanel.add(panel);
+        this.customPanel.show();
+        this.doLayout(false, true);
     },
 
     customize : function() {
@@ -659,6 +656,7 @@ Ext4.define('LABKEY.ext4.DataViewsPanel', {
     },
 
     hiddenFilter : function() {
+
         this.store.clearFilter();
         var _custom = this._inCustomMode();
         this.store.filterBy(function(rec, id){
@@ -675,6 +673,7 @@ Ext4.define('LABKEY.ext4.DataViewsPanel', {
                 if (rec.data.type)
                     s += rec.data.type;
                 answer = t.test(s);
+                console.log(answer);
             }
 
             // custom mode will show hidden
@@ -699,9 +698,9 @@ Ext4.define('LABKEY.ext4.DataViewsPanel', {
 
         /* Record 'entityId' is required*/
         var editable = true;
-        if (record.data.reportId == undefined || record.data.reportId == "")
+        if (record.data.entityId == undefined || record.data.entityId == "")
         {
-            console.warn('Only reports are currently editable');
+            console.warn('Entity ID is required');
             editable = false;
         }
 
@@ -726,12 +725,26 @@ Ext4.define('LABKEY.ext4.DataViewsPanel', {
             fieldLabel : 'Name',
             value      : record.data.name
         },{
-            xtype      : 'textfield',
+            xtype      : 'combo',
             fieldLabel : 'Category',
             name       : 'category',
-            value      : record.data.category
+            store      : this.initializeCategoriesStore(),
+            typeAhead  : true,
+            hideTrigger: true,
+            typeAheadDelay : 75,
+            minChars       : 1,
+            autoSelect     : false,
+            queryMode      : 'remote',
+            displayField   : 'label',
+            valueField     : 'label',
+            emptyText      : 'Uncategorized',
+            listeners      : {
+                render     : function(combo) {
+                    combo.setRawValue(record.data.category);
+                }
+            }
         },{
-            xtype      : (editable == true ? 'textarea' : 'displayfield'),
+            xtype      : (editable == true ? 'textarea' : 'displayfield'), // TODO: Should hook editable to model editable
             fieldLabel : 'Description',
             name       : 'description',
             value      : record.data.description
@@ -767,7 +780,7 @@ Ext4.define('LABKEY.ext4.DataViewsPanel', {
 
         var editWindow = Ext4.create('Ext.window.Window', {
             width  : 450,
-            height : 500,
+            height : 425,
             layout : 'fit',
             draggable : false,
             modal  : true,
@@ -851,11 +864,6 @@ Ext4.define('LABKEY.ext4.DataViewsPanel', {
                     xtype:'textfield',
                     allowBlank:false
                 }
-            },{
-                text     : 'Order',
-                sortable : true,
-                width    : 50,
-                dataIndex: 'displayOrder'
             },{
                 xtype    : 'actioncolumn',
                 width    : 50,
