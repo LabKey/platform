@@ -17,6 +17,12 @@ import java.util.GregorianCalendar;
 */
 public abstract class BaseThumbnailAction<FORM> extends ExportAction<FORM>
 {
+    @Override
+    protected String getCommandClassMethodName()
+    {
+        return "getProvider";  // getProvider() method determines the form class
+    }
+
     // Do any additional permissions checks and return the provider (or null, if no thumbnail should be sent)
     public abstract @Nullable StaticThumbnailProvider getProvider(FORM form) throws Exception;
 

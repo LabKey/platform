@@ -21,7 +21,9 @@ package org.labkey.api.thumbnail;
  * Time: 10:55 PM
  */
 
-// A static thumbnail provider
+// Implement this to provide a standard thumbnail, typically an image shared by all objects of the same type. These
+// thumbnails are cached in memory (using the cache key), but if not cached the service will block, waiting for the
+// provider to return the thumbnail, so they must be retrieved quickly (pulled from the webapp or module resources).
 public interface StaticThumbnailProvider
 {
     Thumbnail getStaticThumbnail();

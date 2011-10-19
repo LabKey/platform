@@ -24,6 +24,13 @@ import org.labkey.api.view.ViewContext;
  * Date: 10/8/11
  * Time: 6:44 AM
  */
+
+// Implement this to provide a dynamic thumbnail, typically an image generated from the contents of a specific report
+// or document. These thumbnails are cached in memory (using the cache key). If not cached the service will not wait
+// for the thumbnail to be generated; instead, it will return the static thumbnail, cache it using the dynamic cache
+// key, and queue up a background rendering of the thumbnail. If background rendering is successful, the thumbnail will
+// be persisted and the cache cleared, allowing the new dynamic thumbnail to be used on next request. Note that some
+// providers generate dynamic thumbnails proactively at save time.
 public interface DynamicThumbnailProvider extends StaticThumbnailProvider, AttachmentParent
 {
     // If null then service will fall back on the static thumbnail. Returning null is reasonable in a couple cases:
