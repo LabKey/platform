@@ -146,7 +146,7 @@ Ext4.define('LABKEY.ext4.DataViewsPanel', {
             pageSize: 100,
             model   : 'Dataset.Browser.Category',
             autoLoad: true,
-            autoSync: true,
+            autoSync: false,
             proxy   : {
                 type   : 'ajax',
                 api    : {
@@ -842,14 +842,6 @@ Ext4.define('LABKEY.ext4.DataViewsPanel', {
 
         var confirm = false;
         var store = this.initializeCategoriesStore();
-        store.on('update', function(){
-            console.info('update requested');
-            confirm = true;
-        }, this);
-        store.on('remove', function(){
-            console.info('remove requested');
-            confirm = true;
-        }, this);
 
         var grid = Ext4.create('Ext.grid.Panel', {
             store    : store,
@@ -871,15 +863,13 @@ Ext4.define('LABKEY.ext4.DataViewsPanel', {
                 sortable : false,
                 items : [{
                     icon    : LABKEY.contextPath + '/ext-4.0.2a/resources/themes/images/access/qtip/close.gif',
-                    tooltip : 'Delete',
-                    handler : function(grid, rowIndex, colIndex) {
-                        var rec = store.getAt(rowIndex);
-                        alert("Sell " + rec.get('company'));
-                    }
+                    tooltip : 'Delete'
                 }],
                 listeners : {
                     click : function(col, grid, idx, evt, x, y, z)
                     {
+                        store.sync();
+
                         var label = store.getAt(idx).data.label;
                         var id    = store.getAt(idx).data.rowid;
 
@@ -894,10 +884,11 @@ Ext4.define('LABKEY.ext4.DataViewsPanel', {
                             icon    : Ext4.MessageBox.WARNING,
                             fn      : function(btn){
                                 if (btn == 'ok') {
+                                    // TODO: This is deprected -- should use proxy/model 'destroy' api
                                     Ext4.Ajax.request({
                                         url    : LABKEY.ActionURL.buildURL('study', 'deleteCategories.api'),
                                         method : 'POST',
-                                        jsonData : cats, // TODO: This is deprected -- should use proxy 'destroy' api
+                                        jsonData : cats,
                                         success: function() {
                                             store.load();
                                         },
@@ -920,7 +911,17 @@ Ext4.define('LABKEY.ext4.DataViewsPanel', {
                 plugins   : [{
                     ptype : 'gridviewdragdrop',
                     dragText: 'Drag and drop to reorganize'
-                }]
+                }],
+                listeners : {
+                    drop : function(node, data, model, pos) {
+                        var s = grid.getStore();
+                        var display = 1;
+                        s.each(function(rec){
+                            rec.set('displayOrder', display);
+                            display++;
+                        }, this);
+                    }
+                }
             },
             plugins   : [cellEditing],
             selType   : 'rowmodelfixed',
@@ -950,6 +951,7 @@ Ext4.define('LABKEY.ext4.DataViewsPanel', {
             },{
                 text    : 'Done',
                 handler : function(btn) {
+                    grid.getStore().sync();
                     categoryOrderWindow.close();
                 }
             }],
