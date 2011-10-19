@@ -152,6 +152,10 @@ public class ViewCategoryManager implements ContainerManager.ContainerListener
             throw new RuntimeException("You must be an administrator to delete a view category");
 
         try {
+            category = getCategory(category.getRowId());
+            if (category == null)
+                throw Table.OptimisticConflictException.create(Table.ERROR_DELETED);
+
             // delete the category definition and fire the deleted event
             SQLFragment sql = new SQLFragment("DELETE FROM ").append(getTableInfoCategories(), "").append(" WHERE RowId = ?");
             Table.execute(CoreSchema.getInstance().getSchema(), sql.getSQL(), category.getRowId());
@@ -180,6 +184,8 @@ public class ViewCategoryManager implements ContainerManager.ContainerListener
     {
         try {
             ViewCategory ret = null;
+            List<Throwable> errors;
+
             if (category.isNew())
             {
                 // check for duplicates
@@ -192,6 +198,7 @@ public class ViewCategoryManager implements ContainerManager.ContainerListener
                     category.setContainerId(c.getId());
                 
                 ret = Table.insert(user, getTableInfoCategories(), category);
+                errors = fireCreatedCategory(user, ret);
             }
             else
             {
@@ -205,11 +212,21 @@ public class ViewCategoryManager implements ContainerManager.ContainerListener
 
                     DbCache.remove(getTableInfoCategories(), getCacheKey(existing.getRowId()));
                     DbCache.remove(getTableInfoCategories(), getCacheKey(c, existing.getLabel()));
+
+                    errors = fireUpdateCategory(user, ret);
                 }
                 else
                     throw new RuntimeException("The specified category does not exist, rowid: " + category.getRowId());
             }
-
+            
+            if (errors.size() != 0)
+            {
+                Throwable first = errors.get(0);
+                if (first instanceof RuntimeException)
+                    throw (RuntimeException)first;
+                else
+                    throw new RuntimeException(first);
+            }
             return ret;
         }
         catch (SQLException x)
@@ -226,11 +243,6 @@ public class ViewCategoryManager implements ContainerManager.ContainerListener
     private String getCacheKey(int categoryId)
     {
         return "ViewCategory-" + categoryId;
-    }
-
-    public interface ViewCategoryListener
-    {
-        void categoryDeleted(User user, ViewCategory category);
     }
 
     public static void addCategoryListener(ViewCategoryListener listener)
@@ -251,6 +263,40 @@ public class ViewCategoryManager implements ContainerManager.ContainerListener
         {
             try {
                 l.categoryDeleted(user, category);
+            }
+            catch (Throwable t)
+            {
+                errors.add(t);
+            }
+        }
+        return errors;
+    }
+
+    private static List<Throwable> fireUpdateCategory(User user, ViewCategory category)
+    {
+        List<Throwable> errors = new ArrayList<Throwable>();
+
+        for (ViewCategoryListener l : _listeners)
+        {
+            try {
+                l.categoryUpdated(user, category);
+            }
+            catch (Throwable t)
+            {
+                errors.add(t);
+            }
+        }
+        return errors;
+    }
+
+    private static List<Throwable> fireCreatedCategory(User user, ViewCategory category)
+    {
+        List<Throwable> errors = new ArrayList<Throwable>();
+
+        for (ViewCategoryListener l : _listeners)
+        {
+            try {
+                l.categoryCreated(user, category);
             }
             catch (Throwable t)
             {
@@ -298,6 +344,16 @@ public class ViewCategoryManager implements ContainerManager.ContainerListener
                 public void categoryDeleted(User user, ViewCategory category)
                 {
                     notifications.remove(category.getLabel());
+                }
+
+                @Override
+                public void categoryCreated(User user, ViewCategory category)
+                {
+                }
+
+                @Override
+                public void categoryUpdated(User user, ViewCategory category)
+                {
                 }
             };
             ViewCategoryManager.addCategoryListener(listener);
