@@ -25,6 +25,7 @@ import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.DbSchema;
 import org.labkey.api.data.DbScope;
 import org.labkey.api.data.Filter;
+import org.labkey.api.data.RuntimeSQLException;
 import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.Table;
@@ -36,6 +37,7 @@ import org.labkey.api.query.QueryService;
 import org.labkey.api.reports.Report;
 import org.labkey.api.reports.ReportService;
 import org.labkey.api.reports.model.ViewCategory;
+import org.labkey.api.reports.model.ViewCategoryListener;
 import org.labkey.api.reports.model.ViewCategoryManager;
 import org.labkey.api.reports.report.AbstractReportIdentifier;
 import org.labkey.api.reports.report.DbReportIdentifier;
@@ -46,6 +48,7 @@ import org.labkey.api.reports.report.ReportIdentifierConverter;
 import org.labkey.api.reports.report.ScriptEngineReport;
 import org.labkey.api.reports.report.view.ReportUtil;
 import org.labkey.api.security.User;
+import org.labkey.api.study.Study;
 import org.labkey.api.util.ContainerUtil;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.Pair;
@@ -72,7 +75,7 @@ import java.util.concurrent.ConcurrentMap;
  * User: Karl Lum
  * Date: Dec 21, 2007
  */
-public class ReportServiceImpl implements ReportService.I, ContainerManager.ContainerListener, QueryService.QueryListener, ViewCategoryManager.ViewCategoryListener
+public class ReportServiceImpl implements ReportService.I, ContainerManager.ContainerListener, QueryService.QueryListener
 {
     private static final String SCHEMA_NAME = "core";
     private static final String TABLE_NAME = "Report";
@@ -93,7 +96,7 @@ public class ReportServiceImpl implements ReportService.I, ContainerManager.Cont
         ConvertUtils.register(new ReportIdentifierConverter(), ReportIdentifier.class);
         QueryService.get().addQueryListener(this);
         SystemMaintenance.addTask(new ReportServiceMaintenanceTask());
-        ViewCategoryManager.addCategoryListener(this);
+        ViewCategoryManager.addCategoryListener(new CategoryListener(this));
     }
 
     private DbSchema getSchema()
@@ -630,9 +633,57 @@ public class ReportServiceImpl implements ReportService.I, ContainerManager.Cont
         ScriptEngineReport.scheduledFileCleanup();
     }
 
-    @Override
-    public void categoryDeleted(User user, ViewCategory category)
+    private static class CategoryListener implements ViewCategoryListener
     {
+        private ReportServiceImpl _instance;
+
+        private CategoryListener(ReportServiceImpl instance)
+        {
+            _instance = instance;
+        }
+
+        @Override
+        public void categoryDeleted(final User user, final ViewCategory category) throws Exception
+        {
+            for (Report report : getReportsForCategory(category))
+            {
+                final Container c = ContainerManager.getForId(category.getContainerId());
+                report.getDescriptor().setCategory(null);
+                
+                if (c != null)
+                {
+                    _instance.saveReport(new ContainerUser()
+                    {
+                        public User getUser() {return user;}
+                        public Container getContainer() {return c;}
+                    }, report.getDescriptor().getReportKey(), report);
+                }
+            }
+        }
+
+        @Override
+        public void categoryCreated(User user, ViewCategory category) throws Exception {}
+
+        @Override
+        public void categoryUpdated(User user, ViewCategory category) throws Exception {}
+
+        private Report[] getReportsForCategory(ViewCategory category)
+        {
+            try
+            {
+                if (category != null)
+                {
+                    SimpleFilter filter = new SimpleFilter("ContainerId", category.getContainerId());
+                    filter.addCondition("CategoryId", category.getRowId());
+                    return _instance.getReports(filter);
+                }
+                return new Report[0];
+            }
+            catch (SQLException x)
+            {
+                throw new RuntimeSQLException(x);
+            }
+        }
     }
 
     private static class ReportComparator implements Comparator<Report>

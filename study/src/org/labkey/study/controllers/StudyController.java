@@ -7146,6 +7146,8 @@ public class StudyController extends BaseStudyController
                                 _report.getDescriptor().setHidden(form.isHidden());
                             }
                             break;
+                        case datasets:
+                            break;
                         default:
                             errors.reject(ERROR_MSG, "Editing this data type not yet supported.");
                     }
@@ -7168,14 +7170,40 @@ public class StudyController extends BaseStudyController
             try {
                 scope.ensureTransaction();
 
+                String id = form.getEntityId();
+                ViewInfo.DataType dataType = form.getDataType();
+                ViewCategory category = null;
+
                 // save the category information then the report
                 if (form.getCategory() != null)
-                {
-                    ViewCategory category = ViewCategoryManager.getInstance().ensureViewCategory(getContainer(), getUser(), form.getCategory());
+                    category = ViewCategoryManager.getInstance().ensureViewCategory(getContainer(), getUser(), form.getCategory());
 
-                    _report.getDescriptor().setCategory(category);
+                switch (dataType)
+                {
+                    case reports:
+                        if (category != null)
+                            _report.getDescriptor().setCategory(category);
+                        ReportService.get().saveReport(getViewContext(), _report.getDescriptor().getReportKey(), _report);
+                        break;
+                    case datasets:
+                        StudyImpl study = StudyManager.getInstance().getStudy(getContainer());
+                        if (study != null)
+                        {
+                            DataSetDefinition dsDef = StudyManager.getInstance().getDataSetDefinitionByEntityId(study, id);
+                            if (dsDef != null)
+                            {
+                                dsDef = dsDef.createMutable();
+                                if (category != null)
+                                    dsDef.setCategoryId(category.getRowId());
+                                dsDef.setDescription(StringUtils.trimToNull(form.getDescription()));
+                                dsDef.setShowByDefault(!form.isHidden());
+                                dsDef.save(getUser());
+                            }
+                        }
+                        break;
+                    default:
+                        throw new UnsupportedOperationException("The specified data type is not supported yet");
                 }
-                ReportService.get().saveReport(getViewContext(), _report.getDescriptor().getReportKey(), _report);
 
                 scope.commitTransaction();
 

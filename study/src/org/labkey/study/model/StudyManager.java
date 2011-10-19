@@ -86,6 +86,7 @@ import org.labkey.api.reader.ColumnDescriptor;
 import org.labkey.api.reader.DataLoader;
 import org.labkey.api.reader.MapLoader;
 import org.labkey.api.reports.model.ViewCategory;
+import org.labkey.api.reports.model.ViewCategoryListener;
 import org.labkey.api.reports.model.ViewCategoryManager;
 import org.labkey.api.resource.Resource;
 import org.labkey.api.search.SearchService;
@@ -271,6 +272,8 @@ public class StudyManager
         _tableInfoParticipant = StudySchema.getInstance().getTableInfoParticipant();
         //_tableInfoStudyData = StudySchema.getInstance().getTableInfoStudyData(null);
         _tableInfoUploadLog = StudySchema.getInstance().getTableInfoUploadLog();
+
+        ViewCategoryManager.addCategoryListener(new CategoryListener(this));
     }
 
 
@@ -3276,6 +3279,62 @@ public class StudyManager
         }
     }
 */
+
+    public static class CategoryListener implements ViewCategoryListener
+    {
+        private StudyManager _instance;
+
+        private CategoryListener(StudyManager instance)
+        {
+            _instance = instance;
+        }
+
+        @Override
+        public void categoryDeleted(User user, ViewCategory category) throws Exception
+        {
+            for (DataSetDefinition def : getDatasetsForCategory(category))
+            {
+                def = def.createMutable();
+                def.setCategoryId(0);
+                def.save(user);
+            }
+        }
+
+        @Override
+        public void categoryCreated(User user, ViewCategory category) throws Exception {}
+
+        @Override
+        public void categoryUpdated(User user, ViewCategory category) throws Exception
+        {
+            for (DataSetDefinition def : getDatasetsForCategory(category))
+            {
+                _instance._dataSetHelper.clearCache(def);
+                _instance._dataSetHelper.clearCache(def.getContainer());
+            }
+        }
+
+        private DataSetDefinition[] getDatasetsForCategory(ViewCategory category)
+        {
+            try
+            {
+                if (category != null)
+                {
+                    Study study = _instance.getStudy(ContainerManager.getForId(category.getContainerId()));
+                    if (study != null)
+                    {
+                        SimpleFilter filter = new SimpleFilter("Container", study.getContainer().getId());
+                        filter.addCondition("CategoryId", category.getRowId());
+                        return _instance._dataSetHelper.get(study.getContainer(), filter);
+                    }
+                }
+                return new DataSetDefinition[0];
+            }
+            catch (SQLException x)
+            {
+                throw new RuntimeSQLException(x);
+            }
+        }
+    }
 
     public static class DatasetImportTestCase extends Assert
     {
