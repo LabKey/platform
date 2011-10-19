@@ -1488,8 +1488,12 @@ public class ExperimentServiceImpl implements ExperimentService.Interface
                 filter.addCondition("Container", c.getId());
             }
             Sort sort = new Sort("-Created");
-            Data data = Table.selectObject(getTinfoData(), Table.ALL_COLUMNS, filter, sort, Data.class);
-            return data == null ? null : new ExpDataImpl(data);
+            Data[] data = Table.select(getTinfoData(), Table.ALL_COLUMNS, filter, sort, Data.class);
+            if (data.length > 0)
+            {
+                return new ExpDataImpl(data[0]);
+            }
+            return null;
         }
         catch (SQLException e)
         {
