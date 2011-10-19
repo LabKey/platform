@@ -57,7 +57,7 @@
         <tr>
             <td colspan=1 class="labkey-crumb-trail"><span id="navTrailAncestors" style="visibility:hidden">
                 <% for(NavTree curLink : bean.getNavTrail()) {%>
-                    <a href="<%=curLink.getValue()%>"><%=h(curLink.getKey())%></a>&nbsp;&gt;&nbsp;
+                    <% if (curLink.getValue() != null) { %><a href="<%=curLink.getValue()%>"><% } %><%=h(curLink.getKey())%><% if (curLink.getValue() != null) { %></a><% } %>&nbsp;&gt;&nbsp;
                 <%
                     }%>
             </span></td></tr>
