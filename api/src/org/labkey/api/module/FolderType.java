@@ -183,36 +183,26 @@ public interface FolderType
             {
 
                 Set<Module> containerModules = container.getActiveModules();
-                if (containerModules.size() == 1)
+                Module activeModule = pageConfig.getModuleOwner();
+                String currentPageflow = context.getActionURL().getPageFlow();
+                if (activeModule == null)
                 {
-                    Module module = container.getDefaultModule();
-                    NavTree navTree = new NavTree(module.getTabName(context), module.getTabURL(context.getContainer(), context.getUser()));
-                    navTree.setSelected(true);
-                    tabs.add(navTree);
+                    activeModule = ModuleLoader.getInstance().getModuleForController(currentPageflow);
                 }
-                else
-                {
-                    Module activeModule = pageConfig.getModuleOwner();
-                    String currentPageflow = context.getActionURL().getPageFlow();
-                    if (activeModule == null)
-                    {
-                        activeModule = ModuleLoader.getInstance().getModuleForController(currentPageflow);
-                    }
 
-                    assert activeModule != null : "Pageflow '" + currentPageflow + "' is not claimed by any module.  " +
-                            "This pageflow name must be added to the list of names returned by 'getPageFlowNameToClass' " +
-                            "from at least one module.";
-                    List<Module> moduleList = getSortedModuleList();
-                    for (Module module : moduleList)
+                assert activeModule != null : "Pageflow '" + currentPageflow + "' is not claimed by any module.  " +
+                        "This pageflow name must be added to the list of names returned by 'getPageFlowNameToClass' " +
+                        "from at least one module.";
+                List<Module> moduleList = getSortedModuleList();
+                for (Module module : moduleList)
+                {
+                    boolean selected = (module == activeModule);
+                    if (selected || (containerModules.contains(module)
+                            && null != module.getTabURL(container, context.getUser())))
                     {
-                        boolean selected = (module == activeModule);
-                        if (selected || (containerModules.contains(module)
-                                && null != module.getTabURL(container, context.getUser())))
-                        {
-                            NavTree navTree = new NavTree(module.getTabName(context), module.getTabURL(context.getContainer(), context.getUser()));
-                            navTree.setSelected(selected);
-                            tabs.add(navTree);
-                        }
+                        NavTree navTree = new NavTree(module.getTabName(context), module.getTabURL(context.getContainer(), context.getUser()));
+                        navTree.setSelected(selected);
+                        tabs.add(navTree);
                     }
                 }
             }
