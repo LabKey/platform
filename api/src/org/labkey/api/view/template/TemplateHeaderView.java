@@ -16,10 +16,10 @@
 
 package org.labkey.api.view.template;
 
+import org.labkey.api.data.ConnectionWrapper;
 import org.labkey.api.view.JspView;
 import org.labkey.api.security.User;
 import org.labkey.api.util.PageFlowUtil;
-import org.labkey.api.util.VersionNumber;
 import org.labkey.api.util.HelpTopic;
 import org.labkey.api.admin.AdminUrls;
 import org.labkey.api.data.Container;
@@ -143,6 +143,22 @@ public class TemplateHeaderView extends JspView<TemplateHeaderView.TemplateHeade
             _warningMessages.add("The maximum amount of heap memory allocated to LabKey Server is too low (256M or less). " +
                     "LabKey recommends <a href=\"" + topic.getHelpTopicLink()
                     + "\" target=\"_new\">setting the maximum heap to at least one gigabyte (-Xmx1024M)</a>.");
+        }
+
+        if (AppProps.getInstance().isDevMode())
+        {
+            int count = ConnectionWrapper.getActiveConnectionCount();
+            if (count > 0)
+            {
+                String connectionsInUse = "<a href=\"" + PageFlowUtil.urlProvider(AdminUrls.class).getMemTrackerURL() + "\">" + count + " DB connection" + (count == 1 ? "" : "s") + " in use.";
+                int leakCount = ConnectionWrapper.getProbableLeakCount();
+                if (leakCount > 0)
+                {
+                    connectionsInUse += " " + leakCount + " probable leak" + (leakCount == 1 ? "" : "s") + ".";
+                }
+                connectionsInUse += "</a>";
+                _warningMessages.add(connectionsInUse);
+            }
         }
     }
 

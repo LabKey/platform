@@ -681,11 +681,6 @@ public class UploadWizardAction<FormType extends AssayRunUploadForm<ProviderType
         return null;
     }
 
-    public AppBar getAppBar()
-    {
-        return getAppBar(_protocol);
-    }
-
     private static class UploadWizardInsertView extends InsertView
     {
         public UploadWizardInsertView(DataRegion dataRegion, ViewContext context, BindException errors)

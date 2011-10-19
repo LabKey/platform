@@ -76,9 +76,4 @@ public class TemplateAction extends BaseAssayAction<ProtocolIdForm>
     {
         throw new UnsupportedOperationException("Not Yet Implemented");
     }
-
-    public AppBar getAppBar()
-    {
-        return getAppBar(_protocol);
-    }
 }

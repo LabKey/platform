@@ -23,17 +23,17 @@ import org.labkey.api.settings.AppProps;
 import org.labkey.api.util.HelpTopic;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.view.ActionURL;
+import org.labkey.api.view.NavTree;
 import org.labkey.api.view.Portal;
 import org.labkey.api.view.ViewContext;
-import org.labkey.api.view.NavTree;
 import org.labkey.api.view.template.AppBar;
 import org.labkey.api.view.template.PageConfig;
 
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.Comparator;
 import java.util.List;
 import java.util.Set;
-import java.util.TreeSet;
 
 /**
  * User: Mark Igra
@@ -178,32 +178,73 @@ public interface FolderType
         {
             List<NavTree> tabs = new ArrayList<NavTree>();
 
-            if (!context.getContainer().isRoot())
+            Container container = context.getContainer();
+            if (!container.isRoot())
             {
-                Module curModule = pageConfig.getModuleOwner();
-                if (curModule == null)
-                    curModule = ModuleLoader.getInstance().getModuleForController(context.getActionURL().getPageFlow());
 
-
-                Set<Module> moduleForTabs = new TreeSet<Module>(context.getContainer().getActiveModules());
-                if (curModule != null)
+                Set<Module> containerModules = container.getActiveModules();
+                if (containerModules.size() == 1)
                 {
-                    moduleForTabs.add(curModule);
+                    Module module = container.getDefaultModule();
+                    NavTree navTree = new NavTree(module.getTabName(context), module.getTabURL(context.getContainer(), context.getUser()));
+                    navTree.setSelected(true);
+                    tabs.add(navTree);
                 }
-
-                for (Module module : moduleForTabs)
+                else
                 {
-                    NavTree moduleTab = new NavTree(module.getTabName(context), module.getTabURL(context.getContainer(), context.getUser()));
-                    if (module.equals(curModule))
+                    Module activeModule = pageConfig.getModuleOwner();
+                    String currentPageflow = context.getActionURL().getPageFlow();
+                    if (activeModule == null)
                     {
-                        moduleTab.setSelected(true);
+                        activeModule = ModuleLoader.getInstance().getModuleForController(currentPageflow);
                     }
-                    tabs.add(moduleTab);
+
+                    assert activeModule != null : "Pageflow '" + currentPageflow + "' is not claimed by any module.  " +
+                            "This pageflow name must be added to the list of names returned by 'getPageFlowNameToClass' " +
+                            "from at least one module.";
+                    List<Module> moduleList = getSortedModuleList();
+                    for (Module module : moduleList)
+                    {
+                        boolean selected = (module == activeModule);
+                        if (selected || (containerModules.contains(module)
+                                && null != module.getTabURL(container, context.getUser())))
+                        {
+                            NavTree navTree = new NavTree(module.getTabName(context), module.getTabURL(context.getContainer(), context.getUser()));
+                            navTree.setSelected(selected);
+                            tabs.add(navTree);
+                        }
+                    }
                 }
             }
             
-            return new AppBar(context.getContainer().getName(), tabs);
+            return new AppBar(container.getName(), tabs);
         }
+
+        private List<Module> getSortedModuleList()
+        {
+            List<Module> sortedModuleList = new ArrayList<Module>();
+            // special-case the portal module: we want it to always be at the far left.
+            Module portal = null;
+            for (Module module : ModuleLoader.getInstance().getModules())
+            {
+                if ("Portal".equals(module.getName()))
+                    portal = module;
+                else
+                    sortedModuleList.add(module);
+            }
+            Collections.sort(sortedModuleList, new Comparator<Module>()
+            {
+                public int compare(Module moduleOne, Module moduleTwo)
+                {
+                    return moduleOne.getName().compareToIgnoreCase(moduleTwo.getName());
+                }
+            });
+            if (portal != null)
+                sortedModuleList.add(0, portal);
+
+            return sortedModuleList;
+        }
+
 
         @Override
         public boolean isWorkbookType()

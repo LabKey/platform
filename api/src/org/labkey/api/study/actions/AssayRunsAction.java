@@ -89,9 +89,4 @@ public class AssayRunsAction extends BaseAssayAction<AssayRunsAction.AssayRunsFo
             .addChild(_protocol.getName() + " Batches", PageFlowUtil.urlProvider(AssayUrls.class).getAssayBatchesURL(getContainer(), _protocol, null))
             .addChild(_protocol.getName() + " Runs");
     }
-
-    public AppBar getAppBar()
-    {
-        return getAppBar(_protocol);
-    }
 }

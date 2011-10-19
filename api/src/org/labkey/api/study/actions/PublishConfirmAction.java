@@ -492,9 +492,4 @@ public class PublishConfirmAction extends BaseAssayAction<PublishConfirmAction.P
         result.addChild("Copy to " + (_targetStudyName == null ? "Study" : _targetStudyName) + ": Verify Results");
         return result;
     }
-
-    public AppBar getAppBar()
-    {
-        return getAppBar(_protocol);
-    }
 }

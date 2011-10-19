@@ -39,7 +39,6 @@ import static org.labkey.api.util.PageFlowUtil.filter;
  */
 public class NavTrailView extends HttpView
 {
-    private PageConfig _pageConfig = null;
     private String _title;
     private List<NavTree> _crumbTrail;
     private List<NavTree> tabs = new ArrayList<NavTree>();
@@ -47,90 +46,7 @@ public class NavTrailView extends HttpView
     public NavTrailView(ViewContext context, String title, PageConfig pageConfig, List<NavTree> moduleChildren)
     {
         _title = title;
-        _pageConfig = pageConfig;
         _crumbTrail = moduleChildren;
-
-        computeTabs(context);
-    }
-
-
-    private static class Tab extends NavTree
-    {
-        public Tab(String name, String link, boolean selected)
-        {
-            super(name, link);
-            // use expanded to mean selected
-            setSelected(selected);
-        }
-
-        public Tab(ViewContext context, Module module, boolean selected)
-        {
-            super(module.getTabName(context), null == module.getTabURL(context.getContainer(), context.getUser())
-                    ? null : module.getTabURL(context.getContainer(), context.getUser()).getLocalURIString());
-            setSelected(selected);
-        }
-    }
-
-
-    private static List<Module> getSortedModuleList()
-    {
-        List<Module> sortedModuleList = new ArrayList<Module>();
-        // special-case the portal module: we want it to always be at the far left.
-        Module portal = null;
-        for (Module module : ModuleLoader.getInstance().getModules())
-        {
-            if ("Portal".equals(module.getName()))
-                portal = module;
-            else
-                sortedModuleList.add(module);
-        }
-        Collections.sort(sortedModuleList, new Comparator<Module>()
-        {
-            public int compare(Module moduleOne, Module moduleTwo)
-            {
-                return moduleOne.getName().compareToIgnoreCase(moduleTwo.getName());
-            }
-        });
-        if (portal != null)
-            sortedModuleList.add(0, portal);
-
-        return sortedModuleList;
-    }
-
-
-    private void computeTabs(ViewContext context)
-    {
-        Container container = context.getContainer();
-
-        FolderType folderType = container.getFolderType();
-        if (!FolderType.NONE.equals(folderType))
-        {
-            tabs.add(new Tab(folderType.getLabel(), folderType.getStartURL(container, context.getUser()).getLocalURIString(), true));
-        }
-        else if (container.getActiveModules().size() == 1)
-        {
-            tabs.add(new Tab(context, container.getDefaultModule(), true));
-        }
-        else
-        {
-            String currentPageflow = context.getActionURL().getPageFlow();
-            Set<Module> containerModules = container.getActiveModules();
-            Module activeModule = ModuleLoader.getInstance().getModuleForController(currentPageflow);
-            assert activeModule != null : "Pageflow '" + currentPageflow + "' is not claimed by any module.  " +
-                    "This pageflow name must be added to the list of names returned by 'getPageFlowNameToClass' " +
-                    "from at least one module.";
-            List<Module> moduleList = getSortedModuleList();
-            for (Module module : moduleList)
-            {
-                boolean selected = (module == activeModule);
-                if (selected || (containerModules.contains(module)
-                        && null != module.getTabURL(container, context.getUser())))
-                {
-                    Tab newTab = new Tab(context, module, selected);
-                    tabs.add(newTab);
-                }
-            }
-        }
     }
 
 
@@ -144,21 +60,6 @@ public class NavTrailView extends HttpView
 
         _out = out;
         _contextPath = filter(context.getContextPath());
-
-        String connectionsInUse = null;
-        if (AppProps.getInstance().isDevMode())
-        {
-            int count = ConnectionWrapper.getActiveConnectionCount();
-            if (count > 0)
-            {
-                connectionsInUse = count + " DB connection" + (count == 1 ? "" : "s") + " in use.";
-                int leakCount = ConnectionWrapper.getProbableLeakCount();
-                if (leakCount > 0)
-                {
-                    connectionsInUse += " " + leakCount + " probable leak" + (leakCount == 1 ? "" : "s") + ".";
-                }
-            }
-        }
 
         //
         // TABSTRIP
@@ -179,13 +80,6 @@ public class NavTrailView extends HttpView
         if (tabs.size() > 1)
             _out.print(" class=\"labkey-tab-space\"");
         _out.print(">");
-
-        if (null != connectionsInUse)
-        {
-            out.print("<span>");
-            _out.print(formatLink(connectionsInUse, PageFlowUtil.urlProvider(AdminUrls.class).getMemTrackerURL()));
-            _out.print("</span>");
-        }
 
         _out.print("</td>\n</tr></table>\n");
 
@@ -265,11 +159,6 @@ public class NavTrailView extends HttpView
     private String formatLink(String display, String href)
     {
         return formatLink(display, href, null);
-    }
-
-    private String formatLink(String display, ActionURL url)
-    {
-        return formatLink(display, url.getLocalURIString(), null);
     }
 
     private String formatLink(String display, String href, String script)

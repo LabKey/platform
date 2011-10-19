@@ -246,9 +246,4 @@ public class PublishStartAction extends BaseAssayAction<PublishStartAction.Publi
         result.addChild("Copy to Study: Choose Target");
         return result;
     }
-
-    public AppBar getAppBar()
-    {
-        return getAppBar(_protocol);
-    }
 }

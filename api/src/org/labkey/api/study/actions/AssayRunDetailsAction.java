@@ -90,9 +90,4 @@ public class AssayRunDetailsAction extends BaseAssayAction<AssayRunDetailsAction
                 .addChild(_protocol.getName() + " Runs", runListURL)
                 .addChild(_run.getName() + " Details");
     }
-
-    public AppBar getAppBar()
-    {
-        return getAppBar(_protocol);
-    }
 }

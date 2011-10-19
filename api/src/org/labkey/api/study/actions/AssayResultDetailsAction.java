@@ -85,9 +85,4 @@ public class AssayResultDetailsAction extends BaseAssayAction<DataDetailsForm>
                 .addChild(run.getName() + " Results", resultsURL)
                 .addChild(_dataRowId + " Details");
     }
-
-    public AppBar getAppBar()
-    {
-        return getAppBar(_protocol);
-    }
 }

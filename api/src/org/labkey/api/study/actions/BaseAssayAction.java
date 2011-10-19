@@ -37,7 +37,7 @@ import java.util.Set;
  * Date: Jul 26, 2007
  * Time: 7:01:48 PM
  */
-public abstract class BaseAssayAction<T extends ProtocolIdForm> extends SimpleViewAction<T> implements AppBarAction
+public abstract class BaseAssayAction<T extends ProtocolIdForm> extends SimpleViewAction<T>
 {
     public BaseAssayAction()
     {
@@ -79,28 +79,6 @@ public abstract class BaseAssayAction<T extends ProtocolIdForm> extends SimpleVi
     public NavTree appendNavTrail(NavTree root)
     {
         return root.addChild("Assay List", PageFlowUtil.urlProvider(AssayUrls.class).getAssayListURL(getContainer()));
-    }
-
-    public AppBar getAppBar(ExpProtocol protocol)
-    {
-        AssayUrls urls = PageFlowUtil.urlProvider(AssayUrls.class);
-        if (null != protocol)
-        {
-            return new AppBar("Assay: " + protocol.getName(),
-                    new NavTree("Add Runs", "#"),
-                    new NavTree("View Runs", urls.getAssayRunsURL(getContainer(), protocol)),
-                    new NavTree("View Data", urls.getAssayResultsURL(getContainer(), protocol)),
-                    new NavTree("Manage", urls.getDesignerURL(getContainer(), protocol, false, null)));
-        }
-        else
-        {
-            return new AppBar("Assays", new NavTree("Add Runs", "javascript:alert('NYI');return null;"), new NavTree("View Assay Types", urls.getAssayListURL(getContainer())));
-        }
-    }
-
-    public AppBar getAppBar()
-    {
-        return getAppBar(null);
     }
 
     /**

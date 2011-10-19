@@ -88,9 +88,4 @@ public class AssayBatchDetailsAction extends BaseAssayAction<AssayBatchDetailsAc
                 .addChild(_protocol.getName() + " Batches", batchListURL)
                 .addChild(_exp.getName() + " Details");
     }
-
-    public AppBar getAppBar()
-    {
-        return getAppBar(_protocol);
-    }
 }

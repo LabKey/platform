@@ -15,6 +15,7 @@
  */
 package org.labkey.api.data;
 
+import org.jetbrains.annotations.Nullable;
 import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.Permission;
 import org.labkey.api.security.permissions.ReadPermission;
@@ -35,6 +36,7 @@ public abstract class ContainerFilter
     /**
      * @return null if no filtering should be done, otherwise the set of valid container ids
      */
+    @Nullable
     public abstract Collection<String> getIds(Container currentContainer);
 
     public abstract Type getType();

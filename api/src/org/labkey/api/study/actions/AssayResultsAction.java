@@ -59,9 +59,4 @@ public class AssayResultsAction extends BaseAssayAction<ProtocolIdForm>
         result.addChild(_protocol.getName() + " Results");
         return result;
     }
-
-    public AppBar getAppBar()
-    {
-        return getAppBar(_protocol);
-    }
 }

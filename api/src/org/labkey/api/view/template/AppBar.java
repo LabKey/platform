@@ -15,6 +15,7 @@
  */
 package org.labkey.api.view.template;
 
+import org.apache.commons.lang.ObjectUtils;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.NavTree;
 
@@ -108,12 +109,14 @@ public class AppBar extends NavTree
         if (null == selected && null != actionURL) //First try to match actionURL
         {
             for (NavTree button : buttons)
+            {
                 if (button.getValue().equals(actionURL.toString()))
                 {
                     selected = button;
                     hideTitle = true;
                     break;
                 }
+            }
         }
 
         if (null == selected)
@@ -136,15 +139,27 @@ public class AppBar extends NavTree
         }
         else if (crumbTrail.size() >= 1)
         {
-            //First item in crumb trail is home page. Last item is page title.
-            //We don't want either of them in the crumb trail.
+            // Last item is page title, strip it off the crumb trail
             setPageTitle(crumbTrail.get(crumbTrail.size() - 1).getKey());
-            if (null != getSelected() && crumbTrail.size() > 1)
-                return crumbTrail.subList(1, crumbTrail.size() - 1);
+            crumbTrail = crumbTrail.subList(0, crumbTrail.size() - 1);
+
+            // First item in crumb trail is usually the home page. See if it matches one of the tabs
+            if (!crumbTrail.isEmpty())
+            {
+                String firstLink = crumbTrail.get(0).getValue();
+                for (NavTree button : buttons)
+                {
+                    if (ObjectUtils.equals(button.getValue(), firstLink) || (actionURL != null && ObjectUtils.equals(actionURL.getLocalURIString(), firstLink)))
+                    {
+                        // Exclude the duplicate item
+                        return crumbTrail.subList(1, crumbTrail.size());
+                    }
+                }
+            }
             else
                 return Collections.emptyList();
         }
-        else
-            return crumbTrail;
+
+        return crumbTrail;
     }
 }

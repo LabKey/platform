@@ -116,9 +116,4 @@ public class DesignerAction extends BaseAssayAction<DesignerAction.DesignerForm>
         result.addChild(_form.getProviderName() + " Assay Designer", new ActionURL(DesignerAction.class, getContainer()));
         return result;
     }
-
-    public AppBar getAppBar()
-    {
-        return getAppBar(_form.isCopy() ? null : _protocol);
-    }
 }
