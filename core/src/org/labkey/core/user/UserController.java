@@ -1165,7 +1165,6 @@ public class UserController extends SpringActionController
 
         public NavTree appendNavTrail(NavTree root)
         {
-            addUserDetailsNavTrail(root, null);
             return root.addChild(UserManager.getEmailForId(_detailsUserId));
         }
     }
