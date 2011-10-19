@@ -26,6 +26,7 @@ import org.labkey.api.query.QueryAction;
 import org.labkey.api.query.QueryDefinition;
 import org.labkey.api.query.QueryParam;
 import org.labkey.api.query.QueryService;
+import org.labkey.api.query.QueryUrls;
 import org.labkey.api.query.QueryView;
 import org.labkey.api.query.UserSchema;
 import org.labkey.api.reports.Report;
@@ -516,6 +517,8 @@ public class ReportUtil
 
                 if (!StringUtils.isEmpty(view.getCustomIconUrl()))
                     info.setIcon(view.getCustomIconUrl());
+
+                info.setThumbnailUrl(PageFlowUtil.urlProvider(QueryUrls.class).urlThumbnail(c).toString());
 
                 views.add(info);
             }

@@ -17,7 +17,6 @@
 package org.labkey.api.reports.report;
 
 import org.jetbrains.annotations.Nullable;
-import org.labkey.api.attachments.AttachmentParent;
 import org.labkey.api.reports.Report;
 import org.labkey.api.reports.ReportService;
 import org.labkey.api.reports.report.r.ParamReplacement;

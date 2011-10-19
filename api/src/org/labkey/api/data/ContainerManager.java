@@ -29,6 +29,7 @@ import org.labkey.api.attachments.AttachmentParent;
 import org.labkey.api.cache.CacheManager;
 import org.labkey.api.cache.StringKeyCache;
 import org.labkey.api.collections.CaseInsensitiveHashSet;
+import org.labkey.api.collections.ConcurrentHashSet;
 import org.labkey.api.data.dialect.SqlDialect;
 import org.labkey.api.module.FolderType;
 import org.labkey.api.module.ModuleLoader;
@@ -287,6 +288,8 @@ public class ContainerManager
     }
 
 
+    private static final Set<Container> containersWithBadFolderTypes = new ConcurrentHashSet<Container>();
+
     public static FolderType getFolderType(Container c)
     {
         Map props = PropertyManager.getProperties(0, c.getId(), ContainerManager.FOLDER_TYPE_PROPERTY_SET_NAME);
@@ -300,8 +303,13 @@ public class ContainerManager
             if (null == folderType)
             {
                 // If we're upgrading then folder types won't be defined yet... don't warn in that case.
-                if (!ModuleLoader.getInstance().isUpgradeInProgress() && !ModuleLoader.getInstance().isUpgradeRequired())
+                if (!ModuleLoader.getInstance().isUpgradeInProgress() &&
+                    !ModuleLoader.getInstance().isUpgradeRequired() &&
+                    !containersWithBadFolderTypes.contains(c))
+                {
                     LOG.warn("No such folder type " + name + " for folder " + c.toString());
+                    containersWithBadFolderTypes.add(c);
+                }
 
                 folderType = FolderType.NONE;
             }
