@@ -275,12 +275,6 @@ public class StudyController extends BaseStudyController
         {
             return new ActionURL(OverviewAction.class, container);
         }
-
-        @Override
-        public ActionURL getThumbnailURL(Container container)
-        {
-            return new ActionURL(ThumbnailAction.class, container);
-        }
     }
 
     public StudyController()
@@ -6893,7 +6887,7 @@ public class StudyController extends BaseStudyController
                         view.setRunUrl(new ActionURL(DefaultDatasetReportAction.class, getContainer()).addParameter("datasetId", ds.getDataSetId()));
                         view.setContainer(ds.getContainer());
                         view.setHidden(!ds.isShowByDefault());
-
+                        view.setThumbnailUrl(new ActionURL(ThumbnailAction.class, getContainer()));
                         datasets.add(view);
                     }
                 }

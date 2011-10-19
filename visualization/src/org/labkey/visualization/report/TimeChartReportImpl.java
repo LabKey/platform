@@ -53,8 +53,8 @@ public class TimeChartReportImpl extends TimeChartReport implements DynamicThumb
     @Override
     public Thumbnail getStaticThumbnail()
     {
-        InputStream is = TimeChartReportImpl.class.getResourceAsStream("timechart_icon.gif");
-        return new Thumbnail(is, "image/gif");
+        InputStream is = TimeChartReportImpl.class.getResourceAsStream("timechart.png");
+        return new Thumbnail(is, "image/png");
     }
 
     @Override
