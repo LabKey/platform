@@ -134,8 +134,9 @@ Ext4.define('LABKEY.ext4.DataViewsPanel', {
             scope : this
         };
 
-        if (useGrouping)
+        if (useGrouping) {
             config["groupField"] = 'category';
+        }
 
         return Ext4.create('Ext.data.Store', config);
     },
@@ -382,7 +383,12 @@ Ext4.define('LABKEY.ext4.DataViewsPanel', {
                     }
                 },
                 reconfigure : function() {
-                    this.store.sort('categoryDisplayOrder', 'ASC');
+                    this.store.sort([
+                        {
+                            property : 'name',
+                            direction: 'ASC'
+                        }
+                    ]);
                     this.customize();
                 },
                 scope : this
@@ -409,6 +415,9 @@ Ext4.define('LABKEY.ext4.DataViewsPanel', {
             renderer : function(view, meta, rec, idx, colIdx, store) {
                 if (!this._inCustomMode())
                     meta.style = 'display: none;';  // what a nightmare
+                if (!rec.data.entityId) {
+                    return '<span height="18px" class="edit-link-cls-' + this.webpartId + '"></span>'; // entityId is required for editing
+                }
                 return '<span height="18px" class="edit-link-cls-' + this.webpartId + ' edit-views-link"></span>';
             },
             hidden   : true,
@@ -473,8 +482,25 @@ Ext4.define('LABKEY.ext4.DataViewsPanel', {
 
     onViewLoad : function(s, recs, success, operation, ops) {
         this.hiddenFilter();
-        this.store.sort('categoryDisplayOrder', 'ASC');
-        this.store.sort('name', 'ASC');
+        var s = this.store;
+        for (var i = 0; i < s.groupers.items.length; i++) {
+            s.groupers.items[i].updateSortFunction(function(rec1, rec2){
+                var cdo1 = rec1.data.categoryDisplayOrder,
+                    cdo2 = rec2.data.categoryDisplayOrder;
+
+                if (cdo1 < cdo2)
+                    return -1;
+                else if (cdo1 == cdo2)
+                    return 0;
+                return 1;
+            });
+        }
+        s.sort([
+            {
+                property : 'name',
+                direction: 'ASC'
+            }
+        ]);
         this.doLayout(false, true);
     },
 
@@ -647,6 +673,10 @@ Ext4.define('LABKEY.ext4.DataViewsPanel', {
         this.doLayout(false, true);
     },
 
+    /**
+     * Takes the panel into/outof customize mode. Customize mode allows users to view edit links,
+     * adminstrate view categories and determine what data types should be shown.
+     */
     customize : function() {
 
         if (!this.isCustomizable())
@@ -655,6 +685,9 @@ Ext4.define('LABKEY.ext4.DataViewsPanel', {
         this.fireEvent((this._inCustomMode() ? 'disableCustomMode' : 'enableCustomMode'), this);
     },
 
+    /**
+     * Aggregates the filters applied by search and by custom mode.
+     */
     hiddenFilter : function() {
 
         this.store.clearFilter();
@@ -725,12 +758,13 @@ Ext4.define('LABKEY.ext4.DataViewsPanel', {
             fieldLabel : 'Name',
             value      : record.data.name
         },{
-            xtype      : 'combo',
-            fieldLabel : 'Category',
-            name       : 'category',
-            store      : this.initializeCategoriesStore(),
-            typeAhead  : true,
-            hideTrigger: true,
+            xtype       : 'combo',
+            fieldLabel  : 'Category',
+            name        : 'category',
+            store       : this.initializeCategoriesStore(),
+            typeAhead   : true,
+            hideTrigger : true,
+            readOnly    : !editable,
             typeAheadDelay : 75,
             minChars       : 1,
             autoSelect     : false,
@@ -879,7 +913,7 @@ Ext4.define('LABKEY.ext4.DataViewsPanel', {
 
                         Ext4.Msg.show({
                             title : 'Delete Category',
-                            msg   : 'Please confirm you would like to <b>DELETE</b> \'' + label + '\' from the set of categories.',
+                            msg   : 'Please confirm you would like to <b>DELETE</b> \'' + Ext4.htmlEncode(label) + '\' from the set of categories.',
                             buttons : Ext4.MessageBox.OKCANCEL,
                             icon    : Ext4.MessageBox.WARNING,
                             fn      : function(btn){
