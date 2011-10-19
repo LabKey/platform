@@ -46,6 +46,11 @@ public class DocumentConversionServiceImpl implements DocumentConversionService
         try
         {
             PDDocument document = PDDocument.load(pdfStream);
+
+            // PDFBox won't extract images from SECURED PDF; use the static thumbnail instead of blank
+            if (document.isEncrypted())
+                return null;
+
             List<PDPage> pages = document.getDocumentCatalog().getAllPages();
 
             if (pages.size() >= page)

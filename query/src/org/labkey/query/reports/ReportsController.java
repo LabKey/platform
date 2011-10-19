@@ -1659,12 +1659,6 @@ public class ReportsController extends SpringActionController
     public class ThumbnailAction extends BaseThumbnailAction<ThumbnailForm>
     {
         @Override
-        public void export(ThumbnailForm thumbnailForm, HttpServletResponse response, BindException errors) throws Exception
-        {
-            super.export(thumbnailForm, response, errors);
-        }
-
-        @Override
         public StaticThumbnailProvider getProvider(ThumbnailForm form) throws Exception
         {
             Report report = form.getReportId().getReport();

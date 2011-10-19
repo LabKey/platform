@@ -38,6 +38,7 @@ import org.labkey.study.controllers.reports.ReportsController.DownloadReportFile
 
 import javax.imageio.ImageIO;
 import java.awt.image.BufferedImage;
+import java.io.IOException;
 import java.io.InputStream;
 import java.util.Date;
 import java.util.List;
@@ -149,41 +150,169 @@ public class AttachmentReport extends RedirectReport implements DynamicThumbnail
         getDescriptor().setProperty(MODIFIED, DateUtil.formatDate(modified));
     }
 
+    enum Type
+    {
+        PDF
+        {
+            @Override
+            String getStaticThumbnailName()
+            {
+                return "pdf";
+            }
+
+            @Override
+            Thumbnail getDynamicThumbnail(AttachmentReport report, String filename) throws IOException
+            {
+                DocumentConversionService svc = ServiceRegistry.get().getService(DocumentConversionService.class);
+
+                if (null != svc)
+                {
+                    InputStream pdfStream = AttachmentService.get().getInputStream(report, filename);
+                    BufferedImage image = svc.pdfToImage(pdfStream, 0);
+
+                    return ImageUtil.renderThumbnail(image);
+                }
+
+                return null;
+            }
+        },
+
+        Image
+        {
+            @Override
+            String getStaticThumbnailName()
+            {
+                return "image";
+            }
+
+            @Override
+            Thumbnail getDynamicThumbnail(AttachmentReport report, String filename) throws IOException
+            {
+                InputStream imageSteam = AttachmentService.get().getInputStream(report, filename);
+                BufferedImage image = ImageIO.read(imageSteam);
+
+                return ImageUtil.renderThumbnail(image);
+            }
+        },
+
+        Document
+        {
+            @Override
+            String getStaticThumbnailName()
+            {
+                return "wordprocessing";
+            }
+
+            @Override
+            Thumbnail getDynamicThumbnail(AttachmentReport report, String filename) throws IOException
+            {
+                return null;
+            }
+        },
+
+        Spreadsheet
+        {
+            @Override
+            String getStaticThumbnailName()
+            {
+                return "spreadsheet";
+            }
+
+            @Override
+            Thumbnail getDynamicThumbnail(AttachmentReport report, String filename) throws IOException
+            {
+                return null;
+            }
+        },
+
+        Presentation
+        {
+            @Override
+            String getStaticThumbnailName()
+            {
+                return "presentation";
+            }
+
+            @Override
+            Thumbnail getDynamicThumbnail(AttachmentReport report, String filename) throws IOException
+            {
+                return null;
+            }
+        },
+
+        Other
+        {
+            @Override
+            String getStaticThumbnailName()
+            {
+                return "unknown";
+            }
+
+            @Override
+            Thumbnail getDynamicThumbnail(AttachmentReport report, String filename) throws IOException
+            {
+                return null;
+            }
+        };
+
+        abstract String getStaticThumbnailName();
+        abstract Thumbnail getDynamicThumbnail(AttachmentReport report, String filename) throws IOException;
+
+        private static Type getForContentType(String contentType)
+        {
+            if (null == contentType)
+                return Type.Other;
+
+            if ("application/pdf".equals(contentType))
+                return Type.PDF;
+
+            if ("application/msword".equals(contentType) ||
+                "application/vnd.openxmlformats-officedocument.wordprocessingml.document".equals(contentType))
+                return Type.Document;
+
+            if ("application/ms-excel".equals(contentType) ||
+                "application/vnd.ms-excel".equals(contentType) ||
+                "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet".equals(contentType))
+                return Type.Spreadsheet;
+
+            if ("application/mspowerpoint".equals(contentType) ||
+                "application/vnd.ms-powerpoint".equals(contentType) ||
+                "application/vnd.openxmlformats-officedocument.presentationml.presentation".equals(contentType))
+                return Type.Presentation;
+
+            if (contentType.startsWith("image/"))
+                return Type.Image;
+
+            return Type.Other;
+        }
+    }
+
+    @Override
+    public Thumbnail getStaticThumbnail()
+    {
+        Type type = Type.getForContentType(getContentType());
+        InputStream is = AttachmentReport.class.getResourceAsStream(type.getStaticThumbnailName() + ".png");
+        return new Thumbnail(is, "image/png");
+    }
+
+    @Override
+    public String getStaticThumbnailCacheKey()
+    {
+        Type type = Type.getForContentType(getContentType());
+        return "AttachmentReport:" + type.name();
+    }
+
     @Override
     public Thumbnail generateDynamicThumbnail(ViewContext context)
     {
+        Type type = Type.getForContentType(getContentType());
         Attachment latest = getLatestVersion();
 
         if (null != latest)
         {
-            String extension = latest.getFileExtension();
-            MimeMap mm = new MimeMap();
-            String contentType = mm.getContentType(extension);
-
             try
             {
-                if ("pdf".equals(extension))
-                {
-                    DocumentConversionService svc = ServiceRegistry.get().getService(DocumentConversionService.class);
-
-                    if (null != svc)
-                    {
-                        InputStream pdfStream = AttachmentService.get().getInputStream(this, latest.getName());
-                        BufferedImage image = svc.pdfToImage(pdfStream, 0);
-
-                        return ImageUtil.renderThumbnail(image);
-                    }
-
-                    return null;
-                }
-
-                if (contentType.startsWith("image/"))
-                {
-                    InputStream imageSteam = AttachmentService.get().getInputStream(this, latest.getName());
-                    BufferedImage image = ImageIO.read(imageSteam);
-
-                    return ImageUtil.renderThumbnail(image);
-                }
+                return type.getDynamicThumbnail(this, latest.getName());
             }
             catch (Exception e)
             {
@@ -192,6 +321,22 @@ public class AttachmentReport extends RedirectReport implements DynamicThumbnail
         }
 
         return null;
+    }
+
+    private String getContentType()
+    {
+        Attachment latest = getLatestVersion();
+
+        if (null != latest)
+        {
+            String extension = latest.getFileExtension();
+            MimeMap mm = new MimeMap();
+            return mm.getContentType(extension);
+        }
+        else
+        {
+            return null;
+        }
     }
 
     @Override
