@@ -86,6 +86,19 @@ public class DatasetUpdateService extends AbstractQueryUpdateService
         List<Map<String, Object>> result = super._insertRowsUsingETL(user, container, rows, errors, extraScriptContext);
         if (null != result && result.size() > 0)
         {
+            for (Map<String, Object> row : result)
+            {
+                try
+                {
+                    String participantID = getParticipant(row, user, container);
+                    _potentiallyNewParticipants.add(participantID);
+                }
+                catch (ValidationException e)
+                {
+                    throw new QueryUpdateServiceException(e);
+                }
+            }
+            
             StudyManager.fireDataSetChanged(_dataset);
             resyncStudy(user, container);
         }
