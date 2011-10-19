@@ -241,11 +241,11 @@ public class DavController extends SpringActionController
             ExceptionUtil.logExceptionToMothership(request, e);
             _webdavresponse.sendError(WebdavStatus.SC_INTERNAL_SERVER_ERROR, e);
         }
-        for (Map.Entry e : closables.entrySet())
+        for (Map.Entry<Closeable, Throwable> e : closables.entrySet())
         {
-            Closeable c = (Closeable) e.getKey();
-            Throwable t = (Throwable)e.getValue();
-            _log.warn(c.getClass().getName(), t);
+            Closeable c = e.getKey();
+            Throwable t = e.getValue();
+            _log.warn(c.getClass().getName() + " not closed", t);
         }
         return null;
     }

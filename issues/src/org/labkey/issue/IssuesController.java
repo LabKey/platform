@@ -373,15 +373,13 @@ public class IssuesController extends SpringActionController
             page.setUserHasUpdatePermissions(hasUpdatePermission(getUser(), _issue));
             page.setRequiredFields(IssueManager.getRequiredIssueFields(getContainer()));
 
-            getPageConfig().setTitle(getSingularEntityName() + " " + _issue.getIssueId() + ": " + _issue.getTitle().getSource());
-
             return new JspView<IssuePage>("/org/labkey/issue/detailView.jsp", page);
         }
 
         public NavTree appendNavTrail(NavTree root)
         {
             return new ListAction(getViewContext()).appendNavTrail(root)
-                    .addChild("Detail -- " + _issue.getIssueId(), getURL());
+                    .addChild(getSingularEntityName() + " " + _issue.getIssueId() + ": " + _issue.getTitle().getSource(), getURL());
         }
 
         public ActionURL getURL()

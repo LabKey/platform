@@ -56,7 +56,7 @@ public class CollaborationFolderType extends DefaultFolderType
         if (c.equals(ContainerManager.getHomeContainer()))
             return LookAndFeelProperties.getInstance(c).getShortName();
         else
-            return c.getName();
+            return "Start Page";
     }
 
     @Override

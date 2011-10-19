@@ -159,11 +159,6 @@ public class AssayController extends SpringActionController
         {
             return root.addChild("Assays", new ActionURL(BeginAction.class, getContainer())).addChild("Assay List", new ActionURL(BeginAction.class, getContainer()));
         }
-
-        public AppBar getAppBar()
-        {
-            return getAppBar(null);
-        }
     }
 
     public static class AssayListForm
@@ -382,11 +377,6 @@ public class AssayController extends SpringActionController
             return root.addChild("Assay List", new ActionURL(BeginAction.class, getContainer())).addChild(_protocol.getName(),
                     new ActionURL(AssayRunsAction.class, getContainer()).addParameter("rowId", _protocol.getRowId())).addChild("Copy Assay Design");
         }
-
-        public AppBar getAppBar()
-        {
-            return getAppBar(_protocol);
-        }
     }
 
     @RequiresPermissionClass(ReadPermission.class)
@@ -400,11 +390,6 @@ public class AssayController extends SpringActionController
         }
 
         public NavTree appendNavTrail(NavTree root)
-        {
-            throw new UnsupportedOperationException("Redirects should not show nav trails");
-        }
-
-        public AppBar getAppBar()
         {
             throw new UnsupportedOperationException("Redirects should not show nav trails");
         }
@@ -644,11 +629,6 @@ public class AssayController extends SpringActionController
         {
             return root.addChild("Assay List", new ActionURL(BeginAction.class, getContainer())).addChild(_protocol.getName(),
                     new ActionURL(AssayRunsAction.class, getContainer()).addParameter("rowId", _protocol.getRowId())).addChild("Copy-to-Study History");
-        }
-
-        public AppBar getAppBar()
-        {
-            return getAppBar(_protocol);
         }
     }
 
