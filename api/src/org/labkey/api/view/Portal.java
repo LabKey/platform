@@ -80,7 +80,7 @@ public class Portal
 
     public static void containerDeleted(Container c)
     {
-        WEB_PART_CACHE.removeUsingPrefix(PORTAL_PREFIX);
+        WEB_PART_CACHE.removeUsingPrefix(getCacheKey(null));
 
         try
         {
@@ -90,7 +90,6 @@ public class Portal
         {
             throw new RuntimeSQLException(e);
         }
-
     }
 
     public static class WebPart implements Serializable
@@ -113,7 +112,6 @@ public class Portal
 
         public WebPart()
         {
-
         }
 
         public WebPart(WebPart copyFrom)
@@ -296,7 +294,7 @@ public class Portal
 
     public static WebPart[] getParts(Container c, String id, boolean force)
     {
-        String key = PORTAL_PREFIX + id;
+        String key = getCacheKey(id);
         WebPart[] parts;
 
         if (!force)
@@ -527,9 +525,20 @@ public class Portal
     }
 
 
-    static void _clearCache(String id)
+    private static void _clearCache(String id)
     {
-        WEB_PART_CACHE.remove(PORTAL_PREFIX + id);
+        WEB_PART_CACHE.remove(getCacheKey(id));
+    }
+
+
+    // CAREFUL: On SQL Server, this id could be all uppercase (when coming from an ENTITYID column) or all lower case
+    // (when coming from a VARCHAR column), so we must normalize.
+    private static String getCacheKey(@Nullable String id)
+    {
+        if (null != id)
+            return PORTAL_PREFIX + id.toLowerCase();
+        else
+            return PORTAL_PREFIX;
     }
 
 
