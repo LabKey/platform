@@ -157,8 +157,8 @@ public abstract class AbstractReport implements Report
     @Override
     public Thumbnail getStaticThumbnail()
     {
-        InputStream is = AbstractReport.class.getResourceAsStream("genericReportThumbnail.png");
-        return new Thumbnail(is, "image/png");
+        InputStream is = AbstractReport.class.getResourceAsStream("report.jpg");
+        return new Thumbnail(is, "image/jpeg");
     }
 
     @Override

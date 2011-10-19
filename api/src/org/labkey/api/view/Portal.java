@@ -315,6 +315,7 @@ public class Portal
             throw new RuntimeSQLException(x);
         }
 
+        // TODO: Really?!?  Caching for only one minute?
         WEB_PART_CACHE.put(key, parts, CacheManager.MINUTE);
         return parts;
     }

@@ -464,7 +464,7 @@ public class ReportUtil
                 if (!StringUtils.isEmpty(iconPath))
                     info.setIcon(iconPath);
 
-                info.setThumbnailUrl(PageFlowUtil.urlProvider(ReportUrls.class).urlThumbnail(c, r).toString());
+                info.setThumbnailUrl(PageFlowUtil.urlProvider(ReportUrls.class).urlThumbnail(c, r));
 
                 views.add(info);
             }
@@ -518,7 +518,7 @@ public class ReportUtil
                 if (!StringUtils.isEmpty(view.getCustomIconUrl()))
                     info.setIcon(view.getCustomIconUrl());
 
-                info.setThumbnailUrl(PageFlowUtil.urlProvider(QueryUrls.class).urlThumbnail(c).toString());
+                info.setThumbnailUrl(PageFlowUtil.urlProvider(QueryUrls.class).urlThumbnail(c));
 
                 views.add(info);
             }

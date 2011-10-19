@@ -56,7 +56,7 @@ public class ViewInfo
     private Container _container;
     private String _permissions;
     private String _icon;
-    private String _thumbnailUrl;
+    private ActionURL _thumbnailUrl;
     private boolean _hidden;
     private int _displayOrder;
 
@@ -261,12 +261,12 @@ public class ViewInfo
         _icon = icon;
     }
 
-    public String getThumbnailUrl()
+    public ActionURL getThumbnailUrl()
     {
         return _thumbnailUrl;
     }
 
-    public void setThumbnailUrl(String thumbnailUrl)
+    public void setThumbnailUrl(ActionURL thumbnailUrl)
     {
         _thumbnailUrl = thumbnailUrl;
     }
@@ -391,7 +391,7 @@ public class ViewInfo
         if (getIcon() != null)
             o.put("icon", getIcon());
         if (getThumbnailUrl() != null)
-            o.put("thumbnail", getThumbnailUrl());
+            o.put("thumbnail", getThumbnailUrl().getLocalURIString());
 
         return o;
     }

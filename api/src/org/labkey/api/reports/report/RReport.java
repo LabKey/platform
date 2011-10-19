@@ -293,9 +293,8 @@ public class RReport extends ExternalScriptEngineReport implements DynamicThumbn
     @Override
     public Thumbnail generateDynamicThumbnail(ViewContext context)
     {
-        // TODO: Temporary -- need to generate based on the content & context
-        InputStream is = RReport.class.getResourceAsStream("rreportThumbnail.jpg");
-        return new Thumbnail(is, "image/jpg");
+        // TODO: Generate based on the content & context
+        return null;
     }
 
     @Override
