@@ -798,84 +798,83 @@ table.labkey-nav-trail
 
 /* Used for the "App Bar" containing the main title and the application button bar */
 /* Used for tabs */
-.labkey-app-bar
+.labkey-app-bar div.folder-header
 {
-    width: 100%;
+    background: #ccc;
+    width:100%;
 }
 
 .labkey-app-bar table.folder-header
 {
-    background-color:#a5abd9;
     padding:0 30px;
     border-spacing: 0; *border-collapse: collapse;
     width:100%;
+	height: 60px;
 }
 
-.labkey-app-bar .button-bar
-{
-    vertical-align:bottom;
-    text-align:right;
+.labkey-app-bar td.folder-title {
+	font-family: Arial, Helvetica, sans serif;
+    font-size: 22px;
+    line-height: 22px;
+	*padding-left: 30px;
+    white-space:nowrap;
 }
 
-.labkey-app-bar ul.labkey-tab-strip
-{
-    vertical-align:bottom;
+.labkey-app-bar td.button-bar {
+	padding: 0;
+	margin: 0;
+	vertical-align: bottom;
+	*padding-right: 30px;
+}
+
+.labkey-app-bar ul.labkey-tab-strip {
+	border-bottom: none;
     float:right;
-    border:0;
-    border-spacing:0;
 }
 
-.labkey-app-bar td.folder-title
-{
-    font-size:28px;
-    line-height:65px;
-    color:#fff;
-}
-
-.labkey-app-bar table.labkey-nav-trail
-{
-    padding: 10px 30px 0;
-}
-
-.labkey-app-button-bar-left
-{
-    height:41px;
-    width:15px;
-}
-
-.labkey-app-button-bar-right
-{
-    height:41px;
-    width:15px;
-    padding-right:12px;
-}
-
-.labkey-app-button-bar-button
-{
-    height:41px;
+.labkey-app-bar li.labkey-tab-inactive a {
+    background-color: #e5e5e5;
+	opacity: 1.0;
+	color: #676767;
+	border-bottom: 1px solid #ccc;
     white-space:nowrap;
-    font:verdana bold 11px;
-    color:#29301a;
-    background-color:#d2d5ec;
 }
 
-.labkey-app-button-bar-button.selected
-{
-    color:#212121;
-    background-color:#f4f4f4;
-}
-
-td.labkey-app-button-bar-button a
-{
-    font-family:verdana, sans-serif;
-    color:#29301a;
-    font-size:10pt;
-    text-transform:uppercase;
-    text-align:center;
-    vertical-align:middle;
-    padding-left:8px;
-    padding-right:8px;
+.labkey-app-bar li.labkey-tab-active a {
+    background-color: #f8f8f8;
+    opacity: 1.0;
+	color: #000;
+	border-bottom: 1px solid #f8f8f8;
     white-space:nowrap;
+}
+
+.labkey-app-bar ul.labkey-tab-strip a {
+/*
+    border-color: 0 none !important;
+    border-style: 0 none !important;
+    border-width: 0 none !important;
+	border: none !important;
+*/
+    float: left;
+    line-height: 14px;
+    margin-right: 1px;
+    padding: 6px 12px;
+    text-decoration: none;
+
+	border-radius: 5px 5px 0 0;
+	-moz-border-radius: 5px 5px 0 0;
+	-webkit-border-radius: 5px 5px 0 0;
+}
+
+.labkey-app-bar ul.labkey-tab-strip a:hover {
+    background-color: #f4f4f4;
+    opacity: 1.0;
+	color: #010101;
+}
+
+.labkey-app-bar .labkey-tab-selected a /*, .labkey-tab a, .labkey-tab-inactive a */ {
+   	outline: 0 none;
+	color: #010101 !important;
 }
 
 /* Used for text fields with auto completion */

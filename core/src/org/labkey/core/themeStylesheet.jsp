@@ -228,19 +228,14 @@ span.css-arrow-down
 /* Used for the "App Bar" containing the main title and the application button bar */
 /* Used for tabs */
 
-.labkey-app-bar table.folder-header
+.labkey-app-bar div.folder-header
 {
     background-color:#<%= webpart %>;
 }
 
-.labkey-app-bar
+.labkey-app-bar li.labkey-tab-inactive a 
 {
-//    background-color:#<%= grid %>;
-}
-
-table.labkey-app-bar td
-{
-//    background-color:#<%= grid %>;
+    background-color:#<%= grid %>;
 }
 
 td.labkey-app-button-bar-button a
