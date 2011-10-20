@@ -89,6 +89,7 @@ import org.labkey.api.reports.report.ChartReportDescriptor;
 import org.labkey.api.reports.report.QueryReport;
 import org.labkey.api.reports.report.ReportDescriptor;
 import org.labkey.api.reports.report.ReportIdentifier;
+import org.labkey.api.reports.report.view.ReportUtil;
 import org.labkey.api.search.SearchService;
 import org.labkey.api.search.SearchUrls;
 import org.labkey.api.security.RequiresNoPermission;
@@ -229,12 +230,14 @@ import java.util.Date;
 import java.util.EnumSet;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Iterator;
 import java.util.LinkedHashSet;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.TreeMap;
+import java.util.TreeSet;
 
 import static org.labkey.api.util.PageFlowUtil.filter;
 
@@ -6833,21 +6836,61 @@ public class StudyController extends BaseStudyController
             if (form.includeData())
             {
                 JSONArray data = new JSONArray();
+                boolean includeReports = types.isEmpty() ? true : types.get(ViewInfo.DataType.reports.name());
+                boolean includeQueries = types.isEmpty() ? true : types.get(ViewInfo.DataType.queries.name());
+                boolean includeDatasets = types.isEmpty() ? true : types.get(ViewInfo.DataType.datasets.name());
+
+                List<ViewInfo> dataViews = new ArrayList<ViewInfo>();
+                int startingDefaultDisplayOrder = 0;
+                Set<String> defaultCategories = new TreeSet<String>(new Comparator<String>(){
+                    @Override
+                    public int compare(String s1, String s2)
+                    {
+                        return s1.compareToIgnoreCase(s2);
+                    }
+                });
 
                 // get reports and queries
-                if (types.isEmpty() || types.get(ViewInfo.DataType.reports.name()))
+                if (includeReports || includeQueries)
                 {
-                    for (ViewInfo info : ReportManager.get().getViews(getViewContext(), null, null, isAdmin, true))
-                        data.put(info.toJSON(getUser()));
+                    for (ViewInfo info : ReportManager.get().getViews(getViewContext(), null, null, includeReports, includeQueries, isAdmin))
+                    {
+                        if (info.getCategoryDisplayOrder() != ReportUtil.DEFAULT_CATEGORY_DISPLAY_ORDER)
+                            startingDefaultDisplayOrder = Math.max(startingDefaultDisplayOrder, info.getCategoryDisplayOrder());
+                        else
+                            defaultCategories.add(info.getCategory());
+
+                        dataViews.add(info);
+                    }
                 }
 
                 // datasets
-                if (types.isEmpty() || types.get(ViewInfo.DataType.datasets.name()))
+                if (includeDatasets)
                 {
                     for (ViewInfo info : getDatasets())
-                        data.put(info.toJSON(getUser()));
+                    {
+                        if (info.getCategoryDisplayOrder() != ReportUtil.DEFAULT_CATEGORY_DISPLAY_ORDER)
+                            startingDefaultDisplayOrder = Math.max(startingDefaultDisplayOrder, info.getCategoryDisplayOrder());
+                        else
+                            defaultCategories.add(info.getCategory());
+
+                        dataViews.add(info);
+                    }
                 }
 
+                // add the default categories after the explicit categories
+                Map<String, Integer> defaultCategoryMap = new HashMap<String, Integer>();
+                for (Iterator<String> it = defaultCategories.iterator(); it.hasNext(); )
+                {
+                    defaultCategoryMap.put(it.next(), ++startingDefaultDisplayOrder);                    
+                }
+
+                for (ViewInfo info : dataViews)
+                {
+                    if (info.getCategoryDisplayOrder() == ReportUtil.DEFAULT_CATEGORY_DISPLAY_ORDER && defaultCategoryMap.containsKey(info.getCategory()))
+                        info.setCategoryDisplayOrder(defaultCategoryMap.get(info.getCategory()));
+                    data.put(info.toJSON(getUser()));
+                }
                 response.put("data", data);
             }
 
@@ -6867,7 +6910,6 @@ public class StudyController extends BaseStudyController
                     if (!ds.isShowByDefault())
                         continue;
 */
-
                     if (ds.canRead(getUser()))
                     {
                         ViewInfo view = new ViewInfo(ds.getLabel(), "Dataset");
@@ -6879,6 +6921,13 @@ public class StudyController extends BaseStudyController
                             ViewCategory vc = ViewCategoryManager.getInstance().getCategory(getContainer(), ds.getCategory());
                             if (vc != null)
                                 view.setCategoryDisplayOrder(vc.getDisplayOrder());
+                            else
+                                view.setCategoryDisplayOrder(ReportUtil.DEFAULT_CATEGORY_DISPLAY_ORDER);
+                        }
+                        else
+                        {
+                            view.setCategory("Uncategorized");
+                            view.setCategoryDisplayOrder(ReportUtil.DEFAULT_CATEGORY_DISPLAY_ORDER);
                         }
                         view.setDescription(ds.getDescription());
                         view.setEntityId(ds.getEntityId());
@@ -6902,7 +6951,7 @@ public class StudyController extends BaseStudyController
         private String pageId;
         private boolean includeData = true;
 
-        private ViewInfo.DataType[] _dataTypes = new ViewInfo.DataType[]{ViewInfo.DataType.reports, ViewInfo.DataType.datasets};
+        private ViewInfo.DataType[] _dataTypes = new ViewInfo.DataType[]{ViewInfo.DataType.reports, ViewInfo.DataType.datasets, ViewInfo.DataType.queries};
 
         public ViewInfo.DataType[] getDataTypes()
         {

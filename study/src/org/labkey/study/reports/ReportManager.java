@@ -312,7 +312,12 @@ public class ReportManager implements StudyManager.DataSetListener
      */
     public List<ViewInfo> getViews(ViewContext context, String schemaName, String queryName, boolean includeQueries, boolean editOnly)
     {
-        return ReportUtil.getViews(context, schemaName, queryName, includeQueries, new StudyReportFilter(editOnly));
+        return ReportUtil.getViews(context, schemaName, queryName, true, includeQueries, new StudyReportFilter(editOnly));
+    }
+
+    public List<ViewInfo> getViews(ViewContext context, String schemaName, String queryName, boolean includeReports, boolean includeQueries, boolean editOnly)
+    {
+        return ReportUtil.getViews(context, schemaName, queryName, includeReports, includeQueries, new StudyReportFilter(editOnly));
     }
 
     public static class StudyReportFilter extends ReportUtil.DefaultReportFilter
