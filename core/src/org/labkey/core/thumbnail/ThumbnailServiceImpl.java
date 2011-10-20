@@ -85,6 +85,10 @@ public class ThumbnailServiceImpl implements ThumbnailService
     // Deletes existing thumbnail before saving
     public void replaceThumbnail(DynamicThumbnailProvider provider, @Nullable ViewContext context) throws IOException
     {
+        // TODO: Shouldn't need this check... but file-based reports don't have entityid??
+        if (null == provider.getEntityId())
+            return;
+
         Thumbnail thumbnail = provider.generateDynamicThumbnail(context);
 
         if (null != thumbnail)
