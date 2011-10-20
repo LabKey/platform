@@ -33,23 +33,29 @@
     ActionURL startUrl = c.getStartURL(context.getUser());
 %>
 <div class="labkey-app-bar">
-<table class="folder-header">
+<div class="folder-header" id="labkey-app-bar-div">
+<table class="folder-header" id="labkey-app-bar-table">
     <tr>
         <td class="folder-title"><a href="<%=h(startUrl.getLocalURIString())%>"><%=h(bean.getFolderTitle())%></a></td>
         <td class="button-bar">
             <ul class="labkey-tab-strip">
+                <table cellpadding="0" cellspacing="0">
+                    <tr>
                 <%
                     for (NavTree navTree : bean.getButtons())
                     {
                 %>
-                        <li class="<%=navTree.isSelected() ? "labkey-tab-active" : "labkey-tab-inactive"%>"><a href="<%=h(navTree.getValue())%>" id="<%=h(navTree.getKey())%>Tab"><%=h(navTree.getKey())%></a>
+                        <td><li class="<%=navTree.isSelected() ? "labkey-tab-active" : "labkey-tab-inactive"%>"><a href="<%=h(navTree.getValue())%>" id="<%=h(navTree.getKey())%>Tab"><%=h(navTree.getKey())%></a></td>
                 <%
                     }
                 %>
+                    </tr>
+                </table>
             </ul>
         </td>
     </tr>
 </table>
+</div>
 <%if(null != bean.getPageTitle()) {%>
 <table class="labkey-nav-trail">
     <%if (null != bean.getNavTrail() && bean.getNavTrail().size() > 0) {
@@ -72,3 +78,23 @@
 </div>
 <%}%>
 
+<script type="text/javascript">
+    Ext.onReady(function(){
+        resizeTask.delay(0);
+    });
+
+    var resizeTask = new Ext.util.DelayedTask(function(){
+        var folderHeaderTableWidth = Ext.getDom("labkey-app-bar-div").offsetWidth;
+        var bodyWidth = Ext.getBody().getWidth();
+        var leftMenuWidth = Ext.getDom("leftmenupanel") ? Ext.getDom("leftmenupanel").offsetWidth : 0;
+
+        if ((folderHeaderTableWidth + leftMenuWidth) > bodyWidth)
+            Ext.getDom("labkey-app-bar-table").style.width = (bodyWidth - leftMenuWidth) + "px";
+        else
+            Ext.getDom("labkey-app-bar-table").style.width = "100%";
+    });
+
+    Ext.EventManager.on(window, 'resize', function(){
+        resizeTask.delay(100);
+    });
+</script>
