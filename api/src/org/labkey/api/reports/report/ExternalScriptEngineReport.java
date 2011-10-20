@@ -25,6 +25,7 @@ import org.labkey.api.reports.report.r.ParamReplacementSvc;
 import org.labkey.api.reports.report.r.view.ConsoleOutput;
 import org.labkey.api.reports.report.view.ReportUtil;
 import org.labkey.api.reports.report.view.RunReportView;
+import org.labkey.api.thumbnail.Thumbnail;
 import org.labkey.api.util.DateUtil;
 import org.labkey.api.util.ExceptionUtil;
 import org.labkey.api.util.FileUtil;
@@ -76,7 +77,74 @@ public class ExternalScriptEngineReport extends ScriptEngineReport implements At
 
     public HttpView renderReport(ViewContext context) throws Exception
     {
-        VBox view = new VBox();
+        final VBox view = new VBox();
+
+        renderReport(context, new Renderer<HttpView>()
+        {
+            @Override
+            public void handleValidationError(String error)
+            {
+                view.addView(new HtmlView("<span class=\"labkey-error\">" + error + "</span>"));
+            }
+
+            @Override
+            public boolean handleRuntimeException(Exception e)
+            {
+                view.addView(handleException(e));
+                return true;
+            }
+
+            @Override
+            public HttpView render(List<ParamReplacement> parameters) throws IOException
+            {
+                return renderViews(ExternalScriptEngineReport.this, view, parameters, false);
+            }
+        });
+
+        return view;
+    }
+
+
+    public Thumbnail getThumbnail(ViewContext context) throws IOException
+    {
+        try
+        {
+            return renderReport(context, new Renderer<Thumbnail>()
+            {
+                @Override
+                public void handleValidationError(String error)
+                {
+                }
+
+                @Override
+                public boolean handleRuntimeException(Exception e)
+                {
+                    return false;
+                }
+
+                @Override
+                public Thumbnail render(List<ParamReplacement> parameters) throws IOException
+                {
+                    return getThumbnail(parameters);
+                }
+            });
+        }
+        catch (IOException e)
+        {
+            return null;
+        }
+    }
+
+
+    interface Renderer<K>
+    {
+        void handleValidationError(String error);
+        boolean handleRuntimeException(Exception e);
+        K render(List<ParamReplacement> parameters) throws IOException;
+    }
+
+    protected <K> K renderReport(ViewContext context, Renderer<K> renderer) throws IOException
+    {
         String script = getDescriptor().getProperty(ScriptReportDescriptor.Prop.script);
 
 /*
@@ -93,8 +161,9 @@ public class ExternalScriptEngineReport extends ScriptEngineReport implements At
         if (!validateScript(script, errors))
         {
             for (String error : errors)
-                view.addView(new HtmlView("<span class=\"labkey-error\">" + error + "</span>"));
-            return view;
+                renderer.handleValidationError(error);
+
+            return null;
         }
 
         List<ParamReplacement> outputSubst = new ArrayList<ParamReplacement>();
@@ -107,21 +176,24 @@ public class ExternalScriptEngineReport extends ScriptEngineReport implements At
             }
             catch (ScriptException e)
             {
-                view.addView(handleException(e));
+                boolean continueOn = renderer.handleRuntimeException(e);
+
+                if (!continueOn)
+                    return null;
             }
             catch (Exception e)
             {
                 ExceptionUtil.logExceptionToMothership(context.getRequest(), e);
-                
-                view.addView(handleException(e));
+                boolean continueOn = renderer.handleRuntimeException(e);
+
+                if (!continueOn)
+                    return null;
             }
 
             cacheResults(context, outputSubst);
         }
 
-        renderViews(this, view, outputSubst, false);
-
-        return view;
+        return renderer.render(outputSubst);
     }
 
     private HttpView handleException(Exception e)

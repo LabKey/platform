@@ -56,8 +56,8 @@ public class InternalScriptEngineReport extends ScriptEngineReport
     {
         VBox view = new VBox();
         String script = getDescriptor().getProperty(ScriptReportDescriptor.Prop.script);
-
         List<String> errors = new ArrayList<String>();
+
         if (!validateScript(script, errors))
         {
             for (String error : errors)
@@ -66,7 +66,9 @@ public class InternalScriptEngineReport extends ScriptEngineReport
         }
 
         List<ParamReplacement> outputSubst = new ArrayList<ParamReplacement>();
-        try {
+
+        try
+        {
             runScript(context, outputSubst, createInputDataFile(context));
         }
         catch (ScriptException e)
@@ -81,6 +83,7 @@ public class InternalScriptEngineReport extends ScriptEngineReport
             HttpView errView = new HtmlView(err);
             view.addView(errView);
         }
+
         renderViews(this, view, outputSubst, false);
 
         return view;

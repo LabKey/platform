@@ -19,6 +19,7 @@ import org.apache.commons.collections15.map.CaseInsensitiveMap;
 import org.apache.commons.lang.BooleanUtils;
 import org.apache.commons.lang.StringUtils;
 import org.apache.log4j.Logger;
+import org.labkey.api.attachments.DocumentConversionService;
 import org.labkey.api.collections.CaseInsensitiveHashSet;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.CompareType;
@@ -52,7 +53,10 @@ import org.labkey.api.reports.report.r.view.ROutputView;
 import org.labkey.api.reports.report.r.view.TextOutput;
 import org.labkey.api.reports.report.r.view.TsvOutput;
 import org.labkey.api.services.ServiceRegistry;
+import org.labkey.api.thumbnail.Thumbnail;
 import org.labkey.api.util.FileUtil;
+import org.labkey.api.util.ImageUtil;
+import org.labkey.api.util.MimeMap;
 import org.labkey.api.util.ResultSetUtil;
 import org.labkey.api.view.DataView;
 import org.labkey.api.view.HttpView;
@@ -60,13 +64,17 @@ import org.labkey.api.view.VBox;
 import org.labkey.api.view.ViewContext;
 import org.labkey.api.writer.VirtualFile;
 
+import javax.imageio.ImageIO;
 import javax.script.ScriptEngine;
 import javax.script.ScriptEngineManager;
 import javax.script.ScriptException;
+import java.awt.image.BufferedImage;
 import java.io.BufferedReader;
 import java.io.File;
+import java.io.FileInputStream;
 import java.io.FileReader;
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.PrintWriter;
 import java.sql.ResultSetMetaData;
 import java.sql.SQLException;
@@ -474,7 +482,82 @@ public abstract class ScriptEngineReport extends ScriptReport implements Report.
     }
 
 
-    public static void renderViews(ScriptEngineReport report, VBox view, List<ParamReplacement> parameters, boolean deleteTempFiles)
+    public static HttpView renderViews(ScriptEngineReport report, final VBox view, List<ParamReplacement> parameters, boolean deleteTempFiles) throws IOException
+    {
+        return handleParameters(report, parameters, new ParameterHandler<HttpView>()
+        {
+            @Override
+            public boolean handleParameter(ViewContext context, Report report, ParamReplacement param, List<String> sectionNames)
+            {
+                // don't show headers if not all sections are being rendered
+                if (!sectionNames.isEmpty())
+                    param.setHeaderVisible(false);
+
+                param.setReport(report);
+                view.addView(param.render(context));
+
+                return true;
+            }
+
+            @Override
+            public HttpView cleanup(ScriptEngineReport report)
+            {
+                if (!BooleanUtils.toBoolean(report.getDescriptor().getProperty(ScriptReportDescriptor.Prop.runInBackground)))
+                    view.addView(new TempFileCleanup(report.getReportDir().getAbsolutePath()));
+
+                return view;
+            }
+        });
+    }
+
+
+    public Thumbnail getThumbnail(List<ParamReplacement> parameters) throws IOException
+    {
+        return handleParameters(this, parameters, new ParameterHandler<Thumbnail>(){
+            private Thumbnail _thumbnail = null;
+
+            @Override
+            public boolean handleParameter(ViewContext context, Report report, ParamReplacement param, List<String> sectionNames) throws IOException
+            {
+                File file = param.getFile();
+                MimeMap mm = new MimeMap();
+                String contentType = mm.getContentTypeFor(file.getName());
+
+                if (contentType.startsWith("image/"))
+                {
+                    _thumbnail = ImageUtil.renderThumbnail(ImageIO.read(file));
+
+                    return false;
+                }
+                else if ("application/pdf".equals(contentType))
+                {
+                    DocumentConversionService svc = ServiceRegistry.get().getService(DocumentConversionService.class);
+
+                    if (null != svc)
+                    {
+                        InputStream pdfStream = new FileInputStream(file);
+                        BufferedImage image = svc.pdfToImage(pdfStream, 0);
+
+                        _thumbnail = ImageUtil.renderThumbnail(image);
+                    }
+
+                    return false;
+                }
+
+                return true;
+            }
+
+            @Override
+            public Thumbnail cleanup(ScriptEngineReport report)
+            {
+                // TODO: Delete file?
+                return _thumbnail;
+            }
+        });
+    }
+
+
+    private static <K> K handleParameters(ScriptEngineReport report, List<ParamReplacement> parameters, ParameterHandler<K> handler) throws IOException
     {
         String sections = (String)HttpView.currentContext().get(renderParam.showSection.name());
         List<String> sectionNames = Collections.emptyList();
@@ -488,18 +571,23 @@ public abstract class ScriptEngineReport extends ScriptReport implements Report.
         {
             if (isViewable(param, sectionNames))
             {
-                // don't show headers if not all sections are being rendered
-                if (!sectionNames.isEmpty())
-                    param.setHeaderVisible(false);
+                boolean keepGoing = handler.handleParameter(context, report, param, sectionNames);
 
-                param.setReport(report);
-                view.addView(param.render(context));
+                if (!keepGoing)
+                    break;
             }
         }
 
-        if (!BooleanUtils.toBoolean(report.getDescriptor().getProperty(ScriptReportDescriptor.Prop.runInBackground)))
-            view.addView(new TempFileCleanup(report.getReportDir().getAbsolutePath()));
+        return handler.cleanup(report);
     }
+
+
+    private interface ParameterHandler<K>
+    {
+        boolean handleParameter(ViewContext context, Report report, ParamReplacement param, List<String> sectionNames) throws IOException;
+        K cleanup(ScriptEngineReport report);
+    }
+
 
     protected static boolean isViewable(ParamReplacement param, List<String> sectionNames)
     {

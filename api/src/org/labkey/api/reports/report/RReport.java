@@ -293,8 +293,10 @@ public class RReport extends ExternalScriptEngineReport implements DynamicThumbn
     @Override
     public Thumbnail generateDynamicThumbnail(ViewContext context)
     {
-        // TODO: Generate based on the content & context
-        return null;
+        if (null != context)
+            return getThumbnail(context);
+        else
+            return null;
     }
 
     @Override

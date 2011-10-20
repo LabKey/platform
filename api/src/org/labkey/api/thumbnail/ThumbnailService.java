@@ -15,8 +15,9 @@
  */
 package org.labkey.api.thumbnail;
 
-import org.labkey.api.attachments.AttachmentFile;
+import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.CacheableWriter;
+import org.labkey.api.view.ViewContext;
 
 import java.io.IOException;
 
@@ -32,5 +33,5 @@ public interface ThumbnailService
     CacheableWriter getThumbnailWriter(StaticThumbnailProvider provider);
     void queueThumbnailRendering(DynamicThumbnailProvider provider);
     void deleteThumbnail(DynamicThumbnailProvider provider);
-    void replaceThumbnail(DynamicThumbnailProvider provider, AttachmentFile thumbnailFile) throws IOException;
+    void replaceThumbnail(DynamicThumbnailProvider provider, @Nullable ViewContext context) throws IOException;
 }

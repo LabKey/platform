@@ -55,7 +55,7 @@ public class RenderBackgroundRReportView extends HttpView
                     File filePath = new File(statusFile.getFilePath());
                     File substitutionMap = new File(filePath.getParentFile(), RReport.SUBSTITUTION_MAP);
 
-                    if (substitutionMap != null && substitutionMap.exists())
+                    if (substitutionMap.exists())
                     {
                         List<ParamReplacement> outputSubst = ParamReplacementSvc.get().fromFile(substitutionMap);
                         VBox view = new VBox();
