@@ -350,16 +350,16 @@ public class ReportUtil
         return getViews(context, schemaName, queryName, includeQueries, new DefaultReportFilter());
     }
 
-    private static String getDefaultCategory(Container c, String query)
+    private static String getDefaultCategory(Container c, String schema, String query)
     {
         String category = query;
-        if (null != query)
+        if ("study".equalsIgnoreCase(schema) && !StringUtils.isEmpty(query))
         {
             int datasetId = StudyService.get().getDatasetId(c, query);
             if (datasetId >= 0)
             {
                 DataSet ds = StudyService.get().getDataSet(c, datasetId);
-                if (ds != null)
+                if (ds != null) // should this check && !StringUtils.isEmpty(ds.getCategory()))
                     category = ds.getCategory();
             }
         }
@@ -410,7 +410,7 @@ public class ReportUtil
                 }
                 else
                 {
-                    info.setCategory(getDefaultCategory(c, query));
+                    info.setCategory(getDefaultCategory(c, schema, query));
                 }
                 info.setSchema(schema);
                 info.setCreatedBy(createdBy);
@@ -490,7 +490,7 @@ public class ReportUtil
                         QueryParam.viewName.name(), view.getName());
 
                 info.setQueryView(true);
-                info.setCategory(getDefaultCategory(c, view.getQueryName()));
+                info.setCategory(getDefaultCategory(c, view.getSchemaName(), view.getQueryName()));
                 info.setReportId(new QueryViewReportId(viewId));
                 info.setQuery(view.getQueryName());
                 info.setSchema(view.getSchemaName());
