@@ -187,13 +187,16 @@ LABKEY.ext.MetaHelper = {
             value: meta.value || meta.defaultValue,
             helpPopup: ['Type: ' + meta.friendlyType],
             width: meta.width,
-            height: meta.height
+            height: meta.height,
+            labelableRenderTpl: LABKEY.ext.MetaHelper.labelableRenderTpl
         };
 
         if(field.description)
             field.helpPopup.push('Description: '+meta.description);
 
-        field.helpPopup = {html: field.helpPopup.join('<br>')};
+        field.renderData = {
+            helpPopup: field.helpPopup.join('<br>')
+        };
 
         if (meta.hidden)
         {
@@ -270,8 +273,8 @@ LABKEY.ext.MetaHelper = {
                     if (meta.inputType=='textarea')
                     {
                         field.xtype = meta.xtype || 'textarea';
-                        field.width = meta.width || 500;
-                        field.height = meta.height || 60;
+                        field.width = meta.width;
+                        field.height = meta.height;
                         if (!this._textMeasure)
                         {
                             this._textMeasure = {};
@@ -659,7 +662,12 @@ LABKEY.ext.MetaHelper = {
     resolveFieldNameFromLabel: function(fieldName, meta){
         var fnMatch = [];
         var aliasMatch = [];
-        Ext.each(meta, function(fieldMeta){
+        if(meta.hasOwnProperty('each'))
+            meta.each(testField, this);
+        else
+            Ext.each(meta, testField, this);
+
+        function testField(fieldMeta){
             if (LABKEY.Utils.caseInsensitiveEquals(fieldName, fieldMeta.name)
                 || LABKEY.Utils.caseInsensitiveEquals(fieldName, fieldMeta.caption)
                 || LABKEY.Utils.caseInsensitiveEquals(fieldName, fieldMeta.shortCaption)
@@ -682,10 +690,10 @@ LABKEY.ext.MetaHelper = {
                         //continue iterating over fields in case a fieldName matches
                 }, this);
             }
-        }, this);
+        }
 
         if(fnMatch.length==1)
-            return fn[0];
+            return fnMatch[0];
         else if (fnMatch.length > 1){
             alert('Ambiguous Field Label: '+fieldName);
             return fieldName;
@@ -698,6 +706,25 @@ LABKEY.ext.MetaHelper = {
             return null;
         }
     },
+
+    labelableRenderTpl: [
+        '<tpl if="!hideLabel && !(!fieldLabel && hideEmptyLabel)">',
+            '<label id="{id}-labelEl"<tpl if="inputId"> for="{inputId}"</tpl> class="{labelCls}"',
+                '<tpl if="labelStyle"> style="{labelStyle}"</tpl>>',
+                '<tpl if="fieldLabel">{fieldLabel}' +
+                    '{labelSeparator}' +
+                    '<tpl if="helpPopup"> <a href="" data-qtip="{helpPopup}">?</a></tpl>' +
+                '</tpl>',
+            '</label>',
+        '</tpl>',
+        '<div class="{baseBodyCls} {fieldBodyCls}" id="{id}-bodyEl" role="presentation">{subTplMarkup}</div>',
+        '<div id="{id}-errorEl" class="{errorMsgCls}" style="display:none"></div>',
+        '<div class="{clearCls}" role="presentation"><!-- --></div>',
+        {
+            compiled: true,
+            disableFormats: true
+        }
+    ],
 
     //private
     findJsonType: function(fieldObj){

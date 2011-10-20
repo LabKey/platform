@@ -66,7 +66,7 @@ Ext4.define('LABKEY.ext4.FormPanel', {
     extend: 'Ext.form.Panel',
     alias: 'widget.labkey-formpanel',
     config: {
-        defaultFieldWidth: 200
+        defaultFieldWidth: 500
     },
     initComponent: function(){
         this.store = this.store || Ext4.create('LABKEY.ext4.Store', {
@@ -91,6 +91,8 @@ Ext4.define('LABKEY.ext4.FormPanel', {
             }
         });
 
+        this.store.on('datachanged', this.onDataChanged, this);
+
         Ext4.apply(this, {
             trackResetOnLoad: true
             ,autoHeight: true
@@ -98,12 +100,11 @@ Ext4.define('LABKEY.ext4.FormPanel', {
             ,buttonAlign: 'left'
             ,monitorValid: false
             ,buttons: [
-                LABKEY.ext4.FORMBUTTONS['SUBMIT'].call(this),
-                LABKEY.ext4.FORMBUTTONS['TESTSUBMIT'].call(this),
-                LABKEY.ext4.FORMBUTTONS['SHOWSTORE'].call(this),
-                LABKEY.ext4.FORMBUTTONS['PREVIOUSRECORD'].call(this),
-                LABKEY.ext4.FORMBUTTONS['NEXTRECORD'].call(this)
+                LABKEY.ext4.FORMBUTTONS['SUBMIT'].call(this)
             ]
+            ,fieldDefaults: {
+                labelWidth: 150
+            }
 
         });
 
@@ -111,9 +112,7 @@ Ext4.define('LABKEY.ext4.FormPanel', {
         this.plugins.push(Ext4.create('LABKEY.ext4.DatabindPlugin'));
 
         LABKEY.Utils.rApplyIf(this, {
-            autoHeight: true
-            ,defaultFieldWidth: 200
-            ,items: {xtype: 'displayfield', value: 'Loading...'}
+            items: {xtype: 'displayfield', value: 'Loading...'}
             ,bodyBorder: false
             ,bodyStyle: 'padding:5px'
             ,style: 'margin-bottom: 15px'
@@ -192,7 +191,7 @@ Ext4.define('LABKEY.ext4.FormPanel', {
                 schemaName: store.schemaName
             };
 
-            if (LABKEY.ext.MetaHelper.shouldShowInDetailsView(c)){
+            if (LABKEY.ext.MetaHelper.shouldShowInUpdateView(c)){
                 var theField = this.store.getFormEditorConfig(c.name, config);
 
                 if(!c.width){
@@ -282,6 +281,10 @@ Ext4.define('LABKEY.ext4.FormPanel', {
         this.fireEvent('formconfiguration', toAdd);
 
         return toAdd;
+    },
+
+    onDataChanged: function(){
+        console.log('data changed');
     },
 
     markInvalid : function()

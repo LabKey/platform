@@ -71,7 +71,8 @@ Ext4.define('LABKEY.ext.AssayUploadPanel', {
                 text: 'Cancel'
                 ,width: 50
                 ,scope: this
-                ,href: LABKEY.ActionURL.getContextPath() + '/assay' + LABKEY.ActionURL.getContainer() + '/assayRuns.view?rowId='+LABKEY.page.assay.id
+                ,href: LABKEY.ActionURL.buildURL('project', 'begin')
+                ,target: '_self'
                 ,formBind: true
             }],
             listeners: {
@@ -392,7 +393,7 @@ Ext4.define('LABKEY.ext.AssayUploadPanel', {
                 xtype: 'radiogroup',
                 name: 'uploadType',
                 isFormField: false,
-                ref: '../inputType',
+                itemId: 'inputType',
                 width: 350,
                 items: [{
                     boxLabel: 'Copy/Paste Data',
@@ -460,7 +461,7 @@ Ext4.define('LABKEY.ext.AssayUploadPanel', {
 
         LABKEY.page.batch.runs.length = 0;
         var fields = this.form.getFieldValues();
-        var uploadType = this.inputType.getValue();
+        var uploadType = this.down('#inputType').getValue();
         
         if (this.selectedMethod.webFormOnly){
             var data = [];
@@ -485,24 +486,24 @@ Ext4.define('LABKEY.ext.AssayUploadPanel', {
         if (!action)
         {
             console.log(action);
-            Ext.Msg.alert("Upload Failed", "Something went horribly wrong when uploading.");
+            Ext4.Msg.alert("Upload Failed", "Something went horribly wrong when uploading.");
             return;
         }
         if(!action.result){
             switch(action.failureType){
                 case 'client':
-                    Ext.Msg.alert("One or more fields has a missing or improper value");
+                    Ext4.Msg.alert("One or more fields has a missing or improper value");
                     break;
                 default:
                     console.log(action);
-                    Ext.Msg.alert("Upload Failed", "Something went wrong when uploading.");
+                    Ext4.Msg.alert("Upload Failed", "Something went wrong when uploading.");
                     break;
             }
             return;
         }
         if (!action.result.id)
         {
-            Ext.Msg.alert("Upload Failed", "Failed to upload the data file: " + action.result);
+            Ext4.Msg.alert("Upload Failed", "Failed to upload the data file: " + action.result);
             return;
         }
 
@@ -513,7 +514,7 @@ Ext4.define('LABKEY.ext.AssayUploadPanel', {
         }
         else
         {
-            data = new LABKEY.Exp.Data(Ext.util.JSON.decode(action.response.responseText));
+            data = new LABKEY.Exp.Data(Ext4.JSON.decode(action.response.responseText));
         }
 
         var run = new LABKEY.Exp.Run();
@@ -534,8 +535,8 @@ Ext4.define('LABKEY.ext.AssayUploadPanel', {
                 },
                 failureCallback: function (error, format)
                 {
-                    Ext.Msg.hide();
-                    Ext.Msg.alert("Upload Failed", "An error occurred while fetching the contents of the data file: " + error.exception);
+                    Ext4.Msg.hide();
+                    Ext4.Msg.alert("Upload Failed", "An error occurred while fetching the contents of the data file: " + error.exception);
                     LABKEY.Utils.onError(error);
                 }
             })
@@ -548,15 +549,15 @@ Ext4.define('LABKEY.ext.AssayUploadPanel', {
     handleFileContent: function(run, content){
         if (!content)
         {
-            Ext.Msg.hide();
-            Ext.Msg.alert("Upload Failed", "The data file has no content");
+            Ext4.Msg.hide();
+            Ext4.Msg.alert("Upload Failed", "The data file has no content");
             return;
         }
         if (!content.sheets || content.sheets.length == 0)
         {
             // expected the data file to be parsed as jsonTSV
-            Ext.Msg.hide();
-            Ext.Msg.alert("Upload Failed", "The data file has no sheets of data");
+            Ext4.Msg.hide();
+            Ext4.Msg.alert("Upload Failed", "The data file has no sheets of data");
             return;
         }
 
@@ -571,7 +572,7 @@ Ext4.define('LABKEY.ext.AssayUploadPanel', {
         var data = sheet.data;
         if (!data.length)
         {
-            Ext.Msg.alert("Upload Failed", "The data file contains no rows");
+            Ext4.Msg.alert("Upload Failed", "The data file contains no rows");
             return;
         }
 
@@ -639,12 +640,11 @@ Ext4.define('LABKEY.ext.AssayUploadPanel', {
         this.processing.extraResults = [];
         this.processing.otherFields = [];
 
-        for (var i in this.form.items.map){
-            var field = this.form.items.map[i];
+        this.getForm().getFields().each(function(field){
             var value = field.getValue();
             
             if(field.isFormField === false)
-                continue;
+                return;
 
             switch (field.domain)
             {
@@ -663,7 +663,7 @@ Ext4.define('LABKEY.ext.AssayUploadPanel', {
                 this.processing.otherFields.push({label: field.name, value: value});
                 break;
             }
-        }
+        }, this);
     },
     _parseHeader: function(row){
         //TODO: figure out how to find row aliases and hook into metadata.          
@@ -732,21 +732,21 @@ Ext4.define('LABKEY.ext.AssayUploadPanel', {
                 //LABKEY.page.batch = batch;
                 LABKEY.setDirty(false);
 
-                this.form.items.each(function(f){
+                this.getForm().getFields().each(function(f){
                     if(f.isFormField===false)
                         return;
 
                     f.reset();
                 });
                 
-                Ext.Msg.hide();
-                Ext.Msg.alert("Success", "Data Uploaded Successfully");
+                Ext4.Msg.hide();
+                Ext4.Msg.alert("Success", "Data Uploaded Successfully");
 
             },
             failureCallback : function (error, format)
             {
-                Ext.Msg.hide();
-                Ext.Msg.alert("Failure when communicating with the server: " + error.exception);
+                Ext4.Msg.hide();
+                Ext4.Msg.alert("Failure when communicating with the server: " + error.exception);
                 LABKEY.Utils.onError(error);
             }
         });

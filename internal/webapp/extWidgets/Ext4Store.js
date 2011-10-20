@@ -539,9 +539,9 @@ Ext4.define('LABKEY.ext4.ExtendedJsonReader', {
 
         for (; i < ln; i++) {
             field = fields[i];
-            map   = (field.mapping !== undefined && field.mapping !== null) ? field.mapping : field.name;
+            map   = field.fieldKey || field.name;
             if(!field.notFromServer)
-                extractorFunctions.push(me.createAccessor(map+'.value'));  //NOTE: modified to support 9.1 API format
+                extractorFunctions.push(me.createAccessor('["'+map+'"].value'));  //NOTE: modified to support 9.1 API format and to support lookups, ie. field1/field2.
             else
                 extractorFunctions.push(me.createAccessor(map));  //if this field doesnt exist on the server, it wont have a value
         }

@@ -118,7 +118,10 @@ Ext4.define('LABKEY.ext.DetailsPanel', {
                 style: 'margin-bottom:20px',
                 border: true,
                 bodyStyle: 'padding:5px',
-                autoHeight: true
+                autoHeight: true,
+                fieldDefaults: {
+                    labelWidth: 150
+                }
             };
             fields.each(function(field){
                 if (LABKEY.ext.MetaHelper.shouldShowInInsertView(field)){

@@ -4762,6 +4762,7 @@ internal/webapp/extWidgets/ExtComponents.js -text
 internal/webapp/extWidgets/MetaHelper.js -text
 internal/webapp/extWidgets/NavPanel.js -text
 internal/webapp/extWidgets/SearchPanel.js -text
+internal/webapp/extWidgets/TabbedReportPanel.js -text
 internal/webapp/index.html -text
 internal/webapp/index.jsp -text
 internal/webapp/js_color_picker_v2.css -text

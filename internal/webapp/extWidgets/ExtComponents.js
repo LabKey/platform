@@ -48,7 +48,6 @@ Ext4.define('LABKEY.ext4.RemoteGroup', {
 
     ,onStoreLoad : function(store, records, success) {
         this.removeAll();
-
         if(!success){
             this.add('Error Loading Store');
         }
@@ -59,13 +58,13 @@ Ext4.define('LABKEY.ext4.RemoteGroup', {
                     inputValue: record.get(this.valueField),
                     name: this.name,
                     disabled: this.disabled,
-                    readOnly: this.readOnly || false,
-                    cls: 'test1'
+                    readOnly: this.readOnly || false
                 });
             }, this);
         }
 
-        this.up('form').doLayout();
+        //TODO: why doesnt the group auto-resize?
+        console.log(this.isFixedHeight())
         this.doLayout();
     }
 });
@@ -179,10 +178,11 @@ Ext4.define('LABKEY.ext.OperatorCombo', {
             xtype: 'combo'
             ,valueField:'value'
             ,displayField:'text'
-            ,listWidth: 200
+            ,listConfig: {
+                minWidth: 250
+            }
             ,typeAhead: false
-            ,mode: 'local'
-            ,triggerAction: 'all'
+            ,queryMode: 'local'
             ,editable: false
             ,value: this.initialValue
             ,store: this.setStore(this.meta, this.initialValue)
@@ -226,7 +226,7 @@ Ext4.define('LABKEY.ext4.BooleanCombo', {
             ,triggerAction: 'all'
             ,listWidth: 200
             ,forceSelection: true
-            ,mode: 'local'
+            ,queryMode: 'local'
             ,store: Ext4.create('Ext.data.ArrayStore', {
                 fields: [
                     'value',
@@ -249,23 +249,18 @@ Ext4.define('LABKEY.ext4.BooleanCombo', {
 });
 
 
-Ext4.define('LABKEY.ext.ViewCombo', {
-    extend: 'Ext.form.field.ComboBox',
-    alias: 'widget.labkey-viewscombo',
-    initComponent: function(){
+Ext4.define('LABKEY.ext4.ViewStore', {
+    extend: 'Ext.data.ArrayStore',
+    alias: 'widget.labkey-viewstore',
+    constructor: function(){
         Ext4.apply(this, {
-            displayField: 'displayText'
-            ,valueField: 'value'
-            ,triggerAction: 'all'
-            ,mode: 'local'
-            ,store: Ext4.create('Ext.data.ArrayStore', {
-                fields: [
-                    'value',
-                    'displayText'
-                ],
-                idIndex: 0,
-                data: []
-            })
+            loading: true,
+            fields: [
+                'value',
+                'displayText'
+            ],
+            idIndex: 0,
+            data: []
         });
 
         this.callParent(arguments);
@@ -278,31 +273,52 @@ Ext4.define('LABKEY.ext.ViewCombo', {
             ,failure: LABKEY.Utils.onError
             ,scope: this
         });
-
     },
     onViewLoad: function(data){
-        if(!data || !data.views)
-            return;
+        this.removeAll();
 
-        var recs = [];
-        var hasDefault = false;
-        Ext4.each(data.views, function(s){
-            if(s.hidden)
-                return;
+        var records = [];
+        if(data && data.views && data.views.length){
+            Ext4.each(data.views, function(s){
+                if(s.hidden)
+                    return;
 
-            if(!s.name)
-                hasDefault = true;
-            recs.push([s.name, s.name || 'Default']);
-        }, this);
+                records.push([s.name, (s.name || 'Default')]);
+            }, this);
+        }
 
-        if(!hasDefault)
-            recs.push(['', 'Default']);
+        if(!records.length){
+            records.push([null, 'Default']);
+        }
 
-        this.store.loadData(recs);
-        this.store.sort('value');
+        this.loading = false;
+        this.add(records);
+        this.sort('value');
+    }
+});
 
-        if(this.initialValue || this.initialConfig.initialValue)
-            this.setValue(this.initialValue || this.initialConfig.initialValue)
+Ext4.define('LABKEY.ext4.ViewCombo', {
+    extend: 'Ext.form.field.ComboBox',
+    alias: 'widget.labkey-viewcombo',
+    constructor: function(config){
+        Ext4.apply(this, {
+            displayField: 'displayText'
+            ,valueField: 'value'
+            ,queryMode: 'local'
+            ,store: Ext4.create('LABKEY.ext4.ViewStore', {
+                schemaName: config.schemaName,
+                queryName: config.queryName,
+                listeners: {
+                    scope: this,
+                    add: function(){
+                        if(this.value)
+                            this.setValue(this.value);
+                    }
+                }
+            })
+        });
+
+        this.callParent(arguments);
     }
 });
 
@@ -316,9 +332,8 @@ Ext4.define('LABKEY.ext.ContainerFilterCombo', {
             ,valueField: 'value'
             ,triggerAction: 'all'
             ,listConfig: {
-                width: 220
+                minWidth: 250
             }
-//            ,matchFieldWidth: false
             ,forceSelection: true
             ,mode: 'local'
             ,store: Ext4.create('Ext.data.ArrayStore', {

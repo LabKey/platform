@@ -63,9 +63,8 @@ Ext4.define('LABKEY.ext4.ExcelUploadPanel', {
             })
             ,items: [{
                 xtype: 'button'
-                ,html: '[download excel template]'
+                ,text: 'Download Excel Template'
                 ,border: false
-                ,style: 'padding-bottom: 10px'
                 ,listeners: {
                     scope: this,
                     click: this.makeExcel
@@ -114,8 +113,7 @@ Ext4.define('LABKEY.ext4.ExcelUploadPanel', {
                             value: 'tsv',
                             displayField: 'displayText',
                             valueField: 'value',
-                            triggerAction: 'all',
-                            mode: 'local',
+                            queryMode: 'local',
                             store: Ext4.create('Ext.data.ArrayStore', {
                                 fields: [
                                     'value',
@@ -138,7 +136,6 @@ Ext4.define('LABKEY.ext4.ExcelUploadPanel', {
                     xtype: 'radio',
                     name: 'uploadType',
                     inputValue: 'file',
-                    style: 'padding-bottom:50px;',
                     handler: function(fb, y){
                         if (!y){return};
 
@@ -192,7 +189,7 @@ Ext4.define('LABKEY.ext4.ExcelUploadPanel', {
                 }]
             }]
             ,buttons: [{
-                text: 'Upload'
+                text: 'Submit'
                 ,width: 50
                 ,handler: this.formSubmit
                 ,scope: this
@@ -270,7 +267,11 @@ Ext4.define('LABKEY.ext4.ExcelUploadPanel', {
             this.fireEvent('uploadexception', response);
         }
         else {
-            alert('Success! '+response.rowCount+' rows inserted.');
+            if(response.rowCount > 0)
+                alert('Success! '+response.rowCount+' rows inserted.');
+            else
+                alert('No rows inserted.');
+
             this.fireEvent('uploadcomplete', response);
         }
 

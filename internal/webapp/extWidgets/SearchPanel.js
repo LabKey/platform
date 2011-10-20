@@ -32,10 +32,10 @@ Ext4.namespace('LABKEY.ext4');
  * @param {String} [config.columns] A comma-delimited list of column names to fetch from the specified query.
  * @param {Object} [config.metadata] A metadata object that will be applied to the default metadata returned by the server.  See example below for usage.
  * @param {Object} [config.fieldDefaults] A metadata object that will be applied to every field of the default metadata returned by the server.  Will be superceeded by the metadata object in case of conflicts. See example below for usage.
- * @param (boolean) useContainerFilter Dictates whether a combobox appears to let the user pick a container filter when searching
- * @param (string) defaultContainerFilter The default container filter in the combo.  If provided, but useContainerFilter is false, this container filter will be silently applied to the search
+ * @param (boolean) showContainerFilter Dictates whether a combobox appears to let the user pick a container filter when searching
+ * @param (string) defaultContainerFilter The default container filter in the combo.  If provided, but showContainerFilter is false, this container filter will be silently applied to the search
  * @param (boolean) allowSelectView Dictates whether a combobox appears to let the user pick a view
- * @param (string) defaultView If provided, this view will be initially selected in the views combo
+ * @param (string) defaultViewName If provided, this view will be initially selected in the views combo
  *
  * @example &lt;script type="text/javascript"&gt;
 
@@ -44,7 +44,7 @@ Ext4.namespace('LABKEY.ext4');
         ,queryName: 'users'
         ,columns: '*'
         ,title: 'Search Panel'
-        ,useContainerFilter: false
+        ,showContainerFilter: true
         ,defaultContainerFilter: 'CurrentAndSubfolders'
         //override default metadata
         ,metadata: {
@@ -68,6 +68,9 @@ Ext4.define('LABKEY.ext4.SearchPanel', {
             layout: {
                 type: 'table',
                 columns: 3
+            },
+            fieldDefaults: {
+                labelWidth: 150
             },
             buttons: [
                 {text: 'Submit', scope: this, handler: this.onSubmit}
@@ -125,7 +128,7 @@ Ext4.define('LABKEY.ext4.SearchPanel', {
             this.createRow(f);
         }, this);
 
-        if (this.useContainerFilter!==false){
+        if (this.showContainerFilter){
             this.add({
                 html: 'Container Filter:', width: 125
             },{
@@ -142,12 +145,12 @@ Ext4.define('LABKEY.ext4.SearchPanel', {
             this.add({
                 html: 'View:', width: 125
             },{
-                xtype: 'labkey-viewscombo'
+                xtype: 'labkey-viewcombo'
                 ,containerPath: this.containerPath
                 ,queryName: this.queryName
                 ,schemaName: this.schemaName
                 ,width: 165
-                ,initialValue: this.defaultView || ''
+                ,value: this.defaultViewName || ''
                 ,fieldType: 'viewName'
                 ,itemId: 'viewNameField'
             });
@@ -255,6 +258,8 @@ Ext4.define('LABKEY.ext4.SearchPanel', {
             }
 
             var val = item.getValue();
+            if(Ext4.isArray(val))
+                val = val.join(';');
 
             if (!(Ext4.isEmpty(val) || val==='' || (Ext.isArray(val) && val[0]=="" && val.length==1)) ||
                 op == 'isblank' || op == 'isnonblank'

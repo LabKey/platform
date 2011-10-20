@@ -17,7 +17,7 @@ Ext4.namespace('LABKEY.ext');
  * @param (function) renderer Optional. This function will be called on each item in the section.  It should return on Ext config object that wil be added to the panel.  If not provided, a default render will create the row.
  * function(item){
  *      return {
- *          html: '<a href="'+tmp.items[j].url+'">'+tmp.items[j].name+'</a>',
+ *          html: '<a href="'+item.url+'">'+item.name+'</a>',
  *          style: 'padding-left:5px;'
  *      }
  *  }
@@ -30,7 +30,7 @@ Ext4.namespace('LABKEY.ext');
         width: 350,
         renderer: function(item){
             return {
-                html: '<div style="float:left;width:250px;">'+item.name+':</div> [<a href="'+LABKEY.ActionURL.buildURL('laboratory', 'AssaySearchPanel', null, {schemaName: item.schemaName, queryName: item.queryName})+'">Search</a>] [<a href="'+LABKEY.ActionURL.buildURL('query', 'executeQuery', container, {schemaName: item.schemaName, 'query.queryName': item.queryName})+'">View All Records</a>]',
+                html: '<div style="float:left;width:250px;">'+item.name+':</div> [<a href="'+LABKEY.ActionURL.buildURL('laboratory', 'AssaySearchPanel', null, {schemaName: item.schemaName, queryName: item.queryName})+'">Search</a>] [<a href="'+LABKEY.ActionURL.buildURL('query', 'executeQuery', null, {schemaName: item.schemaName, 'query.queryName': item.queryName})+'">View All Records</a>]',
                 style: 'padding-left:5px;padding-bottom:8px'
             }
         },
@@ -79,7 +79,7 @@ Ext4.define('LABKEY.ext.NavPanel', {
         this.callParent(arguments);
 
         var section;
-        Ext4.each(this.sections, function(tmp){
+        Ext4.each(this.sections, function(sectionCfg){
             section = this.add({
                 xtype: 'panel',
                 cls: 'labkey-navmenu',
@@ -94,27 +94,75 @@ Ext4.define('LABKEY.ext.NavPanel', {
                 items: [{
                     dock: 'top',
                     xtype: 'header',
-                    title: tmp.header + ':',
+                    title: sectionCfg.header + ':',
                     cls: 'labkey-wp-header',
                     style: 'margin-bottom:5px;font-weight:bold;' //border-bottom:solid;
                 }]
             });
 
-            for (var j=0;j<tmp.items.length;j++){
-                var item;
-                if(this.renderer){
-                    item = this.renderer(tmp.items[j])
-                }
-                else {
-                   item = {
-                        html: '<a href="'+tmp.items[j].url+'">'+tmp.items[j].name+'</a>',
-                        style: 'padding-left:5px;'
-                    }
-                }
-                section.add(item)
+            for (var j=0;j<sectionCfg.items.length;j++)
+            {
+                var item = {};
+                var renderer;
+                if(sectionCfg.items[j].renderer)
+                    renderer = sectionCfg.items[j].renderer;
+                else if (sectionCfg.renderer)
+                    renderer = sectionCfg.renderer;
+                else if(this.renderer)
+                    renderer = this.renderer;
+
+                if(!renderer)
+                    renderer = this.renderers.defaultRenderer;
+
+                if(Ext4.isString(renderer))
+                    renderer = this.renderers[renderer];
+
+                item = renderer(sectionCfg.items[j]);
+
+                section.add(item);
             }
 
             section.add({tag: 'p'});
         }, this);
+    },
+    renderers: {
+        assayRenderer: function(item){
+            return {
+                html: '<div style="float:left;width:250px;">'+item.name+':</div> ' +
+                      '[<a href="'+LABKEY.ActionURL.buildURL('query', 'SearchPanel', null, {schemaName: item.schemaName, 'queryName': item.queryName})+'">Search</a>] '+
+                      '[<a href="'+LABKEY.ActionURL.buildURL('query', 'executeQuery', null, {schemaName: item.schemaName, 'query.queryName': item.queryName})+'">View All Records</a>] ' +
+                      //(item.showImport!==false ? '[<a href="'+LABKEY.ActionURL.buildURL('assay', 'moduleAssayUpload', null, {rowId: item.id})+'">Import Data</a>]' : ''),
+                      (item.showImport!==false ? '[<a href="'+LABKEY.ActionURL.buildURL('query', 'importWizard', null, {controller: 'assay', action: 'moduleAssayUpload', paramNames: 'rowId', rowId: item.id})+'">Import Data</a>]' : ''),
+
+                style: 'padding-left:5px;padding-bottom:8px'
+            };
+        },
+        defaultRenderer: function(item){
+            return {
+                 html: '<a href="'+item.url+'">'+item.name+'</a>',
+                 style: 'padding-left:5px;padding-bottom:8px'
+             }
+        },
+        queryRenderer: function(item){
+            return {
+                html: '<div style="float:left;width:250px;">'+item.name+':</div> ' +
+                      '[<a href="'+LABKEY.ActionURL.buildURL('query', 'SearchPanel', null, {schemaName: item.schemaName, queryName: item.queryName})+'">Search</a>] ' +
+                      '[<a href="'+LABKEY.ActionURL.buildURL('query', 'executeQuery', null, {schemaName: item.schemaName, 'query.queryName': item.queryName})+'">View All Records</a>] ' +
+                      (item.showImport!==false ? item.simpleImport
+                        ? '[<a href="'+LABKEY.ActionURL.buildURL('query', 'importData', null, {schemaName: item.schemaName, queryName: item.queryName})+'">Import Data</a>]'
+                        : '[<a href="'+LABKEY.ActionURL.buildURL('query', 'importWizard', null, {controller: 'query', action: 'importData', paramNames: 'schemaName,queryName', schemaName: item.schemaName, queryName: item.queryName})+'">Import Data</a>]' : ''),
+                style: 'padding-left:5px;padding-bottom:8px'
+            };
+        },
+        fileRenderer: function(item){
+            return {
+                html: '<div style="float:left;width:250px;">'+item.name+':</div> ' +
+                      '[<a href="'+LABKEY.ActionURL.buildURL('query', 'SearchPanel', null, {schemaName: item.schemaName, queryName: item.queryName})+'">Search</a>] ' +
+                      '[<a href="'+LABKEY.ActionURL.buildURL('query', 'executeQuery', null, {schemaName: item.schemaName, 'query.queryName': item.queryName})+'">View All Records</a>] ' +
+                      (item.showImport!==false ? '[<a href="'+LABKEY.ActionURL.buildURL('query', 'importWizard', null, {controller: 'project', action: 'begin', paramNames: 'schemaName,queryName', schemaName: item.schemaName, queryName: item.queryName})+'">Import Data</a>]' : ''),
+                style: 'padding-left:5px;padding-bottom:8px'
+            };
+        }
+
     }
 });
