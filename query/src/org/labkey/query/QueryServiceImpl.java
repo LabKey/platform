@@ -487,7 +487,7 @@ public class QueryServiceImpl extends QueryService
     /** Find any .qview.xml files under the given queryDir Resource. */
     private Collection<? extends Resource> getModuleCustomViews(Resource queryDir)
     {
-        if (queryDir == null)
+        if (queryDir == null || !queryDir.isCollection())
             return Collections.emptyList();
 
         List<Resource> ret = new ArrayList<Resource>();
