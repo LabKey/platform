@@ -904,11 +904,11 @@ abstract public class AbstractTableInfo implements TableInfo, ContainerContext
             for (Path p : paths)
             {
                 r = m.getModuleResource(p);
-                if (r != null)
+                if (r != null && r.isFile())
                     break OUTER;
             }
         }
-        if (r == null)
+        if (r == null || !r.isFile())
             return null;
 
         return svc.compile(r);
