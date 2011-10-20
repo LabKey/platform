@@ -699,34 +699,32 @@ public abstract class DefaultModule implements Module, ApplicationContextAware
         if (null == pathStr)
             return null;
 
-        Path key = Path.parse(pathStr);
+        Path reportPath = Path.parse(pathStr);
 
         //the report path is a relative path from the module's reports directory
         //so the report key will be the middle two sections of the path
         //e.g., for path 'schemas/ms2/peptides/myreport.r', key is 'ms2/peptides'
 
-        if (getQueryReportsDir().getName().equals(key.get(0)) && key.size() >= 3)
-            key = key.subpath(1,2);
-        else
-            key = key.subpath(0,2);
+        if (getQueryReportsDir().getName().equals(reportPath.get(0)) && reportPath.size() >= 3)
+            reportPath = reportPath.subpath(1,reportPath.size());
 
-        Path legalFilePath = reportKeyToLegalFile(key);
-        Resource reportFile = getModuleResource(getQueryReportsDir().getPath().append(legalFilePath));
+        Path legalFilePath = reportKeyToLegalFile(reportPath);
+        Path fullLegalPath = getQueryReportsDir().getPath().append(legalFilePath);
 
-        if (null != reportFile && reportFile.isFile())
+        ModuleRReportDescriptor descriptor = REPORT_DESCRIPTOR_CACHE.get(fullLegalPath);
+
+        if (null == descriptor || descriptor.isStale())
         {
-            ModuleRReportDescriptor descriptor = REPORT_DESCRIPTOR_CACHE.get(reportFile.getPath());
-
-            if (null == descriptor || descriptor.isStale())
+            Resource reportFile = getModuleResource(fullLegalPath);
+            if (null != reportFile && reportFile.isFile())
             {
-                descriptor = createReportDescriptor(key, reportFile);
-                REPORT_DESCRIPTOR_CACHE.put(reportFile.getPath(), descriptor);
+                descriptor = createReportDescriptor(legalFilePath.subpath(0,2), reportFile);
+                if (null != descriptor)
+                    REPORT_DESCRIPTOR_CACHE.put(reportFile.getPath(), descriptor);
             }
-
-            return descriptor;
         }
-        else
-            return null;
+
+        return descriptor;
     }
 
     protected ModuleRReportDescriptor createReportDescriptor(Path key, Resource reportFile)
