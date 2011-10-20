@@ -33,7 +33,7 @@
     ActionURL startUrl = c.getStartURL(context.getUser());
 %>
 <div class="labkey-app-bar">
-<div class="folder-header" id="labkey-app-bar-div">
+<div class="folder-header">
 <table class="folder-header" id="labkey-app-bar-table">
     <tr>
         <td class="folder-title"><a href="<%=h(startUrl.getLocalURIString())%>"><%=h(bean.getFolderTitle())%></a></td>
@@ -79,22 +79,17 @@
 <%}%>
 
 <script type="text/javascript">
-    Ext.onReady(function(){
-        resizeTask.delay(0);
-    });
-
     var resizeTask = new Ext.util.DelayedTask(function(){
-        var folderHeaderTableWidth = Ext.getDom("labkey-app-bar-div").offsetWidth;
         var bodyWidth = Ext.getBody().getWidth();
         var leftMenuWidth = Ext.getDom("leftmenupanel") ? Ext.getDom("leftmenupanel").offsetWidth : 0;
-
-        if ((folderHeaderTableWidth + leftMenuWidth) > bodyWidth)
-            Ext.getDom("labkey-app-bar-table").style.width = (bodyWidth - leftMenuWidth) + "px";
-        else
-            Ext.getDom("labkey-app-bar-table").style.width = "100%";
+        Ext.getDom("labkey-app-bar-table").style.width = (bodyWidth - leftMenuWidth) + "px";
     });
 
     Ext.EventManager.on(window, 'resize', function(){
         resizeTask.delay(100);
+    });
+
+    Ext.onReady(function(){
+        resizeTask.delay(0);
     });
 </script>
