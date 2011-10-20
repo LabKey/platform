@@ -1185,7 +1185,7 @@ public class ModuleLoader implements Filter
         for (Module m : _modules)
         {
             Resource r = m.getModuleResource(path);
-            if (r != null)
+            if (r != null && r.exists())
                 return r;
         }
 

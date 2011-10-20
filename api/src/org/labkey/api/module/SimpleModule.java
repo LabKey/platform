@@ -110,7 +110,7 @@ public class SimpleModule extends SpringModule implements ContainerManager.Conta
         if (_schemaNames == null)
         {
             Resource schemasDir = getModuleResource("schemas");
-            if (schemasDir != null)
+            if (schemasDir != null && schemasDir.isCollection())
             {
                 final Set<String> schemaNames = new LinkedHashSet<String>();
                 CollectionUtils.forAllDo(schemasDir.list(), new Closure<Resource>() {

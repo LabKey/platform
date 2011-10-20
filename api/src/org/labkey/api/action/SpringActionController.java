@@ -616,7 +616,7 @@ public abstract class SpringActionController implements Controller, HasViewConte
             Module module = ModuleLoader.getInstance().getModuleForController(controllerName);
 
             Resource r = (module == null) ? null : module.getModuleResource("/" + VIEWS_DIRECTORY + "/" + actionName + ModuleHtmlViewDefinition.HTML_VIEW_EXTENSION);
-            if (r == null)
+            if (r == null || !r.isFile())
             {
                 return null;
             }

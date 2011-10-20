@@ -567,7 +567,7 @@ public abstract class DefaultModule implements Module, ApplicationContextAware
 
         String sqlScriptsPath = getSqlScriptsPath(dialect);
         Resource dir = getModuleResource(sqlScriptsPath);
-        if (dir == null)
+        if (dir == null || !dir.isCollection())
             return Collections.emptySet();
 
         for (String script : dir.listNames())
@@ -799,7 +799,7 @@ public abstract class DefaultModule implements Module, ApplicationContextAware
     public InputStream getResourceStream(String path) throws IOException
     {
         Resource r = getModuleResource(path);
-        if (r != null)
+        if (r != null && r.isFile())
             return r.getInputStream();
         return null;
     }

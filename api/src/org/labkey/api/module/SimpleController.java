@@ -58,7 +58,7 @@ public class SimpleController extends SpringActionController implements SpringAc
         Module module = ModuleLoader.getInstance().getModuleForController(controllerName);
 
         Resource r = getViewResource(module, actionName);
-        if (r != null)
+        if (r != null && r.isFile())
             return new SimpleAction(r);
 
         return null;
@@ -76,7 +76,7 @@ public class SimpleController extends SpringActionController implements SpringAc
     public static ActionURL getBeginViewUrl(Module module, Container container)
     {
         Resource r = getViewResource(module, BEGIN_VIEW_NAME);
-        if (r != null)
+        if (r != null && r.isFile())
             return new ActionURL(module.getName(), BEGIN_VIEW_NAME, container);
 
         return null;

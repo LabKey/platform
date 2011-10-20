@@ -77,7 +77,8 @@ public class DbSchema
             _log.debug("no module for schema '" + schemaName + "'");
             return null;
         }
-        return module.getModuleResource("/schemas/" + schemaName + ".xml");
+        Resource r = module.getModuleResource("/schemas/" + schemaName + ".xml");
+        return null != r && r.isFile() ? r : null;
     }
 
 

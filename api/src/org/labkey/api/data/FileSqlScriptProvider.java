@@ -139,7 +139,7 @@ public class FileSqlScriptProvider implements SqlScriptProvider
         {
             Path path = Path.parse(_module.getSqlScriptsPath(CoreSchema.getInstance().getSqlDialect())).append(filename);
             Resource r = _module.getModuleResource(path);
-            if (null == r)
+            if (null == r || !r.isFile())
                 throw new SqlScriptException("File not found: " + path, filename);
 
             // TODO: use PageFlowUtil.getStreamContentsAsString()?
