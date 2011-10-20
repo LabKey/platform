@@ -89,7 +89,10 @@ import org.labkey.api.settings.AdminConsole;
 import org.labkey.api.settings.AdminConsole.SettingsLinkType;
 import org.labkey.api.study.reports.CrosstabReport;
 import org.labkey.api.thumbnail.BaseThumbnailAction;
+import org.labkey.api.thumbnail.DynamicThumbnailProvider;
 import org.labkey.api.thumbnail.StaticThumbnailProvider;
+import org.labkey.api.thumbnail.Thumbnail;
+import org.labkey.api.thumbnail.ThumbnailService;
 import org.labkey.api.util.IdentifierString;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.Pair;
@@ -115,7 +118,6 @@ import org.springframework.web.servlet.mvc.Controller;
 import javax.script.ScriptEngineFactory;
 import javax.script.ScriptEngineManager;
 import javax.servlet.ServletException;
-import javax.servlet.http.HttpServletResponse;
 import java.io.File;
 import java.io.PrintWriter;
 import java.util.ArrayList;
@@ -824,6 +826,17 @@ public class ReportsController extends SpringActionController
 
             validatePermissions();
             ReportService.get().saveReport(getViewContext(), ReportUtil.getReportQueryKey(report.getDescriptor()), report);
+
+            if (report instanceof DynamicThumbnailProvider)
+            {
+                ThumbnailService svc = ServiceRegistry.get().getService(ThumbnailService.class);
+
+                if (null != svc)
+                {
+                    DynamicThumbnailProvider provider = (DynamicThumbnailProvider) report;
+                    svc.replaceThumbnail(provider, getViewContext());
+                }
+            }
 
             ApiSimpleResponse response = new ApiSimpleResponse();
 

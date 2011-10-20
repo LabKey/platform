@@ -16,9 +16,9 @@
 package org.labkey.core.thumbnail;
 
 import org.apache.log4j.Logger;
+import org.jetbrains.annotations.Nullable;
 import org.labkey.api.attachments.AttachmentFile;
 import org.labkey.api.attachments.AttachmentService;
-import org.labkey.api.attachments.ByteArrayAttachmentFile;
 import org.labkey.api.attachments.InputStreamAttachmentFile;
 import org.labkey.api.data.CacheableWriter;
 import org.labkey.api.security.User;
@@ -30,6 +30,7 @@ import org.labkey.api.thumbnail.ThumbnailService;
 import org.labkey.api.util.ContextListener;
 import org.labkey.api.util.ExceptionUtil;
 import org.labkey.api.util.ShutdownListener;
+import org.labkey.api.view.ViewContext;
 
 import javax.servlet.ServletContextEvent;
 import java.io.IOException;
@@ -82,12 +83,18 @@ public class ThumbnailServiceImpl implements ThumbnailService
 
     @Override
     // Deletes existing thumbnail before saving
-    public void replaceThumbnail(DynamicThumbnailProvider provider, AttachmentFile thumbnailFile) throws IOException
+    public void replaceThumbnail(DynamicThumbnailProvider provider, @Nullable ViewContext context) throws IOException
     {
-        deleteThumbnail(provider);
-        AttachmentService.Service svc = AttachmentService.get();
-        svc.addAttachments(provider, Collections.singletonList(thumbnailFile), User.guest);
-        ThumbnailCache.remove(provider);   // Just in case (delete already cleared the old thumbnail from the cache)
+        Thumbnail thumbnail = provider.generateDynamicThumbnail(context);
+
+        if (null != thumbnail)
+        {
+            deleteThumbnail(provider);
+            AttachmentService.Service svc = AttachmentService.get();
+            AttachmentFile thumbnailFile = new InputStreamAttachmentFile(thumbnail.getInputStream(), THUMBNAIL_FILENAME, thumbnail.getContentType());
+            svc.addAttachments(provider, Collections.singletonList(thumbnailFile), User.guest);
+            ThumbnailCache.remove(provider);   // Just in case (delete already cleared the old thumbnail from the cache)
+        }
     }
 
     private static class ThumbnailGeneratingThread extends Thread implements ShutdownListener
@@ -112,14 +119,8 @@ public class ThumbnailServiceImpl implements ThumbnailService
                     try
                     {
                         // TODO: Real ViewContext
-                        Thumbnail thumbnail = provider.generateDynamicThumbnail(null);
-
-                        if (null != thumbnail)
-                        {
-                            ThumbnailService svc = ServiceRegistry.get().getService(ThumbnailService.class);
-                            AttachmentFile file = new InputStreamAttachmentFile(thumbnail.getInputStream(), THUMBNAIL_FILENAME, thumbnail.getContentType());
-                            svc.replaceThumbnail(provider, file);
-                        }
+                        ThumbnailService svc = ServiceRegistry.get().getService(ThumbnailService.class);
+                        svc.replaceThumbnail(provider, null);
                     }
                     catch (Exception e)  // Make sure exceptions don't kill the background thread
                     {
