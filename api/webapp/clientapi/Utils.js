@@ -904,20 +904,6 @@ LABKEY.Utils.convertToExcel(
             return pd + input;
         },
 
-        //private.  compare to Ext4.Object.merge(), except this does mergeIf()
-        rApplyIf : function(a, b){
-            a = a || {};
-
-            for(var p in b){
-                if(!a.hasOwnProperty(p))
-                    a[p] = b[p];
-                else if (Ext.isObject(a[p]))
-                    LABKEY.Utils.rApplyIf(a[p], b[p]);
-            }
-
-            return a;
-        },
-
         /**
          * Returns true if the arguments are case-insensitive equal.  Note: the method converts arguments to strings for the purposes of comparing numbers, which means that it will return odd behaviors with objects (ie. LABKEY.Utils.caseInsensitiveEquals({t: 3}, '[object Object]') returns true)
          *

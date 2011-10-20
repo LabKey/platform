@@ -9,17 +9,17 @@ Ext.namespace('LABKEY.ext4');
 
 
 Ext4.define('LABKEY.ext4.RemoteGroup', {
-    initGroup: function(){
+    initGroup: function(field){
         Ext4.apply(this, {
             name: this.name || Ext4.id(),
-            layout: 'checkboxgroup',
-            autoHeight: true,
-            storeLoaded: false,
+            //layout: 'checkboxgroup',
+            //autoHeight: true,
+            //storeLoaded: false,
             items: [{
                 name: 'placeholder',
                 fieldLabel: 'Loading...'
             }],
-           tpl : new Ext4.XTemplate('<tpl for=".">' +
+           fieldRendererTpl : new Ext4.XTemplate('<tpl for=".">' +
               '{[values["' + this.valueField + '"] ? values["' + this.displayField + '"] : "'+ (this.lookupNullCaption ? this.lookupNullCaption : '[none]') +'"]}' +
                 //allow a flag to display both display and value fields
                 '<tpl if="'+this.showValueInList+'">{[(values["' + this.valueField + '"] ? " ("+values["' + this.valueField + '"]+")" : "")]}</tpl>'+
@@ -28,9 +28,8 @@ Ext4.define('LABKEY.ext4.RemoteGroup', {
         });
 
         //we need to test whether the store has been created
-        if(!this.store && this.queryName){
+        if(!this.store && this.queryName)
             this.store = LABKEY.ext.MetaHelper.simpleLookupStore(this);
-        }
 
         if(!this.store){
             console.log('RemoteGroup requires a store');
@@ -40,7 +39,7 @@ Ext4.define('LABKEY.ext4.RemoteGroup', {
         if(this.store && !this.store.events)
             this.store = Ext4.create(this.store, 'labkey-store');
 
-        if(!this.store.getCount())
+        if(!this.store.hasLoaded())
             this.store.on('load', this.onStoreLoad, this, {single: true});
         else
             this.onStoreLoad();
@@ -52,20 +51,23 @@ Ext4.define('LABKEY.ext4.RemoteGroup', {
             this.add('Error Loading Store');
         }
         else {
+            var toAdd = [];
+            var config;
             this.store.each(function(record, idx){
-                this.add({
-                    boxLabel: (this.tpl ? this.tpl.apply(record.data) : record.get(this.displayField)),
+                config = {
+                    boxLabel: (this.tpl ? this.fieldRendererTpl.apply(record.data) : record.get(this.displayField)),
                     inputValue: record.get(this.valueField),
-                    name: this.name,
                     disabled: this.disabled,
                     readOnly: this.readOnly || false
-                });
-            }, this);
-        }
+                };
 
-        //TODO: why doesnt the group auto-resize?
-        console.log(this.isFixedHeight())
-        this.doLayout();
+                if(this instanceof Ext4.form.RadioGroup)
+                    config.name = this.name+'_radio';
+
+                toAdd.push(config);
+            }, this);
+            this.add(toAdd);
+        }
     }
 });
 
@@ -82,7 +84,7 @@ Ext4.define('LABKEY.ext4.RemoteCheckboxGroup', {
     extend: 'Ext.form.CheckboxGroup',
     alias: 'widget.labkey-remotecheckboxgroup',
     initComponent: function(){
-        this.initGroup();
+        this.initGroup(this);
         this.callParent(arguments);
     },
     mixins: {
@@ -103,7 +105,7 @@ Ext4.define('LABKEY.ext4.RemoteRadioGroup', {
     extend: 'Ext.form.RadioGroup',
     alias: 'widget.labkey-remoteradiogroup',
     initComponent: function(){
-        this.initGroup();
+        this.initGroup(this);
         this.callParent(arguments);
     },
     mixins: {

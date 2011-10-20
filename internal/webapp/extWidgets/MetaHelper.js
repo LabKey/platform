@@ -155,6 +155,7 @@ LABKEY.ext.MetaHelper = {
      * @param {object}  [config.formEditorConfig] Similar to editorConfig; however, it will only be merged when getFormEditor() or getFormEditorConfig() are called.
      *      The intention is to provide a mechanism so the same metadata object can be used to generate editors in both a form or a grid (or other contexts).
      * @param {object}  [config.gridEditorConfig] similar to formEditorConfig; however, it will only be merged when getGridEditor() or getGridEditorConfig() are called.
+     * @param {object}  [config.columnConfig] similar to formEditorConfig; however, it will only be merged when getColumnConfig() is getColumnsConfig() called.
      * @param {object} [config.lookup.store] advanced! Pass in your own custom store for a lookup field
      * @param {boolean} [config.lazyCreateStore] If false, the store will be created immediately.  If true, the store will be created when the component is created. (default true)
      * @param {boolean} [createIfDoesNotExist] If true, this field will be created in the store, even if it does not otherwise exist on the server. Can be used to force custom fields to appear in a grid or form or to pass additional information to the server at time of import
@@ -213,27 +214,27 @@ LABKEY.ext.MetaHelper = {
 //                field.store = LABKEY.ext.MetaHelper.getLookupStoreConfig(meta);
                 field.store = LABKEY.ext.MetaHelper.getLookupStore(meta);
 
-            if (field.store && meta.lazyCreateStore === false){
-                field.store = LABKEY.ext.MetaHelper.getLookupStore(field);
-            }
+//            if (field.store && meta.lazyCreateStore === false){
+//                field.store = LABKEY.ext.MetaHelper.getLookupStore(field);
+//            }
 
             Ext4.apply(field, {
                 //this purpose of this is to allow other editors like multiselect, checkboxGroup, etc.
                 xtype: (meta.xtype || 'labkey-combo'),
                 forceSelection: true,
                 typeAhead: true,
-                mode: 'local',
-                hiddenName: meta.name,
-                hiddenId : Ext4.id(),
-                triggerAction: 'all',
-                lazyInit: false,
+                queryMode: 'local',
+//                hiddenName: meta.name,
+//                hiddenId : Ext4.id(),
+//                triggerAction: 'all',
+//                lazyInit: false,
                 //NOTE: perhaps we do translation of the following names in store's translateMeta() method
                 displayField: l.displayColumn,
                 valueField: l.keyColumn,
                 //NOTE: supported for non-combo components
                 initialValue: field.value,
                 showValueInList: meta.showValueInList,
-                listClass: 'labkey-grid-editor',
+//                listClass: 'labkey-grid-editor',
                 lookupNullCaption: meta.lookupNullCaption
             });
         }
@@ -407,6 +408,7 @@ LABKEY.ext.MetaHelper = {
     },
 
     //private
+    //TODO: reconsider how this works.  maybe merge into buildQtip()?
     setLongTextRenderer: function(col, meta){
         if(col.multiline || (undefined === col.multiline && col.scale > 255 && meta.jsonType === "string"))
         {
@@ -414,22 +416,35 @@ LABKEY.ext.MetaHelper = {
             {
                 //set quick-tip attributes and let Ext QuickTips do the work
                 //Ext3
-                metadata.attr = "ext:qtip=\"" + Ext4.util.Format.htmlEncode(data || '') + "\"";
+                metadata.tdAttr = "ext:qtip=\"" + Ext4.util.Format.htmlEncode(data || '') + "\"";
                 //Ext4
-                metadata.attr = "data-qtip=\"" + Ext4.util.Format.htmlEncode(data || '') + "\"";
+                metadata.tdAttr += " data-qtip=\"" + Ext4.util.Format.htmlEncode(data || '') + "\"";
                 return data;
             };
         }
     },
 
     //private
-    getColumnsConfig: function(store, config, grid){
+    getColumnsConfig: function(store, grid, config){
         config = config || {};
 
+        var fields = store.getFields();
         var columns = store.getColumns();
         var cols = new Array();
 
-        Ext4.each(columns, function(col, idx){
+        var col;
+        fields.each(function(field, idx){
+            var col;
+            Ext4.each(columns, function(c){
+                if(c.dataIndex == field.dataIndex){
+                    col = c;
+                    return false;
+                }
+            }, this);
+
+            if(!col)
+                col = {dataIndex: field.dataIndex};
+
             cols.push(LABKEY.ext.MetaHelper.getColumnConfig(store, col, config, grid));
         }, this);
 
@@ -438,6 +453,8 @@ LABKEY.ext.MetaHelper = {
 
     //private
     getColumnConfig: function(store, col, config, grid){
+        col = col || {};
+
         var meta = store.findFieldMetadata(col.dataIndex);
         col.customized = true;
 
@@ -481,19 +498,14 @@ LABKEY.ext.MetaHelper = {
         col.renderer = LABKEY.ext.MetaHelper.getDefaultRenderer(col, meta, col.renderer, grid);
 
         //HTML-encode the column header
-        col.header = Ext4.util.Format.htmlEncode(meta.header || col.header);
+        col.text = Ext4.util.Format.htmlEncode(meta.label || meta.name || col.header);
 
         if(meta.ignoreColWidths)
             delete col.width;
 
-        if(meta.colModel) {
-            Ext4.Object.merge(col, meta.colModel);
-        }
-
         //allow override of defaults
-        if(config && config.defaults)
-            Ext4.Object.merge(col, config.defaults);
-
+        if(meta.columnConfig)
+            Ext4.Object.merge(col, meta.columnConfig);
         if(config && config[col.dataIndex])
             Ext4.Object.merge(col, config[col.dataIndex]);
 
@@ -570,7 +582,7 @@ LABKEY.ext.MetaHelper = {
             if(meta.file){
                 displayValue = "<img src=\"" + LABKEY.Utils.getFileIconUrl(data) + "\" alt=\"icon\" title=\"Click to download file\"/>&nbsp;" + displayValue;
                 //since the icons are 16x16, cut the default padding down to just 1px
-                cellMetaData.attr = "style=\"padding: 1px 1px 1px 1px\"";
+                cellMetaData.tdAttr += " style=\"padding: 1px 1px 1px 1px\"";
             }
 
             //wrap in <a> if url is present in the record's original JSON
@@ -597,9 +609,9 @@ LABKEY.ext.MetaHelper = {
             qtip.push(mvValue);
         }
 
-        if(record.errors && record.errors.length){
+        if(record.errors && record.getErrors().length){
 
-            Ext4.each(record.errors, function(e){
+            Ext4.each(record.getErrors(), function(e){
                 if(e.field==meta.name){
                     qtip.push((e.severity || 'ERROR') +': '+e.message);
                     cellMetaData.css += ' x-grid3-cell-invalid';
@@ -607,11 +619,16 @@ LABKEY.ext.MetaHelper = {
             }, this);
         }
 
-        if(meta.qtipRenderer)
+        if(meta.qtipRenderer){
             meta.qtipRenderer(qtip, data, cellMetaData, record, rowIndex, colIndex, store);
+        }
 
-        if(qtip.length)
-            cellMetaData.attr = "ext:qtip=\"" + Ext4.util.Format.htmlEncode(qtip.join('<br>')) + "\"";
+        if(qtip.length){
+            //ext3
+            cellMetaData.tdAttr = "ext:qtip=" + Ext4.util.Format.htmlEncode(qtip.join('<br>')) + "\"";
+            //ext4
+            cellMetaData.tdAttr += " data-qtip=" + Ext4.util.Format.htmlEncode(qtip.join('<br>')) + "\"";
+        }
     },
 
     //private
@@ -621,9 +638,13 @@ LABKEY.ext.MetaHelper = {
             return '';
         }
 
-        var lookupRecord = lookupStore.getById(data);
+        var lookupRecord;
+        var recIdx = lookupStore.find(meta.lookup.keyColumn, data);
+        if(recIdx != -1)
+            lookupRecord = lookupStore.getAt(recIdx);
+
         if (lookupRecord)
-            return lookupRecord.data[meta.lookup.displayColumn];
+            return lookupRecord.get(meta.lookup.displayColumn);
         else {
             //if store not loaded yet, retry rendering on store load
             if(grid && !lookupStore.fields){
@@ -674,7 +695,7 @@ LABKEY.ext.MetaHelper = {
                 || LABKEY.Utils.caseInsensitiveEquals(fieldName, fieldMeta.label)
             ){
                 fnMatch.push(fieldMeta.name);
-                return false;
+                return false;  //exit here because it should only match 1 name
             }
 
             if(fieldMeta.importAliases){
@@ -686,8 +707,7 @@ LABKEY.ext.MetaHelper = {
 
                 Ext4.each(aliases, function(alias){
                     if(LABKEY.Utils.caseInsensitiveEquals(fieldName, alias))
-                        aliasMatch.push(fieldMeta.name);
-                        //continue iterating over fields in case a fieldName matches
+                        aliasMatch.push(fieldMeta.name);  //continue iterating over fields in case a fieldName matches
                 }, this);
             }
         }
@@ -707,18 +727,38 @@ LABKEY.ext.MetaHelper = {
         }
     },
 
+    //Newer Ext
+//    labelableRenderTpl: [
+//        '<tpl if="!hideLabel && !(!fieldLabel && hideEmptyLabel)">',
+//            '<label id="{id}-labelEl"<tpl if="inputId"> for="{inputId}"</tpl> class="{labelCls}"',
+//                '<tpl if="labelStyle"> style="{labelStyle}"</tpl>>',
+//                '<tpl if="fieldLabel">{fieldLabel}' +
+//                    '{labelSeparator}' +
+//                    '<tpl if="helpPopup"> <a href="#" data-qtip="{helpPopup}"><span class="labkey-help-pop-up">?</span></a></tpl>' +
+//                '</tpl>',
+//            '</label>',
+//        '</tpl>',
+//        '<div class="{baseBodyCls} {fieldBodyCls}" id="{id}-bodyEl" role="presentation">{subTplMarkup}</div>',
+//        '<div id="{id}-errorEl" class="{errorMsgCls}" style="display:none"></div>',
+//        '<div class="{clearCls}" role="presentation"><!-- --></div>',
+//        {
+//            compiled: true,
+//            disableFormats: true
+//        }
+//    ],
+
+    //Ext4.02a
+    //@override
     labelableRenderTpl: [
         '<tpl if="!hideLabel && !(!fieldLabel && hideEmptyLabel)">',
-            '<label id="{id}-labelEl"<tpl if="inputId"> for="{inputId}"</tpl> class="{labelCls}"',
-                '<tpl if="labelStyle"> style="{labelStyle}"</tpl>>',
-                '<tpl if="fieldLabel">{fieldLabel}' +
-                    '{labelSeparator}' +
-                    '<tpl if="helpPopup"> <a href="" data-qtip="{helpPopup}">?</a></tpl>' +
+            '<label<tpl if="inputId"> for="{inputId}"</tpl> class="{labelCls}"<tpl if="labelStyle"> style="{labelStyle}"</tpl>>',
+                '<tpl if="fieldLabel">{fieldLabel}{labelSeparator}' +
+                    '<tpl if="helpPopup"> <a href="#" data-qtip="{helpPopup}"><span class="labkey-help-pop-up">?</span></a></tpl>' +
                 '</tpl>',
             '</label>',
         '</tpl>',
-        '<div class="{baseBodyCls} {fieldBodyCls}" id="{id}-bodyEl" role="presentation">{subTplMarkup}</div>',
-        '<div id="{id}-errorEl" class="{errorMsgCls}" style="display:none"></div>',
+        '<div class="{baseBodyCls} {fieldBodyCls}"<tpl if="inputId"> id="{baseBodyCls}-{inputId}"</tpl> role="presentation">{subTplMarkup}</div>',
+        '<div class="{errorMsgCls}" style="display:none"></div>',
         '<div class="{clearCls}" role="presentation"><!-- --></div>',
         {
             compiled: true,

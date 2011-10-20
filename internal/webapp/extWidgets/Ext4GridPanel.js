@@ -96,7 +96,7 @@ Ext4.define('LABKEY.ext4.GridPanel', {
             }
         };
 
-        var columns = LABKEY.ext.MetaHelper.getColumnsConfig(this.store, config, this);
+        var columns = LABKEY.ext.MetaHelper.getColumnsConfig(this.store, this, config);
 
         Ext4.each(columns, function(col, idx){
             var meta = this.store.findFieldMetadata(col.dataIndex);

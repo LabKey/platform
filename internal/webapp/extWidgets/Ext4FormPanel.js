@@ -65,10 +65,13 @@ Ext4.namespace('LABKEY.ext4');
 Ext4.define('LABKEY.ext4.FormPanel', {
     extend: 'Ext.form.Panel',
     alias: 'widget.labkey-formpanel',
+    autoHeight: true,
     config: {
         defaultFieldWidth: 500
     },
     initComponent: function(){
+        Ext4.QuickTips.init();
+
         this.store = this.store || Ext4.create('LABKEY.ext4.Store', {
             containerPath: this.containerPath,
             schemaName: this.schemaName,
@@ -99,23 +102,19 @@ Ext4.define('LABKEY.ext4.FormPanel', {
             ,bubbleEvents: ['added']
             ,buttonAlign: 'left'
             ,monitorValid: false
-            ,buttons: [
-                LABKEY.ext4.FORMBUTTONS['SUBMIT'].call(this)
-            ]
-            ,fieldDefaults: {
-                labelWidth: 150
-            }
-
         });
 
         this.plugins = this.plugins || [];
         this.plugins.push(Ext4.create('LABKEY.ext4.DatabindPlugin'));
 
-        LABKEY.Utils.rApplyIf(this, {
-            items: {xtype: 'displayfield', value: 'Loading...'}
+        LABKEY.Utils.mergeIf(this, {
+            items: [{xtype: 'displayfield', value: 'Loading...'}]
             ,bodyBorder: false
             ,bodyStyle: 'padding:5px'
             ,style: 'margin-bottom: 15px'
+            ,buttons: [
+                LABKEY.ext4.FORMBUTTONS['SUBMIT'].call(this)
+            ]
         });
 
         if(!this.store.hasLoaded())
@@ -123,7 +122,7 @@ Ext4.define('LABKEY.ext4.FormPanel', {
         else
             this.loadQuery(this.store);
 
-        if(this.errorEl && typeof this.errorEl=='String')
+        if(Ext4.isString(this.errorEl))
             this.errorEl = Ext4.get(this.errorEl);
 
         this.callParent();
@@ -203,7 +202,6 @@ Ext4.define('LABKEY.ext4.FormPanel', {
                 }
 
                 if(theField.xtype == 'combo'){
-                    theField.lazyInit = false;
                     theField.store.autoLoad = true;
                 }
 
@@ -221,7 +219,6 @@ Ext4.define('LABKEY.ext4.FormPanel', {
                             autoHeight: true,
                             layout: 'hbox',
                             border: false,
-                            //msgTarget: c.msgTarget || 'qtip',
                             fieldLabel: c.compositeField,
                             defaults: {
                                 border: false,
@@ -292,56 +289,43 @@ Ext4.define('LABKEY.ext4.FormPanel', {
         var formMessages = [];
         var toMarkInvalid = {};
 
-        if(!this.boundRecord)
+        var record = this.getForm().getRecord();
+        if(!record)
             return;
 
-        this.store.errors.each(function(error){
-            var meta = error.record.fields.get(error.field);
-
-            if(meta && meta.hidden)
-                return;
-
-            if(error.record===this.boundRecord){
-                if ("field" in error){
-                    //these are generic form-wide errors
-                    if ("_form" == error.field){
-                        formMessages.push(error.message);
-                    }
-                }
-                else {
-                    formMessages.push(error.message);
-                }
-            }
-            else {
-                formMessages.push('There are errors in one or more records.  Problem records should be highlighted in red.');
-            }
-        }, this);
-
-        if (this.errorEl){
-            formMessages = Ext.Array.unique(formMessages);
-            formMessages = Ext4.util.Format.htmlEncode(formMessages.join('\n'));
-            this.errorEl.update(formMessages);
-        }
-
-        this.getForm().items.each(function(f){
-            f.validate();
-        }, this);
-
+//        record.getErrors.each(function(error){
+//            var meta = error.record.fields.get(error.field);
+//
+//            if(meta && meta.hidden)
+//                return;
+//
+//                if ("field" in error){
+//                    //these are generic form-wide errors
+//                    if ("_form" == error.field){
+//                        formMessages.push(error.message);
+//                    }
+//                }
+//                else {
+//                    formMessages.push(error.message);
+//                }
+//            }
+//        }, this);
+//
+//        if (this.errorEl){
+//            formMessages = Ext.Array.unique(formMessages);
+//            formMessages = Ext4.util.Format.htmlEncode(formMessages.join('\n'));
+//            this.errorEl.update(formMessages);
+//        }
+//
+//        this.getForm().items.each(function(f){
+//            f.validate();
+//        }, this);
     }
 
 //    onRecordChange: function(theForm){
 //        if(!this.boundRecord)
 //            this.getBottomToolbar().setStatus({text: 'No Records'});
-//    },
-
-//    onStoreValidate: function(store, records){
-//        if(store.errors.getCount())
-//            this.getBottomToolbar().setStatus({text: 'ERRORS', iconCls: 'x-status-error'});
-//        else
-//            this.getBottomToolbar().setStatus({text: 'Section OK', iconCls: 'x-status-valid'});
-//
-//        this.markInvalid();
-//    },
+//    }
 
 });
 
