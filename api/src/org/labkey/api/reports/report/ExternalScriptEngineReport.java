@@ -105,7 +105,7 @@ public class ExternalScriptEngineReport extends ScriptEngineReport implements At
     }
 
 
-    public Thumbnail getThumbnail(ViewContext context) throws IOException
+    public Thumbnail getThumbnail(ViewContext context)
     {
         try
         {
