@@ -31,6 +31,8 @@ import org.labkey.api.query.QueryView;
 import org.labkey.api.query.UserSchema;
 import org.labkey.api.reports.Report;
 import org.labkey.api.reports.ReportService;
+import org.labkey.api.reports.model.ViewCategory;
+import org.labkey.api.reports.model.ViewCategoryManager;
 import org.labkey.api.reports.model.ViewInfo;
 import org.labkey.api.reports.report.ChartReportDescriptor;
 import org.labkey.api.reports.report.ModuleRReportDescriptor;
@@ -347,11 +349,17 @@ public class ReportUtil
 
     public static List<ViewInfo> getViews(ViewContext context, String schemaName, String queryName, boolean includeQueries)
     {
-        return getViews(context, schemaName, queryName, includeQueries, new DefaultReportFilter());
+        return getViews(context, schemaName, queryName, true, includeQueries, new DefaultReportFilter());
     }
 
-    private static String getDefaultCategory(Container c, String schema, String query)
+    public static List<ViewInfo> getViews(ViewContext context, String schemaName, String queryName, boolean includeReports, boolean includeQueries)
     {
+        return getViews(context, schemaName, queryName, includeReports, includeQueries, new DefaultReportFilter());
+    }
+
+    private static ViewCategory getDefaultCategory(Container c, String schema, String query)
+    {
+        ViewCategory vc;
         String category = query;
         if ("study".equalsIgnoreCase(schema) && !StringUtils.isEmpty(query))
         {
@@ -361,12 +369,28 @@ public class ReportUtil
                 DataSet ds = StudyService.get().getDataSet(c, datasetId);
                 if (ds != null) // should this check && !StringUtils.isEmpty(ds.getCategory()))
                     category = ds.getCategory();
+
+                if (category != null)
+                {
+                    vc = ViewCategoryManager.getInstance().getCategory(c, category);
+                    if (vc != null)
+                        return vc;
+                }
             }
         }
-        return StringUtils.defaultIfEmpty(category, "Uncategorized");
+        category = StringUtils.defaultIfEmpty(category, "Uncategorized");
+
+        vc = new ViewCategory();
+
+        vc.setLabel(category);
+        vc.setDisplayOrder(DEFAULT_CATEGORY_DISPLAY_ORDER);
+
+        return vc;
     }
 
-    public static List<ViewInfo> getViews(ViewContext context, String schemaName, String queryName, boolean includeQueries, ReportFilter filter)
+    public static final int DEFAULT_CATEGORY_DISPLAY_ORDER = 1000;
+
+    public static List<ViewInfo> getViews(ViewContext context, String schemaName, String queryName, boolean includeReports, boolean includeQueries, ReportFilter filter)
     {
         Container c = context.getContainer();
         User user = context.getUser();
@@ -381,92 +405,94 @@ public class ReportUtil
 
         List<ViewInfo> views = new ArrayList<ViewInfo>();
 
-        for (Report r : ReportUtil.getReports(c, user, reportKey, true))
+        if (includeReports)
         {
-            if (!filter.accept(r, c, user))
-                continue;
-
-            if (!StringUtils.isEmpty(r.getDescriptor().getReportName()))
+            for (Report r : ReportUtil.getReports(c, user, reportKey, true))
             {
-                ReportDescriptor descriptor = r.getDescriptor();
+                if (!filter.accept(r, c, user))
+                    continue;
 
-                User createdBy = UserManager.getUser(descriptor.getCreatedBy());
-                User modifiedBy = UserManager.getUser(descriptor.getModifiedBy());
-                boolean inherited = descriptor.isInherited(c);
-                String query = descriptor.getProperty(ReportDescriptor.Prop.queryName);
-                String schema = descriptor.getProperty(ReportDescriptor.Prop.schemaName);
-
-                ViewInfo info = new ViewInfo(descriptor.getReportName(), r.getTypeDescription());
-
-                info.setReportId(descriptor.getReportId());
-                info.setEntityId(descriptor.getEntityId());
-                info.setDataType(ViewInfo.DataType.reports);
-                info.setQuery(StringUtils.defaultIfEmpty(query, "Stand-alone views"));
-
-                if (descriptor.getCategory() != null)
+                if (!StringUtils.isEmpty(r.getDescriptor().getReportName()))
                 {
-                    info.setCategory(descriptor.getCategory().getLabel());
-                    info.setCategoryDisplayOrder(descriptor.getCategory().getDisplayOrder());
-                }
-                else
-                {
-                    info.setCategory(getDefaultCategory(c, schema, query));
-                }
-                info.setSchema(schema);
-                info.setCreatedBy(createdBy);
-                info.setCreated(descriptor.getCreated());
-                info.setModifiedBy(modifiedBy);
-                info.setModified(descriptor.getModified());
-                info.setEditable(descriptor.canEdit(user, c));
-                info.setInherited(inherited);
-                info.setVersion(descriptor.getVersionString());
-                info.setHidden(descriptor.isHidden());
-                info.setDisplayOrder(descriptor.getDisplayOrder());
+                    ReportDescriptor descriptor = r.getDescriptor();
 
-                /**
-                 * shared reports are only available if there is a query/schema available in the container that matches
-                 * the view's descriptor. Normally, the check happens automatically when you get reports using a non-blank key, but when
-                 * you request all reports for a container you have to do an explicit check to make sure there is a valid query
-                 * available in the container. 
-                 */
-                if (!inherited || !StringUtils.isBlank(reportKey))
-                {
-                    ActionURL editUrl = r.getEditReportURL(context);
-                    ActionURL runUrl = r.getRunReportURL(context);
+                    User createdBy = UserManager.getUser(descriptor.getCreatedBy());
+                    User modifiedBy = UserManager.getUser(descriptor.getModifiedBy());
+                    boolean inherited = descriptor.isInherited(c);
+                    String query = descriptor.getProperty(ReportDescriptor.Prop.queryName);
+                    String schema = descriptor.getProperty(ReportDescriptor.Prop.schemaName);
 
-                    info.setEditUrl(editUrl);
-                    info.setRunUrl(runUrl);
-                }
-                else
-                {
-                    ActionURL runUrl = r.getRunReportURL(context);
+                    ViewInfo info = new ViewInfo(descriptor.getReportName(), r.getTypeDescription());
 
-                    if (queryExists(user, c, schema, query))
-                        info.setRunUrl(runUrl);
+                    info.setReportId(descriptor.getReportId());
+                    info.setEntityId(descriptor.getEntityId());
+                    info.setDataType(ViewInfo.DataType.reports);
+                    info.setQuery(StringUtils.defaultIfEmpty(query, "Stand-alone views"));
+
+                    if (descriptor.getCategory() != null)
+                    {
+                        info.setCategory(descriptor.getCategory().getLabel());
+                        info.setCategoryDisplayOrder(descriptor.getCategory().getDisplayOrder());
+                    }
                     else
-                        continue;
+                    {
+                        ViewCategory vc = getDefaultCategory(c, schema, query);
+
+                        info.setCategory(vc.getLabel());
+                        info.setCategoryDisplayOrder(vc.getDisplayOrder());
+                    }
+                    info.setSchema(schema);
+                    info.setCreatedBy(createdBy);
+                    info.setCreated(descriptor.getCreated());
+                    info.setModifiedBy(modifiedBy);
+                    info.setModified(descriptor.getModified());
+                    info.setEditable(descriptor.canEdit(user, c));
+                    info.setInherited(inherited);
+                    info.setVersion(descriptor.getVersionString());
+                    info.setHidden(descriptor.isHidden());
+                    info.setDisplayOrder(descriptor.getDisplayOrder());
+
+                    /**
+                     * shared reports are only available if there is a query/schema available in the container that matches
+                     * the view's descriptor. Normally, the check happens automatically when you get reports using a non-blank key, but when
+                     * you request all reports for a container you have to do an explicit check to make sure there is a valid query
+                     * available in the container.
+                     */
+                    if (!inherited || !StringUtils.isBlank(reportKey))
+                    {
+                        ActionURL editUrl = r.getEditReportURL(context);
+                        ActionURL runUrl = r.getRunReportURL(context);
+
+                        info.setEditUrl(editUrl);
+                        info.setRunUrl(runUrl);
+                    }
+                    else
+                    {
+                        ActionURL runUrl = r.getRunReportURL(context);
+
+                        if (queryExists(user, c, schema, query))
+                            info.setRunUrl(runUrl);
+                        else
+                            continue;
+                    }
+                    info.setDescription(descriptor.getReportDescription());
+                    info.setContainer(descriptor.lookupContainer());
+
+                    String security;
+                    if (descriptor.getOwner() != null)
+                        security = "private";
+                    // FIXME: see 10473: ModuleRReportDescriptor extends securable resource, but doesn't properly implement it.  File-based resources don't have a Container or Owner.
+                    else if (!(descriptor instanceof ModuleRReportDescriptor) && !SecurityManager.getPolicy(descriptor, false).isEmpty())
+                        security = "explicit";
+                    else
+                        security = "public";
+
+                    info.setPermissions(security);
+
+                    info.setThumbnailUrl(PageFlowUtil.urlProvider(ReportUrls.class).urlThumbnail(c, r));
+
+                    views.add(info);
                 }
-                info.setDescription(descriptor.getReportDescription());
-                info.setContainer(descriptor.lookupContainer());
-
-                String security;
-                if (descriptor.getOwner() != null)
-                    security = "private";
-                // FIXME: see 10473: ModuleRReportDescriptor extends securable resource, but doesn't properly implement it.  File-based resources don't have a Container or Owner.
-                else if (!(descriptor instanceof ModuleRReportDescriptor) && !SecurityManager.getPolicy(descriptor, false).isEmpty())
-                    security = "explicit";
-                else
-                    security = "public";
-
-                info.setPermissions(security);
-
-                String iconPath = ReportService.get().getReportIcon(context, r.getType());  
-                if (!StringUtils.isEmpty(iconPath))
-                    info.setIcon(iconPath);
-
-                info.setThumbnailUrl(PageFlowUtil.urlProvider(ReportUrls.class).urlThumbnail(c, r));
-
-                views.add(info);
             }
         }
 
@@ -490,7 +516,11 @@ public class ReportUtil
                         QueryParam.viewName.name(), view.getName());
 
                 info.setQueryView(true);
-                info.setCategory(getDefaultCategory(c, view.getSchemaName(), view.getQueryName()));
+
+                ViewCategory vc = getDefaultCategory(c, view.getSchemaName(), view.getQueryName());
+                info.setCategory(vc.getLabel());
+                info.setCategoryDisplayOrder(vc.getDisplayOrder());
+
                 info.setReportId(new QueryViewReportId(viewId));
                 info.setQuery(view.getQueryName());
                 info.setSchema(view.getSchemaName());

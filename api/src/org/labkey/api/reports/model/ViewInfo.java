@@ -63,6 +63,7 @@ public class ViewInfo
     public enum DataType {
         reports,
         datasets,
+        queries,
     }
 
     public ViewInfo(String name, String type)
