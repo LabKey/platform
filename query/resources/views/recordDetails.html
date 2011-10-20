@@ -1,0 +1,61 @@
+<head>
+<script type="text/javascript">
+
+LABKEY.requiresExt4ClientAPI();
+LABKEY.requiresScript('/extWidgets/DetailsPanel.js');
+
+</script>
+<script type="text/javascript">
+
+Ext.onReady(function(){
+    if(!LABKEY.ActionURL.getParameter('schemaName') ||
+        (!LABKEY.ActionURL.getParameter('queryName') && !LABKEY.ActionURL.getParameter('query.queryName')) ||
+        !LABKEY.ActionURL.getParameter('keyField') ||
+        !LABKEY.ActionURL.getParameter('key')
+    ){
+        alert('Missing one or more required params');
+        return;
+    }
+
+    var queryName = LABKEY.ActionURL.getParameter('queryName') || LABKEY.ActionURL.getParameter('query.queryName');
+
+    var panel = Ext4.create('Ext.panel.Panel', {
+        autoHeight: true,
+        border: false,
+        style: 'padding-bottom:20px;',
+        items: [{
+            xtype: 'labkey-detailspanel',
+            border: false,
+            style: 'margin-bottom:20px;',
+            schemaName: LABKEY.ActionURL.getParameter('schemaName'),
+            queryName: queryName,
+            filterArray: [
+                LABKEY.Filter.create(LABKEY.ActionURL.getParameter('keyField'), LABKEY.ActionURL.getParameter('key'), LABKEY.Filter.Types.EQUALS)
+            ]
+        }]
+    });
+
+    if(LABKEY.ActionURL.getParameter('schemaName').match(/^study$/i) && LABKEY.ActionURL.getParameter('keyField').match(/^lsid$/i)){
+        panel.add({
+            xtype: 'button',
+            handler: function(b){
+                window.location = LABKEY.ActionURL.buildURL("query", "executeQuery", null, {
+                    schemaName: 'auditLog',
+                    'query.queryName': 'DatasetAuditEvent',
+                    'query.key1~eq': LABKEY.ActionURL.getParameter('key')
+                });
+            },
+            text: 'Audit History'
+        });
+    }
+    panel.render('recordDetailsDiv');
+
+    LABKEY.NavTrail.setTrail(LABKEY.ActionURL.getParameter('title') || queryName);
+
+});
+
+
+</script>
+</head>
+
+<div id="recordDetailsDiv"></div>

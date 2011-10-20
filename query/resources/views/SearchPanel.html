@@ -1,0 +1,29 @@
+<head>
+<script type="text/javascript">
+
+LABKEY.requiresExt4ClientAPI();
+LABKEY.requiresScript("/extWidgets/SearchPanel.js");
+
+</script>
+<script type="text/javascript">
+
+Ext4.onReady(function(){
+
+    var config = {
+        schemaName: LABKEY.ActionURL.getParameter('schemaName')
+        ,queryName: LABKEY.ActionURL.getParameter('queryName')
+        ,viewName: LABKEY.ActionURL.getParameter('viewName')
+        ,defaultViewName: LABKEY.ActionURL.getParameter('defaultViewName')
+        ,columns: LABKEY.ActionURL.getParameter('columns')
+        ,title: 'Search '+LABKEY.ActionURL.getParameter('queryName')
+        ,showContainerFilter: LABKEY.ActionURL.getParameter('showContainerFilter')
+        ,defaultContainerFilter: LABKEY.ActionURL.getParameter('defaultContainerFilter')
+    };
+
+    Ext4.create('LABKEY.ext4.SearchPanel', config).render('searchPanel');
+
+});
+</script>
+</head>
+
+<div id="searchPanel"></div>

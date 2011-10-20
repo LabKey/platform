@@ -1,0 +1,30 @@
+<head>
+<script type="text/javascript">
+LABKEY.requiresExt4ClientAPI();
+LABKEY.requiresScript("/extWidgets/ExcelUploadPanel.js");
+</script>
+<script type="text/javascript">
+
+Ext4.onReady(function(){
+    Ext4.create('LABKEY.ext4.FormPanel', {
+        title: LABKEY.ActionURL.getParameter('queryName') || LABKEY.ActionURL.getParameter('query.queryName'),
+        schemaName: LABKEY.ActionURL.getParameter('schemaName'),
+        queryName: LABKEY.ActionURL.getParameter('queryName') || LABKEY.ActionURL.getParameter('query.queryName'),
+        filterArray: [
+            LABKEY.Filter.create(LABKEY.ActionURL.getParameter('keyField'), LABKEY.ActionURL.getParameter('key'), LABKEY.Filter.Types.EQUALS)
+        ],
+        bindConfig: {
+            autoCreateRecordOnChange: true,
+            autoBindFirstRecord: true
+        },
+        columns: '*'
+    }).render('manageRecordDiv');
+
+    LABKEY.NavTrail.setTrail(LABKEY.ActionURL.getParameter('title') || LABKEY.ActionURL.getParameter('queryName') || LABKEY.ActionURL.getParameter('query.queryName'));
+
+});
+
+
+</script>
+</head>
+<div id="manageRecordDiv"></div>

@@ -1896,6 +1896,14 @@ query/resources/schemas/dbscripts/sqlserver/query-11.20-11.21.sql -text
 query/resources/schemas/dbscripts/sqlserver/query-11.21-11.22.sql -text
 query/resources/schemas/dbscripts/sqlserver/query-9.20-9.30.sql -text
 query/resources/schemas/query.xml -text
+query/resources/views/SearchPanel.html -text
+query/resources/views/importData.html -text
+query/resources/views/importData.view.xml -text
+query/resources/views/importWizard.html -text
+query/resources/views/manageRecord.html -text
+query/resources/views/manageRecord.view.xml -text
+query/resources/views/recordDetails.html -text
+query/resources/views/runCustomSql.html -text
 query/src/META-INF/query/jars.txt -text
 query/src/org/labkey/query/CustomQueryDefinitionImpl.java -text
 query/src/org/labkey/query/CustomViewImpl.java -text
