@@ -16,6 +16,8 @@
 package org.labkey.api.reports.report;
 
 import org.labkey.api.module.Module;
+import org.labkey.api.resource.Resource;
+import org.labkey.api.util.Path;
 
 import java.io.File;
 import java.util.Map;
@@ -41,7 +43,7 @@ public class ModuleQueryRReportDescriptor extends ModuleRReportDescriptor
         _reportTypeMap.put("ms2/Peptides", "MS2.SingleRun.rReport");
     }
 
-    public ModuleQueryRReportDescriptor(Module module, String reportKey, File sourceFile, String reportPath)
+    public ModuleQueryRReportDescriptor(Module module, String reportKey, Resource sourceFile, Path reportPath)
     {
         super(module, reportKey, sourceFile, reportPath);
 

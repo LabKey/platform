@@ -35,6 +35,7 @@ import org.labkey.api.data.dialect.SqlDialect;
 import org.labkey.api.reports.report.ModuleQueryRReportDescriptor;
 import org.labkey.api.reports.report.ModuleRReportDescriptor;
 import org.labkey.api.reports.report.ReportDescriptor;
+import org.labkey.api.resource.AbstractResource;
 import org.labkey.api.resource.Resolver;
 import org.labkey.api.resource.Resource;
 import org.labkey.api.security.User;
@@ -66,12 +67,14 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.TreeSet;
 
 /**
  * User: migra
@@ -111,7 +114,7 @@ public abstract class DefaultModule implements Module, ApplicationContextAware
     private String _sourcePath = null;
     private File _explodedPath = null;
 
-    private static final Cache<String, ModuleRReportDescriptor> REPORT_DESCRIPTOR_CACHE = CacheManager.getCache(1024, CacheManager.DAY, "Report descriptor cache");
+    private static final Cache<Path, ModuleRReportDescriptor> REPORT_DESCRIPTOR_CACHE = CacheManager.getCache(Integer.MAX_VALUE, CacheManager.DAY, "Report descriptor cache");
 
     private enum SchemaUpdateType
     {
@@ -171,6 +174,8 @@ public abstract class DefaultModule implements Module, ApplicationContextAware
             for (WebPartFactory part : wpFactories)
                 part.setModule(this);
         }
+
+        preloadReports();
     }
 
 
@@ -553,7 +558,7 @@ public abstract class DefaultModule implements Module, ApplicationContextAware
 
     public void setExplodedPath(File path)
     {
-        _explodedPath = path;
+        _explodedPath = path.getAbsoluteFile();
     }
 
     public Set<String> getSqlScripts(@Nullable String schemaName, @NotNull SqlDialect dialect)
@@ -575,88 +580,147 @@ public abstract class DefaultModule implements Module, ApplicationContextAware
         return fileNames;
     }
 
+
     public String getSqlScriptsPath(@NotNull SqlDialect dialect)
     {
         return "schemas/dbscripts/" + dialect.getSQLScriptPath() + "/";
     }
 
-    protected File reportKeyToLegalFile(File rootDir, String key)
+
+    protected Path reportKeyToLegalFile(Path key)
     {
-        if(null == key || null == rootDir)
+        if (null == key)
             return null;
 
-        //the report key is a relative path
-        //need to split it and make each part a legal file name
-        String[] keyParts = key.split("/");
-        for(int idx = 0; idx < keyParts.length; ++idx)
-            keyParts[idx] = FileUtil.makeLegalName(keyParts[idx]);
+        Path legalPath = Path.emptyPath;
 
-        //reassemble into final file path
-        String sep = "";
-        StringBuilder legalKey = new StringBuilder();
-        for(String part : keyParts)
-        {
-            legalKey.append(sep);
-            legalKey.append(part);
-            sep = "/";
-        }
+        for (int idx = 0; idx < key.size() ; ++idx)
+            legalPath = legalPath.append(FileUtil.makeLegalName(key.get(idx)));
 
-        return new File(rootDir, legalKey.toString());
+        return legalPath;
     }
 
-    public List<ReportDescriptor> getReportDescriptors(String key)
-    {
-        if(null == key)
-            return null;
 
-        //currently we support only R reports under the queries directory
+    Set<Resource> _reportFiles = Collections.synchronizedSet(new TreeSet<Resource>(new Comparator<Resource>(){
+        @Override
+        public int compare(Resource o, Resource o1)
+        {
+            return o.getPath().compareTo(o1.getPath());
+        }
+    }));
+
+
+    private void preloadReports()
+    {
+        Resource r = getQueryReportsDir();
+        if (null == r || !r.isCollection())
+            return;
+        _findReports(r);
+    }
+
+
+    private void _findReports(Resource dir)
+    {
+        for (Resource file : dir.list())
+        {
+            if (file.isCollection())
+                _findReports(file);
+            else if (rReportFilter.accept(null, file.getName()))
+                _reportFiles.add(file);
+        }
+    }
+
+
+    protected List<ReportDescriptor> getAllReportDescriptors()
+    {
+        ArrayList<ReportDescriptor> list = new ArrayList<ReportDescriptor>(_reportFiles.size());
+        Resource[] files = _reportFiles.toArray(new Resource[0]);
+        for (Resource file : files)
+        {
+            ModuleRReportDescriptor descriptor = REPORT_DESCRIPTOR_CACHE.get(file.getPath());
+            if (null != descriptor && descriptor.isStale())
+                descriptor = null;
+            if (null == descriptor && file.exists())
+            {
+                // NOTE: reportKeyToLegalFile() is not a two-way mapping, this can cause inconsistencies
+                // so don't cache files with _ (underscore) in path
+                descriptor = createReportDescriptor(file);
+                if (null != descriptor && !file.getPath().toString().contains("_"))
+                    REPORT_DESCRIPTOR_CACHE.put(file.getPath(), descriptor);
+            }
+            if (null != descriptor)
+                list.add(descriptor);
+        }
+        return list;
+    }
+
+
+    public List<ReportDescriptor> getReportDescriptors(String keyStr)
+    {
+        if (!AppProps.getInstance().isDevMode() && _reportFiles.isEmpty())
+            return Collections.emptyList();
+
+        if (null == keyStr)
+            return getAllReportDescriptors();
+
+        Path key = Path.parse(keyStr);
+
+        //currently we support only R reports under the "reports/schemas" directory
         //in the future, we can also support R reports that are not tied to a schema/query
-        File keyDir = reportKeyToLegalFile(getQueryReportsDir(), key);
-        if(keyDir.exists() && keyDir.isDirectory())
+        Path legalPath = reportKeyToLegalFile(key);
+        Resource keyDir = getModuleResource(getQueryReportsDir().getPath().append(legalPath));
+
+        if (null != keyDir && keyDir.isCollection())
         {
             List<ReportDescriptor> reportDescriptors = new ArrayList<ReportDescriptor>();
-            for(File file : keyDir.listFiles(rReportFilter))
+            for (Resource file : keyDir.list())
             {
-                ModuleRReportDescriptor descriptor = REPORT_DESCRIPTOR_CACHE.get(file.getAbsolutePath());
+                if (!rReportFilter.accept(null, file.getName()))
+                    continue;
+                ModuleRReportDescriptor descriptor = REPORT_DESCRIPTOR_CACHE.get(file.getPath());
                 if (null == descriptor || descriptor.isStale())
                 {
                     descriptor = createReportDescriptor(key, file);
-                    REPORT_DESCRIPTOR_CACHE.put(file.getAbsolutePath(), descriptor);
+                    REPORT_DESCRIPTOR_CACHE.put(file.getPath(), descriptor);
                 }
                 reportDescriptors.add(descriptor);
             }
             return reportDescriptors;
         }
 
-        return null;
+        return Collections.emptyList();
     }
 
-    public ReportDescriptor getReportDescriptor(String path)
+
+    public ReportDescriptor getReportDescriptor(String pathStr)
     {
-        if (null == path)
+        if (!AppProps.getInstance().isDevMode() && _reportFiles.isEmpty())
             return null;
+        if (null == pathStr)
+            return null;
+
+        Path key = Path.parse(pathStr);
 
         //the report path is a relative path from the module's reports directory
         //so the report key will be the middle two sections of the path
         //e.g., for path 'schemas/ms2/peptides/myreport.r', key is 'ms2/peptides'
-        String key;
-        String[] pathParts = path.split("/");
 
-        if (getQueryReportsDir().getName().equalsIgnoreCase(pathParts[0]) && pathParts.length >= 3)
-            key = pathParts[1] + "/" + pathParts[2];
+        if (getQueryReportsDir().getName().equals(key.get(0)) && key.size() >= 3)
+            key = key.subpath(1,2);
         else
-            key = path.substring(0, path.lastIndexOf('/'));
+            key = key.subpath(0,2);
 
-        File reportFile = reportKeyToLegalFile(getReportsDir(), path);
+        Path legalFilePath = reportKeyToLegalFile(key);
+        Resource reportFile = getModuleResource(getQueryReportsDir().getPath().append(legalFilePath));
 
-        if (reportFile.exists() && reportFile.isFile())
+        if (null != reportFile && reportFile.isFile())
         {
-            ModuleRReportDescriptor descriptor = (ModuleRReportDescriptor) REPORT_DESCRIPTOR_CACHE.get(reportFile.getAbsolutePath());
+            ModuleRReportDescriptor descriptor = REPORT_DESCRIPTOR_CACHE.get(reportFile.getPath());
 
             if (null == descriptor || descriptor.isStale())
             {
                 descriptor = createReportDescriptor(key, reportFile);
-                REPORT_DESCRIPTOR_CACHE.put(reportFile.getAbsolutePath(), descriptor);
+                REPORT_DESCRIPTOR_CACHE.put(reportFile.getPath(), descriptor);
             }
 
             return descriptor;
@@ -665,20 +729,39 @@ public abstract class DefaultModule implements Module, ApplicationContextAware
             return null;
     }
 
-    protected ModuleRReportDescriptor createReportDescriptor(String key, File reportFile)
+    protected ModuleRReportDescriptor createReportDescriptor(Path key, Resource reportFile)
     {
+        Path reportKey = new Path(getQueryReportsDir().getName()).append(key).append(reportFile.getName());
         //for now, all we create are query r report descriptors
-        return new ModuleQueryRReportDescriptor(this, key, reportFile, getQueryReportsDir().getName() + "/" + key + "/" + reportFile.getName());
+        _log.debug("create module report: key=" + key.toString("","") + " file=" + reportFile.getPath().toString());
+        return new ModuleQueryRReportDescriptor(this, key.toString("",""), reportFile, reportKey);
     }
 
-    protected File getReportsDir()
+
+    protected ModuleRReportDescriptor createReportDescriptor(Resource reportFile)
     {
-        return new File(getExplodedPath(), "reports");
+        Path reportKey = getQueryReportsDir().getPath().relativize(reportFile.getPath());
+        Path key = reportKey.getParent();
+        //for now, all we create are query r report descriptors
+        _log.debug("create module report: key=" + key.toString("","") + " file=" + reportFile.getPath().toString());
+        return new ModuleQueryRReportDescriptor(this, key.toString("",""), reportFile, reportKey);
     }
 
-    protected File getQueryReportsDir()
+    Resource _reportsDir = null;
+
+    protected Resource getReportsDir()
     {
-        return new File(getReportsDir(), "schemas");
+        if (null == _reportsDir)
+            _reportsDir = getModuleResource("reports");
+        return _reportsDir;
+    }
+
+    Resource _queryReportsDir = null;
+    protected Resource getQueryReportsDir()
+    {
+        if (null == _queryReportsDir)
+            _queryReportsDir = getModuleResource("reports/schemas");
+        return _queryReportsDir;
     }
 
     public Set<ModuleResourceLoader> getResourceLoaders()
@@ -693,12 +776,24 @@ public abstract class DefaultModule implements Module, ApplicationContextAware
 
     public Resource getModuleResource(Path path)
     {
-        return _resolver.lookup(path);
+        Resource r = _resolver.lookup(path);
+        if (null != r)
+            return r;
+        return new AbstractResource(new Path("reports"), getModuleResolver())
+        {
+            @Override
+            public Resource parent()
+            {
+                if (getPath().size()==0)
+                    return null;
+                return getModuleResource(getPath().getParent());
+            }
+        };
     }
 
     public Resource getModuleResource(String path)
     {
-        return _resolver.lookup(Path.parse(path));
+        return getModuleResource(Path.parse(path));
     }
 
     public InputStream getResourceStream(String path) throws IOException

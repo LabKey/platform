@@ -19,12 +19,15 @@ import org.apache.commons.io.IOUtils;
 import org.apache.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.labkey.api.module.Module;
+import org.labkey.api.resource.Resource;
+import org.labkey.api.util.Path;
 import org.labkey.api.view.ViewContext;
 import org.labkey.api.util.Pair;
 
 import java.io.File;
 import java.io.FileReader;
 import java.io.IOException;
+import java.io.InputStream;
 import java.util.Map;
 import java.util.List;
 
@@ -43,13 +46,13 @@ public class ModuleRReportDescriptor extends RReportDescriptor
     protected static final String REPORT_METADATA_EXTENSION = ".report.xml";
 
     private Module _module;
-    private String _reportPath;
-    private File _sourceFile;
-    private File _metaDataFile;
+    private Path _reportPath;
+    private Resource _sourceFile;
+    private Resource _metaDataFile;
     private long _sourceLastModified = 0;
     private long _metaDataLastModified = 0;
 
-    public ModuleRReportDescriptor(Module module, String reportKey, File sourceFile, String reportPath)
+    public ModuleRReportDescriptor(Module module, String reportKey, Resource sourceFile, Path reportPath)
     {
         _module = module;
         _sourceFile = sourceFile;
@@ -61,7 +64,8 @@ public class ModuleRReportDescriptor extends RReportDescriptor
         setReportKey(reportKey);
         setReportName(name);
         setReportType(getDefaultReportType(reportKey));
-        _metaDataFile = new File(sourceFile.getParentFile(), getReportName() + REPORT_METADATA_EXTENSION);
+        Resource dir = sourceFile.parent();
+        _metaDataFile = dir.find(getReportName() + REPORT_METADATA_EXTENSION);
         loadMetaData();
     }
 
@@ -74,13 +78,13 @@ public class ModuleRReportDescriptor extends RReportDescriptor
     {
         //check if either source or meta-data files have changed
         //meta-data file is optional so make sure it exists before checking
-        return (_sourceLastModified != 0 && _sourceFile.lastModified() != _sourceLastModified)
-                || (_metaDataLastModified != 0 && _metaDataFile.exists() && _metaDataFile.lastModified() != _metaDataLastModified);
+        return (_sourceLastModified != 0 && _sourceFile.getLastModified() != _sourceLastModified)
+                || (_metaDataLastModified != 0 && _metaDataFile.exists() && _metaDataFile.getLastModified() != _metaDataLastModified);
     }
 
     protected void loadMetaData()
     {
-        if (_metaDataFile.exists() && _metaDataFile.isFile())
+        if (null != _metaDataFile && _metaDataFile.isFile())
         {
             try
             {
@@ -90,7 +94,7 @@ public class ModuleRReportDescriptor extends RReportDescriptor
                 if (null != props)
                     setProperties(props);
 
-                _metaDataLastModified = _metaDataFile.lastModified();
+                _metaDataLastModified = _metaDataFile.getLastModified();
             }
             catch(IOException e)
             {
@@ -129,7 +133,7 @@ public class ModuleRReportDescriptor extends RReportDescriptor
 
     protected void ensureScriptCurrent()
     {
-        if (_sourceFile.exists() && _sourceFile.lastModified() != _sourceLastModified)
+        if (_sourceFile.exists() && _sourceFile.getLastModified() != _sourceLastModified)
         {
             try
             {
@@ -137,7 +141,7 @@ public class ModuleRReportDescriptor extends RReportDescriptor
                 if (null != script)
                 {
                     setProperty(ScriptReportDescriptor.Prop.script, script);
-                    _sourceLastModified = _sourceFile.lastModified();
+                    _sourceLastModified = _sourceFile.getLastModified();
                 }
             }
             catch(IOException e)
@@ -148,9 +152,17 @@ public class ModuleRReportDescriptor extends RReportDescriptor
         }
     }
 
-    protected String getFileContents(File file) throws IOException
+    protected String getFileContents(Resource file) throws IOException
     {
-        return IOUtils.toString(new FileReader(file));
+        InputStream is = file.getInputStream();
+        try
+        {
+            return IOUtils.toString(file.getInputStream());
+        }
+        finally
+        {
+            IOUtils.closeQuietly(is);
+        }
     }
 
     public Module getModule()
@@ -158,12 +170,12 @@ public class ModuleRReportDescriptor extends RReportDescriptor
         return _module;
     }
 
-    public String getReportPath()
+    public Path getReportPath()
     {
         return _reportPath;
     }
 
-    public File getSourceFile()
+    public Resource getSourceFile()
     {
         return _sourceFile;
     }

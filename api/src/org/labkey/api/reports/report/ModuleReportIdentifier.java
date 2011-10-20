@@ -19,6 +19,7 @@ import org.labkey.api.reports.Report;
 import org.labkey.api.reports.ReportService;
 import org.labkey.api.module.Module;
 import org.labkey.api.module.ModuleLoader;
+import org.labkey.api.util.Path;
 
 /*
 * User: Dave
@@ -30,9 +31,9 @@ public class ModuleReportIdentifier extends AbstractReportIdentifier
     protected static final String PREFIX = "module:";
 
     private Module _module;
-    private String _reportPath;
+    private Path _reportPath;
 
-    public ModuleReportIdentifier(Module module, String reportPath)
+    public ModuleReportIdentifier(Module module, Path reportPath)
     {
         assert null != module && null != reportPath;
         _module = module;
@@ -41,16 +42,15 @@ public class ModuleReportIdentifier extends AbstractReportIdentifier
 
     public ModuleReportIdentifier(String id) throws IllegalArgumentException
     {
-        if(!id.startsWith(PREFIX))
+        if (!id.startsWith(PREFIX))
             throw new IllegalArgumentException("Not a valid module report id");
 
-        String moduleAndPath = id.substring(PREFIX.length());
-        int pos = moduleAndPath.indexOf('/');
-        if(-1 == pos)
+        Path moduleAndPath = Path.parse(id.substring(PREFIX.length()));
+        if (moduleAndPath.size() < 2)
             throw new IllegalArgumentException("No / character after prefix");
 
-        _module = ModuleLoader.getInstance().getModule(moduleAndPath.substring(0, pos));
-        _reportPath = moduleAndPath.substring(pos + 1);
+        _module = ModuleLoader.getInstance().getModule(moduleAndPath.get(0));
+        _reportPath = moduleAndPath.subpath(1, moduleAndPath.size());
     }
 
     @Override
@@ -89,17 +89,17 @@ public class ModuleReportIdentifier extends AbstractReportIdentifier
         return _module;
     }
 
-    public String getReportPath()
+    public Path getReportPath()
     {
         return _reportPath;
     }
 
     public Report getReport() throws Exception
     {
-        if(null == getModule())
+        if (null == getModule())
             return null;
 
-        ReportDescriptor descriptor = getModule().getReportDescriptor(getReportPath());
+        ReportDescriptor descriptor = getModule().getReportDescriptor(getReportPath().toString("",""));
         return null == descriptor ? null : ReportService.get().createReportInstance(descriptor);
     }
 }
