@@ -529,6 +529,10 @@ public abstract class ScriptEngineReport extends ScriptReport implements Report.
 
                     return false;
                 }
+                else if ("text/html".equals(contentType))
+                {
+                    // TODO: check if we have an SVG and render a thumbnail
+                }
                 else if ("application/pdf".equals(contentType))
                 {
                     DocumentConversionService svc = ServiceRegistry.get().getService(DocumentConversionService.class);

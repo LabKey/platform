@@ -183,7 +183,7 @@ abstract public class UserSchema extends AbstractSchema
                 if (fk == null || fk instanceof RowIdForeignKey || fk instanceof MultiValuedForeignKey)
                     continue;
 
-                // Unforuntaely, we need to get the lookup table since some FKs don't expose .getLookupSchemaName() or .getLookupTableName()
+                // Unfortunately, we need to get the lookup table since some FKs don't expose .getLookupSchemaName() or .getLookupTableName()
                 TableInfo t = null;
                 try
                 {

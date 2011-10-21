@@ -1218,7 +1218,7 @@ public class ContainerManager
                 if (first instanceof RuntimeException)
                     throw (RuntimeException)first;
                 else
-                   throw new RuntimeException(first);
+                    throw new RuntimeException(first);
             }
 
             synchronized (DATABASE_QUERY_LOCK)
