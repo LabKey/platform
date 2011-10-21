@@ -245,8 +245,8 @@ Ext4.define('LABKEY.ext4.DataViewsPanel', {
          * Tooltip Template
          */
         var tipTpl = new Ext4.XTemplate('<tpl>' +
-                '<div class="tip-content">' +
-                '<table cellpadding="20" cellspacing="100" width="100%">' +
+                '<div class="data-views-tip-content">' +
+                '<table cellpadding="20" cellspacing="100">' +
                 '<tpl if="data.category != undefined && data.category.length">' +
                 '<tr><td>Source:</td><td>{data.category}</td></tr>' +
                 '</tpl>' +
@@ -260,9 +260,9 @@ Ext4.define('LABKEY.ext4.DataViewsPanel', {
                 '<tr><td valign="top">Description:</td><td>{data.description}</td></tr>' +
                 '</tpl>' +
                 '<tpl if="data.thumbnail != undefined && data.thumbnail.length">' +
-                '<tr><td colspan="2" align="center"><img style="height:200px;max-width:300px;" src="{data.thumbnail}"/></td></tr>' +
                 '</tpl>' +
                 '</table>' +
+                '<div class="thumbnail"><img src="{data.thumbnail}"/></div>' +
                 '</div>' +
                 '</tpl>').compile();
 
@@ -278,9 +278,6 @@ Ext4.define('LABKEY.ext4.DataViewsPanel', {
                 height : '100%',
                 cls    : 'tip-panel',
                 tpl    : tipTpl,
-                defaults : {
-                    style : 'padding: 5px;'
-                },
                 renderTipRecord : function(rec){
                     tipPanel.update(rec);
                 }
@@ -324,19 +321,19 @@ Ext4.define('LABKEY.ext4.DataViewsPanel', {
                 width    : _w,
                 height   : _h,
                 html     : null,
+                autoHide : true,
                 anchorToTarget : true,
                 anchorOffset : 100,
                 showDelay: 1000,
-                autoHide : false,
+                cls      : 'data-views-tip-panel',
                 defaults : { border: false, frame: false},
                 items    : [getTipPanel()],
                 listeners: {
-                    activate  : loadRecord,
                     // Change content dynamically depending on which element triggered the show.
                     beforeshow: function(tip) {
                         var loaded = loadRecord(tip);
                         renderToolTip(tip);
-                        return loaded;
+                        return loaded; // return false to not show tip
                     },
                     scope : this
                 },

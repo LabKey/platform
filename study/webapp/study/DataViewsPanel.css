@@ -1,5 +1,3 @@
-/*div.x4-grid-cell-inner.x4-unselectable {cursor:pointer}*/
-
 .edit-views-link
 {
     background: url("../_images/pencil2.png") left top no-repeat;
@@ -60,6 +58,11 @@
     background-color: white;
 }
 
+.x4-reset span.x4-window-header-text-default
+{
+    color: #126495;
+}
+
 .x4-reset .x4-message-box .x4-window-body
 {
     background-color: transparent;
@@ -84,4 +87,35 @@
 .x4-action-col-icon
 {
     cursor: pointer;
+}
+
+/* Hover Tip */
+div.data-views-tip-panel
+{
+  box-shadow: rgb(220, 220, 220) 4px 5px 5px;
+}
+
+div.data-views-tip-content
+{
+}
+
+div.data-views-tip-content table
+{
+    width: 100%;
+}
+
+/* Thumbnails -- seen in hover tooltip */
+div.thumbnail
+{
+    margin-top: 5px;
+}
+
+div.thumbnail img
+{
+    height:200px;
+    max-width: 300px;
+    display: block;
+    margin-left: auto;
+    margin-right: auto;
+    vertical-align: middle;
 }
