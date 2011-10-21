@@ -215,19 +215,6 @@ public class DomainImpl implements Domain
         _properties.add(index, (DomainPropertyImpl)prop);
     }
 
-    public ActionURL urlEditDefinition(boolean allowFileLinkProperties, boolean allowAttachmentProperties, boolean showDefaultValueSettings)
-    {
-        ActionURL ret = new ActionURL(PropertyController.EditDomainAction.class, getContainer());
-        ret.addParameter("domainId", Integer.toString(getTypeId()));
-        if (allowAttachmentProperties)
-            ret.addParameter("allowAttachmentProperties", "1");
-        if (allowFileLinkProperties)
-            ret.addParameter("allowFileLinkProperties", "1");
-        if (showDefaultValueSettings)
-            ret.addParameter("showDefaultValueSettings", "1");
-        return ret;
-    }
-
     public ActionURL urlShowData()
     {
         return getDomainKind().urlShowData(this);

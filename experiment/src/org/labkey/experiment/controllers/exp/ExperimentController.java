@@ -2555,7 +2555,7 @@ public class ExperimentController extends SpringActionController
             {
                 throw new NotFoundException("Could not find sample set with rowId " + form.getBean().getRowId());
             }
-            return ss.getType().urlEditDefinition(false, false, false);
+            return ss.getType().getDomainKind().urlEditDefinition(ss.getType());
         }
 
         @Override
@@ -4413,18 +4413,18 @@ public class ExperimentController extends SpringActionController
             return new ActionURL(BeginAction.class, container);
         }
 
-        public ActionURL getDomainEditorURL(Container container, int domainId)
-        {
-            ActionURL url = new ActionURL(PropertyController.EditDomainAction.class, container);
-            url.addParameter("domainId", domainId);
-            return url;
-        }
-
-        public ActionURL getDomainEditorURL(Container container, String domainURI)
+        public ActionURL getDomainEditorURL(Container container, String domainURI, boolean allowAttachmentProperties, boolean allowFileLinkProperties, boolean showDefaultValueSettings)
         {
             ActionURL url = new ActionURL(PropertyController.EditDomainAction.class, container);
             url.addParameter("domainURI", domainURI);
+            if (allowAttachmentProperties)
+                url.addParameter("allowAttachmentProperties", "1");
+            if (allowFileLinkProperties)
+                url.addParameter("allowFileLinkProperties", "1");
+            if (showDefaultValueSettings)
+                url.addParameter("showDefaultValueSettings", "1");
             return url;
+
         }
 
         public ActionURL getShowFileURL(Container c, ExpData data, boolean inline)
