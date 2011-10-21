@@ -90,10 +90,10 @@ public class ThumbnailServiceImpl implements ThumbnailService
             return;
 
         Thumbnail thumbnail = provider.generateDynamicThumbnail(context);
+        deleteThumbnail(provider);
 
         if (null != thumbnail)
         {
-            deleteThumbnail(provider);
             AttachmentService.Service svc = AttachmentService.get();
             AttachmentFile thumbnailFile = new InputStreamAttachmentFile(thumbnail.getInputStream(), THUMBNAIL_FILENAME, thumbnail.getContentType());
             svc.addAttachments(provider, Collections.singletonList(thumbnailFile), User.guest);
@@ -122,8 +122,8 @@ public class ThumbnailServiceImpl implements ThumbnailService
 
                     try
                     {
-                        // TODO: Real ViewContext
                         ThumbnailService svc = ServiceRegistry.get().getService(ThumbnailService.class);
+                        // TODO: Real ViewContext
                         svc.replaceThumbnail(provider, null);
                     }
                     catch (Exception e)  // Make sure exceptions don't kill the background thread
