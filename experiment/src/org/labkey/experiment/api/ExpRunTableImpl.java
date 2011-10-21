@@ -728,6 +728,15 @@ public class ExpRunTableImpl extends ExpTableImpl<ExpRunTable.Column> implements
                         TableInfo fkTableInfo = col.getFkTableInfo();
                         if (fkTableInfo != null)
                         {
+                            // Do type conversion in case there's a mismatch in the lookup source and target columns
+                            if (newValue != null && !fkTableInfo.getPkColumns().get(0).getJavaClass().isAssignableFrom(newValue.getClass()))
+                            {
+                                newValue = ConvertUtils.convert(newValue.toString(), fkTableInfo.getPkColumns().get(0).getJavaClass());
+                            }
+                            if (oldValue != null && !fkTableInfo.getPkColumns().get(0).getJavaClass().isAssignableFrom(oldValue.getClass()))
+                            {
+                                oldValue = ConvertUtils.convert(oldValue.toString(), fkTableInfo.getPkColumns().get(0).getJavaClass());
+                            }
                             Map<String, Object> oldLookupTarget = Table.selectObject(fkTableInfo, oldValue, Map.class);
                             if (oldLookupTarget != null)
                             {
