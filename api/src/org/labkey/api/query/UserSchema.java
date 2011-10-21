@@ -16,6 +16,7 @@
 
 package org.labkey.api.query;
 
+import org.apache.log4j.Logger;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.collections.BoundMap;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
@@ -183,15 +184,29 @@ abstract public class UserSchema extends AbstractSchema
                     continue;
 
                 // Unforuntaely, we need to get the lookup table since some FKs don't expose .getLookupSchemaName() or .getLookupTableName()
-                TableInfo t = fk.getLookupTableInfo();
+                TableInfo t = null;
+                try
+                {
+                    t = fk.getLookupTableInfo();
+                }
+                catch (QueryParseException qpe)
+                {
+                    // ignore and try to continue
+                    String msg = String.format("Failed to traverse fk (%s, %s, %s) from (%s, %s)",
+                            fk.getLookupSchemaName(), fk.getLookupTableName(), fk.getLookupColumnName(), tableName, column.getName());
+                    Logger.getLogger(UserSchema.class).warn(msg, qpe);
+                }
+
+                // Skip lookups to other schemas
                 if (!(schemaName.equalsIgnoreCase(fk.getLookupSchemaName()) || (t != null && schemaName.equalsIgnoreCase(t.getPublicSchemaName()))))
                     continue;
 
-                // Attempt to use FK name first, then use the actual table name.
+                // Get the lookupTableName: Attempt to use FK name first, then use the actual table name if it exists and is in the set of known tables.
                 String lookupTableName = fk.getLookupTableName();
-                if (!tables.containsKey(lookupTableName) && tables.containsKey(t.getName()))
+                if (!tables.containsKey(lookupTableName) && (t != null && tables.containsKey(t.getName())))
                     lookupTableName = t.getName();
 
+                // Remove the lookup table from the set of tables with no incoming FK
                 startTables.remove(lookupTableName);
             }
         }
@@ -231,17 +246,27 @@ abstract public class UserSchema extends AbstractSchema
                 continue;
 
             // Unforuntaely, we need to get the lookup table since some FKs don't expose .getLookupSchemaName() or .getLookupTableName()
-            TableInfo t = fk.getLookupTableInfo();
+            TableInfo t = null;
+            try
+            {
+                t = fk.getLookupTableInfo();
+            }
+            catch (QueryParseException qpe)
+            {
+                // We've already reported this error once; ignore and try to continue
+            }
+
+            // Skip lookups to other schemas
             if (!(schemaName.equalsIgnoreCase(fk.getLookupSchemaName()) || (t != null && schemaName.equalsIgnoreCase(t.getPublicSchemaName()))))
                 continue;
 
-            // Attempt to use FK name first, then use the actual table name.
+            // Get the lookupTableName: Attempt to use FK name first, then use the actual table name if it exists and is in the set of known tables.
             String lookupTableName = fk.getLookupTableName();
-            if (!tables.containsKey(lookupTableName) && tables.containsKey(t.getName()))
+            if (!tables.containsKey(lookupTableName) && (t != null && tables.containsKey(t.getName())))
                 lookupTableName = t.getName();
 
+            // Continue depthFirstWalk if the lookup table is found in the schema (e.g. it exists in this schema and isn't a query)
             TableInfo lookupTable = tables.get(lookupTableName);
-            assert lookupTable != null : "Lookup failed";
             if (lookupTable != null)
                 depthFirstWalk(schemaName, tables, lookupTable, visited, visiting, sorted);
         }
