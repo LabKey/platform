@@ -77,11 +77,9 @@
 <script type="text/javascript">
     LABKEY.requiresCss("editInPlaceElement.css");
 </script>
-<br>
 <table width="100%">
     <tr>
         <td valign="top">
-            <p>
                 <div>
                 <%=descriptionHtml%>
             <%
@@ -95,7 +93,6 @@
                 }
             %>
                 </div>
-            </p>
             <p>
                 <%
                     if (protocolDocs.size() == 1)
@@ -135,10 +132,8 @@
         </td>
 
         <td style="vertical-align:top;border-left:solid #DDDDDD 1px;padding-left:1em">
-            <p>
                 <a href="<%=h(BaseStudyController.getStudyOverviewURL(bean.getStudy().getContainer()))%>"><img src="<%=request.getContextPath()%>/_images/studyNavigator.gif" alt="Study Navigator"> </a><br>
                 <%=textLink("Study Navigator", BaseStudyController.getStudyOverviewURL(bean.getStudy().getContainer()))%><br>
-            </p>
             <%
                 if (isAdmin)
                 {
