@@ -85,14 +85,15 @@ int datasetsPerCol = userDatasets.size() / 3;
             if (!equal(category, firstDataset.getCategory()))
             {
                 category = firstDataset.getCategory();
-                sb.append("<tr><td class=\"labkey-announcement-title\"><span>");
+                // don't need extra padding (labkey-announcement-title) on first row
+                sb.append("<tr><td class=\"labkey-announcement-title\" style=\"padding-top:0;\"><span>");
                 sb.append(h(category == null ? "Uncategorized" : category));
                 sb.append("</span></td></tr>\n");
                 sb.append("<tr><td class=\"labkey-title-area-line\"></td></tr>\n");
             }
             else if (null != category)
             {
-                sb.append("<tr><td class=\"labkey-announcement-title\"><span>");
+                sb.append("<tr><td class=\"labkey-announcement-title\" style=\"padding-top:0;\"><span>");
                 sb.append(h(category)).append(" (Continued)");
                 sb.append("</span></td></tr>\n");
                 sb.append("<tr><td class=\"labkey-title-area-line\"></td></tr>\n");
