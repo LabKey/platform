@@ -156,23 +156,26 @@ LABKEY.study.CreateStudyWizard = Ext.extend(Ext.util.Observable, {
         this.info.name = 'New Study';
         this.info.dstPath = LABKEY.ActionURL.getContainer() + '/' + this.info.name;
 
-        var studyLocation = new Ext.form.DisplayField({
+        var studyLocation = new Ext.form.TextField({
             fieldLabel: 'Location',
             name: 'studyFolder',
+            width: 449,
             readOnly: true,
+            fieldClass: 'x-form-empty-field',
             value: this.info.dstPath,
             scope: this
         });
 
-        var browseBtn = new Ext.Button({
-            name:"browseBtn",
+        var changeFolderBtn = new Ext.Button({
+            name:"changeFolderBtn",
             text: "Change",
+            width: 56,
             cls: "labkey-button",
             handler: browseFolders
         });
 
         function browseFolders(){
-            treeWin.show();
+            folderTree.toggleCollapse();
         }
 
         var protocolDocField = new Ext.form.FileUploadField({
@@ -191,33 +194,6 @@ LABKEY.study.CreateStudyWizard = Ext.extend(Ext.util.Observable, {
             },
             scope: this
         });
-
-        var formItems = [
-            {
-                xtype: 'textfield',
-                fieldLabel: 'Name',
-                allowBlank: false,
-                name: 'studyName',
-                value: this.info.name,
-                enableKeyEvents: true,
-                listeners: {change: blurChange, keyup:nameChange, scope:this}
-            },{
-                xtype: 'textarea',
-                fieldLabel: 'Description',
-                name: 'studyDescription',
-                height: '200',
-                emptyText: 'Type Description here',
-                listeners: {change:function(cmp, newValue, oldValue) {this.info.description = newValue;}, scope:this}
-            },
-            protocolDocField,
-            {
-                xtype:'compositefield',
-                items:[
-                    studyLocation,
-                    browseBtn
-                ]
-            }
-        ];
 
         function blurChange(txtField){
             //Changes the study location when you click away from the field. This is needed if you are typing and click
@@ -267,12 +243,16 @@ LABKEY.study.CreateStudyWizard = Ext.extend(Ext.util.Observable, {
                 scope:this
             },
             cls : 'folder-management-tree', // used by selenium helper
+            header:false,
+            style: "margin-left: 103px;", //Line up the folder tree with the rest of the form elements.
             rootVisible: true,
             enableDD: false,
             animate : true,
             useArrows : true,
+            height: 200,
+            collapsible : true,
+            collapsed: true,
             autoScroll: true,
-            height: 325,
             border: true
         });
 
@@ -284,7 +264,7 @@ LABKEY.study.CreateStudyWizard = Ext.extend(Ext.util.Observable, {
                 studyLocation.setValue("/" + this.info.name);
                 this.info.dstPath = "/" + this.info.name;
             }
-            treeWin.hide();
+            folderTree.collapse();
         }
 
         var selectFolderBtn = new Ext.Button({
@@ -317,19 +297,34 @@ LABKEY.study.CreateStudyWizard = Ext.extend(Ext.util.Observable, {
             treeWin.hide();
         }
 
-        var treeWin = new Ext.Window ({
-            title: 'Choose Study Location',
-            width: 600,
-            height: 400,
-            cls: 'extContainer',
-            autoScroll: true,
-            closeAction:'hide',
-            border: false,
-            modal: true,
-            layout: 'fit',
-            items: [folderTree],
-            bbar: ['->',cancelBtn, selectFolderBtn]
-        });
+        var formItems = [
+            {
+                xtype: 'textfield',
+                fieldLabel: 'Name',
+                allowBlank: false,
+                name: 'studyName',
+                value: this.info.name,
+                enableKeyEvents: true,
+                listeners: {change: blurChange, keyup:nameChange, scope:this}
+            },{
+                xtype: 'textarea',
+                fieldLabel: 'Description',
+                name: 'studyDescription',
+                height: '200',
+                emptyText: 'Type Description here',
+                listeners: {change:function(cmp, newValue, oldValue) {this.info.description = newValue;}, scope:this}
+            },
+            protocolDocField,
+            {
+                xtype:'compositefield',
+                width: 510,
+                items:[
+                    studyLocation,
+                    changeFolderBtn
+                ]
+            },
+            folderTree
+        ];
 
         this.nameFormPanel = new Ext.form.FormPanel({
             border: false,
