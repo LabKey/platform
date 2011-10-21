@@ -657,20 +657,21 @@ public class WikiController extends SpringActionController
             v.setFrame(WebPartView.FrameType.NONE);
 
             getPageConfig().setTemplate(PageConfig.Template.Print);
-            getPageConfig().setTitle("Print all pages in " + getContainer().getPath());
 
             return v;
         }
 
         public NavTree appendNavTrail(NavTree root)
         {
-            return null;
+            return root.addChild("Print all pages in " + getContainer().getPath());
         }
     }
 
     @RequiresPermissionClass(ReadPermission.class)
     public class PrintBranchAction extends SimpleViewAction<WikiNameForm>
     {
+        private Wiki _rootWiki;
+
         public ModelAndView getView(WikiNameForm form, BindException errors) throws Exception
         {
             Container c = getViewContext().getContainer();
@@ -678,25 +679,24 @@ public class WikiController extends SpringActionController
             if (null == form.getName() || form.getName().trim().length() == 0)
                 throw new NotFoundException("You must supply a page name!");
 
-            Wiki rootWiki = WikiSelectManager.getWiki(c, form.getName());
-            if (null == rootWiki)
+            _rootWiki = WikiSelectManager.getWiki(c, form.getName());
+            if (null == _rootWiki)
                 throw new NotFoundException("The wiki page named '" + form.getName() + "' was not found.");
 
             // build a set of all descendants of the root page
-            Set<WikiTree> wikiTrees = WikiSelectManager.getWikiTrees(c, rootWiki);
+            Set<WikiTree> wikiTrees = WikiSelectManager.getWikiTrees(c, _rootWiki);
 
             JspView v = new JspView<PrintAllBean>("/org/labkey/wiki/view/wikiPrintAll.jsp", new PrintAllBean(wikiTrees));
             v.setFrame(WebPartView.FrameType.NONE);
 
             getPageConfig().setTemplate(PageConfig.Template.Print);
-            getPageConfig().setTitle("Print of " + rootWiki.getLatestVersion().getTitle() + " and Descendants");
 
             return v;
         }
         
         public NavTree appendNavTrail(NavTree root)
         {
-            return null;
+            return root.addChild("Print of " + _rootWiki.getLatestVersion().getTitle() + " and Descendants");
         }
     }
 
@@ -716,28 +716,29 @@ public class WikiController extends SpringActionController
     @RequiresPermissionClass(ReadPermission.class)
     public class PrintRawAction extends SimpleViewAction<WikiNameForm>
     {
+        private HString _name;
+
         public ModelAndView getView(WikiNameForm form, BindException errors) throws Exception
         {
             Container c = getContainer();
-            HString name = form.getName();
-            if (name == null)
+            _name = form.getName();
+            if (_name == null)
                 throw new NotFoundException();
 
-            WikiTree tree = WikiSelectManager.getWikiTree(c, name);
+            WikiTree tree = WikiSelectManager.getWikiTree(c, _name);
 
             //just want to re-use same jsp
             Set<WikiTree> wikis = Collections.singleton(tree);
             JspView v = new JspView<PrintRawBean>("/org/labkey/wiki/view/wikiPrintRaw.jsp", new PrintRawBean(wikis));
             v.setFrame(WebPartView.FrameType.NONE);
             getPageConfig().setTemplate(PageConfig.Template.Print);
-            getPageConfig().setTitle("Print Page '" + name + "'");
 
             return v;
         }
 
         public NavTree appendNavTrail(NavTree root)
         {
-            return null;
+            return root.addChild("Print Page '" + _name + "'");
         }
     }
 
@@ -752,14 +753,13 @@ public class WikiController extends SpringActionController
             JspView v = new JspView<PrintRawBean>("/org/labkey/wiki/view/wikiPrintRaw.jsp", new PrintRawBean(wikiTrees));
             v.setFrame(WebPartView.FrameType.NONE);
             getPageConfig().setTemplate(PageConfig.Template.Print);
-            getPageConfig().setTitle("Print All Pages");
 
             return v;
         }
 
         public NavTree appendNavTrail(NavTree root)
         {
-            return null;
+            return root.addChild("Print All Pages");
         }
     }
 

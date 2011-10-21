@@ -44,7 +44,7 @@
     <td colspan=2>&nbsp;</td>
 </tr>
 <tr>
-    <td class="labkey-form-label">Header logo (appears in every page header; 147 x 56 pixels)</td>
+    <td class="labkey-form-label">Header logo (appears in every page header in the upper left)</td>
     <td><input type="file" name="logoImage" size="50"></td>
 </tr>
 <tr>

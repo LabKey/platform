@@ -151,7 +151,6 @@ String verbing = loader.isNewInstall() ? "Installing" : "Upgrading";
         else
         {
             Ext4.get("completeDiv").setStyle('visibility', 'visible');
-            Ext4.get("staticStatus").dom.innerHTML = '';
         }
     }
 </script>

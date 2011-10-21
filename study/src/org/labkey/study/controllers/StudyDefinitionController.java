@@ -68,7 +68,7 @@ public class StudyDefinitionController extends BaseStudyController
                 domain.save(getUser());
             }
 
-            return PageFlowUtil.urlProvider(ExperimentUrls.class).getDomainEditorURL(getContainer(), domain.getTypeId());
+            return PageFlowUtil.urlProvider(ExperimentUrls.class).getDomainEditorURL(getContainer(), domain.getTypeURI(), false, false, false);
         }
     }
 

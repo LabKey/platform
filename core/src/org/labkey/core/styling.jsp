@@ -68,7 +68,7 @@
         </table>
     </td>
     <tr>
-        <td><%= PageFlowUtil.generateDropDownTextLink("Drop Down Link", "#", "", false, "0")%></td>
+        <td><%= PageFlowUtil.generateDropDownTextLink("Drop Down Link", "#", "", false, "0", null)%></td>
         <td></td>
         <td></td>
     </tr>

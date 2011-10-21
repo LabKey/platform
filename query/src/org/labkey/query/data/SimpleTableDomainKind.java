@@ -25,6 +25,7 @@ import org.labkey.api.data.TableInfo;
 import org.labkey.api.exp.Lsid;
 import org.labkey.api.exp.XarContext;
 import org.labkey.api.exp.XarFormatException;
+import org.labkey.api.exp.api.ExperimentUrls;
 import org.labkey.api.exp.property.AbstractDomainKind;
 import org.labkey.api.exp.property.Domain;
 import org.labkey.api.exp.property.PropertyService;
@@ -38,6 +39,7 @@ import org.labkey.api.query.UserSchema;
 import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.AdminPermission;
 import org.labkey.api.util.GUID;
+import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.Pair;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.HttpView;
@@ -189,7 +191,7 @@ public class SimpleTableDomainKind extends AbstractDomainKind
     @Override
     public ActionURL urlEditDefinition(Domain domain)
     {
-        return domain.urlEditDefinition(true, true, true);
+        return PageFlowUtil.urlProvider(ExperimentUrls.class).getDomainEditorURL(domain.getContainer(), domain.getTypeURI(), true, true, true);
     }
 
     @Override

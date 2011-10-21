@@ -16,33 +16,20 @@
 
 package org.labkey.study;
 
-import org.labkey.api.data.Container;
-import org.labkey.api.exp.list.ListService;
+import org.jetbrains.annotations.NotNull;
 import org.labkey.api.module.DefaultFolderType;
 import org.labkey.api.module.Module;
 import org.labkey.api.module.ModuleLoader;
-import org.labkey.api.portal.ProjectUrls;
-import org.labkey.api.security.User;
-import org.labkey.api.security.permissions.AdminPermission;
-import org.labkey.api.settings.AppProps;
 import org.labkey.api.study.Study;
-import org.labkey.api.study.StudyService;
-import org.labkey.api.study.assay.AssayUrls;
 import org.labkey.api.util.HelpTopic;
-import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.NavTree;
 import org.labkey.api.view.ViewContext;
 import org.labkey.api.view.template.AppBar;
 import org.labkey.api.view.template.PageConfig;
-import org.labkey.study.controllers.StudyController;
-import org.labkey.study.controllers.reports.ReportsController;
 import org.labkey.study.model.StudyManager;
 
-import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Collections;
-import java.util.List;
 import java.util.Set;
 
 /**
@@ -77,7 +64,7 @@ public class StudyFolderType extends DefaultFolderType
         return study == null ? "New Study" : study.getLabel();
     }
 
-    @Override
+    @Override @NotNull
     public AppBar getAppBar(ViewContext context, PageConfig pageConfig)
     {
         ActionURL startURL = getStartURL(context.getContainer(), context.getUser());

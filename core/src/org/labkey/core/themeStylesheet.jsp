@@ -88,7 +88,7 @@ a, a:visited, .labkey-link, .labkey-link:visited
 
 table#header
 {
-    border-bottom: 10px solid #<%= link %>;
+    border-color: #<%= link %>;
 }
 
 /* General */
@@ -337,6 +337,7 @@ td.labkey-site-nav-panel
 td.labkey-main-menu
 {
     background-color: #<%= grid %>;
+    border-color: #<%= link %>;
 }
 
 td.labkey-main-menu a.selected
