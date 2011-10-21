@@ -31,13 +31,29 @@ CREATE TABLE pipeline.StatusFiles
 
      RowId SERIAL,
      Status VARCHAR(100),
-     Info VARCHAR(255),
-     FilePath VARCHAR(500),
+     Info VARCHAR(1024),
+     FilePath VARCHAR(1024),
      Email VARCHAR(255),
 
-     CONSTRAINT PK_StatusFiles PRIMARY KEY (RowId)
-);
+    Description VARCHAR(255),
+    DataUrl VARCHAR(1024),
+    Job VARCHAR(36),
+    Provider VARCHAR(255),
 
+    HadError BOOLEAN NOT NULL DEFAULT FALSE,
+    JobParent VARCHAR(36),
+    JobStore TEXT,
+    ActiveTaskId VARCHAR(255),
+
+    CONSTRAINT PK_StatusFiles PRIMARY KEY (RowId),
+    CONSTRAINT FK_StatusFiles_Container FOREIGN KEY (Container) REFERENCES core.Containers (EntityId),
+    CONSTRAINT UQ_StatusFiles_FilePath UNIQUE (FilePath),
+    CONSTRAINT UQ_StatusFiles_Job UNIQUE (Job),
+    CONSTRAINT FK_StatusFiles_JobParent FOREIGN KEY (JobParent) REFERENCES pipeline.StatusFiles(Job)
+);
+CREATE INDEX IX_StatusFiles_Container ON pipeline.StatusFiles(Container);
+CREATE INDEX IX_StatusFiles_Job ON pipeline.StatusFiles (Job);
+CREATE INDEX IX_StatusFiles_JobParent ON pipeline.StatusFiles (JobParent);
 
 CREATE TABLE pipeline.PipelineRoots
 (
@@ -54,59 +70,11 @@ CREATE TABLE pipeline.PipelineRoots
     Path VARCHAR(300) NOT NULL,
     Providers VARCHAR(100),
 
+    KeyBytes BYTEA,
+    CertBytes BYTEA,
+    KeyPassword VARCHAR(32),
+    Type VARCHAR(255) NOT NULL DEFAULT 'PRIMARY',
+    PerlPipeline BOOLEAN NOT NULL DEFAULT FALSE,
+
     CONSTRAINT PK_PipelineRoots PRIMARY KEY (PipelineRootId)
 );
-
-ALTER TABLE pipeline.StatusFiles
-    ADD Description VARCHAR(255),
-    ADD DataUrl VARCHAR(255),
-    ADD Job VARCHAR(36),
-    ADD Provider VARCHAR(255);
-
-ALTER TABLE pipeline.PipelineRoots
-    ADD Type VARCHAR(255) NOT NULL DEFAULT 'PRIMARY';
-
-ALTER TABLE pipeline.StatusFiles
-    ADD HadError boolean;
-
-ALTER TABLE pipeline.StatusFiles
-    DROP COLUMN HadError;
-
-ALTER TABLE pipeline.StatusFiles
-    ADD HadError boolean NOT NULL DEFAULT FALSE;
-
-ALTER TABLE pipeline.StatusFiles
-    ADD CONSTRAINT FK_StatusFiles_Container FOREIGN KEY (Container) REFERENCES core.Containers (EntityId);
-
-ALTER TABLE pipeline.StatusFiles
-    ALTER FilePath TYPE VARCHAR(1024);
-ALTER TABLE pipeline.StatusFiles
-    ALTER Info TYPE VARCHAR(1024);
-ALTER TABLE pipeline.StatusFiles
-    ALTER DataUrl TYPE VARCHAR(1024);
-
-CREATE INDEX IX_StatusFiles_Container ON pipeline.StatusFiles(Container);
-
-ALTER TABLE pipeline.StatusFiles ADD COLUMN JobParent VARCHAR(36);
-ALTER TABLE pipeline.StatusFiles ADD COLUMN JobStore TEXT;
-
-ALTER TABLE pipeline.PipelineRoots ADD COLUMN KeyBytes BYTEA;
-ALTER TABLE pipeline.PipelineRoots ADD COLUMN CertBytes BYTEA;
-ALTER TABLE pipeline.PipelineRoots ADD COLUMN KeyPassword VARCHAR(32);
-
-ALTER TABLE pipeline.PipelineRoots ADD COLUMN PerlPipeline boolean NOT NULL DEFAULT FALSE;
-
-ALTER TABLE pipeline.StatusFiles ADD COLUMN ActiveTaskId VARCHAR(255);
-
-ALTER TABLE pipeline.StatusFiles ADD CONSTRAINT UQ_StatusFiles_FilePath UNIQUE (FilePath);
-
-CREATE INDEX IX_StatusFiles_Job ON pipeline.StatusFiles (Job);
-
-CREATE INDEX IX_StatusFiles_JobParent ON pipeline.StatusFiles (JobParent);
-
-/* pipeline-8.30-9.10.sql */
-
-ALTER TABLE pipeline.StatusFiles ADD CONSTRAINT UQ_StatusFiles_Job UNIQUE (Job);
-
-ALTER TABLE pipeline.StatusFiles
-    ADD CONSTRAINT FK_StatusFiles_JobParent FOREIGN KEY (JobParent) REFERENCES pipeline.StatusFiles(Job);

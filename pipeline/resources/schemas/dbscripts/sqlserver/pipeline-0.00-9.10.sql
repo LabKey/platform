@@ -16,8 +16,7 @@
 
 /* pipeline-0.00-8.30.sql */
 
-EXEC sp_addapprole 'pipeline', 'password'
-GO
+EXEC sp_addapprole 'pipeline', 'password';
 
 CREATE TABLE pipeline.StatusFiles
 (
@@ -32,11 +31,29 @@ CREATE TABLE pipeline.StatusFiles
 
     RowId INT IDENTITY(1,1) NOT NULL,
     Status NVARCHAR(100),
-    Info NVARCHAR(255),
-    FilePath NVARCHAR(500),
-    Email NVARCHAR(255)
-)
-GO
+    Info NVARCHAR(1024),
+    FilePath NVARCHAR(1024),
+    Email NVARCHAR(255),
+
+    Description NVARCHAR(255),
+    DataUrl NVARCHAR(1024),
+    Job UNIQUEIDENTIFIER,
+    Provider NVARCHAR(255),
+    HadError BIT NOT NULL DEFAULT 0,
+
+    JobParent UNIQUEIDENTIFIER,
+    JobStore NTEXT,
+    ActiveTaskId NVARCHAR(255),
+
+    CONSTRAINT FK_StatusFiles_Container FOREIGN KEY (Container) REFERENCES core.Containers (EntityId),
+    CONSTRAINT UQ_StatusFiles_FilePath UNIQUE (FilePath),
+    CONSTRAINT PK_StatusFiles PRIMARY KEY NONCLUSTERED (RowId),  -- Clustered on Container below
+    CONSTRAINT UQ_StatusFiles_Job UNIQUE (Job),
+    CONSTRAINT FK_StatusFiles_JobParent FOREIGN KEY (JobParent) REFERENCES pipeline.StatusFiles(Job)
+);
+CREATE INDEX IX_StatusFiles_Job ON pipeline.StatusFiles (Job);
+CREATE INDEX IX_StatusFiles_JobParent ON pipeline.StatusFiles (JobParent);
+CREATE CLUSTERED INDEX IX_StatusFiles_Container ON pipeline.StatusFiles(Container);
 
 CREATE TABLE pipeline.PipelineRoots
 (
@@ -52,77 +69,12 @@ CREATE TABLE pipeline.PipelineRoots
     PipelineRootId INT IDENTITY(1,1) NOT NULL,
     Path  NVARCHAR(300) NOT NULL,
     Providers VARCHAR(100),
+    Type NVARCHAR(255) NOT NULL DEFAULT 'PRIMARY',
 
-    CONSTRAINT PK_PipelineRoots PRIMARY KEY (PipelineRootId)
-)
-GO
-
-ALTER TABLE pipeline.StatusFiles ADD
-    Description NVARCHAR(255),
-    DataUrl NVARCHAR(255),
-    Job UNIQUEIDENTIFIER,
-    Provider NVARCHAR(255)
-GO
-
-ALTER TABLE pipeline.PipelineRoots ADD
-    Type NVARCHAR(255) NOT NULL DEFAULT 'PRIMARY'
-GO
-
-ALTER TABLE pipeline.StatusFiles ADD
-    HadError BIT NOT NULL DEFAULT 0
-GO
-
-ALTER TABLE pipeline.StatusFiles
-    ADD CONSTRAINT FK_StatusFiles_Container FOREIGN KEY (Container) REFERENCES core.Containers (EntityId)
-GO
-
-ALTER TABLE pipeline.StatusFiles
-    ALTER COLUMN FilePath VARCHAR(1024)
-ALTER TABLE pipeline.StatusFiles
-    ALTER COLUMN Info VARCHAR(1024)
-ALTER TABLE pipeline.StatusFiles
-    ALTER COLUMN DataUrl VARCHAR(1024)
-GO
-
-ALTER TABLE pipeline.StatusFiles ADD
-    JobParent UNIQUEIDENTIFIER,
-    JobStore NTEXT
-GO
-
-ALTER TABLE pipeline.PipelineRoots ADD
     KeyBytes IMAGE,
     CertBytes IMAGE,
-    KeyPassword NVARCHAR(32)
-GO
+    KeyPassword NVARCHAR(32),
+    PerlPipeline BIT NOT NULL DEFAULT 0,
 
-ALTER TABLE pipeline.PipelineRoots ADD
-    PerlPipeline BIT NOT NULL DEFAULT 0
-GO
-
-ALTER TABLE pipeline.StatusFiles ADD
-    ActiveTaskId NVARCHAR(255)
-GO
-
-ALTER TABLE pipeline.StatusFiles ADD CONSTRAINT UQ_StatusFiles_FilePath UNIQUE (FilePath)
-GO
-
-CREATE INDEX IX_StatusFiles_Job ON pipeline.StatusFiles (Job)
-GO
-
-CREATE INDEX IX_StatusFiles_JobParent ON pipeline.StatusFiles (JobParent)
-GO
-
-CREATE CLUSTERED INDEX IX_StatusFiles_Container ON pipeline.StatusFiles(Container)
-GO
-
-ALTER TABLE pipeline.StatusFiles ADD CONSTRAINT pk_statusfiles PRIMARY KEY (RowId)
-GO
-
-/* pipeline-8.30-9.10.sql */
-
-ALTER TABLE pipeline.StatusFiles ADD CONSTRAINT UQ_StatusFiles_Job UNIQUE (Job)
-GO
-
-ALTER TABLE pipeline.StatusFiles
-    ADD CONSTRAINT FK_StatusFiles_JobParent FOREIGN KEY (JobParent) REFERENCES pipeline.StatusFiles(Job)
-GO
+    CONSTRAINT PK_PipelineRoots PRIMARY KEY (PipelineRootId)
+);

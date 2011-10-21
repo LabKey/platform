@@ -15,8 +15,8 @@
  */
 
 -- Table used by Demo module
-EXEC sp_addapprole 'demo', 'password'
-GO
+EXEC sp_addapprole 'demo', 'password';
+
 CREATE TABLE demo.Person
 (
     -- standard fields
@@ -35,5 +35,4 @@ CREATE TABLE demo.Person
     Age INT NULL,
 
     CONSTRAINT PK_Person PRIMARY KEY (RowId)
-)
-GO
+);

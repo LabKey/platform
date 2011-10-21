@@ -14,10 +14,7 @@
  * limitations under the License.
  */
 
-/* search-0.00-0.03.sql */
-
 CREATE SCHEMA search;
-
 
 CREATE TABLE search.CrawlCollections
 (
@@ -35,7 +32,6 @@ CREATE TABLE search.CrawlCollections
     CONSTRAINT AK_Unique UNIQUE (Parent, Name)
 );
 CREATE INDEX IDX_NextCrawl ON search.CrawlCollections(NextCrawl);
-
 
 CREATE TABLE search.CrawlResources
 (

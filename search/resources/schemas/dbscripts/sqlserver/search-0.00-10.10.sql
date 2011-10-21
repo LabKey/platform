@@ -14,54 +14,43 @@
  * limitations under the License.
  */
 
-/* search-0.00-0.03.sql */
-
-EXEC sp_addapprole 'search', 'password'
-GO
-
+EXEC sp_addapprole 'search', 'password';
 
 CREATE TABLE search.CrawlCollections
 (
-  id INT IDENTITY(1,1),
+    id INT IDENTITY(1,1),
 
-  Parent INT,
-  Name NVARCHAR(448) NOT NULL,
-  Path NVARCHAR(2000) NOT NULL,
-  csPath AS CHECKSUM(Path),
+    Parent INT,
+    Name NVARCHAR(448) NOT NULL,
+    Path NVARCHAR(2000) NOT NULL,
+    csPath AS CHECKSUM(Path),
 
-  Modified DATETIME NULL,
-  LastCrawled DATETIME NULL,
-  ChangeInterval INT NULL DEFAULT 1000*60*60*24,
-  NextCrawl DATETIME NOT NULL DEFAULT CAST('1967-10-04' as DATETIME),
+    Modified DATETIME NULL,
+    LastCrawled DATETIME NULL,
+    ChangeInterval INT NULL DEFAULT 1000*60*60*24,
+    NextCrawl DATETIME NOT NULL DEFAULT CAST('1967-10-04' as DATETIME),
 
-  -- NOTE: Path is too long to use for primary key
-  CONSTRAINT PK_Collections PRIMARY KEY (id),
-  CONSTRAINT AK_Unique UNIQUE (Parent, Name)
-)
-GO
+    -- NOTE: Path is too long to use for primary key
+    CONSTRAINT PK_Collections PRIMARY KEY (id),
+    CONSTRAINT AK_Unique UNIQUE (Parent, Name)
+);
 CREATE INDEX IDX_PathHash ON search.CrawlCollections(csPath);
 CREATE INDEX IDX_NextCrawl ON search.CrawlCollections(NextCrawl);
-GO
-
 
 CREATE TABLE search.CrawlResources
 (
-  Parent INT,
-  Name NVARCHAR(448) NOT NULL,
+    Parent INT,
+    Name NVARCHAR(448) NOT NULL,
 
-  Modified DATETIME NULL,    -- filesystem time
-  LastIndexed DATETIME NULL,  -- server time
-  CONSTRAINT PK_Resources PRIMARY KEY (Parent,Name)
+    Modified DATETIME NULL,    -- filesystem time
+    LastIndexed DATETIME NULL,  -- server time
+    CONSTRAINT PK_Resources PRIMARY KEY (Parent,Name)
 );
-GO
-
-/* search-0.03-0.04.sql */
 
 CREATE TABLE search.ParticipantIndex
 (
-  Container ENTITYID NOT NULL,          -- see core.containers
-  ParticipantId NVARCHAR(32) NOT NULL,   -- see study.participantvisit
-  LastIndexed DATETIME NOT NULL,
-  CONSTRAINT PK_ParticipantIndex PRIMARY KEY (Container,ParticipantId)
-)
-GO
+    Container ENTITYID NOT NULL,          -- see core.containers
+    ParticipantId NVARCHAR(32) NOT NULL,   -- see study.participantvisit
+    LastIndexed DATETIME NOT NULL,
+    CONSTRAINT PK_ParticipantIndex PRIMARY KEY (Container,ParticipantId)
+);

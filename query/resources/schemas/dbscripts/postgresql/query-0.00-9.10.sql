@@ -28,7 +28,7 @@ CREATE TABLE query.QueryDef
     ModifiedBy INT NULL,
 
     Container ENTITYID NOT NULL,
-    Name VARCHAR(50) NOT NULL,
+    Name VARCHAR(200) NOT NULL,
     Schema VARCHAR(50) NOT NULL,
     Sql TEXT,
     MetaData TEXT,
@@ -48,10 +48,10 @@ CREATE TABLE query.CustomView
     Modified TIMESTAMP NULL,
     ModifiedBy INT NULL,
     Schema VARCHAR(50) NOT NULL,
-    QueryName VARCHAR(50) NOT NULL,
+    QueryName VARCHAR(200) NOT NULL,
 
     Container ENTITYID NOT NULL,
-    Name VARCHAR(50) NULL,
+    Name VARCHAR(200) NULL,
     CustomViewOwner INT NULL,
     Columns TEXT,
     Filter TEXT,
@@ -71,17 +71,15 @@ CREATE TABLE query.DbUserSchema
 
     Container ENTITYID NOT NULL,
     UserSchemaName VARCHAR(50) NOT NULL,
-    DbSchemaName VARCHAR(50) NULL,
+    DbSchemaName VARCHAR(50) NOT NULL,
     DbContainer ENTITYID NULL,
+
+    Editable BOOLEAN NOT NULL DEFAULT '0',
+    MetaData TEXT NULL,
 
     CONSTRAINT PK_DbUserSchema PRIMARY KEY(DbUserSchemaId),
     CONSTRAINT UQ_DbUserSchema UNIQUE(Container, UserSchemaName)
 );
-
-ALTER TABLE query.dbuserschema ADD COLUMN editable BOOLEAN NOT NULL DEFAULT '0';
-ALTER TABLE query.dbuserschema ADD COLUMN metadata TEXT NULL;
-ALTER TABLE query.customview ALTER COLUMN queryname TYPE VARCHAR(200);
-ALTER TABLE query.dbuserschema ALTER COLUMN dbschemaname SET NOT NULL;
 
 CREATE TABLE query.QuerySnapshotDef
 (
@@ -95,23 +93,14 @@ CREATE TABLE query.QuerySnapshotDef
     ModifiedBy INT NULL,
     Container ENTITYID NOT NULL,
     Schema VARCHAR(50) NOT NULL,
-    Name VARCHAR(50) NOT NULL,
+    Name VARCHAR(200) NOT NULL,
     Columns TEXT,
     Filter TEXT,
+    LastUpdated TIMESTAMP NULL,
+    NextUpdate TIMESTAMP NULL,
+    UpdateDelay INT DEFAULT 0,
+    QueryTableName VARCHAR(200) NULL,
 
     CONSTRAINT PK_RowId PRIMARY KEY (RowId),
     CONSTRAINT FK_QuerySnapshotDef_QueryDefId FOREIGN KEY (QueryDefId) REFERENCES query.QueryDef (QueryDefId)
 );
-
-ALTER TABLE query.QueryDef ALTER COLUMN Name TYPE VARCHAR(200);
-ALTER TABLE query.QuerySnapshotDef ALTER COLUMN Name TYPE VARCHAR(200);
-ALTER TABLE query.QuerySnapshotDef ADD COLUMN LastUpdated TIMESTAMP NULL;
-ALTER TABLE query.QuerySnapshotDef ADD COLUMN NextUpdate TIMESTAMP NULL;
-ALTER TABLE query.QuerySnapshotDef ADD COLUMN UpdateDelay INT DEFAULT 0;
-ALTER TABLE query.QuerySnapshotDef ADD COLUMN ViewName VARCHAR(50) NULL;
-ALTER TABLE query.QuerySnapshotDef ADD COLUMN QueryTableName VARCHAR(200) NULL;
-ALTER TABLE query.QuerySnapshotDef DROP COLUMN ViewName;
-
-/* query-8.30-9.10.sql */
-
-ALTER TABLE query.customview ALTER COLUMN name TYPE VARCHAR(200);

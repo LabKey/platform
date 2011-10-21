@@ -14,9 +14,20 @@
  * limitations under the License.
  */
 
-/* mothership-0.00-2.10.sql */
-
 CREATE SCHEMA mothership;
+
+CREATE TABLE mothership.SoftwareRelease
+(
+    SoftwareReleaseId SERIAL,
+    SVNRevision INT NULL,
+    Description VARCHAR(50) NOT NULL,
+    Container ENTITYID NOT NULL,
+    SVNURL VARCHAR(200),
+
+    CONSTRAINT PK_SoftwareRelease PRIMARY KEY (SoftwareReleaseId),
+    CONSTRAINT UQ_SoftwareRelease UNIQUE (Container, SVNRevision, SVNURL),
+    CONSTRAINT FK_SoftwareRelease_Container FOREIGN KEY (Container) REFERENCES core.containers(EntityId)
+);
 
 CREATE TABLE mothership.ExceptionStackTrace
 (
@@ -26,13 +37,13 @@ CREATE TABLE mothership.ExceptionStackTrace
     StackTraceHash VARCHAR(50) NOT NULL,
     AssignedTo USERID,
     BugNumber INT,
+    Comments TEXT,
 
     CONSTRAINT PK_ExceptionStackTrace PRIMARY KEY (ExceptionStackTraceId),
-    CONSTRAINT UQ_ExceptionStackTraceId_StackTraceHashContainer UNIQUE (StackTraceHash, Container),
     CONSTRAINT FK_ExceptionStackTrace_Container FOREIGN KEY (Container) REFERENCES core.Containers(EntityId),
     CONSTRAINT FK_ExceptionStackTrace_AssignedTo FOREIGN KEY (AssignedTo) REFERENCES core.Usersdata(UserId)
 );
-
+CREATE INDEX IX_ExceptionStackTrace_Container ON mothership.ExceptionStackTrace(container);
 
 CREATE TABLE mothership.ServerInstallation
 (
@@ -45,11 +56,13 @@ CREATE TABLE mothership.ServerInstallation
     OrganizationName VARCHAR(200),
     SystemShortName VARCHAR(200),
     ServerIP VARCHAR(20),
+    ServerHostName VARCHAR(256),
 
     CONSTRAINT PK_ServerInstallation PRIMARY KEY (ServerInstallationId),
     CONSTRAINT UQ_ServerInstallation_ServerInstallationGUID UNIQUE (ServerInstallationGUID),
     CONSTRAINT FK_ServerInstallation_Container FOREIGN KEY (Container) REFERENCES core.Containers(EntityId)
 );
+CREATE INDEX IX_ServerInstallation_Container ON mothership.ServerInstallation(container);
 
 CREATE TABLE mothership.ServerSession
 (
@@ -64,13 +77,24 @@ CREATE TABLE mothership.ServerSession
     DatabaseDriverName VARCHAR(200),
     DatabaseDriverVersion VARCHAR(200),
     RuntimeOS VARCHAR(100),
-    SVNRevision INT,
+
+    JavaVersion VARCHAR(100),
+    UserCount INT,
+    ActiveUserCount INT,
+    ProjectCount INT,
+    ContainerCount INT,
+    AdministratorEmail VARCHAR(100),
+    EnterprisePipelineEnabled BOOLEAN,
+    LDAPEnabled BOOLEAN,
+    SoftwareReleaseId INT NOT NULL,
 
     CONSTRAINT PK_ServerSession PRIMARY KEY (ServerSessionId),
     CONSTRAINT UQ_ServerSession_ServerSessionGUID UNIQUE (ServerSessionGUID),
     CONSTRAINT FK_ServerSession_ServerInstallation FOREIGN KEY (ServerInstallationId) REFERENCES mothership.ServerInstallation(ServerInstallationId),
-    CONSTRAINT FK_ServerSession_Container FOREIGN KEY (Container) REFERENCES core.Containers(EntityId)
+    CONSTRAINT FK_ServerSession_Container FOREIGN KEY (Container) REFERENCES core.Containers(EntityId),
+    CONSTRAINT FK_ServerSession_SoftwareRelease FOREIGN KEY (SoftwareReleaseId) REFERENCES mothership.SoftwareRelease(SoftwareReleaseId)
 );
+CREATE INDEX IX_ServerSession_ServerInstallationId ON mothership.serversession(serverinstallationid);
 
 CREATE TABLE mothership.ExceptionReport
 (
@@ -82,84 +106,14 @@ CREATE TABLE mothership.ExceptionReport
     Username VARCHAR(50),
     Browser VARCHAR(100),
 
+    ReferrerURL VARCHAR(512),
+    PageflowName VARCHAR(30),
+    PageflowAction VARCHAR(40),
+    SQLState VARCHAR(100),
+
     CONSTRAINT PK_ExceptionReport PRIMARY KEY (ExceptionReportId),
     CONSTRAINT FK_ExceptionReport_ExceptionStackTrace FOREIGN KEY (ExceptionStackTraceId) REFERENCES mothership.ExceptionStackTrace(ExceptionStackTraceId),
     CONSTRAINT FK_ExceptionReport_ServerSessionId FOREIGN KEY (ServerSessionId) REFERENCES mothership.ServerSession(ServerSessionId)
 );
-
-
-ALTER TABLE mothership.ExceptionReport ADD COLUMN ReferrerURL VARCHAR(512);
-ALTER TABLE mothership.ServerInstallation ADD COLUMN ServerHostName VARCHAR(256);
-ALTER TABLE mothership.ExceptionStackTrace ADD COLUMN Comments TEXT;
-
-CREATE TABLE mothership.SoftwareRelease
-(
-    ReleaseId SERIAL NOT NULL,
-    SVNRevision INT NOT NULL,
-    Description VARCHAR(50) NOT NULL,
-    Container ENTITYID NOT NULL,
-
-    CONSTRAINT PK_SoftwareRelease PRIMARY KEY (ReleaseId),
-    CONSTRAINT UQ_SoftwareRelease UNIQUE (Container, SVNRevision)
-);
-
-ALTER TABLE mothership.ExceptionReport ADD COLUMN PageflowName VARCHAR(30);
-ALTER TABLE mothership.ExceptionReport ADD COLUMN PageflowAction VARCHAR(40);
-
-CREATE INDEX IX_ServerSession_ServerInstallationId ON mothership.serversession(serverinstallationid);
 CREATE INDEX IX_ExceptionReport_ExceptionStackTraceId ON mothership.exceptionreport(exceptionstacktraceid);
 CREATE INDEX IX_ExceptionReport_ServerSessionId ON mothership.exceptionreport(serversessionid);
-
-CREATE INDEX IX_ServerInstallation_Container ON mothership.ServerInstallation(container);
-CREATE INDEX IX_ExceptionStackTrace_Container ON mothership.ExceptionStackTrace(container);
-
-/* mothership-2.10-2.20.sql */
-
-ALTER TABLE mothership.ExceptionStackTrace DROP CONSTRAINT uq_exceptionstacktraceid_stacktracehashcontainer;
-
-/* mothership-2.20-2.30.sql */
-
-ALTER TABLE mothership.ServerSession ADD JavaVersion VARCHAR(100);
-ALTER TABLE mothership.ServerSession ADD UserCount INT;
-ALTER TABLE mothership.ServerSession ADD ActiveUserCount INT;
-ALTER TABLE mothership.ServerSession ADD ProjectCount INT;
-ALTER TABLE mothership.ServerSession ADD ContainerCount INT;
-ALTER TABLE mothership.ServerSession ADD AdministratorEmail VARCHAR(100);
-
-/* mothership-2.30-8.10.sql */
-
-ALTER TABLE mothership.ServerSession ADD EnterprisePipelineEnabled BOOLEAN;
-
-ALTER TABLE mothership.ServerSession ADD LDAPEnabled BOOLEAN;
-
-ALTER TABLE mothership.ExceptionReport ADD SQLState VARCHAR(100);
-
-/* mothership-8.30-9.10.sql */
-
--- Migrate from using just the SVN revision to tracking the revision and URL.
-ALTER TABLE mothership.softwarerelease ADD CONSTRAINT FK_SoftwareRelease_Container
-    FOREIGN KEY (Container) REFERENCES core.containers(EntityId);
-
--- Handle null revisions, which happens when building from a source distribution instead of SVN
-ALTER TABLE mothership.SoftwareRelease ALTER COLUMN SVNRevision DROP NOT NULL;
-
-INSERT INTO mothership.SoftwareRelease (Container, SVNRevision, Description)
-    SELECT Container, NULL as Revision, 'NotSVN' as Description FROM mothership.ServerSession LIMIT 1;
-
--- Change the PK
-ALTER TABLE mothership.ServerSession ADD SoftwareReleaseId INT;
-ALTER TABLE mothership.SoftwareRelease ADD SoftwareReleaseId SERIAL;
-ALTER TABLE mothership.SoftwareRelease DROP COLUMN ReleaseId;
-ALTER TABLE mothership.SoftwareRelease ADD CONSTRAINT pk_softwarerelease PRIMARY KEY (SoftwareReleaseId);
-
-ALTER TABLE mothership.ServerSession ALTER COLUMN SoftwareReleaseId SET NOT NULL;
-
-ALTER TABLE mothership.SoftwareRelease ADD SVNURL VARCHAR(200);
-
-ALTER TABLE mothership.SoftwareRelease DROP CONSTRAINT uq_softwarerelease;
-ALTER TABLE mothership.SoftwareRelease ADD CONSTRAINT uq_softwarerelease UNIQUE (container, svnrevision, svnurl);
-
-ALTER TABLE mothership.ServerSession DROP COLUMN SVNRevision;
-
-ALTER TABLE mothership.serversession ADD CONSTRAINT FK_ServerSession_SoftwareRelease FOREIGN KEY (SoftwareReleaseId)
-    REFERENCES mothership.SoftwareRelease(SoftwareReleaseId);

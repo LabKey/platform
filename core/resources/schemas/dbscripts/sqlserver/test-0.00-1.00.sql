@@ -14,8 +14,7 @@
  * limitations under the License.
  */
 
-EXEC sp_addapprole 'test', 'password'
-GO
+EXEC sp_addapprole 'test', 'password';
 
 CREATE TABLE test.TestTable
 (
@@ -37,5 +36,4 @@ CREATE TABLE test.TestTable
     BitNotNull Bit NOT NULL,
 
     CONSTRAINT PK_TestTable PRIMARY KEY (RowId)
-)
-GO
+);

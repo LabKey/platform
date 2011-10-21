@@ -31,7 +31,7 @@ import java.io.StringReader;
  */
 public class VisualizationUtil
 {
-    // Factor this out of controller so thumbnail generation can use it too.  Could move this (and batik) to DocumentConversionService
+    // Factor this out of controller so thumbnail generation can use it too.  Could move this to DocumentConversionService (and batik to core)
     public static void svgToPng(String svg, OutputStream os) throws TranscoderException
     {
         svgToPng(svg, os, null);

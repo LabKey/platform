@@ -16,8 +16,7 @@
 
 /* prop-0.00-1.00.sql */
 
-EXEC sp_addapprole 'prop', 'password'
-GO
+EXEC sp_addapprole 'prop', 'password';
 
 --
 -- NOTE: Bug in PropertyManager means NULL can't be passed for ObjectId, Category, etc. right now
@@ -37,8 +36,7 @@ CREATE TABLE prop.PropertySets
 
     CONSTRAINT PK_PropertySet PRIMARY KEY CLUSTERED ("Set"),
     CONSTRAINT UQ_PropertySet UNIQUE (ObjectId, UserId, Category)
-)
-
+);
 
 CREATE TABLE prop.Properties
 (
@@ -47,9 +45,8 @@ CREATE TABLE prop.Properties
     Value VARCHAR(2000) NOT NULL,
 
     CONSTRAINT PK_Properties PRIMARY KEY CLUSTERED ("Set", Name)
-)
+);
 GO
-
 
 CREATE PROCEDURE prop.Property_setValue(@Set INT, @Name VARCHAR(255), @Value VARCHAR(2000)) AS
     BEGIN
@@ -61,5 +58,4 @@ CREATE PROCEDURE prop.Property_setValue(@Set INT, @Name VARCHAR(255), @Value VAR
         IF (@@ROWCOUNT = 0)
             INSERT prop.Properties VALUES (@Set, @Name, @Value)
         END
-    END
-GO
+    END;

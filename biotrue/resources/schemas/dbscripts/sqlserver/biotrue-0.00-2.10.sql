@@ -13,8 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-EXEC sp_addapprole 'biotrue', 'password'
-GO
+EXEC sp_addapprole 'biotrue', 'password';
 
 CREATE TABLE biotrue.server
 (
@@ -33,7 +32,6 @@ CREATE TABLE biotrue.server
     CONSTRAINT PK_Server PRIMARY KEY(RowId),
     CONSTRAINT UQ_Server UNIQUE(Container, Name)
 );
-GO
 
 CREATE TABLE biotrue.entity
 (
@@ -48,7 +46,6 @@ CREATE TABLE biotrue.entity
     CONSTRAINT FK_Entity_Server FOREIGN KEY(ServerId) REFERENCES biotrue.Server(RowId),
     CONSTRAINT UQ_Entity_BioTrue_Parent_Id UNIQUE(ServerId, ParentId, BioTrue_Id)
 );
-GO
 
 CREATE TABLE biotrue.task
 (
@@ -59,8 +56,5 @@ CREATE TABLE biotrue.task
     Started DATETIME NULL,
     CONSTRAINT PK_Task PRIMARY KEY(RowId)
 );
-GO
-
 CREATE INDEX IX_Task_Server ON biotrue.task(ServerId, RowId);
 CREATE INDEX IX_Task_Entity ON biotrue.task(EntityId);
-GO

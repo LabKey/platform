@@ -78,7 +78,7 @@ class ScriptReorderer
         if (CoreSchema.getInstance().getSqlDialect().isSqlServer())
         {
             patterns.add(new SqlPattern(getRegExWithPrefix("CREATE TABLE "), Type.Table, RowEffect.None));
-            patterns.add(new SqlPattern("EXEC sp_rename (?:@objname\\s*=\\s*)?'" + TABLE_NAME_REGEX + ".*?'.+?" + STATEMENT_ENDING_REGEX, Type.Table, RowEffect.None));
+            patterns.add(new SqlPattern("(?:EXEC )?sp_rename (?:@objname\\s*=\\s*)?'" + TABLE_NAME_REGEX + ".*?'.+?" + STATEMENT_ENDING_REGEX, Type.Table, RowEffect.None));
             patterns.add(new SqlPattern("EXEC core\\.fn_dropifexists '(\\w+)', '(\\w+)'.+?" + STATEMENT_ENDING_REGEX, Type.Table, RowEffect.None));
 
             patterns.add(new SqlPattern("CREATE PROCEDURE .+?" + STATEMENT_ENDING_REGEX, Type.NonTable, RowEffect.None));
@@ -88,6 +88,9 @@ class ScriptReorderer
             patterns.add(new SqlPattern(getRegExWithPrefix("CREATE (?:TEMPORARY )?TABLE "), Type.Table, RowEffect.None));
             patterns.add(new SqlPattern("SELECT core\\.fn_dropifexists\\s*\\('(\\w+)', '(\\w+)'.+?" + STATEMENT_ENDING_REGEX, Type.Table, RowEffect.None));
             patterns.add(new SqlPattern("SELECT SETVAL\\('([a-zA-Z]+)\\.([a-zA-Z]+)_.+?" + STATEMENT_ENDING_REGEX, Type.Table, RowEffect.None));
+            patterns.add(new SqlPattern(getRegExWithPrefix("CLUSTER [a-zA-Z0-9_]+ ON "), Type.Table, RowEffect.None));   // e.g. CLUSTER PK_Keyword ON flow.Keyword
+            patterns.add(new SqlPattern(getRegExWithPrefix("CLUSTER "), Type.Table, RowEffect.None));
+            patterns.add(new SqlPattern(getRegExWithPrefix("ANALYZE "), Type.Table, RowEffect.None));
 
             patterns.add(new SqlPattern("CREATE FUNCTION .+? RETURNS \\w+ AS (.+?) (?:.+?) \\1 LANGUAGE plpgsql" + STATEMENT_ENDING_REGEX, Type.NonTable, RowEffect.None));
         }

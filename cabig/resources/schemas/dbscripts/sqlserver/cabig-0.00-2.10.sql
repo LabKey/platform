@@ -14,5 +14,4 @@
  * limitations under the License.
  */
 
-EXEC sp_addapprole 'cabig', 'password'
-GO
+EXEC sp_addapprole 'cabig', 'password';

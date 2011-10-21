@@ -28,7 +28,7 @@ CREATE TABLE query.QueryDef
     ModifiedBy INT NULL,
 
     Container UNIQUEIDENTIFIER NOT NULL,
-    Name NVARCHAR(50) NOT NULL,
+    Name NVARCHAR(200) NOT NULL,
     "Schema" NVARCHAR(50) NOT NULL,
     Sql NTEXT,
     MetaData NTEXT,
@@ -37,8 +37,7 @@ CREATE TABLE query.QueryDef
     Flags INT NOT NULL,
     CONSTRAINT PK_QueryDef PRIMARY KEY (QueryDefId),
     CONSTRAINT UQ_QueryDef UNIQUE (Container, "Schema", Name)
-)
-GO
+);
 
 CREATE TABLE query.CustomView
 (
@@ -49,18 +48,17 @@ CREATE TABLE query.CustomView
     Modified DATETIME NULL,
     ModifiedBy INT NULL,
     "Schema" NVARCHAR(50) NOT NULL,
-    QueryName NVARCHAR(50) NOT NULL,
+    QueryName NVARCHAR(200) NOT NULL,
 
     Container UNIQUEIDENTIFIER NOT NULL,
-    Name NVARCHAR(50) NULL,
+    Name NVARCHAR(200) NULL,
     CustomViewOwner INT NULL,
     Columns NTEXT,
     Filter NTEXT,
     Flags INT NOT NULL,
     CONSTRAINT PK_CustomView PRIMARY KEY (CustomViewId),
     CONSTRAINT UQ_CustomView UNIQUE (Container, "Schema", QueryName, CustomViewOwner, Name)
-)
-GO
+);
 
 CREATE TABLE query.DbUserSchema
 (
@@ -73,24 +71,14 @@ CREATE TABLE query.DbUserSchema
 
     Container UNIQUEIDENTIFIER NOT NULL,
     UserSchemaName NVARCHAR(50) NOT NULL,
-    DbSchemaName NVARCHAR(50) NULL,
+    DbSchemaName NVARCHAR(50) NOT NULL,
     DbContainer UNIQUEIDENTIFIER NULL,
+    Editable BIT DEFAULT 0,
+    MetaData NTEXT NULL,
 
     CONSTRAINT PK_DbUserSchema PRIMARY KEY(DbUserSchemaId),
     CONSTRAINT UQ_DbUserSchema UNIQUE(Container,UserSchemaName)
-)
-GO
-
-ALTER TABLE query.dbuserschema ADD
-    editable BIT DEFAULT 0,
-    metadata NTEXT NULL
-GO
-
-ALTER TABLE query.customview ALTER COLUMN queryname NVARCHAR(200)
-GO
-
-ALTER TABLE query.dbuserschema ALTER COLUMN dbschemaname NVARCHAR(50) NOT NULL
-GO
+);
 
 CREATE TABLE query.QuerySnapshotDef
 (
@@ -104,33 +92,14 @@ CREATE TABLE query.QuerySnapshotDef
     ModifiedBy INT NULL,
     Container ENTITYID NOT NULL,
     "Schema" NVARCHAR(50) NOT NULL,
-    Name NVARCHAR(50) NOT NULL,
+    Name NVARCHAR(200) NOT NULL,
     Columns TEXT,
     Filter TEXT,
+    LastUpdated DATETIME NULL,
+    NextUpdate DATETIME NULL,
+    UpdateDelay INT DEFAULT 0,
+    QueryTableName NVARCHAR(200) NULL,
 
     CONSTRAINT PK_RowId PRIMARY KEY (RowId),
     CONSTRAINT FK_QuerySnapshotDef_QueryDefId FOREIGN KEY (QueryDefId) REFERENCES query.QueryDef (QueryDefId)
 );
-GO
-
-ALTER TABLE query.QueryDef ALTER COLUMN Name NVARCHAR(200) NOT NULL
-GO
-ALTER TABLE query.QuerySnapshotDef ALTER COLUMN Name NVARCHAR(200) NOT NULL
-GO
-ALTER TABLE query.QuerySnapshotDef ADD LastUpdated DATETIME NULL
-GO
-ALTER TABLE query.QuerySnapshotDef ADD NextUpdate DATETIME NULL
-GO
-ALTER TABLE query.QuerySnapshotDef ADD UpdateDelay INT DEFAULT 0
-GO
-ALTER TABLE query.QuerySnapshotDef ADD ViewName NVARCHAR(50) NULL
-GO
-ALTER TABLE query.QuerySnapshotDef ADD QueryTableName NVARCHAR(200) NULL
-GO
-ALTER TABLE query.QuerySnapshotDef DROP COLUMN ViewName
-GO
-
-/* query-8.30-9.10.sql */
-
-ALTER TABLE query.customview ALTER COLUMN name NVARCHAR(200)
-GO
