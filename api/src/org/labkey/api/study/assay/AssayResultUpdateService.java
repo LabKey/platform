@@ -15,6 +15,7 @@
  */
 package org.labkey.api.study.assay;
 
+import org.apache.commons.beanutils.ConvertUtils;
 import org.apache.commons.lang.ObjectUtils;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
@@ -79,9 +80,18 @@ public class AssayResultUpdateService extends DefaultQueryUpdateService
                 Object newValue = entry.getValue();
 
                 TableInfo fkTableInfo = col.getFkTableInfo();
+                // Don't follow the lookup for specimen IDs, since their FK is very special and based on target study, etc
                 if (!ObjectUtils.equals(oldValue, newValue) && fkTableInfo != null && !AbstractAssayProvider.SPECIMENID_PROPERTY_NAME.equalsIgnoreCase(entry.getKey()))
                 {
-                    // Don't follow the lookup for specimen IDs, since their FK is very special and based on target study, etc
+                    // Do type conversion in case there's a mismatch in the lookup source and target columns
+                    if (newValue != null && !fkTableInfo.getPkColumns().get(0).getJavaClass().isAssignableFrom(newValue.getClass()))
+                    {
+                        newValue = ConvertUtils.convert(newValue.toString(), fkTableInfo.getPkColumns().get(0).getJavaClass());
+                    }
+                    if (oldValue != null && !fkTableInfo.getPkColumns().get(0).getJavaClass().isAssignableFrom(oldValue.getClass()))
+                    {
+                        oldValue = ConvertUtils.convert(oldValue.toString(), fkTableInfo.getPkColumns().get(0).getJavaClass());
+                    }
                     Map<String, Object> oldLookupTarget = Table.selectObject(fkTableInfo, oldValue, Map.class);
                     if (oldLookupTarget != null)
                     {
