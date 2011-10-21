@@ -128,6 +128,29 @@ input, select, .gwt-TextBox
 	font-size:10pt;
 }
 
+select:focus
+{
+    border-color: #E0E6EA; /*#b4b4b4;*/
+    border:  1px solid;
+}
+
+input:focus
+{
+    border-color: #E0E6EA; /*#b4b4b4;*/
+    border: 2px solid;
+}
+
+input[type="radio"], input[type="checkbox"]
+{
+    border: 2px inset;
+    border-color: transparent !important;
+}
+
+input.x-form-field:focus, textarea.x-form-field:focus
+{
+    border: 1px solid;
+}
+
 fieldset
 {
     border: 1px solid #b4b4b4;
@@ -1582,13 +1605,20 @@ td.labkey-main-nav
 table.labkey-main-search
 {
     height:16px; font-size:8pt;
-    border:solid 1px #a0a0a0;
     width: 216px;
     float: right;
 }
 
 table.labkey-main-search img {
-    width: 16px; height: 16px;
+    width: 16px;
+    height: 16px;
+    position: relative;
+    left : -20px;
+    *top : -3px;
+}
+
+table.labkey-main-search img:hover {
+    cursor: pointer;
 }
 
 .labkey-main-search td
@@ -1596,17 +1626,17 @@ table.labkey-main-search img {
     vertical-align:bottom;
     width: 200px;
 }
+
 .labkey-main-search input
 {
     height:16px; font-size:8pt;
-    border:0;
+    border:solid 1px #a0a0a0;
 }
 
 #headerSearchInput /* undo ie ext stuff */
 {
     margin:0; top:0;
     width: 200px;
-    padding; 0;
 }
 
 
