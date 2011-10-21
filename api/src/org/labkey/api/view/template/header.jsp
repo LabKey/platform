@@ -31,6 +31,7 @@
 <%@ page import="org.labkey.api.view.*" %>
 <%@ page import="org.labkey.api.view.template.PageConfig" %>
 <%@ page import="org.labkey.api.view.template.TemplateHeaderView" %>
+<%@ page import="org.labkey.api.search.SearchUrls" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
     TemplateHeaderView me = ((TemplateHeaderView) HttpView.currentView());
@@ -50,11 +51,17 @@
 %>
 <div id="headerDiv"><table id="headerNav" cellpadding="0" cellspacing="0" border=0 width="auto">
   <tr>
+      <td style="padding-right: 1em;">
+          <form id="headerSearchForm" action="<%=h(urlProvider(org.labkey.api.search.SearchUrls.class).getSearchURL(c, null).toHString())%>" method="GET" style="margin:0; <%=showSearchForm?"":"display:none;"%>">
+            <table cellspacing=0 cellpadding=0 class="labkey-main-search">
+              <tr>
+                <td><input id="headerSearchContainer" name="container" type="hidden" value=""><input id="headerSearchInput" name="q" type="text"></td>
+                <td><input type="image" src="<%=contextPath%>/_images/search.png" onclick="return submit_onClick();"></td>
+              </tr>
+            </table>
+          </form>
+      </td>
       <td valign="top" align="right" class="labkey-main-nav">
-          <% if (null != user && !user.isGuest())
-          { %>
-          <span id="header.user.friendlyName"><%=user.getFriendlyName()%></span>&nbsp;&nbsp;
-          <% } %>
       <%
           if (currentContext.hasPermission(AdminPermission.class) || ContainerManager.getRoot().hasPermission(user, AdminReadPermission.class))
           {
@@ -70,8 +77,8 @@
       <a href="<%= bean.pageConfig.getHelpTopic().getHelpTopicLink() %>" target="_new">Help<% if (AppProps.getInstance().isDevMode() && bean.pageConfig.getHelpTopic() == HelpTopic.DEFAULT_HELP_TOPIC) { %> (default)<% } %></a>
       <%
       if (null != user && !user.isGuest())
-      {
-          %> | <a href="<%=h(urlProvider(UserUrls.class).getUserDetailsURL(c, user.getUserId(), currentURL))%>">My&nbsp;Account</a>&nbsp;|&nbsp;<a href="<%=h(user.isImpersonated() ? urlProvider(LoginUrls.class).getStopImpersonatingURL(c, request) : urlProvider(LoginUrls.class).getLogoutURL(c))%>"><%=user.isImpersonated() ? "Stop&nbsp;Impersonating" : "Sign&nbsp;Out"%></a><br/><%
+      { %> | <%
+          include(new PopupUserView(currentContext), out);
       }
       else if (bean.pageConfig.shouldIncludeLoginLink())
       {
@@ -83,18 +90,6 @@
           %> | <a href="<%=h(urlProvider(LoginUrls.class).getLoginURL())%>">Sign&nbsp;In</a><%
       }
       %>
-    </td>
-  </tr>
-  <tr>
-    <td class="labkey-main-nav">
-      <form id="headerSearchForm" action="<%=h(new ActionURL("search","search",c).toHString())%>" method="GET" style="margin:0; <%=showSearchForm?"":"display:none;"%>">
-        <table cellspacing=0 cellpadding=0 class="labkey-main-search">
-          <tr>
-            <td><input id="headerSearchContainer" name="container" type="hidden" value=""><input id="headerSearchInput" name="q" type="text"></td>
-            <td><input type="image" src="<%=contextPath%>/_images/search.png" onclick="return submit_onClick();"></td>
-          </tr>
-        </table>
-      </form>
     </td>
   </tr>
 </table></div>

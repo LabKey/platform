@@ -56,7 +56,6 @@
     </tr>
 </table>
 </div>
-<%if(null != bean.getPageTitle()) {%>
 <table class="labkey-nav-trail">
     <%if (null != bean.getNavTrail() && bean.getNavTrail().size() > 0) {
         %>
@@ -71,12 +70,11 @@
     <%}%>
     <tr>
     <td class="labkey-nav-page-header-container">
-    <span class="labkey-nav-page-header" id="labkey-nav-trail-current-page" style="visibility:hidden"><%=h(bean.getPageTitle())%></span>
+        <span class="labkey-nav-page-header" id="labkey-nav-trail-current-page" style="visibility:hidden"><%=h(bean.getPageTitle())%></span>
     </td>
 </tr>
     </table>
 </div>
-<%}%>
 
 <script type="text/javascript">
     var resizeTask = new Ext.util.DelayedTask(function(){

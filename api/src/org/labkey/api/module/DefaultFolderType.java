@@ -16,6 +16,7 @@
 
 package org.labkey.api.module;
 
+import org.jetbrains.annotations.NotNull;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.RuntimeSQLException;
 import org.labkey.api.security.User;
@@ -284,6 +285,7 @@ public class DefaultFolderType implements FolderType
         addStandardManageLinks(adminNavTree, container);
     }
 
+    @NotNull
     public AppBar getAppBar(ViewContext context, PageConfig pageConfig)
     {
         ActionURL startURL = getStartURL(context.getContainer(), context.getUser());
@@ -291,7 +293,8 @@ public class DefaultFolderType implements FolderType
         String controllerName = context.getActionURL().getPageFlow();
         Module currentModule = ModuleLoader.getInstance().getModuleForController(controllerName);
         startPage.setSelected(currentModule == getDefaultModule());
-        return new AppBar(context.getContainer().getName(), startPage);
+        String title = context.getContainer().isWorkbook() ? context.getContainer().getTitle() : context.getContainer().getName();
+        return new AppBar(title, startPage);
     }
 
     public boolean isWorkbookType()

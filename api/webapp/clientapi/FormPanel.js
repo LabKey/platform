@@ -67,6 +67,12 @@ Ext.namespace("LABKEY","LABKEY.ext");
             }
         }
 
+        function cancelHandler()
+        {
+            // Replace with real handler code
+            Ext.MessageBox.alert("Cancelled", "The submission was cancelled.");
+        }
+
         var formPanel = new LABKEY.ext.FormPanel(
         {
             selectRowsResults:data,
@@ -448,8 +454,12 @@ LABKEY.ext.FormHelper =
         var config = {editable:true, required:false, ext:{}};
         for (var i=arguments.length-1 ; i>= 0 ; --i)
         {
-            var ext = Ext.apply(config.ext, arguments[i].ext);
-            Ext.apply(config, arguments[i]);
+            var ext = config.ext;
+            if (arguments[i])
+            {
+                ext = Ext.apply(ext, arguments[i].ext);
+                Ext.apply(config, arguments[i]);
+            }
             config.ext = ext;
         }
 

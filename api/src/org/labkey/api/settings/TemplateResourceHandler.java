@@ -49,7 +49,7 @@ public enum TemplateResourceHandler
 
         protected String getDefaultLink()
         {
-            return "/_images/defaultlogo.gif";
+            return "/_images/defaultlogo.png";
         }
 
         protected CacheableWriter getWriterForContainer(Container c) throws SQLException, IOException, ServletException

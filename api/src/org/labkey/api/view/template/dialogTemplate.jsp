@@ -43,7 +43,7 @@
 
     if (pageConfig.showHeader() != PageConfig.TrueFalse.False)
     { %>
-    <tr id="headerpanel" class="labkey-header-panel" height="56px">
+    <tr id="headerpanel" class="labkey-header-panel">
         <td><% me.include(me.getView("header"), out); %></td>
     </tr>
     <tr>

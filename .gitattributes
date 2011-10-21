@@ -1114,6 +1114,7 @@ api/src/org/labkey/api/view/PopupAdminView.java -text
 api/src/org/labkey/api/view/PopupDeveloperView.java -text
 api/src/org/labkey/api/view/PopupMenu.java -text
 api/src/org/labkey/api/view/PopupMenuView.java -text
+api/src/org/labkey/api/view/PopupUserView.java -text
 api/src/org/labkey/api/view/PopupWebpartView.java -text
 api/src/org/labkey/api/view/RequestBasicAuthException.java -text
 api/src/org/labkey/api/view/ServletView.java -text
@@ -4526,6 +4527,7 @@ internal/webapp/_images/configure.png -text
 internal/webapp/_images/customize-example.png -text
 internal/webapp/_images/db_commit.png -text
 internal/webapp/_images/defaultlogo.gif -text
+internal/webapp/_images/defaultlogo.png -text
 internal/webapp/_images/defaultlogosmall.gif -text
 internal/webapp/_images/delete.gif -text
 internal/webapp/_images/delete.png -text

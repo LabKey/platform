@@ -226,4 +226,10 @@ public class PropertyColumn extends LookupColumn
         else
             return super.getInputType();
     }
+
+    @Override
+    public Class getJavaClass()
+    {
+        return _pd.getPropertyType().getJavaType();
+    }
 }

@@ -16,6 +16,8 @@
 
 package org.labkey.api.module;
 
+import org.jetbrains.annotations.NotNull;
+import org.labkey.api.admin.AdminUrls;
 import org.labkey.api.data.Container;
 import org.labkey.api.portal.ProjectUrls;
 import org.labkey.api.security.User;
@@ -125,6 +127,7 @@ public interface FolderType
      */
     public void addManageLinks(NavTree adminNavTree, Container container);
 
+    @NotNull
     public AppBar getAppBar(ViewContext context, PageConfig pageConfig);
 
     /** @return whether this is intended to be used exclusively for workbooks */
@@ -174,6 +177,7 @@ public interface FolderType
             DefaultFolderType.addStandardManageLinks(adminNavTree, container);
         }
 
+        @NotNull
         public AppBar getAppBar(ViewContext context, PageConfig pageConfig)
         {
             List<NavTree> tabs = new ArrayList<NavTree>();
@@ -206,7 +210,11 @@ public interface FolderType
                     }
                 }
             }
-            
+            else if (context.getUser().isAdministrator())
+            {
+                tabs.add(new NavTree("Admin Console", PageFlowUtil.urlProvider(AdminUrls.class).getAdminConsoleURL()));
+            }
+
             return new AppBar(container.getName(), tabs);
         }
 
