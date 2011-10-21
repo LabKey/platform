@@ -489,6 +489,11 @@ public class ReportUtil
 
                     info.setPermissions(security);
 
+                    // This icon is the small icon -- not the same as thumbnail
+                    String iconPath = ReportService.get().getReportIcon(context, r.getType());
+                    if (!StringUtils.isEmpty(iconPath))
+                        info.setIcon(iconPath);
+
                     info.setThumbnailUrl(PageFlowUtil.urlProvider(ReportUrls.class).urlThumbnail(c, r));
 
                     views.add(info);

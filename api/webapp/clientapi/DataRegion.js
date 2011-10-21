@@ -1036,10 +1036,10 @@ LABKEY.DataRegion = Ext.extend(Ext.Component,
             this.headerSpacer.dom.style.display = "table-row";
             this.colHeaderRowSpacer.dom.style.display = "table-row";
             this.headerRow.applyStyles("top: 0; position: fixed; " +
-                    "min-width: " + tWidth + "px; z-index: 10000;");
+                    "min-width: " + tWidth + "px; z-index: 9000;"); // 13229
             this.headerRowContent.applyStyles("min-width: " + (tWidth-3) + "px; ");
             this.colHeaderRow.applyStyles("position: fixed; background: white; top: " + this.hdrCoord[3] + "px;" +
-                    "min-width: " + tWidth + "px; box-shadow: -2px 5px 5px #DCDCDC; z-index: 10000;");
+                    "min-width: " + tWidth + "px; box-shadow: -2px 5px 5px #DCDCDC; z-index: 9000;"); // 13229
             this.hdrLocked = true;
         }
         else if (this.hdrLocked && window.pageYOffset >= this.hdrCoord[2]) {
