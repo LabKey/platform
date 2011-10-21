@@ -724,6 +724,30 @@ public abstract class WebPartView<ModelBean> extends HttpView<ModelBean>
         return "WebPartView" + System.identityHashCode(this);
     }
 
+    // dumb method because labkey-announcement-title has huge padding which we need to avoid sometimes
+    public static void startTitleFrame(Writer out, String title, String href, String width, String className, int paddingTop)
+    {
+        try
+        {
+            out.write(
+                    "<table " + (null!=width?"width=\"" + width + "\"" : "") + ">" +
+                            "<tr>" +
+                            "<td class=\"labkey-announcement-title\" style=\"padding-top:" + paddingTop + ";\" align=left><span>");
+            if (null != href)
+                out.write("<a href=\"" + PageFlowUtil.filter(href) + "\">");
+            out.write(PageFlowUtil.filter(title));
+            if (null != href)
+                out.write("</a>");
+            out.write("</span></td></tr>");
+            out.write("<tr><td class=\"labkey-title-area-line\"></td></tr>");
+            out.write("<tr><td colspan=3 class=\"" + className + "\">");
+        }
+        catch (IOException x)
+        {
+            throw new RuntimeException(x);
+        }
+    }
+
     public static void startTitleFrame(Writer out, String title, String href, String width, String className)
     {
         try
