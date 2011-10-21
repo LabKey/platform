@@ -133,20 +133,27 @@
 
 
 <%!
+    int countSection = 0;
+
     void startReportSection(Writer out, String title, StudyManageReportsBean bean) throws Exception
     {
         if (!bean.getAdminView())
         {
-            WebPartView.startTitleFrame(out, title, null, "100%", null);
+            WebPartView.startTitleFrame(out, title, null, "100%", null, countSection==0?0:30);
             out.write("<table>");
         }
         else
         {
-            out.write("<tr width=\"100%\"><td colspan=\"7\" class=\"labkey-announcement-title\" align=left><span>");
-            out.write(h(title));
+            // labkey-announement-title has too much whitespace for first element
+            if (countSection==0)
+                out.write("<tr width=\"100%\"><td colspan=\"7\" class=\"labkey-announcement-title\" style=\"padding-top:0;\" align=left><span>");
+            else
+                out.write("<tr width=\"100%\"><td colspan=\"7\" class=\"labkey-announcement-title\" align=left><span>");
+            out.write(h(title) + " " + countSection);
             out.write("</span></td></tr>");
             out.write("<tr width=\"100%\"><td colspan=\"7\" class=\"labkey-title-area-line\"></td></tr>");
         }
+        countSection++;
     }
 
     void endReportSection(Writer out, StudyManageReportsBean bean) throws Exception

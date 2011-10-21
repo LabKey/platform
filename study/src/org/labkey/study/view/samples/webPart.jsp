@@ -50,7 +50,7 @@
 <%
     }
 %>
-    <% WebPartView.startTitleFrame(out, "Search", null, "100%", null); %>
+    <% WebPartView.startTitleFrame(out, "Search", null, "100%", null, 0); %>
 <a href="<%=h(new ActionURL(ShowSearchAction.class, c).addParameter("showVials", "false"))%>">Search For Specimens</a><br>
 <a href="<%=h(new ActionURL(ShowSearchAction.class, c).addParameter("showVials", "true"))%>">Search For Vials</a><br>
 <%
