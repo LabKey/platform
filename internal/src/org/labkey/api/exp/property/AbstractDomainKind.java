@@ -73,7 +73,7 @@ public abstract class AbstractDomainKind extends DomainKind
         if (domainURI == null)
             return null;
 
-        ActionURL ret = PageFlowUtil.urlProvider(ExperimentUrls.class).getDomainEditorURL(container, domainURI);
+        ActionURL ret = PageFlowUtil.urlProvider(ExperimentUrls.class).getDomainEditorURL(container, domainURI, false, false, false);
         ret.addParameter("createOrEdit", true);
         return ret;
     }

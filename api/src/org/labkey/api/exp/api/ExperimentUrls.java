@@ -55,9 +55,7 @@ public interface ExperimentUrls extends UrlProvider
 
     ActionURL getAddRunsToExperimentURL(Container container, ExpExperiment expExperiment);
 
-    ActionURL getDomainEditorURL(Container container, int domainId);
-
-    ActionURL getDomainEditorURL(Container container, String domainURI);
+    ActionURL getDomainEditorURL(Container container, String domainURI, boolean allowAttachmentProperties, boolean allowFileLinkProperties, boolean showDefaultValueSettings);
 
     ActionURL getShowFileURL(Container container, ExpData data, boolean inline);
 
