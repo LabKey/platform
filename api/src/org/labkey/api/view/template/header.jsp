@@ -56,7 +56,7 @@
             <table cellspacing=0 cellpadding=0 class="labkey-main-search">
               <tr>
                 <td><input id="headerSearchContainer" name="container" type="hidden" value=""><input id="headerSearchInput" name="q" type="text"></td>
-                <td><input type="image" src="<%=contextPath%>/_images/search.png" onclick="return submit_onClick();"></td>
+                <td><img src="<%=contextPath%>/_images/search.png" onclick="return submit_onClick();"></td>
               </tr>
             </table>
           </form>
@@ -146,6 +146,7 @@ function submit_onClick()
 {
     if (headerSearchField && headerSearchField.el.hasClass(headerSearchField.emptyClass) && headerSearchField.el.dom.value == headerSearchField.emptyText)
         headerSearchField.setRawValue('');
+    document.forms["headerSearchForm"].submit();
     return true;
 }
 Ext.onReady(function()
