@@ -2,167 +2,25 @@
 <script type="text/javascript">
 
     LABKEY.requiresExt4ClientAPI();
+    LABKEY.requiresScript('/extWidgets/ImportWizard.js')
 
 </script>
 <script type="text/javascript">
 Ext4.onReady(function(){
 
-    Ext4.create('Ext.form.Panel', {
-        activeTab: 0,
-        border: false,
-        width: 620,
-        frame: true,
-        defaults: {
-            border: false
-        },
-        items: [{
-            xtype: 'radiogroup',
-            columns: 2,
-            width: 400,
-            itemId: 'inputType',
-            items: [{
-                boxLabel: 'Create New Experiment',
-                inputValue: 'new',
-                name: 'inputType',
-                checked: true
-            },{
-                boxLabel: 'Add To Existing Experiment',
-                inputValue: 'existing',
-                name: 'inputType'
-            }],
-            listeners: {
-                change: {fn: function(btn, val){
-                    var panel = btn.up('form');
-                    if(val.inputType=='new')
-                        panel.renderWorkbookForm.call(panel);
-                    else
-                        panel.renderExistingWorkbookForm.call(panel);
-                }, delay: 20}
-            }
+    var params = {};
+    var paramNames = LABKEY.ActionURL.getParameter('paramNames');
+    if(paramNames){
+        paramNames = paramNames.split(',');
+        Ext4.each(paramNames, function(p){
+            params[p] = LABKEY.ActionURL.getParameter(p);
+        })
+    };
 
-        },{
-            itemId: 'renderArea',
-            bodyStyle: 'padding: 5px;'
-        }],
-        renderWorkbookForm: function(){
-            var target = this.down('#renderArea');
-            target.removeAll();
-            target.add({
-                xtype: 'form',
-                border: false,
-                defaults: {
-                    border: false,
-                    width: 600,
-                    labelAlign: 'top'
-                },
-                items: [{
-                    xtype: 'textfield',
-                    fieldLabel: 'Title',
-                    name: 'title',
-                    itemId: 'titleField',
-                    value: LABKEY.Security.currentUser.displayName + ' ' + (new Date().format('Y-m-d'))
-                },{
-                    xtype: 'textarea',
-                    fieldLabel: 'Description',
-                    name: 'description',
-                    itemId: 'descriptionField',
-                    height: 200
-                }]
-            });
-            target.doLayout();
-        },
-        renderExistingWorkbookForm: function(){
-            var target = this.down('#renderArea');
-            target.removeAll();
-            target.add({
-                xtype: 'labkey-combo',
-                labelAlign: 'top',
-                displayField: 'title',
-                valueField: 'RowId',
-                itemId: 'workbookName',
-                fieldLabel: 'Choose Workbook',
-                width: 400,
-                queryMode: 'local',
-                store: Ext4.create('LABKEY.ext4.Store', {
-                    schemaName: 'core',
-                    queryName: 'workbooks',
-                    columns: '*',
-                    autoLoad: true
-                })
-            },{
-                xtype: 'checkbox',
-                fieldLabel: 'My Workbooks Only',
-                listeners: {
-                    change: function(btn, val){
-                        var panel = btn.up('form');
-                        var combo = panel.down('#workbookName');
-
-                        if(val)
-                            combo.store.filter('CreatedBy', LABKEY.Security.currentUser.id);
-                        else
-                            combo.store.clearFilter();
-                    }
-                }
-            });
-            target.doLayout();
-        },
-        listeners: {
-            render: function(){
-                this.renderWorkbookForm();
-            }
-        },
-        buttons: [{
-            text: 'Submit',
-            handler: function(btn){
-                var panel = btn.up('form');
-                var type = panel.down('#inputType');
-
-                if(type.getValue().inputType=='new'){
-                    LABKEY.Security.createContainer({
-                        isWorkbook: true,
-                        title: panel.down('#titleField').getValue(),
-                        description: panel.down('#descriptionField').getValue(),
-                        folderType: 'Expt Workbook',
-                        success: function(data){
-                           doLoad(data.path);
-                        },
-                        scope: this,
-                        failure: LABKEY.Utils.onError
-                    })
-                }
-                else {
-                    var combo = panel.down('#workbookName');
-                    var rowid = combo.getValue();
-                    if(!rowid){
-                        alert('Must pick a workbook');
-                        return;
-                    }
-
-                    var rec = combo.store.getAt(combo.store.find('RowId', rowid));
-                    doLoad('/' + LABKEY.ActionURL.getContainerName() + '/' + rec.data.Name)
-                }
-
-                function doLoad(containerPath){
-                    var controller = LABKEY.ActionURL.getParameter('controller');
-                    var action = LABKEY.ActionURL.getParameter('action');
-                    var paramNames = LABKEY.ActionURL.getParameter('paramNames');
-
-                    var params = {};
-                    if(paramNames){
-                        paramNames = paramNames.split(',');
-                        Ext4.each(paramNames, function(p){
-                            params[p] = LABKEY.ActionURL.getParameter(p);
-                        })
-                    }
-
-                    window.location = LABKEY.ActionURL.buildURL(controller, action, containerPath, params);
-                }
-            }
-        },{
-            text: 'Cancel',
-            target: '_self',
-            href: LABKEY.ActionURL.buildURL('project', 'home')
-        }]
+    Ext4.create('LABKEY.ext.ImportWizard', {
+        action: LABKEY.ActionURL.getParameter('action'),
+        urlParams: params,
+        controller: LABKEY.ActionURL.getParameter('controller')
     }).render('importwizardDiv');
 
 });
