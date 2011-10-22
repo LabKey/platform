@@ -28,7 +28,7 @@ Ext4.namespace('LABKEY.ext');
  * @param {String} [config.containerPath] The containerPath to use when fetching the query
  * @param {String} [config.columns] A comma-delimited list of column names to fetch from the specified query.
  * @param {Object} [config.metadata] A metadata object that will be applied to the default metadata returned by the server.  See example below for usage.
- * @param {Object} [config.fieldDefaults] A metadata object that will be applied to every field of the default metadata returned by the server.  Will be superceeded by the metadata object in case of conflicts. See example below for usage.
+ * @param {Object} [config.metadataDefaults] A metadata object that will be applied to every field of the default metadata returned by the server.  Will be superceeded by the metadata object in case of conflicts. See example below for usage.
  */
 
 Ext4.define('LABKEY.ext4.ExcelUploadPanel', {
@@ -57,7 +57,7 @@ Ext4.define('LABKEY.ext4.ExcelUploadPanel', {
                 ,viewName: this.viewName
                 ,columns: this.columns
                 ,metadata: this.metadata
-                ,fieldDefaults: this.fieldDefaults
+                ,metadataDefaults: this.metadataDefaults
                 ,maxRows: 0
                 ,autoLoad: true
             })
@@ -84,9 +84,10 @@ Ext4.define('LABKEY.ext4.ExcelUploadPanel', {
                 name: 'uploadType',
                 isFormField: false,
                 itemId: 'inputType',
-                width: 350,
+                width: 400,
                 items: [{
                     boxLabel: 'Copy/Paste Data',
+                    width: 200,
                     xtype: 'radio',
                     name: 'uploadType',
                     isFormField: false,
@@ -132,7 +133,8 @@ Ext4.define('LABKEY.ext4.ExcelUploadPanel', {
                         this.uploadType = 'text';
                     }
                 },{
-                    boxLabel: 'File Upload',
+                    boxLabel: 'Upload From File',
+                    width: 200,
                     xtype: 'radio',
                     name: 'uploadType',
                     inputValue: 'file',

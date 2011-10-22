@@ -217,6 +217,41 @@ Ext4.define('LABKEY.ext.OperatorCombo', {
     }
 });
 
+/*
+    a simple extention of an ext buttons that looks like a basic HTML link.
+    useful b/c it can fire events and have a normal ext handler
+ */
+
+Ext4.define('LABKEY.ext.LinkButton', {
+    extend: 'Ext.button.Button',
+    alias: 'widget.labkey-linkbutton',
+    initComponent: function(){
+        this.callParent(arguments);
+
+        this.renderData = this.renderData || {};
+        Ext4.apply(this.renderData, {
+            linkPrefix: this.linkPrefix,
+            linkSuffix: this.linkSuffix
+        });
+    },
+    showBrackets: true,
+    renderSelectors: {
+        btnEl: 'a'
+    },
+    baseCls: 'null',
+    renderTpl:
+        '<em id="{id}-btnWrap" class="{splitCls}">' +
+            '{linkPrefix}' +
+            '<a id="{id}-btnEl" href="{href}" target="{target}"<tpl if="tabIndex"> tabIndex="{tabIndex}"</tpl> role="link">' +
+                '<span id="{id}-btnInnerEl" class="{baseCls}-inner">' +
+                    '{text}' +
+                '</span>' +
+                    '<span id="{id}-btnIconEl" class="{baseCls}-icon"></span>' +
+            '</a>' +
+            '{linkSuffix}' +
+        '</em>'
+});
+
 
 Ext4.define('LABKEY.ext4.BooleanCombo', {
     extend: 'Ext.form.field.ComboBox',

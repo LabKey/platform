@@ -44,7 +44,7 @@ Ext4.namespace('LABKEY.ext4');
  *           <li>"AllFolders": Include all folders for which the user has read permission</li>
  *       </ul>
  * @param {Object} [config.metadata] A metadata object that will be applied to the default metadata returned by the server.  See example below for usage.
- * @param {Object} [config.fieldDefaults] A metadata object that will be applied to every field of the default metadata returned by the server.  Will be superceeded by the metadata object in case of conflicts. See example below for usage.
+ * @param {Object} [config.metadataDefaults] A metadata object that will be applied to every field of the default metadata returned by the server.  Will be superceeded by the metadata object in case of conflicts. See example below for usage.
  *
  * @example &lt;script type="text/javascript"&gt;
     var _grid, _store;
@@ -88,7 +88,7 @@ Ext4.namespace('LABKEY.ext4');
                 defaultValue: 100
             }
         },
-        fieldDefaults: {
+        metadataDefaults: {
             width: 200,
             editorConfig: {
                 allowBlank: false
@@ -162,6 +162,9 @@ LABKEY.ext4.Store = Ext4.define('LABKEY.ext4.Store', {
     },
     //private
     generateBaseParams: function(config){
+        if(config)
+            this.initialConfig = Ext4.apply({}, config);
+
         config = config || this;
         var baseParams = {};
         baseParams.schemaName = config.schemaName;
@@ -173,7 +176,7 @@ LABKEY.ext4.Store = Ext4.define('LABKEY.ext4.Store', {
         }
 
         if (config.containerFilter)
-            baseParams['query.containerFilter'] = config.containerFilter;
+            baseParams['query.containerFilterName'] = config.containerFilter;
 
         if(config.ignoreFilter)
             baseParams['query.ignoreFilter'] = 1;
@@ -194,9 +197,8 @@ LABKEY.ext4.Store = Ext4.define('LABKEY.ext4.Store', {
             baseParams.containerPath = config.containerPath;
 
         //NOTE: sort() is a method in the store.  it's awkward to support a param, but we do it since selectRows() uses it
-        if (config.sort && typeof config.sort == 'string'){
-            baseParams['query.sort'] = config.sort;
-        }
+        if(this.initialConfig && this.initialConfig.sort)
+            baseParams['query.sort'] = this.initialConfig.sort;
         delete config.sort; //important...otherwise the native sort() method is overridden
 
         if(config.sql){
@@ -220,8 +222,8 @@ LABKEY.ext4.Store = Ext4.define('LABKEY.ext4.Store', {
             Ext4.each(meta.fields, function(f){
                 this.translateMetadata(f);
 
-                if(this.fieldDefaults){
-                    Ext4.Object.merge(f, this.fieldDefaults);
+                if(this.metadataDefaults){
+                    Ext4.Object.merge(f, this.metadataDefaults);
                 }
 
                 if(this.metadata){
@@ -243,8 +245,8 @@ LABKEY.ext4.Store = Ext4.define('LABKEY.ext4.Store', {
                         field.name = field.name || i;
                         field.notFromServer = true;
                         this.translateMetadata(field);
-                        if(this.fieldDefaults)
-                            Ext4.Object.merge(field, this.fieldDefaults);
+                        if(this.metadataDefaults)
+                            Ext4.Object.merge(field, this.metadataDefaults);
 
                         meta.fields.push(Ext4.apply({}, field));
                     }
@@ -365,6 +367,22 @@ LABKEY.ext4.Store = Ext4.define('LABKEY.ext4.Store', {
         if(!success)
             return;
 
+        //the intent is to let the client set default values for created fields
+        var toUpdate = [];
+        this.getFields().each(function(f){
+            if(f.setValueOnLoad && (f.setInitialValue || f.defaultValue))
+                toUpdate.push(f);
+        }, this);
+        if(toUpdate.length){
+            this.each(function(rec){
+                Ext4.each(toUpdate, function(meta){
+                    if(meta.setInitialValue)
+                        rec.set(meta.name, meta.setInitialValue(rec.get(meta.name), rec, meta));
+                    else if (meta.defaultValue && !rec.get(meta.name))
+                        rec.set(meta.name, meta.defaultValue)
+                }, this);
+            });
+        }
         //this is primarily used for comboboxes
         //create an extra record with a blank id column
         //and the null caption in the display column

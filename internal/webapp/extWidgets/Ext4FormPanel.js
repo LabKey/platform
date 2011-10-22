@@ -32,7 +32,7 @@ Ext4.namespace('LABKEY.ext4');
  * @param {String} [config.viewName] A saved custom view of the specified query to use if desired.
  * @param {String} [config.containerPath] The container path from which to get the data. If not specified, the current container is used.
  * @param {Object} [config.metadata] A metadata object that will be applied to the default metadata returned by the server.  See example below for usage.
- * @param {Object} [config.fieldDefaults] A metadata object that will be applied to every field of the default metadata returned by the server.  Will be superceeded by the metadata object in case of conflicts. See example below for usage.
+ * @param {Object} [config.metadataDefaults] A metadata object that will be applied to every field of the default metadata returned by the server.  Will be superceeded by the metadata object in case of conflicts. See example below for usage.
  * @param {Object} [config.storeConfig] A config object that will be used to create the store.
  *
  * @example &lt;script type="text/javascript"&gt;
@@ -82,7 +82,7 @@ Ext4.define('LABKEY.ext4.FormPanel', {
             storeId: LABKEY.ext.MetaHelper.getLookupStoreId(this),
             filterArray: this.filterArray || [],
             metadata: this.metadata,
-            fieldDefaults: this.fieldDefaults,
+            metadataDefaults: this.metadataDefaults,
             autoLoad: true,
             //NOTE: we do this to prevent loading the whole table
             maxRows: 0,
@@ -168,7 +168,6 @@ Ext4.define('LABKEY.ext4.FormPanel', {
                 tag: 'div',
                 itemId: 'errorEl',
                 border: false,
-                width: 350,
                 style: 'padding:5px;text-align:center;'
             });
         }
@@ -383,19 +382,20 @@ LABKEY.ext4.FORMBUTTONS = {
             }
         }
     } ,
-    TESTSUBMIT: function(){
+    CHANGEVALUES: function(){
         return {
             text: 'Change Values',
             scope: this,
             handler: function(btn, key){
-                btn.up('form').store.each(function(r, idx){
+                var store = btn.up('form').store;
+
+                store.each(function(r, idx){
                     r.set('field2', Math.random(10));
                     r.set('field1', 'field2341');
                 }, this);
-                this.store.add({
+                store.add({
                     field1: 'new record'
                 });
-//                this.store.sync();
             }
         }
     },

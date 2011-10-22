@@ -4,6 +4,7 @@
  * Licensed under the Apache License, Version 2.0: http://www.apache.org/licenses/LICENSE-2.0
  */
 LABKEY.requiresExt4ClientAPI();
+LABKEY.requiresScript('/extWidgets/ImportWizard.js');
 
 Ext4.namespace('LABKEY.ext');
 
@@ -30,7 +31,7 @@ Ext4.namespace('LABKEY.ext');
         width: 350,
         renderer: function(item){
             return {
-                html: '<div style="float:left;width:250px;">'+item.name+':</div> [<a href="'+LABKEY.ActionURL.buildURL('laboratory', 'AssaySearchPanel', null, {schemaName: item.schemaName, queryName: item.queryName})+'">Search</a>] [<a href="'+LABKEY.ActionURL.buildURL('query', 'executeQuery', null, {schemaName: item.schemaName, 'query.queryName': item.queryName})+'">View All Records</a>]',
+                html: '<div style="float:left;width:250px;">'+item.name+':</div> [<a href="'+LABKEY.ActionURL.buildURL('laboratory', 'AssaySearchPanel', null, {schemaName: item.schemaName, queryName: item.queryName})+'">Search</a>] [<a href="'+LABKEY.ActionURL.buildURL('query', 'executeQuery', null, {schemaName: item.schemaName, 'query.queryName': item.queryName})+'">Browse Records</a>]',
                 style: 'padding-left:5px;padding-bottom:8px'
             }
         },
@@ -128,41 +129,149 @@ Ext4.define('LABKEY.ext.NavPanel', {
     renderers: {
         assayRenderer: function(item){
             return {
-                html: '<div style="float:left;width:250px;">'+item.name+':</div> ' +
-                      '[<a href="'+LABKEY.ActionURL.buildURL('query', 'SearchPanel', null, {schemaName: item.schemaName, 'queryName': item.queryName})+'">Search</a>] '+
-                      '[<a href="'+LABKEY.ActionURL.buildURL('query', 'executeQuery', null, {schemaName: item.schemaName, 'query.queryName': item.queryName})+'">View All Records</a>] ' +
-                      //(item.showImport!==false ? '[<a href="'+LABKEY.ActionURL.buildURL('assay', 'moduleAssayUpload', null, {rowId: item.id})+'">Import Data</a>]' : ''),
-                      (item.showImport!==false ? '[<a href="'+LABKEY.ActionURL.buildURL('query', 'importWizard', null, {controller: 'assay', action: 'moduleAssayUpload', paramNames: 'rowId', rowId: item.id})+'">Import Data</a>]' : ''),
-
-                style: 'padding-left:5px;padding-bottom:8px'
+                layout: 'hbox',
+                defaults: {
+                    style: 'padding-left:5px',
+                    border: false,
+                    target: '_self',
+                    linkPrefix: '[',
+                    linkSuffix: ']'
+                },
+                items: [{
+                    tag: 'div',
+                    html: item.name+':',
+                    width: 250
+                },{
+                    xtype: 'labkey-linkbutton',
+                    href: LABKEY.ActionURL.buildURL('query', 'SearchPanel', null, {schemaName: item.schemaName, 'queryName': item.queryName}),
+                    text: 'Search'
+                },{
+                    xtype: 'labkey-linkbutton',
+                    href: LABKEY.ActionURL.buildURL('query', 'executeQuery', null, {schemaName: item.schemaName, 'query.queryName': item.queryName}),
+                    text: 'Browse Records'
+                },{
+                    xtype: 'labkey-linkbutton',
+                    text: 'Import Data',
+                    hidden: item.showImport===false,
+                    assayId: item.id,
+                    useSimpleImport: item.simpleImport,
+                    handler: function(btn){
+                        if(btn.useSimpleImport)
+                            window.location = LABKEY.ActionURL.buildURL('assay', 'moduleAssayUpload', null, {rowId: btn.assayId});
+                        else
+                            Ext4.create('LABKEY.ext.ImportWizardWin', {
+                                controller: 'assay',
+                                action: 'moduleAssayUpload',
+                                urlParams: {
+                                    rowId: btn.assayId
+                                }
+                            }).show();
+                    }
+                }],
+                style: 'padding-bottom:8px'
             };
         },
         defaultRenderer: function(item){
             return {
-                 html: '<a href="'+item.url+'">'+item.name+'</a>',
-                 style: 'padding-left:5px;padding-bottom:8px'
+                layout: 'hbox',
+                defaults: {
+                    style: 'padding-left:5px',
+                    border: false,
+                    target: '_self'
+                },
+                items: [{
+                    xtype: 'labkey-linkbutton',
+                    text: item.name,
+                    href: item.url,
+                    showBrackets: false
+                }]
              }
         },
         queryRenderer: function(item){
             return {
-                html: '<div style="float:left;width:250px;">'+item.name+':</div> ' +
-                      '[<a href="'+LABKEY.ActionURL.buildURL('query', 'SearchPanel', null, {schemaName: item.schemaName, queryName: item.queryName})+'">Search</a>] ' +
-                      '[<a href="'+LABKEY.ActionURL.buildURL('query', 'executeQuery', null, {schemaName: item.schemaName, 'query.queryName': item.queryName})+'">View All Records</a>] ' +
-                      (item.showImport!==false ? item.simpleImport
-                        ? '[<a href="'+LABKEY.ActionURL.buildURL('query', 'importData', null, {schemaName: item.schemaName, queryName: item.queryName})+'">Import Data</a>]'
-                        : '[<a href="'+LABKEY.ActionURL.buildURL('query', 'importWizard', null, {controller: 'query', action: 'importData', paramNames: 'schemaName,queryName', schemaName: item.schemaName, queryName: item.queryName})+'">Import Data</a>]' : ''),
-                style: 'padding-left:5px;padding-bottom:8px'
+                layout: 'hbox',
+                defaults: {
+                    style: 'padding-left:5px',
+                    border: false,
+                    target: '_self',
+                    linkPrefix: '[',
+                    linkSuffix: ']'
+                },
+                items: [{
+                    tag: 'div',
+                    html: item.name+':',
+                    width: 250
+                },{
+                    xtype: 'labkey-linkbutton',
+                    href: LABKEY.ActionURL.buildURL('query', 'SearchPanel', null, {schemaName: item.schemaName, 'queryName': item.queryName}),
+                    text: 'Search'
+                },{
+                    xtype: 'labkey-linkbutton',
+                    href: LABKEY.ActionURL.buildURL('query', 'executeQuery', null, {schemaName: item.schemaName, 'query.queryName': item.queryName}),
+                    text: 'Browse Records'
+                },{
+                    xtype: 'labkey-linkbutton',
+                    text: 'Import Data',
+                    hidden: item.showImport===false,
+                    useSimpleImport: item.simpleImport,
+                    assayId: item.id,
+                    params: {schemaName: item.schemaName, queryName: item.queryName},
+                    handler: function(btn){
+                        if(btn.useSimpleImport)
+                            window.location = LABKEY.ActionURL.buildURL('query', 'importData', null, btn.params);
+                        else
+                            Ext4.create('LABKEY.ext.ImportWizardWin', {
+                                controller: 'query',
+                                action: 'importData',
+                                urlParams: btn.params
+                            }).show();
+                    }
+                }],
+                style: 'padding-bottom:8px'
             };
         },
         fileRenderer: function(item){
             return {
-                html: '<div style="float:left;width:250px;">'+item.name+':</div> ' +
-                      '[<a href="'+LABKEY.ActionURL.buildURL('query', 'SearchPanel', null, {schemaName: item.schemaName, queryName: item.queryName})+'">Search</a>] ' +
-                      '[<a href="'+LABKEY.ActionURL.buildURL('query', 'executeQuery', null, {schemaName: item.schemaName, 'query.queryName': item.queryName})+'">View All Records</a>] ' +
-                      (item.showImport!==false ? '[<a href="'+LABKEY.ActionURL.buildURL('query', 'importWizard', null, {controller: 'project', action: 'begin', paramNames: 'schemaName,queryName', schemaName: item.schemaName, queryName: item.queryName})+'">Import Data</a>]' : ''),
-                style: 'padding-left:5px;padding-bottom:8px'
+                layout: 'hbox',
+                defaults: {
+                    style: 'padding-left:5px',
+                    border: false,
+                    target: '_self',
+                    linkPrefix: '[',
+                    linkSuffix: ']'
+                },
+                items: [{
+                    tag: 'div',
+                    html: item.name+':',
+                    width: 250
+                },{
+                    xtype: 'labkey-linkbutton',
+                    href: LABKEY.ActionURL.buildURL('query', 'SearchPanel', null, {schemaName: item.schemaName, 'queryName': item.queryName}),
+                    text: 'Search'
+                },{
+                    xtype: 'labkey-linkbutton',
+                    href: LABKEY.ActionURL.buildURL('query', 'executeQuery', null, {schemaName: item.schemaName, 'query.queryName': item.queryName}),
+                    text: 'Browse Files'
+                },{
+                    xtype: 'labkey-linkbutton',
+                    text: 'Import Data',
+                    hidden: item.showImport===false,
+                    useSimpleImport: item.simpleImport,
+                    assayId: item.id,
+                    params: {controller: 'project', action: 'begin', paramNames: 'schemaName,queryName', schemaName: item.schemaName, queryName: item.queryName},
+                    handler: function(btn){
+                        if(btn.useSimpleImport)
+                            window.location = LABKEY.ActionURL.buildURL('query', 'importData', null, btn.params);
+                        else
+                            Ext4.create('LABKEY.ext.ImportWizardWin', {
+                                controller: 'query',
+                                action: 'importData',
+                                urlParams: btn.params
+                            }).show();
+                    }
+                }],
+                style: 'padding-bottom:8px'
             };
         }
-
-    }
+}
 });

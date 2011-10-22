@@ -49,7 +49,7 @@ Ext4.define('LABKEY.ext.DetailsPanel', {
             queryName: this.queryName,
             schemaName: this.schemaName,
             viewName: this.viewName,
-            fieldDefaults: this.fieldDefaults,
+            metadataDefaults: this.metadataDefaults,
             metadata: this.metadata,
             filterArray: this.filterArray,
             listeners: {

@@ -143,6 +143,9 @@ Ext4.define('LABKEY.ext.AssayUploadPanel', {
                     columns: 1,
                     isFormField: false,
                     scope: this,
+                    defaults: {
+                        width: 500
+                    },
                     items: radios
                 }]
             }
@@ -316,16 +319,16 @@ Ext4.define('LABKEY.ext.AssayUploadPanel', {
                     }
                 }, fieldObj);
 
-                if (this.fieldDefaults && this.fieldDefaults[fieldObj.domain]){
-                    Ext4.Object.merge(fieldObj, this.fieldDefaults[fieldObj.domain]);
+                if (this.metadataDefaults && this.metadataDefaults[fieldObj.domain]){
+                    Ext4.Object.merge(fieldObj, this.metadataDefaults[fieldObj.domain]);
                 }
 
                 if (this.metadata && this.metadata[fieldObj.domain] && this.metadata[fieldObj.domain][fieldObj.name]){
                     Ext4.Object.merge(fieldObj, this.metadata[fieldObj.domain][fieldObj.name]);
                 }
 
-                if (this.selectedMethod.fieldDefaults && this.selectedMethod.fieldDefaults[fieldObj.domain]){
-                    Ext4.Object.merge(fieldObj, this.selectedMethod.fieldDefaults[fieldObj.domain]);
+                if (this.selectedMethod.metadataDefaults && this.selectedMethod.metadataDefaults[fieldObj.domain]){
+                    Ext4.Object.merge(fieldObj, this.selectedMethod.metadataDefaults[fieldObj.domain]);
                 }
 
                 if (this.selectedMethod.metadata && this.selectedMethod.metadata[fieldObj.domain] && this.selectedMethod.metadata[fieldObj.domain][fieldObj.name]){
@@ -395,6 +398,9 @@ Ext4.define('LABKEY.ext.AssayUploadPanel', {
                 isFormField: false,
                 itemId: 'inputType',
                 width: 350,
+                defaults: {
+                    width: 200
+                },
                 items: [{
                     boxLabel: 'Copy/Paste Data',
                     xtype: 'radio',

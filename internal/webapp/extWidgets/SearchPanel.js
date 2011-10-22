@@ -31,7 +31,7 @@ Ext4.namespace('LABKEY.ext4');
  * @param {String} [config.containerPath] The containerPath to use when fetching the query
  * @param {String} [config.columns] A comma-delimited list of column names to fetch from the specified query.
  * @param {Object} [config.metadata] A metadata object that will be applied to the default metadata returned by the server.  See example below for usage.
- * @param {Object} [config.fieldDefaults] A metadata object that will be applied to every field of the default metadata returned by the server.  Will be superceeded by the metadata object in case of conflicts. See example below for usage.
+ * @param {Object} [config.metadataDefaults] A metadata object that will be applied to every field of the default metadata returned by the server.  Will be superceeded by the metadata object in case of conflicts. See example below for usage.
  * @param (boolean) showContainerFilter Dictates whether a combobox appears to let the user pick a container filter when searching
  * @param (string) defaultContainerFilter The default container filter in the combo.  If provided, but showContainerFilter is false, this container filter will be silently applied to the search
  * @param (boolean) allowSelectView Dictates whether a combobox appears to let the user pick a view
@@ -99,7 +99,7 @@ Ext4.define('LABKEY.ext4.SearchPanel', {
             ,schemaName: this.schemaName
             ,viewName: this.viewName
             ,metadata: this.metadata
-            ,fieldDefaults: this.fieldDefaults
+            ,metadataDefaults: this.metadataDefaults
             ,columns: this.columns
             ,maxRows: 0
             ,timeout: 0

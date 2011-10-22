@@ -159,8 +159,14 @@ LABKEY.ext.MetaHelper = {
      * @param {object} [config.lookup.store] advanced! Pass in your own custom store for a lookup field
      * @param {boolean} [config.lazyCreateStore] If false, the store will be created immediately.  If true, the store will be created when the component is created. (default true)
      * @param {boolean} [createIfDoesNotExist] If true, this field will be created in the store, even if it does not otherwise exist on the server. Can be used to force custom fields to appear in a grid or form or to pass additional information to the server at time of import
-     * @param {function} [qtipRenderer] This function will be used to generate the qTip for the field when it appears in a grid instead of the default function.  It will be passed the following arguments: qtip, data, cellMetaData, record, rowIndex, colIndex, store. It should return a string
-     * @param {function} [setInitialValue] When a new record is added to this store, this function will be called on that field.  It will be passed the record and metadata.  The advantage of using a function over defaultValue is that more complex and dynamic initial values can be created.  For example:
+     //TODO
+     * @param {function} [qtipRenderer] This function will be used to generate the qTip for the field when it appears in a grid instead of the default function.  It will be passed the following arguments: qtip, data, cellMetaData, record, rowIndex, colIndex, store. It should modify the qtip array
+     //TODO
+     * @param {function} [buildDisplayString] This function will be used to generate the qTip for the field when it appears in a grid instead of the default function.  See example below for usage.
+     //TODO
+     * @param {function} [buildUrl] This function will be used to generate the URL encapsulating the field
+     * @param (boolean) [setValueOnLoad] If true, the store will attempt to set a value for this field on load.  This is determined by the defaultValue or setInitialValue function, if either is defined
+     * @param {function} [setInitialValue] When a new record is added to this store, this function will be called on that field.  If setValueOnLoad is true, this will also occur on load.  It will be passed the record and metadata.  The advantage of using a function over defaultValue is that more complex and dynamic initial values can be created.  For example:
      *  //sets the value to the current date
      *  setInitialValue(val, rec, meta){
      *      return val || new Date()
@@ -446,6 +452,7 @@ LABKEY.ext.MetaHelper = {
                 col = {dataIndex: field.dataIndex};
 
             cols.push(LABKEY.ext.MetaHelper.getColumnConfig(store, col, config, grid));
+
         }, this);
 
         return cols;
@@ -492,10 +499,7 @@ LABKEY.ext.MetaHelper = {
         if(col.editable && !col.editor)
             col.editor = LABKEY.ext.MetaHelper.getGridEditorConfig(meta);
 
-        if(meta.getRenderer)
-            col.renderer = meta.getRenderer(col, meta, grid);
-
-        col.renderer = LABKEY.ext.MetaHelper.getDefaultRenderer(col, meta, col.renderer, grid);
+        col.renderer = LABKEY.ext.MetaHelper.getDefaultRenderer(col, meta, grid);
 
         //HTML-encode the column header
         col.text = Ext4.util.Format.htmlEncode(meta.label || meta.name || col.header);
@@ -503,7 +507,7 @@ LABKEY.ext.MetaHelper = {
         if(meta.ignoreColWidths)
             delete col.width;
 
-        //allow override of defaults
+       //allow override of defaults
         if(meta.columnConfig)
             Ext4.Object.merge(col, meta.columnConfig);
         if(config && config[col.dataIndex])
@@ -514,7 +518,7 @@ LABKEY.ext.MetaHelper = {
     },
 
     //private
-    getDefaultRenderer : function(col, meta, renderer, grid) {
+    getDefaultRenderer : function(col, meta, grid) {
         return function(data, cellMetaData, record, rowIndex, colIndex, store)
         {
             LABKEY.ext.MetaHelper.buildQtip(data, cellMetaData, record, rowIndex, colIndex, store, col, meta);
@@ -537,8 +541,8 @@ LABKEY.ext.MetaHelper = {
 
             //format data into a string
             var displayValue;
-            if(renderer){
-                displayValue = renderer(data, cellMetaData, record, rowIndex, colIndex, store);
+            if(meta.buildDisplayString){
+                displayValue = meta.buildDisplayString(data, col, meta, cellMetaData, record, rowIndex, colIndex, store);
             }
             else {
                 switch (displayType)
@@ -585,12 +589,27 @@ LABKEY.ext.MetaHelper = {
                 cellMetaData.tdAttr += " style=\"padding: 1px 1px 1px 1px\"";
             }
 
-            //wrap in <a> if url is present in the record's original JSON
-            if(col.showLink !== false && record.raw && record.raw[meta.name] && record.raw[meta.name].url)
+            //build the URL
+            displayValue = LABKEY.ext.MetaHelper.buildColumnUrl(displayValue, data, col, meta, record);
+
+            return displayValue;
+        };
+    },
+
+    //private
+    buildColumnUrl: function(displayValue, data, col, meta, record){
+        //wrap in <a> if url is present in the record's original JSON
+        if(col.showLink !== false){
+            if(meta.buildUrl)
+                return meta.buildUrl(displayValue, data, col, meta, record);
+            else if(record.raw && record.raw[meta.name] && record.raw[meta.name].url)
                 return "<a target=\"_blank\" href=\"" + record.raw[meta.name].url + "\">" + displayValue + "</a>";
             else
                 return displayValue;
-        };
+        }
+        else {
+            return displayValue;
+        }
     },
 
     //private

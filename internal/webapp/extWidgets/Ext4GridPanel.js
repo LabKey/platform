@@ -21,13 +21,9 @@ Ext4.define('LABKEY.ext4.GridPanel', {
 
         Ext4.applyIf(this, {
             columns: [],
-            selType: (this.selModel ? null : 'checkboxmodel'),
-            autoHeight: true,
-            autoWidth: true,
             pageSize: 200,
             autoSave: false,
-            editable: true,
-            stripeRows: true
+            editable: true
         });
 
         this.configurePlugins();
@@ -53,7 +49,7 @@ Ext4.define('LABKEY.ext4.GridPanel', {
             storeId: LABKEY.ext.MetaHelper.getLookupStoreId(this),
             filterArray: this.filterArray || [],
             metadata: this.metadata,
-            fieldDefaults: this.fieldDefaults,
+            metadataDefaults: this.metadataDefaults,
             autoLoad: true
         });
     }
@@ -61,8 +57,8 @@ Ext4.define('LABKEY.ext4.GridPanel', {
     //separated to allow subclasses to override
     ,configurePlugins: function(){
         this.plugins = this.plugins || [];
-        this.plugins.push(Ext4.create('Ext.grid.plugin.CellEditing', {clicksToEdit: 2}));
-        this.plugins.push(Ext4.create('Ext.grid.plugin.HeaderResizer'));
+        if(this.editable)
+            this.plugins.push(Ext4.create('Ext.grid.plugin.CellEditing', {clicksToEdit: 2}));
     }
 
     ,setupColumnModel : function() {
@@ -73,8 +69,8 @@ Ext4.define('LABKEY.ext4.GridPanel', {
         //CheckBoxSelectionModel needs to be added to the column model for
         //the check boxes to show up.
         //(not sure why its constructor doesn't do this automatically).
-        if(this.getSelectionModel() && this.getSelectionModel().renderer)
-            columns = [this.getSelectionModel()].concat(columns);
+//        if(this.getSelectionModel() && this.getSelectionModel().renderer)
+//            columns = [this.getSelectionModel()].concat(columns);
 
         //register for the rowdeselect event if the selmodel supports events and if autoSave is on
         if(this.getSelectionModel().on && this.autoSave)

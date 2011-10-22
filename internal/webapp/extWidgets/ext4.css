@@ -1,0 +1,6 @@
+/* Ext4 Forms */
+/* NOTE: 21px matches the combo trigger icons*/
+.x4-reset .x4-form-text
+{
+    height : 21px;
+}
