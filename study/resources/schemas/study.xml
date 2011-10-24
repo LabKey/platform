@@ -111,6 +111,12 @@
       <ns:column columnName="SourceStudyContainerId">
         <ns:description>The entity id of the study container from which this study was derived.  Will be null if a study is not an ancillary study.</ns:description>
       </ns:column>
+      <ns:column columnName="Investigator">
+        <ns:description>The investigator of the study.</ns:description>
+      </ns:column>
+      <ns:column columnName="studyGrant">
+        <ns:description>The grant for the study.</ns:description>
+      </ns:column>
     </ns:columns>
   </ns:table>
   <ns:table tableName="Site" tableDbType="TABLE">

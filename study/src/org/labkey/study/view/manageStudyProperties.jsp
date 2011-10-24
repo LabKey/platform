@@ -73,6 +73,14 @@
             <td><input type="text" size="40" name="label" value="<%= h(getStudy().getLabel()) %>"></td>
         </tr>
         <tr>
+            <td class="labkey-form-label">Investigator</td>
+            <td><input type="text" size="40" name="investigator" value="<%= h(getStudy().getInvestigator()) %>"></td>
+        </tr>
+        <tr>
+            <td class="labkey-form-label">Grant</td>
+            <td><input type="text" size="40" name="studyGrant" value="<%= h(getStudy().getStudyGrant()) %>"></td>
+        </tr>
+        <tr>
             <td class="labkey-form-label">Description</td>
             <td>
                 <textarea name="description" rows="20" cols="80"><%= h(getStudy().getDescription()) %></textarea>

@@ -70,6 +70,8 @@
     boolean isAdmin = policy.hasPermission(user, AdminPermission.class);
     ActionURL url = new ActionURL(StudyController.BeginAction.class, bean.getStudy().getContainer());
     String descriptionHtml = bean.getDescriptionHtml();
+    String investigator = bean.getInvestigator();
+    String studyGrant = bean.getStudyGrant();
     List<Attachment> protocolDocs = bean.getProtocolDocuments();
     ActionURL editMetadataURL = new ActionURL(StudyController.ManageStudyPropertiesAction.class, c);
     editMetadataURL.addParameter("returnURL", bean.getCurrentURL());
@@ -80,7 +82,27 @@
 <table width="100%">
     <tr>
         <td valign="top">
-                <div>
+            <div>
+                <span style="float: left">
+                    <%
+                        if(investigator != null)
+                        {
+                            out.print("Investigator: " + investigator);
+                        }
+                    %>
+                </span>
+
+                <span style="float: right">
+                    <%
+                        if(studyGrant != null)
+                        {
+                            out.print("Grant: " + studyGrant);
+                        }
+                    %>
+                </span>
+            </div>
+            <br><br>
+                <div style="clear: both;">
                 <%=descriptionHtml%>
             <%
                 if (isAdmin)

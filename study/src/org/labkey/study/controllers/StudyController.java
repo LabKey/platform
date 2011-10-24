@@ -1419,6 +1419,8 @@ public class StudyController extends BaseStudyController
             {
                 StudyImpl updated = getStudy().createMutable();
                 updated.setLabel(form.getLabel());
+                updated.setInvestigator(form.getInvestigator());
+                updated.setStudyGrant((form.getStudyGrant()));
                 updated.setDescription(form.getDescription());
                 updated.setDescriptionRendererType(form.getDescriptionRendererType());
                 StudyManager.getInstance().updateStudy(getUser(), updated);
@@ -5727,6 +5729,8 @@ public class StudyController extends BaseStudyController
         private String _returnURL;
         private String _description;
         private String _descriptionRendererType;
+        private String _studyGrant;
+        private String _investigator;
 
         public String getLabel()
         {
@@ -5846,6 +5850,26 @@ public class StudyController extends BaseStudyController
         public void setDescriptionRendererType(String descriptionRendererType)
         {
             _descriptionRendererType = descriptionRendererType;
+        }
+
+        public String getInvestigator()
+        {
+            return _investigator;
+        }
+
+        public void setInvestigator(String investigator)
+        {
+            _investigator = investigator;
+        }
+
+        public String getStudyGrant()
+        {
+            return _studyGrant;
+        }
+
+        public void setStudyGrant(String studyGrant)
+        {
+            _studyGrant = studyGrant;
         }
     }
 

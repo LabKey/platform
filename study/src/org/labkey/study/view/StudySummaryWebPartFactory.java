@@ -149,6 +149,14 @@ public class StudySummaryWebPartFactory extends BaseWebPartFactory
                 }
             }
         }
+
+        public String getInvestigator(){
+            return getStudy().getInvestigator();
+        }
+
+        public String getStudyGrant(){
+            return getStudy().getStudyGrant();
+        }
     }
 
     public WebPartView getWebPartView(ViewContext portalCtx, Portal.WebPart webPart) throws IllegalAccessException, InvocationTargetException

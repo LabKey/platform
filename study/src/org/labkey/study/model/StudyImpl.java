@@ -102,6 +102,8 @@ public class StudyImpl extends ExtensibleStudyEntity<StudyImpl> implements Study
     private String _descriptionRendererType = WikiRendererType.TEXT_WITH_LINKS.name();
     private String _protocolDocumentEntityId;
     private String _sourceStudyContainerId;
+    private String _investigator;
+    private String _studyGrant;
 
     public StudyImpl()
     {
@@ -556,6 +558,26 @@ public class StudyImpl extends ExtensibleStudyEntity<StudyImpl> implements Study
     public void attachProtocolDocument(List<AttachmentFile> files , User user)  throws SQLException, IOException
     {
         AttachmentService.get().addAttachments(getProtocolDocumentAttachmentParent(), files, user);
+    }
+
+    public String getInvestigator()
+    {
+        return _investigator;
+    }
+
+    public void setInvestigator(String investigator)
+    {
+        _investigator = investigator;
+    }
+
+    public String getStudyGrant()
+    {
+        return _studyGrant;
+    }
+
+    public void setStudyGrant(String grant)
+    {
+        _studyGrant = grant;
     }
 
     public void updateProtocolDocument(List<AttachmentFile> files , User user)  throws SQLException, IOException
