@@ -17,6 +17,7 @@ package org.labkey.study.writer;
 
 import org.apache.log4j.Logger;
 import org.labkey.api.data.ColumnInfo;
+import org.labkey.api.data.ContainerForeignKey;
 import org.labkey.api.data.Results;
 import org.labkey.api.data.Sort;
 import org.labkey.api.data.TSVGridWriter;
@@ -185,7 +186,8 @@ public class DatasetWriter implements InternalStudyWriter
 
     private static boolean shouldExport(ColumnInfo column, boolean metaData)
     {
-        return column.isUserEditable() || (!metaData && column.getPropertyURI().equals(DataSetDefinition.getQCStateURI()));
+        return (column.isUserEditable() || (!metaData && column.getPropertyURI().equals(DataSetDefinition.getQCStateURI()))) &&
+                !(column.getFk() instanceof ContainerForeignKey);
     }
 
     public static Collection<ColumnInfo> getColumnsToExport(TableInfo tinfo, DataSetDefinition def, boolean metaData)
