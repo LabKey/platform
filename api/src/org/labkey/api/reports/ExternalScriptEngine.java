@@ -161,7 +161,7 @@ public class ExternalScriptEngine extends AbstractScriptEngine
         }
         finally
         {
-            try {br.close();} catch(IOException ioe) {}
+            try {br.close();} catch(IOException ignored) {}
         }
         return null;
     }
@@ -197,7 +197,6 @@ public class ExternalScriptEngine extends AbstractScriptEngine
      * Returns the external script command to run given the specified script file. The
      * command must be in the form that is acceptable to ProcessBuilder.
      *
-     * @param scriptFile
      * @return an array of command parameters
      */
     protected String[] formatCommand(File scriptFile, ScriptContext context) throws ScriptException
@@ -268,9 +267,7 @@ public class ExternalScriptEngine extends AbstractScriptEngine
 
     /**
      * Execute the external script engine in separate process
-     * @param pb
-     * @param output
-     * @return 0 if the process completed successfully.
+     * @return the exit code for the invocation - 0 if the process completed successfully.
      */
     protected int runProcess(ScriptContext context, ProcessBuilder pb, StringBuffer output)
     {
@@ -310,10 +307,10 @@ public class ExternalScriptEngine extends AbstractScriptEngine
         finally
         {
             if (procReader != null)
-                try {procReader.close();} catch(IOException ioe) {}
+                try {procReader.close();} catch(IOException ignored) {}
 
             if (writer != null)
-                try {writer.close();} catch(IOException ioe) {}
+                try {writer.close();} catch(IOException ignored) {}
         }
 
         try
@@ -357,7 +354,7 @@ public class ExternalScriptEngine extends AbstractScriptEngine
         finally
         {
             if (br != null)
-                try {br.close();} catch(IOException ioe) {}
+                try {br.close();} catch(IOException ignored) {}
         }
     }
 }

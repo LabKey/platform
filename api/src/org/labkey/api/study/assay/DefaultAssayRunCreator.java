@@ -357,7 +357,10 @@ public class DefaultAssayRunCreator<ProviderType extends AbstractAssayProvider> 
                 for (File relatedFile : relatedFiles)
                 {
                     Pair<ExpData, String> dataOutput = createdRelatedOutputData(container, knownRelatedDataTypes, baseName, relatedFile);
-                    outputDatas.put(dataOutput.getKey(), dataOutput.getValue());
+                    if (dataOutput != null)
+                    {
+                        outputDatas.put(dataOutput.getKey(), dataOutput.getValue());
+                    }
                 }
             }
         }
@@ -373,7 +376,11 @@ public class DefaultAssayRunCreator<ProviderType extends AbstractAssayProvider> 
 
     }
 
-    /** Create an ExpData object for the file, and figure out what its role name should be */
+    /**
+     * Create an ExpData object for the file, and figure out what its role name should be
+     * @return null if the file is already linked to another run 
+     */
+    @Nullable
     public static Pair<ExpData, String> createdRelatedOutputData(Container container, List<AssayDataType> knownRelatedDataTypes, String baseName, File relatedFile)
     {
         String roleName = null;
@@ -402,7 +409,14 @@ public class DefaultAssayRunCreator<ProviderType extends AbstractAssayProvider> 
             }
             dataType = AbstractAssayProvider.RELATED_FILE_DATA_TYPE;
         }
-        return new Pair<ExpData, String>(createData(container, relatedFile, relatedFile.getName(), dataType), roleName);
+        ExpData data = createData(container, relatedFile, relatedFile.getName(), dataType);
+        if (data.getSourceApplication() == null)
+        {
+            return new Pair<ExpData, String>(data, roleName);
+        }
+
+        // The file is already linked to another run, so this one must have not created it
+        return null;
     }
 
     protected void savePropertyObject(ExpObject object, Map<DomainProperty, String> properties, User user) throws ExperimentException
