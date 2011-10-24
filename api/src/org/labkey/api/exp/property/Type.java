@@ -15,6 +15,7 @@
  */
 package org.labkey.api.exp.property;
 
+import java.io.File;
 import java.util.Arrays;
 import java.util.Date;
 import java.util.HashSet;
@@ -33,7 +34,7 @@ public enum Type
     DoubleType("Number (Double)", "xsd:double", "double", Double.class, Double.TYPE, Float.class, Float.TYPE), // Double.TYPE is here because manually created datasets with required doubles return Double.TYPE as Class
     DateTimeType("DateTime", "xsd:dateTime", "timestamp", Date.class),
     BooleanType("Boolean", "xsd:boolean", "boolean", Boolean.class, Boolean.TYPE),
-    AttachmentType("Attachment", "xsd:attachment", "varchar", String.class);
+    AttachmentType("Attachment", "xsd:attachment", "varchar", String.class, File.class);
 
     private String label;
     private String xsd;
