@@ -45,6 +45,12 @@ public class ClassResource extends AbstractResource
         return parent.getResourceClass().getResource(getName()) != null;
     }
 
+    @Override
+    public boolean isFile()
+    {
+        return true;
+    }
+
     public InputStream getInputStream() throws IOException
     {
         return parent.getResourceClass().getResourceAsStream(getName());
