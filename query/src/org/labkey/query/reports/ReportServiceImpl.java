@@ -540,9 +540,9 @@ public class ReportServiceImpl implements ReportService.I, ContainerManager.Cont
         _uncacheDependent(view);
     }
 
-    public Report _deserialize(File file) throws IOException, XmlValidationException
+    private Report _deserialize(Container container, User user, File file) throws IOException, XmlValidationException
     {
-        ReportDescriptor descriptor = ReportDescriptor.createFromXML(file);
+        ReportDescriptor descriptor = ReportDescriptor.createFromXML(container, user, file);
 
         if (descriptor != null)
         {
@@ -561,11 +561,11 @@ public class ReportServiceImpl implements ReportService.I, ContainerManager.Cont
         return null;
     }
 
-    public Report deserialize(File reportFile) throws IOException, XmlValidationException
+    private Report deserialize(Container container, User user, File reportFile) throws IOException, XmlValidationException
     {
         if (reportFile.exists())
         {
-            Report report = _deserialize(reportFile);
+            Report report = _deserialize(container, user, reportFile);
 
             // reset any report identifier, we want to treat an imported report as a new
             // report instance
@@ -579,7 +579,7 @@ public class ReportServiceImpl implements ReportService.I, ContainerManager.Cont
 
     public Report importReport(final User user, final Container container, File reportFile) throws IOException, SQLException, XmlValidationException
     {
-        Report report = deserialize(reportFile);
+        Report report = deserialize(container, user, reportFile);
         ReportDescriptor descriptor = report.getDescriptor();
         String key = descriptor.getReportKey();
 

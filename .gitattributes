@@ -2668,6 +2668,7 @@ study/src/org/labkey/study/importer/StudyImportJob.java -text
 study/src/org/labkey/study/importer/StudyImportProvider.java -text
 study/src/org/labkey/study/importer/StudyJobSupport.java -text
 study/src/org/labkey/study/importer/StudyReload.java -text
+study/src/org/labkey/study/importer/ViewCategoryImporter.java -text
 study/src/org/labkey/study/importer/VisitCohortAssigner.java -text
 study/src/org/labkey/study/importer/VisitImporter.java -text
 study/src/org/labkey/study/importer/VisitMapImporter.java -text
@@ -3046,6 +3047,7 @@ study/src/org/labkey/study/writer/StudyExportContext.java -text
 study/src/org/labkey/study/writer/StudySerializationRegistryImpl.java -text
 study/src/org/labkey/study/writer/StudyWriter.java -text
 study/src/org/labkey/study/writer/StudyXmlWriter.java -text
+study/src/org/labkey/study/writer/ViewCategoryWriter.java -text
 study/src/org/labkey/study/writer/VisitMapWriter.java -text
 study/src/org/labkey/study/writer/XmlVisitMapWriter.java -text
 study/webapp/WEB-INF/study/studyContext.xml -text

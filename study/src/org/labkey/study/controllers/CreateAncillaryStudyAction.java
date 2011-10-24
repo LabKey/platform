@@ -66,6 +66,7 @@ import org.labkey.study.writer.ParticipantGroupWriter;
 import org.labkey.study.writer.QcStateWriter;
 import org.labkey.study.writer.StudyExportContext;
 import org.labkey.study.writer.StudyWriter;
+import org.labkey.study.writer.ViewCategoryWriter;
 import org.labkey.study.writer.VisitMapWriter;
 import org.labkey.study.xml.StudyDocument;
 import org.springframework.validation.BindException;
@@ -194,6 +195,7 @@ public class CreateAncillaryStudyAction extends MutatingApiAction<EmphasisStudyD
         dataTypes.add(QcStateWriter.DATA_TYPE);
         dataTypes.add(VisitMapWriter.DATA_TYPE);
         dataTypes.add(DatasetWriter.SELECTION_TEXT);
+        dataTypes.add(ViewCategoryWriter.DATA_TYPE);
 
         StudyWriter writer = new StudyWriter();
         StudyExportContext ctx = new StudyExportContext(_sourceStudy, user, _sourceStudy.getContainer(), false, dataTypes, Logger.getLogger(StudyWriter.class));
