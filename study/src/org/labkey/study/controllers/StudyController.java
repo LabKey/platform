@@ -1316,6 +1316,8 @@ public class StudyController extends BaseStudyController
             study.setSubjectNounPlural(form.getSubjectNounPlural());
             study.setSubjectColumnName(form.getSubjectColumnName());
             study.setDescription(form.getDescription());
+            study.setStudyGrant(form.getStudyGrant());
+            study.setInvestigator(form.getInvestigator());
             StudyManager.getInstance().createStudy(user, study);
         }
     }

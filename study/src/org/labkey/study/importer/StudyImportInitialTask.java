@@ -90,6 +90,12 @@ public class StudyImportInitialTask extends PipelineJob.Task<StudyImportInitialT
                 if (studyXml.getDescription() != null)
                     studyForm.setDescription(studyXml.getDescription());
 
+                if (studyXml.getInvestigator() != null)
+                    studyForm.setInvestigator(studyXml.getInvestigator());
+
+                if (studyXml.getStudyGrant() != null)
+                    studyForm.setStudyGrant(studyXml.getStudyGrant());
+
                 StudyController.createStudy(support.getStudy(true), ctx.getContainer(), ctx.getUser(), studyForm);
             }
             else
