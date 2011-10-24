@@ -104,14 +104,6 @@ public class ReportService
         public String getReportIcon(ViewContext context, String reportType);
 
         /**
-         * Create a report instance from a previously serialized report. The report will exist in
-         * memory only, the ReportService.I.save method can be used to save a report to a specific
-         * container using a specific report key.
-         * @param file
-         */
-        public Report deserialize(File file) throws IOException, XmlValidationException;
-
-        /**
          * Imports a serialized report into the database using the specified user and container
          * parameters. Imported reports are always treated as new reports even if they were exported from
          * the same container.

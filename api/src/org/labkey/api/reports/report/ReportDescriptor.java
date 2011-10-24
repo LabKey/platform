@@ -27,6 +27,7 @@ import org.labkey.api.module.Module;
 import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.reports.ReportService;
 import org.labkey.api.reports.model.ViewCategory;
+import org.labkey.api.reports.model.ViewCategoryManager;
 import org.labkey.api.security.*;
 import org.labkey.api.security.SecurityManager;
 import org.labkey.api.security.permissions.Permission;
@@ -340,6 +341,9 @@ public class ReportDescriptor extends Entity implements SecurableResource
         descriptor.setReportName(getReportName());
         descriptor.setReportKey(getReportKey());
 
+        if (getCategory() != null)
+            descriptor.setCategory(getCategory().getLabel());
+
         ReportPropertyList props = descriptor.addNewProperties();
         for (Map.Entry<String, Object> entry : _props.entrySet())
         {
@@ -399,7 +403,7 @@ public class ReportDescriptor extends Entity implements SecurableResource
         return create(props);
     }
 
-    public static ReportDescriptor createFromXML(File file) throws IOException, XmlValidationException
+    public static ReportDescriptor createFromXML(Container container, User user, File file) throws IOException, XmlValidationException
     {
         try
         {
@@ -424,6 +428,11 @@ public class ReportDescriptor extends Entity implements SecurableResource
 
                 descriptor.init(props.toArray(new Pair[props.size()]));
 
+                if (d.getCategory() != null)
+                {
+                    ViewCategory category = ViewCategoryManager.getInstance().ensureViewCategory(container, user, d.getCategory());
+                    descriptor.setCategory(category);
+                }
                 return descriptor;
             }
 
