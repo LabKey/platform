@@ -462,14 +462,30 @@ function isTrueOrUndefined(obj)
 }
 
 // IE doesn't submit forms on enter, so this method allows one to hook up input elements to submit forms
-function addInputSubmitEvent(form, input) {
-    input.onkeydown = function(e) {
-        e = e || window.event;
-        if (e.keyCode == 13) {
-            form.submit();
-            return false;
-        }
-    };
+function addInputSubmitEvent(form, inputs)
+{
+    if (!input)
+    {
+        inputs = form.getElementsByTagName('input');
+    }
+    else if (!Ext.isArray(inputs))
+    {
+        inputs = [inputs];
+    }
+
+    for (var j = 0; j < inputs.length; j++)
+    {
+        var input = inputs[j];
+        input.onkeydown = function(e)
+        {
+            e = e || window.event;
+            if (e.keyCode == 13)
+            {
+                form.submit();
+                return false;
+            }
+        };
+    }
 }
 
 

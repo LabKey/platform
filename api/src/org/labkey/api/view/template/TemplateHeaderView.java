@@ -147,16 +147,12 @@ public class TemplateHeaderView extends JspView<TemplateHeaderView.TemplateHeade
 
         if (AppProps.getInstance().isDevMode())
         {
-            int count = ConnectionWrapper.getActiveConnectionCount();
-            if (count > 0)
+            int leakCount = ConnectionWrapper.getProbableLeakCount();
+            if (leakCount > 0)
             {
+                int count = ConnectionWrapper.getActiveConnectionCount();
                 String connectionsInUse = "<a href=\"" + PageFlowUtil.urlProvider(AdminUrls.class).getMemTrackerURL() + "\">" + count + " DB connection" + (count == 1 ? "" : "s") + " in use.";
-                int leakCount = ConnectionWrapper.getProbableLeakCount();
-                if (leakCount > 0)
-                {
-                    connectionsInUse += " " + leakCount + " probable leak" + (leakCount == 1 ? "" : "s") + ".";
-                }
-                connectionsInUse += "</a>";
+                connectionsInUse += " " + leakCount + " probable leak" + (leakCount == 1 ? "" : "s") + ".</a>";
                 _warningMessages.add(connectionsInUse);
             }
         }

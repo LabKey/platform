@@ -215,7 +215,7 @@ public interface FolderType
                 tabs.add(new NavTree("Admin Console", PageFlowUtil.urlProvider(AdminUrls.class).getAdminConsoleURL()));
             }
 
-            return new AppBar(container.getName(), tabs);
+            return new AppBar(container.getName(), container.getStartURL(context.getUser()), tabs);
         }
 
         private List<Module> getSortedModuleList()

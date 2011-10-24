@@ -47,7 +47,6 @@ import org.labkey.api.view.UnauthorizedException;
 import org.labkey.api.view.ViewBackgroundInfo;
 import org.labkey.api.view.ViewContext;
 import org.labkey.api.view.ViewServlet;
-import org.labkey.api.view.template.AppBar;
 import org.labkey.api.view.template.DialogTemplate;
 import org.labkey.api.view.template.HomeTemplate;
 import org.labkey.api.view.template.PageConfig;

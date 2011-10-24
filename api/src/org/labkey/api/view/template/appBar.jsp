@@ -28,15 +28,12 @@
     AppBar bean = ((AppBarView) HttpView.currentView()).getModelBean();
     if (null == bean)
         return;
-    ViewContext context = HttpView.currentContext();
-    Container c = context.getContainer();
-    ActionURL startUrl = c.getStartURL(context.getUser());
 %>
 <div class="labkey-app-bar">
 <div class="folder-header">
 <table class="folder-header" id="labkey-app-bar-table">
     <tr>
-        <td class="folder-title"><a href="<%=h(startUrl.getLocalURIString())%>"><%=h(bean.getFolderTitle())%></a></td>
+        <td class="folder-title"><a href="<%=h(bean.getValue())%>"><%=h(bean.getFolderTitle())%></a></td>
         <td class="button-bar">
             <ul class="labkey-tab-strip">
                 <table cellpadding="0" cellspacing="0">

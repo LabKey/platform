@@ -33,7 +33,6 @@ public class PropertyColumn extends LookupColumn
 {
     protected PropertyDescriptor _pd;
     protected Container _container;
-    protected boolean _mvIndicator = false;
     protected boolean _parentIsObjectId = false;
 
     public PropertyColumn(PropertyDescriptor pd, TableInfo tinfoParent, String parentLsidColumn, Container container, User user)
@@ -95,9 +94,9 @@ public class PropertyColumn extends LookupColumn
 
 
     // select the mv column instead
-    public void setMvIndicator(boolean mv)
+    public void setMvIndicatorColumn(boolean mv)
     {
-        _mvIndicator = mv;
+        super.setMvIndicatorColumn(mv);
         setSqlTypeName(getSqlDialect().sqlTypeNameFromSqlType(PropertyType.STRING.getSqlType()));
     }
 
@@ -112,7 +111,7 @@ public class PropertyColumn extends LookupColumn
     {
         String cast = getPropertySqlCastType();
         SQLFragment sql = new SQLFragment("(SELECT ");
-        if (_mvIndicator)
+        if (isMvIndicatorColumn())
         {
             sql.append("MvIndicator");
         }
@@ -171,7 +170,7 @@ public class PropertyColumn extends LookupColumn
 
     private String getPropertySqlCastType()
     {
-        if (_mvIndicator)
+        if (isMvIndicatorColumn())
             return null;
         PropertyType pt = _pd.getPropertyType();
         if (PropertyType.DOUBLE == pt || PropertyType.DATE_TIME == pt)
@@ -230,6 +229,10 @@ public class PropertyColumn extends LookupColumn
     @Override
     public Class getJavaClass()
     {
+        if (isMvIndicatorColumn())
+        {
+            return String.class;
+        }
         return _pd.getPropertyType().getJavaType();
     }
 }

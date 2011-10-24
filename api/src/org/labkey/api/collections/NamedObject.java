@@ -20,4 +20,6 @@ public interface NamedObject
     public String getName();
 
     public Object getObject();
+
+    public String getDefaultValue();
 } 

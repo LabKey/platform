@@ -128,7 +128,13 @@ public class HomeTemplate extends PrintTemplate
         }
 
         //HACK to fix up navTrail to delete navBar items
-        page.setNavTrail(appBar.setNavTrail(page.getNavTrail(), context.getActionURL()));
+        List<NavTree> navTrail = page.getNavTrail();
+        if (context.getContainer().isWorkbook())
+        {
+            navTrail = new ArrayList<NavTree>(navTrail);
+            navTrail.add(0, new NavTree(context.getContainer().getTitle(), context.getContainer().getStartURL(context.getUser())));
+        }
+        page.setNavTrail(appBar.setNavTrail(navTrail, context.getActionURL()));
 
         return new AppBarView(appBar);
     }

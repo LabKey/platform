@@ -119,7 +119,7 @@ public class QcAwarePropertyForeignKey extends PropertyForeignKey
             }
             PropertyColumn qcColumn = new PropertyColumn(pd, parent, null, _schema.getUser());
             qcColumn.setParentIsObjectId(_parentIsObjectId);
-            qcColumn.setMvIndicator(true);
+            qcColumn.setMvIndicatorColumn(true);
             qcColumn.setNullable(true);
             qcColumn.setUserEditable(false);
             return qcColumn;

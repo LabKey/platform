@@ -19,9 +19,17 @@ import org.labkey.api.collections.NamedObject;
 
 public class SimpleNamedObject extends Pair<String, Object> implements NamedObject
 {
+    private String _defaultValue;
+
     public SimpleNamedObject(String name, Object object)
     {
         super(name, object);
+    }
+
+    public SimpleNamedObject(String name, Object object, String defaultValue)
+    {
+        this(name, object);
+        _defaultValue = defaultValue;
     }
 
     public String getName()
@@ -32,5 +40,10 @@ public class SimpleNamedObject extends Pair<String, Object> implements NamedObje
     public Object getObject()
     {
         return getValue();
+    }
+
+    public String getDefaultValue()
+    {
+        return _defaultValue;
     }
 }

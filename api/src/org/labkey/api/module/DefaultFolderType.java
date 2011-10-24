@@ -294,7 +294,7 @@ public class DefaultFolderType implements FolderType
         Module currentModule = ModuleLoader.getInstance().getModuleForController(controllerName);
         startPage.setSelected(currentModule == getDefaultModule());
         String title = context.getContainer().isWorkbook() ? context.getContainer().getTitle() : context.getContainer().getName();
-        return new AppBar(title, startPage);
+        return new AppBar(title, context.getContainer().getStartURL(context.getUser()), startPage);
     }
 
     public boolean isWorkbookType()

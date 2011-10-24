@@ -33,21 +33,15 @@ public class AppBar extends NavTree
     private String _pageTitle;
     private List<NavTree> _navTrail;
 
-    public AppBar(String folderTitle, NavTree... buttons)
+    public AppBar(String folderTitle, ActionURL titleURL, NavTree... buttons)
     {
-        this(folderTitle, Arrays.asList(buttons));
+        this(folderTitle, titleURL, Arrays.asList(buttons));
     }
 
-    public AppBar(String folderTitle, List<NavTree> buttons)
+    public AppBar(String folderTitle, ActionURL titleURL, List<NavTree> buttons)
     {
-        super(folderTitle);
+        super(folderTitle, titleURL);
         addChildren(buttons);
-    }
-
-    public AppBar(List<NavTree> navTrail, List<NavTree> buttons)
-    {
-        this(navTrail.size() > 0 ? navTrail.get(0).getKey(): "No Page Title...", buttons);
-        this._navTrail = fixCrumbTrail(navTrail, null);
     }
 
     public String getFolderTitle()
@@ -82,11 +76,6 @@ public class AppBar extends NavTree
     public List<NavTree> getNavTrail()
     {
         return _navTrail;
-    }
-
-    public void setNavTrail(List<NavTree> navTrail)
-    {
-        _navTrail = setNavTrail(navTrail, null);
     }
 
     public List<NavTree> setNavTrail(List<NavTree> navTrail, ActionURL actionURL)
@@ -231,8 +220,6 @@ public class AppBar extends NavTree
 
         if (null != selected)
             selected.setSelected(true);
-//        else
-//            buttons[buttons.length -1].setSelected(true);
 
         if (hideTitle)
         {
@@ -245,21 +232,25 @@ public class AppBar extends NavTree
             setPageTitle(crumbTrail.get(crumbTrail.size() - 1).getKey());
             crumbTrail = crumbTrail.subList(0, crumbTrail.size() - 1);
 
+            int index = 0;
+            boolean keepLooking = true;
             // First item in crumb trail is usually the home page. See if it matches one of the tabs
-            if (!crumbTrail.isEmpty())
+            while (index < crumbTrail.size() && keepLooking)
             {
-                String firstLink = crumbTrail.get(0).getValue();
+                keepLooking = false;
+                String link = crumbTrail.get(index).getValue();
+
                 for (NavTree button : buttons)
                 {
-                    if (ObjectUtils.equals(button.getValue(), firstLink) || (actionURL != null && ObjectUtils.equals(actionURL.getLocalURIString(), firstLink)))
+                    if (ObjectUtils.equals(button.getValue(), link) || (actionURL != null && ObjectUtils.equals(actionURL.getLocalURIString(), link)))
                     {
-                        // Exclude the duplicate item
-                        return crumbTrail.subList(1, crumbTrail.size());
+                        index++;
+                        keepLooking = true;
                     }
                 }
             }
-            else
-                return Collections.emptyList();
+
+            return crumbTrail.subList(index, crumbTrail.size());
         }
 
         return crumbTrail;

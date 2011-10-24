@@ -240,6 +240,7 @@ public abstract class DisplayColumn extends RenderColumn
         return _tsvFormat;
     }
 
+    /** @return the HTML version of this column's value */
     public String getFormattedValue(RenderContext ctx)
     {
         Format format = getFormat();
@@ -260,6 +261,7 @@ public abstract class DisplayColumn extends RenderColumn
         return ConvertUtils.convert(value);
     }
 
+    /** @return the TSV formatted value. Should not include surrounding quotes - the caller will handle this. */
     public String getTsvFormattedValue(RenderContext ctx)
     {
         Format format = getTsvFormat();
@@ -307,6 +309,7 @@ public abstract class DisplayColumn extends RenderColumn
 
     }
 
+    /** The value to display. Not HTML or otherwise encoded. */
     public Object getDisplayValue(RenderContext ctx)
     {
         return getValue(ctx);

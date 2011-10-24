@@ -69,7 +69,7 @@ public class MVDisplayColumnFactory implements DisplayColumnFactory
 
         //CONSIDER new PropertyColumn constructor
         PropertyColumn mvColumn = new PropertyColumn(property.getPropertyDescriptor(), colObjectId, null, user);
-        mvColumn.setMvIndicator(true);
+        mvColumn.setMvIndicatorColumn(true);
         mvColumn.setName(mvColumnName);
         mvColumn.setAlias(ColumnInfo.legalNameFromName(mvColumnName));
         mvColumn.setLabel(mvColumnName);

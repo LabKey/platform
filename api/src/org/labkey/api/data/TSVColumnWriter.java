@@ -103,11 +103,6 @@ public abstract class TSVColumnWriter extends TSVWriter
         }
     }
 
-    protected void writeValues(RenderContext ctx, Iterable<DisplayColumn> columns)
-    {
-        writeLine(getValues(ctx, columns));
-    }
-
     /** Get the unquoted column values. */
     protected Iterable<String> getValues(RenderContext ctx, Iterable<DisplayColumn> displayColumns)
     {

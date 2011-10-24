@@ -16,7 +16,6 @@
 
 package org.labkey.api.study.actions;
 
-import org.labkey.api.action.AppBarAction;
 import org.labkey.api.action.SimpleViewAction;
 import org.labkey.api.data.*;
 import org.labkey.api.exp.api.ExpProtocol;
@@ -25,7 +24,6 @@ import org.labkey.api.study.assay.AssayUrls;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.NavTree;
-import org.labkey.api.view.template.AppBar;
 
 import java.util.ArrayList;
 import java.util.List;
