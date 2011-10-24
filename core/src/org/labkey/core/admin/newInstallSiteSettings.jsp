@@ -28,14 +28,14 @@
 
 <labkey:errors/>
 
-<form method="POST">
+<form method="POST" id="newInstallSettingsForm">
     <h3 style="margin-bottom: 2px;"><label for="rootPath">Files Location</label></h3>
     <div style="margin-bottom: 10px;">
         This is where LabKey Server stores and looks for data files. The server will
         automatically create subdirectories to match the organization within
         LabKey Server. You can later configure the server to look in other file locations.
         <br/>
-        <input type="text" id="rootPath" name="rootPath" style="width: 100%; max-width: 40em;" value="<%=h(bean.getRootPath())%>">
+        <input autofocus="autofocus" type="text" id="rootPath" name="rootPath" style="width: 100%; max-width: 40em;" value="<%=h(bean.getRootPath())%>">
     </div>
 
     <h3 style="margin-bottom: 2px;"><label for="siteName">Site Name</label></h3>
@@ -64,3 +64,10 @@
     </div>
     <%=generateSubmitButton("Next")%>
 </form>
+
+<script type="text/javascript">
+    Ext.onReady(function()
+    {
+        addInputSubmitEvent(document.getElementById("newInstallSettingsForm"));
+    });
+</script>

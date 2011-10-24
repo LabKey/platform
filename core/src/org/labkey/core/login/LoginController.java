@@ -825,8 +825,8 @@ public class LoginController extends SpringActionController
         {
             verifyBeforeView(form, reshow, errors);
 
-            NamedObjectList nonPasswordInputs = getNonPasswordInputs();
-            NamedObjectList passwordInputs = getPasswordInputs();
+            NamedObjectList nonPasswordInputs = getNonPasswordInputs(form);
+            NamedObjectList passwordInputs = getPasswordInputs(form);
             String buttonText = getButtonText();
             SetPasswordBean bean = new SetPasswordBean(form, getEmailForForm(form), _unrecoverableError, getMessage(form), nonPasswordInputs, passwordInputs, getClass(), isCancellable(form), buttonText);
             HttpView view = new JspView<SetPasswordBean>("/org/labkey/core/login/setPassword.jsp", bean, errors);
@@ -909,7 +909,7 @@ public class LoginController extends SpringActionController
             return null;
         }
 
-        protected NamedObjectList getNonPasswordInputs()
+        protected NamedObjectList getNonPasswordInputs(SetPasswordForm form)
         {
             return new NamedObjectList();
         }
@@ -926,7 +926,7 @@ public class LoginController extends SpringActionController
 
         protected abstract void verify(SetPasswordForm form, ValidEmail email, Errors errors);
         protected abstract String getMessage(SetPasswordForm form);
-        protected abstract NamedObjectList getPasswordInputs();
+        protected abstract NamedObjectList getPasswordInputs(SetPasswordForm form);
         protected abstract void afterPasswordSet(BindException errors, User user) throws SQLException;
         protected abstract boolean isCancellable(SetPasswordForm form);
     }
@@ -982,7 +982,7 @@ public class LoginController extends SpringActionController
         }
 
         @Override
-        protected NamedObjectList getPasswordInputs()
+        protected NamedObjectList getPasswordInputs(SetPasswordForm form)
         {
             NamedObjectList list = new NamedObjectList();
             list.put(new SimpleNamedObject("Password", "password"));
@@ -1039,16 +1039,16 @@ public class LoginController extends SpringActionController
         }
 
         @Override
-        protected NamedObjectList getNonPasswordInputs()
+        protected NamedObjectList getNonPasswordInputs(SetPasswordForm form)
         {
             NamedObjectList list = new NamedObjectList();
-            list.put(new SimpleNamedObject("Email Address", "email"));
+            list.put(new SimpleNamedObject("Email Address", "email", form.getEmail()));
 
             return list;
         }
 
         @Override
-        protected NamedObjectList getPasswordInputs()
+        protected NamedObjectList getPasswordInputs(SetPasswordForm form)
         {
             NamedObjectList list = new NamedObjectList();
             list.put(new SimpleNamedObject("Password", "password"));
@@ -1217,7 +1217,7 @@ public class LoginController extends SpringActionController
         }
 
         @Override
-        protected NamedObjectList getPasswordInputs()
+        protected NamedObjectList getPasswordInputs(SetPasswordForm form)
         {
             NamedObjectList list = new NamedObjectList();
             list.put(new SimpleNamedObject("Old Password", "oldPassword"));

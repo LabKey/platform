@@ -196,7 +196,13 @@ public enum PasswordRule
     {
         if (StringUtils.isBlank(password1) || StringUtils.isBlank(password2))
         {
-            messages.add("You must enter two passwords.");
+            messages.add("You must enter a password.");
+            return false;
+        }
+
+        if (StringUtils.isBlank(password1) || StringUtils.isBlank(password2))
+        {
+            messages.add("You must enter your password twice.");
             return false;
         }
 

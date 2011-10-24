@@ -72,8 +72,7 @@ public class StudyFolderType extends DefaultFolderType
         String controllerName = context.getActionURL().getPageFlow();
         Module currentModule = ModuleLoader.getInstance().getModuleForController(controllerName);
         startPage.setSelected(currentModule == getDefaultModule());
-        return new AppBar(getStartPageLabel(context), startPage);
-
+        return new AppBar(getStartPageLabel(context), startURL, startPage);
     }
 
     @Override

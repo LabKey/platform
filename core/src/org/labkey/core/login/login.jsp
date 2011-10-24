@@ -49,11 +49,9 @@
     Ext.onReady(function() {
         var forms = document.getElementsByTagName('form');
 
-        for (var i=0;i < forms.length;i++) {
-            var inputs = forms[i].getElementsByTagName('input');
-
-            for (var j=0;j < inputs.length;j++)
-                addInputSubmitEvent(forms[i], inputs[j]);
+        for (var i=0;i < forms.length;i++)
+        {
+            addInputSubmitEvent(forms[i]);
         }
     });
 </script>

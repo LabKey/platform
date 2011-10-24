@@ -27,7 +27,7 @@
     LoginController.SetPasswordBean bean = ((JspView<LoginController.SetPasswordBean>)HttpView.currentView()).getModelBean();
     String errors = formatMissedErrors("form");
 %>
-<form method="POST" action="<%=bean.actionName%>.post"><labkey:csrf />
+<form method="POST" id="setPasswordForm" action="<%=bean.actionName%>.post"><labkey:csrf />
 <%
     if (errors.length() > 0)
     { %>
@@ -48,7 +48,7 @@
     <div style="padding-top: 1em;">
         <label for="<%=input.getObject()%>"><%=h(input.getName())%></label>
         <br/>
-        <input id="<%=input.getObject()%>" type="text" name="<%=input.getObject()%>" style="width:40em;">
+        <input id="<%=input.getObject()%>" type="text" name="<%=input.getObject()%>" value="<%= h(input.getDefaultValue()) %>" style="width:40em;">
     </div><%
     }
 
@@ -98,3 +98,10 @@
     <div style="padding-top: 1em;"><%=PageFlowUtil.generateSubmitButton(bean.buttonText, "", "name=\"set\"")%><%=bean.cancellable ? generateButton("Cancel", bean.form.getReturnURLHelper()) : ""%></div><%
     } %>
 </form>
+
+<script type="text/javascript">
+    Ext.onReady(function()
+    {
+        addInputSubmitEvent(document.getElementById("setPasswordForm"));
+    });
+</script>
