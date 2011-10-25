@@ -182,6 +182,8 @@ LABKEY.Query = new function()
          * If true, all information required to recreate the query will be stored on the server and a unique query name will be passed to the
          * success callback.  This temporary query name can be used by all other API methods, including Query Web Part creation, for as long
          * as the current user's session remains active.
+         * @param {Object} [config.parameters] Map of name (string)/value pairs for the values of parameters if the SQL
+         *        references underlying queries that are parameterized.
          * @param {Double} [config.requiredVersion] Set this field to "9.1" to receive the {@link LABKEY.Query.ExtendedSelectRowsResults} format
                    instead of the SelectRowsResults format. The main difference is that in the
                    ExtendedSelectRowsResults format each column in each row
@@ -321,6 +323,8 @@ LABKEY.Query = new function()
 				    <li><b>options:</b> the options used for the AJAX request</li>
 				</ul>
         * @param {Array} [config.filterArray] Array of objects created by {@link LABKEY.Filter.create}.
+        * @param {Object} [config.parameters] Map of name (string)/value pairs for the values of parameters if the
+        *        target query is a parameterized query.
         * @param {String} [config.sort]  String description of the sort.  It includes the column names
         *       listed in the URL of a sorted data region (with an optional minus prefix to indicate
         *       descending order). In the case of a multi-column sort, up to three column names can be

@@ -19,6 +19,7 @@ import org.apache.commons.lang.ObjectUtils;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.NavTree;
 
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
@@ -230,27 +231,32 @@ public class AppBar extends NavTree
         {
             // Last item is page title, strip it off the crumb trail
             setPageTitle(crumbTrail.get(crumbTrail.size() - 1).getKey());
-            crumbTrail = crumbTrail.subList(0, crumbTrail.size() - 1);
 
-            int index = 0;
-            boolean keepLooking = true;
-            // First item in crumb trail is usually the home page. See if it matches one of the tabs
-            while (index < crumbTrail.size() && keepLooking)
+            List<NavTree> result = new ArrayList<NavTree>();
+            boolean stopLooking = false;
+
+            for (int i = 0; i < crumbTrail.size() - 1; i++)
             {
-                keepLooking = false;
-                String link = crumbTrail.get(index).getValue();
-
-                for (NavTree button : buttons)
+                String link = crumbTrail.get(i).getValue();
+                boolean foundMatch = false;
+                if (!stopLooking)
                 {
-                    if (ObjectUtils.equals(button.getValue(), link) || (actionURL != null && ObjectUtils.equals(actionURL.getLocalURIString(), link)))
+                    for (NavTree button : buttons)
                     {
-                        index++;
-                        keepLooking = true;
+                        if (ObjectUtils.equals(button.getValue(), link) || (actionURL != null && ObjectUtils.equals(actionURL.getLocalURIString(), link)))
+                        {
+                            foundMatch = true;
+                        }
                     }
+                }
+                if (!foundMatch)
+                {
+                    stopLooking = true;
+                    result.add(crumbTrail.get(i));
                 }
             }
 
-            return crumbTrail.subList(index, crumbTrail.size());
+            return result;
         }
 
         return crumbTrail;
