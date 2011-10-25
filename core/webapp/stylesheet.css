@@ -894,9 +894,10 @@ table.labkey-nav-trail
 }
 
 .labkey-app-bar ul.labkey-tab-strip a:hover {
-    background-color: #f4f4f4;
+    background-color: #f8f8f8;
     opacity: 1.0;
-	color: #010101;
+	color: #000;
+    border-bottom: 1px solid #f8f8f8;
 }
 
 .labkey-app-bar .labkey-tab-selected a /*, .labkey-tab a, .labkey-tab-inactive a */ {
