@@ -591,6 +591,48 @@ LABKEY.Security = new function()
             });
         },
 
+
+        /**
+         * Retrieves the full set of modules that are installed on the server.
+         * @param config A configuration object with the following properties
+         * @param {function} config.success A reference to a function to call with the API results. This
+         * function will be passed the following parameter:
+         * <ul>
+         * <li><b>folderType:</b> the folderType, based on the container used when calling this API</li>
+         * <li><b>modules:</b> Array of all modules present on this site, each of which consists of the following properties:
+         *  <ul>
+         *      <li><b>name:</b> the name of the module</li>
+         *      <li><b>required:</b> whether this module is required in the folder type specified above</li>
+         *      <li><b>tabName:</b> name of the tab associated with this module</li>
+         *      <li><b>shouldDisplay:</b> whether this module should be visible in the module list for this container</li>
+         *  </ul>
+         * </li>
+         * <li><b>response:</b> The XMLHttpResponse object</li>
+         * </ul>
+         * @param {function} [config.failure] A reference to a function to call when an error occurs. This
+         * function will be passed the following parameters:
+         * <ul>
+         * <li><b>errorInfo:</b> an object containing detailed error information (may be null)</li>
+         * <li><b>response:</b> The XMLHttpResponse object</li>
+         * </ul>
+         * @param {object} [config.scope] An optional scoping object for the success and error callback functions (default to this).
+         * @returns {Mixed} In client-side scripts, this method will return a transaction id
+         * for the async request that can be used to cancel the request
+         * (see <a href="http://dev.sencha.com/deploy/dev/docs/?class=Ext.data.Connection&member=abort" target="_blank">Ext.data.Connection.abort</a>).
+         * In server-side scripts, this method will return the JSON response object (first parameter of the success or failure callbacks.)
+         */
+        getModules : function(config)
+        {
+            return LABKEY.Ajax.request({
+                url: LABKEY.ActionURL.buildURL("admin", "getModules", config.containerPath),
+                method : 'POST',
+                jsonData : {},
+                success: LABKEY.Utils.getCallbackWrapper(LABKEY.Utils.getOnSuccess(config), config.scope),
+                failure: LABKEY.Utils.getCallbackWrapper(LABKEY.Utils.getOnFailure(config), config.scope, true)
+            });
+        },
+
+
         /**
          * Returns information about the specified container, including the user's current permissions within
          * that container. If the includeSubfolders config option is set to true, it will also return information
