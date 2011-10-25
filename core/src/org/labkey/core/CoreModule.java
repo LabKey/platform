@@ -109,6 +109,7 @@ import org.labkey.api.view.BaseWebPartFactory;
 import org.labkey.api.view.ContactWebPart;
 import org.labkey.api.view.HttpView;
 import org.labkey.api.view.JspView;
+import org.labkey.api.view.NavTree;
 import org.labkey.api.view.Portal;
 import org.labkey.api.view.VBox;
 import org.labkey.api.view.ViewContext;
@@ -316,6 +317,21 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
                     public boolean isAvailable(Container c, String location)
                     {
                         return false;
+                    }
+                },
+                new AlwaysAvailableWebPartFactory("Projects")
+                {
+                    public WebPartView getWebPartView(ViewContext portalCtx, Portal.WebPart webPart) throws Exception
+                    {
+                        JspView view = new JspView("/org/labkey/core/project/projects.jsp", webPart);
+                        view.setTitle("Projects");
+
+                        NavTree customize = new NavTree("");
+                        customize.setScript("customizeProjectWebpart(" + webPart.getRowId() + ", \'" + webPart.getPageId() + "\', " + webPart.getIndex() + ");");
+                        customize.setDisplay("Large Icons");
+                        view.setCustomize(customize);
+
+                        return view;
                     }
                 }));
     }

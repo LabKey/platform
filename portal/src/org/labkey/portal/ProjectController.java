@@ -17,11 +17,13 @@
 package org.labkey.portal;
 
 import org.apache.commons.lang.StringUtils;
+import org.apache.log4j.Logger;
 import org.labkey.api.action.ApiAction;
 import org.labkey.api.action.ApiResponse;
 import org.labkey.api.action.ApiSimpleResponse;
 import org.labkey.api.action.ApiVersion;
 import org.labkey.api.action.CustomApiForm;
+import org.labkey.api.action.ExportAction;
 import org.labkey.api.action.FormViewAction;
 import org.labkey.api.action.HasViewContext;
 import org.labkey.api.action.ReturnUrlForm;
@@ -33,6 +35,7 @@ import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.files.FileUrls;
 import org.labkey.api.module.FolderType;
+import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.pipeline.PipelineUrls;
 import org.labkey.api.portal.ProjectUrls;
 import org.labkey.api.security.IgnoresTermsOfUse;
@@ -45,6 +48,7 @@ import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.settings.AppProps;
 import org.labkey.api.settings.LookAndFeelProperties;
 import org.labkey.api.util.HeartBeat;
+import org.labkey.api.util.NetworkDrive;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.Path;
 import org.labkey.api.util.ReturnURLString;
@@ -73,6 +77,8 @@ import org.springframework.web.servlet.ModelAndView;
 
 import javax.servlet.RequestDispatcher;
 import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+import java.io.File;
 import java.util.ArrayList;
 import java.util.Enumeration;
 import java.util.HashMap;
@@ -83,6 +89,8 @@ import java.util.Map;
 public class ProjectController extends SpringActionController
 {
     private static final DefaultActionResolver _actionResolver = new DefaultActionResolver(ProjectController.class);
+
+    private static final Logger _log = Logger.getLogger(ProjectController.class);
 
     public static class ProjectUrlsImpl implements ProjectUrls
     {
@@ -347,6 +355,27 @@ public class ProjectController extends SpringActionController
         @Override
         public void validateCommand(Object target, Errors errors)
         {
+        }
+    }
+
+    @RequiresPermissionClass(ReadPermission.class)
+    public class DownloadProjectIconAction extends ExportAction<Object>
+    {
+        public void export(Object o, HttpServletResponse response, BindException errors) throws Exception
+        {
+            FolderType ft = getContainer().getFolderType();
+            String iconPath = ft.getFolderIconPath();
+            assert null != iconPath;
+
+            iconPath = ModuleLoader.getServletContext().getRealPath(iconPath);
+            File iconFile = new File(iconPath);
+
+            if (iconFile == null || !NetworkDrive.exists(iconFile))
+            {
+                iconFile = new File(FolderType.NONE.getFolderIconPath());  //fall back to default
+                _log.warn("Could not find specified icon: "+iconPath);
+            }
+            PageFlowUtil.streamFile(response, iconFile, false);
         }
     }
 
