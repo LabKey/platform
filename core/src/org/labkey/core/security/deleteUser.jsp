@@ -26,9 +26,9 @@
     SecurityController.UpdateMembersBean bean = ((JspView<SecurityController.UpdateMembersBean>)HttpView.currentView()).getModelBean();
 
 //include hidden inputs for each name to be added.
-for(ValidEmail email : bean.addnames)
+for(String name : bean.addnames)
 {%>
-    <input type="hidden" name="names" value="<%=email.toString()%>"><%
+    <input type="hidden" name="names" value="<%= name %>"><%
 }
 
 //include hidden inputs for each username to be deleted.

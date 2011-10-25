@@ -773,10 +773,11 @@ var UserInfoPopup = Ext.extend(Ext.Window,{
         {
             var users = this.cache.getMembersOf(this.userId);
             user = users.sort(function(a,b){
-                var A = a.Name.toUpperCase(), B = b.Name.toUpperCase();
+                // sort by type (groups before users) and name
+                var A = a.Type + a.Name.toUpperCase(), B = b.Type + b.Name.toUpperCase();
                 return A > B ? 1 : A < B ? -1 : 0;
             });
-            html.push("<b>users</b>");
+            html.push("<b>members</b>");
 
             if (this.userId == SecurityCache.prototype.groupUsers)
             {
@@ -799,14 +800,17 @@ var UserInfoPopup = Ext.extend(Ext.Window,{
                 for (i=0 ; i<users.length ; i++)
                 {
                     user = users[i];
-                    html.push("<tr><td width=100>" + $h(user.Name) + "</td>");
+                    var isMemberGroup = user.Type == 'g' || user.Type == 'r';
+                    html.push("<tr><td width=100>");
+                    html.push(isMemberGroup ? "<b>" + $h(user.Name) + "</b>" : $h(user.Name));
+                    html.push("</td>");
                     if (canRemove)
                     {
                         removeWrapper = '$remove$' + id + user.UserId;
                         html.push('<td><a class="labkey-button" href="#" id="' + removeWrapper + '"><span>remove</span></a></td>');
                     }
                     html.push("<td>");
-                    html.push(_open('permissions', $url('user','userAccess',this.cache.projectId,{userId:user.UserId})));
+                    html.push(isMemberGroup ? "&nbsp;" : _open('permissions', $url('user','userAccess',this.cache.projectId,{userId:user.UserId})));
                     html.push("</td></tr>");
                 }
                 html.push("</table>");
@@ -821,7 +825,7 @@ var UserInfoPopup = Ext.extend(Ext.Window,{
         {
             if (deleteGroup)
                 Ext.fly(deleteGroup).dom.onclick = this.DeleteGroup_onClick.createDelegate(this);
-            this.addPrincipalComboBox = new PrincipalComboBox({cache:this.cache, usersOnly:true, forceSelection:false});
+            this.addPrincipalComboBox = new PrincipalComboBox({cache:this.cache, forceSelection:false});
             this.addPrincipalComboBox.on("select",this.Combo_onSelect,this);
             this.addPrincipalComboBox.on("change",this.Combo_onChange,this);
             this.addPrincipalComboBox.on("specialkey",this.Combo_onKeyPress,this);

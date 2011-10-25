@@ -18,6 +18,7 @@ package org.labkey.core.security;
 
 import org.labkey.api.security.AuthenticationManager;
 import org.labkey.api.security.Group;
+import org.labkey.api.security.UserPrincipal;
 import org.labkey.api.view.JspView;
 import org.labkey.api.util.Pair;
 import org.springframework.validation.BindException;
@@ -30,7 +31,7 @@ import java.util.List;
 */
 public class GroupView extends JspView<GroupView.GroupBean>
 {
-    public GroupView(Group group, List<Pair<Integer,String>> members, List<String> messages, boolean systemGroup, BindException errors)
+    public GroupView(Group group, List<UserPrincipal> members, List<String> messages, boolean systemGroup, BindException errors)
     {
         super("/org/labkey/core/security/group.jsp", new GroupBean(), errors);
 
@@ -48,7 +49,7 @@ public class GroupView extends JspView<GroupView.GroupBean>
     {
         public Group group;
         public String groupName;
-        public List<Pair<Integer, String>> members;
+        public List<UserPrincipal> members;
         public List<String> messages;
         public boolean isSystemGroup;
         public String ldapDomain;

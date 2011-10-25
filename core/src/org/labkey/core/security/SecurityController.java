@@ -620,9 +620,25 @@ public class SecurityController extends SpringActionController
             List<String> messages = new ArrayList<String>();
 
             //check for new users to add.
-            String[] allNames = form.getNames() == null ? new String[0] : form.getNames().split("\n");
+            String[] addNames = form.getNames() == null ? new String[0] : form.getNames().split("\n");
 
-            List<String> emails = new ArrayList<String>(Arrays.asList(allNames));
+            // split the list of names to add into groups and users (emails)
+            List<Group> addGroups = new ArrayList<Group>();
+            List<String> emails = new ArrayList<String>();
+            for (String name : addNames)
+            {
+                Integer gid = SecurityManager.getGroupId(null, StringUtils.trim(name), false);
+                Integer pid = SecurityManager.getGroupId(container, StringUtils.trim(name), false);
+
+                // check for the groupId in the global group list
+                if (null != gid)
+                    addGroups.add(SecurityManager.getGroup(gid));
+                // check for the groupId in the project
+                else if (null != pid)
+                    addGroups.add(SecurityManager.getGroup(pid));
+                else
+                    emails.add(name);
+            }
 
             List<String> invalidEmails = new ArrayList<String>();
             List<ValidEmail> addEmails = SecurityManager.normalizeEmails(emails, invalidEmails);
@@ -637,7 +653,21 @@ public class SecurityController extends SpringActionController
 
             String[] removeNames = form.getDelete();
             invalidEmails.clear();
-            List<ValidEmail> removeEmails = SecurityManager.normalizeEmails(removeNames, invalidEmails);
+            
+            // delete group members by ID (can be both groups and users)
+            List<UserPrincipal> removeIds = new ArrayList<UserPrincipal>();
+            if (removeNames != null && removeNames.length > 0)
+            {
+                for (String removeName : removeNames)
+                {
+                    // first check if the member name is a site group, otherwise get principal based on this container
+                    Integer id = SecurityManager.getGroupId(null, removeName, false);
+                    if (null != id)
+                        removeIds.add(SecurityManager.getGroup(id));
+                    else
+                        removeIds.add(SecurityManager.getPrincipal(removeName, container));
+                }
+            }
 
             for (String rawEmail : invalidEmails)
             {
@@ -669,7 +699,7 @@ public class SecurityController extends SpringActionController
                         HttpView<UpdateMembersBean> v = new JspView<UpdateMembersBean>("/org/labkey/core/security/deleteUser.jsp", new UpdateMembersBean());
 
                         UpdateMembersBean bean = v.getModelBean();
-                        bean.addnames = addEmails;
+                        bean.addnames = addNames;
                         bean.removenames = removeNames;
                         bean.groupName = _group.getName();
                         bean.mailPrefix = form.getMailPrefix();
@@ -679,15 +709,14 @@ public class SecurityController extends SpringActionController
                     }
                     else
                     {
-                        SecurityManager.deleteMembers(_group, removeEmails);
+                        SecurityManager.deleteMembers(_group, removeIds);
                     }
                 }
 
-                if (addEmails.size() > 0)
+                if (addGroups.size() > 0 || addEmails.size() > 0)
                 {
-                    List<User> users = new ArrayList<User>(addEmails.size());
-
                     // add new users
+                    List<User> addUsers = new ArrayList<User>(addEmails.size());
                     for (ValidEmail email : addEmails)
                     {
                         String addMessage = SecurityManager.addUser(getViewContext(), email, form.getSendEmail(), form.getMailPrefix(), null);
@@ -705,17 +734,17 @@ public class SecurityController extends SpringActionController
                                     + "' to this group because that user account is currently deactivated." +
                                     " To re-activate this account, contact your system administrator.");
                             else
-                                users.add(user);
+                                addUsers.add(user);
                         }
                     }
 
                     try
                     {
-                        SecurityManager.addMembers(_group, users);
+                        SecurityManager.addMembers(_group, addGroups, addUsers);
                     }
                     catch (SQLException e)
                     {
-                        errors.addError(new LabkeyError("A failure occurred adding users to the group: " + e.getMessage()));
+                        errors.addError(new LabkeyError("A failure occurred adding members to the group: " + e.getMessage()));
                     }
                 }
             }
@@ -745,7 +774,7 @@ public class SecurityController extends SpringActionController
 
     public static class UpdateMembersBean
     {
-        public List<ValidEmail> addnames;
+        public String[] addnames;
         public String[] removenames;
         public String groupName;
         public String mailPrefix;
@@ -837,7 +866,7 @@ public class SecurityController extends SpringActionController
         // validate that group is in the current project!
         Container c = getContainer();
         ensureGroupInContainer(group, c);
-        List<Pair<Integer, String>> members = SecurityManager.getGroupMemberNamesAndIds(group.getUserId());
+        List<UserPrincipal> members = SecurityManager.getGroupMembers(group, SecurityManager.GroupMemberType.Both);
 
         if (null == members)
         {
@@ -872,6 +901,47 @@ public class SecurityController extends SpringActionController
             return addGroupNavTrail(root, _group);
         }
     }
+
+    public static class CompleteMemberForm
+    {
+        private String _prefix;
+
+        public String getPrefix()
+        {
+            return _prefix;
+        }
+
+        public void setPrefix(String prefix)
+        {
+            _prefix = prefix;
+        }
+    }
+
+    @RequiresPermissionClass(AdminPermission.class)
+    public class CompleteMemberAction extends SimpleViewAction<CompleteMemberForm>
+    {
+        public ModelAndView getView(CompleteMemberForm form, BindException errors) throws Exception
+        {
+            Group[] allGroups = SecurityManager.getGroups(getContainer().getProject(), true);
+            Collection<Group> groups = new ArrayList<Group>();
+            // don't suggest Stystem Groups for type-ahead
+            for (Group group : allGroups)
+            {
+                if (!group.isSystemGroup())
+                    groups.add(group);
+            }
+
+            Collection<User> users = Arrays.asList(UserManager.getActiveUsers());
+            List<AjaxCompletion> completions = UserManager.getAjaxCompletions(form.getPrefix(), groups, users, getViewContext().getUser());
+            PageFlowUtil.sendAjaxCompletions(getViewContext().getResponse(), completions);
+            return null;
+        }
+
+        public NavTree appendNavTrail(NavTree root)
+        {
+            throw new UnsupportedOperationException();
+        }
+    }    
 
     public static class CompleteUserForm
     {

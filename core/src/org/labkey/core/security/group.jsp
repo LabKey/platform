@@ -21,9 +21,9 @@
 <%@ page import="org.labkey.api.view.ActionURL" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.api.view.JspView" %>
-<%@ page import="org.labkey.api.util.Pair" %>
 <%@ page import="org.labkey.core.security.GroupView" %>
 <%@ page import="org.labkey.api.view.WebPartView" %>
+<%@ page import="org.labkey.api.security.UserPrincipal" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%
@@ -103,24 +103,41 @@ else
     <table>
         <tr>
             <th>Remove</th>
-            <th>Email</th>
-            <th>&nbsp;</th>
+            <th>Name</th>
+            <th width="110px">&nbsp;</th>
         </tr>
     <%
-    for (Pair<Integer, String> member : bean.members)
+    for (UserPrincipal member : bean.members)
         {
-        Integer userId = member.getKey();
-        String email = member.getValue();
+        Integer userId = member.getUserId();
+        String memberName = member.getName();
+        boolean isGroup = member.getType().equals("g");
         %>
         <tr>
             <td>
-                <input type="checkbox" name="delete" value="<%= h(email) %>">
+                <input type="checkbox" name="delete" value="<%= h(memberName) %>">
             </td>
             <td>
-                <%= h(email) %>
+                <% if (isGroup)
+                   {
+                    %><b><%= h(memberName) %></b><%
+                   }
+                   else
+                   {
+                    %><%= h(memberName) %><%   
+                   }
+                %>
             </td>
             <td>
-                <%=textLink("permissions", urlProvider(UserUrls.class).getUserAccessURL(c, userId))%>
+                <% if (!isGroup)
+                   {
+                    %><%= textLink("permissions", urlProvider(UserUrls.class).getUserAccessURL(c, userId)) %><%
+                   }
+                   else
+                   {
+                    %>&nbsp;<%
+                   }
+                %>
             </td>
         </tr>
         <%
@@ -141,13 +158,18 @@ else
     </div><%
 }
 %><br>
+<%
+    String completeAction = "completeMember.view?prefix=";
+    if (bean.group.isSystemGroup())
+        completeAction = "completeUser.view?prefix="; 
+%>
 <div id="add-members">
-Add New Members (enter one email address per line):<br>
+Add New Members (enter one email address or group per line):<br>
 <textarea name="names" cols="60" rows="8"
          onKeyDown="return ctrlKeyCheck(event);"
          onBlur="hideCompletionDiv();"
          autocomplete="off"
-         onKeyUp="return handleChange(this, event, 'completeUser.view?prefix=');">
+         onKeyUp="return handleChange(this, event, '<%= completeAction %>');">
 </textarea><br>
 <input type="checkbox" name="sendEmail" value="true" checked>Send notification emails to all new<%
 if (null != bean.ldapDomain)
