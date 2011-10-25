@@ -67,11 +67,25 @@ public abstract class ContainerFilter
                 return CURRENT;
             }
         },
+        CurrentAndFirstChildren("Current folder and first children that are not workbooks")
+        {
+            public ContainerFilter create(User user)
+            {
+                return new CurrentAndFirstChildren(user);
+            }
+        },
         CurrentAndSubfolders("Current folder and subfolders")
         {
             public ContainerFilter create(User user)
             {
                 return new CurrentAndSubfolders(user);
+            }
+        },
+        CurrentOrParentAndWorkbooks("Current folder and/or parent if the current folder is a workbook, plus all workbooks in this series")
+        {
+            public ContainerFilter create(User user)
+            {
+                return new CurrentOrParentAndWorkbooks(user);
             }
         },
         CurrentPlusProject("Current folder and project")
@@ -241,6 +255,40 @@ public abstract class ContainerFilter
         }
     }
 
+    public static class CurrentAndFirstChildren extends ContainerFilterWithUser
+    {
+        public CurrentAndFirstChildren(User user)
+        {
+            this(user, ReadPermission.class);
+        }
+
+        public CurrentAndFirstChildren(User user, Class<? extends Permission> perm)
+        {
+            super(user, perm);
+        }
+
+        public Collection<String> getIds(Container currentContainer)
+        {
+            Set<Container> containers = new HashSet<Container>();
+            for(Container c : ContainerManager.getChildren(currentContainer, _user, _perm))
+            {
+                if(!c.isWorkbook() && c.hasPermission(_user, _perm))
+                {
+                    containers.add(c);
+                }
+            }
+            containers.add(currentContainer);
+            return toIds(containers);
+
+
+        }
+
+        public Type getType()
+        {
+            return Type.CurrentAndFirstChildren;
+        }
+    }
+
     public static class CurrentAndSubfolders extends ContainerFilterWithUser
     {
         public CurrentAndSubfolders(User user)
@@ -393,6 +441,58 @@ public abstract class ContainerFilter
         }
     }
 
+    public static class CurrentOrParentAndWorkbooks extends ContainerFilterWithUser
+    {
+        public CurrentOrParentAndWorkbooks(User user)
+        {
+            this(user, ReadPermission.class);
+        }
+
+        public CurrentOrParentAndWorkbooks(User user, Class<? extends Permission> perm)
+        {
+            super(user, perm);
+        }
+
+        @Override
+        public Collection<String> getIds(Container currentContainer)
+        {
+            Set<String> result = new HashSet<String>();
+            if (currentContainer.hasPermission(_user, _perm))
+                result.add(currentContainer.getId());
+
+            if (currentContainer.isWorkbook())
+            {
+                if(currentContainer.getParent().hasPermission(_user, _perm))
+                    result.add(currentContainer.getParent().getId());
+
+                for (Container c : currentContainer.getParent().getChildren())
+                {
+                    if(c.hasPermission(_user, _perm) && c.isWorkbook())
+                    {
+                        result.add(c.getId());  //sibling workbooks
+                    }
+                }
+            }
+            else
+            {
+                for (Container c : currentContainer.getChildren())
+                {
+                    if(c.hasPermission(_user, _perm) && c.isWorkbook())
+                    {
+                        result.add(c.getId());  //child workbooks
+                    }
+                }
+            }
+            return result;
+        }
+
+        @Override
+        public Type getType()
+        {
+            return Type.CurrentOrParentAndWorkbooks;
+        }
+    }
+    
     public static class StudyAndSourceStudy extends ContainerFilterWithUser
     {
         private boolean _skipPermissionChecks;

@@ -94,6 +94,13 @@ public interface FileContentService
     public AttachmentDirectory getRegisteredDirectoryFromEntityId(Container c, String entityId);
 
     /**
+     * Return true if the supplied string is a valid project root
+     * @param root String to use as the file path
+     * @return boolean
+     */
+    public boolean isValidProjectRoot(String root);
+
+    /**
      * Return a named AttachmentParent for files in the directory mapped to this container
      * @param c Container in the file system
      * @return Array of attachment directories that have previously been registered

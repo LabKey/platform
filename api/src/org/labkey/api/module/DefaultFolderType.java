@@ -16,7 +16,6 @@
 
 package org.labkey.api.module;
 
-import org.jetbrains.annotations.NotNull;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.RuntimeSQLException;
 import org.labkey.api.security.User;
@@ -167,6 +166,11 @@ public class DefaultFolderType implements FolderType
         }
     }
 
+    public String getFolderIconPath()
+    {
+        return "_images/defaultlogosmall.gif";
+    }
+
     /**
      * Find a web part. Don't use strict equality, just name and location
      * @return matchingPart
@@ -285,7 +289,6 @@ public class DefaultFolderType implements FolderType
         addStandardManageLinks(adminNavTree, container);
     }
 
-    @NotNull
     public AppBar getAppBar(ViewContext context, PageConfig pageConfig)
     {
         ActionURL startURL = getStartURL(context.getContainer(), context.getUser());

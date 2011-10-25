@@ -62,11 +62,11 @@ public class ContainerTable extends FilteredTable
 
         getColumn("Parent").setFk(new LookupForeignKey("EntityId", "Name")
         {
-            public TableInfo getLookupTableInfo()
-            {
+           public TableInfo getLookupTableInfo()
+           {
                 return new ContainerTable();
-            }
-        });
+           }
+               });
 
         ActionURL projBegin = PageFlowUtil.urlProvider(ProjectUrls.class).getBeginURL(ContainerManager.getRoot());
         String wbURL = AppProps.getInstance().getContextPath() + "/" + projBegin.getPageFlow()
@@ -88,6 +88,16 @@ public class ContainerTable extends FilteredTable
         folderTypeSQL.add(ContainerManager.FOLDER_TYPE_PROPERTY_NAME);
         ExprColumn folderTypeColumn = new ExprColumn(this, "FolderType", folderTypeSQL, JdbcType.VARCHAR);
         addColumn(folderTypeColumn);
+
+        SQLFragment containerTypeSQL = new SQLFragment("CASE WHEN "+getName()+".workbook = ? THEN 'workbook' " +
+            "WHEN "+getName()+".entityid = ? THEN 'root' " +
+            "WHEN "+getName()+".parent = ? THEN 'project' " +
+            "ELSE 'folder' END");
+        containerTypeSQL.add(true);
+        containerTypeSQL.add(ContainerManager.getRoot().getEntityId());
+        containerTypeSQL.add(ContainerManager.getRoot().getEntityId());
+        ExprColumn containerTypeColumn = new ExprColumn(this, "ContainerType", containerTypeSQL, JdbcType.VARCHAR);
+        addColumn(containerTypeColumn);
 
         col = getColumn("CreatedBy");
         final boolean isSiteAdmin = _schema != null && _schema.getUser().isAdministrator();

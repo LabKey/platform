@@ -80,6 +80,12 @@ public interface FolderType
     public String getLabel();
 
     /**
+     * The filepath of the icon for this folder type, relative to the root of the webapp.
+     * @return File path to the icon
+     */
+    public String getFolderIconPath();
+
+    /**
      * URL to start at when navigating to this folder. This is often the same as getTabURL for the portal module, or
      * getTabURL for the "owner" module, but could be any URL to an appropriate starting page.
      * @return URL for "dashboard" of this
@@ -216,6 +222,11 @@ public interface FolderType
             }
 
             return new AppBar(container.getName(), container.getStartURL(context.getUser()), tabs);
+        }
+
+        public String getFolderIconPath()
+        {
+            return "_images/defaultlogosmall.gif";
         }
 
         private List<Module> getSortedModuleList()

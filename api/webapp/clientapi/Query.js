@@ -136,6 +136,7 @@ LABKEY.Query = new function()
          * The options are as follows:
          * <ul>
          * <li><b>current:</b> Include the current folder only</li>
+         * <li><b>currentAndFirstChildren:</b> Include the current folder and all first children, excluding workbooks</li>
          * <li><b>currentAndSubfolders:</b> Include the current folder and all subfolders</li>
          * <li><b>currentPlusProject:</b> Include the current folder and the project that contains it</li>
          * <li><b>currentAndParents:</b> Include the current folder and its parent folders</li>
@@ -145,6 +146,7 @@ LABKEY.Query = new function()
          */
         containerFilter : {
             current: "Current",
+            currentAndFirstChildren: "CurrentAndFirstChildren",
             currentAndSubfolders: "CurrentAndSubfolders",
             currentPlusProject: "CurrentPlusProject",
             currentAndParents: "CurrentAndParents",
