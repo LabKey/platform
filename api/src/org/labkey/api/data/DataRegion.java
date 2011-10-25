@@ -729,120 +729,128 @@ public class DataRegion extends AbstractDataRegion
 
             if (showParameterForm)
             {
-                renderButtons = false;
-                showRecordSelectors = false;
-                _allowHeaderLock = false;
+                _renderParameterForm(ctx, out);
             }
-
-            List<DisplayColumn> renderers = getDisplayColumns();
-            Map<FieldKey,ColumnInfo> fieldMap = ctx.getFieldMap();
-            Set<FieldKey> fieldKeys = null==fieldMap ? null : fieldMap.keySet();
-                    
-            //determine number of HTML table columns...watch out for hidden display columns
-            //and include one extra if showing record selectors
-            int colCount = 0;
-            for (DisplayColumn col : renderers)
+            else
             {
-                // check that detail columns have valid urls
-                if (null != fieldKeys && col instanceof DetailsColumn)
-                {
-                    DetailsColumn details = (DetailsColumn)col;
-                    Container c = ctx.getContainer();
-                    if (!details.isValid(fieldKeys, c))
-                        details.setVisible(false);
-                }
-                if (col.isVisible(ctx))
-                    colCount++;
+                _renderTable(ctx, out, renderButtons, showRecordSelectors, rs, headerMessage, sqlx);
             }
-            if (showRecordSelectors)
-                colCount++;
-
-
-            if (rs instanceof Table.TableResultSet && ((Table.TableResultSet)rs).getSize() != -1)
-            {
-                _rowCount = ((Table.TableResultSet)rs).getSize();
-                if (_complete && _totalRows == null)
-                    _totalRows = getOffset() + _rowCount.intValue();
-            }
-
-            StringBuilder viewMsg = new StringBuilder();
-            StringBuilder filterMsg = new StringBuilder();
-
-            Map<String, String> messages = new LinkedHashMap<String, String>();
-
-            addFilterMessage(filterMsg, ctx, isShowFilterDescription());
-            // don't generate a view message if this is the default view and the filter is empty
-            if (!isDefaultView(ctx) || filterMsg.length() > 0)
-                addViewMessage(viewMsg, ctx);
-
-            if (headerMessage.length() > 0)
-                messages.put(MessagePart.header.name(), headerMessage.toString());
-            if (viewMsg.length() > 0)
-                messages.put(MessagePart.view.name(), viewMsg.toString());
-            if (filterMsg.length() > 0)
-                messages.put(MessagePart.filter.name(), filterMsg.toString());
-
-            if (showParameterForm)
-            {
-                try
-                {
-                    Collection<QueryService.ParameterDecl> params = getTable().getNamedParameters();
-                    (new ParameterView(params, null)).render(ctx.getViewContext().getRequest(), ctx.getViewContext().getResponse());
-                    return;
-                }
-                catch (IOException io)
-                {
-                    throw io;
-                }
-                catch (Exception x)
-                {
-                    throw new RuntimeException(x);
-                }
-            }
-
-            if (!_showPagination && rs instanceof Table.TableResultSet)
-            {
-                Table.TableResultSet tableRS = (Table.TableResultSet) rs;
-                if (!tableRS.isComplete())
-                {
-                    out.write("<span class=\"labkey-message\">");
-                    out.write(tableRS.getTruncationMessage(getMaxRows()));
-                    out.write("</span>");
-                }
-            }
-            
-            renderRegionStart(ctx, out, renderButtons, showRecordSelectors, renderers);
-
-            renderHeader(ctx, out, renderButtons, colCount);
-
-            if (null == sqlx)
-            {
-                renderGridHeaderColumns(ctx, out, showRecordSelectors, renderers);
-
-                if (_aggregateRowFirst)
-                    renderAggregatesTableRow(ctx, out, showRecordSelectors, renderers);
-
-                int rows = renderTableContents(ctx, out, showRecordSelectors, renderers);
-                if (rows == 0)
-                {
-                    renderNoRowsMessage(ctx, out, colCount);
-                }
-
-                if (_aggregateRowLast)
-                    renderAggregatesTableRow(ctx, out, showRecordSelectors, renderers);
-
-            }
-
-            renderFooter(ctx, out, renderButtons, colCount);
-
-            renderRegionEnd(ctx, out, renderButtons, renderers);
-
-            renderHeaderScript(ctx, out, messages, showRecordSelectors);
         }
         finally
         {
             ResultSetUtil.close(rs);
         }
+    }
+
+    private void _renderParameterForm(RenderContext ctx, Writer out) throws IOException
+    {
+        boolean showRecordSelectors = false;
+        _allowHeaderLock = false;
+
+        try
+        {
+            Collection<QueryService.ParameterDecl> params = getTable().getNamedParameters();
+            (new ParameterView(params, null)).render(ctx.getViewContext().getRequest(), ctx.getViewContext().getResponse());
+            renderHeaderScript(ctx, out, Collections.<String, String>emptyMap(), showRecordSelectors);
+        }
+        catch (IOException ioe)
+        {
+            throw ioe;
+        }
+        catch (Exception ex)
+        {
+            throw new RuntimeException(ex);
+        }
+    }
+
+    private void _renderTable(RenderContext ctx, Writer out, boolean renderButtons, boolean showRecordSelectors, ResultSet rs, StringBuilder headerMessage, SQLException sqlx) throws IOException, SQLException
+    {
+        List<DisplayColumn> renderers = getDisplayColumns();
+        Map<FieldKey,ColumnInfo> fieldMap = ctx.getFieldMap();
+        Set<FieldKey> fieldKeys = null==fieldMap ? null : fieldMap.keySet();
+
+        //determine number of HTML table columns...watch out for hidden display columns
+        //and include one extra if showing record selectors
+        int colCount = 0;
+        for (DisplayColumn col : renderers)
+        {
+            // check that detail columns have valid urls
+            if (null != fieldKeys && col instanceof DetailsColumn)
+            {
+                DetailsColumn details = (DetailsColumn)col;
+                Container c = ctx.getContainer();
+                if (!details.isValid(fieldKeys, c))
+                    details.setVisible(false);
+            }
+            if (col.isVisible(ctx))
+                colCount++;
+        }
+        if (showRecordSelectors)
+            colCount++;
+
+
+        if (rs instanceof Table.TableResultSet && ((Table.TableResultSet)rs).getSize() != -1)
+        {
+            _rowCount = ((Table.TableResultSet)rs).getSize();
+            if (_complete && _totalRows == null)
+                _totalRows = getOffset() + _rowCount.intValue();
+        }
+
+        StringBuilder viewMsg = new StringBuilder();
+        StringBuilder filterMsg = new StringBuilder();
+
+        Map<String, String> messages = new LinkedHashMap<String, String>();
+
+        addFilterMessage(filterMsg, ctx, isShowFilterDescription());
+        // don't generate a view message if this is the default view and the filter is empty
+        if (!isDefaultView(ctx) || filterMsg.length() > 0)
+            addViewMessage(viewMsg, ctx);
+
+        if (headerMessage.length() > 0)
+            messages.put(MessagePart.header.name(), headerMessage.toString());
+        if (viewMsg.length() > 0)
+            messages.put(MessagePart.view.name(), viewMsg.toString());
+        if (filterMsg.length() > 0)
+            messages.put(MessagePart.filter.name(), filterMsg.toString());
+
+        if (!_showPagination && rs instanceof Table.TableResultSet)
+        {
+            Table.TableResultSet tableRS = (Table.TableResultSet) rs;
+            if (!tableRS.isComplete())
+            {
+                out.write("<span class=\"labkey-message\">");
+                out.write(tableRS.getTruncationMessage(getMaxRows()));
+                out.write("</span>");
+            }
+        }
+
+        renderRegionStart(ctx, out, renderButtons, showRecordSelectors, renderers);
+
+        renderHeader(ctx, out, renderButtons, colCount);
+
+        if (null == sqlx)
+        {
+            renderGridHeaderColumns(ctx, out, showRecordSelectors, renderers);
+
+            if (_aggregateRowFirst)
+                renderAggregatesTableRow(ctx, out, showRecordSelectors, renderers);
+
+            int rows = renderTableContents(ctx, out, showRecordSelectors, renderers);
+            if (rows == 0)
+            {
+                renderNoRowsMessage(ctx, out, colCount);
+            }
+
+            if (_aggregateRowLast)
+                renderAggregatesTableRow(ctx, out, showRecordSelectors, renderers);
+
+        }
+
+        renderFooter(ctx, out, renderButtons, colCount);
+
+        renderRegionEnd(ctx, out, renderButtons, renderers);
+
+        renderHeaderScript(ctx, out, messages, showRecordSelectors);
     }
 
     protected void renderRegionStart(RenderContext ctx, Writer out, boolean renderButtons, boolean showRecordSelectors, List<DisplayColumn> renderers) throws IOException

@@ -56,6 +56,7 @@ var decl = [
 var formpanel;
 function submitHandler()
 {
+    debugger;
     var values = formpanel.getForm().getValues();
     var dataRegion = LABKEY.DataRegions[dataRegionName];
     if (dataRegion)
