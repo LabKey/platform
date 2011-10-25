@@ -140,16 +140,16 @@ public class GroupManager
 
     public static class GroupListener implements SecurityManager.GroupListener
     {
-        public void principalAddedToGroup(Group group, UserPrincipal user)
+        public void principalAddedToGroup(Group group, UserPrincipal principal)
         {
-            GroupMembershipCache.handleGroupChange(group, user);
-            addAuditEvent(group, user, "User: " + user.getName() + " was added as a member to Group: " + group.getName());
+            GroupMembershipCache.handleGroupChange(group, principal);
+            addAuditEvent(group, principal, (principal.getType().equals("g") ? "Group: " : "User: ") + principal.getName() + " was added as a member to Group: " + group.getName());
         }
 
-        public void principalDeletedFromGroup(Group group, UserPrincipal user)
+        public void principalDeletedFromGroup(Group group, UserPrincipal principal)
         {
-            GroupMembershipCache.handleGroupChange(group, user);
-            addAuditEvent(group, user, "User: " + user.getName() + " was deleted from Group: " + group.getName());
+            GroupMembershipCache.handleGroupChange(group, principal);
+            addAuditEvent(group, principal, (principal.getType().equals("g") ? "Group: " : "User: ") + principal.getName() + " was deleted from Group: " + group.getName());
         }
 
         private void addAuditEvent(Group group, UserPrincipal principal, String message)

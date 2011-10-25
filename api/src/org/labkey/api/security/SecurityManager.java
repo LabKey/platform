@@ -1128,31 +1128,27 @@ public class SecurityManager
     }
 
 
-    public static void deleteMembers(Group group, List<ValidEmail> emailsToDelete)
+    public static void deleteMembers(Group group, List<UserPrincipal> membersToDelete)
     {
         int groupId = group.getUserId();
 
-        if (emailsToDelete != null && !emailsToDelete.isEmpty())
+        if (membersToDelete != null && !membersToDelete.isEmpty())
         {
 
             SQLFragment sql = new SQLFragment(
             "DELETE FROM " + core.getTableInfoMembers() + "\n" +
-                    "WHERE GroupId = ? AND UserId IN\n" +
-                    "(SELECT M.UserId\n" +
-                    "FROM " + core.getTableInfoMembers() + " M JOIN " + core.getTableInfoPrincipals() + " P ON M.UserId = P.UserId\n" +
-                    "WHERE GroupId = ? AND Name IN (");
+                    "WHERE GroupId = ? AND UserId IN(");
             sql.add(groupId);
-            sql.add(groupId);
-            Iterator<ValidEmail> it = emailsToDelete.iterator();
+            Iterator<UserPrincipal> it = membersToDelete.iterator();
             String comma = "";
             while (it.hasNext())
             {
-                ValidEmail email = it.next();
+                UserPrincipal member = it.next();
                 sql.append(comma).append("?");
                 comma = ",";
-                sql.add(email.getEmailAddress());
+                sql.add(member.getUserId());
             }
-            sql.append("))");
+            sql.append(")");
 
             try
             {
@@ -1163,8 +1159,8 @@ public class SecurityManager
                 throw new RuntimeSQLException(e);
             }
 
-            for (ValidEmail email : emailsToDelete)
-                fireDeletePrincipalFromGroup(groupId, UserManager.getUser(email));
+            for (UserPrincipal member : membersToDelete)
+                fireDeletePrincipalFromGroup(groupId, member);
         }
     }
 
@@ -1190,24 +1186,34 @@ public class SecurityManager
     }
 
 
-    public static void addMembers(Group group, List<User> usersToAdd) throws SQLException
+    public static void addMembers(Group group, List<Group> groupsToAdd, List<User> usersToAdd) throws SQLException
     {
         int groupId = group.getUserId();
+        StringBuilder addString = new StringBuilder();
+        String comma = "";
 
         if (usersToAdd != null && !usersToAdd.isEmpty())
         {
-            Iterator<User> it = usersToAdd.iterator();
-            StringBuilder addString = new StringBuilder();
-
-            while (it.hasNext())
+            for (User u : usersToAdd)
             {
-                User user = it.next();
-                addString.append(user.getUserId());
-
-                if (it.hasNext())
-                    addString.append(", ");
+                addString.append(comma);
+                addString.append(u.getUserId());
+                comma = ", ";
             }
+        }
 
+        if (groupsToAdd != null && !groupsToAdd.isEmpty())
+        {
+            for (Group g : groupsToAdd)
+            {
+                addString.append(comma);
+                addString.append(g.getUserId());
+                comma = ", ";
+            }
+        }
+
+        if (addString.length() > 0)
+        {
             Table.execute(
                     core.getSchema(),
                     "INSERT INTO " + core.getTableInfoMembers() +
@@ -1218,9 +1224,17 @@ public class SecurityManager
                             "   WHERE GroupId = ?)",
                     groupId, groupId);
 
+            if (usersToAdd != null && !usersToAdd.isEmpty())
+            {
+                for (User u : usersToAdd)
+                    fireAddPrincipalToGroup(group, u);
+            }
 
-            for (User user : usersToAdd)
-                fireAddPrincipalToGroup(group, user);
+            if (groupsToAdd != null && !groupsToAdd.isEmpty())
+            {
+                for (Group g : groupsToAdd)
+                    fireAddPrincipalToGroup(group, g);
+            }
         }
     }
 
@@ -1458,7 +1472,7 @@ public class SecurityManager
 
        //get members for each group
         ArrayList<User> projectUsers = new ArrayList<User>();
-        String[] members;
+        List<UserPrincipal> members;
 
         try
         {
@@ -1467,19 +1481,18 @@ public class SecurityManager
                 if (g.isGuests() || g.isUsers())
                     continue;
 
-                if (g.isProjectGroup())
-                    members = getGroupMemberNames(getGroupId(c, g.getName()));
-                else
-                    members = getGroupMemberNames(getGroupId(null, g.getName()));
+                // TODO: currently only getting members that are users (no groups). should this be changed to get users of member groups?
+                members = getGroupMembers(g, GroupMemberType.Users);
 
                 //add this group's members to hashset
-                if (members != null)
+                if (!members.isEmpty())
                 {
                     //get list of users from email
-                    for (String member : members)
+                    for (UserPrincipal member : members)
                     {
-                        if (emails.add(member))
-                            projectUsers.add(UserManager.getUser(new ValidEmail(member)));
+                        User user = UserManager.getUser(member.getUserId());
+                        if (emails.add(user.getEmail()))
+                            projectUsers.add(user);
                     }
                 }
             }
@@ -1489,11 +1502,6 @@ public class SecurityManager
         {
             _log.error("unexpected error", e);
             throw new RuntimeSQLException(e);
-        }
-        catch (ValidEmail.InvalidEmailException e)
-        {
-            _log.error("unexpected error", e);
-            throw new RuntimeException(e);
         }
     }
 
@@ -1665,7 +1673,14 @@ public class SecurityManager
         try
         {
             Integer groupId = SecurityManager.getGroupId(c, groupName);
-            return Table.executeArray(core.getSchema(), "SELECT UserId FROM " + core.getTableInfoMembers() + " WHERE GroupId = ?", new Object[]{groupId}, Integer.class);
+            return Table.executeArray(
+                        core.getSchema(),
+                        "SELECT Members.UserId FROM " + core.getTableInfoMembers() + " Members"
+                                + " JOIN " + core.getTableInfoPrincipals() + " Users ON Members.UserId = Users.UserId\n"
+                                + " WHERE Members.GroupId = ?"
+                                + " ORDER BY Users.Type, Users.Name",
+                        new Object[]{groupId},
+                        Integer.class);
         }
         catch (SQLException e)
         {
@@ -1737,7 +1752,7 @@ public class SecurityManager
     {
         List<String> params = new ArrayList<String>();
         params.add(caseInsensitive ? groupName.toLowerCase() : groupName);
-        String sql = "SELECT UserId FROM " + core.getTableInfoPrincipals() + " WHERE " + (caseInsensitive ? "LOWER(Name)" : "Name") + " = ? AND Container ";
+        String sql = "SELECT UserId FROM " + core.getTableInfoPrincipals() + " WHERE Type!='u' AND " + (caseInsensitive ? "LOWER(Name)" : "Name") + " = ? AND Container ";
         if (c == null || c.isRoot())
             sql += "IS NULL";
         else

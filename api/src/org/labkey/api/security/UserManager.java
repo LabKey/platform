@@ -732,17 +732,28 @@ public class UserManager
     // Get completions from list of all site users
     public static List<AjaxCompletion> getAjaxCompletions(String prefix, User currentUser) throws SQLException
     {
-        return UserManager.getAjaxCompletions(prefix, Arrays.asList(UserManager.getActiveUsers()), currentUser);
+        return UserManager.getAjaxCompletions(prefix, Collections.<Group>emptyList(), Arrays.asList(UserManager.getActiveUsers()), currentUser);
     }
 
-    // Get completions from specified list of users
     public static List<AjaxCompletion> getAjaxCompletions(String prefix, Collection<User> users, User currentUser)
+    {
+        return UserManager.getAjaxCompletions(prefix, Collections.<Group>emptyList(), users, currentUser);
+    }
+
+    // Get completions from specified list of groups and users
+    public static List<AjaxCompletion> getAjaxCompletions(String prefix, Collection<Group> groups, Collection<User> users, User currentUser)
     {
         List<AjaxCompletion> completions = new ArrayList<AjaxCompletion>();
 
         if (prefix != null && prefix.length() != 0)
         {
             String lowerPrefix = prefix.toLowerCase();
+
+            for (Group group : groups)
+            {
+                if (group.getName() != null && group.getName().toLowerCase().startsWith(lowerPrefix))
+                    completions.add(new AjaxCompletion("<b>" + group.getName() + "</b>", group.getName()));
+            }
 
             for (User user : users)
             {
