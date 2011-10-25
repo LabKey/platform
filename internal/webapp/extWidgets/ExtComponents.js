@@ -399,7 +399,6 @@ Ext4.define('LABKEY.ext.ContainerFilterCombo', {
   lookupNullCaption
 
 */
-//TODO: explore how to add the list width auto-size plugin
 Ext4.define('LABKEY.ext4.ComboBox', {
     extend: 'Ext.form.field.ComboBox',
     alias: 'widget.labkey-combo',
@@ -416,83 +415,110 @@ Ext4.define('LABKEY.ext4.ComboBox', {
             '</tpl>'
         ).compile();
 
+        //auto list width
+        this.listConfig.listeners = this.listConfig.listeners || {};
+        Ext4.apply(this.listConfig.listeners, {
+            scope: this,
+            refresh: function(view){
+                view.setSize({width: 'auto', height: null});
+                view.minWidth = this.getWidth();
+            }
+        });
+        this.matchFieldWidth = false;
+
         this.callParent();
 
-    },
-    setValue: function(v){
-        //save the value if it is set prior to loading
-        if(this.store && !this.store.hasLoaded()){
-            this.initialValue = v;
-        }
-
-        this.callParent(arguments);
+        this.store.on('load', function(){
+            this.alignPicker();
+        }, this);
     }
 });
 
+/*
+    This plugin is designed to allow users to add options to combos.  It adds an item on the list called 'Other'.  If they pick this, a prompt comes
+    up, allowing the user to enter a value.  this value is added to the store.  it only works well with stores that have 1 column, when the displayField
+    equals the valueField (otherwise we need to somehow resolve value based on display)
+ */
+Ext4.define('LABKEY.ext.UserEditableComboPlugin', {
+    extend: 'Ext.AbstractPlugin',
+    pluginId: 'labkey-usereditablecombo',
+    alias: 'plugin.labkey-usereditablecombo',
+    init: function(combo) {
+        this.combo = combo;
+        if((combo instanceof Ext4.form.ComboBox && !combo.multiSelect )){   //&& combo.displayField==combo.valueField
+            Ext4.apply(combo, {
+                onListSelectionChange: function(list, records){
+                    if(records.length!=1)
+                        return;
 
-//Ext4.define('LABKEY.ext.UserEditableComboPlugin', {
-//    extend: 'Ext.util.Observable',
-//    init: function(combo) {
-//        if((combo instanceof Ext.form.ComboBox)){
-//            Ext.apply(combo, {
-//                onSelect: function(cmp, idx){
-//                    var val;
-//                    if(idx)
-//                        val = this.store.getAt(idx).get(this.valueField);
-//
-//                    if(val == 'Other'){
-//                        Ext.MessageBox.prompt('Enter Value', 'Enter value:', this.addNewValue, this);
-//                    }
-//                    LABKEY.ext.ComboBox.superclass.onSelect.apply(this, arguments);
-//                },
-//                setValue:     function(v){
-//                    var r = this.findRecord(this.valueField, v);
-//                    if(!r){
-//                        this.addRecord(v, v);
-//                    }
-//                    LABKEY.ext.ComboBox.superclass.setValue.apply(this, arguments);
-//                },
-//                addNewValue: function(btn, val){
-//                    this.addRecord(val);
-//                    this.setValue(val);
-//                    this.fireEvent('change', this, val, 'Other');
-//                },
-//                addRecord: function(value){
-//                    if(!value)
-//                        return;
-//
-//                    var data = {};
-//                    data[this.valueField] = value;
-//                    if(this.displayField!=this.valueField){
-//                        data[this.displayField] = value;
-//                    }
-//
-//                    if(!this.store || !this.store.fields){
-//                        this.store.on('load', function(store){
-//                            this.addRecord(value);
-//                        }, this, {single: true});
-//                        console.log('unable to add record: '+this.store.storeId+'/'+value);
-//                        return;
-//                    }
-//                    this.store.add((new this.store.recordType(data)));
-//
-//                    if(this.view){
-//                        this.view.setStore(this.store);
-//                        this.view.refresh()
-//                    }
-//                }
-//            });
-//
-//            if(combo.store.fields)
-//                combo.addRecord('Other');
-//            else {
-//                if (!combo.store.on)
-//                    combo.store = Ext.ComponentMgr.create(combo.store);
-//
-//                combo.store.on('load', function(){
-//                    combo.addRecord('Other');
-//                }, this);
-//            }
-//        }
-//    }
-//});
+                    var val = records[0].get(this.displayField);
+
+                    if(val == 'Other'){
+                        Ext4.MessageBox.prompt('Enter Value', 'Enter value:', this.addNewValue, this);
+                    }
+                    else {
+                        this.callParent(arguments);
+                    }
+                },
+                setValue: function(v){
+                    if(Ext4.isArray(v)){
+                        if(v.length == 1)
+                            var r = this.findRecord(this.displayField, v[0]);
+                            if(!r){
+                                console.log('adding: '+v);
+                                console.log(v[0])
+                                this.addRecord(v[0]);
+                            }
+                            else
+                                this.callParent(arguments);
+                    }
+                    else
+                        this.callParent(arguments);
+                },
+                addNewValue: function(btn, val){
+                    this.addRecord(val);
+                    console.log('add record')
+                    this.setValue(val);
+                    this.fireEvent('change', this, val, 'Other');
+                },
+                addRecord: function(value){
+                    if(!value)
+                        return;
+
+                    var data = {};
+                    data[this.displayField] = value;
+                    if(this.displayField!=this.valueField){
+                        data[this.displayField] = value;
+                    }
+
+                    if(!this.store || !this.store.model || !this.store.model.prototype.fields.getCount()){
+                        this.store.on('load', function(store){
+                            console.log('load')
+                            this.addRecord(value);
+                        }, this, {single: true});
+                        console.log('unable to add record: '+this.store.storeId+'/'+value);
+                        console.log(this.store.proxy.model.prototype.fields.getCount());
+                        return;
+                    }
+                    this.store.add((this.store.createModel(data)));
+
+                    if(this.view){
+                        this.view.setStore(this.store);
+                        this.view.refresh()
+                    }
+                }
+            });
+
+            if(combo.store.model || !combo.store.model.prototype.fields.length)
+                combo.addRecord('Other');
+            else {
+                if (!combo.store.on)
+                    combo.store = Ext4.create(combo.store);
+
+                combo.store.on('load', function(){
+                    combo.addRecord('Other');
+                }, combo);
+            }
+        }
+    }
+});

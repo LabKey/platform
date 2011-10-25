@@ -8,25 +8,25 @@ Ext4.define('LABKEY.ext.ImportWizard', {
             activeTab: 0,
             border: false,
             width: 620,
-            frame: true,
+            frame: false,
             defaults: {
                 border: false
             },
             items: [{
                 xtype: 'radiogroup',
                 columns: 2,
-                width: 400,
+                width: 500,
                 itemId: 'inputType',
                 items: [{
                     boxLabel: 'Create New Experiment',
                     inputValue: 'new',
-                    width: 200,
+                    width: 250,
                     name: 'inputType',
                     checked: true
                 },{
                     boxLabel: 'Add To Existing Experiment',
                     inputValue: 'existing',
-                    width: 200,
+                    width: 250,
                     name: 'inputType'
                 }],
                 listeners: {
@@ -174,8 +174,8 @@ Ext4.define('LABKEY.ext.ImportWizardWin', {
     initComponent: function(){
         Ext4.apply(this, {
             closeAction:'hide',
-            frame: true,
-            //title: 'Import Data',
+//            frame: true,
+            title: 'Import Data',
             modal: true,
             items: [{
                 xtype: 'labkey-importwizard',

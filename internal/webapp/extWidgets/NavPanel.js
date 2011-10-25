@@ -184,7 +184,8 @@ Ext4.define('LABKEY.ext.NavPanel', {
                     text: item.name,
                     href: item.url,
                     showBrackets: false
-                }]
+                }],
+                style: 'padding-bottom:8px'
              }
         },
         queryRenderer: function(item){
@@ -257,16 +258,13 @@ Ext4.define('LABKEY.ext.NavPanel', {
                     text: 'Import Data',
                     hidden: item.showImport===false,
                     useSimpleImport: item.simpleImport,
-                    assayId: item.id,
-                    params: {controller: 'project', action: 'begin', paramNames: 'schemaName,queryName', schemaName: item.schemaName, queryName: item.queryName},
                     handler: function(btn){
                         if(btn.useSimpleImport)
                             window.location = LABKEY.ActionURL.buildURL('query', 'importData', null, btn.params);
                         else
                             Ext4.create('LABKEY.ext.ImportWizardWin', {
-                                controller: 'query',
-                                action: 'importData',
-                                urlParams: btn.params
+                                controller: 'filecontent',
+                                action: 'begin'
                             }).show();
                     }
                 }],

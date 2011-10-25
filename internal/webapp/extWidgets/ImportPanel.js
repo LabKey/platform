@@ -17,8 +17,17 @@ Ext4.define('LABKEY.ext.ImportPanel', {
                 schemaName: this.schemaName,
                 queryName: this.queryName,
                 viewName: this.viewName
+//            },{
+//                title: 'Import Multiple',
+//                xtype: 'labkey-gridpanel',
+//                store: Ext4.create('LABKEY.ext4.Store', {
+//                    schemaName: this.schemaName,
+//                    queryName: this.queryName,
+//                    viewName: this.viewName,
+//                    maxRows: 0
+//                })
             },{
-                title: 'Import Bulk',
+                title: 'Import Spreadsheet',
                 xtype: 'labkey-exceluploadpanel',
                 schemaName: this.schemaName,
                 queryName: this.queryName,

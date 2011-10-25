@@ -66,9 +66,8 @@ Ext4.define('LABKEY.ext4.FormPanel', {
     extend: 'Ext.form.Panel',
     alias: 'widget.labkey-formpanel',
     autoHeight: true,
-    config: {
-        defaultFieldWidth: 500
-    },
+    width: '100%',
+    defaultFieldWidth: 300,
     initComponent: function(){
         Ext4.QuickTips.init();
 
