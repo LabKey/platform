@@ -1,0 +1,185 @@
+<%
+/*
+ * Copyright (c) 2005-2011 Fred Hutchinson Cancer Research Center
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+%>
+<%@ page import="org.labkey.api.data.Container"%>
+<%@ page import="org.labkey.api.view.HttpView" %>
+<%@ page import="org.labkey.api.view.JspView" %>
+<%@ page import="org.labkey.core.admin.AdminController" %>
+<%@ page import="org.labkey.api.data.ContainerManager" %>
+<%@ page import="java.util.List" %>
+<%@ page import="org.labkey.api.security.permissions.AdminPermission" %>
+<%@ page import="org.labkey.api.view.ViewContext" %>
+<%@ page import="org.labkey.api.security.User" %>
+<%@ page import="org.labkey.api.util.PageFlowUtil" %>
+<%@ page extends="org.labkey.api.jsp.JspBase" %>
+
+<%
+    JspView<AdminController.SetFolderPermissionsForm> me = (JspView<AdminController.SetFolderPermissionsForm>) HttpView.currentView();
+    AdminController.SetFolderPermissionsForm  form = me.getModelBean();
+    Container c = me.getViewContext().getContainer();
+    ViewContext ctx = me.getViewContext();
+    User user = ctx.getUser();
+
+%>
+<script type="text/javascript">
+    LABKEY.requiresExt4Sandbox(true);
+    LABKEY.requiresCss('/extWidgets/ext4.css');
+    LABKEY.requiresCss('/createFolder.css');
+</script>
+<script type="text/javascript">
+    Ext4.onReady(function(){
+        var isProject = <%=h(c.isProject())%>;
+
+        Ext4.create('Ext.form.Panel', {
+            border: false,
+            autoHeight: true,
+            defaults: {
+                border: false
+            },
+            url: 'setFolderPermissions.view',
+            method: 'POST',
+            standardSubmit: true,
+            items: [{
+                xtype: 'radiogroup',
+                width: '100%',
+                id: 'permissionType',
+                name: 'permissionType',
+                columns: 1,
+                defaults: {
+                    width: 300
+                },
+                listeners: {
+                    change: {
+                        fn: function(btn, newVal, oldVal){
+                            var form = btn.up('form');
+                            var panel = form.child('#usersArea');
+                            panel.removeAll();
+
+                            if(newVal.permissionType)
+                                form['render'+newVal.permissionType](panel);
+
+                            form.doLayout();
+                        },
+                        buffer: 20,
+                        scope: this
+                    }
+                },
+                items: [{
+                    //note: folders cant inherit permissions from a parent
+                    boxLabel: 'Inherit From Parent',
+                    checked: !isProject,
+                    hidden: isProject,
+                    name: 'permissionType',
+                    inputValue: 'Inherit'
+                },{
+                    boxLabel: 'My User Only',
+                    checked: isProject,
+                    name: 'permissionType',
+                    inputValue: 'CurrentUser'
+                },{
+                    xtype: 'radio',
+                    boxLabel: 'Copy From Existing Project',
+                    checked: false,
+                    hidden: !isProject,
+                    name: 'permissionType',
+                    inputValue: 'CopyExistingProject'
+                },{
+                    xtype: 'radio',
+                    boxLabel: 'Configure Later',
+                    checked: false,
+                    name: 'permissionType',
+                    inputValue: 'Advanced'
+                }]
+            },{
+                xtype: 'panel',
+                border: false,
+                defaults: {
+                    border: false
+                },
+                itemId: 'usersArea'
+            }],
+            buttons: [{
+                xtype: 'button',
+                cls: 'labkey-button',
+                text: (isProject ? 'Next' : 'Finish'),
+                handler: function(btn){
+                    var f = btn.up('form').getForm();
+                    f.submit();
+                }
+            }],
+            renderAdvanced: function(target){
+                //nothing needed
+            },
+            renderCurrentUser: function(target){
+                //nothing needed
+            },
+            renderInherit: function(target){
+                //nothing needed
+            },
+            renderCopyExistingProject: function(target){
+                target.add({
+                    xtype: 'combo',
+                    id: 'targetProject',
+                    name: 'targetProject',
+                    fieldLabel: 'Choose Project',
+                    displayField: 'name',
+                    valueField: 'value',
+                    store: {
+                        fields: ['name', 'value'],
+                        idIndex: 1,
+                        data: [
+<%
+        List<Container> projects = ContainerManager.getChildren(ContainerManager.getRoot(), user, AdminPermission.class);
+        String comma = "";
+        for (Container p : projects)
+        {
+            %><%=comma%>{name: '<%=h(p.getName())%>', value: '<%=h(p.getId())%>'}
+<%
+            comma = ", ";
+        }
+%>
+                        ]
+                    }
+//NOTE: would be a little cleaner to use the API, but there wasnt a clear way to query just projects
+//                    displayField: 'Name',
+//                    valueField: 'EntityId',
+//                    store: Ext4.create('LABKEY.ext4.Store', {
+//                        containerPath: '/',
+//                        schemaName: 'core',
+//                        queryName: 'containers',
+//                        columns: 'entityId,name',
+//                        filterArray: [
+//                            LABKEY.Filter.create('containerType', 'project, LABKEY.Filter.Types.EQUAL)
+//                        ],
+//                        //NOTE: we will always be in root if this is called
+//                        containerFilter: 'CurrentAndSubfolders'
+//                    })
+                });
+            }
+
+        }).render('folderPermissionsDiv');
+    });
+
+
+</script>
+
+
+<%=formatMissedErrors("form")%>
+
+<div id="folderPermissionsDiv"></div>
+
+

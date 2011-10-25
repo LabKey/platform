@@ -62,6 +62,7 @@ import org.labkey.api.data.QueryProfiler;
 import org.labkey.api.data.TableXmlUtils;
 import org.labkey.api.exp.OntologyManager;
 import org.labkey.api.exp.api.StorageProvisioner;
+import org.labkey.api.files.FileContentService;
 import org.labkey.api.module.AllowedDuringUpgrade;
 import org.labkey.api.module.DefaultModule;
 import org.labkey.api.module.FolderType;
@@ -78,18 +79,27 @@ import org.labkey.api.pipeline.view.SetupForm;
 import org.labkey.api.search.SearchService;
 import org.labkey.api.security.AdminConsoleAction;
 import org.labkey.api.security.CSRF;
+import org.labkey.api.security.Group;
+import org.labkey.api.security.GroupManager;
 import org.labkey.api.security.LoginUrls;
+import org.labkey.api.security.MutableSecurityPolicy;
 import org.labkey.api.security.RequiresLogin;
 import org.labkey.api.security.RequiresNoPermission;
 import org.labkey.api.security.RequiresPermissionClass;
 import org.labkey.api.security.RequiresSiteAdmin;
+import org.labkey.api.security.RoleAssignment;
 import org.labkey.api.security.SecurityManager;
+import org.labkey.api.security.SecurityPolicy;
 import org.labkey.api.security.SecurityUrls;
 import org.labkey.api.security.User;
 import org.labkey.api.security.UserManager;
+import org.labkey.api.security.UserPrincipal;
 import org.labkey.api.security.ValidEmail;
 import org.labkey.api.security.permissions.AdminPermission;
 import org.labkey.api.security.permissions.ReadPermission;
+import org.labkey.api.security.roles.FolderAdminRole;
+import org.labkey.api.security.roles.Role;
+import org.labkey.api.security.roles.RoleManager;
 import org.labkey.api.services.ServiceRegistry;
 import org.labkey.api.settings.AdminConsole;
 import org.labkey.api.settings.AdminConsole.SettingsLinkType;
@@ -142,6 +152,7 @@ import org.springframework.validation.BindException;
 import org.springframework.validation.Errors;
 import org.springframework.web.servlet.ModelAndView;
 import org.springframework.web.servlet.mvc.Controller;
+import org.labkey.api.security.roles.ProjectAdminRole;
 
 import javax.mail.MessagingException;
 import javax.servlet.ServletException;
@@ -436,6 +447,11 @@ public class AdminController extends SpringActionController
             return new ActionURL(CreateFolderAction.class, ContainerManager.getRoot());
         }
 
+        public ActionURL getSetFolderPermissionsURL(Container c)
+        {
+            return new ActionURL(SetFolderPermissionsAction.class, c);
+        }
+
         public NavTree appendAdminNavTrail(NavTree root, String childTitle, @Nullable ActionURL childURL)
         {
             root.addChild("Admin Console", getAdminConsoleURL());
@@ -451,6 +467,11 @@ public class AdminController extends SpringActionController
         public ActionURL getFolderSettingsURL(Container c)
         {
             return new ActionURL(FolderSettingsAction.class, c);
+        }
+
+        public ActionURL getInitialFolderSettingsURL(Container c)
+        {
+            return new ActionURL(SetInitialFolderSettingsAction.class, c);
         }
 
         public ActionURL getMemTrackerURL()
@@ -500,6 +521,56 @@ public class AdminController extends SpringActionController
         {
             return null;
         }
+    }
+
+
+    @RequiresPermissionClass(ReadPermission.class)
+    public class GetModulesAction extends ApiAction<GetModulesForm>
+    {
+        public ApiResponse execute(GetModulesForm form, BindException errors) throws Exception
+        {
+            Container c = ContainerManager.getForPath(getContainer().getPath());
+
+            ApiSimpleResponse response = new ApiSimpleResponse();
+
+            List<Map<String, Object>> qinfos = new ArrayList<Map<String, Object>>();
+
+            FolderType folderType = c.getFolderType();
+            List<Module> allModules = new ArrayList<Module>(ModuleLoader.getInstance().getModules());
+            Collections.sort(allModules, new Comparator<Module>()
+            {
+                public int compare(Module o1, Module o2)
+                {
+                    return o1.getTabName(getViewContext()).compareToIgnoreCase(o2.getTabName(getViewContext()));
+                }
+            });
+
+            Set<Module> requiredModules = folderType.getActiveModules() != null ? folderType.getActiveModules() : new HashSet<Module>();
+            Set<Module> activeModules = c.getActiveModules();
+
+            for (Module m : allModules)
+            {
+                Map<String, Object> qinfo = new HashMap<String, Object>();
+
+                qinfo.put("name", m.getName());
+                qinfo.put("required", requiredModules.contains(m));
+                qinfo.put("active", activeModules.contains(m));
+                qinfo.put("tabName", m.getTabName(getViewContext()));
+                //NOTE: perhaps this logic should be moved elsewhere?
+                qinfo.put("shouldDisplay", ((m.getTabDisplayMode() == Module.TabDisplayMode.DISPLAY_USER_PREFERENCE || m.getTabDisplayMode() == Module.TabDisplayMode.DISPLAY_USER_PREFERENCE_DEFAULT) && !requiredModules.contains(m)));
+                qinfos.add(qinfo);
+            }
+
+            response.put("modules", qinfos);
+            response.put("folderType", folderType.getName());
+
+            return response;
+        }
+    }
+
+    public static class GetModulesForm
+    {
+
     }
 
 
@@ -3428,11 +3499,33 @@ public class AdminController extends SpringActionController
         private String folder;
         private String target;
         private String folderType;
+        private String defaultModule;
+        private String[] activeModules;
         private boolean showAll;
         private boolean confirmed = false;
         private boolean addAlias = false;
         private boolean recurse = false;
 
+
+        public String[] getActiveModules()
+        {
+            return activeModules;
+        }
+
+        public void setActiveModules(String[] activeModules)
+        {
+            this.activeModules = activeModules;
+        }
+
+        public String getDefaultModule()
+        {
+            return defaultModule;
+        }
+
+        public void setDefaultModule(String defaultModule)
+        {
+            this.defaultModule = defaultModule;
+        }
 
         public boolean isShowAll()
         {
@@ -3716,7 +3809,21 @@ public class AdminController extends SpringActionController
 
         public ModelAndView getView(ManageFoldersForm form, boolean reshow, BindException errors) throws Exception
         {
-            return new JspView<ManageFoldersForm>("/org/labkey/core/admin/createFolder.jsp", form, errors);
+
+            VBox vbox = new VBox();
+
+            JspView statusView = new JspView<ManageFoldersForm>("/org/labkey/core/admin/createFolder.jsp", form, errors);
+            vbox.addView(statusView);
+
+            Container c = this.getViewContext().getContainer();
+            String containerNoun = c.isRoot() ? "Project" : "Folder";
+
+            getPageConfig().setNavTrail(getCreateProjectWizardSteps(c.isRoot()));
+            getPageConfig().setTemplate(Template.Wizard);
+            getPageConfig().setTitle("Name and Type");
+
+            return vbox;
+
         }
 
         public boolean handlePost(ManageFoldersForm form, BindException errors) throws Exception
@@ -3731,34 +3838,55 @@ public class AdminController extends SpringActionController
                     error.append("The parent folder already has a folder with this name.");
                 else
                 {
-                    Container c = ContainerManager.createContainer(parent, folderName, null, null, false, getUser());
                     String folderType = form.getFolderType();
                     assert null != folderType;
                     FolderType type = ModuleLoader.getInstance().getFolderType(folderType);
+
+                    String[] modules = form.getActiveModules();
+
+                    if (null == StringUtils.trimToNull(form.getFolderType()) || FolderType.NONE.getName().equals(form.getFolderType()))
+                    {
+                        if (null == modules || modules.length == 0)
+                        {
+                            errors.reject(null, "At least one module must be selected");
+                            return false;
+                        }
+                    }
+
+                    Container c = ContainerManager.createContainer(parent, folderName, null, null, false, getUser());
                     c.setFolderType(type);
+
+                    if (null == StringUtils.trimToNull(form.getFolderType()) || FolderType.NONE.getName().equals(form.getFolderType()))
+                    {
+                        Set<Module> activeModules = new HashSet<Module>();
+                        for (String moduleName : modules)
+                        {
+                            Module module = ModuleLoader.getInstance().getModule(moduleName);
+                            if (module != null)
+                                activeModules.add(module);
+                        }
+
+                        c.setFolderType(FolderType.NONE, activeModules);
+                        Module defaultModule = ModuleLoader.getInstance().getModule(form.getDefaultModule());
+                        c.setDefaultModule(defaultModule);
+                    }
 
                     if (c.isProject())
                     {
                         SecurityManager.createNewProjectGroups(c);
-                        _successURL = PageFlowUtil.urlProvider(SecurityUrls.class).getProjectURL(c);
                     }
                     else
                     {
                         //If current user is NOT a site or folder admin, or the project has been explicitly set to have
-                        // new subfolders inherit permissions,
-                        // we'll inherit permissions (otherwise they would not be able to see the folder)
+                        // new subfolders inherit permissions, we'll inherit permissions (otherwise they would not be able to see the folder)
                         Integer adminGroupId = null;
                         if (null != c.getProject())
                             adminGroupId = SecurityManager.getGroupId(c.getProject(), "Administrators", false);
                         boolean isProjectAdmin = (null != adminGroupId) && getUser().isInGroup(adminGroupId.intValue());
                         if (!isProjectAdmin && !getUser().isAdministrator() || SecurityManager.shouldNewSubfoldersInheritPermissions(c.getProject()))
                             SecurityManager.setInheritPermissions(c);
-
-                        if (type.equals(FolderType.NONE))
-                            _successURL = new AdminUrlsImpl().getFolderSettingsURL(c);
-                        else
-                            _successURL = PageFlowUtil.urlProvider(SecurityUrls.class).getContainerURL(c);
                     }
+                    _successURL = new AdminUrlsImpl().getSetFolderPermissionsURL(c);
                     _successURL.addParameter("wizard", Boolean.TRUE.toString());
 
                     return true;
@@ -3776,14 +3904,236 @@ public class AdminController extends SpringActionController
 
         public NavTree appendNavTrail(NavTree root)
         {
+            return null;
+        }
+    }
+
+
+    @RequiresPermissionClass(AdminPermission.class)
+    public class SetFolderPermissionsAction extends FormViewAction<SetFolderPermissionsForm>
+    {
+        private ActionURL _successURL;
+
+        public void validateCommand(SetFolderPermissionsForm target, Errors errors)
+        {
+        }
+
+
+        public ModelAndView getView(SetFolderPermissionsForm form, boolean reshow, BindException errors) throws Exception
+        {
+            VBox vbox = new VBox();
+
+            JspView statusView = new JspView<SetFolderPermissionsForm>("/org/labkey/core/admin/setFolderPermissions.jsp", form, errors);
+            vbox.addView(statusView);
+
+            Container c = this.getViewContext().getContainer();
+            getPageConfig().setTitle("Users / Permissions");
+            getPageConfig().setNavTrail(getCreateProjectWizardSteps(c.isProject()));
+            getPageConfig().setTemplate(Template.Wizard);
+
+            return vbox;
+
+        }
+
+        public boolean handlePost(SetFolderPermissionsForm form, BindException errors) throws Exception
+        {
+            Container c = getContainer();
+            String permissionType = form.getPermissionType();
+            StringBuilder error = new StringBuilder();
+
+            if(c.isProject()){
+                _successURL = new AdminUrlsImpl().getInitialFolderSettingsURL(c);
+            }
+            else {
+                _successURL = getContainer().getStartURL(getUser());
+            }
+
+            if(permissionType == null){
+                errors.reject(ERROR_MSG, "You must select one of the options for permissions.");
+                return false;
+            }
+
+            if(permissionType.equals("CurrentUser") | permissionType.equals("Advanced"))
+            {
+                MutableSecurityPolicy policy = new MutableSecurityPolicy(c);
+                Role role = RoleManager.getRole(c.isProject() ? ProjectAdminRole.class : FolderAdminRole.class);
+
+                policy.addRoleAssignment(this.getViewContext().getUser(), role);
+                SecurityManager.savePolicy(policy);
+            }
+            else if (permissionType.equals("Inherit"))
+            {
+                SecurityManager.setInheritPermissions(c);
+            }
+            else if (permissionType.equals("CopyExistingProject"))
+            {
+                String targetProject = form.getTargetProject();
+                if(targetProject == null){
+                    errors.reject(ERROR_MSG, "In order to copy permissions from an existing project, you must pick a project.");
+                    return false;
+                }
+                Container source = ContainerManager.getForId(targetProject);
+                SecurityPolicy op = SecurityManager.getPolicy(source);
+                MutableSecurityPolicy np = new MutableSecurityPolicy(c);
+                for (RoleAssignment assignment : op.getAssignments()){
+                    Integer userId = assignment.getUserId();
+                    UserPrincipal p = SecurityManager.getPrincipal(userId);
+                    Role r = assignment.getRole();
+
+                    if(p instanceof Group){
+                        Group g = (Group)p;
+                        if(!g.isProjectGroup()){
+                            np.addRoleAssignment(p, r);
+                        }
+                        else {
+                            Group newGroup = GroupManager.copyGroupToContainer(g, c);
+                            np.addRoleAssignment(newGroup, r);
+                        }
+                    }
+                    else {
+                        np.addRoleAssignment(p, r);
+                    }
+                }
+
+                SecurityManager.savePolicy(np);
+            }
+            else {
+                throw new UnsupportedOperationException("An Unknown permission type was supplied: " + permissionType);
+            }
+            _successURL.addParameter("wizard", Boolean.TRUE.toString());
+
+            return true;
+        }
+
+        public ActionURL getSuccessURL(SetFolderPermissionsForm form)
+        {
+            return _successURL;
+        }
+
+        public NavTree appendNavTrail(NavTree root)
+        {
             getPageConfig().setFocusId("name");
             //can't use getTitle() here, as it assumes the title relates to the current
             //container, but in this case, it relates to the thing we're going to create
-            String title = "Create " + (getContainer().isRoot() ? "Project" : "Folder");
+            String title = "Users / Permissions";
             return appendAdminNavTrail(root, title, this.getClass());
         }
     }
 
+    public static class SetFolderPermissionsForm
+    {
+        private String targetProject;
+        private String permissionType;
+
+        public String getPermissionType()
+        {
+            return permissionType;
+        }
+
+        public void setPermissionType(String permissionType)
+        {
+            this.permissionType = permissionType;
+        }
+
+        public String getTargetProject()
+        {
+            return targetProject;
+        }
+
+        public void setTargetProject(String targetProject)
+        {
+            this.targetProject = targetProject;
+        }
+    }
+
+    @RequiresPermissionClass(AdminPermission.class)
+    public class SetInitialFolderSettingsAction extends FormViewAction<ProjectSettingsForm>
+    {
+        private ActionURL _successURL;
+
+        public void validateCommand(ProjectSettingsForm target, Errors errors)
+        {
+        }
+
+        public ModelAndView getView(ProjectSettingsForm form, boolean reshow, BindException errors) throws Exception
+        {
+
+            VBox vbox = new VBox();
+            Container c = getViewContext().getContainer();
+
+            JspView statusView = new JspView<ProjectSettingsForm>("/org/labkey/core/admin/setInitialFolderSettings.jsp", form, errors);
+            vbox.addView(statusView);
+
+            getPageConfig().setNavTrail(getCreateProjectWizardSteps(c.isProject()));
+            getPageConfig().setTemplate(Template.Wizard);
+
+            String noun = c.isProject() ? "Project": "Folder";
+            getPageConfig().setTitle(noun + " Settings");
+
+            return vbox;
+
+        }
+
+        public boolean handlePost(ProjectSettingsForm form, BindException errors) throws Exception
+        {
+            Container c = getContainer();
+            String projectRootPath = StringUtils.trimToNull(form.getProjectRootPath());
+            String fileRootOption = form.getFileRootOption();
+
+            if(projectRootPath == null && !fileRootOption.equals("default"))
+            {
+                errors.reject(ERROR_MSG, "Error: Must supply a default file location.");
+                return false;
+            }
+
+            FileContentService service = ServiceRegistry.get().getService(FileContentService.class);
+            if(fileRootOption.equals("default"))
+            {
+                service.setIsUseDefaultRoot(c.getProject(), true);
+            }
+            else
+            {
+                if (!service.isValidProjectRoot(projectRootPath))
+                {
+                    errors.reject(ERROR_MSG, "File root '" + projectRootPath + "' does not appear to be a valid directory accessible to the server at " + getViewContext().getRequest().getServerName() + ".");
+                    return false;
+                }
+
+                service.setIsUseDefaultRoot(c.getProject(), false);
+                service.setFileRoot(c.getProject(), new File(projectRootPath));
+            }
+
+            _successURL = getContainer().getStartURL(getUser());
+            _successURL.addParameter("wizard", Boolean.TRUE.toString());
+
+            return true;
+        }
+
+        public ActionURL getSuccessURL(ProjectSettingsForm form)
+        {
+            return _successURL;
+        }
+
+        public NavTree appendNavTrail(NavTree root)
+        {
+            getPageConfig().setFocusId("name");
+            //can't use getTitle() here, as it assumes the title relates to the current
+            //container, but in this case, it relates to the thing we're going to create
+            String title = "Users / Permissions";
+            return appendAdminNavTrail(root, title, this.getClass());
+        }
+    }
+
+    public static List<NavTree> getCreateProjectWizardSteps(Boolean isProject)
+    {
+        List<NavTree> navTrail = new ArrayList<NavTree>();
+
+        navTrail.add(new NavTree("Name and Type"));
+        navTrail.add(new NavTree("Users / Permissions"));
+        if(isProject)
+            navTrail.add(new NavTree("Project Settings"));
+        return navTrail;
+    }
 
     // For backward compatibility only -- old welcomeWiki text has link to admin/modifyFolder.view?action=create 
 

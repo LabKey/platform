@@ -653,4 +653,14 @@ public class FileContentServiceImpl implements FileContentService, ContainerMana
     {
         return new FileQueryUpdateService(tinfo, container);
     }
+
+    public boolean isValidProjectRoot(String root)
+    {
+        File f = new File(root);
+        if (!f.exists() || !f.isDirectory())
+        {
+            return false;
+        }
+        return true;
+    }
 }

@@ -21,78 +21,258 @@
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.api.view.JspView" %>
 <%@ page import="org.labkey.core.admin.AdminController" %>
+<%@ page import="org.labkey.api.module.Module" %>
+<%@ page import="java.util.Set" %>
+<%@ page import="java.util.HashSet" %>
+<%@ page import="java.util.ArrayList" %>
+<%@ page import="java.util.List" %>
+<%@ page import="java.util.Collections" %>
+<%@ page import="java.util.Comparator" %>
+<%@ page import="org.labkey.api.view.ViewContext" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
     JspView<AdminController.ManageFoldersForm> me = (JspView<AdminController.ManageFoldersForm>) HttpView.currentView();
     AdminController.ManageFoldersForm form = me.getModelBean();
-    Container c = me.getViewContext().getContainer();
+    final ViewContext ctx = me.getViewContext();
+    Container c = ctx.getContainer();
 
     String name = form.getName();
-    String containerDescription = (c.isRoot() ? "Project" : "Folder");
-    String containerType = containerDescription.toLowerCase();
+    String folderTypeName = form.getFolderType() != null ? form.getFolderType() : "Collaboration"; //default to Collaboration
 %>
+<script type="text/javascript">
+    LABKEY.requiresExt4Sandbox(true);
+    LABKEY.requiresCss("extWidgets/ext4.css");
+    LABKEY.requiresCss('/createFolder.css');
+</script>
+<script type="text/javascript">
+    Ext4.QuickTips.init();
 
-<form name="createForm" action="createFolder.view" method="post">
-    <%=formatMissedErrors("form")%>
-    <table>
-        <tr><td colspan=2><%
-        if (!c.isRoot())
-        {
-            %>New <%=h(containerType)%> under <b><%=h(c.getName())%></b><%
-        }
-        else
-        {
-            %>New <%=h(containerType)%><%
-        } %>
-        </tr>
-        <tr>
-            <td class="labkey-form-label">Name:</td>
-            <td><input id="name" name="name" value="<%=h(name)%>"/></td>
-        </tr>
-        <tr>
-            <td class="labkey-form-label">
-                Folder Type:
-            </td>
-            <td>
-                <table>
-<%
-    String folderTypeName = form.getFolderType();
-    if (null == folderTypeName) //Try to avoid "None"
-        folderTypeName = FolderType.NONE.equals(c.getFolderType()) ? "Collaboration" : c.getFolderType().getName();
-    int radioIndex = 0;
-    for (FolderType ft : ModuleLoader.getInstance().getFolderTypes())
-    {
-%>
-                    <tr>
-                        <td valign="top">
-                            <input type="radio" name="folderType" value="<%=h(ft.getName())%>" <%=folderTypeName.equals(ft.getName()) ? "checked" : ""%> >
-                         </td>
-                        <td valign="top">
-                            <span style="cursor:pointer;font-weight:bold" onclick="document.createForm.folderType[<%=radioIndex%>].checked = true;"><%=h(ft.getLabel())%></span><br>
-                            <%=h(ft.getDescription())%>
-                        </td>
-                    </tr>
-<%
-    radioIndex++;
-}
-%>
-                </table>
-            </td>
-        </tr>
-    </table>
+    Ext4.onReady(function(){
 
-    <table>
-        <tr>
-            <td><%=generateSubmitButton("Next")%></td>
-            <td><%
-                if (!c.isRoot())
-                {
-                    %><%=generateButton("Cancel", "manageFolders.view")%><%
+        var request = new LABKEY.MultiRequest();
+        var folderTypes;
+        var moduleTypes;
+
+        request.add(LABKEY.Security.getFolderTypes, {
+            success: function(data){
+                var keys = Ext4.Object.getKeys(data);
+                folderTypes = [];
+                Ext4.each(keys, function(k){
+                    folderTypes.push(data[k]);
+                });
+                folderTypes = folderTypes.sort(function(a,b){
+                    //force custom to appear at end
+                    return b.label == 'Custom' ? false
+                        : a.label == 'Custom' ? true
+                        : (a.label > b.label)
+                });
+            }
+        });
+        request.add(LABKEY.Security.getModules, {
+            success: function(data){
+                moduleTypes = data;
+            }
+        });
+
+        request.send(onSuccess);
+
+        function onSuccess(){
+
+            Ext4.create('Ext.form.Panel', {
+            border: false,
+            autoHeight: true,
+            width: 'auto',
+            style: 'padding-top: 20px;',
+            defaults: {
+                border: false
+            },
+            url: 'createFolder.view',
+            method: 'POST',
+            standardSubmit: true,
+            listeners: {
+                render: function(panel){
+                    var target = panel.down('#folderType');
+                    if(target.getValue() && target.getValue().folderType == 'None')
+                        panel.renderModules();
                 }
-                else
-                {
-                    %><%=generateButton("Cancel", "createFolder.view", "window.history.back(); return false;")%><%
-                } %></td>
-        </tr>
-    </table>
-</form>
+            },
+            items: [{
+                html: 'Name:',
+                cls: 'labkey-wizard-header',
+                style: 'padding-bottom: 5px;'
+            },{
+                xtype: 'textfield',
+                name: 'name',
+                width: 400,
+                fieldCls: 'labkey-wizard-input',
+                style: 'padding-left: 5px;',
+                value: '<%=h(name)%>'
+            },{
+                tag: 'span',
+                style: 'padding-bottom: 20px;'
+            },{
+                html: 'Type:',
+                cls: 'labkey-wizard-header'
+            },{
+                xtype: 'radiogroup',
+                columns: 1,
+                name: 'folderType',
+                itemId: 'folderType',
+                layoutConfig: {
+                    minWidth: 400
+                },
+                listeners: {
+                    change: {fn: function(btn, val){this.onTypeChange(btn, val)}, buffer: 20}
+                },
+                onTypeChange: function(btn, val){
+                    var parent = this.up('form');
+                    parent.down('#modules').removeAll();
+                    parent.doLayout();
+                    if(val.folderType=='None'){
+                        parent.renderModules();
+                    }
+                    parent.doLayout();
+                },
+                //NOTE: this could be shifted to use labkey-checkboxgroup with an arraystore
+                items: function(){
+                    var items = [];
+                    var ft;
+                    Ext4.each(folderTypes, function(ft){
+                        if(!ft.workbookType){
+                            items.push({
+                                xtype: 'radio',
+                                name: 'folderType',
+                                width: 500,
+                                inputValue: ft.name,
+                                value: ft.name,
+                                boxLabel: ft.label,
+                                labelWidth: 500,
+                                checked: (ft.name == '<%=folderTypeName%>' ? true : false),
+                                autoEl: {
+                                    'data-qtip': ft.description
+                                }
+                            });
+                        }
+                    }, this);
+
+                    return items;
+                }()
+            },{
+                xtype: 'form',
+                itemId: 'modules',
+                autoHeight: true,
+                border: false,
+                defaults: {
+                    border: false
+                },
+                style: 'padding-left: 15px;'
+            }],
+            buttons: [{
+                xtype: 'button',
+                cls: 'labkey-button',
+                text: 'Next',
+                handler: function(btn){
+                    var f = btn.up('form').getForm();
+                    f.submit();
+                }
+            },{
+                xtype: 'button',
+                cls: 'labkey-button',
+                text: 'Cancel',
+                handler: function(btn){
+                    window.location = LABKEY.ActionURL.buildURL('project', 'begin', 'home');
+                }
+            }],
+            renderModules: function(){
+                var target = this.down('#modules');
+                target.add([
+                    {
+                        html: 'Default Tab:',
+                        cls: 'labkey-wizard-header'
+                    },{
+                        xtype: 'combo',
+                        name: 'defaultModule',
+                        itemId: 'modulesCombo',
+                        displayField: 'module',
+                        valueField: 'module',
+                        value: 'Portal',
+                        queryMode: 'local',
+                        store: {
+                            //xtype: 'array',
+                            fields: ['module'],
+                            idIndex: 0,
+                            data: [
+                                {module: 'Portal'}
+                            ]
+                        }
+                    },{
+                        html: 'Choose Modules:',
+                        cls: 'labkey-wizard-header'
+                    },{
+                        xtype: 'checkboxgroup',
+                        columns: 3,
+                        autoHeight: true,
+                        name: 'activeModules',
+                        listeners: {
+                            change: {
+                                fn: function(btn, val){
+                                    var combo = target.down('#modulesCombo');
+                                    var oldVal = combo.getValue();
+
+                                    var store = combo.store;
+                                    store.removeAll();
+
+                                    if (!val.activeModules){
+                                        combo.reset();
+                                        return;
+                                    }
+
+                                    var records;
+                                    if(Ext4.isArray(val.activeModules)){
+                                        records = Ext4.Array.map(val.activeModules, function(item){
+                                            return {module: item};
+                                        }, this);
+                                    }
+                                    else {
+                                        records = [{module: val.activeModules}];
+                                    }
+                                    store.add(records);
+
+                                    if(records.length==1)
+                                        combo.setValue(records[0].get('module'));
+                                    else if (oldVal)
+                                        combo.setValue(oldVal);
+
+                                },
+                                scope: this,
+                                buffer: 20
+                            }
+                        },
+                        items: function(){
+                            var items = [];
+                            if(moduleTypes)
+                                Ext4.each(moduleTypes.modules, function(m){
+                                    if(m.shouldDisplay)
+                                        items.push({
+                                            xtype: 'checkbox',
+                                            name: 'activeModules',
+                                            inputValue:m.name,
+                                            boxLabel: m.tabName,
+                                            checked: (m.name=='Portal')
+                                        });
+                                }, this);
+
+                            return items;
+
+                        }()
+                }
+            ]);
+        }
+    }).render('createFormDiv');
+        }
+    });
+</script>
+
+<%=formatMissedErrors("form")%>
+<div id="createFormDiv"></div>
+
