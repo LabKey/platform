@@ -299,16 +299,12 @@ public class StudyModule extends SpringModule implements SearchService.DocumentP
         {
             public Set<ExperimentRunType> getExperimentRunTypes(Container container)
             {
-                if (container.getActiveModules().contains(StudyModule.this))
+                Set<ExperimentRunType> result = new HashSet<ExperimentRunType>();
+                for (final ExpProtocol protocol : AssayService.get().getAssayProtocols(container))
                 {
-                    Set<ExperimentRunType> result = new HashSet<ExperimentRunType>();
-                    for (final ExpProtocol protocol : AssayService.get().getAssayProtocols(container))
-                    {
-                        result.add(new AssayRunType(protocol, container));
-                    }
-                    return result;
+                    result.add(new AssayRunType(protocol, container));
                 }
-                return Collections.emptySet();
+                return result;
             }
         });
         AuditLogService.get().addAuditViewFactory(AssayAuditViewFactory.getInstance());
