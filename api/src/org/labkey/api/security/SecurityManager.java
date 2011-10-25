@@ -1185,6 +1185,10 @@ public class SecurityManager
         fireDeletePrincipalFromGroup(groupId, principal);
     }
 
+    public static void addMembers(Group group, List<User> usersToAdd) throws SQLException
+    {
+        addMembers(group, Collections.<Group>emptyList(), usersToAdd);
+    }
 
     public static void addMembers(Group group, List<Group> groupsToAdd, List<User> usersToAdd) throws SQLException
     {
