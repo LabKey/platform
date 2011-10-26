@@ -42,7 +42,7 @@
     if (null == c || null == c.getProject() || c.getProject().equals(ContainerManager.getHomeContainer()))
         homeLink = new NavTree(laf.getShortName() + " Home", appProps.getHomePageActionURL());
     else
-        homeLink = new NavTree(c.getProject().getName(), c.getProject().getFolderType().getStartURL(c, currentContext.getUser()));
+        homeLink = new NavTree(c.getProject().getName(), c.getProject().getFolderType().getStartURL(c.getProject(), currentContext.getUser()));
 %>
 <script type="text/javascript">
     LABKEY.requiresClientAPI();
