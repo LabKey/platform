@@ -91,7 +91,7 @@
     </td>
 </tr>
 <tr>
-    <td><%=PageFlowUtil.generateSubmitButton("Save Resources", "_form.setClean();")%></td>
+    <td><%=PageFlowUtil.generateSubmitButton("Save", "_form.setClean();")%></td>
 </tr>
 <tr>
     <td>&nbsp;</td>

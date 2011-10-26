@@ -160,7 +160,7 @@
 </tr>
 
 <tr>
-    <td><%=PageFlowUtil.generateSubmitButton("Save Properties", "_form.setClean()")%>&nbsp;<%=PageFlowUtil.generateButton("Reset All Properties", new AdminController.AdminUrlsImpl().getResetLookAndFeelPropertiesURL(c), "return confirmReset();")%></td>
+    <td><%=PageFlowUtil.generateSubmitButton("Save", "_form.setClean()")%>&nbsp;<%=PageFlowUtil.generateButton("Reset", new AdminController.AdminUrlsImpl().getResetLookAndFeelPropertiesURL(c), "return confirmReset();")%></td>
 </tr>
 <tr>
     <td>&nbsp;</td>

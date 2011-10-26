@@ -277,7 +277,7 @@ public class ProjectController extends SpringActionController
             else
                 template = new PrintTemplate(new VBox());
 
-            Portal.populatePortalView(getViewContext(), null != form.getPageId() ? form.getPageId() : c.getId(), template);
+            Portal.populatePortalView(getViewContext(), null != form.getPageId() ? form.getPageId() : Portal.DEFAULT_PORTAL_PAGE_ID, template);
 
             getPageConfig().setTemplate(PageConfig.Template.None);
             return template;

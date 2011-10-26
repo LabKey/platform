@@ -1568,7 +1568,7 @@ td.labkey-main-menu a.selected
     display:none;
     position:absolute;
     border:5px solid #dae1e6;
-    margin:3;
+    margin:3px;
     background-color:#FFFFFF;
     padding:8px;
     z-index:1000
@@ -1745,8 +1745,7 @@ table.labkey-expandable-nav
 {
     background-color: #F8F8F8;
     border: 0;
-    margin-top:5px;
-    margin-right:5px;
+    margin: 3px;
     border-spacing: 0;
 	*border-collapse: collapse;
     border-collapse: collapse;
@@ -1761,7 +1760,7 @@ table.labkey-expandable-nav
 
 #menuBarFolder_menu .labkey-expandable-nav
 {
-    border-left: 1px solid #89A1B4;
+    border: 1px solid #89A1B4;
 }
 
 #menuBarFolder_menu .labkey-expandable-nav-body
