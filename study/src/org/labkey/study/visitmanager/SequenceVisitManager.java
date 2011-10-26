@@ -66,9 +66,16 @@ public class SequenceVisitManager extends VisitManager
 
         if (cohortFilter == null)
         {
-            sql.append("SELECT DatasetId, SequenceNum").append(statsSql).append("\nFROM ").append(studyData.getFromSQL(alias))
-                .append("\n").append(qcStates != null ? "WHERE " + qcStates.getStateInClause(DataSetTableImpl.QCSTATE_ID_COLNAME) + "\n" : "")
-                .append("GROUP BY DatasetId, SequenceNum\nORDER BY 1, 2");
+            // This query now joins through ParticipantVisit, like the "too slow" query mentioned above. Grouping by visit is the only way to
+            // do the "participant count" stat correctly. But since all the code around us requires sequence num, for now, translate visit
+            // back to min sequence number for now. TODO: Convert all queries to do visit-based grouping, eliminate the Java grouping code,
+            // and fix any remaining performance issues.
+            sql.append("SELECT DatasetId, (SELECT SequenceNumMin FROM ").append(StudySchema.getInstance().getTableInfoVisit(), "V").append(" WHERE RowId = VisitRowId) AS SequenceNum")
+                .append(statsSql).append("\nFROM ").append(StudySchema.getInstance().getTableInfoParticipantVisit(), "PV").append(" JOIN ")
+                .append(studyData.getFromSQL(alias)).append(" ON PV.ParticipantId = ").append(alias).append(".ParticipantId AND PV.SequenceNum = ")
+                .append(alias).append(".SequenceNum\nWHERE PV.Container = ?").append(qcStates != null ? " AND " + qcStates.getStateInClause(DataSetTableImpl.QCSTATE_ID_COLNAME) : "")
+                .append("\nGROUP BY DatasetId, VisitRowId\nORDER BY 1, 2");
+            sql.add(getStudy().getContainer());
         }
         else
         {
