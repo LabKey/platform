@@ -23,14 +23,11 @@ import org.labkey.api.util.Filter;
  * Date: 10/12/11
  * Time: 4:58 AM
  */
+
+// NOTE: Use CacheManager.getBlockingStringKeyCache() to construct one of these -- this handles generics better
 public class BlockingStringKeyCache<V> extends BlockingCache<String, V>
 {
-    public BlockingStringKeyCache(Cache<String, Object> cache)
-    {
-        super(cache);
-    }
-
-    public BlockingStringKeyCache(Cache<String, Object> cache, @Nullable CacheLoader<String, V> cacheLoader)
+    protected BlockingStringKeyCache(Cache<String, Object> cache, @Nullable CacheLoader<String, V> cacheLoader)
     {
         super(cache, cacheLoader);
     }

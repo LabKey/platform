@@ -571,22 +571,8 @@ public class ContainerManager
 
     public static Container getForRowId(int id)
     {
-        try
-        {
-            // Postgres 8.3 doesn't like it if we use a string as
-            // an int parameter, so parse it first
-            Container[] ret = Table.executeQuery(
-                    CORE.getSchema(),
-                    "SELECT * FROM " + CORE.getTableInfoContainers() + " WHERE RowId = ?",
-                    new Object[]{id}, Container.class);
-            if (ret == null || ret.length == 0)
-                return null;
-            return ret[0];
-        }
-        catch (SQLException e)
-        {
-            throw new RuntimeSQLException(e);
-        }
+        Selector selector = new SqlSelector(CORE.getSchema(), new SQLFragment("SELECT * FROM " + CORE.getTableInfoContainers() + " WHERE RowId = ?", id));
+        return selector.getObject(Container.class);
     }
 
     public static Container getForId(@NotNull GUID id)
@@ -1071,9 +1057,13 @@ public class ContainerManager
         {
             // Synchronize the transaction, but not the listeners -- see #9901
             CORE.getSchema().getScope().ensureTransaction();
+
             synchronized (DATABASE_QUERY_LOCK)
             {
-                Table.execute(CORE.getSchema(), "UPDATE " + CORE.getTableInfoContainers() + " SET Parent=? WHERE EntityId=?", newParent.getId(), c.getId());
+                Table.execute(CORE.getSchema(), "UPDATE " + CORE.getTableInfoContainers() + " SET Parent = ? WHERE EntityId = ?", newParent.getId(), c.getId());
+
+                // Refresh the container directly from the database so the container reflects the new parent, isProject(), etc.
+                c = ContainerManager.getForRowId(c.getRowId());
 
                 // this could be done in the trigger, but I prefer to put it in the transaction
                 if (changedProjects)

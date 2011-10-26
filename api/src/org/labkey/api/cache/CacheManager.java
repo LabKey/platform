@@ -67,6 +67,18 @@ public class CacheManager
         return cache;
     }
 
+    public static <K, V> BlockingCache<K, V> getBlockingCache(int limit, long defaultTimeToLive, String debugName, @Nullable CacheLoader<K, V> loader)
+    {
+        Cache<K, Object> cache = getCache(limit, defaultTimeToLive, debugName);
+        return new BlockingCache<K, V>(cache, loader);
+    }
+
+    public static <V> BlockingStringKeyCache<V> getBlockingStringKeyCache(int limit, long defaultTimeToLive, String debugName, @Nullable CacheLoader<String, V> loader)
+    {
+        StringKeyCache<Object> cache = getStringKeyCache(limit, defaultTimeToLive, debugName);
+        return new BlockingStringKeyCache<V>(cache, loader);
+    }
+
     // Temporary caches must be closed when no longer needed.  Their statistics can accumulate to another cache's stats.
     public static <V> StringKeyCache<V> getTemporaryCache(int limit, long defaultTimeToLive, String debugName, @Nullable Stats stats)
     {

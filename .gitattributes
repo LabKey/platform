@@ -197,6 +197,7 @@ api/src/org/labkey/api/data/DisplayColumnGroup.java -text
 api/src/org/labkey/api/data/Entity.java -text
 api/src/org/labkey/api/data/EnumConverter.java -text
 api/src/org/labkey/api/data/EnumTableInfo.java -text
+api/src/org/labkey/api/data/ExceptionFramework.java -text
 api/src/org/labkey/api/data/ExpDataFileConverter.java -text
 api/src/org/labkey/api/data/FileSqlScriptProvider.java -text
 api/src/org/labkey/api/data/Filter.java -text
@@ -207,10 +208,12 @@ api/src/org/labkey/api/data/HighlightingDisplayColumn.java -text
 api/src/org/labkey/api/data/HtmlWriter.java -text
 api/src/org/labkey/api/data/IconDisplayColumn.java -text
 api/src/org/labkey/api/data/ImportAliasable.java -text
+api/src/org/labkey/api/data/JdbcCommand.java -text
 api/src/org/labkey/api/data/JdbcType.java -text
 api/src/org/labkey/api/data/JsonWriter.java -text
 api/src/org/labkey/api/data/LabKeyScope.java -text
 api/src/org/labkey/api/data/LegacySelector.java -text
+api/src/org/labkey/api/data/LegacySqlExecutor.java -text
 api/src/org/labkey/api/data/LegacySqlSelector.java -text
 api/src/org/labkey/api/data/LegacyTableSelector.java -text
 api/src/org/labkey/api/data/LookupColumn.java -text
@@ -248,6 +251,7 @@ api/src/org/labkey/api/data/ShowRows.java -text
 api/src/org/labkey/api/data/ShowRowsConverter.java -text
 api/src/org/labkey/api/data/SimpleFilter.java -text
 api/src/org/labkey/api/data/SqlColumn.java -text
+api/src/org/labkey/api/data/SqlExecutor.java -text
 api/src/org/labkey/api/data/SqlScriptManager.java -text
 api/src/org/labkey/api/data/SqlScriptParser.java -text
 api/src/org/labkey/api/data/SqlScriptRunner.java -text
@@ -806,6 +810,7 @@ api/src/org/labkey/api/security/IgnoresTermsOfUse.java -text
 api/src/org/labkey/api/security/LimitedUser.java -text
 api/src/org/labkey/api/security/LoginUrls.java -text
 api/src/org/labkey/api/security/MutableSecurityPolicy.java -text
+api/src/org/labkey/api/security/NestedGroupsTest.java -text
 api/src/org/labkey/api/security/PasswordExpiration.java -text
 api/src/org/labkey/api/security/RequiresLogin.java -text
 api/src/org/labkey/api/security/RequiresNoPermission.java -text

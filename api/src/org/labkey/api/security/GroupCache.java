@@ -31,7 +31,7 @@ import org.labkey.api.data.SqlSelector;
 public class GroupCache
 {
     private static final CoreSchema CORE = CoreSchema.getInstance();
-    private static final BlockingCache<Integer, Group> CACHE = new BlockingCache<Integer, Group>(CacheManager.<Integer, Object>getCache(10000, CacheManager.DAY, "Groups"), new CacheLoader<Integer, Group>()
+    private static final BlockingCache<Integer, Group> CACHE = CacheManager.getBlockingCache(10000, CacheManager.DAY, "Groups", new CacheLoader<Integer, Group>()
     {
         @Override
         public Group load(Integer groupId, Object argument)

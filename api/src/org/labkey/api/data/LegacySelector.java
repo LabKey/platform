@@ -16,8 +16,6 @@
 
 package org.labkey.api.data;
 
-import org.labkey.api.data.Selector.ExceptionFramework;
-
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.Collection;

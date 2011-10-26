@@ -35,6 +35,20 @@ public class BlockingCache<K, V> implements BasicCache<K, V>
     public static final Object UNINITIALIZED = new Object() {public String toString() { return "UNINITIALIZED";}};
 
 
+    public BlockingCache(Cache<K, Object> cache)
+    {
+        this(cache, null);
+    }
+
+
+    // TODO: Should take Cache<K, Wrapper<V>> instead (need to expose Wrapper)
+    public BlockingCache(Cache<K, Object> cache, @Nullable CacheLoader<K, V> loader)
+    {
+        _cache = cache;
+        _loader = loader;
+    }
+
+
     protected static class Wrapper<V>
     {
         @SuppressWarnings({"unchecked"})
@@ -61,19 +75,6 @@ public class BlockingCache<K, V> implements BasicCache<K, V>
     protected boolean isValid(Wrapper<V> w, K key, Object argument, CacheLoader loader)
     {
         return w.value != UNINITIALIZED;
-    }
-
-
-    public BlockingCache(Cache<K, Object> cache)
-    {
-        this(cache, null);
-    }
-
-
-    public BlockingCache(Cache<K, Object> cache, @Nullable CacheLoader<K, V> loader)
-    {
-        _cache = cache;
-        _loader = loader;
     }
 
 

@@ -20,6 +20,7 @@ import org.apache.commons.codec.binary.Base64;
 import org.apache.commons.lang.StringUtils;
 import org.apache.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import org.junit.Assert;
 import org.junit.Test;
 import org.labkey.api.audit.AuditLogEvent;
@@ -34,8 +35,11 @@ import org.labkey.api.data.Project;
 import org.labkey.api.data.PropertyManager;
 import org.labkey.api.data.RuntimeSQLException;
 import org.labkey.api.data.SQLFragment;
+import org.labkey.api.data.Selector;
 import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.Sort;
+import org.labkey.api.data.SqlExecutor;
+import org.labkey.api.data.SqlSelector;
 import org.labkey.api.data.Table;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.module.ModuleLoader;
@@ -84,6 +88,7 @@ import java.util.Enumeration;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -212,7 +217,7 @@ public class SecurityManager
         return _listeners;
     }
 
-    protected static void fireAddPrincipalToGroup(Group group, UserPrincipal user)
+    private static void fireAddPrincipalToGroup(Group group, UserPrincipal user)
     {
         if (user == null)
             return;
@@ -435,7 +440,7 @@ public class SecurityManager
     private static final String USER_ID_KEY = User.class.getName() + "$userId";
     private static final String IMPERSONATORS_SESSION_MAP_KEY = "ImpersonatorsSessionMapKey";
 
-    public static void setAuthenticatedUser(HttpServletRequest request, User user, User impersonatingUser, Container project, URLHelper returnURL)
+    public static void setAuthenticatedUser(HttpServletRequest request, User user, @Nullable User impersonatingUser, @Nullable Container project, @Nullable URLHelper returnURL)
     {
         invalidateSession(request);      // Clear out terms-of-use and other session info that guest / previous user may have
 
@@ -571,7 +576,7 @@ public class SecurityManager
     }
 
 
-    public static void setVerification(ValidEmail email, String verification) throws UserManagementException
+    public static void setVerification(ValidEmail email, @Nullable String verification) throws UserManagementException
     {
         try
         {
@@ -652,7 +657,7 @@ public class SecurityManager
 
     public static class UserManagementException extends Exception
     {
-        private String _email;
+        private final String _email;
 
         public UserManagementException(ValidEmail email, String message)
         {
@@ -998,7 +1003,21 @@ public class SecurityManager
 
     public static Group createGroup(Container c, String name, String type)
     {
-        String defaultOwnerId = (null == c || c.isRoot()) ? null : c.getId();
+        String defaultOwnerId;
+
+        if (null == c || c.isRoot())
+        {
+            defaultOwnerId = null;
+        }
+        else if (c.isProject())
+        {
+            defaultOwnerId = c.getId();
+        }
+        else
+        {
+            throw new IllegalStateException("Groups can only be associated with a project or the root");
+        }
+
         return createGroup(c, name, type, defaultOwnerId);
     }
 
@@ -1020,7 +1039,7 @@ public class SecurityManager
             throw new IllegalArgumentException(valid);
 
         if (groupExists(c, group.getName(), group.getOwnerId()))
-            throw new IllegalArgumentException("Group already exists");
+            throw new IllegalArgumentException("Group '" + group.getName() + "' already exists");
 
         try
         {
@@ -1098,7 +1117,7 @@ public class SecurityManager
     }
 
 
-    public static void deleteGroups(Container c, String type)
+    public static void deleteGroups(Container c, @Nullable String type)
     {
         if (!(null == type || type.equals(Group.typeProject) || type.equals(Group.typeModule) ))
             throw new IllegalArgumentException("Illegal group type: " + type);
@@ -1243,29 +1262,71 @@ public class SecurityManager
     }
 
 
-    /** @deprecated */
-    public static void addMember(Integer groupId, User user)
+    // Add a single user/group to a single group
+    public static void addMember(Group group, UserPrincipal principal)
     {
-        Group group = getGroup(groupId);
-        addMember(group, user);
+        String errorMessage = getAddMemberError(group, principal);
+
+        if (null != errorMessage)
+            throw new IllegalStateException(errorMessage);
+
+        SqlExecutor executor = new SqlExecutor(core.getSchema(), new SQLFragment("INSERT INTO " + core.getTableInfoMembers() +
+            " (UserId, GroupId) VALUES (?, ?)", principal.getUserId(), group.getUserId()));
+
+        executor.execute();
+        fireAddPrincipalToGroup(group, principal);
     }
 
-    // Add a single user to a single group
-    public static void addMember(Group group, UserPrincipal user)
+
+    // Return an error message if principal can't be added to the group, otherwise return null
+    private static String getAddMemberError(Group group, UserPrincipal principal)
     {
-        try
+        if (null == group)
+            return "Null group not allowed";
+
+        if (null == principal)
+            return "Null principal not allowed";
+
+        Set<UserPrincipal> members = getGroupMembers(group, GroupMemberType.Both);
+
+        if (members.contains(principal))
+            return "Principal is already a member of this group";
+
+        // End of checks for a user
+        if (principal instanceof User)
+            return null;
+
+        // Principal is a Group, so do some additional validation checks
+
+        Group newMember = (Group)principal;
+
+        if (group.equals(newMember))
+            return "Can't add a group to itself";
+
+        for (int id : group.getGroups())
+            if (newMember.getUserId() == id)
+                return "Can't add a group that results in a circular group relation";
+
+        if (newMember.isSystemGroup())
+            return "Can't add a system group to another group";
+
+        if (group.isProjectGroup())
         {
-            Table.execute(
-                    core.getSchema(),
-                    "INSERT INTO " + core.getTableInfoMembers() + " (UserId, GroupId) VALUES (?, ?)",
-                    user.getUserId(), group.getUserId());
-            fireAddPrincipalToGroup(group, user);
+            if (!newMember.isProjectGroup())
+                return "Can't add a site group to a project group";
+
+            if (!group.getContainer().equals(newMember.getContainer()))
+                return "Can't add a project group to a group in a different project";
         }
-        catch (SQLException e)
+        else
         {
-            _log.error("addMember", e);
+            if (newMember.isProjectGroup())
+                return "Can't add a project group to a site group";
         }
+
+        return null;
     }
+
 
 
     public static Group[] getGroups(Container project, boolean includeGlobalGroups)
@@ -1418,18 +1479,20 @@ public class SecurityManager
     }
 
     @NotNull
-    public static List<UserPrincipal> getGroupMembers(Group group, GroupMemberType memberType) throws SQLException
+    public static Set<UserPrincipal> getGroupMembers(Group group, GroupMemberType memberType)
     {
-        List<UserPrincipal> principals = new ArrayList<UserPrincipal>();
+        Set<UserPrincipal> principals = new LinkedHashSet<UserPrincipal>();
         Integer[] ids = getGroupMemberIds(ContainerManager.getForId(group.getContainer()), group.getName());
-        for(Integer id : ids)
+
+        for (Integer id : ids)
         {
-            UserPrincipal principal = getPrincipal(id.intValue());
-            if(null != principal && (GroupMemberType.Both == memberType
+            UserPrincipal principal = getPrincipal(id);
+            if (null != principal && (GroupMemberType.Both == memberType
                     || (GroupMemberType.Users == memberType && principal instanceof User)
                     || (GroupMemberType.Groups == memberType && principal instanceof Group)))
                 principals.add(principal);
         }
+
         return principals;
     }
 
@@ -1476,37 +1539,30 @@ public class SecurityManager
 
        //get members for each group
         ArrayList<User> projectUsers = new ArrayList<User>();
-        List<UserPrincipal> members;
+        Set<UserPrincipal> members;
 
-        try
+        for (Group g : groups)
         {
-            for(Group g : groups)
+            if (g.isGuests() || g.isUsers())
+                continue;
+
+            // TODO: currently only getting members that are users (no groups). should this be changed to get users of member groups?
+            members = getGroupMembers(g, GroupMemberType.Users);
+
+            //add this group's members to hashset
+            if (!members.isEmpty())
             {
-                if (g.isGuests() || g.isUsers())
-                    continue;
-
-                // TODO: currently only getting members that are users (no groups). should this be changed to get users of member groups?
-                members = getGroupMembers(g, GroupMemberType.Users);
-
-                //add this group's members to hashset
-                if (!members.isEmpty())
+                //get list of users from email
+                for (UserPrincipal member : members)
                 {
-                    //get list of users from email
-                    for (UserPrincipal member : members)
-                    {
-                        User user = UserManager.getUser(member.getUserId());
-                        if (emails.add(user.getEmail()))
-                            projectUsers.add(user);
-                    }
+                    User user = UserManager.getUser(member.getUserId());
+                    if (emails.add(user.getEmail()))
+                        projectUsers.add(user);
                 }
             }
-            return projectUsers;
         }
-        catch (SQLException e)
-        {
-            _log.error("unexpected error", e);
-            throw new RuntimeSQLException(e);
-        }
+
+        return projectUsers;
     }
 
 
@@ -1597,23 +1653,6 @@ public class SecurityManager
     }
     
 
-    public static String[] getGroupMemberNames(String path)
-    {
-        try
-        {
-            Integer groupId = SecurityManager.getGroupId(path);
-            if (groupId == null)
-                return new String[0];
-            else
-                return getGroupMemberNames(groupId);
-        }
-        catch (SQLException e)
-        {
-            _log.error(e);
-            throw new RuntimeSQLException(e);
-        }
-    }
-
     public static List<Pair<Integer, String>> getGroupMemberNamesAndIds(Integer groupId)
     {
         ResultSet rs = null;
@@ -1672,26 +1711,16 @@ public class SecurityManager
     }
 
 
-    public static Integer[] getGroupMemberIds(Container c, String groupName)
+    private static Integer[] getGroupMemberIds(Container c, String groupName)
     {
-        try
-        {
-            Integer groupId = SecurityManager.getGroupId(c, groupName);
-            return Table.executeArray(
-                        core.getSchema(),
-                        "SELECT Members.UserId FROM " + core.getTableInfoMembers() + " Members"
-                                + " JOIN " + core.getTableInfoPrincipals() + " Users ON Members.UserId = Users.UserId\n"
-                                + " WHERE Members.GroupId = ?"
-                                + " ORDER BY Users.Type, Users.Name",
-                        new Object[]{groupId},
-                        Integer.class);
-        }
-        catch (SQLException e)
-        {
-            _log.error(e);
-        }
+        Integer groupId = SecurityManager.getGroupId(c, groupName);
+        Selector selector = new SqlSelector(core.getSchema(), new SQLFragment(
+                "SELECT Members.UserId FROM " + core.getTableInfoMembers() + " Members" +
+                " JOIN " + core.getTableInfoPrincipals() + " Users ON Members.UserId = Users.UserId\n" +
+                " WHERE Members.GroupId = ?" +
+                " ORDER BY Users.Type, Users.Name", groupId));
 
-        return new Integer[ 0 ];
+        return selector.getArray(Integer.class);
     }
 
 
@@ -1722,7 +1751,7 @@ public class SecurityManager
 
 
     // Takes Container (or null for root) and group name; returns groupId
-    public static Integer getGroupId(Container c, String group)
+    public static Integer getGroupId(@Nullable Container c, String group)
     {
         return getGroupId(c, group, null, true);
     }
@@ -1735,14 +1764,7 @@ public class SecurityManager
     }
 
 
-    // Takes Container (or null for root) and group name; returns groupId
-    public static Integer getGroupId(Container c, String group, String ownerId)
-    {
-        return getGroupId(c, group, ownerId, true);
-    }
-
-
-    public static Integer getGroupId(Container c, String groupName, String ownerId, boolean throwOnFailure)
+    public static Integer getGroupId(Container c, String groupName, @Nullable String ownerId, boolean throwOnFailure)
     {
         return getGroupId(c, groupName, ownerId, throwOnFailure, false);
     }
@@ -1752,7 +1774,7 @@ public class SecurityManager
     // by case (this was not possible on SQL Server).  In CPAS 1.6 we disallow this on PostgreSQL... but we still need to be able to
     // retrieve group IDs in a case-sensitive manner.
     // TODO: For CPAS 1.7: this should always be case-insensitive (we will clean up the database by renaming duplicate groups)
-    private static Integer getGroupId(Container c, String groupName, String ownerId, boolean throwOnFailure, boolean caseInsensitive)
+    private static Integer getGroupId(Container c, String groupName, @Nullable String ownerId, boolean throwOnFailure, boolean caseInsensitive)
     {
         List<String> params = new ArrayList<String>();
         params.add(caseInsensitive ? groupName.toLowerCase() : groupName);
@@ -1785,9 +1807,10 @@ public class SecurityManager
         {
             throw new RuntimeSQLException(x);
         }
+
         if (groupId == null && throwOnFailure)
         {
-            throw new NotFoundException();
+            throw new NotFoundException("Group not found");
         }
 
         return groupId;
@@ -1898,7 +1921,7 @@ public class SecurityManager
     //
 
     //manage SecurityPolicy
-    private static String _policyPrefix = "Policy/";
+    private static final String _policyPrefix = "Policy/";
 
     @NotNull
     public static SecurityPolicy getPolicy(@NotNull SecurableResource resource)
@@ -2562,7 +2585,7 @@ public class SecurityManager
         /* when demoting a project to a regular folder, delete the project groups */
         if (oldProject == c)
         {
-            org.labkey.api.security.SecurityManager.deleteGroups(c,Group.typeProject);
+            SecurityManager.deleteGroups(c,Group.typeProject);
         }
 
         /*
@@ -2571,6 +2594,7 @@ public class SecurityManager
         Container[] subtrees = ContainerManager.getAllChildren(c);
         StringBuilder sb = new StringBuilder();
         String comma = "";
+
         for (Container sub : subtrees)
         {
             sb.append(comma);
@@ -2579,6 +2603,7 @@ public class SecurityManager
             sb.append("'");
             comma = ",";
         }
+
         Table.execute(core.getSchema(), "DELETE FROM " + core.getTableInfoRoleAssignments() + "\n" +
             "WHERE ResourceId IN (SELECT ResourceId FROM " + core.getTableInfoPolicies() + " WHERE Container IN (" +
                 sb.toString() + "))");
@@ -2600,7 +2625,7 @@ public class SecurityManager
         private String _emailAddress = "";
         private String _recipient = "";
         protected boolean _verificationUrlRequired = true;
-        protected List<ReplacementParam> _replacements = new ArrayList<ReplacementParam>();
+        protected final List<ReplacementParam> _replacements = new ArrayList<ReplacementParam>();
 
         protected SecurityEmailTemplate(String name)
         {
@@ -2629,7 +2654,7 @@ public class SecurityManager
             if (super.isValid(error))
             {
                 // add an additional requirement for the verification url
-                if (!_verificationUrlRequired || getBody().indexOf("^verificationURL^") != -1)
+                if (!_verificationUrlRequired || getBody().contains("^verificationURL^"))
                 {
                     return true;
                 }

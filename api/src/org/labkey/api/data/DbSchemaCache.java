@@ -16,14 +16,14 @@
 
 package org.labkey.api.data;
 
+import org.labkey.api.cache.BlockingStringKeyCache;
+import org.labkey.api.cache.CacheLoader;
+import org.labkey.api.cache.CacheManager;
 import org.labkey.api.module.Module;
 import org.labkey.api.module.ModuleContext;
 import org.labkey.api.module.ModuleLoader;
-import org.labkey.api.util.Filter;
-import org.labkey.api.cache.BlockingCache;
-import org.labkey.api.cache.CacheLoader;
-import org.labkey.api.cache.CacheManager;
 import org.labkey.api.settings.AppProps;
+import org.labkey.api.util.Filter;
 
 /*
 * User: adam
@@ -35,7 +35,7 @@ import org.labkey.api.settings.AppProps;
 public class DbSchemaCache
 {
     private final DbScope _scope;
-    private final BlockingCache<String, DbSchema> _blockingCache = new DbSchemaBlockingCache();  // TODO: BlockingStringKeyCache?
+    private final BlockingStringKeyCache<DbSchema> _blockingCache = new DbSchemaBlockingCache();  // TODO: BlockingStringKeyCache?
     private final IncompleteSchemaFilter _incompleteFilter = new IncompleteSchemaFilter();
 
     public DbSchemaCache(DbScope scope)
@@ -100,7 +100,7 @@ public class DbSchemaCache
     }
 
 
-    private class DbSchemaBlockingCache extends BlockingCache<String, DbSchema>
+    private class DbSchemaBlockingCache extends BlockingStringKeyCache<DbSchema>
     {
         public DbSchemaBlockingCache()
         {

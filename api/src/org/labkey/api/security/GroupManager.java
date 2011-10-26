@@ -212,17 +212,17 @@ public class GroupManager
             assertFalse("login before running this test", loggedIn.isGuest());
             _user = context.getUser().cloneUser();
 
-            Container c = JunitUtil.getTestContainer();
+            Container project = JunitUtil.getTestContainer().getProject();
+
+            if (null != SecurityManager.getGroupId(project, "a", false))
+                SecurityManager.deleteGroup(SecurityManager.getGroupId(project, "a"));
+            if (null != SecurityManager.getGroupId(project, "b", false))
+                SecurityManager.deleteGroup(SecurityManager.getGroupId(project, "b"));
+
+            Group groupA = SecurityManager.createGroup(project, "a");
+            Group groupB = SecurityManager.createGroup(project, "b");
+
             ACL acl = new ACL();
-
-            if (null != SecurityManager.getGroupId(c,"a",false))
-                SecurityManager.deleteGroup(SecurityManager.getGroupId(c,"a"));
-            if (null != SecurityManager.getGroupId(c,"b",false))
-                SecurityManager.deleteGroup(SecurityManager.getGroupId(c,"b"));
-
-            Group groupA = SecurityManager.createGroup(c, "a");
-            Group groupB = SecurityManager.createGroup(c, "b");
-
             assertFalse(acl.hasPermission(getUser(), ACL.PERM_READ));
             acl.setPermission(groupA, ACL.PERM_READ);
             assertFalse(acl.hasPermission(getUser(), ACL.PERM_READ));

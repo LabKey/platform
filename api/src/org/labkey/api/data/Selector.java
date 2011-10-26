@@ -32,29 +32,6 @@ import java.util.Map;
 */
 public interface Selector
 {
-    public enum ExceptionFramework
-    {
-        Spring
-            {
-                @Override
-                DataAccessException translate(DbScope scope, String message, String sql, SQLException e)
-                {
-                    SQLExceptionTranslator translator = new SQLErrorCodeSQLExceptionTranslator(scope.getDataSource());
-                    return translator.translate(message, sql, e);
-                }
-            },
-        JDBC
-            {
-                @Override
-                RuntimeSQLException translate(DbScope scope, String message, String SQL, SQLException e)
-                {
-                    return new RuntimeSQLException(e);
-                }
-            };
-
-        abstract RuntimeException translate(DbScope scope, String message, String SQL, SQLException e);
-    }
-
     ResultSet getResultSet() throws SQLException;      // TODO: Don't throw SQLException?
 
     <K> K[] getArray(Class<K> clazz);

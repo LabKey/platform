@@ -16,10 +16,9 @@
 
 package org.labkey.api.data;
 
-import org.labkey.api.cache.BlockingCache;
+import org.labkey.api.cache.BlockingStringKeyCache;
 import org.labkey.api.cache.CacheLoader;
 import org.labkey.api.cache.CacheManager;
-import org.labkey.api.util.Filter;
 import org.labkey.api.util.Pair;
 
 /*
@@ -29,7 +28,7 @@ import org.labkey.api.util.Pair;
 */
 public class SchemaTableInfoCache
 {
-    private final BlockingCache<String, SchemaTableInfo> _blockingCache = new SchemaTableInfoBlockingCache();  // TODO: BlockingStringKeyCache?
+    private final BlockingStringKeyCache<SchemaTableInfo> _blockingCache = new SchemaTableInfoBlockingCache();
 
 
     SchemaTableInfo get(DbSchema schema, String tableName)
@@ -48,13 +47,7 @@ public class SchemaTableInfoCache
     {
         final String prefix = (schemaName + "/").toLowerCase();
 
-        _blockingCache.removeUsingFilter(new Filter<String>() {
-            @Override
-            public boolean accept(String key)
-            {
-                return key.startsWith(prefix);
-            }
-        });
+        _blockingCache.removeUsingPrefix(prefix);
     }
 
 
@@ -85,7 +78,7 @@ public class SchemaTableInfoCache
     }
 
 
-    private static class SchemaTableInfoBlockingCache extends BlockingCache<String, SchemaTableInfo>
+    private static class SchemaTableInfoBlockingCache extends BlockingStringKeyCache<SchemaTableInfo>
     {
         private SchemaTableInfoBlockingCache()
         {

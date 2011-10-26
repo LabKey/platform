@@ -80,4 +80,32 @@ public abstract class UserPrincipal implements Principal, Serializable
     }
 
     public abstract int[] getGroups();
+
+
+    @Override
+    public String toString()
+    {
+        return getName();
+    }
+
+
+    @Override
+    public boolean equals(Object o)
+    {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+
+        UserPrincipal principal = (UserPrincipal) o;
+
+        if (getUserId() != principal.getUserId()) return false;
+
+        return true;
+    }
+
+
+    @Override
+    public int hashCode()
+    {
+        return getUserId();
+    }
 }

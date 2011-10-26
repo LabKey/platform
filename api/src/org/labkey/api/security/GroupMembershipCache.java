@@ -20,12 +20,10 @@ import org.labkey.api.cache.CacheLoader;
 import org.labkey.api.cache.CacheManager;
 import org.labkey.api.cache.StringKeyCache;
 import org.labkey.api.data.CoreSchema;
-import org.labkey.api.data.RuntimeSQLException;
 import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.SqlSelector;
 
 import java.beans.PropertyChangeEvent;
-import java.sql.SQLException;
 import java.util.Arrays;
 import java.util.HashSet;
 import java.util.LinkedList;
@@ -81,7 +79,7 @@ public class GroupMembershipCache
 
 
     // Returns the immediate group membership for this principal (non-recursive)
-    static int[] getGroupsForPrincipal(int groupId) throws SQLException
+    static int[] getGroupsForPrincipal(int groupId)
     {
         return CACHE.get(IMMEDIATE_GROUPS_PREFIX + groupId, groupId, IMMEDIATE_GROUPS_LOADER);
     }
@@ -130,36 +128,29 @@ public class GroupMembershipCache
     {
         int userId = user.getUserId();
 
-        try
+        HashSet<Integer> groupSet = new HashSet<Integer>();
+        LinkedList<Integer> recurse = new LinkedList<Integer>();
+        recurse.add(Group.groupGuests);
+        if (user.getUserId() != User.guest.getUserId())
+            recurse.add(Group.groupUsers);
+        recurse.add(userId);
+
+        while (!recurse.isEmpty())
         {
-            HashSet<Integer> groupSet = new HashSet<Integer>();
-            LinkedList<Integer> recurse = new LinkedList<Integer>();
-            recurse.add(Group.groupGuests);
-            if (user.getUserId() != User.guest.getUserId())
-                recurse.add(Group.groupUsers);
-            recurse.add(userId);
+            int id = recurse.removeFirst();
+            groupSet.add(id);
+            int[] groups = getGroupsForPrincipal(id);
 
-            while (!recurse.isEmpty())
-            {
-                int id = recurse.removeFirst();
-                groupSet.add(id);
-                int[] groups = getGroupsForPrincipal(id);
-
-                for (int g : groups)
-                    if (!groupSet.contains(g))
-                        recurse.addLast(g);
-            }
-
-            // Site administrators always get developer role as well
-            if (groupSet.contains(Group.groupAdministrators))
-                groupSet.add(Group.groupDevelopers);
-
-            return _toIntArray(groupSet);
+            for (int g : groups)
+                if (!groupSet.contains(g))
+                    recurse.addLast(g);
         }
-        catch (SQLException e)
-        {
-            throw new RuntimeSQLException(e);
-        }
+
+        // Site administrators always get developer role as well
+        if (groupSet.contains(Group.groupAdministrators))
+            groupSet.add(Group.groupDevelopers);
+
+        return _toIntArray(groupSet);
     }
 
 

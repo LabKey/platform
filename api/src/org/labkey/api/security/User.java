@@ -139,28 +139,6 @@ public class User extends UserPrincipal implements Serializable, Cloneable
         return _displayName;
     }
 
-    public boolean equals(Object u)
-    {
-        if (!(u instanceof User))
-            return false;
-        boolean equal = getUserId() == ((User) u).getUserId();
-        assert !equal || getName().equals(((User) u).getName());
-        return equal;
-    }
-
-
-    public int hashCode()
-    {
-        return getUserId();
-    }
-
-
-    public String toString()
-    {
-        return getName();
-    }
-
-
     public boolean isAdministrator()
     {
         return isAllowedRoles() && isInGroup(Group.groupAdministrators);

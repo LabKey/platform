@@ -413,7 +413,7 @@ public class Table
 
     public static int execute(DbSchema schema, SQLFragment f) throws SQLException
     {
-        return execute(schema, f.getSQL(), f.getParamsArray());
+        return new LegacySqlExecutor(schema, f).execute();
     }
 
 
@@ -766,7 +766,7 @@ public class Table
             _setProperty(returnObject, "CreatedBy", fields.get("CreatedBy"));
     }
 
-    protected static void _updateSpecialFields(User user, TableInfo table, Map<String, Object> fields, java.sql.Timestamp date)
+    protected static void _updateSpecialFields(@Nullable User user, TableInfo table, Map<String, Object> fields, java.sql.Timestamp date)
     {
         ColumnInfo colModifiedBy = table.getColumn("ModifiedBy");
         if (null != colModifiedBy && null != user)
@@ -944,13 +944,13 @@ public class Table
     }
 
 
-    public static <K> K update(User user, TableInfo table, K fieldsIn, Object pkVals) throws SQLException
+    public static <K> K update(@Nullable User user, TableInfo table, K fieldsIn, Object pkVals) throws SQLException
     {
         return update(user, table, fieldsIn, pkVals, null);
     }
 
 
-    public static <K> K update(User user, TableInfo table, K fieldsIn, Object pkVals, @Nullable Filter filter) throws SQLException
+    public static <K> K update(@Nullable User user, TableInfo table, K fieldsIn, Object pkVals, @Nullable Filter filter) throws SQLException
     {
         assert (table.getTableType() != DatabaseTableType.NOT_IN_DB): (table.getName() + " is not in the physical database.");
         assert null != pkVals;

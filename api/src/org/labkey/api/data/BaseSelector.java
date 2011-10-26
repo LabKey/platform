@@ -29,33 +29,16 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-public abstract class BaseSelector implements Selector
+public abstract class BaseSelector extends JdbcCommand implements Selector
 {
-    private final DbScope _scope;
     private Connection _conn = null;
     private SQLFragment _sql = null;
-    private ExceptionFramework _exceptionFramework = ExceptionFramework.Spring;
 
     abstract SQLFragment getSql();
 
     protected BaseSelector(DbScope scope)
     {
-        _scope = scope;
-    }
-
-    public Connection getConnection() throws SQLException
-    {
-        return _scope.getConnection();
-    }
-
-    public DbScope getScope()
-    {
-        return _scope;
-    }
-
-    protected void setExceptionFramework(ExceptionFramework exceptionFramework)
-    {
-        _exceptionFramework = exceptionFramework;
+        super(scope);
     }
 
     @Override      // TODO: Not valid to call directly at the moment since connection never gets closed
@@ -224,7 +207,7 @@ public abstract class BaseSelector implements Selector
         {
             // TODO: Substitute SQL parameters placeholders with values?
             Table.doCatch(_sql.getSQL(), _sql.getParamsArray(), _conn, e);
-            throw _exceptionFramework.translate(getScope(), "Message", _sql.getSQL(), e);  // TODO: Change message
+            throw getExceptionFramework().translate(getScope(), "Message", _sql.getSQL(), e);  // TODO: Change message
         }
         finally
         {
