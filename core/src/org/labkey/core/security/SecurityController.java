@@ -861,25 +861,21 @@ public class SecurityController extends SpringActionController
         return root;
     }
 
-    private ModelAndView renderGroup(Group group, BindException errors, List<String> messages) throws Exception
+    private ModelAndView renderGroup(Group group, BindException errors, List<String> messages) throws ServletException
     {
         // validate that group is in the current project!
         Container c = getContainer();
         ensureGroupInContainer(group, c);
-        List<UserPrincipal> members = SecurityManager.getGroupMembers(group, SecurityManager.GroupMemberType.Both);
-
-        if (null == members)
-        {
-            throw new NotFoundException();
-        }
-
+        Set<UserPrincipal> members = SecurityManager.getGroupMembers(group, SecurityManager.GroupMemberType.Both);
         VBox view = new VBox(new GroupView(group, members, messages, group.isSystemGroup(), errors));
+
         if (getUser().isAdministrator())
         {
             AuditLogQueryView log = GroupAuditViewFactory.getInstance().createGroupView(getViewContext(), group.getUserId());
             log.setFrame(WebPartView.FrameType.TITLE);
             view.addView(log);
         }
+
         return view;
     }
 

@@ -113,7 +113,7 @@ import java.util.concurrent.ConcurrentHashMap;
 
 public class QueryServiceImpl extends QueryService
 {
-    private static final Cache<String, Object> MODULE_RESOURCES_CACHE = CacheManager.getCache(1024, CacheManager.DAY, "Module resources cache");
+    private static final Cache<String, Object> MODULE_RESOURCES_CACHE = CacheManager.getCache(10000, CacheManager.DAY, "Module resources cache");
     private static final String QUERYDEF_SET_CACHE_ENTRY = "QUERYDEFS:";
     private static final String QUERYDEF_METADATA_SET_CACHE_ENTRY = "QUERYDEFSMETADATA:";
     private static final String CUSTOMVIEW_SET_CACHE_ENTRY = "CUSTOMVIEW:";

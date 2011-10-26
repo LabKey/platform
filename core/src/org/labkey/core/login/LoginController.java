@@ -1095,7 +1095,7 @@ public class LoginController extends SpringActionController
                 // If successful, add audit event, make site admin, set some properties based on email domain, and commit
                 if (success)
                 {
-                    SecurityManager.addMember(Group.groupAdministrators, newUserBean.getUser());
+                    SecurityManager.addMember(SecurityManager.getGroup(Group.groupAdministrators), newUserBean.getUser());
 
                     //set default "from" address for system emails to first registered user
                     WriteableLookAndFeelProperties laf = WriteableLookAndFeelProperties.getWriteableInstance(ContainerManager.getRoot());

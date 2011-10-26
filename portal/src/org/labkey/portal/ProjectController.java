@@ -594,7 +594,7 @@ public class ProjectController extends SpringActionController
 
     private boolean handleDeleteWebPart(Container c, String pageId, int index)
     {
-        Portal.WebPart[] parts = Portal.getParts(c, pageId, false);
+        Portal.WebPart[] parts = Portal.getParts(c, pageId);
         //Changed on us..
         if (null == parts || parts.length == 0)
             return true;

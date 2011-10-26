@@ -132,9 +132,9 @@ import java.util.StringTokenizer;
 
 public class IssuesController extends SpringActionController
 {
-    private static Logger _log = Logger.getLogger(IssuesController.class);
+    private static final Logger _log = Logger.getLogger(IssuesController.class);
 
-    private static String helpTopic = "issues";
+    private static final String helpTopic = "issues";
 
     // keywords enum
     public static final int ISSUE_NONE = 0;

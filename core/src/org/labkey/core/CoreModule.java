@@ -39,6 +39,7 @@ import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.TSVWriter;
 import org.labkey.api.data.Table;
 import org.labkey.api.data.TableSelector;
+import org.labkey.api.data.TableViewFormTestCase;
 import org.labkey.api.data.TempTableTracker;
 import org.labkey.api.data.TestSchema;
 import org.labkey.api.data.XMLWriterTest;
@@ -46,6 +47,7 @@ import org.labkey.api.data.dialect.SqlDialectManager;
 import org.labkey.api.etl.CachingDataIterator;
 import org.labkey.api.etl.ResultSetDataIterator;
 import org.labkey.api.etl.SimpleTranslator;
+import org.labkey.api.exp.Lsid;
 import org.labkey.api.exp.api.StorageProvisioner;
 import org.labkey.api.module.FirstRequestHandler;
 import org.labkey.api.module.FolderType;
@@ -71,7 +73,9 @@ import org.labkey.api.security.AuthenticationManager;
 import org.labkey.api.security.AuthenticationManager.Priority;
 import org.labkey.api.security.Group;
 import org.labkey.api.security.GroupManager;
+import org.labkey.api.security.NestedGroupsTest;
 import org.labkey.api.security.PasswordExpiration;
+import org.labkey.api.security.SecurityManager;
 import org.labkey.api.security.SecurityUrls;
 import org.labkey.api.security.User;
 import org.labkey.api.security.UserUrls;
@@ -424,7 +428,7 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
 
         // This listener deletes all properties; make sure it executes after most of the other listeners
         ContainerManager.addContainerListener(new CoreContainerListener(), ContainerManager.ContainerListener.Order.Last);
-        org.labkey.api.security.SecurityManager.init();
+        SecurityManager.init();
         ModuleLoader.getInstance().registerFolderType(this, FolderType.NONE);
         AppProps.getInstance().getUsageReportingLevel().scheduleUpgradeCheck();
         SystemMaintenance.setTimer();
@@ -529,22 +533,22 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
     public Set<Class> getJUnitTests()
     {
         Set<Class> testClasses = new HashSet<Class>(Arrays.asList(
-                org.labkey.api.data.Table.TestCase.class,
+                Table.TestCase.class,
                 Table.DataIteratorTestCase.class,
-                org.labkey.api.data.DbSchema.TestCase.class,
-                org.labkey.api.data.TableViewFormTestCase.class,
+                DbSchema.TestCase.class,
+                TableViewFormTestCase.class,
                 ActionURL.TestCase.class,
-                org.labkey.api.security.SecurityManager.TestCase.class,
-                org.labkey.api.data.PropertyManager.TestCase.class,
-                org.labkey.api.util.DateUtil.TestCase.class,
-                org.labkey.api.data.ContainerManager.TestCase.class,
+                SecurityManager.TestCase.class,
+                PropertyManager.TestCase.class,
+                DateUtil.TestCase.class,
+                ContainerManager.TestCase.class,
                 TabLoader.TabLoaderTestCase.class,
                 MapLoader.MapLoaderTestCase.class,
-                org.labkey.api.data.TSVWriter.TestCase.class,
+                TSVWriter.TestCase.class,
                 ExcelLoader.ExcelLoaderTestCase.class,
                 ExcelFactory.ExcelFactoryTestCase.class,
                 ModuleDependencySorter.TestCase.class,
-                org.labkey.api.security.GroupManager.TestCase.class,
+                GroupManager.TestCase.class,
                 DateUtil.TestCase.class,
                 DatabaseCache.TestCase.class,
                 SecurityController.TestCase.class,
@@ -553,7 +557,7 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
                 BooleanFormat.TestCase.class,
                 XMLWriterTest.TestCase.class,
                 WebdavResolverImpl.TestCase.class,
-                org.labkey.api.exp.Lsid.TestCase.class,
+                Lsid.TestCase.class,
                 MimeMap.TestCase.class,
                 FileUtil.TestCase.class,
                 FileType.TestCase.class,
@@ -574,7 +578,8 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
                 ResultSetDataIterator.TestCase.class,
                 ExceptionUtil.TestCase.class,
                 ViewCategoryManager.TestCase.class,
-                TableSelector.TestCase.class
+                TableSelector.TestCase.class,
+                NestedGroupsTest.class
                 //,RateLimiter.TestCase.class
         ));
 

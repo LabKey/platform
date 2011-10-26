@@ -17,7 +17,7 @@ package org.labkey.core.thumbnail;
 
 import org.labkey.api.attachments.Attachment;
 import org.labkey.api.attachments.AttachmentService;
-import org.labkey.api.cache.BlockingCache;
+import org.labkey.api.cache.BlockingStringKeyCache;
 import org.labkey.api.cache.CacheLoader;
 import org.labkey.api.cache.CacheManager;
 import org.labkey.api.data.CacheableWriter;
@@ -36,7 +36,7 @@ import java.io.IOException;
  */
 public class ThumbnailCache
 {
-    private static final ThumbnailBlockingCache _cache = new ThumbnailBlockingCache();
+    private static final BlockingStringKeyCache<CacheableWriter> _cache = CacheManager.getBlockingStringKeyCache(10000, CacheManager.YEAR, "Thumbnails", null);
     private static final StaticThumbnailLoader _staticLoader = new StaticThumbnailLoader();
     private static final DynamicThumbnailLoader _dynamicLoader = new DynamicThumbnailLoader();
 
@@ -111,14 +111,6 @@ public class ThumbnailCache
             {
                 throw new RuntimeException(e);
             }
-        }
-    }
-
-    private static class ThumbnailBlockingCache extends BlockingCache<String, CacheableWriter>
-    {
-        private ThumbnailBlockingCache()
-        {
-            super(CacheManager.getStringKeyCache(10000, CacheManager.YEAR, "Thumbnails"));
         }
     }
 }
