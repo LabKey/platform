@@ -264,14 +264,14 @@ public class Container implements Serializable, Comparable<Container>, Securable
         return getPolicy().hasPermission(user, perm, contextualRoles);
     }
 
-    public boolean hasOneOf(@NotNull User user, @NotNull Set<Class<? extends Permission>> perms)
+    public boolean hasOneOf(@NotNull User user, @NotNull Collection<Class<? extends Permission>> perms)
     {
         return getPolicy().hasOneOf(user, perms, null);
     }
 
     public boolean hasOneOf(@NotNull User user, @NotNull Class<? extends Permission>... perms)
     {
-        return getPolicy().hasOneOf(user, new HashSet<Class<? extends Permission>>(Arrays.asList(perms)), null);
+        return hasOneOf(user, Arrays.asList(perms));
     }
 
     /**
@@ -687,25 +687,6 @@ public class Container implements Serializable, Comparable<Container>, Securable
     }
 
 
-    private void removeForward(final Portal.WebPart[] activeWebparts)
-    {
-        // we no longer use forwards: this concept has been replaced by the default-tab setting.
-        // So, remove the setting here:
-        boolean hasForward = false;
-        List<Portal.WebPart> partList = new ArrayList<Portal.WebPart>(activeWebparts.length);
-        for (Portal.WebPart part : activeWebparts)
-        {
-            if (!"forward".equals(part.getLocation()))
-                partList.add(part);
-            else
-                hasForward = true;
-        }
-        if (hasForward)
-        {
-            Portal.saveParts(this, partList.toArray(new Portal.WebPart[partList.size()]));
-        }
-    }
-
     // UNDONE: (MAB) getActiveModules() and setActiveModules()
     // UNDONE: these don't feel like they belong on this class
     // UNDONE: move to ModuleLoader? 
@@ -732,8 +713,6 @@ public class Container implements Serializable, Comparable<Container>, Securable
             List<Module> allModules = ModuleLoader.getInstance().getModules();
             //get active web parts for this container
             Portal.WebPart[] activeWebparts = Portal.getParts(this);
-            //remove forward from active web parts
-            removeForward(activeWebparts);
 
             // store active modules, checking first that the container still exists -- junit test creates and deletes
             // containers quickly and this check helps keep the search indexer from creating orphaned property sets.

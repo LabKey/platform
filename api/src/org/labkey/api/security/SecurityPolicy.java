@@ -234,7 +234,7 @@ public class SecurityPolicy
      * @param contextualRoles An optional set of contextual roles (or null)
      * @return True if the principal has at least one of the required permissions.
      */
-    public boolean hasOneOf(@NotNull UserPrincipal principal, @NotNull Set<Class<? extends Permission>> permissions, @Nullable Set<Role> contextualRoles)
+    public boolean hasOneOf(@NotNull UserPrincipal principal, @NotNull Collection<Class<? extends Permission>> permissions, @Nullable Set<Role> contextualRoles)
     {
         Set<Class<? extends Permission>> grantedPerms = getPermissions(principal, contextualRoles);
         for(Class<? extends Permission> requiredPerm : permissions)

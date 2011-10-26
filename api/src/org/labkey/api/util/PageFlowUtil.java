@@ -151,6 +151,7 @@ public class PageFlowUtil
         return filter(s,false,false);
     }
 
+    /** HTML encode a string */
     static public HString filter(HString s)
     {
         if (null == s)
@@ -160,6 +161,7 @@ public class PageFlowUtil
     }
 
 
+    /** HTML encode a string */
     static public HString filter(HStringBuilder s)
     {
         if (null == s)
@@ -169,6 +171,7 @@ public class PageFlowUtil
     }
 
 
+    /** HTML encode a string */
     static public String filter(String s, boolean encodeSpace, boolean encodeLinks)
     {
         if (null == s || 0 == s.length())
@@ -269,7 +272,7 @@ public class PageFlowUtil
         return sb.toString();
     }
 
-
+    /** HTML encode an object (using toString()) */
     public static String filter(Object o)
     {
         return filter(o == null ? null : o.toString());
@@ -284,6 +287,7 @@ public class PageFlowUtil
     }
 
 
+    /** HTML encode a string */
     static public String filter(String s, boolean translateWhiteSpace)
     {
         return filter(s, translateWhiteSpace, false);
@@ -589,6 +593,9 @@ public class PageFlowUtil
     }
 
 
+    /**
+     * URL decode a string.
+     */
     public static String decode(String s)
     {
         try

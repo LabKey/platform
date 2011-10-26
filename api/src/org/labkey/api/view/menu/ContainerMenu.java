@@ -47,7 +47,7 @@ public class ContainerMenu extends NavTreeMenu
             for (Container f : mustExpand)
             {
                 String path = f.getPath();
-                if (f.getProject().equals(home))
+                if (home.equals(f.getProject()))
                 {
                     assert path.toLowerCase().startsWith("/home") : "Home path not in expected format";
                     path = path.replaceFirst("/home", "/Home");

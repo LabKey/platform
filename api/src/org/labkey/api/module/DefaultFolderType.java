@@ -137,7 +137,7 @@ public class DefaultFolderType implements FolderType
 
             active.addAll(requiredActive);
             c.setActiveModules(active);
-            Portal.saveParts(c, c.getId(), all.toArray(new Portal.WebPart[all.size()]));
+            Portal.saveParts(c, all.toArray(new Portal.WebPart[all.size()]));
         }
         catch (SQLException e)
         {
@@ -162,7 +162,7 @@ public class DefaultFolderType implements FolderType
             }
 
             if (saveRequired)
-                Portal.saveParts(c, c.getId(), parts);
+                Portal.saveParts(c, parts);
         }
     }
 

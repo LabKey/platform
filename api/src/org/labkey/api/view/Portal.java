@@ -18,6 +18,7 @@ package org.labkey.api.view;
 
 import org.apache.commons.collections15.MultiMap;
 import org.apache.commons.collections15.multimap.MultiHashMap;
+import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.cache.CacheManager;
 import org.labkey.api.cache.StringKeyCache;
@@ -47,6 +48,8 @@ public class Portal
 {
     private static final WebPartBeanLoader FACTORY = new WebPartBeanLoader();
     private static final StringKeyCache<WebPart[]> WEB_PART_CACHE = CacheManager.getSharedCache();
+
+    public static final String DEFAULT_PORTAL_PAGE_ID = "portal.default";
 
     private static final String PORTAL_PREFIX = "Portal/";
     private static final String SCHEMA_NAME = "portal";
@@ -80,7 +83,7 @@ public class Portal
 
     public static void containerDeleted(Container c)
     {
-        WEB_PART_CACHE.removeUsingPrefix(getCacheKey(null));
+        WEB_PART_CACHE.removeUsingPrefix(getCacheKey(c, null));
 
         try
         {
@@ -201,8 +204,7 @@ public class Portal
 
         public PropertyValues getPropertyValues()
         {
-            MutablePropertyValues pvs = new MutablePropertyValues(getPropertyMap());
-            return pvs;
+            return new MutablePropertyValues(getPropertyMap());
         }
 
         public void setExtendedProperties(Map<String,Object> extendedProperties)
@@ -236,13 +238,6 @@ public class Portal
             return ret;
         }
 
-        public String getHiddenFieldsHtml(ViewContext viewContext)
-        {
-            ActionURL current = viewContext.getActionURL();
-            return "<input type=\"hidden\" name=\"pageId\" value=\"" + getPageId() + "\">\n<input type=\"hidden\" name=\"index\" value=\"" + getIndex() + "\">" +
-                    "<input type=\"hidden\" name=\"" + ActionURL.Param.returnUrl + "\" value=\"" + PageFlowUtil.filter(current.getReturnURL()) + "\">";
-        }
-
         public int getRowId()
         {
             return rowId;
@@ -269,32 +264,19 @@ public class Portal
     }
 
 
-    @Deprecated
-    public static WebPart[] getParts(String id)
-    {
-        return getParts(id, false);
-    }
-
-
-    @Deprecated
-    public static WebPart[] getParts(String id, boolean force)
-    {
-        return getParts(ContainerManager.getForId(id), id, force);
-    }
-
     public static WebPart[] getParts(Container c)
     {
-        return getParts(c, c.getId(), false);
+        return getParts(c, DEFAULT_PORTAL_PAGE_ID, false);
     }
 
-    public static WebPart[] getParts(Container c, String id)
+    public static WebPart[] getParts(Container c, String pageId)
     {
-        return getParts(c, id, false);
+        return getParts(c, pageId, false);
     }
 
-    public static WebPart[] getParts(Container c, String id, boolean force)
+    public static WebPart[] getParts(Container c, String pageId, boolean force)
     {
-        String key = getCacheKey(id);
+        String key = getCacheKey(c, pageId);
         WebPart[] parts;
 
         if (!force)
@@ -304,7 +286,7 @@ public class Portal
                 return parts;
         }
 
-        SimpleFilter filter = new SimpleFilter("PageId", id);
+        SimpleFilter filter = new SimpleFilter("PageId", pageId);
         filter.addCondition("Container", c.getId());
         try
         {
@@ -350,7 +332,7 @@ public class Portal
     public static void updatePart(User u, WebPart part) throws SQLException
     {
         Table.update(u, getTableInfoPortalWebParts(), part, new Object[]{part.getRowId()});
-        _clearCache(part.getPageId());
+        _clearCache(part.getContainer(), part.getPageId());
     }
 
     /**
@@ -391,7 +373,7 @@ public class Portal
 
     public static WebPart addPart(Container c, WebPartFactory desc, String location, int partIndex, Map<String, String> properties)
     {
-        return addPart(c, c.getId(), desc, location, partIndex, properties);
+        return addPart(c, DEFAULT_PORTAL_PAGE_ID, desc, location, partIndex, properties);
     }
 
     /**
@@ -459,10 +441,10 @@ public class Portal
 
     public static void saveParts(Container c, WebPart[] newParts)
     {
-        saveParts(c, c.getId(), newParts);
+        saveParts(c, DEFAULT_PORTAL_PAGE_ID, newParts);
     }
 
-    public static void saveParts(Container c, String id, WebPart[] newParts)
+    public static void saveParts(Container c, String pageId, WebPart[] newParts)
     {
         // make sure indexes are unique
         Arrays.sort(newParts, new Comparator<WebPart>()
@@ -477,13 +459,13 @@ public class Portal
         {
             WebPart part = newParts[i];
             part.index = i + 1;
-            part.pageId = id;
+            part.pageId = pageId;
             part.container = c;
         }
 
         try
         {
-            WebPart[] oldParts = getParts(c, id, false);
+            WebPart[] oldParts = getParts(c, pageId, false);
             Set<Integer> oldPartIds = new HashSet<Integer>();
             for (WebPart oldPart : oldParts)
                 oldPartIds.add(oldPart.getRowId());
@@ -504,7 +486,7 @@ public class Portal
             }
 
             for (WebPart part1 : newParts) {
-                Map m = FACTORY.toMap(part1, null);
+                Map<String, Object> m = FACTORY.toMap(part1, null);
 
                 if (oldPartIds.contains(part1.getRowId()))
                     Table.update(null, getTableInfoPortalWebParts(), m, part1.getRowId());
@@ -522,24 +504,26 @@ public class Portal
         {
             getSchema().getScope().closeConnection();
         }
-        _clearCache(id);
+        _clearCache(c, pageId);
     }
 
 
-    private static void _clearCache(String id)
+    private static void _clearCache(Container c, String pageId)
     {
-        WEB_PART_CACHE.remove(getCacheKey(id));
+        WEB_PART_CACHE.remove(getCacheKey(c, pageId));
     }
 
 
     // CAREFUL: On SQL Server, this id could be all uppercase (when coming from an ENTITYID column) or all lower case
     // (when coming from a VARCHAR column), so we must normalize.
-    private static String getCacheKey(@Nullable String id)
+    private static String getCacheKey(@NotNull Container c, @Nullable String id)
     {
+        String result = PORTAL_PREFIX + c.getId();
         if (null != id)
-            return PORTAL_PREFIX + id.toLowerCase();
-        else
-            return PORTAL_PREFIX;
+        {
+            result += "/" + id.toLowerCase();
+        }
+        return result;
     }
 
 
