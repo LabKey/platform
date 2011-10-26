@@ -1597,8 +1597,8 @@ LABKEY.vis.TimeChartPanel = Ext.extend(Ext.Panel, {
 
     saveChart: function(saveBtnName, replace, reportName, reportDescription, reportShared, canSaveSharedCharts, createdBy) {
         // if queryName and schemaName are set on the URL then save them with the chart info
-        var schema = LABKEY.ActionURL.getParameter("schemaName") || null;
-        var query = LABKEY.ActionURL.getParameter("queryName") || null;
+        var schema = this.saveReportInfo ? this.saveReportInfo.schemaName : (LABKEY.ActionURL.getParameter("schemaName") || null);
+        var query = this.saveReportInfo ? this.saveReportInfo.queryName : (LABKEY.ActionURL.getParameter("queryName") || null);
 
         var reportSvg = (this.firstChartComponent && this.firstChartComponent.canExport() ? LABKEY.vis.SVGConverter.svgToStr(this.firstChartComponent.rootVisPanel.scene.$g) : null);
 
@@ -1787,7 +1787,9 @@ LABKEY.vis.TimeChartPanel = Ext.extend(Ext.Panel, {
             // if a new chart was created (no replacing), we need to refresh the page with the correct report name on the URL
             if (!replace)
             {
-                window.location = LABKEY.ActionURL.buildURL("visualization", "timeChartWizard", LABKEY.ActionURL.getContainer(), {edit: true, name: reportName}); 
+                window.location = LABKEY.ActionURL.buildURL("visualization", "timeChartWizard",
+                                    LABKEY.ActionURL.getContainer(),
+                                    Ext.apply(LABKEY.ActionURL.getParameters(), {edit: true, name: reportName})); 
             }
             else
             {
