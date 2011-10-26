@@ -427,7 +427,7 @@ public class ProjectSettingsAction extends FormViewAction<AdminController.Projec
                         throw new NotFoundException("Menu bar must be configured for each project separately.");
                     WebPartView v = new JspView<Object>(AdminController.class, "editMenuBar.jsp", null);
                     v.setView("menubar", new VBox());
-                    Portal.populatePortalView(getViewContext(), c.getId(), v, true);
+                    Portal.populatePortalView(getViewContext(), Portal.DEFAULT_PORTAL_PAGE_ID, v, true);
                     return v;
                 }
                 else if ("files".equals(tabId))
