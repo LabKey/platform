@@ -20,6 +20,7 @@ import org.apache.commons.lang.StringUtils;
 import org.apache.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.labkey.api.admin.AdminUrls;
+import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.module.AllowedBeforeInitialUserIsSet;
@@ -695,7 +696,7 @@ public abstract class SpringActionController implements Controller, HasViewConte
             _pageFlowName = ViewServlet.getPageFlowName(_outerClass);
             _htmlResolver = null; // This gets loaded if file-based actions are used.
 
-            Map<String, ActionDescriptor> nameToDescriptor = new HashMap<String, ActionDescriptor>();
+            Map<String, ActionDescriptor> nameToDescriptor = new CaseInsensitiveHashMap<ActionDescriptor>();
 
             // Add all concrete inner classes of this controller
             addInnerClassActions(nameToDescriptor, _outerClass);
@@ -723,7 +724,13 @@ public abstract class SpringActionController implements Controller, HasViewConte
                 ActionDescriptor ad = new DefaultActionDescriptor(actionClass);
 
                 for (String name : ad.getAllNames())
-                    nameToDescriptor.put(name, ad);
+                {
+                    ActionDescriptor existingDescriptor = nameToDescriptor.put(name, ad);
+                    if (existingDescriptor != null)
+                    {
+                        throw new IllegalStateException("Duplicate action name " + name + " registered for " + ad.getActionClass() + " and " + existingDescriptor.getActionClass());
+                    }
+                }
 
                 registerAction(ad);
             }
