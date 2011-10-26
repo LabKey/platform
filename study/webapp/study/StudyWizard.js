@@ -86,7 +86,7 @@ LABKEY.study.CreateStudyWizard = Ext.extend(Ext.util.Observable, {
             border: false,
             tpl: this.sideBarTemplate,
             data: {
-                steps: [{value: 'Initial Setup', currentStep: true}, {value: this.subject.nounPlural, currentStep: false}, {value: 'Datasets', currentStep: false}]
+                steps: [{value: 'General Setup', currentStep: true}, {value: this.subject.nounSingular + '&nbsp;Groups', currentStep: false}, {value: 'Datasets', currentStep: false}]
             }
         });
 
@@ -155,6 +155,11 @@ LABKEY.study.CreateStudyWizard = Ext.extend(Ext.util.Observable, {
 
         this.info.name = 'New Study';
         this.info.dstPath = LABKEY.ActionURL.getContainer() + '/' + this.info.name;
+
+        var txt = Ext.DomHelper.markup({tag:'div', cls:'labkey-nav-page-header', html: 'General Setup'}) +
+                Ext.DomHelper.markup({tag:'div', html:'&nbsp;'});
+
+        items.push({xtype:'displayfield', html: txt});
 
         var studyLocation = new Ext.form.TextField({
             fieldLabel: 'Location',
@@ -310,7 +315,7 @@ LABKEY.study.CreateStudyWizard = Ext.extend(Ext.util.Observable, {
                 xtype: 'textarea',
                 fieldLabel: 'Description',
                 name: 'studyDescription',
-                height: '200',
+                height: '100',
                 emptyText: 'Type Description here',
                 listeners: {change:function(cmp, newValue, oldValue) {this.info.description = newValue;}, scope:this}
             },
@@ -343,7 +348,7 @@ LABKEY.study.CreateStudyWizard = Ext.extend(Ext.util.Observable, {
 
         var panel = new Ext.Panel({
             border: false,
-            name: "Initial Setup",
+            name: "General Setup",
             layout: 'vbox',
             layoutConfig: {
                 align: 'stretch',
@@ -370,61 +375,83 @@ LABKEY.study.CreateStudyWizard = Ext.extend(Ext.util.Observable, {
 
         var items = [];
 
-        var txt = Ext.DomHelper.markup({tag:'div', cls:'labkey-strong', html: this.subject.nounSingular + ' Selection'}) +
-                Ext.DomHelper.markup({tag:'div', cls: 'labkey-emphasis', html:'How will ' + this.subject.nounPlural + ' be added to this study?<br>'});
+        var txt = Ext.DomHelper.markup({tag:'div', cls:'labkey-nav-page-header', html: this.subject.nounSingular + ' Groups'}) +
+                Ext.DomHelper.markup({tag:'div', html:'&nbsp;'}) +
+                Ext.DomHelper.markup({tag:'div', html:'Choose the ' + this.subject.nounSingular + ' groups you would like to use from the parent study:'}) +
+                Ext.DomHelper.markup({tag:'div', html:'&nbsp;'});
 
         items.push({xtype:'displayfield', html: txt});
 
-        var noGroupRadio = new Ext.form.Radio({boxLabel:'Use all ' + this.subject.nounPlural + ' from the source Study', name: 'renderType', inputValue: 'all'});
-        this.newGroupRadio = new Ext.form.Radio({
-            boxLabel:'Create a new ' + this.subject.nounSingular + ' group',
-            name: 'renderType',
-            inputValue: 'new',
-            scope: this,
-            handler: this.showNewParticipantGroupPanel
+        var store = new Ext.data.Store({
+            url : LABKEY.ActionURL.buildURL("participant-group", "getParticipantCategories"),
+            reader: new Ext.data.JsonReader({root:'categories',id:'rowId'},
+                    [
+                        {name:'label'},
+                        {name:'createdBy'},
+                        {name:'created'},
+                        {name:'modifiedBy'},
+                        {name:'modified'},
+                        {name:'participantIds'}
+                    ]),
+            autoLoad: true
         });
 
-        this.existingGroupRadio = new Ext.form.Radio({
-            boxLabel:'Select from existing ' + this.subject.nounPlural + ' groups',
-            name: 'renderType',
-            inputValue: 'existing',
-            checked: true,
-            scope:this,
-            handler: this.showExistingParticipantGroupPanel
-        });
+        var selModel = new Ext.grid.CheckboxSelectionModel();
+        selModel.on('selectionchange', function(cmp){this.selectedParticipantGroups = cmp.getSelections();}, this);
 
-        this.copyParticipantGroups = new Ext.form.Checkbox({
-            boxLabel: 'Copy selected ' + this.subject.nounSingular + ' groups to the new study',
-            checked:true
-        });
+        var expander = new LABKEY.grid.RowExpander({
+            tpl : new Ext.XTemplate(
+                '<tpl for="participantIds">',
+                    '<span class="testParticipantGroups" style="margin-left:30px;">{.}</span>' +
+                    '<tpl if="this.isLineEnd(xindex, xcount)">' +
+                        '<br>' +
+                    '</tpl>' +
+                '</tpl>' +
+                '<div>&nbsp;</div>',
+                {
+                    compiled: true,
+                    isLineEnd: function(idx, total){
+                        var maxCols = Math.min(total / 5, 5);
+                        return idx % maxCols < 1;
+                    }
+                })
+            });
 
-        var formItems = [
-            {
-                xtype: 'radiogroup',
-                columns: 2,
-                fieldLabel: '',
-                labelWidth: 5,
-                items: [
-                    this.existingGroupRadio,
-                    noGroupRadio
-                ]
-            }
-            //this.copyParticipantGroups
-        ];
-
-        var formPanel = new Ext.Panel({
-            padding: '5px',
-            border: false,
-            layout: 'form',
+        var grid = new Ext.grid.GridPanel({
+            store: store,
             flex: 1,
-            labelWidth: 5,
-            items: formItems
+            selModel: selModel,
+            plugins: expander,
+            //hideHeaders: true,
+            viewConfig: {forceFit: true, scrollOffset: 0},
+            cls: 'extContainer studyWizardParticipantList',
+            listeners: {
+                cellclick: function(cmp, rowIndex, colIndex, event){
+                    // ignore the checkbox selection
+                    if (colIndex > 0)
+                    {
+                        event.stopEvent();
+                        expander.toggleRow(rowIndex);
+                    }
+                },
+                scope:this
+            },
+
+            columns: [
+                selModel,
+                {header:'&nbsp;&nbsp;All ' + this.subject.nounSingular + ' Groups', dataIndex:'label', renderer: this.participantGroupRenderer, scope: this}
+            ]
         });
-        items.push(formPanel);
+
+        this.participantGroupTemplate = new Ext.DomHelper.createTemplate(
+                '<span style="margin-left:10px;" class="labkey-link">{0}</span>&nbsp;<span class="labkey-disabled">' +
+                '<i>({1} ' + this.subject.nounPlural + ')</i></span>').compile();
+
+        items.push(grid);
 
         this.participantPanel = new Ext.Panel({
             border: false,
-            name: this.subject.nounPlural,
+            name: this.subject.nounSingular + '&nbsp;Groups',
             layout: 'vbox',
             items: items,
             layoutConfig: {
@@ -439,205 +466,39 @@ LABKEY.study.CreateStudyWizard = Ext.extend(Ext.util.Observable, {
             if (this.lastStep > this.currentStep)
                 return;
 
-            if (this.newGroupPanel && this.newGroupPanel.isVisible())
+            if (!this.selectedParticipantGroups || this.selectedParticipantGroups.length == 0)
             {
-                if (!this.newGroupPanel.validate())
-                {
-                    this.currentStep--;
-                    this.updateStep();
-                    return false;
-                }
-            }
-            else if (this.existingGroupRadio.checked)
-            {
-                if(!this.info.existingCategories){
-                    Ext.Msg.alert("Error", "You must select an existing group or create a new one.");
-                    this.currentStep--;
-                    this.updateStep();
-                    return false;
-                }
+                Ext.Msg.alert("Error", "You must select at least one " + this.subject.nounSingular + " group.");
+                this.currentStep--;
+                this.updateStep();
+                return false;
             }
             return true;
         }, this);
 
-        this.showExistingParticipantGroupPanel(null, true);
-
         return this.participantPanel;
     },
 
-    /**
-     * Show or hide the new participant group panel
-     */
-    showNewParticipantGroupPanel : function(cmp, show)
+    participantGroupRenderer : function(data, meta, record, rowIndex, colIndex, store)
     {
-        if (show && this.participantPanel)
-        {
-            if (!this.newGroupPanel)
-            {
-                this.newGroupPanel = new LABKEY.study.ParticipantGroupPanel({
-                    flex: 2,
-                    canEdit: true,
-                    canShare: false,
-                    hasButtons: false,
-                    subject: this.subject
-                });
+        var args = [];
 
-                this.participantPanel.add(this.newGroupPanel);
-                this.participantPanel.doLayout();
-            } else {
-                this.newGroupPanel.setVisible(true);
-            }
-        }
-        else if (this.participantPanel && this.newGroupPanel)
-        {
-            this.newGroupPanel.setVisible(false);
-            this.participantPanel.doLayout();
-        }
-    },
+        meta.css = 'labkey-link';
+        meta.attr = 'ext:qtip="Click to hide or show the list of ' + this.subject.nounPlural + '"';
+        args.push(Ext.util.Format.htmlEncode(data));
+        args.push(record.data.participantIds.length);
 
-    showExistingParticipantGroupPanel : function(cmp, show)
-    {
-        this.copyParticipantGroups.setVisible(show);
-        if (show && this.participantPanel)
-        {
-            if(!this.existingGroupPanel){
-                Ext.Ajax.request(
-                        {
-                            url : LABKEY.ActionURL.buildURL("participant-group", "getParticipantCategories"),
-                            method : 'get',
-                            success: this.createExistingParticipantGroupPanel,
-                            failure: function(response, options){LABKEY.Utils.displayAjaxErrorResponse(response, options);},
-                            scope: this
-                        });
-
-                this.participantPanel.doLayout();
-            } else {
-                this.existingGroupPanel.setVisible(true);
-            }
-        }
-        else if (this.participantPanel && this.existingGroupPanel)
-        {
-            this.existingGroupPanel.setVisible(false);
-            this.participantPanel.doLayout();
-        }
-    },
-
-    createExistingParticipantGroupPanel : function(resp, options)
-    {
-        var o = Ext.util.JSON.decode(resp.responseText);
-
-        if (o.success && o.categories)
-        {
-            if (o.categories.length > 0)
-            {
-                var items = [];
-                var participantStores = [];
-                var participantGroupsStore =new Ext.data.ArrayStore({
-                    fields: ['participantGroup', 'storeIndex']
-                });
-                var participantGroupsStoreRecord = Ext.data.Record.create([
-                    {name:'participantGroup'},
-                    {name: 'rowId'},
-                    {name: 'storeIndex'}
-                ]);
-                var participantsStoreRecord = Ext.data.Record.create([
-                    {name:'participantId'}
-                ]);
-
-                for (var i=0; i < o.categories.length; i++)
-                {
-                    var group = o.categories[i];
-                    var tempStore = new Ext.data.ArrayStore({
-                        fields: ['participantId']
-                    });
-                    for(var j = 0; j < group.participantIds.length; j++){
-                        tempStore.add(new participantsStoreRecord({participantId: group.participantIds[j]}));
-                    }
-                    participantGroupsStore.add(new participantGroupsStoreRecord({participantGroup: group.label, rowId: group.rowId, storeIndex: i}));
-                    participantStores.push(tempStore);
-                }
-
-                this.participantListView = new Ext.list.ListView({
-                    store: new Ext.data.ArrayStore({
-                        fields: ['participantId']
-                    }),
-                    emptyText: "No participants to display.",
-                    flex: 1,
-                    autoScroll: true,
-                    columns:[
-                        {
-                            header: this.subject.nounPlural,
-                            dataIndex: 'participantId'
-                        }
-                    ]
-                });
-
-                function groupSelected(cmp, selection){
-                    this.info.existingCategories = cmp.getSelectedRecords();
-
-                    var selectedStoreIndex = cmp.getSelectedRecords()[0].get('storeIndex');
-                    this.participantListView.bindStore(participantStores[selectedStoreIndex]);
-                }
-
-                this.participantGroupListView = new Ext.list.ListView({
-                    store: participantGroupsStore,
-                    emptyText: "No groups to display.",
-                    width: 250,
-                    autoScroll: true,
-                    multiSelect: true,
-                    simpleSelect: true,
-                    columnSort: false,
-                    columns:[
-                        {
-                            header: this.subject.nounSingular + ' Groups',
-                            dataIndex: 'participantGroup'
-                        }
-                    ],
-                    listeners:{
-                        'selectionchange': groupSelected,
-                        scope: this
-                    }
-                });
-
-                var formItems = [
-                    this.participantGroupListView,
-                    this.participantListView
-                ];
-
-                this.existingGroupPanel = new Ext.Panel({
-                    labelWidth: 250,
-                    flex: 2,
-                    layout: 'hbox',
-                    layoutConfig: {
-                        align: 'stretch',
-                        pack: 'start'
-                    },
-                    items: [formItems],
-                    cls: 'testParticipantGroups'
-                });
-            }
-            else
-            {
-                this.existingGroupPanel = new Ext.Panel({
-                    padding: '20px',
-                    border: false,
-                    flex: 2,
-                    layout: 'fit',
-                    html: 'There are no ' + this.subject.nounSingular + ' groups defined for this Study'
-                });
-            }
-
-            this.participantPanel.add(this.existingGroupPanel);
-            this.participantPanel.doLayout();
-        }
+        return this.participantGroupTemplate.apply(args);
     },
 
     getDatasetsPanel : function() {
 
         var items = [];
 
-        var txt = Ext.DomHelper.markup({tag:'div', cls:'labkey-strong', html:'Dataset Selection'}) +
-                Ext.DomHelper.markup({tag:'div', cls: 'labkey-emphasis', html:'Select existing datasets to include in this Study<br>'});
+        var txt = Ext.DomHelper.markup({tag:'div', cls:'labkey-nav-page-header', html: 'Datasets'}) +
+                Ext.DomHelper.markup({tag:'div', html:'&nbsp;'}) +
+                Ext.DomHelper.markup({tag:'div', html:'Choose the datasets you would like to use from the parent study:'}) +
+                Ext.DomHelper.markup({tag:'div', html:'&nbsp;'});
 
         items.push({xtype:'displayfield', html: txt});
 
@@ -657,15 +518,18 @@ LABKEY.study.CreateStudyWizard = Ext.extend(Ext.util.Observable, {
             pageSize: 300000,
             cls: 'extContainer studyWizardDatasetList',
             flex: 1,
+            bbar: [],
             tbar: []
         });
         items.push(grid);
         grid.on('columnmodelcustomize', this.customizeColumnModel, this);
         grid.selModel.on('selectionchange', function(cmp){this.info.datasets = cmp.getSelections();}, this);
 
-        var syncTxt = Ext.DomHelper.markup({tag:'div', cls:'labkey-strong', html:'<br><br>Data Linking Options'}) +
+        var syncTxt = Ext.DomHelper.markup({tag:'div', cls:'labkey-strong', html:'<br><br>Data Refresh'});
+/*
                 Ext.DomHelper.markup({tag:'div', cls: 'labkey-emphasis', html:'Linked datasets can be configured to be manually updated or to automatically ' +
                     'update within a fixed amount of time after the data from the original study has changed<br>'});
+*/
 
         items.push({xtype:'displayfield', html: syncTxt});
 
@@ -673,7 +537,7 @@ LABKEY.study.CreateStudyWizard = Ext.extend(Ext.util.Observable, {
             defaults: {labelSeparator: ''},
             items: [
                 {xtype: 'hidden', name: 'updateDelay', value: 30},
-                {xtype: 'radiogroup', fieldLabel: '', columns: 2, items: [
+                {xtype: 'radiogroup', fieldLabel: '', columns: 1, items: [
                     {name: 'autoRefresh', boxLabel: 'Automatic Refresh', inputValue: true, checked: true},
                     {name: 'autoRefresh', boxLabel: 'Manual Refresh', inputValue: false}]
                 }
@@ -723,19 +587,18 @@ LABKEY.study.CreateStudyWizard = Ext.extend(Ext.util.Observable, {
         params.dstPath = this.info.dstPath;
 
         var hiddenFields = [];
-        if(this.existingGroupRadio.checked)
+
+        // If we chose an existing group then we just pass the rowid of the group, because of a bug in ie
+        // we add categories and datasets as hidden form fields to the form so the arrays get
+        // serialized correctly
+        for (var i=0; i < this.selectedParticipantGroups.length; i++)
         {
-            // If we chose an existing group then we just pass the rowid of the group, because of a bug in ie
-            // we add categories and datasets as hidden form fields to the form so the arrays get
-            // serialized correctly
-            for (var i=0; i < this.info.existingCategories.length; i++)
-            {
-                var category = this.info.existingCategories[i];
-                var id = Ext.id();
-                hiddenFields.push(id);
-                this.nameFormPanel.add({xtype:'hidden', id: id, name: 'categories', value: category.get('rowId')});
-            }
+            var category = this.selectedParticipantGroups[i];
+            var id = Ext.id();
+            hiddenFields.push(id);
+            this.nameFormPanel.add({xtype:'hidden', id: id, name: 'categories', value: category.id});
         }
+
         params.copyParticipantGroups = true;//this.copyParticipantGroups.checked;
 
         for (var i=0; i < this.info.datasets.length; i++)

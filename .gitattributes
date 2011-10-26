@@ -2084,6 +2084,7 @@ query/webapp/reports/output_motionchart.jpg -text
 query/webapp/reports/output_scatterplot.jpg -text
 query/webapp/reports/output_text.jpg -text
 query/webapp/reports/r.gif -text
+query/webapp/reports/rowExpander.js -text
 query/webapp/reports/xls.gif -text
 search/Search.iml -text
 search/build.xml -text

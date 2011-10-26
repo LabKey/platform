@@ -43,6 +43,7 @@
 
 <script type="text/javascript">
     LABKEY.requiresClientAPI(true);
+    LABKEY.requiresScript("reports/rowExpander.js");
     LABKEY.requiresScript("reports/manageViews.js");
 </script>
 
@@ -195,7 +196,7 @@
                 method: 'GET',
                 timeout: 300000
             }),
-            expander : new Ext.grid.RowExpander({
+            expander : new LABKEY.grid.RowExpander({
                 tpl : new Ext.XTemplate(
                         '<table>',
                             '<tpl if="description != undefined"><tr><td><b>description</b></td><td>{description}</td></tr></tpl>',

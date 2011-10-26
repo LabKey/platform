@@ -263,6 +263,7 @@
 %>
 
 <script type="text/javascript">
+    LABKEY.requiresScript("reports/rowExpander.js");
     LABKEY.requiresScript("study/StudyWizard.js");
 </script>
 
