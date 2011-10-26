@@ -2504,6 +2504,7 @@ api/webapp/ext-4.0.2a/ext-all-debug.js -text
 api/webapp/ext-4.0.2a/ext-all-sandbox-debug.js -text
 api/webapp/ext-4.0.2a/ext-all-sandbox.js -text
 api/webapp/ext-4.0.2a/ext-all.js -text
+api/webapp/ext-4.0.2a/ext-all.js.gz -text
 api/webapp/ext-4.0.2a/ext-debug.js -text
 api/webapp/ext-4.0.2a/ext-dev.js -text
 api/webapp/ext-4.0.2a/ext-patches.js -text
@@ -2522,6 +2523,7 @@ api/webapp/ext-4.0.2a/resources/css/ext-all-access.css -text
 api/webapp/ext-4.0.2a/resources/css/ext-all-gray.css -text
 api/webapp/ext-4.0.2a/resources/css/ext-all-scoped.css -text
 api/webapp/ext-4.0.2a/resources/css/ext-all.css -text
+api/webapp/ext-4.0.2a/resources/css/ext-all.css.gz -text
 api/webapp/ext-4.0.2a/resources/css/ext-ie-scoped.css -text
 api/webapp/ext-4.0.2a/resources/css/ext-ie.css -text
 api/webapp/ext-4.0.2a/resources/css/ext-sandbox.css -text
