@@ -122,7 +122,7 @@ public class IssueManager
     }
 
 
-    public static Issue getIssue(Container c, int issueId)
+    public static Issue getIssue(@Nullable Container c, int issueId)
     {
         try
         {

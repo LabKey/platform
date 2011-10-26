@@ -42,6 +42,7 @@ import org.labkey.api.data.AttachmentParentEntity;
 import org.labkey.api.data.BeanViewForm;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
+import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.DataRegion;
 import org.labkey.api.data.DataRegionSelection;
 import org.labkey.api.data.DbScope;
@@ -93,6 +94,7 @@ import org.labkey.api.view.HttpView;
 import org.labkey.api.view.JspView;
 import org.labkey.api.view.NavTree;
 import org.labkey.api.view.NotFoundException;
+import org.labkey.api.view.RedirectException;
 import org.labkey.api.view.TermsOfUseException;
 import org.labkey.api.view.UnauthorizedException;
 import org.labkey.api.view.ViewContext;
@@ -205,10 +207,28 @@ public class IssuesController extends SpringActionController
         return config;
     }
 
-
-    private Issue getIssue(int issueId) throws SQLException
+    /**
+     * @param redirect if the issue isn't in this container, whether to redirect the browser to same URL except in the
+     * issue's parent container
+     * @throws RedirectException if the issue lives in another container and the user has at least read permission to it
+     */
+    private Issue getIssue(int issueId, boolean redirect) throws RedirectException
     {
-        return IssueManager.getIssue(getContainer(), issueId);
+        Issue result = IssueManager.getIssue(redirect ? null : getContainer(), issueId);
+        // See if it's from a different container
+        if (result != null && redirect && !result.getContainerId().equals(getContainer().getId()))
+        {
+            Container issueContainer = ContainerManager.getForId(result.getContainerId());
+            // Make sure the user has read permission before redirecting
+            if (issueContainer.hasPermission(getViewContext().getUser(), ReadPermission.class))
+            {
+                ActionURL url = getViewContext().getActionURL().clone();
+                url.setContainer(issueContainer);
+                throw new RedirectException(url);
+            }
+            return null;
+        }
+        return result;
     }
 
 
@@ -357,7 +377,7 @@ public class IssuesController extends SpringActionController
         public ModelAndView getView(IssueIdForm form, BindException errors) throws Exception
         {
             int issueId = form.getIssueId();
-            _issue = getIssue(issueId);
+            _issue = getIssue(issueId, true);
 
             IssueManager.EntryTypeNames names = IssueManager.getEntryTypeNames(getViewContext().getContainer());
             if (null == _issue)
@@ -417,7 +437,7 @@ public class IssuesController extends SpringActionController
             {
                 for (String issueId : issueIds)
                 {
-                    issueList.add(getIssue(Integer.parseInt(issueId)));
+                    issueList.add(getIssue(Integer.parseInt(issueId), false));
                 }
             }
             else
@@ -431,7 +451,7 @@ public class IssuesController extends SpringActionController
 
                     while (rs.next())
                     {
-                        issueList.add(getIssue(rs.getInt(issueColumnIndex)));
+                        issueList.add(getIssue(rs.getInt(issueColumnIndex), false));
                     }
                 }
                 finally
@@ -824,7 +844,7 @@ public class IssuesController extends SpringActionController
         public ModelAndView getView(IssuesForm form, boolean reshow, BindException errors) throws Exception
         {
             int issueId = form.getIssueId();
-            _issue = getIssue(issueId);
+            _issue = getIssue(issueId, true);
             if (_issue == null)
             {
                 throw new NotFoundException();
@@ -894,7 +914,7 @@ public class IssuesController extends SpringActionController
         public ModelAndView getView(IssuesForm form, boolean reshow, BindException errors) throws Exception
         {
             int issueId = form.getIssueId();
-            _issue = getIssue(issueId);
+            _issue = getIssue(issueId, true);
             if (null == _issue)
             {
                 throw new NotFoundException();
@@ -947,7 +967,7 @@ public class IssuesController extends SpringActionController
         public ModelAndView getView(IssuesForm form, boolean reshow, BindException errors) throws Exception
         {
             int issueId = form.getIssueId();
-            _issue = getIssue(issueId);
+            _issue = getIssue(issueId, true);
             if (null == _issue)
             {
                 throw new NotFoundException();
@@ -990,7 +1010,7 @@ public class IssuesController extends SpringActionController
         public ModelAndView getView(IssuesForm form, boolean reshow, BindException errors) throws Exception
         {
             int issueId = form.getIssueId();
-            _issue = getIssue(issueId);
+            _issue = getIssue(issueId, true);
             if (_issue == null)
             {
                 throw new NotFoundException();
@@ -1748,7 +1768,7 @@ public class IssuesController extends SpringActionController
                 try
                 {
                     int id = Integer.parseInt(issueId);
-                    Issue issue = getIssue(id);
+                    Issue issue = getIssue(id, true);
                     if (issue != null)
                     {
                         ActionURL url = getDetailsURL(getContainer(), issue.getIssueId(), false);
@@ -1827,7 +1847,7 @@ public class IssuesController extends SpringActionController
         public ApiResponse execute(IssueIdForm issueIdForm, BindException errors) throws Exception
         {
             User user = getUser();
-            Issue issue = getIssue(issueIdForm.getIssueId());
+            Issue issue = getIssue(issueIdForm.getIssueId(), false);
             //IssuePage page = new IssuePage();
 
             BeanMap wrapper = new BeanMap(issue);
