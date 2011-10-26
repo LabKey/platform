@@ -640,6 +640,8 @@ public class UploadSamplesHelper
             {
                 material = ExperimentServiceImpl.get().getExpMaterial(lsid);
                 assert material != null : "Could not find existing material with lsid " + lsid;
+                // Save it so that we reset the modified/modified by info
+                material.save(_user);
             }
             _materials.add(material);
 
