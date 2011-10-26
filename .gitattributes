@@ -1260,6 +1260,7 @@ api/webapp/ext-3.4.0/adapter/yui/ext-yui-adapter.js -text
 api/webapp/ext-3.4.0/ext-all-debug-w-comments.js -text
 api/webapp/ext-3.4.0/ext-all-debug.js -text
 api/webapp/ext-3.4.0/ext-all.js -text
+api/webapp/ext-3.4.0/ext-all.js.gz -text
 api/webapp/ext-3.4.0/ext-patches.js -text
 api/webapp/ext-3.4.0/ext.jsb2 -text
 api/webapp/ext-3.4.0/gpl-3.0.txt -text
@@ -1323,6 +1324,7 @@ api/webapp/ext-3.4.0/resources/css/README.txt -text
 api/webapp/ext-3.4.0/resources/css/debug.css -text
 api/webapp/ext-3.4.0/resources/css/ext-all-notheme.css -text
 api/webapp/ext-3.4.0/resources/css/ext-all.css -text
+api/webapp/ext-3.4.0/resources/css/ext-all.css.gz -text
 api/webapp/ext-3.4.0/resources/css/reset-min.css -text
 api/webapp/ext-3.4.0/resources/css/structure/borders.css -text
 api/webapp/ext-3.4.0/resources/css/structure/box.css -text
