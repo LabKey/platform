@@ -37,6 +37,7 @@ import org.labkey.api.exp.property.PropertyService;
 import org.labkey.api.security.MutableSecurityPolicy;
 import org.labkey.api.security.SecurableResource;
 import org.labkey.api.security.User;
+import org.labkey.api.services.ServiceRegistry;
 import org.labkey.api.settings.AppProps;
 import org.labkey.api.study.Site;
 import org.labkey.api.study.Study;
@@ -45,8 +46,10 @@ import org.labkey.api.study.Visit;
 import org.labkey.api.util.DateUtil;
 import org.labkey.api.util.GUID;
 import org.labkey.api.util.JunitUtil;
+import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.TestContext;
 import org.labkey.api.wiki.WikiRendererType;
+import org.labkey.api.wiki.WikiService;
 import org.labkey.study.SampleManager;
 import org.labkey.study.query.StudyQuerySchema;
 import org.labkey.study.samples.settings.RepositorySettings;
@@ -538,6 +541,34 @@ public class StudyImpl extends ExtensibleStudyEntity<StudyImpl> implements Study
     public void setDescriptionRendererType(String descriptionRendererType)
     {
         _descriptionRendererType = descriptionRendererType;
+    }
+
+    public String getDescriptionHtml()
+    {
+        String description = getDescription();
+
+        if (description == null || description.length() == 0)
+        {
+            long count = StudyManager.getInstance().getParticipantCount(this);;
+            String subjectNoun = (count == 1 ? this.getSubjectNounSingular() : this.getSubjectNounPlural());
+            TimepointType timepointType = getTimepointType();
+            String madeUpDescription = getLabel() + " tracks data in " + getDataSets().size() + " datasets over " + getVisits(Visit.Order.DISPLAY).length + " " + (timepointType.isVisitBased() ? "visits" : "time points") +
+                ". Data is present for " + count + " " + subjectNoun + ".";
+            return PageFlowUtil.filter(madeUpDescription);
+        }
+        else
+        {
+            WikiService ws = ServiceRegistry.get().getService(WikiService.class);
+
+            if (null != ws)
+            {
+                return ws.getFormattedHtml(getDescriptionWikiRendererType(), description);
+            }
+            else
+            {
+                return PageFlowUtil.filter(description, true);
+            }
+        }
     }
 
     public WikiRendererType getDescriptionWikiRendererType()

@@ -15,21 +15,36 @@
  */
 package org.labkey.study.query;
 
+import org.labkey.api.action.UrlProvider;
 import org.labkey.api.data.ColumnInfo;
+import org.labkey.api.data.Container;
+import org.labkey.api.data.ContainerManager;
+import org.labkey.api.data.DisplayColumn;
+import org.labkey.api.data.DisplayColumnFactory;
 import org.labkey.api.data.JdbcType;
+import org.labkey.api.data.Project;
 import org.labkey.api.data.SQLFragment;
 import org.labkey.api.exp.property.Domain;
 import org.labkey.api.exp.property.PropertyService;
+import org.labkey.api.portal.ProjectUrls;
+import org.labkey.api.query.DetailsURL;
 import org.labkey.api.query.ExprColumn;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.QueryUpdateService;
 import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.AdminPermission;
+import org.labkey.api.util.ContainerContext;
+import org.labkey.api.util.PageFlowUtil;
+import org.labkey.api.util.StringExpressionFactory;
+import org.labkey.api.view.ActionURL;
+import org.labkey.api.wiki.WikiRendererDisplayColumn;
+import org.labkey.api.wiki.WikiRendererType;
 import org.labkey.study.StudySchema;
 import org.labkey.study.model.StudyImpl;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 
 /**
  * User: jgarms
@@ -39,32 +54,46 @@ import java.util.List;
 public class StudyPropertiesTable extends BaseStudyTable
 {
     private Domain _domain;
+    private List<FieldKey> _visibleColumns = new ArrayList<FieldKey>();
 
     public StudyPropertiesTable(StudyQuerySchema schema)
     {
         super(schema, StudySchema.getInstance().getTableInfoStudy());
 
-        ColumnInfo labelColumn = addWrapColumn(_rootTable.getColumn("label"));
-        labelColumn.setUserEditable(false);
+        ColumnInfo labelColumn = addRootColumn("label");
+        DetailsURL detailsURL = new DetailsURL(PageFlowUtil.urlProvider(ProjectUrls.class).getStartURL(schema.getContainer()));
+        detailsURL.setContainerContext(new ContainerContext()
+        {
+            @Override
+            public Container getContainer(Map context)
+            {
+                //Container is the key so should always be selected.
+                return ContainerManager.getForId((String) context.get("container"));
+            }
+        });
+        labelColumn.setURL(detailsURL);
+        addRootColumn("startDate");
 
-        ColumnInfo startDateColumn = addWrapColumn(_rootTable.getColumn("startDate"));
-        startDateColumn.setUserEditable(false);
-
-        ColumnInfo containerColumn = addWrapColumn(_rootTable.getColumn("container"));
-        containerColumn.setUserEditable(false);
+        ColumnInfo containerColumn = addRootColumn("container", false, false);
         containerColumn.setKeyField(true);
 
-        ColumnInfo timepointTypeColumn = addWrapColumn(_rootTable.getColumn("timepointType"));
-        timepointTypeColumn.setUserEditable(false);
+        ColumnInfo timepointTypeColumn = addRootColumn("timepointType", false, false);
+        addRootColumn("subjectNounSingular", false, false);
+        addRootColumn("subjectNounPlural", false, false);
+        addRootColumn("subjectColumnName", false, false);
+        addRootColumn("studyGrant");
+        addRootColumn("investigator");
+        ColumnInfo descriptionColumn = addRootColumn("description");
+        final ColumnInfo descriptionRendererTypeColumn = addRootColumn("descriptionRendererType", false, false);
+        descriptionColumn.setDisplayColumnFactory(new DisplayColumnFactory()
+        {
+            @Override
+            public DisplayColumn createRenderer(ColumnInfo colInfo)
+            {
+                return new WikiRendererDisplayColumn(colInfo, descriptionRendererTypeColumn, WikiRendererType.TEXT_WITH_LINKS);
+            }
+        });
 
-        ColumnInfo subjectNounSingularColumn = addWrapColumn(_rootTable.getColumn("subjectNounSingular"));
-        subjectNounSingularColumn.setUserEditable(false);
-
-        ColumnInfo subjectNounPluralColumn = addWrapColumn(_rootTable.getColumn("subjectNounPlural"));
-        subjectNounPluralColumn.setUserEditable(false);
-
-        ColumnInfo subjectColumnNameColumn = addWrapColumn(_rootTable.getColumn("subjectColumnName"));
-        subjectColumnNameColumn.setUserEditable(false);
 
         String bTRUE = getSchema().getSqlDialect().getBooleanTRUE();
         String bFALSE = getSchema().getSqlDialect().getBooleanFALSE();
@@ -75,11 +104,8 @@ public class StudyPropertiesTable extends BaseStudyTable
         dateBasedColumn.setDescription("Deprecated.  Use 'timepointType' column instead.");
         addColumn(dateBasedColumn);
 
-        ColumnInfo lsidColumn = addWrapColumn(_rootTable.getColumn("LSID"));
-        lsidColumn.setUserEditable(false);
+        ColumnInfo lsidColumn = addRootColumn("LSID", false, false);
         lsidColumn.setHidden(true);
-
-        List<FieldKey> visibleColumns = new ArrayList<FieldKey>();
 
         String domainURI = StudyImpl.DOMAIN_INFO.getDomainURI(schema.getContainer());
 
@@ -89,11 +115,25 @@ public class StudyPropertiesTable extends BaseStudyTable
             for (ColumnInfo extraColumn : _domain.getColumns(this, lsidColumn, schema.getUser()))
             {
                 safeAddColumn(extraColumn);
-                visibleColumns.add(FieldKey.fromParts(extraColumn.getName()));
+                _visibleColumns.add(FieldKey.fromParts(extraColumn.getName()));
             }
         }
 
-        setDefaultVisibleColumns(visibleColumns);
+        setDefaultVisibleColumns(_visibleColumns);
+    }
+
+    private ColumnInfo addRootColumn(String columnName)
+    {
+        return addRootColumn(columnName, true, false);
+    }
+
+    private ColumnInfo addRootColumn(String columnName, boolean visible, boolean userEditable)
+    {
+        ColumnInfo columnInfo = addWrapColumn(_rootTable.getColumn(columnName));
+        columnInfo.setUserEditable(userEditable);
+        if (visible)
+            _visibleColumns.add(columnInfo.getFieldKey());
+        return columnInfo;
     }
 
     @Override

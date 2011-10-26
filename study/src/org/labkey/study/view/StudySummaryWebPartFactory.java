@@ -114,40 +114,16 @@ public class StudySummaryWebPartFactory extends BaseWebPartFactory
 
         public String getDescriptionHtml()
         {
-            StudyImpl study = getStudy();
-            String description = study.getDescription();
+            String html = getStudy().getDescriptionHtml();
 
-            if (description == null || description.length() == 0)
+            // Hack!  Remove div so we can nestle the edit icon up to the text
+            if (html.endsWith("</div>"))
             {
-                long count = getSubjectCount();
-                String subjectNoun = (count == 1 ? StudyService.get().getSubjectNounSingular(_container) : StudyService.get().getSubjectNounPlural(_container));
-                TimepointType timepointType = study.getTimepointType();
-                String madeUpDescription = study.getLabel() + " tracks data in " + getDataSets().size() + " datasets over " + getVisits(Visit.Order.DISPLAY).length + " " + (timepointType.isVisitBased() ? "visits" : "time points") +
-                    ". Data is present for " + count + " " + subjectNoun + ".";
-                return PageFlowUtil.filter(madeUpDescription);
+                html = html.replaceFirst("<div .*?>", "");
+                html = html.substring(0, html.length() - 6);
             }
-            else
-            {
-                WikiService ws = ServiceRegistry.get().getService(WikiService.class);
 
-                if (null != ws)
-                {
-                    String html = ws.getFormattedHtml(study.getDescriptionWikiRendererType(), description);
-
-                    // Hack!  Remove div so we can nestle the edit icon up to the text
-                    if (html.endsWith("</div>"))
-                    {
-                        html = html.replaceFirst("<div .*?>", "");
-                        html = html.substring(0, html.length() - 6);
-                    }
-
-                    return html;
-                }
-                else
-                {
-                    return PageFlowUtil.filter(description, true);
-                }
-            }
+            return html;
         }
 
         public String getInvestigator(){

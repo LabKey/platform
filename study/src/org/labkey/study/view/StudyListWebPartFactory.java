@@ -15,6 +15,14 @@
  */
 package org.labkey.study.view;
 
+import org.labkey.api.data.Container;
+import org.labkey.api.data.ContainerFilter;
+import org.labkey.api.query.QuerySchema;
+import org.labkey.api.query.QueryService;
+import org.labkey.api.query.QuerySettings;
+import org.labkey.api.query.QueryView;
+import org.labkey.api.query.QueryWebPart;
+import org.labkey.api.query.UserSchema;
 import org.labkey.api.view.*;
 
 /**
@@ -23,17 +31,51 @@ import org.labkey.api.view.*;
  * Date: Nov 17, 2008
  * Time: 9:28:08 PM
  */
-public class StudyListWebPartFactory extends AlwaysAvailableWebPartFactory
+public class StudyListWebPartFactory extends BaseWebPartFactory
 {
-   public StudyListWebPartFactory()
-   {
-       super("Study List", "menubar", false, false);
-   }
+    public static final String DISPLAY_TYPE_PROPERTY = "displayType";
+
+    public StudyListWebPartFactory()
+    {
+       super("Study List", "menubar", true, false);
+    }
+
+    @Override
+    public boolean isAvailable(Container c, String location)
+    {
+        return location.equals("menubar") || location.equals(HttpView.BODY);
+    }
 
     public WebPartView getWebPartView(ViewContext portalCtx, Portal.WebPart webPart) throws Exception
     {
-        WebPartView view = new JspView(this.getClass(), "studyList.jsp", null);
+        WebPartView view;
+
+        if (webPart.getLocation().equals(HttpView.BODY))
+        {
+            if ("grid".equals(webPart.getPropertyMap().get(DISPLAY_TYPE_PROPERTY)))
+            {
+                UserSchema schema = QueryService.get().getUserSchema(portalCtx.getUser(), portalCtx.getContainer(), "study");
+                QuerySettings settings = schema.getSettings(portalCtx, "qwpStudies", "StudyProperties");
+                settings.setAllowChooseQuery(false);
+                settings.setContainerFilterName(ContainerFilter.Type.CurrentAndSubfolders.name());
+                QueryView queryView = new QueryView(schema, settings, null);
+                queryView.setShowBorders(true);
+                queryView.setShadeAlternatingRows(true);
+                queryView.setShowSurroundingBorder(false);
+                view = queryView;
+            }
+            else
+                view = new JspView(this.getClass(), "studyListWide.jsp", null);
+        }
+        else
+            view = new JspView(this.getClass(), "studyList.jsp", null);
         view.setTitle("Studies");
         return view;
+    }
+
+    @Override
+    public HttpView getEditView(Portal.WebPart webPart, ViewContext context)
+    {
+        return new JspView(this.getClass(), "customizeStudyList.jsp", webPart);
     }
 }
