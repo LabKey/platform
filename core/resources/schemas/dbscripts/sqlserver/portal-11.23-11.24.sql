@@ -31,7 +31,4 @@ GO
 UPDATE portal.PortalWebParts SET PageId = 'portal.default' WHERE PageId = CAST(Container AS VARCHAR(50))
 GO
 
-UPDATE portal.PortalWebParts SET PageId = 'study.' + (SELECT Name FROM prop.Properties WHERE Value = PageId) 
-  WHERE PageId != 'portal.default' AND (SELECT Name FROM prop.Properties WHERE Value = PageId) IS NOT NULL
-GO
 

@@ -26,7 +26,4 @@ ALTER TABLE portal.PortalWebParts ALTER COLUMN PageId TYPE VARCHAR(50);
 
 UPDATE portal.PortalWebParts SET PageId = 'portal.default' WHERE PageId = Container;
 
-UPDATE portal.PortalWebParts SET PageId = 'study.' || (SELECT Name FROM prop.Properties WHERE Value = PageId) 
-  WHERE PageId != 'portal.default' AND (SELECT Name FROM prop.Properties WHERE Value = PageId) IS NOT NULL;
-
 
