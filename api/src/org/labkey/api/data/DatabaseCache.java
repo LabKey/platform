@@ -18,6 +18,7 @@ package org.labkey.api.data;
 
 import junit.framework.Assert;
 import org.apache.log4j.Logger;
+import org.jetbrains.annotations.Nullable;
 import org.junit.Test;
 import org.labkey.api.cache.CacheLoader;
 import org.labkey.api.cache.CacheManager;
@@ -99,9 +100,9 @@ public class DatabaseCache<ValueType> implements StringKeyCache<ValueType>
     }
 
     @Override
-    public ValueType get(String key, Object arg, CacheLoader<String, ValueType> loader)
+    public ValueType get(String key, @Nullable Object arg, CacheLoader<String, ValueType> loader)
     {
-        return getCache().get(key,arg,loader);
+        return getCache().get(key, arg, loader);
     }
 
     public void remove(final String key)

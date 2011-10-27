@@ -18,12 +18,15 @@ package org.labkey.api.view;
 
 import org.apache.commons.collections15.MultiMap;
 import org.apache.commons.collections15.multimap.MultiHashMap;
-import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-import org.labkey.api.cache.CacheManager;
-import org.labkey.api.cache.StringKeyCache;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
-import org.labkey.api.data.*;
+import org.labkey.api.data.BeanObjectFactory;
+import org.labkey.api.data.Container;
+import org.labkey.api.data.DbSchema;
+import org.labkey.api.data.RuntimeSQLException;
+import org.labkey.api.data.SimpleFilter;
+import org.labkey.api.data.Table;
+import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.dialect.SqlDialect;
 import org.labkey.api.module.Module;
 import org.labkey.api.module.ModuleLoader;
@@ -41,21 +44,27 @@ import org.springframework.web.servlet.ModelAndView;
 import javax.servlet.http.HttpServletResponse;
 import java.io.Serializable;
 import java.sql.SQLException;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.Comparator;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.TreeSet;
 
 
 public class Portal
 {
-    private static final WebPartBeanLoader FACTORY = new WebPartBeanLoader();
-    private static final StringKeyCache<WebPart[]> WEB_PART_CACHE = CacheManager.getSharedCache();
-
     public static final String DEFAULT_PORTAL_PAGE_ID = "portal.default";
-
-    private static final String PORTAL_PREFIX = "Portal/";
-    private static final String SCHEMA_NAME = "portal";
-
     public static final int MOVE_UP = 0;
     public static final int MOVE_DOWN = 1;
+
+    private static final WebPartBeanLoader FACTORY = new WebPartBeanLoader();
+    private static final String SCHEMA_NAME = "portal";
 
     private static HashMap<String, WebPartFactory> _viewMap = null;
     private static MultiHashMap<String, String> _regionMap = null;
@@ -83,7 +92,7 @@ public class Portal
 
     public static void containerDeleted(Container c)
     {
-        WEB_PART_CACHE.removeUsingPrefix(getCacheKey(c, null));
+        WebPartCache.remove(c);
 
         try
         {
@@ -106,7 +115,7 @@ public class Portal
         boolean permanent;
         Map<String, String> propertyMap = new HashMap<String, String>();
         String properties = null;
-        Map<String,Object> extendedProperties = null;
+        Map<String, Object> extendedProperties = null;
 
         static
         {
@@ -266,40 +275,12 @@ public class Portal
 
     public static WebPart[] getParts(Container c)
     {
-        return getParts(c, DEFAULT_PORTAL_PAGE_ID, false);
+        return getParts(c, DEFAULT_PORTAL_PAGE_ID);
     }
 
     public static WebPart[] getParts(Container c, String pageId)
     {
-        return getParts(c, pageId, false);
-    }
-
-    public static WebPart[] getParts(Container c, String pageId, boolean force)
-    {
-        String key = getCacheKey(c, pageId);
-        WebPart[] parts;
-
-        if (!force)
-        {
-            parts = WEB_PART_CACHE.get(key);
-            if (null != parts)
-                return parts;
-        }
-
-        SimpleFilter filter = new SimpleFilter("PageId", pageId);
-        filter.addCondition("Container", c.getId());
-        try
-        {
-            parts = Table.select(getTableInfoPortalWebParts(), Table.ALL_COLUMNS, filter, new Sort("Index"), WebPart.class);
-        }
-        catch (SQLException x)
-        {
-            throw new RuntimeSQLException(x);
-        }
-
-        // TODO: Really?!?  Caching for only one minute?
-        WEB_PART_CACHE.put(key, parts, CacheManager.MINUTE);
-        return parts;
+        return WebPartCache.get(c, pageId);
     }
 
     public static WebPart getPart(int webPartRowId)
@@ -332,7 +313,7 @@ public class Portal
     public static void updatePart(User u, WebPart part) throws SQLException
     {
         Table.update(u, getTableInfoPortalWebParts(), part, new Object[]{part.getRowId()});
-        _clearCache(part.getContainer(), part.getPageId());
+        WebPartCache.remove(part.getContainer(), part.getPageId());
     }
 
     /**
@@ -371,7 +352,7 @@ public class Portal
         return addPart(c, desc, location, partIndex, null);
     }
 
-    public static WebPart addPart(Container c, WebPartFactory desc, String location, int partIndex, Map<String, String> properties)
+    public static WebPart addPart(Container c, WebPartFactory desc, String location, int partIndex, @Nullable Map<String, String> properties)
     {
         return addPart(c, DEFAULT_PORTAL_PAGE_ID, desc, location, partIndex, properties);
     }
@@ -379,9 +360,9 @@ public class Portal
     /**
      * Add a web part to the container at the specified index, with properties
      */
-    public static WebPart addPart(Container c, String pageId, WebPartFactory desc, String location, int partIndex, Map<String, String> properties)
+    public static WebPart addPart(Container c, String pageId, WebPartFactory desc, String location, int partIndex, @Nullable Map<String, String> properties)
     {
-        WebPart[] parts = getParts(c, pageId, false);
+        WebPart[] parts = getParts(c, pageId);
 
         WebPart newPart = new Portal.WebPart();
         newPart.setContainer(c);
@@ -465,7 +446,7 @@ public class Portal
 
         try
         {
-            WebPart[] oldParts = getParts(c, pageId, false);
+            WebPart[] oldParts = getParts(c, pageId);
             Set<Integer> oldPartIds = new HashSet<Integer>();
             for (WebPart oldPart : oldParts)
                 oldPartIds.add(oldPart.getRowId());
@@ -504,26 +485,8 @@ public class Portal
         {
             getSchema().getScope().closeConnection();
         }
-        _clearCache(c, pageId);
-    }
 
-
-    private static void _clearCache(Container c, String pageId)
-    {
-        WEB_PART_CACHE.remove(getCacheKey(c, pageId));
-    }
-
-
-    // CAREFUL: On SQL Server, this id could be all uppercase (when coming from an ENTITYID column) or all lower case
-    // (when coming from a VARCHAR column), so we must normalize.
-    private static String getCacheKey(@NotNull Container c, @Nullable String id)
-    {
-        String result = PORTAL_PREFIX + c.getId();
-        if (null != id)
-        {
-            result += "/" + id.toLowerCase();
-        }
-        return result;
+        WebPartCache.remove(c, pageId);
     }
 
 
@@ -596,7 +559,7 @@ public class Portal
             throws Exception
     {
         String contextPath = context.getContextPath();
-        WebPart[] parts = getParts(context.getContainer(), id, false);
+        WebPart[] parts = getParts(context.getContainer(), id);
 
         MultiMap<String, WebPart> locationMap = getPartsByLocation(parts);
         Collection<String> locations = locationMap.keySet();

@@ -46,9 +46,8 @@ public class ACL implements Cloneable
     private static int[] _emptyArray = new int[0];
 
     // use two arrays, makes it easy to use binarySearch()
-    int[] _groups = _emptyArray;
-    int[] _permissions = _emptyArray;
-    boolean _isEmpty = true;
+    private int[] _groups = _emptyArray;
+    private int[] _permissions = _emptyArray;
 
 
     public ACL()
@@ -109,33 +108,6 @@ public class ACL implements Cloneable
     }
 
 
-    /**
-     * If we ever have groups of groups this should return the calculated
-     * permissions like getPermissions(User).  Since we don't have groups
-     * of groups, this is sematically equivalent.
-     *
-     * @param group
-     * @return calculated permissions
-     */
-    public int getPermissions(Group group)
-    {
-        return getPermissions(group.getUserId());
-    }
-
-
-    /**
-     * Explicitly set permissions for this groupid.
-     */
-    public int getPermissions(int group)
-    {
-        for (int i = 0; i < _groups.length; i++)
-        {
-            if (_groups[i] == group)
-                return _permissions[i];
-        }
-        return 0;
-    }
-
     public void setPermission(UserPrincipal p, int permission)
     {
         setPermission(p.getUserId(), permission);
@@ -144,9 +116,6 @@ public class ACL implements Cloneable
     public void setPermission(int group, int permission)
     {
         assert _groups.length == _permissions.length;
-
-        // once you explicity set a permission, isEmpty is false
-        _isEmpty = false;
 
         if (group == User.guest.getUserId())
             return;

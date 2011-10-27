@@ -87,7 +87,7 @@ public class BlockingCache<K, V> implements BasicCache<K, V>
 
 
     @Override
-    public V get(K key, Object arg, CacheLoader<K, V> loader)
+    public V get(K key, @Nullable Object arg, CacheLoader<K, V> loader)
     {
         Wrapper<V> w;
         synchronized(_cache)

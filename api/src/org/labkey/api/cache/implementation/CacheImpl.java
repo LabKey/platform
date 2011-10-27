@@ -16,6 +16,7 @@
 package org.labkey.api.cache.implementation;
 
 import org.apache.log4j.Logger;
+import org.jetbrains.annotations.Nullable;
 import org.labkey.api.cache.BasicCache;
 import org.labkey.api.cache.CacheLoader;
 import org.labkey.api.util.Filter;
@@ -62,7 +63,7 @@ class CacheImpl<K, V> implements BasicCache<K, V>
 
 
     @Override
-    public V get(K key, Object arg, CacheLoader<K, V> loader)
+    public V get(K key, @Nullable Object arg, CacheLoader<K, V> loader)
     {
         Object v = _cache.get(key);
         _logDebug("Cache.get(" + key + ") " + (null == v ? "not found" : "found"));

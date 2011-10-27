@@ -15,6 +15,7 @@
  */
 package org.labkey.api.cache;
 
+import org.jetbrains.annotations.Nullable;
 import org.labkey.api.util.Filter;
 
 /**
@@ -35,7 +36,7 @@ public interface BasicCache<K, V>
     /**
      * The wrapped calls to get() and put() are not guaranteed synchronous (see subclass/wrapper impl)
      */
-    V get(K key, Object arg, CacheLoader<K,V> loader);
+    V get(K key, @Nullable Object arg, CacheLoader<K,V> loader);
 
     void remove(K key);
 
