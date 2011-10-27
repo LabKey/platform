@@ -86,7 +86,7 @@ LABKEY.study.CreateStudyWizard = Ext.extend(Ext.util.Observable, {
             border: false,
             tpl: this.sideBarTemplate,
             data: {
-                steps: [{value: 'General Setup', currentStep: true}, {value: this.subject.nounSingular + '&nbsp;Groups', currentStep: false}, {value: 'Datasets', currentStep: false}]
+                steps: [{value: 'General Setup', currentStep: true}, {value: this.subject.nounPlural, currentStep: false}, {value: 'Datasets', currentStep: false}]
             }
         });
 
@@ -164,7 +164,7 @@ LABKEY.study.CreateStudyWizard = Ext.extend(Ext.util.Observable, {
         var studyLocation = new Ext.form.TextField({
             fieldLabel: 'Location',
             name: 'studyFolder',
-            width: 449,
+            width: 447,
             readOnly: true,
             fieldClass: 'x-form-empty-field',
             value: this.info.dstPath,
@@ -174,9 +174,17 @@ LABKEY.study.CreateStudyWizard = Ext.extend(Ext.util.Observable, {
         var changeFolderBtn = new Ext.Button({
             name:"changeFolderBtn",
             text: "Change",
-            width: 56,
+            width: 58,
             cls: "labkey-button",
             handler: browseFolders
+        });
+
+        var locationField = new Ext.form.CompositeField({
+            width: 510,
+            items:[
+                studyLocation,
+                changeFolderBtn
+            ]
         });
 
         function browseFolders(){
@@ -187,6 +195,7 @@ LABKEY.study.CreateStudyWizard = Ext.extend(Ext.util.Observable, {
             emptyText: 'Select a protocol document',
             fieldLabel: 'Protocol',
             name: 'protocolDoc',
+            height: 24,
             buttonText: 'Browse',
             buttonCfg: { cls: "labkey-button" },
             listeners: {
@@ -254,7 +263,7 @@ LABKEY.study.CreateStudyWizard = Ext.extend(Ext.util.Observable, {
             enableDD: false,
             animate : true,
             useArrows : true,
-            height: 200,
+            height: 250,
             collapsible : true,
             collapsed: true,
             autoScroll: true,
@@ -320,14 +329,7 @@ LABKEY.study.CreateStudyWizard = Ext.extend(Ext.util.Observable, {
                 listeners: {change:function(cmp, newValue, oldValue) {this.info.description = newValue;}, scope:this}
             },
             protocolDocField,
-            {
-                xtype:'compositefield',
-                width: 510,
-                items:[
-                    studyLocation,
-                    changeFolderBtn
-                ]
-            },
+            locationField,
             folderTree
         ];
 
@@ -368,6 +370,10 @@ LABKEY.study.CreateStudyWizard = Ext.extend(Ext.util.Observable, {
             return true;
         }, this);
 
+        panel.on('show', function(cmp){
+            locationField.setVisible(true);
+        }, this);
+
         return panel;
     },
 
@@ -375,14 +381,51 @@ LABKEY.study.CreateStudyWizard = Ext.extend(Ext.util.Observable, {
 
         var items = [];
 
-        var txt = Ext.DomHelper.markup({tag:'div', cls:'labkey-nav-page-header', html: this.subject.nounSingular + ' Groups'}) +
-                Ext.DomHelper.markup({tag:'div', html:'&nbsp;'}) +
-                Ext.DomHelper.markup({tag:'div', html:'Choose the ' + this.subject.nounSingular + ' groups you would like to use from the parent study:'}) +
-                Ext.DomHelper.markup({tag:'div', html:'&nbsp;'});
+        var txt = Ext.DomHelper.markup({tag:'div', cls:'labkey-nav-page-header', html: this.subject.nounPlural}) +
+                Ext.DomHelper.markup({tag:'div', html:'&nbsp;'});// +
+//                Ext.DomHelper.markup({tag:'div', html:'Choose the ' + this.subject.nounSingular.toLowerCase() + ' groups you would like to use from the parent study:'}) +
+//                Ext.DomHelper.markup({tag:'div', html:'&nbsp;'});
 
         items.push({xtype:'displayfield', html: txt});
 
-        var store = new Ext.data.Store({
+        this.noGroupRadio = new Ext.form.Radio({
+            boxLabel:'Use all ' + this.subject.nounPlural.toLowerCase() + ' from the source study',
+            name: 'renderType',
+            inputValue: 'all'
+        });
+
+        this.existingGroupRadio = new Ext.form.Radio({
+            boxLabel:'Select from existing ' + this.subject.nounPlural.toLowerCase() + ' groups',
+            name: 'renderType',
+            inputValue: 'existing',
+            checked: true,
+            scope:this,
+            handler: existingGroupHandler
+        });
+
+        function existingGroupHandler(cmp, checked){
+            if(checked == true){
+                grid.setDisabled(false);
+            } else {
+                grid.setDisabled(true);
+            }
+        }
+
+        items.push(
+                {
+                xtype: 'radiogroup',
+                columns: 2,
+                fieldLabel: '',
+                style:"padding-bottom: 10px;",
+                labelWidth: 5,
+                items: [
+                    this.existingGroupRadio,
+                    this.noGroupRadio
+                ]
+            }
+        );
+
+        this.store = new Ext.data.Store({
             url : LABKEY.ActionURL.buildURL("participant-group", "getParticipantCategories"),
             reader: new Ext.data.JsonReader({root:'categories',id:'rowId'},
                     [
@@ -393,7 +436,18 @@ LABKEY.study.CreateStudyWizard = Ext.extend(Ext.util.Observable, {
                         {name:'modified'},
                         {name:'participantIds'}
                     ]),
-            autoLoad: true
+            autoLoad: true,
+            listeners: {
+                load: function(store, records, options){
+                    if(records.length > 0){
+                        this.existingGroupRadio.setValue(true);
+                    } else {
+                        this.noGroupRadio.setValue(true);
+                        this.existingGroupRadio.setEnabled(false);
+                    }
+                },
+                scope: this
+            }
         });
 
         var selModel = new Ext.grid.CheckboxSelectionModel();
@@ -418,7 +472,7 @@ LABKEY.study.CreateStudyWizard = Ext.extend(Ext.util.Observable, {
             });
 
         var grid = new Ext.grid.GridPanel({
-            store: store,
+            store: this.store,
             flex: 1,
             selModel: selModel,
             plugins: expander,
@@ -451,7 +505,7 @@ LABKEY.study.CreateStudyWizard = Ext.extend(Ext.util.Observable, {
 
         this.participantPanel = new Ext.Panel({
             border: false,
-            name: this.subject.nounSingular + '&nbsp;Groups',
+            name: this.subject.nounPlural,
             layout: 'vbox',
             items: items,
             layoutConfig: {
@@ -461,12 +515,11 @@ LABKEY.study.CreateStudyWizard = Ext.extend(Ext.util.Observable, {
         });
 
         this.participantPanel.on('beforehide', function(cmp){
-
             // if the prev button was pressed, we don't care about validation
             if (this.lastStep > this.currentStep)
                 return;
 
-            if (!this.selectedParticipantGroups || this.selectedParticipantGroups.length == 0)
+            if (this.existingGroupRadio.getValue() == true && (!this.selectedParticipantGroups || this.selectedParticipantGroups.length == 0))
             {
                 Ext.Msg.alert("Error", "You must select at least one " + this.subject.nounSingular + " group.");
                 this.currentStep--;
@@ -587,18 +640,19 @@ LABKEY.study.CreateStudyWizard = Ext.extend(Ext.util.Observable, {
         params.dstPath = this.info.dstPath;
 
         var hiddenFields = [];
-
-        // If we chose an existing group then we just pass the rowid of the group, because of a bug in ie
-        // we add categories and datasets as hidden form fields to the form so the arrays get
-        // serialized correctly
-        for (var i=0; i < this.selectedParticipantGroups.length; i++)
+        if(this.existingGroupRadio.checked)
         {
-            var category = this.selectedParticipantGroups[i];
-            var id = Ext.id();
-            hiddenFields.push(id);
-            this.nameFormPanel.add({xtype:'hidden', id: id, name: 'categories', value: category.id});
+            // If we chose an existing group then we just pass the rowid of the group, because of a bug in ie
+            // we add categories and datasets as hidden form fields to the form so the arrays get
+            // serialized correctly
+            for (var i=0; i < this.selectedParticipantGroups.length; i++)
+            {
+                var category = this.selectedParticipantGroups[i];
+                var id = Ext.id();
+                hiddenFields.push(id);
+                this.nameFormPanel.add({xtype:'hidden', id: id, name: 'categories', value: category.id});
+            }
         }
-
         params.copyParticipantGroups = true;//this.copyParticipantGroups.checked;
 
         for (var i=0; i < this.info.datasets.length; i++)
