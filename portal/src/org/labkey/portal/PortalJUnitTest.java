@@ -20,9 +20,7 @@ import org.junit.Assert;
 import org.junit.Test;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
-import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.security.User;
-import org.labkey.api.settings.AppProps;
 import org.labkey.api.util.GUID;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.TestContext;
@@ -30,7 +28,6 @@ import org.labkey.api.view.Portal;
 import org.labkey.api.view.WebPartFactory;
 
 import java.sql.SQLException;
-import java.util.Collection;
 import java.util.Map;
 
 /**
@@ -68,20 +65,20 @@ public class PortalJUnitTest extends Assert
 
         Portal.addPart(folder, wikiFactory, "body");
         Portal.addPart(folder, searchFactory, "body");
-        Portal.addPart(folder, pagesFactory, "right");
+        Portal.addPart(folder, pagesFactory, WebPartFactory.LOCATION_RIGHT);
 
         Portal.WebPart[] parts = Portal.getParts(folder);
         assertEquals(parts.length, 3);
 
         MultiMap<String, Portal.WebPart> locMap = Portal.getPartsByLocation(parts);
-        Portal.WebPart[] bodyParts = locMap.get("body").toArray(new Portal.WebPart[0]);
+        Portal.WebPart[] bodyParts = locMap.get("body").toArray(new Portal.WebPart[locMap.get("body").size()]);
         assertEquals(bodyParts.length, 2);
         assertEquals(parts[0].getName(), "Wiki");
         assertEquals(parts[1].getName(), "Search");
 
-        Portal.WebPart[] rightParts = locMap.get("right").toArray(new Portal.WebPart[0]);
-        assertEquals(rightParts.length, 1);
-        assertEquals(rightParts[0].getName(), "Wiki TOC");
+        Portal.WebPart[] rightParts = locMap.get(WebPartFactory.LOCATION_RIGHT).toArray(new Portal.WebPart[locMap.get(WebPartFactory.LOCATION_RIGHT).size()]);
+        assertEquals(1, rightParts.length);
+        assertEquals("Wiki TOC", rightParts[0].getName());
 
 
         //Delete a part
@@ -93,11 +90,11 @@ public class PortalJUnitTest extends Assert
         parts = Portal.getParts(folder);
         assertEquals(parts.length, 2);
         locMap = Portal.getPartsByLocation(parts);
-        bodyParts = locMap.get("body").toArray(new Portal.WebPart[0]);
+        bodyParts = locMap.get("body").toArray(new Portal.WebPart[locMap.get("body").size()]);
         assertEquals(bodyParts.length, 1);
         assertEquals(parts[0].getName(), "Wiki");
 
-        rightParts = locMap.get("right").toArray(new Portal.WebPart[0]);
+        rightParts = locMap.get(WebPartFactory.LOCATION_RIGHT).toArray(new Portal.WebPart[locMap.get(WebPartFactory.LOCATION_RIGHT).size()]);
         assertEquals(rightParts.length, 1);
         assertEquals(rightParts[0].getName(), "Wiki TOC");
 
@@ -106,7 +103,7 @@ public class PortalJUnitTest extends Assert
         parts = Portal.getParts(folder);
         assertEquals(parts.length, 3);
         locMap = Portal.getPartsByLocation(parts);
-        bodyParts = locMap.get("body").toArray(new Portal.WebPart[0]);
+        bodyParts = locMap.get("body").toArray(new Portal.WebPart[locMap.get("body").size()]);
         assertEquals(bodyParts.length, 2);
         assertEquals(parts[0].getName(), "Search");
 

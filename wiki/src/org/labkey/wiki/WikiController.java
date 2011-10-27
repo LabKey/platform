@@ -88,6 +88,7 @@ import org.labkey.api.view.RedirectException;
 import org.labkey.api.view.UnauthorizedException;
 import org.labkey.api.view.VBox;
 import org.labkey.api.view.ViewContext;
+import org.labkey.api.view.WebPartFactory;
 import org.labkey.api.view.WebPartView;
 import org.labkey.api.view.template.HomeTemplate;
 import org.labkey.api.view.template.PageConfig;
@@ -153,13 +154,13 @@ public class WikiController extends SpringActionController
 
             if (null == ss)
             {
-                ((HomeTemplate)template).setView("right", toc);
+                ((HomeTemplate)template).setView(WebPartFactory.LOCATION_RIGHT, toc);
             }
             else
             {
                 WebPartView searchView = ss.getSearchView(false, 0, false, true);
 
-                ((HomeTemplate)template).setView("right", new VBox(searchView, toc));
+                ((HomeTemplate)template).setView(WebPartFactory.LOCATION_RIGHT, new VBox(searchView, toc));
             }
         }
 

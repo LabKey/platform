@@ -316,7 +316,7 @@ public class StudyController extends BaseStudyController
 		SimpleTemplate(HttpView body, HttpView right)
 		{
 			setBody(body);
-			setView("right",right);
+			setView(WebPartFactory.LOCATION_RIGHT, right);
 		}
 
 		@Override
@@ -325,7 +325,7 @@ public class StudyController extends BaseStudyController
 			out.print("<table width=100%><tr><td align=left valign=top class=labkey-body-panel><img height=1 width=400 src=\""+getViewContext().getContextPath()+"\"/_.gif\"><br>");
 			include(getBody());
 			out.print("</td><td align=left valign=top class=labkey-side-panel><img height=1 width=240 src=\""+getViewContext().getContextPath()+"/_.gif\"><br>");
-			include(getView("right"));
+			include(getView(WebPartFactory.LOCATION_RIGHT));
 			out.print("</td></tr></table>");
 		}
 	}

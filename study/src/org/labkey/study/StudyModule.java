@@ -148,10 +148,10 @@ public class StudyModule extends SpringModule implements SearchService.DocumentP
 
     public static final BaseWebPartFactory reportsPartFactory = new ReportsWebPartFactory();
     public static final WebPartFactory reportsWidePartFactory = new ReportsWideWebPartFactory();
-    public static final WebPartFactory samplesPartFactory = new SamplesWebPartFactory("right");
+    public static final WebPartFactory samplesPartFactory = new SamplesWebPartFactory(WebPartFactory.LOCATION_RIGHT);
     public static final WebPartFactory samplesWidePartFactory = new SamplesWebPartFactory(HttpView.BODY);
     public static final WebPartFactory subjectsWideWebPartFactory = new SubjectsWebPartFactory(HttpView.BODY);
-    public static final WebPartFactory subjectsWebPartFactory = new SubjectsWebPartFactory("right");
+    public static final WebPartFactory subjectsWebPartFactory = new SubjectsWebPartFactory(WebPartFactory.LOCATION_RIGHT);
     public static final WebPartFactory sampleSearchPartFactory = new SampleSearchWebPartFactory(HttpView.BODY);
     public static final WebPartFactory datasetsPartFactory = new DatasetsWebPartFactory();
     public static final WebPartFactory manageStudyPartFactory = new StudySummaryWebPartFactory();
@@ -167,9 +167,9 @@ public class StudyModule extends SpringModule implements SearchService.DocumentP
     public static final WebPartFactory studyListWebPartFactory = new StudyListWebPartFactory();
     public static final WebPartFactory dataToolsWideWebPartFactory = new StudyToolsWebPartFactory.Data(HttpView.BODY);
     public static final WebPartFactory dataViewsWebPartFactory = new DataViewsWebPartFactory();
-    public static final WebPartFactory dataToolsWebPartFactory = new StudyToolsWebPartFactory.Data("right");
+    public static final WebPartFactory dataToolsWebPartFactory = new StudyToolsWebPartFactory.Data(WebPartFactory.LOCATION_RIGHT);
     public static final WebPartFactory specimenToolsWideWebPartFactory = new StudyToolsWebPartFactory.Specimens(HttpView.BODY);
-    public static final WebPartFactory specimenToolsWebPartFactory = new StudyToolsWebPartFactory.Specimens("right");
+    public static final WebPartFactory specimenToolsWebPartFactory = new StudyToolsWebPartFactory.Specimens(WebPartFactory.LOCATION_RIGHT);
     public static final WebPartFactory specimenReportWebPartFactory = new SpecimenController.SpecimenReportWebPartFactory();
 
     public String getName()
@@ -401,7 +401,7 @@ public class StudyModule extends SpringModule implements SearchService.DocumentP
             if (null == StudyManager.getInstance().getStudy(portalCtx.getContainer()))
                 return new HtmlView("Views", "This folder does not contain a study");
 
-            return new ReportsController.ReportsWebPart(!"right".equalsIgnoreCase(webPart.getLocation()));
+            return new ReportsController.ReportsWebPart(!WebPartFactory.LOCATION_RIGHT.equalsIgnoreCase(webPart.getLocation()));
         }
     }
 

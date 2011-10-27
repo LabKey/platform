@@ -38,7 +38,7 @@ public class SearchWebPartFactory extends AlwaysAvailableWebPartFactory
     {
         boolean includeSubfolders = includeSubfolders(webPart);
 
-        if ("right".equals(webPart.getLocation()))
+        if (WebPartFactory.LOCATION_RIGHT.equals(webPart.getLocation()))
         {
             return new SearchWebPart(includeSubfolders, 0, false, true);
         }
