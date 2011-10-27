@@ -501,7 +501,7 @@ public class Portal
     private static void addCustomizeDropdowns(Container c, HttpView template, String id, Collection occupiedLocations)
     {
         Set<String> regionNames = getRegionMap().keySet();
-        boolean rightEmpty = !occupiedLocations.contains("right");
+        boolean rightEmpty = !occupiedLocations.contains(WebPartFactory.LOCATION_RIGHT);
         AddWebParts bodyAddPart = null;
         List<String> rightParts = null;
         
@@ -509,7 +509,7 @@ public class Portal
         {
             List<String> partsToAdd = Portal.getPartsToAdd(c, regionName);
 
-            if ("right".equals(regionName) && rightEmpty)
+            if (WebPartFactory.LOCATION_RIGHT.equals(regionName) && rightEmpty)
                 rightParts = partsToAdd;
             else
             {

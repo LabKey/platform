@@ -29,6 +29,7 @@
 <%@ page import="java.util.Set" %>
 <%@ page import="org.labkey.api.settings.LookAndFeelProperties" %>
 <%@ page import="org.labkey.api.view.ThemeFont" %>
+<%@ page import="org.labkey.api.view.WebPartFactory" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %><%
     PrintTemplate me = (PrintTemplate) HttpView.currentView();
     PageConfig bean = me.getModelBean();
@@ -173,7 +174,7 @@ if (null != me.getView("moduleNav"))
             <!-- RIGHT -->
             <td class="labkey-side-panel" style="min-width:240px;">
                 <img height=1 width=240 src="<%= contextPath %>/_.gif"><br>
-                <% me.include(me.getView("right"),out); %>
+                <% me.include(me.getView(org.labkey.api.view.WebPartFactory.LOCATION_RIGHT),out); %>
             </td>
             <!-- /RIGHT -->
 <%				} %>
@@ -187,12 +188,11 @@ if (null != me.getView("moduleNav"))
     }
 %>
     </table><%
-    // Need hack below so we don't include anchor javascript when running DRT; the framework responds by redirecting with no parameters
     String anchor = bean.getAnchor();
     if (null == StringUtils.trimToNull(anchor))
         anchor = StringUtils.trimToNull(request.getParameter("_anchor"));
 
-    if (null != anchor && !"httpunit/1.5".equals(request.getHeader("user-agent")))
+    if (null != anchor)
     {
         %><script type="text/javascript" for="window" event="onload">window.location.href = "#<%=h(anchor)%>"</script><%
     }
