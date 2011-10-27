@@ -32,7 +32,6 @@ import org.labkey.api.exp.list.ListService;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.reports.report.ReportUrls;
 import org.labkey.api.view.template.PageConfig;
-import org.springframework.web.servlet.mvc.Controller;
 
 import java.sql.SQLException;
 import java.util.*;
