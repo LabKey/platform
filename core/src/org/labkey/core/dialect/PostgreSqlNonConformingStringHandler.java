@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package org.labkey.core;
+package org.labkey.core.dialect;
 
 import org.apache.commons.lang.StringUtils;
 import org.labkey.api.data.dialect.StandardDialectStringHandler;

@@ -553,12 +553,6 @@ core/src/org/labkey/core/CoreController.java -text
 core/src/org/labkey/core/CoreFirstRequestHandler.java -text
 core/src/org/labkey/core/CoreModule.java -text
 core/src/org/labkey/core/CoreUpgradeCode.java -text
-core/src/org/labkey/core/PostgreSql83Dialect.java -text
-core/src/org/labkey/core/PostgreSql84Dialect.java -text
-core/src/org/labkey/core/PostgreSql90Dialect.java -text
-core/src/org/labkey/core/PostgreSql91Dialect.java -text
-core/src/org/labkey/core/PostgreSqlDialectFactory.java -text
-core/src/org/labkey/core/PostgreSqlNonConformingStringHandler.java -text
 core/src/org/labkey/core/admin/AbstractFileSiteSettingsAction.java -text
 core/src/org/labkey/core/admin/ActionsHelper.java -text
 core/src/org/labkey/core/admin/ActionsTsvWriter.java -text
@@ -619,6 +613,12 @@ core/src/org/labkey/core/attachment/AttachmentServiceImpl.java -text
 core/src/org/labkey/core/attachment/DatabaseAttachmentFile.java -text
 core/src/org/labkey/core/attachment/refreshParent.jsp -text
 core/src/org/labkey/core/attachment/showErrors.jsp -text
+core/src/org/labkey/core/dialect/PostgreSql83Dialect.java -text
+core/src/org/labkey/core/dialect/PostgreSql84Dialect.java -text
+core/src/org/labkey/core/dialect/PostgreSql90Dialect.java -text
+core/src/org/labkey/core/dialect/PostgreSql91Dialect.java -text
+core/src/org/labkey/core/dialect/PostgreSqlDialectFactory.java -text
+core/src/org/labkey/core/dialect/PostgreSqlNonConformingStringHandler.java -text
 core/src/org/labkey/core/filters/SetCharacterEncodingFilter.java -text
 core/src/org/labkey/core/junit/JunitManager.java -text
 core/src/org/labkey/core/junit/JunitRunner.java -text

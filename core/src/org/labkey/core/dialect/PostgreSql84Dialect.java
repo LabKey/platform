@@ -14,13 +14,13 @@
  * limitations under the License.
  */
 
-package org.labkey.core;
+package org.labkey.core.dialect;
 
 /*
 * User: adam
 * Date: May 22, 2011
-* Time: 9:28:59 PM
+* Time: 9:27:56 PM
 */
-public class PostgreSql91Dialect extends PostgreSql90Dialect
+public class PostgreSql84Dialect extends PostgreSql83Dialect
 {
 }
