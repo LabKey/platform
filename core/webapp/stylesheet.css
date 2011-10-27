@@ -418,7 +418,8 @@ table.labkey-button-bar
 .labkey-button,
 .labkey-menu-button,
 .labkey-disabled-button,
-.labkey-disabled-menu-button
+.labkey-disabled-menu-button,
+.labkey-wp-text-buttons a
 {
     font-size: 10px;
 }
