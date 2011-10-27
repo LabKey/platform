@@ -92,7 +92,7 @@ if (null != bean.getStyles())
 %>
 </head>
 
-<body id="bodyElement" onload="<%=h(onLoad)%>">
+<body id="bodyElement" onload="<%=h(onLoad)%>" class="<%=themeFont.getClassName()%>">
 <%
 if (null != gwtModules && gwtModules.size() > 0)
 {   //Only include first js file?? %>
@@ -161,7 +161,7 @@ if (null != me.getView("moduleNav"))
 }
 
     %>
-            <td id="bodypanel" class="labkey-body-panel">
+            <td id="bodypanel" class="labkey-body-panel" style="min-width:<%=bean.getMinimumWidth()%>px;">
                 <img height=1 width=<%=bean.getMinimumWidth()%> src="<%= contextPath %>/_.gif"><br>
                 <!-- BODY -->
                 <% me.include(me.getBody(),out); %>
@@ -171,7 +171,7 @@ if (null != me.getView("moduleNav"))
             if (me.getView("right") instanceof HttpView && ((HttpView)me.getView("right")).isVisible())
 				{ %>
             <!-- RIGHT -->
-            <td class="labkey-side-panel">
+            <td class="labkey-side-panel" style="min-width:240px;">
                 <img height=1 width=240 src="<%= contextPath %>/_.gif"><br>
                 <% me.include(me.getView("right"),out); %>
             </td>

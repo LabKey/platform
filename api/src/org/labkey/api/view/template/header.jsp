@@ -31,7 +31,6 @@
 <%@ page import="org.labkey.api.view.*" %>
 <%@ page import="org.labkey.api.view.template.PageConfig" %>
 <%@ page import="org.labkey.api.view.template.TemplateHeaderView" %>
-<%@ page import="org.labkey.api.search.SearchUrls" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
     TemplateHeaderView me = ((TemplateHeaderView) HttpView.currentView());
@@ -48,7 +47,26 @@
     boolean showSearchForm = bean.pageConfig.getTemplate() == PageConfig.Template.Home || bean.pageConfig.getTemplate() == PageConfig.Template.None;
     if ("search".equalsIgnoreCase(currentURL.getPageFlow()) && "search".equalsIgnoreCase(currentURL.getAction()))
         showSearchForm = false;
-%>
+if ("true".equals(request.getParameter("testFont"))) {
+%><script>
+    function changeFontEl(el, themeFontClass)
+    {
+        el = Ext.get(el);
+        if (!el) return;
+        <%for (ThemeFont tf : ThemeFont.getThemeFonts()){%>
+            el.removeClass(<%=PageFlowUtil.jsString(tf.getClassName())%>);
+        <%}%>
+        el.addClass(themeFontClass);
+    }
+    function changeFont(themeFontName)
+    {
+        var className = event.target.className;
+        var body = Ext.getBody();
+        changeFontEl(Ext.getBody(),className);
+        changeFontEl('bodyTableElement',className);
+//        document.cookie="themeFontName=" + themeFontName + ";path=/";
+    }
+</script><%}%>
 <div id="headerDiv"><table id="headerNav" cellpadding="0" cellspacing="0" border=0 width="auto">
   <tr>
       <td style="padding-right: 1em;">
@@ -89,7 +107,8 @@
 
           %> | <a href="<%=h(urlProvider(LoginUrls.class).getLoginURL())%>">Sign&nbsp;In</a><%
       }
-      %>
+      if ("true".equals(request.getParameter("testFont"))) {
+        %><span onclick="changeFont()"></span><span class="labkey-theme-font-smallest" onclick="changeFont('Smallest')">A</span><span class="labkey-theme-font-small" onclick="changeFont('Small')">A</span><span class="labkey-theme-font-medium" onclick="changeFont('Medium')">A</span><span class="labkey-theme-font-large" onclick="changeFont('Large')">A</span></span><%}%>
     </td>
   </tr>
 </table></div>

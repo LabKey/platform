@@ -20,11 +20,13 @@
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.api.view.template.DialogTemplate" %>
 <%@ page import="org.labkey.api.view.template.PageConfig" %>
+<%@ page import="org.labkey.api.view.ThemeFont" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
     DialogTemplate me = (DialogTemplate) HttpView.currentView();
     PageConfig pageConfig = me.getModelBean();
     Container c = me.getViewContext().getContainer();
+    ThemeFont themeFont = ThemeFont.getThemeFont(c);
 
     if (pageConfig.getFrameOption() != PageConfig.FrameOption.ALLOW)
         response.setHeader("X-FRAME-OPTIONS", pageConfig.getFrameOption().name());
@@ -38,7 +40,7 @@
     <%= PageFlowUtil.getStandardIncludes(c,request.getHeader("User-Agent")) %>
 </head>
 
-<body<%= null != pageConfig.getFocus() ? " onload=\"document." + pageConfig.getFocus() + ".focus();\"" : "" %>>
+<body<%= null != pageConfig.getFocus() ? " onload=\"document." + pageConfig.getFocus() + ".focus();\"" : "" %> class="<%=themeFont.getClassName()%>">
     <table class="labkey-main"><%
 
     if (pageConfig.showHeader() != PageConfig.TrueFalse.False)
