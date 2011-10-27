@@ -415,6 +415,14 @@ table.labkey-button-bar
     padding: 4px;
 }
 
+.labkey-button,
+.labkey-menu-button,
+.labkey-disabled-button,
+.labkey-disabled-menu-button
+{
+    font-size: 10px;
+}
+
 /* Used for the new css menu buttons, which consist of a link (<a>)
     or a span wrapped around an input for submit buttons */
 .labkey-button-bar .labkey-button,
@@ -432,7 +440,7 @@ table.labkey-button-bar
 
     color: #126495;
     text-transform: uppercase;
-    font-size: 10px;
+    /*font-size: 10px;*/
     font-family: Verdana, Arial, Helvetica, sans serif;
     font-weight: bold;
 
@@ -527,7 +535,7 @@ table.labkey-button-bar
 
     color: #808080 !important;
     text-transform: uppercase;
-    font-size: 10px;
+    /*font-size: 10px;*/
     font-weight: bold;
     font-family: Verdana, Arial, Helvetica, sans serif;
     cursor: default;
@@ -622,7 +630,7 @@ span.labkey-button {
     border: 1px solid #b4b4b4;
     color: #126495;
     text-transform: uppercase;
-    font-size: 10px;
+    /*font-size: 10px;*/
     font-family: Verdana, Arial, Helvetica, sans serif;
     font-weight: bold;
     white-space: nowrap;
@@ -652,7 +660,7 @@ span.labkey-button:hover
     border: 1px solid #676767 !important;
     color: #000000;
     text-transform: uppercase;
-    font-size: 10px;
+    /*font-size: 10px;*/
     font-family: Verdana, Arial, Helvetica, sans serif;
     font-weight: bold;
     cursor: pointer;
@@ -676,7 +684,7 @@ a.labkey-disabled-button {
     margin-right: 5px;
     color: #808080 !important;
     text-transform: uppercase;
-    font-size: 10px;
+    /*font-size: 10px;*/
     font-family: Verdana, Arial, Helvetica, sans serif;
     font-weight: bold;
     cursor: default;
@@ -703,7 +711,7 @@ span.labkey-button:active
     border: 1px solid #b4b4b4 !important;
     color: #000000;
     text-transform: uppercase;
-    font-size: 10px;
+    /*font-size: 10px;*/
     font-family: Verdana, Arial, Helvetica, sans serif;
     font-weight: bold;
     cursor: pointer;
@@ -1787,7 +1795,7 @@ table.labkey-expandable-nav
 /* The rest of the project area besides the project nav panel */
 .labkey-body-panel
 {
-    padding: 0;
+    padding: 0 0 0 0;
     width: 100%;
     height: 100%;
     vertical-align: top;
@@ -1974,7 +1982,7 @@ tr.labkey-wp-header
     border: 0;
 }
 
-.labkey-wp-header th, .labkey-wp-header td
+.labkey-wp-header th.labkey-wp-title-left, .labkey-wp-header td.labkey-wp-title-left
 {
     font-weight: bold;
     padding-left: 4px;
@@ -2103,7 +2111,7 @@ span.labkey-wp-icon-button-inactive:hover {
     border: 1px solid #fff;
     color: #126495;
     text-transform: uppercase;
-    font-size: 10px;
+    /*font-size: 10px;*/
     font-family: Verdana, Arial, Helvetica, sans serif;
     font-weight: bold;
     white-space: nowrap;
@@ -2129,10 +2137,15 @@ a.no-arrow {
 
 /* these are the new text links with css arrows */
 
+.labkey-text-link
+{
+    font-size: 10px;
+}
+
 a.labkey-text-link, a.labkey-text-link:visited {
     color: #126495;
     font-family: Verdana,Arial,Helvetica,sans-serif;
-    font-size: 10px;
+    /*font-size: 10px;*/
     font-weight: bold;
     padding: 2px 12px 2px 0;
     text-transform: uppercase;
@@ -2155,7 +2168,7 @@ table.labkey-data-region .css-arrow-right {
 
 a.labkey-text-link:hover {
     text-transform: uppercase;
-    font-size: 10px;
+    /*font-size: 10px;*/
     font-family: Verdana, Arial, Helvetica, sans serif;
     font-weight: bold;
     padding: 2px 12px 2px 0;
@@ -2403,7 +2416,7 @@ div.labkey-wiki h1
 
 .labkey-wiki .heading-1-1-1, div.labkey-wiki h4
 {
-    text-transform: uppercase;
+    text-tran    sform: uppercase;
     font-size: 0.8em;
     margin: 0.83em 0 0.0px 0;
     font-weight: bold;
@@ -2411,8 +2424,12 @@ div.labkey-wiki h1
 
 .labkey-wiki .code
 {
-    font-family: courier,monospace;
     padding-left: 0.25in;
+    padding-top: 5px; padding-bottom:5px;
+    background-color: #EEE;
+    border: 1px solid #CCC;
+    color: #2020BE;
+    font-family: "Bitstream Vera Sans Mono", "Courier New", monospace;
 }
 
 /* R reports */
