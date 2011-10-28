@@ -1219,6 +1219,11 @@ public class SecurityManager
         {
             for (User u : usersToAdd)
             {
+                // check that each user to be added is valid for this group
+                String errorMessage = getAddMemberError(group, u);
+                if (null != errorMessage)
+                    throw new IllegalStateException(errorMessage);
+
                 addString.append(comma);
                 addString.append(u.getUserId());
                 comma = ", ";
@@ -1229,6 +1234,11 @@ public class SecurityManager
         {
             for (Group g : groupsToAdd)
             {
+                // check that each member group to be added is valid for this group
+                String errorMessage = getAddMemberError(group, g);
+                if (null != errorMessage)
+                    throw new IllegalStateException(errorMessage);
+
                 addString.append(comma);
                 addString.append(g.getUserId());
                 comma = ", ";
@@ -1279,7 +1289,7 @@ public class SecurityManager
 
 
     // Return an error message if principal can't be added to the group, otherwise return null
-    private static String getAddMemberError(Group group, UserPrincipal principal)
+    public static String getAddMemberError(Group group, UserPrincipal principal)
     {
         if (null == group)
             return "Null group not allowed";
@@ -1302,6 +1312,9 @@ public class SecurityManager
 
         if (group.equals(newMember))
             return "Can't add a group to itself";
+
+        if (group.isSystemGroup())
+            return "Can't add groups to a sytem group";
 
         for (int id : group.getGroups())
             if (newMember.getUserId() == id)
