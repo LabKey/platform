@@ -746,6 +746,10 @@ public class SecurityController extends SpringActionController
                     {
                         errors.addError(new LabkeyError("A failure occurred adding members to the group: " + e.getMessage()));
                     }
+                    catch (IllegalStateException e)
+                    {
+                        errors.addError(new LabkeyError("A failure occurred adding members to the group: " + e.getMessage()));
+                    }
                 }
             }
 
@@ -901,6 +905,8 @@ public class SecurityController extends SpringActionController
     public static class CompleteMemberForm
     {
         private String _prefix;
+        private Integer _groupId;
+        private Group _group;
 
         public String getPrefix()
         {
@@ -911,6 +917,30 @@ public class SecurityController extends SpringActionController
         {
             _prefix = prefix;
         }
+
+        public Integer getGroupId()
+        {
+            return _groupId;
+        }
+
+        public void setGroupId(Integer groupId)
+        {
+            _groupId = groupId;
+        }
+
+        public Group getGroup()
+        {
+            if (_group == null && getGroupId() != null)
+            {
+                _group = SecurityManager.getGroup(getGroupId());
+                if (_group == null)
+                {
+                    throw new NotFoundException("Could not find group for id " + getGroupId());
+                }
+            }
+
+            return _group;
+        }
     }
 
     @RequiresPermissionClass(AdminPermission.class)
@@ -920,14 +950,22 @@ public class SecurityController extends SpringActionController
         {
             Group[] allGroups = SecurityManager.getGroups(getContainer().getProject(), true);
             Collection<Group> groups = new ArrayList<Group>();
-            // don't suggest Stystem Groups for type-ahead
+            // dont' suggest groups that will results in errors (i.e. circulate relation, already member, etc.)
             for (Group group : allGroups)
             {
-                if (!group.isSystemGroup())
+                if (null == SecurityManager.getAddMemberError(form.getGroup(), group))
                     groups.add(group);
             }
 
-            Collection<User> users = Arrays.asList(UserManager.getActiveUsers());
+            User[] allUsers = UserManager.getActiveUsers();
+            Collection<User> users = new ArrayList<User>();
+            // dont' suggest users that will results in errors (i.e. already member, etc.)
+            for (User user : allUsers)
+            {
+                if (null == SecurityManager.getAddMemberError(form.getGroup(), user))
+                    users.add(user);
+            }
+
             List<AjaxCompletion> completions = UserManager.getAjaxCompletions(form.getPrefix(), groups, users, getViewContext().getUser());
             PageFlowUtil.sendAjaxCompletions(getViewContext().getResponse(), completions);
             return null;
@@ -937,7 +975,7 @@ public class SecurityController extends SpringActionController
         {
             throw new UnsupportedOperationException();
         }
-    }    
+    }
 
     public static class CompleteUserForm
     {

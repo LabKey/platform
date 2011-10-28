@@ -158,18 +158,13 @@ else
     </div><%
 }
 %><br>
-<%
-    String completeAction = "completeMember.view?prefix=";
-    if (bean.group.isSystemGroup())
-        completeAction = "completeUser.view?prefix="; 
-%>
 <div id="add-members">
 Add New Members (enter one email address or group per line):<br>
 <textarea name="names" cols="60" rows="8"
          onKeyDown="return ctrlKeyCheck(event);"
          onBlur="hideCompletionDiv();"
          autocomplete="off"
-         onKeyUp="return handleChange(this, event, '<%= completeAction %>');">
+         onKeyUp="return handleChange(this, event, 'completeMember.view?groupId=<%= bean.group.getUserId() %>&prefix=');">
 </textarea><br>
 <input type="checkbox" name="sendEmail" value="true" checked>Send notification emails to all new<%
 if (null != bean.ldapDomain)
