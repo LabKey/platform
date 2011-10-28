@@ -241,7 +241,7 @@ public class ExperimentService
         ExpProtocolApplication getExpProtocolApplication(int rowId);
         ExpProtocolApplication[] getExpProtocolApplicationsForRun(int runId);
 
-        ExpProtocol[] getExpProtocols(Container container);
+        ExpProtocol[] getExpProtocols(Container... containers);
         ExpProtocol[] getAllExpProtocols();
 
         /**

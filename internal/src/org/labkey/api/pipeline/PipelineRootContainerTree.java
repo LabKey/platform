@@ -59,11 +59,6 @@ public abstract class PipelineRootContainerTree extends ContainerTree
         renderCellContents(html, c, url, hasPipelineRoot(c));
     }
 
-    protected void defaultRenderCellContents(StringBuilder html, Container c, ActionURL url)
-    {
-        super.renderCellContents(html, c, url);
-    }
-
     /** Subclasses must implement this overloaded version */
     protected abstract void renderCellContents(StringBuilder html, Container c, ActionURL url, boolean hasPipelineRoot);
 }
