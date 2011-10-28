@@ -10,6 +10,7 @@ LABKEY.requiresScript("study/ParticipantGroup.js");
 LABKEY.requiresScript("FileUploadField.js");
 
 Ext.QuickTips.init();
+Ext.GuidedTips.init();
 
 LABKEY.study.CreateStudyWizard = Ext.extend(Ext.util.Observable, {
 
@@ -578,27 +579,36 @@ LABKEY.study.CreateStudyWizard = Ext.extend(Ext.util.Observable, {
         grid.on('columnmodelcustomize', this.customizeColumnModel, this);
         grid.selModel.on('selectionchange', function(cmp){this.info.datasets = cmp.getSelections();}, this);
 
-        var syncTxt = Ext.DomHelper.markup({tag:'div', cls:'labkey-strong', html:'<br><br>Data Refresh'});
-/*
-                Ext.DomHelper.markup({tag:'div', cls: 'labkey-emphasis', html:'Linked datasets can be configured to be manually updated or to automatically ' +
-                    'update within a fixed amount of time after the data from the original study has changed<br>'});
-*/
-
-        items.push({xtype:'displayfield', html: syncTxt});
+        var syncTip = '' +
+            '<div>' +
+                '<div class=\'g-tip-header\'>' +
+                    '<span>Data Refresh</span>' +
+                '</div>' +
+                '<div class=\'g-tip-subheader\'>' +
+                    '<span>Automatic:</span>' +
+                    ' When data refreshes or changes in the parent study, the data will ' +
+                    'automatically refresh in the ancillary study as well.' +
+                '</div>' +
+                '<div class=\'g-tip-subheader\'>' +
+                    '<span>Manual:</span> When data refreshes or changes in the parent study, ' +
+                    'the ancillary data will <b>not</b> refresh until you specifically choose to refresh.' +
+                '</div>' +
+            '</div>';
 
         this.snapshotOptions = new Ext.form.FormPanel({
             defaults: {labelSeparator: ''},
             items: [
                 {xtype: 'hidden', name: 'updateDelay', value: 30},
-                {xtype: 'radiogroup', fieldLabel: '', columns: 1, items: [
-                    {name: 'autoRefresh', boxLabel: 'Automatic Refresh', inputValue: true, checked: true},
-                    {name: 'autoRefresh', boxLabel: 'Manual Refresh', inputValue: false}]
+                {xtype: 'radiogroup', fieldLabel: 'Data Refresh', gtip : syncTip, columns: 1, items: [
+                    {name: 'autoRefresh', boxLabel: 'Automatic', inputValue: true, checked: true},
+                    {name: 'autoRefresh', boxLabel: 'Manual', inputValue: false}]
                 }
             ],
             padding: '10px 0px',
             border: false,
             height: 100,
-            labelWidth: 100
+//            labelWidth: 100,
+            width : 300
         });
         items.push(this.snapshotOptions);
 
