@@ -125,7 +125,7 @@ LABKEY.vis.TimeChartPanel = Ext.extend(Ext.Panel, {
                         this.editorMeasurePanel.setMeasuresStoreData(data);
                     },
                     'initialMeasureSelected': function(initMeasure) {
-                        Ext.getCmp('chart-editor-tabpanel').activate(this.editorMeasurePanel.getId());
+                        Ext.getCmp(this.chartEditorTabId).activate(this.editorMeasurePanel.getId());
                         this.measureSelected(initMeasure, true);
                     },
                     'saveThumbnailChecked': function(checked) {
@@ -135,12 +135,15 @@ LABKEY.vis.TimeChartPanel = Ext.extend(Ext.Panel, {
                 }
             });
 
+            // somewhat ugly, have to pass this id to the chartEditorMeasurePanel
+            this.seriesSelectorTabPanelId = Ext.id();
             this.editorMeasurePanel = new LABKEY.vis.ChartEditorMeasurePanel({
                 disabled: true,
                 origMeasures: this.chartInfo.measures, 
                 filterUrl: this.chartInfo.filterUrl ? this.chartInfo.filterUrl : LABKEY.Visualization.getDataFilterFromURL(),
                 filterQuery: this.chartInfo.filterQuery ? this.chartInfo.filterQuery : this.getFilterQuery(),
                 viewInfo: this.viewInfo,
+                seriesSelectorTabPanelId: this.seriesSelectorTabPanelId,
                 listeners: {
                     scope: this,
                     'measureSelected': this.measureSelected,
@@ -286,6 +289,7 @@ LABKEY.vis.TimeChartPanel = Ext.extend(Ext.Panel, {
                 }
             });
 
+            this.chartEditorTabId = Ext.id();
             this.chartEditor = new Ext.Panel({
                 layout: 'fit',
                 header: false,
@@ -298,7 +302,7 @@ LABKEY.vis.TimeChartPanel = Ext.extend(Ext.Panel, {
                 hideCollapseTool: true,
                 items: [
                     new Ext.TabPanel({
-                        id: 'chart-editor-tabpanel',
+                        id: this.chartEditorTabId,
                         autoScroll: true,
                         activeTab: 0,
                         items: [
@@ -365,7 +369,8 @@ LABKEY.vis.TimeChartPanel = Ext.extend(Ext.Panel, {
             });
 
             this.seriesSelectorTabPanel = new Ext.TabPanel({
-                id: 'series-selector-tabpanel',
+                id: this.seriesSelectorTabPanelId,
+                cls: 'series-selector-tabpanel-test',
                 activeTab: (this.chartInfo.chartSubjectSelection != "subjects" ? 0 : 1),
                 padding: 5,
                 enablePanelScroll: true,
@@ -519,7 +524,6 @@ LABKEY.vis.TimeChartPanel = Ext.extend(Ext.Panel, {
             }
 
             this.chart = new Ext.Panel({
-                id: 'chart-tabpanel',
                 region: 'center',
                 layout: 'fit',
                 frame: false,
@@ -1637,7 +1641,7 @@ LABKEY.vis.TimeChartPanel = Ext.extend(Ext.Panel, {
                     xtype: 'textfield',
                     fieldLabel: 'Report Name',
                     name: 'reportName',
-                    id: 'reportNameSaveAs',
+                    cls: 'report-name-saveas-test',
                     value: reportName || null,
                     width: 300,
                     allowBlank: false,
@@ -1647,7 +1651,7 @@ LABKEY.vis.TimeChartPanel = Ext.extend(Ext.Panel, {
                     xtype: 'textarea',
                     fieldLabel: 'Report Description',
                     name: 'reportDescription',
-                    id: 'reportDescriptionSaveAs',
+                    cls: 'report-description-saveas-test',
                     value: reportDescription || null,
                     width: 300,
                     height: 70,
@@ -1655,17 +1659,15 @@ LABKEY.vis.TimeChartPanel = Ext.extend(Ext.Panel, {
                 },
                 new Ext.form.RadioGroup({
                     name: 'reportShared',
-                    id: 'reportSharedSaveAs',
                     fieldLabel: 'Viewable by',
                     anchor: '100%',
                     items : [
-                            { name: 'reportShared', id: 'reportSharedAllSaveAs', boxLabel: 'All readers', inputValue: 'true', checked: reportShared, disabled: !canSaveSharedCharts },
-                            { name: 'reportShared', id: 'reportSharedMeSaveAs', boxLabel: 'Only me', inputValue: 'false', checked: !reportShared, disabled: !canSaveSharedCharts }
+                            { name: 'reportShared', cls: 'report-shared-all-test', boxLabel: 'All readers', inputValue: 'true', checked: reportShared, disabled: !canSaveSharedCharts },
+                            { name: 'reportShared', cls: 'report-shared-me-test', boxLabel: 'Only me', inputValue: 'false', checked: !reportShared, disabled: !canSaveSharedCharts }
                         ]
                 }),
                 new Ext.form.Checkbox({
                     name: 'reportSaveThumbnail',
-                    id: 'reportSaveThumbnailSaveAs',
                     fieldLabel: 'Save Thumbnail',
                     anchor: '100%',
                     checked: this.chartInfo.saveThumbnail,

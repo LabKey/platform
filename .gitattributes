@@ -3323,9 +3323,6 @@ visualization/lib/batik-1.7-all.jar -text
 visualization/module.properties -text
 visualization/resources/config/module.xml -text
 visualization/resources/readme.txt -text
-visualization/resources/views/Time[!!-~]Chart.webpart.xml -text
-visualization/resources/views/timeChartWizard.html -text
-visualization/resources/views/visualizationWizard.html -text
 visualization/resources/web/protovis/protovis-d3.2.js -text
 visualization/resources/web/protovis/protovis-r3.2.js -text
 visualization/resources/web/vis/ChartComponent.js -text
@@ -3357,6 +3354,7 @@ visualization/src/org/labkey/visualization/sql/VisualizationProvider.java -text
 visualization/src/org/labkey/visualization/sql/VisualizationSQLGenerator.java -text
 visualization/src/org/labkey/visualization/sql/VisualizationSourceColumn.java -text
 visualization/src/org/labkey/visualization/sql/VisualizationSourceQuery.java -text
+visualization/src/org/labkey/visualization/views/timeChartWizard.jsp -text
 visualization/webapp/visualization/report/timechart.gif -text
 wiki/lib/radeox-api.jar -text
 wiki/lib/radeox.jar -text

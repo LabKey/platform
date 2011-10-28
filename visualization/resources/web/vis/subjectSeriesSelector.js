@@ -30,7 +30,7 @@ LABKEY.vis.SubjectSeriesSelector = Ext.extend(Ext.Panel, {
 
     getSubjectValues: function() {
         // if the subjects gridpanel is already available, then return
-        if(this.items && this.getComponent('subject-list-view')){
+        if(this.items && this.getComponent(this.subjectListViewId)){
             return;
         }
 
@@ -104,9 +104,10 @@ LABKEY.vis.SubjectSeriesSelector = Ext.extend(Ext.Panel, {
             this.fireEvent('chartDefinitionChanged', true);
         }, this, {buffer: 1000}); // buffer allows single event to fire if bulk changes are made within the given time (in ms)
 
+        this.subjectListViewId = Ext.id();
         // initialize the subject gridPanel with the subjectValues from the getDimensionValues call
         var subjectGridPanel = new Ext.grid.GridPanel({
-            id: 'subject-list-view',
+            id: this.subjectListViewId,
             autoHeight: true,
             viewConfig: {forceFit: true},
             border: false,

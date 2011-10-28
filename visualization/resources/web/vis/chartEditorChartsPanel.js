@@ -164,7 +164,7 @@ LABKEY.vis.ChartEditorChartsPanel = Ext.extend(Ext.FormPanel, {
         colTwoItems.push(this.numCharts);
 
         this.chartTitleTextField = new Ext.form.TextField({
-            id: 'chart-title-textfield',
+            name: 'chart-title-textfield',
             fieldLabel: 'Chart Title',
             value: this.mainTitle,
             width: '100%',

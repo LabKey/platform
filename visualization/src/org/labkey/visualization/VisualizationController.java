@@ -29,6 +29,7 @@ import org.labkey.api.action.ApiSimpleResponse;
 import org.labkey.api.action.BaseViewAction;
 import org.labkey.api.action.ExtendedApiQueryResponse;
 import org.labkey.api.action.RedirectAction;
+import org.labkey.api.action.SimpleViewAction;
 import org.labkey.api.action.SpringActionController;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
@@ -69,7 +70,10 @@ import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.ResultSetUtil;
 import org.labkey.api.util.URLHelper;
 import org.labkey.api.view.ActionURL;
+import org.labkey.api.view.JspView;
+import org.labkey.api.view.NavTree;
 import org.labkey.api.view.ViewContext;
+import org.labkey.api.view.WebPartView;
 import org.labkey.api.visualization.VisualizationReportDescriptor;
 import org.labkey.api.visualization.VisualizationUrls;
 import org.labkey.visualization.report.TimeChartReportImpl;
@@ -104,7 +108,6 @@ public class VisualizationController extends SpringActionController
 
     public static class VisualizationUrlsImpl implements VisualizationUrls
     {
-        public static final String TIME_CHART_VIEW_NAME = "timeChartWizard";
         private static final String VISUALIZATION_NAME_PARAM = "name";
         private static final String VISUALIZATION_SCHEMA_PARAM = "schemaName";
         private static final String VISUALIZATION_FILTER_URL = "filterUrl";
@@ -174,10 +177,7 @@ public class VisualizationController extends SpringActionController
 
         private ActionURL getBaseTimeChartURL(Container container, boolean editMode)
         {
-            // Using deprecated ActionURL class to enable reference to html-based view in the
-            // resources directory.  Not ideal, but better than circumventing the html view loading
-            // process just to wrap the file in an Action class.
-            ActionURL url = new ActionURL(NAME, TIME_CHART_VIEW_NAME, container);
+            ActionURL url = new ActionURL(TimeChartWizardAction.class, container);
             url.addParameter(VISUALIZATION_EDIT_PARAM, editMode);
             return url;
         }
@@ -1173,6 +1173,29 @@ public class VisualizationController extends SpringActionController
             resp.put("visualizationId", reportId);
             resp.put("name", _currentReport.getDescriptor().getReportName());
             return resp;
+        }
+    }
+
+    public static final String TITLE = "Time Chart Wizard";
+
+    @RequiresPermissionClass(ReadPermission.class)
+    public class TimeChartWizardAction extends SimpleViewAction<Object>
+    {
+        @Override
+        public ModelAndView getView(Object o, BindException errors) throws Exception
+        {
+            JspView timeChartWizard = new JspView("/org/labkey/visualization/views/timeChartWizard.jsp");
+
+            timeChartWizard.setTitle(TITLE);
+            timeChartWizard.setFrame(WebPartView.FrameType.PORTAL);
+
+            return timeChartWizard;
+        }
+
+        @Override
+        public NavTree appendNavTrail(NavTree root)
+        {
+            return root.addChild(TITLE);
         }
     }
 }

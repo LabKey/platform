@@ -16,19 +16,16 @@
 package org.labkey.visualization.report;
 
 import org.apache.batik.transcoder.TranscoderException;
-import org.labkey.api.module.Module;
-import org.labkey.api.module.ModuleLoader;
-import org.labkey.api.module.SimpleAction;
+import org.labkey.api.reports.Report;
 import org.labkey.api.thumbnail.DynamicThumbnailProvider;
 import org.labkey.api.thumbnail.Thumbnail;
 import org.labkey.api.thumbnail.ThumbnailOutputStream;
 import org.labkey.api.view.HBox;
 import org.labkey.api.view.HttpView;
+import org.labkey.api.view.JspView;
 import org.labkey.api.view.ViewContext;
 import org.labkey.api.view.WebPartView;
 import org.labkey.api.visualization.TimeChartReport;
-import org.labkey.visualization.VisualizationController;
-import org.labkey.visualization.VisualizationModule;
 import org.labkey.visualization.VisualizationUtil;
 
 import java.io.InputStream;
@@ -44,8 +41,8 @@ public class TimeChartReportImpl extends TimeChartReport implements DynamicThumb
     @Override
     public HttpView renderReport(ViewContext context) throws Exception
     {
-        Module vizModule = ModuleLoader.getInstance().getModule(VisualizationModule.class);
-        WebPartView timeChartWizard = SimpleAction.getModuleHtmlView(vizModule, VisualizationController.VisualizationUrlsImpl.TIME_CHART_VIEW_NAME);
+        JspView timeChartWizard = new JspView<Report>("/org/labkey/visualization/views/timeChartWizard.jsp", this);
+
         timeChartWizard.setFrame(WebPartView.FrameType.NONE);
         return new HBox(timeChartWizard);
     }

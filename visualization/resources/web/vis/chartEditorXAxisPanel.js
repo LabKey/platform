@@ -124,7 +124,7 @@ LABKEY.vis.ChartEditorXAxisPanel = Ext.extend(Ext.FormPanel, {
         
         // combobox for the selection of the date axis interval unit
         this.intervalCombo = new Ext.form.ComboBox({
-            id: 'x-axis-interval-combo',
+            cls: 'x-axis-interval-combo-test',
             disabled: this.time == 'visit', //disable combo if the chart is visit based.
             triggerAction: 'all',
             mode: 'local',
@@ -172,7 +172,6 @@ LABKEY.vis.ChartEditorXAxisPanel = Ext.extend(Ext.FormPanel, {
 
         // combobox to select the "starting date" to be used for the x-axis interval calculation
         this.zeroDateCombo = new Ext.form.ComboBox({
-            id: 'zero-date-combo',
             disabled: this.time == 'visit', //disable combo if the chart is visit based.
             fieldLabel: 'Calculate time interval(s) relative to',
             triggerAction: 'all',
@@ -205,7 +204,8 @@ LABKEY.vis.ChartEditorXAxisPanel = Ext.extend(Ext.FormPanel, {
         columnOneItems.push(this.zeroDateCombo);
 
         this.labelTextField = new Ext.form.TextField({
-            id: 'x-axis-label-textfield',            
+            cls: 'x-axis-label-textfield-test',
+            name: 'x-axis-label-textfield',            
             fieldLabel: 'Axis label',
             value: this.axis.label,
             width: 300,

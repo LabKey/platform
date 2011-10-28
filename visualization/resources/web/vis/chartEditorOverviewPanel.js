@@ -106,6 +106,16 @@ LABKEY.vis.ChartEditorOverviewPanel = Ext.extend(Ext.Panel, {
             scope: this
         });
 
+        // create a map of element id's that are unique for the page
+        this.idMap = {
+            reportName: Ext.id(),
+            reportNameDisplay: Ext.id(),
+            reportDescription: Ext.id(),
+            reportDescriptionDisplay: Ext.id(),
+            reportShared: Ext.id(),
+            reportSaveThumbnail: Ext.id()
+        };
+
         this.saveChartFormPanel = new Ext.FormPanel({
             title: '',
             autoHeight: true,
@@ -117,7 +127,7 @@ LABKEY.vis.ChartEditorOverviewPanel = Ext.extend(Ext.Panel, {
             monitorValid: true,
             items: [
                 new Ext.form.TextField({
-                    id: 'reportName',
+                    id: this.idMap.reportName,
                     name: 'reportName',
                     fieldLabel: 'Report Name',
                     hidden: savedReport || !canSaveChanges,
@@ -127,7 +137,7 @@ LABKEY.vis.ChartEditorOverviewPanel = Ext.extend(Ext.Panel, {
                     maxLength: 200
                 }),
                 new Ext.form.DisplayField({
-                    id: 'reportNameDisplay',
+                    id: this.idMap.reportNameDisplay,
                     name: 'reportNameDisplay',
                     fieldLabel: 'Report Name',
                     hidden: !savedReport && canSaveChanges, 
@@ -135,7 +145,7 @@ LABKEY.vis.ChartEditorOverviewPanel = Ext.extend(Ext.Panel, {
                     anchor: '100%'
                 }),
                 new Ext.form.TextArea({
-                    id: 'reportDescription',
+                    id: this.idMap.reportDescription,
                     name: 'reportDescription',
                     fieldLabel: 'Report Description',
                     hidden: !canSaveChanges,
@@ -145,7 +155,7 @@ LABKEY.vis.ChartEditorOverviewPanel = Ext.extend(Ext.Panel, {
                     height: 35
                 }),
                 new Ext.form.DisplayField({
-                    id: 'reportDescriptionDisplay',
+                    id: this.idMap.reportDescriptionDisplay,
                     name: 'reportDescriptionDisplay',
                     fieldLabel: 'Report Description',
                     hidden: canSaveChanges,
@@ -153,7 +163,7 @@ LABKEY.vis.ChartEditorOverviewPanel = Ext.extend(Ext.Panel, {
                     anchor: '100%'
                 }),
                 new Ext.form.RadioGroup({
-                    id: 'reportShared',
+                    id: this.idMap.reportShared,
                     name: 'reportShared',
                     fieldLabel: 'Viewable By',
                     anchor: '100%',
@@ -163,7 +173,7 @@ LABKEY.vis.ChartEditorOverviewPanel = Ext.extend(Ext.Panel, {
                         ]
                 }),
                 new Ext.form.Checkbox({
-                    id: 'reportSaveThumbnail',
+                    id: this.idMap.reportSaveThumbnail,
                     name: 'reportSaveThumbnail',
                     fieldLabel: 'Save Thumbnail',
                     anchor: '100%',
@@ -305,12 +315,12 @@ LABKEY.vis.ChartEditorOverviewPanel = Ext.extend(Ext.Panel, {
 
         // update the name/description field values accordingly
         if(typeof this.reportInfo == 'object'){
-            this.saveChartFormPanel.getComponent('reportName').hide();
-            this.saveChartFormPanel.getComponent('reportNameDisplay').setValue($h(this.reportInfo.name));
-            this.saveChartFormPanel.getComponent('reportNameDisplay').show();
-            this.saveChartFormPanel.getComponent('reportDescription').setValue(this.reportInfo.description);
-            this.saveChartFormPanel.getComponent('reportShared').setValue(this.reportInfo.shared);
-            this.saveChartFormPanel.getComponent('reportSaveThumbnail').setValue(saveThumbnail);
+            this.saveChartFormPanel.getComponent(this.idMap.reportName).hide();
+            this.saveChartFormPanel.getComponent(this.idMap.reportNameDisplay).setValue($h(this.reportInfo.name));
+            this.saveChartFormPanel.getComponent(this.idMap.reportNameDisplay).show();
+            this.saveChartFormPanel.getComponent(this.idMap.reportDescription).setValue(this.reportInfo.description);
+            this.saveChartFormPanel.getComponent(this.idMap.reportShared).setValue(this.reportInfo.shared);
+            this.saveChartFormPanel.getComponent(this.idMap.reportSaveThumbnail).setValue(saveThumbnail);
 
             // if the user can update, show save button (which is now for replacing the saved report)
             (this.canSaveChanges() ? this.saveBtn.show() : this.saveBtn.hide());

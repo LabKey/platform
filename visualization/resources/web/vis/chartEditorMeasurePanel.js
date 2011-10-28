@@ -29,6 +29,9 @@ LABKEY.vis.ChartEditorMeasurePanel = Ext.extend(Ext.FormPanel, {
             'measureRemoved'
         );
 
+        // shared from the parent component
+        this.seriesSelectorTabPanelId = config.seriesSelectorTabPanelId;
+
         // add any y-axis measures from the origMeasures object (for saved chart)
         if (typeof config.origMeasures == "object")
         {
@@ -137,7 +140,6 @@ LABKEY.vis.ChartEditorMeasurePanel = Ext.extend(Ext.FormPanel, {
 
         // combobox for choosing axis on left/right
         this.yAxisSide = new Ext.form.ComboBox({
-            id: 'y-axis-side',
             triggerAction: 'all',
             mode: 'local',
             store: new Ext.data.ArrayStore({
@@ -162,7 +164,6 @@ LABKEY.vis.ChartEditorMeasurePanel = Ext.extend(Ext.FormPanel, {
 
         //Measure date combo box.
         this.measureDateCombo = new Ext.form.ComboBox({
-            id: 'measure_date_combo',
             triggerAction: 'all',
             mode: 'local',
             store: new Ext.data.Store(),
@@ -497,6 +498,8 @@ LABKEY.vis.ChartEditorMeasurePanel = Ext.extend(Ext.FormPanel, {
 
     showMeasureSelectionWindow: function() {
         delete this.changeMeasureSelection;
+        this.measureSelectionBtnId = Ext.id();
+
         var win = new Ext.Window({
             cls: 'extContainer',
             title: 'Add Measure...',
@@ -518,7 +521,7 @@ LABKEY.vis.ChartEditorMeasurePanel = Ext.extend(Ext.FormPanel, {
                         // store the selected measure for later use
                         this.changeMeasureSelection = data;
 
-                        Ext.getCmp('measure-selection-button').setDisabled(false);
+                        Ext.getCmp(this.measureSelectionBtnId).setDisabled(false);
                     },
                     'measuresStoreLoaded': function (data) {
                         // store the measure store JSON object for later use
@@ -527,7 +530,7 @@ LABKEY.vis.ChartEditorMeasurePanel = Ext.extend(Ext.FormPanel, {
                 }
             }),
             buttons: [{
-                id: 'measure-selection-button',
+                id: this.measureSelectionBtnId,
                 text:'Select',
                 disabled:true,
                 handler: function(){
@@ -787,9 +790,9 @@ LABKEY.vis.ChartEditorMeasurePanel = Ext.extend(Ext.FormPanel, {
                    pnl.doLayout();
                 }, this);
 
-                Ext.getCmp('series-selector-tabpanel').add(this.measures[index].dimensionSelectorPanel);
-                Ext.getCmp('series-selector-tabpanel').activate(this.measures[index].dimensionSelectorPanel.getId());
-                Ext.getCmp('series-selector-tabpanel').doLayout();
+                Ext.getCmp(this.seriesSelectorTabPanelId).add(this.measures[index].dimensionSelectorPanel);
+                Ext.getCmp(this.seriesSelectorTabPanelId).activate(this.measures[index].dimensionSelectorPanel.getId());
+                Ext.getCmp(this.seriesSelectorTabPanelId).doLayout();
             },
             failure: function(info, response, options) {
                 LABKEY.Utils.displayAjaxErrorResponse(response, options);
@@ -883,7 +886,7 @@ LABKEY.vis.ChartEditorMeasurePanel = Ext.extend(Ext.FormPanel, {
         // if there was a different dimension selection, remove that list view from the series selector
         this.measures[this.getSelectedMeasureIndex()].dimensionSelectorPanel.destroy();
         delete this.measures[this.getSelectedMeasureIndex()].dimensionSelectorPanel;
-        Ext.getCmp('series-selector-tabpanel').doLayout();
+        Ext.getCmp(this.seriesSelectorTabPanelId).doLayout();
     },
 
     setDimensionAggregate: function(newAggregate){

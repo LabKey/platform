@@ -64,7 +64,6 @@ LABKEY.vis.GroupSelector = Ext.extend(Ext.Panel, {
         }, this, {buffer: 1000}); // buffer allows single event to fire if bulk changes are made within the given time (in ms)
 
         this.groupGridPanel = new Ext.grid.GridPanel({
-            id: 'group-list-view',
             autoHeight: true,
             viewConfig: {forceFit: true},
             border: false,
