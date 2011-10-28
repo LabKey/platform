@@ -340,6 +340,7 @@ LABKEY.Visualization = new function() {
             {
                 url : LABKEY.ActionURL.buildURL("visualization", "getVisualization"),
                 method : 'POST',
+                initialConfig: config,
                 success: successCallback,
                 failure: LABKEY.Utils.getCallbackWrapper(LABKEY.Utils.getOnFailure(config), config.scope, true),
                 jsonData : params,
@@ -361,17 +362,15 @@ LABKEY.Visualization = new function() {
          */
         getFromUrl : function(config)
         {
-            var params = {
-                success: LABKEY.Utils.getOnSuccess(config),
-                failure: LABKEY.Utils.getOnFailure(config)
-            };
+            var params = config || {};
+
+            params.success = LABKEY.Utils.getOnSuccess(config);
+            params.failure = LABKEY.Utils.getOnFailure(config);
 
             var urlParams = LABKEY.ActionURL.getParameters();
-            var reportId = urlParams['Dataset.reportId'];
             var valid = false;
-            if (reportId)
+            if (params.reportId)
             {
-                params.reportId = reportId;
                 valid = true;
             }
             else
