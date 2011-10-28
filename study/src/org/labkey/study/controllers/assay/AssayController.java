@@ -212,25 +212,13 @@ public class AssayController extends SpringActionController
         {
             Container c = getViewContext().getContainer();
             HashMap<ExpProtocol, AssayProvider> assayProtocols = new HashMap<ExpProtocol, AssayProvider>();
-            ExpProtocol[] protocols = ExperimentService.get().getExpProtocols(c);
+            List<ExpProtocol> protocols = AssayManager.get().getAssayProtocols(c);
             for (ExpProtocol protocol : protocols)
             {
                 AssayProvider provider = AssayService.get().getProvider(protocol);
                 if (provider != null && form.matches(protocol, provider))
                 {
                     assayProtocols.put(protocol, provider);
-                }
-            }
-            if (!c.isProject())
-            {
-                protocols = ExperimentService.get().getExpProtocols(c.getProject());
-                for (ExpProtocol protocol : protocols)
-                {
-                    AssayProvider provider = AssayService.get().getProvider(protocol);
-                    if (provider != null && form.matches(protocol, provider))
-                    {
-                        assayProtocols.put(protocol, provider);
-                    }
                 }
             }
 

@@ -45,7 +45,7 @@
 <table class="labkey-data-region">
 <tr>
     <td style="padding-left:0">
-        Please select a destination folder. Folders must be configured with a pipeline root to be valid destinations.
+        Folders must be configured with a pipeline root to be valid destinations.
         Those without pipeline roots are still shown in the list, but are not linked.
     </td>
 </tr>

@@ -164,36 +164,31 @@ public class AssayManager implements AssayService.Interface
 
     public List<ExpProtocol> getAssayProtocols(Container container)
     {
-        List<ExpProtocol> protocols = new ArrayList<ExpProtocol>();
-        ExpProtocol[] containerProtocols = ExperimentService.get().getExpProtocols(container);
-        addTopLevelProtocols(containerProtocols, protocols);
+        // Build up a set of containers so that we can query them all at once
+        Set<Container> containers = new HashSet<Container>();
+        containers.add(container);
+        containers.add(ContainerManager.getSharedContainer());
         Container project = container.getProject();
-        if (project != null && !container.equals(project))
+        if (project != null)
         {
-            ExpProtocol[] projectProtocols = ExperimentService.get().getExpProtocols(project);
-            addTopLevelProtocols(projectProtocols, protocols);
+            containers.add(project);
         }
-        Container sharedContainer = ContainerManager.getSharedContainer();
-        if (!container.equals(sharedContainer) && !sharedContainer.equals(project))
+        if (container.isWorkbook())
         {
-            ExpProtocol[] projectProtocols = ExperimentService.get().getExpProtocols(sharedContainer);
-            addTopLevelProtocols(projectProtocols, protocols);
+            containers.add(container.getParent());
         }
-        if (container.isWorkbook() && !container.getParent().equals(project))
-        {
-            ExpProtocol[] workbookParentProtocols = ExperimentService.get().getExpProtocols(container.getParent());
-            addTopLevelProtocols(workbookParentProtocols, protocols);
-        }
-        return protocols;
-    }
 
-    private void addTopLevelProtocols(ExpProtocol[] potential, List<ExpProtocol> returnList)
-    {
-        for (ExpProtocol protocol : potential)
+        ExpProtocol[] protocols = ExperimentService.get().getExpProtocols(containers.toArray(new Container[containers.size()]));
+        List<ExpProtocol> result = new ArrayList<ExpProtocol>();
+
+        // Filter to just the ones that have an AssayProvider associated with them
+        for (ExpProtocol protocol : protocols)
         {
             if (AssayService.get().getProvider(protocol) != null)
-                returnList.add(protocol);
+                result.add(protocol);
         }
+
+        return result;
     }
 
     public WebPartView createAssayListView(ViewContext context, boolean portalView)

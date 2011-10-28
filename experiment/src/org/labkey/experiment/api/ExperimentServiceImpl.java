@@ -3154,11 +3154,11 @@ public class ExperimentServiceImpl implements ExperimentService.Interface
         return ss;
     }
 
-    public ExpProtocol[] getExpProtocols(Container container)
+    public ExpProtocol[] getExpProtocols(Container... containers)
     {
         try
         {
-            SimpleFilter filter = new SimpleFilter("Container", container.getId());
+            SimpleFilter filter = new SimpleFilter(new SimpleFilter.InClause("Container", Arrays.asList(containers)));
             return ExpProtocolImpl.fromProtocols(Table.select(getTinfoProtocol(), Table.ALL_COLUMNS, filter, null, Protocol.class));
         }
         catch (SQLException x)

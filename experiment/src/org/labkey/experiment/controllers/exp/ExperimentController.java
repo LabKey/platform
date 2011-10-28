@@ -517,7 +517,7 @@ public class ExperimentController extends SpringActionController
                 ActionURL urlUploadSamples = new ActionURL(ShowUploadMaterialsAction.class, getViewContext().getContainer());
                 urlUploadSamples.addParameter("name", _source.getName());
                 urlUploadSamples.addParameter("importMoreSamples", "true");
-                ActionButton uploadButton = new ActionButton(urlUploadSamples.toString(), "Import More Samples", DataRegion.MODE_ALL, ActionButton.Action.LINK);
+                ActionButton uploadButton = new ActionButton(urlUploadSamples, "Import More Samples", DataRegion.MODE_ALL, ActionButton.Action.LINK);
                 uploadButton.setDisplayPermission(UpdatePermission.class);
                 detailsView.getDataRegion().getButtonBar(DataRegion.MODE_DETAILS).add(uploadButton);
             }
@@ -2115,7 +2115,7 @@ public class ExperimentController extends SpringActionController
 
         protected void deleteObjects(DeleteForm deleteForm) throws SQLException, ExperimentException, ServletException
         {
-            for (ExpRun run : getRuns(deleteForm))
+            for (ExpRun run : getRuns())
             {
                 if (!run.getContainer().hasPermission(getUser(), DeletePermission.class))
                 {
@@ -2132,15 +2132,16 @@ public class ExperimentController extends SpringActionController
         public ModelAndView getView(DeleteForm deleteForm, boolean reshow, BindException errors) throws Exception
         {
             List<ExpMaterial> materials = getMaterials(deleteForm, false);
-            List<ExpRun> runs = getRuns(deleteForm);
+            List<ExpRun> runs = getRuns();
             return new ConfirmDeleteView("Sample", "showMaterial", materials, deleteForm, runs);
         }
 
-        private List<ExpRun> getRuns(DeleteForm deleteForm)
+        private List<ExpRun> getRuns()
                 throws SQLException
         {
-            ExpRun[] runs = ExperimentService.get().getRunsUsingMaterials(deleteForm.getIds(false));
-            return ExperimentService.get().runsDeletedWithInput(runs);
+            // We don't actually delete runs that use the materials - we just disconnect the material from the run
+            // In some cases (such as flow) this is required. In others, it's not as sensible
+            return Collections.emptyList();
         }
 
         private List<ExpMaterial> getMaterials(DeleteForm deleteForm, boolean clear)
@@ -4061,7 +4062,10 @@ public class ExperimentController extends SpringActionController
             ct.setInitialLevel(1);
 
             MoveRunsBean bean = new MoveRunsBean(ct, form.getDataRegionSelectionKey());
-            return new JspView<MoveRunsBean>("/org/labkey/experiment/moveRunsLocation.jsp", bean);
+            JspView<MoveRunsBean> result = new JspView<MoveRunsBean>("/org/labkey/experiment/moveRunsLocation.jsp", bean);
+            result.setTitle("Choose Destination Folder");
+            result.setFrame(WebPartView.FrameType.PORTAL);
+            return result;
         }
 
         public NavTree appendNavTrail(NavTree root)
@@ -4100,7 +4104,7 @@ public class ExperimentController extends SpringActionController
                         runs.add(run);
                     }
                 }
-                catch (NumberFormatException e) {}
+                catch (NumberFormatException ignored) {}
             }
 
             ViewBackgroundInfo info = getViewBackgroundInfo();
