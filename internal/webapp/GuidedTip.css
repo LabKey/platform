@@ -1,0 +1,41 @@
+.g-tip-label span
+{
+    border-bottom: 1px dotted #808080;
+}
+
+.g-tip-label span:hover
+{
+    cursor: pointer;
+}
+
+g-tip-mc
+{
+    border: 3px solid #E7EFF4;
+}
+
+.g-tip-body
+{
+    border: 4px solid #E7EFF4;
+    border-radius: 3px;
+    background-color: white;
+    padding: 20px;
+}
+
+/* Styling for contents of gtip */
+
+.g-tip-header
+{
+    font-size: 14px;
+    font-weight: bold;
+    padding-bottom: 5px;
+}
+
+.g-tip-subheader
+{
+    padding-bottom: 12px;
+}
+
+.g-tip-subheader span
+{
+    font-weight: bold;
+}

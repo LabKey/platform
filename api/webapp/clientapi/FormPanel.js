@@ -957,49 +957,56 @@ LABKEY.ext.ComboBox = Ext.extend(Ext.form.ComboBox, {
     }
 });
 
-
-Ext.override(Ext.layout.FormLayout,
-{
-    fieldTpl: (function()
-    {
+/**
+ * The following overwrite allows tooltips on labels within form layouts.
+ * The field have to be a property named "gtip" in the corresponding
+ * config object.
+ */
+Ext.override(Ext.layout.FormLayout, {
+    setContainer: Ext.layout.FormLayout.prototype.setContainer.createSequence(function(ct) {
+        // the default field template used by all form layouts
         var t = new Ext.Template(
-                '<div class="x-form-item {itemCls}" tabIndex="-1">',
-                '<label for="{id}" style="{labelStyle}" class="x-form-item-label" {labelAttrs}>{label}{labelSeparator}{helpPopup}</label>',
-                '<div class="x-form-element" id="x-form-el-{id}" style="{elementStyle}" {fieldAttrs}>',
-                '</div><div class="{clearCls}"></div>',
-                '</div>'
-                );
+            '<div class="x-form-item {5}" tabIndex="-1">',
+                '<label for="{0}" style="{2}" class="x-form-item-label {8}"><span class="{9}"{7}>{1}{4}</span></label>',
+                '<div class="x-form-element" id="x-form-el-{0}" style="{3}">',
+                '</div><div class="{6}"></div>',
+            '</div>'
+        );
         t.disableFormats = true;
-        return t.compile();
-    })(),
+        t.compile();
+        Ext.layout.FormLayout.prototype.fieldTpl = t;
+    }),
 
-    _origGetTemplateArgs : Ext.layout.FormLayout.prototype.getTemplateArgs,
-
-    _toQtip : function(o)
-    {
-        if (typeof o == 'string')
-            o = {html: o};
-        if (!o || !o.html) return false;
-        var qtip = 'ext:qtip="' + o.html + '"';
-        if ('title' in o && o.title)
-            qtip += ' ext:qtitle="' + Ext.util.Format.htmlEncode(o.title) + '"';
-        return qtip;
-    },
-    
-    getTemplateArgs: function(field)
-    {
-        var args = this._origGetTemplateArgs(field);
-        var noLabelSep = !field.fieldLabel || field.hideLabel;
-        var qtipPopup = this._toQtip(field.helpPopup);
-        var qtipField = this._toQtip(field.qtip || field.helpPopup);
-        
-        return Ext.apply(args, {
-            labelAttrs    : '',
-            helpPopup     : (noLabelSep || !qtipPopup) ? '' : '<a href="#"><span class="labkey-help-pop-up" ' + qtipPopup + '>?</span></a>',
-            fieldAttrs    : '' // !qtipField ? '' : qtipField // doesn't work right (tip works over <div>, but not over <input>
-        });
+    renderItem: function(c, position, target){
+        if(c && !c.rendered && c.isFormField && c.inputType != 'hidden'){
+            var args = [
+                c.id, c.fieldLabel,
+                c.labelStyle||this.labelStyle||'',
+                this.elementStyle||'',
+                typeof c.labelSeparator == 'undefined' ? this.labelSeparator : c.labelSeparator,
+                (c.itemCls||this.container.itemCls||'') + (c.hideLabel ? ' x-hide-label' : ''),
+                c.clearCls || 'x-form-clear-left',
+                (c.gtip === undefined ? '' : ' ext:gtip="'+c.gtip+'"'),
+                (c.gtip === undefined ? '' : 'g-tip-label'),
+                ''
+            ];
+            if(typeof position == 'number'){
+                position = target.dom.childNodes[position] || null;
+            }
+            if(position){
+                this.fieldTpl.insertBefore(position, args);
+            }else{
+                this.fieldTpl.append(target, args);
+            }
+            c.render('x-form-el-'+c.id);
+        }else {
+            Ext.layout.FormLayout.superclass.renderItem.apply(this, arguments);
+        }
     }
 });
+
+LABKEY.requiresCss('GuidedTip.css', true);
+LABKEY.requiresScript('GuidedTip.js', true);
 
 
 //Ext.reg('datepicker', LABKEY.ext.DatePicker);
