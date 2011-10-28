@@ -71,6 +71,7 @@ import org.labkey.study.writer.VisitMapWriter;
 import org.labkey.study.xml.StudyDocument;
 import org.springframework.validation.BindException;
 import org.springframework.validation.Errors;
+import org.springframework.validation.ObjectError;
 
 import java.io.BufferedInputStream;
 import java.io.ByteArrayInputStream;
@@ -350,6 +351,21 @@ public class CreateAncillaryStudyAction extends MutatingApiAction<EmphasisStudyD
 
         if (_sourceStudy == null)
             errors.reject(SpringActionController.ERROR_MSG, "Unable to locate the parent study from location : " + form.getSrcPath());
+
+        // work around for IE bug (13242), in ext 3.4 posting using a basic form will not call the failure handler if the status code is 400
+        if (errors.hasErrors())
+        {
+            StringBuilder sb = new StringBuilder();
+            String delim = "";
+            for (Object error : errors.getAllErrors())
+            {
+                sb.append(delim);
+                sb.append(((ObjectError)error).getDefaultMessage());
+
+                delim = "\n";
+            }
+            throw new RuntimeException(sb.toString());
+        }
     }
 
     private StudyImpl createNewStudy(EmphasisStudyDefinition form) throws SQLException
