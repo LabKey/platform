@@ -82,6 +82,7 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.Date;
 import java.util.Enumeration;
@@ -89,6 +90,7 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.LinkedHashSet;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -104,6 +106,16 @@ public class SecurityManager
     private static final Logger _log = Logger.getLogger(SecurityManager.class);
     private static final CoreSchema core = CoreSchema.getInstance();
     private static final List<ViewFactory> _viewFactories = new ArrayList<ViewFactory>();
+
+    static final String NULL_GROUP_ERROR_MESSAGE = "Null group not allowed";
+    static final String NULL_PRINCIPAL_ERROR_MESSAGE = "Null principal not allowed";
+    static final String ALREADY_A_MEMBER_ERROR_MESSAGE = "Principal is already a member of this group";
+    static final String ADD_GROUP_TO_ITSELF_ERROR_MESSAGE = "Can't add a group to itself";
+    static final String ADD_TO_SYSTEM_GROUP_ERROR_MESSAGE = "Can't add a group to a system group";
+    static final String ADD_SYSTEM_GROUP_ERROR_MESSAGE = "Can't add a system group to another group";
+    static final String DIFFERENT_PROJECTS_ERROR_MESSAGE =  "Can't add a project group to a group in a different project";
+    static final String PROJECT_TO_SITE_ERROR_MESSAGE =  "Can't add a project group to a site group";
+    static final String CIRCULAR_GROUP_ERROR_MESSAGE = "Can't add a group that results in a circular group relation";
 
     public static final String TERMS_OF_USE_WIKI_NAME = "_termsOfUse";
 
@@ -1204,69 +1216,17 @@ public class SecurityManager
         fireDeletePrincipalFromGroup(groupId, principal);
     }
 
-    public static void addMembers(Group group, List<User> usersToAdd) throws SQLException
+    public static void addMembers(Group group, Collection<? extends UserPrincipal> principals)
     {
-        addMembers(group, Collections.<Group>emptyList(), usersToAdd);
-    }
-
-    public static void addMembers(Group group, List<Group> groupsToAdd, List<User> usersToAdd) throws SQLException
-    {
-        int groupId = group.getUserId();
-        StringBuilder addString = new StringBuilder();
-        String comma = "";
-
-        if (usersToAdd != null && !usersToAdd.isEmpty())
+        for (UserPrincipal principal : principals)
         {
-            for (User u : usersToAdd)
+            try
             {
-                // check that each user to be added is valid for this group
-                String errorMessage = getAddMemberError(group, u);
-                if (null != errorMessage)
-                    throw new IllegalStateException(errorMessage);
-
-                addString.append(comma);
-                addString.append(u.getUserId());
-                comma = ", ";
+                addMember(group, principal);
             }
-        }
-
-        if (groupsToAdd != null && !groupsToAdd.isEmpty())
-        {
-            for (Group g : groupsToAdd)
+            catch (IllegalStateException e)
             {
-                // check that each member group to be added is valid for this group
-                String errorMessage = getAddMemberError(group, g);
-                if (null != errorMessage)
-                    throw new IllegalStateException(errorMessage);
-
-                addString.append(comma);
-                addString.append(g.getUserId());
-                comma = ", ";
-            }
-        }
-
-        if (addString.length() > 0)
-        {
-            Table.execute(
-                    core.getSchema(),
-                    "INSERT INTO " + core.getTableInfoMembers() +
-                            "\nSELECT UserId, ?\n" +
-                            "FROM " + core.getTableInfoPrincipals() +
-                            "\nWHERE UserId IN (" + addString.toString() + ") AND UserId NOT IN\n" +
-                            "  (SELECT _Members.UserId FROM " + core.getTableInfoMembers() + " _Members JOIN " + core.getTableInfoPrincipals() + " _Principals ON _Members.UserId = _Principals.UserId\n" +
-                            "   WHERE GroupId = ?)",
-                    groupId, groupId);
-
-            if (usersToAdd != null && !usersToAdd.isEmpty())
-            {
-                for (User u : usersToAdd)
-                    fireAddPrincipalToGroup(group, u);
-            }
-
-            if (groupsToAdd != null && !groupsToAdd.isEmpty())
-            {
-                for (Group g : groupsToAdd)
-                    fireAddPrincipalToGroup(group, g);
+                _log.error("Error adding principal to a group", e);
             }
         }
     }
@@ -1285,6 +1245,42 @@ public class SecurityManager
 
         executor.execute();
         fireAddPrincipalToGroup(group, principal);
+
+        // If we added a group then check for circular relationship... we check this above, but it's possible that
+        // another thread concurrently made a change that introduced a cycle.
+        if (principal instanceof Group && hasCycle(group))
+        {
+            deleteMember(group, principal);
+            throw new IllegalStateException(CIRCULAR_GROUP_ERROR_MESSAGE);
+        }
+    }
+
+
+    // True if current group relationships cycle through root. Does NOT detect all cycles in the group graph nor even
+    // in the subgraph represented by root, just the ones that that link back to root itself.
+    private static boolean hasCycle(Group root)
+    {
+        HashSet<Integer> groupSet = new HashSet<Integer>();
+        LinkedList<Integer> recurse = new LinkedList<Integer>();
+        recurse.add(root.getUserId());
+
+        while (!recurse.isEmpty())
+        {
+            int id = recurse.removeFirst();
+            groupSet.add(id);
+            int[] groups = GroupMembershipCache.getGroupsForPrincipal(id);
+
+            for (int g : groups)
+            {
+                if (g == root.getUserId())
+                    return true;
+
+                if (!groupSet.contains(g))
+                    recurse.addLast(g);
+            }
+        }
+
+        return false;
     }
 
 
@@ -1292,50 +1288,50 @@ public class SecurityManager
     public static String getAddMemberError(Group group, UserPrincipal principal)
     {
         if (null == group)
-            return "Null group not allowed";
+            return NULL_GROUP_ERROR_MESSAGE;
 
         if (null == principal)
-            return "Null principal not allowed";
+            return NULL_PRINCIPAL_ERROR_MESSAGE;
+
+        if (group.isGuests() || group.isUsers())
+            return "Can't add a member to the " + group.getName() + " group";
 
         Set<UserPrincipal> members = getGroupMembers(group, GroupMemberType.Both);
 
         if (members.contains(principal))
-            return "Principal is already a member of this group";
+            return ALREADY_A_MEMBER_ERROR_MESSAGE;
 
         // End of checks for a user
         if (principal instanceof User)
             return null;
 
-        // Principal is a Group, so do some additional validation checks
+        // We're adding a group, so do some additional validation checks
 
         Group newMember = (Group)principal;
 
         if (group.equals(newMember))
-            return "Can't add a group to itself";
+            return ADD_GROUP_TO_ITSELF_ERROR_MESSAGE;
 
         if (group.isSystemGroup())
-            return "Can't add groups to a sytem group";
-
-        for (int id : group.getGroups())
-            if (newMember.getUserId() == id)
-                return "Can't add a group that results in a circular group relation";
+            return ADD_TO_SYSTEM_GROUP_ERROR_MESSAGE;
 
         if (newMember.isSystemGroup())
-            return "Can't add a system group to another group";
+            return ADD_SYSTEM_GROUP_ERROR_MESSAGE;
 
         if (group.isProjectGroup())
         {
-            if (!newMember.isProjectGroup())
-                return "Can't add a site group to a project group";
-
-            if (!group.getContainer().equals(newMember.getContainer()))
-                return "Can't add a project group to a group in a different project";
+            if (newMember.isProjectGroup() && !group.getContainer().equals(newMember.getContainer()))
+                return DIFFERENT_PROJECTS_ERROR_MESSAGE;
         }
         else
         {
             if (newMember.isProjectGroup())
-                return "Can't add a project group to a site group";
+                return PROJECT_TO_SITE_ERROR_MESSAGE;
         }
+
+        for (int id : group.getGroups())
+            if (newMember.getUserId() == id)
+                return CIRCULAR_GROUP_ERROR_MESSAGE;
 
         return null;
     }
@@ -1392,7 +1388,7 @@ public class SecurityManager
     {
         Integer id = getGroupId(container, name, false);
         if(null != id)
-            return getGroup(id.intValue());
+            return getGroup(id);
         else
         {
             try

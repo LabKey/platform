@@ -16,15 +16,18 @@
 package org.labkey.api.security;
 
 import org.apache.commons.lang.ArrayUtils;
+import org.jetbrains.annotations.Nullable;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 import org.labkey.api.data.Container;
+import org.labkey.api.data.ContainerManager;
 import org.labkey.api.util.JunitUtil;
 import org.labkey.api.util.TestContext;
 
 import java.sql.SQLException;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashSet;
 import java.util.Set;
 
@@ -39,16 +42,15 @@ public class NestedGroupsTest extends Assert
     private static final String DIV_A = "Division A";
     private static final String DIV_B = "Division B";
     private static final String DIV_C = "Division C";
-    private static final String DEVELOPERS = "Developers";
+    private static final String CODERS = "Coders";
     private static final String TESTERS = "Testers";
     private static final String WRITERS = "Writers";
     private static final String PROJECT_X = "Project X";
+    private static final String SITE_GROUP = "TestSiteGroup";
 
-    private static final String ADDING_GROUP_TO_ITSELF_MESSAGE = "Can't add a group to itself";
-    private static final String ALREADY_A_MEMBER_MESSAGE = "Principal is already a member of this group";
-    private static final String CIRCULAR_MESSAGE = "Can't add a group that results in a circular group relation";
-
-    private static final String[] GROUP_NAMES = new String[] {ALL, DIV_A, DIV_B, DIV_C, DEVELOPERS, TESTERS, WRITERS, PROJECT_X};
+    private static final String ADD_TO_GUESTS = "Can't add a member to the Guests group";
+    private static final String ADD_TO_USERS = "Can't add a member to the Users group";
+    private static final String[] GROUP_NAMES = new String[] {ALL, DIV_A, DIV_B, DIV_C, CODERS, TESTERS, WRITERS, PROJECT_X};
 
     private Container _project;
 
@@ -64,11 +66,16 @@ public class NestedGroupsTest extends Assert
     {
         User user = TestContext.get().getUser();
 
+        // Grab the first group (if there is one) in the home project
+        Container home = ContainerManager.getHomeContainer();
+        Group[] homeGroups = SecurityManager.getGroups(home, false);
+        @Nullable Group homeGroup = homeGroups.length > 0 ? homeGroups[0] : null;
+
         Group all = create(ALL);
         Group divA = create(DIV_A);
         Group divB = create(DIV_B);
         Group divC = create(DIV_C);
-        Group developers = create(DEVELOPERS);
+        Group coders = create(CODERS);
         Group testers = create(TESTERS);
         Group writers = create(WRITERS);
         Group projectX = create(PROJECT_X);
@@ -76,36 +83,71 @@ public class NestedGroupsTest extends Assert
         addMember(all, divA);
         addMember(all, divB);
         addMember(all, divC);
-        addMember(all, developers);
+        addMember(all, coders);
         addMember(all, testers);
         addMember(all, writers);
 
-        addMember(developers, user);
+        addMember(coders, user);
         addMember(divA, user);
         addMember(divA, projectX);
         addMember(projectX, user);
 
-        expected(all, divA, divB, divC, developers, testers, writers);
+        expected(all, divA, divB, divC, coders, testers, writers);
 
         int[] groups = GroupMembershipCache.getGroupsForPrincipal(user.getUserId());
-        expected(groups, projectX, developers, divA);
+        expected(groups, projectX, coders, divA);
         notExpected(groups, user, all, divB, divC, testers, writers);
 
         int[] allGroups = GroupManager.getAllGroupsForPrincipal(user);
-        expected(allGroups, projectX, developers, divA, user, all);
+        expected(allGroups, projectX, coders, divA, user, all);
         notExpected(allGroups, divB, divC, testers, writers);
 
-        failAddMember(testers, testers, ADDING_GROUP_TO_ITSELF_MESSAGE);
-
-        failAddMember(developers, user, ALREADY_A_MEMBER_MESSAGE);
-        failAddMember(all, divA, ALREADY_A_MEMBER_MESSAGE);
-        failAddMember(divA, user, ALREADY_A_MEMBER_MESSAGE);
-
-        failAddMember(divA, all, CIRCULAR_MESSAGE);
-        failAddMember(projectX, all, CIRCULAR_MESSAGE);
-        failAddMember(projectX, divA, CIRCULAR_MESSAGE);
-
         // TODO: Create another group, add directly to "all", add user to new group, validate
+        // TODO: Check permissions
+
+        Group administrators = SecurityManager.getGroup(Group.groupAdministrators);
+        Group developers = SecurityManager.getGroup(Group.groupDevelopers);
+        Group users = SecurityManager.getGroup(Group.groupUsers);
+        Group guests = SecurityManager.getGroup(Group.groupGuests);
+
+        failAddMember(null, user, SecurityManager.NULL_GROUP_ERROR_MESSAGE);
+        failAddMember(projectX, null, SecurityManager.NULL_PRINCIPAL_ERROR_MESSAGE);
+
+        failAddMember(testers, testers, SecurityManager.ADD_GROUP_TO_ITSELF_ERROR_MESSAGE);
+        failAddMember(administrators, administrators, SecurityManager.ADD_GROUP_TO_ITSELF_ERROR_MESSAGE);
+        failAddMember(developers, developers, SecurityManager.ADD_GROUP_TO_ITSELF_ERROR_MESSAGE);
+
+        failAddMember(coders, user, SecurityManager.ALREADY_A_MEMBER_ERROR_MESSAGE);
+        failAddMember(all, divA, SecurityManager.ALREADY_A_MEMBER_ERROR_MESSAGE);
+        failAddMember(divA, user, SecurityManager.ALREADY_A_MEMBER_ERROR_MESSAGE);
+
+        failAddMember(divA, all, SecurityManager.CIRCULAR_GROUP_ERROR_MESSAGE);
+        failAddMember(projectX, all, SecurityManager.CIRCULAR_GROUP_ERROR_MESSAGE);
+        failAddMember(projectX, divA, SecurityManager.CIRCULAR_GROUP_ERROR_MESSAGE);
+
+        failAddMember(guests, user, ADD_TO_GUESTS);
+        failAddMember(guests, projectX, ADD_TO_GUESTS);
+        failAddMember(guests, users, ADD_TO_GUESTS);
+        failAddMember(users, user, ADD_TO_USERS);
+        failAddMember(users, projectX, ADD_TO_USERS);
+        failAddMember(users, guests, ADD_TO_USERS);
+
+        failAddMember(administrators, projectX, SecurityManager.ADD_TO_SYSTEM_GROUP_ERROR_MESSAGE);
+        failAddMember(developers, projectX, SecurityManager.ADD_TO_SYSTEM_GROUP_ERROR_MESSAGE);
+        failAddMember(administrators, guests, SecurityManager.ADD_TO_SYSTEM_GROUP_ERROR_MESSAGE);
+        failAddMember(developers, users, SecurityManager.ADD_TO_SYSTEM_GROUP_ERROR_MESSAGE);
+
+        failAddMember(projectX, administrators, SecurityManager.ADD_SYSTEM_GROUP_ERROR_MESSAGE);
+        failAddMember(projectX, developers, SecurityManager.ADD_SYSTEM_GROUP_ERROR_MESSAGE);
+        failAddMember(projectX, users, SecurityManager.ADD_SYSTEM_GROUP_ERROR_MESSAGE);
+        failAddMember(projectX, guests, SecurityManager.ADD_SYSTEM_GROUP_ERROR_MESSAGE);
+
+        if (null != homeGroup)
+            failAddMember(projectX, homeGroup, SecurityManager.DIFFERENT_PROJECTS_ERROR_MESSAGE);
+
+        Group siteGroup = SecurityManager.createGroup(ContainerManager.getRoot(), SITE_GROUP);
+        assertTrue(!siteGroup.isProjectGroup());
+        addMember(projectX, siteGroup);
     }
 
     private Group create(String name)
@@ -119,10 +161,9 @@ public class NestedGroupsTest extends Assert
     }
 
     // Adding this principal should fail
-    private void failAddMember(Group group, UserPrincipal principal, String expectedMessage) throws SQLException
+    private void failAddMember(@Nullable Group group, @Nullable UserPrincipal principal, String expectedMessage) throws SQLException
     {
-        // Does the principal already exist in this group?  We'll use this to verify no change below.
-        boolean isMember = SecurityManager.getGroupMembers(group, SecurityManager.GroupMemberType.Both).contains(principal);
+        Set<UserPrincipal> members = getMembers(group);
 
         try
         {
@@ -134,11 +175,13 @@ public class NestedGroupsTest extends Assert
             assertEquals(expectedMessage, e.getMessage());
         }
 
-        // We expect no change in membership
-        if (isMember)
-            expected(group, principal);
-        else
-            notExpected(group, principal);
+        // Membership should not have changed
+        assertEquals(members, getMembers(group));
+    }
+
+    private Set<UserPrincipal> getMembers(@Nullable Group group)
+    {
+        return null != group ? SecurityManager.getGroupMembers(group, SecurityManager.GroupMemberType.Both) : Collections.<UserPrincipal>emptySet();
     }
 
     private void expected(int[] actualIds, UserPrincipal... expectedMembers)
@@ -200,5 +243,10 @@ public class NestedGroupsTest extends Assert
             if (null != groupId)
                 SecurityManager.deleteGroup(groupId);
         }
+
+        Integer groupId = SecurityManager.getGroupId(ContainerManager.getRoot(), SITE_GROUP, false);
+
+        if (null != groupId)
+            SecurityManager.deleteGroup(groupId);
     }
 }

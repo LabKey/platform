@@ -33,8 +33,7 @@ import org.labkey.api.view.ViewContext;
 
 import java.beans.PropertyChangeEvent;
 import java.sql.SQLException;
-import java.util.ArrayList;
-import java.util.List;
+import java.util.Set;
 
 /**
  * User: adam
@@ -252,32 +251,9 @@ public class GroupManager
             return g;
         }
 
-        Group newGroup = new Group();
-        try {
-            List<User> members = SecurityManager.getGroupMembers(g);
-            List<User> newMembers = new ArrayList<User>();
-            for(UserPrincipal member : members){
-                if(member instanceof Group){
-                    //TODO: groups in groups needs to be implemented first.
-                    throw new UnsupportedOperationException();
-                    // Presumably getGroupMembers() will now return UserPrincipals instead of Users?
-                    //newMembers.add(GroupManager.copyGroupToContainer(member, c));
-                }
-                else {
-                    newMembers.add((User)member);
-                }
-            }
-
-            newGroup = SecurityManager.createGroup(c, g.getName());
-            SecurityManager.addMembers(newGroup, newMembers);
-            return newGroup;
-        }
-        catch (ValidEmail.InvalidEmailException e) {
-            //
-        }
-        catch (java.sql.SQLException e) {
-            //
-        }
+        Set<UserPrincipal> members = SecurityManager.getGroupMembers(g, SecurityManager.GroupMemberType.Both);
+        Group newGroup = SecurityManager.createGroup(c, g.getName());
+        SecurityManager.addMembers(newGroup, members);
 
         return newGroup;
     }
