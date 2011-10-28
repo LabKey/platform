@@ -738,18 +738,8 @@ public class SecurityController extends SpringActionController
                         }
                     }
 
-                    try
-                    {
-                        SecurityManager.addMembers(_group, addGroups, addUsers);
-                    }
-                    catch (SQLException e)
-                    {
-                        errors.addError(new LabkeyError("A failure occurred adding members to the group: " + e.getMessage()));
-                    }
-                    catch (IllegalStateException e)
-                    {
-                        errors.addError(new LabkeyError("A failure occurred adding members to the group: " + e.getMessage()));
-                    }
+                    SecurityManager.addMembers(_group, addGroups);
+                    SecurityManager.addMembers(_group, addUsers);
                 }
             }
 
@@ -1596,16 +1586,16 @@ public class SecurityController extends SpringActionController
             assertTrue(site.isAdministrator());
 
             User guest = SecurityManager.addUser(new ValidEmail("guest@scjutc.com")).getUser();
-            Group guestsGroup = SecurityManager.getGroup(Group.groupGuests);
-            SecurityManager.addMember(guestsGroup, guest);
+//            Group guestsGroup = SecurityManager.getGroup(Group.groupGuests);
+//            SecurityManager.addMember(guestsGroup, guest);
 
             User user = SecurityManager.addUser(new ValidEmail("user@scjutc.com")).getUser();
-            Group usersGroup = SecurityManager.getGroup(Group.groupUsers);
-            SecurityManager.addMember(usersGroup, user);
+//            Group usersGroup = SecurityManager.getGroup(Group.groupUsers);
+//            SecurityManager.addMember(usersGroup, user);
 
             User admin = SecurityManager.addUser(new ValidEmail("admin@scjutc.com")).getUser();
-            SecurityManager.addMember(usersGroup, admin);
-            SecurityManager.addMember(guestsGroup, admin);
+//            SecurityManager.addMember(usersGroup, admin);
+//            SecurityManager.addMember(guestsGroup, admin);
 
             MutableSecurityPolicy policy = new MutableSecurityPolicy(c, c.getPolicy());
             policy.addRoleAssignment(admin, RoleManager.getRole(SiteAdminRole.class));
