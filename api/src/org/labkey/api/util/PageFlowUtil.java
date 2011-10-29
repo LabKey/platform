@@ -119,6 +119,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.StringTokenizer;
+import java.util.concurrent.TimeUnit;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.zip.DeflaterOutputStream;
@@ -938,6 +939,69 @@ public class PageFlowUtil
         mv.getView().render(mv.getModel(), request, sresponse);
         String sheet = writer.toString();
         return new Content(sheet);
+    }
+
+
+    public static void sendContent(HttpServletRequest request, HttpServletResponse response, Content content, String contentType) throws IOException
+    {
+        // TODO content.getContentType()
+        response.setContentType(contentType);
+        response.setDateHeader("Expires", HeartBeat.currentTimeMillis() + TimeUnit.DAYS.toMillis(35));
+        response.setHeader("Cache-Control", "private");
+        response.setHeader("Pragma", "cache");
+        response.setDateHeader("Last-Modified", content.modified);
+
+        if (!checkIfModifiedSince(request, content.modified))
+        {
+            response.setStatus(HttpServletResponse.SC_NOT_MODIFIED);
+            return;
+        }
+
+        if (StringUtils.trimToEmpty(request.getHeader("Accept-Encoding")).contains("gzip") && null != content.compressed)
+        {
+            response.setHeader("Content-Encoding", "gzip");
+            response.getOutputStream().write(content.compressed);
+        }
+        else
+        {
+            response.getOutputStream().write(content.encoded);
+        }
+    }
+
+
+    /**
+     * TODO: This code needs to be shared with DavController.checkModifiedSince
+     *
+     * CONSIDER: implementing these actions directly via WebdavResolver using something
+     * like the SymbolicLink class.
+     *
+     * ref 10499
+     */
+    private static boolean checkIfModifiedSince(HttpServletRequest request, long lastModified)
+    {
+        try
+        {
+            long headerValue = request.getDateHeader("If-Modified-Since");
+            if (headerValue != -1)
+            {
+                // If an If-None-Match header has been specified, if modified since
+                // is ignored.
+                if ((request.getHeader("If-None-Match") == null))
+                {
+                    if (lastModified < headerValue + 1000)
+                    {
+                    // The entity has not been modified since the date
+                    // specified by the client. This is not an error case.
+                    return false;
+                    }
+                }
+            }
+        }
+        catch (IllegalArgumentException illegalArgument)
+        {
+            return true;
+        }
+        return true;
     }
 
 
