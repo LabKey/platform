@@ -28,7 +28,8 @@ public class WikiTOCFactory extends BaseWebPartFactory
 {
     public WikiTOCFactory()
     {
-        super("Wiki TOC", WebPartFactory.LOCATION_RIGHT, true, false);
+        super("Wiki Table of Contents", WebPartFactory.LOCATION_RIGHT, true, false);
+        addLegacyNames("Wiki TOC");
     }
 
     public WebPartView getWebPartView(ViewContext portalCtx, Portal.WebPart webPart) throws IllegalAccessException, InvocationTargetException

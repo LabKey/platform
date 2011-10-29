@@ -34,7 +34,7 @@
 <table>
     <tr>
         <td>
-        Enter the title for the Wiki TOC web part.
+        Enter the title for the Wiki Table of Contents web part.
         </td>
         <td>
         <input name="title" type="text" value="<%=title == null ? "Pages" : h(title) %>">

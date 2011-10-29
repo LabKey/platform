@@ -26,6 +26,7 @@ import org.labkey.api.action.CustomApiForm;
 import org.labkey.api.action.ExportAction;
 import org.labkey.api.action.FormViewAction;
 import org.labkey.api.action.HasViewContext;
+import org.labkey.api.action.RedirectAction;
 import org.labkey.api.action.ReturnUrlForm;
 import org.labkey.api.action.SimpleViewAction;
 import org.labkey.api.action.SpringActionController;
@@ -138,13 +139,18 @@ public class ProjectController extends SpringActionController
             return url;
         }
 
-        public ActionURL getDeleteWebPartURL(Container c, Portal.WebPart webPart, ActionURL returnURL)
+        public ActionURL getDeleteWebPartURL(Container c, String pageId, int index, ActionURL returnURL)
         {
             ActionURL url = new ActionURL(DeleteWebPartAction.class, c);
-            url.addParameter("pageId", webPart.getPageId());
-            url.addParameter("index", String.valueOf(webPart.getIndex()));
+            url.addParameter("pageId", pageId);
+            url.addParameter("index", index);
             url.addReturnURL(returnURL);
             return url;
+        }
+
+        public ActionURL getDeleteWebPartURL(Container c, Portal.WebPart webPart, ActionURL returnURL)
+        {
+            return getDeleteWebPartURL(c, webPart.getPageId(), webPart.getIndex(), returnURL);
         }
 
         public ActionURL getExpandCollapseURL(Container c, String path, String treeId)
@@ -163,6 +169,14 @@ public class ProjectController extends SpringActionController
             url.addParameter("path", path);
 
             return url;
+        }
+
+        @Override
+        public ActionURL getResetDefaultTabsURL(Container c, ActionURL returnURL)
+        {
+            ActionURL result = new ActionURL(ResetDefaultTabsAction.class, c);
+            result.addReturnURL(returnURL);
+            return result;
         }
     }
 
@@ -235,6 +249,32 @@ public class ProjectController extends SpringActionController
         }
     }
 
+    @RequiresPermissionClass(AdminPermission.class)
+    public class ResetDefaultTabsAction extends org.labkey.api.action.RedirectAction<ReturnUrlForm>
+    {
+        @Override
+        public URLHelper getSuccessURL(ReturnUrlForm returnUrlForm)
+        {
+            return returnUrlForm.getReturnActionURL(getContainer().getStartURL(getUser()));
+        }
+
+        @Override
+        public boolean doAction(ReturnUrlForm returnUrlForm, BindException errors) throws Exception
+        {
+            FolderType folderType = getContainer().getFolderType();
+            if (folderType.hasConfigurableTabs())
+            {
+                folderType.resetDefaultTabs(getContainer());
+            }
+            return true;
+        }
+
+        @Override
+        public void validateCommand(ReturnUrlForm target, Errors errors)
+        {
+            
+        }
+    }
 
     @RequiresPermissionClass(ReadPermission.class)
     public class BeginAction extends SimpleViewAction<PageForm>

@@ -60,7 +60,7 @@ public class PortalJUnitTest extends Assert
         assertNotNull(wikiFactory);
         WebPartFactory searchFactory = Portal.getPortalPart("Search");
         assertNotNull(searchFactory);
-        WebPartFactory pagesFactory = Portal.getPortalPart("Wiki TOC");
+        WebPartFactory pagesFactory = Portal.getPortalPart("Wiki Table of Contents");
         assertNotNull(pagesFactory);
 
         Portal.addPart(folder, wikiFactory, "body");
@@ -78,7 +78,7 @@ public class PortalJUnitTest extends Assert
 
         Portal.WebPart[] rightParts = locMap.get(WebPartFactory.LOCATION_RIGHT).toArray(new Portal.WebPart[locMap.get(WebPartFactory.LOCATION_RIGHT).size()]);
         assertEquals(1, rightParts.length);
-        assertEquals("Wiki TOC", rightParts[0].getName());
+        assertEquals("Wiki Table of Contents", rightParts[0].getName());
 
 
         //Delete a part
@@ -96,7 +96,7 @@ public class PortalJUnitTest extends Assert
 
         rightParts = locMap.get(WebPartFactory.LOCATION_RIGHT).toArray(new Portal.WebPart[locMap.get(WebPartFactory.LOCATION_RIGHT).size()]);
         assertEquals(rightParts.length, 1);
-        assertEquals(rightParts[0].getName(), "Wiki TOC");
+        assertEquals(rightParts[0].getName(), "Wiki Table of Contents");
 
         ///Now add it back at a specific position
         Portal.addPart(folder, searchFactory, "body", 0);
