@@ -121,11 +121,11 @@
                 items: [{
                     html: '<li><a href="'+LABKEY.ActionURL.buildURL('admin', 'projectSettings.view') + '" target="_blank">Properties</a></li>'
                 },{
-                    html: '<li><a href="'+LABKEY.ActionURL.buildURL('admin', 'projectSettings.view', null, {tabid: 'resources'}) + '" target="_blank">Resources</a></li>'
+                    html: '<li><a href="'+LABKEY.ActionURL.buildURL('admin', 'projectSettings.view', null, {tabId: 'resources'}) + '" target="_blank">Resources</a></li>'
                 },{
-                    html: '<li><a href="'+LABKEY.ActionURL.buildURL('admin', 'projectSettings.view', null, {tabid: 'menubar'}) + '" target="_blank">Menu Bar</a></li>'
+                    html: '<li><a href="'+LABKEY.ActionURL.buildURL('admin', 'projectSettings.view', null, {tabId: 'menubar'}) + '" target="_blank">Menu Bar</a></li>'
                 },{
-                    html: '<li><a href="'+LABKEY.ActionURL.buildURL('admin', 'projectSettings.view', null, {tabid: 'files'}) + '" target="_blank">Folder Settings</a></li>'
+                    html: '<li><a href="'+LABKEY.ActionURL.buildURL('admin', 'projectSettings.view', null, {tabId: 'files'}) + '" target="_blank">Folder Settings</a></li>'
                 },{
                     html: '<li><a href="'+LABKEY.ActionURL.buildURL('security', 'project.view') + '" target="_blank">Configure Permissions</a></li>'
                 }]
