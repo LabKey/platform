@@ -178,65 +178,8 @@ public class CoreController extends SpringActionController
             if (content instanceof NoContent)
                 return;
 
-            response.setContentType(getContentType());
-            response.setDateHeader("Expires", HeartBeat.currentTimeMillis() + MILLIS_IN_DAY * 35);
-            response.setHeader("Cache-Control", "private");
-            response.setHeader("Pragma", "cache");
-            response.setDateHeader("Last-Modified", content.modified);
-
-            if (!checkIfModifiedSince(request, content.modified))
-            {
-                response.setStatus(HttpServletResponse.SC_NOT_MODIFIED);
-                return;
-            }
-
-            if (StringUtils.trimToEmpty(request.getHeader("Accept-Encoding")).contains("gzip") && null != content.compressed)
-            {
-                response.setHeader("Content-Encoding", "gzip");
-                response.getOutputStream().write(content.compressed);
-            }
-            else
-            {
-                response.getOutputStream().write(content.encoded);
-            }
+            PageFlowUtil.sendContent(request, response, content, getContentType());
         }
-
-
-        /**
-         * TODO: This code needs to be shared with DavController.checkModifiedSince
-         *
-         * CONSIDER: implementing these actions directly via WebdavResolver using something
-         * like the SymbolicLink class.
-         *
-         * ref 10499
-         */
-        private boolean checkIfModifiedSince(HttpServletRequest request, long lastModified)
-        {
-            try
-            {
-                long headerValue = request.getDateHeader("If-Modified-Since");
-                if (headerValue != -1)
-                {
-                    // If an If-None-Match header has been specified, if modified since
-                    // is ignored.
-                    if ((request.getHeader("If-None-Match") == null))
-                    {
-                        if (lastModified < headerValue + 1000)
-                        {
-                        // The entity has not been modified since the date
-                        // specified by the client. This is not an error case.
-                        return false;
-                        }
-                    }
-                }
-            }
-            catch (IllegalArgumentException illegalArgument)
-            {
-                return true;
-            }
-            return true;
-        }
-
 
         String getContentType()
         {
