@@ -91,7 +91,7 @@ Ext4.define('LABKEY.ext.IconPanel', {
                 overItemCls: 'x4-item-over',
                 itemSelector: 'div.thumb-wrap',
                 emptyText: 'No projects to display'
-                }]
+            }]
         });
 
         if(this.showMenu){
@@ -130,5 +130,10 @@ Ext4.define('LABKEY.ext.IconPanel', {
         }
 
         this.callParent(arguments);
+
+        //poor solution to Ext4 layout issue that occurs when adding items from store after panel has rendered
+        if(!this.store.getCount()){
+            this.store.on('load', this.doLayout, this, {single: true});
+        }
     }
 });
