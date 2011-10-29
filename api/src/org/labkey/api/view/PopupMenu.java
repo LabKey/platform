@@ -34,7 +34,6 @@ public class PopupMenu extends DisplayElement
     private NavTree _navTree;
     private Align _align = Align.LEFT;
     private ButtonStyle _buttonStyle = ButtonStyle.MENUBUTTON;
-    private String _imageSrc = "";
     private String _imageId = "";
     private String _offset = "-1";
     
@@ -68,16 +67,6 @@ public class PopupMenu extends DisplayElement
     public void setNavTree(NavTree navTree)
     {
         _navTree = navTree;
-    }
-
-    public String getImageSrc()
-    {
-        return _imageSrc;
-    }
-
-    public void setImageSrc(String imageSrc)
-    {
-        _imageSrc = imageSrc;
     }
 
     public void setImageId(String imageId)
@@ -137,9 +126,9 @@ public class PopupMenu extends DisplayElement
         else if (_buttonStyle == ButtonStyle.IMAGE)
         {
             assert !requiresSelection : "Only button-style popups can require selection.";
-            assert _imageSrc.length() > 0 : "Must provide an image source for image based popups.";
+            assert _navTree.getImageSrc() != null && _navTree.getImageSrc().length() > 0 : "Must provide an image source for image based popups.";
             out.append(PageFlowUtil.generateDropDownImage(_navTree.getKey(),  "javascript:void(0)",
-                    "showMenu(this, " + jsStringFilteredMenuId + ",'" + _align.getExtPosition() + "');", _imageSrc, _imageId));
+                    "showMenu(this, " + jsStringFilteredMenuId + ",'" + _align.getExtPosition() + "');", _navTree.getImageSrc(), _imageId, _navTree.getImageHeight(), _navTree.getImageWidth()));
         }
     }
 

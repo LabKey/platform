@@ -32,7 +32,12 @@ public class PopupMenuView extends HttpView<PopupMenu>
     
     public PopupMenuView(NavTree navTree)
     {
-        super(new PopupMenu(navTree));
+        this(new PopupMenu(navTree));
+    }
+
+    public PopupMenuView(PopupMenu menu)
+    {
+        super(menu);
     }
 
     public NavTree getNavTree()

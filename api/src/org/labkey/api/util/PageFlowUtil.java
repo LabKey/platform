@@ -1271,11 +1271,12 @@ public class PageFlowUtil
     }
 
     /* Renders image and a drop down wrapped in an unstyled link */
-    public static String generateDropDownImage(String text, String href, String onClick, String imageSrc, String imageId)
+    public static String generateDropDownImage(String text, String href, String onClick, String imageSrc, String imageId, Integer imageHeight, Integer imageWidth)
     {
         return "<a href=\"" + filter(href) +"\"" +
             " onClick=\"if (this.className.indexOf('labkey-disabled-button') != -1) return false; " + (onClick == null ? "" : filter(onClick)) + "\"" +
-            "><img id=\"" + imageId + "\" title=\"" + text + "\"src=\"" + imageSrc + "\"/></a>";
+            "><img id=\"" + imageId + "\" title=\"" + text + "\"src=\"" + imageSrc + "\" " +
+            (imageHeight == null ? "" : " height=\"" + imageHeight + "\"") + (imageWidth == null ? "" : " width=\"" + imageWidth + "\"") + "/></a>";
     }
 
     /* Renders a lightly colored inactive button, or in other words, a disabled span wrapped in a link of type labkey-disabled-button */

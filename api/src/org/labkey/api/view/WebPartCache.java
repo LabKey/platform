@@ -46,7 +46,7 @@ public class WebPartCache
         return result;
     }
 
-    static WebPart[] get(final Container c, final String pageId)
+    static WebPart[] get(@NotNull final Container c, @NotNull final String pageId)
     {
         String key = getCacheKey(c, pageId);
         return CACHE.get(key, null, new CacheLoader<String, WebPart[]>()

@@ -43,8 +43,8 @@ public class NavTree extends Pair<String, String> implements Collapsible
     static final List<NavTree> EMPTY_LIST = Collections.emptyList();
 
     String imageSrc = null;
-    int imageHeight=0;
-    int imageWidth=0;
+    Integer imageHeight;
+    Integer imageWidth;
     
     private boolean _selected = false;
     private boolean _collapsed = false;
@@ -330,12 +330,12 @@ public class NavTree extends Pair<String, String> implements Collapsible
         this.imageSrc = imageSrc;
     }
 
-    public int getImageHeight()
+    public Integer getImageHeight()
     {
         return imageHeight;
     }
 
-    public int getImageWidth()
+    public Integer getImageWidth()
     {
         return imageWidth;
     }

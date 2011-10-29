@@ -21,6 +21,7 @@ import org.labkey.api.data.RuntimeSQLException;
 import org.labkey.api.security.User;
 import org.labkey.api.study.StudyUrls;
 import org.labkey.api.util.HelpTopic;
+import org.labkey.api.view.FolderTab;
 import org.labkey.api.view.Portal;
 import org.labkey.api.view.Portal.WebPart;
 import org.labkey.api.view.ViewContext;
@@ -65,6 +66,26 @@ public class DefaultFolderType implements FolderType
         this.preferredParts = preferredParts == null ? Collections.<WebPart>emptyList() : preferredParts;
         this.activeModules = activeModules;
         this.defaultModule = defaultModule;
+    }
+
+    @Override
+    public List<FolderTab> getDefaultTabs()
+    {
+        FolderTab tab = new FolderTab("DefaultDashboard")
+        {
+            @Override
+            public boolean isSelectedPage(ActionURL currentURL)
+            {
+                return true;
+            }
+
+            @Override
+            public ActionURL getURL(ViewContext context)
+            {
+                return getStartURL(context.getContainer(), context.getUser());
+            }
+        };
+        return Collections.singletonList(tab);
     }
 
     public void configureContainer(Container c)
@@ -142,7 +163,32 @@ public class DefaultFolderType implements FolderType
         {
             throw new RuntimeSQLException(e);
         }
+
+        if (hasConfigurableTabs())
+        {
+            resetDefaultTabs(c);
+        }
+        for (FolderTab folderTab : getDefaultTabs())
+        {
+            folderTab.initializeContent(c);
+        }
     }
+
+    public Portal.WebPart[] resetDefaultTabs(Container c)
+    {
+        List<Portal.WebPart> tabs = new ArrayList<Portal.WebPart>();
+        for (FolderTab p : getDefaultTabs())
+        {
+            Portal.WebPart tab = new Portal.WebPart();
+            tab.setLocation(FolderTab.LOCATION);
+            tab.setName(p.getName());
+            tabs.add(tab);
+        }
+
+        Portal.saveParts(c, FolderTab.FOLDER_TAB_PAGE_ID, tabs.toArray(new Portal.WebPart[tabs.size()]));
+        return Portal.getParts(c, FolderTab.FOLDER_TAB_PAGE_ID);
+    }
+
 
     public void unconfigureContainer(Container c)
     {
@@ -221,6 +267,12 @@ public class DefaultFolderType implements FolderType
         return name;
     }
 
+    @Override
+    public boolean hasConfigurableTabs()
+    {
+        return false;
+    }
+
     public String getDescription()
     {
         return description;
@@ -249,7 +301,7 @@ public class DefaultFolderType implements FolderType
             defaultModules.add(getModule("Query"));
             defaultModules.add(getModule("Portal"));
             defaultModules.add(getModule("Issues"));
-            s_defaultModules = defaultModules;
+            s_defaultModules = Collections.unmodifiableSet(defaultModules);
         }
 
         Set<Module> modules = new HashSet<Module>(s_defaultModules);

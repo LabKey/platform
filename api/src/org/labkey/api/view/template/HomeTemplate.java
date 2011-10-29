@@ -131,6 +131,7 @@ public class HomeTemplate extends PrintTemplate
         List<NavTree> navTrail = page.getNavTrail();
         if (context.getContainer().isWorkbook())
         {
+            // Add the main page for the workbook to the nav trail
             navTrail = new ArrayList<NavTree>(navTrail);
             navTrail.add(0, new NavTree(context.getContainer().getTitle(), context.getContainer().getStartURL(context.getUser())));
         }
@@ -178,12 +179,6 @@ public class HomeTemplate extends PrintTemplate
     @Override
     public void prepareWebPart(PageConfig page)
     {
-        String title = page.getTitle();
-        if (null ==  title || 0 == title.length())
-        {
-            title = getDefaultTitle(getRootContext().getActionURL());
-        }
-
         if (page.shouldAppendPathToTitle())
         {
             String extraPath = getRootContext().getActionURL().getExtraPath();

@@ -17,23 +17,17 @@
 package org.labkey.api.module;
 
 import org.jetbrains.annotations.NotNull;
-import org.labkey.api.admin.AdminUrls;
 import org.labkey.api.data.Container;
-import org.labkey.api.portal.ProjectUrls;
 import org.labkey.api.security.User;
-import org.labkey.api.settings.AppProps;
 import org.labkey.api.util.HelpTopic;
-import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.view.ActionURL;
+import org.labkey.api.view.FolderTab;
 import org.labkey.api.view.NavTree;
 import org.labkey.api.view.Portal;
 import org.labkey.api.view.ViewContext;
 import org.labkey.api.view.template.AppBar;
 import org.labkey.api.view.template.PageConfig;
 
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.Comparator;
 import java.util.List;
 import java.util.Set;
 
@@ -47,7 +41,7 @@ import java.util.Set;
  */
 public interface FolderType
 {
-    public static final FolderType NONE = new FolderTypeNone();
+    public static final FolderType NONE = new CustomFolderType();
 
     /**
      * Configure the container with whatever active modules and web parts are required for this folder type.
@@ -67,6 +61,16 @@ public interface FolderType
      * @return name
      */
     public String getName();
+
+    /**
+     * @return whether or not an admin is allowed to customize the set of tabs for this folder.
+     * For folder types with only one tab, or a set backed by some other config (such as the active set of modules),
+     * return false;
+     */
+    public boolean hasConfigurableTabs();
+
+    /** If configurable, reset to the default set, throwing away tab configuration if it's customized. */
+    public Portal.WebPart[] resetDefaultTabs(Container c);
 
     /**
      * Description of this folder type. Used to let users know what to expect.
@@ -136,129 +140,8 @@ public interface FolderType
     @NotNull
     public AppBar getAppBar(ViewContext context, PageConfig pageConfig);
 
+    public List<FolderTab> getDefaultTabs();
+
     /** @return whether this is intended to be used exclusively for workbooks */
     public boolean isWorkbookType();
-    
-    /**
-     * Folder type that results in an old style "tabbed" folder.
-     */
-    static class FolderTypeNone implements FolderType
-    {
-        private FolderTypeNone(){}
-        public void configureContainer(Container c) {  }
-        public void unconfigureContainer(Container c) {  }
-        public String getName() { return "None"; }
-
-        public String getDescription()
-        {
-            return "Create a tab for each LabKey module you select. Used in older LabKey installations. Note that any LabKey module can also be used from any folder type    via Customize Folder.";
-        }
-
-        public List<Portal.WebPart> getRequiredWebParts()
-        {
-            return Collections.emptyList();
-        }
-
-        public List<Portal.WebPart> getPreferredWebParts()
-        {
-            return Collections.emptyList();
-        }
-
-        public String getLabel() { return "Custom"; }
-        public Module getDefaultModule() { return null; }
-        public Set<Module> getActiveModules() { return Collections.emptySet(); }
-        public String getStartPageLabel(ViewContext ctx) { return null; }
-        public ActionURL getStartURL(Container c, User u)
-        {
-            if (null == c)
-                return AppProps.getInstance().getHomePageActionURL();
-            if (null == c.getDefaultModule())
-                return PageFlowUtil.urlProvider(ProjectUrls.class).getStartURL(c);
-            return c.getDefaultModule().getTabURL(c, u);
-        }
-        public HelpTopic getHelpTopic() { return null; }
-
-        public void addManageLinks(NavTree adminNavTree, Container container)
-        {
-            DefaultFolderType.addStandardManageLinks(adminNavTree, container);
-        }
-
-        @NotNull
-        public AppBar getAppBar(ViewContext context, PageConfig pageConfig)
-        {
-            List<NavTree> tabs = new ArrayList<NavTree>();
-
-            Container container = context.getContainer();
-            if (!container.isRoot())
-            {
-
-                Set<Module> containerModules = container.getActiveModules();
-                Module activeModule = pageConfig.getModuleOwner();
-                String currentPageflow = context.getActionURL().getPageFlow();
-                if (activeModule == null)
-                {
-                    activeModule = ModuleLoader.getInstance().getModuleForController(currentPageflow);
-                }
-
-                assert activeModule != null : "Pageflow '" + currentPageflow + "' is not claimed by any module.  " +
-                        "This pageflow name must be added to the list of names returned by 'getPageFlowNameToClass' " +
-                        "from at least one module.";
-                List<Module> moduleList = getSortedModuleList();
-                for (Module module : moduleList)
-                {
-                    boolean selected = (module == activeModule);
-                    if (selected || (containerModules.contains(module)
-                            && null != module.getTabURL(container, context.getUser())))
-                    {
-                        NavTree navTree = new NavTree(module.getTabName(context), module.getTabURL(context.getContainer(), context.getUser()));
-                        navTree.setSelected(selected);
-                        tabs.add(navTree);
-                    }
-                }
-            }
-            else if (context.getUser().isAdministrator())
-            {
-                tabs.add(new NavTree("Admin Console", PageFlowUtil.urlProvider(AdminUrls.class).getAdminConsoleURL()));
-            }
-
-            return new AppBar(container.getName(), container.getStartURL(context.getUser()), tabs);
-        }
-
-        public String getFolderIconPath()
-        {
-            return "_images/defaultlogosmall.gif";
-        }
-
-        private List<Module> getSortedModuleList()
-        {
-            List<Module> sortedModuleList = new ArrayList<Module>();
-            // special-case the portal module: we want it to always be at the far left.
-            Module portal = null;
-            for (Module module : ModuleLoader.getInstance().getModules())
-            {
-                if ("Portal".equals(module.getName()))
-                    portal = module;
-                else
-                    sortedModuleList.add(module);
-            }
-            Collections.sort(sortedModuleList, new Comparator<Module>()
-            {
-                public int compare(Module moduleOne, Module moduleTwo)
-                {
-                    return moduleOne.getName().compareToIgnoreCase(moduleTwo.getName());
-                }
-            });
-            if (portal != null)
-                sortedModuleList.add(0, portal);
-
-            return sortedModuleList;
-        }
-
-
-        @Override
-        public boolean isWorkbookType()
-        {
-            return false;
-        }
-    }
 }

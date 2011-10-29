@@ -599,7 +599,7 @@ public abstract class WebPartView<ModelBean> extends HttpView<ModelBean>
                                     
                                     if (null != current.getImageSrc())
                                     {
-                                        if (current.getImageWidth() != 0 && current.getImageHeight() != 0)
+                                        if (current.getImageWidth() != null && current.getImageHeight() != null)
                                             out.print("<img height=" + current.getImageHeight() + " width=" + current.getImageWidth() + " src=\"" + current.getImageSrc() + "\" title=\"" + PageFlowUtil.filter(linkText) + "\">");
                                         else
                                             out.print("<img src=\"" + current.getImageSrc() + "\" title=\"" + PageFlowUtil.filter(linkText) + "\">");
@@ -635,7 +635,7 @@ public abstract class WebPartView<ModelBean> extends HttpView<ModelBean>
                             
                             if (null != link.getImageSrc())
                             {
-                                if (link.getImageWidth() != 0 && link.getImageHeight() != 0)
+                                if (link.getImageWidth() != null && link.getImageHeight() != null)
                                     out.print("<img height=" + link.getImageHeight() + " width=" + link.getImageWidth() + " src=\"" + link.getImageSrc() + "\" title=\"" + PageFlowUtil.filter(linkText) + "\">");
                                 else
                                     out.print("<img src=\"" + link.getImageSrc() + "\" title=\"" + PageFlowUtil.filter(linkText) + "\">");
@@ -895,7 +895,7 @@ public abstract class WebPartView<ModelBean> extends HttpView<ModelBean>
         {
             menu.setKey("More");
             PopupMenu more = new PopupMenu(menu, PopupMenu.Align.RIGHT, PopupMenu.ButtonStyle.IMAGE);
-            more.setImageSrc(imageSrc);
+            menu.setImage(imageSrc, 24, 24);
             more.setImageId("more-" + PageFlowUtil.filter(getTitle().toLowerCase()));
             out.print("<span class=\"labkey-wp-icon-button-active\">");
             more.render(out);

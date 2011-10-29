@@ -22,10 +22,18 @@
 <%@ page import="org.labkey.api.view.ViewContext" %>
 <%@ page import="org.labkey.api.data.Container" %>
 <%@ page import="org.labkey.api.view.ActionURL" %>
+<%@ page import="org.labkey.api.security.permissions.AdminPermission" %>
+<%@ page import="org.labkey.api.view.PopupMenu" %>
+<%@ page import="org.labkey.api.view.PopupMenuView" %>
+<%@ page import="org.labkey.api.util.PageFlowUtil" %>
+<%@ page import="org.labkey.api.portal.ProjectUrls" %>
+<%@ page import="org.labkey.api.view.FolderTab" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 
 <%
-    AppBar bean = ((AppBarView) HttpView.currentView()).getModelBean();
+    ViewContext context = HttpView.currentView().getViewContext();
+    AppBarView me = (AppBarView) HttpView.currentView();
+    AppBar bean = me.getModelBean();
     if (null == bean)
         return;
 %>
@@ -43,6 +51,30 @@
                     {
                 %>
                         <td><li class="<%=navTree.isSelected() ? "labkey-tab-active" : "labkey-tab-inactive"%>"><a href="<%=h(navTree.getValue())%>" id="<%=h(navTree.getKey())%>Tab"><%=h(navTree.getKey())%></a></td>
+                <%
+                    }
+                    if (context.getContainer().getFolderType().hasConfigurableTabs() && context.hasPermission(org.labkey.api.security.permissions.AdminPermission.class))
+                    {
+                        NavTree link = new NavTree("Tab Administration");
+                        NavTree removeNode = new NavTree("Remove tab");
+                        int index = 1;
+                        for (NavTree tab : bean.getButtons())
+                        {
+                            ActionURL url = PageFlowUtil.urlProvider(ProjectUrls.class).getDeleteWebPartURL(context.getContainer(), FolderTab.FOLDER_TAB_PAGE_ID, index++, getViewContext().getActionURL());
+                            NavTree removeTab = new NavTree(tab.getKey(), url);
+                            removeNode.addChild(removeTab);
+                        }
+                        link.addChild(removeNode);
+
+                        link.addChild(new NavTree("Reset to default tabs", PageFlowUtil.urlProvider(ProjectUrls.class).getResetDefaultTabsURL(context.getContainer(), getViewContext().getActionURL())));
+
+                        PopupMenu menu = new PopupMenu(link);
+                        menu.setAlign(PopupMenu.Align.RIGHT);
+                        link.setImage(request.getContextPath() + "/_images/text_link_arrow.gif", 10, 5);
+                        org.labkey.api.view.PopupMenuView popup = new org.labkey.api.view.PopupMenuView(menu);
+                        popup.setButtonStyle(org.labkey.api.view.PopupMenu.ButtonStyle.IMAGE);
+                %>
+                    <td><li class="labkey-tab-inactive"><% me.include(popup, out); %></td>
                 <%
                     }
                 %>

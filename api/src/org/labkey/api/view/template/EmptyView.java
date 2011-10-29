@@ -21,12 +21,11 @@ import org.labkey.api.view.HttpView;
 import java.io.PrintWriter;
 
 /**
+ * Do nothing view... useful for testing templates, etc.
  * User: adam
  * Date: May 1, 2007
  * Time: 1:06:15 PM
  */
-
-// Do nothing view... useful for testing templates, etc.
 public class EmptyView extends HttpView
 {
     @Override
