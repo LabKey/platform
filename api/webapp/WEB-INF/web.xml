@@ -191,14 +191,12 @@
         <servlet-class>org.labkey.api.attachments.ImageServlet</servlet-class>
     </servlet>
 
-<!--	<servlet>
-		<servlet-name>webdav</servlet-name>
-		<servlet-class>org.labkey.core.webdav.WebdavServlet</servlet-class>
-        <init-param>
-          <param-name>resolver</param-name> 
-          <param-value>org.labkey.api.webdav.WebdavResolverImpl</param-value>
-        </init-param>
-	</servlet> -->
+
+    <servlet>
+        <servlet-name>ScssServlet</servlet-name>
+        <servlet-class>org.labkey.api.scss.ScssServlet</servlet-class>
+    </servlet>
+
 
     <servlet>
         <servlet-name>static</servlet-name>
@@ -267,10 +265,10 @@
         <url-pattern>/files/*</url-pattern>
     </servlet-mapping>
 
-<!--    <servlet-mapping>
-        <servlet-name>webdav</servlet-name>
-        <url-pattern>/_webdav/*</url-pattern>
-    </servlet-mapping> -->
+    <servlet-mapping>
+        <servlet-name>ScssServlet</servlet-name>
+        <url-pattern>*.scss</url-pattern>
+    </servlet-mapping>
 
     <servlet-mapping>
         <servlet-name>static</servlet-name>
@@ -291,6 +289,7 @@
         <extension>wsdl</extension>
         <mime-type>text/xml</mime-type>
     </mime-mapping>
+
     <mime-mapping>
         <extension>xsd</extension>
         <mime-type>text/xml</mime-type>
