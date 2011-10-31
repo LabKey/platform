@@ -762,7 +762,7 @@ public final class CGIServlet extends HttpServlet {
         private Container container;
 
         /** labkey user **/
-        org.labkey.api.security.User user;
+        User user;
 
 
 

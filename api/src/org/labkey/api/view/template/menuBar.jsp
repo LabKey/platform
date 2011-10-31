@@ -28,7 +28,7 @@
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
     List<Portal.WebPart> menus = ((MenuBarView) HttpView.currentView()).getModelBean();
-    ViewContext currentContext = org.labkey.api.view.HttpView.currentContext();
+    ViewContext currentContext = HttpView.currentContext();
     Container c = currentContext.getContainer();
     LookAndFeelProperties laf = LookAndFeelProperties.getInstance(c);
     AppProps appProps = AppProps.getInstance();

@@ -27,6 +27,7 @@ import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.ms2.MS2Service;
 import org.labkey.api.resource.Resource;
 import org.labkey.api.resource.ResourceRef;
+import org.labkey.api.security.SecurityManager;
 import org.labkey.api.settings.AppProps;
 import org.labkey.api.util.ResultSetUtil;
 import org.labkey.api.util.TestContext;
@@ -735,7 +736,7 @@ public class DbSchema
                     {
                         Table.execute(coreSchema, sql, recovered.getId(), rs1.getString(2));
                         //remove the ACLs that were there
-                        org.labkey.api.security.SecurityManager.removeAll(recovered);
+                        SecurityManager.removeAll(recovered);
                         sbOut.append("<br> Recovered objects from table ");
                         sbOut.append(rs1.getString(1));
                         sbOut.append(" to project ");

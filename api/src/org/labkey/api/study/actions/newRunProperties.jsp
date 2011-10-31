@@ -27,7 +27,7 @@
 <script type="text/javascript">LABKEY.requiresScript('completion.js');</script>
 <%
     JspView<AssayRunUploadForm> me = (JspView<AssayRunUploadForm>) HttpView.currentView();
-    org.labkey.api.study.actions.AssayRunUploadForm<? extends AssayProvider> bean = me.getModelBean();
+    AssayRunUploadForm<? extends AssayProvider> bean = me.getModelBean();
 %>
 <table>
 <%

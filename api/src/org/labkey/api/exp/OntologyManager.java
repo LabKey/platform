@@ -66,6 +66,7 @@ import org.labkey.api.util.StringExpressionFactory;
 import org.labkey.api.util.TestContext;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.HttpView;
+import org.labkey.api.webdav.SimpleDocumentResource;
 import org.labkey.api.webdav.WebdavResource;
 
 import java.sql.Connection;
@@ -3479,7 +3480,7 @@ public class OntologyManager
 
                 ActionURL url = new ActionURL("experiment-types", "findConcepts", shared);
                 url.addParameter("concept",propertyURI);
-                WebdavResource r = new org.labkey.api.webdav.SimpleDocumentResource(
+                WebdavResource r = new SimpleDocumentResource(
                     new Path(propertyURI),
                     "concept:" + propertyURI,
                     shared.getId(),

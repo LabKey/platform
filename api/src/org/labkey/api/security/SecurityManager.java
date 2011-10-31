@@ -1015,22 +1015,26 @@ public class SecurityManager
 
     public static Group createGroup(Container c, String name, String type)
     {
-        String defaultOwnerId;
+        // TODO: UserPrincipal.Type enum and add validation rules there
+        if (!type.equals(Group.typeProject) && !type.equals(Group.typeModule))
+            throw new IllegalStateException("Can't create a group with type \"" + type + "\"");
+
+        String ownerId;
 
         if (null == c || c.isRoot())
         {
-            defaultOwnerId = null;
-        }
-        else if (c.isProject())
-        {
-            defaultOwnerId = c.getId();
+            ownerId = null;
         }
         else
         {
-            throw new IllegalStateException("Groups can only be associated with a project or the root");
+            ownerId = c.getId();
+
+            // Module groups can be associated with any folder; security groups must be associated with a project
+            if (!type.equals(Group.typeModule) && !c.isProject())
+                throw new IllegalStateException("Security groups can only be associated with a project or the root");
         }
 
-        return createGroup(c, name, type, defaultOwnerId);
+        return createGroup(c, name, type, ownerId);
     }
 
 
@@ -1235,16 +1239,22 @@ public class SecurityManager
     // Add a single user/group to a single group
     public static void addMember(Group group, UserPrincipal principal)
     {
+        addMember(group, principal, null);
+    }
+
+
+    // Internal only; used by junit test
+    static void addMember(Group group, UserPrincipal principal, @Nullable Runnable afterAddRunnable)
+    {
         String errorMessage = getAddMemberError(group, principal);
 
         if (null != errorMessage)
             throw new IllegalStateException(errorMessage);
 
-        SqlExecutor executor = new SqlExecutor(core.getSchema(), new SQLFragment("INSERT INTO " + core.getTableInfoMembers() +
-            " (UserId, GroupId) VALUES (?, ?)", principal.getUserId(), group.getUserId()));
+        addMemberWithoutValidation(group, principal);
 
-        executor.execute();
-        fireAddPrincipalToGroup(group, principal);
+        if (null != afterAddRunnable)
+            afterAddRunnable.run();
 
         // If we added a group then check for circular relationship... we check this above, but it's possible that
         // another thread concurrently made a change that introduced a cycle.
@@ -1253,6 +1263,17 @@ public class SecurityManager
             deleteMember(group, principal);
             throw new IllegalStateException(CIRCULAR_GROUP_ERROR_MESSAGE);
         }
+    }
+
+
+    // Internal only; used by junit test
+    static void addMemberWithoutValidation(Group group, UserPrincipal principal)
+    {
+        SqlExecutor executor = new SqlExecutor(core.getSchema(), new SQLFragment("INSERT INTO " + core.getTableInfoMembers() +
+            " (UserId, GroupId) VALUES (?, ?)", principal.getUserId(), group.getUserId()));
+
+        executor.execute();
+        fireAddPrincipalToGroup(group, principal);
     }
 
 
@@ -1337,8 +1358,7 @@ public class SecurityManager
     }
 
 
-
-    public static Group[] getGroups(Container project, boolean includeGlobalGroups)
+    public static Group[] getGroups(@Nullable Container project, boolean includeGlobalGroups)
     {
         try
         {
@@ -1491,7 +1511,7 @@ public class SecurityManager
     public static Set<UserPrincipal> getGroupMembers(Group group, GroupMemberType memberType)
     {
         Set<UserPrincipal> principals = new LinkedHashSet<UserPrincipal>();
-        Integer[] ids = getGroupMemberIds(ContainerManager.getForId(group.getContainer()), group.getName());
+        Integer[] ids = getGroupMemberIds(group);
 
         for (Integer id : ids)
         {
@@ -1720,14 +1740,13 @@ public class SecurityManager
     }
 
 
-    private static Integer[] getGroupMemberIds(Container c, String groupName)
+    private static Integer[] getGroupMemberIds(Group group)
     {
-        Integer groupId = SecurityManager.getGroupId(c, groupName);
         Selector selector = new SqlSelector(core.getSchema(), new SQLFragment(
                 "SELECT Members.UserId FROM " + core.getTableInfoMembers() + " Members" +
                 " JOIN " + core.getTableInfoPrincipals() + " Users ON Members.UserId = Users.UserId\n" +
                 " WHERE Members.GroupId = ?" +
-                " ORDER BY Users.Type, Users.Name", groupId));
+                " ORDER BY Users.Type, Users.Name", group.getUserId()));
 
         return selector.getArray(Integer.class);
     }
@@ -1819,7 +1838,7 @@ public class SecurityManager
 
         if (groupId == null && throwOnFailure)
         {
-            throw new NotFoundException("Group not found");
+            throw new NotFoundException("Group not found: " + groupName);
         }
 
         return groupId;

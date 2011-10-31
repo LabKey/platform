@@ -5,13 +5,13 @@
 |                  (http://webfx.eae.net/contact.html#erik)                   |
 |                      For WebFX (http://webfx.eae.net/)                      |
 |           Modified to have two handles, defining a range, by David Stearns  |
-               for Labkey Software (http://www.labkey.com)                    |
+               for LabKey Software (http://www.labkey.com)                    |
 |-----------------------------------------------------------------------------|
 | A  slider  control that  degrades  to an  input control  for non  supported |
 | browsers.                                                                   |
 |-----------------------------------------------------------------------------|
 |                Copyright (c) 2002, 2003, 2006 Erik Arvidsson                |
-|                Copyright (c) 2007 David Stearns (Labkey Software)           |
+|                Copyright (c) 2007 LabKey Corporation                        |
 |-----------------------------------------------------------------------------|
 | Licensed under the Apache License, Version 2.0 (the "License"); you may not |
 | use this file except in compliance with the License.  You may obtain a copy |

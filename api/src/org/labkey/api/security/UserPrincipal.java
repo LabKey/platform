@@ -29,6 +29,7 @@ public abstract class UserPrincipal implements Principal, Serializable
     private String _name;
     private int _userId = 0;
 
+    // TODO: Create enum
     public static final String typeProject = "g";
     public static final String typeModule = "m";
     public static final String typeUser = "u";

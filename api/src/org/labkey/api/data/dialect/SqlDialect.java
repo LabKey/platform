@@ -19,6 +19,7 @@ package org.labkey.api.data.dialect;
 import org.apache.commons.lang.StringUtils;
 import org.apache.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.collections.CaseInsensitiveHashSet;
 import org.labkey.api.collections.CsvSet;
@@ -746,7 +747,7 @@ public abstract class SqlDialect
      * @param objectType "TABLE", "VIEW", "INDEX"
      * @param subObjectName index name;  ignored if not an index
      */
-    public void dropIfExists (DbSchema schema, String objectName, String objectType, String subObjectName) throws SQLException
+    public void dropIfExists(DbSchema schema, String objectName, String objectType, @Nullable String subObjectName) throws SQLException
     {
         Object[] parameters = new Object[]{objectName, schema.getName(), objectType, subObjectName};
         String sql = schema.getSqlDialect().execute(CoreSchema.getInstance().getSchema(), "fn_dropifexists", "?, ?, ?, ?");

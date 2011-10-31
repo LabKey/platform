@@ -714,7 +714,7 @@ public class StorageProvisioner
     public static class TestCase extends Assert
     {
         Container container = JunitUtil.getTestContainer();
-        org.labkey.api.exp.property.Domain domain;
+        Domain domain;
         final String notNullPropName = "a_" + System.currentTimeMillis();
         final String propNameB = "b_" + System.currentTimeMillis();
         final String propBMvColumnName = PropertyStorageSpec.getMvIndicatorColumnName(propNameB).toLowerCase();

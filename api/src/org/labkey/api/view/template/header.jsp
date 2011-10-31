@@ -31,11 +31,12 @@
 <%@ page import="org.labkey.api.view.*" %>
 <%@ page import="org.labkey.api.view.template.PageConfig" %>
 <%@ page import="org.labkey.api.view.template.TemplateHeaderView" %>
+<%@ page import="org.labkey.api.search.SearchUrls" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
     TemplateHeaderView me = ((TemplateHeaderView) HttpView.currentView());
     TemplateHeaderView.TemplateHeaderBean bean = me.getModelBean();
-    ViewContext currentContext = org.labkey.api.view.HttpView.currentContext();
+    ViewContext currentContext = HttpView.currentContext();
     User user = (User) request.getUserPrincipal();
     Container c = currentContext.getContainer();
     String contextPath = currentContext.getContextPath();
@@ -70,7 +71,7 @@ if ("true".equals(request.getParameter("testFont"))) {
 <div id="headerDiv"><table id="headerNav" cellpadding="0" cellspacing="0" border=0 width="auto">
   <tr>
       <td style="padding-right: 1em;">
-          <form id="headerSearchForm" action="<%=h(urlProvider(org.labkey.api.search.SearchUrls.class).getSearchURL(c, null).toHString())%>" method="GET" style="margin:0; <%=showSearchForm?"":"display:none;"%>">
+          <form id="headerSearchForm" action="<%=h(urlProvider(SearchUrls.class).getSearchURL(c, null).toHString())%>" method="GET" style="margin:0; <%=showSearchForm?"":"display:none;"%>">
             <table cellspacing=0 cellpadding=0 class="labkey-main-search">
               <tr>
                 <td><input id="headerSearchContainer" name="container" type="hidden" value=""><input id="headerSearchInput" name="q" type="text"></td>

@@ -474,7 +474,7 @@ public class ReportDescriptor extends Entity implements SecurableResource
 
     public boolean canRead(User u)
     {
-        return org.labkey.api.security.SecurityManager.getPolicy(this).hasPermission(u, ReadPermission.class);
+        return SecurityManager.getPolicy(this).hasPermission(u, ReadPermission.class);
     }
 
     public boolean canEdit(User user, Container container)

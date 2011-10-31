@@ -126,7 +126,7 @@ class ErrorView extends HttpView
         {
             if (_renderer.getStatus() == HttpServletResponse.SC_UNAUTHORIZED)
             {
-                LookAndFeelProperties props = org.labkey.api.settings.LookAndFeelProperties.getInstance(getContextContainer());
+                LookAndFeelProperties props = LookAndFeelProperties.getInstance(getContextContainer());
                 if (!StringUtils.isBlank(props.getSupportEmail()))
                 {
                     out.println("<p>If you believe you should have permission to perform this action, please <a href=\"mailto:");

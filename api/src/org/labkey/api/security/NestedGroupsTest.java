@@ -47,10 +47,11 @@ public class NestedGroupsTest extends Assert
     private static final String WRITERS = "Writers";
     private static final String PROJECT_X = "Project X";
     private static final String SITE_GROUP = "TestSiteGroup";
+    private static final String CONCURRENCY_TEST_GROUP = "ConcurrencyGroup";
 
     private static final String ADD_TO_GUESTS = "Can't add a member to the Guests group";
     private static final String ADD_TO_USERS = "Can't add a member to the Users group";
-    private static final String[] GROUP_NAMES = new String[] {ALL, DIV_A, DIV_B, DIV_C, CODERS, TESTERS, WRITERS, PROJECT_X};
+    private static final String[] GROUP_NAMES = new String[] {ALL, DIV_A, DIV_B, DIV_C, CODERS, TESTERS, WRITERS, PROJECT_X, CONCURRENCY_TEST_GROUP};
 
     private Container _project;
 
@@ -71,7 +72,7 @@ public class NestedGroupsTest extends Assert
         Group[] homeGroups = SecurityManager.getGroups(home, false);
         @Nullable Group homeGroup = homeGroups.length > 0 ? homeGroups[0] : null;
 
-        Group all = create(ALL);
+        final Group all = create(ALL);
         Group divA = create(DIV_A);
         Group divB = create(DIV_B);
         Group divC = create(DIV_C);
@@ -79,6 +80,7 @@ public class NestedGroupsTest extends Assert
         Group testers = create(TESTERS);
         Group writers = create(WRITERS);
         Group projectX = create(PROJECT_X);
+        final Group cycleTest = create(CONCURRENCY_TEST_GROUP);
 
         addMember(all, divA);
         addMember(all, divB);
@@ -91,16 +93,6 @@ public class NestedGroupsTest extends Assert
         addMember(divA, user);
         addMember(divA, projectX);
         addMember(projectX, user);
-
-        expected(all, divA, divB, divC, coders, testers, writers);
-
-        int[] groups = GroupMembershipCache.getGroupsForPrincipal(user.getUserId());
-        expected(groups, projectX, coders, divA);
-        notExpected(groups, user, all, divB, divC, testers, writers);
-
-        int[] allGroups = GroupManager.getAllGroupsForPrincipal(user);
-        expected(allGroups, projectX, coders, divA, user, all);
-        notExpected(allGroups, divB, divC, testers, writers);
 
         // TODO: Create another group, add directly to "all", add user to new group, validate
         // TODO: Check permissions
@@ -145,9 +137,44 @@ public class NestedGroupsTest extends Assert
         if (null != homeGroup)
             failAddMember(projectX, homeGroup, SecurityManager.DIFFERENT_PROJECTS_ERROR_MESSAGE);
 
+        // Test that we protect against concurrent threads making independent group adds that result in a cycle.  We
+        // simulate this by
+        try
+        {
+            SecurityManager.addMember(projectX, cycleTest, new Runnable() {
+                @Override
+                public void run()
+                {
+                    SecurityManager.addMemberWithoutValidation(cycleTest, all);
+                }
+            });
+            fail("Add member of circular group addition should have throw IllegalStateException");
+        }
+        catch (IllegalStateException e)
+        {
+            assertEquals(SecurityManager.CIRCULAR_GROUP_ERROR_MESSAGE, e.getMessage());
+        }
+
+        notExpected(projectX, cycleTest);
+        expected(cycleTest, all);
+        SecurityManager.deleteMember(cycleTest, all);
+        notExpected(cycleTest, all);
+        addMember(projectX, cycleTest);
+
         Group siteGroup = SecurityManager.createGroup(ContainerManager.getRoot(), SITE_GROUP);
         assertTrue(!siteGroup.isProjectGroup());
         addMember(projectX, siteGroup);
+
+        expected(all, divA, divB, divC, coders, testers, writers);
+        notExpected(all, cycleTest);
+
+        int[] groups = GroupMembershipCache.getGroupsForPrincipal(user.getUserId());
+        expected(groups, projectX, coders, divA);
+        notExpected(groups, user, all, divB, divC, testers, writers, siteGroup);
+
+        int[] allGroups = GroupManager.getAllGroupsForPrincipal(user);
+        expected(allGroups, projectX, coders, divA, user, all);
+        notExpected(allGroups, divB, divC, testers, writers, siteGroup);
     }
 
     private Group create(String name)
@@ -158,6 +185,7 @@ public class NestedGroupsTest extends Assert
     private void addMember(Group group, UserPrincipal principal)
     {
         SecurityManager.addMember(group, principal);
+        expected(group, principal);
     }
 
     // Adding this principal should fail
@@ -168,7 +196,7 @@ public class NestedGroupsTest extends Assert
         try
         {
             SecurityManager.addMember(group, principal);
-            assertTrue("Expected failure when adding principal \"" + principal.getName() + "\" to group \"" + group.getName() + "\"", false);
+            fail("Expected failure when adding principal \"" + principal.getName() + "\" to group \"" + group.getName() + "\"");
         }
         catch (IllegalStateException e)
         {
@@ -194,12 +222,12 @@ public class NestedGroupsTest extends Assert
         validate(false, actualIds, testMembers);
     }
 
-    private void expected(Group group, UserPrincipal... expectedMembers) throws SQLException
+    private void expected(Group group, UserPrincipal... expectedMembers)
     {
         validate(true, group, expectedMembers);
     }
 
-    private void notExpected(Group group, UserPrincipal... expectedMembers) throws SQLException
+    private void notExpected(Group group, UserPrincipal... expectedMembers)
     {
         validate(false, group, expectedMembers);
     }
@@ -226,7 +254,7 @@ public class NestedGroupsTest extends Assert
     {
         Set<Integer> set = new HashSet<Integer>();
 
-        for (UserPrincipal userPrincipal : SecurityManager.getGroupMembers(group, SecurityManager.GroupMemberType.Both))
+        for (UserPrincipal userPrincipal : getMembers(group))
             set.add(userPrincipal.getUserId());
 
         validate(expected, set, members);

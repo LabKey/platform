@@ -11,7 +11,7 @@
 | swingdoc-api-1.0.3/com/sun/java/swing/BoundedRangeModel.html                |
 |-----------------------------------------------------------------------------|
 |                Copyright (c) 2002, 2005, 2006 Erik Arvidsson                |
-|                Copyright (c) 2007 David Stearns (Labkey Software)           |
+|                Copyright (c) 2007 LabKey Corporation                        |
 |-----------------------------------------------------------------------------|
 | Licensed under the Apache License, Version 2.0 (the "License"); you may not |
 | use this file except in compliance with the License.  You may obtain a copy |

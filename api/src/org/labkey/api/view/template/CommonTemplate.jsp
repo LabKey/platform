@@ -174,7 +174,7 @@ if (null != me.getView("moduleNav"))
             <!-- RIGHT -->
             <td class="labkey-side-panel" style="min-width:240px;">
                 <img height=1 width=240 src="<%= contextPath %>/_.gif"><br>
-                <% me.include(me.getView(org.labkey.api.view.WebPartFactory.LOCATION_RIGHT),out); %>
+                <% me.include(me.getView(WebPartFactory.LOCATION_RIGHT),out); %>
             </td>
             <!-- /RIGHT -->
 <%				} %>
