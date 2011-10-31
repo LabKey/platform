@@ -105,7 +105,7 @@ public class ScssServlet extends HttpServlet
     @Override
     public String getServletInfo()
     {
-        return "SCCS Servlet";
+        return "SCSS Servlet";
     }
 
 
@@ -162,7 +162,9 @@ public class ScssServlet extends HttpServlet
 
         // devMode only try to compile
 
-        ProcessBuilder pb = new ProcessBuilder("compass", "compile", "--boring", dir);
+        String OS = System.getProperty("os.name").toLowerCase();
+        String compass = -1==OS.indexOf("windows") ? "compas" : "compass.bat";
+        ProcessBuilder pb = new ProcessBuilder(compass, "compile", "--boring", dir);
         runProcess(pb);
 
         cssFile = lookup(targetPath);
@@ -362,7 +364,7 @@ public class ScssServlet extends HttpServlet
 
     private void findDependencies(Resource scss, Set<Path> dependencies) throws IOException
     {
-        if (isDevMode())
+        if (!isDevMode())
             return;
         if (!scss.isFile())
             return;
