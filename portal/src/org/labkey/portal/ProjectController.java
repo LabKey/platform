@@ -1169,7 +1169,7 @@ public class ProjectController extends SpringActionController
             String name = StringUtils.trimToEmpty(getViewContext().getRequest().getParameter("name"));
             String path;
             if (name.endsWith("/"))
-                path = "/" + PageFlowUtil.extJsRoot() + "/resources/images/default/tree/folder.gif";
+                path = "/_icon/folder.gif";
             else
                 path = Attachment.getFileIcon(name);
 
