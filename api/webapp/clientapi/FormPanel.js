@@ -966,10 +966,10 @@ Ext.override(Ext.layout.FormLayout, {
     setContainer: Ext.layout.FormLayout.prototype.setContainer.createSequence(function(ct) {
         // the default field template used by all form layouts
         var t = new Ext.Template(
-            '<div class="x-form-item {5}" tabIndex="-1">',
-                '<label for="{0}" style="{2}" class="x-form-item-label {8}"><span class="{9}"{7}>{1}{4}</span></label>',
-                '<div class="x-form-element" id="x-form-el-{0}" style="{3}">',
-                '</div><div class="{6}"></div>',
+            '<div class="x-form-item {itemCls}" tabIndex="-1">',
+                '<label for="{id}" style="{labelStyle}" class="x-form-item-label {guidedCls}"><span {guidedTip}>{label}{labelSeparator}</span></label>',
+                '<div class="x-form-element" id="x-form-el-{id}" style="{elementStyle}">',
+                '</div><div class="{clearCls}"></div>',
             '</div>'
         );
         t.disableFormats = true;
@@ -979,18 +979,39 @@ Ext.override(Ext.layout.FormLayout, {
 
     renderItem: function(c, position, target){
         if(c && !c.rendered && c.isFormField && c.inputType != 'hidden'){
-            var args = [
-                c.id, c.fieldLabel,
-                c.labelStyle||this.labelStyle||'',
-                this.elementStyle||'',
-                typeof c.labelSeparator == 'undefined' ? this.labelSeparator : c.labelSeparator,
-                (c.itemCls||this.container.itemCls||'') + (c.hideLabel ? ' x-hide-label' : ''),
-                c.clearCls || 'x-form-clear-left',
-                (c.gtip === undefined ? '' : ' ext:gtip="'+c.gtip+'"'),
-                (c.gtip === undefined ? '' : 'g-tip-label'),
-                ''
-            ];
-            if(typeof position == 'number'){
+
+            var noLabelSep = !c.fieldLabel || c.hideLabel;
+            var itemCls = (c.itemCls || this.container.itemCls || '') + (c.hideLabel ? ' x-hide-label' : '');
+
+            // IE9 quirks needs an extra, identifying class on wrappers of TextFields
+            if (Ext.isIE9 && Ext.isIEQuirks && c instanceof Ext.form.TextField) {
+                itemCls += ' x-input-wrapper';
+            }
+
+//            var args = [
+//                c.id, c.fieldLabel,
+//                c.labelStyle||this.labelStyle||'',
+//                this.elementStyle||'',
+//                typeof c.labelSeparator == 'undefined' ? this.labelSeparator : c.labelSeparator,
+//                (c.itemCls||this.container.itemCls||'') + (c.hideLabel ? ' x-hide-label' : ''),
+//                c.clearCls || 'x-form-clear-left',
+//                (c.gtip === undefined ? '' : ' ext:gtip="'+c.gtip+'"'),
+//                (c.gtip === undefined ? '' : 'g-tip-label')
+//            ];
+
+            var args = {
+                id            : c.id,
+                label         : c.fieldLabel,
+                itemCls       : itemCls,
+                clearCls      : c.clearCls || 'x-form-clear-left',
+                labelStyle    : this.getLabelStyle(c.labelStyle),
+                elementStyle  : this.elementStyle||'',
+                labelSeparator: noLabelSep ? '' : (Ext.isDefined(c.labelSeparator) ? c.labelSeparator : this.labelSeparator),
+                guidedTip     : (c.gtip === undefined ? '' : ' ext:gtip="'+c.gtip+'"'),
+                guidedCls     : (c.gtip === undefined ? '' : 'g-tip-label')
+            };
+
+            if(Ext.isNumber(position)){
                 position = target.dom.childNodes[position] || null;
             }
             if(position){
@@ -1005,7 +1026,6 @@ Ext.override(Ext.layout.FormLayout, {
     }
 });
 
-LABKEY.requiresCss('GuidedTip.css', true);
 LABKEY.requiresScript('GuidedTip.js', true);
 
 
