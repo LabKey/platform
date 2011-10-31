@@ -269,6 +269,7 @@
                     width: 250
                 }
             ],
+            buttonAlign:'left',
             buttons: [{
                 text: 'Submit', handler:submitFormTsv
             },{
@@ -308,6 +309,7 @@
                 }
             ],
 
+            buttonAlign:'left',
             buttons: [{
                 text: 'Submit', handler:submitFormUpload
             },{
