@@ -23,7 +23,7 @@
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <script type="text/javascript">LABKEY.requiresScript('completion.js');</script>
 <%
-    JspView<ShowGroupMembersAction.GroupMembersBean> me = (org.labkey.api.view.JspView<ShowGroupMembersAction.GroupMembersBean>) HttpView.currentView();
+    JspView<ShowGroupMembersAction.GroupMembersBean> me = (JspView<ShowGroupMembersAction.GroupMembersBean>) HttpView.currentView();
     ShowGroupMembersAction.GroupMembersBean bean = me.getModelBean();
 %>
 <labkey:errors/>

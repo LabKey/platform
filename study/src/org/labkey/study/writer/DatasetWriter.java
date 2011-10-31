@@ -25,6 +25,7 @@ import org.labkey.api.data.TableInfo;
 import org.labkey.api.query.AliasedColumn;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.QueryService;
+import org.labkey.api.study.Cohort;
 import org.labkey.api.study.StudyImportException;
 import org.labkey.api.study.StudyService;
 import org.labkey.api.writer.VirtualFile;
@@ -98,7 +99,7 @@ public class DatasetWriter implements InternalStudyWriter
             datasetXml.setName(def.getName());
             datasetXml.setId(def.getDataSetId());
 
-            org.labkey.api.study.Cohort cohort = def.getCohort();
+            Cohort cohort = def.getCohort();
 
             if (null != cohort)
                 datasetXml.setCohort(cohort.getLabel());

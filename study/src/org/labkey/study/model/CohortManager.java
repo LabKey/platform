@@ -119,7 +119,7 @@ public class CohortManager
         CohortImpl cohort = new CohortImpl();
 
         // Check if there's a conflict
-        org.labkey.api.study.Cohort existingCohort = StudyManager.getInstance().getCohortByLabel(study.getContainer(), user, newLabel);
+        Cohort existingCohort = StudyManager.getInstance().getCohortByLabel(study.getContainer(), user, newLabel);
 
         if (existingCohort != null)
             throw new ServletException("A cohort with the label '" + newLabel + "' already exists");

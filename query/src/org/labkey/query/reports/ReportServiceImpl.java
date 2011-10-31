@@ -47,8 +47,8 @@ import org.labkey.api.reports.report.ReportIdentifier;
 import org.labkey.api.reports.report.ReportIdentifierConverter;
 import org.labkey.api.reports.report.ScriptEngineReport;
 import org.labkey.api.reports.report.view.ReportUtil;
+import org.labkey.api.security.SecurityManager;
 import org.labkey.api.security.User;
-import org.labkey.api.study.Study;
 import org.labkey.api.util.ContainerUtil;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.Pair;
@@ -249,7 +249,7 @@ public class ReportServiceImpl implements ReportService.I, ContainerManager.Cont
 
             final ReportDescriptor descriptor = report.getDescriptor();
             _deleteReport(context.getContainer(), reportId.getRowId());
-            org.labkey.api.security.SecurityManager.deletePolicy(descriptor);
+            SecurityManager.deletePolicy(descriptor);
             scope.commitTransaction();
         }
         finally

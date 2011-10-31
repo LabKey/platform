@@ -15,18 +15,18 @@
  * limitations under the License.
  */
 %>
-<%@ page import="org.labkey.api.view.HttpView"%>
-<%@ page import="org.labkey.api.view.JspView" %>
+<%@ page import="org.labkey.api.exp.ExperimentException"%>
 <%@ page import="org.labkey.api.study.actions.AssayRunUploadForm" %>
 <%@ page import="org.labkey.api.study.assay.AssayDataCollector" %>
-<%@ page import="java.util.List" %>
-<%@ page import="java.util.ArrayList" %>
+<%@ page import="org.labkey.api.view.HttpView" %>
+<%@ page import="org.labkey.api.view.JspView" %>
 <%@ page import="java.io.File" %>
+<%@ page import="java.util.ArrayList" %>
+<%@ page import="java.util.List" %>
 <%@ page import="java.util.Map" %>
-<%@ page import="org.labkey.api.exp.ExperimentException" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
-    JspView<AssayRunUploadForm> me = (JspView<org.labkey.api.study.actions.AssayRunUploadForm>) HttpView.currentView();
+    JspView<AssayRunUploadForm> me = (JspView<AssayRunUploadForm>) HttpView.currentView();
     AssayRunUploadForm bean = me.getModelBean();
 %>
 <table>
@@ -35,7 +35,7 @@
             <table>
                 <%
                     boolean first = true;
-                    List<AssayDataCollector> visibleCollectors = new ArrayList<org.labkey.api.study.assay.AssayDataCollector>();
+                    List<AssayDataCollector> visibleCollectors = new ArrayList<AssayDataCollector>();
                     Map<String, File> uploadedData = null;
                     try
                     {

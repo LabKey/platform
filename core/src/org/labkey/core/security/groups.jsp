@@ -21,14 +21,15 @@
 <%@ page import="org.labkey.api.security.SecurityUrls" %>
 <%@ page import="org.labkey.api.security.UserUrls" %>
 <%@ page import="org.labkey.api.util.PageFlowUtil" %>
-<%@ page import="org.labkey.api.view.JspView" %>
 <%@ page import="org.labkey.api.util.Pair" %>
+<%@ page import="org.labkey.api.view.HttpView" %>
+<%@ page import="org.labkey.api.view.JspView" %>
 <%@ page import="org.labkey.core.security.SecurityController" %>
 <%@ page import="java.util.List" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%
-    JspView<SecurityController.GroupsBean> me = (JspView<SecurityController.GroupsBean>) org.labkey.api.view.HttpView.currentView();
+    JspView<SecurityController.GroupsBean> me = (JspView<SecurityController.GroupsBean>) HttpView.currentView();
     SecurityController.GroupsBean groupsBean = me.getModelBean();
     Container container = groupsBean.getContainer();
     for (String message : groupsBean.getMessages())

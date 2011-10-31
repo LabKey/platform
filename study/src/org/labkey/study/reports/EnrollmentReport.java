@@ -225,9 +225,9 @@ public class EnrollmentReport extends ChartReport implements Report.ImageReport
 
     public static class EnrollmentView extends WebPartView
     {
-        private org.labkey.api.reports.Report _report;
+        private Report _report;
 
-        public EnrollmentView(org.labkey.api.reports.Report report)
+        public EnrollmentView(Report report)
         {
             super("Enrollment Report");
             _report = report;
@@ -251,12 +251,14 @@ public class EnrollmentReport extends ChartReport implements Report.ImageReport
                 if (descriptor.getProperty(VisitImpl.SEQUENCEKEY) != null)
                 {
                     double sequenceNum = VisitImpl.parseSequenceNum(descriptor.getProperty(VisitImpl.SEQUENCEKEY));
-
                     ResultSet rs = getVisitDateResultSet(study, datasetId, sequenceNum);
-                    try {
+
+                    try
+                    {
                         int indexX = 1;
                         int countAll = 0;
                         int countNull = 0;
+
                         while (rs.next())
                         {
                             countAll++;
@@ -264,6 +266,7 @@ public class EnrollmentReport extends ChartReport implements Report.ImageReport
                             if (t == null)
                                 countNull++;
                         }
+
                         if (countNull != 0)
                         {
                             out.println("<br><font class=labkey-error>" + countNull + " participants (out of " + countAll + ") do not have VisitDate properly recorded.</font>");
@@ -285,7 +288,7 @@ public class EnrollmentReport extends ChartReport implements Report.ImageReport
     {
         if (study != null)
         {
-            org.labkey.api.reports.Report[] reports = ReportService.get().getReports(user, study.getContainer(), "enrollmentReport");
+            Report[] reports = ReportService.get().getReports(user, study.getContainer(), "enrollmentReport");
             if (reports.length > 0)
             {
                 assert (reports.length == 1);

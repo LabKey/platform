@@ -16,16 +16,14 @@
  */
 %>
 <%@ page import="org.labkey.api.admin.AdminUrls" %>
-<%@ page import="org.labkey.api.view.ActionURL" %>
-<%@ page import="org.labkey.api.util.PageFlowUtil" %>
 <%@ page import="org.labkey.api.data.ContainerManager" %>
+<%@ page import="org.labkey.api.util.PageFlowUtil" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.api.view.ViewContext" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
-    org.labkey.api.admin.AdminUrls adminURLs = PageFlowUtil.urlProvider(org.labkey.api.admin.AdminUrls.class);
-
-    org.labkey.api.view.ViewContext viewContext = org.labkey.api.view.HttpView.currentContext();
+    AdminUrls adminURLs = PageFlowUtil.urlProvider(AdminUrls.class);
+    ViewContext viewContext = HttpView.currentContext();
 %>
 
 <p>Congratulations! Your LabKey Server installation is ready to use.</p>

@@ -47,7 +47,7 @@ public abstract class DefaultActor<A extends DefaultActor<A>> implements Require
     public void addMembers(Site site, User... users)
     {
         Integer groupId = getGroupId(site, true);
-        Group group = org.labkey.api.security.SecurityManager.getGroup(groupId);
+        Group group = SecurityManager.getGroup(groupId);
         for (User user : users)
             SecurityManager.addMember(group, user);
     }
@@ -127,7 +127,7 @@ public abstract class DefaultActor<A extends DefaultActor<A>> implements Require
 
         for (Integer groupId : groupsToDelete)
         {
-            Group group = org.labkey.api.security.SecurityManager.getGroup(groupId);
+            Group group = SecurityManager.getGroup(groupId);
             if (group != null)
                 SecurityManager.deleteGroup(group);
         }

@@ -27,6 +27,9 @@
 <%@ page import="java.util.Map" %>
 <%@ page import="org.labkey.api.settings.AppProps" %>
 <%@ page import="org.labkey.api.util.DateUtil" %>
+<%@ page import="org.labkey.api.util.Path" %>
+<%@ page import="org.labkey.api.webdav.WebdavService" %>
+<%@ page import="org.labkey.api.files.FileUrls" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 
@@ -34,12 +37,12 @@
     org.labkey.filecontent.message.FileContentDigestProvider.FileDigestForm form = ((JspView<org.labkey.filecontent.message.FileContentDigestProvider.FileDigestForm>)HttpView.currentView()).getModelBean();
     int pref = FileContentEmailPref.FOLDER_DEFAULT;//NumberUtils.stringToInt(EmailService.get().getEmailPref(user, c, new FileContentEmailPref()), -1);
 
-    ActionURL emailPrefs = PageFlowUtil.urlProvider(org.labkey.api.files.FileUrls.class).urlFileEmailPreference(form.getContainer());
-    ActionURL fileBrowser = PageFlowUtil.urlProvider(org.labkey.api.files.FileUrls.class).urlBegin(form.getContainer());
+    ActionURL emailPrefs = PageFlowUtil.urlProvider(FileUrls.class).urlFileEmailPreference(form.getContainer());
+    ActionURL fileBrowser = PageFlowUtil.urlProvider(FileUrls.class).urlBegin(form.getContainer());
 %>
 <html>
     <head>
-        <base href="<%=h(org.labkey.api.settings.AppProps.getInstance().getBaseServerUrl() + org.labkey.api.settings.AppProps.getInstance().getContextPath())%>"/>
+        <base href="<%=h(AppProps.getInstance().getBaseServerUrl() + AppProps.getInstance().getContextPath())%>"/>
         <%=PageFlowUtil.getStylesheetIncludes(form.getContainer())%>
     </head>
     <body>
@@ -52,10 +55,10 @@
         <table width="100%">
             <tr><th>Time</th><th>User</th><th>Comment</th></tr>
         <%
-            for (Map.Entry<org.labkey.api.util.Path, List<AuditLogEvent>> record : form.getRecords().entrySet())
+            for (Map.Entry<Path, List<AuditLogEvent>> record : form.getRecords().entrySet())
             {
-                org.labkey.api.util.Path path = record.getKey();
-                WebdavResource resource = org.labkey.api.webdav.WebdavService.get().getResolver().lookup(path);
+                Path path = record.getKey();
+                WebdavResource resource = WebdavService.get().getResolver().lookup(path);
                 
         %>
             <%  if (resource.exists()) { %>
@@ -70,7 +73,7 @@
                     String rowCls = (i % 2 == 0) ? "labkey-row" : "labkey-row";
                     User user = event.getCreatedBy();
             %>
-                    <tr class="<%=rowCls%>"><td><%=org.labkey.api.util.DateUtil.formatDateTime(event.getCreated())%></td><td><%=user.getDisplayName(user)%></td><td><%=event.getComment()%></td></tr>
+                    <tr class="<%=rowCls%>"><td><%=DateUtil.formatDateTime(event.getCreated())%></td><td><%=user.getDisplayName(user)%></td><td><%=event.getComment()%></td></tr>
             <%
                 }
             %>

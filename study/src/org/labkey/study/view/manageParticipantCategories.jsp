@@ -16,16 +16,17 @@
  */
 %>
 <%@ page import="org.labkey.api.data.Container" %>
-<%@ page import="org.labkey.api.view.HttpView" %>
-<%@ page import="org.labkey.api.view.JspView"%>
-<%@ page import="org.labkey.study.model.StudyManager" %>
-<%@ page import="org.labkey.api.study.permissions.SharedParticipantGroupPermission" %>
 <%@ page import="org.labkey.api.security.permissions.AdminPermission" %>
+<%@ page import="org.labkey.api.study.Study"%>
+<%@ page import="org.labkey.api.study.permissions.SharedParticipantGroupPermission" %>
+<%@ page import="org.labkey.api.view.HttpView" %>
+<%@ page import="org.labkey.api.view.JspView" %>
+<%@ page import="org.labkey.study.model.StudyManager" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
     JspView<Object> me = (JspView<Object>) HttpView.currentView();
     Container c = me.getViewContext().getContainer();
-    org.labkey.api.study.Study s = StudyManager.getInstance().getStudy(c);
+    Study s = StudyManager.getInstance().getStudy(c);
     String subjectNounSingular = s.getSubjectNounSingular();
     String subjectNounPlural = s.getSubjectNounPlural();
     String subjectNounColName = s.getSubjectColumnName();

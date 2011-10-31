@@ -16,24 +16,25 @@
 
 package org.labkey.study.model;
 
+import org.jetbrains.annotations.NotNull;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
-import org.labkey.api.security.SecurityPolicy;
-import org.labkey.api.security.SecurableResource;
-import org.labkey.api.security.User;
-import org.labkey.api.security.MutableSecurityPolicy;
-import org.labkey.api.security.roles.RoleManager;
-import org.labkey.api.security.permissions.Permission;
 import org.labkey.api.module.Module;
 import org.labkey.api.module.ModuleLoader;
+import org.labkey.api.security.MutableSecurityPolicy;
+import org.labkey.api.security.SecurableResource;
+import org.labkey.api.security.SecurityManager;
+import org.labkey.api.security.SecurityPolicy;
+import org.labkey.api.security.User;
+import org.labkey.api.security.permissions.Permission;
+import org.labkey.api.security.roles.RoleManager;
 import org.labkey.api.study.StudyEntity;
 import org.labkey.study.StudyModule;
-import org.jetbrains.annotations.NotNull;
 
 import java.io.Serializable;
-import java.util.Set;
-import java.util.List;
 import java.util.Collections;
+import java.util.List;
+import java.util.Set;
 
 /**
  * User: brittp
@@ -141,20 +142,19 @@ public abstract class AbstractStudyEntity<T>
             (study.getSecurityType() == SecurityType.ADVANCED_READ ||
              study.getSecurityType() == SecurityType.ADVANCED_WRITE))
         {
-            return org.labkey.api.security.SecurityManager.getPolicy(this);
+            return SecurityManager.getPolicy(this);
         }
         else
         {
-            return org.labkey.api.security.SecurityManager.getPolicy(getContainer());
+            return SecurityManager.getPolicy(getContainer());
         }
-
     }
 
     public void savePolicy(MutableSecurityPolicy policy)
     {
         if (!supportsPolicyUpdate())
             throw new IllegalArgumentException("unexpected class " + this.getClass().getName());
-        org.labkey.api.security.SecurityManager.savePolicy(policy);
+        SecurityManager.savePolicy(policy);
     }
 
     protected boolean supportsPolicyUpdate()

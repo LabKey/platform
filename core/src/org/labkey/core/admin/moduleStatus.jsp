@@ -15,14 +15,13 @@
  * limitations under the License.
  */
 %>
+<%@ page import="org.labkey.api.data.ContainerManager" %>
+<%@ page import="org.labkey.api.module.ModuleLoader" %>
 <%@ page import="org.labkey.api.util.PageFlowUtil" %>
 <%@ page import="org.labkey.api.view.ActionURL" %>
-<%@ page import="org.labkey.api.settings.AppProps" %>
 <%@ page import="org.labkey.core.admin.AdminController" %>
-<%@ page import="org.labkey.api.module.ModuleLoader" %>
-<%@ page import="org.labkey.api.data.ContainerManager" %>
 <%
-org.labkey.api.module.ModuleLoader loader = org.labkey.api.module.ModuleLoader.getInstance();
+ModuleLoader loader = ModuleLoader.getInstance();
 
 String verb = loader.isNewInstall() ? "Install" : "Upgrade";
 String verbing = loader.isNewInstall() ? "Installing" : "Upgrading";
@@ -157,5 +156,5 @@ String verbing = loader.isNewInstall() ? "Installing" : "Upgrading";
 <br/>
 <div id="completeDiv" style="visibility: hidden">
     <%--Could send install/upgrade paths to different pages for settings, but for now use the same simple one for both --%>
-    <%= PageFlowUtil.generateButton("Next", new ActionURL(AdminController.NewInstallSiteSettingsAction.class, org.labkey.api.data.ContainerManager.getRoot())) %>
+    <%= PageFlowUtil.generateButton("Next", new ActionURL(AdminController.NewInstallSiteSettingsAction.class, ContainerManager.getRoot())) %>
 </div>

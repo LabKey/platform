@@ -27,6 +27,10 @@
 <%@ page import="java.util.Set" %>
 <%@ page import="java.util.Arrays" %>
 <%@ page import="org.labkey.api.data.ColumnInfo" %>
+<%@ page import="org.labkey.api.data.Sort" %>
+<%@ page import="org.labkey.api.util.PageFlowUtil" %>
+<%@ page import="org.labkey.api.util.HString" %>
+<%@ page import="java.util.List" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
     HttpView<IssuesController.AdminBean> me = (HttpView<IssuesController.AdminBean>) HttpView.currentView();
@@ -54,10 +58,10 @@
             <tr><td colspan=2>&nbsp;</td></tr>
             <tr><td><input type="checkbox" name="requiredFields" <%=isRequired("comment", bean.getRequiredFields()) ? "checked " : ""%> value="comment">Comments (new issues only)</td>
         <%
-            java.util.List<org.labkey.api.data.ColumnInfo> columns = bean.getColumns();
+            List<ColumnInfo> columns = bean.getColumns();
             for (int i = 0; i < columns.size(); i++)
             {
-                org.labkey.api.data.ColumnInfo info = columns.get(i);
+                ColumnInfo info = columns.get(i);
                 boolean startNewRow = i % 2 == 1;
                 if (startNewRow)
                 {
@@ -119,7 +123,7 @@
                         <tr>
                             <td>Comment sort direction</td>
                             <td>
-                                <%= org.labkey.api.util.PageFlowUtil.strSelect(IssuesController.ConfigureIssuesForm.ParamNames.direction.name(), Arrays.asList(org.labkey.api.data.Sort.SortDirection.values()), java.util.Arrays.asList("Oldest first", "Newest first"), bean.commentSort) %>
+                                <%=PageFlowUtil.strSelect(IssuesController.ConfigureIssuesForm.ParamNames.direction.name(), Arrays.asList(Sort.SortDirection.values()), java.util.Arrays.asList("Oldest first", "Newest first"), bean.commentSort) %>
                             </td>
                         </tr>
                     </table>
@@ -166,7 +170,7 @@
 </form>
 
 <%!
-    public boolean isRequired(String name, org.labkey.api.util.HString requiredFields) {
+    public boolean isRequired(String name, HString requiredFields) {
         if (requiredFields != null) {
             return requiredFields.indexOf(name.toLowerCase()) != -1;
         }

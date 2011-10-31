@@ -15,18 +15,21 @@
  */
 package org.labkey.announcements;
 
+import org.apache.log4j.Logger;
+import org.labkey.announcements.model.AnnouncementManager;
 import org.labkey.announcements.model.MessageConfigManager;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
-import org.labkey.api.security.*;
+import org.labkey.api.security.Group;
 import org.labkey.api.security.SecurityManager;
-import org.labkey.announcements.model.AnnouncementManager;
-import org.apache.log4j.Logger;
+import org.labkey.api.security.User;
+import org.labkey.api.security.UserManager;
+import org.labkey.api.security.UserPrincipal;
 
 import java.beans.PropertyChangeEvent;
 import java.sql.SQLException;
-import java.util.List;
 import java.util.ArrayList;
+import java.util.List;
 
 /**
  * User: adam
@@ -102,7 +105,7 @@ public class AnnouncementListener implements ContainerManager.ContainerListener,
         {
             User user = (User)p;
             Container cProject = ContainerManager.getForId(g.getContainer());
-            List<User> memberList = org.labkey.api.security.SecurityManager.getProjectUsers(cProject, false);
+            List<User> memberList = SecurityManager.getProjectUsers(cProject, false);
 
             //if user is no longer a member of any project group, delete any EmailPrefs records
             if (!memberList.contains(user))

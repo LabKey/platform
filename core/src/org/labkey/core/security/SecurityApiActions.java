@@ -71,7 +71,7 @@ public class SecurityApiActions
             //if the container is not the root container, get the set of groups
             //from the container's project and pass that down the recursion stack
             response.put("container", getContainerPerms(container,
-                    org.labkey.api.security.SecurityManager.getGroups(container.getProject(), true),
+                    SecurityManager.getGroups(container.getProject(), true),
                     form.isIncludeSubfolders()));
 
             return response;
@@ -95,7 +95,7 @@ public class SecurityApiActions
                     if (child.hasPermission(getViewContext().getUser(), ReadPermission.class))
                     {
                         childPerms.add(getContainerPerms(child,
-                                child.isProject() ? org.labkey.api.security.SecurityManager.getGroups(child, true) : groups,
+                                child.isProject() ? SecurityManager.getGroups(child, true) : groups,
                                 recurse));
                     }
                 }

@@ -27,6 +27,7 @@ import org.labkey.api.data.UpgradeUtils;
 import org.labkey.api.exp.ChangePropertyDescriptorException;
 import org.labkey.api.exp.ExperimentException;
 import org.labkey.api.exp.property.Domain;
+import org.labkey.api.exp.property.DomainProperty;
 import org.labkey.api.module.ModuleContext;
 import org.labkey.api.security.User;
 import org.labkey.api.study.DataSet;
@@ -187,7 +188,7 @@ public class StudyUpgradeCode implements UpgradeCode
                     if (dataSet.isAssayData())
                     {
                         Domain domain = dataSet.getDomain();
-                        for (org.labkey.api.exp.property.DomainProperty prop : domain.getProperties())
+                        for (DomainProperty prop : domain.getProperties())
                         {
                             String keyName = dataSet.getKeyPropertyName();
                             if (keyName == null || !keyName.equalsIgnoreCase(prop.getName()))

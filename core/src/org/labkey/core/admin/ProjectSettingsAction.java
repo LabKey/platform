@@ -131,7 +131,7 @@ public class ProjectSettingsAction extends FormViewAction<AdminController.Projec
         {
         }
 
-        if (form.getShouldInherit() != org.labkey.api.security.SecurityManager.shouldNewSubfoldersInheritPermissions(c))
+        if (form.getShouldInherit() != SecurityManager.shouldNewSubfoldersInheritPermissions(c))
         {
             SecurityManager.setNewSubfoldersInheritPermissions(c, getViewContext().getUser(), form.getShouldInherit());
         }

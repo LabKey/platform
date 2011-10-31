@@ -20,11 +20,12 @@
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.api.view.JspView" %>
 <%@ page import="org.labkey.filecontent.message.FileEmailConfig" %>
+<%@ page import="org.labkey.api.util.UniqueID" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
     FileEmailConfig.EmailConfigForm bean = ((JspView<FileEmailConfig.EmailConfigForm>)HttpView.currentView()).getModelBean();
     final String ID_PREFIX = "labkey_";
-    String panelDiv = ID_PREFIX + org.labkey.api.util.UniqueID.getRequestScopedUID(HttpView.currentRequest());
+    String panelDiv = ID_PREFIX + UniqueID.getRequestScopedUID(HttpView.currentRequest());
 %>
 
 <div id="<%=panelDiv%>"></div>

@@ -16,6 +16,7 @@
  */
 %>
 <%@ page import="org.labkey.api.data.Container"%>
+<%@ page import="org.labkey.api.security.SecurityManager" %>
 <%@ page import="org.labkey.api.settings.LookAndFeelProperties" %>
 <%@ page import="org.labkey.api.util.FolderDisplayMode" %>
 <%@ page import="org.labkey.api.util.PageFlowUtil" %>
@@ -24,9 +25,7 @@
 <%@ page import="org.labkey.api.view.ThemeFont" %>
 <%@ page import="org.labkey.api.view.WebTheme" %>
 <%@ page import="org.labkey.core.admin.AdminController" %>
-<%@ page import="org.labkey.api.settings.AppProps" %>
 <%@ page import="org.labkey.core.admin.ProjectSettingsAction" %>
-<%@ page import="org.labkey.api.view.WebThemeManager" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 
 <%=formatMissedErrors("form")%>
@@ -51,7 +50,7 @@
 <tr><td colspan=3 class=labkey-title-area-line></td></tr>
 <tr>
     <td class="labkey-form-label">New folders should inherit permissions by default</td>
-    <td><input type="checkbox" name="shouldInherit" size="50" <%= org.labkey.api.security.SecurityManager.shouldNewSubfoldersInheritPermissions(c) ? "checked" : "" %>></td>
+    <td><input type="checkbox" name="shouldInherit" size="50" <%= SecurityManager.shouldNewSubfoldersInheritPermissions(c) ? "checked" : "" %>></td>
 </tr>
 
 <tr>

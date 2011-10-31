@@ -1131,7 +1131,7 @@ public class IssuesController extends SpringActionController
     {
         String[] rawEmails = _toString(form.getNotifyList()).split("\n");
         List<String> invalidEmails = new ArrayList<String>();
-        List<ValidEmail> emails = org.labkey.api.security.SecurityManager.normalizeEmails(rawEmails, invalidEmails);
+        List<ValidEmail> emails = SecurityManager.normalizeEmails(rawEmails, invalidEmails);
 
         StringBuilder message = new StringBuilder();
 

@@ -15,9 +15,22 @@
  */
 package org.labkey.core.query;
 
-import org.labkey.api.data.*;
-import org.labkey.api.query.*;
+import org.labkey.api.data.ColumnInfo;
+import org.labkey.api.data.Container;
+import org.labkey.api.data.ContainerForeignKey;
+import org.labkey.api.data.ContainerTable;
+import org.labkey.api.data.CoreSchema;
+import org.labkey.api.data.MultiValuedForeignKey;
+import org.labkey.api.data.RuntimeSQLException;
+import org.labkey.api.data.SQLFragment;
+import org.labkey.api.data.TableInfo;
+import org.labkey.api.query.DetailsURL;
+import org.labkey.api.query.FieldKey;
+import org.labkey.api.query.FilteredTable;
+import org.labkey.api.query.LookupForeignKey;
+import org.labkey.api.query.UserSchema;
 import org.labkey.api.security.Group;
+import org.labkey.api.security.SecurityManager;
 import org.labkey.api.security.User;
 import org.labkey.api.security.ValidEmail;
 import org.labkey.api.security.permissions.AdminPermission;
@@ -28,7 +41,11 @@ import org.labkey.core.user.UserController;
 import org.labkey.core.workbook.WorkbooksTableInfo;
 
 import java.sql.SQLException;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
 
 /**
  * Created by IntelliJ IDEA.
@@ -273,11 +290,11 @@ public class CoreQuerySchema extends UserSchema
         {
             if (_projectUserIds == null)
             {
-                _projectUserIds = new HashSet<Integer>(org.labkey.api.security.SecurityManager.getFolderUserids(getContainer()));
-                Group siteAdminGroup = org.labkey.api.security.SecurityManager.getGroup(Group.groupAdministrators);
+                _projectUserIds = new HashSet<Integer>(SecurityManager.getFolderUserids(getContainer()));
+                Group siteAdminGroup = SecurityManager.getGroup(Group.groupAdministrators);
                 try
                 {
-                    for (User adminUser : org.labkey.api.security.SecurityManager.getGroupMembers(siteAdminGroup))
+                    for (User adminUser : SecurityManager.getGroupMembers(siteAdminGroup))
                     {
                         _projectUserIds.add(adminUser.getUserId());
                     }

@@ -20,6 +20,7 @@ import org.labkey.api.data.Container;
 import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.Table;
 import org.labkey.api.study.Cohort;
+import org.labkey.api.study.Visit;
 import org.labkey.study.StudySchema;
 
 import java.util.List;
@@ -32,7 +33,7 @@ import java.io.Serializable;
  * Date: Jan 6, 2006
  * Time: 10:28:55 AM
  */
-public class VisitImpl extends AbstractStudyEntity<VisitImpl> implements Cloneable, Serializable, org.labkey.api.study.Visit
+public class VisitImpl extends AbstractStudyEntity<VisitImpl> implements Cloneable, Serializable, Visit
 {
     // standard strings to use in URLs etc
     public static final String VISITKEY = "visitRowId";

@@ -37,7 +37,7 @@
     User user = context.getUser();
     LoginForm form = bean.form;
     URLHelper returnURL = form.getReturnURLHelper(AppProps.getInstance().getHomePageActionURL());
-    org.labkey.api.settings.LookAndFeelProperties props = org.labkey.api.settings.LookAndFeelProperties.getInstance(context.getContainer());
+    LookAndFeelProperties props = LookAndFeelProperties.getInstance(context.getContainer());
     boolean agreeOnly = bean.agreeOnly;
 
     // Next bit of code makes the enter button work on all browsers.

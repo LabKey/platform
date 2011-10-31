@@ -839,7 +839,7 @@ public class PipelineController extends SpringActionController
         {
             String[] rawEmails = StringUtils.trimToEmpty(emailString).split("\n");
             List<String> invalidEmails = new ArrayList<String>();
-            List<ValidEmail> emails = org.labkey.api.security.SecurityManager.normalizeEmails(rawEmails, invalidEmails);
+            List<ValidEmail> emails = SecurityManager.normalizeEmails(rawEmails, invalidEmails);
             StringBuilder builder = new StringBuilder();
 
             for (ValidEmail email : emails)

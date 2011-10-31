@@ -43,5 +43,5 @@ public abstract class AbstractReportView extends AbstractReport implements Repor
     public void setParams(String params) {_params = params;}
 
     public String getReportViewType(){return _reportType;}
-    public void setReports(org.labkey.api.reports.Report[] reports){_reports = reports;}
+    public void setReports(Report[] reports){_reports = reports;}
 }

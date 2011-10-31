@@ -413,7 +413,7 @@ Path files = new Path("@files");
 Path pipeline = new Path("@pipeline");
 Path dav = new Path("_webdav");
 
-NavTree getDocumentContext(Container c, org.labkey.api.search.SearchService.SearchHit hit)
+NavTree getDocumentContext(Container c, SearchService.SearchHit hit)
 {
 
     if (null == c)

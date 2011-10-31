@@ -26,6 +26,9 @@
 <%@ page import="java.util.List" %>
 <%@ page import="java.util.Map" %>
 <%@ page import="org.labkey.api.util.DateUtil" %>
+<%@ page import="org.labkey.api.util.Path" %>
+<%@ page import="org.labkey.api.webdav.WebdavService" %>
+<%@ page import="org.labkey.api.files.FileUrls" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 
@@ -33,17 +36,17 @@
     org.labkey.filecontent.message.FileContentDigestProvider.FileDigestForm form = ((JspView<org.labkey.filecontent.message.FileContentDigestProvider.FileDigestForm>)HttpView.currentView()).getModelBean();
     int pref = FileContentEmailPref.FOLDER_DEFAULT;//NumberUtils.stringToInt(EmailService.get().getEmailPref(user, c, new FileContentEmailPref()), -1);
 
-    ActionURL emailPrefs = PageFlowUtil.urlProvider(org.labkey.api.files.FileUrls.class).urlFileEmailPreference(form.getContainer());
-    ActionURL fileBrowser = PageFlowUtil.urlProvider(org.labkey.api.files.FileUrls.class).urlBegin(form.getContainer());
+    ActionURL emailPrefs = PageFlowUtil.urlProvider(FileUrls.class).urlFileEmailPreference(form.getContainer());
+    ActionURL fileBrowser = PageFlowUtil.urlProvider(FileUrls.class).urlBegin(form.getContainer());
 %>
 
 Summary of notifications of files at <%=form.getContainer().getPath()%>.
 
     <%
-        for (Map.Entry<org.labkey.api.util.Path, List<AuditLogEvent>> record : form.getRecords().entrySet())
+        for (Map.Entry<Path, List<AuditLogEvent>> record : form.getRecords().entrySet())
         {
-            org.labkey.api.util.Path path = record.getKey();
-            WebdavResource resource = org.labkey.api.webdav.WebdavService.get().getResolver().lookup(path);
+            Path path = record.getKey();
+            WebdavResource resource = WebdavService.get().getResolver().lookup(path);
 
     %>
         <%=resource.isCollection() ? "Folder: " : " File: "%><%=h(resource.getName())%>
@@ -52,7 +55,7 @@ Summary of notifications of files at <%=form.getContainer().getPath()%>.
             {
                 User user = event.getCreatedBy();
         %>
-                <%=org.labkey.api.util.DateUtil.formatDateTime(event.getCreated())%>, <%=user.getDisplayName(user)%>, <%=event.getComment()%>
+                <%=DateUtil.formatDateTime(event.getCreated())%>, <%=user.getDisplayName(user)%>, <%=event.getComment()%>
         <%
             }
         %>

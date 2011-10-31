@@ -156,9 +156,9 @@ else
     {
         org.labkey.study.model.DataSetDefinition ds = datasets.get(0);
         SecurityPolicy dsPolicy = SecurityManager.getPolicy(ds);
-        for (org.labkey.api.security.roles.Role role : org.labkey.api.security.roles.RoleManager.getAllRoles())
+        for (Role role : RoleManager.getAllRoles())
         {
-            if (role.isApplicable(dsPolicy, ds) && role.getClass() != org.labkey.api.security.roles.ReaderRole.class && role.getClass() != org.labkey.api.security.roles.EditorRole.class)
+            if (role.isApplicable(dsPolicy, ds) && role.getClass() != ReaderRole.class && role.getClass() != EditorRole.class)
             {
                 possibleRoles.add(role);
             }
@@ -193,7 +193,7 @@ else
             java.util.List<Role> roles = dsPolicy.getAssignedRoles(g);
             Role assignedRole = roles.isEmpty() ? null : roles.get(0);
 
-            boolean writePerm = assignedRole != null && assignedRole.getClass() == org.labkey.api.security.roles.EditorRole.class;
+            boolean writePerm = assignedRole != null && assignedRole.getClass() == EditorRole.class;
             boolean readPerm = !writePerm && dsPolicy.hasPermission(g, ReadPermission.class);
 
             if (study.getSecurityType() == SecurityType.ADVANCED_READ && writePerm)

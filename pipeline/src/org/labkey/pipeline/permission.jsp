@@ -17,8 +17,14 @@
 %>
 <%@ page import="org.labkey.api.data.Container" %>
 <%@ page import="org.labkey.api.security.Group" %>
+<%@ page import="org.labkey.api.security.SecurityManager" %>
 <%@ page import="org.labkey.api.security.SecurityPolicy" %>
-<%@ page import="org.labkey.api.security.roles.*" %>
+<%@ page import="org.labkey.api.security.roles.AuthorRole" %>
+<%@ page import="org.labkey.api.security.roles.EditorRole" %>
+<%@ page import="org.labkey.api.security.roles.NoPermissionsRole" %>
+<%@ page import="org.labkey.api.security.roles.ReaderRole" %>
+<%@ page import="org.labkey.api.security.roles.Role" %>
+<%@ page import="org.labkey.api.security.roles.RoleManager" %>
 <%@ page import="org.labkey.api.util.Pair" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.api.view.ViewContext" %>
@@ -41,7 +47,7 @@ These permissions control whether pipeline files can be downloaded and updated v
 <form id="permissionsForm" action="updateRootPermissions.post" method="POST">
 <input id="enabledCheckbox" type="checkbox" name="enable" <%=enableFTP?"checked":""%> onclick="toggleEnableFTP(this)" onchange="toggleEnableFTP(this)"> Share files via web site<br>
     <%
-    Group[] groups = org.labkey.api.security.SecurityManager.getGroups(c.getProject(), true);
+    Group[] groups = SecurityManager.getGroups(c.getProject(), true);
     Pair[] optionsFull = new Pair[]
     {
         new Pair<String,Role>("no access", RoleManager.getRole(NoPermissionsRole.class)),
