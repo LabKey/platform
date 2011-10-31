@@ -1510,6 +1510,28 @@ public class StudyController extends BaseStudyController
         }
     }
 
+
+    @RequiresPermissionClass(ReadPermission.class)
+    public class ManageStudyPropertiesExtAction extends SimpleViewAction<Object>
+    {
+        @Override
+        public ModelAndView getView(Object form, BindException errors) throws Exception
+        {
+            Study study = getStudy(true);
+            if (null == study)
+                throw new RedirectException(new ActionURL(CreateStudyAction.class, getContainer()));
+            return new StudyJspView<Study>(getStudy(), "manageStudyPropertiesExt.jsp", study, null);
+        }
+
+        @Override
+        public NavTree appendNavTrail(NavTree root)
+        {
+            _appendManageStudy(root);
+            return root.addChild("Study Properties");
+        }
+    }
+
+
     @RequiresPermissionClass(AdminPermission.class)
     public class ManageVisitsAction extends FormViewAction<StudyPropertiesForm>
     {
