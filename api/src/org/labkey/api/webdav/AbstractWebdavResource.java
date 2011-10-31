@@ -173,7 +173,7 @@ public abstract class AbstractWebdavResource extends AbstractResource implements
     public String getIconHref()
     {
         if (isCollection())
-            return AppProps.getInstance().getContextPath() + "/" + PageFlowUtil.extJsRoot() + "/resources/images/default/tree/folder.gif";
+            return AppProps.getInstance().getContextPath() + "/_icons/folder.gif";
         return AppProps.getInstance().getContextPath() + Attachment.getFileIcon(getName());
     }
 
