@@ -38,7 +38,6 @@ import org.labkey.api.exp.MvFieldWrapper;
 import org.labkey.api.iterator.CloseableIterator;
 import org.labkey.api.iterator.IteratorUtil;
 import org.labkey.api.query.BatchValidationException;
-
 import org.labkey.api.webdav.WebdavResource;
 import org.springframework.web.multipart.MultipartFile;
 import javax.servlet.ServletException;
@@ -66,6 +65,8 @@ import java.util.Set;
 // Abstract class for loading columnar data from file sources: TSVs, Excel files, etc.
 public abstract class DataLoader implements Iterable<Map<String, Object>>, Loader, DataIteratorBuilder
 {
+    // if a conversion error occurs, the original field value is returned
+    public static final Object ERROR_VALUE_USE_ORIGINAL = new Object();
     private static final Logger _log = Logger.getLogger(DataLoader.class);
 
     /**
@@ -718,8 +719,10 @@ public abstract class DataLoader implements Iterable<Map<String, Object>>, Loade
 
                             throw new ConversionException(sb.toString(), x);
                         }
-
-                        values[i] = column.errorValues;
+                        else if (ERROR_VALUE_USE_ORIGINAL.equals(column.errorValues))
+                            values[i] = fld;
+                        else
+                            values[i] = column.errorValues;
                     }
 
                     if (values[i] != null)

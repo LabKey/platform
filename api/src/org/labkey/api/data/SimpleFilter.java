@@ -864,6 +864,29 @@ public class SimpleFilter implements Filter
         return false;
     }
 
+    // NOTE: We really should take FieldKey instead of String as map key.
+    public boolean meetsCriteria(Map<String, ? extends Object> map)
+    {
+        if (_clauses == null || _clauses.isEmpty())
+            return true;
+
+        for (FilterClause clause : _clauses)
+        {
+            List<String> columns = clause.getColumnNames();
+            if (columns.size() == 0)
+                throw new IllegalArgumentException("Expected filter criteria column name");
+            if (columns.size() > 1)
+                throw new IllegalArgumentException("Can't check filter criteria of multi-column clauses");
+
+            String column = columns.get(0);
+            Object value = map.get(column);
+            if (!clause.meetsCriteria(value))
+                return false;
+        }
+
+        return true;
+    }
+
     // Take care of column name artifacts
     public static class ColumnNameFormatter
     {

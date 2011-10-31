@@ -187,7 +187,12 @@ public class TsvDataExchangeHandler implements DataExchangeHandler
                 pw.append('\n');
                 _filesToIgnore.add(data);
 
-                Map<DataType, List<Map<String, Object>>> dataMap = ((ValidationDataHandler)handler).getValidationDataMap(expData, data, info, LOG, xarContext);
+                // for the data map sent to validation or transform scripts, we want to attempt type conversion, but if it fails, return
+                // the original field value so the transform script can attempt to clean it up.
+                DataLoaderSettings settings = new DataLoaderSettings();
+                settings.setBestEffortConversion(true);
+
+                Map<DataType, List<Map<String, Object>>> dataMap = ((ValidationDataHandler)handler).getValidationDataMap(expData, data, info, LOG, xarContext, settings);
 
                 // Combine the rows of any of the same DataTypes into a single entry
                 for (Map.Entry<DataType, List<Map<String, Object>>> entry : dataMap.entrySet())

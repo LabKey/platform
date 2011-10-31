@@ -38,6 +38,6 @@ public interface ValidationDataHandler
      * used to locate a data handler that can import data in the same tsv format into the DB. This would be the case when an external data transform script
      * is invoked to possibly modify uploaded data.
      */
-    public Map<DataType, List<Map<String, Object>>> getValidationDataMap(ExpData data, File dataFile, ViewBackgroundInfo info, Logger log, XarContext context) throws ExperimentException;
+    public Map<DataType, List<Map<String, Object>>> getValidationDataMap(ExpData data, File dataFile, ViewBackgroundInfo info, Logger log, XarContext context, DataLoaderSettings settings) throws ExperimentException;
 
 }

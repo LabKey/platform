@@ -23,6 +23,7 @@ import org.labkey.api.exp.*;
 import org.labkey.api.exp.api.*;
 import org.labkey.api.exp.property.Domain;
 import org.labkey.api.exp.property.DomainProperty;
+import org.labkey.api.qc.DataLoaderSettings;
 import org.labkey.api.qc.ValidationDataHandler;
 import org.labkey.api.query.ValidationException;
 import org.labkey.api.security.User;
@@ -62,7 +63,7 @@ public abstract class AbstractAssayTsvDataHandler extends AbstractExperimentData
         ExpProtocol protocol = run.getProtocol();
         AssayProvider provider = AssayService.get().getProvider(protocol);
 
-        Map<DataType, List<Map<String, Object>>> rawData = getValidationDataMap(data, dataFile, info, log, context);
+        Map<DataType, List<Map<String, Object>>> rawData = getValidationDataMap(data, dataFile, info, log, context, new DataLoaderSettings());
         assert(rawData.size() <= 1);
         importRows(data, info.getUser(), run, protocol, provider, rawData.values().iterator().next());
     }
