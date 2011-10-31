@@ -388,7 +388,7 @@ LABKEY.Query = new function()
             queryName: 'People',
             columns: ['Name', 'Age'],
             success: onSuccess,
-            failure: onFailure,
+            failure: onFailure
         });
 &lt;/script&gt; </pre>
 		* @see LABKEY.Query.SelectRowsOptions
