@@ -22,6 +22,7 @@ import org.labkey.api.exp.property.DomainProperty;
 import org.labkey.api.exp.api.DataType;
 import org.labkey.api.exp.api.ExpData;
 import org.labkey.api.exp.api.ExpProtocol;
+import org.labkey.api.qc.DataLoaderSettings;
 import org.labkey.api.study.assay.AbstractAssayTsvDataHandler;
 import org.labkey.api.study.assay.AssayProvider;
 import org.labkey.api.study.assay.AssayService;
@@ -98,7 +99,7 @@ public class CBCDataHandler extends AbstractAssayTsvDataHandler
         return cal.getTime();
     }
 
-    public Map<DataType, List<Map<String, Object>>> getValidationDataMap(ExpData data, File dataFile, ViewBackgroundInfo info, Logger log, XarContext context) throws ExperimentException
+    public Map<DataType, List<Map<String, Object>>> getValidationDataMap(ExpData data, File dataFile, ViewBackgroundInfo info, Logger log, XarContext context, DataLoaderSettings settings) throws ExperimentException
     {
         ExpProtocol protocol = data.getRun().getProtocol();
         AssayProvider provider = AssayService.get().getProvider(protocol);
