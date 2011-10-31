@@ -977,57 +977,30 @@ Ext.override(Ext.layout.FormLayout, {
         Ext.layout.FormLayout.prototype.fieldTpl = t;
     }),
 
-    renderItem: function(c, position, target){
-        if(c && !c.rendered && c.isFormField && c.inputType != 'hidden'){
+    getTemplateArgs : function(field) {
+        var noLabelSep = !field.fieldLabel || field.hideLabel,
+                itemCls = (field.itemCls || this.container.itemCls || '') + (field.hideLabel ? ' x-hide-label' : '');
 
-            var noLabelSep = !c.fieldLabel || c.hideLabel;
-            var itemCls = (c.itemCls || this.container.itemCls || '') + (c.hideLabel ? ' x-hide-label' : '');
-
-            // IE9 quirks needs an extra, identifying class on wrappers of TextFields
-            if (Ext.isIE9 && Ext.isIEQuirks && c instanceof Ext.form.TextField) {
-                itemCls += ' x-input-wrapper';
-            }
-
-//            var args = [
-//                c.id, c.fieldLabel,
-//                c.labelStyle||this.labelStyle||'',
-//                this.elementStyle||'',
-//                typeof c.labelSeparator == 'undefined' ? this.labelSeparator : c.labelSeparator,
-//                (c.itemCls||this.container.itemCls||'') + (c.hideLabel ? ' x-hide-label' : ''),
-//                c.clearCls || 'x-form-clear-left',
-//                (c.gtip === undefined ? '' : ' ext:gtip="'+c.gtip+'"'),
-//                (c.gtip === undefined ? '' : 'g-tip-label')
-//            ];
-
-            var args = {
-                id            : c.id,
-                label         : c.fieldLabel,
-                itemCls       : itemCls,
-                clearCls      : c.clearCls || 'x-form-clear-left',
-                labelStyle    : this.getLabelStyle(c.labelStyle),
-                elementStyle  : this.elementStyle||'',
-                labelSeparator: noLabelSep ? '' : (Ext.isDefined(c.labelSeparator) ? c.labelSeparator : this.labelSeparator),
-                guidedTip     : (c.gtip === undefined ? '' : ' ext:gtip="'+c.gtip+'"'),
-                guidedCls     : (c.gtip === undefined ? '' : 'g-tip-label')
-            };
-
-            if(Ext.isNumber(position)){
-                position = target.dom.childNodes[position] || null;
-            }
-            if(position){
-                this.fieldTpl.insertBefore(position, args);
-            }else{
-                this.fieldTpl.append(target, args);
-            }
-            c.render('x-form-el-'+c.id);
-        }else {
-            Ext.layout.FormLayout.superclass.renderItem.apply(this, arguments);
+        // IE9 quirks needs an extra, identifying class on wrappers of TextFields
+        if (Ext.isIE9 && Ext.isIEQuirks && field instanceof Ext.form.TextField) {
+            itemCls += ' x-input-wrapper';
         }
+
+        return {
+            id            : field.id,
+            label         : field.fieldLabel,
+            itemCls       : itemCls,
+            clearCls      : field.clearCls || 'x-form-clear-left',
+            labelStyle    : this.getLabelStyle(field.labelStyle),
+            elementStyle  : this.elementStyle||'',
+            labelSeparator: noLabelSep ? '' : (Ext.isDefined(field.labelSeparator) ? field.labelSeparator : this.labelSeparator),
+            guidedTip     : (field.gtip === undefined ? '' : ' ext:gtip="'+field.gtip+'"'),
+            guidedCls     : (field.gtip === undefined ? '' : 'g-tip-label')
+        };
     }
 });
 
 LABKEY.requiresScript('GuidedTip.js', true);
-
 
 //Ext.reg('datepicker', LABKEY.ext.DatePicker);
 Ext.reg('checkbox', LABKEY.ext.Checkbox);
