@@ -399,6 +399,7 @@ public class ProjectController extends SpringActionController
     }
 
     @RequiresPermissionClass(ReadPermission.class)
+    @IgnoresTermsOfUse
     public class DownloadProjectIconAction extends ExportAction<Object>
     {
         public void export(Object o, HttpServletResponse response, BindException errors) throws Exception
