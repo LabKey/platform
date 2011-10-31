@@ -146,7 +146,7 @@ public class LoginController extends SpringActionController
             return new ActionURL(InitialUserAction.class, ContainerManager.getRoot());
         }
 
-        public ActionURL getVerificationURL(Container c, ValidEmail email, String verification, Pair<String, String>[] extraParameters)
+        public ActionURL getVerificationURL(Container c, ValidEmail email, String verification, @Nullable Pair<String, String>[] extraParameters)
         {
             //FIX: 6021, use project container for this URL so it remains short but maintains the project look & feel settings 
             ActionURL url = new ActionURL(SetPasswordAction.class, LookAndFeelProperties.getSettingsContainer(c));

@@ -60,10 +60,9 @@ public class ShowGroupMembersAction extends FormViewAction<ShowGroupMembersActio
             throw new NotFoundException();
 
         User[] members = actor.getMembers(site);
-        JspView<GroupMembersBean> view = new JspView<GroupMembersBean>("/org/labkey/study/view/samples/groupMembers.jsp",
-                new GroupMembersBean(actor, site, members, form.getReturnUrl()), errors);
 
-        return view;
+        return new JspView<GroupMembersBean>("/org/labkey/study/view/samples/groupMembers.jsp",
+                new GroupMembersBean(actor, site, members, form.getReturnUrl()), errors);
     }
 
     public boolean handlePost(UpdateGroupForm form, BindException errors) throws Exception
@@ -108,6 +107,7 @@ public class ShowGroupMembersAction extends FormViewAction<ShowGroupMembersActio
             }
 
             List<User> newMembers = new ArrayList<User>();
+
             for (ValidEmail email : emails)
             {
                 if (getViewContext().getUser().isAdministrator())
@@ -118,14 +118,18 @@ public class ShowGroupMembersAction extends FormViewAction<ShowGroupMembersActio
                 else
                 {
                     User user = UserManager.getUser(email);
+
                     if (user == null)
+                    {
                         errors.reject(SpecimenController.ERROR_MSG, email.getEmailAddress() + " is not a registered system user.");
+                    }
                     else
                     {
                         newMembers.add(UserManager.getUser(email));
                     }
                 }
             }
+
             actor.addMembers(site, newMembers.toArray(new User[newMembers.size()]));
         }
 

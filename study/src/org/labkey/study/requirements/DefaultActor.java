@@ -16,6 +16,7 @@
 
 package org.labkey.study.requirements;
 
+import org.jetbrains.annotations.Nullable;
 import org.labkey.api.security.*;
 import org.labkey.api.security.SecurityManager;
 import org.labkey.api.data.RuntimeSQLException;
@@ -44,7 +45,7 @@ public abstract class DefaultActor<A extends DefaultActor<A>> implements Require
         addMembers(null, users);
     }
 
-    public void addMembers(Site site, User... users)
+    public void addMembers(@Nullable Site site, User... users)
     {
         Integer groupId = getGroupId(site, true);
         Group group = SecurityManager.getGroup(groupId);
@@ -57,7 +58,7 @@ public abstract class DefaultActor<A extends DefaultActor<A>> implements Require
         return getMembers(null);
     }
 
-    public User[] getMembers(Site site)
+    public User[] getMembers(@Nullable Site site)
     {
         Integer groupId = getGroupId(site, false);
         if (groupId == null)
@@ -75,7 +76,7 @@ public abstract class DefaultActor<A extends DefaultActor<A>> implements Require
         removeMembers(null, members);
     }
 
-    public void removeMembers(Site site, User... members)
+    public void removeMembers(@Nullable Site site, User... members)
     {
         Integer groupId = getGroupId(site, false);
         if (groupId == null)
@@ -92,7 +93,7 @@ public abstract class DefaultActor<A extends DefaultActor<A>> implements Require
         return getGroupId(null, createIfMissing);
     }
 
-    public Integer getGroupId(Site site, boolean createIfMissing)
+    public Integer getGroupId(@Nullable Site site, boolean createIfMissing)
     {
         String groupName = getGroupName() + " " + getPrimaryKey();
         Integer groupId;

@@ -149,7 +149,7 @@ public class CoreQuerySchema extends UserSchema
         groups.addCondition(new SQLFragment("Container IS NULL or Container=?", getContainer().getProject()));
 
         //if guest add null filter
-        if(getUser().isGuest())
+        if (getUser().isGuest())
             addNullSetFilter(groups);
 
         groups.setDescription("Contains all groups defined in the current project." +
@@ -165,7 +165,7 @@ public class CoreQuerySchema extends UserSchema
         //only site admins are allowed to see all site users,
         //so if the user is not a site admin, add a filter that will
         //generate an empty set (CONSIDER: should we throw an exception here instead?)
-        if(!getUser().isAdministrator())
+        if (!getUser().isAdministrator())
             addNullSetFilter(users);
         users.setName("SiteUsers");
         users.setDescription("Contains all users who have accounts on the server regardless of whether they are members of the current project or not." +
@@ -215,7 +215,7 @@ public class CoreQuerySchema extends UserSchema
         principals.addCondition(new SQLFragment("Container IS NULL or Container=?", getContainer().getProject()));
 
         //only non-guest users may see the principals
-        if(getUser().isGuest())
+        if (getUser().isGuest())
             addNullSetFilter(principals);
 
         principals.setDescription("Contains all principals (users and groups) who are members of the current project." +
@@ -253,8 +253,10 @@ public class CoreQuerySchema extends UserSchema
         members.addColumn(col);
 
         //if user is guest, add a null-set filter
-        if(getUser().isGuest())
+        if (getUser().isGuest())
+        {
             addNullSetFilter(members);
+        }
         else
         {
             Container container = getContainer();
@@ -271,7 +273,7 @@ public class CoreQuerySchema extends UserSchema
         members.setDefaultVisibleColumns(defCols);
 
         members.setDescription("Contains rows indicating which users are in which groups in the current project." +
-        " The data in this talbe are available only to users who are signed in (not guests). Guests will see no rows.");
+            " The data in this talbe are available only to users who are signed in (not guests). Guests will see no rows.");
 
         return members;
     }
@@ -284,14 +286,17 @@ public class CoreQuerySchema extends UserSchema
         FilteredTable users = getUserTable();
 
         //if the user is a guest, add a filter to produce a null set
-        if(getUser().isGuest())
+        if (getUser().isGuest())
+        {
             addNullSetFilter(users);
+        }
         else
         {
             if (_projectUserIds == null)
             {
                 _projectUserIds = new HashSet<Integer>(SecurityManager.getFolderUserids(getContainer()));
                 Group siteAdminGroup = SecurityManager.getGroup(Group.groupAdministrators);
+
                 try
                 {
                     for (User adminUser : SecurityManager.getGroupMembers(siteAdminGroup))

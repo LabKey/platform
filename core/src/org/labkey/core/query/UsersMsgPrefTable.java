@@ -34,13 +34,11 @@ import org.labkey.api.security.permissions.ReadPermission;
 
 import java.io.IOException;
 import java.io.Writer;
-import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
 /**
- * Created by IntelliJ IDEA.
  * User: klum
  * Date: Feb 2, 2011
  * Time: 1:38:38 PM
@@ -76,22 +74,17 @@ public class UsersMsgPrefTable extends FilteredTable
 
         // add all of the active users who have read permission to this container to an in clause, this avoids
         // having to do the permission checking at render time and fixes the pagination display issues
-        try
-        {
-            List<Integer> userIds = new ArrayList<Integer>();
-            for (User user : UserManager.getActiveUsers())
-            {
-                if (container.hasPermission(user, ReadPermission.class))
-                    userIds.add(user.getUserId());
-            }
+        List<Integer> userIds = new ArrayList<Integer>();
 
-            if (!userIds.isEmpty())
-                addInClause(getRealTable().getColumn("UserId"), userIds);
-        }
-        catch (SQLException e)
+        for (User user : UserManager.getActiveUsers())
         {
-            throw new RuntimeException(e);
+            if (container.hasPermission(user, ReadPermission.class))
+                userIds.add(user.getUserId());
         }
+
+        if (!userIds.isEmpty())
+            addInClause(getRealTable().getColumn("UserId"), userIds);
+
         setDefaultVisibleColumns(getDefaultColumns());
     }
 
@@ -164,7 +157,7 @@ public class UsersMsgPrefTable extends FilteredTable
         }
     }
 
-    static public class NotificationSettingColumn extends DataColumn
+    public static class NotificationSettingColumn extends DataColumn
     {
         public NotificationSettingColumn(ColumnInfo column)
         {

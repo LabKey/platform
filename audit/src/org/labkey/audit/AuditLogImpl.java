@@ -255,7 +255,7 @@ public class AuditLogImpl implements AuditLogService.I, StartupListener
         event.setCreatedBy(context.getUser());
         Container c = context.getContainer();
         event.setContainerId(c.getId());
-        if(null != c.getProject())
+        if (null != c.getProject())
             event.setProjectId(c.getProject().getId());
 
         return event;
