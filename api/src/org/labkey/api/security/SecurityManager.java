@@ -42,6 +42,7 @@ import org.labkey.api.data.SqlExecutor;
 import org.labkey.api.data.SqlSelector;
 import org.labkey.api.data.Table;
 import org.labkey.api.data.TableInfo;
+import org.labkey.api.data.TableSelector;
 import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.security.permissions.Permission;
 import org.labkey.api.security.roles.FolderAdminRole;
@@ -56,6 +57,7 @@ import org.labkey.api.util.HelpTopic;
 import org.labkey.api.util.MailHelper;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.Pair;
+import org.labkey.api.util.ResultSetUtil;
 import org.labkey.api.util.TestContext;
 import org.labkey.api.util.URLHelper;
 import org.labkey.api.util.emailTemplate.EmailTemplate;
@@ -341,8 +343,8 @@ public class SecurityManager
             if (rawEmail.toLowerCase().equals("guest"))
                 return User.guest;
             new ValidEmail(rawEmail);  // validate email address
-            User u = AuthenticationManager.authenticate(rawEmail, password);
-            return u;
+
+            return AuthenticationManager.authenticate(rawEmail, password);
         }
         catch (ValidEmail.InvalidEmailException e)
         {
@@ -568,7 +570,7 @@ public class SecurityManager
     }
 
 
-    public static ActionURL createVerificationURL(Container c, ValidEmail email, String verification, Pair<String, String>[] extraParameters)
+    public static ActionURL createVerificationURL(Container c, ValidEmail email, String verification, @Nullable Pair<String, String>[] extraParameters)
     {
         return PageFlowUtil.urlProvider(LoginUrls.class).getVerificationURL(c, email, verification, extraParameters);
     }
@@ -932,61 +934,43 @@ public class SecurityManager
 
     private static final int MAX_HISTORY = 10;
 
-    private static List<String> getCryptHistory(String email) throws SQLException
+    private static List<String> getCryptHistory(String email)
     {
-        String cryptHistory = Table.executeSingleton(core.getSchema(), "SELECT PreviousCrypts FROM " + core.getTableInfoLogins() + " WHERE Email=?", new Object[]{email}, String.class);
-
+        Selector selector = new SqlSelector(core.getSchema(), new SQLFragment("SELECT PreviousCrypts FROM " + core.getTableInfoLogins() + " WHERE Email=?", email));
+        String cryptHistory = selector.getObject(String.class);
         List<String> fixedList = Arrays.asList(cryptHistory.split(","));
         assert fixedList.size() <= MAX_HISTORY;
+
         return fixedList;
     }
 
 
     public static boolean matchesPreviousPassword(String password, User user)
     {
-        try
-        {
-            List<String> history = getCryptHistory(user.getEmail());
+        List<String> history = getCryptHistory(user.getEmail());
 
-            for (String hash : history)
-            {
-                if (SecurityManager.matchPassword(password, hash))
-                    return true;
-            }
-
-            return false;
-        }
-        catch (SQLException e)
+        for (String hash : history)
         {
-            throw new RuntimeSQLException(e);
+            if (SecurityManager.matchPassword(password, hash))
+                return true;
         }
+
+        return false;
     }
 
 
     public static Date getLastChanged(User user)
     {
-        try
-        {
-            return Table.executeSingleton(core.getSchema(), "SELECT LastChanged FROM " + core.getTableInfoLogins() + " WHERE Email=?", new Object[]{user.getEmail()}, Date.class);
-        }
-        catch (SQLException e)
-        {
-            throw new RuntimeSQLException(e);
-        }
+        SqlSelector selector = new SqlSelector(core.getSchema(), new SQLFragment("SELECT LastChanged FROM " + core.getTableInfoLogins() + " WHERE Email=?", user.getEmail()));
+        return selector.getObject(Date.class);
     }
 
 
     // Look up email in Logins table and return the corresponding password hash
     public static String getPasswordHash(ValidEmail email)
     {
-        try
-        {
-            return Table.executeSingleton(core.getSchema(), "SELECT Crypt FROM " + core.getTableInfoLogins() + " WHERE Email=?", new Object[]{email.getEmailAddress()}, String.class);
-        }
-        catch (SQLException e)
-        {
-            throw new RuntimeSQLException(e);
-        }
+        SqlSelector selector = new SqlSelector(core.getSchema(), new SQLFragment("SELECT Crypt FROM " + core.getTableInfoLogins() + " WHERE Email = ?", email.getEmailAddress()));
+        return selector.getObject(String.class);
     }
 
 
@@ -1169,7 +1153,6 @@ public class SecurityManager
 
         if (membersToDelete != null && !membersToDelete.isEmpty())
         {
-
             SQLFragment sql = new SQLFragment(
             "DELETE FROM " + core.getTableInfoMembers() + "\n" +
                     "WHERE GroupId = ? AND UserId IN(");
@@ -1185,14 +1168,7 @@ public class SecurityManager
             }
             sql.append(")");
 
-            try
-            {
-                Table.execute(core.getSchema(), sql);
-            }
-            catch (SQLException e)
-            {
-                throw new RuntimeSQLException(e);
-            }
+            new SqlExecutor(core.getSchema(), sql).execute();
 
             for (UserPrincipal member : membersToDelete)
                 fireDeletePrincipalFromGroup(groupId, member);
@@ -1203,20 +1179,9 @@ public class SecurityManager
     public static void deleteMember(Group group, UserPrincipal principal)
     {
         int groupId = group.getUserId();
-
-        try
-        {
-            Table.execute(
-                    core.getSchema(),
-                    "DELETE FROM " + core.getTableInfoMembers() + "\n" +
-                            "WHERE GroupId = ? AND UserId = ?",
-                    groupId, principal.getUserId());
-        }
-        catch (SQLException e)
-        {
-            throw new RuntimeSQLException(e);
-        }
-
+        SqlExecutor executor = new SqlExecutor(core.getSchema(), new SQLFragment("DELETE FROM " + core.getTableInfoMembers() + "\n" +
+            "WHERE GroupId = ? AND UserId = ?", groupId, principal.getUserId()));
+        executor.execute();
         fireDeletePrincipalFromGroup(groupId, principal);
     }
 
@@ -1360,36 +1325,27 @@ public class SecurityManager
 
     public static Group[] getGroups(@Nullable Container project, boolean includeGlobalGroups)
     {
-        try
-        {
-            if (null == project)
-            {
-                return Table.executeQuery(
-                        core.getSchema(),
-                        "SELECT Name, UserId, Container FROM " + core.getTableInfoPrincipals() + " WHERE Type='g' AND Container IS NULL ORDER BY LOWER(Name)",  // Force case-insensitve order for consistency
-                        null,
-                        Group.class);
-            }
-            else
-            {
-                String projectClause = (includeGlobalGroups ? "(Container = ? OR Container IS NULL)" : "Container = ?");
+        SQLFragment sql;
 
-                // Postgres and SQLServer disagree on how to sort null, so we need to handle
-                // null Container values as the first ORDER BY criteria
-                return Table.executeQuery(
-                        core.getSchema(),
-                        "SELECT Name, UserId, Container FROM " + core.getTableInfoPrincipals() + "\n" +
-                                "WHERE Type='g' AND " + projectClause + "\n" +
-                                "ORDER BY CASE WHEN ( Container IS NULL ) THEN 1 ELSE 2 END, Container, LOWER(Name)",  // Force case-insensitve order for consistency
-                        new Object[]{project.getId()},
-                        Group.class);
-            }
-        }
-        catch (SQLException e)
+        if (null == project)
         {
-            _log.error("unexpected exception", e);
-            throw new RuntimeSQLException(e);
+            sql = new SQLFragment("SELECT Name, UserId, Container FROM " + core.getTableInfoPrincipals() + " WHERE Type='g' AND Container IS NULL ORDER BY LOWER(Name)");
         }
+        else
+        {
+            String projectClause = (includeGlobalGroups ? "(Container = ? OR Container IS NULL)" : "Container = ?");
+
+            // PostgreSQL and SQLServer disagree on how to sort null, so we need to handle
+            // null Container values as the first ORDER BY criteria
+            sql = new SQLFragment(
+                    "SELECT Name, UserId, Container FROM " + core.getTableInfoPrincipals() + "\n" +
+                            "WHERE Type='g' AND " + projectClause + "\n" +
+                            "ORDER BY CASE WHEN ( Container IS NULL ) THEN 1 ELSE 2 END, Container, LOWER(Name)");  // Force case-insensitve order for consistency
+
+            sql.add(project.getId());
+        }
+
+        return new SqlSelector(core.getSchema(), sql).getArray(Group.class);
     }
 
 
@@ -1407,8 +1363,11 @@ public class SecurityManager
     public static UserPrincipal getPrincipal(String name, Container container)
     {
         Integer id = getGroupId(container, name, false);
-        if(null != id)
+
+        if (null != id)
+        {
             return getGroup(id);
+        }
         else
         {
             try
@@ -1437,8 +1396,8 @@ public class SecurityManager
     {
         Container proj = null != c.getProject() ? c.getProject() : c;
         int[] groupIds = u.getGroups();
-
         List<Group> groupList = new ArrayList<Group>();
+
         for (int groupId : groupIds)
         {
             //ignore user as group
@@ -1495,7 +1454,7 @@ public class SecurityManager
     {
         String[] emails = getGroupMemberNames(group.getUserId());
         List<User> users = new ArrayList<User>(emails.length);
-        for(String email : emails)
+        for (String email : emails)
             users.add(UserManager.getUser(new ValidEmail(email)));
         return users;
     }
@@ -1534,18 +1493,8 @@ public class SecurityManager
         SQLFragment sql = SecurityManager.getProjectUsersSQL(c.getProject());
         sql.insert(0, "SELECT DISTINCT members.UserId ");
 
-        Integer[] projectUsers;
-
-        try
-        {
-            projectUsers = Table.executeArray(core.getSchema(), sql, Integer.class);
-        }
-        catch (SQLException e)
-        {
-            throw new RuntimeSQLException(e);
-        }
-
-        return PageFlowUtil.set(projectUsers);
+        Selector selector = new SqlSelector(core.getSchema(), sql);
+        return new HashSet<Integer>(selector.getCollection(Integer.class));
     }
 
 
@@ -1595,65 +1544,58 @@ public class SecurityManager
     }
 
 
-    public static List<Integer> getFolderUserids(Container c)
+    public static Collection<Integer> getFolderUserids(Container c)
     {
         Container project = (c.isProject() || c.isRoot()) ? c : c.getProject();
-        try
+
+        //users "in the project" consists of:
+        // - users who are members of a project group
+        // - users who belong to a site group that has a role assignment in the policy for the specified folder
+        // - users who have a direct role assignment in the policy for the specified folder
+        //And if the All Site Users group is playing a role, then all users are "in the project"
+
+        SQLFragment sql = new SQLFragment("SELECT u.UserId FROM ");
+        sql.append(core.getTableInfoPrincipals(), "u");
+        sql.append(" WHERE u.type='u'");
+
+        //don't filter if all site users is playing a role
+        SecurityPolicy policy = c.getPolicy();
+        Group allSiteUsers = SecurityManager.getGroup(Group.groupUsers);
+
+        if (policy.getAssignedRoles(allSiteUsers).size() == 0)
         {
-            //users "in the project" consists of:
-            // - users who are members of a project group
-            // - users who belong to a site group that has a role assignment in the policy for the specified folder
-            // - users who have a direct role assignment in the policy for the specified folder
-            //And if the All Site Users group is playing a role, then all users are "in the project"
+            String resId = c.getPolicy().getResourceId();
 
-            SQLFragment sql = new SQLFragment("SELECT u.UserId FROM ");
-            sql.append(core.getTableInfoPrincipals());
-            sql.append(" u WHERE u.type='u'");
+            sql.append(" AND (");
 
-            //don't filter if all site users is playing a role
-            SecurityPolicy policy = c.getPolicy();
-            Group allSiteUsers = SecurityManager.getGroup(Group.groupUsers);
-            if (policy.getAssignedRoles(allSiteUsers).size() == 0)
-            {
-                String resId = c.getPolicy().getResourceId();
+            //all users who are members of a project group
+            sql.append("u.UserId IN (SELECT m.UserId FROM ");
+            sql.append(core.getTableInfoMembers(), "m");
+            sql.append(" INNER JOIN ");
+            sql.append(core.getTableInfoPrincipals(), "g");
+            sql.append(" ON m.GroupId = g.UserId WHERE g.Type='g' AND g.Container=?)");
+            sql.add(project);
 
-                sql.append(" AND (");
+            //all users who belong to a site group that has a role assignment in the policy for the specified folder
+            sql.append(" OR u.UserId IN (SELECT m.UserId FROM ");
+            sql.append(core.getTableInfoMembers(), "m");
+            sql.append(" INNER JOIN ");
+            sql.append(core.getTableInfoPrincipals(), "g");
+            sql.append(" ON m.GroupId = g.UserId WHERE g.Type='g' AND g.Container IS NULL AND g.UserId IN (SELECT a.UserId FROM ");
+            sql.append(core.getTableInfoRoleAssignments(), "a");
+            sql.append(" WHERE a.ResourceId=? AND a.role != 'org.labkey.api.security.roles.NoPermissionsRole'))");
+            sql.add(resId);
 
-                //all users who are members of a project group
-                sql.append("u.UserId IN (SELECT m.UserId FROM ");
-                sql.append(core.getTableInfoMembers());
-                sql.append(" m INNER JOIN ");
-                sql.append(core.getTableInfoPrincipals());
-                sql.append(" g on m.GroupId=g.UserId WHERE g.Type='g' AND g.Container=?)");
-                sql.add(project);
+            //users who have a direct role assignment in the policy for the specified folder
+            sql.append(" OR u.UserId IN (SELECT a.UserId FROM ");
+            sql.append(core.getTableInfoRoleAssignments(), "a");
+            sql.append(" WHERE a.ResourceId=? AND a.role != 'org.labkey.api.security.roles.NoPermissionsRole')");
+            sql.add(resId);
 
-                //all users who belong to a site group that has a role assignment in the policy for the specified folder
-                sql.append(" OR u.UserId IN (SELECT m.UserId FROM ");
-                sql.append(core.getTableInfoMembers());
-                sql.append(" m INNER JOIN ");
-                sql.append(core.getTableInfoPrincipals());
-                sql.append(" g on m.GroupId=g.UserId WHERE g.Type='g' AND g.Container IS NULL AND g.UserId IN (SELECT a.UserId FROM ");
-                sql.append(core.getTableInfoRoleAssignments());
-                sql.append(" a WHERE a.ResourceId=? AND a.role != 'org.labkey.api.security.roles.NoPermissionsRole'))");
-                sql.add(resId);
-
-                //users who have a direct role assignment in the policy for the specified folder
-                sql.append(" OR u.UserId IN (SELECT a.UserId FROM ");
-                sql.append(core.getTableInfoRoleAssignments());
-                sql.append(" a WHERE a.ResourceId=? AND a.role != 'org.labkey.api.security.roles.NoPermissionsRole')");
-                sql.add(resId);
-                
-                sql.append(")"); //close of "AND ("
-            }
-            
-
-            Integer[] userIds = Table.executeArray(core.getSchema(), sql, Integer.class);
-            return Arrays.asList(userIds);
+            sql.append(")"); //close of "AND ("
         }
-        catch (SQLException x)
-        {
-            throw new RuntimeSQLException(x);
-        }
+
+        return new SqlSelector(core.getSchema(), sql).getCollection(Integer.class);
     }
 
 
@@ -1685,11 +1627,12 @@ public class SecurityManager
     public static List<Pair<Integer, String>> getGroupMemberNamesAndIds(Integer groupId)
     {
         ResultSet rs = null;
+
         try
         {
-            List<Pair<Integer,String>> members = new ArrayList<Pair<Integer, String>>();
+            final List<Pair<Integer, String>> members = new ArrayList<Pair<Integer, String>>();
 
-            if (groupId != null && groupId.intValue() == Group.groupUsers)
+            if (groupId != null && groupId == Group.groupUsers)
             {
                 // Special-case site users group, which isn't maintained in the database
                 for (User user : UserManager.getActiveUsers())
@@ -1699,35 +1642,31 @@ public class SecurityManager
             }
             else
             {
-                rs = Table.executeQuery(
+                Selector selector = new SqlSelector(
                         core.getSchema(),
-                        "SELECT Users.UserId, Users.Name\n" +
+                        new SQLFragment("SELECT Users.UserId, Users.Name\n" +
                                 "FROM " + core.getTableInfoMembers() + " JOIN " + core.getTableInfoPrincipals() + " Users ON " + core.getTableInfoMembers() + ".UserId = Users.UserId\n" +
                                 "WHERE GroupId = ? AND Active=?\n" +
                                 "ORDER BY Users.Name",
-                        new Object[]{groupId, true});
-                while (rs.next())
-                    members.add(new Pair<Integer,String>(rs.getInt(1), rs.getString(2)));
+                        groupId, true));
+
+                selector.forEach(new Selector.ForEachBlock<ResultSet>() {
+                    @Override
+                    public void exec(ResultSet rs) throws SQLException
+                    {
+                        members.add(new Pair<Integer, String>(rs.getInt(1), rs.getString(2)));
+                    }
+                });
             }
+
             return members;
-        }
-        catch (SQLException e)
-        {
-            _log.error(e);
-            throw new RuntimeSQLException(e);
         }
         finally
         {
-            if (rs != null)
-            {
-                try { rs.close(); }
-                catch (SQLException e)
-                {
-                    //ignore
-                }
-            }
+            ResultSetUtil.close(rs);
         }
     }
+
 
     public static String[] getGroupMemberNames(Integer groupId) throws SQLException
     {
@@ -1743,10 +1682,10 @@ public class SecurityManager
     private static Integer[] getGroupMemberIds(Group group)
     {
         Selector selector = new SqlSelector(core.getSchema(), new SQLFragment(
-                "SELECT Members.UserId FROM " + core.getTableInfoMembers() + " Members" +
-                " JOIN " + core.getTableInfoPrincipals() + " Users ON Members.UserId = Users.UserId\n" +
-                " WHERE Members.GroupId = ?" +
-                " ORDER BY Users.Type, Users.Name", group.getUserId()));
+            "SELECT Members.UserId FROM " + core.getTableInfoMembers() + " Members" +
+            " JOIN " + core.getTableInfoPrincipals() + " Users ON Members.UserId = Users.UserId\n" +
+            " WHERE Members.GroupId = ?" +
+            " ORDER BY Users.Type, Users.Name", group.getUserId()));
 
         return selector.getArray(Integer.class);
     }
@@ -1804,37 +1743,32 @@ public class SecurityManager
     // TODO: For CPAS 1.7: this should always be case-insensitive (we will clean up the database by renaming duplicate groups)
     private static Integer getGroupId(Container c, String groupName, @Nullable String ownerId, boolean throwOnFailure, boolean caseInsensitive)
     {
-        List<String> params = new ArrayList<String>();
-        params.add(caseInsensitive ? groupName.toLowerCase() : groupName);
-        String sql = "SELECT UserId FROM " + core.getTableInfoPrincipals() + " WHERE Type!='u' AND " + (caseInsensitive ? "LOWER(Name)" : "Name") + " = ? AND Container ";
+        SQLFragment sql = new SQLFragment("SELECT UserId FROM " + core.getTableInfoPrincipals() + " WHERE Type!='u' AND " + (caseInsensitive ? "LOWER(Name)" : "Name") + " = ? AND Container ");
+        sql.add(caseInsensitive ? groupName.toLowerCase() : groupName);
+
         if (c == null || c.isRoot())
-            sql += "IS NULL";
+        {
+            sql.append("IS NULL");
+        }
         else
         {
-            sql += "= ?";
-            params.add(c.getId());
+            sql.append("= ?");
+            sql.add(c.getId());
             if (ownerId == null)
                 ownerId = c.isRoot() ? null : c.getId();
         }
 
         if (ownerId == null)
-            sql += " AND OwnerId IS NULL";
+        {
+            sql.append(" AND OwnerId IS NULL");
+        }
         else
         {
-            sql += " AND OwnerId = ?";
-            params.add(ownerId);
+            sql.append(" AND OwnerId = ?");
+            sql.add(ownerId);
         }
 
-        Integer groupId;
-        try
-        {
-            groupId = Table.executeSingleton(core.getSchema(), sql,
-                    params.toArray(new Object[params.size()]), Integer.class);
-        }
-        catch (SQLException x)
-        {
-            throw new RuntimeSQLException(x);
-        }
+        Integer groupId = new SqlSelector(core.getSchema(), sql).getObject(Integer.class);
 
         if (groupId == null && throwOnFailure)
         {
@@ -1962,33 +1896,27 @@ public class SecurityManager
     {
         String cacheName = cacheName(resource);
         SecurityPolicy policy = (SecurityPolicy) DbCache.get(core.getTableInfoRoleAssignments(), cacheName);
-        if(null == policy)
+
+        if (null == policy)
         {
-            try
-            {
-                SimpleFilter filter = new SimpleFilter("ResourceId", resource.getResourceId());
+            SimpleFilter filter = new SimpleFilter("ResourceId", resource.getResourceId());
 
-                SecurityPolicyBean policyBean = Table.selectObject(core.getTableInfoPolicies(), resource.getResourceId(),
-                        SecurityPolicyBean.class);
+            SecurityPolicyBean policyBean = Table.selectObject(core.getTableInfoPolicies(), resource.getResourceId(),
+                    SecurityPolicyBean.class);
 
-                TableInfo table = core.getTableInfoRoleAssignments();
+            TableInfo table = core.getTableInfoRoleAssignments();
 
-                RoleAssignment[] assignments = Table.select(table, Table.ALL_COLUMNS, filter,
-                        new Sort("UserId"), RoleAssignment.class);
+            Selector selector = new TableSelector(table, filter, new Sort("UserId"));
+            RoleAssignment[] assignments = selector.getArray(RoleAssignment.class);
 
-                policy = new SecurityPolicy(resource, assignments, null != policyBean ? policyBean.getModified() : new Date());
-                DbCache.put(table, cacheName, policy);
-            }
-            catch(SQLException e)
-            {
-                throw new RuntimeSQLException(e);
-            }
+            policy = new SecurityPolicy(resource, assignments, null != policyBean ? policyBean.getModified() : new Date());
+            DbCache.put(table, cacheName, policy);
         }
 
-        if(findNearest && policy.isEmpty() && resource.mayInheritPolicy())
+        if (findNearest && policy.isEmpty() && resource.mayInheritPolicy())
         {
             SecurableResource parent = resource.getParentResource();
-            if(null != parent)
+            if (null != parent)
                 return getPolicy(parent, findNearest);
         }
         
@@ -1999,6 +1927,7 @@ public class SecurityManager
     public static void savePolicy(@NotNull MutableSecurityPolicy policy)
     {
         DbScope scope = core.getSchema().getScope();
+
         try
         {
             scope.ensureTransaction();
@@ -2008,7 +1937,7 @@ public class SecurityManager
             SecurityPolicyBean currentPolicyBean = Table.selectObject(core.getTableInfoPolicies(),
                     policy.getResourceId(), SecurityPolicyBean.class);
 
-            if(null != currentPolicyBean && null != policy.getModified() &&
+            if (null != currentPolicyBean && null != policy.getModified() &&
                     0 != policy.getModified().compareTo(currentPolicyBean.getModified()))
             {
                 throw new Table.OptimisticConflictException("The security policy you are attempting to save" +
@@ -2019,7 +1948,7 @@ public class SecurityManager
             policy.normalize();
 
             //save to policies table
-            if(null == currentPolicyBean)
+            if (null == currentPolicyBean)
                 Table.insert(null, core.getTableInfoPolicies(), policy.getBean());
             else
                 Table.update(null, core.getTableInfoPolicies(), policy.getBean(), policy.getResourceId());
@@ -2030,7 +1959,7 @@ public class SecurityManager
             Table.delete(table, new SimpleFilter("ResourceId", policy.getResourceId()));
 
             //insert rows for the policy entries
-            for(RoleAssignment assignment : policy.getAssignments())
+            for (RoleAssignment assignment : policy.getAssignments())
             {
                 Table.insert(null, table, assignment);
             }
@@ -2093,53 +2022,49 @@ public class SecurityManager
      */
     public static void clearRoleAssignments(@NotNull Set<SecurableResource> resources, @NotNull Set<UserPrincipal> principals)
     {
-        if(resources.size() == 0 || principals.size() == 0)
+        if (resources.size() == 0 || principals.size() == 0)
             return;
 
-        try
+        TableInfo table = core.getTableInfoRoleAssignments();
+
+        SQLFragment sql = new SQLFragment("DELETE FROM ");
+        sql.append(core.getTableInfoRoleAssignments());
+        sql.append(" WHERE ResourceId IN (");
+
+        String sep = "";
+        SQLFragment resourcesList = new SQLFragment();
+
+        for (SecurableResource resource : resources)
         {
-            TableInfo table = core.getTableInfoRoleAssignments();
-
-            SQLFragment sql = new SQLFragment("delete from ");
-            sql.append(core.getTableInfoRoleAssignments());
-            sql.append(" where ResourceId in(");
-
-            String sep = "";
-            SQLFragment resourcesList = new SQLFragment();
-            for(SecurableResource resource : resources)
-            {
-                resourcesList.append(sep);
-                resourcesList.append("?");
-                resourcesList.add(resource.getResourceId());
-                sep = ",";
-            }
-            sql.append(resourcesList);
-            sql.append(") and UserId in(");
-
-            sep = "";
-            SQLFragment principalsList = new SQLFragment();
-            for(UserPrincipal principal : principals)
-            {
-                principalsList.append(sep);
-                principalsList.append("?");
-                principalsList.add(principal.getUserId());
-                sep = ",";
-            }
-            sql.append(principalsList);
-            sql.append(")");
-
-            Table.execute(core.getSchema(), sql);
-
-            DbCache.clear(table);
-            
-            for(SecurableResource resource : resources)
-            {
-                notifyPolicyChange(resource.getResourceId());
-            }
+            resourcesList.append(sep);
+            resourcesList.append("?");
+            resourcesList.add(resource.getResourceId());
+            sep = ",";
         }
-        catch(SQLException e)
+
+        sql.append(resourcesList);
+        sql.append(") AND UserId IN (");
+        sep = "";
+        SQLFragment principalsList = new SQLFragment();
+
+        for (UserPrincipal principal : principals)
         {
-            throw new RuntimeSQLException(e);
+            principalsList.append(sep);
+            principalsList.append("?");
+            principalsList.add(principal.getUserId());
+            sep = ",";
+        }
+
+        sql.append(principalsList);
+        sql.append(")");
+
+        new SqlExecutor(core.getSchema(), sql).execute();
+
+        DbCache.clear(table);
+
+        for (SecurableResource resource : resources)
+        {
+            notifyPolicyChange(resource.getResourceId());
         }
     }
 
@@ -2473,19 +2398,24 @@ public class SecurityManager
 
     private static void appendMailHelpText(StringBuilder sb, ActionURL messageContentsURL, boolean isAdmin)
     {
-        if(isAdmin){
+        if (isAdmin)
+        {
             sb.append("You can attempt to resend this mail later by going to the Site Users link, clicking on the appropriate user from the list, and resetting their password.");
+
             if (messageContentsURL != null)
             {
                 sb.append(" Alternatively, you can copy the <a href=\"");
                 sb.append(PageFlowUtil.filter(messageContentsURL));
                 sb.append("\" target=\"_blank\">contents of the message</a> into an email client and send it to the user manually.");
             }
+
             sb.append("</p>");
             sb.append("<p>For help on fixing your mail server settings, please consult the SMTP section of the <a href=\"");
             sb.append((new HelpTopic("cpasxml")).getHelpTopicLink());
             sb.append("\" target=\"_new\">LabKey documentation on modifying your configuration file</a>.<br>");
-        } else {
+        }
+        else
+        {
             sb.append("Please contact your site administrator.");
         }
     }
@@ -2526,12 +2456,12 @@ public class SecurityManager
             SecurityPolicy projectPolicy = c.getProject().getPolicy();
             Role projAdminRole = RoleManager.getRole(ProjectAdminRole.class);
             Role folderAdminRole = RoleManager.getRole(FolderAdminRole.class);
-            for(RoleAssignment ra : projectPolicy.getAssignments())
+            for (RoleAssignment ra : projectPolicy.getAssignments())
             {
                 if (ra.getRole().equals(projAdminRole))
                 {
                     UserPrincipal principal = getPrincipal(ra.getUserId());
-                    if(null != principal)
+                    if (null != principal)
                         policy.addRoleAssignment(principal, folderAdminRole);
                 }
             }
@@ -2551,13 +2481,14 @@ public class SecurityManager
         adminRoles.add(RoleManager.getRole(SiteAdminRole.class));
         adminRoles.add(RoleManager.getRole(ProjectAdminRole.class));
         adminRoles.add(RoleManager.getRole(FolderAdminRole.class));
-
         SecurityPolicy policy = c.getPolicy();
-        for(RoleAssignment ra : policy.getAssignments())
+
+        for (RoleAssignment ra : policy.getAssignments())
         {
-            if(!adminRoles.contains(ra.getRole()))
+            if (!adminRoles.contains(ra.getRole()))
                 return false;
         }
+
         return true;
     }
 

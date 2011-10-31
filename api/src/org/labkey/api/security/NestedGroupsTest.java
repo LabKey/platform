@@ -138,7 +138,8 @@ public class NestedGroupsTest extends Assert
             failAddMember(projectX, homeGroup, SecurityManager.DIFFERENT_PROJECTS_ERROR_MESSAGE);
 
         // Test that we protect against concurrent threads making independent group adds that result in a cycle.  We
-        // simulate this by
+        // simulate this by adding two groups that result in a cycle, forcing the second add to occur just after the
+        // first add, but before the final validation of the first add.
         try
         {
             SecurityManager.addMember(projectX, cycleTest, new Runnable() {

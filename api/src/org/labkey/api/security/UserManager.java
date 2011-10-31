@@ -19,10 +19,23 @@ package org.labkey.api.security;
 import org.apache.commons.lang.StringUtils;
 import org.apache.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import org.labkey.api.audit.AuditLogService;
 import org.labkey.api.cache.CacheManager;
 import org.labkey.api.cache.DbCache;
-import org.labkey.api.data.*;
+import org.labkey.api.data.Container;
+import org.labkey.api.data.ContainerManager;
+import org.labkey.api.data.CoreSchema;
+import org.labkey.api.data.PropertyManager;
+import org.labkey.api.data.RuntimeSQLException;
+import org.labkey.api.data.SQLFragment;
+import org.labkey.api.data.Selector;
+import org.labkey.api.data.SimpleFilter;
+import org.labkey.api.data.Sort;
+import org.labkey.api.data.SqlExecutor;
+import org.labkey.api.data.SqlSelector;
+import org.labkey.api.data.Table;
+import org.labkey.api.data.TableSelector;
 import org.labkey.api.util.HeartBeat;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.Pair;
@@ -33,7 +46,15 @@ import org.labkey.api.view.ViewContext;
 import java.beans.PropertyChangeListener;
 import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.Comparator;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 import java.util.concurrent.CopyOnWriteArrayList;
 
 public class UserManager
@@ -176,50 +197,16 @@ public class UserManager
     }
 
 
-    public static User getUser(ValidEmail email)
+    public static @Nullable User getUser(ValidEmail email)
     {
-        User user = null;
-
-        try
-        {
-            // TODO: Index on Principals.Name?
-            User[] users = Table.executeQuery(CORE.getSchema(), "SELECT * FROM " + CORE.getTableInfoUsers() + " WHERE Email=?", new Object[]{email.getEmailAddress()}, User.class);
-
-            if (0 < users.length)
-                user = users[0];
-        }
-        catch (SQLException e)
-        {
-            throw new RuntimeSQLException(e);
-        }
-
-        return user;
+        // TODO: Index on Principals.Name?
+        return new SqlSelector(CORE.getSchema(), new SQLFragment("SELECT * FROM " + CORE.getTableInfoUsers() + " WHERE Email = ?", email.getEmailAddress())).getObject(User.class);
     }
 
 
-    public static User getUserByDisplayName(String displayName)
+    public static @Nullable User getUserByDisplayName(String displayName)
     {
-        User user = null;
-
-        try
-        {
-            User[] users = Table.select(
-                    CORE.getTableInfoUsers(),
-                    Table.ALL_COLUMNS,
-                    new SimpleFilter("DisplayName", displayName),
-                    null,
-                    User.class
-            );
-
-            if (0 < users.length)
-                user = users[0];
-        }
-        catch (SQLException e)
-        {
-            throw new RuntimeSQLException(e);
-        }
-
-        return user;
+        return new TableSelector(CORE.getTableInfoUsers(), new SimpleFilter("DisplayName", displayName), null).getObject(User.class);
     }
 
 
@@ -241,18 +228,12 @@ public class UserManager
     }
 
 
-    /** Includes users who have logged in during any server session */
+    // Includes users who have logged in during any server session
     public static int getActiveUserCount(Date since)
     {
-        try
-        {
-            return Table.executeSingleton(CORE.getSchema(), "SELECT COUNT(*) FROM " + CORE.getTableInfoUsersData() + " WHERE LastLogin >= ?", new Object[] { since }, Integer.class);
-        }
-        catch (SQLException e)
-        {
-            throw new RuntimeSQLException(e);
-        }
+        return new SqlSelector(CORE.getSchema(), new SQLFragment("SELECT COUNT(*) FROM " + CORE.getTableInfoUsersData() + " WHERE LastLogin >= ?", since)).getObject(Integer.class);
     }
+
 
     /** Returns all users who have logged in during this server session since the specified interval */
     public static List<Pair<String, Long>> getActiveUsers(long since)
@@ -344,12 +325,12 @@ public class UserManager
     }
 
 
-    public static User[] getActiveUsers() throws SQLException
+    public static User[] getActiveUsers()
     {
         User[] userList = (User[]) DbCache.get(CORE.getTableInfoActiveUsers(), USER_OBJECT_LIST_LOOKUP);
         if (userList != null)
             return userList;
-        userList = Table.select(CORE.getTableInfoActiveUsers(), Table.ALL_COLUMNS, null, new Sort("Email"), User.class);
+        userList = new TableSelector(CORE.getTableInfoActiveUsers(), null, new Sort("Email")).getArray(User.class);
         DbCache.put(CORE.getTableInfoActiveUsers(), USER_OBJECT_LIST_LOOKUP, userList, CacheManager.HOUR);
         return userList;
     }
@@ -361,40 +342,20 @@ public class UserManager
 
         if (null == userList)
         {
-            userList = new HashMap<Integer, UserName>((int) (getUserCount() * 1.333));
+            final Map<Integer, UserName> userList2 = new HashMap<Integer, UserName>((int) (getUserCount() * 1.333));
 
-            ResultSet rs = null;
-
-            try
-            {
-                rs = Table.executeQuery(CORE.getSchema(), "SELECT UserId, Email, DisplayName FROM " + CORE.getTableInfoActiveUsers(), new Object[]{});
-
-                while (rs.next())
+            Selector selector = new SqlSelector(CORE.getSchema(), new SQLFragment("SELECT UserId, Email, DisplayName FROM " + CORE.getTableInfoActiveUsers()));
+            selector.forEach(new Selector.ForEachBlock<ResultSet>() {
+                @Override
+                public void exec(ResultSet rs) throws SQLException
                 {
                     UserName userName = new UserName(rs.getString("Email"), rs.getString("DisplayName"));
-                    userList.put(rs.getInt("UserId"), userName);
+                    userList2.put(rs.getInt("UserId"), userName);
                 }
-            }
-            catch (SQLException e)
-            {
-                throw new RuntimeSQLException(e);
-            }
-            finally
-            {
-                if (rs != null)
-                {
-                    try
-                    {
-                        rs.close();
-                    }
-                    catch(SQLException e)
-                    {
-                        LOG.error("Error closing ResultSet", e);
-                    }
-                }
-            }
+            });
 
-            DbCache.put(CORE.getTableInfoActiveUsers(), USER_LIST_LOOKUP, userList, CacheManager.HOUR);
+            DbCache.put(CORE.getTableInfoActiveUsers(), USER_LIST_LOOKUP, userList2, CacheManager.HOUR);
+            userList = userList2;
         }
 
         return userList;
@@ -419,7 +380,7 @@ public class UserManager
          * if it is an email address.
          *
          * @param context
-         * @return The diplay name, possibly sanitized
+         * @return The display name, possibly sanitized
          */
         public String getDisplayName(ViewContext context)
         {
@@ -569,14 +530,8 @@ public class UserManager
 
     public static void updateLogin(User user)
     {
-        try
-        {
-            Table.execute(CORE.getSchema(), "UPDATE " + CORE.getTableInfoUsersData() + " SET LastLogin=? WHERE UserId=?", new Date(), user.getUserId());
-        }
-        catch (SQLException e)
-        {
-            throw new RuntimeSQLException(e);
-        }
+        SQLFragment sql = new SQLFragment("UPDATE " + CORE.getTableInfoUsersData() + " SET LastLogin = ? WHERE UserId = ?", new Date(), user.getUserId());
+        new SqlExecutor(CORE.getSchema(), sql).execute();
     }
 
 

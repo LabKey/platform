@@ -1520,6 +1520,7 @@ public class Table
         SQLFragment sql = new SQLFragment("SELECT COUNT(*) FROM (");
         sql.append(QueryService.get().getSelectSQL(tinfo, tinfo.getPkColumns(), null, null, ALL_ROWS, NO_OFFSET, false));
         sql.append(") x");
+
         return executeSingleton(tinfo.getSchema(), sql.getSQL(), sql.getParamsArray(), Long.class);
     }
 
