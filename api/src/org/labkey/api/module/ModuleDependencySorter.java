@@ -85,6 +85,13 @@ public class ModuleDependencySorter
             }
         }
 
+        for (Pair<Module, Set<String>> entry : dependencies)
+        {
+            String moduleName = entry.getKey().getName();
+            if (entry.getValue().contains(moduleName))
+                throw new IllegalArgumentException("Module '" + moduleName + "' (" + entry.getKey().getClass().getName() + ") is listed as being dependent on itself.");
+        }
+
         StringBuilder sb = new StringBuilder();
         for (Pair<Module, Set<String>> dependencyInfo : dependencies)
         {
