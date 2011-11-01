@@ -32,13 +32,17 @@
     User user = ctx.getUser();
 %>
 <script type="text/javascript">
-    LABKEY.requiresExt4Sandbox(true);
+    //LABKEY.requiresExt4Sandbox(true);
+    LABKEY.requiresExt4ClientAPI();
     LABKEY.requiresCss('/extWidgets/ext4.css');
     LABKEY.requiresCss('/createFolder.css');
 </script>
 <script type="text/javascript">
     Ext4.onReady(function(){
         var isProject = <%=h(c.isProject())%>;
+        var containerNoun = isProject ? 'Project' : 'Folder';
+
+        Ext4.QuickTips.init();
 
         Ext4.create('Ext.form.Panel', {
             border: false,
@@ -56,13 +60,13 @@
                 name: 'permissionType',
                 columns: 1,
                 defaults: {
-                    width: 300
+                    width: 400
                 },
                 listeners: {
                     change: {
                         fn: function(btn, newVal, oldVal){
                             var form = btn.up('form');
-                            var panel = form.child('#usersArea');
+                            var panel = form.down('#usersArea');
                             panel.removeAll();
 
                             if(newVal.permissionType)
@@ -76,37 +80,61 @@
                 },
                 items: [{
                     //note: folders cant inherit permissions from a parent
-                    boxLabel: 'Inherit From Parent',
+                    boxLabel: 'Inherit From Parent ' + containerNoun,
                     checked: !isProject,
                     hidden: isProject,
                     name: 'permissionType',
-                    inputValue: 'Inherit'
+                    inputValue: 'Inherit',
+                    autoEl: {
+                        'data-qtip': 'If selected, all permissions will be inherited from the parent '+containerNoun+'.  Any changes made to the parent will automatically be reflected in the child.'
+                    }
                 },{
                     boxLabel: 'My User Only',
                     checked: isProject,
                     name: 'permissionType',
-                    inputValue: 'CurrentUser'
+                    inputValue: 'CurrentUser',
+                    autoEl: {
+                        'data-qtip': 'If selected, only the current user and site admins will have permissions in this folder.'
+                    }
                 },{
-                    xtype: 'radio',
-                    boxLabel: 'Copy From Existing Project',
-                    checked: false,
+                    xtype: 'form',
+                    layout: 'hbox',
+                    width: '100%',
+                    itemId: 'hbox',
                     hidden: !isProject,
-                    name: 'permissionType',
-                    inputValue: 'CopyExistingProject'
+                    border: false,
+                    defaults: {
+                        border: false
+                    },
+                    items: [{
+                        xtype: 'radio',
+                        boxLabel: 'Copy From Existing Project',
+                        checked: false,
+                        name: 'permissionType',
+                        inputValue: 'CopyExistingProject',
+                        autoEl: {
+                            'data-qtip': 'If selected, the permissions for all users and groups from the selected project will be applied to this project.  If this project has project groups, copies of those groups will be made in the new project.'
+                        }
+                    },{
+                        xtype: 'panel',
+                        width: 400,
+                        border: false,
+                        autoHeight: true,
+                        defaults: {
+                            border: false
+                        },
+                        itemId: 'usersArea'
+                    }]
                 },{
                     xtype: 'radio',
                     boxLabel: 'Configure Later',
                     checked: false,
                     name: 'permissionType',
-                    inputValue: 'Advanced'
+                    inputValue: 'Advanced',
+                    autoEl: {
+                        'data-qtip': 'If selected, on the final page of the wizard there will be a link allowing you to set permissions using the default security policy editor.  This option is the most powerful, yet most complex to use.'
+                    }
                 }]
-            },{
-                xtype: 'panel',
-                border: false,
-                defaults: {
-                    border: false
-                },
-                itemId: 'usersArea'
             }],
             buttons: [{
                 xtype: 'button',
@@ -131,42 +159,23 @@
                     xtype: 'combo',
                     id: 'targetProject',
                     name: 'targetProject',
-                    fieldLabel: 'Choose Project',
-                    displayField: 'name',
-                    valueField: 'value',
-                    store: {
-                        fields: ['name', 'value'],
-                        idIndex: 1,
-                        data: [
-<%
-        List<Container> projects = ContainerManager.getChildren(ContainerManager.getRoot(), user, AdminPermission.class);
-        String comma = "";
-        for (Container p : projects)
-        {
-            %><%=comma%>{name: '<%=h(p.getName())%>', value: '<%=h(p.getId())%>'}
-<%
-            comma = ", ";
-        }
-%>
-                        ]
-                    }
-//NOTE: would be a little cleaner to use the API, but there wasnt a clear way to query just projects
-//                    displayField: 'Name',
-//                    valueField: 'EntityId',
-//                    store: Ext4.create('LABKEY.ext4.Store', {
-//                        containerPath: '/',
-//                        schemaName: 'core',
-//                        queryName: 'containers',
-//                        columns: 'entityId,name',
-//                        filterArray: [
-//                            LABKEY.Filter.create('containerType', 'project, LABKEY.Filter.Types.EQUAL)
-//                        ],
-//                        //NOTE: we will always be in root if this is called
-//                        containerFilter: 'CurrentAndSubfolders'
-//                    })
+                    style: 'padding-left: 20px;padding-top:3px;',
+                    //fieldLabel: 'Choose Project',
+                    labelAlign: 'top',
+                    displayField: 'Name',
+                    valueField: 'EntityId',
+                    store: Ext4.create('LABKEY.ext4.Store', {
+                        containerPath: '/',
+                        schemaName: 'core',
+                        queryName: 'containers',
+                        columns: 'entityId,name',
+                        filterArray: [
+                            LABKEY.Filter.create('containerType', 'project', LABKEY.Filter.Types.EQUAL)
+                        ],
+                        containerFilter: 'CurrentAndSubfolders'
+                    })
                 });
             }
-
         }).render('folderPermissionsDiv');
     });
 

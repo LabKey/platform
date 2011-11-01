@@ -49,12 +49,12 @@ Ext4.onReady(function(){
         border: false,
         frame: false,
         store: Ext4.create('LABKEY.ext4.Store', {
-            containerPath: '/',
+            containerPath: 'home',
             schemaName: 'core',
             queryName: 'Containers',
             title: 'Projects',
             sort: 'Name',
-            containerFilter: 'CurrentAndFirstChildren',
+            containerFilter: 'CurrentAndSiblings',
             columns: 'name',
             autoLoad: true,
             filterArray: [

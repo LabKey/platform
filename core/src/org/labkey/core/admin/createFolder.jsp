@@ -92,218 +92,223 @@
 
         function onSuccess(){
 
-            Ext4.create('Ext.form.Panel', {
-            border: false,
-            autoHeight: true,
-            width: 'auto',
-            style: 'padding-top: 20px;',
-            defaults: {
-                border: false
-            },
-            url: 'createFolder.view',
-            method: 'POST',
-            standardSubmit: true,
-            listeners: {
-                render: function(panel){
-                    var target = panel.down('#folderType');
-                    if(target.getValue() && target.getValue().folderType == 'None')
-                        panel.renderModules();
-                }
-            },
-            items: [{
-                html: 'Name:',
-                cls: 'labkey-wizard-header',
-                style: 'padding-bottom: 5px;'
-            },{
-                xtype: 'hidden',
-                name: 'hasLoaded',
-                value: true
-            },{
-                xtype: 'textfield',
-                name: 'name',
-                width: 400,
-                fieldCls: 'labkey-wizard-input',
-                style: 'padding-left: 5px;',
-                value: '<%=h(name)%>'
-            },{
-                tag: 'span',
-                style: 'padding-bottom: 20px;'
-            },{
-                html: 'Type:',
-                cls: 'labkey-wizard-header'
-            },{
-                xtype: 'radiogroup',
-                columns: 1,
-                name: 'folderType',
-                itemId: 'folderType',
-                layoutConfig: {
-                    minWidth: 400
-                },
-                listeners: {
-                    change: {fn: function(btn, val){this.onTypeChange(btn, val)}, buffer: 20}
-                },
-                onTypeChange: function(btn, val){
-                    var parent = this.up('form');
-                    parent.down('#modules').removeAll();
-                    parent.doLayout();
-                    if(val.folderType=='None'){
-                        parent.renderModules();
-                    }
-                    parent.doLayout();
-                },
-                //NOTE: this could be shifted to use labkey-checkboxgroup with an arraystore
-                items: function(){
-                    var items = [];
-                    var ft;
-                    Ext4.each(folderTypes, function(ft){
-                        if(!ft.workbookType){
-                            items.push({
-                                xtype: 'radio',
-                                name: 'folderType',
-                                width: 500,
-                                inputValue: ft.name,
-                                value: ft.name,
-                                boxLabel: ft.label,
-                                labelWidth: 500,
-                                checked: (ft.name == '<%=folderTypeName%>' ? true : false),
-                                autoEl: {
-                                    'data-qtip': ft.description
-                                }
-                            });
-                        }
-                    }, this);
-
-                    return items;
-                }()
-            },{
-                xtype: 'form',
-                itemId: 'modules',
-                autoHeight: true,
+            var panel = Ext4.create('Ext.form.Panel', {
                 border: false,
+                autoHeight: true,
+                width: 'auto',
+                style: 'padding-top: 20px;',
                 defaults: {
                     border: false
                 },
-                style: 'padding-left: 15px;'
-            }],
-            buttons: [{
-                xtype: 'button',
-                cls: 'labkey-button',
-                text: 'Next',
-                handler: function(btn){
-                    var f = btn.up('form').getForm();
-                    f.submit();
-                }
-            },{
-                xtype: 'button',
-                cls: 'labkey-button',
-                text: 'Cancel',
-                handler: function(btn){
-                    window.location = LABKEY.ActionURL.buildURL('project', 'begin', 'home');
-                }
-            }],
-            renderModules: function(){
-                var target = this.down('#modules');
-                target.add([
-                    {
-                        html: 'Default Tab:',
-                        cls: 'labkey-wizard-header'
-                    },{
-                        xtype: 'combo',
-                        name: 'defaultModule',
-                        itemId: 'modulesCombo',
-                        displayField: 'module',
-                        valueField: 'module',
-                        value: (hasLoaded ? defaultTab : 'Portal'),
-                        queryMode: 'local',
-                        store: {
-                            fields: ['module'],
-                            idIndex: 0,
-                            data: (function(hasLoaded, selectedModules){
-                                var items = [];
-                                if(!hasLoaded)
-                                    return [{module: 'Portal'}];
-                                else {
-                                    if(selectedModules && selectedModules.length){
-                                        items = Ext4.Array.map(selectedModules, function(e){
-                                            return {module: e};
-                                        }, this);
-                                    }
-                                }
-                                return items;
-                            })(hasLoaded, selectedModules)
-                        }
-                    },{
-                        html: 'Choose Modules:',
-                        cls: 'labkey-wizard-header'
-                    },{
-                        xtype: 'checkboxgroup',
-                        columns: 3,
-                        autoHeight: true,
-                        name: 'activeModules',
-                        listeners: {
-                            change: {
-                                fn: function(btn, val){
-                                    var combo = target.down('#modulesCombo');
-                                    var oldVal = combo.getValue();
-
-                                    var store = combo.store;
-                                    store.removeAll();
-
-                                    if (!val.activeModules){
-                                        combo.reset();
-                                        return;
-                                    }
-
-                                    var records;
-                                    if(Ext4.isArray(val.activeModules)){
-                                        records = Ext4.Array.map(val.activeModules, function(item){
-                                            return {module: item};
-                                        }, this);
-                                    }
-                                    else {
-                                        records = [{module: val.activeModules}];
-                                    }
-                                    store.add(records);
-
-                                    if(records.length==1)
-                                        combo.setValue(records[0].get('module'));
-                                    else if (oldVal)
-                                        combo.setValue(oldVal);
-
-                                },
-                                scope: this,
-                                buffer: 20
-                            }
-                        },
-                        items: function(){
-                            var items = [];
-                            if(moduleTypes){
-                                Ext4.each(moduleTypes.modules, function(m){
-                                    //the effect of this is that by default, a new container inherits modules from the parent
-                                    //if creating a project, there is nothing to inherit, so we set to Portal below
-                                    if(m.active || m.enabled)
-                                        items.push({
-                                            xtype: 'checkbox',
-                                            name: 'activeModules',
-                                            inputValue:m.name,
-                                            boxLabel: m.tabName,
-                                            checked: (hasLoaded ? (selectedModules && selectedModules.indexOf(m.name)!=-1) : m.active)
-                                            //disabled: !m.enabled
-                                        });
-                                }, this);
-                            }
-
-                            return items;
-
-                        }()
+                url: 'createFolder.view',
+                method: 'POST',
+                standardSubmit: true,
+                listeners: {
+                    render: function(panel){
+                        var target = panel.down('#folderType');
+                        if(target.getValue() && target.getValue().folderType == 'None')
+                            panel.renderModules();
                     }
-                ]);
+                },
+                items: [{
+                    html: 'Name:',
+                    cls: 'labkey-wizard-header',
+                    style: 'padding-bottom: 5px;'
+                },{
+                    xtype: 'hidden',
+                    name: 'hasLoaded',
+                    value: true
+                },{
+                    xtype: 'textfield',
+                    name: 'name',
+                    width: 400,
+                    fieldCls: 'labkey-wizard-input',
+                    style: 'padding-left: 5px;',
+                    value: '<%=h(name)%>',
+                    listeners: {
+                        render: function(field){
+                            field.focus('', 10);
+                        }
+                    }
+                },{
+                    tag: 'span',
+                    style: 'padding-bottom: 20px;'
+                },{
+                    html: 'Type:',
+                    cls: 'labkey-wizard-header'
+                },{
+                    xtype: 'radiogroup',
+                    columns: 1,
+                    name: 'folderType',
+                    itemId: 'folderType',
+                    layoutConfig: {
+                        minWidth: 400
+                    },
+                    listeners: {
+                        change: {fn: function(btn, val){this.onTypeChange(btn, val)}, buffer: 20}
+                    },
+                    onTypeChange: function(btn, val){
+                        var parent = this.up('form');
+                        parent.down('#modules').removeAll();
+                        parent.doLayout();
+                        if(val.folderType=='None'){
+                            parent.renderModules();
+                        }
+                        parent.doLayout();
+                    },
+                    //NOTE: this could be shifted to use labkey-checkboxgroup with an arraystore
+                    items: function(){
+                        var items = [];
+                        var ft;
+                        Ext4.each(folderTypes, function(ft){
+                            if(!ft.workbookType){
+                                items.push({
+                                    xtype: 'radio',
+                                    name: 'folderType',
+                                    width: 500,
+                                    inputValue: ft.name,
+                                    value: ft.name,
+                                    boxLabel: ft.label,
+                                    labelWidth: 500,
+                                    checked: (ft.name == '<%=folderTypeName%>' ? true : false),
+                                    autoEl: {
+                                        'data-qtip': ft.description
+                                    }
+                                });
+                            }
+                        }, this);
 
-                //default to portal if none selected
-                if(!hasLoaded && (!this.getForm().getValues().activeModules || !this.getForm().getValues().activeModules.length)){
-                    this.getForm().findField('activeModules').setValue({activeModules: ['Portal']});
+                        return items;
+                    }()
+                },{
+                    xtype: 'form',
+                    itemId: 'modules',
+                    autoHeight: true,
+                    border: false,
+                    defaults: {
+                        border: false
+                    },
+                    style: 'padding-left: 15px;'
+                }],
+                buttons: [{
+                    xtype: 'button',
+                    cls: 'labkey-button',
+                    text: 'Next',
+                    handler: function(btn){
+                        var f = btn.up('form').getForm();
+                        f.submit();
+                    }
+                },{
+                    xtype: 'button',
+                    cls: 'labkey-button',
+                    text: 'Cancel',
+                    handler: function(btn){
+                        window.location = LABKEY.ActionURL.buildURL('project', 'begin', 'home');
+                    }
+                }],
+                renderModules: function(){
+                    var target = this.down('#modules');
+                    target.add([
+                        {
+                            html: 'Default Tab:',
+                            cls: 'labkey-wizard-header'
+                        },{
+                            xtype: 'combo',
+                            name: 'defaultModule',
+                            itemId: 'modulesCombo',
+                            displayField: 'module',
+                            valueField: 'module',
+                            value: (hasLoaded ? defaultTab : 'Portal'),
+                            queryMode: 'local',
+                            store: {
+                                fields: ['module'],
+                                idIndex: 0,
+                                data: (function(hasLoaded, selectedModules){
+                                    var items = [];
+                                    if(!hasLoaded)
+                                        return [{module: 'Portal'}];
+                                    else {
+                                        if(selectedModules && selectedModules.length){
+                                            items = Ext4.Array.map(selectedModules, function(e){
+                                                return {module: e};
+                                            }, this);
+                                        }
+                                    }
+                                    return items;
+                                })(hasLoaded, selectedModules)
+                            }
+                        },{
+                            html: 'Choose Modules:',
+                            cls: 'labkey-wizard-header'
+                        },{
+                            xtype: 'checkboxgroup',
+                            columns: 3,
+                            autoHeight: true,
+                            name: 'activeModules',
+                            listeners: {
+                                change: {
+                                    fn: function(btn, val){
+                                        var combo = target.down('#modulesCombo');
+                                        var oldVal = combo.getValue();
+
+                                        var store = combo.store;
+                                        store.removeAll();
+
+                                        if (!val.activeModules){
+                                            combo.reset();
+                                            return;
+                                        }
+
+                                        var records;
+                                        if(Ext4.isArray(val.activeModules)){
+                                            records = Ext4.Array.map(val.activeModules, function(item){
+                                                return {module: item};
+                                            }, this);
+                                        }
+                                        else {
+                                            records = [{module: val.activeModules}];
+                                        }
+                                        store.add(records);
+
+                                        if(records.length==1)
+                                            combo.setValue(records[0].get('module'));
+                                        else if (oldVal)
+                                            combo.setValue(oldVal);
+
+                                    },
+                                    scope: this,
+                                    buffer: 20
+                                }
+                            },
+                            items: function(){
+                                var items = [];
+                                if(moduleTypes){
+                                    Ext4.each(moduleTypes.modules, function(m){
+                                        //the effect of this is that by default, a new container inherits modules from the parent
+                                        //if creating a project, there is nothing to inherit, so we set to Portal below
+                                        if(m.active || m.enabled)
+                                            items.push({
+                                                xtype: 'checkbox',
+                                                name: 'activeModules',
+                                                inputValue:m.name,
+                                                boxLabel: m.tabName,
+                                                checked: (hasLoaded ? (selectedModules && selectedModules.indexOf(m.name)!=-1) : m.active)
+                                                //disabled: !m.enabled
+                                            });
+                                    }, this);
+                                }
+
+                                return items;
+
+                            }()
+                        }
+                    ]);
+
+                    //default to portal if none selected
+                    if(!hasLoaded && (!this.getForm().getValues().activeModules || !this.getForm().getValues().activeModules.length)){
+                        this.getForm().findField('activeModules').setValue({activeModules: ['Portal']});
+                    }
                 }
-            }
             }).render('createFormDiv');
         }
     });
