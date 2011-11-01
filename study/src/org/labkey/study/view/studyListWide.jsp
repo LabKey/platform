@@ -24,8 +24,10 @@
 <%@ page import="org.labkey.api.study.Study" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <style type="text/css">
-    div.labkey-study-title {font-weight: bold; font-size: larger; padding-top:6px}
-    div.labkey-study-title:first-child {font-weight: bold; font-size: larger; padding-top:0}
+    div.labkey-study-list div.study-header {padding-top:6px;}
+    div.labkey-study-list div.study-header:first-child {padding-top:0;}
+    span.labkey-study-title {font-weight: bold; font-size: larger; text-align: left}
+    span.labkey-study-investigator {float: right; width:150px}
 </style>
 <%
     JspView me = (JspView) HttpView.currentView();
@@ -43,17 +45,20 @@
 <div class="labkey-study-list"><%
     for (Study study: studies)
     {
-        %><%
+        %>
+        <div class='study-header'>
+        <%
         ActionURL url;
         if (studyFolderType.equals(study.getContainer().getFolderType()))
             url = studyFolderType.getStartURL(study.getContainer(), ctx.getUser());
         else
             url = new ActionURL(StudyController.BeginAction.class,study.getContainer());
         %>
-        <div class="labkey-study-title"><a href="<%=url%>"><%=h(study.getLabel())%></a></div>
+        <span class="labkey-study-title"><a href="<%=url%>"><%=h(study.getLabel())%></a></span>
     <%if(null != study.getInvestigator()) { %>
-        <div><%=h(study.getInvestigator())%></div>
+        <span class='labkey-study-investigator'><%=h(study.getInvestigator())%></span>
     <%}%>
+            </div>
             <%=study.getDescriptionHtml()%>
 <%
     }

@@ -403,7 +403,7 @@ public class StudyManager
     {
         try
         {
-            return Table.select(StudySchema.getInstance().getTableInfoStudy(), Table.ALL_COLUMNS, null, null, StudyImpl.class);
+            return Table.select(StudySchema.getInstance().getTableInfoStudy(), Table.ALL_COLUMNS, null, new Sort("Label"), StudyImpl.class);
         }
         catch (SQLException e)
         {

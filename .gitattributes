@@ -2921,6 +2921,7 @@ study/src/org/labkey/study/view/BaseStudyPage.java -text
 study/src/org/labkey/study/view/DataHeader.java -text
 study/src/org/labkey/study/view/DatasetsWebPartView.java -text
 study/src/org/labkey/study/view/StudyGWTView.java -text
+study/src/org/labkey/study/view/StudyListQueryView.java -text
 study/src/org/labkey/study/view/StudyListWebPartFactory.java -text
 study/src/org/labkey/study/view/StudyNavigationView.java -text
 study/src/org/labkey/study/view/StudySummaryWebPartFactory.java -text

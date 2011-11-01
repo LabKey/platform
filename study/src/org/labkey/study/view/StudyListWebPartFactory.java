@@ -53,17 +53,7 @@ public class StudyListWebPartFactory extends BaseWebPartFactory
         if (webPart.getLocation().equals(HttpView.BODY))
         {
             if ("grid".equals(webPart.getPropertyMap().get(DISPLAY_TYPE_PROPERTY)))
-            {
-                UserSchema schema = QueryService.get().getUserSchema(portalCtx.getUser(), portalCtx.getContainer(), "study");
-                QuerySettings settings = schema.getSettings(portalCtx, "qwpStudies", "StudyProperties");
-                settings.setAllowChooseQuery(false);
-                settings.setContainerFilterName(ContainerFilter.Type.CurrentAndSubfolders.name());
-                QueryView queryView = new QueryView(schema, settings, null);
-                queryView.setShowBorders(true);
-                queryView.setShadeAlternatingRows(true);
-                queryView.setShowSurroundingBorder(false);
-                view = queryView;
-            }
+                view = new StudyListQueryView(portalCtx);
             else
                 view = new JspView(this.getClass(), "studyListWide.jsp", null);
         }
