@@ -604,7 +604,8 @@ LABKEY.Security = new function()
          *      <li><b>name:</b> the name of the module</li>
          *      <li><b>required:</b> whether this module is required in the folder type specified above</li>
          *      <li><b>tabName:</b> name of the tab associated with this module</li>
-         *      <li><b>shouldDisplay:</b> whether this module should be visible in the module list for this container</li>
+         *      <li><b>active:</b> whether this module should be active for this container</li>
+         *      <li><b>enabled:</b> whether this module should be enabled by default for this container</li>
          *  </ul>
          * </li>
          * <li><b>response:</b> The XMLHttpResponse object</li>
