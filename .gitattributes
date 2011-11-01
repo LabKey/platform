@@ -121,11 +121,6 @@ api/src/org/labkey/api/cache/StringKeyCacheWrapper.java -text
 api/src/org/labkey/api/cache/Tracking.java -text
 api/src/org/labkey/api/cache/ehcache/EhCacheProvider.java -text
 api/src/org/labkey/api/cache/ehcache/ehcache.xml -text
-api/src/org/labkey/api/cache/implementation/CacheImpl.java -text
-api/src/org/labkey/api/cache/implementation/CacheMap.java -text
-api/src/org/labkey/api/cache/implementation/LimitedCacheMap.java -text
-api/src/org/labkey/api/cache/implementation/TTLCacheMap.java -text
-api/src/org/labkey/api/cache/implementation/TTLCacheProvider.java -text
 api/src/org/labkey/api/collections/BoundMap.java -text
 api/src/org/labkey/api/collections/CaseInsensitiveHashMap.java -text
 api/src/org/labkey/api/collections/CaseInsensitiveHashSet.java -text
