@@ -19,23 +19,29 @@ import org.junit.Assert;
 import org.junit.Test;
 import org.labkey.api.cache.DbCache;
 import org.labkey.api.data.ActionButton;
+import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.DbScope;
 import org.labkey.api.data.MenuButton;
+import org.labkey.api.data.Results;
 import org.labkey.api.data.RuntimeSQLException;
 import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.Table;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.query.FieldKey;
+import org.labkey.api.query.QueryView;
 import org.labkey.api.security.Group;
 import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.AdminPermission;
 import org.labkey.api.study.Study;
+import org.labkey.api.study.StudyService;
 import org.labkey.api.study.permissions.SharedParticipantGroupPermission;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.Pair;
+import org.labkey.api.util.ResultSetUtil;
+import org.labkey.api.util.UnexpectedException;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.NavTree;
 import org.labkey.api.view.ViewContext;
@@ -47,6 +53,7 @@ import org.labkey.study.controllers.StudyController;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -273,7 +280,10 @@ public class ParticipantGroupManager
 
         // ask for either the selected participants or all the participants in the view
         if (fromSelection)
-            sb.append("         jsonData: {selections:checked},");
+        {
+            sb.append("         jsonData: {selections:checked, schemaName: dataRegion.schemaName, queryName: dataRegion.queryName, ");
+            sb.append("                     viewName: dataRegion.viewName, dataRegionName: dataRegion.name, requestURL: dataRegion.requestURL},");
+        }
         else
         {
             sb.append("         jsonData: {selectAll:true, schemaName: dataRegion.schemaName, queryName: dataRegion.queryName, ");
@@ -631,6 +641,59 @@ public class ParticipantGroupManager
         {
             scope.closeConnection();
         }
+    }
+
+    public List<String> getParticipantsFromSelection(Container container, QueryView view, Collection<String> lsids) throws SQLException
+    {
+        List<String> ptids = new ArrayList<String>();
+        TableInfo table = view.getTable();
+
+        if (table != null)
+        {
+            ResultSet rs = null;
+
+            try
+            {
+                StringBuilder whereClause = new StringBuilder();
+                whereClause.append("lsid IN (");
+                Object[] params = new Object[lsids.size()];
+                String comma = "";
+                int i = 0;
+
+                for (String lsid : lsids)
+                {
+                    whereClause.append(comma);
+                    whereClause.append("?");
+                    params[i++] = lsid;
+                    comma = ",";
+                }
+
+                whereClause.append(")");
+                SimpleFilter filter = new SimpleFilter();
+                filter.addWhereClause(whereClause.toString(), params);
+
+                FieldKey ptidKey = new FieldKey(null, StudyService.get().getSubjectColumnName(container));
+                Results r = Table.select(table, table.getColumns(ptidKey.toString(), "lsid"), filter, null);
+                rs = r.getResultSet();
+
+                if (rs != null)
+                {
+                    ColumnInfo ptidColumnInfo = r.getFieldMap().get(ptidKey);
+
+                    int ptidIndex = (null != ptidColumnInfo) ? rs.findColumn(ptidColumnInfo.getAlias()) : 0;
+                    while (rs.next() && ptidIndex > 0)
+                    {
+                        String ptid = rs.getString(ptidIndex);
+                        ptids.add(ptid);
+                    }
+                }
+            }
+            finally
+            {
+                ResultSetUtil.close(rs);
+            }
+        }
+        return ptids;
     }
 
     private String getCacheKey(ParticipantCategory def)

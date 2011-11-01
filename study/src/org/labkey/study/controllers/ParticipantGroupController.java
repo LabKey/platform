@@ -40,6 +40,7 @@ import org.springframework.validation.BindException;
 import java.sql.SQLException;
 import java.util.Arrays;
 import java.util.LinkedHashSet;
+import java.util.List;
 import java.util.Set;
 
 /**
@@ -227,26 +228,23 @@ public class ParticipantGroupController extends BaseStudyController
             {
                 Set<String> ptids = new LinkedHashSet<String>();
 
-                if (form.isSelectAll())
+                QuerySettings settings = form.getQuerySettings();
+                settings.setMaxRows(Table.ALL_ROWS);
+
+                QuerySchema querySchema = DefaultSchema.get(getUser(), getContainer()).getSchema(form.getSchemaName().toString());
+                QueryView view = ((UserSchema)querySchema).createView(getViewContext(), settings, errors);
+
+                if (view != null)
                 {
-                    QuerySettings settings = form.getQuerySettings();
-                    settings.setMaxRows(Table.ALL_ROWS);
-
-                    QuerySchema querySchema = DefaultSchema.get(getUser(), getContainer()).getSchema(form.getSchemaName().toString());
-                    QueryView view = ((UserSchema)querySchema).createView(getViewContext(), settings, errors);
-
-                    if (view != null)
+                    if (form.isSelectAll())
                     {
                         for (String ptid : StudyController.generateParticipantGroup(view))
                             ptids.add(ptid);
                     }
-                }
-                else
-                {
-                    ParticipantDataset[] pds = StudyManager.getInstance().getParticipantDatasets(getContainer(), Arrays.asList(form.getSelections()));
-                    for (ParticipantDataset pd : pds)
+                    else
                     {
-                        ptids.add(pd.getParticipantId());
+                        List<String> participants = ParticipantGroupManager.getInstance().getParticipantsFromSelection(getContainer(), view, Arrays.asList(form.getSelections()));
+                        ptids.addAll(participants);
                     }
                 }
                 resp.put("ptids", ptids);
