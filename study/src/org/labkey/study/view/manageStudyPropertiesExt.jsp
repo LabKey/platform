@@ -98,7 +98,6 @@ function unmask()
 }
 
 
-
 function showSuccessMessage(message, after)
 {
     Ext.get("formError").update("");
@@ -162,12 +161,14 @@ function editButtonHandler()
 
 function cancelButtonHandler()
 {
+    LABKEY.setSubmit(true);
     window.location = <%=q(cancelLink)%>;
 }
 
 
 function doneButtonHandler()
 {
+    LABKEY.setSubmit(true);
     window.location = <%=q(cancelLink)%>;
 }
 
@@ -308,7 +309,15 @@ function createPage()
     });
 }
 
+function isFormDirty()
+{
+    return studyPropertiesFormPanel && studyPropertiesFormPanel.getForm().isDirty();
+}
+
+window.onbeforeunload = LABKEY.beforeunload(isFormDirty);
+
 Ext.onReady(createPage);
+
 </script>
 
 <span id=formSuccess class=labkey-message-strong></span><span id=formError class=labkey-error></span>&nbsp;</br>
