@@ -163,7 +163,7 @@ public class ScssServlet extends HttpServlet
         // devMode only try to compile
 
         String OS = System.getProperty("os.name").toLowerCase();
-        String compass = -1==OS.indexOf("windows") ? "compas" : "compass.bat";
+        String compass = -1==OS.indexOf("windows") ? "compass" : "compass.bat";
         ProcessBuilder pb = new ProcessBuilder(compass, "compile", "--boring", dir);
         runProcess(pb);
 
