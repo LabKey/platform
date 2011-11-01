@@ -81,6 +81,13 @@ public abstract class ContainerFilter
                 return new CurrentAndSubfolders(user);
             }
         },
+        CurrentAndSiblings("Current folder and siblings")
+        {
+            public ContainerFilter create(User user)
+            {
+                return new CurrentAndSiblings(user);
+            }
+        },
         CurrentOrParentAndWorkbooks("Current folder and/or parent if the current folder is a workbook, plus all workbooks in this series")
         {
             public ContainerFilter create(User user)
@@ -490,6 +497,48 @@ public abstract class ContainerFilter
         public Type getType()
         {
             return Type.CurrentOrParentAndWorkbooks;
+        }
+    }
+
+    public static class CurrentAndSiblings extends ContainerFilterWithUser
+    {
+        public CurrentAndSiblings(User user)
+        {
+            this(user, ReadPermission.class);
+        }
+
+        public CurrentAndSiblings(User user, Class<? extends Permission> perm)
+        {
+            super(user, perm);
+        }
+
+        @Override
+        public Collection<String> getIds(Container currentContainer)
+        {
+            Set<String> result = new HashSet<String>();
+
+            if (currentContainer.isRoot() && currentContainer.hasPermission(_user, _perm))
+                result.add(currentContainer.getId());  //if not root, we will add the current container below
+
+            Container parent = currentContainer.getParent();
+            if(parent != null)
+            {
+                for(Container c : parent.getChildren())
+                {
+                    if(c.hasPermission(_user, _perm))
+                    {
+                        result.add(c.getId());
+                    }
+                }
+            }
+
+            return result;
+        }
+
+        @Override
+        public Type getType()
+        {
+            return Type.CurrentAndSiblings;
         }
     }
     

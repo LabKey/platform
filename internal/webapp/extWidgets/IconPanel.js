@@ -50,26 +50,26 @@ Ext4.define('LABKEY.ext.IconPanel', {
                     this.refresh();
                 },
                 tpl: [
+                    '<table id="test" style="width:100%;"><tr>',
                     '<tpl for=".">',
-                        '<tpl if="labelPosition==&quot;bottom&quot;">',
-                            '<div class="thumb-wrap thumb-wrap-{labelPosition} thumb-{iconSize}">',
+                        '<td class="thumb-wrap">',
+                        '<div style="width: {thumbWidth};" class="thumb-wrap thumb-wrap-{labelPosition}">',
                             '<tpl if="url"><a href="{url}"></tpl>',
-                            '<div class="thumb-img-{labelPosition}"><img src="{iconurl}" title="{label}" class="thumb-{iconSize}"></div>',
+                            '<div class="thumb-img-{labelPosition}"><img src="{iconurl}" title="{label}" style="width: {imageSize}px;height: {imageSize}px;" class="thumb-{iconSize}"></div>',
                             '<span class="thumb-label-{labelPosition}">{label}</span>',
                             '<tpl if="url"></a></tpl>',
-                            '</div>',
-                        '</tpl>',
-                        '<tpl if="labelPosition==&quot;side&quot;">',
-                            '<div class="thumb-wrap thumb-wrap-{labelPosition} thumb-{iconSize}">',
-                            '<tpl if="url"><a href="{url}"></tpl>',
-                            '<div class="thumb-img-{labelPosition}"><img src="{iconurl}" title="{label}" class="thumb-{iconSize}"></div>',
-                            '<span class="thumb-label-{labelPosition}">{label}</span>',
-                            '<tpl if="url"></a></tpl>',
-                            '</div>',
-                        '</tpl>',
+                        '</div>',
+                        '</td>',
+                        '<tpl if="xindex % columns === 0"></tr><tr></tpl>',
                     '</tpl>',
+                    '</td></tr></table>',
                     '<div class="x-clear"></div>'
                 ],
+                imageSizeMap: {
+                    large: 60,
+                    medium: 40,
+                    small: 20
+                },
                 prepareData: function(d){
                     var panel = this.up('panel');
                     var item = Ext4.apply({}, this.renderData);
@@ -81,7 +81,15 @@ Ext4.define('LABKEY.ext.IconPanel', {
                     if(panel.urlField)
                         item.url = d[panel.urlField];
 
+                    var multiplier = 1.66;
+                    item.imageSize = this.imageSizeMap[this.renderData.iconSize];
+                    item.thumbWidth = item.labelPosition=='bottom' ? item.imageSize * multiplier + 'px':  '100%';
+                    item.columns = item.labelPosition=='bottom' ? this.calculateColumnNumber(item.imageSize*multiplier) : 1;
                     return item;
+                },
+                calculateColumnNumber: function(thumbWidth){
+                    var totalWidth = this.getWidth();
+                    return parseInt(totalWidth / (thumbWidth + 10)); //padding
                 },
                 renderData: {
                     iconSize: this.iconSize || 'medium',
@@ -133,7 +141,7 @@ Ext4.define('LABKEY.ext.IconPanel', {
 
         //poor solution to Ext4 layout issue that occurs when adding items from store after panel has rendered
         if(!this.store.getCount()){
-            this.store.on('load', this.doLayout, this, {single: true});
+            this.mon(this.store, 'load', this.doLayout, this, {single: true});
         }
     }
 });
