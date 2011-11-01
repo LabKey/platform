@@ -47,7 +47,7 @@ public class ShowSearchAction extends FormViewAction<ShowSearchAction.SearchForm
         if (null == _study)
             throw new NotFoundException("No study exists in this folder.");
 
-        _title = (form.isShowVials() ? "Vial" : "Specimen") + " Search";
+        _title = (form.isShowVials() ? "Individual Vial" : "Grouped Vial") + " Search";
 
         SampleSearchBean bean = new SampleSearchBean(getViewContext(), form.isShowVials(), false);
         bean.setAdvancedExpanded(form.isShowAdvanced());

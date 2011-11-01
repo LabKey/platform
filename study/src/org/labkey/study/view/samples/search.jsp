@@ -28,6 +28,7 @@
 <%@ page import="org.labkey.study.samples.SampleSearchBean" %>
 <%@ page import="org.labkey.api.view.ActionURL" %>
 <%@ page import="org.labkey.study.query.PtidObfuscatingDisplayColumn" %>
+<%@ page import="org.labkey.api.study.StudyService" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
     JspView<SampleSearchBean> me = (JspView<SampleSearchBean>) HttpView.currentView();
@@ -101,8 +102,8 @@
     if (!bean.isInWebPart())
     {
 %>
-This page may be used to search by <%= bean.isDetailsView() ? " vial" : "specimen" %>.<br>
-<%= textLink("Search by " + (!bean.isDetailsView() ? "vial" : "specimen"), "showSearch.view?showVials=" + !bean.isDetailsView())%><br><br>
+This page may be used to search for <%= bean.isDetailsView() ? " individual vials" : " vials grouped by " + StudyService.get().getSubjectNounSingular(me.getViewContext().getContainer()).toLowerCase() + ", time point, and type" %>.<br>
+<%= textLink("Search " + (!bean.isDetailsView() ? " individual vials" : "grouped vials"), "showSearch.view?showVials=" + !bean.isDetailsView())%><br><br>
 <%
     }
     int paramNumber = 0;

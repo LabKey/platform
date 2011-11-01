@@ -30,6 +30,7 @@
 <%@ page import="org.labkey.study.controllers.samples.SpecimenController.*" %>
 <%@ page import="org.labkey.study.controllers.samples.ShowUploadSpecimensAction" %>
 <%@ page import="org.labkey.study.controllers.samples.SpecimenController" %>
+<%@ page import="org.labkey.api.study.StudyService" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
     ViewContext currentContext = HttpView.currentContext();
@@ -51,8 +52,9 @@
     }
 %>
     <% WebPartView.startTitleFrame(out, "Search", null, "100%", null, 0); %>
-<a href="<%=h(new ActionURL(ShowSearchAction.class, c).addParameter("showVials", "false"))%>">Search For Specimens</a><br>
-<a href="<%=h(new ActionURL(ShowSearchAction.class, c).addParameter("showVials", "true"))%>">Search For Vials</a><br>
+<a href="<%=h(new ActionURL(ShowSearchAction.class, c).addParameter("showVials", "false"))%>">Search For Vial Groups</a><%= helpPopup("Vial group search", "Vial group search returns a single row per " +
+                StudyService.get().getSubjectNounSingular(c).toLowerCase() + ", time point, and sample type.  Results include the number of vials in each group.")%><br>
+<a href="<%=h(new ActionURL(ShowSearchAction.class, c).addParameter("showVials", "true"))%>">Search For Individual Vials</a><br>
 <%
     WebPartView.endTitleFrame(out);
     WebPartView.startTitleFrame(out, "Vials by Primary Type", null, "100%", null); %>
@@ -82,7 +84,8 @@
     }
 
     WebPartView.startTitleFrame(out, "View All Specimens", null, "100%", null); %>
-<a href="<%=h(SpecimenController.getSamplesURL(c).addParameter("showVials", "false"))%>">By Specimen</a><br>
+<a href="<%=h(SpecimenController.getSamplesURL(c).addParameter("showVials", "false"))%>">By Vial Group</a><%= helpPopup("Vial Viewing Options", "Vials may be viewed individually, with one row per vial, or by vial group, with one row per " +
+            StudyService.get().getSubjectNounSingular(c).toLowerCase() + ", time point, and sample type combination.") %><br>
 <a href="<%=h(SpecimenController.getSamplesURL(c).addParameter("showVials", "true"))%>">By Vial</a><br>
 <%
     WebPartView.endTitleFrame(out);

@@ -40,7 +40,7 @@ public class StudyViewLoader implements ModuleResourceLoader
     {
         // NOTE: Can't use Module's resource resolver yet since the module hasn't been initialized.
         File viewsDir = new File(explodedModuleDir, VIEWS_DIR_NAME);
-        if (viewsDir.exists())
+        if (!StudyModule.MODULE_NAME.equalsIgnoreCase(module.getName()) && viewsDir.exists())
             return Collections.singleton(StudyModule.MODULE_NAME);
         return Collections.emptySet();
     }

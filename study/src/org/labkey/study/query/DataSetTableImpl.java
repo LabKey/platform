@@ -195,7 +195,7 @@ public class DataSetTableImpl extends FilteredTable implements DataSetTable
                 ColumnInfo col = addWrapColumn(baseColumn);
 
                 // When copying a column, the hidden bit is not propagated, so we need to do it manually
-                if (baseColumn.isHidden())
+                if (baseColumn.isHidden() || !isVisibleByDefault(baseColumn))
                     col.setHidden(true);
                 
                 String propertyURI = col.getPropertyURI();
@@ -230,6 +230,7 @@ public class DataSetTableImpl extends FilteredTable implements DataSetTable
         // Don't show sequence num for date-based studies
         if (!dsd.getStudy().getTimepointType().isVisitBased())
         {
+            getColumn("SequenceNum").setHidden(true);
             getColumn("SequenceNum").setShownInInsertView(false);
             getColumn("SequenceNum").setShownInDetailsView(false);
             getColumn("SequenceNum").setShownInUpdateView(false);

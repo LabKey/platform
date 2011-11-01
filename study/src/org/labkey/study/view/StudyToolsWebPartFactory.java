@@ -100,7 +100,7 @@ public abstract class StudyToolsWebPartFactory extends BaseWebPartFactory
             String noun = StudyService.get().getSubjectNounSingular(portalCtx.getContainer());
             items.add(new StudyToolsWebPart.Item(noun + " List", iconBase + "subjectlist_icon.gif", new ActionURL(StudyController.SubjectListAction.class, portalCtx.getContainer())));
 
-            items.add(new StudyToolsWebPart.Item("Study Overview", iconBase + "overview_icon.gif", new ActionURL(StudyController.OverviewAction.class, portalCtx.getContainer())));
+            items.add(new StudyToolsWebPart.Item("Study Navigator", iconBase + "overview_icon.gif", new ActionURL(StudyController.OverviewAction.class, portalCtx.getContainer())));
 
             if (portalCtx.getContainer().hasPermission(portalCtx.getUser(), ManageStudyPermission.class))
                 items.add(new StudyToolsWebPart.Item("Settings", iconBase + "settings_icon.gif", new ActionURL(StudyController.ManageStudyAction.class, portalCtx.getContainer() )));

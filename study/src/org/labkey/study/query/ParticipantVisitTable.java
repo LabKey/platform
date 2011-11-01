@@ -22,6 +22,8 @@ import org.labkey.api.data.TableInfo;
 import org.labkey.api.query.AliasedColumn;
 import org.labkey.api.query.FilteredTable;
 import org.labkey.api.query.LookupForeignKey;
+import org.labkey.api.study.Study;
+import org.labkey.api.study.TimepointType;
 import org.labkey.api.util.StringExpression;
 import org.labkey.api.view.UnauthorizedException;
 import org.labkey.api.study.StudyService;
@@ -40,6 +42,7 @@ public class ParticipantVisitTable extends FilteredTable
         setName(StudyService.get().getSubjectVisitTableName(schema.getContainer()));
         _schema = schema;
         _dialect = _schema.getDbSchema().getSqlDialect();
+        Study study = StudyService.get().getStudy(schema.getContainer());
 
         /*
         ColumnInfo keyPV = new ParticipantVisitColumn("ParticipantVisit", this, _rootTable.getColumn("ParticipantId"), _rootTable.getColumn("SequenceNum"));
@@ -88,6 +91,11 @@ public class ParticipantVisitTable extends FilteredTable
             {
                 ColumnInfo subjectColumn = wrapColumn(StudyService.get().getSubjectColumnName(getContainer()), col);
                 addColumn(subjectColumn);
+            }
+            else if (study != null && study.getTimepointType() != TimepointType.VISIT && "SequenceNum".equalsIgnoreCase(col.getName()))
+            {
+                ColumnInfo sequenceNumCol = addWrapColumn(col);
+                sequenceNumCol.setHidden(true);
             }
             else
                 addWrapColumn(col);

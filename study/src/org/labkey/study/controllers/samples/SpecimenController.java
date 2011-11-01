@@ -334,7 +334,7 @@ public class SpecimenController extends BaseStudyController
         public NavTree appendNavTrail(NavTree root)
         {
             root = appendBaseSpecimenNavTrail(root);
-            root.addChild(_vialView ? "Vials" : "Specimens");
+            root.addChild(_vialView ? "Vials" : "Grouped Vials");
             return root;
         }
     }

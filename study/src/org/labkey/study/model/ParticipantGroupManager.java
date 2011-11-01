@@ -501,7 +501,8 @@ public class ParticipantGroupManager
             SQLFragment sql = new SQLFragment("SELECT * FROM (");
             sql.append("SELECT pg.label, pg.rowId FROM ").append(StudySchema.getInstance().getTableInfoParticipantCategory(), "pc");
             sql.append(" JOIN ").append(getTableInfoParticipantGroup(), "pg").append(" ON pc.rowId = pg.categoryId WHERE pg.categoryId = ?) jr ");
-            sql.append(" JOIN ").append(getTableInfoParticipantGroupMap(), "gm").append(" ON jr.rowId = gm.groupId;");
+            sql.append(" JOIN ").append(getTableInfoParticipantGroupMap(), "gm").append(" ON jr.rowId = gm.groupId");
+            sql.append(" ORDER BY gm.groupId, gm.ParticipantId;");
 
             ParticipantGroupMap[] maps = new ParticipantGroupMap[0];
             try

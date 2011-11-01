@@ -122,8 +122,8 @@
     rs = Table.executeQuery(dbSchema,
             "SELECT VisitRowId, ParticipantId, SequenceNum, VisitDate\n" +
             "FROM " + StudySchema.getInstance().getTableInfoParticipantVisit() + "\n" +
-            "WHERE Container = ?",
-            new Object[]{study.getContainer()});
+            "WHERE Container = ? AND ParticipantId = ?",
+            new Object[]{study.getContainer(), bean.getParticipantId()});
     while (rs.next())
     {
         int visitRowId = rs.getInt(1);
@@ -144,8 +144,9 @@
     SQLFragment f = new SQLFragment();
     f.append("SELECT ParticipantId, SequenceNum, DatasetId, COUNT(*) AS _RowCount FROM ");
     f.append(StudySchema.getInstance().getTableInfoStudyDataFiltered(study, datasets, user).getFromSQL("SD"));
-    f.append("\n");
+    f.append("\nWHERE ParticipantId = ?");
     f.append("GROUP BY ParticipantId, SequenceNum, DatasetId");
+    f.add(bean.getParticipantId());
     rs = Table.executeQuery(dbSchema, f);
     while (rs.next())
     {
