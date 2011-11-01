@@ -29,6 +29,8 @@
 <%@ page import="java.util.Collections" %>
 <%@ page import="java.util.Comparator" %>
 <%@ page import="org.labkey.api.view.ViewContext" %>
+<%@ page import="org.apache.commons.lang.StringUtils" %>
+<%@ page import="org.json.JSONArray" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
     JspView<AdminController.ManageFoldersForm> me = (JspView<AdminController.ManageFoldersForm>) HttpView.currentView();
@@ -38,11 +40,20 @@
 
     String name = form.getName();
     String folderTypeName = form.getFolderType() != null ? form.getFolderType() : "Collaboration"; //default to Collaboration
+
+    JSONArray modulesOut = new JSONArray();
+    String[] activeModules = form.getActiveModules();
+    if(activeModules != null){
+        for(String m : form.getActiveModules()){
+            modulesOut.put(m);
+        }
+    }
+
 %>
 <script type="text/javascript">
     LABKEY.requiresExt4Sandbox(true);
     LABKEY.requiresCss("extWidgets/ext4.css");
-    LABKEY.requiresCss('/createFolder.css');
+    LABKEY.requiresCss('createFolder.css');
 </script>
 <script type="text/javascript">
     Ext4.QuickTips.init();
@@ -52,6 +63,9 @@
         var request = new LABKEY.MultiRequest();
         var folderTypes;
         var moduleTypes;
+        <%="var selectedModules = " + modulesOut + ";"%>
+        <%="var hasLoaded = " + form.getHasLoaded() + ";"%>
+        <%="var defaultTab = '" + form.getDefaultModule() + "';"%>
 
         request.add(LABKEY.Security.getFolderTypes, {
             success: function(data){
@@ -100,6 +114,10 @@
                 html: 'Name:',
                 cls: 'labkey-wizard-header',
                 style: 'padding-bottom: 5px;'
+            },{
+                xtype: 'hidden',
+                name: 'hasLoaded',
+                value: true
             },{
                 xtype: 'textfield',
                 name: 'name',
@@ -195,15 +213,24 @@
                         itemId: 'modulesCombo',
                         displayField: 'module',
                         valueField: 'module',
-                        value: 'Portal',
+                        value: (hasLoaded ? defaultTab : 'Portal'),
                         queryMode: 'local',
                         store: {
-                            //xtype: 'array',
                             fields: ['module'],
                             idIndex: 0,
-                            data: [
-                                {module: 'Portal'}
-                            ]
+                            data: (function(hasLoaded, selectedModules){
+                                var items = [];
+                                if(!hasLoaded)
+                                    return [{module: 'Portal'}];
+                                else {
+                                    if(selectedModules && selectedModules.length){
+                                        items = Ext4.Array.map(selectedModules, function(e){
+                                            return {module: e};
+                                        }, this);
+                                    }
+                                }
+                                return items;
+                            })(hasLoaded, selectedModules)
                         }
                     },{
                         html: 'Choose Modules:',
@@ -250,25 +277,34 @@
                         },
                         items: function(){
                             var items = [];
-                            if(moduleTypes)
+                            if(moduleTypes){
                                 Ext4.each(moduleTypes.modules, function(m){
-                                    if(m.shouldDisplay)
+                                    //the effect of this is that by default, a new container inherits modules from the parent
+                                    //if creating a project, there is nothing to inherit, so we set to Portal below
+                                    if(m.active || m.enabled)
                                         items.push({
                                             xtype: 'checkbox',
                                             name: 'activeModules',
                                             inputValue:m.name,
                                             boxLabel: m.tabName,
-                                            checked: (m.name=='Portal')
+                                            checked: (hasLoaded ? (selectedModules && selectedModules.indexOf(m.name)!=-1) : m.active)
+                                            //disabled: !m.enabled
                                         });
                                 }, this);
+                            }
 
                             return items;
 
                         }()
+                    }
+                ]);
+
+                //default to portal if none selected
+                if(!hasLoaded && (!this.getForm().getValues().activeModules || !this.getForm().getValues().activeModules.length)){
+                    this.getForm().findField('activeModules').setValue({activeModules: ['Portal']});
                 }
-            ]);
-        }
-    }).render('createFormDiv');
+            }
+            }).render('createFormDiv');
         }
     });
 </script>

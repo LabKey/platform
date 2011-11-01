@@ -554,10 +554,10 @@ public class AdminController extends SpringActionController
 
                 qinfo.put("name", m.getName());
                 qinfo.put("required", requiredModules.contains(m));
-                qinfo.put("active", activeModules.contains(m));
+                qinfo.put("active", activeModules.contains(m) || requiredModules.contains(m));
+                qinfo.put("enabled", (m.getTabDisplayMode() == Module.TabDisplayMode.DISPLAY_USER_PREFERENCE ||
+                    m.getTabDisplayMode() == Module.TabDisplayMode.DISPLAY_USER_PREFERENCE_DEFAULT) && !requiredModules.contains(m));
                 qinfo.put("tabName", m.getTabName(getViewContext()));
-                //NOTE: perhaps this logic should be moved elsewhere?
-                qinfo.put("shouldDisplay", ((m.getTabDisplayMode() == Module.TabDisplayMode.DISPLAY_USER_PREFERENCE || m.getTabDisplayMode() == Module.TabDisplayMode.DISPLAY_USER_PREFERENCE_DEFAULT) && !requiredModules.contains(m)));
                 qinfos.add(qinfo);
             }
 
@@ -3501,11 +3501,21 @@ public class AdminController extends SpringActionController
         private String folderType;
         private String defaultModule;
         private String[] activeModules;
+        private boolean hasLoaded = false;
         private boolean showAll;
         private boolean confirmed = false;
         private boolean addAlias = false;
         private boolean recurse = false;
 
+        public boolean getHasLoaded()
+        {
+            return hasLoaded;
+        }
+
+        public void setHasLoaded(boolean hasLoaded)
+        {
+            this.hasLoaded = hasLoaded;
+        }
 
         public String[] getActiveModules()
         {
@@ -3655,7 +3665,7 @@ public class AdminController extends SpringActionController
                 }
             }
 
-            errors.reject(ERROR_MSG, "Error: " + error + "  Please enter a different folder name (or Cancel).");
+            errors.reject(ERROR_MSG, "Error: " + error + "  Please enter a different folder name.");
             return false;
         }
 
