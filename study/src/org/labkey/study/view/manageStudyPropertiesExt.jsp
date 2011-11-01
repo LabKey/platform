@@ -31,7 +31,8 @@
 <div class="extContainer" id="manageStudyPropertiesDiv"></div>
 <script type="text/javascript">
 
-var editable = false;   // render as details view initially
+var canEdit = <%=canEdit?"true":"false"%>;
+var editableFormPanel = canEdit;
 var studyPropertiesFormPanel = null;
 
 function removeProtocolDocument(name, xid)
@@ -80,6 +81,24 @@ function removeProtocolDocument(name, xid)
 }
 
 
+
+var maskEl = null;
+
+function mask()
+{
+    maskEl = Ext.getBody();
+    maskEl.mask();
+}
+
+function unmask()
+{
+    if (maskEl)
+        maskEl.unmask();
+    maskEl = null;
+}
+
+
+
 function showSuccessMessage(message, after)
 {
     Ext.get("formError").update("");
@@ -91,17 +110,22 @@ function showSuccessMessage(message, after)
 
 function onSaveSuccess()
 {
-    showSuccessMessage("Study properties saved successfully", null);
-    editable = false;
-    createPage();
+    // if you want to stay on page, you need to refresh anyway to udpate attachments
+    var msgbox = Ext.Msg.show({
+       title:'Status',
+       msg: '<span class="labkey-message">Changes saved</span>',
+       buttons: false
+    });
+    var el = msgbox.getDialog().el;
+    el.pause(1).fadeOut({callback:cancelButtonHandler});
 }
 
 
 function onSaveFailure(error)
 {
-    studyPropertiesFormPanel.el.unmask();
+    unmask();
     Ext.get("formSuccess").update("");
-    Ext.get("formError").udpate(error.exeption);
+    Ext.get("formError").update(error.exception);
 }
 
 
@@ -119,7 +143,7 @@ function submitButtonHandler()
             success : onSaveSuccess,
             failure : onSaveFailure
         });
-        studyPropertiesFormPanel.el.mask();
+        mask();
     }
     else
     {
@@ -128,9 +152,9 @@ function submitButtonHandler()
 }
 
 
-function editButonHandler()
+function editButtonHandler()
 {
-    editable = true;
+    editableFormPanel = true;
     destroyFormPanel();
     createPage();
 }
@@ -158,6 +182,14 @@ function destroyFormPanel()
 }
 
 
+var renderTypes = {<%
+String comma = "";
+for (WikiRendererType type : getRendererTypes())
+{
+    %><%=comma%><%=q(type.name())%>:<%=q(type.getDisplayName())%><%
+    comma = ",";
+}%>};
+
 function renderFormPanel(data, editable)
 {
     destroyFormPanel();
@@ -170,24 +202,27 @@ function renderFormPanel(data, editable)
     }
     else if (<%=canEdit ? "true" : "false"%>)
     {
-        buttons.push({text:"Edit", handler: editButonHandler});
+        buttons.push({text:"Edit", handler: editButtonHandler});
         buttons.push({text:"Done", handler: doneButtonHandler});
     }
 
     var renderTypeCombo = new Ext.form.ComboBox(
     {
-        mode:'local',
+        hiddenName : 'DescriptionRendererType',
+        name : 'RendererTypeDisplayName',
+        mode: 'local',
+        triggerAction: 'all',
+        valueField: 'renderType',
+        displayField: 'displayText',
         store : new Ext.data.ArrayStore(
         {
             id : 0, fields:['renderType', 'displayText'],
             data : [
 <%
-                String comma = "";
+                comma = "";
                 for (WikiRendererType type : getRendererTypes())
                 {
-                    String value = type.name();
-                    String displayName = type.getDisplayName();
-                    %><%=comma%>[<%=q(value)%>,<%=q(displayName)%>]<%
+                    %><%=comma%>[<%=q(type.name())%>,<%=q(type.getDisplayName())%>]<%
                     comma = ",";
                 }
 %>
@@ -195,21 +230,64 @@ function renderFormPanel(data, editable)
         })
     });
 
+    // fields we've handled (whether or now we're showing them)
+    var handledFields = {};
+    var items = [];
+
+    items.push({name:'Label', width:400});
+    handledFields['Label'] = true;
+    items.push({name:'Investigator'});
+    handledFields['Investigator'] = true;
+    items.push({name:'studyGrant'});
+    handledFields['studyGrant'] = true;
+    items.push({name:'Description', width:400});
+    handledFields['Description'] = true;
+    if (editableFormPanel)
+        items.push(renderTypeCombo);
+    handledFields[renderTypeCombo.hiddenName] = true;
+    // the original form didn't include these, but we can decide later
+    handledFields['StartDate'] = true;
+    handledFields['Container'] = true;
+    handledFields['TimepointType'] = true;
+
+    // Now let's add all the other fields
+    var cm = data.columnModel;
+    var col, i;
+    for (i=0 ; i<cm.length ; i++)
+    {
+        col = cm[i];
+        console.log(col.dataIndex + " hidden=" + col.hidden);
+        col = cm[i];
+        if (col.hidden) continue;
+        if (handledFields[col.dataIndex]) continue;
+        items.push({name:col.dataIndex});
+    }
+    for (i=0 ; i<items.length ; i++)
+    {
+        items[i].disabled = !editableFormPanel;
+        items[i].disabledClass = 'noop';    // TODO the defaultClass makes everything unreadable
+    }
+
     studyPropertiesFormPanel = new LABKEY.ext.FormPanel(
     {
         selectRowsResults:data,
-        addAllFields:true,
+        padding : 10,
+        defaults : { width:200, disabled : !editableFormPanel, disabledClass:'noop' },
+        labelWidth:150,   <%-- don't wrap even on Large font theme --%>
         buttonAlign:'left',
         buttons: buttons,
-        items:[renderTypeCombo]
+        items:items
     });
     studyPropertiesFormPanel.render('formDiv');
+    var renderType = data.rows[0][renderTypeCombo.hiddenName];
+    if (renderTypes[renderType])
+        renderTypeCombo.setValue(renderTypes[renderType]);
 }
 
 
 function onQuerySuccess(data) // e.g. callback from Query.selectRows
 {
-    renderFormPanel(data, editable);
+    renderFormPanel(data, editableFormPanel);
 }
 
 
@@ -233,8 +311,7 @@ function createPage()
 Ext.onReady(createPage);
 </script>
 
-<%=canEdit?"CAN EDIT":"READ-ONLY"%><br>
-<span id=formSuccess class=labkey-message-strong></span><spaan id=formError class=labkey-error></spaan>&nbsp;</br>
+<span id=formSuccess class=labkey-message-strong></span><span id=formError class=labkey-error></span>&nbsp;</br>
 <div id='formDiv'/>
 
 </script>
