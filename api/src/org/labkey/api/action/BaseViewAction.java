@@ -601,18 +601,11 @@ public abstract class BaseViewAction<FORM> extends BaseCommandController impleme
         if (c.isForbiddenProject(user))
             throw new ForbiddenProjectException();
 
-        RequiresPermission oldReqPerm = actionClass.getAnnotation(RequiresPermission.class);
         RequiresPermissionClass requiresPerm = actionClass.getAnnotation(RequiresPermissionClass.class);
         Set<Class<? extends Permission>> permissionsRequired = null;
         if (null != requiresPerm)
         {
             permissionsRequired = RoleManager.permSet(requiresPerm.value());
-        }
-        if (null != oldReqPerm)
-        {
-            Class<? extends Permission> perm = translatePermission(oldReqPerm);
-            if(null != perm)
-                permissionsRequired = RoleManager.permSet(perm);
         }
 
         ContextualRoles rolesAnnotation = actionClass.getAnnotation(ContextualRoles.class);
@@ -666,36 +659,12 @@ public abstract class BaseViewAction<FORM> extends BaseCommandController impleme
 
         boolean requiresNoPermission = actionClass.isAnnotationPresent(RequiresNoPermission.class);
 
-        if (null == oldReqPerm && null == requiresPerm && !requiresSiteAdmin && !requiresLogin && !requiresNoPermission && !adminConsoleAction)
-            throw new IllegalStateException("@RequiresPermission, @RequiresPermissionClass, @RequiresSiteAdmin, @RequiresLogin, @RequiresNoPermission, or @AdminConsoleAction annotation is required on class " + actionClass.getName());
+        if (null == requiresPerm && !requiresSiteAdmin && !requiresLogin && !requiresNoPermission && !adminConsoleAction)
+            throw new IllegalStateException("@RequiresPermissionClass, @RequiresSiteAdmin, @RequiresLogin, @RequiresNoPermission, or @AdminConsoleAction annotation is required on class " + actionClass.getName());
 
         // All permission checks have succeeded.  Now check for deprecated action.
         if (actionClass.isAnnotationPresent(DeprecatedAction.class))
             throw new DeprecatedActionException(actionClass);
-    }
-
-    private static Class<? extends Permission> translatePermission(RequiresPermission requiresPerm)
-    {
-        if(null == requiresPerm)
-            return null;
-        switch(requiresPerm.value())
-        {
-            case ACL.PERM_ADMIN:
-                return AdminPermission.class;
-            case ACL.PERM_DELETE:
-            case ACL.PERM_DELETEOWN:
-                return DeletePermission.class;
-            case ACL.PERM_INSERT:
-                return InsertPermission.class;
-            case ACL.PERM_READ:
-            case ACL.PERM_READOWN:
-                return ReadPermission.class;
-            case ACL.PERM_UPDATE:
-            case ACL.PERM_UPDATEOWN:
-                return UpdatePermission.class;
-            default:
-                return null;
-        }
     }
 
     public static void checkPermissionsAndTermsOfUse(Class<? extends Controller> actionClass, ViewContext context, Set<Role> contextualRoles)
