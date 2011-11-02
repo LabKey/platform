@@ -76,9 +76,11 @@
                 });
                 folderTypes = folderTypes.sort(function(a,b){
                     //force custom to appear at end
-                    return b.label == 'Custom' ? false
-                        : a.label == 'Custom' ? true
-                        : (a.label > b.label)
+                    return b.label == 'Custom' ? -1
+                        : a.label == 'Custom' ? 1
+                        : (a.label > b.label) ? 1
+                        : (a.label < b.label) ? -1
+                        : 0
                 });
             }
         });
