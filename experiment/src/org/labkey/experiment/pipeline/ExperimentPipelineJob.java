@@ -65,7 +65,8 @@ public class ExperimentPipelineJob extends PipelineJob
 
     private XarSource createXarSource(File file)
     {
-        if (file.getName().toLowerCase().endsWith(".xar"))
+        String name = file.getName().toLowerCase();
+        if (name.endsWith(".xar") || name.endsWith(".zip"))
         {
             return new CompressedXarSource(file, this);
         }

@@ -372,6 +372,11 @@ public class XarExporter
         }
         _sampleSetLSIDs.add(cpasType);
         ExpSampleSet sampleSet = ExperimentService.get().getSampleSet(cpasType);
+        addSampleSet(sampleSet);
+    }
+
+    public void addSampleSet(ExpSampleSet sampleSet) throws ExperimentException
+    {
         if (sampleSet == null)
         {
             return;

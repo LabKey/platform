@@ -57,6 +57,7 @@ import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.DataRegion;
 import org.labkey.api.data.DataRegionSelection;
 import org.labkey.api.data.DisplayColumn;
+import org.labkey.api.data.PanelButton;
 import org.labkey.api.data.RenderContext;
 import org.labkey.api.data.SimpleDisplayColumn;
 import org.labkey.api.data.SimpleFilter;
@@ -472,6 +473,16 @@ public class ExperimentController extends SpringActionController
                     deriveButton.setDisplayPermission(InsertPermission.class);
                     deriveButton.setRequiresSelection(true);
                     bar.add(deriveButton);
+                }
+
+                @Override
+                public PanelButton createExportButton(boolean exportAsWebPage)
+                {
+                    PanelButton result = super.createExportButton(exportAsWebPage);
+                    ActionURL url = new ActionURL(ExportSampleSetAction.class, getContainer());
+                    url.addParameter("sampleSetId", _source.getRowId());
+                    result.addSubPanel("XAR", new JspView<ActionURL>("/org/labkey/experiment/controllers/exp/exportSampleSetAsXar.jsp", url));
+                    return result;
                 }
             };
             queryView.setShowDeleteButton(false);
@@ -2950,6 +2961,7 @@ public class ExperimentController extends SpringActionController
         private String _zipFileName;
         private String _fileExportType;
         private Integer _protocolId;
+        private Integer _sampleSetId;
         private String[] _roles = new String[0];
 
         public String getError()
@@ -3030,6 +3042,16 @@ public class ExperimentController extends SpringActionController
         public void setRoles(String[] roles)
         {
             _roles = roles;
+        }
+
+        public Integer getSampleSetId()
+        {
+            return _sampleSetId;
+        }
+
+        public void setSampleSetId(Integer sampleSetId)
+        {
+            _sampleSetId = sampleSetId;
         }
 
         public List<ExpProtocol> lookupProtocols(ViewContext context, boolean clearSelection)
@@ -3132,13 +3154,6 @@ public class ExperimentController extends SpringActionController
     @RequiresPermissionClass(ReadPermission.class)
     public class ExportProtocolsAction extends AbstractExportAction
     {
-        @Override
-        public ModelAndView getView(ExportOptionsForm form, boolean reshow, BindException errors) throws Exception
-        {
-            handlePost(form, errors);
-            return null;
-        }
-
         public boolean handlePost(ExportOptionsForm form, BindException errors) throws Exception
         {
             List<ExpProtocol> protocols = form.lookupProtocols(getViewContext(), false);
@@ -3180,8 +3195,9 @@ public class ExperimentController extends SpringActionController
             return null;
         }
 
-        public ModelAndView getView(ExportOptionsForm exportOptionsForm, boolean reshow, BindException errors) throws Exception
+        public ModelAndView getView(ExportOptionsForm form, boolean reshow, BindException errors) throws Exception
         {
+            handlePost(form, errors);
             return null;
         }
 
@@ -3233,6 +3249,34 @@ public class ExperimentController extends SpringActionController
             {
                 throw new NotFoundException(runIds.toString());
             }
+        }
+    }
+
+    @RequiresPermissionClass(ReadPermission.class)
+    public class ExportSampleSetAction extends AbstractExportAction
+    {
+        public boolean handlePost(ExportOptionsForm form, BindException errors) throws Exception
+        {
+            Integer rowId = form.getSampleSetId();
+            if (rowId == null)
+            {
+                throw new NotFoundException("No sampleSetId specified");
+            }
+            ExpSampleSet sampleSet = ExperimentService.get().getSampleSet(rowId.intValue());
+            if (sampleSet == null)
+            {
+                throw new NotFoundException("No such sample set with RowId " + rowId);
+            }
+            if (!sampleSet.getContainer().hasPermission(getUser(), ReadPermission.class))
+            {
+                throw new UnauthorizedException();
+            }
+
+            XarExportSelection selection = new XarExportSelection();
+            selection.addSampleSet(sampleSet);
+
+            _resultURL = exportXAR(selection, form.getLsidOutputType(), form.getExportType(), FileUtil.makeLegalName(sampleSet.getName() + ".xar"));
+            return true;
         }
     }
 

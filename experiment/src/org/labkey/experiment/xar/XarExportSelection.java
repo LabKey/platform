@@ -18,6 +18,7 @@ package org.labkey.experiment.xar;
 
 import org.labkey.api.exp.ExperimentException;
 import org.labkey.api.exp.api.ExpProtocol;
+import org.labkey.api.exp.api.ExpSampleSet;
 import org.labkey.api.exp.api.ExperimentService;
 import org.labkey.experiment.ArchiveURLRewriter;
 import org.labkey.experiment.URLRewriter;
@@ -38,6 +39,7 @@ public class XarExportSelection implements Serializable
 {
     private List<Integer> _expIds = new ArrayList<Integer>();
     private List<Integer> _runIds = new ArrayList<Integer>();
+    private List<Integer> _sampleSetIds = new ArrayList<Integer>();
     private List<Integer> _protocolIds = new ArrayList<Integer>();
     private boolean _includeXarXml = true;
     private List<String> _roles;
@@ -102,10 +104,20 @@ public class XarExportSelection implements Serializable
             ExpProtocol protocol = ExperimentService.get().getExpProtocol(protocolId);
             exporter.addProtocol(protocol, true);
         }
+
+        for (int sampleSetId : _sampleSetIds)
+        {
+            exporter.addSampleSet(ExperimentServiceImpl.get().getSampleSet(sampleSetId));
+        }
     }
 
     public URLRewriter createURLRewriter()
     {
         return new ArchiveURLRewriter(_includeXarXml, _roles);
+    }
+
+    public void addSampleSet(ExpSampleSet sampleSet)
+    {
+        _sampleSetIds.add(sampleSet.getRowId());
     }
 }
