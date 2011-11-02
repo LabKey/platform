@@ -2,6 +2,7 @@
 	padding: 5px;
     text-align: center;
     vertical-align:text-top;
+    word-wrap: break-word;
 }
 
 .labkey-iconpanel .thumb-wrap-bottom{
