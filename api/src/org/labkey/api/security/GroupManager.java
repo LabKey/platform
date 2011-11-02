@@ -247,12 +247,34 @@ public class GroupManager
     }
 
     public static Group copyGroupToContainer(Group g, Container c){
+        return copyGroupToContainer(g, c, 0);
+    }
+
+    public static Group copyGroupToContainer(Group g, Container c, int suffix){
         if(!g.isProjectGroup()){
             return g;
         }
 
         Set<UserPrincipal> members = SecurityManager.getGroupMembers(g, SecurityManager.GroupMemberType.Both);
-        Group newGroup = SecurityManager.createGroup(c, g.getName());
+        String newGroupName = g.getName() + (suffix > 0 ? " " + suffix+1 : "");
+
+        //test whether a group of this name already exists in the container
+        if(SecurityManager.getGroupId(c, newGroupName, null, false) != null)
+        {
+            Group existingGroup = SecurityManager.getGroup(SecurityManager.getGroupId(c, newGroupName));
+            Set<UserPrincipal> existingMembers = SecurityManager.getGroupMembers(existingGroup, SecurityManager.GroupMemberType.Both);
+            if(existingMembers.equals(members))
+            {
+                return existingGroup; //groups are the same. nothing needed
+            }
+            else
+            {
+                //a different group of the same name already exists.  modify name and try again
+                return GroupManager.copyGroupToContainer(g, c, suffix+1);
+            }
+        }
+
+        Group newGroup = SecurityManager.createGroup(c, newGroupName);
         SecurityManager.addMembers(newGroup, members);
 
         return newGroup;
