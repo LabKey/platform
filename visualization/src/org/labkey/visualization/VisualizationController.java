@@ -64,6 +64,7 @@ import org.labkey.api.security.permissions.InsertPermission;
 import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.services.ServiceRegistry;
 import org.labkey.api.study.DataSetTable;
+import org.labkey.api.study.Study;
 import org.labkey.api.study.StudyService;
 import org.labkey.api.thumbnail.ThumbnailService;
 import org.labkey.api.util.PageFlowUtil;
@@ -72,6 +73,7 @@ import org.labkey.api.util.URLHelper;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.JspView;
 import org.labkey.api.view.NavTree;
+import org.labkey.api.view.NotFoundException;
 import org.labkey.api.view.ViewContext;
 import org.labkey.api.view.WebPartView;
 import org.labkey.api.visualization.VisualizationReportDescriptor;
@@ -547,13 +549,13 @@ public class VisualizationController extends SpringActionController
     @RequiresPermissionClass(ReadPermission.class)
     public class GetVisualizationTypes extends ApiAction
     {
-        Map<String, Object> getBaseTypeProperties()
+        Map<String, Object> getBaseTypeProperties(Study study)
         {
             Map<String, Object> properties = new HashMap<String, Object>();
             properties.put("subjectColumn", StudyService.get().getSubjectColumnName(getContainer()));
             properties.put("subjectNounSingular", StudyService.get().getSubjectNounSingular(getContainer()));
             properties.put("subjectNounPlural", StudyService.get().getSubjectNounPlural(getContainer()));
-            properties.put("TimepointType", StudyService.get().getStudy(getContainer()).getTimepointType().toString().toLowerCase());
+            properties.put("TimepointType", study.getTimepointType().toString().toLowerCase());
             return properties;
         }
 
@@ -572,8 +574,14 @@ public class VisualizationController extends SpringActionController
             motion.put("icon", getViewContext().getContextPath() + "/reports/output_motionchart.jpg");
             types.add(motion);
 */
+            Study study = StudyService.get().getStudy(getContainer());
+            if (study == null)
+            {
+                throw new NotFoundException("No study available in " + getContainer().getPath());
+            }
+
             // line chart
-            Map<String, Object> line = getBaseTypeProperties();
+            Map<String, Object> line = getBaseTypeProperties(study);
             line.put("type", "line");
             line.put("label", "Time Chart");
             line.put("icon", getViewContext().getContextPath() + "/reports/output_linechart.jpg");
@@ -602,7 +610,7 @@ public class VisualizationController extends SpringActionController
             types.add(scatter);
 */
             // data grid
-            Map<String, Object> data = getBaseTypeProperties();
+            Map<String, Object> data = getBaseTypeProperties(study);
             data.put("type", "dataGridTime");
             data.put("label", "Data Grid (Time)");
             data.put("icon", getViewContext().getContextPath() + "/reports/output_grid.jpg");
@@ -610,14 +618,14 @@ public class VisualizationController extends SpringActionController
             List<Map<String, String>> dataAxis = new ArrayList<Map<String, String>>();
             dataAxis.add(PageFlowUtil.map("name", "x-axis", "label", "Select the date measurement for the x-axis", "multiSelect", "false", "timeAxis", "true"));
             dataAxis.add(PageFlowUtil.map("name", "y-axis", "label", "Select data type for y-axis", "multiSelect", "false"));
-            data.put("axis", lineAxis);
+            data.put("axis", dataAxis);
             data.put("isGrid", true);
             data.put("enabled", true);
 
             types.add(data);
 
             // data grid
-            Map<String, Object> dataScatter = getBaseTypeProperties();
+            Map<String, Object> dataScatter = getBaseTypeProperties(study);
             dataScatter.put("type", "dataGridScatter");
             dataScatter.put("label", "Data Grid (X/Y)");
             dataScatter.put("icon", getViewContext().getContextPath() + "/reports/output_grid.jpg");

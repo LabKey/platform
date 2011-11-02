@@ -303,15 +303,17 @@ public class AttachmentServiceImpl implements AttachmentService.Service, Contain
                     continue;
                 }
 
-                int maxSize = AppProps.getInstance().getMaxBLOBSize();
-                if (file.getSize() > maxSize)
-                {
-                    throw new IOException(file.getFilename() + " is larger than the maximum allowed size, " + NumberFormat.getIntegerInstance().format(maxSize) + " bytes");
-                }
-
                 HashMap<String, Object> hm = new HashMap<String, Object>();
                 if (null == fileLocation)
+                {
+                    int maxSize = AppProps.getInstance().getMaxBLOBSize();
+                    if (file.getSize() > maxSize)
+                    {
+                        throw new IOException(file.getFilename() + " is larger than the maximum allowed size, " + NumberFormat.getIntegerInstance().format(maxSize) + " bytes");
+                    }
+
                     hm.put("Document", file);
+                }
                 else
                     ((AttachmentDirectory)parent).addAttachment(user, file);
 

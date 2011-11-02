@@ -62,7 +62,6 @@ String guid = GUID.makeGUID();
 
 <table cellspacing="4" class="labkey-export-tab-contents" style="overflow-y: visible;">
     <tr>
-        <td valign="middle" rowspan="2">Export as a ZIP file:</td>
         <td valign="middle"><input type="radio" name="fileExportType" value="all" checked="true" onclick="setFileDownloadEnabled(document.getElementById('<%=h(guid) %>').checked, '<%= h(guid) %>');" /></td>
         <td valign="middle">Include all files</td>
     </tr>
@@ -72,7 +71,7 @@ String guid = GUID.makeGUID();
             <td valign="middle">Include only selected files based on usage in run:</td>
         </tr>
         <tr>
-            <td colspan="2" />
+            <td></td>
             <td>
                 <% for (String role : bean.getRoles()) { %>
                     <div style="white-space:nowrap; width: 15em; float: left;"><input type="checkbox" class="file-download-role-checkbox-<%= guid %>" disabled="true" name="roles" id="role<%= h(role) %>" value="<%= h(role) %>" /><span style="padding-left: .4em; padding-right: 1.5em;"><%= h(role) %></span></div>
@@ -81,12 +80,10 @@ String guid = GUID.makeGUID();
         </tr>
     <% } %>
     <tr>
-        <td>ZIP file name:</td>
-        <td colspan="2"><input type="text" size="45" name="zipFileName" value="<%= h(bean.getFileName()) %>" /></td>
+        <td colspan="2">File name: <input type="text" size="45" name="zipFileName" value="<%= h(bean.getFileName()) %>" /></td>
     </tr>
 
     <tr>
-        <td/>
-        <td colspan="2"><%= PageFlowUtil.generateSubmitButton("Export", "return validateFileExportOptions('" + guid + "', this.form, '" + bean.getPostURL() + "');") %></td>
+        <td colspan="2"><%= PageFlowUtil.generateSubmitButton("Export As ZIP", "return validateFileExportOptions('" + guid + "', this.form, '" + bean.getPostURL() + "');") %></td>
     </tr>
 </table>

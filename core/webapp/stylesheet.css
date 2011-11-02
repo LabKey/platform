@@ -3107,28 +3107,12 @@ body .x-grid3 .x-grid3-row-alt {
 
 .labkey-export-tab-contents
 {
+    padding: 0.5em;
 }
 
 .labkey-export-tab-contents td
 {
     padding: 1px;
-}
-
-.labkey-export-tab-layout td
-{
-    padding: 1px;
-}
-
-td.labkey-export-tab-options
-{
-    vertical-align: top;
-}
-
-td.labkey-export-tab-buttons
-{
-    vertical-align: bottom;
-    text-align: right;
-    padding-left: 2em;
 }
 
 .labkey-file-browser-elem

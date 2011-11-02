@@ -26,7 +26,6 @@ import org.labkey.api.action.CustomApiForm;
 import org.labkey.api.action.ExportAction;
 import org.labkey.api.action.FormViewAction;
 import org.labkey.api.action.HasViewContext;
-import org.labkey.api.action.RedirectAction;
 import org.labkey.api.action.ReturnUrlForm;
 import org.labkey.api.action.SimpleViewAction;
 import org.labkey.api.action.SpringActionController;
@@ -406,12 +405,11 @@ public class ProjectController extends SpringActionController
         {
             FolderType ft = getContainer().getFolderType();
             String iconPath = ft.getFolderIconPath();
-            assert null != iconPath;
 
             iconPath = ModuleLoader.getServletContext().getRealPath(iconPath);
             File iconFile = new File(iconPath);
 
-            if (iconFile == null || !NetworkDrive.exists(iconFile))
+            if (!NetworkDrive.exists(iconFile))
             {
                 iconFile = new File(FolderType.NONE.getFolderIconPath());  //fall back to default
                 _log.warn("Could not find specified icon: "+iconPath);
