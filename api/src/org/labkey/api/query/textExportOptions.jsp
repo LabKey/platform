@@ -23,10 +23,12 @@
 %>
 <table class="labkey-export-tab-contents">
     <tr>
-        <td class="labkey-export-tab-options">
+        <td>
             <table class="labkey-export-tab-layout"><tr><td>Export as tab-separated values</td></tr></table>
         </td>
-        <td class="labkey-export-tab-buttons">
+    </tr>
+    <tr>
+        <td>
             <%=generateButton("Export to Text", url) %>
         </td>
     </tr>

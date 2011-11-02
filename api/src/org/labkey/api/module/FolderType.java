@@ -87,6 +87,7 @@ public interface FolderType
      * The filepath of the icon for this folder type, relative to the root of the webapp.
      * @return File path to the icon
      */
+    @NotNull
     public String getFolderIconPath();
 
     /**

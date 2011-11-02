@@ -28,21 +28,16 @@
     boolean first = true;
 %>
 <table class="labkey-export-tab-contents">
+    <% for (Map.Entry<String, ActionURL> entry : map.entrySet())
+    { %>
+        <tr>
+            <td valign="center"><input type="radio" <%= first ? "id=\"" + guid + "\"" : "" %> name="scriptExportType" <%= first ? "checked=\"true\"" : "" %> value="<%=h(entry.getValue()) %>"/></td>
+            <td valign="center"><%= h(entry.getKey())%></td>
+        </tr>
+    <%  first = false;
+    }%>
     <tr>
-        <td class="labkey-export-tab-options">
-            <table class="labkey-export-tab-layout">
-                <% for (Map.Entry<String, ActionURL> entry : map.entrySet())
-                { %>
-                    <tr>
-                        <td valign="center"><%= first ? "Scripting language:" : "" %></td>
-                        <td valign="center"><input type="radio" <%= first ? "id=\"" + guid + "\"" : "" %> name="scriptExportType" <%= first ? "checked=\"true\"" : "" %> value="<%=h(entry.getValue()) %>"/></td>
-                        <td valign="center"><%= h(entry.getKey())%></td>
-                    </tr>
-                <%  first = false;
-                }%>
-            </table>
-        </td>
-        <td class="labkey-export-tab-buttons">
+        <td colspan="2">
             <%=generateButton("Create Script", "", "var _scriptUrl = getRadioButtonValue(document.getElementById(\"" + guid + "\")); window.open(_scriptUrl, \"_newtab\"); return false;") %>
         </td>
     </tr>

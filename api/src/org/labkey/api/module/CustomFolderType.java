@@ -34,7 +34,7 @@ public class CustomFolderType implements FolderType
 
     public String getDescription()
     {
-        return "Create a tab for each LabKey module you select. Used in older LabKey installations. Note that any LabKey module can also be used from any folder type    via Customize Folder.";
+        return "Create a tab for each LabKey module you select. Used in older LabKey installations. Note that any LabKey module can also be enabled in any folder type via Folder Settings.";
     }
 
     public List<Portal.WebPart> getRequiredWebParts()
@@ -113,6 +113,7 @@ public class CustomFolderType implements FolderType
         return new AppBar(container.getName(), container.getStartURL(context.getUser()), tabs);
     }
 
+    @NotNull
     public String getFolderIconPath()
     {
         return "_images/defaultlogosmall.gif";

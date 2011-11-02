@@ -16,6 +16,7 @@
 
 package org.labkey.api.module;
 
+import org.jetbrains.annotations.NotNull;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.RuntimeSQLException;
 import org.labkey.api.security.User;
@@ -211,6 +212,7 @@ public class DefaultFolderType implements FolderType
         }
     }
 
+    @NotNull
     public String getFolderIconPath()
     {
         return "_images/defaultlogosmall.gif";

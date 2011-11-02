@@ -15,6 +15,7 @@
  */
 package org.labkey.api.view;
 
+import org.labkey.api.action.SpringActionController;
 import org.labkey.api.data.Container;
 import org.springframework.web.servlet.mvc.Controller;
 
@@ -68,7 +69,8 @@ public abstract class FolderTab
 
         public boolean isSelectedPage(ActionURL currentURL)
         {
-            if (currentURL.getPageFlow().equals("study-redesign"))
+            if (currentURL.getPageFlow().equalsIgnoreCase(SpringActionController.getPageFlowName(_actionClass)) &&
+                currentURL.getAction().equalsIgnoreCase(SpringActionController.getActionName(_actionClass)))
             {
                 String pageName = currentURL.getParameter("pageName");
                 return getName().equalsIgnoreCase(pageName);
