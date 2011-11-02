@@ -66,7 +66,12 @@ public class ModuleHtmlViewDefinition extends ResourceRef
         {
             is = r.getInputStream();
             if (is != null)
+            {
                 _html = IOUtils.toString(is);
+                char ch = _html.length() > 0 ? _html.charAt(0) : 0;
+                if (ch == 0xfffe || ch == 0xfeff)
+                    _html = _html.substring(1);
+            }
         }
         catch(IOException e)
         {
@@ -75,7 +80,7 @@ public class ModuleHtmlViewDefinition extends ResourceRef
         }
         finally
         {
-            try { if (is != null) is.close(); } catch (IOException _) { }
+            IOUtils.closeQuietly(is);
         }
 
         Resource parent = r.parent();
