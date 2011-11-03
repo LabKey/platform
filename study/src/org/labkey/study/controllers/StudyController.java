@@ -60,6 +60,7 @@ import org.labkey.api.portal.ProjectUrls;
 import org.labkey.api.query.AbstractQueryImportAction;
 import org.labkey.api.query.BatchValidationException;
 import org.labkey.api.query.CustomView;
+import org.labkey.api.query.DefaultSchema;
 import org.labkey.api.query.DetailsURL;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.QueryAction;
@@ -67,9 +68,9 @@ import org.labkey.api.query.QueryDefinition;
 import org.labkey.api.query.QueryForeignKey;
 import org.labkey.api.query.QueryForm;
 import org.labkey.api.query.QueryParseException;
+import org.labkey.api.query.QuerySchema;
 import org.labkey.api.query.QueryService;
 import org.labkey.api.query.QuerySettings;
-import org.labkey.api.query.QueryUpdateForm;
 import org.labkey.api.query.QueryUpdateService;
 import org.labkey.api.query.QueryView;
 import org.labkey.api.query.UserSchema;
@@ -191,6 +192,7 @@ import org.labkey.study.query.DataSetQueryView;
 import org.labkey.study.query.PublishedRecordQueryView;
 import org.labkey.study.query.StudyPropertiesQueryView;
 import org.labkey.study.query.StudyQuerySchema;
+import org.labkey.study.query.StudySchemaProvider;
 import org.labkey.study.reports.ReportManager;
 import org.labkey.study.samples.settings.RepositorySettings;
 import org.labkey.study.security.permissions.ManageStudyPermission;
@@ -1518,11 +1520,9 @@ public class StudyController extends BaseStudyController
         @Override
         protected TableViewForm getCommand(HttpServletRequest request) throws Exception
         {
-            StudyImpl study = getStudy(true);
             User user = getUser();
-            if (null == study)
-                throw new NotFoundException("Study not found");
-            TableViewForm form = new TableViewForm(new StudyQuerySchema(study,user,true).getTable("StudyProperties"));
+            QuerySchema schema = new StudySchemaProvider().getSchema(DefaultSchema.get(user, getViewContext().getContainer()));
+            TableViewForm form = new TableViewForm(schema.getTable("StudyProperties"));
             form.setViewContext(getViewContext());
             return form;
         }
