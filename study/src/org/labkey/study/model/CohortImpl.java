@@ -24,7 +24,7 @@ import org.labkey.api.exp.Lsid;
 public class CohortImpl extends ExtensibleStudyEntity<CohortImpl> implements Cohort
 {
     private static final String DOMAIN_URI_PREFIX = "Cohort";
-    public static final DomainInfo DOMAIN_INFO = new StudyDomainInfo(DOMAIN_URI_PREFIX);
+    public static final DomainInfo DOMAIN_INFO = new StudyDomainInfo(DOMAIN_URI_PREFIX, false);
 
     private int _rowId = 0;
     private String _lsid;
@@ -45,9 +45,16 @@ public class CohortImpl extends ExtensibleStudyEntity<CohortImpl> implements Coh
         _rowId = rowId;
     }
 
+    @Override
     public String getDomainURIPrefix()
     {
         return DOMAIN_URI_PREFIX;
+    }
+
+    @Override
+    protected boolean getUseSharedProjectDomain()
+    {
+        return false;
     }
 
     public void initLsid()

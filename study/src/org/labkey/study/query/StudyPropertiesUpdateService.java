@@ -78,6 +78,7 @@ public class StudyPropertiesUpdateService extends AbstractQueryUpdateService
         }
 
         Table.update(user, table.getRealTable(), updateRow, study.getContainer().getId());
+        StudyManager.getInstance().clearCaches(container, false);
 
         return getRow(user, container, null);
     }

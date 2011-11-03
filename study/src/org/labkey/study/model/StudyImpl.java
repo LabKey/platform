@@ -74,7 +74,7 @@ import java.util.Set;
 public class StudyImpl extends ExtensibleStudyEntity<StudyImpl> implements Study
 {
     private static final String DOMAIN_URI_PREFIX = "Study";
-    public static final DomainInfo DOMAIN_INFO = new StudyDomainInfo(DOMAIN_URI_PREFIX);
+    public static final DomainInfo DOMAIN_INFO = new StudyDomainInfo(DOMAIN_URI_PREFIX, true);
 
     private String _label;
     private TimepointType _timepointType;
@@ -315,9 +315,16 @@ public class StudyImpl extends ExtensibleStudyEntity<StudyImpl> implements Study
         _manualCohortAssignment = manualCohortAssignment;
     }
 
+    @Override
     public String getDomainURIPrefix()
     {
         return DOMAIN_URI_PREFIX;
+    }
+
+    @Override
+    protected boolean getUseSharedProjectDomain()
+    {
+        return true;
     }
 
     public void initLsid()

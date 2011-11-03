@@ -82,31 +82,15 @@
         <td><%= textLink("Change Label or Description", ManageStudyPropertiesAction.class) %></td>
     </tr>
     <tr>
-        <th align="left">Reloading</th>
-        <td><%= h(intervalLabel) %></td>
-        <td><%= textLink("Manage Reloading", ManageReloadAction.class) %></td>
-    </tr>
-    <tr>
         <th align="left">Additional Properties</th>
         <td>This study has <%=numProperties%> additional <%=propString%></td>
         <td><%= textLink("Edit Definition", StudyDefinitionController.EditStudyDefinitionAction.class) %></td>
     </tr>
-
-    <% if (numProperties > 0)
-    {
-    %>
-
     <tr>
-        <td colspan="3">
-
-            <%me.include(me.getModelBean(), out);%>
-
-        </td>
+        <th align="left">Reloading</th>
+        <td><%= h(intervalLabel) %></td>
+        <td><%= textLink("Manage Reloading", ManageReloadAction.class) %></td>
     </tr>
-    <%
-    }
-    %>
-
     <tr>
         <th align="left">Datasets</th>
         <td>This study defines <%= getDataSets().size() %> Datasets</td>

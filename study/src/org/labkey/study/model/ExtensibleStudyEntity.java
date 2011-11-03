@@ -38,13 +38,15 @@ public abstract class ExtensibleStudyEntity<E> extends AbstractStudyEntity<E>
         String getDomainName();
     }
 
-    protected static class StudyDomainInfo implements DomainInfo
+    public static class StudyDomainInfo implements DomainInfo
     {
-        String _domainUriPrefix;
+        final boolean _useSharedProjectDomain;
+        final String _domainUriPrefix;
 
-        protected StudyDomainInfo(String domainUriPrefix)
+        protected StudyDomainInfo(String domainUriPrefix, boolean useSharedDomain)
         {
             _domainUriPrefix = domainUriPrefix;
+            _useSharedProjectDomain = useSharedDomain;
         }
 
         public String getDomainPrefix()
@@ -53,6 +55,20 @@ public abstract class ExtensibleStudyEntity<E> extends AbstractStudyEntity<E>
         }
 
         public String getDomainURI(final Container c)
+        {
+            Container p = c.getProject();
+            if (_useSharedProjectDomain && null != p)
+            {
+                return new Lsid(getDomainPrefix(), "Project-" + p.getRowId(), getDomainPrefix()).toString();
+            }
+            else
+            {
+                return new Lsid(getDomainPrefix(), "Folder-" + c.getRowId(), getDomainPrefix()).toString();
+            }
+        }
+
+        /* for upgrade action */
+        public String getOldDomainURI(final Container c)
         {
             return new Lsid(getDomainPrefix(), "Folder-" + c.getRowId(), getDomainPrefix()).toString();
         }
@@ -79,10 +95,11 @@ public abstract class ExtensibleStudyEntity<E> extends AbstractStudyEntity<E>
      */
     public DomainInfo getDomainInfo()
     {
-        return new StudyDomainInfo(getDomainURIPrefix());
+        return new StudyDomainInfo(getDomainURIPrefix(), getUseSharedProjectDomain());
     }
 
     protected abstract String getDomainURIPrefix();
+    protected abstract boolean getUseSharedProjectDomain();
 
     /**
      * Creates and lsid for this individual extensible object

@@ -15,14 +15,12 @@
  */
 package org.labkey.study.query;
 
-import org.labkey.api.action.UrlProvider;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.DisplayColumn;
 import org.labkey.api.data.DisplayColumnFactory;
 import org.labkey.api.data.JdbcType;
-import org.labkey.api.data.Project;
 import org.labkey.api.data.SQLFragment;
 import org.labkey.api.exp.property.Domain;
 import org.labkey.api.exp.property.PropertyService;
@@ -33,10 +31,11 @@ import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.QueryUpdateService;
 import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.AdminPermission;
+import org.labkey.api.security.permissions.Permission;
+import org.labkey.api.security.permissions.ReadPermission;
+import org.labkey.api.security.permissions.UpdatePermission;
 import org.labkey.api.util.ContainerContext;
 import org.labkey.api.util.PageFlowUtil;
-import org.labkey.api.util.StringExpressionFactory;
-import org.labkey.api.view.ActionURL;
 import org.labkey.api.wiki.WikiRendererDisplayColumn;
 import org.labkey.api.wiki.WikiRendererType;
 import org.labkey.study.StudySchema;
@@ -60,7 +59,7 @@ public class StudyPropertiesTable extends BaseStudyTable
     {
         super(schema, StudySchema.getInstance().getTableInfoStudy());
 
-        ColumnInfo labelColumn = addRootColumn("label");
+        ColumnInfo labelColumn = addRootColumn("label", true, true);
         DetailsURL detailsURL = new DetailsURL(PageFlowUtil.urlProvider(ProjectUrls.class).getStartURL(schema.getContainer()));
         detailsURL.setContainerContext(new ContainerContext()
         {
@@ -78,12 +77,12 @@ public class StudyPropertiesTable extends BaseStudyTable
         containerColumn.setKeyField(true);
 
         ColumnInfo timepointTypeColumn = addRootColumn("timepointType", false, false);
-        addRootColumn("subjectNounSingular", false, false);
-        addRootColumn("subjectNounPlural", false, false);
-        addRootColumn("subjectColumnName", false, false);
-        addRootColumn("studyGrant");
-        addRootColumn("investigator");
-        ColumnInfo descriptionColumn = addRootColumn("description");
+        addRootColumn("subjectNounSingular", false, true);
+        addRootColumn("subjectNounPlural", false, true);
+        addRootColumn("subjectColumnName", false, true);
+        addRootColumn("studyGrant", true, true);
+        addRootColumn("investigator", true, true);
+        ColumnInfo descriptionColumn = addRootColumn("description", true, true);
         final ColumnInfo descriptionRendererTypeColumn = addRootColumn("descriptionRendererType", false, false);
         descriptionColumn.setDisplayColumnFactory(new DisplayColumnFactory()
         {
@@ -140,6 +139,16 @@ public class StudyPropertiesTable extends BaseStudyTable
     public Domain getDomain()
     {
         return _domain;
+    }
+
+    @Override
+    public boolean hasPermission(User user, Class<? extends Permission> perm)
+    {
+        if (perm == UpdatePermission.class)
+            return getContainer().getPolicy().hasPermission(user, AdminPermission.class);
+        if (perm == ReadPermission.class)
+            return getContainer().getPolicy().hasPermission(user, ReadPermission.class);
+        return false;
     }
 
     @Override

@@ -69,6 +69,7 @@ import org.labkey.api.query.QueryForm;
 import org.labkey.api.query.QueryParseException;
 import org.labkey.api.query.QueryService;
 import org.labkey.api.query.QuerySettings;
+import org.labkey.api.query.QueryUpdateForm;
 import org.labkey.api.query.QueryUpdateService;
 import org.labkey.api.query.QueryView;
 import org.labkey.api.query.UserSchema;
@@ -1490,7 +1491,7 @@ public class StudyController extends BaseStudyController
 
 
     @RequiresPermissionClass(AdminPermission.class)
-    public class ManageStudyPropertiesAction extends SimpleViewAction<StudyPropertiesForm>
+    public class ManageStudyPropertiesOldAction extends SimpleViewAction<StudyPropertiesForm>
     {
         public ModelAndView getView(StudyPropertiesForm form, BindException errors) throws Exception
         {
@@ -1512,10 +1513,22 @@ public class StudyController extends BaseStudyController
 
 
     @RequiresPermissionClass(ReadPermission.class)
-    public class ManageStudyPropertiesExtAction extends SimpleViewAction<Object>
+    public class ManageStudyPropertiesAction extends FormApiAction<TableViewForm>
     {
         @Override
-        public ModelAndView getView(Object form, BindException errors) throws Exception
+        protected TableViewForm getCommand(HttpServletRequest request) throws Exception
+        {
+            StudyImpl study = getStudy(true);
+            User user = getUser();
+            if (null == study)
+                throw new NotFoundException("Study not found");
+            TableViewForm form = new TableViewForm(new StudyQuerySchema(study,user,true).getTable("StudyProperties"));
+            form.setViewContext(getViewContext());
+            return form;
+        }
+
+        @Override
+        public ModelAndView getView(TableViewForm form, BindException errors) throws Exception
         {
             Study study = getStudy(true);
             if (null == study)
@@ -1528,6 +1541,36 @@ public class StudyController extends BaseStudyController
         {
             _appendManageStudy(root);
             return root.addChild("Study Properties");
+        }
+
+        @Override
+        public ApiResponse execute(TableViewForm form, BindException errors) throws Exception
+        {
+            if (!getContainer().hasPermission(getUser(),AdminPermission.class))
+                throw new UnauthorizedException();
+
+            Map<String,Object> values = form.getTypedValues();
+            values.put("container", getContainer().getId());
+
+            TableInfo studyProperties = form.getTable();
+            QueryUpdateService qus = studyProperties.getUpdateService();
+            if (null == qus)
+                throw new UnauthorizedException();
+            try
+            {
+                qus.updateRows(getUser(), getContainer(), Collections.singletonList(values), Collections.singletonList(values), null);
+                List<AttachmentFile> files = getAttachmentFileList();
+                getStudy(true).attachProtocolDocument(files, getUser());
+            }
+            catch (BatchValidationException x)
+            {
+                x.addToErrors(errors);
+                return null;
+            }
+
+            JSONObject json = new JSONObject();
+            json.put("success", true);
+            return new ApiSimpleResponse(json);
         }
     }
 
