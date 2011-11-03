@@ -11,6 +11,19 @@ LABKEY.requiresScript("/extWidgets/Ext4FormPanel.js");
 Ext4.define('LABKEY.ext.ImportPanel', {
     extend: 'Ext.tab.Panel',
     initComponent: function(){
+        this.store = Ext4.create('LABKEY.ext4.Store', {
+            schemaName: this.schemaName,
+            queryName: this.queryName,
+            viewName: this.viewName,
+            maxRows: 0,
+            autoLoad: true,
+            listeners: {
+                load: function(store){
+                    delete store.maxRows;
+                }
+            }
+        });
+
         Ext4.apply(this, {
             activeTab: 0,
             defaults: {
@@ -19,9 +32,12 @@ Ext4.define('LABKEY.ext.ImportPanel', {
             items: [{
                 title: 'Import Single',
                 xtype: 'labkey-formpanel',
-                schemaName: this.schemaName,
-                queryName: this.queryName,
-                viewName: this.viewName
+                store: this.store,
+                listeners: {
+                    uploadcomplete: function(){
+                        window.location = LABKEY.ActionURL.getParameter('srcURL') || LABKEY.ActionURL.buildURL('project', 'begin');
+                    }
+                }
 //            },{
 //                title: 'Import Multiple',
 //                xtype: 'labkey-gridpanel',
@@ -34,9 +50,15 @@ Ext4.define('LABKEY.ext.ImportPanel', {
             },{
                 title: 'Import Spreadsheet',
                 xtype: 'labkey-exceluploadpanel',
+                store: this.store, //saves redundant loading
                 schemaName: this.schemaName,
                 queryName: this.queryName,
-                viewName: this.viewName
+                viewName: this.viewName,
+                listeners: {
+                    uploadcomplete: function(){
+                        window.location = LABKEY.ActionURL.getParameter('srcURL') || LABKEY.ActionURL.buildURL('project', 'begin');
+                    }
+                }
             }]
         });
 

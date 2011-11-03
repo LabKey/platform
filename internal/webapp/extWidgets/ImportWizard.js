@@ -5,6 +5,12 @@
  */
 //experimental
 
+/*
+    @param (String) [action]
+    @param (String) [controller]
+    @param (String) [action]
+ */
+
 Ext4.define('LABKEY.ext.ImportWizard', {
     extend: 'Ext.form.Panel',
     alias: 'widget.labkey-importwizard',
@@ -98,9 +104,13 @@ Ext4.define('LABKEY.ext.ImportWizard', {
     doLoad: function(containerPath){
         var controller = this.controller;
         var action = this.action;
-        var params = this.urlParams;
+        var urlParams = this.urlParams || {};
+        var srcURL = LABKEY.ActionURL.buildURL('project', 'begin', containerPath);
+        if(srcURL)
+            urlParams.srcURL = srcURL;
 
-        window.location = LABKEY.ActionURL.buildURL(controller, action, containerPath, params);
+
+        window.location = LABKEY.ActionURL.buildURL(controller, action, containerPath, urlParams);
     },
 
     renderWorkbookForm: function(){

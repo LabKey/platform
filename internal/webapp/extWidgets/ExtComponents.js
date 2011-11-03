@@ -39,7 +39,7 @@ Ext4.define('LABKEY.ext4.RemoteGroup', {
         if(this.store && !this.store.events)
             this.store = Ext4.create(this.store, 'labkey-store');
 
-        if(!this.store.hasLoaded())
+        if(!this.store || !this.store.model || !this.store.model.prototype.fields.getCount())
             this.store.on('load', this.onStoreLoad, this, {single: true});
         else
             this.onStoreLoad();
@@ -431,6 +431,17 @@ Ext4.define('LABKEY.ext4.ComboBox', {
         this.store.on('load', function(){
             this.alignPicker();
         }, this);
+    },
+    //allows value to be set if store has not yet loaded
+    setValue: function(val){
+        if(!this.store || !this.store.model || !this.store.model.prototype.fields.getCount()){
+            this.initialValue = val;
+            this.mon(this.store, 'load', function(){
+                this.setValue(this.initialValue);
+            }, this, {single: true});
+        }
+
+        this.callParent(arguments);
     }
 });
 

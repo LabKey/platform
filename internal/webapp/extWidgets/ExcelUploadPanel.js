@@ -37,10 +37,9 @@ Ext4.define('LABKEY.ext4.ExcelUploadPanel', {
     initComponent: function(){
         Ext4.QuickTips.init();
 
-        Ext4.applyIf(this, {
+        Ext4.apply(this, {
             autoHeight: true
             ,url: LABKEY.ActionURL.buildURL("query", "import", null, {schemaName: this.schemaName, 'query.queryName': this.queryName})
-            ,title: 'Upload Data'
             ,bodyBorder: false
             ,border: true
             ,bodyStyle:'padding:5px'
@@ -50,17 +49,6 @@ Ext4.define('LABKEY.ext4.ExcelUploadPanel', {
             }
             ,buttonAlign: 'left'
             ,monitorValid: true
-            ,store: Ext4.create('LABKEY.ext4.Store', {
-                containerPath: this.containerPath
-                ,schemaName: this.schemaName
-                ,queryName: this.queryName
-                ,viewName: this.viewName
-                ,columns: this.columns
-                ,metadata: this.metadata
-                ,metadataDefaults: this.metadataDefaults
-                ,maxRows: 0
-                ,autoLoad: true
-            })
             ,items: [{
                 xtype: 'button'
                 ,text: 'Download Excel Template'
@@ -190,6 +178,10 @@ Ext4.define('LABKEY.ext4.ExcelUploadPanel', {
                     })
                 }]
             }]
+        });
+
+        Ext4.applyIf(this, {
+            title: 'Upload Data'
             ,buttons: [{
                 text: 'Submit'
                 ,width: 50
@@ -204,17 +196,26 @@ Ext4.define('LABKEY.ext4.ExcelUploadPanel', {
                     window.location = LABKEY.ActionURL.buildURL('project', 'begin.view')
                 }
             }]
-            ,listeners: {
-                scope: this
-                ,actioncomplete: this.processResponse
-                ,actionfailed: this.processResponse
-            }
+        })
+
+        this.store = this.store || Ext4.create('LABKEY.ext4.Store', {
+            containerPath: this.containerPath
+            ,schemaName: this.schemaName
+            ,queryName: this.queryName
+            ,viewName: this.viewName
+            ,columns: this.columns
+            ,metadata: this.metadata
+            ,metadataDefaults: this.metadataDefaults
+            ,maxRows: 0
+            ,autoLoad: true
         });
 
         this.uploadType = 'text';
 
         this.callParent();
 
+        this.on('actioncomplete', this.processResponse, this);
+        this.on('actionfailed', this.processResponse, this);
         this.addEvents('uploadexception', 'uploadcomplete');
     },
 
@@ -255,17 +256,36 @@ Ext4.define('LABKEY.ext4.ExcelUploadPanel', {
         errorArea.removeAll();
 
         var response = Ext4.JSON.decode(action.response.responseText);
-        if(response && response.errors && response.errors._form){
-            errorArea.add({
-                style: 'color:red;',
-                html: response.errors._form
-            });
+        if(response && response.errors){
+            var html = '<div style="color: red;">';
+            if(response.errors._form){
+                html += response.errors._form = '<br>';
+            }
+
+            if(Ext4.isArray(response.errors)){
+                html += '<table border=0>';
+                var rowErrors;
+                Ext4.each(response.errors, function(error){
+                    var rowErrors = [];
+                    if(error.errors)
+                        Ext4.iterate(error.errors, function(field){
+                            rowErrors.push(error.errors[field]);
+                        }, this);
+
+                    html += '<tr><td style="color:red;padding-right: 10px;">Row '+(error.rowNumber+1)+':</td><td style="color:red;">'+rowErrors.join('<br>'+'</td></tr>')
+                }, this);
+
+                html += '</table>';
+            }
+            html += '</div>';
         }
 
+        errorArea.add({html: html});
         Ext4.Msg.hide();
 
         if(!response.success){
             alert('There was a problem with the upload');
+            console.log(response.errors)
             this.fireEvent('uploadexception', response);
         }
         else {

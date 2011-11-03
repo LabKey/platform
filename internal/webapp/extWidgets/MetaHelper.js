@@ -184,7 +184,7 @@ LABKEY.ext.MetaHelper = {
         var field =
         {
             //added 'caption' for assay support
-            fieldLabel: Ext4.util.Format.htmlEncode(meta.label || meta.caption || meta.header || meta.name),
+            fieldLabel: Ext4.util.Format.htmlEncode(meta.label || meta.shortCaption || meta.caption || meta.header || meta.name),
             originalConfig: meta,
             //we assume the store's translateMeta() will handle this
             allowBlank: meta.allowBlank!==false,
@@ -195,7 +195,9 @@ LABKEY.ext.MetaHelper = {
             helpPopup: ['Type: ' + meta.friendlyType],
             width: meta.width,
             height: meta.height,
-            labelableRenderTpl: LABKEY.ext.MetaHelper.labelableRenderTpl
+            msgTarget: 'qtip',
+            labelableRenderTpl: LABKEY.ext.MetaHelper.labelableRenderTpl,
+            validateOnChange: true
         };
 
         if(field.description)
@@ -644,9 +646,9 @@ LABKEY.ext.MetaHelper = {
 
         if(qtip.length){
             //ext3
-            cellMetaData.tdAttr = "ext:qtip=" + Ext4.util.Format.htmlEncode(qtip.join('<br>')) + "\"";
+            cellMetaData.tdAttr = "ext:qtip=\"" + Ext4.util.Format.htmlEncode(qtip.join('<br>')) + "\"";
             //ext4
-            cellMetaData.tdAttr += " data-qtip=" + Ext4.util.Format.htmlEncode(qtip.join('<br>')) + "\"";
+            cellMetaData.tdAttr += " data-qtip=\"" + Ext4.util.Format.htmlEncode(qtip.join('<br>')) + "\"";
         }
     },
 

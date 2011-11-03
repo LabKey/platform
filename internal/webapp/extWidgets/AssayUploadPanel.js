@@ -71,7 +71,7 @@ Ext4.define('LABKEY.ext.AssayUploadPanel', {
                 text: 'Cancel'
                 ,width: 50
                 ,scope: this
-                ,href: LABKEY.ActionURL.buildURL('project', 'begin')
+                ,href: LABKEY.ActionURL.getParameter('srcURL') || LABKEY.ActionURL.buildURL('project', 'begin')
                 ,target: '_self'
                 ,formBind: true
             }],
@@ -746,7 +746,13 @@ Ext4.define('LABKEY.ext.AssayUploadPanel', {
                 });
                 
                 Ext4.Msg.hide();
-                Ext4.Msg.alert("Success", "Data Uploaded Successfully");
+                Ext4.Msg.alert("Success", "Data Uploaded Successfully", function(){
+                    function doLoad(){
+                        window.location = LABKEY.ActionURL.getParameter('srcURL') || LABKEY.ActionURL.buildURL('project', 'begin')
+                    }
+
+                    doLoad.defer(400, this)
+                });
 
             },
             failureCallback : function (error, format)

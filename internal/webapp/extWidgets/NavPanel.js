@@ -143,11 +143,11 @@ Ext4.define('LABKEY.ext.NavPanel', {
                     width: 250
                 },{
                     xtype: 'labkey-linkbutton',
-                    href: LABKEY.ActionURL.buildURL('query', 'SearchPanel', null, {schemaName: item.schemaName, 'queryName': item.queryName}),
+                    href: LABKEY.ActionURL.buildURL('query', 'SearchPanel', null, {schemaName: item.schemaName, 'queryName': item.queryName, defaultContainerFilter: 'CurrentAndSubfolders'}),
                     text: 'Search'
                 },{
                     xtype: 'labkey-linkbutton',
-                    href: LABKEY.ActionURL.buildURL('query', 'executeQuery', null, {schemaName: item.schemaName, 'query.queryName': item.queryName}),
+                    href: LABKEY.ActionURL.buildURL('query', 'executeQuery', null, {schemaName: item.schemaName, 'query.queryName': item.queryName, 'query.containerFilterName': 'CurrentAndSubfolders'}),
                     text: 'Browse Records'
                 },{
                     xtype: 'labkey-linkbutton',
@@ -204,11 +204,11 @@ Ext4.define('LABKEY.ext.NavPanel', {
                     width: 250
                 },{
                     xtype: 'labkey-linkbutton',
-                    href: LABKEY.ActionURL.buildURL('query', 'SearchPanel', null, {schemaName: item.schemaName, 'queryName': item.queryName}),
+                    href: LABKEY.ActionURL.buildURL('query', 'SearchPanel', null, {schemaName: item.schemaName, 'queryName': item.queryName, 'defaultContainerFilter': 'CurrentAndSubfolders'}),
                     text: 'Search'
                 },{
                     xtype: 'labkey-linkbutton',
-                    href: LABKEY.ActionURL.buildURL('query', 'executeQuery', null, {schemaName: item.schemaName, 'query.queryName': item.queryName}),
+                    href: LABKEY.ActionURL.buildURL('query', 'executeQuery', null, {schemaName: item.schemaName, 'query.queryName': item.queryName, 'query.containerFilterName': 'CurrentAndSubfolders'}),
                     text: 'Browse Records'
                 },{
                     xtype: 'labkey-linkbutton',
@@ -247,11 +247,11 @@ Ext4.define('LABKEY.ext.NavPanel', {
                     width: 250
                 },{
                     xtype: 'labkey-linkbutton',
-                    href: LABKEY.ActionURL.buildURL('query', 'SearchPanel', null, {schemaName: item.schemaName, 'queryName': item.queryName}),
+                    href: LABKEY.ActionURL.buildURL('query', 'SearchPanel', null, {schemaName: item.schemaName, 'queryName': item.queryName, 'defaultContainerFilter': 'CurrentAndSubfolders'}),
                     text: 'Search'
                 },{
                     xtype: 'labkey-linkbutton',
-                    href: LABKEY.ActionURL.buildURL('query', 'executeQuery', null, {schemaName: item.schemaName, 'query.queryName': item.queryName}),
+                    href: LABKEY.ActionURL.buildURL('query', 'executeQuery', null, {schemaName: item.schemaName, 'query.queryName': item.queryName, 'query.containerFilterName': 'CurrentAndSubfolders'}),
                     text: 'Browse Files'
                 },{
                     xtype: 'labkey-linkbutton',

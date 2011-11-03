@@ -34,7 +34,7 @@ Ext4.namespace('LABKEY.ext4');
  * @param {Object} [config.metadata] A metadata object that will be applied to the default metadata returned by the server.  See example below for usage.
  * @param {Object} [config.metadataDefaults] A metadata object that will be applied to every field of the default metadata returned by the server.  Will be superceeded by the metadata object in case of conflicts. See example below for usage.
  * @param {Object} [config.storeConfig] A config object that will be used to create the store.
- *
+ * @param (boolean) [config.noAlertOnError] If true, no dialog will appear on if the store fires a syncerror event
  * @example &lt;script type="text/javascript"&gt;
     var _grid, _store;
     Ext.onReady(function(){
@@ -66,34 +66,11 @@ Ext4.define('LABKEY.ext4.FormPanel', {
     extend: 'Ext.form.Panel',
     alias: 'widget.labkey-formpanel',
     autoHeight: true,
-    width: '100%',
     defaultFieldWidth: 300,
     initComponent: function(){
         Ext4.QuickTips.init();
 
-        this.store = this.store || Ext4.create('LABKEY.ext4.Store', {
-            containerPath: this.containerPath,
-            schemaName: this.schemaName,
-            queryName: this.queryName,
-            sql: this.sql,
-            viewName: this.viewName,
-            columns: this.columns,
-            storeId: LABKEY.ext.MetaHelper.getLookupStoreId(this),
-            filterArray: this.filterArray || [],
-            metadata: this.metadata,
-            metadataDefaults: this.metadataDefaults,
-            autoLoad: true,
-            //NOTE: we do this to prevent loading the whole table
-            maxRows: 0,
-            listeners: {
-                scope: this,
-                load: function(store){
-                    delete store.maxRows;
-                }
-            }
-        });
-
-        this.store.on('datachanged', this.onDataChanged, this);
+        this.store = this.store || this.createStore();
 
         Ext4.apply(this, {
             trackResetOnLoad: true
@@ -112,9 +89,11 @@ Ext4.define('LABKEY.ext4.FormPanel', {
             ,bodyStyle: 'padding:5px'
             ,style: 'margin-bottom: 15px'
             ,buttons: [
-                LABKEY.ext4.FORMBUTTONS['SUBMIT'].call(this)
+                LABKEY.ext4.FORMBUTTONS['SUBMIT']()
             ]
         });
+
+        this.mon(this.store, 'syncexception', this.onCommitException, this);
 
         if(!this.store.hasLoaded())
             this.mon(this.store, 'load', this.loadQuery, this, {single: true});
@@ -143,6 +122,44 @@ Ext4.define('LABKEY.ext4.FormPanel', {
 
         this.on('recordchange', this.markInvalid, this, {buffer: 100});
     },
+
+    createStore: function(){
+        return Ext4.create('LABKEY.ext4.Store', {
+            containerPath: this.containerPath,
+            schemaName: this.schemaName,
+            queryName: this.queryName,
+            sql: this.sql,
+            viewName: this.viewName,
+            columns: this.columns,
+            storeId: LABKEY.ext.MetaHelper.getLookupStoreId(this),
+            filterArray: this.filterArray || [],
+            metadata: this.metadata,
+            metadataDefaults: this.metadataDefaults,
+            autoLoad: true,
+            //NOTE: we do this to prevent loading the whole table
+            maxRows: 0,
+            listeners: {
+                scope: this,
+                load: function(store){
+                    delete store.maxRows;
+                }
+            }
+        });
+    },
+
+    onCommitException: function(response, operation){
+        var msg;
+        if(response.errors && response.errors.exception)
+            msg = response.errors.exception;
+        else
+            msg = 'There was an error with the submission';
+
+        if(!this.noAlertOnError)
+            Ext4.Msg.alert('Error', msg);
+
+        this.getForm().isValid();
+    },
+
     loadQuery: function(store, records, success)
     {
         this.removeAll();
@@ -276,54 +293,7 @@ Ext4.define('LABKEY.ext4.FormPanel', {
         this.fireEvent('formconfiguration', toAdd);
 
         return toAdd;
-    },
-
-    onDataChanged: function(){
-        console.log('data changed');
-    },
-
-    markInvalid : function()
-    {
-        var formMessages = [];
-        var toMarkInvalid = {};
-
-        var record = this.getForm().getRecord();
-        if(!record)
-            return;
-
-//        record.getErrors.each(function(error){
-//            var meta = error.record.fields.get(error.field);
-//
-//            if(meta && meta.hidden)
-//                return;
-//
-//                if ("field" in error){
-//                    //these are generic form-wide errors
-//                    if ("_form" == error.field){
-//                        formMessages.push(error.message);
-//                    }
-//                }
-//                else {
-//                    formMessages.push(error.message);
-//                }
-//            }
-//        }, this);
-//
-//        if (this.errorEl){
-//            formMessages = Ext.Array.unique(formMessages);
-//            formMessages = Ext4.util.Format.htmlEncode(formMessages.join('\n'));
-//            this.errorEl.update(formMessages);
-//        }
-//
-//        this.getForm().items.each(function(f){
-//            f.validate();
-//        }, this);
     }
-
-//    onRecordChange: function(theForm){
-//        if(!this.boundRecord)
-//            this.getBottomToolbar().setStatus({text: 'No Records'});
-//    }
 
 });
 
@@ -367,48 +337,38 @@ Ext4.define('LABKEY.ext4.FormPanelWin', {
 
         this.callParent();
 
+        this.on('validitychange', function(){
+            console.log('validity chne')
+        })
         this.addEvents('uploadexception', 'uploadcomplete');
     }
 });
 
 LABKEY.ext4.FORMBUTTONS = {
-    SUBMIT: function(){
-        return {
+    SUBMIT: function(config){
+        return Ext4.Object.merge({
             text: 'Submit',
-            scope: this,
+            formBind: true,
             handler: function(btn, key){
-                btn.up('form').store.sync();
-            }
-        }
-    } ,
-    CHANGEVALUES: function(){
-        return {
-            text: 'Change Values',
-            scope: this,
-            handler: function(btn, key){
-                var store = btn.up('form').store;
+                var panel = btn.up('form');
 
-                store.each(function(r, idx){
-                    r.set('field2', Math.random(10));
-                    r.set('field1', 'field2341');
-                }, this);
-                store.add({
-                    field1: 'new record'
-                });
+                if(!panel.store.getNewRecords().length && !panel.store.getUpdatedRecords().length && !panel.store.getRemovedRecords().length){
+                    Ext4.Msg.alert('No changes', 'There are no changes, nothing to do');
+                    return;
+                }
+
+                function onSuccess(store){
+                    Ext4.Msg.alert("Success", "Record successfully inserted", function(){
+                        window.location = btn.successURL || LABKEY.ActionURL.buildURL('query', 'executeQuery', null, {schemaName: this.store.schemaName, 'query.queryName': this.store.queryName})
+                    }, panel);
+                }
+
+                panel.store.on('write', onSuccess, this, {single: true});
+                panel.store.on('syncexception', function(error){panel.store.un(onSuccess)}, this, {single: true});
+                panel.store.sync();
             }
-        }
+        }, config);
     },
-    SHOWSTORE: function(){
-        return {
-            text: 'Show Store',
-            scope: this,
-            handler: function(btn, key){
-                btn.up('form').store.each(function(r){
-                    console.log(r);
-                }, this);
-            }
-        }
-    } ,
     NEXTRECORD: function(){
         return {
             text: 'Next Record',
@@ -427,7 +387,6 @@ LABKEY.ext4.FORMBUTTONS = {
     PREVIOUSRECORD: function(){
         return {
             text: 'Previous Record',
-            scope: this,
             handler: function(btn, key){
                 var panel = btn.up('form');
                 var rec = panel.getForm().getRecord();
@@ -441,6 +400,14 @@ LABKEY.ext4.FORMBUTTONS = {
                 }
             }
         }
+    },
+    CANCEL: function(config){
+        return Ext4.Object.merge({
+            text: 'Cancel',
+            handler: function(btn, key){
+                window.location = btn.returnURL || LABKEY.ActionURL.getParameter('srcURL') || LABKEY.ActionURL.buildURL('project', 'begin')
+            }
+        }, config)
     }
 }
 
@@ -469,7 +436,7 @@ Ext4.define('LABKEY.ext4.DatabindPlugin', {
         panel.bindConfig = panel.bindConfig || {};
         panel.bindConfig = Ext4.Object.merge({
             disableUnlessBound: false,
-            autoCreateRecordOnChange: false,
+            autoCreateRecordOnChange: true,
             autoBindFirstRecord: false,
             createRecordOnLoad: false
         }, panel.bindConfig);
@@ -550,6 +517,7 @@ Ext4.define('LABKEY.ext4.DatabindPlugin', {
         form.suspendEvents();
         form.loadRecord(record);
         form.resumeEvents();
+        form.isValid();
     },
 
     unbindRecord: function(){
@@ -593,6 +561,31 @@ Ext4.define('LABKEY.ext4.DatabindPlugin', {
         if(form.getRecord() && this.panel.bindConfig.disableUnlessBound && !this.panel.bindConfig.autoCreateRecordOnChange)
             f.setDisabled(true);
 
+        f.oldGetErrors = f.getErrors;
+        f.getErrors = function(value){
+            var errors = this.oldGetErrors(value);
+            var record = this.up('form').getForm().getRecord();
+
+            if(record){
+                record.validate().each(function(e){
+                    if(e.field == this.name)
+                        errors.push(e.message);
+                }, this);
+
+                if(record.serverErrors && record.serverErrors[f.name]){
+                    errors.push(record.serverErrors[f.name]);
+                    delete record.serverErrors[f.name]; //only use it once
+                }
+            }
+
+
+
+            errors = Ext4.Array.unique(errors);
+
+//            if(errors.length)
+//                console.log(errors);
+            return errors;
+        };
         f.hasDatabindListener = true;
     },
 

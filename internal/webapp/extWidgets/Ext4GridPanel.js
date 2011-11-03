@@ -8,6 +8,11 @@ LABKEY.requiresExt4ClientAPI();
 
 Ext4.namespace('LABKEY.ext4');
 
+/**
+ * Constructs a new LabKey GridPanel using the supplied configuration.
+ *
+ * @param (boolean) [config.noAlertOnError] If true, no dialog will appear on if the store fires a syncerror event
+ */
 
 Ext4.define('LABKEY.ext4.GridPanel', {
     extend: 'Ext.grid.Panel',
@@ -23,18 +28,23 @@ Ext4.define('LABKEY.ext4.GridPanel', {
             columns: [],
             pageSize: 200,
             autoSave: false,
-            editable: true
+            editable: true,
+            multiSelect: true
         });
 
         this.configurePlugins();
 
         this.callParent();
 
+        if(this.autoSave)
+            this.store.autoSync = true;  //could we just obligate users to put this on the store directly?
+
         if(this.store.hasLoaded())
             this.setupColumnModel();
         else
-            this.store.on('load', this.setupColumnModel, this, {single: true});
+            this.mon(this.store, 'load', this.setupColumnModel, this, {single: true});
 
+        this.mon(this.store, 'syncexception', this.onCommitException, this);
         this.addEvents('beforesubmit', 'fieldconfiguration', 'recordchange', 'fieldvaluechange');
     }
 
@@ -58,7 +68,7 @@ Ext4.define('LABKEY.ext4.GridPanel', {
     ,configurePlugins: function(){
         this.plugins = this.plugins || [];
         if(this.editable)
-            this.plugins.push(Ext4.create('Ext.grid.plugin.CellEditing', {clicksToEdit: 2}));
+            this.plugins.push(Ext4.create('Ext.grid.plugin.CellEditing', {pluginId: 'cellediting', clicksToEdit: 2}));
     }
 
     ,setupColumnModel : function() {
@@ -71,10 +81,6 @@ Ext4.define('LABKEY.ext4.GridPanel', {
         //(not sure why its constructor doesn't do this automatically).
 //        if(this.getSelectionModel() && this.getSelectionModel().renderer)
 //            columns = [this.getSelectionModel()].concat(columns);
-
-        //register for the rowdeselect event if the selmodel supports events and if autoSave is on
-        if(this.getSelectionModel().on && this.autoSave)
-            this.getSelectionModel().on("rowselect", this.onRowSelect, this);
 
         //fire the "columnmodelcustomize" event to allow clients
         //to modify our default configuration of the column model
@@ -112,8 +118,70 @@ Ext4.define('LABKEY.ext4.GridPanel', {
         return this.getColumnModel().getColumnById(colName);
     }
 
-    ,onRowSelect: function(){
-        //TODO.  autoSave on rows
-    }
+    ,onCommitException: function(response, operation){
+        var msg;
+        if(response.errors && response.errors.exception)
+            msg = response.errors.exception;
+        else
+            msg = 'There was an error with the submission';
 
+        if(!this.noAlertOnError)
+            Ext4.Msg.alert('Error', msg);
+    }
 });
+
+LABKEY.ext4.GRIDBUTTONS = {
+    ADDRECORD: function(config){
+        return Ext4.Object.merge({
+            text: 'Add Record',
+            tooltip: 'Click to add a row',
+            handler: function(btn){
+                var grid = btn.up('gridpanel');
+                if(!grid.store || !grid.store.hasLoaded())
+                    return;
+
+                grid.getPlugin('cellediting').completeEdit( );
+                grid.store.insert(grid.store.createModel({}), 0); //add a blank record in the first position
+                grid.getPlugin('cellediting').startEditByPosition({row: 0, column: this.firstEditableColumn || 0});
+            }
+        }, config);
+    },
+    DELETERECORD: function(config){
+        return Ext4.Object.merge({
+            text: 'Delete Records',
+            tooltip: 'Click to delete selected rows',
+            handler: function(btn){
+                var grid = btn.up('gridpanel');
+                var selections = grid.getSelectionModel().getSelection();
+
+                if(!grid.store || !selections || !selections.length)
+                    return;
+
+                grid.store.remove(selections);
+            }
+        });
+    },
+    SUBMIT: function(config){
+        return Ext4.Object.merge({
+            text: 'Submit',
+            formBind: true,
+            handler: function(btn, key){
+                var panel = btn.up('gridpanel');
+                panel.store.on('write', function(store, success){
+                    Ext4.Msg.alert("Success", "Record successfully inserted", function(){
+                        window.location = btn.successURL || LABKEY.ActionURL.buildURL('query', 'executeQuery', null, {schemaName: this.store.schemaName, 'query.queryName': this.store.queryName})
+                    }, panel);
+                }, this);
+                panel.store.sync();
+            }
+        }, config);
+    },
+    CANCEL: function(config){
+        return Ext4.Object.merge({
+            text: 'Cancel',
+            handler: function(btn, key){
+                window.location = btn.returnURL || LABKEY.ActionURL.getParameter('srcURL') || LABKEY.ActionURL.buildURL('project', 'begin')
+            }
+        }, config)
+    }
+}

@@ -109,6 +109,7 @@ Ext4.namespace('LABKEY.ext4');
 LABKEY.ext4.Store = Ext4.define('LABKEY.ext4.Store', {
     extend: 'Ext.data.Store',
     alias: 'store.labkey-store',
+    pageSize: 10000,
     constructor: function(config) {
         config = config || {};
 
@@ -163,7 +164,7 @@ LABKEY.ext4.Store = Ext4.define('LABKEY.ext4.Store', {
          * @param {Object} metadata The metadata object that will be supplied to the Ext.data.Model.
          */
 
-        this.addEvents("metadataload");
+        this.addEvents('metadataload', 'syncexception', 'synccomplete');
     },
     //private
     generateBaseParams: function(config){
@@ -186,7 +187,7 @@ LABKEY.ext4.Store = Ext4.define('LABKEY.ext4.Store', {
         if(config.ignoreFilter)
             baseParams['query.ignoreFilter'] = 1;
 
-        if(config.maxRows)
+        if(Ext4.isDefined(config.maxRows))
             baseParams['query.maxRows'] = config.maxRows;
 
         if (config.viewName)
@@ -371,7 +372,6 @@ LABKEY.ext4.Store = Ext4.define('LABKEY.ext4.Store', {
     onLoad : function(store, records, success) {
         if(!success)
             return;
-
         //the intent is to let the client set default values for created fields
         var toUpdate = [];
         this.getFields().each(function(f){
@@ -414,12 +414,29 @@ LABKEY.ext4.Store = Ext4.define('LABKEY.ext4.Store', {
             var errorJson = Ext4.JSON.decode(response.responseText);
             if(errorJson && errorJson.exception)
                 loadError.message = errorJson.exception;
+
+            response.errors = errorJson;
+
+            this.validateRecords(errorJson);
         }
 
         this.loadError = loadError;
 
-        //TODO: fire an event??
-        //maybe bubble proxy's event instead?
+        this.fireEvent('syncexception', response, operation);
+    },
+
+    validateRecords: function(errors){
+        Ext4.each(errors.errors, function(error){
+            //the error object for 1 row:
+            if(Ext4.isDefined(error.rowNumber)){
+                var record = this.getAt(error.rowNumber);
+                record.serverErrors = {};
+
+                Ext4.each(error.errors, function(e){
+                    record.serverErrors[e.field] = e.message;
+                }, this);
+            }
+        }, this);
     },
 
     //private
@@ -544,6 +561,12 @@ Ext4.define('LABKEY.ext4.ExtendedJsonReader', {
     readRecords: function(data) {
         if(data.metaData){
             this.idProperty = data.metaData.id; //NOTE: normalize which field holds the PK.
+
+            Ext4.each(data.metaData.fields, function(meta){
+                if(meta.jsonType == 'int' || meta.jsonType=='float' || meta.jsonType=='boolean')
+                    meta.useNull = true;  //prevents Ext from assigning 0's to field when record created
+            });
+
             this.fireEvent('metadataload', data.metaData); //NOTE: provide an event the store can consume in order to modify the server-supplied metadata
         }
 
