@@ -67,6 +67,8 @@ import org.labkey.study.StudyServiceImpl;
 import org.labkey.study.controllers.StudyController;
 import org.labkey.study.model.DataSetDefinition;
 import org.labkey.study.model.ParticipantCategory;
+import org.labkey.study.model.ParticipantCategoryListener;
+import org.labkey.study.model.ParticipantGroup;
 import org.labkey.study.model.ParticipantGroupManager;
 import org.labkey.study.model.StudyImpl;
 import org.labkey.study.model.StudyManager;
@@ -77,6 +79,7 @@ import javax.servlet.ServletContextEvent;
 import javax.servlet.ServletException;
 import java.sql.SQLException;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Calendar;
 import java.util.Collections;
 import java.util.Date;
@@ -96,12 +99,16 @@ import java.util.concurrent.LinkedBlockingQueue;
  * Time: 4:57:40 PM
  */
 
-public class DatasetSnapshotProvider extends AbstractSnapshotProvider implements QuerySnapshotService.AutoUpdateable, StudyManager.DataSetListener
+public class DatasetSnapshotProvider extends AbstractSnapshotProvider implements QuerySnapshotService.AutoUpdateable, StudyManager.DataSetListener, ParticipantCategoryListener
 {
     private static final DatasetSnapshotProvider _instance = new DatasetSnapshotProvider();
     private static final Logger _log = Logger.getLogger(DatasetSnapshotProvider.class);
-    private static final BlockingQueue<DataSet> _queue = new LinkedBlockingQueue<DataSet>(1000);
+    private static final BlockingQueue<SnapshotDependency.SourceDataType> _queue = new LinkedBlockingQueue<SnapshotDependency.SourceDataType>(1000);
     private static final QuerySnapshotDependencyThread _dependencyThread = new QuerySnapshotDependencyThread();
+
+    // query snapshot dependency checkers
+    private static SnapshotDependency.Dataset _datasetDependency = new SnapshotDependency.Dataset();
+    private static SnapshotDependency.ParticipantCategoryDependency _categoryDependency = new SnapshotDependency.ParticipantCategoryDependency();
 
     static
     {
@@ -111,6 +118,7 @@ public class DatasetSnapshotProvider extends AbstractSnapshotProvider implements
     private DatasetSnapshotProvider()
     {
         StudyManager.addDataSetListener(this);
+        ParticipantGroupManager.addCategoryListener(this);
     }
 
     public static DatasetSnapshotProvider getInstance()
@@ -221,7 +229,7 @@ public class DatasetSnapshotProvider extends AbstractSnapshotProvider implements
         }
     }
 
-    private static QueryView createQueryView(ViewContext context, QuerySnapshotDefinition qsDef, BindException errors)
+    static QueryView createQueryView(ViewContext context, QuerySnapshotDefinition qsDef, BindException errors)
     {
         QueryDefinition queryDef = qsDef.getQueryDefinition(context.getUser());
         QuerySchema querySchema = DefaultSchema.get(context.getUser(), queryDef.getContainer()).getSchema(queryDef.getSchemaName());
@@ -237,16 +245,20 @@ public class DatasetSnapshotProvider extends AbstractSnapshotProvider implements
             if (!groups.isEmpty())
             {
                 SimpleFilter filter = new SimpleFilter();
-                SimpleFilter.OrClause or = new SimpleFilter.OrClause();
+                Set<String> ptids = new HashSet<String>();
 
                 for (Integer groupId : groups)
                 {
-                    ParticipantCategory category = ParticipantGroupManager.getInstance().getParticipantCategory(queryDef.getContainer(), context.getUser(), groupId);
-                    FieldKey fieldKey = FieldKey.fromParts(StudyService.get().getSubjectColumnName(queryDef.getContainer()), category.getLabel());
+                    ParticipantCategory category = ParticipantGroupManager.getInstance().getParticipantCategory(qsDef.getContainer(), context.getUser(), groupId);
 
-                    or.addClause(new CompareType.CompareClause(fieldKey.toString(), CompareType.EQUAL, category.getLabel()));
+                    if (category != null)
+                    {
+                        for (ParticipantGroup group : category.getGroups())
+                            ptids.addAll(Arrays.asList(group.getParticipantIds()));
+                    }
                 }
-                filter.addClause(or);
+                SimpleFilter.InClause inClause = new SimpleFilter.InClause(StudyService.get().getSubjectColumnName(queryDef.getContainer()), ptids);
+                filter.addClause(inClause);
                 settings.setBaseFilter(filter);
             }
 
@@ -452,101 +464,7 @@ public class DatasetSnapshotProvider extends AbstractSnapshotProvider implements
                 addParameter(ActionURL.Param.redirectUrl.name(), PageFlowUtil.encode(context.getActionURL().getLocalURIString()));
     }
 
-    private static boolean isContainerValid(Container c)
-    {
-        if (c != null)
-        {
-            return ContainerManager.getForId(c.getId()) != null;
-        }
-        return false;
-    }
-
-    private static List<QuerySnapshotDefinition> getDependencies(DataSet dsDef)
-    {
-        // check if container is still valid
-        Map<Integer, QuerySnapshotDefinition> dependencies = new HashMap<Integer, QuerySnapshotDefinition>();
-        if (isContainerValid(dsDef.getContainer()))
-        {
-            List<QuerySnapshotDefinition> snapshots = QueryService.get().getQuerySnapshotDefs(null, StudyManager.getSchemaName());
-            if (!snapshots.isEmpty())
-            {
-                Domain d = PropertyService.get().getDomain(dsDef.getContainer(), dsDef.getTypeURI());
-                if (d != null)
-                {
-                    try {
-                        for (DomainProperty prop : d.getProperties())
-                        {
-                            for (QuerySnapshotDefinition snapshot : snapshots)
-                            {
-                                if (!dependencies.containsKey(snapshot.getId()) && hasDependency(snapshot, prop.getPropertyURI()))
-                                {
-                                    dependencies.put(snapshot.getId(), snapshot);
-                                }
-                            }
-                        }
-                    }
-                    catch (ServletException e)
-                    {
-                        throw new RuntimeException(e);
-                    }
-                }
-            }
-        }
-        else
-            _log.info("Failed checking dependencies for container: " + dsDef.getContainer().getPath() + ", it has been deleted.");
-
-        return new ArrayList<QuerySnapshotDefinition>(dependencies.values());
-    }
-
-    // map of property uri to dataset id
-    private static final Map<Integer, Map<String, String>> _snapshotPropertyMap = new HashMap<Integer, Map<String, String>>();
-
-    private static boolean hasDependency(QuerySnapshotDefinition def, String propertyURI) throws ServletException
-    {
-        Map<String, String> propertyMap;
-
-        synchronized (_snapshotPropertyMap)
-        {
-            if (!_snapshotPropertyMap.containsKey(def.getId()))
-            {
-                propertyMap = new HashMap<String, String>();
-                _snapshotPropertyMap.put(def.getId(), propertyMap);
-
-                // can't assume that the dependency check is coming from the same container that
-                // the snapshot is defined in.
-                ViewContext context = new ViewContext(getViewContext(def, false));
-                context.setContainer(def.getContainer());
-
-                BindException errors = new NullSafeBindException(def, "snapshot");
-                QueryView view = createQueryView(context, def, errors);
-                TableInfo tinfo = view.getTable();
-
-                if (tinfo instanceof UnionTableInfo)
-                {
-                    for (ColumnInfo info : ((UnionTableInfo)tinfo).getUnionColumns())
-                    {
-                        propertyMap.put(info.getPropertyURI(), info.getPropertyURI());
-                    }
-                }
-                else
-                {
-                    for (DisplayColumn dc : view.getDisplayColumns())
-                    {
-                        ColumnInfo info = dc.getColumnInfo();
-                        if (info != null)
-                        {
-                            propertyMap.put(info.getPropertyURI(), info.getPropertyURI());
-                        }
-                    }
-                }
-            }
-            else
-                propertyMap = _snapshotPropertyMap.get(def.getId());
-        }
-        return propertyMap.containsKey(propertyURI);
-    }
-
-    private static ViewContext getViewContext(QuerySnapshotDefinition def, boolean pushViewContext)
+    static ViewContext getViewContext(QuerySnapshotDefinition def, boolean pushViewContext)
     {
         if (HttpView.hasCurrentView())
             return HttpView.currentContext();
@@ -560,16 +478,42 @@ public class DatasetSnapshotProvider extends AbstractSnapshotProvider implements
 
     public void dataSetChanged(final DataSet def)
     {
-        if (_coalesceMap.containsKey(def.getContainer()))
-            deferReload(def);
-        else
-            _queue.add(def);
+        _log.debug("Cache cleared notification on dataset : " + def.getDataSetId());
+
+        _sourceDataChanged(new SnapshotDependency.SourceDataType(def.getContainer(), SnapshotDependency.SourceDataType.Type.dataset, def));
     }
 
-    private void deferReload(DataSet def)
+    private void _sourceDataChanged(SnapshotDependency.SourceDataType type)
     {
-        Map<Container, List<QuerySnapshotDefinition>> deferredStudies = _coalesceMap.get(def.getContainer());
-        for (QuerySnapshotDefinition snapshotDef : getDependencies(def))
+        if (_coalesceMap.containsKey(type.getContainer()))
+            deferReload(type);
+        else
+            _queue.add(type);
+    }
+
+    @Override
+    public void categoryDeleted(User user, ParticipantCategory category) throws Exception
+    {
+    }
+
+    @Override
+    public void categoryCreated(User user, ParticipantCategory category) throws Exception
+    {
+    }
+
+    @Override
+    public void categoryUpdated(User user, ParticipantCategory category) throws Exception
+    {
+        _log.debug("Category updated notification on participant category : " + category.getLabel());
+
+        Container c = ContainerManager.getForId(category.getContainerId());
+        _sourceDataChanged(new SnapshotDependency.SourceDataType(c, SnapshotDependency.SourceDataType.Type.participantCategory, category));
+    }
+
+    private void deferReload(SnapshotDependency.SourceDataType sourceData)
+    {
+        Map<Container, List<QuerySnapshotDefinition>> deferredStudies = _coalesceMap.get(sourceData.getContainer());
+        for (QuerySnapshotDefinition snapshotDef : getDependencies(sourceData))
         {
             List<QuerySnapshotDefinition> deferredQuerySnapshots = deferredStudies.get(snapshotDef.getContainer());
             if (deferredQuerySnapshots == null)
@@ -579,6 +523,22 @@ public class DatasetSnapshotProvider extends AbstractSnapshotProvider implements
             }
             deferredQuerySnapshots.add(snapshotDef);
         }
+    }
+
+    private static List<QuerySnapshotDefinition> getDependencies(SnapshotDependency.SourceDataType sourceData)
+    {
+        List<QuerySnapshotDefinition> dependencies = new ArrayList<QuerySnapshotDefinition>();
+
+        switch (sourceData.getType())
+        {
+            case dataset:
+                dependencies = _datasetDependency.getDependencies(sourceData);
+                break;
+            case participantCategory:
+                dependencies = _categoryDependency.getDependencies(sourceData);
+                break;
+        }
+        return dependencies;
     }
 
     private static class QuerySnapshotDependencyThread extends Thread implements ShutdownListener
@@ -596,13 +556,13 @@ public class DatasetSnapshotProvider extends AbstractSnapshotProvider implements
             {
                 while (true)
                 {
-                    DataSet def = _queue.take();
-                    if (def != null)
+                    SnapshotDependency.SourceDataType data = _queue.take();
+                    if (data != null)
                     {
                         try
                         {
-                            _log.debug("Cache cleared notification on dataset : " + def.getDataSetId());
-                            for (QuerySnapshotDefinition snapshotDef : getDependencies(def))
+                            List<QuerySnapshotDefinition> dependencies = getDependencies(data);
+                            for (QuerySnapshotDefinition snapshotDef : dependencies)
                             {
                                 _log.debug("Updating snapshot definition : " + snapshotDef.getName());
                                 autoUpdateSnapshot(snapshotDef);

@@ -25,12 +25,15 @@ import org.labkey.api.attachments.AttachmentFile;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.DbScope;
+import org.labkey.api.data.SQLFragment;
+import org.labkey.api.data.Table;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.module.FolderType;
 import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.portal.ProjectUrls;
 import org.labkey.api.query.QueryDefinition;
 import org.labkey.api.query.QueryService;
+import org.labkey.api.query.ValidationException;
 import org.labkey.api.query.snapshot.QuerySnapshotDefinition;
 import org.labkey.api.query.snapshot.QuerySnapshotService;
 import org.labkey.api.security.RequiresPermissionClass;
@@ -55,6 +58,7 @@ import org.labkey.study.importer.VisitImporter;
 import org.labkey.study.model.DataSetDefinition;
 import org.labkey.study.model.EmphasisStudyDefinition;
 import org.labkey.study.model.ParticipantCategory;
+import org.labkey.study.model.ParticipantGroup;
 import org.labkey.study.model.ParticipantGroupManager;
 import org.labkey.study.model.SecurityType;
 import org.labkey.study.model.StudyImpl;
@@ -159,11 +163,12 @@ public class CreateAncillaryStudyAction extends MutatingApiAction<EmphasisStudyD
                 exportFromParentStudy(form, errors, vf);
                 importToDestinationStudy(form, errors, newStudy, vf);
 
-                // snapshot datasets
-                createSnapshotDatasets(form, errors, newStudy);
-                
                 // copy participants
                 copyParticipants(form, errors, newStudy, vf);
+
+                // snapshot datasets
+                createSnapshotDatasets(form, errors, newStudy);
+
                 String redirect = PageFlowUtil.urlProvider(ProjectUrls.class).getStartURL(_dstContainer).getLocalURIString();
 
                 resp.put("redirect", redirect);
@@ -245,9 +250,13 @@ public class CreateAncillaryStudyAction extends MutatingApiAction<EmphasisStudyD
         QuerySnapshotService.I svc = QuerySnapshotService.get(StudyManager.getSchemaName());
 
         List<Integer> participantGroups = new ArrayList<Integer>();
-        for (ParticipantCategory category : _participantCategories)
+        if (!_participantCategories.isEmpty())
         {
-            participantGroups.add(category.getRowId());
+            // get the participant categories that were copied to the ancillary study
+            for (ParticipantCategory category : ParticipantGroupManager.getInstance().getParticipantCategories(_dstContainer, user))
+            {
+                participantGroups.add(category.getRowId());
+            }
         }
 
         for (DataSetDefinition def : _datasets)
@@ -304,6 +313,8 @@ public class CreateAncillaryStudyAction extends MutatingApiAction<EmphasisStudyD
 
         if (!categoriesToCopy.isEmpty())
         {
+            ensureGroupParticipants();
+            
             Set<String> dataTypes = new HashSet<String>();
             dataTypes.add(ParticipantGroupWriter.DATA_TYPE);
             StudyExportContext ctx = new StudyExportContext(_sourceStudy, user, _sourceStudy.getContainer(), false, dataTypes, Logger.getLogger(ParticipantGroupWriter.class));
@@ -327,6 +338,49 @@ public class CreateAncillaryStudyAction extends MutatingApiAction<EmphasisStudyD
 
         if (errors.hasErrors())
             throw new RuntimeException("Error copying participant groups : " + errors.getMessage());
+    }
+
+    /**
+     * Participant groups cannot be created unless the subject id's exist in the participant table, participants are usually
+     * added via dataset data insertion but we need to have them sooner because we need to filter the datasets on participant
+     * group participants.
+     */
+    private void ensureGroupParticipants()
+    {
+        try {
+            if (!_participantCategories.isEmpty())
+            {
+                StudySchema schema = StudySchema.getInstance();
+
+                StringBuilder groupInClause = new StringBuilder();
+                String delim = "";
+
+                groupInClause.append("(");
+                for (ParticipantCategory category : _participantCategories)
+                {
+                    for (ParticipantGroup group : category.getGroups())
+                    {
+                        groupInClause.append(delim);
+                        groupInClause.append(group.getRowId());
+
+                        delim = ",";
+                    }
+                }
+                groupInClause.append(")");
+
+                SQLFragment sql = new SQLFragment();
+
+                sql.append("INSERT INTO ").append(schema.getTableInfoParticipant()).append(" (ParticipantId, Container)");
+                sql.append(" SELECT DISTINCT(ParticipantId), ? FROM ").append(ParticipantGroupManager.getInstance().getTableInfoParticipantGroupMap());
+                sql.append(" WHERE GroupId IN ").append(groupInClause).append(" AND Container = ?");
+
+                Table.execute(schema.getSchema(), sql.getSQL(), _dstContainer.getId(), _sourceStudy.getContainer().getId());
+            }
+        }
+        catch (SQLException se)
+        {
+            throw new RuntimeException(se);
+        }
     }
 
     @Override

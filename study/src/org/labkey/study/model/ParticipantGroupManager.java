@@ -32,6 +32,7 @@ import org.labkey.api.data.Table;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.QueryView;
+import org.labkey.api.query.ValidationException;
 import org.labkey.api.security.Group;
 import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.AdminPermission;
@@ -60,6 +61,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.CopyOnWriteArrayList;
 
 /**
  * Created by IntelliJ IDEA.
@@ -70,6 +72,7 @@ import java.util.Set;
 public class ParticipantGroupManager
 {
     private static final ParticipantGroupManager _instance = new ParticipantGroupManager();
+    private static final List<ParticipantCategoryListener> _listeners = new CopyOnWriteArrayList<ParticipantCategoryListener>();
 
     private ParticipantGroupManager(){}
 
@@ -318,7 +321,7 @@ public class ParticipantGroupManager
         return getParticipantCategories(c, user, new SimpleFilter());
     }
 
-    public ParticipantCategory setParticipantCategory(Container c, User user, ParticipantCategory def, String[] participants)
+    public ParticipantCategory setParticipantCategory(Container c, User user, ParticipantCategory def, String[] participants) throws ValidationException
     {
         DbScope scope = StudySchema.getInstance().getSchema().getScope();
 
@@ -326,15 +329,16 @@ public class ParticipantGroupManager
             scope.ensureTransaction();
             ParticipantCategory ret;
             boolean isUpdate = !def.isNew();
+            List<Throwable> errors;
 
             if (!def.canEdit(c, user))
-                throw new RuntimeException("You don't have permission to create or edit this participant category");
+                throw new ValidationException("You don't have permission to create or edit this participant category");
             
             if (def.isNew())
             {
                 ParticipantCategory previous = getParticipantCategory(c, user, def.getLabel());
                 if (!previous.isNew())
-                    throw new RuntimeException("There is aready a group named: " + def.getLabel() + " within this study. Please choose a unique group name.");
+                    throw new ValidationException("There is aready a group named: " + def.getLabel() + " within this study. Please choose a unique group name.");
                 ret = Table.insert(user, StudySchema.getInstance().getTableInfoParticipantCategory(), def);
             }
             else
@@ -353,6 +357,20 @@ public class ParticipantGroupManager
                     throw new UnsupportedOperationException("Participant category type: cohort not yet supported");
             }
             scope.commitTransaction();
+
+            if (def.isNew())
+                errors = fireCreatedCategory(user, ret);
+            else
+                errors = fireUpdateCategory(user, ret);
+
+            if (errors.size() != 0)
+            {
+                Throwable first = errors.get(0);
+                if (first instanceof RuntimeException)
+                    throw (RuntimeException)first;
+                else
+                    throw new RuntimeException(first);
+            }
             return ret;
         }
         catch (SQLException x)
@@ -365,7 +383,7 @@ public class ParticipantGroupManager
         }
     }
 
-    private ParticipantGroup setParticipantGroup(User user, ParticipantGroup group)
+    private ParticipantGroup setParticipantGroup(User user, ParticipantGroup group) throws ValidationException
     {
         DbScope scope = StudySchema.getInstance().getSchema().getScope();
 
@@ -389,7 +407,7 @@ public class ParticipantGroupManager
 
                 // don't let the database catch the invalid ptid, so we can show a more reasonable error
                 if (p == null)
-                    throw new IllegalArgumentException(String.format("The %s ID specified : %s does not exist in this study. Please enter a valid identifier.", study.getSubjectNounSingular(), id));
+                    throw new ValidationException(String.format("The %s ID specified : %s does not exist in this study. Please enter a valid identifier.", study.getSubjectNounSingular(), id));
 
                 Table.execute(StudySchema.getInstance().getSchema(), sql.getSQL(), group.getRowId(), id, group.getContainerId());
             }
@@ -564,7 +582,7 @@ public class ParticipantGroupManager
         }
     }
 
-    private void updateListTypeDef(Container c, User user, ParticipantCategory def, boolean update, String[] participants) throws SQLException
+    private void updateListTypeDef(Container c, User user, ParticipantCategory def, boolean update, String[] participants) throws SQLException, ValidationException
     {
         assert !def.isNew() : "The participant category has not been created yet";
 
@@ -604,13 +622,13 @@ public class ParticipantGroupManager
         }
     }
 
-    public void deleteParticipantCategory(Container c, User user, ParticipantCategory def)
+    public void deleteParticipantCategory(Container c, User user, ParticipantCategory def) throws ValidationException
     {
         if (def.isNew())
-            throw new IllegalArgumentException("Participant category has not been saved to the database yet");
+            throw new ValidationException("Participant category has not been saved to the database yet");
 
         if (!def.canDelete(c, user))
-            throw new RuntimeException("You must either be an administrator, editor or the owner to delete a participant group");
+            throw new ValidationException("You must either be an administrator, editor or the owner to delete a participant group");
 
         DbScope scope = StudySchema.getInstance().getSchema().getScope();
 
@@ -633,6 +651,16 @@ public class ParticipantGroupManager
 
             DbCache.remove(StudySchema.getInstance().getTableInfoParticipantCategory(), getCacheKey(def));
             scope.commitTransaction();
+
+            List<Throwable> errors = fireDeleteCategory(user, def);
+            if (errors.size() != 0)
+            {
+                Throwable first = errors.get(0);
+                if (first instanceof RuntimeException)
+                    throw (RuntimeException)first;
+                else
+                    throw new RuntimeException(first);
+            }
         }
         catch (SQLException x)
         {
@@ -707,6 +735,66 @@ public class ParticipantGroupManager
         return "ParticipantCategory-" + categoryId;
     }
 
+    public static void addCategoryListener(ParticipantCategoryListener listener)
+    {
+        _listeners.add(listener);
+    }
+
+    public static void removeCategoryListener(ParticipantCategoryListener listener)
+    {
+        _listeners.remove(listener);
+    }
+
+    private static List<Throwable> fireDeleteCategory(User user, ParticipantCategory category)
+    {
+        List<Throwable> errors = new ArrayList<Throwable>();
+
+        for (ParticipantCategoryListener l : _listeners)
+        {
+            try {
+                l.categoryDeleted(user, category);
+            }
+            catch (Throwable t)
+            {
+                errors.add(t);
+            }
+        }
+        return errors;
+    }
+
+    private static List<Throwable> fireUpdateCategory(User user, ParticipantCategory category)
+    {
+        List<Throwable> errors = new ArrayList<Throwable>();
+
+        for (ParticipantCategoryListener l : _listeners)
+        {
+            try {
+                l.categoryUpdated(user, category);
+            }
+            catch (Throwable t)
+            {
+                errors.add(t);
+            }
+        }
+        return errors;
+    }
+
+    private static List<Throwable> fireCreatedCategory(User user, ParticipantCategory category)
+    {
+        List<Throwable> errors = new ArrayList<Throwable>();
+
+        for (ParticipantCategoryListener l : _listeners)
+        {
+            try {
+                l.categoryCreated(user, category);
+            }
+            catch (Throwable t)
+            {
+                errors.add(t);
+            }
+        }
+        return errors;
+    }
 
     public static class ParticipantGroupTestCase extends Assert
     {

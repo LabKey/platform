@@ -239,7 +239,7 @@ LABKEY.study.ParticipantGroupPanel = Ext.extend(Ext.Panel, {
             },
             failure: function(response, options){
                 this.getEl().unmask();
-                LABKEY.Utils.displayAjaxErrorResponse(response, options);
+                LABKEY.Utils.displayAjaxErrorResponse(response, options, false, 'An error occurred:<br>');
             },
             jsonData : categoryData,
             headers : {'Content-Type' : 'application/json'},

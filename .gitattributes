@@ -2643,6 +2643,7 @@ study/src/org/labkey/study/controllers/samples/SpecimenUtils.java -text
 study/src/org/labkey/study/controllers/security/SecurityController.java -text
 study/src/org/labkey/study/dataset/DatasetAuditViewFactory.java -text
 study/src/org/labkey/study/dataset/DatasetSnapshotProvider.java -text
+study/src/org/labkey/study/dataset/SnapshotDependency.java -text
 study/src/org/labkey/study/designer/JSONSerializer.java -text
 study/src/org/labkey/study/designer/MapArrayExcelWriter.java -text
 study/src/org/labkey/study/designer/SaveException.java -text
@@ -2707,6 +2708,7 @@ study/src/org/labkey/study/model/EmphasisStudyDefinition.java -text
 study/src/org/labkey/study/model/ExtensibleStudyEntity.java -text
 study/src/org/labkey/study/model/Participant.java -text
 study/src/org/labkey/study/model/ParticipantCategory.java -text
+study/src/org/labkey/study/model/ParticipantCategoryListener.java -text
 study/src/org/labkey/study/model/ParticipantDataMapKey.java -text
 study/src/org/labkey/study/model/ParticipantDataset.java -text
 study/src/org/labkey/study/model/ParticipantGroup.java -text
