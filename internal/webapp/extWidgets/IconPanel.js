@@ -50,7 +50,7 @@ Ext4.define('LABKEY.ext.IconPanel', {
                     this.refresh();
                 },
                 tpl: [
-                    '<table id="test" style="width:100%;"><tr>',
+                    '<table id="test"><tr>',
                     '<tpl for=".">',
                         '<td class="thumb-wrap">',
                         '<div style="width: {thumbWidth};" class="thumb-wrap thumb-wrap-{labelPosition}">',
