@@ -33,6 +33,8 @@ import org.labkey.api.view.ViewContext;
 
 import java.beans.PropertyChangeEvent;
 import java.sql.SQLException;
+import java.util.HashMap;
+import java.util.LinkedHashSet;
 import java.util.Set;
 
 /**
@@ -247,36 +249,67 @@ public class GroupManager
     }
 
     public static Group copyGroupToContainer(Group g, Container c){
-        return copyGroupToContainer(g, c, 0);
+        return copyGroupToContainer(g, c, new HashMap<UserPrincipal, UserPrincipal>(), 1);
     }
 
-    public static Group copyGroupToContainer(Group g, Container c, int suffix){
+    private static Group copyGroupToContainer(Group g, Container c, HashMap<UserPrincipal, UserPrincipal> groupMap){
+        return copyGroupToContainer(g, c, groupMap, 1);
+    }
+
+    private static Group copyGroupToContainer(Group g, Container c, HashMap<UserPrincipal, UserPrincipal> groupMap, int suffix){
         if(!g.isProjectGroup()){
             return g;
         }
 
+        if(groupMap.get(g) != null)
+        {
+            return (Group)groupMap.get(g);  //it has already been copied
+        }
+
         Set<UserPrincipal> members = SecurityManager.getGroupMembers(g, SecurityManager.GroupMemberType.Both);
-        String newGroupName = g.getName() + (suffix > 0 ? " " + suffix+1 : "");
+        Set<UserPrincipal> translatedMembers = new LinkedHashSet<UserPrincipal>();
+        for (UserPrincipal m : members)
+        {
+            if(groupMap.get(m) != null)
+            {
+                translatedMembers.add(groupMap.get(m));
+            }
+            else if(m instanceof Group && ((Group) m).isProjectGroup())
+            {
+                Group copiedGroup = GroupManager.copyGroupToContainer((Group)m, c, groupMap);
+                groupMap.put(m, copiedGroup);
+                translatedMembers.add(copiedGroup);
+            }
+            else
+            {
+                translatedMembers.add(m);
+            }
+        }
+
+        String newGroupName = g.getName() + (suffix > 1 ? " " + suffix : "");
 
         //test whether a group of this name already exists in the container
         if(SecurityManager.getGroupId(c, newGroupName, null, false) != null)
         {
             Group existingGroup = SecurityManager.getGroup(SecurityManager.getGroupId(c, newGroupName));
             Set<UserPrincipal> existingMembers = SecurityManager.getGroupMembers(existingGroup, SecurityManager.GroupMemberType.Both);
-            if(existingMembers.equals(members))
+            if(existingMembers.equals(translatedMembers))
             {
                 return existingGroup; //groups are the same. nothing needed
             }
             else
             {
                 //a different group of the same name already exists.  modify name and try again
-                return GroupManager.copyGroupToContainer(g, c, suffix+1);
+                suffix++;
+                Group newGroup = GroupManager.copyGroupToContainer(g, c, groupMap, suffix);
+                groupMap.put(g, newGroup);
+                return newGroup;
             }
         }
 
         Group newGroup = SecurityManager.createGroup(c, newGroupName);
-        SecurityManager.addMembers(newGroup, members);
-
+        groupMap.put(g, newGroup);
+        SecurityManager.addMembers(newGroup, translatedMembers);
         return newGroup;
     }
 }
