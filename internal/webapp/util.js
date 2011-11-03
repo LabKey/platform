@@ -361,6 +361,7 @@ function addFilePicker(tblId, linkId)
     var newRow = table.insertRow(-1);
     filePickerIndex++;
     newRow.id = "row" + filePickerIndex;
+    newRow.style.minHeight = '20px';
     var filePickerCell = newRow.insertCell(0);
     var filePickerId = "formFile" + filePickerIndex;
     filePickerCell.innerHTML = '<input type="file" id="' + filePickerId + '" name="formFiles[' + filePickerIndex + ']" size="45" onChange="showPathname(this, \'filename' + filePickerIndex + '\')">';

@@ -41,6 +41,6 @@ public abstract class ExtFormAction<FORM> extends ApiAction<FORM>
 
     public ApiResponseWriter createResponseWriter() throws IOException
     {
-        return new ExtFormResponseWriter(getViewContext().getResponse(), getContentTypeOverride());
+        return new ExtFormResponseWriter(getViewContext().getRequest(), getViewContext().getResponse(), getContentTypeOverride());
     }
 }

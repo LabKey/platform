@@ -16,13 +16,16 @@
 package org.labkey.api.action;
 
 import org.apache.commons.beanutils.BeanUtils;
+import org.json.JSONObject;
 import org.labkey.api.data.ObjectFactory;
 
 import java.lang.reflect.InvocationTargetException;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 /**
  * Use this for simple responses from Api actions.
@@ -31,35 +34,46 @@ import java.util.Map;
  * Date: Feb 13, 2008
  * Time: 4:44:39 PM
  */
-public class ApiSimpleResponse extends HashMap<String, Object> implements ApiResponse
+public class ApiSimpleResponse implements ApiResponse, Map<String,Object>
 {
+    final JSONObject _json;
+
     public ApiSimpleResponse()
     {
+        _json = new JSONObject();
+    }
+
+    public ApiSimpleResponse(JSONObject json)
+    {
+        _json = json;
     }
 
     public ApiSimpleResponse(Map<String, ?> values)
     {
-        putAll(values);
+        _json = new JSONObject(values);
     }
 
     public ApiSimpleResponse(String key, Object value)
     {
-        put(key, value);
+        _json = new JSONObject();
+        _json.put(key, value);
     }
 
     public ApiSimpleResponse(String key, int value)
     {
-        put(key, Integer.valueOf(value));
+        _json = new JSONObject();
+        _json.put(key, Integer.valueOf(value));
     }
 
     public ApiSimpleResponse(String key, boolean value)
     {
-        put(key, Boolean.valueOf(value));
+        _json = new JSONObject();
+        _json.put(key, Boolean.valueOf(value));
     }
 
     public Map<String, Object> getProperties()
     {
-        return this;
+        return _json;
     }
 
     /**
@@ -68,12 +82,12 @@ public class ApiSimpleResponse extends HashMap<String, Object> implements ApiRes
     public <T> void putBean(T bean, String... props) throws IllegalAccessException, InvocationTargetException, NoSuchMethodException
     {
         Map<String,Object> map = getBeanMap(bean, props);
-        putAll(map);
+        _json.putAll(map);
     }
 
     public <T> void putBean(String key, T bean, String... props) throws IllegalAccessException, InvocationTargetException, NoSuchMethodException
     {
-        put(key, getBeanMap(bean, props));
+        _json.put(key, getBeanMap(bean, props));
     }
 
     public <T> void putBeanList(String key, List<T> beans, String... props) throws IllegalAccessException, InvocationTargetException, NoSuchMethodException
@@ -81,7 +95,7 @@ public class ApiSimpleResponse extends HashMap<String, Object> implements ApiRes
         List<Map> beanMaps = new ArrayList<Map>();
         for(Object bean : beans)
             beanMaps.add(getBeanMap(bean, props));
-        put(key, beanMaps);
+        _json.put(key, beanMaps);
     }
 
     protected <T> Map<String,Object> getBeanMap(T bean, String... props) throws IllegalAccessException, InvocationTargetException, NoSuchMethodException
@@ -101,5 +115,77 @@ public class ApiSimpleResponse extends HashMap<String, Object> implements ApiRes
                 map.put(prop, BeanUtils.getProperty(bean, prop));
             return map;
         }
+    }
+
+    public boolean equals(Object o)
+    {
+        return _json.equals(o);
+    }
+
+    public int hashCode()
+    {
+        return _json.hashCode();
+    }
+
+    public int size()
+    {
+        return _json.size();
+    }
+
+    public boolean isEmpty()
+    {
+        return _json.isEmpty();
+    }
+
+    public Object get(Object o)
+    {
+        return _json.get(o);
+    }
+
+    public boolean containsKey(Object o)
+    {
+        return _json.containsKey(o);
+    }
+
+    public Object remove(Object o)
+    {
+        return _json.remove(o);
+    }
+
+    public void clear()
+    {
+        _json.clear();
+    }
+
+    public boolean containsValue(Object o)
+    {
+        return _json.containsValue(o);
+    }
+
+    public Set<String> keySet()
+    {
+        return _json.keySet();
+    }
+
+    public Collection<Object> values()
+    {
+        return _json.values();
+    }
+
+    public Set<Map.Entry<String, Object>> entrySet()
+    {
+        return _json.entrySet();
+    }
+
+    @Override
+    public Object put(String key, Object value)
+    {
+        return _json.put(key,value);
+    }
+
+    @Override
+    public void putAll(Map map)
+    {
+        _json.putAll(map);
     }
 }

@@ -70,20 +70,21 @@ public class ExtFormResponseWriter extends ApiJsonWriter
         setErrorResponseStatus(HttpServletResponse.SC_OK);
     }
 
-    public  ExtFormResponseWriter(HttpServletResponse response, String contentTypeOverride) throws IOException
-    {
-        super(response, contentTypeOverride);
-        setErrorResponseStatus(HttpServletResponse.SC_OK);
-    }
-
     public ExtFormResponseWriter(HttpServletRequest request, HttpServletResponse response) throws IOException
     {
-        super(response);
+        this(response);
         if (request instanceof MultipartHttpServletRequest)
             isMultipartRequest = true;
         response.setContentType(isMultipartRequest ? "text/html" : CONTENT_TYPE_JSON);
-        setErrorResponseStatus(HttpServletResponse.SC_OK);
     }
+
+    public  ExtFormResponseWriter(HttpServletRequest request, HttpServletResponse response, String contentTypeOverride) throws IOException
+    {
+        this(request, response);
+        if (!isMultipartRequest && null != contentTypeOverride)
+            response.setContentType(contentTypeOverride);
+    }
+
 
     public void write(ValidationException e) throws IOException
     {
@@ -158,7 +159,7 @@ public class ExtFormResponseWriter extends ApiJsonWriter
     }
 
 
-/*    @Override
+    @Override
     protected Writer getWriter()
     {
         Writer w = super.getWriter();
@@ -178,5 +179,4 @@ public class ExtFormResponseWriter extends ApiJsonWriter
         }
         return w;
     }
-*/
 }
