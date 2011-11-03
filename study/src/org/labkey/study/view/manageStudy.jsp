@@ -84,7 +84,20 @@
     <tr>
         <th align="left">Additional Properties</th>
         <td>This study has <%=numProperties%> additional <%=propString%></td>
-        <td><%= textLink("Edit Definition", StudyDefinitionController.EditStudyDefinitionAction.class) %></td>
+        <td><%
+            Container p = c.getProject();
+            if (p.hasPermission(user,AdminPermission.class))
+            {
+                ActionURL returnURL = getViewContext().getActionURL();
+                ActionURL editDefinition = new ActionURL(StudyDefinitionController.EditStudyDefinitionAction.class, p);
+                editDefinition.addReturnURL(returnURL);
+                %><%= textLink("Edit Definition", editDefinition) %><%
+            }
+            else
+            {
+                %>&nbsp;<%
+            }
+        %></td>
     </tr>
     <tr>
         <th align="left">Reloading</th>
