@@ -157,10 +157,11 @@ LABKEY.Utils = new function()
         * @param {XMLHttpRequest} responseObj The XMLHttpRequest object containing the response data.
         * @param {Error} [exceptionObj] A JavaScript Error object caught by the calling code.
         * @param {boolean} showExceptionClass Optional flag to display the java class of the exception.
+        * @param {String} msgPrefix Optional prefix to the error message (defaults to: 'An error occurred trying to load:')
         * The error dialog will display the Error's name and message, if available. Ext.data.DataReader implementations
         * may throw this type of error object.
         */
-        displayAjaxErrorResponse: function(responseObj, exceptionObj, showExceptionClass)
+        displayAjaxErrorResponse: function(responseObj, exceptionObj, showExceptionClass, msgPrefix)
         {
             if (responseObj.status == 0)
             {
@@ -170,6 +171,8 @@ LABKEY.Utils = new function()
 
             }
             var error;
+            var prefix = msgPrefix || 'An error occurred trying to load:\n';
+
             if (responseObj &&
                 responseObj.responseText &&
                 responseObj.getResponseHeader('Content-Type') &&
@@ -178,16 +181,16 @@ LABKEY.Utils = new function()
                 var jsonResponse = Ext.util.JSON.decode(responseObj.responseText);
                 if (jsonResponse && jsonResponse.exception)
                 {
-                    error = "An error occurred trying to load:\n" + jsonResponse.exception;
+                    error = prefix + jsonResponse.exception;
                     if (showExceptionClass)
                         error += "\n(" + (jsonResponse.exceptionClass ? jsonResponse.exceptionClass : "Exception class unknown") + ")";
                 }
             }
             if (!error)
-                error = "An error occurred trying to load.\nStatus: " + responseObj.statusText + " (" + responseObj.status + ")";
+                error = prefix + "Status: " + responseObj.statusText + " (" + responseObj.status + ")";
             if (exceptionObj && exceptionObj.message)
                 error += "\n" + exceptionObj.name + ": " + exceptionObj.message;
-            Ext.Msg.alert("Load Error", error);
+            Ext.Msg.alert("Error", error);
         },
         
         /**
