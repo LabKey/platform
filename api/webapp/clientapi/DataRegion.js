@@ -922,8 +922,6 @@ LABKEY.DataRegion = Ext.extend(Ext.Component,
     _initHeaderLock : function() {
         // initialize constants
         this.headerRow          = Ext.get('dataregion_header_row_' + this.name);
-        if (!this.headerRow)
-            return;  // too early?
         this.headerRowContent   = this.headerRow.child('td');
         this.headerSpacer       = Ext.get('dataregion_header_row_spacer_' + this.name);
         this.colHeaderRow       = Ext.get('dataregion_column_header_row_' + this.name);
@@ -998,7 +996,7 @@ LABKEY.DataRegion = Ext.extend(Ext.Component,
             z.setSize(s);
         }
 
-        if (recalcPosition === true) this.hdrCoord = this._findPos((this.includeHeader ? this.headerRow : this.colHeaderRow));
+        if (recalcPosition === true) this.hdrCoord = this._findPos();
         this.hdrLocked = false;
     },
 
@@ -1011,13 +1009,20 @@ LABKEY.DataRegion = Ext.extend(Ext.Component,
      * This method assumes interaction with the Header of the Data Region.
      * @param o - The Ext.Element object to be measured againt that is considered the top of the Data Region.
      */
-    _findPos : function(o) {
-        var xy = o.getXY();
+    _findPos : function() {
+        var o, xy;
 
+        if (this.includeHeader) {
+            o = (this.hdrLocked ? this.headerSpacer : this.headerRow);
+        }
+        else {
+            o = (this.hdrLocked ? this.colHeaderRowSpacer : this.colHeaderRow);
+        }
+
+        xy = o.getXY();
         var curbottom = xy[1] + this.table.getHeight();
-        curbottom    -= (this.includeHeader ? (this.headerRow.getComputedHeight()*2) : 0) +
-                            (this.colHeaderRow.getComputedHeight()*2);
-        var hdrOffset = this.includeHeader ? this.headerRow.getComputedHeight() : 0;
+        curbottom    -= o.getComputedHeight()*2;
+        var hdrOffset = this.includeHeader ? this.headerSpacer.getComputedHeight() : 0;
 
         return [ xy[0], xy[1], curbottom, hdrOffset ];
     },
@@ -1030,7 +1035,7 @@ LABKEY.DataRegion = Ext.extend(Ext.Component,
      */
     _scrollContainer : function() {
         // calculate Y scrolling
-        if (window.pageYOffset > this.hdrCoord[1] && window.pageYOffset < this.hdrCoord[2]) {
+        if (window.pageYOffset >= this.hdrCoord[1] && window.pageYOffset < this.hdrCoord[2]) {
             // The header has reached the top of the window and needs to be locked
             var tWidth = this.table.getComputedWidth();
             this.headerSpacer.dom.style.display = "table-row";
@@ -1055,13 +1060,9 @@ LABKEY.DataRegion = Ext.extend(Ext.Component,
         }
 
         // Calculate X Scrolling
-        if (this.hdrLocked && window.pageXOffset > 0) {
+        if (this.hdrLocked) {
             this.headerRow.applyStyles("left: " + (this.hdrCoord[0]-window.pageXOffset) + "px;");
             this.colHeaderRow.applyStyles("left: " + (this.hdrCoord[0]-window.pageXOffset) + "px;");
-        }
-        else if (window.pageXOffset == 0) {
-            this.headerRow.applyStyles("left: auto;");
-            this.colHeaderRow.applyStyles("left: auto;");
         }
     },
 
