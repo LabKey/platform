@@ -165,14 +165,14 @@
                     displayField: 'Name',
                     valueField: 'EntityId',
                     store: Ext4.create('LABKEY.ext4.Store', {
-                        containerPath: '/',
+                        containerPath: '/home',
                         schemaName: 'core',
                         queryName: 'containers',
                         columns: 'entityId,name',
                         filterArray: [
                             LABKEY.Filter.create('containerType', 'project', LABKEY.Filter.Types.EQUAL)
                         ],
-                        containerFilter: 'CurrentAndSubfolders'
+                        containerFilter: 'CurrentAndSiblings'
                     })
                 });
             }
