@@ -29,7 +29,7 @@ abstract public class LookupForeignKey extends AbstractForeignKey
 {
     ActionURL _baseURL;
     Object _param;
-    private boolean _prefixColumnCaption = true;
+    private boolean _prefixColumnCaption = false;
     String _titleColumn;
     private Map<ColumnInfo, String> _additionalJoins = new HashMap<ColumnInfo, String>();
 

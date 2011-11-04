@@ -931,8 +931,16 @@ LABKEY.DataRegion = Ext.extend(Ext.Component,
         this.includeHeader = this.headerRow.isDisplayed();
 
         // initialize row contents
-        this.rowContent         = Ext.query(" > td[class*=labkey-column-header]",      this.colHeaderRow.id);
-        this.rowSpacerContent   = Ext.query(" > td[class*=labkey-column-header]",      this.colHeaderRowSpacer.id);
+        // Check if we have colHeaderRow and colHeaderRowSpacer - they won't be present if there was an SQLException
+        // during query execution, so we didn't get column metadata back
+        if (this.colHeaderRow)
+        {
+            this.rowContent         = Ext.query(" > td[class*=labkey-column-header]",      this.colHeaderRow.id);
+        }
+        if (this.colHeaderRowSpacer)
+        {
+            this.rowSpacerContent   = Ext.query(" > td[class*=labkey-column-header]",      this.colHeaderRowSpacer.id);
+        }
         this.firstRow           = Ext.query("tr[class=labkey-alternate-row]:first td", this.table.id);
 
         // If no data rows exist just turn off header locking

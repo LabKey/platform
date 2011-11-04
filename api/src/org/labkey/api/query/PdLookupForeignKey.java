@@ -107,7 +107,7 @@ public class PdLookupForeignKey extends AbstractForeignKey
         }
         if (displayField == null)
             return null;
-        return LookupColumn.create(parent, table.getPkColumns().get(0), table.getColumn(displayField), true);
+        return LookupColumn.create(parent, table.getPkColumns().get(0), table.getColumn(displayField), false);
     }
 
     public StringExpression getURL(ColumnInfo parent)

@@ -46,7 +46,7 @@ public class TitleForeignKey extends AbstractForeignKey
     {
         if (displayField != null)
             return null;
-        return LookupColumn.create(parent, _lookupKey, _displayColumn, true);
+        return LookupColumn.create(parent, _lookupKey, _displayColumn, false);
     }
 
     public TableInfo getLookupTableInfo()

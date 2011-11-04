@@ -444,7 +444,7 @@ public abstract class DisplayColumn extends RenderColumn
         {
             tooltip.append(getDescription());
         }
-        if (null != getColumnInfo() && getColumnInfo().getFieldKey().getParts().size() > 1)
+        if (null != getColumnInfo() && !getColumnInfo().getFieldKey().toString().equals(getColumnInfo().getLabel()))
         {
             boolean suffix = tooltip.length() > 0;
             if (suffix)
@@ -454,7 +454,7 @@ public abstract class DisplayColumn extends RenderColumn
             tooltip.append(getColumnInfo().getFieldKey().toString());
             if (suffix)
             {
-                tooltip.append(" )");
+                tooltip.append(")");
             }
         }
 

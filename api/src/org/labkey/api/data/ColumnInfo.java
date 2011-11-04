@@ -1058,7 +1058,7 @@ public class ColumnInfo extends ColumnRenderProperties implements SqlColumn
                 return null;
             }
 
-            LookupColumn result = LookupColumn.create(foreignKey, lookupTable.getColumn(_lookupKey), lookupColumn, true);
+            LookupColumn result = LookupColumn.create(foreignKey, lookupTable.getColumn(_lookupKey), lookupColumn, false);
             if (_joinWithContainer)
             {
                 ColumnInfo fkContainer = foreignKey.getParentTable().getColumn("Container");

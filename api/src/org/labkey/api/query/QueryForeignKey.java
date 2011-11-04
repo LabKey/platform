@@ -87,7 +87,7 @@ public class QueryForeignKey implements ForeignKey
                 return foreignKey;
             }
         }
-        return LookupColumn.create(foreignKey, lookupTable.getColumn(_lookupKey), lookupTable.getColumn(displayField), true);
+        return LookupColumn.create(foreignKey, lookupTable.getColumn(_lookupKey), lookupTable.getColumn(displayField), false);
     }
 
     public String getLookupContainerId()

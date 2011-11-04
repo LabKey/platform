@@ -342,6 +342,9 @@ public class ConceptPicker extends TriggerField<ConceptPicker.ConceptType>
                     r.setEnabled(picker.isRangeEditable && picker.allowFileLinkProperties);
                 else if (r._type instanceof LookupConceptType)
                     r.setEnabled(picker.isRangeEditable || null == type || type.getPropertyType().isLookupType());
+                else if (r._type.getPropertyType() == PropertyType.expMultiLine || r._type.getPropertyType() == PropertyType.xsdString)
+                    // Allow toggling between multi-line text and regular text types
+                    r.setEnabled(picker.isRangeEditable || null == type || type.getPropertyType() == PropertyType.expMultiLine || type.getPropertyType() == PropertyType.xsdString);
                 else
                     r.setEnabled(picker.isRangeEditable || null == type || type.getPropertyType() == r._type.getPropertyType());
             }

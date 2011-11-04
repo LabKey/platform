@@ -42,7 +42,7 @@ public class RowIdForeignKey extends AbstractForeignKey
     {
         if (displayField == null)
             return null;
-        return LookupColumn.create(parent, _rowidColumn, getLookupTableInfo().getColumn(displayField), true);
+        return LookupColumn.create(parent, _rowidColumn, getLookupTableInfo().getColumn(displayField), false);
     }
 
     public TableInfo getLookupTableInfo()

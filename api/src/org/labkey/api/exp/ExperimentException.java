@@ -42,4 +42,22 @@ public class ExperimentException extends Exception
         super(cause);
     }
 
+    @Override
+    public String getMessage()
+    {
+        String result = super.getMessage();
+        if (result == null)
+        {
+            result = toString();
+            if (getCause() != null && getCause() != this)
+            {
+                if (getCause().getMessage() != null)
+                {
+                    return getCause().getMessage();
+                }
+                result += " " + getCause();
+            }
+        }
+        return result;
+    }
 }
