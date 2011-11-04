@@ -346,7 +346,7 @@ function showPathname(filechooser, id)
          filename = pathname.substring(pathname.lastIndexOf('/')+1,pathname.length);
     else
          filename = pathname.substring(pathname.lastIndexOf('\\')+1,pathname.length);
-    document.getElementById(id).innerHTML = " <img src=\"" + LABKEY.Utils.getFileIconUrl(filename) + "\"/> " + filename;
+    document.getElementById(id).innerHTML = "<table><tr><td><img src=\"" + LABKEY.Utils.getFileIconUrl(filename) + "\"/></td><td>" + filename + "</td></tr></table>";
     return(true);
 }
 
@@ -366,8 +366,8 @@ function addFilePicker(tblId, linkId)
     var filePickerId = "formFile" + filePickerIndex;
     filePickerCell.innerHTML = '<input type="file" id="' + filePickerId + '" name="formFiles[' + filePickerIndex + ']" size="45" onChange="showPathname(this, \'filename' + filePickerIndex + '\')">';
     var removePathnameCell = newRow.insertCell(1);
-    removePathnameCell.innerHTML = '<a href="javascript:removeFilePicker(\'' + tblId + '\', \'' + linkId + '\', \'' + newRow.id + '\')">remove</a>' +
-        '&nbsp;&nbsp;<label id="filename' + filePickerIndex + '"></label>';
+    removePathnameCell.innerHTML = '<table><tr><td><a href="javascript:removeFilePicker(\'' + tblId + '\', \'' + linkId + '\', \'' + newRow.id + '\')">remove</a></td>' +
+        '<td><label id="filename' + filePickerIndex + '"></label></td></tr></table>';
     updateInstructions(document.getElementById(linkId), table.rows.length);
 }
 

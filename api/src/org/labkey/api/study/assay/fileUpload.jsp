@@ -34,6 +34,7 @@
 <script type="text/javascript">
     var _fileUploadIndex = 0;
     var _maxFileInputs = <%= bean.getMaxFileInputs() %>;
+    var _prefix = "<%= AssayDataCollector.PRIMARY_FILE %>";
 
     /**
      * Add a new row to the file upload table with a file input element
@@ -58,9 +59,9 @@
 
         // add a cell for the file upload input
         var cell = row.insertCell(0);
-        var id = "<%= AssayDataCollector.PRIMARY_FILE %>" + _fileUploadIndex;
-        var name = "<%= AssayDataCollector.PRIMARY_FILE %>" + (_fileUploadIndex > 0 ? _fileUploadIndex : "");
-        cell.innerHTML = "<input type='file' size='40' id='" + id + "' name='" + name + "' onChange='toggleAddRemoveButtons();updateFileLabel(this);' />";
+        var id = _prefix + _fileUploadIndex;
+        var name = _prefix + (_fileUploadIndex > 0 ? _fileUploadIndex : "");
+        cell.innerHTML = "<input type='file' size='40' id='" + id + "' name='" + name + "' onChange='checkForDuplicateFileName(this);' />";
 
         // if the given assay type allows for multiple file uploads, add the add and remove buttons
         if (_maxFileInputs > 1)
@@ -80,7 +81,7 @@
 
         // add a cell to show the file name after selection
         cell = row.insertCell(-1);
-        cell.innerHTML = '&nbsp;&nbsp;<label id="label' + id + '"></label>'; 
+        cell.innerHTML = '<label id="label' + id + '"></label>'; 
     }
 
     /**
@@ -127,11 +128,11 @@
             var prevRowNum = row.id.substring(row.id.indexOf("-row")+4);
             row.id = "file-upload-row" + i;
 
-            document.getElementById("<%= AssayDataCollector.PRIMARY_FILE %>" + prevRowNum).name = "<%= AssayDataCollector.PRIMARY_FILE %>" + (i > 0 ? i : "");
-            document.getElementById("<%= AssayDataCollector.PRIMARY_FILE %>" + prevRowNum).id = "<%= AssayDataCollector.PRIMARY_FILE %>" + i;
+            document.getElementById(_prefix + prevRowNum).name = _prefix + (i > 0 ? i : "");
+            document.getElementById(_prefix + prevRowNum).id = _prefix + i;
             row.cells[1].innerHTML = "<a id='file-upload-remove" + i + "' class='labkey-file-remove-icon labkey-file-remove-icon-disabled' onClick='removeFileUploadInputRow(this, " + i + ");'><span>&nbsp;</span></a>";
             document.getElementById("file-upload-add" + prevRowNum).id = "file-upload-add" + i;
-            document.getElementById("label<%= AssayDataCollector.PRIMARY_FILE %>" + prevRowNum).id = "label<%= AssayDataCollector.PRIMARY_FILE %>" + i;
+            document.getElementById("label" + _prefix + prevRowNum).id = "label" + _prefix + i;
         }
 
         toggleAddRemoveButtons();
@@ -143,7 +144,6 @@
      */
     function toggleAddRemoveButtons()
     {
-        var filePaths = [];
         for (var i = _fileUploadIndex - 1; i >= 0; i--)
         {
             // disable the remove button if there is only one row
@@ -151,26 +151,21 @@
             {
                 enableDisableButton("remove", i, false);
             }
-            else{
+            else
+            {
                 enableDisableButton("remove", i, true);
             }
 
             // only enable the add button that is on the last row (if the file input is available)
-            var inputEl = document.getElementById("__primaryFile__" + i);
+            var inputEl = document.getElementById(_prefix + i);
             if (i == _fileUploadIndex - 1 && inputEl.value != "")
             {
                 enableDisableButton("add", i, true);
             }
-            else{
+            else
+            {
                 enableDisableButton("add", i, false);
             }
-
-            // alert the user (only once) if the same file name has already been uploaded
-            if (filePaths.indexOf(inputEl.value) != -1)
-            {
-                alert('Warning: A file with the same name has already been selected for this run.');
-            }
-            filePaths.push(inputEl.value);
         }
     }
 
@@ -201,9 +196,47 @@
      */
     function updateFileLabel(fileInput)
     {
-        var idNum = parseInt(fileInput.id.replace("<%= AssayDataCollector.PRIMARY_FILE %>", ""));
-        if (Ext.getDom("<%= AssayDataCollector.PRIMARY_FILE %>" + idNum).value)
-            showPathname(fileInput, "label<%= AssayDataCollector.PRIMARY_FILE %>" + idNum);
+        if (fileInput.value)
+            showPathname(fileInput, "label" + fileInput.id);
+    }
+
+    /**
+     * Check if the selected file name is already in the list of selected files
+     * @param currFileInput
+     */
+    function checkForDuplicateFileName(currFileInput)
+    {
+        // get the file index from the input id
+        var index = parseInt(currFileInput.id.replace(_prefix, ""));
+
+        // loop through the other selected files to see if they are all unique
+        var dupFound = false;
+        for (var i = 0; i < _fileUploadIndex; i++)
+        {
+            // alert the user and remove the file input if the selected file has already been added to this run
+            var inputEl = document.getElementById(_prefix + i);
+            if (currFileInput.id != inputEl.id && currFileInput.value == inputEl.value)
+            {
+                Ext.Msg.show({
+                   title:'Error',
+                   msg: 'A file with the same name has already been selected for this run. The duplicate file input will be removed.',
+                   buttons: Ext.Msg.OK,
+                   fn: function() {
+                       removeFileUploadInputRow(null, index);
+                   },
+                   icon: Ext.MessageBox.ERROR
+                });
+
+                dupFound = true;
+                break;
+            }
+        }
+
+        if (!dupFound)
+        {
+            toggleAddRemoveButtons();
+            updateFileLabel(currFileInput);
+        }
     }
 
     Ext.onReady(addFileUploadInputRow);
