@@ -27,6 +27,8 @@
 <%@ page import="org.labkey.api.util.PageFlowUtil" %>
 <%@ page import="org.labkey.api.query.QueryUrls" %>
 <%@ page import="org.labkey.api.exp.query.SamplesSchema" %>
+<%@ page import="org.labkey.api.exp.api.ExperimentUrls" %>
+<%@ page import="org.labkey.api.pipeline.PipelineUrls" %>
 <%@ page extends="org.labkey.api.jsp.FormPage" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%
@@ -98,7 +100,13 @@
 
 <form onSubmit="return validateKey();" action="showUploadMaterials.view" method="post">
 <labkey:errors />
-<table>
+    <p>If you have an existing sample set definition in the XAR file format (a .xar or .xar.xml file), you can
+        <a href="<%= urlProvider(ExperimentUrls.class).getUploadXARURL(getViewContext().getContainer()) %>">upload the XAR file directly</a>
+        or place the file in this folder's pipeline directory and import using the
+        <a href="<%= urlProvider(PipelineUrls.class).urlBrowse(getViewContext().getContainer(), getViewContext().getActionURL().toString()) %>">Data Pipeline</a>.
+    </p>
+
+    <table>
     <tr>
         <td class="labkey-form-label">Name</td>
         <td>
@@ -134,9 +142,9 @@
         <td>
             Sample set uploads must formatted as tab separated values (TSV).<br>
             The first row should contain column names; subsequent rows should contain the data.<br>
-            Copy/paste from Microsoft Excel works well. <%=textLink("Download an Excel template workbook", templateURL)%><br>
+            Copy/paste from Microsoft Excel works well. <% if (!form.isCreateNewSampleSet()) { %><%=textLink("Download an Excel template workbook", templateURL)%><% } %><br>
             <% if (!form.isImportMoreSamples()) { %>
-                <b>Note:</b> If there is a column <em>'Name'</em>, it will be chosen as the unique identifier for the sample set.
+                <b>Note:</b> If there is a <em>'Name'</em> column, it will be used as each sample's unique identifier.
                 <br>
             <% } %>
             <br>

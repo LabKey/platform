@@ -251,7 +251,7 @@ Ext.onReady(function(){
 
         var items = [];
         if (canEdit) {
-            items.push({border:false, style : 'float: left; padding-right: 5px;', html:'<input id="' + (formId + '$input')+ '" type="text" size="30" name="name">'});
+            items.push({border:false, style : 'float: left; padding-right: 5px;', html:'<input id="' + (formId + '$input')+ '" placeholder="New group name" type="text" size="30" name="name">'});
             items.push(new Ext.Button({text: 'Create New Group', id: formId + '$submit'}));
         }
         items.push(groupsList);

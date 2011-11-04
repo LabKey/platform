@@ -33,10 +33,10 @@
     Each assay is a customized version of a particular assay type. 
     The assay type defines things like how the data is parsed and what kinds of analysis are provided.
 </p>
-<p>If you have an existing assay design to import in the XAR file format (a .xar or .xar.xml file), you can place
-    the file in this folder's pipeline directory and upload using the
-    <a href="<%= urlProvider(PipelineUrls.class).urlBrowse(getViewContext().getContainer(), getViewContext().getActionURL().toString()) %>">Data Pipeline</a>
-    or <a href="<%= urlProvider(ExperimentUrls.class).getUploadXARURL(getViewContext().getContainer()) %>">upload XAR the file directly</a>.
+<p>If you have an existing assay design in the XAR file format (a .xar or .xar.xml file), you can
+    <a href="<%= urlProvider(ExperimentUrls.class).getUploadXARURL(getViewContext().getContainer()) %>">upload the XAR file directly</a>
+    or place the file in this folder's pipeline directory and import using the
+    <a href="<%= urlProvider(PipelineUrls.class).urlBrowse(getViewContext().getContainer(), getViewContext().getActionURL().toString()) %>">Data Pipeline</a>.
 </p>
 <p>
     To create a new assay design, please choose which assay type you would like to customize with your own settings and input options.

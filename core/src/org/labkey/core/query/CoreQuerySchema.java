@@ -273,7 +273,7 @@ public class CoreQuerySchema extends UserSchema
         members.setDefaultVisibleColumns(defCols);
 
         members.setDescription("Contains rows indicating which users are in which groups in the current project." +
-            " The data in this talbe are available only to users who are signed in (not guests). Guests will see no rows.");
+            " The data in this table are available only to users who are signed in (not guests). Guests will see no rows.");
 
         return members;
     }

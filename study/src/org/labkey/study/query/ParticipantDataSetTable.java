@@ -83,7 +83,7 @@ public class ParticipantDataSetTable extends VirtualTable
                     if (displayField == null)
                         return null;
 
-                    return LookupColumn.create(parent, table.getColumn(StudyService.get().getSubjectColumnName(def.getContainer())), table.getColumn(displayField), true);
+                    return LookupColumn.create(parent, table.getColumn(StudyService.get().getSubjectColumnName(def.getContainer())), table.getColumn(displayField), false);
                 }
 
                 public TableInfo getLookupTableInfo()
