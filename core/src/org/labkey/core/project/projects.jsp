@@ -48,6 +48,13 @@ Ext4.onReady(function(){
         width: '100%',
         border: false,
         frame: false,
+        buttonAlign: 'left',
+        buttons: [{
+            text: 'Create New Project',
+            target: '_self',
+            hidden: !LABKEY.Security.currentUser.isAdmin,
+            href: LABKEY.ActionURL.buildURL('admin', 'createFolder', '/')
+        }],
         store: Ext4.create('LABKEY.ext4.Store', {
             containerPath: 'home',
             schemaName: 'core',

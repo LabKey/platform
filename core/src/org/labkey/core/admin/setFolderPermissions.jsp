@@ -44,7 +44,7 @@
 
         Ext4.QuickTips.init();
 
-        Ext4.create('Ext.form.Panel', {
+        var panel = Ext4.create('Ext.form.Panel', {
             border: false,
             autoHeight: true,
             defaults: {
@@ -60,7 +60,15 @@
                 name: 'permissionType',
                 columns: 1,
                 defaults: {
-                    width: 400
+                    width: 400,
+                    listeners: {
+                        specialkey: function(field, e){
+                            if(e.getKey() == e.ENTER){
+                                var f = field.up('form').getForm();
+                                f.submit();
+                            }
+                        }
+                    }
                 },
                 listeners: {
                     change: {
@@ -177,6 +185,14 @@
                 });
             }
         }).render('folderPermissionsDiv');
+
+        Ext4.create('Ext.util.KeyNav', document.body, {
+            scope: this,
+            enter: function(){
+                var f = panel.getForm();
+                f.submit();
+            }
+        });
     });
 
 

@@ -54,7 +54,7 @@
 
         var projectDefault = "<%=h(projectDefaultRoot.replace("\\", "\\\\"))%>";
 
-        Ext4.create('Ext.form.Panel', {
+        var panel = Ext4.create('Ext.form.Panel', {
             border: false,
             autoHeight: true,
             defaults: {
@@ -140,6 +140,15 @@
                 }
             }]
         }).render('setInitialFolderSettingsDiv');
+
+        Ext4.create('Ext.util.KeyNav', document.body, {
+            scope: this,
+            enter: function(){
+                var f = panel.getForm();
+                f.submit();
+            }
+        });
+
     });
 </script>
 

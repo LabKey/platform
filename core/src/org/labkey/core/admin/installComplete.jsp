@@ -25,7 +25,11 @@
     AdminUrls adminURLs = PageFlowUtil.urlProvider(AdminUrls.class);
     ViewContext viewContext = HttpView.currentContext();
 %>
-
+<style type="text/css">
+li {
+    margin-bottom: 10px;
+}
+</style>
 <p>Congratulations! Your LabKey Server installation is ready to use.</p>
 
 <p>What would you like to do next?</p>
@@ -40,7 +44,7 @@
     <li>
         <a href="<%= h(adminURLs.getCreateProjectURL()) %>">Create a new project</a>
         (analyze MS1, MS2, flow cytometry, plate-based assay data; organize data in a study;
-        create messages boards, wikis, or issue trackers, etc)
+        create messages boards, wikis, or issue trackers, etc).  This is the most common for new servers.
     </li>
 
     <li>
