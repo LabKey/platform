@@ -33,6 +33,7 @@ LABKEY.vis.TimeChartPanel = Ext.extend(Ext.Panel, {
         {
             Ext.applyIf(config.chartInfo, {
                 axis: [],
+                //This is for charts saved prior to 2011-10-07
                 chartSubjectSelection: config.chartInfo.chartLayout == 'per_group' ? 'groups' : 'subjects'
             });
             for (var i = 0; i < config.chartInfo.measures.length; i++)
@@ -149,7 +150,7 @@ LABKEY.vis.TimeChartPanel = Ext.extend(Ext.Panel, {
                     'measureSelected': this.measureSelected,
                     'chartDefinitionChanged': function(requiresDataRefresh){
                         if(requiresDataRefresh){
-                            this.getChartData();
+                            this.refreshChart.delay(1000);
                         }
                         else{
                             this.loader();
@@ -159,7 +160,7 @@ LABKEY.vis.TimeChartPanel = Ext.extend(Ext.Panel, {
                         this.editorYAxisLeftPanel.setLabel(this.editorMeasurePanel.getDefaultLabel("left"));
                         this.editorYAxisRightPanel.setLabel(this.editorMeasurePanel.getDefaultLabel("right"));
                         this.editorChartsPanel.setMainTitle(this.editorMeasurePanel.getDefaultTitle());
-                        this.getChartData();
+                        this.refreshChart.delay(1000);
 
                         // if all of the measures have been removed, disable any non-relevant elements
                         if (this.editorMeasurePanel.getNumMeasures() == 0)
@@ -194,7 +195,7 @@ LABKEY.vis.TimeChartPanel = Ext.extend(Ext.Panel, {
                     scope: this,
                     'chartDefinitionChanged': function(requiresDataRefresh){
                         if(requiresDataRefresh){
-                            this.getChartData();
+                            this.refreshChart.delay(1000);
                         }
                         else{
                             this.loader();
@@ -214,7 +215,7 @@ LABKEY.vis.TimeChartPanel = Ext.extend(Ext.Panel, {
                     scope: this,
                     'chartDefinitionChanged': function(requiresDataRefresh){
                         if(requiresDataRefresh){
-                            this.getChartData();
+                            this.refreshChart.delay(1000);
                         }
                         else{
                             this.loader();
@@ -235,7 +236,7 @@ LABKEY.vis.TimeChartPanel = Ext.extend(Ext.Panel, {
                     scope: this,
                     'chartDefinitionChanged': function(requiresDataRefresh){
                         if(requiresDataRefresh){
-                            this.getChartData();
+                            this.refreshChart.delay(1000);
                         }
                         else{
                             this.loader();
@@ -264,7 +265,7 @@ LABKEY.vis.TimeChartPanel = Ext.extend(Ext.Panel, {
                             this.editorChartsPanel.groupLayoutChanged = false;
                         }
                         if(requiresDataRefresh){
-                            this.getChartData();
+                            this.refreshChart.delay(1000);
                         }
                         else{
                             this.loader();
@@ -342,7 +343,7 @@ LABKEY.vis.TimeChartPanel = Ext.extend(Ext.Panel, {
                     scope: this,
                     'chartDefinitionChanged': function(requiresDataRefresh){
                         if(requiresDataRefresh){
-                            this.getChartData();
+                            this.refreshChart.delay(500); //Delay is only 500ms here because there is already a buffer when selecting participants/groups
                         }
                         else{
                             this.loader();
@@ -359,7 +360,7 @@ LABKEY.vis.TimeChartPanel = Ext.extend(Ext.Panel, {
                     scope: this,
                     'chartDefinitionChanged': function(requiresDataRefresh){
                         if(requiresDataRefresh){
-                            this.getChartData();
+                            this.refreshChart.delay(500); //Delay is only 500ms here because there is already a buffer when selecting participants/groups
                         }
                         else{
                             this.loader();
@@ -432,6 +433,9 @@ LABKEY.vis.TimeChartPanel = Ext.extend(Ext.Panel, {
             this.loaderName = 'renderLineChart';
             this.viewGridBtn = new Ext.Button({text: "View Data", handler: this.viewDataGrid, scope: this, disabled: true});
             this.viewChartBtn = new Ext.Button({text: "View Chart(s)", handler: this.renderLineChart, scope: this, hidden: true});
+            this.refreshChart = new Ext.util.DelayedTask(function(){
+                this.getChartData();
+            }, this);
 
             // setup exportPDF button and menu (items to be added later)
             // the single button will be used for "single" chart layout
@@ -459,7 +463,7 @@ LABKEY.vis.TimeChartPanel = Ext.extend(Ext.Panel, {
                 listeners : {
                     check : function(cmp, checked){
                         this.displayIndividual = checked;
-                        this.getChartData();
+                        this.refreshChart.delay(1000);
                     },
                     beforerender: function(){
                         this.displayIndividual = this.chartInfo.displayIndividual;
@@ -480,7 +484,7 @@ LABKEY.vis.TimeChartPanel = Ext.extend(Ext.Panel, {
 
                         // enable/disable the aggregate combo box accordingly
                         this.displayAggregateComboBox.setDisabled(!checked);
-                        this.getChartData();
+                        this.refreshChart.delay(1000);
                     },
                     beforerender: function(){
                         this.displayAggregate = this.chartInfo.displayAggregate;
@@ -655,8 +659,7 @@ LABKEY.vis.TimeChartPanel = Ext.extend(Ext.Panel, {
     },
 
     measureMetadataRequestPending:  function() {
-        // mask panel and remove the chart(s)
-        this.getEl().mask("loading...");
+        //remove the chart(s)
         this.clearChartPanel();
 
         // increase the request counter
@@ -675,8 +678,15 @@ LABKEY.vis.TimeChartPanel = Ext.extend(Ext.Panel, {
 
     getChartData: function() {
         // mask panel and remove the chart(s)
-        this.getEl().mask("loading...");
+        this.chart.getEl().mask("loading...");
         this.clearChartPanel();
+
+        // Clear previous chart data.
+        this.individualChartSubjectData = undefined;
+        this.aggregateChartSubjectData = undefined;
+        this.individualData = undefined;
+        this.aggregateData = undefined;
+
         this.loaderCount = 0; //Used to prevent the loader from running until we have recieved all necessary callbacks.
         if((this.displayIndividualCheckbox.disabled === false && this.displayIndividualCheckbox.getValue() === true) || (this.displayIndividualCheckbox.disabled === true)){
             this.loaderCount++;
@@ -998,7 +1008,7 @@ LABKEY.vis.TimeChartPanel = Ext.extend(Ext.Panel, {
     renderLineChart: function(force)
     {
         // mask panel and remove the chart(s)
-        this.getEl().mask("loading...");
+        this.chart.getEl().mask("loading...");
         this.clearChartPanel("loading...");
 
         // get the updated chart information from the varios tabs of the chartEditor
@@ -1219,8 +1229,8 @@ LABKEY.vis.TimeChartPanel = Ext.extend(Ext.Panel, {
         this.chart.doLayout();
 
         // unmask the panel if needed
-        if (this.getEl().isMasked())
-            this.getEl().unmask();
+        if (this.chart.getEl().isMasked())
+            this.chart.getEl().unmask();
     },
 
     generateSeries: function(series, seriesList, aggregate){
@@ -1453,7 +1463,7 @@ LABKEY.vis.TimeChartPanel = Ext.extend(Ext.Panel, {
         // make sure the tempGridInfo is available
         if(typeof this.tempGridInfo == "object") {
             // mask panel and remove the chart(s)
-            this.getEl().mask("loading...");
+            this.chart.getEl().mask("loading...");
             this.clearChartPanel();
             this.loader = this.viewDataGrid;
             this.loaderName = 'viewDataGrid';
@@ -1496,8 +1506,8 @@ LABKEY.vis.TimeChartPanel = Ext.extend(Ext.Panel, {
                 this.viewChartBtn.enable();
                 
                 // unmask the panel if needed
-                if (this.getEl().isMasked())
-                    this.getEl().unmask();
+                if (this.chart.getEl().isMasked())
+                    this.chart.getEl().unmask();
             }, this);
 
             this.chart.removeAll();
@@ -1817,8 +1827,8 @@ LABKEY.vis.TimeChartPanel = Ext.extend(Ext.Panel, {
                 padding: 10,
                 html : "<table width='100%'><tr><td align='center' style='font-style:italic'>" + message + "</td></tr></table>"
             }));
-            if (this.getEl().isMasked)
-                this.getEl().unmask();
+            if (this.chart.getEl().isMasked)
+                this.chart.getEl().unmask();
         }
         this.chart.doLayout();
     },

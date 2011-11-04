@@ -444,7 +444,7 @@ LABKEY.study.CreateStudyWizard = Ext.extend(Ext.util.Observable, {
                         this.existingGroupRadio.setValue(true);
                     } else {
                         this.noGroupRadio.setValue(true);
-                        this.existingGroupRadio.setEnabled(false);
+                        this.existingGroupRadio.setDisabled(true);
                     }
                 },
                 scope: this

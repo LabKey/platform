@@ -53,9 +53,9 @@ LABKEY.vis.ChartEditorChartsPanel = Ext.extend(Ext.FormPanel, {
                         this.oneChartPerSubjectRadio.setVisible(true);
                         if(this.oneChartPerGroupRadio.getValue()){
                             this.oneChartPerSubjectRadio.setValue(true);
+                        } else {
+                            this.fireEvent('chartDefinitionChanged', true);
                         }
-                        this.chartSubjectSelection = "subjects";
-                        this.fireEvent('chartDefinitionChanged', true);
                     }
                 }
             }
@@ -73,10 +73,10 @@ LABKEY.vis.ChartEditorChartsPanel = Ext.extend(Ext.FormPanel, {
                         this.oneChartPerSubjectRadio.setVisible(false);
                         if(this.oneChartPerSubjectRadio.getValue()){
                             this.oneChartPerGroupRadio.setValue(true);
+                        } else {
+                            this.fireEvent('chartDefinitionChanged', true);
                         }
-                        this.chartSubjectSelection = "groups";
                         this.fireEvent('groupLayoutSelectionChanged', true);
-                        this.fireEvent('chartDefinitionChanged', true);
                     }
                 }
             }
@@ -262,7 +262,11 @@ LABKEY.vis.ChartEditorChartsPanel = Ext.extend(Ext.FormPanel, {
     },
 
     getChartSubjectSelection: function(){
-        return this.chartSubjectSelection;
+        if(this.groupsRadio.getValue()){
+            return "groups";
+        } else {
+            return "subjects";
+        }
     },
 
     getLineWidth: function(){
