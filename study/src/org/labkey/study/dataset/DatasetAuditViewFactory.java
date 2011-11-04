@@ -16,16 +16,20 @@
 
 package org.labkey.study.dataset;
 
+import org.apache.commons.lang.StringUtils;
 import org.apache.log4j.Logger;
 import org.labkey.api.audit.AuditLogService;
 import org.labkey.api.audit.SimpleAuditViewFactory;
 import org.labkey.api.audit.query.AuditLogQueryView;
 import org.labkey.api.data.*;
+import org.labkey.api.data.RenderContext;
 import org.labkey.api.exp.PropertyType;
 import org.labkey.api.exp.property.Domain;
 import org.labkey.api.exp.property.PropertyService;
+import org.labkey.api.query.AliasedColumn;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.FilteredTable;
+import org.labkey.api.query.QueryService;
 import org.labkey.api.query.QueryView;
 import org.labkey.api.security.User;
 import org.labkey.api.util.PageFlowUtil;
@@ -39,11 +43,16 @@ import org.labkey.study.controllers.DatasetController;
 import org.labkey.study.controllers.StudyController;
 import org.labkey.study.model.DataSetDefinition;
 
+import java.awt.image.renderable.*;
 import java.io.IOException;
 import java.io.Writer;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
+import java.io.UnsupportedEncodingException;
+import java.net.URLDecoder;
 
 /**
  * IntKey1 is the dataset row id
@@ -160,6 +169,62 @@ public class DatasetAuditViewFactory extends SimpleAuditViewFactory
                 };
             }
         });
+
+
+        FieldKey oldFieldKey = FieldKey.fromParts("Property", "oldRecordMap");
+        FieldKey newFieldKey = FieldKey.fromParts("Property", "newRecordMap");
+
+        Map<FieldKey,ColumnInfo> cols = QueryService.get().getColumns(table, Arrays.<FieldKey>asList(oldFieldKey, newFieldKey));
+        ColumnInfo oldCol = cols.get(oldFieldKey);
+        ColumnInfo newCol = cols.get(newFieldKey);
+
+        oldCol.setDisplayColumnFactory(new DisplayColumnFactory()
+        {
+            public DisplayColumn createRenderer(final ColumnInfo colInfo)
+            {
+                return new DataColumn(colInfo)
+                {
+                    public String getFormattedValue(RenderContext ctx)
+                    {
+                        return formatPropertyMap((String)getValue(ctx));
+                    }
+                    public String getTsvFormattedValue(RenderContext ctx){
+                        return formatPropertyMapForExport((String)getValue(ctx));
+                    }
+                    public String getDisplayValue(RenderContext ctx)
+                    {
+                        return formatPropertyMapForExport((String)getValue(ctx));
+                    }
+
+                };
+            }
+        });
+
+        newCol.setDisplayColumnFactory(new DisplayColumnFactory()
+        {
+            public DisplayColumn createRenderer(final ColumnInfo colInfo)
+            {
+                return new DataColumn(colInfo)
+                {
+                    public String getFormattedValue(RenderContext ctx)
+                    {
+                        return formatPropertyMap((String)getValue(ctx));
+                    }
+                    public String getTsvFormattedValue(RenderContext ctx){
+                        return formatPropertyMapForExport((String)getValue(ctx));
+                    }
+                    public Object getDisplayValue(RenderContext ctx)
+                    {
+                        return formatPropertyMapForExport((String)getValue(ctx));
+                    }
+
+                };
+            }
+
+        });
+
+       table.addColumn(new AliasedColumn(table, "OldValues", oldCol));
+       table.addColumn(new AliasedColumn(table, "NewValues", newCol));
     }
 
     private void addDetailsColumn(AuditLogQueryView view)
@@ -274,5 +339,56 @@ public class DatasetAuditViewFactory extends SimpleAuditViewFactory
 
             out.write(PageFlowUtil.textLink("details", url));
         }
+    }
+
+    public String formatPropertyMap(String contents)
+    {
+        if (contents == null)
+            return "";
+
+        contents = contents.replaceAll("=",": ");
+        String[] contentsArray = contents.split("&");
+        String[] newContents = new String[contentsArray.length];
+        Integer idx = 0;
+        for(String e : contentsArray)
+        {
+            try
+            {
+                e = URLDecoder.decode(e, "UTF-8");
+            }
+            catch (UnsupportedEncodingException error)
+            {
+                throw new IllegalArgumentException("UTF-8 encoding not supported on this machine", error);
+            }
+            newContents[idx] = (PageFlowUtil.filter(e));
+            newContents[idx] = e;
+            idx++;
+        }
+        return StringUtils.join(newContents, "<br>");
+    }
+
+    public String formatPropertyMapForExport(String contents)
+    {
+        if (contents == null)
+            return "";
+
+        contents = contents.replaceAll("=",": ");
+        String[] contentsArray = contents.split("&");
+        String[] newContents = new String[contentsArray.length];
+        Integer idx = 0;
+        for(String e : contentsArray)
+        {
+            try
+            {
+                e = URLDecoder.decode(e, "UTF-8");
+            }
+            catch (UnsupportedEncodingException error)
+            {
+                throw new IllegalArgumentException("UTF-8 encoding not supported on this machine", error);
+            }
+            newContents[idx] = e;
+            idx++;
+        }
+        return StringUtils.join(newContents, "\n");
     }
 }
