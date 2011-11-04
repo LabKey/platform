@@ -49,7 +49,8 @@ public class TableWrapperDynaClass extends StringWrapperDynaClass
         if (null == tdc)
         {
             tdc = new TableWrapperDynaClass(tinfo);
-            _dynClasses.put(tinfo, tdc);
+            if (tinfo instanceof SchemaTableInfo)
+                _dynClasses.put(tinfo, tdc);
         }
         return tdc;
     }
