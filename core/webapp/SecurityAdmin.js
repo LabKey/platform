@@ -802,7 +802,14 @@ var UserInfoPopup = Ext.extend(Ext.Window,{
                     user = users[i];
                     var isMemberGroup = user.Type == 'g' || user.Type == 'r';
                     html.push("<tr><td width=100>");
-                    html.push(isMemberGroup ? "<b>" + $h(user.Name) + "</b>" : $h(user.Name));
+                    if (isMemberGroup)
+                    {
+                        html.push("<a href='" + $url('security', 'group',this.cache.projectId,{id:user.UserId}) + "'><b>" + $h(user.Name) + "</b></a>");
+                    }
+                    else
+                    {
+                        html.push($h(user.Name));
+                    }
                     html.push("</td>");
                     if (canRemove)
                     {
@@ -810,7 +817,7 @@ var UserInfoPopup = Ext.extend(Ext.Window,{
                         html.push('<td><a class="labkey-button" href="#" id="' + removeWrapper + '"><span>remove</span></a></td>');
                     }
                     html.push("<td>");
-                    html.push(isMemberGroup ? "&nbsp;" : _open('permissions', $url('user','userAccess',this.cache.projectId,{userId:user.UserId})));
+                    html.push(isMemberGroup ? _open('permissions', $url('security','groupPermission',this.cache.projectId,{id:user.UserId})) : _open('permissions', $url('user','userAccess',this.cache.projectId,{userId:user.UserId})));
                     html.push("</td></tr>");
                 }
                 html.push("</table>");

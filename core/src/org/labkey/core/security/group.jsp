@@ -24,6 +24,7 @@
 <%@ page import="org.labkey.core.security.GroupView" %>
 <%@ page import="org.labkey.api.view.WebPartView" %>
 <%@ page import="org.labkey.api.security.UserPrincipal" %>
+<%@ page import="org.labkey.api.security.SecurityUrls" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%
@@ -112,6 +113,7 @@ else
         Integer userId = member.getUserId();
         String memberName = member.getName();
         boolean isGroup = member.getType().equals("g");
+        String groupPath = (c.isRoot() ? member.getName() : c.getPath() + "/" + member.getName());
         %>
         <tr>
             <td>
@@ -120,7 +122,7 @@ else
             <td>
                 <% if (isGroup)
                    {
-                    %><b><%= h(memberName) %></b><%
+                    %><a href="<%= urlProvider(SecurityUrls.class).getManageGroupURL(c, groupPath) %>"><b><%= h(memberName) %></b></a><%
                    }
                    else
                    {
@@ -135,7 +137,7 @@ else
                    }
                    else
                    {
-                    %>&nbsp;<%
+                    %><%= textLink("permissions", urlProvider(SecurityUrls.class).getGroupPermissionURL(c, userId)) %><%
                    }
                 %>
             </td>

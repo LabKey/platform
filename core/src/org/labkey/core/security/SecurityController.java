@@ -15,6 +15,8 @@
  */
 package org.labkey.core.security;
 
+import jxl.write.WritableSheet;
+import jxl.write.WriteException;
 import org.apache.commons.lang.StringUtils;
 import org.junit.Assert;
 import org.junit.Test;
@@ -31,11 +33,13 @@ import org.labkey.api.action.SpringActionController;
 import org.labkey.api.audit.AuditLogEvent;
 import org.labkey.api.audit.AuditLogService;
 import org.labkey.api.audit.query.AuditLogQueryView;
+import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.CoreSchema;
 import org.labkey.api.data.DataRegion;
+import org.labkey.api.data.ExcelColumn;
 import org.labkey.api.data.ExcelWriter;
 import org.labkey.api.data.ObjectFactory;
 import org.labkey.api.data.RenderContext;
@@ -98,6 +102,7 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletRequestWrapper;
 import javax.servlet.http.HttpServletResponse;
 import java.io.Writer;
+import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -1077,12 +1082,39 @@ public class SecurityController extends SpringActionController
             rgn.setColumns(columns);
             RenderContext ctx = new RenderContext(getViewContext());
             List<Integer> userIds = new ArrayList<Integer>();
+            final List<Pair<Integer, String>> memberGroups = new ArrayList<Pair<Integer, String>>();
             for (Pair<Integer, String> member : members)
-                userIds.add(member.getKey());
+            {
+                Group g = SecurityManager.getGroup(member.getKey());
+                if (null == g)
+                {
+                    userIds.add(member.getKey());
+                }
+                else
+                {
+                    memberGroups.add(member);
+                }
+            }
             SimpleFilter filter = new SimpleFilter();
             filter.addInClause("UserId", userIds);
             ctx.setBaseFilter(filter);
-            ExcelWriter ew = new ExcelWriter(rgn.getResultSet(ctx), rgn.getDisplayColumns());
+            ExcelWriter ew = new ExcelWriter(rgn.getResultSet(ctx), rgn.getDisplayColumns())
+            {
+                @Override
+                public void renderGrid(WritableSheet sheet, List<ExcelColumn> visibleColumns) throws SQLException, WriteException, MaxRowsExceededException
+                {
+                    RenderContext ctx = new RenderContext(HttpView.currentContext());
+                    for (Pair<Integer, String> memberGroup : memberGroups)
+                    {
+                        Map<String, Object> row = new CaseInsensitiveHashMap<Object>();
+                        row.put("displayName", memberGroup.getValue());
+                        row.put("userId", memberGroup.getKey());
+                        ctx.setRow(row);
+                        renderGridRow(sheet, ctx, visibleColumns);
+                    }
+                    super.renderGrid(sheet, visibleColumns);
+                }
+            };
             ew.setAutoSize(true);
             ew.setSheetName(group + " Members");
             ew.setFooter(group + " Members");
