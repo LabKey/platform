@@ -178,53 +178,59 @@ public class DatasetAuditViewFactory extends SimpleAuditViewFactory
         ColumnInfo oldCol = cols.get(oldFieldKey);
         ColumnInfo newCol = cols.get(newFieldKey);
 
-        oldCol.setDisplayColumnFactory(new DisplayColumnFactory()
-        {
-            public DisplayColumn createRenderer(final ColumnInfo colInfo)
+        if(oldCol != null){
+            oldCol.setDisplayColumnFactory(new DisplayColumnFactory()
             {
-                return new DataColumn(colInfo)
+                public DisplayColumn createRenderer(final ColumnInfo colInfo)
                 {
-                    public String getFormattedValue(RenderContext ctx)
+                    return new DataColumn(colInfo)
                     {
-                        return formatPropertyMap((String)getValue(ctx));
-                    }
-                    public String getTsvFormattedValue(RenderContext ctx){
-                        return formatPropertyMapForExport((String)getValue(ctx));
-                    }
-                    public String getDisplayValue(RenderContext ctx)
-                    {
-                        return formatPropertyMapForExport((String)getValue(ctx));
-                    }
+                        public String getFormattedValue(RenderContext ctx)
+                        {
+                            return formatPropertyMap((String)getValue(ctx));
+                        }
+                        public String getTsvFormattedValue(RenderContext ctx){
+                            return formatPropertyMapForExport((String)getValue(ctx));
+                        }
+                        public String getDisplayValue(RenderContext ctx)
+                        {
+                            return formatPropertyMapForExport((String)getValue(ctx));
+                        }
 
-                };
-            }
-        });
+                    };
+                }
+            });
 
-        newCol.setDisplayColumnFactory(new DisplayColumnFactory()
+            table.addColumn(new AliasedColumn(table, "OldValues", oldCol));
+        }
+
+        if(newCol != null)
         {
-            public DisplayColumn createRenderer(final ColumnInfo colInfo)
+            newCol.setDisplayColumnFactory(new DisplayColumnFactory()
             {
-                return new DataColumn(colInfo)
+                public DisplayColumn createRenderer(final ColumnInfo colInfo)
                 {
-                    public String getFormattedValue(RenderContext ctx)
+                    return new DataColumn(colInfo)
                     {
-                        return formatPropertyMap((String)getValue(ctx));
-                    }
-                    public String getTsvFormattedValue(RenderContext ctx){
-                        return formatPropertyMapForExport((String)getValue(ctx));
-                    }
-                    public Object getDisplayValue(RenderContext ctx)
-                    {
-                        return formatPropertyMapForExport((String)getValue(ctx));
-                    }
+                        public String getFormattedValue(RenderContext ctx)
+                        {
+                            return formatPropertyMap((String)getValue(ctx));
+                        }
+                        public String getTsvFormattedValue(RenderContext ctx){
+                            return formatPropertyMapForExport((String)getValue(ctx));
+                        }
+                        public Object getDisplayValue(RenderContext ctx)
+                        {
+                            return formatPropertyMapForExport((String)getValue(ctx));
+                        }
 
-                };
-            }
+                    };
+                }
 
-        });
+            });
 
-       table.addColumn(new AliasedColumn(table, "OldValues", oldCol));
-       table.addColumn(new AliasedColumn(table, "NewValues", newCol));
+            table.addColumn(new AliasedColumn(table, "NewValues", newCol));
+        }
     }
 
     private void addDetailsColumn(AuditLogQueryView view)
