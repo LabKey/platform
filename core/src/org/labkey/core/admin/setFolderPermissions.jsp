@@ -178,6 +178,7 @@
                         schemaName: 'core',
                         queryName: 'containers',
                         columns: 'entityId,name',
+                        sort: 'name',
                         autoLoad: true,
                         filterArray: [
                             LABKEY.Filter.create('containerType', 'project', LABKEY.Filter.Types.EQUAL)
