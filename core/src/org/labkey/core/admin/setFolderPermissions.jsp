@@ -170,6 +170,7 @@
                     style: 'padding-left: 20px;padding-top:3px;',
                     //fieldLabel: 'Choose Project',
                     labelAlign: 'top',
+                    editable: false,
                     displayField: 'Name',
                     valueField: 'EntityId',
                     store: Ext4.create('LABKEY.ext4.Store', {
@@ -177,6 +178,7 @@
                         schemaName: 'core',
                         queryName: 'containers',
                         columns: 'entityId,name',
+                        autoLoad: true,
                         filterArray: [
                             LABKEY.Filter.create('containerType', 'project', LABKEY.Filter.Types.EQUAL)
                         ],
