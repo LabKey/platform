@@ -106,6 +106,7 @@ public class CreateAncillaryStudyAction extends MutatingApiAction<EmphasisStudyD
     private StudyImpl _sourceStudy;
     private Set<DataSetDefinition> _datasets = new HashSet<DataSetDefinition>();
     private List<ParticipantCategory> _participantCategories = new ArrayList<ParticipantCategory>();
+    private boolean _destFolderCreated;
 
     public CreateAncillaryStudyAction()
     {
@@ -119,6 +120,7 @@ public class CreateAncillaryStudyAction extends MutatingApiAction<EmphasisStudyD
         ApiSimpleResponse resp = new ApiSimpleResponse();
 
         DbScope scope = StudySchema.getInstance().getSchema().getScope();
+        boolean success = false;
         try
         {
             scope.ensureTransaction();
@@ -175,9 +177,13 @@ public class CreateAncillaryStudyAction extends MutatingApiAction<EmphasisStudyD
                 resp.put("success", true);
             }
             scope.commitTransaction();
+            success = true;
         }
         finally
         {
+            if (!success && _destFolderCreated)
+                ContainerManager.delete(_dstContainer, getViewContext().getUser());
+            
             scope.closeConnection();
         }
 
@@ -386,7 +392,11 @@ public class CreateAncillaryStudyAction extends MutatingApiAction<EmphasisStudyD
     @Override
     public void validateForm(EmphasisStudyDefinition form, Errors errors)
     {
+        Container c = ContainerManager.getForPath(form.getDstPath());
+        _destFolderCreated = c == null;
+
         // make sure the folder, if already existing doesn't already contain a study
+
         _dstContainer = ContainerManager.ensureContainer(form.getDstPath());
         if (_dstContainer != null)
         {

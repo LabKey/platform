@@ -5345,7 +5345,8 @@ public class StudyController extends BaseStudyController
                         _successURL = new ActionURL(PageFlowUtil.decode(redirect));
                 }
 
-                schema.getScope().commitTransaction();
+                if (!errors.hasErrors())
+                    schema.getScope().commitTransaction();
             }
             finally
             {

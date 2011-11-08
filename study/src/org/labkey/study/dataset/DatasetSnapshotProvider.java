@@ -21,17 +21,15 @@ import org.labkey.api.action.NullSafeBindException;
 import org.labkey.api.action.SpringActionController;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.data.ColumnInfo;
-import org.labkey.api.data.CompareType;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.DbSchema;
 import org.labkey.api.data.DisplayColumn;
+import org.labkey.api.data.Results;
 import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.TSVGridWriter;
 import org.labkey.api.data.TableInfo;
-import org.labkey.api.data.UnionTableInfo;
 import org.labkey.api.exp.property.Domain;
-import org.labkey.api.exp.property.DomainProperty;
 import org.labkey.api.exp.property.PropertyService;
 import org.labkey.api.query.BatchValidationException;
 import org.labkey.api.query.CustomView;
@@ -73,14 +71,15 @@ import org.labkey.study.model.ParticipantGroupManager;
 import org.labkey.study.model.StudyImpl;
 import org.labkey.study.model.StudyManager;
 import org.labkey.study.query.DataSetQuerySettings;
+import org.labkey.study.writer.DatasetWriter;
 import org.springframework.validation.BindException;
 
 import javax.servlet.ServletContextEvent;
-import javax.servlet.ServletException;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Calendar;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
@@ -163,6 +162,31 @@ public class DatasetSnapshotProvider extends AbstractSnapshotProvider implements
                 addParameter(ActionURL.Param.redirectUrl, PageFlowUtil.encode(context.getActionURL().getLocalURIString()));
     }
 
+    private SimpleFilter createParticipantGroupFilter(ViewContext context, QuerySnapshotDefinition qsDef)
+    {
+        // create a filter for any participant groups associated with this snapshot
+        List<Integer> groups = qsDef.getParticipantGroups();
+        SimpleFilter filter = new SimpleFilter();
+        if (!groups.isEmpty())
+        {
+            Set<String> ptids = new HashSet<String>();
+
+            for (Integer groupId : groups)
+            {
+                ParticipantCategory category = ParticipantGroupManager.getInstance().getParticipantCategory(qsDef.getContainer(), context.getUser(), groupId);
+
+                if (category != null)
+                {
+                    for (ParticipantGroup group : category.getGroups())
+                        ptids.addAll(Arrays.asList(group.getParticipantIds()));
+                }
+            }
+            SimpleFilter.InClause inClause = new SimpleFilter.InClause(StudyService.get().getSubjectColumnName(qsDef.getContainer()), ptids);
+            filter.addClause(inClause);
+        }
+        return filter;
+    }
+
     public void createSnapshot(ViewContext context, QuerySnapshotDefinition qsDef, BindException errors) throws Exception
     {
         DbSchema schema = StudyManager.getSchema();
@@ -183,9 +207,16 @@ public class DatasetSnapshotProvider extends AbstractSnapshotProvider implements
 
                     if (view != null && !errors.hasErrors())
                     {
+                        TableInfo tinfo = view.getTable();
+                        SimpleFilter filter = createParticipantGroupFilter(context, qsDef);
+
+                        Collection<ColumnInfo> columns = DatasetWriter.getColumnsToExport(tinfo, def, false);
+                        Results results = QueryService.get().select(tinfo, columns, filter, null);
+
                         // TODO: Create class ResultSetDataLoader and use it here instead of round-tripping through a TSV StringBuilder
                         StringBuilder sb = new StringBuilder();
-                        TSVGridWriter tsvWriter = view.getTsvWriter();
+                        TSVGridWriter tsvWriter = new TSVGridWriter(results);
+                        tsvWriter.setApplyFormats(false);
                         tsvWriter.setColumnHeaderType(TSVGridWriter.ColumnHeaderType.queryColumnName);
                         tsvWriter.write(sb);
 
@@ -239,28 +270,6 @@ public class DatasetSnapshotProvider extends AbstractSnapshotProvider implements
             DataSetQuerySettings settings = new DataSetQuerySettings(context.getBindPropertyValues(), QueryView.DATAREGIONNAME_DEFAULT);
 
             settings.setQueryName(queryDef.getName());
-
-            // set the base filter for any specified participant groups
-            List<Integer> groups = qsDef.getParticipantGroups();
-            if (!groups.isEmpty())
-            {
-                SimpleFilter filter = new SimpleFilter();
-                Set<String> ptids = new HashSet<String>();
-
-                for (Integer groupId : groups)
-                {
-                    ParticipantCategory category = ParticipantGroupManager.getInstance().getParticipantCategory(qsDef.getContainer(), context.getUser(), groupId);
-
-                    if (category != null)
-                    {
-                        for (ParticipantGroup group : category.getGroups())
-                            ptids.addAll(Arrays.asList(group.getParticipantIds()));
-                    }
-                }
-                SimpleFilter.InClause inClause = new SimpleFilter.InClause(StudyService.get().getSubjectColumnName(queryDef.getContainer()), ptids);
-                filter.addClause(inClause);
-                settings.setBaseFilter(filter);
-            }
 
             QueryView view = ((UserSchema)querySchema).createView(context, settings, errors);
 
@@ -347,9 +356,16 @@ public class DatasetSnapshotProvider extends AbstractSnapshotProvider implements
 
                     if (view != null && !errors.hasErrors())
                     {
-                        // TODO: Create and use a ResultSetDataLoader here instead of round-tripping through a TSV StringBuilder
+                        TableInfo tinfo = view.getTable();
+                        SimpleFilter filter = createParticipantGroupFilter(form.getViewContext(), def);
+
+                        Collection<ColumnInfo> columns = DatasetWriter.getColumnsToExport(tinfo, dsDef, false);
+                        Results results = QueryService.get().select(tinfo, columns, filter, null);
+
+                        // TODO: Create class ResultSetDataLoader and use it here instead of round-tripping through a TSV StringBuilder
                         StringBuilder sb = new StringBuilder();
-                        TSVGridWriter tsvWriter = view.getTsvWriter();
+                        TSVGridWriter tsvWriter = new TSVGridWriter(results);
+                        tsvWriter.setApplyFormats(false);
                         tsvWriter.setColumnHeaderType(TSVGridWriter.ColumnHeaderType.queryColumnName);
                         tsvWriter.write(sb);
 
