@@ -3983,6 +3983,7 @@ public class AdminController extends SpringActionController
                     return false;
                 }
                 Container source = ContainerManager.getForId(targetProject);
+                assert source != null;
                 SecurityPolicy op = SecurityManager.getPolicy(source);
                 MutableSecurityPolicy np = new MutableSecurityPolicy(c);
                 for (RoleAssignment assignment : op.getAssignments()){

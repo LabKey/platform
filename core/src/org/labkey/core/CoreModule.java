@@ -181,6 +181,8 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
         return CORE_MODULE_NAME;
     }
 
+    public static final String WEB_PART_NAME = "Projects";
+
     public double getVersion()
     {
         return 11.24;
@@ -402,6 +404,15 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
         ContainerManager.bootstrapContainer(ContainerManager.HOME_PROJECT_PATH, siteAdminRole, readerRole, readerRole);
 
         getUpgradeCode().installDefaultMvIndicators();
+
+        try
+        {
+            addWebPart(WEB_PART_NAME, ContainerManager.getHomeContainer(), HttpView.BODY, 0);
+        }
+        catch (SQLException e)
+        {
+            Logger.getLogger(CoreModule.class).error("Unable to set up home folder", e);
+        }
     }
 
 
