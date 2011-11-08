@@ -367,20 +367,6 @@ td.labkey-main-menu a.selected
     color: #<%= borderTitle %>;
 }
 
-select:focus, input:focus {
-    border-color: #<%= link %>;
-}
-
-.labkey-main-search input:focus
-{
-    border-color: #<%= link %>;
-}
-
-input.x-form-field:focus, textarea.x-form-field:focus
-{
-    border-color: #<%= link %>;
-}
-
 /* The table that contains the expandable nav panels */
 table.labkey-expandable-nav
 {

@@ -134,23 +134,6 @@ select:focus
     border:  1px solid;
 }
 
-input:focus
-{
-    border-color: #E0E6EA; /*#b4b4b4;*/
-    border: 2px solid;
-}
-
-input[type="radio"], input[type="checkbox"]
-{
-    border: 2px inset;
-    border-color: transparent !important;
-}
-
-input.x-form-field:focus, textarea.x-form-field:focus
-{
-    border: 1px solid;
-}
-
 fieldset
 {
     border: 1px solid #b4b4b4;

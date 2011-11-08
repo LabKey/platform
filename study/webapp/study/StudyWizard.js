@@ -192,10 +192,22 @@ LABKEY.study.CreateStudyWizard = Ext.extend(Ext.util.Observable, {
             folderTree.toggleCollapse();
         }
 
+        var protocolTip = '' +
+            '<div>' +
+                '<div class=\'g-tip-header\'>' +
+                    '<span>Protocol Document</span>' +
+                '</div>' +
+                '<div class=\'g-tip-subheader\'>' +
+                    'A document that describes the objective, design, and orgainzation of your study.' +
+                    ' Often, this document contains a study plan, the types of participants, as well as scheduling.' +
+                '</div>' +
+            '</div>';
+
         var protocolDocField = new Ext.form.FileUploadField({
             emptyText: 'Select a protocol document',
             fieldLabel: 'Protocol',
             name: 'protocolDoc',
+            gtip : protocolTip,
             height: 24,
             buttonText: 'Browse',
             buttonCfg: { cls: "labkey-button" },
@@ -264,7 +276,7 @@ LABKEY.study.CreateStudyWizard = Ext.extend(Ext.util.Observable, {
             enableDD: false,
             animate : true,
             useArrows : true,
-            height: 250,
+            height: 240,
             collapsible : true,
             collapsed: true,
             autoScroll: true,
