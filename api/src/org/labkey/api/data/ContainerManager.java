@@ -76,7 +76,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Random;
 import java.util.Set;
-import java.util.TreeSet;
 import java.util.concurrent.CopyOnWriteArrayList;
 
 /**
@@ -507,11 +506,12 @@ public class ContainerManager
     }
 
 
-    static String[] emptyStringArray = new String[0];
+    private static final String[] emptyStringArray = new String[0];
 
     public static Map<String, Container> getChildrenMap(Container parent)
     {
         String[] childIds = (String[]) CACHE.get(CONTAINER_CHILDREN_PREFIX + parent.getId());
+
         if (null == childIds)
         {
             try
@@ -555,8 +555,8 @@ public class ContainerManager
 
         if (childIds == emptyStringArray)
             return Collections.emptyMap();
-        // Use a LinkedHashMap to preserve the order defined by the user - they're not necessarily
-        // alphabetical
+
+        // Use a LinkedHashMap to preserve the order defined by the user - they're not necessarily alphabetical
         Map<String, Container> ret = new LinkedHashMap<String, Container>();
         for (String id : childIds)
         {
@@ -813,18 +813,8 @@ public class ContainerManager
     }
 
 
-    public static NavTree getProjectList(ViewContext context)
-    {
-        if (context.getUser().isAdministrator())
-            return getProjectListForAdmin(context);
-        else
-            return getProjectListForUser(context);
-    }
-
-
     public static Container getHomeContainer()
     {
-        //TODO: Allow people to set the home container?
         return getForPath(HOME_PROJECT_PATH);
     }
 
@@ -833,107 +823,35 @@ public class ContainerManager
         return ContainerManager.getChildren(ContainerManager.getRoot());
     }
 
-    private static NavTree getProjectListForAdmin(ViewContext context)
+
+    public static NavTree getProjectList(ViewContext context)
     {
-        // CONSIDER: use UserManager.getAdmin() here for user
         NavTree navTree = (NavTree) NavTreeManager.getFromCache(PROJECT_LIST_ID, context);
+
         if (null != navTree)
             return navTree;
 
+        User user = context.getUser();
         NavTree list = new NavTree("Projects");
         List<Container> projects = ContainerManager.getProjects();
 
         for (Container project : projects)
         {
-            ActionURL startURL = PageFlowUtil.urlProvider(ProjectUrls.class).getStartURL(project);
+            if (project.shouldDisplay(user) && project.hasPermission(user, ReadPermission.class))
+            {
+                ActionURL startURL = PageFlowUtil.urlProvider(ProjectUrls.class).getStartURL(project);
 
-            if (project.equals(getHomeContainer()))
-                list.addChild(0, new NavTree("Home", startURL));
-            else
-                list.addChild(project.getName(), startURL);
+                if (project.equals(getHomeContainer()))
+                    list.addChild(0, new NavTree("Home", startURL));
+                else
+                    list.addChild(project.getName(), startURL);
+            }
         }
+
         list.setId(PROJECT_LIST_ID);
         NavTreeManager.cacheTree(list, context.getUser());
+
         return list;
-    }
-
-
-    private static NavTree getProjectListForUser(ViewContext context)
-    {
-        NavTree tree = (NavTree) NavTreeManager.getFromCache(PROJECT_LIST_ID, context);
-        if (null != tree)
-            return tree;
-        User user = context.getUser();
-        try
-        {
-            NavTree list = new NavTree("Projects");
-            // Use a tree set so that we only add each container once, and they're sorted correctly
-            Set<Container> containerSet = new TreeSet<Container>();
-
-            String[] ids;
-
-            // If user is being impersonated within a project then only that project should appear in the list
-            if (user.isImpersonated() && null != user.getImpersonationProject())
-            {
-                ids = new String[]{user.getImpersonationProject().getId()};
-            }
-            else
-            {
-                ids = Table.executeArray(
-                    CORE.getSchema(),
-                    "SELECT DISTINCT Container\n" +
-                            "FROM " + CORE.getTableInfoPrincipals() + " P INNER JOIN " + CORE.getTableInfoMembers() + " M ON P.UserId = M.GroupId\n" +
-                            "WHERE M.UserId = ?",
-                    new Object[]{user.getUserId()},
-                    String.class);
-            }
-
-            for (String id : ids)
-            {
-                if (id == null)
-                    continue;
-                Container c = ContainerManager.getForId(id);
-                if (null == c || !c.isProject() || !c.shouldDisplay())
-                    continue;
-                containerSet.add(c);
-            }
-
-            // find all projects that have public permissions to root directory
-            Container root = ContainerManager.getRoot();
-            ids = Table.executeArray(
-                    CORE.getSchema(),
-                    "SELECT EntityId\n" +
-                            "FROM " + CORE.getTableInfoContainers() + "\n" +
-                            "WHERE Parent = ? ORDER BY SortOrder, LOWER(Name)",
-                    new Object[]{root.getId()},
-                    String.class);
-
-            for (String id : ids)
-            {
-                Container c = ContainerManager.getForId(id);
-                if (null == c || !c.shouldDisplay())
-                    continue;
-                //ensure that user has permissions on container, and that container is not already in nav tree set
-                if (c.hasPermission(user, ReadPermission.class))
-                {
-                    containerSet.add(c);
-                }
-            }
-            
-            for (Container c : containerSet)
-            {
-                String name = c.equals(getHomeContainer()) ? "Home" : c.getName();
-                list.addChild(name, PageFlowUtil.urlProvider(ProjectUrls.class).getStartURL(c));
-            }
-
-            list.setId(PROJECT_LIST_ID);
-            NavTreeManager.cacheTree(list, user);
-            return list;
-        }
-        catch (SQLException x)
-        {
-            throw new RuntimeSQLException(x);
-        }
     }
 
 

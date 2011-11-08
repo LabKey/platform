@@ -637,7 +637,7 @@ public abstract class BaseViewAction<FORM> extends BaseCommandController impleme
         if (null != permissionsRequired)
         {
             SecurityPolicy policy = SecurityManager.getPolicy(c);
-            if(!policy.hasOneOf(user, permissionsRequired, contextualRoles))
+            if (!policy.hasOneOf(user, permissionsRequired, contextualRoles))
                 throw new UnauthorizedException();
         }
 

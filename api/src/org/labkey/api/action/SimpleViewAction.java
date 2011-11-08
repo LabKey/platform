@@ -42,14 +42,13 @@ public abstract class SimpleViewAction<FORM> extends BaseViewAction<FORM> implem
 
     public ModelAndView handleRequest() throws Exception
     {
-        FORM form = null;
-        BindException errors = null;
+        BindException errors;
         if (null == getCommandClass())
             errors = new NullSafeBindException(new Object(), "command");
         else
             errors = bindParameters(getPropertyValues());
 
-        form = (FORM)errors.getTarget();
+        FORM form = (FORM)errors.getTarget();
         validate(form, errors);
 
         ModelAndView v;

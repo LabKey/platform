@@ -34,4 +34,5 @@ public interface UserUrls extends UrlProvider
     ActionURL getUserDetailsURL(Container container, int userId, @Nullable URLHelper returnURL);
     ActionURL getUserDetailsURL(Container c, @Nullable URLHelper returnURL);
     ActionURL getUserUpdateURL(URLHelper returnURL, int userId);
+    ActionURL getImpersonateGroupURL(Container c, int groupId, ActionURL returnURL);
 }

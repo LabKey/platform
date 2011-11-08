@@ -74,7 +74,16 @@ public class TableSelector extends BaseSelector
     @Override
     SQLFragment getSql()
     {
+        // TODO: Handle offset and limit
         return QueryService.get().getSelectSQL(_table, _columns, _filter, _sort, Table.ALL_ROWS, Table.NO_OFFSET, false);
+    }
+
+    @Override
+    protected SQLFragment getSqlForRowcount()
+    {
+        // TODO: Handle offset and limit
+        // Ignore specified columns; only need to select PK column(s)
+        return QueryService.get().getSelectSQL(_table, _table.getPkColumns(), _filter, _sort, Table.ALL_ROWS, Table.NO_OFFSET, false);
     }
 
     public static class TestCase extends Assert

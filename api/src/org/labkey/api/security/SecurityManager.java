@@ -44,6 +44,7 @@ import org.labkey.api.data.Table;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.TableSelector;
 import org.labkey.api.module.ModuleLoader;
+import org.labkey.api.security.permissions.AdminPermission;
 import org.labkey.api.security.permissions.Permission;
 import org.labkey.api.security.roles.FolderAdminRole;
 import org.labkey.api.security.roles.NoPermissionsRole;
@@ -422,8 +423,19 @@ public class SecurityManager
                 // u = sessionUser.cloneUser();
                 assert sessionUser._groups == null;
                 sessionUser._groups = null;
-                u = sessionUser;
-//                u = new LimitedUser(sessionUser, new int[]{Group.groupGuests, Group.groupUsers, 3213});  // Test "impersonate group" idea
+
+                // Is user impersonating a group?
+                Group group = (Group)session.getAttribute(IMPERSONATE_GROUP_KEY);
+
+                if (null != group)
+                {
+                    u = new LimitedUser(sessionUser, getImpersonationGroups(sessionUser, group));
+                    u.setImpersonatingGroup(group);
+                }
+                else
+                {
+                    u = sessionUser;
+                }
             }
         }
 
@@ -453,6 +465,7 @@ public class SecurityManager
     private static final String IMPERSONATING_USER_ID_KEY = User.class.getName() + "$impersonatingUserId";
     private static final String USER_ID_KEY = User.class.getName() + "$userId";
     private static final String IMPERSONATORS_SESSION_MAP_KEY = "ImpersonatorsSessionMapKey";
+    private static final String IMPERSONATE_GROUP_KEY = "ImpersonatGroupKey";
 
     public static void setAuthenticatedUser(HttpServletRequest request, User user, @Nullable User impersonatingUser, @Nullable Container project, @Nullable URLHelper returnURL)
     {
@@ -480,7 +493,7 @@ public class SecurityManager
     }
 
 
-    public static void impersonate(ViewContext viewContext, User impersonatedUser, Container project, URLHelper returnURL)
+    public static void impersonateUser(ViewContext viewContext, User impersonatedUser, @Nullable Container project, URLHelper returnURL)
     {
         HttpServletRequest request = viewContext.getRequest();
         User adminUser = viewContext.getUser();
@@ -505,6 +518,68 @@ public class SecurityManager
                 adminUser.getEmail() + " impersonated " + impersonatedUser.getEmail());
         AuditLogService.get().addEvent(viewContext, UserManager.USER_AUDIT_EVENT, impersonatedUser.getUserId(),
                 impersonatedUser.getEmail() + " was impersonated by " + adminUser.getEmail());
+    }
+
+
+    public static void impersonateGroup(ViewContext viewContext, Group group, URLHelper returnURL)
+    {
+        // Validate that user can impersonate this group
+        getImpersonationGroups(viewContext.getUser(), group);
+
+        HttpServletRequest request = viewContext.getRequest();
+        HttpSession session = request.getSession(true);
+
+        session.setAttribute(IMPERSONATE_GROUP_KEY, group);
+
+        // TODO: Save resturnURL
+        // TODO: Need to audit?
+    }
+
+
+    public static int[] getImpersonationGroups(User user, Group group)
+    {
+        String id = group.getContainer();
+        Container c = (null == id ? ContainerManager.getRoot() : ContainerManager.getForId(id));
+
+        if (!canImpersonateGroup(c, user, group))
+            throw new IllegalStateException("You are not allowed to impersonate this group");
+
+        if (group.isGuests())
+            return groups(Group.groupGuests);
+        else if (group.isUsers())
+            return groups(Group.groupGuests, Group.groupUsers);
+        else
+            return groups(Group.groupGuests, Group.groupUsers, group.getUserId());
+    }
+
+
+    public static boolean canImpersonateGroup(Container c, User user, Group group)
+    {
+        // Site admin can impersonate any group
+        if (user.isAdministrator())
+            return true;
+
+        // TODO: c.getProject()?  Need to be project admin?
+
+        // Project admin...
+        if (c.hasPermission(user, AdminPermission.class))
+        {
+            // ...can impersonate any project group but must be a member of a site group to impersonate it
+            if (group.isProjectGroup())
+                return group.getContainer().equals(c.getId());
+            else
+                return user.isInGroup(group.getUserId());
+        }
+
+        return false;
+    }
+
+
+    // Ensure they are sorted
+    private static int[] groups(int... ids)
+    {
+        Arrays.sort(ids);
+        return ids;
     }
 
 
@@ -1725,13 +1800,13 @@ public class SecurityManager
 
 
     // Takes Container (or null for root) and group name; returns groupId
-    public static Integer getGroupId(Container c, String group, boolean throwOnFailure)
+    public static Integer getGroupId(@Nullable Container c, String group, boolean throwOnFailure)
     {
         return getGroupId(c, group, null, throwOnFailure);
     }
 
 
-    public static Integer getGroupId(Container c, String groupName, @Nullable String ownerId, boolean throwOnFailure)
+    public static Integer getGroupId(@Nullable Container c, String groupName, @Nullable String ownerId, boolean throwOnFailure)
     {
         return getGroupId(c, groupName, ownerId, throwOnFailure, false);
     }
@@ -1741,7 +1816,7 @@ public class SecurityManager
     // by case (this was not possible on SQL Server).  In CPAS 1.6 we disallow this on PostgreSQL... but we still need to be able to
     // retrieve group IDs in a case-sensitive manner.
     // TODO: For CPAS 1.7: this should always be case-insensitive (we will clean up the database by renaming duplicate groups)
-    private static Integer getGroupId(Container c, String groupName, @Nullable String ownerId, boolean throwOnFailure, boolean caseInsensitive)
+    private static Integer getGroupId(@Nullable Container c, String groupName, @Nullable String ownerId, boolean throwOnFailure, boolean caseInsensitive)
     {
         SQLFragment sql = new SQLFragment("SELECT UserId FROM " + core.getTableInfoPrincipals() + " WHERE Type!='u' AND " + (caseInsensitive ? "LOWER(Name)" : "Name") + " = ? AND Container ");
         sql.add(caseInsensitive ? groupName.toLowerCase() : groupName);

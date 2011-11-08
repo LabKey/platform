@@ -16,16 +16,21 @@
 
 package org.labkey.api.view;
 
+import org.labkey.api.admin.AdminUrls;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.module.FolderType;
 import org.labkey.api.module.Module;
 import org.labkey.api.module.ModuleLoader;
+import org.labkey.api.security.Group;
+import org.labkey.api.security.SecurityManager;
 import org.labkey.api.security.User;
+import org.labkey.api.security.UserUrls;
 import org.labkey.api.security.permissions.AdminPermission;
 import org.labkey.api.security.permissions.AdminReadPermission;
 import org.labkey.api.settings.LookAndFeelProperties;
 import org.labkey.api.util.FolderDisplayMode;
+import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.view.menu.MenuService;
 import org.labkey.api.view.menu.ProjectAdminMenu;
 import org.labkey.api.view.menu.SiteAdminMenu;
@@ -55,6 +60,7 @@ public class PopupAdminView extends PopupMenuView
     public PopupAdminView(final ViewContext context)
     {
         User user = context.getUser();
+        ActionURL currentURL = context.getActionURL();
 
         boolean isAdminInThisFolder = context.hasPermission(AdminPermission.class);
         boolean hasAdminReadInRoot = ContainerManager.getRoot().hasPermission(user, AdminReadPermission.class);
@@ -88,6 +94,9 @@ public class PopupAdminView extends PopupMenuView
 
         if (!c.isRoot())
         {
+            Container project = c.getProject();
+            assert project != null;
+
             if (isAdminInThisFolder && !c.isWorkbook())
             {
                 NavTree projectAdmin = new NavTree("Manage Project");
@@ -96,6 +105,48 @@ public class PopupAdminView extends PopupMenuView
             }
 
             c.getFolderType().addManageLinks(navTree, c);
+
+            // Don't allow folder admins to impersonate
+            if (project.hasPermission(user, AdminPermission.class) && !user.isImpersonated() && false) // TODO: Turn on impersonation menu when it's working fully
+            {
+                UserUrls userURLs = PageFlowUtil.urlProvider(UserUrls.class);
+                AdminUrls adminURLs = PageFlowUtil.urlProvider(AdminUrls.class);
+                NavTree impersonateMenu = new NavTree("Impersonate");
+
+                ActionURL impersonateURL = user.isAdministrator() ? adminURLs.getAdminConsoleURL() : userURLs.getProjectUsersURL(project);
+                NavTree userMenu = new NavTree("User", impersonateURL);
+                impersonateMenu.addChild(userMenu);
+                NavTree groupMenu = new NavTree("Group");
+
+                // TODO: Cache this!
+                Group[] groups = SecurityManager.getGroups(c.getProject(), true);
+
+                boolean addSeparator = false;
+
+                // Site groups are always first, followed by project groups
+                for (Group group : groups)
+                {
+                    if (!SecurityManager.canImpersonateGroup(c, user, group))
+                        continue;
+
+                    if (!group.isProjectGroup())
+                    {
+                        // We have at least one site group... so add a separator (if we also have project groups)
+                        addSeparator = true;
+                    }
+                    else if (addSeparator)
+                    {
+                        // Our first project group after site groups... add a separator
+                        groupMenu.addSeparator();
+                        addSeparator = false;
+                    }
+
+                    groupMenu.addChild(group.getName(), userURLs.getImpersonateGroupURL(c, group.getUserId(), currentURL));
+                }
+
+                impersonateMenu.addChild(groupMenu);
+                navTree.addChild(impersonateMenu);
+            }
 
             Comparator<Module> moduleComparator = new Comparator<Module>()
             {

@@ -19,6 +19,7 @@ package org.labkey.api.view;
 import org.apache.commons.beanutils.BeanUtils;
 import org.apache.commons.beanutils.PropertyUtils;
 import org.apache.log4j.Logger;
+import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.Container;
 import org.labkey.api.module.FolderType;
 import org.labkey.api.module.Module;
@@ -42,7 +43,7 @@ public abstract class BaseWebPartFactory implements WebPartFactory
     private boolean showCustomizeOnInsert;
     private List<String> _legacyNames = Collections.emptyList();
 
-    public BaseWebPartFactory(String name, String defaultLocation, boolean isEditable, boolean showCustomizeOnInsert)
+    public BaseWebPartFactory(String name, @Nullable String defaultLocation, boolean isEditable, boolean showCustomizeOnInsert)
     {
         if (!isEditable && showCustomizeOnInsert)
             throw new IllegalArgumentException("CustomizeOnInsert is only valid when web part is editable.");
@@ -52,7 +53,7 @@ public abstract class BaseWebPartFactory implements WebPartFactory
         this.defaultLocation = null == defaultLocation ? HttpView.BODY : defaultLocation;
     }
 
-    public BaseWebPartFactory(String name, String defaultLocation)
+    public BaseWebPartFactory(String name, @Nullable String defaultLocation)
     {
         this(name, defaultLocation, false, false);
     }

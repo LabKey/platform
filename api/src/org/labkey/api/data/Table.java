@@ -1521,7 +1521,7 @@ public class Table
         sql.append(QueryService.get().getSelectSQL(tinfo, tinfo.getPkColumns(), null, null, ALL_ROWS, NO_OFFSET, false));
         sql.append(") x");
 
-        return executeSingleton(tinfo.getSchema(), sql.getSQL(), sql.getParamsArray(), Long.class);
+        return new LegacySqlSelector(tinfo.getSchema(), sql).getObject(Long.class);
     }
 
 

@@ -35,6 +35,7 @@ public class User extends UserPrincipal implements Serializable, Cloneable
     private Date _lastLogin = null;
     private User _impersonatingUser = null;
     private Container _impersonationProject = null;
+    private Group _impersonatingGroup = null;
     private boolean _active = false;
     private String _phone;
 
@@ -207,9 +208,14 @@ public class User extends UserPrincipal implements Serializable, Cloneable
         _impersonatingUser = impersonatingUser;
     }
 
+    public void setImpersonatingGroup(Group impersonatingGroup)
+    {
+        _impersonatingGroup = impersonatingGroup;
+    }
+
     public boolean isImpersonated()
     {
-        return null != _impersonatingUser;
+        return null != _impersonatingUser || null != _impersonatingGroup;
     }
 
     public Container getImpersonationProject()

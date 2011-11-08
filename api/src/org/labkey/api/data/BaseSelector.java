@@ -32,7 +32,6 @@ import java.util.Map;
 public abstract class BaseSelector extends JdbcCommand implements Selector
 {
     private Connection _conn = null;
-    private SQLFragment _sql = null;
 
     abstract SQLFragment getSql();
 
@@ -44,9 +43,13 @@ public abstract class BaseSelector extends JdbcCommand implements Selector
     @Override      // TODO: Not valid to call directly at the moment since connection never gets closed
     public ResultSet getResultSet() throws SQLException
     {
-        _sql = getSql();
+        return getResultSet(getSql());
+    }
+
+    private ResultSet getResultSet(SQLFragment sql) throws SQLException
+    {
         _conn = getConnection();
-        return Table._executeQuery(_conn, _sql.getSQL(), _sql.getParamsArray());
+        return Table._executeQuery(_conn, sql.getSQL(), sql.getParamsArray());
     }
 
     private <K> ArrayList<K> getArrayList(final Class<K> clazz)
@@ -69,7 +72,7 @@ public abstract class BaseSelector extends JdbcCommand implements Selector
         }
         else
         {
-            list = handleResultSet(new ResultSetHandler<ArrayList<K>>() {
+            list = handleResultSet(getSql(), new ResultSetHandler<ArrayList<K>>() {
                 @Override
                 public ArrayList<K> handle(ResultSet rs) throws SQLException
                 {
@@ -97,6 +100,29 @@ public abstract class BaseSelector extends JdbcCommand implements Selector
         }
 
         return list;
+    }
+
+    @Override
+    public long getRowCount()
+    {
+        SQLFragment sql = new SQLFragment("SELECT COUNT(*) FROM (");
+        sql.append(getSqlForRowcount());
+        sql.append(") x");
+
+        return handleResultSet(sql, new ResultSetHandler<Long>()
+        {
+            @Override
+            public Long handle(ResultSet rs) throws SQLException
+            {
+                rs.next();
+                return rs.getLong(1);
+            }
+        });
+    }
+
+    protected SQLFragment getSqlForRowcount()
+    {
+        return getSql();
     }
 
     @Override
@@ -128,7 +154,7 @@ public abstract class BaseSelector extends JdbcCommand implements Selector
     @Override
     public void forEach(final ForEachBlock<ResultSet> block)
     {
-        handleResultSet((new ResultSetHandler<Object>() {
+        handleResultSet(getSql(), (new ResultSetHandler<Object>() {
             @Override
             public Object handle(ResultSet rs) throws SQLException
             {
@@ -143,7 +169,7 @@ public abstract class BaseSelector extends JdbcCommand implements Selector
     @Override
     public void forEachMap(final ForEachBlock<Map<String, Object>> block)
     {
-        handleResultSet(new ResultSetHandler<Object>() {
+        handleResultSet(getSql(), new ResultSetHandler<Object>() {
             @Override
             public Object handle(ResultSet rs) throws SQLException
             {
@@ -194,20 +220,20 @@ public abstract class BaseSelector extends JdbcCommand implements Selector
         return fillValueMap(new HashMap<Object, Object>());
     }
 
-    private <K> K handleResultSet(ResultSetHandler<K> handler)
+    private <K> K handleResultSet(SQLFragment sql, ResultSetHandler<K> handler)
     {
         ResultSet rs = null;
 
         try
         {
-            rs = getResultSet();
+            rs = getResultSet(sql);
             return handler.handle(rs);
         }
         catch(SQLException e)
         {
-            // TODO: Substitute SQL parameters placeholders with values?
-            Table.doCatch(_sql.getSQL(), _sql.getParamsArray(), _conn, e);
-            throw getExceptionFramework().translate(getScope(), "Message", _sql.getSQL(), e);  // TODO: Change message
+            // TODO: Substitute SQL parameter placeholders with values?
+            Table.doCatch(sql.getSQL(), sql.getParamsArray(), _conn, e);
+            throw getExceptionFramework().translate(getScope(), "Message", sql.getSQL(), e);  // TODO: Change message
         }
         finally
         {

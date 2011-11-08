@@ -15,6 +15,7 @@
  */
 package org.labkey.api.view;
 
+import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.Container;
 
 /**
@@ -26,7 +27,7 @@ import org.labkey.api.data.Container;
 // Base class for factories that produce webparts available in all folder types
 public abstract class AlwaysAvailableWebPartFactory extends BaseWebPartFactory
 {
-    public AlwaysAvailableWebPartFactory(String name, String defaultLocation, boolean isEditable, boolean showCustomizeOnInsert)
+    public AlwaysAvailableWebPartFactory(String name, @Nullable String defaultLocation, boolean isEditable, boolean showCustomizeOnInsert)
     {
         super(name, defaultLocation, isEditable, showCustomizeOnInsert);
     }

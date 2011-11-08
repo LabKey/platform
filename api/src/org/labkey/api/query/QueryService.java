@@ -117,11 +117,11 @@ abstract public class QueryService
     abstract public TableType findMetadataOverride(UserSchema schema, String tableName, boolean customQuery, Collection<QueryException> errors, Path dir);
 
 	abstract public ResultSet select(QuerySchema schema, String sql) throws SQLException;
-    public Results select(TableInfo table, Collection<ColumnInfo> columns, Filter filter, Sort sort) throws SQLException
+    public Results select(TableInfo table, Collection<ColumnInfo> columns, @Nullable Filter filter, @Nullable Sort sort) throws SQLException
     {
         return select(table, columns, filter, sort, Collections.<String, Object>emptyMap());
     }
-	abstract public Results select(TableInfo table, Collection<ColumnInfo> columns, Filter filter, Sort sort, Map<String,Object> parameters) throws SQLException;
+	abstract public Results select(TableInfo table, Collection<ColumnInfo> columns, @Nullable Filter filter, @Nullable Sort sort, Map<String,Object> parameters) throws SQLException;
 
     /**
      * @param forceSort always add a sort, even if the Sort parameter is null or empty. Do not pass true if the SQL will

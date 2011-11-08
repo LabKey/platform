@@ -34,6 +34,8 @@ public interface Selector
 {
     ResultSet getResultSet() throws SQLException;      // TODO: Don't throw SQLException?
 
+    long getRowCount();
+
     <K> K[] getArray(Class<K> clazz);
 
     <K> Collection<K> getCollection(Class<K> clazz);
