@@ -398,10 +398,22 @@ LABKEY.createElement = function(tag, innerHTML, attributes)
     if (innerHTML)
         e.innerHTML = innerHTML;
     if (attributes)
+    {
         for (var att in attributes)
-            e[att] = attributes[att];
+        {
+            try
+            {
+                e[att] = attributes[att];
+            }
+            catch (x)
+            {
+                console.log(x); // e['style'] is read-only in old firefox
+            }
+        }
+    }
     return e;
 };
+
 
 LABKEY.toHTML = function(elem)
 {
