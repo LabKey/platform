@@ -71,8 +71,6 @@ public interface Study extends StudyEntity
 
     void attachProtocolDocument(List<AttachmentFile> files , User user)  throws SQLException, IOException;
 
-    void updateProtocolDocument(List<AttachmentFile> files, User user)  throws SQLException, IOException;
-
     void removeProtocolDocument(String name, User user)  throws SQLException, IOException;
 
     List<Attachment> getProtocolDocuments ();

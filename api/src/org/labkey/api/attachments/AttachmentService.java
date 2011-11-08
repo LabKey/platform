@@ -123,7 +123,7 @@ public class AttachmentService
 
         private void addError(String filename)
         {
-            _errors.add("New file " + filename + " was not attached; a file by that name was previously attached.");
+            _errors.add("New file " + filename + " was not attached; A duplicate file was detected.");
         }
 
         public List<String> getErrors()
