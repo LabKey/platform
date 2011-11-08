@@ -51,7 +51,7 @@
 </script>
 <script type="text/javascript">
     Ext4.onReady(function(){
-
+        Ext4.FocusManager.enable(false);
         var projectDefault = "<%=h(projectDefaultRoot.replace("\\", "\\\\"))%>";
 
         var panel = Ext4.create('Ext.form.Panel', {
@@ -81,6 +81,9 @@
                         },
                         buffer: 20,
                         scope: this
+                    },
+                    render: function(field){
+                        field.focus('', 10);
                     }
                 },
                 defaults: {
@@ -141,7 +144,7 @@
             }]
         }).render('setInitialFolderSettingsDiv');
 
-        Ext4.create('Ext.util.KeyNav', document.body, {
+        Ext4.create('Ext.util.KeyNav', Ext4.getBody(), {
             scope: this,
             enter: function(){
                 var f = panel.getForm();

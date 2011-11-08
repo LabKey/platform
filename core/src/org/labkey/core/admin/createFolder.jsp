@@ -110,14 +110,6 @@
                         var target = panel.down('#folderType');
                         if(target.getValue() && target.getValue().folderType == 'None')
                             panel.renderModules();
-                    },
-                    afterRender: function(thisForm, options){
-                        Ext4.create('Ext.util.KeyNav', thisForm.el, {
-                            enter: function(btn){
-                                var f = btn.up('form').getForm();
-                                f.submit();
-                            }
-                        });
                     }
                 },
                 items: [{
@@ -326,6 +318,14 @@
                     }
                 }
             }).render('createFormDiv');
+
+            Ext4.create('Ext.util.KeyNav', Ext4.getBody(), {
+                scope: this,
+                enter: function(){
+                    var f = panel.getForm();
+                    f.submit();
+                }
+            });
         }
     });
 </script>

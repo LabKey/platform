@@ -42,6 +42,7 @@
         var isProject = <%=h(c.isProject())%>;
         var containerNoun = isProject ? 'Project' : 'Folder';
 
+        Ext4.FocusManager.enable(false);
         Ext4.QuickTips.init();
 
         var panel = Ext4.create('Ext.form.Panel', {
@@ -189,7 +190,7 @@
             }
         }).render('folderPermissionsDiv');
 
-        Ext4.create('Ext.util.KeyNav', document.body, {
+        Ext4.create('Ext.util.KeyNav', Ext4.getBody(), {
             scope: this,
             enter: function(){
                 var f = panel.getForm();
