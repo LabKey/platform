@@ -149,7 +149,8 @@ LABKEY.requiresTimeline = function(fn)
     LABKEY.requiresCss(jquery_urlPrefix + 'ui.core.css', true);
     LABKEY.requiresCss(jquery_urlPrefix + 'ui.tabs.css', true);
 
-    if (LABKEY.devMode)
+    // onreadystatechange seems to be unreliable, so use timeline-all-min on IE
+    if (LABKEY.devMode && !Ext.isIE)
     {
         var dependencies = [
             /* Simile */
@@ -169,7 +170,7 @@ LABKEY.requiresTimeline = function(fn)
             prefix + 'Timeline.js'
         ];
 
-        LABKEY._requiresScript(dependencies, true, fn, null, true);
+        LABKEY.requiresScript(dependencies, true, fn, null, true);
     }
     else
     {
