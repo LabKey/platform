@@ -64,7 +64,7 @@ public class RelativeDateVisitManager extends VisitManager
     @Override
     protected SQLFragment getVisitSummarySql(CohortFilter cohortFilter, QCStateSet qcStates, String statsSql, String alias)
     {
-        TableInfo studyData = StudySchema.getInstance().getTableInfoStudyData(getStudy(), null);
+        TableInfo studyData = StudySchema.getInstance().getTableInfoStudyDataVisible(getStudy(), null);
         TableInfo participantVisit = StudySchema.getInstance().getTableInfoParticipantVisit();
         TableInfo participantTable = StudySchema.getInstance().getTableInfoParticipant();
 

@@ -48,7 +48,7 @@ public class SequenceVisitManager extends VisitManager
     @Override
     protected SQLFragment getVisitSummarySql(CohortFilter cohortFilter, QCStateSet qcStates, String statsSql, String alias)
     {
-        TableInfo studyData = StudySchema.getInstance().getTableInfoStudyData(getStudy(), null);
+        TableInfo studyData = StudySchema.getInstance().getTableInfoStudyDataVisible(getStudy(), null);
         TableInfo participantTable = StudySchema.getInstance().getTableInfoParticipant();
 
         // This query is too slow on postgres (8.1 anyway), do the join in code

@@ -17,15 +17,17 @@
 package org.labkey.study;
 
 import org.labkey.api.data.DbSchema;
-import org.labkey.api.data.dialect.SqlDialect;
 import org.labkey.api.data.TableInfo;
+import org.labkey.api.data.dialect.SqlDialect;
 import org.labkey.api.security.User;
 import org.labkey.study.model.DataSetDefinition;
 import org.labkey.study.model.StudyImpl;
 import org.labkey.study.model.StudyManager;
 
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.List;
 
 /**
  * User: brittp
@@ -99,6 +101,21 @@ public class StudySchema
     public TableInfo getTableInfoStudyDataFiltered(StudyImpl study, Collection<DataSetDefinition> defs, User user)
     {
         return new StudyUnionTableInfo(study, defs, user);
+    }
+
+    public TableInfo getTableInfoStudyDataVisible(StudyImpl study, User user)
+    {
+        List<DataSetDefinition> defsAll = study.getDataSets();
+        List<DataSetDefinition> defsVisible = new ArrayList<DataSetDefinition>(defsAll.size());
+        for (DataSetDefinition def : defsAll)
+        {
+            if (!def.isShowByDefault())
+                continue;
+            if (null != user && !def.canRead(user))
+                continue;
+            defsVisible.add(def);
+        }
+        return new StudyUnionTableInfo(study, defsVisible, user);
     }
 
     public TableInfo getTableInfoParticipant()
