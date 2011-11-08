@@ -346,10 +346,20 @@ public abstract class DefaultModule implements Module, ApplicationContextAware
 
     protected void addWebPart(String name, Container c, String location) throws SQLException
     {
-        addWebPart(name, c, location, null);
+        addWebPart(name, c, location, -1, new HashMap<String, String>());
     }
 
-    protected void addWebPart(String name, Container c, String location, Map<String, String> properties)
+    protected void addWebPart(String name, Container c, String location, Map<String, String> properties) throws SQLException
+    {
+        addWebPart(name, c, location, -1, properties);
+    }
+
+    protected void addWebPart(String name, Container c, String location, int partIndex) throws SQLException
+    {
+        addWebPart(name, c, location, partIndex, new HashMap<String, String>());
+    }
+
+    protected void addWebPart(String name, Container c, String location, int partIndex, Map<String, String> properties)
             throws SQLException
     {
         boolean foundPart = false;
@@ -368,7 +378,7 @@ public abstract class DefaultModule implements Module, ApplicationContextAware
             WebPartFactory desc = Portal.getPortalPart(name);
             if (desc != null)
             {
-                Portal.addPart(c, desc, location, properties);
+                Portal.addPart(c, desc, location, partIndex, properties);
             }
         }
     }
