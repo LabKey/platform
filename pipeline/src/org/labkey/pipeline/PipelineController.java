@@ -1214,7 +1214,7 @@ public class PipelineController extends SpringActionController
             return urlBrowse(container, null, null);
         }
 
-        public ActionURL urlBrowse(Container container, String referer)
+        public ActionURL urlBrowse(Container container, @Nullable String referer)
         {
             return urlBrowse(container, referer, null);
         }

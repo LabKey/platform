@@ -15,6 +15,7 @@
  */
 package org.labkey.wiki;
 
+import org.jetbrains.annotations.Nullable;
 import org.labkey.api.view.*;
 import org.labkey.wiki.model.WikiWebPart;
 
@@ -33,7 +34,7 @@ public class WikiWebPartFactory extends AlwaysAvailableWebPartFactory
         this(WikiModule.WEB_PART_NAME, null);
     }
 
-    public WikiWebPartFactory(String name, String location)
+    public WikiWebPartFactory(String name, @Nullable String location)
     {
         super(name, location, true, false);
         addLegacyNames("Narrow Wiki");

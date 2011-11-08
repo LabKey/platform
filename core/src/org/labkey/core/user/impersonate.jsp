@@ -36,7 +36,7 @@
     if (bean.emails.isEmpty())
         return;
 %>
-    <form method="get" action="<%=new UserController.UserUrlsImpl().getImpersonateURL(c)%>"><labkey:csrf/>
+    <form method="get" action="<%=new UserController.UserUrlsImpl().getImpersonateUserURL(c)%>"><labkey:csrf/>
         <table>
             <%
 

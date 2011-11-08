@@ -1197,7 +1197,7 @@ public class QueryServiceImpl extends QueryService
     }
 
 
-    public Results select(TableInfo table, Collection<ColumnInfo> columns, Filter filter, Sort sort, Map<String,Object> parameters) throws SQLException
+    public Results select(TableInfo table, Collection<ColumnInfo> columns, @Nullable Filter filter, @Nullable Sort sort, Map<String,Object> parameters) throws SQLException
     {
         SQLFragment sql = getSelectSQL(table, columns, filter, sort, Table.ALL_ROWS, Table.NO_OFFSET, false);
         bindNamedParameters(sql, parameters);

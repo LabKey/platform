@@ -51,7 +51,7 @@ import java.util.*;
 
 public class UserController extends SpringActionController
 {
-    private static DefaultActionResolver _actionResolver = new DefaultActionResolver(UserController.class);
+    private static final DefaultActionResolver _actionResolver = new DefaultActionResolver(UserController.class);
 
     public UserController()
     {
@@ -120,9 +120,17 @@ public class UserController extends SpringActionController
             return url;
         }
 
-        public ActionURL getImpersonateURL(Container c)
+        public ActionURL getImpersonateGroupURL(Container c, int groupId, ActionURL returnURL)
         {
-            return new ActionURL(ImpersonateAction.class, c);
+            ActionURL url = new ActionURL(ImpersonateGroupAction.class, c);
+            url.addParameter("groupId", groupId);
+            url.addReturnURL(returnURL);
+            return url;
+        }
+
+        public ActionURL getImpersonateUserURL(Container c)
+        {
+            return new ActionURL(ImpersonateUserAction.class, c);
         }
     }
 
@@ -639,14 +647,16 @@ public class UserController extends SpringActionController
         }
         else
         {
+            Container project = c.getProject();
+
             // Must be project admin to view outside the root...
-            if (!c.hasPermission(user, AdminPermission.class))
+            if (!project.hasPermission(user, AdminPermission.class))
             {
                 throw new UnauthorizedException();
             }
 
             // ...and user must be a project user
-            if (!SecurityManager.getProjectUsersIds(c).contains(userId))
+            if (!SecurityManager.getProjectUsersIds(project).contains(userId))
                 throw new UnauthorizedException("Project administrators can only " + action + " project users");
         }
     }
@@ -1675,7 +1685,7 @@ public class UserController extends SpringActionController
     }
 
 
-    public static class ImpersonateForm extends ReturnUrlForm
+    public static class ImpersonateUserForm extends ReturnUrlForm
     {
         private String _email;
 
@@ -1693,9 +1703,9 @@ public class UserController extends SpringActionController
 
 
     @RequiresPermissionClass(AdminPermission.class) @CSRF
-    public class ImpersonateAction extends SimpleRedirectAction<ImpersonateForm>
+    public class ImpersonateUserAction extends SimpleRedirectAction<ImpersonateUserForm>
     {
-        public ActionURL getRedirectURL(ImpersonateForm form) throws Exception
+        public ActionURL getRedirectURL(ImpersonateUserForm form) throws Exception
         {
             if (getUser().isImpersonated())
                 throw new UnauthorizedException("Can't impersonate; you're already impersonating");
@@ -1703,10 +1713,10 @@ public class UserController extends SpringActionController
             String rawEmail = form.getEmail();
             ValidEmail email = new ValidEmail(rawEmail);
 
-            if (!UserManager.userExists(email))
-                throw new NotFoundException("User doesn't exist");
-
             final User impersonatedUser = UserManager.getUser(email);
+
+            if (null == impersonatedUser)
+                throw new NotFoundException("User doesn't exist");
 
             if (impersonatedUser.equals(getUser()))
                 throw new UnauthorizedException("Can't impersonate yourself");
@@ -1716,16 +1726,53 @@ public class UserController extends SpringActionController
 
             if (c.isRoot())
             {
-                SecurityManager.impersonate(getViewContext(), impersonatedUser, null, form.getReturnURLHelper());
+                SecurityManager.impersonateUser(getViewContext(), impersonatedUser, null, form.getReturnURLHelper());
                 return AppProps.getInstance().getHomePageActionURL();
             }
             else
             {
-                SecurityManager.impersonate(getViewContext(), impersonatedUser, c.getProject(), form.getReturnURLHelper());
+                SecurityManager.impersonateUser(getViewContext(), impersonatedUser, c.getProject(), form.getReturnURLHelper());
                 return PageFlowUtil.urlProvider(ProjectUrls.class).getStartURL(c);
             }
         }
     }
+
+
+    public static class ImpersonateGroupForm extends ReturnUrlForm
+    {
+        private int _groupId;
+
+        public int getGroupId()
+        {
+            return _groupId;
+        }
+
+        @SuppressWarnings({"UnusedDeclaration"})
+        public void setGroupId(int groupId)
+        {
+            _groupId = groupId;
+        }
+    }
+
+
+    @RequiresPermissionClass(AdminPermission.class)
+    public class ImpersonateGroupAction extends SimpleRedirectAction<ImpersonateGroupForm>
+    {
+        public ActionURL getRedirectURL(ImpersonateGroupForm form) throws Exception
+        {
+            if (getUser().isImpersonated())
+                throw new UnauthorizedException("Can't impersonate; you're already impersonating");
+
+            Container c = getContainer();
+            Group group = SecurityManager.getGroup(form.getGroupId());
+
+            ActionURL returnURL = form.getReturnActionURL(AppProps.getInstance().getHomePageActionURL());
+            SecurityManager.impersonateGroup(getViewContext(), group, returnURL);
+
+            return returnURL;
+        }
+    }
+
 
     public static class ShowWarningMessagesForm
     {

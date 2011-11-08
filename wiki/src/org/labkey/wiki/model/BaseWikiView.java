@@ -179,7 +179,7 @@ public abstract class BaseWikiView extends JspView<Object>
             updateContentURL.addParameter("redirect", url.getLocalURIString());
         }
 
-        if (isWebPart() && perms.allowUpdate(wiki))
+        if (isWebPart() && perms.allowAdmin())
         {
             customizeURL = PageFlowUtil.urlProvider(ProjectUrls.class).getCustomizeWebPartURL(c);
             customizeURL.addParameter("pageId", _pageId);
