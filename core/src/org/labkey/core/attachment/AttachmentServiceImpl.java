@@ -101,6 +101,7 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -286,6 +287,17 @@ public class AttachmentServiceImpl implements AttachmentService.Service, Contain
     {
         if (null == user)
             throw new IllegalArgumentException("Cannot add attachments for the null user");
+
+        if (files != null)
+        {
+            List<String> duplicates = findDuplicates(files);
+
+            if (duplicates.size() > 0)
+            {
+                throw new AttachmentService.DuplicateFilenameException(duplicates);
+            }
+        }
+
 
         try
         {
@@ -515,6 +527,19 @@ public class AttachmentServiceImpl implements AttachmentService.Service, Contain
         return null != getAttachment(parent, filename);
     }
 
+    private List<String> findDuplicates(List<AttachmentFile> files)
+    {
+        Set fileNames = new HashSet<String>();
+        List<String> duplicates = new ArrayList<String>();
+        for (AttachmentFile file : files)
+        {
+            if(fileNames.add(file.getFilename()) == false)
+            {
+                duplicates.add(file.getFilename());
+            }
+        }
+        return duplicates;
+    }
 
     @Override
     public @NotNull List<Attachment> getAttachments(AttachmentParent parent)

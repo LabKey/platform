@@ -19,23 +19,22 @@ package org.labkey.study.view;
 import org.labkey.api.attachments.Attachment;
 import org.labkey.api.data.Container;
 import org.labkey.api.security.User;
+import org.labkey.api.security.permissions.AdminPermission;
 import org.labkey.api.security.permissions.ReadPermission;
-import org.labkey.api.services.ServiceRegistry;
 import org.labkey.api.study.Cohort;
 import org.labkey.api.study.DataSet;
 import org.labkey.api.study.Site;
-import org.labkey.api.study.StudyService;
-import org.labkey.api.study.TimepointType;
 import org.labkey.api.study.Visit;
-import org.labkey.api.util.PageFlowUtil;
+import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.BaseWebPartFactory;
 import org.labkey.api.view.HtmlView;
 import org.labkey.api.view.HttpView;
 import org.labkey.api.view.JspView;
+import org.labkey.api.view.NavTree;
 import org.labkey.api.view.Portal;
 import org.labkey.api.view.ViewContext;
 import org.labkey.api.view.WebPartView;
-import org.labkey.api.wiki.WikiService;
+import org.labkey.study.controllers.StudyController;
 import org.labkey.study.model.StudyImpl;
 import org.labkey.study.model.StudyManager;
 import org.springframework.validation.BindException;
@@ -144,6 +143,13 @@ public class StudySummaryWebPartFactory extends BaseWebPartFactory
         WebPartView v = new JspView<StudySummaryBean>("/org/labkey/study/view/studySummary.jsp", new StudySummaryBean(portalCtx), errors);
         v.setTitle(NAME);
 
+        if(portalCtx.getContainer().hasPermission(portalCtx.getUser(), AdminPermission.class))
+        {
+            ActionURL editMetaDataURL = new ActionURL(StudyController.ManageStudyPropertiesAction.class, portalCtx.getContainer());
+            editMetaDataURL.addParameter("returnURL",portalCtx.getActionURL().toString());
+            NavTree edit = new NavTree("Edit", editMetaDataURL.toString(), portalCtx.getContextPath() + "/_images/partedit.png");
+            v.addCustomMenu(edit);
+        }
         return v;
     }
 }

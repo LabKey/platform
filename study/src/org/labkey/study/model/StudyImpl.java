@@ -618,15 +618,6 @@ public class StudyImpl extends ExtensibleStudyEntity<StudyImpl> implements Study
         _studyGrant = grant;
     }
 
-    public void updateProtocolDocument(List<AttachmentFile> files , User user)  throws SQLException, IOException
-    {
-        // Here we want to delete the current attachment, and then upload a new one. In the future this might
-        // need to be changed to delete a specific protocol doc in the case that we have more than one doc, but
-        // at the moment we only plan to have one document.
-        AttachmentService.get().deleteAttachments(getProtocolDocumentAttachmentParent());
-        attachProtocolDocument(files, user);
-    }
-
     public List<Attachment> getProtocolDocuments()
     {
         return new ArrayList<Attachment>(AttachmentService.get().getAttachments(getProtocolDocumentAttachmentParent()));

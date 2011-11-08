@@ -1567,6 +1567,13 @@ public class StudyController extends BaseStudyController
                 x.addToErrors(errors);
                 return null;
             }
+            catch (AttachmentService.DuplicateFilenameException x)
+            {
+                JSONObject json = new JSONObject();
+                json.put("failure", true);
+                json.put("msg", x.getMessage());
+                return new ApiSimpleResponse(json);
+            }
 
             JSONObject json = new JSONObject();
             json.put("success", true);

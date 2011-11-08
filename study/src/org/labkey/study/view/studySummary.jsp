@@ -105,16 +105,6 @@
             <br><br>
                 <div style="clear: both;">
                 <%=descriptionHtml%>
-            <%
-                if (isAdmin)
-                {
-            %>
-                <a href="<%= editMetadataURL.getLocalURIString() %>">
-                    <span class="labkey-edit-in-place-icon" title="Click to Edit"></span>
-                </a>
-            <%
-                }
-            %>
                 </div>
             <p>
                 <%
@@ -141,14 +131,6 @@
                         <%= h(h(doc.getName())) %>
                     </a><%
                         }
-                    }
-                    if (isAdmin && protocolDocs.size() > 0)
-                    {
-                %>
-                    <a href="<%= editMetadataURL.getLocalURIString() %>">
-                        <span class="labkey-edit-in-place-icon" title="Click to Edit"></span>
-                    </a>
-                <%
                     }
                 %>
             </p>

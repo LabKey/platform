@@ -86,12 +86,32 @@ function addExtFilePickerHandler()
 {
     var fibasic = new Ext.ux.form.FileUploadField(
     {
-        renderTo: 'filePickers',
         width: 300
     });
-    studyPropertiesFormPanel.add(fibasic);
+
+    var removeBtn = new Ext.Button({
+        text: "remove",
+        name: "remove",
+        uploadId: fibasic.id,
+        handler: removeNewAttachment
+    });
+
+    var uploadField = new Ext.form.CompositeField({
+        renderTo: 'filePickers',
+        items:[fibasic, removeBtn]
+    });
+
+    studyPropertiesFormPanel.add(uploadField);
 }
 
+function removeNewAttachment(btn)
+{
+    // In order to 'remove' an attachment before it is submitted we must hide and disable it. We CANNOT destroy the
+    // elements related to the upload field, if we do the form will not validate. This is a known Issue with Ext 3.4.
+    // http://www.sencha.com/forum/showthread.php?25479-2.0.1-2.1-Field.destroy()-on-Fields-rendered-by-FormLayout-does-not-clean-up.
+    Ext.getCmp(btn.uploadId).disable();
+    btn.ownerCt.hide();
+}
 
 var maskEl = null;
 
@@ -283,7 +303,7 @@ function renderFormPanel(data, editable)
     var handledFields = {};
     var items = [];
 
-    items.push({name:'Label', width:500});
+    items.push({name:'Label'});
     handledFields['Label'] = true;
     items.push({name:'Investigator'});
     handledFields['Investigator'] = true;
@@ -306,7 +326,6 @@ function renderFormPanel(data, editable)
     for (i=0 ; i<cm.length ; i++)
     {
         col = cm[i];
-        console.log(col.dataIndex + " hidden=" + col.hidden);
         col = cm[i];
         if (col.hidden) continue;
         if (handledFields[col.dataIndex]) continue;
@@ -322,7 +341,7 @@ function renderFormPanel(data, editable)
     {
         selectRowsResults:data,
         padding : 10,
-        defaults : { width:260, disabled : !editableFormPanel, disabledClass:'noop' },
+        defaults : { width:500, disabled : !editableFormPanel, disabledClass:'noop' },
         labelWidth:150,   <%-- don't wrap even on Large font theme --%>
         buttonAlign:'left',
         buttons: buttons,
