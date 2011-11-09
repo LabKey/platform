@@ -508,31 +508,35 @@ public class PropertyManager
     public static class TestCase extends Assert
     {
         @Test
-        public void test()
+        public void test() throws SQLException
         {
+            Container child = null;
+            String objectId = null;
+            TestContext context = TestContext.get();
+            User user = context.getUser();
+            Container parent = JunitUtil.getTestContainer();
+
             try
             {
-                TestContext context = TestContext.get();
-
-                User user = context.getUser();
-                Container parent = JunitUtil.getTestContainer();
-                Container child = ContainerManager.createContainer(parent, "Properties");
-                String objectId = child.getId();
+                child = ContainerManager.createContainer(parent, "Properties");
+                objectId = child.getId();
 
                 // Do it twice to ensure multiple categories for same user and container works
                 testProperties(user, child, "junit");
                 testProperties(user, child, "junit2");
-                //Properties should get cleaned up when container is deleted.
-                ContainerManager.delete(child, TestContext.get().getUser());
-                Map m = PropertyManager.getProperties(user.getUserId(), objectId, "junit");
-                assertTrue(m == NULL_MAP);
-                m = PropertyManager.getProperties(user.getUserId(), objectId, "junit2");
-                assertTrue(m == NULL_MAP);
             }
-            catch (SQLException x)
+            finally
             {
-                assertTrue(x.getMessage(), false);
+                if (child != null)
+                {
+                    //Properties should get cleaned up when container is deleted.
+                    ContainerManager.delete(child, TestContext.get().getUser());
+                }
             }
+            Map m = PropertyManager.getProperties(user.getUserId(), objectId, "junit");
+            assertTrue(m == NULL_MAP);
+            m = PropertyManager.getProperties(user.getUserId(), objectId, "junit2");
+            assertTrue(m == NULL_MAP);
         }
 
 

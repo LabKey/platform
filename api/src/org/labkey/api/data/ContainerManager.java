@@ -202,7 +202,7 @@ public class ContainerManager
 
         Path path = makePath(parent, name);
         SQLException sqlx = null;
-        Map<String, Object> _insertMap = null;
+        Map<String, Object> insertMap = null;
         
         try
         {
@@ -214,7 +214,7 @@ public class ContainerManager
             if (null != description)
                 m.put("Description", description);
             m.put("Workbook", workbook);
-            _insertMap = Table.insert(user, CORE.getTableInfoContainers(), m);
+            insertMap = Table.insert(user, CORE.getTableInfoContainers(), m);
         }
         catch (SQLException x)
         {
@@ -225,7 +225,7 @@ public class ContainerManager
 
         _clearChildrenFromCache(parent);
 
-        Container c = getForId((String) _insertMap.get("EntityId"));
+        Container c = insertMap == null ? null  : getForId((String) insertMap.get("EntityId"));
         if (null == c)
         {
             if (null != sqlx)
