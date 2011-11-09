@@ -185,7 +185,7 @@ function renderBrowser(rootPath, renderTo, isFolderTreeCollapsed, isPipelineRoot
 
     var _resize = function(w,h)
     {
-        LABKEY.Utils.resizeToViewport(panel, w, h, 32, 20);
+        LABKEY.Utils.resizeToViewport(panel, w, h);
     };
 
     if (autoResize)

@@ -294,7 +294,7 @@ LABKEY.Utils = new function()
             if (paddingX !== undefined && paddingX != null)
                 padding.push(paddingX);
             else
-                padding.push(30);
+                padding.push(35);
             if (paddingY !== undefined && paddingY != null)
                 padding.push(paddingY);
             else
