@@ -27,7 +27,6 @@ import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.CoreSchema;
 import org.labkey.api.data.PropertyManager;
-import org.labkey.api.data.RuntimeSQLException;
 import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.Selector;
 import org.labkey.api.data.SimpleFilter;
@@ -440,7 +439,7 @@ public class UserManager
     }
 
 
-    public static void addToUserHistory(User principal, String message) throws SQLException
+    public static void addToUserHistory(User principal, String message)
     {
         User user = UserManager.getGuestUser();
         Container c = ContainerManager.getRoot();
@@ -475,14 +474,7 @@ public class UserManager
     {
         if (null == _userCount)
         {
-            try
-            {
-                _userCount = Table.rowCount(CORE.getTableInfoActiveUsers());
-            }
-            catch (SQLException e)
-            {
-                throw new RuntimeSQLException(e);
-            }
+            _userCount = new TableSelector(CORE.getTableInfoActiveUsers()).getRowCount();
         }
 
         return _userCount.intValue();

@@ -1496,8 +1496,7 @@ public class Table
     }
 
 
-    public static void snapshot(TableInfo tinfo, String tableName)
-            throws SQLException
+    public static void snapshot(TableInfo tinfo, String tableName) throws SQLException
     {
         SQLFragment sqlSelect = Table.getSelectSQL(tinfo, null, null, null);
         SQLFragment sqlSelectInto = new SQLFragment();
@@ -1515,13 +1514,10 @@ public class Table
     }
 
 
+    @Deprecated  // Use TableSelector.getRowCount() directly
     public static long rowCount(TableInfo tinfo) throws SQLException
     {
-        SQLFragment sql = new SQLFragment("SELECT COUNT(*) FROM (");
-        sql.append(QueryService.get().getSelectSQL(tinfo, tinfo.getPkColumns(), null, null, ALL_ROWS, NO_OFFSET, false));
-        sql.append(") x");
-
-        return new LegacySqlSelector(tinfo.getSchema(), sql).getObject(Long.class);
+        return new LegacyTableSelector(tinfo).getRowCount();
     }
 
 

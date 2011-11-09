@@ -45,6 +45,11 @@ public class LegacyTableSelector extends LegacySelector
         super(new TableSelector(table, Table.ALL_COLUMNS, filter, sort));
     }
 
+    public LegacyTableSelector(TableInfo table)
+    {
+        super(new TableSelector(table, Table.ALL_COLUMNS, null, null));
+    }
+
     /* TODO: Fix up caching and connection closing, then expose this
     public Results getResults() throws SQLException
     {

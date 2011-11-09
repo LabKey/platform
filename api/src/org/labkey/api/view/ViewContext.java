@@ -188,11 +188,9 @@ public class ViewContext extends BoundMap implements MessageSource, ContainerCon
 
     public boolean hasPermission(Class<? extends Permission> perm) throws NotFoundException
     {
-        SecurityPolicy policy = getContainer().getPolicy();
         User user = getUser();
-        if (null == policy || null == user)
-            return false;
-        return policy.hasPermission(user, perm, _contextualRoles);
+
+        return null != user && getContainer().hasPermission(user, perm, _contextualRoles);
     }
 
 

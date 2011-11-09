@@ -17,7 +17,10 @@
 package org.labkey.api.security;
 
 import org.apache.log4j.Logger;
+import org.jetbrains.annotations.NotNull;
 import org.labkey.api.data.Container;
+import org.labkey.api.security.impersonation.ImpersonationContext;
+import org.labkey.api.security.impersonation.NotImpersonatingContext;
 
 import java.io.Serializable;
 import java.util.Arrays;
@@ -33,11 +36,10 @@ public class User extends UserPrincipal implements Serializable, Cloneable
     private String _displayName = null;
     protected int[] _groups = null;
     private Date _lastLogin = null;
-    private User _impersonatingUser = null;
-    private Container _impersonationProject = null;
-    private Group _impersonatingGroup = null;
     private boolean _active = false;
     private String _phone;
+
+    private ImpersonationContext _impersonationContext = new NotImpersonatingContext();
 
     public static final User guest = new GuestUser("guest");
     private static final User search = new GuestUser("search");
@@ -151,10 +153,9 @@ public class User extends UserPrincipal implements Serializable, Cloneable
         return isAllowedRoles() && isInGroup(Group.groupDevelopers);
     }
 
-    // Never allow global roles (site admin, developer, etc.) if user is being impersonated within a project
     public boolean isAllowedRoles()
     {
-        return !isImpersonated() || null == getImpersonationProject();
+        return _impersonationContext.isAllowedRoles();
     }
 
     public boolean isInGroup(int group)
@@ -198,34 +199,30 @@ public class User extends UserPrincipal implements Serializable, Cloneable
         _lastLogin = lastLogin;
     }
 
-    public User getImpersonatingUser()
+    public void setImpersonationContext(ImpersonationContext impersonationContext)
     {
-        return _impersonatingUser;
+        _impersonationContext = impersonationContext;
     }
 
-    public void setImpersonatingUser(User impersonatingUser)
+    public @NotNull
+    ImpersonationContext getImpersonationContext()
     {
-        _impersonatingUser = impersonatingUser;
-    }
-
-    public void setImpersonatingGroup(Group impersonatingGroup)
-    {
-        _impersonatingGroup = impersonatingGroup;
+        return _impersonationContext;
     }
 
     public boolean isImpersonated()
     {
-        return null != _impersonatingUser || null != _impersonatingGroup;
+        return _impersonationContext.isImpersonated();
+    }
+
+    public User getImpersonatingUser()
+    {
+        return _impersonationContext.getImpersonatingUser();
     }
 
     public Container getImpersonationProject()
     {
-        return _impersonationProject;
-    }
-
-    public void setImpersonationProject(Container impersonationProject)
-    {
-        _impersonationProject = impersonationProject;
+        return _impersonationContext.getImpersonationProject();
     }
 
     public boolean isActive()

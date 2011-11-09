@@ -15,15 +15,14 @@
  */
 package org.labkey.api.security;
 
-import org.labkey.api.util.GUID;
-import org.labkey.api.module.Module;
-import org.labkey.api.security.permissions.Permission;
-import org.labkey.api.data.Container;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.labkey.api.data.Container;
+import org.labkey.api.module.Module;
+import org.labkey.api.security.permissions.Permission;
 
-import java.util.Set;
 import java.util.List;
+import java.util.Set;
 
 /*
 * User: Dave

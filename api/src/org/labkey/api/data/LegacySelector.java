@@ -143,4 +143,16 @@ public class LegacySelector
             throw e.getSQLException();
         }
     }
+
+    public long getRowCount() throws SQLException
+    {
+        try
+        {
+            return _selector.getRowCount();
+        }
+        catch (RuntimeSQLException e)
+        {
+            throw e.getSQLException();
+        }
+    }
 }

@@ -162,7 +162,7 @@ public class AssayHeaderView extends JspView<AssayHeaderView>
     {
         ViewContext ctx = getViewContext();
         Container container = protocol.getContainer();
-        return container.getPolicy().hasPermission(ctx.getUser(), DesignAssayPermission.class);
+        return container.hasPermission(ctx.getUser(), DesignAssayPermission.class);
     }
 
     protected boolean allowDelete(ExpProtocol protocol)

@@ -878,7 +878,7 @@ public class ContainerManager
                 continue;
             
             SecurityPolicy policy = f.getPolicy();
-            boolean skip = (!policy.hasPermission(user, ReadPermission.class) || (!f.shouldDisplay()));
+            boolean skip = (!policy.hasPermission(user, ReadPermission.class) || (!f.shouldDisplay(user)));
             //Always put the project and current container in...
             if (skip && !f.equals(project) && !f.equals(c))
                 continue;
@@ -1310,14 +1310,7 @@ public class ContainerManager
 
     public static long getContainerCount()
     {
-        try
-        {
-            return Table.rowCount(CORE.getTableInfoContainers());
-        }
-        catch (SQLException e)
-        {
-            throw new RuntimeSQLException(e);
-        }
+        return new TableSelector(CORE.getTableInfoContainers()).getRowCount();
     }
 
 

@@ -43,6 +43,6 @@ public interface LoginUrls extends UrlProvider
     public ActionURL getLoginURL(Container c, URLHelper returnURL);
     public ActionURL getLogoutURL(Container c);
     public ActionURL getLogoutURL(Container c, URLHelper returnURL);
-    public ActionURL getStopImpersonatingURL(Container c, HttpServletRequest request);
+    public ActionURL getStopImpersonatingURL(Container c, @Nullable URLHelper returnURL);
     public ActionURL getAgreeToTermsURL(Container c, URLHelper returnURL);
 }

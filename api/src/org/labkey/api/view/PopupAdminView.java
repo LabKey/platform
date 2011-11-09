@@ -74,7 +74,7 @@ public class PopupAdminView extends PopupMenuView
 
         LookAndFeelProperties laf = LookAndFeelProperties.getInstance(c);
         //Allow Admins to turn the folder bar on & off
-        if (laf.getFolderDisplayMode() != FolderDisplayMode.ALWAYS && !"post".equals(getViewContext().getRequest().getMethod().toLowerCase()))
+        if (laf.getFolderDisplayMode() != FolderDisplayMode.ALWAYS && !"POST".equalsIgnoreCase(getViewContext().getRequest().getMethod()))
         {
             ActionURL adminURL = MenuService.get().getSwitchAdminModeURL(context);
 
@@ -107,7 +107,7 @@ public class PopupAdminView extends PopupMenuView
             c.getFolderType().addManageLinks(navTree, c);
 
             // Don't allow folder admins to impersonate
-            if (project.hasPermission(user, AdminPermission.class) && !user.isImpersonated() && false) // TODO: Turn on impersonation menu when it's working fully
+            if (project.hasPermission(user, AdminPermission.class) && !user.isImpersonated())
             {
                 UserUrls userURLs = PageFlowUtil.urlProvider(UserUrls.class);
                 AdminUrls adminURLs = PageFlowUtil.urlProvider(AdminUrls.class);
@@ -144,7 +144,7 @@ public class PopupAdminView extends PopupMenuView
                     groupMenu.addChild(group.getName(), userURLs.getImpersonateGroupURL(c, group.getUserId(), currentURL));
                 }
 
-                impersonateMenu.addChild(groupMenu);
+                // TODO: impersonateMenu.addChild(groupMenu);
                 navTree.addChild(impersonateMenu);
             }
 

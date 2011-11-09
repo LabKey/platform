@@ -32,9 +32,10 @@ public class PopupUserView extends PopupMenuView
         User user = context.getUser();
         NavTree tree = new NavTree(user.getFriendlyName());
         tree.addChild("My Account", PageFlowUtil.urlProvider(UserUrls.class).getUserDetailsURL(context.getContainer(), user.getUserId(), context.getActionURL()));
+
         if (user.isImpersonated())
         {
-            tree.addChild("Stop Impersonating", PageFlowUtil.urlProvider(LoginUrls.class).getStopImpersonatingURL(context.getContainer(), context.getRequest()));
+            tree.addChild("Stop Impersonating", PageFlowUtil.urlProvider(LoginUrls.class).getStopImpersonatingURL(context.getContainer(), user.getImpersonationContext().getReturnURL()));
         }
         else
         {

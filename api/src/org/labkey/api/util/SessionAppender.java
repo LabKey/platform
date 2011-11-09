@@ -19,6 +19,7 @@ import org.apache.log4j.spi.LoggingEvent;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpSession;
+import java.io.Serializable;
 import java.util.LinkedList;
 import java.util.List;
 
@@ -29,7 +30,7 @@ import java.util.List;
  */
 public class SessionAppender extends org.apache.log4j.AppenderSkeleton
 {
-    static class AppenderInfo
+    static class AppenderInfo implements Serializable
     {
         AppenderInfo(String key, boolean on)
         {

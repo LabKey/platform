@@ -237,9 +237,9 @@ public class SecurityPolicy
     public boolean hasOneOf(@NotNull UserPrincipal principal, @NotNull Collection<Class<? extends Permission>> permissions, @Nullable Set<Role> contextualRoles)
     {
         Set<Class<? extends Permission>> grantedPerms = getPermissions(principal, contextualRoles);
-        for(Class<? extends Permission> requiredPerm : permissions)
+        for (Class<? extends Permission> requiredPerm : permissions)
         {
-            if(grantedPerms.contains(requiredPerm))
+            if (grantedPerms.contains(requiredPerm))
                 return true;
         }
         return false;

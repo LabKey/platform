@@ -48,6 +48,12 @@ public class TableSelector extends BaseSelector
         _sort = sort;
     }
 
+    // Select all columns from a table, no filter or sort
+    public TableSelector(TableInfo table)
+    {
+        this(table, Table.ALL_COLUMNS, null, null);
+    }
+
     // Select all columns from a table
     public TableSelector(TableInfo table, @Nullable Filter filter, @Nullable Sort sort)
     {

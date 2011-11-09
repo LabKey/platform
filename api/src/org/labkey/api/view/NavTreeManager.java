@@ -163,16 +163,8 @@ public class NavTreeManager
         String key;
         if (null != user)
         {
-            key = navTreeId + "/user=" + user.getUserId();
-
-            // NavTree for user being impersonated will be different per impersonating user per project
-            if (user.isImpersonated())
-            {
-                key = key + "/impersonatingUser=" + user.getImpersonatingUser().getUserId();
-
-                if (null != user.getImpersonationProject())
-                    key = key + "/impersonationProject=" + user.getImpersonationProject().getId();
-            }
+            // Caching permission-related state is tricky with impersonation, so involve the impersonation context
+            key = navTreeId + "/user=" + user.getUserId() + user.getImpersonationContext().getNavTreeCacheKey();
         }
         else
         {

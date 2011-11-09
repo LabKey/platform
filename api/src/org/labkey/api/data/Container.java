@@ -48,7 +48,6 @@ import org.labkey.api.util.GUID;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.Path;
 import org.labkey.api.view.ActionURL;
-import org.labkey.api.view.HttpView;
 import org.labkey.api.view.Portal;
 import org.labkey.api.view.WebPartFactory;
 
@@ -249,24 +248,26 @@ public class Container implements Serializable, Comparable<Container>, Securable
         return project;
     }
 
-    public SecurityPolicy getPolicy()
+    // Note: don't use the security policy directly unless you really have to... call hasPermission() or hasOneOf()
+    // instead, to ensure proper behavior during impersonation.
+    public @NotNull SecurityPolicy getPolicy()
     {
         return SecurityManager.getPolicy(this);
     }
 
     public boolean hasPermission(@NotNull User user, @NotNull Class<? extends Permission> perm)
     {
-        return getPolicy().hasPermission(user, perm);
+        return !isForbiddenProject(user) && getPolicy().hasPermission(user, perm);
     }
 
     public boolean hasPermission(@NotNull User user, @NotNull Class<? extends Permission> perm, @Nullable Set<Role> contextualRoles)
     {
-        return getPolicy().hasPermission(user, perm, contextualRoles);
+        return !isForbiddenProject(user) && getPolicy().hasPermission(user, perm, contextualRoles);
     }
 
     public boolean hasOneOf(@NotNull User user, @NotNull Collection<Class<? extends Permission>> perms)
     {
-        return getPolicy().hasOneOf(user, perms, null);
+        return !isForbiddenProject(user) && getPolicy().hasOneOf(user, perms, null);
     }
 
     public boolean hasOneOf(@NotNull User user, @NotNull Class<? extends Permission>... perms)
@@ -335,13 +336,6 @@ public class Container implements Serializable, Comparable<Container>, Securable
     }
 
 
-    public boolean shouldDisplay()
-    {
-        User user = HttpView.currentContext().getUser();
-        return shouldDisplay(user);
-    }
-
-    
     public boolean shouldDisplay(User user)
     {
         if (isWorkbook())
