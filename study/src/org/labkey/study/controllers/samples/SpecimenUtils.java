@@ -627,8 +627,7 @@ public class SpecimenUtils
 
     public void ensureSpecimenRequestsConfigured() throws ServletException, SQLException
     {
-        SampleRequestStatus[] statuses = SampleManager.getInstance().getRequestStatuses(getContainer(), getUser());
-        if (statuses == null || statuses.length == 1)
+        if (!SampleManager.getInstance().isSampleRequestEnabled(getContainer()))
             throw new RedirectException(new ActionURL(SpecimenController.SpecimenRequestConfigRequired.class, getContainer()));
     }
 

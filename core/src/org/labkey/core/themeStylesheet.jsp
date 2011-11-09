@@ -20,6 +20,7 @@
 <%@ page import="org.labkey.api.view.ThemeFont" %>
 <%@ page import="org.labkey.api.view.WebTheme" %>
 <%@ page import="org.labkey.api.view.WebThemeManager" %>
+<%@ page import="java.awt.*" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
 
@@ -42,6 +43,9 @@
     String second      = theme.getSecondaryBackgroundColor();
     String borderTitle = theme.getBorderTitleColor();
     String webpart     = theme.getWebPartColor();
+
+    String toolIconBackgroundHex = link;
+    Color toolIconBackgroundColor = WebTheme.parseColor(toolIconBackgroundHex);
     /*
 
     index:
@@ -635,4 +639,40 @@ li.labkey-tab-inactive a
 .labkey-ancillary-wizard-background
 {
     background-color: #<%= grid %>;
+}
+
+.tool-icon {
+	margin-bottom: 20px;
+	text-align: center;
+}
+
+.tool-icon:hover img {
+	cursor: pointer;
+    background: rgb(<%= toolIconBackgroundColor.getRed() %>, <%= toolIconBackgroundColor.getGreen()%>, <%= toolIconBackgroundColor.getBlue() %>); /* no RGBa */
+    background: rgba(<%= toolIconBackgroundColor.getRed() %>, <%= toolIconBackgroundColor.getGreen()%>, <%= toolIconBackgroundColor.getBlue() %>, 1.0); /* FF, Safari, Chrome, IE9 */
+    filter:progid:DXImageTransform.Microsoft.gradient(startColorstr=#ff<%= toolIconBackgroundHex %>, endColorstr=#ff<%= toolIconBackgroundHex %>); /* IE 5.5 - 7 */
+    -ms-filter: "progid:DXImageTransform.Microsoft.gradient(startColorstr=#ff<%= toolIconBackgroundHex %>, endColorstr=#ff<%= toolIconBackgroundHex %>)"; /* IE 8 */
+}
+
+.tool-icon img {
+	border: none;
+	width: 64px;
+	height: 64px;
+    background: rgb(<%= toolIconBackgroundColor.getRed() %>, <%= toolIconBackgroundColor.getGreen()%>, <%= toolIconBackgroundColor.getBlue() %>); /* no RGBa */
+    background: rgba(<%= toolIconBackgroundColor.getRed() %>, <%= toolIconBackgroundColor.getGreen()%>, <%= toolIconBackgroundColor.getBlue() %>, 0.7); /* FF, Safari, Chrome, IE9 */
+    filter:progid:DXImageTransform.Microsoft.gradient(startColorstr=#b2<%= toolIconBackgroundHex %>, endColorstr=#b2<%= toolIconBackgroundHex %>); /* IE 5.5 - 7 */
+    -ms-filter: "progid:DXImageTransform.Microsoft.gradient(startColorstr=#b2<%= toolIconBackgroundHex %>, endColorstr=#b2<%= toolIconBackgroundHex %>)"; /* IE 8 */
+}
+
+.tool-icon a {
+	text-transform: uppercase;
+	text-decoration: none;
+	font-family: Verdana, Arial, Helvetica, sans serif;
+	color: #999;
+	font-size: 10px;
+	font-weight: bold;
+}
+
+.tool-icon:hover a {
+	color: #<%= toolIconBackgroundHex %>;
 }

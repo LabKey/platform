@@ -26,6 +26,7 @@ import org.labkey.api.view.Portal;
 import org.labkey.api.view.ViewContext;
 import org.labkey.api.view.WebPartView;
 import org.labkey.api.visualization.VisualizationUrls;
+import org.labkey.study.SampleManager;
 import org.labkey.study.controllers.StudyController;
 import org.labkey.study.controllers.samples.ShowSearchAction;
 import org.labkey.study.controllers.samples.SpecimenController;
@@ -61,15 +62,17 @@ public abstract class StudyToolsWebPartFactory extends BaseWebPartFactory
 
             ActionURL vialSearchURL = new ActionURL(ShowSearchAction.class, portalCtx.getContainer());
             vialSearchURL.addParameter("showVials", true);
-            items.add(new StudyToolsWebPart.Item("Vial Search", iconBase + "search_icon.gif", vialSearchURL));
+            items.add(new StudyToolsWebPart.Item("Vial Search", iconBase + "specimen_search.png", vialSearchURL));
 
-            if (portalCtx.getContainer().hasPermission(portalCtx.getUser(), RequestSpecimensPermission.class))
-                items.add(new StudyToolsWebPart.Item("New Request", iconBase + "cart_icon.gif", new ActionURL(SpecimenController.ShowCreateSampleRequestAction.class, portalCtx.getContainer() )));
-
-            items.add(new StudyToolsWebPart.Item("Specimen Reports", iconBase + "report_icon.gif", new ActionURL(SpecimenController.AutoReportListAction.class, portalCtx.getContainer() )));
+            if (SampleManager.getInstance().isSampleRequestEnabled(portalCtx.getContainer()))
+            {
+                if (portalCtx.getContainer().hasPermission(portalCtx.getUser(), RequestSpecimensPermission.class))
+                    items.add(new StudyToolsWebPart.Item("New Request", iconBase + "specimen_request.png", new ActionURL(SpecimenController.ShowCreateSampleRequestAction.class, portalCtx.getContainer() )));
+            }
+            items.add(new StudyToolsWebPart.Item("Specimen Reports", iconBase + "specimen_report.png", new ActionURL(SpecimenController.AutoReportListAction.class, portalCtx.getContainer() )));
 
             if (portalCtx.getContainer().hasPermission(portalCtx.getUser(), ManageStudyPermission.class))
-                items.add(new StudyToolsWebPart.Item("Settings", iconBase + "settings_icon.gif", new ActionURL(StudyController.ManageStudyAction.class, portalCtx.getContainer() )));
+                items.add(new StudyToolsWebPart.Item("Settings", iconBase + "settings.png", new ActionURL(StudyController.ManageStudyAction.class, portalCtx.getContainer() )));
 
             return items;
         }
@@ -95,15 +98,15 @@ public abstract class StudyToolsWebPartFactory extends BaseWebPartFactory
             List<StudyToolsWebPart.Item> items = new ArrayList<StudyToolsWebPart.Item>();
 
             URLHelper timeChartURL = PageFlowUtil.urlProvider(VisualizationUrls.class).getTimeChartDesignerURL(portalCtx.getContainer());
-            items.add(new StudyToolsWebPart.Item("New Time Chart", iconBase + "timechart_icon.gif", timeChartURL));
+            items.add(new StudyToolsWebPart.Item("New Time Chart", iconBase + "timeline_chart.png", timeChartURL));
 
             String noun = StudyService.get().getSubjectNounSingular(portalCtx.getContainer());
-            items.add(new StudyToolsWebPart.Item(noun + " List", iconBase + "subjectlist_icon.gif", new ActionURL(StudyController.SubjectListAction.class, portalCtx.getContainer())));
+            items.add(new StudyToolsWebPart.Item(noun + " List", iconBase + "participant_list.png", new ActionURL(StudyController.SubjectListAction.class, portalCtx.getContainer())));
 
-            items.add(new StudyToolsWebPart.Item("Study Navigator", iconBase + "overview_icon.gif", new ActionURL(StudyController.OverviewAction.class, portalCtx.getContainer())));
+            items.add(new StudyToolsWebPart.Item("Study Navigator", iconBase + "study_overview.png", new ActionURL(StudyController.OverviewAction.class, portalCtx.getContainer())));
 
             if (portalCtx.getContainer().hasPermission(portalCtx.getUser(), ManageStudyPermission.class))
-                items.add(new StudyToolsWebPart.Item("Settings", iconBase + "settings_icon.gif", new ActionURL(StudyController.ManageStudyAction.class, portalCtx.getContainer() )));
+                items.add(new StudyToolsWebPart.Item("Settings", iconBase + "settings.png", new ActionURL(StudyController.ManageStudyAction.class, portalCtx.getContainer() )));
             return items;
         }
 

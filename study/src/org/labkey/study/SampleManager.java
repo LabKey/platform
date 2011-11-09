@@ -1556,6 +1556,20 @@ public class SampleManager
         Table.delete(StudySchema.getInstance().getTableInfoSampleRequestSpecimen(), filter);
     }
 
+    public boolean isSampleRequestEnabled(Container container)
+    {
+        try
+        {
+            if (!getRepositorySettings(container).isEnableRequests())
+                return false;
+            SampleRequestStatus[] statuses = _requestStatusHelper.get(container, "SortOrder");
+            return (statuses != null && statuses.length > 1);
+        }
+        catch (SQLException e)
+        {
+            throw new RuntimeSQLException(e);
+        }
+    }
 
     public List<String> getMissingSpecimens(SampleRequest sampleRequest) throws SQLException
     {
