@@ -1164,6 +1164,7 @@ issues/module.properties -text
 issues/resources/schemas/dbscripts/postgresql/issues-0.00-8.20.sql -text
 issues/resources/schemas/dbscripts/postgresql/issues-10.10-10.20.sql -text
 issues/resources/schemas/dbscripts/postgresql/issues-10.20-10.30.sql -text
+issues/resources/schemas/dbscripts/postgresql/issues-11.20-11.21.sql -text
 issues/resources/schemas/dbscripts/postgresql/issues-9.30-10.10.sql -text
 issues/resources/schemas/dbscripts/postgresql/obsolete/issues-0.00-0.60.sql -text
 issues/resources/schemas/dbscripts/postgresql/obsolete/issues-0.00-1.00.sql -text
@@ -1184,6 +1185,7 @@ issues/resources/schemas/dbscripts/postgresql/obsolete/issues-9.30-9.31.sql -tex
 issues/resources/schemas/dbscripts/sqlserver/issues-0.00-8.20.sql -text
 issues/resources/schemas/dbscripts/sqlserver/issues-10.10-10.20.sql -text
 issues/resources/schemas/dbscripts/sqlserver/issues-10.20-10.30.sql -text
+issues/resources/schemas/dbscripts/sqlserver/issues-11.20-11.21.sql -text
 issues/resources/schemas/dbscripts/sqlserver/issues-9.30-10.10.sql -text
 issues/resources/schemas/dbscripts/sqlserver/obsolete/cpas-0.00-0.58.sql -text
 issues/resources/schemas/dbscripts/sqlserver/obsolete/cpas-0.00-0.70.sql -text
