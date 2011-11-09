@@ -71,7 +71,7 @@ public class AssayListPortalView extends AssayListQueryView
 
     protected void populateButtonBar(DataView view, ButtonBar bar)
     {
-        if (getContainer().getPolicy().hasPermissions(getUser(), DesignAssayPermission.class))
+        if (getContainer().hasPermission(getUser(), DesignAssayPermission.class))
         {
             ActionURL insertURL = new ActionURL(AssayController.ChooseAssayTypeAction.class, view.getViewContext().getContainer());
             insertURL.addParameter(ActionURL.Param.returnUrl, getViewContext().getActionURL().getLocalURIString());

@@ -387,6 +387,7 @@ public class ReportManager implements StudyManager.DataSetListener
     public boolean canReadReport(User user, Container c, Report report)
     {
         SecurityPolicy policy = SecurityManager.getPolicy(report.getDescriptor(), false);
+
         if (policy.isEmpty())
         {
             StudyImpl study = StudyManager.getInstance().getStudy(c);
@@ -414,7 +415,7 @@ public class ReportManager implements StudyManager.DataSetListener
                 return true;
             }
             else
-                return c.getPolicy().hasPermission(user, ReadPermission.class);
+                return c.hasPermission(user, ReadPermission.class);
         }
         else
             // explicit permissions

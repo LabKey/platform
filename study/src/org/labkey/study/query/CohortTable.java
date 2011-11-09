@@ -83,7 +83,7 @@ public class CohortTable extends BaseStudyTable
     public QueryUpdateService getUpdateService()
     {
         User user = _schema.getUser();
-        if (!getContainer().getPolicy().hasPermission(user, AdminPermission.class))
+        if (!getContainer().hasPermission(user, AdminPermission.class))
             return null;
         return new CohortUpdateService(this);
     }

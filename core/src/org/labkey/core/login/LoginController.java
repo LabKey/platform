@@ -89,7 +89,6 @@ import javax.servlet.ServletException;
 import javax.servlet.http.Cookie;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
-import javax.servlet.http.HttpSession;
 import java.io.PrintWriter;
 import java.net.URISyntaxException;
 import java.sql.SQLException;
@@ -212,13 +211,8 @@ public class LoginController extends SpringActionController
             return url;
         }
 
-        public ActionURL getStopImpersonatingURL(Container c, HttpServletRequest request)
+        public ActionURL getStopImpersonatingURL(Container c, @Nullable URLHelper returnURL)
         {
-            HttpSession session = request.getSession(true);
-
-            // Return to the admin's original URL, if it's there
-            URLHelper returnURL = (URLHelper)session.getAttribute(SecurityManager.IMPERSONATION_RETURN_URL_KEY);
-
             if (null != returnURL)
                 return getLogoutURL(c, returnURL);
             else
@@ -350,7 +344,7 @@ public class LoginController extends SpringActionController
                 {
                     case Success:
                         _user = result.getUser();
-                        SecurityManager.setAuthenticatedUser(request, _user, null, null, null);
+                        SecurityManager.setAuthenticatedUser(request, _user);
                         return true;
                     case InactiveUser:
                         LookAndFeelProperties laf = LookAndFeelProperties.getInstance(getContainer());
@@ -752,7 +746,7 @@ public class LoginController extends SpringActionController
 
         public URLHelper getSuccessURL(ReturnUrlForm form)
         {
-            return getWelcomeURL();
+            return form.getReturnURLHelper(getWelcomeURL());
         }
 
         public boolean doAction(ReturnUrlForm form, BindException errors) throws Exception
@@ -890,7 +884,7 @@ public class LoginController extends SpringActionController
                 {
                     // Log the user into the system
                     User authenticatedUser = result.getUser();
-                    SecurityManager.setAuthenticatedUser(request, authenticatedUser, null, null, null);
+                    SecurityManager.setAuthenticatedUser(request, authenticatedUser);
                     getViewContext().setUser(authenticatedUser);
                     _skipProfile = form.getSkipProfile();
                 }

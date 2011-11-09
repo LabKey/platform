@@ -67,8 +67,7 @@
         return;
     }
 
-    SecurityPolicy policy = c.getPolicy();
-    boolean isAdmin = policy.hasPermission(user, AdminPermission.class);
+    boolean isAdmin = c.hasPermission(user, AdminPermission.class);
     ActionURL url = new ActionURL(StudyController.BeginAction.class, bean.getStudy().getContainer());
     String descriptionHtml = bean.getDescriptionHtml();
     String investigator = bean.getInvestigator();
@@ -158,14 +157,14 @@
                     out.write(textLink("Manage Files", pipelineUrl));
                     out.write("</p>");
                 }
-                else if (policy.hasPermission(user, ManageRequestSettingsPermission.class) &&
+                else if (c.hasPermission(user, ManageRequestSettingsPermission.class) &&
                         bean.getStudy().getRepositorySettings().isEnableRequests())
                 {
                     out.write("<p>");
                     out.write(textLink("Manage Specimen Request Settings", url.setAction(StudyController.ManageStudyAction.class)));
                     out.write("</p>");
                 }
-                else if (policy.hasPermission(user, ManageRequestSettingsPermission.class))
+                else if (c.hasPermission(user, ManageRequestSettingsPermission.class))
                 {
                     out.write("<p>");
                     out.write(textLink("Manage Study", url.setAction(StudyController.ManageStudyAction.class)));

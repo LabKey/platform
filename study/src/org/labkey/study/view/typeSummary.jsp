@@ -111,7 +111,7 @@
 </table>
 
 <%
-    if (context.getContainer().getPolicy().hasPermission(context.getUser(), AdminPermission.class))
+    if (context.hasPermission(AdminPermission.class))
     {
         if (dataset.getTypeURI() == null)
         {

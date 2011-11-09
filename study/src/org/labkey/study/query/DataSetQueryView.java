@@ -219,7 +219,7 @@ public class DataSetQueryView extends QueryView
         // Only show link to edit if permission allows it
         setShowUpdateColumn(_showEditLinks && !isExportView() &&
                 _dataset.canWrite(user) &&
-                c.getPolicy().hasPermission(user, UpdatePermission.class));
+                c.hasPermission(user, UpdatePermission.class));
 
         // allow posts from dataset data regions to determine which dataset was being displayed:
         view.getDataRegion().addHiddenFormField(DataSetDefinition.DATASETKEY, "" + _dataset.getDataSetId());
@@ -487,7 +487,7 @@ public class DataSetQueryView extends QueryView
 
     private boolean canWrite(DataSetDefinition def, User user)
     {
-        return def.canWrite(user) && def.getContainer().getPolicy().hasPermission(user, UpdatePermission.class);
+        return def.canWrite(user) && def.getContainer().hasPermission(user, UpdatePermission.class);
     }
 
     private boolean hasSourceLsids() throws SQLException

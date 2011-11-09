@@ -584,7 +584,7 @@ public class DataSetDefinition extends AbstractStudyEntity<DataSetDefinition> im
                 {
                     result.addAll(RoleManager.getRole(SiteAdminRole.class).getPermissions());
                 }
-                else if (getStudy().getContainer().getPolicy().hasPermission(user, UpdatePermission.class))
+                else if (getStudy().getContainer().hasPermission(user, UpdatePermission.class))
                 {
                     // Basic write access grants insert/update/delete for datasets to everyone who has update permission
                     // in the folder

@@ -145,9 +145,9 @@ public class StudyPropertiesTable extends BaseStudyTable
     public boolean hasPermission(User user, Class<? extends Permission> perm)
     {
         if (perm == UpdatePermission.class)
-            return getContainer().getPolicy().hasPermission(user, AdminPermission.class);
+            return getContainer().hasPermission(user, AdminPermission.class);
         if (perm == ReadPermission.class)
-            return getContainer().getPolicy().hasPermission(user, ReadPermission.class);
+            return getContainer().hasPermission(user, ReadPermission.class);
         return false;
     }
 
@@ -155,7 +155,7 @@ public class StudyPropertiesTable extends BaseStudyTable
     public QueryUpdateService getUpdateService()
     {
         User user = _schema.getUser();
-        if (!getContainer().getPolicy().hasPermission(user, AdminPermission.class))
+        if (!getContainer().hasPermission(user, AdminPermission.class))
             return null;
         return new StudyPropertiesUpdateService(this);
     }

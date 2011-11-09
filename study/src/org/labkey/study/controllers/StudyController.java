@@ -792,7 +792,7 @@ public class StudyController extends BaseStudyController
     // moved here to call it out instead of embedding it
     private static boolean canWrite(DataSetDefinition def, User user)
     {
-        return def.canWrite(user) && def.getContainer().getPolicy().hasPermission(user, UpdatePermission.class);
+        return def.canWrite(user) && def.getContainer().hasPermission(user, UpdatePermission.class);
     }
 
 

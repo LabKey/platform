@@ -16,19 +16,20 @@
  */
 %>
 <%@ page import="org.labkey.api.audit.AuditLogService" %>
+<%@ page import="org.labkey.api.data.Container" %>
 <%@ page import="org.labkey.api.exp.list.ListDefinition" %>
 <%@ page import="org.labkey.api.exp.list.ListService" %>
 <%@ page import="org.labkey.api.lists.permissions.DesignListPermission" %>
-<%@ page import="org.labkey.api.security.SecurityPolicy" %>
 <%@ page import="org.labkey.api.security.User" %>
 <%@ page import="org.labkey.list.view.ListController" %>
-<%@ page import="java.util.*" %>
+<%@ page import="java.util.Map" %>
+<%@ page import="java.util.TreeSet" %>
 <%@ page extends="org.labkey.api.jsp.FormPage" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%
-    Map<String, ListDefinition> map = ListService.get().getLists(getContainer());
+    Container c = getContainer();
+    Map<String, ListDefinition> map = ListService.get().getLists(c);
     User user = getViewContext().getUser();
-    SecurityPolicy policy = getViewContext().getContainer().getPolicy();
 %>
 
 <% if (map.isEmpty())
@@ -52,7 +53,7 @@
                 <labkey:link href="<%=def.urlShowData()%>" text="view data" />
             </td><%
 
-        if (policy.hasPermission(user, DesignListPermission.class))
+        if (c.hasPermission(user, DesignListPermission.class))
         { %>
             <td>
                 <labkey:link href="<%=def.urlShowDefinition()%>" text="view design" />
@@ -66,7 +67,7 @@
             </td><%
         }
 
-        if (policy.hasPermission(user, DesignListPermission.class))
+        if (c.hasPermission(user, DesignListPermission.class))
         { %>
             <td>
                 <labkey:link href="<%=def.urlFor(ListController.DeleteListDefinitionAction.class)%>" text="delete list" />
@@ -80,7 +81,7 @@
     </table><%
     }
 
-    if (policy.hasPermission(user, DesignListPermission.class))
+    if (c.hasPermission(user, DesignListPermission.class))
     { %>
         <labkey:button text="Create New List" href="<%=h(urlFor(ListController.EditListDefinitionAction.class))%>" />
         <labkey:button text="Import List Archive" href="<%=h(urlFor(ListController.ImportListArchiveAction.class))%>" /><%

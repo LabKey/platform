@@ -50,7 +50,7 @@ public class AssayListQueryView extends QueryView
     {
         super.populateButtonBar(view, bar);
 
-        if (getContainer().getPolicy().hasPermissions(getUser(), DesignAssayPermission.class))
+        if (getContainer().hasPermission(getUser(), DesignAssayPermission.class))
         {
             ActionURL insertURL = new ActionURL(AssayController.ChooseAssayTypeAction.class, view.getViewContext().getContainer());
             insertURL.addParameter(ActionURL.Param.returnUrl, getViewContext().getActionURL().getLocalURIString());
@@ -79,7 +79,7 @@ public class AssayListQueryView extends QueryView
             bar.add(sharedButton);
         }
 
-        if (getContainer().getPolicy().hasPermissions(getUser(), DesignAssayPermission.class))
+        if (getContainer().hasPermission(getUser(), DesignAssayPermission.class))
         {
             ActionURL plateURL = PageFlowUtil.urlProvider(PlateUrls.class).getPlateTemplateListURL(getContainer());
             plateURL.addParameter(ActionURL.Param.returnUrl, getViewContext().getActionURL().getLocalURIString());
