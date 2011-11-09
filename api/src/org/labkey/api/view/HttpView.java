@@ -534,19 +534,22 @@ public abstract class HttpView<ModelBean> extends DefaultModelAndView<ModelBean>
         }
     }
 
-    public static ModelAndView redirect(URLHelper url)
+
+    public static HttpView redirect(URLHelper url)
     {
-        return new ModelAndView(new RedirectView(url.getLocalURIString(), false));
+        return new HttpRedirectView(url.getLocalURIString());
     }
 
-    public static ModelAndView redirect(String url)
+
+    public static HttpView redirect(String url)
     {
-        return new ModelAndView(new RedirectView(url, false));
+        return new HttpRedirectView(url);
     }
 
-    public static ModelAndView redirect(HString url)
+
+    public static HttpView redirect(HString url)
     {
-        return new ModelAndView(new RedirectView(url.getSource(), false));
+        return new HttpRedirectView(url.getSource());
     }
 
     /**
