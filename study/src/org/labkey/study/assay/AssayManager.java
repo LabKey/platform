@@ -23,6 +23,7 @@ import org.labkey.api.data.ActionButton;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.MenuButton;
+import org.labkey.api.data.RenderContext;
 import org.labkey.api.data.RuntimeSQLException;
 import org.labkey.api.exp.ExperimentException;
 import org.labkey.api.exp.Handler;
@@ -59,6 +60,8 @@ import org.labkey.study.view.StudyGWTView;
 import org.springframework.web.servlet.ModelAndView;
 
 import java.io.File;
+import java.io.IOException;
+import java.io.Writer;
 import java.sql.SQLException;
 import java.util.*;
 
@@ -264,38 +267,77 @@ public class AssayManager implements AssayService.Interface
 
         List<ActionButton> result = new ArrayList<ActionButton>();
 
-        if (containers.size() == 1 && containers.iterator().next().equals(currentContainer))
+        //this is the previous assay btn
+        if(currentContainer.getFolderType().getForceAssayUploadIntoWorkbooks() == false)
         {
-            // Create one import button for each provider, using the current container
-            ActionButton button = new ActionButton(provider.getImportURL(currentContainer, protocol), AbstractAssayProvider.IMPORT_DATA_LINK_NAME);
-            button.setActionType(ActionButton.Action.LINK);
-            result.add(button);
+            if (containers.size() == 1 && containers.iterator().next().equals(currentContainer))
+            {
+                // Create one import button for each provider, using the current container
+                ActionButton button = new ActionButton(provider.getImportURL(currentContainer, protocol), AbstractAssayProvider.IMPORT_DATA_LINK_NAME);
+                button.setActionType(ActionButton.Action.LINK);
+                result.add(button);
+            }
+            else
+            {
+                // It's not just the current container, so fall through to show a submenu even if there's
+                // only one item, in order to indicate that the user is going to be redirected elsewhere
+                MenuButton uploadButton = new MenuButton(AbstractAssayProvider.IMPORT_DATA_LINK_NAME);
+                // If the current folder is in our list, put it first.
+                if (containers.contains(currentContainer))
+                {
+                    containers.remove(currentContainer);
+                    ActionURL url = provider.getImportURL(currentContainer, protocol);
+                    if (currentContainer.isWorkbook())
+                    {
+                        uploadButton.addMenuItem("Current Workbook (" + currentContainer.getTitle() + ")", url);
+                    }
+                    else
+                    {
+                        uploadButton.addMenuItem("Current Folder (" + currentContainer.getPath() + ")", url);
+                    }
+                }
+                for(Container container : containers)
+                {
+                    ActionURL url = provider.getImportURL(container, protocol);
+                    uploadButton.addMenuItem(container.getPath(), url);
+                }
+                result.add(uploadButton);
+            }
         }
-        else
+
+        else //btn for workbook-upload
         {
-            // It's not just the current container, so fall through to show a submenu even if there's
-            // only one item, in order to indicate that the user is going to be redirected elsewhere
-            MenuButton uploadButton = new MenuButton(AbstractAssayProvider.IMPORT_DATA_LINK_NAME);
-            // If the current folder is in our list, put it first.
-            if (containers.contains(currentContainer))
+            if(currentContainer.isWorkbook())
             {
-                containers.remove(currentContainer);
-                ActionURL url = provider.getImportURL(currentContainer, protocol);
-                if (currentContainer.isWorkbook())
-                {
-                    uploadButton.addMenuItem("Current Workbook (" + currentContainer.getTitle() + ")", url);
-                }
-                else
-                {
-                    uploadButton.addMenuItem("Current Folder (" + currentContainer.getPath() + ")", url);
-                }
+                ActionButton button = new ActionButton(provider.getImportURL(currentContainer, protocol), AbstractAssayProvider.IMPORT_DATA_LINK_NAME);
+                button.setActionType(ActionButton.Action.LINK);
+                result.add(button);
             }
-            for(Container container : containers)
+            else
             {
-                ActionURL url = provider.getImportURL(container, protocol);
-                uploadButton.addMenuItem(container.getPath(), url);
+                ActionButton button = new ActionButton("#", AbstractAssayProvider.IMPORT_DATA_LINK_NAME){
+                    public void render(RenderContext ctx, Writer out) throws IOException
+                    {
+                        if (!shouldRender(ctx))
+                            return;
+
+                        out.write("<script type=\"text/javascript\">\n");
+                        out.write("LABKEY.requiresExt4ClientAPI()\n");
+                        out.write("LABKEY.requiresScript('extWidgets/ImportWizard.js')\n");
+                        out.write("</script>\n");
+                        super.render(ctx, out);
+                    }
+                };
+                button.setURL("javascript:void(0)");
+                button.setActionType(ActionButton.Action.SCRIPT);
+                button.setScript("Ext4.create('LABKEY.ext.ImportWizardWin', {" +
+                    "controller: 'assay'," +
+                    "action: '" + provider.getImportURL(currentContainer, protocol).getAction() + "'," +
+                    "urlParams: {rowId: " + protocol.getRowId() + "}" +
+                    "}).show();");
+                result.add(button);
+
             }
-            result.add(uploadButton);
         }
 
         return result;
