@@ -20,19 +20,16 @@
 <%@ page import="org.labkey.api.security.SecurityPolicy"%>
 <%@ page import="org.labkey.api.security.permissions.ReadPermission"%>
 <%@ page import="org.labkey.api.security.permissions.ReadSomePermission"%>
-<%@ page import="org.labkey.api.security.permissions.UpdatePermission"%>
-<%@ page import="org.labkey.api.study.DataSet"%>
-<%@ page import="org.labkey.api.view.HttpView"%>
+<%@ page import="org.labkey.api.security.roles.EditorRole"%>
+<%@ page import="org.labkey.api.security.roles.ReaderRole"%>
+<%@ page import="org.labkey.api.security.roles.Role"%>
+<%@ page import="org.labkey.api.security.roles.RoleManager" %>
+<%@ page import="org.labkey.api.study.DataSet" %>
+<%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.study.model.SecurityType" %>
 <%@ page import="org.labkey.study.model.StudyImpl" %>
 <%@ page import="java.util.ArrayList" %>
-<%@ page import="org.labkey.api.security.roles.RoleManager" %>
-<%@ page import="org.labkey.api.security.roles.Role" %>
 <%@ page import="java.util.List" %>
-<%@ page import="org.labkey.api.security.roles.EditorRole" %>
-<%@ page import="org.labkey.api.security.roles.ReaderRole" %>
-<%@ page import="org.labkey.api.util.PageFlowUtil" %>
-<%@ page import="org.labkey.study.model.DataSetDefinition" %>
 <%@ page extends="org.labkey.study.view.BaseStudyPage" %>
 <%!
     String groupName(Group g)
