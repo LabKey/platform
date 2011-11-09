@@ -36,7 +36,6 @@ import org.labkey.api.view.template.PageConfig;
 import org.labkey.pipeline.api.PipelineEmailPreferences;
 import org.labkey.pipeline.api.PipelineServiceImpl;
 import org.labkey.pipeline.api.PipelineStatusFileImpl;
-import org.labkey.pipeline.api.PipelineStatusManager;
 import org.springframework.validation.BindException;
 import org.springframework.validation.Errors;
 import org.springframework.web.servlet.ModelAndView;
@@ -58,7 +57,6 @@ public class StatusController extends SpringActionController
     private static final DefaultActionResolver _resolver = new DefaultActionResolver(StatusController.class);
 
     protected static final String _newline = System.getProperty("line.separator");
-    protected static final String DATAREGION_STATUS = "dataregion_StatusFiles";
 
     private static HelpTopic getHelpTopic(String topic)
     {
@@ -284,8 +282,8 @@ public class StatusController extends SpringActionController
                 File f = new File(_statusFile.getFilePath());
                 if (NetworkDrive.exists(f))
                 {
-                    String content = FileUtils.readFileToString(f);
-                    HtmlView logFileView = new HtmlView(f.getName(), "<pre>" + PageFlowUtil.filter(content) + "</pre>");
+                    WebPartView logFileView = new ReaderView(new FileInputStream(f), true, "<pre>", "</pre>");
+                    logFileView.setTitle(f.getName());
                     result.addView(logFileView);
                 }
             }
