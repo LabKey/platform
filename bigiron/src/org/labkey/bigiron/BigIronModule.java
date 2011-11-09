@@ -65,4 +65,9 @@ public class BigIronModule extends DefaultModule
     public void startup(ModuleContext moduleContext)
     {
     }
+
+    public TabDisplayMode getTabDisplayMode()
+    {
+        return TabDisplayMode.DISPLAY_NEVER;
+    }
 }

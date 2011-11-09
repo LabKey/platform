@@ -32,7 +32,6 @@ import java.util.Collections;
 
 public class AuthenticationModule extends DefaultModule
 {
-    public static final String NAME = "Authentication";
     private static Logger _log = Logger.getLogger(AuthenticationModule.class);
 
     public String getName()
