@@ -217,9 +217,7 @@ public class DataSetQueryView extends QueryView
         Container c = getContainer();
         User user = getUser();
         // Only show link to edit if permission allows it
-        setShowUpdateColumn(_showEditLinks && !isExportView() &&
-                _dataset.canWrite(user) &&
-                c.hasPermission(user, UpdatePermission.class));
+        setShowUpdateColumn(_showEditLinks && !isExportView() && _dataset.canWrite(user));
 
         // allow posts from dataset data regions to determine which dataset was being displayed:
         view.getDataRegion().addHiddenFormField(DataSetDefinition.DATASETKEY, "" + _dataset.getDataSetId());

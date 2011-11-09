@@ -18,9 +18,12 @@ package org.labkey.study.reports;
 import org.labkey.api.reports.report.AbstractReport;
 import org.labkey.api.reports.report.ReportDescriptor;
 import org.labkey.api.view.ActionURL;
+import org.labkey.api.view.HttpRedirectView;
 import org.labkey.api.view.HttpView;
 import org.labkey.api.view.RedirectException;
 import org.labkey.api.view.ViewContext;
+import org.springframework.web.servlet.ModelAndView;
+import org.springframework.web.servlet.view.RedirectView;
 
 import java.io.PrintWriter;
 
@@ -33,9 +36,13 @@ public abstract class RedirectReport extends AbstractReport
 {
     public static final String REDIRECT_URL = ReportDescriptor.Prop.redirectUrl.name();
 
-    public HttpView renderReport(ViewContext viewContext)
+    public RedirectReport()
     {
-        return new RedirectView();
+    }
+
+    public HttpView renderReport(ViewContext viewContext) throws Exception
+    {
+        return HttpView.redirect(getUrl(viewContext));
     }
 
     public String getParams()
@@ -56,14 +63,5 @@ public abstract class RedirectReport extends AbstractReport
     public String getUrl(ViewContext c)
     {
         return getParams();
-    }
-
-    private class RedirectView extends HttpView
-    {
-        @Override
-        protected void renderInternal(Object model, PrintWriter out) throws Exception
-        {
-            throw new RedirectException(getUrl(getViewContext()));
-        }
     }
 }
