@@ -930,6 +930,8 @@ public class PublishResultsQueryView extends ResultsQueryView
             DataColumn c = new DataColumn(specimenPTIDCol);
             c.setVisible(false);
             columns.add(c);
+            // We eliminate duplicate columns later based on labels, so make sure these have unique ones
+            c.setCaption("Specimen PTID - hidden");
         }
         if (specimenVisitCol != null)
         {
@@ -937,6 +939,8 @@ public class PublishResultsQueryView extends ResultsQueryView
             DataColumn c = new DataColumn(specimenVisitCol);
             c.setVisible(false);
             columns.add(c);
+            // We eliminate duplicate columns later based on labels, so make sure these have unique ones
+            c.setCaption("Specimen Visit - hidden");
         }
         if (specimenDateCol != null)
         {
@@ -944,6 +948,8 @@ public class PublishResultsQueryView extends ResultsQueryView
             DataColumn c = new DataColumn(specimenDateCol);
             c.setVisible(false);
             columns.add(c);
+            // We eliminate duplicate columns later based on labels, so make sure these have unique ones
+            c.setCaption("Specimen Date - hidden");
         }
         if (matchCol != null)
         {
@@ -951,6 +957,8 @@ public class PublishResultsQueryView extends ResultsQueryView
             DataColumn c = new DataColumn(matchCol);
             c.setVisible(false);
             columns.add(c);
+            // We eliminate duplicate columns later based on labels, so make sure these have unique ones
+            c.setCaption("Specimen Match - hidden");
         }
 
         columns.add(new ValidParticipantVisitDisplayColumn(resolverHelper));
