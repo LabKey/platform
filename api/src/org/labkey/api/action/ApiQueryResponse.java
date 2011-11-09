@@ -261,7 +261,16 @@ public class ApiQueryResponse implements ApiResponse, ApiStreamResponse
         for(DisplayColumn dc : _displayColumns)
         {
             if(dc.isQueryColumn())
+            {
                 cols.add(getColModel(dc));
+
+                if("file".equalsIgnoreCase(dc.getColumnInfo().getInputType()))
+                {
+                    Map<String,Object> urlmdata = getFileUrlMeta(dc);
+                    if(null != urlmdata)
+                        cols.add(urlmdata);
+                }
+            }
         }
         return cols;
     }
@@ -275,7 +284,7 @@ public class ApiQueryResponse implements ApiResponse, ApiStreamResponse
         // see  Ext.grid.ColumnModel Ext.grid.Column
         extGridColumn.put("dataIndex", colInfo.getName());
         extGridColumn.put("sortable", dc.isSortable());
-        extGridColumn.put("editable", !"file".equals(colInfo.getInputType()) && isEditable(dc));
+        extGridColumn.put("editable", isEditable(dc));
         extGridColumn.put("hidden", colInfo.isHidden() || colInfo.isAutoIncrement()); //auto-incr list key columns return false for isHidden(), so check isAutoIncrement as well
         if(dc.getTextAlign() != null)
             extGridColumn.put("align", dc.getTextAlign());

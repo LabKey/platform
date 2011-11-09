@@ -63,6 +63,22 @@ public class ExpDataFileConverter implements Converter
             }
             return data;
         }
+        // Then try as an LSID
+        else if (dataObject.has(ExperimentJSONConverter.LSID))
+        {
+            String lsid = dataObject.getString(ExperimentJSONConverter.LSID);
+            ExpData data = expSvc.getExpData(lsid);
+
+            if (data == null)
+            {
+                throw new NotFoundException("Could not find data with LSID " + lsid);
+            }
+            if (container != null && !data.getContainer().equals(container))
+            {
+                throw new NotFoundException("Data with LSID " + lsid + " is not in folder " + container);
+            }
+            return data;
+        }
         // Then try as a relative path from the pipeline root
         else if (dataObject.has(ExperimentJSONConverter.PIPELINE_PATH) && dataObject.getString(ExperimentJSONConverter.PIPELINE_PATH) != null && pipelineRoot != null)
         {
@@ -128,7 +144,7 @@ public class ExpDataFileConverter implements Converter
             return data;
         }
         else
-            throw new IllegalArgumentException("Data must have an id, pipelinePath, dataFileURL, or absolutePath property. " + dataObject);
+            throw new IllegalArgumentException("Data must have an id, LSID, pipelinePath, dataFileURL, or absolutePath property. " + dataObject);
     }
 
     @Override

@@ -16,6 +16,7 @@
 
 package org.labkey.api.exp.property;
 
+import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.TableInfo;
@@ -44,6 +45,8 @@ public interface Domain extends IPropertyType
     void setPropertyIndex(DomainProperty prop, int index);
     DomainProperty[] getProperties();
     DomainProperty getProperty(int id);
+    @Nullable
+    DomainProperty getPropertyByURI(String propertyURI);
     DomainProperty getPropertyByName(String name);
     ActionURL urlShowData();
 

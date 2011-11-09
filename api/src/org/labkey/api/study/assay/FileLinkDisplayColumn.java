@@ -16,84 +16,49 @@
 
 package org.labkey.api.study.assay;
 
-import org.labkey.api.data.DataColumn;
-import org.labkey.api.data.ColumnInfo;
-import org.labkey.api.data.RenderContext;
-import org.labkey.api.exp.query.ExpRunTable;
-import org.labkey.api.util.StringExpressionFactory;
-import org.labkey.api.util.PageFlowUtil;
-import org.labkey.api.util.StringExpression;
-import org.labkey.api.exp.PropertyDescriptor;
-import org.labkey.api.view.ActionURL;
+import org.labkey.api.admin.CoreUrls;
+import org.labkey.api.data.AbstractFileDisplayColumn;
+import org.labkey.api.data.Container;
+import org.labkey.api.exp.PropertyColumn;
+import org.labkey.api.query.DetailsURL;
 import org.labkey.api.query.FieldKey;
-import org.labkey.api.query.QueryService;
+import org.labkey.api.util.PageFlowUtil;
 
-import java.util.Set;
-import java.util.List;
-import java.util.ArrayList;
-import java.util.Map;
-import java.io.Writer;
-import java.io.IOException;
 import java.io.File;
+import java.util.Set;
 
 /**
  * User: brittp
 * Date: Oct 23, 2007
 * Time: 2:08:29 PM
 */
-public class FileLinkDisplayColumn extends DataColumn
+public class FileLinkDisplayColumn extends AbstractFileDisplayColumn
 {
-    private StringExpression _url;
-    private PropertyDescriptor _pd;
-    private ActionURL _baseURL;
-    private ColumnInfo _objectIdColumn;
+    private FieldKey _objectURIFieldKey;
 
-    public FileLinkDisplayColumn(ColumnInfo col, PropertyDescriptor pd, ActionURL baseURL)
+    public FileLinkDisplayColumn(PropertyColumn col, Container container, FieldKey objectURIFieldKey)
     {
         super(col);
-        _pd = pd;
-        _baseURL = baseURL;
+
+        _objectURIFieldKey = objectURIFieldKey;
+
+        setURLExpression(new DetailsURL(PageFlowUtil.urlProvider(CoreUrls.class).getDownloadFileLinkBaseURL(container, col.getPropertyDescriptor()), "objectURI", objectURIFieldKey));
     }
 
-    public void addQueryColumns(Set<ColumnInfo> columns)
+    @Override
+    public void addQueryFieldKeys(Set<FieldKey> keys)
     {
-        super.addQueryColumns(columns);
-        FieldKey thisFieldKey = FieldKey.fromString(getColumnInfo().getName());
-        List<FieldKey> keys = new ArrayList<FieldKey>();
-
-        FieldKey lsidFieldKey = new FieldKey(thisFieldKey.getParent(), ExpRunTable.Column.LSID.name());
-        keys.add(lsidFieldKey);
-        Map<FieldKey, ColumnInfo> cols = QueryService.get().getColumns(getColumnInfo().getParentTable(), keys);
-
-         _objectIdColumn = cols.get(lsidFieldKey);
-        if (_objectIdColumn != null)
-        {
-            columns.add(_objectIdColumn);
-        }
+        super.addQueryFieldKeys(keys);
+        keys.add(_objectURIFieldKey);
     }
 
-    public void renderGridCellContents(RenderContext ctx, Writer out) throws IOException
+    @Override
+    protected String getFileName(Object value)
     {
-        if (_url == null && _objectIdColumn != null)
+        if (value instanceof String)
         {
-            ActionURL url = _baseURL.clone();
-            url.addParameter("propertyId", _pd.getPropertyId());
-            _url = StringExpressionFactory.create(url.toString() + "&objectURI=${" + _objectIdColumn.getAlias() + "}", true);
+            return new File((String)value).getName();
         }
-
-        String path = (String) getValue(ctx);
-        if (path != null)
-        {
-            File file = new File(path);
-            if (file.exists() && _url != null)
-            {
-                out.write("<a href=\"" + _url.eval(ctx) + "\" title=\"Download attached file\">" +
-                    PageFlowUtil.filter(file.getName()) + "</a>");
-            }
-            else
-                out.write(file.getName());
-            return;
-        }
-        super.renderGridCellContents(ctx, out);
+        return null;
     }
 }

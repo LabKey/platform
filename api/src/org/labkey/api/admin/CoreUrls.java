@@ -16,6 +16,7 @@
 package org.labkey.api.admin;
 
 import org.labkey.api.action.UrlProvider;
+import org.labkey.api.exp.PropertyDescriptor;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.data.Container;
 
@@ -32,4 +33,7 @@ public interface CoreUrls extends UrlProvider
     ActionURL getCustomStylesheetURL(Container c);
     ActionURL getCombinedStylesheetURL(Container c);
     ActionURL getContainerRedirectURL(Container c, String pageFlow, String action);
+
+    /** Still needs objectURI parameter and value tacked on */
+    ActionURL getDownloadFileLinkBaseURL(Container container, PropertyDescriptor pd);
 }

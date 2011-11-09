@@ -17,6 +17,7 @@ package org.labkey.api.action;
 
 import org.labkey.api.util.FileUtil;
 import org.labkey.api.util.PageFlowUtil;
+import org.labkey.api.util.Pair;
 import org.springframework.validation.BindException;
 import org.springframework.web.multipart.MultipartHttpServletRequest;
 import org.springframework.web.multipart.MultipartFile;
@@ -25,7 +26,9 @@ import org.labkey.api.util.ExceptionUtil;
 import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpServletRequest;
 import java.io.*;
+import java.util.HashMap;
 import java.util.Iterator;
+import java.util.Map;
 
 /**
  * Base class for actions that just want to accept a file by HTTP upload.
@@ -33,8 +36,46 @@ import java.util.Iterator;
  * User: jeckels
  * Date: Jan 19, 2009
  */
-public abstract class AbstractFileUploadAction<FORM> extends ExportAction<FORM>
+public abstract class AbstractFileUploadAction<FORM extends AbstractFileUploadAction.FileUploadForm> extends ExportAction<FORM>
 {
+    public static class FileUploadForm
+    {
+        private String[] _fileName = new String[0];
+        private String[] _fileContent  = new String[0];
+        /** If false, only send back the multiple result format if multiple files were uploaded */
+        private boolean _forceMultipleResults;
+
+        public String[] getFileName()
+        {
+            return _fileName;
+        }
+
+        public void setFileName(String[] fileName)
+        {
+            _fileName = fileName;
+        }
+
+        public String[] getFileContent()
+        {
+            return _fileContent;
+        }
+
+        public void setFileContent(String[] fileContent)
+        {
+            _fileContent = fileContent;
+        }
+
+        public boolean isForceMultipleResults()
+        {
+            return _forceMultipleResults;
+        }
+
+        public void setForceMultipleResults(boolean forceMultipleResults)
+        {
+            _forceMultipleResults = forceMultipleResults;
+        }
+    }
+
     public void export(FORM form, HttpServletResponse response, BindException errors) throws Exception
     {
         response.reset();
@@ -43,9 +84,16 @@ public abstract class AbstractFileUploadAction<FORM> extends ExportAction<FORM>
         OutputStream out = response.getOutputStream();
         OutputStreamWriter writer = new OutputStreamWriter(out);
 
+        if (form.getFileName().length != form.getFileContent().length)
+        {
+            error(writer, "Must include the same number of fileName and fileContent parameter values", HttpServletResponse.SC_BAD_REQUEST);
+            return;
+        }
+        
         HttpServletRequest basicRequest = getViewContext().getRequest();
-        String filename;
-        InputStream input = null;
+
+        // Parameter name (String) -> File on disk/original file name Pair
+        Map<String, Pair<File, String>> savedFiles = new HashMap<String, Pair<File, String>>();
 
         if (basicRequest instanceof MultipartHttpServletRequest)
         {
@@ -53,66 +101,83 @@ public abstract class AbstractFileUploadAction<FORM> extends ExportAction<FORM>
 
             //noinspection unchecked
             Iterator<String> nameIterator = request.getFileNames();
-            String formElementName = nameIterator.next();
-            MultipartFile file = request.getFile(formElementName);
-            filename = file.getOriginalFilename();
-            input = file.getInputStream();
+            while (nameIterator.hasNext())
+            {
+                String formElementName = nameIterator.next();
+                MultipartFile file = request.getFile(formElementName);
+                String filename = file.getOriginalFilename();
+                InputStream input = file.getInputStream();
+                if (!file.isEmpty())
+                {
+                    try
+                    {
+                        File f = handleFile(filename, input, writer);
+                        if (f == null)
+                        {
+                            return;
+                        }
+                        savedFiles.put(formElementName, new Pair<File, String>(f, filename));
+                    }
+                    finally
+                    {
+                        if (input != null) { try { input.close(); } catch (IOException ignored) {} }
+                    }
+                }
+            }
         }
-        else
+
+        for (int i = 0; i < form.getFileName().length; i++)
         {
-            filename = basicRequest.getParameter("fileName");
-            String content = basicRequest.getParameter("fileContent");
+            String filename = form.getFileName()[i];
+            String content = form.getFileContent()[i];
             if (content != null)
             {
-                input = new ByteArrayInputStream(content.getBytes());
+                File f = handleFile(filename, new ByteArrayInputStream(content.getBytes()), writer);
+                if (f != null)
+                {
+                    savedFiles.put("FileContent" + (i == 0 ? "" : (i + 1)), new Pair<File, String>(f, filename));
+                }
             }
         }
 
-        if (filename == null || input == null)
-        {
-            error(writer, "No file uploaded, or no filename specified", HttpServletResponse.SC_BAD_REQUEST);
-            return;
-        }
-
-        File targetFile;
-        try
-        {
-            // Issue 12845: clean the upload filename before trying to create the file
-            String legalName = FileUtil.makeLegalName(filename);
-            targetFile = getTargetFile(legalName);
-
-            OutputStream output = new FileOutputStream(targetFile);
-            try
-            {
-                byte[] buffer = new byte[1024];
-                int len;
-                while ((len = input.read(buffer)) > 0)
-                    output.write(buffer, 0, len);
-
-                output.flush();
-                output.close();
-                input.close();
-
-            }
-            catch (IOException ioe)
-            {
-                ExceptionUtil.logExceptionToMothership(basicRequest, ioe);
-                error(writer, ioe.getMessage(), HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
-                return;
-            }
-
-            String message = handleFile(targetFile, filename);
-            writer.write(message);
-        }
-        catch (UploadException e)
-        {
-            error(writer, e.getMessage(), e.getStatusCode());
-            return;
-        }
-
+        writer.write(getResponse(savedFiles, form));
 
         writer.flush();
         writer.close();
+    }
+
+    protected File handleFile(String filename, InputStream input, Writer writer) throws IOException
+    {
+        if (filename == null || input == null)
+        {
+            error(writer, "No file uploaded, or no filename specified", HttpServletResponse.SC_BAD_REQUEST);
+            return null;
+        }
+
+        // Issue 12845: clean the upload filename before trying to create the file
+        String legalName = FileUtil.makeLegalName(filename);
+        File targetFile = getTargetFile(legalName);
+
+        OutputStream output = new FileOutputStream(targetFile);
+        try
+        {
+            byte[] buffer = new byte[1024];
+            int len;
+            while ((len = input.read(buffer)) > 0)
+                output.write(buffer, 0, len);
+
+            output.flush();
+            output.close();
+            input.close();
+            return targetFile;
+
+        }
+        catch (IOException ioe)
+        {
+            ExceptionUtil.logExceptionToMothership(getViewContext().getRequest(), ioe);
+            error(writer, ioe.getMessage(), HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
+            return null;
+        }
     }
 
     public static class UploadException extends IOException
@@ -138,7 +203,7 @@ public abstract class AbstractFileUploadAction<FORM> extends ExportAction<FORM>
      * Callback once the file has been written to the server's file system.
      * @return a meaningful handle that the client can use to refer to the file
      */
-    protected abstract String handleFile(File file, String originalName) throws UploadException;
+    protected abstract String getResponse(Map<String, Pair<File, String>> files, FORM form) throws UploadException;
 
     private void error(Writer writer, String message, int statusCode) throws IOException
     {

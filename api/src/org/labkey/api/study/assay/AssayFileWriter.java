@@ -23,6 +23,7 @@ import org.labkey.api.pipeline.PipeRoot;
 import org.labkey.api.pipeline.PipelineService;
 import org.labkey.api.util.DateUtil;
 import org.labkey.api.data.Container;
+import org.labkey.api.util.NetworkDrive;
 import org.labkey.api.view.ViewContext;
 import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.multipart.MultipartHttpServletRequest;
@@ -38,12 +39,25 @@ public class AssayFileWriter
 {
     public static final String DIR_NAME = "assaydata";
 
+    /** Make sure there's an assaydata subdirectory available for this container */
     public static File ensureUploadDirectory(Container container) throws ExperimentException
     {
+        return ensureUploadDirectory(container, DIR_NAME);
+    }
+
+    /** Make sure there's a subdirectory of the specified name available for this container */
+    public static File ensureUploadDirectory(Container container, String dirName) throws ExperimentException
+    {
+        if (dirName == null)
+        {
+            dirName = "";
+        }
+        
         PipeRoot root = getPipelineRoot(container);
 
-        File dir = root.resolvePath(DIR_NAME);
-        if (!dir.exists()) {
+        File dir = root.resolvePath(dirName);
+        if (!NetworkDrive.exists(dir))
+        {
             boolean success = dir.mkdir();
             if (!success) throw new ExperimentException("Could not create directory: " + dir);
         }
@@ -179,7 +193,7 @@ public class AssayFileWriter
                     if (!multipartFile.isEmpty())
                     {
                         File file = findUniqueFileName(fileName, dir);
-                        writeFile(multipartFile.getInputStream(), file);
+                        multipartFile.transferTo(file);
                         files.put(multipartFile.getName(), file);
                     }
                 }

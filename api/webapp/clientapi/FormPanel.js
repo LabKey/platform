@@ -125,7 +125,8 @@ LABKEY.ext.FormPanel = Ext.extend(Ext.form.FormPanel,
             {
                 var c = this.allFields[i];
                 var name = c.hiddenName || c.name;
-                if (!existing[name])
+                // Don't render URL values as a separate input field
+                if (!existing[name] && name.indexOf(LABKEY.Query.URL_COLUMN_PREFIX) != 0)
                     this.add(c);
             }
         }
@@ -544,7 +545,13 @@ LABKEY.ext.FormHelper =
                                     'j M Y H:i:s';     // 10 Sep 2009 01:24:12
                     break;
                 case "string":
-                    if (config.inputType=='textarea')
+                    if (config.inputType == 'file')
+                    {
+                        field.xtype = 'textfield';
+                        field.inputType = 'file';
+                        break;
+                    }
+                    else if (config.inputType=='textarea')
                     {
                         field.xtype = 'textarea';
                         field.width = 500;

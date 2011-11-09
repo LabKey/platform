@@ -20,6 +20,7 @@ import org.labkey.api.data.dialect.SqlDialect;
 import org.labkey.api.exp.property.PropertyService;
 import org.labkey.api.query.PdLookupForeignKey;
 import org.labkey.api.security.User;
+import org.labkey.api.study.assay.FileLinkDisplayColumn;
 
 import java.util.Map;
 
@@ -40,7 +41,7 @@ public class PropertyColumn extends LookupColumn
         this(pd, tinfoParent.getColumn(parentLsidColumn), container, user);
     }
 
-    public PropertyColumn(PropertyDescriptor pd, ColumnInfo lsidColumn, Container container, User user)
+    public PropertyColumn(PropertyDescriptor pd, final ColumnInfo lsidColumn, final Container container, User user)
     {
         super(lsidColumn, OntologyManager.getTinfoObject().getColumn("ObjectURI"), OntologyManager.getTinfoObjectProperty().getColumn(getPropertyCol(pd)));
         setName(pd.getName());
@@ -48,6 +49,18 @@ public class PropertyColumn extends LookupColumn
 
         copyAttributes(user, this, pd);
         setSqlTypeName(getPropertySqlType(pd,OntologyManager.getSqlDialect()));
+
+        // Swap out the renderer for file properties
+        if (pd.getPropertyType() == PropertyType.FILE_LINK)
+        {
+            setDisplayColumnFactory(new DisplayColumnFactory()
+            {
+                public DisplayColumn createRenderer(ColumnInfo colInfo)
+                {
+                    return new FileLinkDisplayColumn(PropertyColumn.this, container, lsidColumn.getFieldKey());
+                }
+            });
+        }
 
         _pd = pd;
         _container = container;

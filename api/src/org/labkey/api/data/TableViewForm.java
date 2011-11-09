@@ -42,10 +42,13 @@ import org.springframework.beans.PropertyValue;
 import org.springframework.beans.PropertyValues;
 import org.springframework.validation.BindException;
 import org.springframework.validation.FieldError;
+import org.springframework.web.multipart.MultipartFile;
+import org.springframework.web.multipart.MultipartHttpServletRequest;
 
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
 import java.beans.Introspector;
+import java.io.File;
 import java.sql.SQLException;
 import java.util.Collections;
 import java.util.Enumeration;
@@ -511,6 +514,19 @@ public class TableViewForm extends ViewForm implements DynaBean, HasBindParamete
                 values.put(column.getName(), getTypedValue(column));
             else if (includeUntyped && contains(column))
                 values.put(column.getName(), get(column));
+
+            // Check if there was a file uploaded for the column's value
+            if (values.get(column.getName()) == null && File.class.equals(column.getJavaClass()) && getRequest() instanceof MultipartHttpServletRequest)
+            {
+                MultipartHttpServletRequest request = (MultipartHttpServletRequest) getRequest();
+                MultipartFile f = request.getFile(getFormFieldName(column));
+                // Only set the parameter value if there was a form element that was posted
+                if (f != null)
+                {
+                    // Translate an empty file to null so that everyone else doesn't have to check
+                    values.put(column.getName(), f.isEmpty() ? null : f);
+                }
+            }
 
             if (column.isMvEnabled())
             {
