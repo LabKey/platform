@@ -1147,7 +1147,8 @@ var PrincipalComboBox = Ext.extend(Ext.form.ComboBox,{
             forceSelection : true,
             typeAhead : true,
             displayField : 'Name',
-            emptyText : config.groupsOnly ? 'Add group...' : config.usersOnly ? 'Add user...' : 'Add user or group...'
+            emptyText : config.groupsOnly ? 'Add group...' : config.usersOnly ? 'Add user...' : 'Add user or group...',
+            id : 'Users_dropdownMenu'
         });
         PrincipalComboBox.superclass.constructor.call(this, config);
     },
