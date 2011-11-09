@@ -62,45 +62,61 @@ public class RelativeDateVisitManager extends VisitManager
     
 
     @Override
-    protected SQLFragment getVisitSummarySql(CohortFilter cohortFilter, QCStateSet qcStates, String statsSql, String alias)
+    protected SQLFragment getVisitSummarySql(CohortFilter cohortFilter, QCStateSet qcStates, String statsSql, String alias, boolean showAll, boolean useVisitId)
     {
-        TableInfo studyData = StudySchema.getInstance().getTableInfoStudyDataVisible(getStudy(), null);
+        TableInfo studyData = showAll ?
+                StudySchema.getInstance().getTableInfoStudyData(getStudy(), null) :
+                StudySchema.getInstance().getTableInfoStudyDataVisible(getStudy(), null);
         TableInfo participantVisit = StudySchema.getInstance().getTableInfoParticipantVisit();
         TableInfo participantTable = StudySchema.getInstance().getTableInfoParticipant();
 
         SQLFragment sql = new SQLFragment();
+        sql.appendComment("<RelativeDateVisitManager.getVisitSummarySql>", participantTable.getSqlDialect());
+
+        SQLFragment keyCols = new SQLFragment("DatasetId, ");
+        if (useVisitId)
+            keyCols.append("PV.VisitRowId");
+        else
+            keyCols.append("PV.Day");
 
         if (cohortFilter == null)
         {
-            sql.append("SELECT DatasetId, Day").append(statsSql).append("\n" + "FROM ").append(studyData.getFromSQL(alias))
-                .append("\n" + "JOIN ").append(participantVisit.getFromSQL("PV")).append(" ON ").append(alias)
-                .append(".ParticipantId = PV.ParticipantId AND ").append(alias).append(".SequenceNum = PV.SequenceNum AND ? = PV.Container\n")
-                .append(qcStates != null ? "WHERE " + qcStates.getStateInClause(DataSetTableImpl.QCSTATE_ID_COLNAME) + "\n" : "")
-                .append("GROUP BY DatasetId, Day\n" + "ORDER BY 1, 2");
+            sql.append("SELECT ").append(keyCols).append(statsSql);
+            sql.append("\nFROM ").append(studyData.getFromSQL(alias))
+                .append(" JOIN ").append(participantVisit.getFromSQL("PV")).append(" ON ").append(alias)
+                .append(".ParticipantId = PV.ParticipantId AND ").append(alias).append(".SequenceNum = PV.SequenceNum AND ? = PV.Container");
             sql.add(getStudy().getContainer());
+            if (null != qcStates)
+                sql.append("\nWHERE ").append(qcStates.getStateInClause(DataSetTableImpl.QCSTATE_ID_COLNAME));
+            sql.append("\nGROUP BY ").append(keyCols);
+            sql.append("\nORDER BY 1, 2");
         }
         else
         {
             switch (cohortFilter.getType())
             {
                 case DATA_COLLECTION:
-                    break;
+                    throw new UnsupportedOperationException("Unsupported cohort filter for date-based study");
                 case PTID_CURRENT:
                 case PTID_INITIAL:
-                    sql.append("SELECT DatasetId, Day").append(statsSql).append("\n" + "FROM ").append(studyData.getFromSQL(alias))
-                        .append("\n" + "JOIN ").append(participantVisit.getFromSQL("PV")).append(" ON ").append(alias)
-                        .append(".ParticipantId = PV.ParticipantId AND ").append(alias).append(".SequenceNum = PV.SequenceNum AND ? = PV.Container\n" + "JOIN ")
-                        .append(participantTable.getFromSQL("P")).append(" ON ").append(alias).append(".ParticipantId = P.ParticipantId AND ? = P.Container\n" + "WHERE P.")
+                    sql.append("SELECT ").append(keyCols).append(statsSql);
+                    sql.append("\nFROM ").append(studyData.getFromSQL(alias))
+                        .append("\nJOIN ").append(participantVisit.getFromSQL("PV")).append(" ON (").append(alias)
+                        .append(".ParticipantId = PV.ParticipantId AND ").append(alias).append(".SequenceNum = PV.SequenceNum AND ? = PV.Container)\n" + "JOIN ")
+                        .append(participantTable.getFromSQL("P")).append(" ON (").append(alias).append(".ParticipantId = P.ParticipantId AND ? = P.Container)\n");
+                    sql.add(getStudy().getContainer());
+                    sql.add(getStudy().getContainer());
+                    sql.append("\nWHERE P.")
                         .append(cohortFilter.getType() == CohortFilter.Type.PTID_CURRENT ? "CurrentCohortId" : "InitialCohortId")
-                        .append(" = ?\n").append(qcStates != null ? "AND " + qcStates.getStateInClause(DataSetTableImpl.QCSTATE_ID_COLNAME) + "\n" : "")
-                        .append("GROUP BY DatasetId, Day\n" + "ORDER BY 1, 2");
-                    sql.add(getStudy().getContainer());
-                    sql.add(getStudy().getContainer());
+                        .append(" = ?\n").append(qcStates != null ? "AND " + qcStates.getStateInClause(DataSetTableImpl.QCSTATE_ID_COLNAME) + "\n" : "");
                     sql.add(cohortFilter.getCohortId());
+                    sql.append("\nGROUP BY ").append(keyCols);
+                    sql.append("\nORDER BY 1, 2");
                     break;
             }
         }
 
+        sql.appendComment("</RelativeDateVisitManager.getVisitSummarySql>", participantTable.getSqlDialect());
         return sql;
     }
 

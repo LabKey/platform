@@ -629,7 +629,7 @@ public class StudyController extends BaseStudyController
                 bean.cohortFilter = CohortFilter.getFromURL(getViewContext().getActionURL());
 
             VisitManager visitManager = StudyManager.getInstance().getVisitManager(bean.study);
-            bean.visitMapSummary = visitManager.getVisitSummary(bean.cohortFilter, bean.qcStates, bean.stats);
+            bean.visitMapSummary = visitManager.getVisitSummary(bean.cohortFilter, bean.qcStates, bean.stats, bean.showAll);
 
             return new StudyJspView<OverviewBean>(getStudy(), "overview.jsp", bean, errors);
         }

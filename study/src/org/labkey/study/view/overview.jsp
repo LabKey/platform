@@ -42,15 +42,18 @@
 <%@ page import="java.util.List" %>
 <%@ page import="java.util.Map" %>
 <%@ page import="org.labkey.study.model.CohortManager" %>
+<%@ page import="org.labkey.study.model.StudyImpl" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
     JspView<StudyController.OverviewBean> me = (JspView<StudyController.OverviewBean>) HttpView.currentView();
     StudyController.OverviewBean bean = me.getModelBean();
     String contextPath = request.getContextPath();
-    Study study = bean.study;
+    StudyImpl study = bean.study;
     Container container = study.getContainer();
     User user = (User) request.getUserPrincipal();
     StudyManager manager = StudyManager.getInstance();
+    String visitsLabel = manager.getVisitManager(study).getPluralLabel();
+    String subjectNoun = StudyService.get().getSubjectNounSingular(container);
 
     boolean showCohorts = CohortManager.getInstance().hasCohortMenu(container, user);
     CohortImpl selectedCohort = null;
@@ -71,6 +74,8 @@
         selectedQCStateSet = bean.qcStates;
         qcStateSetOptions = QCStateSet.getSelectableSets(container);
     }
+
+    VisitStatistic[] statisticsToDisplay = bean.stats.toArray(new VisitStatistic[bean.stats.size()]);
 
     VisitImpl[] visits = manager.getVisits(study, selectedCohort, user, Visit.Order.DISPLAY);
     DataSetDefinition[] datasets = manager.getDataSetDefinitions(study, selectedCohort);
@@ -106,7 +111,7 @@
     {
 %>
     <input type="hidden" name="<%= CohortFilter.Params.cohortFilterType.name() %>" value="<%= CohortFilter.Type.PTID_CURRENT.name() %>">
-    <%= h(StudyService.get().getSubjectNounSingular(container)) %>'s current cohort: <select name="<%= CohortFilter.Params.cohortId.name() %>" onchange="document.changeFilterForm.submit()">
+    <%= h(subjectNoun) %>'s current cohort: <select name="<%= CohortFilter.Params.cohortId.name() %>" onchange="document.changeFilterForm.submit()">
     <option value="">All</option>
     <%
         for (CohortImpl cohort : cohorts)
@@ -142,30 +147,37 @@
     for (VisitStatistic stat : VisitStatistic.values())
     {
         boolean checked = bean.stats.contains(stat);
-        out.print("<input name=\"visitStatistic\" value=\"" + h(stat.name()) + "\" type=\"checkbox\"" + (checked ? " checked" : "") + " onclick=\"document.changeFilterForm.submit()\">" + h(stat.getDisplayString()) + "\n");
+        out.print("<input name=\"visitStatistic\" value=\"" + h(stat.name()) + "\" type=\"checkbox\"" + (checked ? " checked" : "") + " onclick=\"document.changeFilterForm.submit()\">" + h(stat.getDisplayString(study)) + "\n");
     }
     %>
 </form>
 <br><br>
-<table id="studyOverview" class="labkey-data-region labkey-show-borders"><colgroup><col><col>
-    <%
-        for (VisitImpl visit : visits)
-        {
-            if (!bean.showAll && !visit.isShowByDefault())
-                continue;
-            %><col><%
-        }
-        %></colgroup>
-    <tr class="labkey-alternate-row labkey-col-header">
-        <th class="labkey-data-region-title"><img alt="" width=60 height=1 src="<%=contextPath%>/_.gif"></th>
-        <th style="font-weight:bold;">&nbsp;ALL&nbsp;</th><%
+<table id="studyOverview" class="labkey-data-region labkey-show-borders"style="border-collapse:collapse;">
+    <tr class="labkey-alternate-row">
+        <td class="labkey-column-header"><img alt="" width=60 height=1 src="<%=contextPath%>/_.gif"></td>
+        <td class="labkey-column-header"><%
+            String slash = "";
+            for (VisitStatistic v : statisticsToDisplay)
+            {
+                %><%=slash%><%
+                if (v == VisitStatistic.ParticipantCount)
+                {
+                    %>All <%=visitsLabel%><%
+                }
+                else
+                {
+                    %><%=v.getDisplayString(study)%><%
+                }
+                slash = " / ";
+            }
+        %></td><%
 
         for (VisitImpl visit : visits)
         {
             if (!bean.showAll && !visit.isShowByDefault())
                 continue;
             String label = visit.getDisplayString();
-            %><th align="center" valign="top"><%= h(label) %></th><%
+            %><td class="labkey-column-header" align="center" valign="top"><%= h(label) %></td><%
         }
         %>
     </tr>
@@ -235,7 +247,7 @@
 
         String innerHtml = "";
 
-        for (VisitStatistic stat : bean.stats)
+        for (VisitStatistic stat : statisticsToDisplay)
         {
             if (!innerHtml.isEmpty())
                 innerHtml += " / ";

@@ -161,9 +161,9 @@ public abstract class VisitManager
 
     // Produce appropriate SQL for getVisitSummary().  The SQL must select dataset ID, sequence number, and then the specified statistics;
     // it also needs to filter by cohort and qcstates.  Tables providing the statistics must be aliased using the provided alias.
-    protected abstract SQLFragment getVisitSummarySql(CohortFilter cohortFilter, QCStateSet qcStates, String stats, String alias);
+    protected abstract SQLFragment getVisitSummarySql(CohortFilter cohortFilter, QCStateSet qcStates, String stats, String alias, boolean showAll, boolean useVisitId);
 
-    public Map<VisitMapKey, VisitStatistics> getVisitSummary(CohortFilter cohortFilter, QCStateSet qcStates, Set<VisitStatistic> stats) throws SQLException
+    public Map<VisitMapKey, VisitStatistics> getVisitSummary(CohortFilter cohortFilter, QCStateSet qcStates, Set<VisitStatistic> stats, boolean showAll) throws SQLException
     {
         String alias = "SD";
         StringBuilder statsSql = new StringBuilder();
@@ -174,7 +174,9 @@ public abstract class VisitManager
             statsSql.append(stat.getSql(alias));
         }
 
-        SQLFragment sql = getVisitSummarySql(cohortFilter, qcStates, statsSql.toString(), alias);
+        boolean useVisitId = true;
+
+        SQLFragment sql = getVisitSummarySql(cohortFilter, qcStates, statsSql.toString(), alias, showAll, useVisitId);
         ResultSet rows = null;
 
         try
@@ -188,14 +190,22 @@ public abstract class VisitManager
             while (rows.next())
             {
                 int datasetId = rows.getInt(1);
-                double sequenceNum = rows.getDouble(2);
+                int visitRowId;
 
-                VisitImpl v = findVisitBySequence(sequenceNum);
-
-                if (null == v)
-                    continue;
-
-                int visitRowId = v.getRowId();
+                if (useVisitId)
+                {
+                    visitRowId = rows.getInt(2);
+                    if (rows.wasNull())
+                        continue;
+                }
+                else
+                {
+                    double sequenceNum = rows.getDouble(2);
+                    VisitImpl v = findVisitBySequence(sequenceNum);
+                    if (null == v)
+                        continue;
+                    visitRowId = v.getRowId();
+                }
 
                 if (null == key || key.datasetId != datasetId || key.visitRowId != visitRowId)
                 {
@@ -215,6 +225,7 @@ public abstract class VisitManager
             if (key != null)
                 visitSummary.put(key, statistics);
 
+//            assert dump(visitSummary, stats);
             return visitSummary;
         }
         finally
@@ -222,6 +233,19 @@ public abstract class VisitManager
             ResultSetUtil.close(rows);
         }
     }
+
+    boolean dump(Map<VisitMapKey, VisitStatistics> map, Set<VisitStatistic> set)
+    {
+        VisitStatistic[] statsToDisplay = set.toArray(new VisitStatistic[set.size()]);
+        for (Map.Entry<VisitMapKey,VisitStatistics> e : map.entrySet())
+        {
+            VisitMapKey key = e.getKey();
+            VisitStatistics stats = e.getValue();
+            System.out.println("datasetId=" + key.datasetId + " visitRowId=" + key.visitRowId + " stat=" + (null==stats?"null":stats.get(statsToDisplay[0])));
+        }
+        return true;
+    }
+
 
     public static void cancelParticipantPurge(Container c)
     {
@@ -245,9 +269,9 @@ public abstract class VisitManager
             }
 
             @Override
-            public String getDisplayString()
+            public String getDisplayString(Study study)
             {
-                return "Participant Count";
+                return study.getSubjectNounSingular() + " Count";
             }},
 
         RowCount
@@ -259,14 +283,14 @@ public abstract class VisitManager
             }
 
             @Override
-            public String getDisplayString()
+            public String getDisplayString(Study study)
             {
                 return "Row Count";
             }
         };
 
         abstract String getSql(@NotNull String alias);
-        public abstract String getDisplayString();
+        public abstract String getDisplayString(Study study);
     }
 
     public static class VisitStatistics

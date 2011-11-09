@@ -16,6 +16,7 @@
 
 package org.labkey.study;
 
+import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.DbSchema;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.dialect.SqlDialect;
@@ -93,7 +94,7 @@ public class StudySchema
         return getSchema().getTable("VisitMap");
     }
 
-    public TableInfo getTableInfoStudyData(StudyImpl study, User user)
+    public TableInfo getTableInfoStudyData(StudyImpl study, @Nullable User user)
     {
         return new StudyUnionTableInfo(study, Arrays.asList(StudyManager.getInstance().getDataSetDefinitions(study)), user);
     }
@@ -103,7 +104,7 @@ public class StudySchema
         return new StudyUnionTableInfo(study, defs, user);
     }
 
-    public TableInfo getTableInfoStudyDataVisible(StudyImpl study, User user)
+    public TableInfo getTableInfoStudyDataVisible(StudyImpl study, @Nullable User user)
     {
         List<DataSetDefinition> defsAll = study.getDataSets();
         List<DataSetDefinition> defsVisible = new ArrayList<DataSetDefinition>(defsAll.size());
