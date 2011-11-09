@@ -78,6 +78,11 @@ public interface FolderType
     public String getDescription();
 
     /**
+     * If true, rather than importing into the current container, assay upload will ask the user to create a workbook or pick an existing one and import using this container
+     */
+    public boolean getForceAssayUploadIntoWorkbooks();
+
+    /**
      * Label of this folder type. This is what the user sees. Should be a short name such as "MS2" not "MS2 Folder"
      * @return User visible label
      */

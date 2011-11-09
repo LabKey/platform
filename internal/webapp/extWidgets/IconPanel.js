@@ -97,8 +97,7 @@ Ext4.define('LABKEY.ext.IconPanel', {
                 },
                 trackOver: true,
                 overItemCls: 'x4-item-over',
-                itemSelector: 'div.thumb-wrap',
-                emptyText: 'No projects to display'
+                itemSelector: 'div.thumb-wrap'
             }]
         });
 

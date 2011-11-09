@@ -145,6 +145,10 @@ public class SimpleFolderType extends DefaultFolderType
         _preferredParts = createWebParts(type.getPreferredWebParts().getWebPartArray(), log);
         _requiredParts = createWebParts(type.getRequiredWebParts().getWebPartArray(), log);
         setWorkbookType(type.isSetWorkbookType() && type.getWorkbookType());
+        setForceAssayUploadIntoWorkbooks(type.getForceAssayUploadIntoWorkbooks());
+        String _iconPath = type.getFolderIconPath();
+        if(_iconPath != null)
+            setFolderIconPath(_iconPath);
 
         Set<Module> activeModules = new HashSet<Module>();
         for (String moduleName : type.getModules().getModuleNameArray())

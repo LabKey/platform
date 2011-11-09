@@ -31,6 +31,7 @@ public class CustomFolderType implements FolderType
     public void configureContainer(Container c) {  }
     public void unconfigureContainer(Container c) {  }
     public String getName() { return "None"; }
+    protected boolean forceAssayUploadIntoWorkbooks = false;
 
     public String getDescription()
     {
@@ -117,6 +118,16 @@ public class CustomFolderType implements FolderType
     public String getFolderIconPath()
     {
         return "_images/defaultlogosmall.gif";
+    }
+
+    public boolean getForceAssayUploadIntoWorkbooks()
+    {
+        return forceAssayUploadIntoWorkbooks;
+    }
+
+    public void setForceAssayUploadIntoWorkbooks(boolean forceAssayUploadIntoWorkbooks)
+    {
+        this.forceAssayUploadIntoWorkbooks = forceAssayUploadIntoWorkbooks;
     }
 
     private List<Module> getSortedModuleList()

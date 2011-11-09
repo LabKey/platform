@@ -3,12 +3,11 @@
  *
  * Licensed under the Apache License, Version 2.0: http://www.apache.org/licenses/LICENSE-2.0
  */
-//experimental
 
 /*
-    @param (String) [action]
-    @param (String) [controller]
-    @param (String) [action]
+    @param (String) [action] After a workbook is created, it will nagivate to this page
+    @param (String) [controller] After a workbook is created, it will navigate to a URL using this controller
+    @param (Object) [urlParams] (optional) After a workbook is created, it will navigate to a URL with these params
  */
 
 Ext4.define('LABKEY.ext.ImportWizard', {
@@ -25,6 +24,7 @@ Ext4.define('LABKEY.ext.ImportWizard', {
             },
             items: [{
                 xtype: 'radiogroup',
+                style: 'padding:5px;',
                 columns: 2,
                 width: 500,
                 itemId: 'inputType',
@@ -97,7 +97,12 @@ Ext4.define('LABKEY.ext.ImportWizard', {
             }
 
             var rec = combo.store.getAt(combo.store.find('RowId', rowid));
-            this.doLoad('/' + LABKEY.ActionURL.getContainerName() + '/' + rec.data.Name)
+            if(!rec){
+                alert('Must pick a workbook');
+                return;
+            }
+
+            this.doLoad('/' + LABKEY.ActionURL.getContainerName() + '/' + rec.get('Name'));
         }
     },
 
@@ -105,10 +110,6 @@ Ext4.define('LABKEY.ext.ImportWizard', {
         var controller = this.controller;
         var action = this.action;
         var urlParams = this.urlParams || {};
-        var srcURL = LABKEY.ActionURL.buildURL('project', 'begin', containerPath);
-        if(srcURL)
-            urlParams.srcURL = srcURL;
-
 
         window.location = LABKEY.ActionURL.buildURL(controller, action, containerPath, urlParams);
     },
@@ -155,7 +156,8 @@ Ext4.define('LABKEY.ext.ImportWizard', {
             store: Ext4.create('LABKEY.ext4.Store', {
                 schemaName: 'core',
                 queryName: 'workbooks',
-                columns: '*',
+                columns: 'RowId,title,CreatedBy,Name',
+                sort: 'rowid',
                 autoLoad: true
             })
         },{
@@ -165,6 +167,7 @@ Ext4.define('LABKEY.ext.ImportWizard', {
                 change: function(btn, val){
                     var panel = btn.up('form');
                     var combo = panel.down('#workbookName');
+                    combo.reset();
 
                     if(val)
                         combo.store.filter('CreatedBy', LABKEY.Security.currentUser.id);
@@ -189,7 +192,6 @@ Ext4.define('LABKEY.ext.ImportWizardWin', {
     initComponent: function(){
         Ext4.apply(this, {
             closeAction:'hide',
-//            frame: true,
             title: 'Import Data',
             modal: true,
             items: [{

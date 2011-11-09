@@ -52,6 +52,8 @@ public class DefaultFolderType implements FolderType
     protected String name;
     protected Module defaultModule;
     protected boolean workbookType = false;
+    protected String folderIconPath = "_images/defaultlogosmall.gif";
+    protected boolean forceAssayUploadIntoWorkbooks = false;
 
     public DefaultFolderType(String name, String description)
     {
@@ -67,6 +69,18 @@ public class DefaultFolderType implements FolderType
         this.preferredParts = preferredParts == null ? Collections.<WebPart>emptyList() : preferredParts;
         this.activeModules = activeModules;
         this.defaultModule = defaultModule;
+    }
+
+    public DefaultFolderType(String name, String description, List<Portal.WebPart> requiredParts, List<Portal.WebPart> preferredParts, Set<Module> activeModules, Module defaultModule, boolean forceAssayUploadIntoWorkbooks, String folderIconPath)
+    {
+        this.name = name;
+        this.description = description;
+        this.requiredParts = requiredParts == null ? Collections.<WebPart>emptyList() : requiredParts;
+        this.preferredParts = preferredParts == null ? Collections.<WebPart>emptyList() : preferredParts;
+        this.activeModules = activeModules;
+        this.defaultModule = defaultModule;
+        this.forceAssayUploadIntoWorkbooks = forceAssayUploadIntoWorkbooks;
+        this.folderIconPath = folderIconPath;
     }
 
     @Override
@@ -215,7 +229,12 @@ public class DefaultFolderType implements FolderType
     @NotNull
     public String getFolderIconPath()
     {
-        return "_images/defaultlogosmall.gif";
+        return folderIconPath;
+    }
+
+    public void setFolderIconPath(String folderIconPath)
+    {
+        this.folderIconPath = folderIconPath;
     }
 
     /**
@@ -233,6 +252,15 @@ public class DefaultFolderType implements FolderType
         return null;
     }
 
+    public boolean getForceAssayUploadIntoWorkbooks()
+    {
+        return forceAssayUploadIntoWorkbooks;
+    }
+
+    public void setForceAssayUploadIntoWorkbooks(boolean forceAssayUploadIntoWorkbooks)
+    {
+        this.forceAssayUploadIntoWorkbooks = forceAssayUploadIntoWorkbooks;
+    }
 
     public ActionURL getStartURL(Container c, User user)
     {

@@ -155,16 +155,16 @@ Ext4.define('LABKEY.ext.NavPanel', {
                     hidden: item.showImport===false,
                     assayId: item.id,
                     useSimpleImport: item.simpleImport,
+                    urlParams: {rowId: item.id, srcURL: LABKEY.ActionURL.buildURL('project', 'begin')},
+                    importAction: item.importAction || 'moduleAssayUpload',
                     handler: function(btn){
                         if(btn.useSimpleImport)
-                            window.location = LABKEY.ActionURL.buildURL('assay', 'moduleAssayUpload', null, {rowId: btn.assayId});
+                            window.location = LABKEY.ActionURL.buildURL('assay', btn.importAction, null, btn.urlParams);
                         else
                             Ext4.create('LABKEY.ext.ImportWizardWin', {
                                 controller: 'assay',
-                                action: 'moduleAssayUpload',
-                                urlParams: {
-                                    rowId: btn.assayId
-                                }
+                                action: btn.importAction,
+                                urlParams: btn.urlParams
                             }).show();
                     }
                 }],
@@ -216,15 +216,15 @@ Ext4.define('LABKEY.ext.NavPanel', {
                     hidden: item.showImport===false,
                     useSimpleImport: item.simpleImport,
                     assayId: item.id,
-                    params: {schemaName: item.schemaName, queryName: item.queryName},
+                    urlParams: {schemaName: item.schemaName, queryName: item.queryName, srcURL: LABKEY.ActionURL.buildURL('project', 'begin')},
                     handler: function(btn){
                         if(btn.useSimpleImport)
-                            window.location = LABKEY.ActionURL.buildURL('query', 'importData', null, btn.params);
+                            window.location = LABKEY.ActionURL.buildURL('query', 'importData', null, btn.urlParams);
                         else
                             Ext4.create('LABKEY.ext.ImportWizardWin', {
                                 controller: 'query',
                                 action: 'importData',
-                                urlParams: btn.params
+                                urlParams: btn.urlParams
                             }).show();
                     }
                 }],
@@ -260,11 +260,12 @@ Ext4.define('LABKEY.ext.NavPanel', {
                     useSimpleImport: item.simpleImport,
                     handler: function(btn){
                         if(btn.useSimpleImport)
-                            window.location = LABKEY.ActionURL.buildURL('query', 'importData', null, btn.params);
+                            window.location = LABKEY.ActionURL.buildURL('query', 'importData', null, btn.urlParams);
                         else
                             Ext4.create('LABKEY.ext.ImportWizardWin', {
-                                controller: 'filecontent',
-                                action: 'begin'
+                                controller: 'project',
+                                action: 'begin',
+                                urlParams: btn.urlParams
                             }).show();
                     }
                 }],
