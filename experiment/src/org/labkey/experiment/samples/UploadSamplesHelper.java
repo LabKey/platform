@@ -30,6 +30,8 @@ import org.labkey.api.exp.property.ExperimentProperty;
 import org.labkey.api.exp.property.PropertyService;
 import org.labkey.api.exp.property.DomainProperty;
 import org.labkey.api.exp.query.ExpMaterialTable;
+import org.labkey.api.pipeline.PipeRoot;
+import org.labkey.api.pipeline.PipelineService;
 import org.labkey.api.query.ValidationException;
 import org.labkey.api.reader.ColumnDescriptor;
 import org.labkey.api.reader.DataLoader;
@@ -40,6 +42,7 @@ import org.labkey.api.view.ViewBackgroundInfo;
 import org.labkey.experiment.api.*;
 import org.labkey.experiment.samples.UploadMaterialSetForm.InsertUpdateChoice;
 
+import java.io.File;
 import java.io.IOException;
 import java.sql.SQLException;
 import java.util.*;
@@ -171,14 +174,6 @@ public class UploadSamplesHelper
                 domain.save(_form.getUser());
             }
 
-            List<PropertyDescriptor> descriptors = new ArrayList<PropertyDescriptor>();
-            for (DomainProperty property : domain.getProperties())
-            {
-                descriptors.add(property.getPropertyDescriptor());
-            }
-            descriptors.add(ExperimentProperty.COMMENT.getPropertyDescriptor());
-
-
             boolean usingNameAsUniqueColumn = false;
             List<String> idColPropertyURIs = new ArrayList<String>();
             if (source != null && source.getIdCol1() != null)
@@ -256,6 +251,11 @@ public class UploadSamplesHelper
                 }
             }
 
+            // Remember the actual set of properties that we received, so we don't end up deleting
+            // unspecified values
+            Set<PropertyDescriptor> descriptors = new HashSet<PropertyDescriptor>();
+            descriptors.add(ExperimentProperty.COMMENT.getPropertyDescriptor());
+
             Set<String> newNames = new CaseInsensitiveHashSet();
             for (Map<String, Object> map : maps)
             {
@@ -263,6 +263,25 @@ public class UploadSamplesHelper
                 if (!newNames.add(name))
                 {
                     throw new ExperimentException("Duplicate material: " + name);
+                }
+                for (Map.Entry<String, Object> entry : map.entrySet())
+                {
+                    DomainProperty prop = domain.getPropertyByURI(entry.getKey());
+                    if (prop != null)
+                    {
+                        descriptors.add(prop.getPropertyDescriptor());
+                    }
+
+                    // For security reasons, make sure the user hasn't tried to reference a file that's not under
+                    // the pipeline root. Otherwise, they could get access to any file on the server
+                    if (entry.getValue() instanceof File)
+                    {
+                        PipeRoot root = PipelineService.get().findPipelineRoot(getContainer());
+                        if (root == null || !root.isUnderRoot((File)entry.getValue()))
+                        {
+                            throw new ExperimentException("Cannot reference file " + entry.getValue() + " from container " + getContainer().getPath());
+                        }
+                    }
                 }
             }
 
@@ -346,7 +365,11 @@ public class UploadSamplesHelper
                             li.set(newMap);
                         }
 
-                        OntologyManager.deleteOntologyObjects(_form.getContainer(), material.getLSID());
+                        for (PropertyDescriptor descriptor : descriptors)
+                        {
+                            // Delete values that we have received new versions of
+                            OntologyManager.deleteProperty(material.getLSID(), descriptor.getPropertyURI(), material.getContainer(), descriptor.getContainer());
+                        }
                         reusedMaterialLSIDs.add(lsid);
                     }
                 }
@@ -471,7 +494,7 @@ public class UploadSamplesHelper
         int ownerObjectId = OntologyManager.ensureObject(c, source.getLSID());
         MaterialImportHelper helper = new MaterialImportHelper(c, source, _form.getUser(), reusedMaterialLSIDs);
 
-        OntologyManager.insertTabDelimited(c, _form.getUser(), ownerObjectId, helper, descriptors, rows, false);
+        OntologyManager.insertTabDelimited(c, _form.getUser(), ownerObjectId, helper, descriptors, rows, true);
 
         if (source.getParentCol() != null)
         {

@@ -39,6 +39,7 @@ import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.AdminPermission;
 import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.util.ExceptionUtil;
+import org.labkey.api.util.Pair;
 import org.labkey.api.util.SessionTempFileHolder;
 import org.labkey.api.util.UnexpectedException;
 import org.labkey.api.view.*;
@@ -214,7 +215,7 @@ public class PropertyController extends SpringActionController
      * for later use by gwt services
      */
     @RequiresPermissionClass(AdminPermission.class)
-    public class UploadFileForInferencingAction extends AbstractFileUploadAction
+    public class UploadFileForInferencingAction extends AbstractFileUploadAction<AbstractFileUploadAction.FileUploadForm>
     {
         private static final String SESSION_ATTR_NAME = "org.labkey.domain.tempFile";
 
@@ -233,8 +234,9 @@ public class PropertyController extends SpringActionController
             return tempFile;
         }
 
-        protected String handleFile(File file, String originalName)
+        protected String getResponse(Map<String, Pair<File, String>> files, FileUploadForm form) throws UploadException
         {
+            assert files.size() == 1 : "Only one file is supported";
             // Store the file in the session, and delete it when the session expires
             HttpSession session = getViewContext().getSession();
 
@@ -244,7 +246,7 @@ public class PropertyController extends SpringActionController
             if (oldFileHolder != null)
                 oldFileHolder.getFile().delete();
 
-            session.setAttribute(SESSION_ATTR_NAME, new SessionTempFileHolder(file));
+            session.setAttribute(SESSION_ATTR_NAME, new SessionTempFileHolder(files.values().iterator().next().getKey()));
 
             return "Success";
         }

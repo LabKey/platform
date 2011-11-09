@@ -29,9 +29,7 @@ import org.labkey.api.data.JdbcType;
 import org.labkey.api.data.RenderContext;
 import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.TableInfo;
-import org.labkey.api.exp.PropertyColumn;
 import org.labkey.api.exp.PropertyDescriptor;
-import org.labkey.api.exp.PropertyType;
 import org.labkey.api.exp.api.ExpProtocol;
 import org.labkey.api.exp.api.ExperimentService;
 import org.labkey.api.exp.property.Domain;
@@ -57,7 +55,6 @@ import org.labkey.api.study.assay.AssayProvider;
 import org.labkey.api.study.assay.AssaySchema;
 import org.labkey.api.study.assay.AssayService;
 import org.labkey.api.study.assay.AssayUrls;
-import org.labkey.api.study.assay.FileLinkDisplayColumn;
 import org.labkey.api.study.assay.StudyContainerFilter;
 import org.labkey.api.study.query.ResultsQueryView;
 import org.labkey.api.util.PageFlowUtil;
@@ -67,7 +64,6 @@ import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.ViewContext;
 import org.labkey.data.xml.TableType;
 import org.labkey.study.assay.ModuleAssayLoader;
-import org.labkey.study.controllers.assay.AssayController;
 import org.labkey.study.model.StudyManager;
 
 import java.util.ArrayList;
@@ -425,20 +421,6 @@ public class AssaySchemaImpl extends AssaySchema
                     };
                 }
             });
-        }
-        if (col instanceof PropertyColumn)
-        {
-            final PropertyDescriptor pd = ((PropertyColumn)col).getPropertyDescriptor();
-            if (pd.getPropertyType() == PropertyType.FILE_LINK)
-            {
-                columnInfo.setDisplayColumnFactory(new DisplayColumnFactory()
-                {
-                    public DisplayColumn createRenderer(ColumnInfo colInfo)
-                    {
-                        return new FileLinkDisplayColumn(colInfo, pd, new ActionURL(AssayController.DownloadFileAction.class, _container));
-                    }
-                });
-            }
         }
     }
 

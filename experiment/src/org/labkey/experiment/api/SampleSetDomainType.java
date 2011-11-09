@@ -81,7 +81,7 @@ public class SampleSetDomainType extends AbstractDomainKind
 
     public ActionURL urlEditDefinition(Domain domain)
     {
-        return PageFlowUtil.urlProvider(ExperimentUrls.class).getDomainEditorURL(domain.getContainer(), domain.getTypeURI(), false, false, false);
+        return PageFlowUtil.urlProvider(ExperimentUrls.class).getDomainEditorURL(domain.getContainer(), domain.getTypeURI(), false, true, false);
     }
 
     public String getTypeLabel(Domain domain)

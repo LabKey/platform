@@ -32,11 +32,6 @@ import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.defaults.SetDefaultValuesAssayAction;
 import org.labkey.api.exp.ExperimentException;
-import org.labkey.api.exp.ObjectProperty;
-import org.labkey.api.exp.OntologyManager;
-import org.labkey.api.exp.OntologyObject;
-import org.labkey.api.exp.PropertyDescriptor;
-import org.labkey.api.exp.PropertyType;
 import org.labkey.api.exp.api.ExpData;
 import org.labkey.api.exp.api.ExpProtocol;
 import org.labkey.api.exp.api.ExperimentJSONConverter;
@@ -505,95 +500,6 @@ public class AssayController extends SpringActionController
         }
     }
 
-    public static class DownloadFileForm
-    {
-        private Integer _propertyId;
-        private Integer _objectId;
-        private String _objectURI;
-
-        public Integer getObjectId()
-        {
-            return _objectId;
-        }
-
-        public void setObjectId(Integer objectId)
-        {
-            _objectId = objectId;
-        }
-
-        public Integer getPropertyId()
-        {
-            return _propertyId;
-        }
-
-        public void setPropertyId(Integer propertyId)
-        {
-            _propertyId = propertyId;
-        }
-
-        public String getObjectURI()
-        {
-            return _objectURI;
-        }
-
-        public void setObjectURI(String objectURI)
-        {
-            _objectURI = objectURI;
-        }
-    }
-
-    @RequiresPermissionClass(ReadPermission.class)
-    public class DownloadFileAction extends SimpleViewAction<DownloadFileForm>
-    {
-        public ModelAndView getView(DownloadFileForm form, BindException errors) throws Exception
-        {
-            if (form.getPropertyId() == null)
-            {
-                throw new NotFoundException();
-            }
-            OntologyObject obj = null;
-            if (form.getObjectId() != null)
-            {
-                obj = OntologyManager.getOntologyObject(form.getObjectId().intValue());
-            }
-            else if (form.getObjectURI() != null)
-            {
-                // Don't filter by container - we'll redirect to the correct container ourselves
-                obj = OntologyManager.getOntologyObject(null, form.getObjectURI());
-            }
-            if (obj == null)
-                throw new NotFoundException();
-            if (!obj.getContainer().equals(getContainer()))
-            {
-                ActionURL correctedURL = getViewContext().getActionURL().clone();
-                Container objectContainer = obj.getContainer();
-                if (objectContainer == null)
-                    throw new NotFoundException();
-                correctedURL.setContainer(objectContainer);
-                throw new RedirectException(correctedURL);
-            }
-
-            PropertyDescriptor pd = OntologyManager.getPropertyDescriptor(form.getPropertyId().intValue());
-            if (pd == null)
-                throw new NotFoundException();
-
-            Map<String, ObjectProperty> properties = OntologyManager.getPropertyObjects(obj.getContainer(), obj.getObjectURI());
-            ObjectProperty fileProperty = properties.get(pd.getPropertyURI());
-            if (fileProperty == null || fileProperty.getPropertyType() != PropertyType.FILE_LINK || fileProperty.getStringValue() == null)
-                throw new NotFoundException();
-            File file = new File(fileProperty.getStringValue());
-            if (!file.exists())
-                throw new NotFoundException("File " + file.getPath() + " does not exist on the server file system.");
-            PageFlowUtil.streamFile(getViewContext().getResponse(), file, true);
-            return null;
-        }
-
-        public NavTree appendNavTrail(NavTree root)
-        {
-            throw new UnsupportedOperationException("Not Yet Implemented");
-        }
-    }
-
     @RequiresPermissionClass(ReadPermission.class)
     public class PublishHistoryAction extends BaseAssayAction<PublishHistoryForm>
     {
@@ -619,7 +525,7 @@ public class AssayController extends SpringActionController
     }
 
     @RequiresPermissionClass(InsertPermission.class)
-    public class AssayFileUploadAction extends AbstractFileUploadAction
+    public class AssayFileUploadAction extends AbstractFileUploadAction<AbstractFileUploadAction.FileUploadForm>
     {
         protected File getTargetFile(String filename) throws IOException
         {
@@ -638,17 +544,34 @@ public class AssayController extends SpringActionController
             }
         }
 
-        protected String handleFile(File file, String originalName) throws UploadException
+        protected String getResponse(Map<String, Pair<File, String>> files, FileUploadForm form) throws UploadException
         {
-            ExpData data = ExperimentService.get().createData(getContainer(), ModuleAssayProvider.RAW_DATA_TYPE);
+            JSONObject fullMap = new JSONObject();
+            for (Map.Entry<String, Pair<File, String>> entry : files.entrySet())
+            {
+                String paramName = entry.getKey();
+                File file = entry.getValue().getKey();
+                String originalName = entry.getValue().getValue();
 
-            data.setDataFileURI(FileUtil.getAbsoluteCaseSensitiveFile(file).toURI());
-            data.setName(originalName);
-            data.save(getViewContext().getUser());
+                ExpData data = ExperimentService.get().createData(getContainer(), ModuleAssayProvider.RAW_DATA_TYPE);
 
-            JSONObject json = ExperimentJSONConverter.serializeData(data);
-            json.put("success", true);
-            return json.toString();
+                data.setDataFileURI(FileUtil.getAbsoluteCaseSensitiveFile(file).toURI());
+                data.setName(originalName);
+                data.save(getViewContext().getUser());
+
+                JSONObject jsonData = ExperimentJSONConverter.serializeData(data);
+
+                if (files.size() == 1 && !form.isForceMultipleResults())
+                {
+                    // Make sure that Ext treats the submission as a success
+                    jsonData.put("success", true);
+                    return jsonData.toString();
+                }
+                fullMap.put(paramName, jsonData);
+            }
+            // Make sure that Ext treats the submission as a success
+            fullMap.put("success", true);
+            return fullMap.toString();
         }
     }
 

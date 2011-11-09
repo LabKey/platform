@@ -31,6 +31,11 @@ import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.ContainerManager.ContainerParent;
 import org.labkey.api.data.DataRegionSelection;
+import org.labkey.api.exp.ObjectProperty;
+import org.labkey.api.exp.OntologyManager;
+import org.labkey.api.exp.OntologyObject;
+import org.labkey.api.exp.PropertyDescriptor;
+import org.labkey.api.exp.PropertyType;
 import org.labkey.api.module.AllowedBeforeInitialUserIsSet;
 import org.labkey.api.module.AllowedDuringUpgrade;
 import org.labkey.api.module.FolderType;
@@ -45,7 +50,6 @@ import org.labkey.api.security.roles.RoleManager;
 import org.labkey.api.settings.AppProps;
 import org.labkey.api.settings.LookAndFeelProperties;
 import org.labkey.api.util.DateUtil;
-import org.labkey.api.util.HeartBeat;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.PageFlowUtil.Content;
 import org.labkey.api.util.PageFlowUtil.NoContent;
@@ -65,6 +69,7 @@ import org.springframework.web.servlet.mvc.Controller;
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
+import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
@@ -157,6 +162,12 @@ public class CoreController extends SpringActionController
 
             return url;
         }
+
+        @Override
+        public ActionURL getDownloadFileLinkBaseURL(Container container, PropertyDescriptor pd)
+        {
+            return new ActionURL(DownloadFileLinkAction.class, container).addParameter("propertyId", pd.getPropertyId());
+        }
     }
 
     abstract class BaseStylesheetAction extends ExportAction
@@ -220,6 +231,94 @@ public class CoreController extends SpringActionController
         }
     }
 
+    @RequiresPermissionClass(ReadPermission.class)
+    public class DownloadFileLinkAction extends SimpleViewAction<DownloadFileLinkForm>
+    {
+        public ModelAndView getView(DownloadFileLinkForm form, BindException errors) throws Exception
+        {
+            if (form.getPropertyId() == null)
+            {
+                throw new NotFoundException("No propertyId specified");
+            }
+            OntologyObject obj = null;
+            if (form.getObjectId() != null)
+            {
+                obj = OntologyManager.getOntologyObject(form.getObjectId().intValue());
+            }
+            else if (form.getObjectURI() != null)
+            {
+                // Don't filter by container - we'll redirect to the correct container ourselves
+                obj = OntologyManager.getOntologyObject(null, form.getObjectURI());
+            }
+            if (obj == null)
+                throw new NotFoundException("No matching ontology object found");
+            if (!obj.getContainer().equals(getContainer()))
+            {
+                ActionURL correctedURL = getViewContext().getActionURL().clone();
+                Container objectContainer = obj.getContainer();
+                if (objectContainer == null)
+                    throw new NotFoundException();
+                correctedURL.setContainer(objectContainer);
+                throw new RedirectException(correctedURL);
+            }
+
+            PropertyDescriptor pd = OntologyManager.getPropertyDescriptor(form.getPropertyId().intValue());
+            if (pd == null)
+                throw new NotFoundException();
+
+            Map<String, ObjectProperty> properties = OntologyManager.getPropertyObjects(obj.getContainer(), obj.getObjectURI());
+            ObjectProperty fileProperty = properties.get(pd.getPropertyURI());
+            if (fileProperty == null || fileProperty.getPropertyType() != PropertyType.FILE_LINK || fileProperty.getStringValue() == null)
+                throw new NotFoundException();
+            File file = new File(fileProperty.getStringValue());
+            if (!file.exists())
+                throw new NotFoundException("File " + file.getPath() + " does not exist on the server file system.");
+            PageFlowUtil.streamFile(getViewContext().getResponse(), file, true);
+            return null;
+        }
+
+        public NavTree appendNavTrail(NavTree root)
+        {
+            throw new UnsupportedOperationException("Not Yet Implemented");
+        }
+    }
+
+    public static class DownloadFileLinkForm
+    {
+        private Integer _propertyId;
+        private Integer _objectId;
+        private String _objectURI;
+
+        public Integer getObjectId()
+        {
+            return _objectId;
+        }
+
+        public void setObjectId(Integer objectId)
+        {
+            _objectId = objectId;
+        }
+
+        public Integer getPropertyId()
+        {
+            return _propertyId;
+        }
+
+        public void setPropertyId(Integer propertyId)
+        {
+            _propertyId = propertyId;
+        }
+
+        public String getObjectURI()
+        {
+            return _objectURI;
+        }
+
+        public void setObjectURI(String objectURI)
+        {
+            _objectURI = objectURI;
+        }
+    }
 
     @RequiresNoPermission
     @IgnoresTermsOfUse
