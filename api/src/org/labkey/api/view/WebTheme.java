@@ -69,7 +69,7 @@ public class WebTheme
         _editable = editable;
     }
 
-    private Color parseColor(String s)
+    public static Color parseColor(String s)
     {
         if (null == s)
         {
