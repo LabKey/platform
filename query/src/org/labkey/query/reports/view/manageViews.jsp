@@ -30,6 +30,7 @@
 
 <script type="text/javascript">
     LABKEY.requiresClientAPI(true);
+    LABKEY.requiresScript("reports/rowExpander.js");
     LABKEY.requiresScript("reports/manageViews.js");
 </script>
 
