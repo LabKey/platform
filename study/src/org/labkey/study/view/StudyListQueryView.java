@@ -25,6 +25,7 @@ public class StudyListQueryView extends QueryView
         settings.setAllowChooseQuery(false);
         settings.setBaseSort(new Sort("Label"));
         setSettings(settings);
+        setShowUpdateColumn(false);
         setShowBorders(true);
         setShadeAlternatingRows(true);
         setShowSurroundingBorder(false);
