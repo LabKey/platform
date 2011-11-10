@@ -1556,6 +1556,25 @@ public class SecurityManager
         return principals;
     }
 
+    // get the list of group members that do not need to be direct members because they are a member of a member group (i.e. groups-in-groups)
+    public static Map<UserPrincipal, String> getRedundantGroupMembers(Group group)
+    {
+        Map<UserPrincipal, String> redundantMembers = new HashMap<UserPrincipal, String>();
+        Set<UserPrincipal> allMembers = getGroupMembers(group, GroupMemberType.Both);
+        Set<UserPrincipal> memberGroups = getGroupMembers(group, GroupMemberType.Groups);
+        for (UserPrincipal g : memberGroups)
+        {
+            for (UserPrincipal member : getGroupMembers((Group)g, GroupMemberType.Both))
+            {
+                if (allMembers.contains(member))
+                {
+                    redundantMembers.put(member, "\"" + member.getName() + "\" can be removed because it already belongs to \"" + g.getName() + "\".");
+                }
+            }
+        }
+        return redundantMembers;
+    }
+
 
     // TODO: Redundant with getProjectUsers() -- this approach should be more efficient for simple cases
     // TODO: Also redundant with getFolderUserids()
