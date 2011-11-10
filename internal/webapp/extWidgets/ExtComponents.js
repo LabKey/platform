@@ -429,8 +429,9 @@ Ext4.define('LABKEY.ext4.ComboBox', {
         this.callParent();
 
         this.store.on('load', function(){
-            this.alignPicker();
-        }, this);
+            if(this.picker)
+                this.alignPicker();
+        }, this, {delay: 20});
     },
     //allows value to be set if store has not yet loaded
     setValue: function(val){

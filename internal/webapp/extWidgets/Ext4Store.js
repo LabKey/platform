@@ -264,7 +264,7 @@ LABKEY.ext4.Store = Ext4.define('LABKEY.ext4.Store', {
     //private
     //NOTE: the intention of this method is to provide a standard, low-level way to translating Labkey metadata names into ext ones.
     translateMetadata: function(field){
-        field.fieldLabel = Ext.util.Format.htmlEncode(field.label || field.shortCaption || field.header || field.name);
+        field.fieldLabel = Ext.util.Format.htmlEncode(field.label || field.caption || field.header || field.name);
         field.dataIndex = field.dataIndex || field.name;
         field.editable = (field.userEditable!==false && !field.readOnly && !field.autoIncrement);
         field.allowBlank = field.nullable;

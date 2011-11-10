@@ -66,7 +66,8 @@ Ext4.define('LABKEY.ext4.FormPanel', {
     extend: 'Ext.form.Panel',
     alias: 'widget.labkey-formpanel',
     autoHeight: true,
-    defaultFieldWidth: 300,
+    defaultFieldWidth: 350,
+    defaultFieldLabelWidth: 150,
     initComponent: function(){
         Ext4.QuickTips.init();
 
@@ -208,9 +209,10 @@ Ext4.define('LABKEY.ext4.FormPanel', {
             if (LABKEY.ext.MetaHelper.shouldShowInUpdateView(c)){
                 var theField = this.store.getFormEditorConfig(c.name, config);
 
-                if(!c.width){
+                if(!c.width)
                     theField.width = this.defaultFieldWidth;
-                }
+                if(!c.width)
+                    theField.labelWidth = this.defaultFieldLabelWidth;
 
                 if (c.inputType == 'textarea' && !c.height){
                     Ext4.apply(theField, {height: 100});

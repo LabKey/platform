@@ -196,7 +196,7 @@ Ext4.define('LABKEY.ext4.SearchPanel', {
         theField.disabled = false;
 
         //the label
-        this.add({html: (meta.shortCaption || meta.caption)+':', width: 150});
+        this.add({html: meta.caption + ':', width: 150});
 
         Ext4.apply(theField, {
             nullable: true,

@@ -313,9 +313,10 @@ Ext4.define('LABKEY.ext.AssayUploadPanel', {
                 fieldObj = Ext4.Object.merge({
                     editorConfig: {
                         editable: false,
-                        width: 300,
+                        width: 350,
                         lazyInit: false,
-                        domain: domainFields[i].domain
+                        domain: domainFields[i].domain,
+                        labelWidth: 150
                     }
                 }, fieldObj);
 

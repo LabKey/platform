@@ -10,6 +10,7 @@ Ext4.namespace('LABKEY.ext');
 config:
 
 titleField
+sectionTitle
 multiToGrid
 queryConfig
 qwpConfig
@@ -90,7 +91,7 @@ Ext4.define('LABKEY.ext.DetailsPanel', {
                 showUpdateColumn: false,
                 showRecordSelectors: true,
                 buttonBarPosition: 'top',
-                title: this.title,
+                title: this.sectionTitle,
                 timeout: 0
             });
 
@@ -113,7 +114,7 @@ Ext4.define('LABKEY.ext.DetailsPanel', {
             var fields = this.store.getFields();
             var panel = {
                 xtype: 'form',
-                title: Ext4.isDefined(this.title) ?  this.title : 'Details',
+                title: Ext4.isDefined(this.sectionTitle) ?  this.sectionTitle : 'Details',
                 items: [],
                 style: 'margin-bottom:20px',
                 border: true,
@@ -136,7 +137,7 @@ Ext4.define('LABKEY.ext.DetailsPanel', {
                         value = rec.get(field.name);
 
                     panel.items.push({
-                        fieldLabel: field.label || field.shortCaption || field.name,
+                        fieldLabel: field.label || field.caption || field.name,
                         xtype: 'displayfield',
                         value: value
                     });

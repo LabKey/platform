@@ -135,6 +135,7 @@ Ext4.define('LABKEY.ext4.ExcelUploadPanel', {
                         fileArea.add({
                             xtype: 'filefield',
                             name: 'file',
+                            width: 400,
                             itemId: 'fileContent',
                             buttonText: 'Select File...'
 
@@ -148,6 +149,7 @@ Ext4.define('LABKEY.ext4.ExcelUploadPanel', {
             },{
                 xtype: 'panel',
                 itemId: 'fileArea',
+                width: '100%',
                 border: false,
                 items: [{
                     itemId: 'fileContent',
