@@ -1639,10 +1639,10 @@ table.labkey-proj
     width: 100%;
     vertical-align: top;
     border-spacing: 0;
-    padding: 0 20px;
+    padding: 0 20px 20px;
     *border-collapse: collapse;
     *width: 97%;
-    *margin: 0 20px;
+    *margin: 0 20px 20px;
 }
 
 td.labkey-proj
