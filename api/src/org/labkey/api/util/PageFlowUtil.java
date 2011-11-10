@@ -1677,8 +1677,8 @@ public class PageFlowUtil
     public static String getStandardIncludes(Container c, @Nullable String userAgent)
     {
         StringBuilder sb = getFaviconIncludes(c);
-        sb.append(getLabkeyJS());
         sb.append(getStylesheetIncludes(c, userAgent));
+        sb.append(getLabkeyJS());
         sb.append(getJavaScriptIncludes());
         return sb.toString();
     }
