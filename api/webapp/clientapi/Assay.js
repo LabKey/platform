@@ -464,6 +464,12 @@ LABKEY.Assay = new function()
 */
 
 /**
+* @name importAction
+* @description The name of the action used for data import
+* @type String
+*/
+
+/**
 * @name type
 * @description The name of the assay type.  Example:  "ELISpot"
 * @type String
