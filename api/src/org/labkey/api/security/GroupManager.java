@@ -19,6 +19,7 @@ package org.labkey.api.security;
 import org.apache.log4j.Logger;
 import org.jetbrains.annotations.Nullable;
 import org.junit.Assert;
+import org.junit.BeforeClass;
 import org.junit.Test;
 import org.labkey.api.audit.AuditLogEvent;
 import org.labkey.api.audit.AuditLogService;
@@ -26,6 +27,8 @@ import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.CoreSchema;
 import org.labkey.api.data.Table;
+import org.labkey.api.security.permissions.ReadPermission;
+import org.labkey.api.security.roles.ReaderRole;
 import org.labkey.api.util.JunitUtil;
 import org.labkey.api.util.TestContext;
 import org.labkey.api.view.HttpView;
@@ -33,6 +36,7 @@ import org.labkey.api.view.ViewContext;
 
 import java.beans.PropertyChangeEvent;
 import java.sql.SQLException;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.LinkedHashSet;
 import java.util.Set;
@@ -245,6 +249,72 @@ public class GroupManager
 
             SecurityManager.deleteGroup(groupA);
             SecurityManager.deleteGroup(groupB);
+        }
+
+        @Test
+        public void testCopyGroupToContainer() throws Exception
+        {
+            TestContext context = TestContext.get();
+            User loggedIn = context.getUser();
+            assertTrue("login before running this test", null != loggedIn);
+            assertFalse("login before running this test", loggedIn.isGuest());
+            _user = context.getUser().cloneUser();
+
+            Container project = JunitUtil.getTestContainer().getProject();
+
+            if (null != SecurityManager.getGroupId(project, "a", false))
+                SecurityManager.deleteGroup(SecurityManager.getGroupId(project, "a"));
+            if (null != SecurityManager.getGroupId(project, "b", false))
+                SecurityManager.deleteGroup(SecurityManager.getGroupId(project, "b"));
+
+            Group groupA = SecurityManager.createGroup(project, "a");
+            Group groupB = SecurityManager.createGroup(project, "b");
+
+            SecurityManager.addMember(groupA, groupB);
+            SecurityManager.addMember(groupB, getUser());
+
+            MutableSecurityPolicy op = new MutableSecurityPolicy(project);
+            op.addRoleAssignment(groupA, ReaderRole.class);
+            SecurityManager.savePolicy(op);
+
+            String newContainerPath = "GroupManagerJunitTestProject";
+            Container newProject = ContainerManager.getContainerService().getForPath("GroupManagerJunitTestProject");
+            if(newProject != null)
+                ContainerManager.delete(newProject, getUser());
+
+            newProject = ContainerManager.createContainer(ContainerManager.getRoot(), newContainerPath);
+
+            UserPrincipal newGroupA = GroupManager.copyGroupToContainer(groupA, newProject);
+            UserPrincipal newGroupB = SecurityManager.getGroup(SecurityManager.getGroupId(newProject, "b"));
+
+            MutableSecurityPolicy np = new MutableSecurityPolicy(newProject);
+            np.addRoleAssignment(newGroupA, ReaderRole.class);
+            SecurityManager.savePolicy(np);
+
+            //should be copied from the previous project though groupB membership
+            assertTrue(np.hasPermission(getUser(), ReadPermission.class));
+
+            //groups were copied, so the originals should not have read permission
+            assertFalse(np.hasPermission(groupA, ReadPermission.class));
+            assertFalse(np.hasPermission(groupB, ReadPermission.class));
+
+            int[] members = GroupManager.getAllGroupsForPrincipal(newGroupB);
+            Arrays.sort(members);
+            assertTrue(Arrays.binarySearch(members, newGroupA.getUserId()) > -1);
+
+            members = GroupManager.getAllGroupsForPrincipal(getUser());
+            Arrays.sort(members);
+            assertTrue(Arrays.binarySearch(members, newGroupB.getUserId()) > -1);
+
+            assertTrue(np.hasPermission(newGroupA, ReadPermission.class));
+            assertTrue(np.hasPermission(newGroupB, ReadPermission.class));
+
+            //cleanup
+            SecurityManager.deleteGroup(groupA);
+            SecurityManager.deleteGroup(groupB);
+            SecurityManager.deleteGroup((Group)newGroupA);
+            SecurityManager.deleteGroup((Group)newGroupB);
+            ContainerManager.delete(newProject, getUser());
         }
     }
 
