@@ -804,7 +804,7 @@ var UserInfoPopup = Ext.extend(Ext.Window,{
                     html.push("<tr><td width=100>");
                     if (isMemberGroup)
                     {
-                        html.push("<a href='" + $url('security', 'group',this.cache.projectId,{id:user.UserId}) + "'><b>" + $h(user.Name) + "</b></a>");
+                        html.push("<a href='" + $url('security', 'group',(user.Container ? this.cache.projectId : this.cache.rootId),{id:user.UserId}) + "'><b>" + $h(user.Name) + "</b></a>");
                     }
                     else
                     {

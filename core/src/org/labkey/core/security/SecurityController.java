@@ -693,17 +693,19 @@ public class SecurityController extends SpringActionController
             List<String> emails = new ArrayList<String>();
             for (String name : addNames)
             {
+                // check for the groupId in the global group list or in the project
                 Integer gid = SecurityManager.getGroupId(null, StringUtils.trim(name), false);
                 Integer pid = SecurityManager.getGroupId(container, StringUtils.trim(name), false);
 
-                // check for the groupId in the global group list
-                if (null != gid)
-                    addGroups.add(SecurityManager.getGroup(gid));
-                // check for the groupId in the project
-                else if (null != pid)
-                    addGroups.add(SecurityManager.getGroup(pid));
+                if (null != gid || null != pid)
+                {
+                    Group g = (gid != null ? SecurityManager.getGroup(gid) : SecurityManager.getGroup(pid));
+                    addGroups.add(g);
+                }
                 else
+                {
                     emails.add(name);
+                }
             }
 
             List<String> invalidEmails = new ArrayList<String>();
@@ -927,7 +929,8 @@ public class SecurityController extends SpringActionController
         Container c = getContainer();
         ensureGroupInContainer(group, c);
         Set<UserPrincipal> members = SecurityManager.getGroupMembers(group, SecurityManager.GroupMemberType.Both);
-        VBox view = new VBox(new GroupView(group, members, messages, group.isSystemGroup(), errors));
+        Map<UserPrincipal, String> redundantMembers = SecurityManager.getRedundantGroupMembers(group);
+        VBox view = new VBox(new GroupView(group, members, redundantMembers, messages, group.isSystemGroup(), errors));
 
         if (getUser().isAdministrator())
         {

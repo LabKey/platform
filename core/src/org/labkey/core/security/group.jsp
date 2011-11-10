@@ -25,6 +25,8 @@
 <%@ page import="org.labkey.api.view.WebPartView" %>
 <%@ page import="org.labkey.api.security.UserPrincipal" %>
 <%@ page import="org.labkey.api.security.SecurityUrls" %>
+<%@ page import="org.labkey.api.security.Group" %>
+<%@ page import="org.labkey.api.data.ContainerManager" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%
@@ -45,6 +47,24 @@
             var e = elems[i];
             if (e.type == 'checkbox' && !e.disabled && e.name == 'delete') e.checked = value;
         }
+        return false;
+    }
+
+    function selectForRemoval(id, name, value)
+    {
+        var el = document.getElementById(id);
+        if (el && el.type == 'checkbox' && !el.disabled && el.name == 'delete' && el.value == name)
+        {
+            el.checked = value;
+        }
+        return false;
+    }
+
+    function selectAllForRemoval(value)
+    {
+        <% for (UserPrincipal redundantMember : bean.redundantMembers.keySet()) {
+            %>selectForRemoval('<%= redundantMember.getUserId() %>', '<%= redundantMember.getName() %>', value);<%
+        } %>
         return false;
     }
 
@@ -100,10 +120,11 @@ if (bean.members.size() <= 0)
 else
 {
     %>
+
     <div id="current-members">
     <table>
         <tr>
-            <th>Remove</th>
+            <th width=70>Remove</th>
             <th>Name</th>
             <th width="110px">&nbsp;</th>
         </tr>
@@ -113,22 +134,42 @@ else
         Integer userId = member.getUserId();
         String memberName = member.getName();
         boolean isGroup = member.getType().equals("g");
-        String groupPath = (c.isRoot() ? member.getName() : c.getPath() + "/" + member.getName());
         %>
         <tr>
             <td>
-                <input type="checkbox" name="delete" value="<%= h(memberName) %>">
+                <input type="checkbox" name="delete" id="<%= userId %>" value="<%= h(memberName) %>">
             </td>
             <td>
-                <% if (isGroup)
-                   {
-                    %><a href="<%= urlProvider(SecurityUrls.class).getManageGroupURL(c, groupPath) %>"><b><%= h(memberName) %></b></a><%
-                   }
-                   else
-                   {
-                    %><%= h(memberName) %><%   
-                   }
-                %>
+        <%
+        if (isGroup)
+        {
+            Group g = (Group)member;
+            if (g.isProjectGroup())
+            {
+                %><a href="<%= urlProvider(SecurityUrls.class).getManageGroupURL(c, c.getPath() + "/" + h(memberName)) %>"><%
+            }
+            else
+            {
+                %><a href="<%= urlProvider(SecurityUrls.class).getManageGroupURL(ContainerManager.getRoot(), h(memberName)) %>"><%
+            }
+            %>
+                <span style="font-weight:bold;">
+                    <%= h(memberName) %>
+                </span>
+              </a>
+            <%
+        }
+        else
+        {
+            %><%= h(memberName) %><%
+        }
+
+        if (bean.redundantMembers.keySet().contains(member))
+        {
+            String reason = bean.redundantMembers.get(member);
+            %>*<%
+        }
+        %>
             </td>
             <td>
                 <% if (!isGroup)
@@ -148,20 +189,27 @@ else
         urlGroup.setAction("groupExport");
         urlGroup.replaceParameter("group", bean.groupName);
     %>
-        <tr>
-            <td colspan=3>
-                <%=PageFlowUtil.generateSubmitButton("Select All", "return selectAllCheckboxes(this.form, true);")%>
-                <%=PageFlowUtil.generateSubmitButton("Clear All", "return selectAllCheckboxes(this.form, false);")%>
-                <%= generateButton("Export All to Excel", urlGroup)%>
-            </td>
-        </tr>
-
     </table>
+    </div><%
+    if (bean.redundantMembers.size() > 0)
+    {
+        %><div style="padding:5px;">* These group members already appear in other included member groups and can be safely removed.</div><%
+    }
+
+    %><div style="padding:5px;"><%
+    if (bean.redundantMembers.size() > 0)
+    {
+        %><%=PageFlowUtil.generateSubmitButton("Select Redundant Members", "return selectAllForRemoval(true);")%><%
+    }
+    %>
+    <%=PageFlowUtil.generateSubmitButton("Select All", "return selectAllCheckboxes(this.form, true);")%>
+    <%=PageFlowUtil.generateSubmitButton("Clear All", "return selectAllCheckboxes(this.form, false);")%>
+    <%= generateButton("Export All to Excel", urlGroup)%>
     </div><%
 }
 %><br>
 <div id="add-members">
-Add New Members (enter one email address or group per line):<br>
+<span style="font-weight:bold">Add New Members</span> (enter one email address or group per line):<br>
 <textarea name="names" cols="60" rows="8"
          onKeyDown="return ctrlKeyCheck(event);"
          onBlur="hideCompletionDiv();"
@@ -174,7 +222,7 @@ if (null != bean.ldapDomain)
     %>, non-<%= bean.ldapDomain %><%
 }
 %> users.<br><br>
-Include the following message with the new user mail (optional):<br>
+<span style="font-weight:bold">Include a message</span> with the new user mail (optional):<br>
     <textarea rows="8" cols="60" name="mailPrefix"></textarea><br>
 <input type="hidden" name="group" value="<%= bean.groupName %>">
 <%=PageFlowUtil.generateSubmitButton("Update Group Membership", "return confirmRemoveUsers();")%>

@@ -25,6 +25,7 @@ import org.springframework.validation.BindException;
 
 import java.util.Collection;
 import java.util.List;
+import java.util.Map;
 
 /**
  * User: jeckels
@@ -32,7 +33,7 @@ import java.util.List;
 */
 public class GroupView extends JspView<GroupView.GroupBean>
 {
-    public GroupView(Group group, Collection<UserPrincipal> members, List<String> messages, boolean systemGroup, BindException errors)
+    public GroupView(Group group, Collection<UserPrincipal> members, Map<UserPrincipal, String> redundantMembers, List<String> messages, boolean systemGroup, BindException errors)
     {
         super("/org/labkey/core/security/group.jsp", new GroupBean(), errors);
 
@@ -44,6 +45,7 @@ public class GroupView extends JspView<GroupView.GroupBean>
         bean.messages = messages;
         bean.isSystemGroup = systemGroup;
         bean.ldapDomain = AuthenticationManager.getLdapDomain();
+        bean.redundantMembers = redundantMembers;
     }
 
     public static class GroupBean
@@ -54,5 +56,6 @@ public class GroupView extends JspView<GroupView.GroupBean>
         public List<String> messages;
         public boolean isSystemGroup;
         public String ldapDomain;
+        public Map<UserPrincipal, String> redundantMembers;
     }
 }
