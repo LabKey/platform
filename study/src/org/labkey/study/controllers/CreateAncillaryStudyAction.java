@@ -33,14 +33,12 @@ import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.portal.ProjectUrls;
 import org.labkey.api.query.QueryDefinition;
 import org.labkey.api.query.QueryService;
-import org.labkey.api.query.ValidationException;
 import org.labkey.api.query.snapshot.QuerySnapshotDefinition;
 import org.labkey.api.query.snapshot.QuerySnapshotService;
 import org.labkey.api.security.RequiresPermissionClass;
 import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.AdminPermission;
 import org.labkey.api.study.Study;
-import org.labkey.api.study.StudyService;
 import org.labkey.api.study.Visit;
 import org.labkey.api.util.FileUtil;
 import org.labkey.api.util.PageFlowUtil;
@@ -459,11 +457,10 @@ public class CreateAncillaryStudyAction extends MutatingApiAction<EmphasisStudyD
 
         StudyManager.getInstance().createStudy(getViewContext().getUser(), study);
 
-        FolderType folderType = ModuleLoader.getInstance().getFolderType(StudyService.STUDY_REDESIGN_FOLDER_TYPE_NAME_CHAVI);
-        // We may not have the study redesign module installed:
-        if (folderType == null)
-            folderType = ModuleLoader.getInstance().getFolderType(StudyFolderType.NAME);
+        FolderType folderType = ModuleLoader.getInstance().getFolderType(StudyFolderType.NAME);
         _dstContainer.setFolderType(folderType);
+
+        
 
         return study;
     }

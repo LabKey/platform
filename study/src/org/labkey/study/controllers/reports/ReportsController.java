@@ -2078,8 +2078,8 @@ public class ReportsController extends BaseStudyController
     {
         try
         {
-            Study study = getStudy();
-            root.addChild(study.getLabel(), getStudyOverviewURL());
+            appendRootNavTrail(root);
+
 
             if (getUser().isAdministrator())
                 root.addChild("Manage Views", new ActionURL(ManageReportsAction.class, getContainer()));
@@ -2095,9 +2095,8 @@ public class ReportsController extends BaseStudyController
     {
         try
         {
-            Study study = getStudy();
-            ActionURL url = getViewContext().getActionURL();
-            root.addChild(study.getLabel(), getStudyOverviewURL());
+            Study study = appendRootNavTrail(root);
+            root.addChild("Study Overview", getStudyOverviewURL());
 
             if (getUser().isAdministrator())
                 root.addChild("Manage Views", new ActionURL(ManageReportsAction.class, getContainer()));
@@ -2118,16 +2117,15 @@ public class ReportsController extends BaseStudyController
                     if (0 == visitRowId && study.getTimepointType() != TimepointType.CONTINUOUS)
                         label += " (All Visits)";
 
-                    ActionURL datasetUrl = url.clone();
+                    ActionURL datasetUrl = getViewContext().getActionURL().clone();
                     datasetUrl.deleteParameter(VisitImpl.VISITKEY);
-                    datasetUrl.setAction("dataset");
-                    datasetUrl.setPageFlow("Study");
+                    datasetUrl.setAction(StudyController.DatasetAction.class);
                     root.addChild(label, datasetUrl.getLocalURIString());
                 }
             }
 
             if (null != visit)
-                root.addChild(visit.getDisplayString(), url.relativeUrl("dataset", null, "Study", false));
+                root.addChild(visit.getDisplayString(), getViewContext().getActionURL().clone().setAction(StudyController.DatasetAction.class));
         }
         catch (Exception e)
         {

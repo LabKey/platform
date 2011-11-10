@@ -21,10 +21,12 @@ import org.labkey.api.action.HasPageConfig;
 import org.labkey.api.action.NavTrailAction;
 import org.labkey.api.action.SpringActionController;
 import org.labkey.api.data.Container;
+import org.labkey.api.portal.ProjectUrls;
 import org.labkey.api.study.DataSet;
 import org.labkey.api.study.Study;
 import org.labkey.api.study.TimepointType;
 import org.labkey.api.study.Visit;
+import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.HttpView;
 import org.labkey.api.view.JspView;
@@ -34,6 +36,7 @@ import org.labkey.api.view.ViewContext;
 import org.labkey.api.view.template.HomeTemplate;
 import org.labkey.api.view.template.PageConfig;
 import org.labkey.study.CohortFilter;
+import org.labkey.study.StudyModule;
 import org.labkey.study.controllers.samples.SpecimenUtils;
 import org.labkey.study.model.DataSetDefinition;
 import org.labkey.study.model.StudyImpl;
@@ -215,14 +218,29 @@ public abstract class BaseStudyController extends SpringActionController
     {
         try
         {
-            Study study = getStudy();
-            root.addChild(study.getLabel(), new ActionURL(StudyController.BeginAction.class, getContainer()));
+            appendRootNavTrail(root);
             root.addChild("Manage Study", new ActionURL(StudyController.ManageStudyAction.class, getContainer()));
         }
         catch (ServletException e)
         {
         }
         return root;
+    }
+
+    protected Study appendRootNavTrail(NavTree root) throws ServletException
+    {
+        Study study = getStudy();
+        ActionURL rootURL;
+        if (getContainer().getFolderType().getDefaultModule() instanceof StudyModule)
+        {
+            rootURL = getContainer().getFolderType().getStartURL(getContainer(), getUser());
+        }
+        else
+        {
+            rootURL = new ActionURL(StudyController.BeginAction.class, getContainer());
+        }
+        root.addChild(study.getLabel(), rootURL);
+        return study;
     }
 
     protected NavTree _appendNavTrailDatasetAdmin(NavTree root)
@@ -240,8 +258,7 @@ public abstract class BaseStudyController extends SpringActionController
     {
         try
         {
-            Study study = getStudy();
-            root.addChild(study.getLabel(), new ActionURL(StudyController.BeginAction.class, getContainer()));
+            appendRootNavTrail(root);
             ActionURL overviewURL = getStudyOverviewURL();
             if (cohortFilter != null)
                 cohortFilter.addURLParameters(overviewURL);
@@ -260,9 +277,9 @@ public abstract class BaseStudyController extends SpringActionController
 
     protected NavTree _appendNavTrail(NavTree root, int datasetId, int visitId, CohortFilter cohortFilter, String qcStateSetFormValue)
     {
-        try {
-            Study study = getStudy();
-            root.addChild(study.getLabel(), new ActionURL(StudyController.BeginAction.class, getContainer()));
+        try
+        {
+            Study study = appendRootNavTrail(root);
             ActionURL overviewURL = getStudyOverviewURL();
             if (cohortFilter != null)
                 cohortFilter.addURLParameters(overviewURL);

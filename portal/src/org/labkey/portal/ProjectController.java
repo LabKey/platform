@@ -101,7 +101,17 @@ public class ProjectController extends SpringActionController
 
         public ActionURL getBeginURL(Container container)
         {
-            return new ActionURL(BeginAction.class, container);
+            return getBeginURL(container, null);
+        }
+
+        public ActionURL getBeginURL(Container container, String pageId)
+        {
+            ActionURL url = new ActionURL(BeginAction.class, container);
+            if (pageId != null)
+            {
+                url.addParameter("pageId", pageId);
+            }
+            return url;
         }
 
         public ActionURL getHomeURL()

@@ -17,19 +17,20 @@
 package org.labkey.study;
 
 import org.jetbrains.annotations.NotNull;
-import org.labkey.api.module.DefaultFolderType;
 import org.labkey.api.module.Module;
 import org.labkey.api.module.ModuleLoader;
+import org.labkey.api.module.MultiPortalFolderType;
 import org.labkey.api.study.Study;
+import org.labkey.api.study.StudyFolderTabs;
+import org.labkey.api.study.StudyService;
 import org.labkey.api.util.HelpTopic;
-import org.labkey.api.view.ActionURL;
-import org.labkey.api.view.NavTree;
+import org.labkey.api.view.FolderTab;
 import org.labkey.api.view.ViewContext;
-import org.labkey.api.view.template.AppBar;
-import org.labkey.api.view.template.PageConfig;
 import org.labkey.study.model.StudyManager;
 
 import java.util.Arrays;
+import java.util.Collections;
+import java.util.List;
 import java.util.Set;
 
 /**
@@ -37,9 +38,17 @@ import java.util.Set;
  * Date: Aug 8, 2006
  * Time: 4:21:56 PM
  */
-public class StudyFolderType extends DefaultFolderType
+public class StudyFolderType extends MultiPortalFolderType
 {
     public static final String NAME = "Study";
+
+    private static final List<FolderTab> PAGES = Arrays.asList(
+            new StudyFolderTabs.OverviewPage("Overview"),
+            new StudyFolderTabs.ShortcutsPage("Shortcuts"),
+            new StudyFolderTabs.DataAnalysisPage("Clinical and Assay Data"),
+            new StudyFolderTabs.SpecimensPage("Specimen Data"),
+            new StudyFolderTabs.ManagePage("Manage")
+        );
 
     StudyFolderType(StudyModule module)
     {
@@ -48,13 +57,16 @@ public class StudyFolderType extends DefaultFolderType
                         "Use specimen repository for samples. Design and manage specialized assays. " +
                         "Analyze, visualize and share results.",
                 null,
-                Arrays.asList(StudyModule.manageStudyPartFactory.createWebPart(),
-                        StudyModule.reportsPartFactory.createWebPart(),
-                        StudyModule.samplesPartFactory.createWebPart(),
-                        StudyModule.datasetsPartFactory.createWebPart(),
-                        StudyModule.subjectsWideWebPartFactory.createWebPart()),
+                Arrays.asList(StudyModule.manageStudyPartFactory.createWebPart()),
                 getActiveModulesForOwnedFolder(module), module);
 
+    }
+
+    @NotNull
+    @Override
+    public Set<String> getLegacyNames()
+    {
+        return Collections.singleton("Study Redesign (CHAVI)");
     }
 
     @Override
@@ -64,21 +76,21 @@ public class StudyFolderType extends DefaultFolderType
         return study == null ? "New Study" : study.getLabel();
     }
 
-    @Override @NotNull
-    public AppBar getAppBar(ViewContext context, PageConfig pageConfig)
-    {
-        ActionURL startURL = getStartURL(context.getContainer(), context.getUser());
-        NavTree startPage = new NavTree("Study Overview", startURL);
-        String controllerName = context.getActionURL().getPageFlow();
-        Module currentModule = ModuleLoader.getInstance().getModuleForController(controllerName);
-        startPage.setSelected(currentModule == getDefaultModule());
-        return new AppBar(getStartPageLabel(context), startURL, startPage);
-    }
-
     @Override
     public HelpTopic getHelpTopic()
     {
         return new HelpTopic("study");
+    }
+
+    protected String getFolderTitle(ViewContext ctx)
+    {
+        Study study = StudyService.get().getStudy(ctx.getContainer());
+        return study != null ? study.getLabel() : ctx.getContainer().getName();
+    }
+
+    public List<FolderTab> getDefaultTabs()
+    {
+        return PAGES;
     }
 
     private static Set<Module> _activeModulesForOwnedFolder = null;

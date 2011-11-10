@@ -48,9 +48,11 @@ import org.labkey.api.util.GUID;
 import org.labkey.api.util.JunitUtil;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.TestContext;
+import org.labkey.api.view.ActionURL;
 import org.labkey.api.wiki.WikiRendererType;
 import org.labkey.api.wiki.WikiService;
 import org.labkey.study.SampleManager;
+import org.labkey.study.controllers.StudyController;
 import org.labkey.study.query.StudyQuerySchema;
 import org.labkey.study.samples.settings.RepositorySettings;
 
@@ -559,9 +561,8 @@ public class StudyImpl extends ExtensibleStudyEntity<StudyImpl> implements Study
             long count = StudyManager.getInstance().getParticipantCount(this);;
             String subjectNoun = (count == 1 ? this.getSubjectNounSingular() : this.getSubjectNounPlural());
             TimepointType timepointType = getTimepointType();
-            String madeUpDescription = getLabel() + " tracks data in " + getDataSets().size() + " datasets over " + getVisits(Visit.Order.DISPLAY).length + " " + (timepointType.isVisitBased() ? "visits" : "time points") +
-                ". Data is present for " + count + " " + subjectNoun + ".";
-            return PageFlowUtil.filter(madeUpDescription);
+            return PageFlowUtil.filter(getLabel() + " tracks data in ") + "<a href=\"" + new ActionURL(StudyController.DatasetsAction.class, getContainer()) + "\">" + getDataSets().size() + " datasets</a>" + PageFlowUtil.filter(" over " + getVisits(Visit.Order.DISPLAY).length + " " + (timepointType.isVisitBased() ? "visits" : "time points") +
+                ". Data is present for " + count + " " + subjectNoun + ".");
         }
         else
         {
