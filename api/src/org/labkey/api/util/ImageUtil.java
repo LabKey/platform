@@ -46,7 +46,7 @@ public class ImageUtil
             int height = (int) (originalImage.getHeight() * incrementalScale);
 
             // Create a new empty image buffer to render into
-            bufferedResizedImage = new BufferedImage(width, height, BufferedImage.TYPE_INT_RGB);
+            bufferedResizedImage = new BufferedImage(width, height, originalImage.getType());
             Graphics2D g2d = bufferedResizedImage.createGraphics();
 
             // Set up the hints to make it look decent
