@@ -207,11 +207,7 @@ public class DatasetSnapshotProvider extends AbstractSnapshotProvider implements
 
                     if (view != null && !errors.hasErrors())
                     {
-                        TableInfo tinfo = view.getTable();
-                        SimpleFilter filter = createParticipantGroupFilter(context, qsDef);
-
-                        Collection<ColumnInfo> columns = DatasetWriter.getColumnsToExport(tinfo, def, false);
-                        Results results = QueryService.get().select(tinfo, columns, filter, null);
+                        Results results = getResults(context, view, qsDef, def);
 
                         // TODO: Create class ResultSetDataLoader and use it here instead of round-tripping through a TSV StringBuilder
                         StringBuilder sb = new StringBuilder();
@@ -258,6 +254,28 @@ public class DatasetSnapshotProvider extends AbstractSnapshotProvider implements
         {
             schema.getScope().closeConnection();
         }
+    }
+
+    private Results getResults(ViewContext context, QueryView view, QuerySnapshotDefinition qsDef, DataSetDefinition def) throws SQLException
+    {
+        TableInfo tinfo = view.getTable();
+        SimpleFilter filter = createParticipantGroupFilter(context, qsDef);
+        Map<String, ColumnInfo> colMap = new HashMap<String, ColumnInfo>();
+
+        for (ColumnInfo column : DatasetWriter.getColumnsToExport(tinfo, def, false))
+        {
+            colMap.put(column.getPropertyURI(), column);
+        }
+
+        for (DisplayColumn dc : view.getDisplayColumns())
+        {
+            ColumnInfo col = dc.getColumnInfo();
+            if (col != null && !colMap.containsKey(col.getPropertyURI()))
+            {
+                colMap.put(col.getPropertyURI(), col);
+            }
+        }
+        return QueryService.get().select(tinfo, colMap.values(), filter, null);
     }
 
     static QueryView createQueryView(ViewContext context, QuerySnapshotDefinition qsDef, BindException errors)
@@ -356,11 +374,7 @@ public class DatasetSnapshotProvider extends AbstractSnapshotProvider implements
 
                     if (view != null && !errors.hasErrors())
                     {
-                        TableInfo tinfo = view.getTable();
-                        SimpleFilter filter = createParticipantGroupFilter(form.getViewContext(), def);
-
-                        Collection<ColumnInfo> columns = DatasetWriter.getColumnsToExport(tinfo, dsDef, false);
-                        Results results = QueryService.get().select(tinfo, columns, filter, null);
+                        Results results = getResults(form.getViewContext(), view, def, dsDef);
 
                         // TODO: Create class ResultSetDataLoader and use it here instead of round-tripping through a TSV StringBuilder
                         StringBuilder sb = new StringBuilder();
