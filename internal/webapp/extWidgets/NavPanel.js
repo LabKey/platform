@@ -164,7 +164,8 @@ Ext4.define('LABKEY.ext.NavPanel', {
                             Ext4.create('LABKEY.ext.ImportWizardWin', {
                                 controller: 'assay',
                                 action: btn.importAction,
-                                urlParams: btn.urlParams
+                                urlParams: btn.urlParams,
+                                workbookFolderType: 'Expt Workbook'
                             }).show();
                     }
                 }],
@@ -224,7 +225,8 @@ Ext4.define('LABKEY.ext.NavPanel', {
                             Ext4.create('LABKEY.ext.ImportWizardWin', {
                                 controller: 'query',
                                 action: 'importData',
-                                urlParams: btn.urlParams
+                                urlParams: btn.urlParams,
+                                workbookFolderType: 'Expt Workbook'
                             }).show();
                     }
                 }],
@@ -265,7 +267,8 @@ Ext4.define('LABKEY.ext.NavPanel', {
                             Ext4.create('LABKEY.ext.ImportWizardWin', {
                                 controller: 'project',
                                 action: 'begin',
-                                urlParams: btn.urlParams
+                                urlParams: btn.urlParams,
+                                workbookFolderType: 'Expt Workbook'
                             }).show();
                     }
                 }],

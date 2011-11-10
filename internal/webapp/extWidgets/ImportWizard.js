@@ -8,6 +8,7 @@
     @param (String) [action] After a workbook is created, it will nagivate to this page
     @param (String) [controller] After a workbook is created, it will navigate to a URL using this controller
     @param (Object) [urlParams] (optional) After a workbook is created, it will navigate to a URL with these params
+    @param (String) [workbookFolderType] (optional) The folderType used for newly created workbooks.  If not provided, the default workbook will be used.
  */
 
 Ext4.define('LABKEY.ext.ImportWizard', {
@@ -74,13 +75,12 @@ Ext4.define('LABKEY.ext.ImportWizard', {
     formSubmit: function(btn){
         var panel = btn.up('form') || btn.up('window');
         var type = panel.down('#inputType');
-
         if(type.getValue().inputType=='new'){
             LABKEY.Security.createContainer({
                 isWorkbook: true,
                 title: panel.down('#titleField').getValue(),
                 description: panel.down('#descriptionField').getValue(),
-                folderType: 'Expt Workbook',
+                folderType: panel.workbookFolderType,
                 success: function(data){
                    this.doLoad(data.path);
                 },
