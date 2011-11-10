@@ -135,6 +135,8 @@ import java.util.Vector;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentSkipListSet;
 import java.util.concurrent.TimeUnit;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipOutputStream;
 
@@ -2847,17 +2849,6 @@ public class DavController extends SpringActionController
         if (resource.getPath().isDirectory())
             return notFound(getURL().getURIString());
 
-        // Check if the conditions specified in the optional If headers are satisfied.
-        if (!checkIfHeaders(resource))
-            return null;
-
-        String contentDisposition = getRequest().getParameter("contentDisposition");
-        if ("attachment".equals(contentDisposition) || "inline".equals(contentDisposition))
-            getResponse().setContentDisposition(contentDisposition);
-
-        // Find content type
-        String contentType = resource.getContentType();
-
         // Parse range specifier
         List ranges = parseRange(resource);
 
@@ -2869,7 +2860,6 @@ public class DavController extends SpringActionController
         long modified = resource.getLastModified();
         if (modified != Long.MIN_VALUE)
             getResponse().setLastModified(modified);
-
 
         boolean isStatic = isStaticContent(resource.getPath());
         if (isStatic)
@@ -2888,6 +2878,17 @@ public class DavController extends SpringActionController
                 }
             }
         }
+
+        // Check if the conditions specified in the optional If headers are satisfied.
+        if (!checkIfHeaders(resource))
+            return null;
+
+        String contentDisposition = getRequest().getParameter("contentDisposition");
+        if ("attachment".equals(contentDisposition) || "inline".equals(contentDisposition))
+            getResponse().setContentDisposition(contentDisposition);
+
+        // Find content type
+        String contentType = resource.getContentType();
 
         // Get content length
         long contentLength = resource.getContentLength();
@@ -3306,7 +3307,8 @@ public class DavController extends SpringActionController
     }
                                                              
 
-    // UNDONE: normalize path
+    static Pattern nameVersionExtension = Pattern.compile("(.*)\\{.*\\}(\\.[^\\.]*)");
+
     @Nullable WebdavResource resolvePath() throws DavException
     {
         // NOTE: security is enforced via WebFolderInfo, however we expect the container to be a parent of the path
@@ -3318,6 +3320,14 @@ public class DavController extends SpringActionController
         Path containerPath = c.getParsedPath();
         if (!path.startsWith(containerPath))
             return null;
+
+        // check for version info in name e.g. stylesheet{47}.css
+        if (isStaticContent(path))
+        {
+            Matcher m = nameVersionExtension.matcher(path.getName());
+            if (m.matches())
+                path = path.getParent().append(m.group(1) + m.group(2));
+        }
         return resolvePath(path);
     }
 
