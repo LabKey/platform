@@ -62,6 +62,9 @@ public interface FolderType
      */
     public String getName();
 
+    @NotNull /** Old names that we should be backwards compatible with */
+    public Set<String> getLegacyNames();
+
     /**
      * @return whether or not an admin is allowed to customize the set of tabs for this folder.
      * For folder types with only one tab, or a set backed by some other config (such as the active set of modules),

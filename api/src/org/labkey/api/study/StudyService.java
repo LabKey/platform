@@ -45,8 +45,11 @@ public class StudyService
     /** LSID namespace prefix for study specimens in the experiment material table */
     public static final String SPECIMEN_NAMESPACE_PREFIX = "StudySpecimen";
 
-    public static final String STUDY_REDESIGN_FOLDER_TYPE_NAME_CHAVI = "Study Redesign (CHAVI)";
     public static final String STUDY_REDESIGN_FOLDER_TYPE_NAME_ITN = "Study Redesign (ITN)";
+
+    public static final String SPECIMEN_SEARCH_WEBPART = "Specimen Search (Experimental)";
+    public static final String SPECIMEN_BROWSE_WEBPART = "Specimen Browse (Experimental)";
+
     public static String SPECIMEN_TOOLS_WEBPART_NAME = "Specimen Tools";
     public static String DATA_TOOLS_WEBPART_NAME = "Study Data Tools";
 

@@ -289,6 +289,7 @@ public class ContainerManager
 
     private static final Set<Container> containersWithBadFolderTypes = new ConcurrentHashSet<Container>();
 
+    @NotNull
     public static FolderType getFolderType(Container c)
     {
         Map props = PropertyManager.getProperties(0, c.getId(), ContainerManager.FOLDER_TYPE_PROPERTY_SET_NAME);

@@ -17,6 +17,7 @@
 package org.labkey.api.module;
 
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.RuntimeSQLException;
 import org.labkey.api.security.User;
@@ -297,6 +298,13 @@ public class DefaultFolderType implements FolderType
         return name;
     }
 
+    @NotNull
+    @Override
+    public Set<String> getLegacyNames()
+    {
+        return Collections.emptySet();
+    }
+
     @Override
     public boolean hasConfigurableTabs()
     {
@@ -389,5 +397,18 @@ public class DefaultFolderType implements FolderType
     public void setWorkbookType(boolean workbookType)
     {
         this.workbookType = workbookType;
+    }
+
+    @Nullable
+    protected FolderTab findTab(String caption)
+    {
+        for (FolderTab tab : getDefaultTabs())
+        {
+            if (tab.getName().equalsIgnoreCase(caption))
+            {
+                return tab;
+            }
+        }
+        return null;
     }
 }

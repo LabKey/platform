@@ -15,9 +15,10 @@
  */
 package org.labkey.api.view;
 
-import org.labkey.api.action.SpringActionController;
 import org.labkey.api.data.Container;
-import org.springframework.web.servlet.mvc.Controller;
+import org.labkey.api.data.ContainerManager;
+import org.labkey.api.portal.ProjectUrls;
+import org.labkey.api.util.PageFlowUtil;
 
 import java.util.List;
 
@@ -52,27 +53,23 @@ public abstract class FolderTab
     /** A tab backed by a portal page */
     public static abstract class PortalPage extends FolderTab
     {
-        private final Class<? extends Controller> _actionClass;
-
-        protected PortalPage(String pageId, String caption, Class<? extends Controller> actionClass)
+        protected PortalPage(String pageId, String caption)
         {
             super(pageId, caption);
-            _actionClass = actionClass;
         }
 
         public ActionURL getURL(ViewContext context)
         {
-            ActionURL actionUrl = new ActionURL(_actionClass, context.getContainer());
-            actionUrl.addParameter("pageName", getName());
-            return actionUrl;
+            return PageFlowUtil.urlProvider(ProjectUrls.class).getBeginURL(context.getContainer(), getName());
         }
 
         public boolean isSelectedPage(ActionURL currentURL)
         {
-            if (currentURL.getPageFlow().equalsIgnoreCase(SpringActionController.getPageFlowName(_actionClass)) &&
-                currentURL.getAction().equalsIgnoreCase(SpringActionController.getActionName(_actionClass)))
+            ActionURL tabURL = PageFlowUtil.urlProvider(ProjectUrls.class).getBeginURL(ContainerManager.getHomeContainer(), getName());
+            if (currentURL.getPageFlow().equalsIgnoreCase(tabURL.getPageFlow()) &&
+                currentURL.getAction().equalsIgnoreCase(tabURL.getAction()))
             {
-                String pageName = currentURL.getParameter("pageName");
+                String pageName = currentURL.getParameter("pageId");
                 return getName().equalsIgnoreCase(pageName);
             }
             return false;

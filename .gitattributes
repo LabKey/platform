@@ -487,6 +487,7 @@ api/src/org/labkey/api/module/ModuleResourceLoadException.java -text
 api/src/org/labkey/api/module/ModuleResourceLoader.java -text
 api/src/org/labkey/api/module/ModuleResourceResolver.java -text
 api/src/org/labkey/api/module/ModuleUpgrader.java -text
+api/src/org/labkey/api/module/MultiPortalFolderType.java -text
 api/src/org/labkey/api/module/ResourceFinder.java -text
 api/src/org/labkey/api/module/SafeFlushResponseWrapper.java -text
 api/src/org/labkey/api/module/SimpleAction.java -text
@@ -897,6 +898,7 @@ api/src/org/labkey/api/study/Study.java -text
 api/src/org/labkey/api/study/StudyCachable.java -text
 api/src/org/labkey/api/study/StudyContext.java -text
 api/src/org/labkey/api/study/StudyEntity.java -text
+api/src/org/labkey/api/study/StudyFolderTabs.java -text
 api/src/org/labkey/api/study/StudyImportException.java -text
 api/src/org/labkey/api/study/StudySerializationRegistry.java -text
 api/src/org/labkey/api/study/StudyService.java -text

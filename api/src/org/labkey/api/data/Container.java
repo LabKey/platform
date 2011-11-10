@@ -644,6 +644,7 @@ public class Container implements Serializable, Comparable<Container>, Securable
         ContainerManager.setFolderType(this, folderType);
     }
 
+    @NotNull
     public FolderType getFolderType()
     {
         return ContainerManager.getFolderType(this);

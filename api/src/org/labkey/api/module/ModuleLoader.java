@@ -1206,7 +1206,21 @@ public class ModuleLoader implements Filter
     {
         synchronized (_folderTypes)
         {
-            return _folderTypes.get(name);
+            FolderType result = _folderTypes.get(name);
+            if (result != null)
+            {
+                return result;
+            }
+
+            // Check if it's a legacy name for an existing folder type
+            for (FolderType folderType : _folderTypes.values())
+            {
+                if (folderType.getLegacyNames().contains(name))
+                {
+                    return folderType;
+                }
+            }
+            return null;
         }
     }
 
