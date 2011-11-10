@@ -29,13 +29,19 @@
 <%@ page import="org.labkey.api.data.ContainerManager" %>
 <%@ page import="org.labkey.api.view.ActionURL" %>
 <%@ page import="org.labkey.api.portal.ProjectUrls" %>
+<%@ page import="org.labkey.core.admin.AdminController" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
     SecurityController.FolderPermissions me = (SecurityController.FolderPermissions)HttpView.currentView();
+    Container c = getViewContext().getContainer();
     ActionURL doneURL = me.doneURL;
     if (null == doneURL)
-        doneURL = urlProvider(ProjectUrls.class).getStartURL(getViewContext().getContainer());
-    Container c = getViewContext().getContainer();
+    {
+        if (c.isRoot())
+            doneURL = new ActionURL(AdminController.ShowAdminAction.class,c);
+        else
+            doneURL = urlProvider(ProjectUrls.class).getStartURL(c);
+    }
     Container project = c.getProject();
     Container root = ContainerManager.getRoot();
     User user = getViewContext().getUser();
