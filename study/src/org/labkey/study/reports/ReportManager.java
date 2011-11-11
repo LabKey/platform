@@ -422,6 +422,7 @@ public class ReportManager implements StudyManager.DataSetListener
             return policy.hasPermission(user, ReadPermission.class);
     }
 
+    // TODO: Delete this?
     private Report createReport(StudyReport report)
     {
         final String type = report.getReportType();
@@ -429,8 +430,6 @@ public class ReportManager implements StudyManager.DataSetListener
 
         if ("ExportExcel".equals(type))
             newType = ExportExcelReport.TYPE;
-        else if ("Attachment".equals(type))
-            newType = AttachmentReport.TYPE;
         else if ("Query".equals(type))
             newType = StudyQueryReport.TYPE;
         else if ("External".equals(type))

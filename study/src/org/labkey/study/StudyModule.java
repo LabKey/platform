@@ -37,9 +37,11 @@ import org.labkey.api.module.ModuleResourceLoader;
 import org.labkey.api.module.SpringModule;
 import org.labkey.api.pipeline.PipelineService;
 import org.labkey.api.query.DefaultSchema;
+import org.labkey.api.query.QueryUrls;
 import org.labkey.api.query.snapshot.QuerySnapshotService;
 import org.labkey.api.reports.Report;
 import org.labkey.api.reports.ReportService;
+import org.labkey.api.reports.report.ReportUrls;
 import org.labkey.api.search.SearchService;
 import org.labkey.api.security.SecurityManager;
 import org.labkey.api.security.permissions.AdminPermission;
@@ -59,6 +61,7 @@ import org.labkey.api.study.reports.CrosstabReport;
 import org.labkey.api.study.reports.CrosstabReportDescriptor;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.SystemMaintenance;
+import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.BaseWebPartFactory;
 import org.labkey.api.view.DefaultWebPartFactory;
 import org.labkey.api.view.HtmlView;
@@ -111,7 +114,6 @@ import org.labkey.study.pipeline.StudyPipeline;
 import org.labkey.study.plate.PlateManager;
 import org.labkey.study.plate.query.PlateSchema;
 import org.labkey.study.query.StudySchemaProvider;
-import org.labkey.study.reports.AttachmentReport;
 import org.labkey.study.reports.ChartReportView;
 import org.labkey.study.reports.EnrollmentReport;
 import org.labkey.study.reports.ExportExcelReport;
@@ -316,7 +318,6 @@ public class StudyModule extends SpringModule implements SearchService.DocumentP
         ReportService.get().registerReport(new StudyQueryReport());
         ReportService.get().registerReport(new ChartReportView.DatasetChartReport());
         ReportService.get().registerReport(new ExternalReport());
-        ReportService.get().registerReport(new AttachmentReport());
         ReportService.get().registerReport(new ExportExcelReport());
         ReportService.get().registerReport(new ChartReportView());
         ReportService.get().registerReport(new StudyChartQueryReport());
@@ -419,12 +420,21 @@ public class StudyModule extends SpringModule implements SearchService.DocumentP
             JspView<Portal.WebPart> view = new JspView<Portal.WebPart>("/org/labkey/study/view/dataViews.jsp", webPart);
             view.setTitle("Data Views");
             view.setFrame(WebPartView.FrameType.PORTAL);
+            Container c = portalCtx.getContainer();
+
             if (portalCtx.hasPermission(AdminPermission.class))
             {
                 NavTree customize = new NavTree("");
                 customize.setScript("customizeDataViews(" + webPart.getRowId() + ", \'" + webPart.getPageId() + "\', " + webPart.getIndex() + ");");
                 view.setCustomize(customize);
+
+                NavTree menu = new NavTree();
+                menu.addChild("Manage Datasets", new ActionURL(StudyController.ManageTypesAction.class, c));
+                menu.addChild("Manage Queries", PageFlowUtil.urlProvider(QueryUrls.class).urlSchemaBrowser(c));
+                menu.addChild("Manage Views", PageFlowUtil.urlProvider(ReportUrls.class).urlManageViews(c));
+                view.setNavMenu(menu);
             }
+
             return view;
         }
     }

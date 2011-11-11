@@ -16,6 +16,7 @@
 
 package org.labkey.query.reports;
 
+import org.apache.commons.beanutils.ConversionException;
 import org.apache.commons.lang.BooleanUtils;
 import org.apache.commons.lang.ObjectUtils;
 import org.apache.commons.lang.StringUtils;
@@ -27,6 +28,7 @@ import org.labkey.api.action.ApiSimpleResponse;
 import org.labkey.api.action.ExtFormAction;
 import org.labkey.api.action.FormViewAction;
 import org.labkey.api.action.GWTServiceAction;
+import org.labkey.api.action.ReturnUrlForm;
 import org.labkey.api.action.SimpleViewAction;
 import org.labkey.api.action.SpringActionController;
 import org.labkey.api.admin.AdminUrls;
@@ -91,8 +93,9 @@ import org.labkey.api.study.reports.CrosstabReport;
 import org.labkey.api.thumbnail.BaseThumbnailAction;
 import org.labkey.api.thumbnail.DynamicThumbnailProvider;
 import org.labkey.api.thumbnail.StaticThumbnailProvider;
-import org.labkey.api.thumbnail.Thumbnail;
 import org.labkey.api.thumbnail.ThumbnailService;
+import org.labkey.api.util.DateUtil;
+import org.labkey.api.util.HelpTopic;
 import org.labkey.api.util.IdentifierString;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.Pair;
@@ -112,6 +115,7 @@ import org.labkey.query.ViewFilterItemImpl;
 import org.labkey.query.reports.chart.ChartServiceImpl;
 import org.springframework.validation.BindException;
 import org.springframework.validation.Errors;
+import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.servlet.ModelAndView;
 import org.springframework.web.servlet.mvc.Controller;
 
@@ -124,6 +128,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -975,23 +980,24 @@ public class ReportsController extends SpringActionController
         }
     }
 
+
     @RequiresPermissionClass(ReadPermission.class)
     public class DownloadAction extends SimpleViewAction<AttachmentForm>
     {
         public ModelAndView getView(AttachmentForm form, BindException errors) throws Exception
         {
-            SimpleFilter filter = new SimpleFilter("EntityId", form.getEntityId());
+            SimpleFilter filter = new SimpleFilter("ContainerId", getContainer().getId());
+            filter.addCondition("EntityId", form.getEntityId());
+
             Report[] report = ReportService.get().getReports(filter);
             if (report.length != 1)
             {
                 throw new NotFoundException("Unable to find report");
             }
 
-            //if (!report.getDescriptor().getACL().hasPermission(getUser(), ACL.PERM_READ))
-            //    HttpView.throwUnauthorized();
+            if (report[0] instanceof RReport || report[0] instanceof AttachmentReport)
+                AttachmentService.get().download(getViewContext().getResponse(), report[0], form.getName());
 
-            if (report[0] instanceof RReport)
-                AttachmentService.get().download(getViewContext().getResponse(), (RReport)report[0], form.getName());
             return null;
         }
 
@@ -1000,6 +1006,193 @@ public class ReportsController extends SpringActionController
             return null;
         }
     }
+
+
+    public static class UploadForm extends ReturnUrlForm
+    {
+        private int reportId;
+        private String label;
+        private String reportDate;
+        private String filePath;
+        private BindException _errors;
+
+        public String getReportDateString()
+        {
+            return reportDate;
+        }
+
+        public void setReportDateString(String reportDate)
+        {
+            this.reportDate = reportDate;
+        }
+
+        public int getReportId()
+        {
+            return reportId;
+        }
+
+        public void setReportId(int reportId)
+        {
+            this.reportId = reportId;
+        }
+
+        public String getLabel()
+        {
+            return label;
+        }
+
+        public void setLabel(String label)
+        {
+            this.label = label;
+        }
+
+        public String getFilePath()
+        {
+            return filePath;
+        }
+
+        public void setFilePath(String filePath)
+        {
+            this.filePath = filePath;
+        }
+
+        public void setErrors(BindException errors){_errors = errors;}
+        public BindException getErrors(){return _errors;}
+    }
+
+
+    public static ActionURL getAttachmentReportURL(Container c, ActionURL returnURL)
+    {
+        ActionURL url = new ActionURL(UploadReportAction.class, c);
+        url.addReturnURL(returnURL);
+
+        return url;
+    }
+
+
+    @RequiresPermissionClass(AdminPermission.class)
+    public class UploadReportAction extends FormViewAction<UploadForm>
+    {
+        public ModelAndView getView(UploadForm form, boolean reshow, BindException errors) throws Exception
+        {
+            setHelpTopic(new HelpTopic("staticReports"));
+            form.setErrors(errors);
+
+            if (form.getReportId() != 0)
+            {
+                Report report = ReportService.get().getReport(form.getReportId());
+
+                if (report != null)
+                {
+                    form.setLabel(report.getDescriptor().getReportName());
+                    form.setReportId(form.getReportId());
+                }
+            }
+
+            return new JspView<UploadForm>("/org/labkey/query/reports/view/uploadAttachmentReport.jsp", form);
+        }
+
+        public void validateCommand(UploadForm form, Errors errors)
+        {
+            Map<String, MultipartFile> fileMap = getFileMap();
+            MultipartFile[] formFiles = fileMap.values().toArray(new MultipartFile[fileMap.size()]);
+
+            if (null == StringUtils.trimToNull(form.getLabel()))
+                errors.reject("uploadForm", "You must enter a report name.");
+
+            String filePath = null;
+            if (null != form.getFilePath())
+                filePath = StringUtils.trimToNull(form.getFilePath());
+            if (null == filePath && (0 == formFiles.length || formFiles[0].isEmpty()))
+                errors.reject("uploadForm", "You must specify a file");
+
+            String dateStr = form.getReportDateString();
+            if (dateStr != null && dateStr.length() > 0)
+            {
+                try
+                {
+                    Long l = DateUtil.parseDateTime(dateStr);
+                    Date reportDate = new Date(l);
+                }
+                catch (ConversionException x)
+                {
+                    errors.reject("uploadForm", "You must enter a legal report date");
+                }
+            }
+        }
+
+        public boolean handlePost(UploadForm form, BindException errors) throws Exception
+        {
+            AttachmentReport report = (AttachmentReport)ReportService.get().createReportInstance(AttachmentReport.TYPE);
+
+            report.getDescriptor().setContainer(getContainer().getId());
+            report.getDescriptor().setReportName(form.getLabel());
+            if (!StringUtils.isEmpty(form.getReportDateString()))
+                report.setModified(new Date(DateUtil.parseDateTime(form.getReportDateString())));
+            report.setFilePath(form.getFilePath());
+
+            int id = ReportService.get().saveReport(getViewContext(), form.getLabel(), report);
+
+            report = (AttachmentReport)ReportService.get().getReport(id);
+            AttachmentService.get().addAttachments(report, getAttachmentFileList(), getViewContext().getUser());
+
+            ThumbnailService svc = ServiceRegistry.get().getService(ThumbnailService.class);
+
+            if (null != svc)
+                svc.queueThumbnailRendering(report);
+
+            return true;
+        }
+
+        public ActionURL getSuccessURL(UploadForm uploadForm)
+        {
+            return uploadForm.getReturnActionURL();
+        }
+
+        public NavTree appendNavTrail(NavTree root)
+        {
+            return root.addChild("Upload Report");
+        }
+    }
+
+
+    @RequiresPermissionClass(ReadPermission.class)
+    public class DownloadReportFileAction extends SimpleViewAction<UploadForm>
+    {
+        public ModelAndView getView(UploadForm form, BindException errors) throws Exception
+        {
+            Integer reportId = form.getReportId();
+
+            if (null == reportId)
+                throw new NotFoundException("ReportId not specified");
+
+            Report report = ReportService.get().getReport(reportId);
+
+            if (null == report)
+                throw new NotFoundException("Report not found");
+
+            if (report instanceof AttachmentReport)
+            {
+                AttachmentReport aReport = (AttachmentReport)report;
+
+                if (null == aReport.getFilePath())
+                    throw new NotFoundException();
+
+                File file = new File(aReport.getFilePath());
+                if (!file.exists())
+                    throw new NotFoundException("Could not find file with name " + aReport.getFilePath());
+
+                PageFlowUtil.streamFile(getViewContext().getResponse(), file, true);
+            }
+            return null;
+        }
+
+        public NavTree appendNavTrail(NavTree root)
+        {
+            return null;
+        }
+    }
+
 
     @RequiresPermissionClass(ReadPermission.class)
     public class ManageViewsAction extends SimpleViewAction<ViewsSummaryForm>

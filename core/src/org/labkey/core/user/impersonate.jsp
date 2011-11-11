@@ -23,10 +23,11 @@
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.api.view.ViewContext" %>
 <%@ page import="org.labkey.core.user.UserController" %>
+<%@ page import="org.jetbrains.annotations.Nullable" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
-    HttpView<UserController.ImpersonateBean> me = (HttpView<UserController.ImpersonateBean>) HttpView.currentView();
-    UserController.ImpersonateBean bean = me.getModelBean();
+    HttpView<UserController.ImpersonateUserBean> me = (HttpView<UserController.ImpersonateUserBean>) HttpView.currentView();
+    UserController.ImpersonateUserBean bean = me.getModelBean();
 
     ViewContext context = HttpView.currentContext();
     User user = context.getUser();
@@ -47,8 +48,10 @@
 
             if (user.isImpersonated())
             {
+                @Nullable User impersonatingUser = user.getImpersonatingUser();
+                String changeBackMessage = null != impersonatingUser ? "change back to " + impersonatingUser.getDisplayName(user) : "stop impersonating";
         %>
-            <tr><td>Already impersonating; click <a href="<%=h(urlProvider(LoginUrls.class).getStopImpersonatingURL(c, user.getImpersonationContext().getReturnURL()))%>">here</a> to change back to <%=h(user.getImpersonatingUser().getDisplayName(user))%>.</td></tr><%
+            <tr><td>Already impersonating; click <a href="<%=h(urlProvider(LoginUrls.class).getStopImpersonatingURL(c, user.getImpersonationContext().getReturnURL()))%>">here</a> <%=h(changeBackMessage)%>.</td></tr><%
             }
             else
             {

@@ -1614,14 +1614,14 @@ public class UserController extends SpringActionController
     }
 
 
-    public static class ImpersonateBean
+    public static class ImpersonateUserBean
     {
         public final List<String> emails;
         public final String title;
         public final String message;
         public final boolean isAdminConsole;
 
-        public ImpersonateBean(Container c, User user, boolean isAdminConsole)
+        public ImpersonateUserBean(Container c, User user, boolean isAdminConsole)
         {
             this.isAdminConsole = isAdminConsole;
 
@@ -1663,11 +1663,11 @@ public class UserController extends SpringActionController
     }
 
 
-    public static class ImpersonateView extends JspView<ImpersonateBean>
+    public static class ImpersonateView extends JspView<ImpersonateUserBean>
     {
         public ImpersonateView(Container c, User user, boolean isAdminConsole)
         {
-            super("/org/labkey/core/user/impersonate.jsp", new ImpersonateBean(c, user, isAdminConsole));
+            super("/org/labkey/core/user/impersonate.jsp", new ImpersonateUserBean(c, user, isAdminConsole));
 
             if (!isAdminConsole)
             {
@@ -1763,7 +1763,6 @@ public class UserController extends SpringActionController
             if (getUser().isImpersonated())
                 throw new UnauthorizedException("Can't impersonate; you're already impersonating");
 
-            Container c = getContainer();
             Group group = SecurityManager.getGroup(form.getGroupId());
 
             ActionURL returnURL = form.getReturnActionURL(AppProps.getInstance().getHomePageActionURL());

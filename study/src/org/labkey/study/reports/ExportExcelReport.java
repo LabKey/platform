@@ -20,6 +20,7 @@ import jxl.write.WritableWorkbook;
 import jxl.write.WriteException;
 import org.apache.commons.lang.math.NumberUtils;
 import org.labkey.api.data.*;
+import org.labkey.api.reports.report.RedirectReport;
 import org.labkey.api.security.User;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.view.ActionURL;

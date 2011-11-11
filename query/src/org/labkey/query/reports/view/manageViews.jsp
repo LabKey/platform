@@ -19,12 +19,14 @@
 <%@ page import="org.labkey.api.reports.report.RReport" %>
 <%@ page import="org.labkey.api.reports.report.view.RReportBean" %>
 <%@ page import="org.labkey.api.reports.report.view.ReportUtil" %>
+<%@ page import="org.labkey.api.security.permissions.AdminPermission" %>
 <%@ page import="org.labkey.api.util.PageFlowUtil" %>
 <%@ page import="org.labkey.api.view.ActionURL" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.api.view.JspView" %>
 <%@ page import="org.labkey.api.view.ViewContext" %>
 <%@ page import="org.labkey.query.reports.ReportsController" %>
+<%@ page import="org.labkey.query.reports.ReportsController.*" %>
 <%@ page extends="org.labkey.api.jsp.JspBase"%>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 
@@ -45,6 +47,7 @@
     bean.setRedirectUrl(context.getActionURL().getLocalURIString());
 
     ActionURL newRView = ReportUtil.getRReportDesignerURL(context, bean);
+    ActionURL newAttachmentReport = ReportsController.getAttachmentReportURL(context.getContainer(), context.getActionURL());
 %>
 
 <script type="text/javascript">
@@ -68,7 +71,11 @@
                 text:'R View',
                 icon: <%=PageFlowUtil.jsString(ReportService.get().getReportIcon(getViewContext(), RReport.TYPE))%>,
                 disabled: <%=!ReportUtil.canCreateScript(context)%>,
-                listeners:{click:function(button, event) {window.location = <%=PageFlowUtil.jsString(newRView.getLocalURIString())%>;}}}]
+                listeners:{click:function(button, event) {window.location = <%=PageFlowUtil.jsString(newRView.getLocalURIString())%>;}}},{
+                id: 'create_attachment_report',
+                text:'Attachment Report',
+                disabled: <%=!context.hasPermission(AdminPermission.class)%>,
+                listeners:{click:function(button, event) {window.location = <%=PageFlowUtil.jsString(newAttachmentReport.getLocalURIString())%>;}}}]
             <% } %>
         };
         var panel = new LABKEY.ViewsPanel(gridConfig);

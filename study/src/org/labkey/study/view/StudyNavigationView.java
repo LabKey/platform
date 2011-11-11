@@ -59,7 +59,7 @@ public class StudyNavigationView extends JspView<NavTree>
         //
         
 //        NavTree ntDatasets = new NavTree("Datasets", new ActionURL("project","getWebPart",_study.getContainer()).addParameter("webpart.name","Datasets"));
-        NavTree ntDatasets = new NavTree("Datasets", new ActionURL(StudyController.DatasetsAction.class,_study.getContainer()));
+        NavTree ntDatasets = new NavTree("Datasets", new ActionURL(StudyController.DatasetsAction.class, _study.getContainer()));
         ntRoot.addChild(ntDatasets);
         List<DataSetDefinition> defs = _study.getDataSets();
 //        for (DataSetDefinition def : defs)

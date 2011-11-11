@@ -751,10 +751,12 @@ public class LoginController extends SpringActionController
 
         public boolean doAction(ReturnUrlForm form, BindException errors) throws Exception
         {
-            if (getUser().isImpersonated())
-                SecurityManager.stopImpersonating(getViewContext(), getUser());
+            User user = getUser();
+
+            if (user.isImpersonated())
+                SecurityManager.stopImpersonating(getViewContext(), user);
             else
-                SecurityManager.logoutUser(getViewContext().getRequest(), getUser());
+                SecurityManager.logoutUser(getViewContext().getRequest(), user);
 
             return true;
         }

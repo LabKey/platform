@@ -237,11 +237,6 @@
                 icon: '<%=ReportService.get().getReportIcon(getViewContext(), ExportExcelReport.TYPE)%>',
                 listeners:{click:function(button, event) {window.location = '<%=new ActionURL(ReportsController.ExportExcelConfigureAction.class, context.getContainer())%>';}}
             },{
-                id: 'create_staticView',
-                text:'Static View',
-                disabled: <%=!context.hasPermission(AdminPermission.class)%>,
-                listeners:{click:function(button, event) {window.location = '<%=new ActionURL(ReportsController.ShowUploadReportAction.class, context.getContainer())%>';}}
-            },{
                 id: 'create_enrollmentView',
                 text:'<%=hasEnrollmentReport ? "Configure Enrollment View" : "Enrollment View"%>',
                 disabled: <%=!context.hasPermission(AdminPermission.class)%>,

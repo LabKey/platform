@@ -30,13 +30,10 @@
 <%@ page import="org.labkey.api.view.ViewContext" %>
 <%@ page import="org.labkey.study.controllers.security.SecurityController" %>
 <%@ page import="org.labkey.study.model.StudyManager" %>
-<%@ page import="org.labkey.study.reports.AttachmentReport" %>
 <%@ page import="java.util.HashMap" %>
 <%@ page import="java.util.List" %>
 <%@ page import="java.util.Map" %>
 <%@ page extends="org.labkey.api.jsp.JspBase"%>
-
-
 <%
     JspView<Report> me = (JspView<Report>) HttpView.currentView();
     Report bean = me.getModelBean();
@@ -47,7 +44,7 @@
     SecurityPolicy containerPolicy = c.getPolicy();
     SecurityPolicy reportPolicy = SecurityManager.getPolicy(bean.getDescriptor());
 
-    boolean isAttachmentReport = bean.getDescriptor().getReportType().equals(AttachmentReport.TYPE);
+    boolean isAttachmentReport = false;  // TODO: Remove all references
 
     Container project = study.getContainer().getProject();
     Group[] globalGroups = SecurityManager.getGroups(null, false);
@@ -68,7 +65,7 @@
     {
         var form = document.getElementById("permissionsForm");
         var inputs = form.getElementsByTagName("INPUT");
-        for (i=0 ; i<inputs.length ; i++)
+        for (var i=0 ; i<inputs.length ; i++)
         {
             var input = inputs[i];
             // probably overkill, but double-check to ensure that the input is an enabled, visible checkbox:
@@ -85,7 +82,7 @@
         var useExplicitInput = document.getElementById("useExplicit");
         var useExplicit = useExplicitInput.checked;
         var inputs = form.getElementsByTagName("INPUT");
-        for (i=0 ; i<inputs.length ; i++)
+        for (var i=0 ; i<inputs.length ; i++)
         {
             var input = inputs[i];
             if (input.type == "checkbox")

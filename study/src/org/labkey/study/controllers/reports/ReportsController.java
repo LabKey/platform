@@ -17,18 +17,33 @@
 package org.labkey.study.controllers.reports;
 
 import gwt.client.org.labkey.study.chart.client.StudyChartDesigner;
-import org.apache.commons.beanutils.ConversionException;
 import org.apache.commons.lang.StringUtils;
 import org.apache.commons.lang.math.NumberUtils;
 import org.json.JSONArray;
-import org.labkey.api.action.*;
-import org.labkey.api.attachments.AttachmentForm;
-import org.labkey.api.attachments.AttachmentService;
+import org.labkey.api.action.ApiAction;
+import org.labkey.api.action.ApiResponse;
+import org.labkey.api.action.ApiSimpleResponse;
+import org.labkey.api.action.FormViewAction;
+import org.labkey.api.action.GWTServiceAction;
+import org.labkey.api.action.SimpleViewAction;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
-import org.labkey.api.data.*;
+import org.labkey.api.data.BeanViewForm;
+import org.labkey.api.data.ColumnInfo;
+import org.labkey.api.data.Container;
+import org.labkey.api.data.DisplayColumn;
+import org.labkey.api.data.SimpleFilter;
+import org.labkey.api.data.Table;
+import org.labkey.api.data.TableInfo;
 import org.labkey.api.exp.PropertyType;
 import org.labkey.api.gwt.server.BaseRemoteService;
-import org.labkey.api.query.*;
+import org.labkey.api.query.CustomView;
+import org.labkey.api.query.DefaultSchema;
+import org.labkey.api.query.QueryDefinition;
+import org.labkey.api.query.QueryParam;
+import org.labkey.api.query.QueryService;
+import org.labkey.api.query.QuerySettings;
+import org.labkey.api.query.QueryView;
+import org.labkey.api.query.UserSchema;
 import org.labkey.api.reports.Report;
 import org.labkey.api.reports.ReportService;
 import org.labkey.api.reports.model.ViewInfo;
@@ -44,15 +59,27 @@ import org.labkey.api.security.RequiresPermissionClass;
 import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.AdminPermission;
 import org.labkey.api.security.permissions.ReadPermission;
-import org.labkey.api.services.ServiceRegistry;
-import org.labkey.api.study.*;
+import org.labkey.api.study.DataSet;
+import org.labkey.api.study.Study;
+import org.labkey.api.study.StudyService;
+import org.labkey.api.study.TimepointType;
+import org.labkey.api.study.Visit;
 import org.labkey.api.study.reports.CrosstabReportDescriptor;
-import org.labkey.api.thumbnail.ThumbnailService;
-import org.labkey.api.util.DateUtil;
 import org.labkey.api.util.HelpTopic;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.Pair;
-import org.labkey.api.view.*;
+import org.labkey.api.view.ActionURL;
+import org.labkey.api.view.HtmlView;
+import org.labkey.api.view.HttpView;
+import org.labkey.api.view.JspView;
+import org.labkey.api.view.NavTree;
+import org.labkey.api.view.NotFoundException;
+import org.labkey.api.view.RedirectException;
+import org.labkey.api.view.UnauthorizedException;
+import org.labkey.api.view.VBox;
+import org.labkey.api.view.ViewContext;
+import org.labkey.api.view.ViewForm;
+import org.labkey.api.view.WebPartView;
 import org.labkey.study.StudyModule;
 import org.labkey.study.StudySchema;
 import org.labkey.study.controllers.BaseStudyController;
@@ -62,11 +89,14 @@ import org.labkey.study.model.StudyImpl;
 import org.labkey.study.model.StudyManager;
 import org.labkey.study.model.VisitImpl;
 import org.labkey.study.query.StudyQuerySchema;
-import org.labkey.study.reports.*;
+import org.labkey.study.reports.EnrollmentReport;
+import org.labkey.study.reports.ExportExcelReport;
+import org.labkey.study.reports.ExternalReport;
+import org.labkey.study.reports.ReportManager;
+import org.labkey.study.reports.StudyQueryReport;
 import org.labkey.study.view.StudyGWTView;
 import org.springframework.validation.BindException;
 import org.springframework.validation.Errors;
-import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.servlet.ModelAndView;
 
 import javax.servlet.ServletException;
@@ -75,7 +105,6 @@ import java.io.File;
 import java.io.PrintWriter;
 import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -959,211 +988,8 @@ public class ReportsController extends BaseStudyController
     }
 
     @RequiresPermissionClass(AdminPermission.class)
-    public class ShowUploadReportAction extends FormViewAction<UploadForm>
-    {
-        public ModelAndView getView(UploadForm form, boolean reshow, BindException errors) throws Exception
-        {
-            setHelpTopic(new HelpTopic("staticReports"));
-            form.setErrors(errors);
-            if (form.getReportId() != 0)
-            {
-                Report report = ReportManager.get().getReport(getContainer(), form.getReportId());
-                if (report != null)
-                {
-                    form.setLabel(report.getDescriptor().getReportName());
-                    form.setReportId(form.getReportId());
-                }
-            }
-            return new JspView<UploadForm>("/org/labkey/study/view/uploadAttachmentReport.jsp", form);
-        }
-
-        public void validateCommand(UploadForm form, Errors errors)
-        {
-            Map<String, MultipartFile> fileMap = getFileMap();
-            MultipartFile[] formFiles = fileMap.values().toArray(new MultipartFile[fileMap.size()]);
-
-            if (null == StringUtils.trimToNull(form.getLabel()))
-                errors.reject("uploadForm", "You must enter a report name.");
-
-            String filePath = null;
-            if (null != form.getFilePath())
-                filePath = StringUtils.trimToNull(form.getFilePath());
-            if (null == filePath && (0 == formFiles.length || formFiles[0].isEmpty()))
-                errors.reject("uploadForm", "You must specify a file");
-
-            String dateStr = form.getReportDateString();
-            if (dateStr != null && dateStr.length() > 0)
-            {
-                try
-                {
-                    Long l = DateUtil.parseDateTime(dateStr);
-                    Date reportDate = new Date(l);
-                }
-                catch (ConversionException x)
-                {
-                    errors.reject("uploadForm", "You must enter a legal report date");
-                }
-            }
-        }
-
-        public boolean handlePost(UploadForm form, BindException errors) throws Exception
-        {
-            AttachmentReport report = (AttachmentReport)ReportService.get().createReportInstance(AttachmentReport.TYPE);
-
-            report.getDescriptor().setContainer(getContainer().getId());
-            report.getDescriptor().setReportName(form.getLabel());
-            if (!StringUtils.isEmpty(form.getReportDateString()))
-                report.setModified(new Date(DateUtil.parseDateTime(form.getReportDateString())));
-            report.setFilePath(form.getFilePath());
-
-            int id = ReportService.get().saveReport(getViewContext(), form.getLabel(), report);
-
-            report = (AttachmentReport)ReportService.get().getReport(id);
-            AttachmentService.get().addAttachments(report, getAttachmentFileList(), getViewContext().getUser());
-
-            ThumbnailService svc = ServiceRegistry.get().getService(ThumbnailService.class);
-
-            if (null != svc)
-                svc.queueThumbnailRendering(report);
-
-            return true;
-        }
-
-        public ActionURL getSuccessURL(UploadForm uploadForm)
-        {
-            return getViewContext().cloneActionURL().setAction("begin");
-        }
-
-        public NavTree appendNavTrail(NavTree root)
-        {
-            return _appendNavTrail(root, "Upload Report");
-        }
-    }
-
-    @RequiresPermissionClass(ReadPermission.class)
-    public class DownloadReportFileAction extends SimpleViewAction<UploadForm>
-    {
-        public ModelAndView getView(UploadForm form, BindException errors) throws Exception
-        {
-            Integer reportId = form.getReportId();
-            if (null == reportId)
-            {
-                throw new NotFoundException();
-            }
-            AttachmentReport report = (AttachmentReport) ReportManager.get().getReport(getContainer(), reportId);
-            if (null == report || null == report.getFilePath())
-                throw new NotFoundException();
-
-            if (!ReportManager.get().canReadReport(getUser(), getContainer(), report))
-                throw new UnauthorizedException();
-
-            File file = new File(report.getFilePath());
-            if (!file.exists())
-                throw new NotFoundException("Could not find file with name " + report.getFilePath());
-
-            PageFlowUtil.streamFile(getViewContext().getResponse(), file, true);
-            return null;
-        }
-
-        public NavTree appendNavTrail(NavTree root)
-        {
-            return null;
-        }
-
-        public boolean handlePost(UploadForm form, BindException errors) throws Exception
-        {
-            Integer reportId = form.getReportId();
-            if (null == reportId)
-                throw new NotFoundException();
-
-            AttachmentReport report = (AttachmentReport) ReportManager.get().getReport(getContainer(), reportId);
-            if (null == report || null == report.getFilePath())
-                throw new NotFoundException();
-
-            if (!ReportManager.get().canReadReport(getUser(), getContainer(), report))
-                throw new UnauthorizedException();
-
-            File file = new File(report.getFilePath());
-            if (!file.exists())
-            {
-                throw new NotFoundException("Could not find file with name " + report.getFilePath());
-            }
-
-            PageFlowUtil.streamFile(getViewContext().getResponse(), file, true);
-            return true;
-        }
-
-        public void validateCommand(UploadForm target, Errors errors)
-        {
-        }
-
-        public ActionURL getSuccessURL(UploadForm uploadForm)
-        {
-            return null;
-        }
-    }
-
-    @RequiresPermissionClass(ReadPermission.class)
-    public class DownloadAction extends SimpleViewAction<AttachmentForm>
-    {
-        public ModelAndView getView(AttachmentForm form, BindException errors) throws Exception
-        {
-            SimpleFilter filter = new SimpleFilter("ContainerId", getContainer().getId());
-            filter.addCondition("EntityId", form.getEntityId());
-
-            Report[] report = ReportService.get().getReports(filter);
-            if (report.length == 0)
-            {
-                throw new NotFoundException("Unable to find report");
-            }
-
-            if (!ReportManager.get().canReadReport(getUser(), getContainer(), report[0]))
-                throw new UnauthorizedException();
-
-            if (report[0] instanceof AttachmentReport)
-                AttachmentService.get().download(getViewContext().getResponse(), (AttachmentReport)report[0], form.getName());
-
-            return null;
-        }
-
-        public NavTree appendNavTrail(NavTree root)
-        {
-            return null;
-        }
-
-        public boolean handlePost(AttachmentForm form, BindException errors) throws Exception
-        {
-            SimpleFilter filter = new SimpleFilter("ContainerId", getContainer().getId());
-            filter.addCondition("EntityId", form.getEntityId());
-
-            Report[] report = ReportService.get().getReports(filter);
-            if (report.length == 0)
-            {
-                throw new NotFoundException("Unable to find report");
-            }
-
-            //if (!report.getDescriptor().getACL().hasPermission(getUser(), ACL.PERM_READ))
-            //    HttpView.throwUnauthorized();
-
-            if (report[0] instanceof AttachmentReport)
-            AttachmentService.get().download(getViewContext().getResponse(), (AttachmentReport)report[0], form.getName());
-            return true;
-        }
-
-        public void validateCommand(AttachmentForm target, Errors errors)
-        {
-        }
-
-        public ActionURL getSuccessURL(AttachmentForm uploadForm)
-        {
-            return null;
-        }
-    }
-
-    @RequiresPermissionClass(AdminPermission.class)
     public class CreateQueryReportAction extends SimpleViewAction<QueryReportForm>
     {
-
         public ModelAndView getView(QueryReportForm form, BindException errors) throws Exception
         {
             setHelpTopic(new HelpTopic("datasetViews"));
@@ -1292,76 +1118,6 @@ public class ReportsController extends BaseStudyController
         {
             return _srcURL;
         }
-    }
-
-    public static class UploadForm
-    {
-        private int reportId;
-        private String label;
-        private String reportDate;
-        private String message;
-        private String filePath;
-        private BindException _errors;
-
-        public String getReportDateString()
-        {
-            return reportDate;
-        }
-
-        public void setReportDateString(String reportDate)
-        {
-            this.reportDate = reportDate;
-        }
-
-        public int getReportId()
-        {
-            return reportId;
-        }
-
-        public void setReportId(int reportId)
-        {
-            this.reportId = reportId;
-        }
-
-        public String getMessage()
-        {
-            return message;
-        }
-
-        public void setMessage(String message)
-        {
-            this.message = message;
-        }
-
-        public void appendMessage(String message)
-        {
-            if (null == this.message)
-                this.message = message;
-            else
-                this.message = this.message + "<br>" + message;
-        }
-
-        public String getLabel()
-        {
-            return label;
-        }
-
-        public void setLabel(String label)
-        {
-            this.label = label;
-        }
-
-        public String getFilePath()
-        {
-            return filePath;
-        }
-
-        public void setFilePath(String filePath)
-        {
-            this.filePath = filePath;
-        }
-        public void setErrors(BindException errors){_errors = errors;}
-        public BindException getErrors(){return _errors;}
     }
 
     public static class ShowReportForm

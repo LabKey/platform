@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package org.labkey.study.reports;
+package org.labkey.query.reports;
 
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.attachments.Attachment;
@@ -22,6 +22,7 @@ import org.labkey.api.attachments.AttachmentService;
 import org.labkey.api.attachments.DocumentConversionService;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
+import org.labkey.api.reports.report.RedirectReport;
 import org.labkey.api.services.ServiceRegistry;
 import org.labkey.api.thumbnail.DynamicThumbnailProvider;
 import org.labkey.api.thumbnail.Thumbnail;
@@ -33,8 +34,8 @@ import org.labkey.api.util.MimeMap;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.ViewContext;
-import org.labkey.study.controllers.reports.ReportsController.DownloadAction;
-import org.labkey.study.controllers.reports.ReportsController.DownloadReportFileAction;
+import org.labkey.query.reports.ReportsController.DownloadAction;
+import org.labkey.query.reports.ReportsController.DownloadReportFileAction;
 
 import javax.imageio.ImageIO;
 import java.awt.image.BufferedImage;
@@ -52,7 +53,7 @@ import java.util.Map;
  */
 public class AttachmentReport extends RedirectReport implements DynamicThumbnailProvider
 {
-    public static final String TYPE = "Study.attachmentReport";
+    public static final String TYPE = "Study.attachmentReport";     // Misnomer (it's no longer part of study), but keep this for backward compatibility
     public static final String FILE_PATH = "filePath";
     public static final String MODIFIED = "modified";
 
@@ -63,7 +64,7 @@ public class AttachmentReport extends RedirectReport implements DynamicThumbnail
 
     public String getTypeDescription()
     {
-        return "Study Attachment Report";
+        return "Attachment Report";
     }
 
     @Override

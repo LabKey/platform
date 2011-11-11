@@ -17,12 +17,13 @@
 %>
 <%@ page import="org.labkey.api.view.HttpView"%>
 <%@ page import="org.labkey.api.view.JspView"%>
-<%@ page import="org.labkey.study.controllers.reports.ReportsController"%>
+<%@ page import="org.labkey.query.reports.ReportsController" %>
+<%@ page import="org.labkey.query.reports.ReportsController.UploadForm" %>
 <%@ page import="org.springframework.validation.ObjectError" %>
 <%@ page import="java.util.List" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
-    JspView<ReportsController.UploadForm> me = (JspView<ReportsController.UploadForm>) HttpView.currentView();
+    JspView<UploadForm> me = (JspView<UploadForm>) HttpView.currentView();
     ReportsController.UploadForm bean = me.getModelBean();
 
     boolean canUseDiskFile = HttpView.currentContext().getUser().isAdministrator() && bean.getReportId() == 0;
@@ -39,7 +40,7 @@
 
 <form method="post" action="" enctype="multipart/form-data">
     <table>
-            <tr>
+        <tr>
             <td class="labkey-form-label">
                 Report Name
             </td>
