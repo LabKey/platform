@@ -1234,6 +1234,16 @@ issues/src/org/labkey/issue/summaryWebpart.jsp -text
 issues/src/org/labkey/issue/updateEmail.jsp -text
 issues/src/org/labkey/issue/updateView.jsp -text
 issues/webapp/issues/hashbang.js -text
+lab/Lab.iml -text
+lab/build.xml -text
+lab/module.properties -text
+lab/src/org/labkey/lab/LabContainerListener.java -text
+lab/src/org/labkey/lab/LabController.java -text
+lab/src/org/labkey/lab/LabFolderTabs.java -text
+lab/src/org/labkey/lab/LabFolderType.java -text
+lab/src/org/labkey/lab/LabManager.java -text
+lab/src/org/labkey/lab/LabModule.java -text
+lab/src/org/labkey/lab/LabSchema.java -text
 list/List.iml -text
 list/ListGWT.iml -text
 list/build.xml -text
