@@ -560,12 +560,19 @@ LABKEY.Query = new function()
             if (config.timeout)
                 Ext.Ajax.timeout = config.timeout;
 
+            var dataObject = {
+                commands: config.commands,
+                containerPath: config.containerPath,
+                transacted : config.transacted,
+                extraContext : config.extraContext
+            };
+
             return LABKEY.Ajax.request({
                 url : LABKEY.ActionURL.buildURL("query", "saveRows", config.containerPath),
                 method : 'POST',
                 success: LABKEY.Utils.getCallbackWrapper(LABKEY.Utils.getOnSuccess(config), config.scope),
                 failure: LABKEY.Utils.getCallbackWrapper(LABKEY.Utils.getOnFailure(config), config.scope, true),
-                jsonData : config,
+                jsonData : dataObject,
                 headers : {
                     'Content-Type' : 'application/json'
                 }
