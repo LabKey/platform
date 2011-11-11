@@ -38,7 +38,7 @@ LABKEY.Query = new function()
 {
     function sendJsonQueryRequest(config)
     {
-        if (config.timeout)
+        if (Ext.isDefined(config.timeout))
             Ext.Ajax.timeout = config.timeout;
 
         var dataObject = {
@@ -216,7 +216,7 @@ LABKEY.Query = new function()
          */
         executeSql : function(config)
         {
-            if (config.timeout)
+            if (Ext.isDefined(config.timeout))
                 Ext.Ajax.timeout = config.timeout;
 
             var dataObject = {
@@ -455,7 +455,7 @@ LABKEY.Query = new function()
                 for (var propName in config.parameters)
                     dataObject['query.param.' + propName] = config.parameters[propName];
 
-            if (config.timeout)
+            if (Ext.isDefined(config.timeout))
                 Ext.Ajax.timeout = config.timeout;
 
             if (config.requiredVersion)
@@ -557,7 +557,7 @@ LABKEY.Query = new function()
         {
             if (arguments.length > 1)
                 config = configFromArgs(arguments);
-            if (config.timeout)
+            if (Ext.isDefined(config.timeout))
                 Ext.Ajax.timeout = config.timeout;
 
             var dataObject = {

@@ -277,7 +277,7 @@ LABKEY.Assay = new function()
 
             LABKEY.Filter.appendFilterParams(dataObject, config.filterArray);
 
-            if(config.timeout)
+            if(Ext.isDefined(config.timeout))
                 Ext.Ajax.timeout = config.timeout;
 
             var successCallback = LABKEY.Utils.getOnSuccess(config);
@@ -329,7 +329,7 @@ LABKEY.Assay = new function()
 
             Ext.apply(dataObject, config);
 
-            if(config.timeout)
+            if(Ext.isDefined(config.timeout))
                 Ext.Ajax.timeout = config.timeout;
 
             var successCallback = LABKEY.Utils.getOnSuccess(config);
@@ -420,7 +420,7 @@ LABKEY.Assay = new function()
 
             LABKEY.Utils.applyTranslated(parameters, config, {objectIds: 'id'}, true, false);
 
-            if(config.timeout)
+            if(Ext.isDefined(config.timeout))
                 Ext.Ajax.timeout = config.timeout;
 
             Ext.Ajax.request({
