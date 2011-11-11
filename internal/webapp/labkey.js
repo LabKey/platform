@@ -14,7 +14,8 @@ if (typeof LABKEY == "undefined")
     LABKEY.devMode = false;
     LABKEY.demoMode = false;
     LABKEY.extJsRoot = "ext-3.4.0";
-    LABKEY.extJsRoot_40 = "ext-4.0.2a";
+//    LABKEY.extJsRoot_40 = "ext-4.0.2a";
+    LABKEY.extJsRoot_40 = "ext-4.0.7";
     LABKEY.verbose = false;
     LABKEY.widget = {};
     LABKEY.hash = 0;

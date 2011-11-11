@@ -2296,7 +2296,7 @@ LABKEY.DataRegion._filterUI =
         filterPanel.on('afterlayout', function(cmp){Ext.TaskMgr.start(this.focusTask)}, this);
 
          this._filterWin = new Ext.Window({
-             width: 400,
+             width: 410,
              autoHeight: true,
              modal: true,
              resizable: false,

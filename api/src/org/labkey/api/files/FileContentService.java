@@ -36,7 +36,16 @@ public interface FileContentService
     public static final String FILE_SETS_LINK = "@filesets";
     public static final String PIPELINE_LINK = "@pipeline";
 
-    File getFileRoot(Container c);
+    /**
+     * Returns the project file root of the specified container
+     */
+    File getProjectFileRoot(Container c);
+
+    /**
+     * Returns the file root for a container of the specified content type
+     */
+    File getFileRoot(Container c, ContentType type);
+
     void setFileRoot(Container c, File root);
 
     void disableFileRoot(Container container);
@@ -127,4 +136,6 @@ public interface FileContentService
 
     public ExpData getDataObject(WebdavResource resource, Container c);
     public QueryUpdateService getFilePropsUpdateService(TableInfo tinfo, Container container);
+
+    public void moveFileRoot(File prev, File dest);
 }
