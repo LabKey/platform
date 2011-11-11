@@ -18,7 +18,6 @@ package org.labkey.api.security.impersonation;
 import org.labkey.api.data.Container;
 import org.labkey.api.security.User;
 import org.labkey.api.util.URLHelper;
-import org.labkey.api.view.ViewContext;
 
 import java.io.Serializable;
 
