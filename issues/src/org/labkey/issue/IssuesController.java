@@ -1414,6 +1414,9 @@ public class IssuesController extends SpringActionController
                 }
                 else
                 {
+                    if(keyword.length() > 200)
+                            errors.reject(ERROR_MSG, "The keyword is too long, it must be under 200 characters.");
+
                     IssueManager.Keyword[] keywords = IssueManager.getKeywords(getContainer().getId(), type);
                     for (IssueManager.Keyword word : keywords)
                     {
@@ -1556,6 +1559,24 @@ public class IssuesController extends SpringActionController
         public void validateCommand(ConfigureIssuesForm form, Errors errors)
         {
             checkPickLists(form, errors);
+            
+            IssueManager.CustomColumnConfiguration ccc = new IssueManager.CustomColumnConfiguration(getViewContext());
+            String defaultCols[] = {"Milestone", "Area", "Type", "Priority", "Resolution"};
+            Map<String, String> captions = ccc.getColumnCaptions(); //All of the custom captions
+            for (String column : defaultCols)
+            {
+                //Here we add the default captions if the user hasn't changed them.
+                if (captions.get(column.toLowerCase()) == null)
+                {
+                    captions.put(column.toLowerCase(), column);
+                }
+            }
+
+            HashSet<String> uniqueCaptions = new HashSet<String>(captions.values());
+            if (captions.size() > uniqueCaptions.size())
+            {
+                errors.reject(ERROR_MSG, "Custom field names must be unique.");
+            }
 
             if (form.getAssignedToMethod().equals("ProjectUsers"))
             {
@@ -1916,10 +1937,10 @@ public class IssuesController extends SpringActionController
             else
             {
                 sbText.append(" changed from ");
-                sbText.append(HString.EMPTY.equals(from) ? "blank" : from.getSource());
+                sbText.append(HString.EMPTY.equals(from) ? "blank" : "\"" + from.getSource() + "\"");
             }
             sbText.append(" to ");
-            sbText.append(HString.EMPTY.equals(to) ? "blank" : to.getSource());
+            sbText.append(HString.EMPTY.equals(to) ? "blank" : "\"" + to.getSource() + "\"");
             sbText.append("\n");
             HString encFrom = PageFlowUtil.filter(from);
             HString encTo = PageFlowUtil.filter(to);
