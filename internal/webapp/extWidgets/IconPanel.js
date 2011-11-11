@@ -53,7 +53,7 @@ Ext4.define('LABKEY.ext.IconPanel', {
                     '<table id="test"><tr>',
                     '<tpl for=".">',
                         '<td class="thumb-wrap">',
-                        '<div style="width: {thumbWidth};" class="thumb-wrap thumb-wrap-{labelPosition}">',
+                        '<div style="width: {thumbWidth};" class="tool-icon thumb-wrap thumb-wrap-{labelPosition}">',
                             '<tpl if="url"><a href="{url}"></tpl>',
                             '<div class="thumb-img-{labelPosition}"><img src="{iconurl}" title="{label}" style="width: {imageSize}px;height: {imageSize}px;" class="thumb-{iconSize}"></div>',
                             '<span class="thumb-label-{labelPosition}">{label}</span>',
@@ -95,8 +95,8 @@ Ext4.define('LABKEY.ext.IconPanel', {
                     iconSize: this.iconSize || 'medium',
                     labelPosition: this.labelPosition || 'bottom'
                 },
-                trackOver: true,
-                overItemCls: 'x4-item-over',
+                //trackOver: true,
+                //overItemCls: 'x4-item-over',
                 itemSelector: 'div.thumb-wrap'
             }]
         });
@@ -138,7 +138,8 @@ Ext4.define('LABKEY.ext.IconPanel', {
 
         this.callParent(arguments);
 
-        //poor solution to Ext4 layout issue that occurs when adding items from store after panel has rendered
+        //poor solution to firefox Ext4 layout issue that occurs when adding items from store after panel has rendered
+        //TODO: should revisit with future Ext4 versions
         if(!this.store.getCount()){
             this.mon(this.store, 'load', this.doLayout, this, {single: true});
         }
