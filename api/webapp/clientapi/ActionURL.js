@@ -75,6 +75,13 @@ LABKEY.ActionURL = new function()
         return parameters;
     }
 
+    // private
+    function encodeContainerURI(containerPath) {
+        var c = encodeURIComponent(containerPath);
+        c = c.replace(/%2F/g, '/'); // replace slashes
+        return c;
+    }
+
     /** @scope LABKEY.ActionURL */
     return {
         // public functions
@@ -238,6 +245,7 @@ that points back to the current page:
         {
             if(!containerPath)
                 containerPath = this.getContainer();
+            containerPath = encodeContainerURI(containerPath);
 
             //ensure that container path begins and ends with a /
             if(containerPath.charAt(0) != "/")
