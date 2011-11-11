@@ -51,7 +51,7 @@
                 @Nullable User impersonatingUser = user.getImpersonatingUser();
                 String changeBackMessage = null != impersonatingUser ? "change back to " + impersonatingUser.getDisplayName(user) : "stop impersonating";
         %>
-            <tr><td>Already impersonating; click <a href="<%=h(urlProvider(LoginUrls.class).getStopImpersonatingURL(c, user.getImpersonationContext().getReturnURL()))%>">here</a> <%=h(changeBackMessage)%>.</td></tr><%
+            <tr><td>Already impersonating; click <a href="<%=h(urlProvider(LoginUrls.class).getStopImpersonatingURL(c, user.getImpersonationContext().getReturnURL()))%>">here</a> to <%=h(changeBackMessage)%>.</td></tr><%
             }
             else
             {
