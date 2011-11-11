@@ -531,18 +531,7 @@ LABKEY.ext.FormHelper =
                 case "date":
                     field.xtype = 'datefield';
                     field.format = Date.patterns.ISO8601Long;
-                    field.altFormats = Date.patterns.ISO8601Short +
-                                    'n/j/y g:i:s a|n/j/Y g:i:s a|n/j/y G:i:s|n/j/Y G:i:s|' +
-                                    'n-j-y g:i:s a|n-j-Y g:i:s a|n-j-y G:i:s|n-j-Y G:i:s|' +
-                                    'n/j/y g:i a|n/j/Y g:i a|n/j/y G:i|n/j/Y G:i|' +
-                                    'n-j-y g:i a|n-j-Y g:i a|n-j-y G:i|n-j-Y G:i|' +
-                                    'j-M-y g:i a|j-M-Y g:i a|j-M-y G:i|j-M-Y G:i|' +
-                                    'n/j/y|n/j/Y|' +
-                                    'n-j-y|n-j-Y|' +
-                                    'j-M-y|j-M-Y|' +
-                                    'Y-n-d H:i:s|Y-n-d|' +
-                                    'j M Y G:i:s O|' + // 10 Sep 2009 11:24:12 -0700
-                                    'j M Y H:i:s';     // 10 Sep 2009 01:24:12
+                    field.altFormats = LABKEY.Utils.getDateAltFormats();
                     break;
                 case "string":
                     if (config.inputType == 'file')
