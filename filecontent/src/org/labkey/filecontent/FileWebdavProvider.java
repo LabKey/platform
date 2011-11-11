@@ -60,7 +60,7 @@ public class FileWebdavProvider implements WebdavService.Provider
         }
         // Check for the default file location
         Set<String> result = new HashSet<String>();
-        File root = svc.getFileRoot(c);
+        File root = svc.getProjectFileRoot(c);
         if (root != null && NetworkDrive.exists(root))
         {
             result.add(FileContentService.FILES_LINK);

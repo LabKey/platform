@@ -36,6 +36,7 @@ import org.labkey.api.security.User;
 import org.labkey.api.settings.AppProps;
 import org.labkey.api.settings.WriteableAppProps;
 import org.labkey.api.util.ContainerUtil;
+import org.labkey.api.util.FileUtil;
 import org.labkey.api.util.GUID;
 import org.labkey.api.view.HttpView;
 import org.labkey.api.webdav.WebdavResource;
@@ -73,7 +74,31 @@ public class FileContentServiceImpl implements FileContentService, ContainerMana
         ContainerManager.addContainerListener(this);
     }
 
-    public File getFileRoot(Container c)
+    public @Nullable File getFileRoot(Container c, ContentType type)
+    {
+        File root = getProjectFileRoot(c);
+        if (root != null)
+        {
+            File dir;
+
+            //Don't want the Project part of the path.
+            if (c.isProject())
+                dir = root;
+            else
+            {
+                //Cut off the project name
+                String extraPath = c.getPath();
+                extraPath = extraPath.substring(c.getProject().getName().length() + 2);
+                dir = new File(root, extraPath);
+            }
+
+            String folderName = getFolderName(type);
+            return folderName != null ? new File(dir, folderName) : dir;
+        }
+        return null;
+    }
+
+    public @Nullable File getProjectFileRoot(Container c)
     {
         if (c == null)
             return null;
@@ -309,7 +334,7 @@ public class FileContentServiceImpl implements FileContentService, ContainerMana
 
     File getMappedDirectory(Container c, boolean create) throws UnsetRootDirectoryException, MissingRootDirectoryException
     {
-        File root = getFileRoot(c);
+        File root = getProjectFileRoot(c);
         if (null == root)
         {
             if (create)
@@ -326,17 +351,7 @@ public class FileContentServiceImpl implements FileContentService, ContainerMana
                 return null;
         }
 
-        File dir;
-        //Don't want the Project part of the path.
-        if (c.isProject())
-            dir = root;
-        else
-        {
-            //Cut off the project name
-            String extraPath = c.getPath();
-            extraPath = extraPath.substring(c.getProject().getName().length() + 2);
-            dir = new File(root, extraPath);
-        }
+        File dir = getFileRoot(c, null);
 
         if (!dir.exists() && create)
             dir.mkdirs();
@@ -429,7 +444,20 @@ public class FileContentServiceImpl implements FileContentService, ContainerMana
 
     @Override
     public void containerMoved(Container c, Container oldParent, User user)
-    {               
+    {
+        // only attempt to move the root if this is a managed file system
+        if (isUseDefaultRoot(c))
+        {
+            File prevParent = getFileRoot(oldParent, null);
+            if (prevParent != null)
+            {
+                File src = new File(prevParent, c.getName());
+                File dst = getFileRoot(c, null);
+
+                if (src.exists() && dst != null)
+                    moveFileRoot(src, dst);
+            }
+        }
     }
 
     public void propertyChange(PropertyChangeEvent propertyChangeEvent)
@@ -662,5 +690,33 @@ public class FileContentServiceImpl implements FileContentService, ContainerMana
             return false;
         }
         return true;
+    }
+
+    public void moveFileRoot(File prev, File dest)
+    {
+        try
+        {
+            _log.info("moving " + prev.getPath() + " to " + dest.getPath());
+            boolean doRename = true;
+
+            // attempt to rename, if that fails (try the more expensive copy)
+            if (dest.exists())
+                doRename = dest.delete();
+
+            if (doRename && !prev.renameTo(dest))
+            {
+                File parentDir = dest.getParentFile();
+
+                if (parentDir != null && parentDir.exists())
+                {
+                    FileUtil.copyBranch(prev, parentDir);
+                    FileUtil.deleteDir(prev);
+                }
+            }
+        }
+        catch (IOException e)
+        {
+            _log.error("error occurred moving the file root", e);
+        }
     }
 }

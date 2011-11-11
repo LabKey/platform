@@ -106,7 +106,7 @@ public class PipelineServiceImpl extends PipelineService
                 {
                     if (svc.isUseDefaultRoot(container.getProject()))
                     {
-                        File root = svc.getFileRoot(container.getProject());
+                        File root = svc.getProjectFileRoot(container.getProject());
                         if (root != null)
                         {
                             AttachmentDirectory dir = svc.getMappedAttachmentDirectory(container, true);

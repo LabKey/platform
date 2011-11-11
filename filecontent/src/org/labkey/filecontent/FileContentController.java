@@ -64,7 +64,6 @@ import org.labkey.api.query.ValidationError;
 import org.labkey.api.query.ValidationException;
 import org.labkey.api.security.RequiresPermissionClass;
 import org.labkey.api.security.RequiresSiteAdmin;
-import org.labkey.api.security.UserManager;
 import org.labkey.api.security.permissions.AdminPermission;
 import org.labkey.api.security.permissions.DeletePermission;
 import org.labkey.api.security.permissions.InsertPermission;
@@ -647,7 +646,7 @@ public class FileContentController extends SpringActionController
 
            if (service != null)
            {
-               File root = service.getFileRoot(getContainer());
+               File root = service.getProjectFileRoot(getContainer());
                if (null == form.getRootPath() && null != root)
                {
                    String path = root.getPath();
@@ -729,7 +728,7 @@ public class FileContentController extends SpringActionController
            File webRoot = null;
 
            if (service != null)
-               webRoot = service.getFileRoot(getContainer().getProject());
+               webRoot = service.getProjectFileRoot(getContainer().getProject());
            form.setRootPath(webRoot == null ? null : webRoot.getCanonicalPath());
            form.setMessage(StringUtils.trimToNull(message));
            setReshow(true);
@@ -763,7 +762,7 @@ public class FileContentController extends SpringActionController
                form.setPath(null);
                form.setFileSetName(null);
            }
-           File webRoot = service.getFileRoot(getContainer().getProject());
+           File webRoot = service.getProjectFileRoot(getContainer().getProject());
            form.setRootPath(webRoot == null ? null : webRoot.getCanonicalPath());
            setReshow(true);
 

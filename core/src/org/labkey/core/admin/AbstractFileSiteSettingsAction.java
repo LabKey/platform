@@ -109,7 +109,7 @@ public abstract class AbstractFileSiteSettingsAction<FormType extends FileSettin
         }
         else if (isNewRoot(prev, _svc.getSiteDefaultRoot()))
         {
-            moveSiteRoot(prev, _svc.getSiteDefaultRoot());
+            _svc.moveFileRoot(prev, _svc.getSiteDefaultRoot());
         }
         return true;
     }

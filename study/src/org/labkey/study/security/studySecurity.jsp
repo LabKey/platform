@@ -52,5 +52,4 @@
         %>
     </select>
     </p>
-    <%=generateSubmitButton("Update")%>
 </form>

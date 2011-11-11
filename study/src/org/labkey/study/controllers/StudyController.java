@@ -2993,9 +2993,13 @@ public class StudyController extends BaseStudyController
                 }
                 return new ArrayList<String>(participantSet);
             }
-            catch (Exception e)
+            catch (RuntimeSQLException x)
             {
-                throw new UnexpectedException(e);
+                // noop, will get handled properly at dataregion render time
+            }
+            catch (Exception x)
+            {
+                throw new RuntimeException(x);
             }
             finally
             {

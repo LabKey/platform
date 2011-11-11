@@ -169,9 +169,14 @@ else
         %><td style="padding: 0 5px 0 5px;"><select name="<%= h(g.getName()) %>" onchange="setColumnSelections(this)">
             <option value="" selected>&lt;set all to...&gt;</option>
             <option value="None">None</option>
-            <option value="Read">Read</option>
-            <option value="Edit">Edit</option>
-            <% for (Role role : possibleRoles)
+            <option value="Read">Read</option><%
+            if (study.getSecurityType() == SecurityType.ADVANCED_WRITE)
+            {
+            %>
+                <option value="Edit">Edit</option>
+            <%
+            }
+            for (Role role : possibleRoles)
             { %>
                 <option value="<%= h(role.getName()) %>"><%= h(role.getName()) %></option>
             <% } %>
@@ -223,8 +228,13 @@ else
     <table>
         <tr>
             <td><%=generateSubmitButton("Save")%></td>
-            <td><%=generateButton("Set all to Read", "#", "return setAllSelections('Read');")%></td>
-            <td><%=generateButton("Set all to Edit", "#", "return setAllSelections('Edit');")%></td>
+            <td><%=generateButton("Set all to Read", "#", "return setAllSelections('Read');")%></td><%
+            if (study.getSecurityType() == SecurityType.ADVANCED_WRITE)
+            {
+            %>
+                <td><%=generateButton("Set all to Edit", "#", "return setAllSelections('Edit');")%></td><%
+            }
+            %>
             <td><%=generateButton("Clear All", "#", "return setAllSelections('None');")%></td>
         </tr></table>
 </form>

@@ -51,7 +51,7 @@
 
     if (ctx.getUser().isAdministrator())
     {
-        File rootFile = service.getFileRoot(ctx.getContainer().getProject());
+        File rootFile = service.getProjectFileRoot(ctx.getContainer().getProject());
         ActionURL configureHelper = urlProvider(AdminUrls.class).getProjectSettingsURL(ctx.getContainer()).addParameter("tabId", "files");
         if (null == rootFile)
         { %>

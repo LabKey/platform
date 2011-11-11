@@ -450,13 +450,13 @@ public class ProjectSettingsAction extends FormViewAction<AdminController.Projec
                             else if (service.isUseDefaultRoot(c))
                             {
                                 _form.setFileRootOption(AdminController.ProjectSettingsForm.FileRootProp.siteDefault.name());
-                                File root = service.getFileRoot(getViewContext().getContainer());
+                                File root = service.getProjectFileRoot(getViewContext().getContainer());
                                 if (root != null && root.exists())
                                     confirmMessage = "The file root is set to a default of: " + root.getCanonicalPath();
                             }
                             else
                             {
-                                File root = service.getFileRoot(getViewContext().getContainer());
+                                File root = service.getProjectFileRoot(getViewContext().getContainer());
 
                                 _form.setFileRootOption(AdminController.ProjectSettingsForm.FileRootProp.projectSpecified.name());
                                 if (root != null)
