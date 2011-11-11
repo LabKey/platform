@@ -57,7 +57,7 @@ public abstract class MultiPortalFolderType extends DefaultFolderType
                 String label = folderTab.getCaption();
                 NavTree nav = new NavTree(label, folderTab.getURL(ctx));
                 buttons.add(nav);
-                if (folderTab.isSelectedPage(ctx.getActionURL()))
+                if (folderTab.isSelectedPage(ctx))
                     nav.setSelected(true);
             }
         }

@@ -63,8 +63,9 @@ public abstract class FolderTab
             return PageFlowUtil.urlProvider(ProjectUrls.class).getBeginURL(context.getContainer(), getName());
         }
 
-        public boolean isSelectedPage(ActionURL currentURL)
+        public boolean isSelectedPage(ViewContext viewContext)
         {
+            ActionURL currentURL = viewContext.getActionURL();
             ActionURL tabURL = PageFlowUtil.urlProvider(ProjectUrls.class).getBeginURL(ContainerManager.getHomeContainer(), getName());
             if (currentURL.getPageFlow().equalsIgnoreCase(tabURL.getPageFlow()) &&
                 currentURL.getAction().equalsIgnoreCase(tabURL.getAction()))
@@ -99,9 +100,9 @@ public abstract class FolderTab
 
     }
 
-    public abstract boolean isSelectedPage(ActionURL currentURL);
+    public abstract boolean isSelectedPage(ViewContext viewContext);
 
-    public abstract ActionURL getURL(ViewContext container);
+    public abstract ActionURL getURL(ViewContext viewContext);
 
     public boolean isVisible(ViewContext context)
     {

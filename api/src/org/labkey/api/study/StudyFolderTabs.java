@@ -33,10 +33,11 @@ public class StudyFolderTabs
         }
 
         @Override
-        public boolean isSelectedPage(ActionURL currentURL)
+        public boolean isSelectedPage(ViewContext viewContext)
         {
             // Actual container we use doesn't matter, we just care about the controller and action names
             ActionURL defaultURL = PageFlowUtil.urlProvider(ProjectUrls.class).getBeginURL(ContainerManager.getHomeContainer());
+            ActionURL currentURL = viewContext.getActionURL();
             return currentURL.getPageFlow().equalsIgnoreCase(defaultURL.getPageFlow()) && currentURL.getAction().equalsIgnoreCase(defaultURL.getAction()) && currentURL.getParameter("pageId") == null;
         }
     }
@@ -51,10 +52,10 @@ public class StudyFolderTabs
         }
 
         @Override
-        public boolean isSelectedPage(ActionURL currentURL)
+        public boolean isSelectedPage(ViewContext viewContext)
         {
-            return super.isSelectedPage(currentURL) ||
-                   "study-samples".equals(currentURL.getPageFlow());
+            return super.isSelectedPage(viewContext) ||
+                   "study-samples".equals(viewContext.getActionURL().getPageFlow());
         }
 
         @Override
@@ -87,9 +88,10 @@ public class StudyFolderTabs
         }
 
         @Override
-        public boolean isSelectedPage(ActionURL currentURL)
+        public boolean isSelectedPage(ViewContext viewContext)
         {
-            return super.isSelectedPage(currentURL) ||
+            ActionURL currentURL = viewContext.getActionURL();
+            return super.isSelectedPage(viewContext) ||
                     currentURL.getPageFlow().equalsIgnoreCase("study-reports") ||
                     currentURL.getPageFlow().equalsIgnoreCase("dataset") ||
                     currentURL.getAction().equalsIgnoreCase("dataset") ||
@@ -156,8 +158,9 @@ public class StudyFolderTabs
         }
 
         @Override
-        public boolean isSelectedPage(ActionURL currentURL)
+        public boolean isSelectedPage(ViewContext viewContext)
         {
+            ActionURL currentURL = viewContext.getActionURL();
             return currentURL.getPageFlow().equalsIgnoreCase("study-definition") ||
                     currentURL.getPageFlow().equalsIgnoreCase("cohort") ||
                     currentURL.getPageFlow().equalsIgnoreCase("study-properties");

@@ -90,7 +90,7 @@ public class DefaultFolderType implements FolderType
         FolderTab tab = new FolderTab("DefaultDashboard")
         {
             @Override
-            public boolean isSelectedPage(ActionURL currentURL)
+            public boolean isSelectedPage(ViewContext viewContext)
             {
                 return true;
             }
