@@ -16,6 +16,7 @@
 package org.labkey.api.security.impersonation;
 
 import org.labkey.api.data.Container;
+import org.labkey.api.security.GroupManager;
 import org.labkey.api.security.User;
 import org.labkey.api.util.URLHelper;
 
@@ -66,5 +67,17 @@ public class NotImpersonatingContext implements ImpersonationContext
     public URLHelper getReturnURL()
     {
         return null;
+    }
+
+    @Override
+    public ImpersonationContextFactory getFactory()
+    {
+        return null;
+    }
+
+    @Override
+    public int[] getGroups(User user)
+    {
+        return GroupManager.getAllGroupsForPrincipal(user);
     }
 }

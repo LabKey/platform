@@ -26,6 +26,7 @@ import org.labkey.api.security.Group;
 import org.labkey.api.security.SecurityManager;
 import org.labkey.api.security.User;
 import org.labkey.api.security.UserUrls;
+import org.labkey.api.security.impersonation.ImpersonateGroupContextFactory;
 import org.labkey.api.security.permissions.AdminPermission;
 import org.labkey.api.security.permissions.AdminReadPermission;
 import org.labkey.api.settings.LookAndFeelProperties;
@@ -126,7 +127,7 @@ public class PopupAdminView extends PopupMenuView
                 // Site groups are always first, followed by project groups
                 for (Group group : groups)
                 {
-                    if (!SecurityManager.canImpersonateGroup(c, user, group))
+                    if (!ImpersonateGroupContextFactory.canImpersonateGroup(c, user, group))
                         continue;
 
                     if (!group.isProjectGroup())
@@ -144,7 +145,7 @@ public class PopupAdminView extends PopupMenuView
                     groupMenu.addChild(group.getName(), userURLs.getImpersonateGroupURL(c, group.getUserId(), currentURL));
                 }
 
-                // TODO: impersonateMenu.addChild(groupMenu);
+                impersonateMenu.addChild(groupMenu);
                 navTree.addChild(impersonateMenu);
             }
 

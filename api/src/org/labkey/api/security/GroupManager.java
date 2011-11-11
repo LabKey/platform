@@ -86,7 +86,7 @@ public class GroupManager
     }
 
     // Returns the FLATTENED group list for this principal
-    static int[] getAllGroupsForPrincipal(@Nullable UserPrincipal user)
+    public static int[] getAllGroupsForPrincipal(@Nullable UserPrincipal user)
     {
         if (user == null)
             return EMPTY_INT_ARRAY;

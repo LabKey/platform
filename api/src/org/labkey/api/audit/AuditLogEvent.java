@@ -76,7 +76,12 @@ public class AuditLogEvent
             _createdBy = user;
 
             if (user.isImpersonated())
-                setImpersonatedBy(user.getImpersonatingUser().getUserId());
+            {
+                User impersonatingUser = user.getImpersonatingUser();
+
+                if (null != impersonatingUser)
+                    setImpersonatedBy(impersonatingUser.getUserId());
+            }
         }
     }
 

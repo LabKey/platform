@@ -44,9 +44,9 @@ import org.labkey.api.data.Table;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.TableSelector;
 import org.labkey.api.module.ModuleLoader;
-import org.labkey.api.security.impersonation.ImpersonateUserContext;
+import org.labkey.api.security.impersonation.ImpersonateGroupContextFactory;
+import org.labkey.api.security.impersonation.ImpersonateUserContextFactory;
 import org.labkey.api.security.impersonation.ImpersonationContextFactory;
-import org.labkey.api.security.permissions.AdminPermission;
 import org.labkey.api.security.permissions.Permission;
 import org.labkey.api.security.roles.FolderAdminRole;
 import org.labkey.api.security.roles.NoPermissionsRole;
@@ -90,7 +90,6 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Date;
-import java.util.Enumeration;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
@@ -123,6 +122,10 @@ public class SecurityManager
     static final String CIRCULAR_GROUP_ERROR_MESSAGE = "Can't add a group that results in a circular group relation";
 
     public static final String TERMS_OF_USE_WIKI_NAME = "_termsOfUse";
+
+    private static final String USER_ID_KEY = User.class.getName() + "$userId";
+    private static final String IMPERSONATION_CONTEXT_FACTORY_KEY = User.class.getName() + "$ImpersonationContextFactoryKey";
+    public static final String AUTHENTICATION_METHOD = "SecurityManager.authenticationMethod";
 
     static
     {
@@ -385,8 +388,6 @@ public class SecurityManager
     }
 
 
-    public static final String AUTHENTICATION_METHOD = "SecurityManager.authenticationMethod";
-
     public static User getAuthenticatedUser(HttpServletRequest request)
     {
         User u = (User) request.getUserPrincipal();
@@ -403,13 +404,6 @@ public class SecurityManager
 
             if (null != sessionUser)
             {
-                ImpersonationContextFactory factory = (ImpersonationContextFactory)session.getAttribute(IMPERSONATION_CONTEXT_FACTORY_KEY);
-
-                if (null != factory)
-                {
-                    sessionUser.setImpersonationContext(factory.getImpersonationContext());
-                }
-
                 // We want groups membership to be calculated on every request (but just once)
                 // the cloned User will calculate groups exactly once
                 // NOTE: getUser() returns a cloned object
@@ -417,19 +411,14 @@ public class SecurityManager
                 assert sessionUser._groups == null;
                 sessionUser._groups = null;
 
-                // Is user impersonating a group?
-                Group group = (Group)session.getAttribute(IMPERSONATE_GROUP_KEY);
+                ImpersonationContextFactory factory = (ImpersonationContextFactory)session.getAttribute(IMPERSONATION_CONTEXT_FACTORY_KEY);
 
-                if (null != group)
+                if (null != factory)
                 {
-                    // TODO: Redo this
-                    u = new LimitedUser(sessionUser, getImpersonationGroups(sessionUser, group));
-                    //u.setImpersonatingGroup(group);
+                    sessionUser.setImpersonationContext(factory.getImpersonationContext());
                 }
-                else
-                {
-                    u = sessionUser;
-                }
+
+                u = sessionUser;
             }
         }
 
@@ -453,33 +442,14 @@ public class SecurityManager
         return null == u || u.isGuest() ? null : u;
     }
 
-    private static final String USER_ID_KEY = User.class.getName() + "$userId";
 
-    private static final String IMPERSONATORS_SESSION_MAP_KEY = "ImpersonatorsSessionMapKey";
-    private static final String IMPERSONATE_GROUP_KEY = "ImpersonateGroupKey";
-    private static final String IMPERSONATION_CONTEXT_FACTORY_KEY = User.class.getName() + "$ImpersonationContextFactoryKey";
-
-    public static HttpSession setAuthenticatedUser(HttpServletRequest request, User user)
+    public static void setAuthenticatedUser(HttpServletRequest request, User user)
     {
         invalidateSession(request);      // Clear out terms-of-use and other session info that guest / previous user may have
 
         HttpSession newSession = request.getSession(true);
         newSession.setAttribute(USER_ID_KEY, user.getUserId());
         newSession.setAttribute("LABKEY.username", user.getName());
-
-        return newSession;
-    }
-
-
-    public static void setAuthenticatedUser(HttpServletRequest request, User user, @Nullable User impersonatingUser, @Nullable Container project, @Nullable URLHelper returnURL)
-    {
-        HttpSession session = setAuthenticatedUser(request, user);
-
-        if (null != impersonatingUser)
-        {
-            ImpersonationContextFactory factory = new ImpersonateUserContext.ImpersonateUserContextFactory(project, impersonatingUser, returnURL);
-            session.setAttribute(IMPERSONATION_CONTEXT_FACTORY_KEY, factory);
-        }
     }
 
 
@@ -492,135 +462,44 @@ public class SecurityManager
 
     public static void impersonateUser(ViewContext viewContext, User impersonatedUser, @Nullable Container project, URLHelper returnURL)
     {
-        HttpServletRequest request = viewContext.getRequest();
-        User adminUser = viewContext.getUser();
-
-        // We clear the session when we impersonate; we stash the admin's session attributes in the new
-        // session so we can reinstate them after impersonation is over.
-        Map<String, Object> impersonatorSessionAttributes = new HashMap<String, Object>();
-        HttpSession impersonatorSession = request.getSession(true);
-        Enumeration names = impersonatorSession.getAttributeNames();
-
-        while (names.hasMoreElements())
-        {
-            String name = (String) names.nextElement();
-            impersonatorSessionAttributes.put(name, impersonatorSession.getAttribute(name));
-        }
-
-        SecurityManager.setAuthenticatedUser(request, impersonatedUser, adminUser, project, returnURL);
-        HttpSession userSession = request.getSession(true);
-        userSession.setAttribute(IMPERSONATORS_SESSION_MAP_KEY, impersonatorSessionAttributes);
-
-        AuditLogService.get().addEvent(viewContext, UserManager.USER_AUDIT_EVENT, adminUser.getUserId(),
-                adminUser.getEmail() + " impersonated " + impersonatedUser.getEmail());
-        AuditLogService.get().addEvent(viewContext, UserManager.USER_AUDIT_EVENT, impersonatedUser.getUserId(),
-                impersonatedUser.getEmail() + " was impersonated by " + adminUser.getEmail());
+        impersonate(viewContext, new ImpersonateUserContextFactory(project, viewContext.getUser(), impersonatedUser, returnURL));
     }
 
 
     public static void impersonateGroup(ViewContext viewContext, Group group, URLHelper returnURL)
     {
-        // Validate that user can impersonate this group
-        getImpersonationGroups(viewContext.getUser(), group);
+        @Nullable Container project = viewContext.getContainer().getProject();
+        User user = viewContext.getUser();
+        impersonate(viewContext, new ImpersonateGroupContextFactory(project, user, group, returnURL));
+    }
 
+
+    private static void impersonate(ViewContext viewContext, ImpersonationContextFactory factory)
+    {
+        // Tell the factory to start impersonating
+        factory.startImpersonating(viewContext);
+
+        // Stash the factory in session
         HttpServletRequest request = viewContext.getRequest();
         HttpSession session = request.getSession(true);
-
-        session.setAttribute(IMPERSONATE_GROUP_KEY, group);
-
-        // TODO: Save resturnURL
-        // TODO: Need to audit?
+        session.setAttribute(IMPERSONATION_CONTEXT_FACTORY_KEY, factory);
     }
 
 
-    public static int[] getImpersonationGroups(User user, Group group)
+    public static void stopImpersonating(ViewContext viewContext, User impersonatingUser)
     {
-        String id = group.getContainer();
-        Container c = (null == id ? ContainerManager.getRoot() : ContainerManager.getForId(id));
+        assert impersonatingUser.isImpersonated();
 
-        if (!canImpersonateGroup(c, user, group))
-            throw new IllegalStateException("You are not allowed to impersonate this group");
+        impersonatingUser.getImpersonationContext().getFactory().stopImpersonating(viewContext);
 
-        if (group.isGuests())
-            return groups(Group.groupGuests);
-        else if (group.isUsers())
-            return groups(Group.groupGuests, Group.groupUsers);
-        else
-            return groups(Group.groupGuests, Group.groupUsers, group.getUserId());
-    }
-
-
-    public static boolean canImpersonateGroup(Container c, User user, Group group)
-    {
-        // Site admin can impersonate any group
-        if (user.isAdministrator())
-            return true;
-
-        // TODO: c.getProject()?  Need to be project admin?
-
-        // Project admin...
-        if (c.hasPermission(user, AdminPermission.class))
-        {
-            // ...can impersonate any project group but must be a member of a site group to impersonate it
-            if (group.isProjectGroup())
-                return group.getContainer().equals(c.getId());
-            else
-                return user.isInGroup(group.getUserId());
-        }
-
-        return false;
-    }
-
-
-    // Ensure they are sorted
-    private static int[] groups(int... ids)
-    {
-        Arrays.sort(ids);
-        return ids;
-    }
-
-
-    public static void stopImpersonating(ViewContext viewContext, User impersonatedUser)
-    {
-        assert impersonatedUser.isImpersonated();
+        // Remove factory from session
         HttpServletRequest request = viewContext.getRequest();
-
-        if (impersonatedUser.isImpersonated())
-        {
-            User adminUser = impersonatedUser.getImpersonatingUser();
-
-            HttpSession userSession = request.getSession(true);
-            Map<String, Object> impersonatorSessionAttributes = (Map<String, Object>)userSession.getAttribute(IMPERSONATORS_SESSION_MAP_KEY);
-
-            assert null != impersonatorSessionAttributes;
-
-            if (null != impersonatorSessionAttributes)
-            {
-                invalidateSession(request);
-                HttpSession impersonatorSession = request.getSession(true);
-
-                for (Map.Entry<String, Object> entry : impersonatorSessionAttributes.entrySet())
-                    impersonatorSession.setAttribute(entry.getKey(), entry.getValue());
-            }
-            else
-            {
-                // Just in case
-                setAuthenticatedUser(request, adminUser);
-            }
-
-            AuditLogService.get().addEvent(viewContext, UserManager.USER_AUDIT_EVENT, impersonatedUser.getUserId(),
-                impersonatedUser.getEmail() + " was no longer impersonated by " + adminUser.getEmail());
-            AuditLogService.get().addEvent(viewContext, UserManager.USER_AUDIT_EVENT, adminUser.getUserId(),
-                adminUser.getEmail() + " stopped impersonating " + impersonatedUser.getEmail());
-        }
-        else
-        {
-            invalidateSession(request);
-        }
+        HttpSession session = request.getSession(true);
+        session.removeAttribute(IMPERSONATION_CONTEXT_FACTORY_KEY);
     }
 
 
-    private static void invalidateSession(HttpServletRequest request)
+    public static void invalidateSession(HttpServletRequest request)
     {
         HttpSession s = request.getSession();
         if (null != s)

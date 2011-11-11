@@ -312,11 +312,12 @@ public class Container implements Serializable, Comparable<Container>, Securable
 
     public boolean isForbiddenProject(User user)
     {
-        // If user is being impersonated within a project
-        if (null != user && user.isImpersonated() && null != user.getImpersonationProject())
+        if (null != user)
         {
-            // Can't visit the root and current project must match impersonation project
-            if (isRoot() || !getProject().equals(user.getImpersonationProject()))
+            @Nullable Container impersonationProject = user.getImpersonationProject();
+
+            // Current project must match impersonation project (forbids root as well)
+            if (null != impersonationProject && !impersonationProject.equals(getProject()))
                 return true;
         }
 

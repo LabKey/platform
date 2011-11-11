@@ -18,6 +18,7 @@ package org.labkey.api.security;
 
 import org.apache.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.Container;
 import org.labkey.api.security.impersonation.ImpersonationContext;
 import org.labkey.api.security.impersonation.NotImpersonatingContext;
@@ -114,7 +115,7 @@ public class User extends UserPrincipal implements Serializable, Cloneable
     public int[] getGroups()
     {
         if (_groups == null)
-            _groups = GroupManager.getAllGroupsForPrincipal(this);
+            _groups = _impersonationContext.getGroups(this);
         return _groups;
     }
 
@@ -204,8 +205,7 @@ public class User extends UserPrincipal implements Serializable, Cloneable
         _impersonationContext = impersonationContext;
     }
 
-    public @NotNull
-    ImpersonationContext getImpersonationContext()
+    public @NotNull ImpersonationContext getImpersonationContext()
     {
         return _impersonationContext;
     }
@@ -215,7 +215,8 @@ public class User extends UserPrincipal implements Serializable, Cloneable
         return _impersonationContext.isImpersonated();
     }
 
-    public User getImpersonatingUser()
+    // Can be null even when isImpersonated() is true -- e.g., when impersonating a group
+    public @Nullable User getImpersonatingUser()
     {
         return _impersonationContext.getImpersonatingUser();
     }

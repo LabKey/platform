@@ -15,6 +15,8 @@
  */
 package org.labkey.api.security.impersonation;
 
+import org.labkey.api.view.ViewContext;
+
 import java.io.Serializable;
 
 /**
@@ -27,4 +29,6 @@ import java.io.Serializable;
 public interface ImpersonationContextFactory extends Serializable
 {
     public ImpersonationContext getImpersonationContext();
+    public void startImpersonating(ViewContext context);
+    public void stopImpersonating(ViewContext context);
 }

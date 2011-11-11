@@ -18,6 +18,7 @@ package org.labkey.api.security.impersonation;
 import org.labkey.api.data.Container;
 import org.labkey.api.security.User;
 import org.labkey.api.util.URLHelper;
+import org.labkey.api.view.ViewContext;
 
 import java.io.Serializable;
 
@@ -35,4 +36,6 @@ public interface ImpersonationContext extends Serializable
     public User getImpersonatingUser();
     public String getNavTreeCacheKey();  // Caching permission-related state is very tricky with impersonation; context needs to provide the cache key suffix
     public URLHelper getReturnURL();
+    public int[] getGroups(User user);
+    public ImpersonationContextFactory getFactory();
 }

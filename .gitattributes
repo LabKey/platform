@@ -731,6 +731,7 @@ api/src/org/labkey/api/reports/report/RReport.java -text
 api/src/org/labkey/api/reports/report/RReportDescriptor.java -text
 api/src/org/labkey/api/reports/report/RReportJob.java -text
 api/src/org/labkey/api/reports/report/RScriptRunner.java -text
+api/src/org/labkey/api/reports/report/RedirectReport.java -text
 api/src/org/labkey/api/reports/report/ReportDB.java -text
 api/src/org/labkey/api/reports/report/ReportDescriptor.java -text
 api/src/org/labkey/api/reports/report/ReportIdentifier.java -text
@@ -828,7 +829,8 @@ api/src/org/labkey/api/security/UserPrincipal.java -text
 api/src/org/labkey/api/security/UserUrls.java -text
 api/src/org/labkey/api/security/ValidEmail.java -text
 api/src/org/labkey/api/security/impersonation/ImpersonateGroupContext.java -text
-api/src/org/labkey/api/security/impersonation/ImpersonateUserContext.java -text
+api/src/org/labkey/api/security/impersonation/ImpersonateGroupContextFactory.java -text
+api/src/org/labkey/api/security/impersonation/ImpersonateUserContextFactory.java -text
 api/src/org/labkey/api/security/impersonation/ImpersonationContext.java -text
 api/src/org/labkey/api/security/impersonation/ImpersonationContextFactory.java -text
 api/src/org/labkey/api/security/impersonation/NotImpersonatingContext.java -text
