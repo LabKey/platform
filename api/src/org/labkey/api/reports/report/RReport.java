@@ -17,6 +17,7 @@
 package org.labkey.api.reports.report;
 
 import org.jetbrains.annotations.Nullable;
+import org.apache.commons.lang.StringUtils;
 import org.labkey.api.reports.Report;
 import org.labkey.api.reports.ReportService;
 import org.labkey.api.reports.report.r.ParamReplacement;
@@ -97,6 +98,12 @@ public class RReport extends ExternalScriptEngineReport implements DynamicThumbn
         return DEFAULT_APP_PATH;
     }
 
+    public String toR(String s)
+    {
+        String r = PageFlowUtil.jsString(s);
+        return "\"" + StringUtils.strip(r, "'") + "\"";
+    }
+
     protected String getScriptProlog(ViewContext context, File inputFile)
     {
         StringBuilder labkey = new StringBuilder();
@@ -108,11 +115,11 @@ public class RReport extends ExternalScriptEngineReport implements DynamicThumbn
 
         labkey.append("labkey.url <- function (controller, action, list){paste(labkey.url.base,controller,labkey.url.path,action,\".view?\",paste(names(list),list,sep=\"=\",collapse=\"&\"),sep=\"\")}\n" +
             "labkey.resolveLSID <- function(lsid){paste(labkey.url.base,\"experiment/resolveLSID.view?lsid=\",lsid,sep=\"\");}\n");
-        labkey.append("labkey.user.email=\"").append(context.getUser().getEmail()).append("\"\n");
+        labkey.append("labkey.user.email=").append(toR(context.getUser().getEmail())).append("\n");
 
         ActionURL url = context.getActionURL();
-        labkey.append("labkey.url.path=\"").append(url.getExtraPath()).append("/\"\n");
-        labkey.append("labkey.url.base=\"").append(url.getBaseServerURI()).append(context.getContextPath()).append("/\"\n");
+        labkey.append("labkey.url.path=").append(toR(url.getExtraPath() + "/")).append("\n");
+        labkey.append("labkey.url.base=").append(toR(url.getBaseServerURI() + context.getContextPath() + "/")).append("\n");
 
         // url parameters
         Pair<String, String>[] params = url.getParameters();
@@ -124,13 +131,9 @@ public class RReport extends ExternalScriptEngineReport implements DynamicThumbn
             for (Pair<String, String> param : params)
             {
                 labkey.append(sep);
-                labkey.append("\"");
-                labkey.append(param.getKey());
-                labkey.append("\"");
+                labkey.append(toR(param.getKey()));
                 labkey.append("=");
-                labkey.append("\"");
-                labkey.append(param.getValue());
-                labkey.append("\"");
+                labkey.append(toR(param.getValue()));
                 sep = ",";
             }
 
