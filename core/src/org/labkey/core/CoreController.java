@@ -168,6 +168,21 @@ public class CoreController extends SpringActionController
         {
             return new ActionURL(DownloadFileLinkAction.class, container).addParameter("propertyId", pd.getPropertyId());
         }
+
+        @Override
+        public ActionURL getAttachmentIconURL(Container c, String filename)
+        {
+            ActionURL url = new ActionURL(GetAttachmentIconAction.class, c);
+
+            if (null != filename)
+            {
+                int dotPos = filename.lastIndexOf(".");
+                if (dotPos > -1 && dotPos < filename.length() - 1)
+                    url.addParameter("extension", filename.substring(dotPos + 1).toLowerCase());
+            }
+
+            return url;
+        }
     }
 
     abstract class BaseStylesheetAction extends ExportAction

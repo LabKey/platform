@@ -400,7 +400,7 @@ Ext4.define('LABKEY.ext4.DataViewsPanel', {
     initGridColumns : function() {
 
         var typeTpl = '<tpl if="icon == undefined || icon == \'\'">{type}</tpl><tpl if="icon != undefined && icon != \'\'">' +
-                '<img height="18px" width="18px" src="{icon}" alt="{type}">' + // must set height/width explicitly for layout engine to work properly
+                '<img height="16px" width="16px" src="{icon}" alt="{type}">' + // must set height/width explicitly for layout engine to work properly
                 '</tpl>';
 
         var _columns = [];
