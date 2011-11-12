@@ -166,8 +166,7 @@ else
 
         if (bean.redundantMembers.keySet().contains(member))
         {
-            String reason = bean.redundantMembers.get(member);
-            %>*<%
+            %><%=PageFlowUtil.helpPopup("Redundant Member", bean.redundantMembers.get(member), false, "<span class=\"labkey-help-pop-up\" style=\"font-size:small;\">*</span>", 0)%><%
         }
         %>
             </td>
