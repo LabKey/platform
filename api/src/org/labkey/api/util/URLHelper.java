@@ -235,7 +235,7 @@ public class URLHelper implements Cloneable, Serializable, Taintable
     {
         setHost(uri.getHost());
         setPort(uri.getPort());       // TODO: Don't store -1 if port is not specified -- use scheme to save default ports
-        _parsePath(uri.getPath());
+        _parsePath(uri.getRawPath());
         _parseQuery(uri.getRawQuery());
         setScheme(uri.getScheme());
         _fragment = uri.getFragment();

@@ -123,9 +123,10 @@ public class WindowUtil
      * Does NOT work with simple action names like "begin.view" (this breaks on IE).  See PropertyUtil.getRelativeURL()
      * and PropertyUtil.getContextPath().
      */
-    public static native void setLocation(String loc) /*-{
-         $wnd.location = loc;
-    }-*/;
+    public static void setLocation(String loc)
+    {
+        Window.Location.assign(loc);
+    }
 
     /**
      * Navigates back one page
