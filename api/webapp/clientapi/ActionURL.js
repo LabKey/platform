@@ -75,13 +75,6 @@ LABKEY.ActionURL = new function()
         return parameters;
     }
 
-    // private
-    function encodeContainerURI(containerPath) {
-        var c = encodeURIComponent(containerPath);
-        c = c.replace(/%2F/g, '/'); // replace slashes
-        return c;
-    }
-
     /** @scope LABKEY.ActionURL */
     return {
         // public functions
@@ -245,7 +238,7 @@ that points back to the current page:
         {
             if(!containerPath)
                 containerPath = this.getContainer();
-            containerPath = encodeContainerURI(containerPath);
+            containerPath = LABKEY.ActionURL.encodePath(containerPath);
 
             //ensure that container path begins and ends with a /
             if(containerPath.charAt(0) != "/")
@@ -262,6 +255,14 @@ that points back to the current page:
             return newUrl;
         },
 
+        // helper function -- we want to encode everything save / so this is not like encodeURI() or encodeURIComponent()
+        encodePath : function(s)
+        {
+            var a = s.split('/');
+            for (var i=0 ; i<a.length ; i++)
+                a[i] = encodeURIComponent(a[i]);
+            return a.join('/');
+        },
 
         /**
          * Turn the parameter object into a query string (e.g. {x:'fred'} -> "x=fred").

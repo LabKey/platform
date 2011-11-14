@@ -18,25 +18,20 @@
 <%@ page import="org.labkey.api.admin.AdminUrls" %>
 <%@ page import="org.labkey.api.data.Container" %>
 <%@ page import="org.labkey.api.files.view.FilesWebPart" %>
-<%@ page import="org.labkey.api.pipeline.PipelineUrls" %>
 <%@ page import="org.labkey.api.security.permissions.AdminPermission" %>
-<%@ page import="org.labkey.api.util.PageFlowUtil" %>
 <%@ page import="org.labkey.api.view.ActionURL" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.api.view.ViewContext" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 
 <script type="text/javascript">
-    LABKEY.requiresClientAPI(true);
     LABKEY.requiresScript("applet.js");
-    LABKEY.requiresScript("StatusBar.js");
     LABKEY.requiresScript("fileBrowser.js");
     LABKEY.requiresScript("FileUploadField.js");
     LABKEY.requiresScript("ActionsAdmin.js");
     LABKEY.requiresScript("PipelineAction.js");
     LABKEY.requiresScript("FileProperties.js");
     LABKEY.requiresScript("FileContent.js");
-    Ext.QuickTips.init();
 </script>
 
 <style type="text/css">
@@ -75,32 +70,20 @@
 
 <script type="text/javascript">
 
-    /**
-     * activate the Ext state manager (for directory persistence), but by default, make all components
-     * not try to load state.
-     */
-    Ext.state.Manager.setProvider(new Ext.state.CookieProvider());
-    Ext.override(Ext.Component,{
-        stateful:false
-    });
-
-Ext.BLANK_IMAGE_URL = LABKEY.contextPath + "/_.gif";
-Ext.QuickTips.init();
-
-var autoResize = <%=bean.isAutoResize()%>;
-var actionsURL = <%=PageFlowUtil.jsString(urlProvider(PipelineUrls.class).urlActions(context.getContainer()).getLocalURIString() + "path=")%>;
-var buttonActions = [];
-
-<%
-    for (FilesWebPart.FilesForm.actions action  : bean.getButtonConfig())
-    {
-%>
-        buttonActions.push('<%=action.name()%>');
-<%
-    }
-%>
 function renderBrowser(rootPath, renderTo, isFolderTreeCollapsed, isPipelineRoot)
 {
+    var autoResize = <%=bean.isAutoResize()%>;
+
+    var buttonActions = [];
+
+    <%
+    for (FilesWebPart.FilesForm.actions action  : bean.getButtonConfig()) {
+    %>
+        buttonActions.push('<%=action.name()%>');
+    <%
+    }
+    %>
+
     var fileSystem = new LABKEY.WebdavFileSystem({
         extraPropNames: ['description', 'actions'],
 
@@ -136,21 +119,20 @@ function renderBrowser(rootPath, renderTo, isFolderTreeCollapsed, isPipelineRoot
                     return result;
                 }}
         ],
-        //extraPropNames: ["actions", "description"],
         baseUrl:rootPath,
         rootName:'fileset'
     });
 
     var prefix = undefined;
 
-<%  if (bean.getStatePrefix() != null) { %>
+    <%  if (bean.getStatePrefix() != null) { %>
     prefix = '<%=bean.getStatePrefix()%>';
-<%  } %>
+    <%  } %>
 
     var fileBrowser = new LABKEY.FilesWebPartPanel({
         fileSystem: fileSystem,
         helpEl:null,
-        resizable: false, //!Ext.isIE,
+        resizable: false,
         showAddressBar: <%=bean.isShowAddressBar()%>,
         showFolderTree: <%=bean.isShowFolderTree()%>,
         folderTreeCollapsed: isFolderTreeCollapsed,
@@ -165,18 +147,10 @@ function renderBrowser(rootPath, renderTo, isFolderTreeCollapsed, isPipelineRoot
         statePrefix: prefix
     });
 
-    //fileBrowser.height = 350;
-    //fileBrowser.render(renderTo);
-
     var panel = new Ext.Panel({
         layout: 'fit',
         renderTo: renderTo,
         border: false,
-/*
-        layoutConfig: {
-            columns: 1
-        },
-*/
         items: [fileBrowser],
         height: <%= height %>,
         boxMinHeight:<%= height %>,
@@ -193,11 +167,25 @@ function renderBrowser(rootPath, renderTo, isFolderTreeCollapsed, isPipelineRoot
         Ext.EventManager.onWindowResize(_resize);
         Ext.EventManager.fireWindowResize();
     }
+
     fileBrowser.start(<%=bean.getDirectory() != null ? q(bean.getDirectory().toString()) : ""%>);
 }
 
 <%  if (bean.isEnabled() && bean.isRootValid()) { %>
         Ext.onReady(function(){
+
+            /**
+             * activate the Ext state manager (for directory persistence), but by default, make all components
+             * not try to load state.
+             */
+            Ext.state.Manager.setProvider(new Ext.state.CookieProvider());
+            Ext.override(Ext.Component,{
+                stateful:false
+            });
+
+            Ext.BLANK_IMAGE_URL = LABKEY.contextPath + "/_.gif";
+            Ext.QuickTips.init();
+
             renderBrowser(<%=q(bean.getRootPath())%>, <%=q(bean.getContentId())%>, <%=bean.isFolderTreeCollapsed()%>, <%=bean.isPipelineRoot()%>);
         });
 <%  } %>
