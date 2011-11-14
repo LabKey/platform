@@ -105,7 +105,7 @@
             <tr><td><%=recurse ? "They" : "It"%> may contain objects that are not listed.</td></tr>
             <tr><td>&nbsp;</td></tr><%
         } %>
-            <tr><td>Are you <u>sure</u> you want to permanently delete <%=containerType%> <b><%=name%></b><%=recurse ? ", all its subfolders," : ""%> and all the objects <%=recurse ? "they contain" : "it contains"%>?</td></tr>
+            <tr><td>Are you <u>sure</u> you want to permanently delete <%=h(containerType)%> <b><%=h(name)%></b><%=recurse ? ", all its subfolders," : ""%> and all the objects <%=recurse ? "they contain" : "it contains"%>?</td></tr>
             <tr><td>&nbsp;</td></tr>
         </table>
 
