@@ -76,7 +76,7 @@ LABKEY.ActionsAdminPanel = Ext.extend(Ext.util.Observable, {
 
         if (config.path)
         {
-            if (startsWith(config.path,"/"))
+            if (FileBrowser.startsWith(config.path,"/"))
                 config.path = config.path.substring(1);
 
             this.actionsURL = LABKEY.ActionURL.buildURL('pipeline', 'actions', null, {allActions:true, path:config.path});
@@ -629,13 +629,12 @@ LABKEY.ActionsAdminPanel = Ext.extend(Ext.util.Observable, {
                 col.renderer = undefined;
         }
 
-        this.grid = new LABKEY.StatefulGridPanel(
+        this.grid = new Ext.grid.GridPanel(
         {
             tbar: this.toolbar,
             layout: 'fit',
             store: sampleStore,
             border:true,
-            //loadMask:{msg:"Loading, please wait..."},
             height: 150,
             columns: this.columnModel
         });
@@ -660,7 +659,6 @@ LABKEY.ActionsAdminPanel = Ext.extend(Ext.util.Observable, {
                 panel,
                 this.grid
             ]
-//                    bodyStyle : 'padding:10 10 10 0px;',
         });
 
         return toolbarPanel;

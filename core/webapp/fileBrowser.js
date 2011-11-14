@@ -5,26 +5,13 @@
  */
 
 LABKEY.requiresCss("_images/icons.css");
-LABKEY.requiresScript("StatusBar.js",true);
+LABKEY.requiresScript("StatusBar.js");
 
-
-var $ = Ext.get;
-var $h = Ext.util.Format.htmlEncode;
-var $dom = Ext.DomHelper;
-
-
-var FATAL_INT = 50000;
-var ERROR_INT = 40000;
-var WARN_INT  = 30000;
-var INFO_INT  = 20000;
-var DEBUG_INT = 10000;
-
-
-/*
-	from parseUri 1.2.1
-	(c) 2007 Steven Levithan <stevenlevithan.com>
-	MIT License
-*/
+/**
+ *  from parseUri 1.2.1
+ *  (c) 2007 Steven Levithan <stevenlevithan.com>
+ *  MIT License
+ */
 var URI = Ext.extend(Object,
 {
     constructor : function(u)
@@ -86,446 +73,352 @@ var URI = Ext.extend(Object,
     }
 });
 
+FileBrowser = {};
 
-// we want to encode everything save / so this is not like encodeURI() or encodeURIComponent()
-function encodePath(s)
-{
-    var a = s.split('/');
-    for (var i=0 ; i<a.length ; i++)
-        a[i] = encodeURIComponent(a[i]);
-    return a.join('/');
-}
+(function(){
+    var $ = Ext.get, $h = Ext.util.Format.htmlEncode, $dom = Ext.DomHelper,
+    imgSeed = 0,
+    FATAL_INT = 50000,
+    ERROR_INT = 40000,
+    WARN_INT  = 30000,
+    INFO_INT  = 20000,
+    DEBUG_INT = 10000,
+    _rDateTime = Ext.util.Format.dateRenderer("Y-m-d H:i:s"),
+    _longDateTime = Ext.util.Format.dateRenderer("l, F d, Y g:i:s A");
 
-
-var TREESELECTION_EVENTS =
-{
-    selectionchange:"selectionchange",
-    beforeselect:"beforeselect"
-};
-var PANEL_EVENTS =
-{
-	active:'activate',
-	add:'add',
-	afterlayout:'afterlayout',
-	beforeadd:'beforeadd',
-	beforeclose:'beforeclose',
-	beforecollapse:'beforecollapse',
-	beforedestroy:'beforedestroy',
-	beforeexpand:'beforeexpand',
-	beforehide:'beforehide',
-	beforeremove:'beforeremove',
-	beforerender:'beforerender',
-	beforeshow:'beforeshow',
-	beforestaterestore:'beforestaterestore',
-	beforestatesave:'beforestatesave',
-	bodyresize:'bodyresize',
-	close:'close',
-	collapse:'collapse',
-	deactivate:'deactivate',
-	destroy:'destroy',
-	disable:'disable',
-	enable:'enable',
-	expand:'expand',
-	hide:'hide',
-	move:'move',
-	remove:'remove',
-	render:'render',
-	resize:'resize',
-	show:'show',
-	staterestore:'staterestore',
-	statesave:'statesave',
-	titlechange:'titlechange'
-};
-var WINDOW_EVENTS = Ext.apply({
-    resize:'resize', maximize:'maximize', minimize:'minimize', restore:'restore'
-},PANEL_EVENTS);
-var GRIDPANEL_EVENTS =
-{
-    click:"click",
-    dblclick:"dblclick",
-    contextmenu:"contextmenu",
-    mousedown:"mousedown",
-    mouseup:"mouseup",
-    mouseover:"mouseover",
-    mouseout:"mouseout",
-    keypress:"keypress",
-    keydown:"keydown",
-    cellmousedown:"cellmousedown",
-    rowmousedown:"rowmousedown",
-    headermousedown:"headermousedown",
-    cellclick:"cellclick",
-    celldblclick:"celldblclick",
-    rowclick:"rowclick",
-    rowdblclick:"rowdblclick",
-    headerclick:"headerclick",
-    headerdblclick:"headerdblclick",
-    rowcontextmenu:"rowcontextmenu",
-    cellcontextmenu:"cellcontextmenu",
-    headercontextmenu:"headercontextmenu",
-    bodyscroll:"bodyscroll",
-    columnresize:"columnresize",
-    columnmove:"columnmove",
-    sortchange:"sortchange"
-};
-Ext.apply(GRIDPANEL_EVENTS,PANEL_EVENTS);
-
-var ROWSELETION_EVENTS =
-{
-    selectionchange:"selectionchange",
-    beforerowselect:"beforerowselect",
-    rowselect:"rowselect",
-    rowdeselect:"rowdeselect"
-};
-
-var STORE_EVENTS =
-{
-    datachanged:'datachanged',
-    metachange:'metachange',
-    add:'add',
-    remove:'remove',
-    update:'update',
-    clear:'clear',
-    beforeload:'beforeload',
-    load:'load',
-    loadexception:'loadexception'
-};
-
-function log(o)
-{
-    if ("console" in window)
-        console.log(o);
-}
-function startsWith(s, f)
-{
-    var len = f.length;
-    if (s.length < len) return false;
-    if (len == 0)
-        return true;
-    return s.charAt(0) == f.charAt(0) && s.charAt(len-1) == f.charAt(len-1) && s.indexOf(f) == 0;
-}
-function endsWith(s, f)
-{
-    var len = f.length;
-    var slen = s.length;
-    if (slen < len) return false;
-    if (len == 0)
-        return true;
-    return s.charAt(slen-len) == f.charAt(0) && s.charAt(slen-1) == f.charAt(len-1) && s.indexOf(f) == slen-len;
-}
-
-var imgCounter = 0;
-
-// minor hack call with scope having decorateIcon functions
-function renderIcon(value, metadata, record, rowIndex, colIndex, store, decorateFN)
-{
-    var file = record.get("file");
-    if (!value)
+    //
+    // FileListMenu
+    //
+    var FileListMenu = function(fileSystem, path, folderFilter, fn)
     {
-        if (!file)
-        {
-            value = LABKEY.FileBrowser.prototype.FOLDER_ICON;
-        }
-        else
-        {
-            var name = record.get("name");
-            var i = name.lastIndexOf(".");
-            var ext = i >= 0 ? name.substring(i) : name;
-            value = LABKEY.contextPath + "/project/icon.view?name=" + ext;
-        }
-    }
-    var img = {tag:'img', width:16, height:16, src:value, id:'img'+(++imgCounter)};
-    if (decorateFN)
-        decorateFN.defer(1,this,[img.id,record]);
-    return $dom.markup(img);
-}
+        FileListMenu.superclass.constructor.call(this, {items:[], cls:'extContainer'});
+        this.showFiles = false;
+        this.fileSystem = fileSystem;
+        this.path = path;
+        this.folderFilter = folderFilter;
 
-function renderFileSize(value, metadata, record, rowIndex, colIndex, store)
-{
-    if (!record.get('file')) return "";
-    var f =  Ext.util.Format.fileSize(value);
-    return "<span title='" + f + "'>" + formatWithCommas(value) + "</span>";
-}
-
-function formatWithCommas(value)
-{
-    var x = value;
-    var formatted = (x == 0) ? '0' : '';
-    var separator = '';
-    while (x > 0)
-    {
-        // Comma separate between thousands
-        formatted = separator + formatted;
-        formatted = (x % 10) + formatted;
-        x -= (x % 10);
-        if (x > 0)
-        {
-            formatted = ((x % 100) / 10) + formatted;
-            x -= (x % 100);
-        }
-        if (x > 0)
-        {
-            formatted = ((x % 1000) / 100) + formatted;
-            x -= (x % 1000);
-        }
-        x = x / 1000;
-        separator = ',';
-    }
-    return formatted;
-}
-
-
-function renderUsage(value, metadata, record, rowIndex, colIndex, store)
-{
-    if (!value || value.length == 0) return "";
-    var result = "<span title='";
-    for (var i = 0; i < value.length; i++)
-    {
-        if (i > 0)
-        {
-            result = result + ", ";
-        }
-        result = result + Ext.util.Format.htmlEncode(value[i].message);
-    }
-    result = result + "'>";
-    for (i = 0; i < value.length; i++)
-    {
-        if (i > 0)
-        {
-            result = result + ", ";
-        }
-        if (value[i].href)
-        {
-            result = result + "<a href=\'" + Ext.util.Format.htmlEncode(value[i].href) + "'>";
-        }
-        result = result + Ext.util.Format.htmlEncode(value[i].message);
-        if (value[i].href)
-        {
-            result = result + "</a>";
-        }
-    }
-    result = result + "</span>";
-    return result;
-}
-
-var _rDateTime = Ext.util.Format.dateRenderer("Y-m-d H:i:s");
-var _longDateTime = Ext.util.Format.dateRenderer("l, F d, Y g:i:s A");
-function renderDateTime(value, metadata, record, rowIndex, colIndex, store)
-{
-    if (!value) return "";
-    if (value.getTime() == 0) return "";
-    return "<span title='" + _longDateTime(value) + "'>" + _rDateTime(value) + "<span>";
-}
-
-
-//
-// PREVIEW
-//
-
-var _previewScope = "previewAncor";
-
-var PreviewResource = Ext.extend(LABKEY.ext.PersistentToolTip, {
-
-    baseCls: 'x-panel',
-    minWidth : 40,
-    maxWidth : 800,
-    frame : true,
-
-    destroy : function()
-    {
-        PreviewResource.superclass.destroy.call(this);
-    },
-
-    // we're not really ready to show anything, we have to get the resource still
-    show : function ()
-    {
-        this.showAt(this.getTargetXY());
-    },
-
-    // we're not really ready to show anything, we have to get the resource still
-    showAt : function(xy)
-    {
-        this.showAt_xy = xy;
-        this.loadResource();
-    },
-
-    previewAt : function(xy)
-    {
-        PreviewResource.superclass.showAt.call(this, xy);
-    },
-
-    render : function(ct, position)
-    {
-        PreviewResource.superclass.render.call(this, ct, position);
-    },
-
-    onRender : function(ct, position)
-    {
-        this.title = false;
-        PreviewResource.superclass.onRender.call(this, ct, position);
-        this.body.update($dom.markup(this.html));
-    },
-
-    doAutoWidth : function(adjust)
-    {
-        PreviewResource.superclass.doAutoWidth.call(this, adjust);
-    },
-
-
-    loadResource : function()
-    {
-        var record = this.record;
-        var name = record.data.name;
-        var uri = record.data.uri;
-        var contentType = record.data.contentType;
-        var size = record.data.size;
-
-        if (!uri || !contentType || !size)
-            return;
-
-        if (startsWith(contentType,'image/'))
-        {
-            var image = new Image();
-            image.onload = (function()
+        var records = fileSystem.directoryFromCache(path);
+        var populate = function(filesystem, success, path, records)
             {
-                var img = {tag:'img', src:uri, border:'0', width:image.width, height:image.height};
-                this.constrain(img, 400, 400);
-                this.html = img;
-                this.previewAt(this.showAt_xy);
-            }).createDelegate(this);
-            image.src = uri;
-        }
-//IFRAME
-        else if (contentType == 'text/html')
-        {
-            var base = uri.substr(0,uri.lastIndexOf('/')+1)
-            var headers = {};
-            var requestid = this.connection.request({
-                autoAbort:true,
-                url:uri,
-                headers:headers,
-                method:'GET',
-                disableCaching:false,
-                success : (function(response)
+                for (var i=0 ; i<records.length ; i++)
                 {
-                    var contentType = response.getResponseHeader("Content-Type") || "text/html";
-                    if (startsWith(contentType,"text/"))
-                    {
-                        var id = 'iframePreview' + (++Ext.Component.AUTO_ID);
-                        var body = response.responseText;
-                        body = Ext.util.Format.stripScripts(body);
-                        //this.html = {tag:'div', style:{width:'600px', height:'400px', overflow:'auto'}, children:body};
-                        this.html = {tag:'iframe', id:id, name:id, width:600, height:400, frameborder:'no', src:(Ext.isIE ? Ext.SSL_SECURE_URL : "javascript:;")};
-                        this.previewAt(this.showAt_xy);
-                        var frame = Ext.getDom(id);
-                        if (!frame)
-                        {
-                            this.hide();
-                        }
-                        else
-                        {
-                            var doc = Ext.isIE ? frame.contentWindow.document : frame.contentDocument || window.frames[id].document;
-                            doc.open();
-                            if (base)
-                                body = '<base href="' + $h(base) + '" />' + body;
-                            doc.write(body);
-                            doc.close();
-                        }
-                    }
-                }).createDelegate(this)
-            });
-        }
-// DIV
-//        else if (contentType == 'text/html')
-//        {
-//            var headers = {};
-//            var requestid = this.connection.request({
-//                autoAbort:true,
-//                url:uri,
-//                headers:headers,
-//                method:'GET',
-//                disableCaching:false,
-//                success : (function(response)
-//                {
-//                    var contentType = response.getResponseHeader["Content-Type"] || "text/html";
-//                    if (startsWith(contentType,"text/"))
-//                    {
-//                        var body = response.responseText;
-//                        body = Ext.util.Format.stripScripts(body);
-//                        this.html = {tag:'div', style:{width:'600px', height:'400px', overflow:'auto'}, children:body};
-//                        this.previewAt(this.showAt_xy);
-//                    }
-//                }).createDelegate(this)
-//            });
-//        }
-        else if (startsWith(contentType,'text/') || contentType == 'application/javascript' || endsWith(name,".log"))
-        {
-            var headers = {};
-            if (contentType != 'text/html' && size > 10000)
-                headers['Range'] = 'bytes 0-10000';
-            var requestid = this.connection.request({
-                autoAbort:true,
-                url:uri,
-                headers:headers,
-                method:'GET',
-                disableCaching:false,
-                success : (function(response)
-                {
-                    var contentType = response.getResponseHeader("Content-Type") || "text/plain";
-                    if (startsWith(contentType,"text/"))
-                    {
-                        var text = response.responseText;
-                        if (headers['Range']) text += "\n. . .";
-                        this.html = {tag:'div', style:{width:'600px', height:'400px', overflow:'auto'}, children:{tag:'pre', children:$h(text)}};
-                        this.previewAt(this.showAt_xy);
-                    }
-                }).createDelegate(this)
-            });
-        }
-    },
+                    var record = records[i];
+                    var data = record.data;
+                    if (!this.showFiles && data.file)
+                        continue;
 
-    constrain : function(img,w,h)
+                    else if (this.folderFilter && !this.folderFilter.test(data))
+                        continue;
+
+                    this.addMenuItem(new Ext.menu.Item({text:data.name, icon:data.iconHref, path:record.data.path}));
+                }
+            };
+        if (records)
+            populate.call(this, null, true, path, records);
+        else
+            fileSystem.listFiles(path, populate, this);
+        if (typeof fn == "function")
+        {
+            this.on("click", function(menu,item,event)
+            {
+                var path = item.initialConfig.path;
+                fn(path);
+            });
+        }
+    };
+    Ext.extend(FileListMenu, Ext.menu.Menu);
+
+    function formatWithCommas(value)
     {
-        var X = img.width;
-        var Y = img.height;
-        if (X > w)
+        var x = value;
+        var formatted = (x == 0) ? '0' : '';
+        var sep = '';
+        while (x > 0)
         {
-            img.width = w;
-            img.height = Math.round(Y * (1.0*w/X));
+            // Comma separate between thousands
+            formatted = sep + formatted;
+            formatted = (x % 10) + formatted;
+            x -= (x % 10);
+            if (x > 0)
+            {
+                formatted = ((x % 100) / 10) + formatted;
+                x -= (x % 100);
+            }
+            if (x > 0)
+            {
+                formatted = ((x % 1000) / 100) + formatted;
+                x -= (x % 1000);
+            }
+            x = x / 1000;
+            sep = ',';
         }
-        X = img.width;
-        Y = img.height;
-        if (Y > h)
-        {
-            img.height = h;
-            img.width = Math.round(X * (1.0*h/Y));
+        return formatted;
+    }
+
+    Ext.apply(FileBrowser, {
+
+        //
+        // PREVIEW
+        //
+        PreviewResource : Ext.extend(LABKEY.ext.PersistentToolTip, {
+
+            baseCls    : 'x-panel',
+            minWidth   : 40,
+            maxWidth   : 800,
+            frame      : true,
+            connection : new Ext.data.Connection({autoAbort:true, method:'GET', disableCaching:false}),
+
+            // we're not really ready to show anything, we have to get the resource still
+            show : function ()
+            {
+                this.showAt(this.getTargetXY());
+            },
+
+            // we're not really ready to show anything, we have to get the resource still
+            showAt : function(xy)
+            {
+                this.showAt_xy = xy;
+                this.loadResource();
+            },
+
+            previewAt : function(xy)
+            {
+                PreviewResource.superclass.showAt.call(this, xy);
+            },
+
+            onRender : function(ct, position)
+            {
+                this.title = false;
+                PreviewResource.superclass.onRender.call(this, ct, position);
+                this.body.update($dom.markup(this.html));
+            },
+
+            loadResource : function()
+            {
+                var record = this.record;
+                var name = record.data.name;
+                var uri = record.data.uri;
+                var contentType = record.data.contentType;
+                var size = record.data.size;
+
+                if (!uri || !contentType || !size)
+                    return;
+
+                if (FileBrowser.startsWith(contentType,'image/'))
+                {
+                    var image = new Image();
+                    image.onload = (function()
+                    {
+                        var img = {tag:'img', src:uri, border:'0', width:image.width, height:image.height};
+                        this.constrain(img, 400, 400);
+                        this.html = img;
+                        this.previewAt(this.showAt_xy);
+                    }).createDelegate(this);
+                    image.src = uri;
+                }
+//IFRAME
+                else if (contentType == 'text/html')
+                {
+                    var base = uri.substr(0,uri.lastIndexOf('/')+1)
+                    var headers = {};
+                    var requestid = this.connection.request({
+                        autoAbort:true,
+                        url:uri,
+                        headers:headers,
+                        method:'GET',
+                        disableCaching:false,
+                        success : (function(response)
+                        {
+                            var contentType = response.getResponseHeader("Content-Type") || "text/html";
+                            if (FileBrowser.startsWith(contentType,"text/"))
+                            {
+                                var id = 'iframePreview' + (++Ext.Component.AUTO_ID);
+                                var body = response.responseText;
+                                body = Ext.util.Format.stripScripts(body);
+                                this.html = {tag:'iframe', id:id, name:id, width:600, height:400, frameborder:'no', src:(Ext.isIE ? Ext.SSL_SECURE_URL : "javascript:;")};
+                                this.previewAt(this.showAt_xy);
+                                var frame = Ext.getDom(id);
+                                if (!frame)
+                                {
+                                    this.hide();
+                                }
+                                else
+                                {
+                                    var doc = Ext.isIE ? frame.contentWindow.document : frame.contentDocument || window.frames[id].document;
+                                    doc.open();
+                                    if (base)
+                                        body = '<base href="' + $h(base) + '" />' + body;
+                                    doc.write(body);
+                                    doc.close();
+                                }
+                            }
+                        }).createDelegate(this)
+                    });
+                }
+// DIV
+                else if (FileBrowser.startsWith(contentType,'text/') || contentType == 'application/javascript' || endsWith(name,".log"))
+                {
+                    var headers = {};
+                    if (contentType != 'text/html' && size > 10000)
+                        headers['Range'] = 'bytes 0-10000';
+                    var requestid = this.connection.request({
+                        autoAbort:true,
+                        url:uri,
+                        headers:headers,
+                        method:'GET',
+                        disableCaching:false,
+                        success : (function(response)
+                        {
+                            var contentType = response.getResponseHeader("Content-Type") || "text/plain";
+                            if (FileBrowser.startsWith(contentType,"text/"))
+                            {
+                                var text = response.responseText;
+                                if (headers['Range']) text += "\n. . .";
+                                this.html = {tag:'div', style:{width:'600px', height:'400px', overflow:'auto'}, children:{tag:'pre', children:$h(text)}};
+                                this.previewAt(this.showAt_xy);
+                            }
+                        }).createDelegate(this)
+                    });
+                }
+            },
+
+            constrain : function(img,w,h)
+            {
+                var X = img.width;
+                var Y = img.height;
+                if (X > w)
+                {
+                    img.width = w;
+                    img.height = Math.round(Y * (1.0*w/X));
+                }
+                X = img.width;
+                Y = img.height;
+                if (Y > h)
+                {
+                    img.height = h;
+                    img.width = Math.round(X * (1.0*h/Y));
+                }
+            }
+        }),
+
+        FileStore : Ext.extend(Ext.data.Store, {
+            constructor : function(config)
+            {
+                FileBrowser.FileStore.superclass.constructor.call(this,config);
+                this.setDefaultSort("name","ASC");
+            },
+
+            sortData : function()
+            {
+                this.sortInfo.direction = this.sortInfo.direction || 'ASC';
+                var f = this.sortInfo.field;
+                var st = this.fields.get(f).sortType;
+                var d = this.sortInfo.direction=="DESC" ? -1 : 1;
+                var fn = function(r1, r2)
+                {
+                    if (r1.data.file != r2.data.file)
+                        return d * (r1.data.file ? 1 : -1);
+                    var v1 = st(r1.data[f]), v2 = st(r2.data[f]);
+                    return v1 > v2 ? 1 : (v1 < v2 ? -1 : 0);
+                };
+                this.data.sort(this.sortInfo.direction, fn);
+                if (this.snapshot && this.snapshot != this.data)
+                {
+                    this.snapshot.sort(this.sortInfo.direction, fn);
+                }
+            }
+        }),
+
+        startsWith : function(s, f){
+            var len = f.length;
+            if (s.length < len) return false;
+            if (len == 0)
+                return true;
+            return s.charAt(0) == f.charAt(0) && s.charAt(len-1) == f.charAt(len-1) && s.indexOf(f) == 0;
+        },
+
+        endsWith : function(s, f){
+            var len = f.length;
+            var slen = s.length;
+            if (slen < len) return false;
+            if (len == 0)
+                return true;
+            return s.charAt(slen-len) == f.charAt(0) && s.charAt(slen-1) == f.charAt(len-1) && s.indexOf(f) == slen-len;
+        },
+
+        // minor hack call with scope having decorateIcon functions
+        renderIcon : function(value, metadata, record, rowIndex, colIndex, store, decorateFN) {
+            var file = record.get("file");
+            if (!value)
+            {
+                if (!file)
+                {
+                    value = LABKEY.FileBrowser.prototype.FOLDER_ICON;
+                }
+                else
+                {
+                    var name = record.get("name");
+                    var i = name.lastIndexOf(".");
+                    var ext = i >= 0 ? name.substring(i) : name;
+                    value = LABKEY.contextPath + "/project/icon.view?name=" + ext;
+                }
+            }
+            var img = {tag:'img', width:16, height:16, src:value, id:'img'+(++imgSeed)};
+            if (decorateFN)
+                decorateFN.defer(1,this,[img.id,record]);
+            return $dom.markup(img);
+        },
+
+        renderFileSize : function(value, metadata, record, rowIndex, colIndex, store){
+            if (!record.get('file')) return "";
+            var f =  Ext.util.Format.fileSize(value);
+            return "<span title='" + f + "'>" + formatWithCommas(value) + "</span>";
+        },
+
+        /* Used as a field renderer */
+        renderUsage : function(value, metadata, record, rowIndex, colIndex, store){
+            if (!value || value.length == 0) return "";
+            var result = "<span title='";
+            for (var i = 0; i < value.length; i++)
+            {
+                if (i > 0)
+                {
+                    result = result + ", ";
+                }
+                result = result + $h(value[i].message);
+            }
+            result = result + "'>";
+            for (i = 0; i < value.length; i++)
+            {
+                if (i > 0)
+                {
+                    result = result + ", ";
+                }
+                if (value[i].href)
+                {
+                    result = result + "<a href=\'" + $h(value[i].href) + "'>";
+                }
+                result = result + $h(value[i].message);
+                if (value[i].href)
+                {
+                    result = result + "</a>";
+                }
+            }
+            result = result + "</span>";
+            return result;
+        },
+
+        renderDateTime : function(value, metadata, record, rowIndex, colIndex, store){
+            if (!value) return "";
+            if (value.getTime() == 0) return "";
+            return "<span title='" + _longDateTime(value) + "'>" + _rDateTime(value) + "<span>";
+        },
+
+        formatWithCommas : function(value) {
+            return formatWithCommas(value);
         }
-    },
-
-    connection : new Ext.data.Connection({autoAbort:true, method:'GET', disableCaching:false})
-});
-
-
-var allPreviews = [];
-
-function _attachPreview(id,record)
-{
-    if (this && !this.canRead(record))
-        return;
-    if (!record.data.file)
-        return;
-    var img = Ext.fly(id,_previewScope);
-    if (!img) return;
-    var preview = new PreviewResource({title:id, target:id, record:record});
-    allPreviews.push(preview);
-}
-
-
-function destroyPreviews()
-{
-    Ext.destroy.apply(null, allPreviews);
-    allPreviews = [];
-}
-
+    });
+})();
 
 //
 // FileSystem
@@ -550,15 +443,16 @@ var FILESYSTEM_EVENTS = {listfiles:"listfiles", ready:"ready"};
 
 var FileSystem = Ext.extend(Ext.util.Observable, {
 
+    ready     : true,
+    rootPath  : "/",
+    separator : "/",
+
     constructor : function(config)
     {
         Ext.util.Observable.prototype.constructor.call(this);
         this.directoryMap = {};
         this.addEvents(FILESYSTEM_EVENTS.listfiles, FILESYSTEM_EVENTS.ready);
     },
-
-    rootPath : "/",
-    separator : "/",
 
     listFiles : function(path, callback, scope)    // callback(filesystem, success, path, records)
     {
@@ -582,7 +476,6 @@ var FileSystem = Ext.extend(Ext.util.Observable, {
         var path = (typeof record == "string") ? record : record.data.path;
         this.directoryMap[path] = null;
     },
-
 
     canRead : function(record)
     {
@@ -609,12 +502,10 @@ var FileSystem = Ext.extend(Ext.util.Observable, {
         return false;
     },
 
-
     createDirectory : function(path, callback) // callback(filesystem, success, path)
     {
         callback(this, path, false);
     },
-
 
     // called by listFiles(), return false on immediate fail
     reloadFiles : function(path, callback, scope)
@@ -660,8 +551,6 @@ var FileSystem = Ext.extend(Ext.util.Observable, {
         }
         return null;
     },
-
-    ready: true,
 
     onReady : function(fn)
     {
@@ -794,7 +683,7 @@ Ext.extend(LABKEY.WebdavFileSystem, FileSystem,
     {
         try
         {
-            var resourcePath = this.concatPaths(this.prefixUrl, encodePath(path));
+            var resourcePath = this.concatPaths(this.prefixUrl, LABKEY.ActionURL.encodePath(path));
             var fileSystem = this;
             var connection = new Ext.data.Connection();
             var callbackFunction = function(options, success, response)
@@ -859,7 +748,7 @@ Ext.extend(LABKEY.WebdavFileSystem, FileSystem,
 
     reloadFile : function(path, callback)
     {
-        var url = this.concatPaths(this.prefixUrl, encodePath(path));
+        var url = this.concatPaths(this.prefixUrl, LABKEY.ActionURL.encodePath(path));
         this.connection.url = url;
         var args = {url: url, path: path, callback:callback};
         this.proxy.doRequest("read", null, {method:"PROPFIND",depth:"0", propname : this.propNames}, this.transferReader, this.processFile, this, args);
@@ -934,7 +823,7 @@ Ext.extend(LABKEY.WebdavFileSystem, FileSystem,
             return;
         }
 
-        var url = this.concatPaths(this.prefixUrl, encodePath(path));
+        var url = this.concatPaths(this.prefixUrl, LABKEY.ActionURL.encodePath(path));
         this.connection.url = url;
         this.pendingPropfind[path] = args = {url: url, path: path, callbacks:[cb]};
         this.proxy.doRequest("read", null, {method:"PROPFIND",depth:"1", propname : this.propNames}, this.transferReader, this.processFiles, this, args);
@@ -1016,7 +905,10 @@ Ext.extend(LABKEY.WebdavFileSystem, FileSystem,
                     var uri = getURI(v,rec);
 
                     if (uri && uri.file)
-                        return $dom.markup({tag:'a', href: Ext.util.Format.htmlEncode(uri.href + '?contentDisposition=attachment'), html: Ext.util.Format.htmlEncode(decodeURIComponent(uri.file))});
+                        return Ext.DomHelper.markup({
+                            tag  :'a',
+                            href : Ext.util.Format.htmlEncode(uri.href + '?contentDisposition=attachment'),
+                            html : Ext.util.Format.htmlEncode(decodeURIComponent(uri.file))});
                     else
                         return '';
                 }
@@ -1112,12 +1004,12 @@ var AppletFileSystem = function(config)
 
 Ext.extend(AppletFileSystem, FileSystem,
 {
-    rootPath : "/",
+    rootPath  : "/",
     separator : Ext.isWindows ? "\\" : "/",
-    retry : 0,
+    retry     : 0,
+    transferReader : null,
 
-    AppletRecord : Ext.data.Record.create(
-    [
+    AppletRecord : Ext.data.Record.create([
         {name:'uri'},
         {name:'path'},
         {name:'name'},
@@ -1125,8 +1017,6 @@ Ext.extend(AppletFileSystem, FileSystem,
         {name:'size', mapping:'length'},
         {name:'modified', mapping:'lastModified'}
     ]),
-
-    transferReader : null,
 
     createDirectory : function(path, callback)
     {
@@ -1157,7 +1047,6 @@ Ext.extend(AppletFileSystem, FileSystem,
             if (!applet.local_changeDirectory(directory))
                 return false;
         }
-        var count = applet.local_getFileCount();
         var js = applet.local_getObjects();
         var json = eval("var $=" + js + ";$;");
         var records = [];
@@ -1181,94 +1070,6 @@ Ext.extend(AppletFileSystem, FileSystem,
     }
 });
 
-
-
-
-
-//
-// FileStore
-//
-
-var FileStore = Ext.extend(Ext.data.Store,
-{
-    constructor : function(config)
-    {
-        FileStore.superclass.constructor.call(this,config);
-        this.setDefaultSort("name","ASC");
-    },
-
-    sortData : function()
-    {
-        this.sortInfo.direction = this.sortInfo.direction || 'ASC';
-        var f = this.sortInfo.field;
-        var st = this.fields.get(f).sortType;
-        var d = this.sortInfo.direction=="DESC" ? -1 : 1;
-        var fn = function(r1, r2)
-        {
-            if (r1.data.file != r2.data.file)
-                return d * (r1.data.file ? 1 : -1);
-            var v1 = st(r1.data[f]), v2 = st(r2.data[f]);
-            return v1 > v2 ? 1 : (v1 < v2 ? -1 : 0);
-        };
-        this.data.sort(this.sortInfo.direction, fn);
-        if (this.snapshot && this.snapshot != this.data)
-        {
-            this.snapshot.sort(this.sortInfo.direction, fn);
-        }
-    }
-});
-
-
-
-
-//
-// FileListMenu
-//
-var FileListMenu = function(fileSystem, path, folderFilter, fn)
-{
-    FileListMenu.superclass.constructor.call(this, {items:[], cls:'extContainer'});
-    this.showFiles = false;
-    this.fileSystem = fileSystem;
-    this.path = path;
-    this.folderFilter = folderFilter;
-
-//    if (path && path != fileSystem.rootPath)
-//    {
-//        this.addMenuItem(new Ext.menu.Item({text: '[up]', path:this.fileSystem.parentPath(path)}));
-//    }
-
-    var records = fileSystem.directoryFromCache(path);
-    var populate = function(filesystem, success, path, records)
-        {
-            for (var i=0 ; i<records.length ; i++)
-            {
-                var record = records[i];
-                var data = record.data;
-                if (!this.showFiles && data.file)
-                    continue;
-
-                else if (this.folderFilter && !this.folderFilter.test(data))
-                    continue;
-
-                this.addMenuItem(new Ext.menu.Item({text:data.name, icon:data.iconHref, path:record.data.path}));
-            }
-        };
-    if (records)
-        populate.call(this, null, true, path, records);
-    else
-        fileSystem.listFiles(path, populate, this);
-    if (typeof fn == "function")
-    {
-        this.on("click", function(menu,item,event)
-        {
-            var path = item.initialConfig.path;
-            fn(path);
-        });
-    }
-};
-Ext.extend(FileListMenu, Ext.menu.Menu);
-
-
 //
 // FileSystemTreeLoader
 //
@@ -1284,12 +1085,11 @@ var FileSystemTreeLoader = function (config)
 
 Ext.extend(FileSystemTreeLoader, Ext.tree.TreeLoader,
 {
-    debugTree : null,
-
-    fileFilter : null,
+    debugTree    : null,
+    fileFilter   : null,
     folderFilter : null,
-    displayFiles: true,
-    url: true, // hack for Ext.tree.TreeLoader.load()
+    displayFiles : true,
+    url          : true, // hack for Ext.tree.TreeLoader.load()
 
     requestData : function(node, callback)
     {
@@ -1357,12 +1157,12 @@ Ext.extend(FileSystemTreeLoader, Ext.tree.TreeLoader,
 
     mergeRecords : function(node, records)
     {
-        var i, p, n, r;
+        var i, p, n, r, record;
         var nodesMap = {}, recordsMap = {};
         node.eachChild(function(child){nodesMap[child.record.data.path]=child;});
         for (i=0 ; i<records.length ; i++)
         {
-            var record = records[i];
+            record = records[i];
             n = this.createNodeFromRecord(records[i]);
             if (!n) continue;
             recordsMap[record.data.path] = {r:record, n:n};
@@ -1438,8 +1238,6 @@ Ext.extend(FileSystemTreeLoader, Ext.tree.TreeLoader,
         }
         catch (e)
         {
-//          UNDONE:
-//          this.handleFailure(response);
             window.alert(path + " " + e);
         }
     },
@@ -1474,25 +1272,38 @@ Ext.extend(FileSystemTreeLoader, Ext.tree.TreeLoader,
 // TransferApplet
 //
 
-var TRANSFER_EVENTS = {update:'update'};
 var TRANSFER_STATES = {
-    success:1,
-    info:0,
-    failed:-1,
-    retryable:-2
-}
+    success   : 1,
+    info      : 0,
+    failed    : -1,
+    retryable : -2
+};
 
 var TransferApplet;
 if (LABKEY.Applet)
 {
     TransferApplet = Ext.extend(LABKEY.Applet,
     {
+        transferReader : null,
+        transfers      : null,
+        TransferRecord : Ext.data.Record.create([
+            {name:'transferId', mapping:'id'},
+            {name:'src'},
+            {name:'uri', mapping:'target'},
+            {name:'name'},
+            {name:'state'},
+            {name:'status'},
+            {name:'size', mapping:'length'},
+            {name:'transferred'},
+            {name:'percent'},
+            {name:'updated'},
+            {name:'md5', mapping:'digest'}
+        ]),
+        ConsoleRecord : Ext.data.Record.create(['level', 'text']),
+
         constructor : function(params)
         {
-            var callbackname = Ext.id(null, 'transferapplet');
-
-            var config =
-            {
+            var config = {
                 id: params.id,
                 archive: LABKEY.contextPath + '/_applets/applets-' + LABKEY.versionString + '.jar',
                 code: 'org.labkey.applets.drop.DropApplet',
@@ -1522,7 +1333,7 @@ if (LABKEY.Applet)
         {
             TransferApplet.superclass.initComponent.call(this);
 
-            this.addEvents([TRANSFER_EVENTS.update]);
+            this.addEvents(["update"]);
 
             this.transferReader = new Ext.data.JsonReader({successProperty:'success', totalProperty:'recordCount', root:'records', id:'target'}, this.TransferRecord);
             this.transfers = new Ext.data.Store();
@@ -1540,9 +1351,7 @@ if (LABKEY.Applet)
 
         destroy : function()
         {
-            //console.log('stopping the polling task');
             Ext.TaskMgr.stop(this.pollTask);
-            
             TransferApplet.superclass.destroy.call(this);
         },
 
@@ -1550,13 +1359,9 @@ if (LABKEY.Applet)
         {
             TransferApplet.superclass.onRender.call(this, ct, position);
             // callbacks work terribly on some browsers, just poll for updates
-            //console.log('starting a task to poll the applet');
             this.pollTask = {interval:100, scope:this, run:this._poll};
             Ext.TaskMgr.start(this.pollTask);
         },
-
-        transferReader : null,
-        transfers : null,
 
         /* private */
         _poll : function()
@@ -1571,7 +1376,6 @@ if (LABKEY.Applet)
                 window.eval("" + event);
             }
         },
-
 
         /* private */
         _merge : function(store,records)
@@ -1595,28 +1399,8 @@ if (LABKEY.Applet)
             store.add(adds);
         },
 
-
-        TransferRecord : Ext.data.Record.create([
-            {name:'transferId', mapping:'id'},
-            {name:'src'},
-            {name:'uri', mapping:'target'},
-            {name:'name'},
-            {name:'state'},
-            {name:'status'},
-            {name:'size', mapping:'length'},
-            {name:'transferred'},
-            {name:'percent'},
-            {name:'updated'},
-            {name:'md5', mapping:'digest'}
-        ]),
-
-
-        ConsoleRecord : Ext.data.Record.create(['level', 'text']),
-
-
         changeWorkingDirectory : function(path)
         {
-
             var applet = this.getApplet();
             if (applet)
                 applet.changeWorkingDirectory(path);
@@ -1740,65 +1524,10 @@ if (LABKEY.Applet)
             }
 
             if (updated)
-                this.fireEvent(TRANSFER_EVENTS.update);
+                this.fireEvent("update");
         }
     });
 }
-
-
-///
-// TOOLBAR
-//
-
-// ToolBar.TextItem is sort of broken
-var _TextItem = function(config)
-{
-    if (typeof config == 'string')
-        config = {text:config};
-    Ext.apply(this,config);
-    if (config.id)
-        Ext.ComponentMgr.register(this);
-};
-Ext.extend(_TextItem, Ext.Toolbar.Item,
-{
-    hidden:false,
-    enable:Ext.emptyFn,
-    disable:Ext.emptyFn,
-    focus:Ext.emptyFn,
-    setText : function(text)
-    {
-        this.text = text;
-        this._update();
-    },
-    last : {width:0, text:null},
-    _update : function()
-    {
-        if (!this.dom)
-            return;
-        if (this.last.width == this.width && this.last.text == this.text)
-            return;
-        var w = Ext.Element.addUnits(this.width,"px");
-        var html = [{tag:'img', src:(LABKEY.contextPath + '/_.gif'), width:w, height:1}, "<br>", this.text ? Ext.util.Format.htmlEncode(this.text) : '&nbsp;'];
-        Ext.fly(this.dom).setSize(w).update($dom.markup(html));
-        Ext.fly(this.td).setSize(w);
-        this.last.width = this.width;
-        this.last.text = this.text;
-    },
-    render:function(td)
-    {
-        this.dom = $dom.append(td, {id:this.id, className:'ytb-text'});
-        this.td = td;
-        Ext.fly(this.td).addClass('x-status-text-panel');
-        this._update();
-    },
-    setSize:function(w,h)
-    {
-        if (typeof w == 'object')
-            w = w.width;
-        this.width = w;
-        this._update();
-    }
-});
 
 
 //
@@ -1829,9 +1558,10 @@ var BROWSER_EVENTS = {
 //
 LABKEY.FileBrowser = Ext.extend(Ext.Panel,
 {
-    FOLDER_ICON: LABKEY.contextPath + "/" + LABKEY.extJsRoot + "/resources/images/default/tree/folder.gif",
+    FOLDER_ICON : LABKEY.contextPath + "/" + LABKEY.extJsRoot + "/resources/images/default/tree/folder.gif",
 
     // instance/config variables
+    allPreviews : [],
     resizable : true,
     allowChangeDirectory : true,
     showFolderTree: true,
@@ -1850,6 +1580,11 @@ LABKEY.FileBrowser = Ext.extend(Ext.Panel,
     currentDirectory: null,
     selectedRecord: null,
 
+    helpEl : null,
+    helpWindow : null,
+
+    history : null,
+
     // collapsible tab panel used to display dialog-like content
     fileUploadPanel : undefined,
 
@@ -1860,12 +1595,17 @@ LABKEY.FileBrowser = Ext.extend(Ext.Panel,
 
     fileFilter : undefined,
 
+    progressRecord : null,
+
+    lastSummary: {info:0, success:0, file:'', pct:0},
+
+    notifyStates : {},
+
     //
     // actions
     //
 
     actions : {},
-    //tbar : null,
 
     getDownloadAction : function()
     {
@@ -1895,7 +1635,6 @@ LABKEY.FileBrowser = Ext.extend(Ext.Panel,
                 }
             }});
     },
-
 
     getCreateDirectoryAction : function()
     {
@@ -1973,14 +1712,6 @@ LABKEY.FileBrowser = Ext.extend(Ext.Panel,
             this.refreshFolderTree();
         }
     },
-
-
-    _refreshOnCallback : function(fs, success, path)
-    {
-        if (this.actions.refresh)
-            this.actions.refresh.execute();
-    },
-
 
     getParentFolderAction : function()
     {
@@ -2157,9 +1888,6 @@ LABKEY.FileBrowser = Ext.extend(Ext.Panel,
             }});
     },
 
-    helpEl : null,
-    helpWindow : null,
-
     getHelpAction : function()
     {
         if (!this.helpEl)
@@ -2174,7 +1902,6 @@ LABKEY.FileBrowser = Ext.extend(Ext.Panel,
         }});
     },
 
-
     getShowHistoryAction : function()
     {
         return new Ext.Action({text: 'Show History', scope:this, handler: function()
@@ -2187,18 +1914,15 @@ LABKEY.FileBrowser = Ext.extend(Ext.Panel,
             {
                 var item = items[i];
                 html.push("<b>"); html.push(item.date); html.push("</b><br>");
-                html.push($h(item.user)); html.push("<br>");
-                html.push($h(item.message));
+                html.push(Ext.util.Format.htmlEncode(item.user)); html.push("<br>");
+                html.push(Ext.util.Format.htmlEncode(item.message));
                 if (html.href)
                 {
-                    html.push("<a color=green href='"); html.push($h(html.href)); html.push("'>link</a><br>");
+                    html.push("<a color=green href='"); html.push(Ext.util.Format.htmlEncode(html.href)); html.push("'>link</a><br>");
                 }
             }
         }});
     },
-
-
-    progressRecord : null,
 
     updateProgressBarRecord : function(store,record)
     {
@@ -2210,9 +1934,6 @@ LABKEY.FileBrowser = Ext.extend(Ext.Panel,
         else if (state != 0 && this.progressRecord == record)
             this.progressRecord = null;
     },
-
-
-    lastSummary: {info:0, success:0, file:'', pct:0},
 
     updateProgressBar : function()
     {
@@ -2228,13 +1949,11 @@ LABKEY.FileBrowser = Ext.extend(Ext.Panel,
             {
                 this.appletStatusBar.clearStatus();
                 this.appletStatusBar.setText('Ready');
-//                Ext.getCmp('appletStatusFiles').setText('');
             }
             else
             {
                 this.appletStatusBar.busyText = 'Copying... ' + summary.info + ' file' + (summary.info>1?'s':'');
                 this.appletStatusBar.showBusy();
-//                Ext.getCmp('appletStatusFiles').setText('' + summary.info);
             }
         }
 
@@ -2254,24 +1973,21 @@ LABKEY.FileBrowser = Ext.extend(Ext.Panel,
         this.lastSummary.file = file;
     },
 
-
-    notifyStates : {},
-
     //private
     fireUploadEvents : function()
     {
-        var transfers = this.applet.getTransfers();
-        var count = transfers.getCount();
-        var incompleteCount = 0;
-        var newlyAdded = [];
-        var newlyComplete = [];
-        var pending = [];                   // files and folders just dropped that need to be checked for overwrite
+        var transfers   = this.applet.getTransfers();
+        var count       = transfers.getCount(),
+        incompleteCount = 0, i = 0,
+        newlyAdded      = [],
+        newlyComplete   = [],
+        pending         = []; // files and folders just dropped that need to be checked for overwrite
 
         //Try to notify in batches.
         //If new files are added fire a transferstarted event
         //If all started files are finished, file a transfercomplete event for all of them
         
-        for (var i = 0 ; i<count ; i++)
+        for (i = 0 ; i<count ; i++)
         {
             var record = transfers.getAt(i);
             var id = new URI(record.id).pathname; //Normalize paths...
@@ -2347,7 +2063,7 @@ LABKEY.FileBrowser = Ext.extend(Ext.Panel,
         if (newlyAdded.length != 0)
         {
             this.fireEvent(BROWSER_EVENTS.transferstarted, {uploadType:"applet", files:newlyAdded});
-            for (var i = 0; i < newlyAdded.length; i++)
+            for (i = 0; i < newlyAdded.length; i++)
                 this.notifyStates[newlyAdded[i].id].notified = TRANSFER_STATES.info;
         }
 
@@ -2355,9 +2071,10 @@ LABKEY.FileBrowser = Ext.extend(Ext.Panel,
         if (incompleteCount == 0 && newlyComplete.length > 0)
         {
             this.fireEvent(BROWSER_EVENTS.transfercomplete, {uploadType:"applet", files:newlyComplete});
-            for (var i = 0; i < newlyComplete.length; i++)
+            var rec;
+            for (i = 0; i < newlyComplete.length; i++)
             {
-                var rec = newlyComplete[i];
+                rec = newlyComplete[i];
                 this.notifyStates[rec.id].notified = TRANSFER_STATES.success;
 
                 // remove this transfer record from the list so it doesn't appear in subsequent status requests
@@ -2517,7 +2234,6 @@ LABKEY.FileBrowser = Ext.extend(Ext.Panel,
        }
     },
 
-
     refreshDirectory : function()
     {
         if (!this.currentDirectory)
@@ -2560,7 +2276,6 @@ LABKEY.FileBrowser = Ext.extend(Ext.Panel,
         this.fireEvent(BROWSER_EVENTS.selectionchange, record);
     },
 
-
     //
     // event handlers
     //
@@ -2576,36 +2291,24 @@ LABKEY.FileBrowser = Ext.extend(Ext.Panel,
     // UNDONE: multiselect?
     Grid_onSelectionChange : function(event)
     {
-        if (event.selections.getCount() == 0)
-        {
-            this.fireEvent(BROWSER_EVENTS.selectionchange, null);
-        }
-        else
-        {
-            this.fireEvent(BROWSER_EVENTS.selectionchange, event.selections.itemAt(0));
-        }
+        this.fireEvent(BROWSER_EVENTS.selectionchange, (event.selections.getCount() == 0 ? null : event.selections.itemAt(0)));
     },
 
     Grid_onKeypress : function(e)
     {
         switch (e.keyCode)
         {
-        case e.ENTER:
-            var record = this.selectedRecord;
-            if (record && !record.data.file)
-                this.changeDirectory(record);
-            this.grid.focus();
-            break;
-        case e.ESC:
-            this.grid.getSelectionModel().clearSelections();
-        default:
-            break;
+            case e.ENTER:
+                var record = this.selectedRecord;
+                if (record && !record.data.file)
+                    this.changeDirectory(record);
+                this.grid.focus();
+                break;
+            case e.ESC:
+                this.grid.getSelectionModel().clearSelections();
+            default:
+                break;
         }
-    },
-
-    Grid_onClick : function(e)
-    {
-        //this.grid.getSelectionModel().clearSelections();
     },
 
     Grid_onCelldblclick : function(grid, rowIndex, columnIndex, e)
@@ -2631,22 +2334,6 @@ LABKEY.FileBrowser = Ext.extend(Ext.Panel,
         }
     },
 
-
-    addressBarHandler : null,
-
-
-    history : null,
-
-    _historyCallback : function(filesystem, path, success, records)
-    {
-        if (path == this.selectedRecord.data.path)
-        {
-            this.history = records;
-            if (this.actions.showHistory)
-                this.actions.showHistory.enable();
-        }
-    },
-
     getHistory : function(path)
     {
         this.fileSystem.getHistory(path, this.history.createDelegate(this));
@@ -2655,8 +2342,7 @@ LABKEY.FileBrowser = Ext.extend(Ext.Panel,
     updateAddressBar : function(path)
     {
         var i;
-        var folderImg = '<img src="' + this.FOLDER_ICON + '" border=0>';
-        var el = $('addressBar');
+        var el = Ext.get('addressBar');
         if (!el)
             return;
         var elStyle = el.dom.style;
@@ -2685,9 +2371,9 @@ LABKEY.FileBrowser = Ext.extend(Ext.Panel,
         for (i=0 ; i<parts.length ; i++)
         {
             html.push('<td id="' + parts[i].idImg + '">');
-            html.push(folderImg);
+            html.push('<img src="' + this.FOLDER_ICON + '" border=0>');
             html.push('</td><td id="' + parts[i].id + '">');
-            html.push($h(parts[i].name));
+            html.push(Ext.util.Format.htmlEncode(parts[i].name));
             html.push("</td><td>&nbsp;</td>");
         }
         html.push("</tr></table>");
@@ -2702,10 +2388,10 @@ LABKEY.FileBrowser = Ext.extend(Ext.Panel,
                 this.hideFileListMenu();
                 this.changeDirectory(path);
             }.createDelegate(this, [parts[i].path]);
-            $(parts[i].id).on("click", addressBarHandler);
-            $(parts[i].id).on("dblclick", changeDirectory);
-            $(parts[i].idImg).on("click", addressBarHandler);
-            $(parts[i].idImg).on("dblclick", changeDirectory);
+            Ext.get(parts[i].id).on("click", addressBarHandler);
+            Ext.get(parts[i].id).on("dblclick", changeDirectory);
+            Ext.get(parts[i].idImg).on("click", addressBarHandler);
+            Ext.get(parts[i].idImg).on("dblclick", changeDirectory);
         }
     },
 
@@ -2729,12 +2415,11 @@ LABKEY.FileBrowser = Ext.extend(Ext.Panel,
         }
     },
 
-
     updateFileDetails : function(record)
     {
         try
         {
-            var el = $('file-details');
+            var el = Ext.get('file-details');
             if (!el)
                 return;
             var elStyle = el.dom.style;
@@ -2767,13 +2452,13 @@ LABKEY.FileBrowser = Ext.extend(Ext.Panel,
                     var sizeValue = Ext.util.Format.fileSize(data.size);
                     if (data.size > 1024)
                     {
-                        sizeValue += " (" + formatWithCommas(data.size) + " bytes)";
+                        sizeValue += " (" + FileBrowser.formatWithCommas(data.size) + " bytes)";
                     }
                     row("Size", sizeValue);
                 }
             if (data.createdBy && data.createdBy != 'Guest')
-                row("Created By", $h(data.createdBy));
-            if (startsWith(data.contentType,"image/"))
+                row("Created By", Ext.util.Format.htmlEncode(data.createdBy));
+            if (FileBrowser.startsWith(data.contentType,"image/"))
             {
                 row("Dimensions","<span id=detailsImgSize></span>");
                 var image = new Image();
@@ -2783,16 +2468,13 @@ LABKEY.FileBrowser = Ext.extend(Ext.Panel,
                 };
                 image.src = data.uri;
             }
-//            html.push('<tr><td colspan=2 style="color:#404040;">');
-//            html.push($h(data.uri));
-//            html.push('</td></tr>');
-//
+
             html.push('</table>');
             el.update(html.join(""));
         }
         catch (x)
         {
-            log(x);
+            console.log(x);
         }
     },
 
@@ -2892,9 +2574,9 @@ LABKEY.FileBrowser = Ext.extend(Ext.Panel,
         });
 
 
-        this.applet.on(TRANSFER_EVENTS.update, this.updateProgressBar, this);
-        this.applet.on(TRANSFER_EVENTS.update, this.fireUploadEvents, this);
-        this.applet.getTransfers().on(STORE_EVENTS.update, this.updateProgressBarRecord, this);
+        this.applet.on("update", this.updateProgressBar, this);
+        this.applet.on("update", this.fireUploadEvents, this);
+        this.applet.getTransfers().on("update", this.updateProgressBarRecord, this);
 
         // make sure that the applet still matches the current directory when it appears
         this.applet.onReady(function()
@@ -2946,20 +2628,6 @@ LABKEY.FileBrowser = Ext.extend(Ext.Panel,
         config = config || {};
         Ext.apply(this, config);
         Ext.useShims = true;     // so floating elements can appear over the applet drop target
-/*
-        this.actions = Ext.apply({}, this.actions,
-        {
-            parentFolder: this.getParentFolderAction(),
-            refresh: this.getRefreshAction(),
-            createDirectory: this.getCreateDirectoryAction(),
-            download: this.getDownloadAction(),
-            deletePath: this.getDeleteAction(),
-            help: this.getHelpAction(),
-            //drop : this.getOldDropAction(),
-            showHistory : this.getShowHistoryAction(),
-            uploadTool: this.getUploadToolAction()
-        });
-*/
 
         // create the set of actions and initialize any configurable state
         this.actions = this.createActions();
@@ -2967,32 +2635,24 @@ LABKEY.FileBrowser = Ext.extend(Ext.Panel,
 
         delete config.actions;  // so superclass.constructor doesn't overwrite this.actions
 
-        var me = this; // for anonymous inner functions
-
         //
         // GRID
         //
 
-        this.store = new FileStore({recordType:this.fileSystem.FileRecord});
+        this.store = new FileBrowser.FileStore({recordType:this.fileSystem.FileRecord});
         this.grid = this.createGrid();
 
-        this.grid.getSelectionModel().on(ROWSELETION_EVENTS.rowselect, this.Grid_onRowselect, this);
-        this.grid.getSelectionModel().on(ROWSELETION_EVENTS.selectionchange, this.Grid_onSelectionChange, this);
-        this.grid.on(GRIDPANEL_EVENTS.celldblclick, this.Grid_onCelldblclick, this);
-        this.grid.on(GRIDPANEL_EVENTS.keypress, this.Grid_onKeypress, this);
-        this.grid.on(GRIDPANEL_EVENTS.click, this.Grid_onClick, this);
-        this.grid.on(PANEL_EVENTS.render, function()
-        {
-//            this.getView().hmenu.getEl().addClass("extContainer");
-//            this.getView().colMenu.getEl().addClass("extContainer");
-        }, this.grid);
+        this.grid.getSelectionModel().on("rowselect", this.Grid_onRowselect, this);
+        this.grid.getSelectionModel().on("selectionchange", this.Grid_onSelectionChange, this);
+        this.grid.on("celldblclick", this.Grid_onCelldblclick, this);
+        this.grid.on("keypress", this.Grid_onKeypress, this);
 
         // this is kind of nasty, if the column model changes, we need to re-hook all the listeners for the selection
         // model because in the process, all listeners for each column get purged
         this.grid.getColumnModel().on('configchange', function()
         {
-            this.grid.getSelectionModel().on(ROWSELETION_EVENTS.rowselect, this.Grid_onRowselect, this);
-            this.grid.getSelectionModel().on(ROWSELETION_EVENTS.selectionchange, this.Grid_onSelectionChange, this);
+            this.grid.getSelectionModel().on("rowselect", this.Grid_onRowselect, this);
+            this.grid.getSelectionModel().on("selectionchange", this.Grid_onSelectionChange, this);
         }, this);
 
         //
@@ -3045,11 +2705,11 @@ LABKEY.FileBrowser = Ext.extend(Ext.Panel,
 
             this.updateFileDetails(record);
 
-            if (selections.length == 1 && startsWith(record.data.uri,"http"))
+            if (selections.length == 1 && FileBrowser.startsWith(record.data.uri,"http"))
             {
                 this.actions.download.enable();
             }
-            else if (selections.length > 0 && startsWith(this.currentDirectory.data.uri,"http"))
+            else if (selections.length > 0 && FileBrowser.startsWith(this.currentDirectory.data.uri,"http"))
             {
                 this.actions.download.enable();
             }
@@ -3227,7 +2887,6 @@ LABKEY.FileBrowser = Ext.extend(Ext.Panel,
             download: this.getDownloadAction(),
             deletePath: this.getDeleteAction(),
             help: this.getHelpAction(),
-            //drop : this.getOldDropAction(),
             showHistory : this.getShowHistoryAction(),
             uploadTool: this.getUploadToolAction()
         });
@@ -3339,13 +2998,23 @@ LABKEY.FileBrowser = Ext.extend(Ext.Panel,
             });
 
             // the description field is hidden by default until a file is selected
-            this.descriptionField = new Ext.form.TextField({name: 'description', disabled: true, fieldLabel: 'Description', width: 350});
-            this.descriptionField.on('render', function(cmp){cmp.label.addClass('labkey-disabled');});
+            this.descriptionField = new Ext.form.TextField({
+                name       : 'description',
+                disabled   : true,
+                fieldLabel : 'Description',
+                width      : 350,
+                listeners  : { render : function(field) { field.label.addClass('labkey-disabled'); } }
+            });
 
             // disable the upload button until a file is selected
-            var uploadBtnId = Ext.id();
+            var btn = new Ext.Button({
+                text     : 'Upload',
+                disabled : true,
+                handler  : this.submitFileUploadForm,
+                scope    : this
+            });
+
             this.fileUploadField.on('fileselected', function(){
-                var btn = Ext.getCmp(uploadBtnId);
                 if (btn)
                     btn.enable();
                 this.descriptionField.label.removeClass('labkey-disabled');
@@ -3364,16 +3033,16 @@ LABKEY.FileBrowser = Ext.extend(Ext.Panel,
                     {xtype:'compositefield', items:[
                         this.fileUploadField,
                         {xtype:'displayfield', value: '&nbsp;&nbsp;'},
-                        {xtype:'button', id: uploadBtnId, disabled: true, text: 'Upload', handler:this.submitFileUploadForm, scope:this}]},
+                        btn]},
                     this.descriptionField
                 ],
                 listeners: {
                     "actioncomplete" : {fn: this.uploadSuccess, scope: this},
-                    "actionfailed" : {fn: this.uploadFailed, scope: this}
+                    "actionfailed"   : {fn: this.uploadFailed,  scope: this}
                 }
             });
 
-            var loadingImageSrc = LABKEY.contextPath + "/ext-3.4.0/resources/images/default/shared/large-loading.gif";
+            var loadingImageSrc = LABKEY.contextPath + "/" + LABKEY.extJsRoot + "/resources/images/default/shared/large-loading.gif";
 
             this.progressBar = new Ext.ProgressBar();
             this.appletStatusBar = new LABKEY.ext.StatusBar({
@@ -3404,12 +3073,9 @@ LABKEY.FileBrowser = Ext.extend(Ext.Panel,
                 items: [
                     {xtype:'compositefield',items:[
                         this.appletPanel,
-                        //{xtype:'displayfield', value:'&nbsp;OR&nbsp;'},
                         new Ext.Panel({border:false, bodyStyle : 'background-color:#f0f0f0', items:[
                             new Ext.Button(this.actions.appletFileAction),
-                            new Ext.menu.Separator(),
                             new Ext.Button(this.actions.appletDirAction),
-                            new Ext.menu.Separator(),
                             new Ext.Button(this.actions.appletDragAndDropAction)]})]}
                 ]
             });
@@ -3435,7 +3101,6 @@ LABKEY.FileBrowser = Ext.extend(Ext.Panel,
             });
 
             // main panel with the radio button selectors and the upload panel
-            this.singleFileId = Ext.id();
             var panel = new Ext.Panel({
                 border: true,
                 stateful: false,
@@ -3447,7 +3112,7 @@ LABKEY.FileBrowser = Ext.extend(Ext.Panel,
                     columns:2,
                     fieldLabel: 'File Upload Type',
                     items: [
-                        {boxLabel: 'Single&nbsp;file', id: this.singleFileId, name: 'rb-file-upload-type', checked: true, handler: function(cmp, checked){
+                        {boxLabel: 'Single&nbsp;file', name: 'rb-file-upload-type', checked: true, handler: function(cmp, checked){
                             if (checked)
                             {
                                 this.applet.setEnabled(false);
@@ -3521,7 +3186,8 @@ LABKEY.FileBrowser = Ext.extend(Ext.Panel,
             layout: 'fit',
             border: true,
             stateful: false,
-            items: [{id:'addressBar', html: '<div style="background-color:#f0f0f0;height:100%;width:100%">&nbsp</div>'}]};
+            items: [{id:'addressBar', html: '<div style="background-color:#f0f0f0;height:100%;width:100%">&nbsp</div>'}]
+        };
 
         if (this.showDetails)
         {
@@ -3560,23 +3226,23 @@ LABKEY.FileBrowser = Ext.extend(Ext.Panel,
 
         if (this.showFolderTree)
         {
-            this.tree.region='west';
-            this.tree.split=true;
-            this.tree.width = 200;
+            this.tree.region = 'west';
+            this.tree.split  = true;
+            this.tree.width  = 200;
             layoutItems.push(this.tree);
         }
 
         var centerItems = [];
 
         centerItems.push({region:'center', layout:'fit', border:false, items:[this.grid]});
-        layoutItems.push(
-            {
-                region:'center',
-                margins: '0 ' + (this.propertiesPanel ? '0' : '5') + ' ' + (this.showDetails ? '0' : '0') + ' 0',
-                minSize: 200,
-                layout:'border',
-                items: centerItems
-            });
+        layoutItems.push({
+            region  : 'center',
+            margins : '0 ' + (this.propertiesPanel ? '0' : '5') + ' ' + (this.showDetails ? '0' : '0') + ' 0',
+            minSize : 200,
+            layout  : 'border',
+            items   : centerItems
+        });
+
         if (this.propertiesPanel)
         {
             var panels = !'length' in this.propertiesPanel ? [this.propertiesPanel] : this.propertiesPanel;
@@ -3692,13 +3358,12 @@ LABKEY.FileBrowser = Ext.extend(Ext.Panel,
             var url = uri.toString();
             this.applet = new TransferApplet({id: Ext.id(), url:url, directory:this.currentDirectory.data.path, text:'initializing...', width:80, height:80});
 
-            this.applet.on(TRANSFER_EVENTS.update, this.updateProgressBar, this);
-            this.applet.on(TRANSFER_EVENTS.update, this.fireUploadEvents, this);
-            this.applet.getTransfers().on(STORE_EVENTS.update, this.updateProgressBarRecord, this);
+            this.applet.on("update", this.updateProgressBar, this);
+            this.applet.on("update", this.fireUploadEvents, this);
+            this.applet.getTransfers().on("update", this.updateProgressBarRecord, this);
 
             // make sure that the applet still matches the current directory when it appears
-            this.applet.onReady(function()
-            {
+            this.applet.onReady(function() {
                 this.updateAppletState(this.currentDirectory);
                 var el = Ext.get('testJavaLink');
                 if (el)
@@ -3712,10 +3377,9 @@ LABKEY.FileBrowser = Ext.extend(Ext.Panel,
         else
         {
             var task = {
-                interval:100,
-                scope: this,
-                run : function()
-                {
+                interval : 100,
+                scope    : this,
+                run      : function() {
                     if (this.applet.isActive())
                     {
                         this.updateAppletState(this.currentDirectory);
@@ -3733,51 +3397,65 @@ LABKEY.FileBrowser = Ext.extend(Ext.Panel,
     {
         var treeloader = new FileSystemTreeLoader({fileSystem: this.fileSystem, displayFiles:false, folderFilter:this.fileFilter});
         this.root = treeloader.createNodeFromRecord(this.fileSystem.rootRecord, this.fileSystem.rootPath);
-        var tree = new Ext.tree.TreePanel(
-        {
-            loader:treeloader,
-            root: this.root,
-            rootVisible:true,
-            //title: 'Folders',
-            useArrows:true,
-            margins: (this.showDetails || this.showAddressBar) ? '0 0 0 5' : '0 0 5 5',
-            autoScroll:true,
-            animate:true,
-            enableDD:false,
-            containerScroll:true,
-            collapsible: true,
-            collapseMode: 'mini',
-            collapsed: this.folderTreeCollapsed,
-            cmargins:'0 0 0 0',
-            border: true,
-            stateful: false,
-            pathSeparator:';'
+        var tree = new Ext.tree.TreePanel({
+            loader          : treeloader,
+            root            : this.root,
+            rootVisible     : true,
+            useArrows       : true,
+            margins         : (this.showDetails || this.showAddressBar) ? '0 0 0 5' : '0 0 5 5',
+            autoScroll      : true,
+            animate         : true,
+            enableDD        : false,
+            containerScroll : true,
+            collapsible     : true,
+            collapseMode    : 'mini',
+            collapsed       : this.folderTreeCollapsed,
+            cmargins        :'0 0 0 0',
+            border          : true,
+            stateful        : false,
+            pathSeparator   : ';'
         });
         treeloader.debugTree = tree;
-        tree.getSelectionModel().on(TREESELECTION_EVENTS.selectionchange, this.Tree_onSelectionchange, this);
-        window.DEBUGTREE = tree;
+        tree.getSelectionModel().on("selectionchange", this.Tree_onSelectionchange, this);
         return tree;
+    },
+
+    attachPreview : function(id, record) {
+        if (this && !this.canRead(record))
+            return;
+        if (!record.data.file)
+            return;
+        var img = Ext.fly(id,"previewAncor");
+        if (!img) return;
+        var preview = new FileBrowser.PreviewResource({title:id, target:id, record:record});
+        if (!this.allPreviews)
+            this.allPreviews = [];
+        this.allPreviews.push(preview);
+    },
+
+    destroyPreviews : function()
+    {
+        Ext.destroy.apply(null, this.allPreviews);
+        this.allPreviews = [];
     },
 
     createGrid : function()
     {
         // mild convolution to pass fileSystem to the _attachPreview function
-        var iconRenderer = renderIcon.createDelegate(null,_attachPreview.createDelegate(this.fileSystem,[],true),true);
+        var iconRenderer = FileBrowser.renderIcon.createDelegate(null,this.attachPreview.createDelegate(this.fileSystem,[],true),true);
 
-        var grid = new Ext.grid.GridPanel(
-        {
-            store: this.store,
-            cls: 'labkey-filecontent-grid',
-            border:false,
+        var grid = new Ext.grid.GridPanel({
+            store    : this.store,
+            cls      : 'labkey-filecontent-grid',
+            border   : false,
             selModel : new Ext.grid.RowSelectionModel({singleSelect:true}),
-            loadMask:{msg:"Loading, please wait..."},
-            columns: [
-                {header: "", width:20, dataIndex: 'iconHref', sortable: false, hidden:false, renderer:iconRenderer},
-                {header: "Name", width: 250, dataIndex: 'name', sortable: true, hidden:false, renderer:Ext.util.Format.htmlEncode},
-//                {header: "Created", width: 150, dataIndex: 'created', sortable: true, hidden:false, renderer:renderDateTime},
-                {header: "Last Modified", width: 150, dataIndex: 'modified', sortable: true, hidden:false, renderer:renderDateTime},
-                {header: "Size", width: 80, dataIndex: 'size', sortable: true, hidden:false, align:'right', renderer:renderFileSize},
-                {header: "Created By", width: 100, dataIndex: 'createdBy', sortable: true, hidden:false, renderer:Ext.util.Format.htmlEncode}
+            loadMask : {msg:"Loading, please wait..."},
+            columns  : [
+                {header: "",              width: 20,  dataIndex: 'iconHref',  sortable: false, hidden: false, renderer: iconRenderer},
+                {header: "Name",          width: 250, dataIndex: 'name',      sortable: true,  hidden: false, renderer: Ext.util.Format.htmlEncode},
+                {header: "Last Modified", width: 150, dataIndex: 'modified',  sortable: true,  hidden: false, renderer: FileBrowser.renderDateTime},
+                {header: "Size",          width: 80,  dataIndex: 'size',      sortable: true,  hidden: false, renderer: FileBrowser.renderFileSize, align:'right'},
+                {header: "Created By",    width: 100, dataIndex: 'createdBy', sortable: true,  hidden: false, renderer: Ext.util.Format.htmlEncode}
             ]
         });
         return grid;

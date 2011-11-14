@@ -50,7 +50,7 @@ LABKEY.FilesWebPartPanel = Ext.extend(LABKEY.FileBrowser, {
     {
         LABKEY.FilesWebPartPanel.superclass.initComponent.call(this);
 
-        this.grid.store.on(STORE_EVENTS.datachanged, this.onGridDataChange, this);
+        this.grid.store.on("datachanged", this.onGridDataChange, this);
         this.on(BROWSER_EVENTS.selectionchange,function(record){this.onSelectionChange(record);}, this);
         this.on(BROWSER_EVENTS.directorychange,function(record){this.onGridDataChanged(false);}, this);
 
@@ -141,31 +141,20 @@ LABKEY.FilesWebPartPanel = Ext.extend(LABKEY.FileBrowser, {
         return actions;
     },
 
-    /**
-     * Override base class to add components to the file browser
-     * @override
-     */
-    getItems : function()
-    {
-        var items = LABKEY.FilesWebPartPanel.superclass.getItems.call(this);
-
-        return items;
-    },
-
     createDefaultColumnModel : function(sm)
     {
         // mild convolution to pass fileSystem to the _attachPreview function
-        var iconRenderer = renderIcon.createDelegate(null,_attachPreview.createDelegate(this.fileSystem,[],true),true);
+        var iconRenderer = FileBrowser.renderIcon.createDelegate(null,this.attachPreview.createDelegate(this.fileSystem,[],true),true);
         var cm = [sm,
-                {header: "", width:20, dataIndex: 'iconHref', sortable: false, hidden:false, renderer:iconRenderer},
-                {header: "Name", width: 250, dataIndex: 'name', sortable: true, hidden:false, renderer:Ext.util.Format.htmlEncode},
-                {header: "Last Modified", width: 150, dataIndex: 'modified', sortable: true, hidden:false, renderer:renderDateTime},
-                {header: "Size", width: 80, dataIndex: 'size', sortable: true, hidden:false, align:'right', renderer:renderFileSize},
-                {header: "Created By", width: 100, dataIndex: 'createdBy', sortable: true, hidden:false, renderer:Ext.util.Format.htmlEncode},
-                {header: "Description", width: 100, dataIndex: 'description', sortable: true, hidden:false, renderer:Ext.util.Format.htmlEncode},
-                {header: "Usages", width: 100, dataIndex: 'actionHref', sortable: true, hidden:false, renderer:renderUsage},
-                {header: "Download Link", width: 100, dataIndex: 'fileLink', sortable: true, hidden:true},
-                {header: "File Extension", width: 80, dataIndex: 'fileExt', sortable: true, hidden:true, renderer:Ext.util.Format.htmlEncode}
+                {header: "",               width: 20,  dataIndex: 'iconHref',    sortable: false, hidden: false, renderer:iconRenderer},
+                {header: "Name",           width: 250, dataIndex: 'name',        sortable: true,  hidden: false, renderer:Ext.util.Format.htmlEncode},
+                {header: "Last Modified",  width: 150, dataIndex: 'modified',    sortable: true,  hidden: false, renderer:FileBrowser.renderDateTime},
+                {header: "Size",           width: 80,  dataIndex: 'size',        sortable: true,  hidden: false, align:'right', renderer:FileBrowser.renderFileSize},
+                {header: "Created By",     width: 100, dataIndex: 'createdBy',   sortable: true,  hidden: false, renderer:Ext.util.Format.htmlEncode},
+                {header: "Description",    width: 100, dataIndex: 'description', sortable: true,  hidden: false, renderer:Ext.util.Format.htmlEncode},
+                {header: "Usages",         width: 100, dataIndex: 'actionHref',  sortable: true,  hidden: false, renderer:FileBrowser.renderUsage},
+                {header: "Download Link",  width: 100, dataIndex: 'fileLink',    sortable: true,  hidden: true},
+                {header: "File Extension", width: 80,  dataIndex: 'fileExt',     sortable: true,  hidden: true,  renderer:Ext.util.Format.htmlEncode}
             ];
 
         return cm;
@@ -174,8 +163,7 @@ LABKEY.FilesWebPartPanel = Ext.extend(LABKEY.FileBrowser, {
     createGrid : function()
     {
         var sm = new Ext.grid.CheckboxSelectionModel();
-        var grid = new LABKEY.StatefulGridPanel(
-        {
+        var grid = new Ext.grid.GridPanel({
             store: this.store,
             cls: 'labkey-filecontent-grid',
             border:false,
@@ -185,8 +173,8 @@ LABKEY.FilesWebPartPanel = Ext.extend(LABKEY.FileBrowser, {
         });
 
         // hack to get the file input field to size correctly
-        grid.on('render', function(c){this.fileUploadField.setSize(350);}, this);
-        grid.on('dblclick', function(e){this.renderFile(e);}, this);
+        grid.on('render',   function(c){this.fileUploadField.setSize(350);}, this);
+        grid.on('dblclick', function(e){this.renderFile(e);},                this);
 
         return grid;
     },
@@ -199,7 +187,7 @@ LABKEY.FilesWebPartPanel = Ext.extend(LABKEY.FileBrowser, {
         this.onGridDataChanged(false);
         this.enableImportData(false);
         this.path = this.currentDirectory.data.path;
-        if (startsWith(this.path,"/"))
+        if (FileBrowser.startsWith(this.path,"/"))
             this.path = this.path.substring(1);
 
         Ext.Ajax.request({
@@ -469,7 +457,7 @@ LABKEY.FilesWebPartPanel = Ext.extend(LABKEY.FileBrowser, {
         if (this.adminUser)
             return true;
 
-        if (this.importDataEnabled)// && this.importActions.length)
+        if (this.importDataEnabled)
             return true;
 
         return false;
@@ -502,7 +490,7 @@ LABKEY.FilesWebPartPanel = Ext.extend(LABKEY.FileBrowser, {
                 for (var i=0; i < selections.length; i++)
                     selectionMap[selections[i].data.name] = true;
 
-                for (var i=0; i <this.pipelineActions.length; i++)
+                for (i=0; i <this.pipelineActions.length; i++)
                 {
                     var action = this.pipelineActions[i];
                     var files = action.getFiles();
@@ -601,8 +589,8 @@ LABKEY.FilesWebPartPanel = Ext.extend(LABKEY.FileBrowser, {
         this.selectionProcessed = true;
     },
 
-    ensureSelection : function() {
-      
+    ensureSelection : function()
+    {
         if (!this.selectionProcessed)
             this.onSelectionChange();
     },
@@ -611,22 +599,21 @@ LABKEY.FilesWebPartPanel = Ext.extend(LABKEY.FileBrowser, {
     {
         if (action)
         {
-            var selections = this.grid.selModel.getSelections();
+            var selections = this.grid.selModel.getSelections(), i;
+            var link = action.getLink(id);
 
             // if there are no selections, treat as if all are selected
             if (selections.length == 0)
             {
-                var selections = [];
+                selections = [];
                 var store = this.grid.getStore();
 
-                for (var i=0; i <store.getCount(); i++)
+                for (i=0; i <store.getCount(); i++)
                 {
-                    var record = store.getAt(i);
-                    selections.push(record);
+                    selections.push(store.getAt(i));
                 }
             }
 
-            var link = action.getLink(id);
             if (link && link.href)
             {
                 if (selections.length == 0)
@@ -639,7 +626,7 @@ LABKEY.FilesWebPartPanel = Ext.extend(LABKEY.FileBrowser, {
                 form.setAttribute("method", "post");
                 form.setAttribute("action", link.href);
 
-                for (var i=0; i < selections.length; i++)
+                for (i=0; i < selections.length; i++)
                 {
                     var files = action.getFiles();
                     for (var j = 0; j < files.length; j++)
@@ -688,13 +675,13 @@ LABKEY.FilesWebPartPanel = Ext.extend(LABKEY.FileBrowser, {
         }
 
         var configDlg = new LABKEY.ActionsAdminPanel({
-            path: this.currentDirectory.data.path,
-            isPipelineRoot : this.isPipelineRoot,
-            tbarItemsConfig: this.tbarItemsConfig,
-            actions: availableActions,
-            disableGeneralAdminSettings : this.disableGeneralAdminSettings,
-            columnModel : cm, //this.grid.getColumnModel().config
-            gridConfig : this.adminOptions.getGridConfig() 
+            path            : this.currentDirectory.data.path,
+            isPipelineRoot  : this.isPipelineRoot,
+            tbarItemsConfig : this.tbarItemsConfig,
+            actions         : availableActions,
+            columnModel     : cm,
+            gridConfig      : this.adminOptions.getGridConfig(),
+            disableGeneralAdminSettings : this.disableGeneralAdminSettings
         });
 
         configDlg.on('success', function(c){this.updateActionConfiguration(true, true);}, this, {single:true});
@@ -705,100 +692,94 @@ LABKEY.FilesWebPartPanel = Ext.extend(LABKEY.FileBrowser, {
 
     onImportData : function(btn)
     {
-        var actionMap = [];
-        var actions = [];
-        var checked = true;
-        var hasAdmin = false;
+        var actionMap = [],
+        actions = [],
+        items   = [],
+        checked = true,
+        hasAdmin = false, pa, links;
 
         // make sure we have processed the current selection
         this.ensureSelection();
         for (var i=0; i < this.pipelineActions.length; i++)
         {
-            var pa = this.pipelineActions[i];
+            pa         = this.pipelineActions[i];
+            links      = pa.getLinks();
 
-            //if (pa.getEnabled() || (pa.getEnabledMsg() != ''))
+            var radioGroup = new Ext.form.RadioGroup({
+                fieldLabel : pa.getText() + '<br>' + pa.getShortMessage(),
+                itemCls    : 'x-check-group',
+                columns    : 1,
+                labelSeparator: '',
+                items      : []
+            });
+
+            for (var j=0; j < links.length; j++)
             {
-                var links = pa.getLinks();
-                var imgId = Ext.id();
-                var fieldLabel = pa.getText() + '<br>' + pa.getShortMessage();
+                var link = links[j];
 
-                var radioGroup = new Ext.form.RadioGroup({
-                    xtype: 'radiogroup',
-                    fieldLabel: fieldLabel,
-                    itemCls: 'x-check-group',
-                    columns: 1,
-                    labelSeparator: '',
-                    //disabled: !pa.initialConfig.multiSelect,
-                    items: []
-                });
-
-                for (var j=0; j < links.length; j++)
+                if (link.href && (link.enabled || this.adminUser))
                 {
-                    var link = links[j];
+                    var label = link.text;
 
-                    if (link.href && (link.enabled || this.adminUser))
+                    // administrators always see all actions
+                    if (!link.enabled && this.adminUser)
                     {
-                        var label = link.text;
-
-                        // administrators always see all actions
-                        if (!link.enabled && this.adminUser)
-                        {
-                            label = label.concat(' <span class="labkey-error">*</span>');
-                            hasAdmin = true;
-                        }
-
-                        actionMap[link.id] = pa;
-                        radioGroup.items.push({
-                            xtype: 'radio',
-                            checked: checked,
-                            labelSeparator: '',
-                            boxLabel: label,
-                            name: 'importAction',
-                            inputValue: link.id
-                            //width: 250
-                        });
-                        fieldLabel = '';
-                        checked = false;
+                        label = label.concat(' <span class="labkey-error">*</span>');
+                        hasAdmin = true;
                     }
-                }
-                if (!pa.getEnabled())
-                {
-                    radioGroup.disabled = true;
-                    radioGroup.tooltip = pa.getLongMessage();
 
-                    radioGroup.on('render', function(c){this.setFormFieldTooltip(c, 'warning-icon-alt.png');}, this);
+                    actionMap[link.id] = pa;
+                    radioGroup.items.push({
+                        xtype: 'radio',
+                        checked: checked,
+                        labelSeparator: '',
+                        boxLabel: label,
+                        name: 'importAction',
+                        inputValue: link.id
+                        //width: 250
+                    });
+                    checked = false;
                 }
-                else
-                {
-                    radioGroup.tooltip = pa.getLongMessage();
-                    radioGroup.on('render', function(c){this.setFormFieldTooltip(c, 'info.png');}, this);
-                }
-                actions.push(radioGroup);
             }
-        }
-        var actionPanel = new Ext.form.FormPanel({
-            bodyStyle : 'padding:10px;',
-            labelWidth: 250,
-            defaultType: 'radio',
-            items: actions
-        });
+            if (!pa.getEnabled())
+            {
+                radioGroup.disabled = true;
+                radioGroup.tooltip = pa.getLongMessage();
 
-        var items = [];
+                radioGroup.on('render', function(c){this.setFormFieldTooltip(c, 'warning-icon-alt.png');}, this);
+            }
+            else
+            {
+                radioGroup.tooltip = pa.getLongMessage();
+                radioGroup.on('render', function(c){this.setFormFieldTooltip(c, 'info.png');}, this);
+            }
+            actions.push(radioGroup);
+        }
+
+        var actionPanel = new Ext.form.FormPanel({
+            bodyStyle   : 'padding:10px;',
+            labelWidth  : 250,
+            defaultType : 'radio',
+            items       : actions
+        });
         items.push(actionPanel);
+
         if (hasAdmin)
         {
             items.push({
-                html: 'Actions marked with an asterisk <span class="labkey-error">*</span> are only visible to Administrators.',
-                bodyStyle: 'padding:10px;',
-                border: false});
+                html      : 'Actions marked with an asterisk <span class="labkey-error">*</span> are only visible to Administrators.',
+                bodyStyle : 'padding:10px;',
+                border    : false
+            });
         }
 
         if (!this.importDataEnabled)
         {
             items.push({
-                html: 'This dialog has been disabled from the admin panel and is only visible to Administrators.',
-                bodyStyle: 'padding:10px;',
-                border: false});
+                html      : 'This dialog has been disabled from the admin panel and is only visible to Administrators.',
+                bodyStyle : 'padding:10px;',
+                border    : false
+            });
         }
 
         var win = new Ext.Window({
@@ -826,11 +807,10 @@ LABKEY.FilesWebPartPanel = Ext.extend(LABKEY.FileBrowser, {
         win.show();
     },
 
-    submitForm : function (panel, actionMap)
+    submitForm : function(panel, actionMap)
     {
         // client side validation
-        var form = panel.getForm();
-        var selection = form.getValues();
+        var selection = panel.getForm().getValues();
         var action = actionMap[selection.importAction];
 
         if ('object' == typeof action)
@@ -924,7 +904,6 @@ LABKEY.FilesWebPartPanel = Ext.extend(LABKEY.FileBrowser, {
             containerPath: this.adminOptions.getFilePropContainerPath()});
 
         fileDlg.on('success', function(c){this.refreshDirectory();}, this, {single:true});
-        //fileDlg.on('failure', function(){Ext.Msg.alert("Update Action Config", "Update Failed")});
 
         fileDlg.show();
     },
@@ -961,58 +940,5 @@ LABKEY.FilesWebPartPanel = Ext.extend(LABKEY.FileBrowser, {
             this.grid.applyState(config.getGridConfig());
             this.grid.getView().refresh(true);            
         }
-    }
-});
-
-/**
- * Version of Ext GridPanel that allows the column module to be re-configured. This was to
- * work around a change in GridPanel.js between 3.2.1 and 3.2.2 that made it so you couldn't
- * customize the grid view in the way we did previously (using the configuration state of the component). 
- *
- */
-LABKEY.StatefulGridPanel = Ext.extend(Ext.grid.GridPanel, {
-
-    applyState : function(state){
-
-        var cm = this.colModel,
-            cs = state.columns,
-            store = this.store,
-            s,
-            c,
-            oldIndex;
-
-        if(cs){
-            for(var i = 0, len = cs.length; i < len; i++){
-                s = cs[i];
-                c = cm.getColumnById(s.id);
-                if(c){
-                    c.hidden = s.hidden;
-                    c.width = s.width;
-                    oldIndex = cm.getIndexById(s.id);
-                    if(oldIndex != i){
-                        cm.moveColumn(oldIndex, i);
-                    }
-                }
-            }
-        }
-        if(store){
-            s = state.sort;
-            if(s){
-                store[store.remoteSort ? 'setDefaultSort' : 'sort'](s.field, s.direction);
-            }
-            s = state.group;
-            if(store.groupBy){
-                if(s){
-                    store.groupBy(s);
-                }else{
-                    store.clearGrouping();
-                }
-            }
-
-        }
-        var o = Ext.apply({}, state);
-        delete o.columns;
-        delete o.sort;
-        Ext.grid.GridPanel.superclass.applyState.call(this, o);
     }
 });
