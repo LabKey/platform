@@ -22,6 +22,7 @@ import com.google.gwt.event.dom.client.ChangeEvent;
 import com.google.gwt.event.dom.client.ChangeHandler;
 import com.google.gwt.event.dom.client.ClickEvent;
 import com.google.gwt.event.dom.client.ClickHandler;
+import com.google.gwt.http.client.URL;
 import com.google.gwt.user.client.DOM;
 import com.google.gwt.user.client.Element;
 import com.google.gwt.user.client.Window;
@@ -1052,8 +1053,15 @@ public class ListDesigner implements EntryPoint, Saveable<GWTList>
         @Override
         protected void onFinish()
         {
-            String loc = PropertyUtil.getContextPath() + "/list" + PropertyUtil.getContainerPath() + "/grid.view";
-            WindowUtil.setLocation(loc + "?listId=" + _list.getListId());
+            // Need to escapeURIComponent each part of the container path
+            StringBuilder loc = new StringBuilder(PropertyUtil.getContextPath());
+            loc.append("/list");
+            for (String part : PropertyUtil.getContainerPath().split("/"))
+            {
+                loc.append("/").append(URL.encodeComponent(part));
+            }
+            loc.append("/grid.view?listId=").append(_list.getListId());
+            WindowUtil.setLocation(loc.toString());
         }
 
         @Override
