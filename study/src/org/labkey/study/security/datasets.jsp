@@ -273,8 +273,14 @@ function setColumnSelections(select)
     var table = document.getElementById("datasetSecurityFormTable");
     for (var i=2; i<table.rows.length; i++)
     {
-        var elem = table.rows[i].cells[colIdx].firstElementChild;
-        if (elem.nodeName == 'SELECT')
+        var elem;
+        // firstElementChild supported by IE9, FF 3.6, else use firstChild 
+        if ('firstElementChild' in table.rows[i].cells[colIdx])
+            elem = table.rows[i].cells[colIdx].firstElementChild;
+        else
+            elem = table.rows[i].cells[colIdx].firstChild;
+
+        if (elem && elem.nodeName == 'SELECT')
         {
             var options = elem.options;
             for (var optionIndex = 0; optionIndex < options.length; optionIndex++)
