@@ -2224,8 +2224,6 @@ public class StudyController extends BaseStudyController
         public NavTree appendNavTrail(NavTree root)
         {
             root.addChild(_study.getLabel(), new ActionURL(BeginAction.class, getContainer()));
-            ActionURL overviewURL = getStudyOverviewURL();
-            root.addChild("Study Overview", overviewURL);
             ActionURL datasetURL = new ActionURL(DatasetAction.class, getContainer()).
                     addParameter(DataSetDefinition.DATASETKEY, _form.getDatasetId());
             root.addChild(_def.getName(), datasetURL);
@@ -6344,15 +6342,7 @@ public class StudyController extends BaseStudyController
 
         public NavTree appendNavTrail(NavTree root)
         {
-            try
-            {
-                Study study = getStudy();
-                if (study != null)
-                    root.addChild(study.getLabel(), new ActionURL(BeginAction.class, getContainer()));
-            }
-            catch (ServletException e)
-            {
-            }
+            _appendNavTrail(root);
             root.addChild("Datasets");
             return root;
         }

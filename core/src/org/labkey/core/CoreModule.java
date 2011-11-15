@@ -670,14 +670,12 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
         return resources;
     }
 
-    public void enumerateDocuments(SearchService.IndexTask task, Container c, Date since)
+    public void enumerateDocuments(SearchService.IndexTask task, @NotNull Container c, Date since)
     {
-        containerSimple(task,c);
-    }
-    
-    private void containerSimple(SearchService.IndexTask task, Container c)
-    {
-        if (null == c || c.isRoot())
+        if (null == task)
+            task = ServiceRegistry.get(SearchService.class).defaultTask();
+
+        if (c.isRoot())
             return;
         Container p = c.getProject();
         String displayTitle;
@@ -704,10 +702,12 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
             else
                 type = "Folder";
 
+            String name = c.isWorkbook() ? c.getTitle() : c.getName();
+
             String description = StringUtils.trimToEmpty(c.getDescription());
-            displayTitle = type + " -- " + c.getName();
-            searchTitle = c.getName() + " " + description + " " + type;
-            body = type + " " + c.getName() + (c.isProject() ? "" : " in Project " + p.getName());
+            displayTitle = type + " -- " + name;
+            searchTitle = name + " " + description + " " + type;
+            body = type + " " + name + (c.isProject() ? "" : " in Project " + p.getName());
             body += "\n" + description;
         }
 

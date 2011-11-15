@@ -36,6 +36,7 @@ import org.labkey.api.study.Study;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.ReturnURLString;
 import org.labkey.api.view.*;
+import org.labkey.study.StudyModule;
 import org.labkey.study.model.DataSetDefinition;
 import org.labkey.study.model.QCStateSet;
 import org.labkey.study.model.StudyImpl;
@@ -192,8 +193,17 @@ public abstract class InsertUpdateAction<Form extends DatasetController.EditData
         try
         {
             Study study = getStudy();
-            root.addChild(study.getLabel(), new ActionURL(StudyController.BeginAction.class, getViewContext().getContainer()));
-            root.addChild("Study Overview", BaseStudyController.getStudyOverviewURL(getViewContext().getContainer()));
+            Container container = getViewContext().getContainer();
+            ActionURL rootURL;
+            if (container.getFolderType().getDefaultModule() instanceof StudyModule)
+            {
+                rootURL = container.getFolderType().getStartURL(container, getViewContext().getUser());
+            }
+            else
+            {
+                rootURL = new ActionURL(StudyController.BeginAction.class, container);
+            }
+            root.addChild(study.getLabel(), rootURL);
             ActionURL grid = new ActionURL(StudyController.DatasetAction.class, getViewContext().getContainer());
             grid.addParameter(DataSetDefinition.DATASETKEY, _ds.getDataSetId());
             grid.addParameter(DataRegion.LAST_FILTER_PARAM, "true");

@@ -293,6 +293,7 @@ public class StatusController extends SpringActionController
 
         public NavTree appendNavTrail(NavTree root)
         {
+            root.addChild("Pipeline Jobs", new ActionURL(BeginAction.class, getContainer()));
             return root.addChild(_statusFile == null ? "Job Status" : _statusFile.getDescription());
         }
     }

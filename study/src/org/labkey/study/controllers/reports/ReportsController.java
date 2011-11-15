@@ -1852,7 +1852,6 @@ public class ReportsController extends BaseStudyController
         try
         {
             Study study = appendRootNavTrail(root);
-            root.addChild("Study Overview", getStudyOverviewURL());
 
             if (getUser().isAdministrator())
                 root.addChild("Manage Views", new ActionURL(ManageReportsAction.class, getContainer()));

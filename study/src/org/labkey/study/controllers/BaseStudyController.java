@@ -21,12 +21,10 @@ import org.labkey.api.action.HasPageConfig;
 import org.labkey.api.action.NavTrailAction;
 import org.labkey.api.action.SpringActionController;
 import org.labkey.api.data.Container;
-import org.labkey.api.portal.ProjectUrls;
 import org.labkey.api.study.DataSet;
 import org.labkey.api.study.Study;
 import org.labkey.api.study.TimepointType;
 import org.labkey.api.study.Visit;
-import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.HttpView;
 import org.labkey.api.view.JspView;
@@ -251,20 +249,11 @@ public abstract class BaseStudyController extends SpringActionController
 
     protected NavTree _appendNavTrail(NavTree root)
     {
-        return _appendNavTrail(root, null);
-    }
-
-    protected NavTree _appendNavTrail(NavTree root, CohortFilter cohortFilter)
-    {
         try
         {
             appendRootNavTrail(root);
-            ActionURL overviewURL = getStudyOverviewURL();
-            if (cohortFilter != null)
-                cohortFilter.addURLParameters(overviewURL);
-            root.addChild("Study Overview", overviewURL);
         }
-        catch (ServletException e)
+        catch (ServletException ignored)
         {
         }
         return root;
@@ -280,12 +269,6 @@ public abstract class BaseStudyController extends SpringActionController
         try
         {
             Study study = appendRootNavTrail(root);
-            ActionURL overviewURL = getStudyOverviewURL();
-            if (cohortFilter != null)
-                cohortFilter.addURLParameters(overviewURL);
-            if (qcStateSetFormValue != null)
-                overviewURL.addParameter(SharedFormParameters.QCState, qcStateSetFormValue);
-            root.addChild("Study Overview", overviewURL);
             _appendDataset(root, study, datasetId, visitId, cohortFilter, qcStateSetFormValue);
         }
         catch (ServletException e)

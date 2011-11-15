@@ -22,6 +22,7 @@ import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.PropertyManager;
 import org.labkey.api.data.MvUtil;
+import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.security.User;
 
 import java.beans.PropertyChangeEvent;
@@ -66,6 +67,8 @@ public class CoreContainerListener implements ContainerManager.ContainerListener
     {
         String message = c.getName() + " was moved from " + oldParent.getPath() + " to " + c.getParent().getPath();
         addAuditEvent(user, c, message);
+
+        ((CoreModule)ModuleLoader.getInstance().getCoreModule()).enumerateDocuments(null, c, null);
     }
 
     private void addAuditEvent(User user, Container c, String comment)
@@ -88,5 +91,7 @@ public class CoreContainerListener implements ContainerManager.ContainerListener
 
     public void propertyChange(PropertyChangeEvent evt)
     {
+        Container container = ((ContainerManager.ContainerPropertyChangeEvent)evt).container;
+        ((CoreModule)ModuleLoader.getInstance().getCoreModule()).enumerateDocuments(null, container, null);
     }
 }
