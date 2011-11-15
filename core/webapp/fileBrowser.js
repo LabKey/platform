@@ -82,10 +82,7 @@ FileBrowser = {};
     ERROR_INT = 40000,
     WARN_INT  = 30000,
     INFO_INT  = 20000,
-    DEBUG_INT = 10000,
-    _rDateTime = Ext.util.Format.dateRenderer("Y-m-d H:i:s"),
-    _longDateTime = Ext.util.Format.dateRenderer("l, F d, Y g:i:s A");
-
+    DEBUG_INT = 10000;
     //
     // FileListMenu
     //
@@ -183,13 +180,13 @@ FileBrowser = {};
 
             previewAt : function(xy)
             {
-                PreviewResource.superclass.showAt.call(this, xy);
+                FileBrowser.PreviewResource.superclass.showAt.call(this, xy);
             },
 
             onRender : function(ct, position)
             {
                 this.title = false;
-                PreviewResource.superclass.onRender.call(this, ct, position);
+                FileBrowser.PreviewResource.superclass.onRender.call(this, ct, position);
                 this.body.update($dom.markup(this.html));
             },
 
@@ -411,8 +408,11 @@ FileBrowser = {};
         renderDateTime : function(value, metadata, record, rowIndex, colIndex, store){
             if (!value) return "";
             if (value.getTime() == 0) return "";
-            return "<span title='" + _longDateTime(value) + "'>" + _rDateTime(value) + "<span>";
+            return "<span title='" + FileBrowser._longDateTime(value) + "'>" + FileBrowser. _rDateTime(value) + "<span>";
         },
+
+        _longDateTime : Ext.util.Format.dateRenderer("l, F d, Y g:i:s A"),
+        _rDateTime : Ext.util.Format.dateRenderer("Y-m-d H:i:s"),
 
         formatWithCommas : function(value) {
             return formatWithCommas(value);
@@ -1326,7 +1326,7 @@ if (LABKEY.Applet)
                 }
             };
             TransferApplet.superclass.constructor.call(this, config);
-            console.log("TransferApplet.url: " + config.params.url);
+//            console.log("TransferApplet.url: " + config.params.url);
         },
 
         initComponent : function()
@@ -1512,11 +1512,11 @@ if (LABKEY.Applet)
                     var level = data.level;
                     var text = data.text;
                     if (!text) continue;
-                    if (level >= ERROR_INT)
+                    if (level >= FileBrowser.ERROR_INT)
                         console.error(text);
-                    else if (level >= WARN_INT)
+                    else if (level >= FileBrowser.WARN_INT)
                         console.warn(text);
-                    else if (level >= INFO_INT)
+                    else if (level >= FileBrowser.INFO_INT)
                         console.info(text);
                     else
                         console.debug(text);
@@ -2446,7 +2446,7 @@ LABKEY.FileBrowser = Ext.extend(Ext.Panel,
             row("Name", data.name);
             row("WebDav URL", data.uri);
             if (data.modified)
-                row("Date modified", _longDateTime(data.modified));
+                row("Date modified", FileBrowser._longDateTime(data.modified));
             if (data.file)
                 {
                     var sizeValue = Ext.util.Format.fileSize(data.size);
@@ -2464,7 +2464,7 @@ LABKEY.FileBrowser = Ext.extend(Ext.Panel,
                 var image = new Image();
                 image.onload = function()
                 {
-                    $('detailsImgSize').update(image.width + "x" + image.height);
+                    Ext.get('detailsImgSize').update(image.width + "x" + image.height);
                 };
                 image.src = data.uri;
             }
@@ -3288,7 +3288,6 @@ LABKEY.FileBrowser = Ext.extend(Ext.Panel,
                 form.doAction(new Ext.form.Action.Submit(form, options));
                 this.fireEvent(BROWSER_EVENTS.transferstarted, {uploadType:"webform", files:[{name:name, id:new URI(this.fileSystem.concatPaths(options.url, encodeURIComponent(options.name))).pathname}]});
                 this.fileUploadPanel.getEl().mask("Uploading " + name + '...');
-                Ext.getBody().dom.style.cursor = "wait";
             };
 
             if (file)
@@ -3321,9 +3320,8 @@ LABKEY.FileBrowser = Ext.extend(Ext.Panel,
         var form = this.uploadPanel.getForm();
         if (form)
             form.reset();
-        Ext.getBody().dom.style.cursor = "pointer";
-        console.log("upload actioncomplete");
-        console.log(action);
+//        console.log("upload actioncomplete");
+//        console.log(action);
         var options = action.options;
         // UNDONE: update data store directly
         //this.toggleTabPanel();
@@ -3341,7 +3339,6 @@ LABKEY.FileBrowser = Ext.extend(Ext.Panel,
         var form = this.uploadPanel.getForm();
         if (form)
             form.reset();
-        Ext.getBody().dom.style.cursor = "pointer";
         console.log("upload actionfailed");
         console.log(action);
         this.refreshDirectory();
