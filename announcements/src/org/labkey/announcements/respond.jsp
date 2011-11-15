@@ -42,7 +42,8 @@ function validateForm(form)
     if (trimmedTitle.length > 0)
         return true;
 
-    alert("Title must not be blank");
+//    alert("Title must not be blank");
+    Ext.Msg.alert("Error", "Title must not be blank");
     return false;
 }
 Ext.onReady(function(){
