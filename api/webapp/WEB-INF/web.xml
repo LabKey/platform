@@ -217,6 +217,11 @@
     </servlet>
 
     <servlet-mapping>
+        <servlet-name>static</servlet-name>
+        <url-pattern>/_webdav/*</url-pattern>
+    </servlet-mapping>
+
+    <servlet-mapping>
       <servlet-name>WSRFServlet</servlet-name>
       <url-pattern>/servlet/AxisServlet</url-pattern>
     </servlet-mapping>
