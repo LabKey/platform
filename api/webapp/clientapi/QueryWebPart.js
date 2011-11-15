@@ -291,6 +291,7 @@ LABKEY.QueryWebPart = Ext.extend(Ext.util.Observable,
         this.qsParamsToIgnore = {};
         this.userFilters = {};
         this.userSort = "";
+        this.userContainerFilter = "";
         for (var key in params)
         {
             if (key.indexOf(this.dataRegionName + ".") == 0 && key.indexOf("~") > -1)
@@ -301,6 +302,11 @@ LABKEY.QueryWebPart = Ext.extend(Ext.util.Observable,
             else if (key == this.dataRegionName + ".sort")
             {
                 this.userSort = params[key];
+                this.qsParamsToIgnore[key] = true;
+            }
+            else if (key == this.dataRegionName + ".containerFilterName")
+            {
+                this.userContainerFilter = params[key];
                 this.qsParamsToIgnore[key] = true;
             }
         }
@@ -314,6 +320,11 @@ LABKEY.QueryWebPart = Ext.extend(Ext.util.Observable,
         if (config.removeableSort)
         {
             this.userSort = this.userSort + config.removeableSort;
+        }
+
+        if (config.removeableContainerFilter)
+        {
+            this.userContainerFilter = this.removeableContainerFilter;
         }
 
         // XXX: Uncomment when UI supports adding/removing aggregates as URL parameters just like filters/sorts
@@ -367,6 +378,11 @@ LABKEY.QueryWebPart = Ext.extend(Ext.util.Observable,
         {
             for (name in this.userFilters)
                 params[name] = this.userFilters[name];
+        }
+
+        if (this.userContainerFilter)
+        {
+            params[this.dataRegionName + ".containerFilterName"] = this.userContainerFilter;
         }
 
         if (this.parameters)
@@ -689,8 +705,9 @@ LABKEY.QueryWebPart = Ext.extend(Ext.util.Observable,
      * @param {String} [view.type] the type of view, either a 'view' or a 'report'.
      * @param {String} [view.viewName] If the type is 'view', then the name of the view.
      * @param {String} [view.reportId] If the type is 'report', then the report id.
+     * @param {Object} urlParameters <b>NOTE: Experimental parameter; may change without warning.</b> A set of filter and sorts to apply as URL parameters when changing the view.
      */
-    beforeChangeView : function(dataRegion, view) {
+    beforeChangeView : function(dataRegion, view, urlParameters) {
         delete this.offset;
 
         // this makes interactive filters 'sticky' between view and report changes.
@@ -713,6 +730,39 @@ LABKEY.QueryWebPart = Ext.extend(Ext.util.Observable,
             delete this.viewName;
         }
         this.qsParamsToIgnore[this.getQualifiedParamName("viewName")] = true;
+
+        if (urlParameters)
+        {
+            this.userFilters = {};
+            if (urlParameters.filter && urlParameters.filter.length > 0)
+            {
+                for (var i = 0; i < urlParameters.filter.length; i++)
+                {
+                    var filter = urlParameters.filters[i];
+                    this.userFilters["." + filter.fieldKey + "~" + filter.op] = filter.value;
+                }
+            }
+
+            var userSort = [];
+            if (urlParameters.sort && urlParameters.sort.length > 0)
+            {
+                for (var i = 0; i < urlParameters.sort.length; i++)
+                {
+                    var sort = urlParameters.sort[i];
+                    userSort.push((sort.dir == "+" ? "" : sort.dir) + sort.fieldKey);
+                }
+            }
+            this.userSort = userSort.join(",");
+
+            if (urlParameters.containerFilter)
+                this.userContainerFilter = urlParameters.containerFilter;
+
+            // remove all filter, sort, and container filter parameters
+            this.qsParamsToIgnore[this.getQualifiedParamName(".")] = true;
+            this.qsParamsToIgnore[this.getQualifiedParamName(".sort")] = true;
+            this.qsParamsToIgnore[this.getQualifiedParamName(".containerFilterName")] = true;
+        }
+
         this.render();
         return false;
     },

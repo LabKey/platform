@@ -1548,13 +1548,16 @@ LABKEY.DataRegion.FilterTab = Ext.extend(LABKEY.DataRegion.Tab, {
                     op: items[j].op
                 };
 
+                var value = undefined;
                 var filterType = LABKEY.Filter.getFilterTypeForURLSuffix(items[j].op);
                 if (filterType) {
                     // filterType.validate() converts the value to a string
-                    o.value = filterType.validate(items[j].value, jsonType, o.fieldKey);
+                    value = filterType.validate(items[j].value, jsonType, o.fieldKey);
                 } else {
-                    o.value = items[j].value;
+                    value = items[j].value;
                 }
+                if (filterType.isDataValueRequired())
+                    o.value = value;
                 if (items[j].urlParameter)
                     urlData.push(o);
                 else
