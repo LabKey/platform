@@ -26,7 +26,7 @@
     JspView<UploadForm> me = (JspView<UploadForm>) HttpView.currentView();
     ReportsController.UploadForm bean = me.getModelBean();
 
-    boolean canUseDiskFile = HttpView.currentContext().getUser().isAdministrator() && bean.getReportId() == 0;
+    boolean canUseDiskFile = HttpView.currentContext().getUser().isAdministrator() && bean.getReportId() == null;
 %>
 
 <table>

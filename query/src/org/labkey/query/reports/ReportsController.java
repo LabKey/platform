@@ -1010,7 +1010,7 @@ public class ReportsController extends SpringActionController
 
     public static class UploadForm extends ReturnUrlForm
     {
-        private int reportId;
+        private ReportIdentifier _reportId;
         private String label;
         private String reportDate;
         private String filePath;
@@ -1026,14 +1026,14 @@ public class ReportsController extends SpringActionController
             this.reportDate = reportDate;
         }
 
-        public int getReportId()
+        public ReportIdentifier getReportId()
         {
-            return reportId;
+            return _reportId;
         }
 
-        public void setReportId(int reportId)
+        public void setReportId(ReportIdentifier reportId)
         {
-            this.reportId = reportId;
+            _reportId = reportId;
         }
 
         public String getLabel()
@@ -1078,9 +1078,9 @@ public class ReportsController extends SpringActionController
             setHelpTopic(new HelpTopic("staticReports"));
             form.setErrors(errors);
 
-            if (form.getReportId() != 0)
+            if (form.getReportId() != null)
             {
-                Report report = ReportService.get().getReport(form.getReportId());
+                Report report = form.getReportId().getReport();
 
                 if (report != null)
                 {
@@ -1161,12 +1161,12 @@ public class ReportsController extends SpringActionController
     {
         public ModelAndView getView(UploadForm form, BindException errors) throws Exception
         {
-            Integer reportId = form.getReportId();
+            ReportIdentifier reportId = form.getReportId();
 
             if (null == reportId)
                 throw new NotFoundException("ReportId not specified");
 
-            Report report = ReportService.get().getReport(reportId);
+            Report report = reportId.getReport();
 
             if (null == report)
                 throw new NotFoundException("Report not found");
