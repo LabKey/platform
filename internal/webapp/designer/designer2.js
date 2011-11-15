@@ -1585,7 +1585,7 @@ LABKEY.DataRegion.SortTab = Ext.extend(LABKEY.DataRegion.Tab, {
         var fieldMetaStore = this.fieldMetaStore = config.fieldMetaStore;
 
         this.sortStore = new Ext.data.JsonStore({
-            fields: ['fieldKey', 'dir', 'urlParameter'],
+            fields: ['fieldKey', 'dir', {name: 'urlParameter', type: 'boolean', defaultValue: false}],
             root: 'sort',
             //idProperty: 'fieldKey',
             data: this.customView,
@@ -1712,7 +1712,8 @@ LABKEY.DataRegion.SortTab = Ext.extend(LABKEY.DataRegion.Tab, {
     createDefaultRecordData : function (fieldKey) {
         return {
             fieldKey: fieldKey,
-            dir: "+"
+            dir: "+",
+            urlParameter: false
         };
     },
 
@@ -1885,8 +1886,9 @@ LABKEY.DataRegion.PaperclipButton = Ext.extend(Ext.Button, {
     },
 
     // Called by ComponentDataView.renderItem when indexedProperty is false
+    // We need to invert the value so the record.urlParameter is true when the button is not pressed.
     getValue : function () {
-        return this.pressed;
+        return !this.pressed;
     },
 
     // 'blur' event needed by ComponentDataView to set the value after changing
