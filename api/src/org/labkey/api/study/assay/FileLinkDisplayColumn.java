@@ -18,8 +18,10 @@ package org.labkey.api.study.assay;
 
 import org.labkey.api.admin.CoreUrls;
 import org.labkey.api.data.AbstractFileDisplayColumn;
+import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
 import org.labkey.api.exp.PropertyColumn;
+import org.labkey.api.exp.PropertyDescriptor;
 import org.labkey.api.query.DetailsURL;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.util.PageFlowUtil;
@@ -36,13 +38,13 @@ public class FileLinkDisplayColumn extends AbstractFileDisplayColumn
 {
     private FieldKey _objectURIFieldKey;
 
-    public FileLinkDisplayColumn(PropertyColumn col, Container container, FieldKey objectURIFieldKey)
+    public FileLinkDisplayColumn(ColumnInfo col, PropertyDescriptor pd, Container container, FieldKey objectURIFieldKey)
     {
         super(col);
 
         _objectURIFieldKey = objectURIFieldKey;
 
-        setURLExpression(new DetailsURL(PageFlowUtil.urlProvider(CoreUrls.class).getDownloadFileLinkBaseURL(container, col.getPropertyDescriptor()), "objectURI", objectURIFieldKey));
+        setURLExpression(new DetailsURL(PageFlowUtil.urlProvider(CoreUrls.class).getDownloadFileLinkBaseURL(container, pd), "objectURI", objectURIFieldKey));
     }
 
     @Override

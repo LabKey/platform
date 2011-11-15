@@ -293,7 +293,12 @@ public class ModuleLoader implements Filter
         // Start up a thread that lets us hit a breakpoint in the debugger, even if
         // all the real working threads are hung. This lets us invoke methods in the debugger,
         // gain easier access to statics, etc.
-        File coreModuleDir = getCoreModule().getExplodedPath();
+        Module coreModule = getCoreModule();
+        if (coreModule == null)
+        {
+            throw new IllegalStateException("Could not find the Core module. Ensure that Tomcat user can create directories under the <LABKEY_HOME>/modules directory.");
+        }
+        File coreModuleDir = coreModule.getExplodedPath();
         File modulesDir = coreModuleDir.getParentFile();
         new BreakpointThread(modulesDir).start();
 

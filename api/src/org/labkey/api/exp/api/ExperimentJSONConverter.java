@@ -15,13 +15,13 @@
  */
 package org.labkey.api.exp.api;
 
-import org.json.JSONObject;
+import org.apache.commons.beanutils.ConvertUtils;
 import org.json.JSONArray;
+import org.json.JSONObject;
 import org.labkey.api.data.Container;
 import org.labkey.api.exp.PropertyType;
-import org.labkey.api.exp.property.DomainProperty;
 import org.labkey.api.exp.property.Domain;
-import org.apache.commons.beanutils.ConvertUtils;
+import org.labkey.api.exp.property.DomainProperty;
 import org.labkey.api.files.FileContentService;
 import org.labkey.api.pipeline.PipeRoot;
 import org.labkey.api.pipeline.PipelineService;
@@ -30,8 +30,8 @@ import org.labkey.api.util.URIUtil;
 
 import java.io.File;
 import java.sql.SQLException;
-import java.util.Map;
 import java.util.HashMap;
+import java.util.Map;
 
 /**
  * User: jeckels

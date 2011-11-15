@@ -22,6 +22,7 @@ import org.json.JSONObject;
 import org.labkey.api.query.BatchValidationException;
 import org.labkey.api.query.InvalidKeyException;
 import org.labkey.api.query.ValidationException;
+import org.labkey.api.util.ExceptionUtil;
 import org.labkey.api.view.NotFoundException;
 import org.labkey.api.view.RequestBasicAuthException;
 import org.labkey.api.view.TermsOfUseException;
@@ -164,6 +165,7 @@ public abstract class ApiAction<FORM> extends BaseViewAction<FORM>
             }
             else
             {
+                ExceptionUtil.logExceptionToMothership(getViewContext().getRequest(), e);
                 Logger.getLogger(ApiAction.class).warn("ApiAction exception: ", e);
 
                 createResponseWriter().write(e);

@@ -561,6 +561,19 @@ public class Portal
         String contextPath = context.getContextPath();
         WebPart[] parts = getParts(context.getContainer(), id);
 
+        // Initialize content for non-default portal pages that are folder tabs
+        if (parts.length == 0 && !DEFAULT_PORTAL_PAGE_ID.equalsIgnoreCase(id))
+        {
+            for (FolderTab folderTab : context.getContainer().getFolderType().getDefaultTabs())
+            {
+                if (folderTab instanceof FolderTab.PortalPage && id.equalsIgnoreCase(folderTab.getName()))
+                {
+                    folderTab.initializeContent(context.getContainer());
+                    parts = getParts(context.getContainer(), id);
+                }
+            }
+        }
+
         MultiMap<String, WebPart> locationMap = getPartsByLocation(parts);
         Collection<String> locations = locationMap.keySet();
 

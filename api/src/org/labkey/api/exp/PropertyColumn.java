@@ -41,7 +41,7 @@ public class PropertyColumn extends LookupColumn
         this(pd, tinfoParent.getColumn(parentLsidColumn), container, user);
     }
 
-    public PropertyColumn(PropertyDescriptor pd, final ColumnInfo lsidColumn, final Container container, User user)
+    public PropertyColumn(final PropertyDescriptor pd, final ColumnInfo lsidColumn, final Container container, User user)
     {
         super(lsidColumn, OntologyManager.getTinfoObject().getColumn("ObjectURI"), OntologyManager.getTinfoObjectProperty().getColumn(getPropertyCol(pd)));
         setName(pd.getName());
@@ -57,7 +57,7 @@ public class PropertyColumn extends LookupColumn
             {
                 public DisplayColumn createRenderer(ColumnInfo colInfo)
                 {
-                    return new FileLinkDisplayColumn(PropertyColumn.this, container, lsidColumn.getFieldKey());
+                    return new FileLinkDisplayColumn(colInfo, pd, container, lsidColumn.getFieldKey());
                 }
             });
         }

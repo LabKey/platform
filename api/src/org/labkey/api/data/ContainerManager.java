@@ -34,6 +34,7 @@ import org.labkey.api.data.dialect.SqlDialect;
 import org.labkey.api.module.FolderType;
 import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.portal.ProjectUrls;
+import org.labkey.api.search.SearchService;
 import org.labkey.api.security.Group;
 import org.labkey.api.security.MutableSecurityPolicy;
 import org.labkey.api.security.SecurityManager;
@@ -120,7 +121,9 @@ public class ContainerManager
         Policy,
         WebRoot,
         AttachmentDirectory,
-        PipelineRoot
+        PipelineRoot,
+        Title,
+        Description
     }
     
     static Path makePath(Container parent, String name)
@@ -398,8 +401,11 @@ public class ContainerManager
         {
             throw new RuntimeSQLException(x);
         }
-
+        String oldValue = container.getDescription();
         _removeFromCache(container);
+        container = getForRowId(container.getRowId());
+        ContainerPropertyChangeEvent evt = new ContainerPropertyChangeEvent(container, Property.Description, oldValue, description);
+        firePropertyChangeEvent(evt);
     }
 
     public static void updateSearchable(Container container, boolean searchable, User user)
@@ -438,6 +444,10 @@ public class ContainerManager
         }
 
         _removeFromCache(container);
+        String oldValue = container.getTitle();
+        container = getForRowId(container.getRowId());
+        ContainerPropertyChangeEvent evt = new ContainerPropertyChangeEvent(container, Property.Title, oldValue, title);
+        firePropertyChangeEvent(evt);
     }
 
     private static final String SHARED_CONTAINER_PATH = "/Shared";
