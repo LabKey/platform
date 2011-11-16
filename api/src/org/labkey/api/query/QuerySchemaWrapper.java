@@ -19,6 +19,7 @@ import org.labkey.api.data.DbSchema;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.security.User;
+import org.labkey.api.view.NavTree;
 
 import java.util.Set;
 import java.util.Collections;
@@ -78,5 +79,11 @@ public class QuerySchemaWrapper implements QuerySchema
     public String getDescription()
     {
         return "Contains data tables from the '" + _schema.getName() + "' database schema.";
+    }
+
+    @Override
+    public NavTree getSchemaBrowserLinks(User user)
+    {
+        return new NavTree();
     }
 }

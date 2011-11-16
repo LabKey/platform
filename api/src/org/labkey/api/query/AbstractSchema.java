@@ -20,6 +20,7 @@ import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.*;
 import org.labkey.api.security.User;
 import org.labkey.api.util.MemTracker;
+import org.labkey.api.view.NavTree;
 
 import java.util.*;
 import java.sql.SQLException;
@@ -70,5 +71,10 @@ abstract public class AbstractSchema implements QuerySchema
             AbstractTableInfo t = ((AbstractTableInfo)info);
             t.afterConstruct();
         }
+    }
+
+    public NavTree getSchemaBrowserLinks(User user)
+    {
+        return new NavTree();
     }
 }

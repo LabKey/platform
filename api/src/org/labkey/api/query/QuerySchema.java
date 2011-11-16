@@ -21,6 +21,7 @@ import org.labkey.api.data.Container;
 import org.labkey.api.data.DbSchema;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.security.User;
+import org.labkey.api.view.NavTree;
 
 import java.util.Set;
 
@@ -42,4 +43,6 @@ public interface QuerySchema
     public String getName();
 
     public String getDescription();
+
+    public NavTree getSchemaBrowserLinks(User user);
 }

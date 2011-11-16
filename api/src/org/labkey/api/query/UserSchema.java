@@ -399,7 +399,8 @@ abstract public class UserSchema extends AbstractSchema
         for (String tableName : visibleOnly ? getVisibleTableNames() : getTableNames())
             set.put(tableName, QueryService.get().createQueryDefForTable(this, tableName));
 
-        for (QueryDefinition query : QueryService.get().getQueryDefs(getUser(), getContainer(), getSchemaName()).values())
+        Map<String, QueryDefinition> queryDefs = QueryService.get().getQueryDefs(getUser(), getContainer(), getSchemaName());
+        for (QueryDefinition query : queryDefs.values())
         {
             if (!visibleOnly || !query.isHidden())
                 set.put(query.getName(), query);
