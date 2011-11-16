@@ -245,7 +245,7 @@ class SampleSetUpdateService extends AbstractQueryUpdateService
             result.add(map);
         }
 
-        ExperimentServiceImpl.get().deleteMaterialByRowIds(container, ids);
+        ExperimentServiceImpl.get().deleteMaterialByRowIds(user, container, ids);
         return result;
     }
 

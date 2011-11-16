@@ -112,7 +112,7 @@ public class ExpMaterialImpl extends AbstractProtocolOutputImpl<Material> implem
 
     public void delete(User user)
     {
-        ExperimentServiceImpl.get().deleteMaterialByRowIds(getContainer(), getRowId());
+        ExperimentServiceImpl.get().deleteMaterialByRowIds(user, getContainer(), getRowId());
         // Deleting from search index is handled inside deleteMaterialByRowIds()
     }
 

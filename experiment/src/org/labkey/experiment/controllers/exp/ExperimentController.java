@@ -2126,7 +2126,9 @@ public class ExperimentController extends SpringActionController
 
         protected void deleteObjects(DeleteForm deleteForm) throws SQLException, ExperimentException, ServletException
         {
-            for (ExpRun run : getRuns())
+            List<ExpMaterial> materials = getMaterials(deleteForm, true);
+
+            for (ExpRun run : getRuns(materials))
             {
                 if (!run.getContainer().hasPermission(getUser(), DeletePermission.class))
                 {
@@ -2134,7 +2136,7 @@ public class ExperimentController extends SpringActionController
                 }
             }
 
-            for (ExpMaterial expMaterial : getMaterials(deleteForm, true))
+            for (ExpMaterial expMaterial : materials)
             {
                 expMaterial.delete(getUser());
             }
@@ -2143,16 +2145,21 @@ public class ExperimentController extends SpringActionController
         public ModelAndView getView(DeleteForm deleteForm, boolean reshow, BindException errors) throws Exception
         {
             List<ExpMaterial> materials = getMaterials(deleteForm, false);
-            List<ExpRun> runs = getRuns();
+            List<ExpRun> runs = getRuns(materials);
             return new ConfirmDeleteView("Sample", "showMaterial", materials, deleteForm, runs);
         }
 
-        private List<ExpRun> getRuns()
+        private List<ExpRun> getRuns(List<ExpMaterial> materials)
                 throws SQLException
         {
             // We don't actually delete runs that use the materials - we just disconnect the material from the run
             // In some cases (such as flow) this is required. In others, it's not as sensible
-            return Collections.emptyList();
+            List<ExpRun> runsToDelete = new ArrayList<ExpRun>();
+            ExpRun[] runArray = ExperimentService.get().getRunsUsingMaterials(materials);
+            for (ExpRun run : ExperimentService.get().runsDeletedWithInput(runArray))
+                runsToDelete.add(run);
+
+            return runsToDelete;
         }
 
         private List<ExpMaterial> getMaterials(DeleteForm deleteForm, boolean clear)

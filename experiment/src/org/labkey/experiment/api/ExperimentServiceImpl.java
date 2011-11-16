@@ -97,6 +97,7 @@ import org.labkey.api.query.UserSchema;
 import org.labkey.api.query.ValidationException;
 import org.labkey.api.search.SearchService;
 import org.labkey.api.security.User;
+import org.labkey.api.security.permissions.DeletePermission;
 import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.services.ServiceRegistry;
 import org.labkey.api.settings.AppProps;
@@ -110,6 +111,7 @@ import org.labkey.api.util.UnexpectedException;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.HttpView;
 import org.labkey.api.view.JspView;
+import org.labkey.api.view.UnauthorizedException;
 import org.labkey.api.view.ViewBackgroundInfo;
 import org.labkey.api.view.ViewContext;
 import org.labkey.experiment.ExperimentAuditViewFactory;
@@ -1751,7 +1753,7 @@ public class ExperimentServiceImpl implements ExperimentService.Interface
         return result;
     }
 
-    public void deleteMaterialByRowIds(Container container, int... selectedMaterialIds)
+    public void deleteMaterialByRowIds(User user, Container container, int... selectedMaterialIds)
     {
         if (selectedMaterialIds.length == 0)
             return;
@@ -1777,6 +1779,18 @@ public class ExperimentServiceImpl implements ExperimentService.Interface
                     {
                         throw new SQLException("Attemping to delete a Material from another container");
                     }
+
+                    // Delete any runs using the material if the ProtocolImplementation allows deleting the run when an input is deleted.
+                    ExpRun[] runArray = ExperimentService.get().getRunsUsingMaterials(material.getRowId());
+                    for (ExpRun run : ExperimentService.get().runsDeletedWithInput(runArray))
+                    {
+                        Container runContainer = run.getContainer();
+                        if (!runContainer.hasPermission(user, DeletePermission.class))
+                            throw new UnauthorizedException();
+
+                        deleteExperimentRunsByRowIds(run.getContainer(), user, run.getRowId());
+                    }
+
                     OntologyManager.deleteOntologyObjects(container, material.getLSID());
                 }
                 Table.execute(getExpSchema(), "DELETE FROM exp.MaterialInput WHERE MaterialId IN (" + materialIds + ")");
@@ -1909,7 +1923,7 @@ public class ExperimentServiceImpl implements ExperimentService.Interface
             // deleted already
             sql = "SELECT RowId FROM exp.Material WHERE Container = ? ;";
             int[] matIds = toInts(Table.executeArray(getExpSchema(), sql, new Object[]{c.getId()}, Integer.class));
-            deleteMaterialByRowIds(c, matIds);
+            deleteMaterialByRowIds(user, c, matIds);
 
             // same drill for data objects
             sql = "SELECT RowId FROM exp.Data WHERE Container = ? ;";
@@ -2017,7 +2031,7 @@ public class ExperimentServiceImpl implements ExperimentService.Interface
             throw new RuntimeSQLException(x);
         }
     }
-    
+
     public String getDefaultSampleSetLsid()
     {
         return new Lsid("SampleSource", "Default").toString();
@@ -2054,6 +2068,15 @@ public class ExperimentServiceImpl implements ExperimentService.Interface
         {
             throw new RuntimeSQLException(e);
         }
+    }
+
+    public ExpRun[] getRunsUsingMaterials(List<ExpMaterial> materials) throws SQLException
+    {
+        int[] ids = new int[materials.size()];
+        for (int i = 0; i < materials.size(); i++)
+            ids[i] = materials.get(i).getRowId();
+
+        return getRunsUsingMaterials(ids);
     }
 
     public ExpRun[] getRunsUsingMaterials(int... ids) throws SQLException
@@ -2131,25 +2154,10 @@ public class ExperimentServiceImpl implements ExperimentService.Interface
         {
             getExpSchema().getScope().ensureTransaction();
 
-            for (ExpRun run : getRunsUsingSampleSets(source))
-            {
-                deleteExperimentRunsByRowIds(run.getContainer(), user, run.getRowId());
-            }
-
-            // Remove from search index separately since we're doing a bulk-delete that doesn't fire
-            // the delete code for each material individually
-            SearchService ss = ServiceRegistry.get(SearchService.class);
-            if (null != ss)
-            {
-                for (ExpMaterial material : source.getSamples())
-                {
-                    ss.deleteResource(material.getDocumentId());
-                }
-            }
-
-            //Delete all materials in this source
+            // Delete all Materials from the SampleSet
             SimpleFilter materialFilter = new SimpleFilter("CpasType", source.getLSID());
-            Table.delete(getTinfoMaterial(), materialFilter);
+            int[] materialIds = toInts(Table.executeArray(ExperimentServiceImpl.get().getTinfoMaterial(), "RowId", materialFilter, null, Integer.class));
+            deleteMaterialByRowIds(user, c, materialIds);
 
             //Delete everything the ontology knows about this
             //includes all properties where this is the owner.
