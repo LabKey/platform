@@ -181,16 +181,18 @@ public abstract class AbstractWebdavResource extends AbstractResource implements
     public String getETag(boolean force)
     {
         long len = 0;
-        try
-        {
-            len = getContentLength();
-        }
-        catch (IOException x)
-        {
-            /* */
-        }
         if (null == _etag)
+        {
+            try
+            {
+                len = getContentLength();
+            }
+            catch (IOException x)
+            {
+                /* */
+            }
             _etag = "W/\"" + len + "-" + getLastModified() + "\"";
+        }
         return _etag;
     }
 
