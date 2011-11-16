@@ -25,9 +25,11 @@ import org.labkey.api.exp.property.ValidatorKind;
 import org.labkey.api.gwt.client.model.GWTPropertyValidator;
 import org.labkey.api.gwt.client.model.PropertyValidatorType;
 import org.labkey.api.query.ValidationError;
+import org.labkey.api.util.DateUtil;
 import org.labkey.api.util.Pair;
 
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.List;
 
 /*
@@ -109,8 +111,14 @@ public class RangeValidator extends DefaultPropertyValidator implements Validato
             int comparison = NumberUtils.compare(NumberUtils.toDouble(String.valueOf(value)), NumberUtils.toDouble(constraint.getValue()));
             return comparisonValid(comparison, constraint.getKey());
         }
-        else
-            return false;
+        else if (value instanceof Date)
+        {
+            Date dateConstraint = new Date(DateUtil.parseDateTime(constraint.getValue()));
+            int comparison = ((Date) value).compareTo(dateConstraint);
+
+            return comparisonValid(comparison, constraint.getKey());
+        }
+        return false;
     }
 
     private boolean comparisonValid(int comparison, String type)

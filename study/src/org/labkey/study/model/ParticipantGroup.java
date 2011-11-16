@@ -100,7 +100,7 @@ public class ParticipantGroup extends Entity
         {
             StringBuilder sb = new StringBuilder();
 
-            sb.append("the following duplicate ID(s): ");
+            sb.append("Duplicate ID(s) were found: ");
             String delim = "";
             int i=0;
 
