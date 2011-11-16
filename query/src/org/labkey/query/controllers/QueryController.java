@@ -4022,9 +4022,12 @@ public class QueryController extends SpringActionController
                     if (null == schema)
                         continue;
 
-                    Map<String, Object> schemaProps = new HashMap<String, Object>();
+                    JSONObject schemaProps = new JSONObject();
                     schemaProps.put("description", schema.getDescription());
 
+                    NavTree tree = schema instanceof UserSchema ? ((UserSchema)schema).getSchemaBrowserLinks(user) : null;
+                    if (null != tree && tree.hasChildren())
+                        schemaProps.put("menu", tree.toJSON());
                     resp.put(schema.getName(), schemaProps);
                 }
 

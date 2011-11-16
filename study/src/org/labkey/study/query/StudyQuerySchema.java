@@ -24,13 +24,17 @@ import org.labkey.api.query.QuerySettings;
 import org.labkey.api.query.QueryView;
 import org.labkey.api.query.UserSchema;
 import org.labkey.api.security.User;
+import org.labkey.api.security.permissions.AdminPermission;
 import org.labkey.api.study.DataSet;
 import org.labkey.api.study.Study;
 import org.labkey.api.study.StudyService;
 import org.labkey.api.study.TimepointType;
+import org.labkey.api.view.ActionURL;
+import org.labkey.api.view.NavTree;
 import org.labkey.api.view.UnauthorizedException;
 import org.labkey.api.view.ViewContext;
 import org.labkey.study.StudySchema;
+import org.labkey.study.controllers.StudyController;
 import org.labkey.study.model.*;
 import org.springframework.validation.BindException;
 
@@ -410,4 +414,13 @@ public class StudyQuerySchema extends UserSchema
         return null;
     }
 
+
+    @Override
+    public NavTree getSchemaBrowserLinks(User user)
+    {
+        NavTree root = super.getSchemaBrowserLinks(user);
+        if (getContainer().hasPermission(user, AdminPermission.class))
+            root.addChild("Manage datasets", new ActionURL(StudyController.ManageTypesAction.class, getContainer()));
+        return root;
+    }
 }

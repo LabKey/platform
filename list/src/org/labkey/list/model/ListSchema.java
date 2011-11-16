@@ -25,7 +25,10 @@ import org.labkey.api.query.DefaultSchema;
 import org.labkey.api.query.QuerySchema;
 import org.labkey.api.query.UserSchema;
 import org.labkey.api.security.User;
+import org.labkey.api.security.permissions.ReadPermission;
+import org.labkey.api.view.NavTree;
 import org.labkey.api.view.NotFoundException;
+import org.labkey.list.view.ListController;
 
 import java.util.Map;
 import java.util.Set;
@@ -75,5 +78,14 @@ public class ListSchema extends UserSchema
             throw new NotFoundException("List '" + queryName + "' was not found in the container '" + container.getPath() + "'.");
 
         return listDef.getDomain().getTypeURI();
+    }
+
+    @Override
+    public NavTree getSchemaBrowserLinks(User user)
+    {
+        NavTree root = super.getSchemaBrowserLinks(user);
+        if (getContainer().hasPermission(user, ReadPermission.class))
+            root.addChild("Manage lists", ListController.getBeginURL(getContainer()));
+        return root;
     }
 }

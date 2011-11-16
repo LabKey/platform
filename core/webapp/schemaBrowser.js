@@ -8,12 +8,15 @@ Ext.namespace('LABKEY', 'LABKEY.ext');
 
 Ext.Ajax.timeout = 60000;
 
-LABKEY.ext.QueryCache = Ext.extend(Ext.util.Observable, {
-    constructor : function(config) {
+LABKEY.ext.QueryCache = Ext.extend(Ext.util.Observable,
+{
+    constructor : function(config)
+    {
         LABKEY.ext.QueryCache.superclass.constructor.apply(this, arguments);
     },
 
-    getSchemas : function(callback, scope) {
+    getSchemas : function(callback, scope)
+    {
         if (this.schemasMap)
         {
             if (callback)
@@ -31,7 +34,8 @@ LABKEY.ext.QueryCache = Ext.extend(Ext.util.Observable, {
         });
     },
 
-    getSchema : function(schemaName, callback, scope) {
+    getSchema : function(schemaName, callback, scope)
+    {
         if (!callback)
             return this.schemasMap ? this.schemasMap[schemaName] : null;
 
@@ -40,7 +44,8 @@ LABKEY.ext.QueryCache = Ext.extend(Ext.util.Observable, {
         }, this);
     },
 
-    getQueries : function(schemaName, callback, scope) {
+    getQueries : function(schemaName, callback, scope)
+    {
         if (!this.schemasMap)
         {
             this.getSchemas(function(){
@@ -84,18 +89,23 @@ LABKEY.ext.QueryCache = Ext.extend(Ext.util.Observable, {
     }
 });
 
-LABKEY.ext.QueryDetailsCache = Ext.extend(Ext.util.Observable, {
-    constructor : function(config) {
+
+LABKEY.ext.QueryDetailsCache = Ext.extend(Ext.util.Observable,
+{
+    constructor : function(config)
+    {
         this.addEvents("newdetails");
         LABKEY.ext.QueryDetailsCache.superclass.constructor.apply(this, arguments);
         this.queryDetailsMap = {};
     },
 
-    getQueryDetails : function(schemaName, queryName, fk) {
+    getQueryDetails : function(schemaName, queryName, fk)
+    {
         return this.queryDetailsMap[this.getCacheKey(schemaName, queryName, fk)];
     },
 
-    loadQueryDetails : function(schemaName, queryName, fk, callback, errorCallback, scope) {
+    loadQueryDetails : function(schemaName, queryName, fk, callback, errorCallback, scope)
+    {
         var cacheKey = this.getCacheKey(schemaName, queryName, fk);
         if (this.queryDetailsMap[cacheKey])
         {
@@ -119,21 +129,26 @@ LABKEY.ext.QueryDetailsCache = Ext.extend(Ext.util.Observable, {
         });
     },
 
-    clear : function(schemaName, queryName, fk) {
+    clear : function(schemaName, queryName, fk)
+    {
         this.queryDetailsMap[this.getCacheKey(schemaName, queryName, fk)] = undefined;
     },
 
-    clearAll : function() {
+    clearAll : function()
+    {
         this.queryDetailsMap = {};
     },
 
-    getCacheKey : function(schemaName, queryName, fk) {
+    getCacheKey : function(schemaName, queryName, fk)
+    {
         return schemaName + "." + queryName + (fk ? "." + fk : "");
     }
 
 });
 
-LABKEY.ext.QueryTreePanel = Ext.extend(Ext.tree.TreePanel, {
+
+LABKEY.ext.QueryTreePanel = Ext.extend(Ext.tree.TreePanel,
+{
     initComponent : function(){
 
         this.rootVisible = false;
@@ -192,7 +207,8 @@ LABKEY.ext.QueryDetailsPanel = Ext.extend(Ext.Panel, {
         fieldKey: 'lkqdFieldKey'
     },
 
-    initComponent : function() {
+    initComponent : function()
+    {
         Ext.QuickTips.init();
 
         this.bodyStyle = "padding: 5px";
@@ -206,7 +222,8 @@ LABKEY.ext.QueryDetailsPanel = Ext.extend(Ext.Panel, {
         this.addEvents("lookupclick");
     },
 
-    onRender : function() {
+    onRender : function()
+    {
         LABKEY.ext.QueryDetailsPanel.superclass.onRender.apply(this, arguments);
         this.body.createChild({
             tag: 'p',
@@ -227,7 +244,8 @@ LABKEY.ext.QueryDetailsPanel = Ext.extend(Ext.Panel, {
         }
     },
 
-    renderQueryDetails : function() {
+    renderQueryDetails : function()
+    {
         var elemDef = this.formatQueryDetails(this.queryDetails);
         this.body.update("");
         var container = this.body.createChild(elemDef);
@@ -252,13 +270,15 @@ LABKEY.ext.QueryDetailsPanel = Ext.extend(Ext.Panel, {
 
     },
 
-    getExpandoClickFn : function(expando) {
+    getExpandoClickFn : function(expando)
+    {
         return function() {
             this.toggleLookupRow(expando);
         };
     },
 
-    getLookupLinkClickFn : function(lookupLink) {
+    getLookupLinkClickFn : function(lookupLink)
+    {
         return function() {
             this.fireEvent("lookupclick",
                     Ext.util.Format.htmlDecode(lookupLink.getAttributeNS('', this.domProps.schemaName)),
@@ -267,7 +287,8 @@ LABKEY.ext.QueryDetailsPanel = Ext.extend(Ext.Panel, {
         };
     },
 
-    formatQueryDetails : function(queryDetails) {
+    formatQueryDetails : function(queryDetails)
+    {
         var root = {tag: 'div', children: []};
         root.children.push(this.formatQueryLinks(queryDetails));
         root.children.push(this.formatQueryInfo(queryDetails));
@@ -278,7 +299,8 @@ LABKEY.ext.QueryDetailsPanel = Ext.extend(Ext.Panel, {
         return root;
     },
 
-    formatQueryLinks : function(queryDetails) {
+    formatQueryLinks : function(queryDetails)
+    {
         var container = {tag: 'div', cls: 'lk-qd-links', children:[]};
 
         if (queryDetails.isInherited)
@@ -703,9 +725,11 @@ LABKEY.ext.QueryDetailsPanel = Ext.extend(Ext.Panel, {
 
 Ext.reg('labkey-query-details-panel', LABKEY.ext.QueryDetailsPanel);
 
-LABKEY.ext.ValidateQueriesPanel = Ext.extend(Ext.Panel, {
+LABKEY.ext.ValidateQueriesPanel = Ext.extend(Ext.Panel,
+{
 
-    initComponent : function() {
+    initComponent : function()
+    {
         this.addEvents("queryclick");
         this.bodyStyle = "padding: 5px";
         this.stop = false;
@@ -716,7 +740,8 @@ LABKEY.ext.ValidateQueriesPanel = Ext.extend(Ext.Panel, {
         LABKEY.ext.ValidateQueriesPanel.superclass.initComponent.apply(this, arguments);
     },
 
-    initEvents : function() {
+    initEvents : function()
+    {
         LABKEY.ext.ValidateQueriesPanel.superclass.initEvents.apply(this, arguments);
         this.ownerCt.on("beforeremove", function(){
             if (this.validating)
@@ -727,7 +752,8 @@ LABKEY.ext.ValidateQueriesPanel = Ext.extend(Ext.Panel, {
         }, this);
     },
 
-    onRender : function() {
+    onRender : function()
+    {
         LABKEY.ext.ValidateQueriesPanel.superclass.onRender.apply(this, arguments);
         this.body.createChild({
             tag: 'p',
@@ -1065,7 +1091,9 @@ LABKEY.ext.ValidateQueriesPanel = Ext.extend(Ext.Panel, {
     }
 });
 
-LABKEY.ext.SchemaBrowserHomePanel = Ext.extend(Ext.Panel, {
+
+LABKEY.ext.SchemaBrowserHomePanel = Ext.extend(Ext.Panel,
+{
     initComponent : function() {
         this.bodyStyle = "padding: 5px";
         this.addEvents("schemaclick");
@@ -1170,14 +1198,18 @@ LABKEY.ext.SchemaBrowserHomePanel = Ext.extend(Ext.Panel, {
 
 Ext.reg('labkey-schema-browser-home-panel', LABKEY.ext.SchemaBrowserHomePanel);
 
-LABKEY.ext.SchemaSummaryPanel = Ext.extend(Ext.Panel, {
-    initComponent : function() {
+
+LABKEY.ext.SchemaSummaryPanel = Ext.extend(Ext.Panel,
+{
+    initComponent : function()
+    {
         this.bodyStyle = "padding: 5px";
         this.addEvents("queryclick");
         LABKEY.ext.SchemaSummaryPanel.superclass.initComponent.apply(this, arguments);
     },
 
-    onRender : function() {
+    onRender : function()
+    {
         //call superclass to create basic elements
         LABKEY.ext.SchemaSummaryPanel.superclass.onRender.apply(this, arguments);
         this.body.createChild({
@@ -1188,9 +1220,16 @@ LABKEY.ext.SchemaSummaryPanel = Ext.extend(Ext.Panel, {
         this.cache.getQueries(this.schemaName, this.onQueries, this);
     },
 
-    onQueries : function(queriesMap) {
+    onQueries : function(queriesMap)
+    {
         this.queries = queriesMap;
         this.body.update("");
+
+        var schema = this.cache.getSchema(this.schemaName);
+        var links = this.formatSchemaLinks(schema);
+        if (links)
+            this.body.createChild(links);
+
         this.body.createChild({
             tag: 'div',
             cls: 'lk-qd-name',
@@ -1242,7 +1281,25 @@ LABKEY.ext.SchemaSummaryPanel = Ext.extend(Ext.Panel, {
 
     },
 
-    formatQueryList : function(queries, title) {
+
+    formatSchemaLinks : function(schema)
+    {
+        var container = {tag: 'div', cls: 'lk-qd-links', children:[]};
+
+        if (!schema || !schema.menu || !schema.menu.items || 0==schema.menu.items.length)
+            return;
+
+        for (var i=0 ; i<schema.menu.items.length ; i++)
+        {
+            var item = schema.menu.items[i];
+            container.children.push(LABKEY.Utils.textLink(item));
+        }
+        return container;
+    },
+
+
+    formatQueryList : function(queries, title)
+    {
         var rows = [{
                 tag: 'tr',
                 children: [{
@@ -1421,7 +1478,8 @@ LABKEY.ext.SchemaBrowser = Ext.extend(Ext.Panel, {
         Ext.History.on('change', this.onHistoryChange, this);
     },
 
-    showPanel : function(id) {
+    showPanel : function(id)
+    {
         var tabs = this.getComponent("lk-sb-details");
         if (tabs.getComponent(id))
             tabs.activate(id);
@@ -1430,7 +1488,8 @@ LABKEY.ext.SchemaBrowser = Ext.extend(Ext.Panel, {
             var panel;
             if (id == "lk-vq-panel")
             {
-                panel = new LABKEY.ext.ValidateQueriesPanel({
+                panel = new LABKEY.ext.ValidateQueriesPanel(
+                {
                     id: "lk-vq-panel",
                     closable: true,
                     title: "Validate Queries",
@@ -1447,7 +1506,8 @@ LABKEY.ext.SchemaBrowser = Ext.extend(Ext.Panel, {
             else if (this.qdpPrefix == id.substring(0, this.qdpPrefix.length))
             {
                 var idMap = this.parseQueryPanelId(id);
-                panel = new LABKEY.ext.QueryDetailsPanel({
+                panel = new LABKEY.ext.QueryDetailsPanel(
+                {
                     cache: this._qdcache,
                     schemaName: idMap.schemaName,
                     queryName: idMap.queryName,
@@ -1466,7 +1526,8 @@ LABKEY.ext.SchemaBrowser = Ext.extend(Ext.Panel, {
             else if (this.sspPrefix == id.substring(0, this.sspPrefix.length))
             {
                 var schemaName = id.substring(this.sspPrefix.length);
-                panel = new LABKEY.ext.SchemaSummaryPanel({
+                panel = new LABKEY.ext.SchemaSummaryPanel(
+                {
                     cache: this._qcache,
                     schemaName: schemaName,
                     id: id,
