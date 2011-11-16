@@ -44,6 +44,7 @@ import org.labkey.api.security.roles.RoleManager;
 import org.labkey.api.services.ServiceRegistry;
 import org.labkey.api.study.StudyService;
 import org.labkey.api.util.ContainerContext;
+import org.labkey.api.util.FileUtil;
 import org.labkey.api.util.GUID;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.Path;
@@ -545,9 +546,21 @@ public class Container implements Serializable, Comparable<Container>, Securable
             return false;
         }
 
-        if (-1 != name.indexOf('/') || -1 != name.indexOf(';') || -1 != name.indexOf('\\'))
+        if (name.length() > 255)
         {
-            error.append("Slashes, semicolons, and backslashes are not allowed in folder names.");
+            error.append("Folder name must be shorted than 255 characters");
+            return false;
+        }
+
+        if (!FileUtil.isLegalName(name))
+        {
+            error.append("Folder name must be a legal filename and not contain one of '/', '\\', ':', '?', '<', '>', '*', '|', '\"', '^'");
+            return false;
+        }
+
+        if (-1 != name.indexOf(';'))
+        {
+            error.append("Semicolons are not allowed in folder names.");
             return false;
         }
         else if (name.startsWith("@"))

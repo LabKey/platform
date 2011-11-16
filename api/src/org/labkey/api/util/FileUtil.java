@@ -17,6 +17,7 @@
 package org.labkey.api.util;
 
 import org.apache.commons.io.IOUtils;
+import org.apache.commons.lang.StringUtils;
 import org.apache.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -701,6 +702,20 @@ quickScan:
     }
 
     private static char[] illegalChars = {'/','\\',':','?','<','>','*','|','"','^'};
+
+    public static boolean isLegalName(String name)
+    {
+        if (name == null || 0 == name.trim().length())
+            return false;
+
+        if (name.length() > 255)
+            return false;
+
+        if (StringUtils.containsAny(name, illegalChars))
+            return false;
+
+        return true;
+    }
 
     public static String makeLegalName(String name)
     {
