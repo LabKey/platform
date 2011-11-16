@@ -3391,14 +3391,12 @@ public class DavController extends SpringActionController
     private boolean checkIfMatch(WebdavResource resource)
             throws DavException
     {
-
-        String eTag = resource.getETag();
         String headerValue = getRequest().getHeader("If-Match");
         if (headerValue != null)
         {
+            String eTag = resource.getETag();
             if (headerValue.indexOf('*') == -1)
             {
-
                 StringTokenizer commaTokenizer = new StringTokenizer
                         (headerValue, ",");
                 boolean conditionSatisfied = false;
@@ -3417,7 +3415,6 @@ public class DavController extends SpringActionController
                     getResponse().sendError(WebdavStatus.SC_PRECONDITION_FAILED);
                     return false;
                 }
-
             }
         }
         return true;
@@ -3472,7 +3469,6 @@ public class DavController extends SpringActionController
      */
     private boolean checkIfNoneMatch(WebdavResource resource) throws DavException
     {
-        String eTag = resource.getETag();
         String headerValue = getRequest().getHeader("If-None-Match");
         if (headerValue != null)
         {
@@ -3480,17 +3476,14 @@ public class DavController extends SpringActionController
 
             if (!headerValue.equals("*"))
             {
-
-                StringTokenizer commaTokenizer =
-                        new StringTokenizer(headerValue, ",");
-
+                String eTag = resource.getETag();
+                StringTokenizer commaTokenizer = new StringTokenizer(headerValue, ",");
                 while (!conditionSatisfied && commaTokenizer.hasMoreTokens())
                 {
                     String currentToken = commaTokenizer.nextToken();
                     if (currentToken.trim().equals(eTag))
                         conditionSatisfied = true;
                 }
-
             }
             else
             {
