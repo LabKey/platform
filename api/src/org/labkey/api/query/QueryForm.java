@@ -369,6 +369,18 @@ public class QueryForm extends ReturnUrlForm implements HasViewContext, HasBindP
         _customView = customView;
     }
 
+    public boolean canEditSql()
+    {
+        QueryDefinition q = getQueryDef();
+        return null != q && q.canEdit(getUser()) && getQueryDef().isSqlEditable();
+    }
+
+    public boolean canEditMetaData()
+    {
+        QueryDefinition q = getQueryDef();
+        return null != q && q.canEdit(getUser()) && getQueryDef().isMetadataEditable();
+    }
+
     public boolean canEdit()
     {
         return null != getQueryDef() && getQueryDef().canEdit(getUser());
