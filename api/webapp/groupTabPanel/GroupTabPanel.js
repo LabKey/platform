@@ -98,6 +98,7 @@ Ext.ux.GroupTabPanel = Ext.extend(Ext.TabPanel, {
         });
 
         this.addClass('x-tab-panel-' + this.tabPosition);
+//        this.getEl().setWidth(this.adjustBodyWidth(this.getEl().getWidth()));
         this.header.setWidth(this.tabWidth);
 
         if (this.activeGroup !== undefined) {

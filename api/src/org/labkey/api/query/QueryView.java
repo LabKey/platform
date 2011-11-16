@@ -27,6 +27,7 @@ import org.labkey.api.reports.Report;
 import org.labkey.api.reports.ReportService;
 import org.labkey.api.reports.report.ChartQueryReport;
 import org.labkey.api.reports.report.JavaScriptReport;
+import org.labkey.api.reports.report.QueryReportDescriptor;
 import org.labkey.api.reports.report.RReport;
 import org.labkey.api.reports.report.ReportUrls;
 import org.labkey.api.reports.report.view.ReportUtil;
@@ -1438,7 +1439,7 @@ public class QueryView extends WebPartView<Object>
     {
         _report = getSettings().getReportView();
 
-        return _report != null && StringUtils.trimToNull(getSettings().getViewName()) == null;
+        return _report != null && !_report.getDescriptor().getDescriptorType().equals(QueryReportDescriptor.TYPE) && StringUtils.trimToNull(getSettings().getViewName()) == null;
     }
 
     public DataView createDataView()

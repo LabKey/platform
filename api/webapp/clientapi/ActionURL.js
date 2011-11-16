@@ -102,17 +102,17 @@ LABKEY.ActionURL = new function()
         },
 
 		/**
-		* Gets the current container path
+		* Gets the current (unencoded) container path
 		* @return {String} Current container path.
 		*/
         getContainer : function()
         {
             if (LABKEY.container && LABKEY.container.path)
-                return LABKEY.container.path;
+                return decodeURIComponent(LABKEY.container.path); // OK to double decode
             var path = window.location.pathname;
             var start = path.indexOf("/", LABKEY.contextPath.length + 1);
             var end = path.lastIndexOf("/");
-            return path.substring(start, end);
+            return decodeURIComponent(path.substring(start, end));
         },
 
         /**
@@ -255,10 +255,16 @@ that points back to the current page:
             return newUrl;
         },
 
-        // helper function -- we want to encode everything save / so this is not like encodeURI() or encodeURIComponent()
-        encodePath : function(s)
+        /**
+         * @private
+         * Encoder for LabKey container paths that accounts for / to only encode the proper names. NOTE: This method is
+         * marked as private and could change at any time.
+         * @param {String} path An unencoded container path.
+         * @returns {String} An URI encoded container path.
+         */
+        encodePath : function(path)
         {
-            var a = s.split('/');
+            var a = path.split('/');
             for (var i=0 ; i<a.length ; i++)
                 a[i] = encodeURIComponent(a[i]);
             return a.join('/');
