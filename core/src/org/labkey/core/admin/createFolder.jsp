@@ -127,6 +127,10 @@
                     fieldCls: 'labkey-wizard-input',
                     style: 'padding-left: 5px;',
                     value: '<%=h(name)%>',
+                    allowBlank: false,
+                    maxLength: 255,
+                    regex: /^[^@\/\\;:?<>*|"^][^\/\\;:?<>*|"^]*$/,
+                    regexText: "Folder must be a legal filename and not start with '@' or contain one of '/', '\\', ';', ':', '?', '<', '>', '*', '|', '\"', or '^'",
                     listeners: {
                         render: function(field){
                             field.focus('', 10);
@@ -204,7 +208,8 @@
                     text: 'Next',
                     handler: function(btn){
                         var f = btn.up('form').getForm();
-                        f.submit();
+                        if (f.isValid())
+                            f.submit();
                     }
                 },{
                     xtype: 'button',
@@ -323,7 +328,8 @@
                 scope: this,
                 enter: function(){
                     var f = panel.getForm();
-                    f.submit();
+                    if (f.isValid())
+                        f.submit();
                 }
             });
         }

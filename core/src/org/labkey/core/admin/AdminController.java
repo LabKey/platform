@@ -3642,7 +3642,7 @@ public class AdminController extends SpringActionController
         public boolean handlePost(ManageFoldersForm form, BindException errors) throws Exception
         {
             Container c = getContainer();
-            String folderName = form.getName();
+            String folderName = StringUtils.trimToNull(form.getName());
             StringBuilder error = new StringBuilder();
 
             if (Container.isLegalName(folderName, error))
@@ -3839,7 +3839,7 @@ public class AdminController extends SpringActionController
         public boolean handlePost(ManageFoldersForm form, BindException errors) throws Exception
         {
             Container parent = getContainer();
-            String folderName = form.getName();
+            String folderName = StringUtils.trimToNull(form.getName());
             StringBuilder error = new StringBuilder();
 
             if (Container.isLegalName(folderName, error))
