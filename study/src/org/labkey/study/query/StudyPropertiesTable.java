@@ -83,7 +83,7 @@ public class StudyPropertiesTable extends BaseStudyTable
         addRootColumn("studyGrant", true, true);
         addRootColumn("investigator", true, true);
         ColumnInfo descriptionColumn = addRootColumn("description", true, true);
-        final ColumnInfo descriptionRendererTypeColumn = addRootColumn("descriptionRendererType", false, false);
+        final ColumnInfo descriptionRendererTypeColumn = addRootColumn("descriptionRendererType", false, true);
         descriptionColumn.setDisplayColumnFactory(new DisplayColumnFactory()
         {
             @Override
