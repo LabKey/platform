@@ -683,6 +683,12 @@ public abstract class QueryDefinitionImpl implements QueryDefinition
         return false;
     }
 
+    @Override
+    public boolean isSqlEditable()
+    {
+        return true;
+    }
+
     public boolean isMetadataEditable()
     {
         return true;

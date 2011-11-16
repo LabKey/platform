@@ -34,6 +34,12 @@ public class ModuleCustomQueryDefinition extends CustomQueryDefinitionImpl
     }
 
     @Override
+    public boolean isSqlEditable()
+    {
+        return false;
+    }
+
+    @Override
     public boolean isMetadataEditable()
     {
         return false;

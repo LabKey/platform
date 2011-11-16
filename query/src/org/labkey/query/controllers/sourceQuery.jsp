@@ -25,7 +25,6 @@
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
     SourceForm form = (SourceForm)HttpView.currentModel();
-    boolean canEdit = form.canEdit();
     boolean builtIn = form.getQueryDef().isTableQueryDefinition();
     String sqlHelpTopic = "labkeySql";
     String metadataHelpTopic = "metadataSql";
@@ -129,10 +128,10 @@
             schema    : LABKEY.ActionURL.getParameter('schemaName'),
             query     : LABKEY.ActionURL.getParameter('query.queryName'),
             executeUrl: <%= PageFlowUtil.jsString(exeUrl.toString()) %>,
-            canEdit   : <%= canEdit %>,
+            canEdit   : <%= form.canEditSql() %>,
             builtIn   : <%= builtIn %>,
-            metadataEdit : <%= form.getQueryDef().isMetadataEditable() && canEdit %>,
-            propEdit     : <%= canEdit && !builtIn %>,
+            metadataEdit : <%= form.canEditMetaData() %>,
+            propEdit     : <%= form.canEditMetaData() && !builtIn %>,
             queryText    : <%=PageFlowUtil.jsString(form.ff_queryText)%>,
             metadataText : <%=PageFlowUtil.jsString(form.ff_metadataText)%>,
             help         : <%=PageFlowUtil.jsString(new HelpTopic(sqlHelpTopic).toString())%>,

@@ -209,6 +209,17 @@ public class QueryController extends SpringActionController
             return ret;
         }
 
+        @Override
+        public ActionURL urlSchemaBrowser(Container c, String schemaName, String queryName)
+        {
+            if (StringUtils.isEmpty(queryName))
+                return urlSchemaBrowser(c, schemaName);
+            ActionURL ret = urlSchemaBrowser(c);
+            ret.addParameter(QueryParam.schemaName.toString(), schemaName);
+            ret.addParameter(QueryParam.queryName.toString(), queryName);
+            return ret;
+        }
+
         public ActionURL urlExternalSchemaAdmin(Container c)
         {
             return urlExternalSchemaAdmin(c, null);

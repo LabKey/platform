@@ -18,8 +18,10 @@ package org.labkey.query;
 
 import org.labkey.api.data.*;
 import org.labkey.api.query.*;
+import org.labkey.api.security.User;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.util.StringExpression;
+import org.labkey.query.controllers.QueryController;
 import org.labkey.query.sql.Query;
 import org.labkey.query.persist.QueryManager;
 import org.labkey.query.persist.QueryDef;
@@ -82,6 +84,11 @@ public class TableQueryDefinition extends QueryDefinitionImpl
         if (url == TableInfo.LINK_DISABLER_ACTION_URL)
         {
             return null;
+        }
+
+        if (action == QueryAction.sourceQuery)
+        {
+            return new QueryController.QueryUrlsImpl().urlSchemaBrowser(container, getSchemaName(), getName());
         }
 
         return url != null ? url : super.urlFor(action, container);
@@ -214,6 +221,13 @@ public class TableQueryDefinition extends QueryDefinitionImpl
         return super.getTable(schema, errors, includeMetadata);
     }
 
+
+    @Override
+    public boolean canEdit(User user)
+    {
+        return super.canEdit(user);
+    }
+
     public String getSql()
     {
         if (_sql != null)
@@ -236,6 +250,12 @@ public class TableQueryDefinition extends QueryDefinitionImpl
     public boolean isTableQueryDefinition()
     {
         return true;
+    }
+
+    @Override
+    public boolean isSqlEditable()
+    {
+        return false;
     }
 
     public boolean isMetadataEditable()
