@@ -185,6 +185,7 @@ public class ExperimentService
         ExpSampleSet ensureActiveSampleSet(Container container);
         public String getDefaultSampleSetLsid();
 
+        ExpRun[] getRunsUsingMaterials(List<ExpMaterial> materials) throws SQLException;
         ExpRun[] getRunsUsingMaterials(int... materialIds) throws SQLException;
         List<? extends ExpRun> getRunsUsingDatas(List<ExpData> datas);
 
