@@ -896,7 +896,7 @@ Ext4.define('LABKEY.ext4.DataViewsPanel', {
                 align    : 'center',
                 sortable : false,
                 items : [{
-                    icon    : LABKEY.contextPath + '/ext-4.0.2a/resources/themes/images/access/qtip/close.gif',
+                    icon    : LABKEY.contextPath + '/' + LABKEY.extJsRoot_40 + '/resources/themes/images/access/qtip/close.gif',
                     tooltip : 'Delete'
                 }],
                 listeners : {
