@@ -426,7 +426,7 @@ public class CreateAncillaryStudyAction extends MutatingApiAction<EmphasisStudyD
 
                 delim = "\n";
             }
-            throw new RuntimeException(sb.toString());
+            throw new IllegalArgumentException(sb.toString());
         }
     }
 

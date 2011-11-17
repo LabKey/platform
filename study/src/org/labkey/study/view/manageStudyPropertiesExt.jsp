@@ -283,6 +283,7 @@ function renderFormPanel(data, editable)
         triggerAction: 'all',
         valueField: 'renderType',
         displayField: 'displayText',
+        value: data.rows[0]['DescriptionRendererType'], //Set default value to the current render type.
         store : new Ext.data.ArrayStore(
         {
             id : 0, fields:['renderType', 'displayText'],
@@ -348,12 +349,6 @@ function renderFormPanel(data, editable)
         items:items
     });
     studyPropertiesFormPanel.render('formDiv');
-    var renderType = data.rows[0][renderTypeCombo.hiddenName];
-    if (renderTypes[renderType])
-    {
-        renderTypeCombo.setValue(renderTypes[renderType]);
-        renderTypeCombo.originalValue = renderTypes[renderType];
-    }
 }
 
 
