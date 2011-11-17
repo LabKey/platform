@@ -3688,9 +3688,8 @@ public class SpecimenController extends BaseStudyController
 
         public NavTree appendNavTrail(NavTree root)
         {
+            _appendManageStudy(root);
             root.addChild("Manage Repository Settings");
-            root.addChild("Study", new ActionURL(StudyController.BeginAction.class, getContainer()));
-            root.addChild("Manage Study", new ActionURL(StudyController.ManageStudyAction.class, getContainer()));
 
             return root;
         }
@@ -3803,17 +3802,11 @@ public class SpecimenController extends BaseStudyController
 
         public NavTree appendNavTrail(NavTree root)
         {
-            try {
-                setHelpTopic(new HelpTopic(_helpTopic));
+            setHelpTopic(new HelpTopic(_helpTopic));
 
-                root.addChild(getStudy().getLabel(), getStudyOverviewURL());
-                root.addChild("Manage Study", new ActionURL(StudyController.ManageStudyAction.class, getContainer()));
-                root.addChild(_title);
-            }
-            catch (ServletException e)
-            {
-                throw new RuntimeException(e);
-            }
+            _appendManageStudy(root);
+            root.addChild(_title);
+
             return root;
         }
     }
@@ -3832,7 +3825,7 @@ public class SpecimenController extends BaseStudyController
     {
         public ManageActorsAction()
         {
-            super("manageActors", "Manage Actors", "specimenRequest");
+            super("manageActors", "Manage Speciment Request Actors", "specimenRequest");
         }
 
         public boolean handlePost(ActorEditForm form, BindException errors) throws Exception
@@ -3957,7 +3950,7 @@ public class SpecimenController extends BaseStudyController
     {
         public ManageStatusesAction()
         {
-            super("manageStatuses", "Manage Statuses", "specimenRequest");
+            super("manageStatuses", "Manage Specimen Request Statuses", "specimenRequest");
         }
 
         public boolean handlePost(StatusEditForm form, BindException errors) throws Exception
@@ -4263,19 +4256,12 @@ public class SpecimenController extends BaseStudyController
 
         public NavTree appendNavTrail(NavTree root)
         {
-            try {
-                setHelpTopic(new HelpTopic("specimenRequest"));
+            setHelpTopic(new HelpTopic("specimenRequest"));
 
-                root.addChild(getStudy().getLabel(), getStudyOverviewURL());
-                root.addChild("Manage Study", new ActionURL(StudyController.ManageStudyAction.class, getContainer()));
-                root.addChild("Manage New Request Form");
+            _appendManageStudy(root);
+            root.addChild("Manage New Request Form");
 
-                return root;
-            }
-            catch (ServletException e)
-            {
-                throw new RuntimeException(e);
-            }
+            return root;
         }
     }
 
@@ -4416,19 +4402,12 @@ public class SpecimenController extends BaseStudyController
 
         public NavTree appendNavTrail(NavTree root)
         {
-            try {
-                setHelpTopic(new HelpTopic("specimenRequest"));
+            setHelpTopic(new HelpTopic("specimenRequest"));
 
-                root.addChild(getStudy().getLabel(), getStudyOverviewURL());
-                root.addChild("Manage Study", new ActionURL(StudyController.ManageStudyAction.class, getContainer()));
-                root.addChild("Manage Notifications");
+            _appendManageStudy(root);
+            root.addChild("Manage Notifications");
 
-                return root;
-            }
-            catch (ServletException e)
-            {
-                throw new RuntimeException(e);
-            }
+            return root;
         }
     }
     
@@ -4469,20 +4448,11 @@ public class SpecimenController extends BaseStudyController
 
         public NavTree appendNavTrail(NavTree root)
         {
-            try
-            {
-                setHelpTopic(new HelpTopic("specimenRequest"));
+            setHelpTopic(new HelpTopic("specimenRequest"));
+            _appendManageStudy(root);
+            root.addChild("Manage Specimen Display Settings");
 
-                root.addChild(getStudy().getLabel(), getStudyOverviewURL());
-                root.addChild("Manage Study", new ActionURL(StudyController.ManageStudyAction.class, getContainer()));
-                root.addChild("Manage Display Settings");
-
-                return root;
-            }
-            catch (ServletException e)
-            {
-                throw new RuntimeException(e);
-            }
+            return root;
         }
     }
 
@@ -4979,15 +4949,7 @@ public class SpecimenController extends BaseStudyController
 
         public NavTree appendNavTrail(NavTree root)
         {
-            try
-            {
-                root.addChild(getStudy().getLabel(), getStudyOverviewURL());
-            }
-            catch (ServletException e)
-            {
-                throw new RuntimeException(e);
-            }
-            root.addChild("Manage Study", new ActionURL(StudyController.ManageStudyAction.class, getContainer()));
+            _appendManageStudy(root);
             root.addChild("Configure Requestability Rules");
             return root;
         }

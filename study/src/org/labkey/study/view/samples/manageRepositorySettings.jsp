@@ -24,21 +24,16 @@
 <labkey:errors/>
 
 <form action="manageRepositorySettings.post" method="POST">
-    <table >
-        <tr>
-            <th align="left">Specimen Repository</th>
-        </tr>
-        <tr>
-            <td align="left"><input type="radio" name="simple" value="true" <%=settings.isSimple() ? "CHECKED" : "" %>> Standard Specimen Repository
-                <input type="radio" name="simple" value="false" <%=settings.isSimple() ? "" : "CHECKED" %>> Advanced (External) Specimen Repository</td>
-        </tr>
-        <tr>
-            <td colspan="2" align="left">The standard specimen repository allows you to upload a list of available specimens. The advanced specimen repository
+    <div>
+        <input type="radio" name="simple" value="true" <%=settings.isSimple() ? "CHECKED" : "" %>> Standard Specimen Repository - allows you to upload a list of available specimens
+    </div>
+    <div>
+        <input type="radio" name="simple" value="false" <%=settings.isSimple() ? "" : "CHECKED" %>> Advanced (External) Specimen Repository -
                 relies on an external set of tools to track movement of specimens between sites. The advanced system also enables a customizable specimen
-                request system.</td>
-        </tr>
-        <tr>
-            <td><%= generateSubmitButton("Submit")%>&nbsp;<%= generateButton("Back", "manageRepositorySettings.view", "window.history.back();return false;")%></td>
-        </tr>
-    </table>
+                request system.
+    </div>
+    <br/>
+    <div>
+        <%= generateSubmitButton("Submit")%>&nbsp;<%= generateButton("Back", "manageRepositorySettings.view", "window.history.back();return false;")%>
+    </div>
 </form>
