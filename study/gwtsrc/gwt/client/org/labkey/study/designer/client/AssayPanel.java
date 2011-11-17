@@ -357,16 +357,16 @@ public class AssayPanel extends Composite
 
                 checkbox.setChecked (assaySchedule.isAssayPerformed(assayDefinition, tp));
                 updateLabel();
-                checkbox.addClickListener(new ClickListener() {
-                    public void onClick(Widget sender)
+                checkbox.addClickHandler(new ClickHandler() {
+                    public void onClick(ClickEvent e)
                     {
                         assaySchedule.setAssayPerformed(AssayCheckBox.this.assayDefinition, AssayCheckBox.this.tp, checkbox.isChecked());
                         designer.setDirty(true);
                         updateLabel();
                     }
                 });
-                label.addClickListener(new ClickListener() {
-                    public void onClick(Widget sender)
+                label.addClickHandler(new ClickHandler() {
+                    public void onClick(ClickEvent e)
                     {
                         SampleMeasureDialog dlg = new SampleMeasureDialog();
                         dlg.setPopupPosition(label.getAbsoluteLeft(), label.getAbsoluteTop() + label.getOffsetHeight());

@@ -16,6 +16,8 @@
 
 package gwt.client.org.labkey.plate.designer.client;
 
+import com.google.gwt.event.dom.client.ClickEvent;
+import com.google.gwt.event.dom.client.ClickHandler;
 import com.google.gwt.user.client.ui.*;
 import com.google.gwt.user.client.Window;
 import com.google.gwt.user.client.DOM;
@@ -81,9 +83,9 @@ public abstract class PropertyPanel extends DockPanel
         add(_propertyTable, CENTER);
 
         _addPropertyButton = new ImageButton("Add a new property");
-        _addPropertyButton.addClickListener(new ClickListener()
+        _addPropertyButton.addClickHandler(new ClickHandler()
         {
-            public void onClick(Widget sender)
+            public void onClick(ClickEvent e)
             {
                 PropertyCreationDialog dialog = new PropertyCreationDialog(PropertyPanel.this);
                 dialog.show();
@@ -153,9 +155,9 @@ public abstract class PropertyPanel extends DockPanel
         _propertyTable.setWidget(row, 1, textBox);
         final Image image = new Image(PropertyUtil.getContextPath() + "/_images/partdelete.gif");
         image.addMouseListener(_tooltipListener);
-        image.addClickListener(new ClickListener()
+        image.addClickHandler(new ClickHandler()
         {
-            public void onClick(Widget sender)
+            public void onClick(ClickEvent e)
             {
                 deleteProperty(name);
             }

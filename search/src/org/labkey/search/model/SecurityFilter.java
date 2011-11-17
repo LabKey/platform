@@ -64,7 +64,7 @@ class SecurityFilter extends Filter
 
             for (Container c : containers)
             {
-                if ((c.isSearchable() || c.equals(currentContainer)) && c.shouldDisplay(user))
+                if ((c.isSearchable() || (c.equals(currentContainer)) && (c.shouldDisplay(user) || c.isWorkbook())))
                     containerIds.put(c.getId(), c);
             }
         }

@@ -58,6 +58,8 @@ public class PropertyController extends SpringActionController
 {
     private static DefaultActionResolver _actionResolver = new DefaultActionResolver(PropertyController.class);
 
+    public static final String UNRECOGNIZED_FILE_TYPE_ERROR = "Unrecognized file type. Please upload a .xls, .xlsx, .tsv, .csv or .txt file";
+
     public PropertyController()
     {
         setActionResolver(_actionResolver);
@@ -224,7 +226,7 @@ public class PropertyController extends SpringActionController
             int dotIndex = filename.lastIndexOf(".");
             if (dotIndex < 0)
             {
-                throw new UploadException("Unrecognized file type. Please upload a .xls, .tsv, .csv or .txt file", HttpServletResponse.SC_BAD_REQUEST);
+                throw new UploadException(UNRECOGNIZED_FILE_TYPE_ERROR, HttpServletResponse.SC_BAD_REQUEST);
             }
             String suffix = filename.substring(dotIndex + 1).toLowerCase();
             String prefix = filename.substring(0, dotIndex);
@@ -315,7 +317,7 @@ public class PropertyController extends SpringActionController
             int dotIndex = filename.lastIndexOf(".");
             if (dotIndex < 0)
             {
-                error(writer, "Unrecognized file type. Please upload a .xls, .tsv, .csv or .txt file");
+                error(writer, UNRECOGNIZED_FILE_TYPE_ERROR);
                 return null;
             }
             String suffix = filename.substring(dotIndex + 1).toLowerCase();
@@ -339,7 +341,7 @@ public class PropertyController extends SpringActionController
                 dataLoader = getDataLoader(tempFile, suffix);
                 if (dataLoader == null)
                 {
-                    error(writer, "Unrecognized file type. Please upload a .xls, .tsv, .csv or .txt file");
+                    error(writer, UNRECOGNIZED_FILE_TYPE_ERROR);
                     return null;
                 }
 
@@ -393,7 +395,7 @@ public class PropertyController extends SpringActionController
         private DataLoader getDataLoader(File tempFile, String suffix) throws IOException
         {
             DataLoader dataLoader = null;
-            if (suffix.equals("xls"))
+            if (suffix.equals("xls") || suffix.equals("xlsx"))
             {
                 dataLoader = new ExcelLoader(tempFile, true);
             }

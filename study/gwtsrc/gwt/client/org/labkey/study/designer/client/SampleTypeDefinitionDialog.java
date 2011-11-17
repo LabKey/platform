@@ -79,7 +79,7 @@ public class SampleTypeDefinitionDialog extends DialogBox
         setWidget(vpanel);
     }
 
-    public SampleTypeDefinitionDialog(final AssayPanel parent, final List/*<GWTSampleType> */ sampleTypes)
+    public SampleTypeDefinitionDialog(final AssayPanel parent, final List<GWTSampleType> sampleTypes)
     {
         this.parent = parent;
 
@@ -87,10 +87,9 @@ public class SampleTypeDefinitionDialog extends DialogBox
         listBox = new ListBox();
         listBox.setVisibleItemCount(12);
         this.sampleTypes = sampleTypes;
-        for (int i = 0; i < sampleTypes.size(); i++)
+        for (GWTSampleType def : sampleTypes)
         {
-          GWTSampleType def = (GWTSampleType) sampleTypes.get(i);
-          listBox.addItem(def.getName());
+            listBox.addItem(def.getName());
         }
         listBox.addChangeListener(new ChangeListener(){
             public void onChange(Widget src)
