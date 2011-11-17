@@ -42,5 +42,6 @@ public enum QueryAction
     tableInfo,
     excelWebQueryDefinition,
     createSnapshot,
-    editSnapshot
+    editSnapshot,
+    schemaBrowser   // same as begin, but more explicit
 }

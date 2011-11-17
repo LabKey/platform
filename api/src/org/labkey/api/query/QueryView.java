@@ -306,7 +306,11 @@ public class QueryView extends WebPartView<Object>
 
         if (_queryDef != null && _queryDef.canEdit(getUser()) && getContainer().equals(_queryDef.getContainer()))
         {
-            NavTree editQueryItem = new NavTree(_queryDef.isSqlEditable() ? "Edit Source" : "View Definition", getSchema().urlFor(QueryAction.sourceQuery, _queryDef));
+            NavTree editQueryItem;
+            if (_queryDef.isSqlEditable())
+                editQueryItem = new NavTree("Edit Source", getSchema().urlFor(QueryAction.sourceQuery, _queryDef));
+            else
+                editQueryItem = new NavTree("View Definition", getSchema().urlFor(QueryAction.schemaBrowser, _queryDef));
             editQueryItem.setId(getDataRegionName() + ":Query:EditSource");
             button.addMenuItem(editQueryItem);
             if (_queryDef.isMetadataEditable())
