@@ -297,7 +297,7 @@ public class QueryController extends SpringActionController
      * ensureQueryExists throws NotFound if the query/table does not exist.
      * Does not guarantee that the query is syntactically correct, or can execute.
      */
-    protected void ensureQueryExists(QueryForm form) throws ServletException
+    protected void ensureQueryExists(QueryForm form)
     {
         if (form.getSchema() == null)
         {
@@ -925,7 +925,6 @@ public class QueryController extends SpringActionController
             return root;
         }
     }
-
 
     @RequiresPermissionClass(ReadPermission.class)
     public class RawTableMetaDataAction extends QueryViewAction
@@ -1560,6 +1559,7 @@ public class QueryController extends SpringActionController
             {
                 if (session)
                 {
+                    assert !view.isSession();
                     if (owner == null)
                     {
                         errors.reject(ERROR_MSG, "Session views can't be saved for all users");
@@ -1573,9 +1573,10 @@ public class QueryController extends SpringActionController
                 }
                 else
                 {
-                    // If the form is saving to the database but the view is session,
-                    // just flip the view's session bit if it is a custom view.
-                    ((CustomViewImpl)view).isSession(false);
+                    // Remove the session view and call saveCustomView again to either create a new view or update an existing view.
+                    assert view.isSession();
+                    view.delete(getUser(), getViewContext().getRequest());
+                    return saveCustomView(container, queryDef, regionName, viewName, share, inherit, session, saveFilter, updateCallback, srcURL, errors);
                 }
             }
 
