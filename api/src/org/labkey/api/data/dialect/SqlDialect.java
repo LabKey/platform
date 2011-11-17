@@ -268,6 +268,14 @@ public abstract class SqlDialect
     }
 
 
+    public static boolean isTransactionException(SQLException x)
+    {
+        String msg = StringUtils.defaultString(x.getMessage(),"");
+        String state = StringUtils.defaultString(((SQLException)x).getSQLState(),"");
+        return -1 != msg.toLowerCase().indexOf("deadlock") || state.startsWith("25") || state.startsWith("40");
+    }
+
+
     // Do dialect-specific work for this new data source.
     public void prepareNewDbScope(DbScope scope) throws SQLException, IOException
     {

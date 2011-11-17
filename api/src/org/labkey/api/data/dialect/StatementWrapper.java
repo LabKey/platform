@@ -1608,12 +1608,9 @@ public class StatementWrapper implements Statement, PreparedStatement, CallableS
         _log.log(Level.DEBUG, logEntry);
 
         // check for deadlock or transaction related error
-        if (x instanceof SQLException)
+        if (x instanceof SQLException && SqlDialect.isTransactionException((SQLException)x))
         {
-            String msg = StringUtils.defaultString(x.getMessage(),"");
-            String state = StringUtils.defaultString(((SQLException)x).getSQLState(),"");
-            if (-1 != msg.toLowerCase().indexOf("deadlock") || state.startsWith("25") || state.startsWith("40"))
-                BreakpointThread.dumpThreads(_log);
+            BreakpointThread.dumpThreads(_log);
         }
     }
 
