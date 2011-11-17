@@ -38,7 +38,6 @@ import org.springframework.validation.BindException;
 import javax.mail.Address;
 import javax.mail.Message;
 import javax.mail.MessagingException;
-import java.sql.SQLException;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
@@ -149,41 +148,35 @@ public class SendMessageAction extends MutatingApiAction<SendMessageAction.Messa
         String address = recipient.getString(MsgRecipient.address.name());
         int principalId = NumberUtils.toInt(recipient.getString(MsgRecipient.principalId.name()), -100);
 
-        try {
-            if (address != null)
-            {
-                return new String[]{address};
-            }
-            else if (principalId != -100)
-            {
-                if (!isServerSideRequest())
-                    throw new IllegalArgumentException("Use of principalId is allowed only for server side scripts");
-
-                // specifies a user or group id
-                User user = UserManager.getUser(principalId);
-                if (user != null)
-                    return new String[]{user.getEmail()};
-                else
-                {
-                    Group group = SecurityManager.getGroup(principalId);
-                    if (group != null)
-                    {
-                        if (group.isSystemGroup())
-                            throw new IllegalArgumentException("Invalid group ID: site groups are not allowed");
-
-                        return SecurityManager.getGroupMemberNames(principalId);
-                    }
-                    else
-                        throw new IllegalArgumentException("Unable to resolve principalId");
-                }
-            }
-            else
-                throw new IllegalArgumentException("Invalid group or user ID format (must be: id:<user or group id>");
-        }
-        catch (SQLException e)
+        if (address != null)
         {
-            throw new RuntimeException(e);
+            return new String[]{address};
         }
+        else if (principalId != -100)
+        {
+            if (!isServerSideRequest())
+                throw new IllegalArgumentException("Use of principalId is allowed only for server side scripts");
+
+            // specifies a user or group id
+            User user = UserManager.getUser(principalId);
+            if (user != null)
+                return new String[]{user.getEmail()};
+            else
+            {
+                Group group = SecurityManager.getGroup(principalId);
+                if (group != null)
+                {
+                    if (group.isSystemGroup())
+                        throw new IllegalArgumentException("Invalid group ID: site groups are not allowed");
+
+                    return SecurityManager.getGroupMemberNames(principalId);
+                }
+                else
+                    throw new IllegalArgumentException("Unable to resolve principalId");
+            }
+        }
+        else
+            throw new IllegalArgumentException("Invalid group or user ID format (must be: id:<user or group id>");
     }
 
     private void addMsgRecipients(MailHelper.MultipartMessage msg, JSONArray recipients) throws IllegalArgumentException

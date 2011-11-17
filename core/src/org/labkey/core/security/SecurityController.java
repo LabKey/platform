@@ -20,6 +20,8 @@ import jxl.write.WriteException;
 import org.apache.commons.lang.StringUtils;
 import org.junit.Assert;
 import org.junit.Test;
+import org.labkey.api.action.ApiAction;
+import org.labkey.api.action.ApiResponse;
 import org.labkey.api.action.ApiSimpleResponse;
 import org.labkey.api.action.BaseViewAction;
 import org.labkey.api.action.ExportAction;
@@ -68,6 +70,8 @@ import org.labkey.api.security.roles.Role;
 import org.labkey.api.security.roles.RoleManager;
 import org.labkey.api.security.roles.SiteAdminRole;
 import org.labkey.api.util.CSRFUtil;
+import org.labkey.api.util.DotRunner;
+import org.labkey.api.util.FileUtil;
 import org.labkey.api.util.GUID;
 import org.labkey.api.util.HelpTopic;
 import org.labkey.api.util.PageFlowUtil;
@@ -101,6 +105,7 @@ import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletRequestWrapper;
 import javax.servlet.http.HttpServletResponse;
+import java.io.File;
 import java.io.Writer;
 import java.sql.SQLException;
 import java.util.ArrayList;
@@ -118,21 +123,21 @@ import static org.labkey.api.util.PageFlowUtil.filter;
 public class SecurityController extends SpringActionController
 {
     private static DefaultActionResolver _actionResolver = new DefaultActionResolver(SecurityController.class,
-            SecurityApiActions.GetGroupPermsAction.class,
-            SecurityApiActions.GetUserPermsAction.class,
-            SecurityApiActions.GetGroupsForCurrentUserAction.class,
-            SecurityApiActions.EnsureLoginAction.class,
-            SecurityApiActions.GetRolesAction.class,
-            SecurityApiActions.GetSecurableResourcesAction.class,
-            SecurityApiActions.GetPolicyAction.class,
-            SecurityApiActions.SavePolicyAction.class,
-            SecurityApiActions.DeletePolicyAction.class,
-            SecurityApiActions.CreateGroupAction.class,
-            SecurityApiActions.DeleteGroupAction.class,
-            SecurityApiActions.AddGroupMemberAction.class,
-            SecurityApiActions.RemoveGroupMemberAction.class,
-            SecurityApiActions.CreateNewUserAction.class,
-            SecurityApiActions.RenameGroupAction.class);
+        SecurityApiActions.GetGroupPermsAction.class,
+        SecurityApiActions.GetUserPermsAction.class,
+        SecurityApiActions.GetGroupsForCurrentUserAction.class,
+        SecurityApiActions.EnsureLoginAction.class,
+        SecurityApiActions.GetRolesAction.class,
+        SecurityApiActions.GetSecurableResourcesAction.class,
+        SecurityApiActions.GetPolicyAction.class,
+        SecurityApiActions.SavePolicyAction.class,
+        SecurityApiActions.DeletePolicyAction.class,
+        SecurityApiActions.CreateGroupAction.class,
+        SecurityApiActions.DeleteGroupAction.class,
+        SecurityApiActions.AddGroupMemberAction.class,
+        SecurityApiActions.RemoveGroupMemberAction.class,
+        SecurityApiActions.CreateNewUserAction.class,
+        SecurityApiActions.RenameGroupAction.class);
 
     public SecurityController()
     {
@@ -287,9 +292,7 @@ public class SecurityController extends SpringActionController
             String resource = getContainer().getId();
             ActionURL doneURL = form.isWizard() ? getContainer().getFolderType().getStartURL(getContainer(), getUser()) : form.getReturnActionURL();
 
-            Container container = getViewContext().getContainer();
-
-            FolderPermissions permsView = new FolderPermissions(resource, doneURL);
+            FolderPermissionsView permsView = new FolderPermissionsView(resource, doneURL);
 
             getPageConfig().setTemplate(PageConfig.Template.Dialog);
 
@@ -312,12 +315,12 @@ public class SecurityController extends SpringActionController
     }
 
 
-    public class FolderPermissions extends JspView<FolderPermissions>
+    public class FolderPermissionsView extends JspView<FolderPermissionsView>
     {
         public final String resource;
         public final ActionURL doneURL;
         
-        FolderPermissions(String resource, ActionURL doneURL)
+        FolderPermissionsView(String resource, ActionURL doneURL)
         {
             super(SecurityController.class, "FolderPermissions.jsp", null);
             this.setModelBean(this);
@@ -750,14 +753,16 @@ public class SecurityController extends SpringActionController
                 //check for users to delete
                 if (removeNames != null)
                 {
-                    //get list of group members. need this to determine how many there are.
-                    String[] groupMemberNames = SecurityManager.getGroupMemberNames(_group.getUserId());
-
                     //if this is the site admins group and user is attempting to remove all site admins, display error.
-                    if (_group.getUserId() == Group.groupAdministrators && removeNames.length == groupMemberNames.length)
+                    if (_group.getUserId() == Group.groupAdministrators)
                     {
-                        errors.addError(new LabkeyError("The Site Administrators group must always contain at least one member. You cannot remove all members of this group."));
+                        //get list of group members to determine how many there are
+                        Set<UserPrincipal> userMembers = SecurityManager.getGroupMembers(_group, SecurityManager.GroupMemberType.Users);
+
+                        if (removeNames.length == userMembers.size())
+                            errors.addError(new LabkeyError("The Site Administrators group must always contain at least one member. You cannot remove all members of this group."));
                     }
+
                     //if this is site or project admins group and user is removing themselves, display warning.
                     else if (_group.getName().compareToIgnoreCase("Administrators") == 0
                             && Arrays.asList(removeNames).contains(getUser().getEmail())
@@ -1659,6 +1664,40 @@ public class SecurityController extends SpringActionController
         }
     }
 
+
+    public static class GroupDiagramViewFactory implements SecurityManager.ViewFactory
+    {
+        @Override
+        public HttpView createView(ViewContext context)
+        {
+            JspView view = new JspView("/org/labkey/core/security/groupDiagram.jsp");
+            view.setTitle("Group Diagram");
+
+            return view;
+        }
+    }
+
+
+    @RequiresPermissionClass(AdminPermission.class)
+    public class GroupDiagramAction extends ApiAction
+    {
+        @Override
+        public ApiResponse execute(Object o, BindException errors) throws Exception
+        {
+            String dot = GroupManager.getGroupGraph(getContainer());
+            File dir = FileUtil.getTempDirectory();
+            File svgFile = new File(dir, "groups.svg");  // TODO: Randomize
+            DotRunner runner = new DotRunner(dir, dot);
+            runner.addSvgOutput(svgFile);
+            runner.execute();
+            String svg = PageFlowUtil.getFileContentsAsString(svgFile);
+            svgFile.delete();
+            svg = svg.substring(svg.indexOf("<svg"));
+
+            return new ApiSimpleResponse("svg", svg);
+        }
+    }
+
     public static class TestCase extends Assert
     {
         private Container c;
@@ -1682,16 +1721,8 @@ public class SecurityController extends SpringActionController
             assertTrue(site.isAdministrator());
 
             User guest = SecurityManager.addUser(new ValidEmail("guest@scjutc.com")).getUser();
-//            Group guestsGroup = SecurityManager.getGroup(Group.groupGuests);
-//            SecurityManager.addMember(guestsGroup, guest);
-
             User user = SecurityManager.addUser(new ValidEmail("user@scjutc.com")).getUser();
-//            Group usersGroup = SecurityManager.getGroup(Group.groupUsers);
-//            SecurityManager.addMember(usersGroup, user);
-
             User admin = SecurityManager.addUser(new ValidEmail("admin@scjutc.com")).getUser();
-//            SecurityManager.addMember(usersGroup, admin);
-//            SecurityManager.addMember(guestsGroup, admin);
 
             MutableSecurityPolicy policy = new MutableSecurityPolicy(c, c.getPolicy());
             policy.addRoleAssignment(admin, RoleManager.getRole(SiteAdminRole.class));

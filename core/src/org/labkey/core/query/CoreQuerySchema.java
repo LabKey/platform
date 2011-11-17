@@ -297,20 +297,9 @@ public class CoreQuerySchema extends UserSchema
                 _projectUserIds = new HashSet<Integer>(SecurityManager.getFolderUserids(getContainer()));
                 Group siteAdminGroup = SecurityManager.getGroup(Group.groupAdministrators);
 
-                try
+                for (User adminUser : SecurityManager.getGroupMembers(siteAdminGroup))
                 {
-                    for (User adminUser : SecurityManager.getGroupMembers(siteAdminGroup))
-                    {
-                        _projectUserIds.add(adminUser.getUserId());
-                    }
-                }
-                catch (SQLException e)
-                {
-                    throw new RuntimeSQLException(e);
-                }
-                catch (ValidEmail.InvalidEmailException e)
-                {
-                    throw new UnexpectedException(e);
+                    _projectUserIds.add(adminUser.getUserId());
                 }
             }
             ColumnInfo userid = users.getRealTable().getColumn("userid");

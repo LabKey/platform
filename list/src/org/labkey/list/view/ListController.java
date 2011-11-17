@@ -21,6 +21,8 @@ import org.apache.commons.lang.ObjectUtils;
 import org.apache.commons.lang.StringUtils;
 import org.apache.commons.lang.math.NumberUtils;
 import org.apache.log4j.Logger;
+import org.jetbrains.annotations.Nullable;
+import org.labkey.api.action.ConfirmAction;
 import org.labkey.api.action.ExportAction;
 import org.labkey.api.action.FormViewAction;
 import org.labkey.api.action.GWTServiceAction;
@@ -157,7 +159,7 @@ public class ListController extends SpringActionController
     }
 
 
-    private NavTree appendListNavTrail(NavTree root, ListDefinition list, String title)
+    private NavTree appendListNavTrail(NavTree root, ListDefinition list, @Nullable String title)
     {
         appendRootNavTrail(root);
         root.addChild(list.getName(), list.urlShowData());
@@ -267,19 +269,17 @@ public class ListController extends SpringActionController
     }
 
 
-   @RequiresPermissionClass(AdminPermission.class)
-    public class DeleteListDefinitionAction extends FormViewAction<ListDefinitionForm>
+    @RequiresPermissionClass(AdminPermission.class)
+    public class DeleteListDefinitionAction extends ConfirmAction<ListDefinitionForm>
     {
-        private ListDefinition _list;
-
-        public void validateCommand(ListDefinitionForm target, Errors errors)
+        public void validateCommand(ListDefinitionForm form, Errors errors)
         {
         }
 
-        public ModelAndView getView(ListDefinitionForm form, boolean reshow, BindException errors) throws Exception
+        @Override
+        public ModelAndView getConfirmView(ListDefinitionForm form, BindException errors) throws Exception
         {
-            _list = form.getList();
-            return FormPage.getView(ListController.class, form, "deleteListDefinition.jsp");
+            return new HtmlView("Are you sure you want to delete the list '" + PageFlowUtil.filter(form.getList().getName()) + "'?");
         }
 
         public boolean handlePost(ListDefinitionForm form, BindException errors) throws Exception
@@ -288,15 +288,9 @@ public class ListController extends SpringActionController
             return true;
         }
 
-        public ActionURL getSuccessURL(ListDefinitionForm listDefinitionForm)
+        public URLHelper getSuccessURL(ListDefinitionForm form)
         {
-            return getBeginURL(getContainer());
-        }
-
-        public NavTree appendNavTrail(NavTree root)
-        {
-            return appendListNavTrail(root, _list, "Delete List");
-
+            return getBeginURL(getContainer());     // Always go back to manage views page
         }
     }
 

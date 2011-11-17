@@ -550,14 +550,7 @@ public class IssueManager
 
                 if (null != group)
                 {
-                    try
-                    {
-                        initialAssignedTo.addAll(SecurityManager.getGroupMembers(group));
-                    }
-                    catch (Exception e)
-                    {
-                        throw new RuntimeException(e);
-                    }
+                    initialAssignedTo.addAll(SecurityManager.getGroupMembers(group));
                 }
                 else
                 {

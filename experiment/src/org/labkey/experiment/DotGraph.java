@@ -32,7 +32,6 @@ import java.io.PrintWriter;
  */
 public class DotGraph
 {
-
     PrintWriter pwOut;
     ActionURL urlBase;
     private static String GROUP_ID_PREFIX = "Grp";
@@ -81,6 +80,7 @@ public class DotGraph
         writtenProcNodes = new HashMap<Integer, DotNode>();
         pendingConnects = new HashSet<String>();
         writtenConnects = new HashSet<String>();
+
         if (bSmallFonts)
             pwOut.println("digraph G { node[fontname=\"" + LABEL_FONT + "\" fontsize=" + LABEL_SMALL_FONTSIZE + "]");
         else

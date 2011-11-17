@@ -25,8 +25,8 @@ import org.labkey.api.exp.api.ExpProtocolApplication;
 import org.labkey.api.exp.api.ExpProtocolOutput;
 import org.labkey.api.exp.api.ExpRun;
 import org.labkey.api.settings.AppProps;
+import org.labkey.api.util.DotRunner;
 import org.labkey.api.util.FileUtil;
-import org.labkey.api.util.HelpTopic;
 import org.labkey.api.util.ImageUtil;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.ViewContext;
@@ -162,18 +162,12 @@ public class ExperimentRunGraph
         // We need to create files to open up a write lock
         Lock writeLock = LOCK.writeLock();
         writeLock.lock();
+
         try
         {
             if (!testDotPath())
             {
-                StringBuffer sb = new StringBuffer();
-                sb.append("Unable to display graph view: cannot run ");
-                sb.append(dotExePath);
-                sb.append(" due to system configuration error. \n<BR>");
-                sb.append("For help on fixing your system configuration, please consult the Graphviz section of the <a href=\"");
-                sb.append((new HelpTopic("thirdPartyCode")).getHelpTopicLink());
-                sb.append("\" target=\"_new\">LabKey Server documentation on third party components</a>.<br>");
-                throw new ExperimentException(sb.toString());
+                throw new ExperimentException(DotRunner.getConfigurationErrorHtml());
             }
 
             ActionURL url = ctx.getActionURL();
@@ -197,6 +191,7 @@ public class ExperimentRunGraph
                     }
                     catch (NumberFormatException e) {}
                 }
+
                 StringWriter writer = new StringWriter();
                 out = new PrintWriter(writer);
                 GraphCtrlProps ctrlProps = analyzeGraph(run);
@@ -228,7 +223,11 @@ public class ExperimentRunGraph
                 out.close();
                 out = null;
                 String dotInput = writer.getBuffer().toString();
-
+                DotRunner runner = new DotRunner(getFolderDirectory(run.getContainer()), dotInput);
+                runner.addCmapOutput(mapFile);
+                runner.addPngOutput(imageFile);
+                runner.execute();
+/*
                 ProcessBuilder pb = new ProcessBuilder(dotExePath, "-Tcmap", "-o" + mapFile.getName(), "-Tpng", "-o" + imageFile.getName());
                 pb.directory(getFolderDirectory(run.getContainer()));
                 ProcessResult result = executeProcess(pb, dotInput);
@@ -237,6 +236,8 @@ public class ExperimentRunGraph
                 {
                     throw new IOException("Graph generation failed with error code " + result._returnCode + " - " + result._output);
                 }
+*/
+
                 mapFile.deleteOnExit();
                 imageFile.deleteOnExit();
 
@@ -337,42 +338,6 @@ public class ExperimentRunGraph
         }
     }
 
-    private static ProcessResult executeProcess(ProcessBuilder pb, String stdIn) throws IOException, InterruptedException
-    {
-        StringBuilder sb = new StringBuilder();
-        pb.redirectErrorStream(true);
-        Process p = pb.start();
-        PrintWriter writer = null;
-        BufferedReader procReader = null;
-        try
-        {
-            writer = new PrintWriter(p.getOutputStream());
-            writer.write(stdIn);
-            writer.close();
-            writer = null;
-            procReader = new BufferedReader(new InputStreamReader(p.getInputStream()));
-            String line;
-            while ((line = procReader.readLine()) != null)
-            {
-                sb.append(line);
-                sb.append("\n");
-            }
-        }
-        finally
-        {
-            if (procReader != null)
-            {
-                try { procReader.close(); } catch (IOException eio) {}
-            }
-            if (writer != null)
-            {
-                writer.close();
-            }
-        }
-        int returnCode = p.waitFor();
-        return new ProcessResult(returnCode, sb.toString());
-    }
-
     /**
      * Clears out the cache of files for this container. Must be called after any operation that changes the way a graph
      * would be generated. Typically this includes deleting or inserting any run in the container, because that
@@ -394,19 +359,6 @@ public class ExperimentRunGraph
         finally
         {
             deleteLock.unlock();
-        }
-    }
-
-    private static class ProcessResult
-    {
-        private final int _returnCode;
-        private final String _output;
-
-        public ProcessResult(int returnCode, String output)
-        {
-            super();
-            _returnCode = returnCode;
-            _output = output;
         }
     }
 
@@ -598,7 +550,6 @@ public class ExperimentRunGraph
 
     private static void generateSummaryGraph(ExpRunImpl expRun, DotGraph dg, GraphCtrlProps ctrlProps)
     {
-
         int runId = expRun.getRowId();
         Map<ExpMaterial, String> inputMaterials = expRun.getMaterialInputs();
         Map<ExpData, String> inputDatas = expRun.getDataInputs();
@@ -799,29 +750,18 @@ public class ExperimentRunGraph
 
     private static boolean testDotPath()
     {
+        File dir;
+
         try
         {
-            File testVersion = new File(getBaseDirectory(), "dottest.txt");
-            if (testVersion.exists())
-                return true;
-            ProcessBuilder pb = new ProcessBuilder(dotExePath, "-V", "-o" + testVersion.getName());
-            pb = pb.directory(getBaseDirectory());
-            Process p = pb.start();
-            int err = p.waitFor();
-            if (err == 0)
-                return true;
-
+            dir = getBaseDirectory();
         }
         catch (IOException e)
         {
             return false;
         }
-        catch (InterruptedException e)
-        {
-            return false;
-        }
-        return false;
 
+        return DotRunner.testDotPath(dir);
     }
 
 
@@ -883,7 +823,5 @@ public class ExperimentRunGraph
                 _lock = null;
             }
         }
-
-
     }
 }

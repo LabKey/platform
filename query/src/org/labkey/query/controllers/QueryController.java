@@ -2244,7 +2244,7 @@ public class QueryController extends SpringActionController
     {
         public ApiResponse execute(APIQueryForm form, BindException errors) throws Exception
         {
-            //TODO: remove this hack once we can send maxRows=0 down to the table layer
+            //TODO: remove once we can send maxRows=0 down to the table layer
             //currently Query and the table layer interprets maxRows=0 as meaning "all rows"
             String maxRowsParam = StringUtils.trimToNull(getViewContext().getRequest().getParameter(QueryView.DATAREGIONNAME_DEFAULT + "." + QueryParam.maxRows.name()));
             boolean metaDataOnly = "0".equals(maxRowsParam);

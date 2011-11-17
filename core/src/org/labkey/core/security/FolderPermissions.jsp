@@ -16,23 +16,23 @@
  */
 %>
 <%@ page import="org.labkey.api.data.Container" %>
-<%@ page import="org.labkey.core.user.UserController" %>
+<%@ page import="org.labkey.api.data.ContainerManager" %>
+<%@ page import="org.labkey.api.portal.ProjectUrls" %>
+<%@ page import="org.labkey.api.security.SecurityManager" %>
+<%@ page import="org.labkey.api.security.User" %>
+<%@ page import="org.labkey.api.security.permissions.AdminPermission" %>
+<%@ page import="org.labkey.api.security.roles.RoleManager" %>
+<%@ page import="org.labkey.api.util.PageFlowUtil" %>
+<%@ page import="org.labkey.api.view.ActionURL" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.api.view.WebPartView" %>
-<%@ page import="org.labkey.core.security.SecurityController" %>
-<%@ page import="org.labkey.api.util.PageFlowUtil" %>
-<%@ page import="org.labkey.api.security.*" %>
-<%@ page import="java.util.List" %>
-<%@ page import="org.labkey.api.security.SecurityManager" %>
-<%@ page import="org.labkey.api.security.roles.RoleManager" %>
-<%@ page import="org.labkey.api.security.permissions.AdminPermission" %>
-<%@ page import="org.labkey.api.data.ContainerManager" %>
-<%@ page import="org.labkey.api.view.ActionURL" %>
-<%@ page import="org.labkey.api.portal.ProjectUrls" %>
 <%@ page import="org.labkey.core.admin.AdminController" %>
+<%@ page import="org.labkey.core.security.SecurityController" %>
+<%@ page import="org.labkey.core.user.UserController" %>
+<%@ page import="java.util.List" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
-    SecurityController.FolderPermissions me = (SecurityController.FolderPermissions)HttpView.currentView();
+    SecurityController.FolderPermissionsView me = (SecurityController.FolderPermissionsView)HttpView.currentView();
     Container c = getViewContext().getContainer();
     ActionURL doneURL = me.doneURL;
     if (null == doneURL)
@@ -112,6 +112,7 @@ function done()
         });
     }
 }
+
 function save()
 {
     if (policyEditor)
@@ -239,11 +240,16 @@ Ext.onReady(function(){
     <div id="groupsFrame" class="x-hide-display"></div>
     <div id="siteGroupsFrame" class="x-hide-display"></div>
     <script type="text/javascript">
+    function showPopupId(groupId)
+    {
+        showPopup(securityCache.getPrincipal(groupId), null);
+    }
+
     function showPopup(group, groupsList)
     {
         var canEdit = !group.Container && isSiteAdmin || group.Container && isProjectAdmin;
         var w = new UserInfoPopup({userId:group.UserId, cache:securityCache, policy:null, modal:true, canEdit:canEdit});
-        w.on("close", function(){groupsList.onDataChanged();});
+        w.on("close", function(){if (groupsList) groupsList.onDataChanged();});
         w.show();
     }
 
@@ -351,23 +357,23 @@ Ext.onReady(function(){
 --%>
 
 <%
-        List<SecurityManager.ViewFactory> factories = SecurityManager.getViewFactories();
+    List<SecurityManager.ViewFactory> factories = SecurityManager.getViewFactories();
 
-        int counter = 0;
-        for (SecurityManager.ViewFactory factory : factories)
-        {
-            WebPartView view = (WebPartView)factory.createView(getViewContext());
-            if (null == view)
-                continue;
-            counter++;
-            String id = "moduleSecurityView" + counter;
-            %><div id='<%=id%>' class="x-hide-display"><%
-            view.setFrame(WebPartView.FrameType.NONE);
-            me.include(view,out);
-            %></div>
-            <script type="text/javascript">
-                tabItems.push({contentEl:<%=PageFlowUtil.jsString(id)%>, title:<%=PageFlowUtil.jsString(view.getTitle())%>, autoHeight:true});
-            </script>
-            <%
-        }
+    int counter = 0;
+    for (SecurityManager.ViewFactory factory : factories)
+    {
+        WebPartView view = (WebPartView)factory.createView(getViewContext());
+        if (null == view)
+            continue;
+        counter++;
+        String id = "moduleSecurityView" + counter;
+        %><div id='<%=id%>' class="x-hide-display"><%
+        view.setFrame(WebPartView.FrameType.NONE);
+        me.include(view,out);
+        %></div>
+        <script type="text/javascript">
+            tabItems.push({contentEl:<%=PageFlowUtil.jsString(id)%>, title:<%=PageFlowUtil.jsString(view.getTitle())%>, autoHeight:true});
+        </script>
+        <%
+    }
 %>

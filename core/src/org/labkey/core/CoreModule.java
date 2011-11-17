@@ -503,6 +503,8 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
         {
             ss.addDocumentProvider(this);
         }
+
+        SecurityManager.addViewFactory(new SecurityController.GroupDiagramViewFactory());
     }
 
     @Override
