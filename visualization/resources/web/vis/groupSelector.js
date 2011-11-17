@@ -36,7 +36,7 @@ LABKEY.vis.GroupSelector = Ext.extend(Ext.Panel, {
         });
 
         // selection model for group selector gridPanel
-        var sm = new  Ext.grid.CheckboxSelectionModel({});
+        var sm = new  Ext.grid.CheckboxSelectionModel({checkOnly:true});
         sm.on('selectionchange', function(selModel){
             // add the selected groups/subjects to the subject object
             this.subject.groups = [];

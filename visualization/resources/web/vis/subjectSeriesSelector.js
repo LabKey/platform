@@ -89,7 +89,7 @@ LABKEY.vis.SubjectSeriesSelector = Ext.extend(Ext.Panel, {
         this.add(this.defaultDisplayField);
 
         // selection model for subject series selector
-        var sm = new  Ext.grid.CheckboxSelectionModel({});
+        var sm = new  Ext.grid.CheckboxSelectionModel({checkOnly: true});
         sm.on('selectionchange', function(selModel){
             // add the selected subjects to the subject object
             this.subject.values = [];

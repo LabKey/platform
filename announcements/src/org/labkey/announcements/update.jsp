@@ -33,7 +33,22 @@
     DiscussionService.Settings settings = bean.settings;
 %>
 <%=formatMissedErrors("form")%>
-<form method="post" action="update.post" enctype="multipart/form-data">
+<script type="text/javascript">
+function validateForm(form)
+{
+    var trimmedTitle = form.title.value.trim();
+
+    if (trimmedTitle.length > 0)
+        return true;
+
+    Ext.Msg.alert("Error", "Title must not be blank");
+    return false;
+}
+Ext.onReady(function(){
+    new Ext.Resizable('body', { handles:'se', minWidth:200, minHeight:100, wrap:true });
+});
+</script>
+<form method="post" action="update.post" enctype="multipart/form-data" onSubmit="return validateForm(this)">
 <input type="hidden" name="rowId" value="<%=ann.getRowId()%>">
 <input type="hidden" name="entityId" value="<%=ann.getEntityId()%>">
 <input type="hidden" name=".oldValues" value="<%=PageFlowUtil.encodeObject(ann)%>">
@@ -129,7 +144,7 @@ if (settings.hasExpires())
     <td colspan=3 align=left>
       <table>
         <tr>
-          <td><%=PageFlowUtil.generateSubmitButton("Submit", null, null, true, true)%>
+          <td><%=PageFlowUtil.generateSubmitButton("Submit", null, null, true, false)%>
              &nbsp;<%=generateBackButton("Cancel")%></td>
         </tr>
       </table>

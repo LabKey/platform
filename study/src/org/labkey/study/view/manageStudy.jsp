@@ -254,7 +254,7 @@
 <%=generateButton("Export Study", StudyController.ExportStudyAction.class)%>
 <%=generateButton("Reload Study", StudyController.ImportStudyAction.class)%>
 <%=generateButton("Delete Study", StudyController.DeleteStudyAction.class)%>
-<%=generateButton("Create New Study", "javascript:void(0)", "showNewStudyWizard()")%>
+<%=generateButton("Create Ancillary Study", "javascript:void(0)", "showNewStudyWizard()")%>
 <%
     }
 %>

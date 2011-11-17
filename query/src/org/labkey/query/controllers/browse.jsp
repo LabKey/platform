@@ -34,8 +34,8 @@
     Ext.onReady(function(){
         _browser = new LABKEY.ext.SchemaBrowser({
             renderTo: 'browser',
-            height: 600,
-            width: 900,
+            boxMinHeight: 600,
+            boxMinWidth: 900,
             useHistory: true,
             listeners: {
                 schemasloaded: {

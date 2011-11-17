@@ -1303,7 +1303,15 @@ public class AnnouncementsController extends SpringActionController
                 throw new UnauthorizedException();
             }
 
-            AnnouncementManager.updateAnnouncement(getUser(), update, files);
+            try
+            {
+                AnnouncementManager.updateAnnouncement(getUser(), update, files);
+            }
+            catch (AttachmentService.DuplicateFilenameException e)
+            {
+                errors.reject(ERROR_MSG, e.getMessage());
+                return false;
+            }
 
             // Needs to support non-ActionURL (e.g., an HTML page using the client API with embedded discussion webpart)
             // so we can't use getSuccessURL()

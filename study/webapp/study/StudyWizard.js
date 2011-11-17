@@ -165,7 +165,7 @@ LABKEY.study.CreateStudyWizard = Ext.extend(Ext.util.Observable, {
         var studyLocation = new Ext.form.TextField({
             fieldLabel: 'Location',
             name: 'studyFolder',
-            width: 447,
+            width: 446,
             readOnly: true,
             fieldClass: 'x-form-empty-field',
             value: this.info.dstPath,
@@ -175,7 +175,7 @@ LABKEY.study.CreateStudyWizard = Ext.extend(Ext.util.Observable, {
         var changeFolderBtn = new Ext.Button({
             name:"changeFolderBtn",
             text: "Change",
-            width: 58,
+            width: 57,
             cls: "labkey-button",
             handler: browseFolders
         });
@@ -210,7 +210,7 @@ LABKEY.study.CreateStudyWizard = Ext.extend(Ext.util.Observable, {
             gtip : protocolTip,
             height: 24,
             buttonText: 'Browse',
-            buttonCfg: { cls: "labkey-button" },
+            buttonCfg: { cls: "labkey-button"},
             listeners: {
                 "fileselected": function (fb, v) {
                     var i = Math.max(v.lastIndexOf('/'), v.lastIndexOf('\\'));
@@ -463,7 +463,7 @@ LABKEY.study.CreateStudyWizard = Ext.extend(Ext.util.Observable, {
             }
         });
 
-        var selModel = new Ext.grid.CheckboxSelectionModel();
+        var selModel = new Ext.grid.CheckboxSelectionModel({checkOnly:true});
         selModel.on('selectionchange', function(cmp){this.selectedParticipantGroups = cmp.getSelections();}, this);
 
         var expander = new LABKEY.grid.RowExpander({

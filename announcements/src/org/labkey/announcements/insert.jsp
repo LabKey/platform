@@ -36,8 +36,22 @@
     String insertUrl = AnnouncementsController.getInsertURL(c).getEncodedLocalURIString();
 %>
 <%=formatMissedErrors("form")%>
+<script type="text/javascript">
+function validateForm(form)
+{
+    var trimmedTitle = form.title.value.trim();
 
-<form method=post enctype="multipart/form-data" action="<%=insertUrl%>">
+    if (trimmedTitle.length > 0)
+        return true;
+
+    Ext.Msg.alert("Error", "Title must not be blank");
+    return false;
+}
+Ext.onReady(function(){
+    new Ext.Resizable('body', { handles:'se', minWidth:200, minHeight:100, wrap:true });
+});
+</script>
+<form method=post enctype="multipart/form-data" action="<%=insertUrl%>" onSubmit="return validateForm(this)">
 <input type=hidden name=cancelUrl value="<%=h(null != cancelURL ? cancelURL.getLocalURIString() : null)%>">
 <%=generateReturnUrlFormField(cancelURL)%>
 <input type=hidden name=fromDiscussion value="<%=bean.fromDiscussion%>">
@@ -110,7 +124,7 @@
         </td>
     </tr>
 </table>
-<br>&nbsp;<%=PageFlowUtil.generateSubmitButton("Submit", null, null, true, true)%>&nbsp;<%
+<br>&nbsp;<%=PageFlowUtil.generateSubmitButton("Submit", null, null, true, false)%>&nbsp;<%
 if (null != cancelURL)
 {
     %><%=generateButton("Cancel", cancelURL)%><%
