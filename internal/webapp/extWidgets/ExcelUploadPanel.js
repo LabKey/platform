@@ -286,7 +286,7 @@ Ext4.define('LABKEY.ext4.ExcelUploadPanel', {
         Ext4.Msg.hide();
 
         if(!response.success){
-            alert('There was a problem with the upload');
+            alert(response.exception || 'There was a problem with the upload');
             console.log(response.errors)
             this.fireEvent('uploadexception', response);
         }
@@ -312,6 +312,7 @@ Ext4.define('LABKEY.ext4.ExcelUploadWin', {
         Ext4.apply(this, {
             closeAction:'hide',
             title: 'Upload Data',
+            modal: true,
             width: 730,
             items: [{
                 xtype: 'labkey-exceluploadpanel',

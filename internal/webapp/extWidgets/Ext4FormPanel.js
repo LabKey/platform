@@ -308,6 +308,7 @@ Ext4.define('LABKEY.ext4.FormPanelWin', {
             closeAction:'hide',
             title: 'Upload Data',
             width: 730,
+            modal: true,
             items: [{
                 xtype: 'labkey-formpanel',
                 bubbleEvents: ['uploadexception', 'uploadcomplete'],

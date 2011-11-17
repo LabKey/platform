@@ -44,12 +44,11 @@ Ext4.define('LABKEY.ext.AssayUploadPanel', {
             ,failure: LABKEY.Utils.onError
             ,scope: this
         });
-
         multi.send(this.onMetaLoad, this);
 
         Ext4.apply(this, {
             autoHeight: true
-            ,autoWidth: true
+//            ,autoWidth: true
             ,bodyBorder: false
             ,border: false
             ,frame: false
@@ -89,14 +88,7 @@ Ext4.define('LABKEY.ext.AssayUploadPanel', {
     },
     onMetaLoad: function(){
         this.handleImportMethods();
-
-        //set the initial import method
-        var defaultImportMethodIdx = 0;
-        for (var i=0;i<this.importMethods.length;i++){
-            if (this.importMethods[i].isDefault){
-                defaultImportMethodIdx = i;
-            }
-        }
+        this.defaultImportMethod = this.defaultImportMethod || 'defaultExcel';
 
         //create the panel:
         var radios = [];
@@ -107,7 +99,7 @@ Ext4.define('LABKEY.ext.AssayUploadPanel', {
                 id:'importMethod'+i,
                 boxLabel: this.importMethods[i].label,
                 inputValue: i,
-                checked: i==defaultImportMethodIdx,
+                checked: (this.defaultImportMethod == this.importMethods[i].name),
                 //value: i,
                 scope: this,
                 listeners: {
@@ -167,30 +159,11 @@ Ext4.define('LABKEY.ext.AssayUploadPanel', {
         this.importMethods = this.importMethods || new Array();
 
         this.importMethods.unshift(Ext4.create('LABKEY.ext.AssayImportMethod', {
-            name: 'singleSample',
-            label: 'Single Sample Upload',
+            name: 'manualEntry',
+            label: 'Manual Entry',
             webFormOnly: true,
-            noTemplateDownload: true,
-            newGlobalFields: (function(panel){
-                var fields = new Array();
-                var rf =  panel.domains.Results.columns;
-                for (i=0;i<rf.length;i++)
-                    {
-                        var config = rf[i];
-                        config.domain = 'Results';
-                        fields.push(config);
-
-                        if(config.inputType=='textarea'){
-                            config = Ext4.Object.merge({
-                                editorConfig: {
-                                    height: 100,
-                                    width: 400
-                                }
-                            }, config);
-                        }
-                    }
-                return fields;
-            })(this)
+            showResultGrid: true,
+            noTemplateDownload: true
         }));
 
         this.importMethods.unshift(Ext4.create('LABKEY.ext.AssayImportMethod', {
@@ -225,12 +198,12 @@ Ext4.define('LABKEY.ext.AssayUploadPanel', {
         this.down('#runFields').doLayout();
 
         //we toggle visibility on the file import area
-        if (this.selectedMethod.webFormOnly == true){
-            this.down('#assayResults').setVisible(false);
-        }
-        else {
-            this.down('#assayResults').setVisible(true);
-        }
+        this.down('#assayResults').setVisible(!this.selectedMethod.webFormOnly);
+
+        if(this.selectedMethod.showResultGrid)
+            this.renderResultGrid();
+        else if (this.down('#resultGrid'))
+            this.remove(this.down('#resultGrid'));
 
         this.down('#sampleDataArea').removeAll();
 
@@ -320,11 +293,13 @@ Ext4.define('LABKEY.ext.AssayUploadPanel', {
                     }
                 }, fieldObj);
 
-                if (this.metadataDefaults && this.metadataDefaults[fieldObj.domain]){
+                this.metadataDefaults = this.metadataDefaults || {};
+                if (this.metadataDefaults[fieldObj.domain]){
                     Ext4.Object.merge(fieldObj, this.metadataDefaults[fieldObj.domain]);
                 }
 
-                if (this.metadata && this.metadata[fieldObj.domain] && this.metadata[fieldObj.domain][fieldObj.name]){
+                this.metadata = this.metadata || {};
+                if (this.metadata[fieldObj.domain] && this.metadata[fieldObj.domain][fieldObj.name]){
                     Ext4.Object.merge(fieldObj, this.metadata[fieldObj.domain][fieldObj.name]);
                 }
 
@@ -381,6 +356,35 @@ Ext4.define('LABKEY.ext.AssayUploadPanel', {
         };
 
         LABKEY.Utils.convertToExcel(config);
+    },
+
+    renderResultGrid: function(){
+        this.add({
+            xtype: 'labkey-gridpanel',
+            itemId: 'resultGrid',
+            title: 'Assay Results',
+            bodyStyle:'',
+            minHeight: 400,
+            tbar: [
+                LABKEY.ext4.GRIDBUTTONS['ADDRECORD'](),
+                LABKEY.ext4.GRIDBUTTONS['DELETERECORD']()
+            ],
+            store: Ext4.create('LABKEY.ext4.Store', {
+                schemaName: 'assay',
+                queryName: LABKEY.page.assay.name + ' Data',
+                columns: '*',
+                autoLoad: true,
+                maxRows: 0,
+                metadataDefaults: Ext4.Object.merge({}, this.metadataDefaults.Results, {
+                    ignoreColWidths: true
+                }),
+                metadata: Ext4.Object.merge({}, this.metadata.Results, {
+                    Run: {
+                        hidden: true
+                    }
+                })
+            })
+        })
     },
 
     renderFileArea: function(){
@@ -471,8 +475,24 @@ Ext4.define('LABKEY.ext.AssayUploadPanel', {
         var uploadType = this.down('#inputType').getValue();
         
         if (this.selectedMethod.webFormOnly){
-            var data = [];
-            data.push([], []);
+            var store = this.down('#resultGrid').store;
+
+            var header = [];
+            store.getFields().each(function(f){
+                header.push(f.name);
+            }, this);
+            var data = [header];
+            var newRow;
+            store.each(function(rec){
+                newRow = [];
+                Ext4.each(header, function(f){
+                    newRow.push({
+                        value: rec.get(f)
+                    })
+                });
+                data.push(newRow);
+            }, this);
+
             var run = new LABKEY.Exp.Run();
             this.processData(data, run);
         }
@@ -630,7 +650,6 @@ Ext4.define('LABKEY.ext.AssayUploadPanel', {
         if (this.selectedMethod.clientParsing.contentPost)
             this.selectedMethod.clientParsing.contentPost.call(this, run.dataRows);
 
-
         LABKEY.page.batch.runs = LABKEY.page.batch.runs || new Array();
         LABKEY.page.batch.runs.push(run);
 
@@ -697,6 +716,12 @@ Ext4.define('LABKEY.ext.AssayUploadPanel', {
         for (var j=0;j<this.processing.headers.length;j++){
             var field = row[j];
             var header = this.processing.headers[j];
+//            var meta = this.metadata;
+//            console.log(this.domains)
+
+            if(!field){
+                field = {};
+            }
 
             //Allows a custom parse/transform method to be defined per field
             //runs prior to default processing
@@ -712,6 +737,7 @@ Ext4.define('LABKEY.ext.AssayUploadPanel', {
             if (this.selectedMethod.clientParsing.fieldsPost[header.name])
                 value = this.selectedMethod.clientParsing.fieldsPost[header.name](value);
 
+
             rowContent[header.name] = value;
         }
 
@@ -721,9 +747,10 @@ Ext4.define('LABKEY.ext.AssayUploadPanel', {
 
         return rowContent;
     },
+
     _fieldParse: function (field){
-        //TODO: sort out when cells are returned as objects versus scalars
-        return field.formattedValue || field.value;
+        var val = field.formattedValue || field.value;
+        return Ext.isEmpty(val) ? null : val;
     },
 
     saveBatch: function()
@@ -749,7 +776,9 @@ Ext4.define('LABKEY.ext.AssayUploadPanel', {
                 Ext4.Msg.hide();
                 Ext4.Msg.alert("Success", "Data Uploaded Successfully", function(){
                     function doLoad(){
-                        window.location = LABKEY.ActionURL.getParameter('srcURL') || LABKEY.ActionURL.buildURL('project', 'begin')
+                        //NOTE: always return to the project root, ignoring srcURL
+                        window.location = LABKEY.ActionURL.buildURL('project', 'begin');
+                        //LABKEY.ActionURL.getParameter('srcURL') ||
                     }
 
                     doLoad.defer(400, this)
@@ -759,7 +788,7 @@ Ext4.define('LABKEY.ext.AssayUploadPanel', {
             failureCallback : function (error, format)
             {
                 Ext4.Msg.hide();
-                Ext4.Msg.alert("Failure when communicating with the server: " + error.exception);
+                Ext4.Msg.alert("Error", "Failure when communicating with the server: " + error.exception);
                 LABKEY.Utils.onError(error);
             }
         });
@@ -787,9 +816,6 @@ LABKEY.ext.AssayImportMethod = function(config){
     var defaults = {
         //name: 'Name',
         //,label: 'Other CSV Upload'
-
-        //if true, this will be selected on load
-        //,isDefault: true
 
         //provide arrays with the names of any existing fields to skip
         skippedBatchFields: []
