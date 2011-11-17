@@ -55,6 +55,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.TimeUnit;
 
 
 public class SchemaTableInfo implements TableInfo, UpdateableTableInfo
@@ -243,6 +244,7 @@ public class SchemaTableInfo implements TableInfo, UpdateableTableInfo
         return getSelectList(getPkColumnNames());
     }
 
+
     private NamedObjectList getSelectList(List<String> columnNames)
     {
         StringBuilder pkColumnSelect = new StringBuilder();
@@ -287,9 +289,18 @@ public class SchemaTableInfo implements TableInfo, UpdateableTableInfo
             ResultSetUtil.close(rs);
         }
 
-        DbCache.put(this, cacheKey, list);
+        DbCache.put(this, cacheKey, list, getSelectListTimeout());
         return list;
     }
+
+
+    protected long _selectListTimeout = TimeUnit.MINUTES.toMillis(1);
+
+    protected long getSelectListTimeout()
+    {
+        return _selectListTimeout;
+    }
+
 
     public ColumnInfo getColumn(String colName)
     {
