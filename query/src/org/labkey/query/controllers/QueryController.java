@@ -3592,45 +3592,67 @@ public class QueryController extends SpringActionController
                     throw new UnauthorizedException();
             }
 
-            // Delete the session view.
-            view.delete(getUser(), getViewContext().getRequest());
-
-            // Get any previously existing non-session view.
-            // The session custom view and the view-to-be-saved may have different names.
-            // If they do have different names, we may need to delete an existing session view with that name.
-            // UNDONE: If the view has a different name, we will clobber it without asking.
-            CustomView existingView = form.getQueryDef().getCustomView(getUser(), null, form.getNewName());
-            if (existingView != null && existingView.isSession())
+            try
             {
-                // Delete any session view we are overwriting.
-                existingView.delete(getUser(), getViewContext().getRequest());
-                existingView = form.getQueryDef().getCustomView(getUser(), null, form.getNewName());
-            }
+                QueryManager.get().getDbSchema().getScope().ensureTransaction();
 
-            if (existingView == null || !existingView.isEditable())
+                // Delete the session view.
+                view.delete(getUser(), getViewContext().getRequest());
+
+                // Get any previously existing non-session view.
+                // The session custom view and the view-to-be-saved may have different names.
+                // If they do have different names, we may need to delete an existing session view with that name.
+                // UNDONE: If the view has a different name, we will clobber it without asking.
+                CustomView existingView = form.getQueryDef().getCustomView(getUser(), null, form.getNewName());
+                if (existingView != null && existingView.isSession())
+                {
+                    // Delete any session view we are overwriting.
+                    existingView.delete(getUser(), getViewContext().getRequest());
+                    existingView = form.getQueryDef().getCustomView(getUser(), null, form.getNewName());
+                }
+
+                if (existingView == null)
+                {
+                    User owner = form.isShared() ? null : getUser();
+
+                    CustomViewImpl viewCopy = new CustomViewImpl(form.getQueryDef(), owner, form.getNewName());
+                    viewCopy.setColumns(view.getColumns());
+                    viewCopy.setCanInherit(form.isInherit());
+                    viewCopy.setFilterAndSort(view.getFilterAndSort());
+                    viewCopy.setColumnProperties(view.getColumnProperties());
+                    viewCopy.setIsHidden(view.isHidden());
+
+                    viewCopy.save(getUser(), getViewContext().getRequest());
+                }
+                else if (!existingView.isEditable())
+                {
+                    throw new IllegalArgumentException("Existing view '" + form.getNewName() + "' is not editable.  You may save this view with a different name.");
+                }
+                else
+                {
+                    // UNDONE: changing shared and inherit properties is unimplemented.  Not sure if it makes sense from a usability point of view.
+                    existingView.setColumns(view.getColumns());
+                    existingView.setFilterAndSort(view.getFilterAndSort());
+                    existingView.setColumnProperties(view.getColumnProperties());
+
+                    existingView.save(getUser(), getViewContext().getRequest());
+                }
+
+                QueryManager.get().getDbSchema().getScope().commitTransaction();
+                return new ApiSimpleResponse("success", true);
+            }
+            catch (Exception e)
             {
-                User owner = form.isShared() ? null : getUser();
-
-                CustomViewImpl viewCopy = new CustomViewImpl(form.getQueryDef(), owner, form.getNewName());
-                viewCopy.setColumns(view.getColumns());
-                viewCopy.setCanInherit(form.isInherit());
-                viewCopy.setFilterAndSort(view.getFilterAndSort());
-                viewCopy.setColumnProperties(view.getColumnProperties());
-                viewCopy.setIsHidden(view.isHidden());
-
-                viewCopy.save(getUser(), getViewContext().getRequest());
+                // dirty the view then save the deleted session view back in session state
+                view.setName(view.getName());
+                view.save(getUser(), getViewContext().getRequest());
+                
+                throw e;
             }
-            else
+            finally
             {
-                // UNDONE: changing shared and inherit properties is unimplemented.  Not sure if it makes sense from a usability point of view.
-                existingView.setColumns(view.getColumns());
-                existingView.setFilterAndSort(view.getFilterAndSort());
-                existingView.setColumnProperties(view.getColumnProperties());
-
-                existingView.save(getUser(), getViewContext().getRequest());
+                QueryManager.get().getDbSchema().getScope().closeConnection();
             }
-
-            return new ApiSimpleResponse("success", true);
         }
     }
 
