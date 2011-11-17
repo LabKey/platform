@@ -351,7 +351,7 @@ public abstract class ScriptEngineReport extends ScriptReport implements Report.
         }
     }
     
-    protected static File getTempRoot(ReportDescriptor descriptor)
+    public static File getTempRoot(ReportDescriptor descriptor)
     {
         File tempRoot;
         String tempFolderName = null;// = getTempFolder();

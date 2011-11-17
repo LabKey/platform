@@ -16,6 +16,9 @@
 
 package org.labkey.api.reports.report.r.view;
 
+import org.labkey.api.reports.ReportService;
+import org.labkey.api.reports.report.RReportDescriptor;
+import org.labkey.api.reports.report.ScriptEngineReport;
 import org.labkey.api.util.FileUtil;
 import org.labkey.api.view.HttpView;
 import org.labkey.api.util.PageFlowUtil;
@@ -118,17 +121,14 @@ public class ROutputView extends HttpView
 
     protected File moveToTemp(File file, String prefix)
     {
-        try {
-            File newFile = File.createTempFile(prefix, "." + FileUtil.getExtension(file));
-            newFile.delete();
+        File root = ScriptEngineReport.getTempRoot(ReportService.get().createDescriptorInstance(RReportDescriptor.TYPE));
 
-            if (file.renameTo(newFile))
-                return newFile;
-        }
-        catch (IOException ioe)
-        {
-            throw new RuntimeException(ioe);
-        }
+        File newFile = new File(root, FileUtil.makeFileNameWithTimestamp(file.getName(), FileUtil.getExtension(file)));
+        newFile.delete();
+
+        if (file.renameTo(newFile))
+            return newFile;
+
         return null;
     }
 

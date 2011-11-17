@@ -728,7 +728,13 @@ public abstract class DefaultModule implements Module, ApplicationContextAware
             Resource reportFile = getModuleResource(fullLegalPath);
             if (null != reportFile && reportFile.isFile())
             {
-                descriptor = createReportDescriptor(legalFilePath.subpath(0,2), reportFile);
+                Path key;
+                if (legalFilePath.size() >= 2)
+                    key = legalFilePath.subpath(0,2);
+                else
+                    key = Path.parse("StandAloneReport");
+
+                descriptor = createReportDescriptor(key, reportFile);
                 if (null != descriptor)
                     REPORT_DESCRIPTOR_CACHE.put(reportFile.getPath(), descriptor);
             }
