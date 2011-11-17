@@ -98,12 +98,6 @@ public class MultiValuedLookupColumn extends LookupColumn
         // Select and aggregate all columns in the far right table for now.  TODO: Select only required columns.
         for (ColumnInfo col : _rightFk.getLookupTableInfo().getColumns())
         {
-            /*  We could uncomment & commit this as a temporary 11.1 hotfix for perf problems in genotyping
-            // Select only the key fields and the lookup column.
-            if (!col.isKeyField() && !col.getName().equals(_lookupColumn.getColumnName()))
-                continue;
-            */
-
             // Skip text and ntext columns -- aggregates don't work on them in some databases
             if (col.isLongTextType())
                 continue;

@@ -46,12 +46,14 @@ public class NestedGroupsTest extends Assert
     private static final String TESTERS = "Testers";
     private static final String WRITERS = "Writers";
     private static final String PROJECT_X = "Project X";
-    private static final String SITE_GROUP = "TestSiteGroup";
+    private static final String SITE_GROUP_1 = "TestSiteGroup1";
+    private static final String SITE_GROUP_2 = "TestSiteGroup2";
     private static final String CONCURRENCY_TEST_GROUP = "ConcurrencyGroup";
 
     private static final String ADD_TO_GUESTS = "Can't add a member to the Guests group";
     private static final String ADD_TO_USERS = "Can't add a member to the Users group";
-    private static final String[] GROUP_NAMES = new String[] {ALL, DIV_A, DIV_B, DIV_C, CODERS, TESTERS, WRITERS, PROJECT_X, CONCURRENCY_TEST_GROUP};
+    private static final String[] PROJECT_GROUP_NAMES = new String[] {ALL, DIV_A, DIV_B, DIV_C, CODERS, TESTERS, WRITERS, PROJECT_X, CONCURRENCY_TEST_GROUP};
+    private static final String[] SITE_GROUP_NAMES = new String[] {SITE_GROUP_1, SITE_GROUP_2};
 
     private Container _project;
 
@@ -81,6 +83,19 @@ public class NestedGroupsTest extends Assert
         Group writers = create(WRITERS);
         Group projectX = create(PROJECT_X);
         final Group cycleTest = create(CONCURRENCY_TEST_GROUP);
+        Group siteGroup1 = SecurityManager.createGroup(ContainerManager.getRoot(), SITE_GROUP_1);
+        assertTrue(!siteGroup1.isProjectGroup());
+        Group siteGroup2 = SecurityManager.createGroup(ContainerManager.getRoot(), SITE_GROUP_2);
+        assertTrue(!siteGroup2.isProjectGroup());
+
+        addMember(projectX, user);
+        int[] groups = GroupMembershipCache.getGroupsForPrincipal(user.getUserId());
+        expected(groups, projectX);
+        notExpected(groups, user, all, divB, divC, testers, writers, siteGroup1, coders, divA);
+
+        int[] allGroups = GroupManager.getAllGroupsForPrincipal(user);
+        expected(allGroups, projectX, user);
+        notExpected(allGroups, divB, divC, testers, writers, siteGroup1, coders, divA, all);
 
         addMember(all, divA);
         addMember(all, divB);
@@ -92,7 +107,6 @@ public class NestedGroupsTest extends Assert
         addMember(coders, user);
         addMember(divA, user);
         addMember(divA, projectX);
-        addMember(projectX, user);
 
         // TODO: Create another group, add directly to "all", add user to new group, validate
         // TODO: Check permissions
@@ -161,26 +175,30 @@ public class NestedGroupsTest extends Assert
         SecurityManager.deleteMember(cycleTest, all);
         notExpected(cycleTest, all);
         addMember(projectX, cycleTest);
-
-        Group siteGroup = SecurityManager.createGroup(ContainerManager.getRoot(), SITE_GROUP);
-        assertTrue(!siteGroup.isProjectGroup());
-        addMember(projectX, siteGroup);
+        addMember(projectX, siteGroup1);
+        addMember(siteGroup1, siteGroup2);
 
         expected(all, divA, divB, divC, coders, testers, writers);
         notExpected(all, cycleTest);
 
-        int[] groups = GroupMembershipCache.getGroupsForPrincipal(user.getUserId());
+        groups = GroupMembershipCache.getGroupsForPrincipal(user.getUserId());
         expected(groups, projectX, coders, divA);
-        notExpected(groups, user, all, divB, divC, testers, writers, siteGroup);
+        notExpected(groups, user, all, divB, divC, testers, writers, siteGroup1);
 
-        int[] allGroups = GroupManager.getAllGroupsForPrincipal(user);
+        allGroups = GroupManager.getAllGroupsForPrincipal(user);
         expected(allGroups, projectX, coders, divA, user, all);
-        notExpected(allGroups, divB, divC, testers, writers, siteGroup);
+        notExpected(allGroups, divB, divC, testers, writers, siteGroup1);
+
+        String gv = GroupManager.getGroupGraph(_project);
+        System.out.println(gv);
     }
 
     private Group create(String name)
     {
-        return SecurityManager.createGroup(_project, name);
+        Group group = SecurityManager.createGroup(_project, name);
+        assertTrue(group.isProjectGroup());
+
+        return group;
     }
 
     private void addMember(Group group, UserPrincipal principal)
@@ -265,7 +283,7 @@ public class NestedGroupsTest extends Assert
     {
         Container project = JunitUtil.getTestContainer().getProject();
 
-        for (String groupName : GROUP_NAMES)
+        for (String groupName : PROJECT_GROUP_NAMES)
         {
             Integer groupId = SecurityManager.getGroupId(project, groupName, false);
 
@@ -273,9 +291,12 @@ public class NestedGroupsTest extends Assert
                 SecurityManager.deleteGroup(groupId);
         }
 
-        Integer groupId = SecurityManager.getGroupId(ContainerManager.getRoot(), SITE_GROUP, false);
+        for (String groupName : SITE_GROUP_NAMES)
+        {
+            Integer groupId = SecurityManager.getGroupId(ContainerManager.getRoot(), groupName, false);
 
-        if (null != groupId)
-            SecurityManager.deleteGroup(groupId);
+            if (null != groupId)
+                SecurityManager.deleteGroup(groupId);
+        }
     }
 }

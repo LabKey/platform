@@ -109,7 +109,7 @@ public class SecurityManager
 {
     private static final Logger _log = Logger.getLogger(SecurityManager.class);
     private static final CoreSchema core = CoreSchema.getInstance();
-    private static final List<ViewFactory> _viewFactories = new ArrayList<ViewFactory>();
+    private static final List<ViewFactory> _viewFactories = new CopyOnWriteArrayList<ViewFactory>();
 
     static final String NULL_GROUP_ERROR_MESSAGE = "Null group not allowed";
     static final String NULL_PRINCIPAL_ERROR_MESSAGE = "Null principal not allowed";
@@ -1051,7 +1051,11 @@ public class SecurityManager
 
         try
         {
+            Group group = getGroup(groupId);
             GroupCache.uncache(groupId);
+
+            // Need to invalidate all computed group lists. This isn't quite right, but it gets the job done.
+            GroupMembershipCache.handleGroupChange(group, group);
 
             Table.delete(core.getTableInfoRoleAssignments(), new SimpleFilter("UserId", groupId));
 
@@ -1401,12 +1405,21 @@ public class SecurityManager
         return groupList.toString();
     }
 
-    public static List<User> getGroupMembers(Group group) throws SQLException, ValidEmail.InvalidEmailException
+    public static List<User> getGroupMembers(Group group)
     {
         String[] emails = getGroupMemberNames(group.getUserId());
         List<User> users = new ArrayList<User>(emails.length);
         for (String email : emails)
-            users.add(UserManager.getUser(new ValidEmail(email)));
+        {
+            try
+            {
+                users.add(UserManager.getUser(new ValidEmail(email)));
+            }
+            catch (ValidEmail.InvalidEmailException e)
+            {
+                // This is silly
+            }
+        }
         return users;
     }
 
@@ -1638,7 +1651,7 @@ public class SecurityManager
     }
 
 
-    public static String[] getGroupMemberNames(Integer groupId) throws SQLException
+    public static String[] getGroupMemberNames(Integer groupId)
     {
         List<Pair<Integer, String>> members = getGroupMemberNamesAndIds(groupId);
         String[] names = new String[members.size()];
@@ -2685,6 +2698,7 @@ public class SecurityManager
     public static String getDisambiguatedGroupName(Group group)
     {
         int id = group.getUserId();
+
         switch(id)
         {
             case Group.groupAdministrators:

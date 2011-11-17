@@ -6199,6 +6199,7 @@ internal/src/org/labkey/api/security/UserEmailComparator.java -text
 internal/src/org/labkey/api/util/ContainerTree.java -text
 internal/src/org/labkey/api/util/ContainerTreeSelected.java -text
 internal/src/org/labkey/api/util/DiffMatchPatch.java -text
+internal/src/org/labkey/api/util/DotRunner.java -text
 internal/src/org/labkey/api/util/FTPUtil.java -text
 internal/src/org/labkey/api/util/HashHelpers.java -text
 internal/src/org/labkey/api/util/LogPrintWriter.java -text

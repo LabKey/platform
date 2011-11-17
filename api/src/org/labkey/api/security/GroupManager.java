@@ -19,7 +19,6 @@ package org.labkey.api.security;
 import org.apache.log4j.Logger;
 import org.jetbrains.annotations.Nullable;
 import org.junit.Assert;
-import org.junit.BeforeClass;
 import org.junit.Test;
 import org.labkey.api.audit.AuditLogEvent;
 import org.labkey.api.audit.AuditLogService;
@@ -38,7 +37,10 @@ import java.beans.PropertyChangeEvent;
 import java.sql.SQLException;
 import java.util.Arrays;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.LinkedHashSet;
+import java.util.LinkedList;
+import java.util.List;
 import java.util.Set;
 
 /**
@@ -142,6 +144,53 @@ public class GroupManager
         Table.execute(_core.getSchema(), _insertGroupSql, userId, name, type.typeChar);
 
         return userId;
+    }
+
+
+    public static String getGroupGraph(Container c)
+    {
+        List<Group> groups = Arrays.asList(SecurityManager.getGroups(c.getProject(), false));
+        StringBuilder sb = new StringBuilder("digraph groups\n{\n");
+        HashSet<Group> groupSet = new HashSet<Group>();
+        LinkedList<Group> recurse = new LinkedList<Group>();
+        recurse.addAll(groups);
+        groupSet.addAll(groups);
+
+        while (!recurse.isEmpty())
+        {
+            Group group = recurse.removeFirst();
+            Set<UserPrincipal> set = SecurityManager.getGroupMembers(group, SecurityManager.GroupMemberType.Groups);
+
+            for (UserPrincipal principal : set)
+            {
+                Group g = (Group)principal;
+                sb.append("\t").append(group.getUserId()).append("->").append(g.getUserId()).append(";\n");
+
+                if (!groupSet.contains(g))
+                {
+                    recurse.addLast(g);
+                    groupSet.add(g);
+                }
+            }
+        }
+
+        for (Group g : groupSet)
+        {
+            int userCount = SecurityManager.getGroupMembers(g, SecurityManager.GroupMemberType.Users).size();
+
+            sb.append("\t").append(g.getUserId()).append(" [");
+            sb.append("label=\"").append(g.getName()).append("\\n").append(userCount).append(" users\"");
+            sb.append(", URL=\"javascript:window.parent.showPopupId(").append(g.getUserId()).append(")\"");
+
+            if (!g.isProjectGroup())
+                sb.append(", shape=box");
+
+            sb.append("]\n");
+        }
+
+        sb.append("}");
+
+        return sb.toString();
     }
 
 
@@ -318,33 +367,38 @@ public class GroupManager
         }
     }
 
-    public static Group copyGroupToContainer(Group g, Container c){
+    public static Group copyGroupToContainer(Group g, Container c)
+    {
         return copyGroupToContainer(g, c, new HashMap<UserPrincipal, UserPrincipal>(), 1);
     }
 
-    private static Group copyGroupToContainer(Group g, Container c, HashMap<UserPrincipal, UserPrincipal> groupMap){
+    private static Group copyGroupToContainer(Group g, Container c, HashMap<UserPrincipal, UserPrincipal> groupMap)
+    {
         return copyGroupToContainer(g, c, groupMap, 1);
     }
 
-    private static Group copyGroupToContainer(Group g, Container c, HashMap<UserPrincipal, UserPrincipal> groupMap, int suffix){
-        if(!g.isProjectGroup()){
+    private static Group copyGroupToContainer(Group g, Container c, HashMap<UserPrincipal, UserPrincipal> groupMap, int suffix)
+    {
+        if (!g.isProjectGroup())
+        {
             return g;
         }
 
-        if(groupMap.get(g) != null)
+        if (groupMap.get(g) != null)
         {
             return (Group)groupMap.get(g);  //it has already been copied
         }
 
         Set<UserPrincipal> members = SecurityManager.getGroupMembers(g, SecurityManager.GroupMemberType.Both);
         Set<UserPrincipal> translatedMembers = new LinkedHashSet<UserPrincipal>();
+
         for (UserPrincipal m : members)
         {
-            if(groupMap.get(m) != null)
+            if (groupMap.get(m) != null)
             {
                 translatedMembers.add(groupMap.get(m));
             }
-            else if(m instanceof Group && ((Group) m).isProjectGroup())
+            else if (m instanceof Group && ((Group) m).isProjectGroup())
             {
                 Group copiedGroup = GroupManager.copyGroupToContainer((Group)m, c, groupMap);
                 groupMap.put(m, copiedGroup);
@@ -359,10 +413,11 @@ public class GroupManager
         String newGroupName = g.getName() + (suffix > 1 ? " " + suffix : "");
 
         //test whether a group of this name already exists in the container
-        if(SecurityManager.getGroupId(c, newGroupName, null, false) != null)
+        if (SecurityManager.getGroupId(c, newGroupName, null, false) != null)
         {
             Group existingGroup = SecurityManager.getGroup(SecurityManager.getGroupId(c, newGroupName));
             Set<UserPrincipal> existingMembers = SecurityManager.getGroupMembers(existingGroup, SecurityManager.GroupMemberType.Both);
+
             if(existingMembers.equals(translatedMembers))
             {
                 return existingGroup; //groups are the same. nothing needed

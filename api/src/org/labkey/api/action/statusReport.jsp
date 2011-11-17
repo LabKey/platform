@@ -40,7 +40,7 @@
             url: baseURL + offset,
             method: 'POST',
             success: LABKEY.Utils.getCallbackWrapper(appendStatus),
-            failure: null,
+            failure: null
         });
     }
 
