@@ -686,16 +686,6 @@ public class DataRegion extends AbstractDataRegion
             return;
         }
 
-        boolean renderButtons = _gridButtonBar.shouldRender(ctx);
-        if (renderButtons && _buttonBarConfigs != null && !_buttonBarConfigs.isEmpty())
-        {
-            if (_gridButtonBar.isLocked())
-                _gridButtonBar = new ButtonBar(_gridButtonBar);
-            _gridButtonBar.setConfigs(ctx, _buttonBarConfigs);
-        }
-
-        boolean showRecordSelectors = getShowRecordSelectors(ctx);
-
         ResultSet rs = null;
         try
         {
@@ -733,7 +723,7 @@ public class DataRegion extends AbstractDataRegion
             }
             else
             {
-                _renderTable(ctx, out, renderButtons, showRecordSelectors, rs, headerMessage, sqlx);
+                _renderTable(ctx, out, rs, headerMessage, sqlx);
             }
         }
         finally
@@ -763,8 +753,18 @@ public class DataRegion extends AbstractDataRegion
         }
     }
 
-    private void _renderTable(RenderContext ctx, Writer out, boolean renderButtons, boolean showRecordSelectors, ResultSet rs, StringBuilder headerMessage, SQLException sqlx) throws IOException, SQLException
+    private void _renderTable(RenderContext ctx, Writer out, ResultSet rs, StringBuilder headerMessage, SQLException sqlx) throws IOException, SQLException
     {
+        boolean renderButtons = _gridButtonBar.shouldRender(ctx);
+        if (renderButtons && _buttonBarConfigs != null && !_buttonBarConfigs.isEmpty())
+        {
+            if (_gridButtonBar.isLocked())
+                _gridButtonBar = new ButtonBar(_gridButtonBar);
+            _gridButtonBar.setConfigs(ctx, _buttonBarConfigs);
+        }
+
+        boolean showRecordSelectors = getShowRecordSelectors(ctx);
+
         List<DisplayColumn> renderers = getDisplayColumns();
         Map<FieldKey,ColumnInfo> fieldMap = ctx.getFieldMap();
         Set<FieldKey> fieldKeys = null==fieldMap ? null : fieldMap.keySet();
@@ -794,6 +794,12 @@ public class DataRegion extends AbstractDataRegion
             _rowCount = ((Table.TableResultSet)rs).getSize();
             if (_complete && _totalRows == null)
                 _totalRows = getOffset() + _rowCount.intValue();
+        }
+
+        if (sqlx != null)
+        {
+            _showPagination = false;
+            _allowHeaderLock = false;
         }
 
         StringBuilder viewMsg = new StringBuilder();
@@ -1202,7 +1208,7 @@ public class DataRegion extends AbstractDataRegion
                     singleAggregateType = null;
             }
 
-            out.write("<tr class=\"labkey-col-total\">");
+            out.write("<tr class=\"labkey-col-total labkey-row\">");
             if (showRecordSelectors)
             {
                 out.write("<td class='labkey-selectors'>");

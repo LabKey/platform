@@ -805,7 +805,7 @@ LABKEY.DataRegion = Ext.extend(Ext.Component,
      * @param {String} [view.type] the type of view, either a 'view' or a 'report'.
      * @param {String} [view.viewName] If the type is 'view', then the name of the view.
      * @param {String} [view.reportId] If the type is 'report', then the report id.
-     * @param urlParameters <b>NOTE: Experimental parameter; may change without warning.</b> A set of filter and sorts to apply as URL parameters when changing the view.
+     * @param {Object} urlParameters <b>NOTE: Experimental parameter; may change without warning.</b> A set of filter and sorts to apply as URL parameters when changing the view.
      */
     changeView : function(view, urlParameters)
     {
