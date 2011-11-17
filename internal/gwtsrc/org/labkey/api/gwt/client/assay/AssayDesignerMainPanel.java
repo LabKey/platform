@@ -111,7 +111,8 @@ public class AssayDesignerMainPanel extends VerticalPanel implements Saveable<GW
         DOM.setStyleAttribute(_autoCopyTargetListBox.getElement(), "width", "500px");
         _autoCopyTargetListBox.setEnabled(false);
 
-        _autoCopyCheckBox = new CheckBox(" Automatically copy uploaded data to study: ");
+        _autoCopyCheckBox = new CheckBox();
+        _autoCopyCheckBox.getElement().setId("auto-copy-checkbox");
         _autoCopyCheckBox.setEnabled(false);
     }
 
@@ -388,7 +389,6 @@ public class AssayDesignerMainPanel extends VerticalPanel implements Saveable<GW
         table.getFlexCellFormatter().setStyleName(row, 0, "labkey-form-label");
         table.setWidget(row++, 1, descriptionBox);
 
-        HorizontalPanel autoCopyPanel = new HorizontalPanel();
         _autoCopyCheckBox.addValueChangeHandler(new ValueChangeHandler<Boolean>()
         {
             public void onValueChange(ValueChangeEvent<Boolean> event)
@@ -404,10 +404,26 @@ public class AssayDesignerMainPanel extends VerticalPanel implements Saveable<GW
                 setDirty(true);
             }
         });
-        autoCopyPanel.add(_autoCopyCheckBox);
-        autoCopyPanel.add(_autoCopyTargetListBox);
 
-        table.setWidget(row++, 1, autoCopyPanel);
+        FlowPanel autoCopyCheckboxPanel = new FlowPanel();
+        autoCopyCheckboxPanel.add(new InlineHTML("Auto-copy Data"));
+        autoCopyCheckboxPanel.add(new HelpPopup("Auto-copy Data", "When new runs are imported, automatically copy " +
+                "their data rows to the specified target study. Only rows that include subject and visit/date " +
+                "information will be copied."));
+        table.getFlexCellFormatter().setStyleName(row, 0, "labkey-form-label");
+
+        table.setWidget(row, 0, autoCopyCheckboxPanel);
+        table.setWidget(row++, 1, _autoCopyCheckBox);
+
+        FlowPanel autoCopyTargetPanel = new FlowPanel();
+        autoCopyTargetPanel.add(new InlineHTML("Auto-copy Target"));
+        autoCopyTargetPanel.add(new HelpPopup("Auto-copy Target", "If auto-copy is enabled, the target study to which " +
+                "the data rows will be copied. The user performing the import must have insert permission in the target " +
+                "study and the corresponding dataset."));
+        table.getFlexCellFormatter().setStyleName(row, 0, "labkey-form-label");
+
+        table.setWidget(row, 0, autoCopyTargetPanel);
+        table.setWidget(row++, 1, _autoCopyTargetListBox);
 
         if (assay.getAvailablePlateTemplates() != null)
         {
@@ -444,15 +460,9 @@ public class AssayDesignerMainPanel extends VerticalPanel implements Saveable<GW
 
         if (assay.isAllowValidationScript())
         {
-            table.setWidget(row++, 0, new HTML("&nbsp;"));
-
-            HTML title = new HTML("Validation and Transformation Scripts");
-            title.setStyleName("labkey-wp-title");
-            table.setWidget(row++, 1, title);
-
             if (assay.isAllowTransformationScript())
             {
-                BoundTextBox transformFile = new BoundTextBox("Data Transform", "AssayDesignerTransformScript", assay.getProtocolTransformScript(), new WidgetUpdatable()
+                BoundTextBox transformFile = new BoundTextBox("Transform Script", "AssayDesignerTransformScript", assay.getProtocolTransformScript(), new WidgetUpdatable()
                 {
                     public void update(Widget widget)
                     {
@@ -465,11 +475,15 @@ public class AssayDesignerMainPanel extends VerticalPanel implements Saveable<GW
                 }, this);
                 transformFile.getBox().setVisibleLength(79);
                 FlowPanel transformNamePanel = new FlowPanel();
-                transformNamePanel.add(new InlineHTML("Data Transform"));
-                transformNamePanel.add(new HelpPopup("Data Transform", "The full path to the data transform script file. The extension of the script file " +
-                        "identifies the script engine that will be used to run the transform script. For example: a script named test.pl will " +
-                        "be run with the Perl scripting engine. The scripting engine must be configured from the Admin panel. For additional information " +
-                        "refer to the <a href=\"https://www.labkey.org/wiki/home/Documentation/page.view?name=configureScripting\" target=\"_blank\">help documentation</a>."));
+                transformNamePanel.add(new InlineHTML("Transform Script"));
+                transformNamePanel.add(new HelpPopup("Transform Script", "<div>The full path to the transform script file. " +
+                        "Transform scripts run before the assay data is imported and can reshape the data file to match " +
+                        "the expected import format.</div>" +
+                        "<br><div>The extension of the script file " +
+                        "identifies the script engine that will be used to run the validation script. For example, " +
+                        "a script named test.pl will be run with the Perl scripting engine. The scripting engine must be " +
+                        "configured on the Views and Scripting page in the Admin Console. For additional information refer to " +
+                        "the <a href=\"https://www.labkey.org/wiki/home/Documentation/page.view?name=configureScripting\" target=\"_blank\">help documentation</a>.</div>"));
                 table.getFlexCellFormatter().setStyleName(row, 0, "labkey-form-label");
                 table.setWidget(row, 0, transformNamePanel);
                 table.setWidget(row++, 1, transformFile);
@@ -484,15 +498,20 @@ public class AssayDesignerMainPanel extends VerticalPanel implements Saveable<GW
                 text.setVisibleLength(79);
 
                 FlowPanel validationPanel = new FlowPanel();
-                validationPanel.add(new InlineLabel("QC Validation"));
-                validationPanel.add(new HelpPopup("QC Validation", "Validation scripts can be assigned by default by the assay type. Default scripts cannot be " +
-                        "removed from this view."));
+                validationPanel.add(new InlineLabel("Validation Script"));
+                validationPanel.add(new HelpPopup("Validation Script", "<div>The full path to the validation script file. " +
+                        "Validation scripts run before the assay data is imported and can reject invalid data.</div>" +
+                        "<br><div>The extension of the script file " +
+                        "identifies the script engine that will be used to run the validation script. For example, " +
+                        "a script named test.pl will be run with the Perl scripting engine. The scripting engine must be " +
+                        "configured on the Views and Scripting page in the Admin Console. For additional information refer to " +
+                        "the <a href=\"https://www.labkey.org/wiki/home/Documentation/page.view?name=configureScripting\" target=\"_blank\">help documentation</a>.</div>"));
                 table.setWidget(row, 0, validationPanel);
                 table.getFlexCellFormatter().setStyleName(row, 0, "labkey-form-label");
                 table.setWidget(row++, 1, text);
             }
 
-            BoundTextBox scriptFile = new BoundTextBox("QC Validation", "AssayDesignerQCScript", assay.getProtocolValidationScript(), new WidgetUpdatable()
+            BoundTextBox scriptFile = new BoundTextBox("Validation Script", "AssayDesignerQCScript", assay.getProtocolValidationScript(), new WidgetUpdatable()
             {
                 public void update(Widget widget)
                 {
@@ -506,11 +525,14 @@ public class AssayDesignerMainPanel extends VerticalPanel implements Saveable<GW
             scriptFile.getBox().setVisibleLength(79);
 
             FlowPanel validationPanel = new FlowPanel();
-            validationPanel.add(new InlineHTML("QC Validation"));
-            validationPanel.add(new HelpPopup("QC Validation", "The full path to the validation script file. The extension of the script file " +
-                    "identifies the script engine that will be used to run the validation script. For example: a script named test.pl will " +
-                    "be run with the Perl scripting engine. The scripting engine must be configured from the Admin panel. For additional information " +
-                    "refer to the <a href=\"https://www.labkey.org/wiki/home/Documentation/page.view?name=configureScripting\" target=\"_blank\">help documentation</a>."));
+            validationPanel.add(new InlineHTML("Validation Script"));
+            validationPanel.add(new HelpPopup("Validation Script", "<div>The full path to the validation script file. " +
+                    "Validation scripts run before the assay data is imported and can reject invalid data.</div>" +
+                    "<br><div>The extension of the script file " +
+                    "identifies the script engine that will be used to run the validation script. For example, " +
+                    "a script named test.pl will be run with the Perl scripting engine. The scripting engine must be " +
+                    "configured on the Views and Scripting page in the Admin Console. For additional information refer to " +
+                    "the <a href=\"https://www.labkey.org/wiki/home/Documentation/page.view?name=configureScripting\" target=\"_blank\">help documentation</a>.</div>"));
             table.setWidget(row, 0, validationPanel);
             table.getFlexCellFormatter().setStyleName(row, 0, "labkey-form-label");
             table.setWidget(row, 1, scriptFile);

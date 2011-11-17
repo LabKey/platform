@@ -15,6 +15,8 @@
  */
 package org.labkey.api.gwt.client.ui;
 
+import com.google.gwt.event.dom.client.ClickEvent;
+import com.google.gwt.event.dom.client.ClickHandler;
 import com.google.gwt.user.client.Window;
 import com.google.gwt.user.client.ui.*;
 import org.labkey.api.gwt.client.util.PropertyUtil;
@@ -33,7 +35,7 @@ public class InferSchemaWizard extends DialogBox
     private RadioButton tsvButton;
     private TextArea tsvTextArea;
     private FileUploadWithListeners upload;
-    private HTML statusLabel;
+    private Label statusLabel;
 
     public InferSchemaWizard(PropertiesEditor propertiesEditor)
     {
@@ -50,12 +52,13 @@ public class InferSchemaWizard extends DialogBox
         form.addFormHandler(new UploadFormHandler());
 
         VerticalPanel panel = new VerticalPanel();
+        panel.setSpacing(6);
         form.setWidget(panel);
 
         fileButton = new RadioButton("source", "file");
-        fileButton.setText("Upload Excel or tab-delimited file (.xls, .tsv, .txt, .csv):");
+        fileButton.setText("Upload Excel or text file (.xls, .xlsx, .tsv, .txt, .csv):");
         fileButton.setFormValue("file");
-        fileButton.setChecked(true);
+        fileButton.setValue(true);
         panel.add(fileButton);
 
         upload = new FileUploadWithListeners();
@@ -64,7 +67,7 @@ public class InferSchemaWizard extends DialogBox
         {
             public void onClick(Widget sender)
             {
-                fileButton.setChecked(true);
+                fileButton.setValue(true);
             }
         });
         panel.add(upload);
@@ -75,31 +78,31 @@ public class InferSchemaWizard extends DialogBox
         panel.add(tsvButton);
         tsvTextArea = new TextArea();
         tsvTextArea.setName("tsvText");
-        tsvTextArea.setSize("400", "200");
-        tsvTextArea.addClickListener(new ClickListener()
+        tsvTextArea.setCharacterWidth(80);
+        tsvTextArea.setVisibleLines(8);
+        tsvTextArea.addClickHandler(new ClickHandler()
         {
-            public void onClick(Widget sender)
+            public void onClick(ClickEvent e)
             {
-                tsvButton.setChecked(true);
+                tsvButton.setValue(true);
             }
         });
         panel.add(tsvTextArea);
 
-        statusLabel = new HTML("&nbsp;");
-        panel.add(statusLabel);
-
-        submitButton = new ImageButton("Submit", new ClickListener()
+        submitButton = new ImageButton("Submit", new ClickHandler()
         {
-            public void onClick(Widget sender)
+            public void onClick(ClickEvent e)
             {
                 submitButton.setEnabled(false);
                 form.submit();
             }
         });
 
-        ImageButton cancelButton = new ImageButton("Cancel", new ClickListener()
+        panel.add(new Label("Note: This will delete all existing fields and associated data."));
+
+        ImageButton cancelButton = new ImageButton("Cancel", new ClickHandler()
         {
-            public void onClick(Widget sender)
+            public void onClick(ClickEvent event)
             {
                 InferSchemaWizard.this.hide();
             }
@@ -108,6 +111,8 @@ public class InferSchemaWizard extends DialogBox
         HorizontalPanel buttonPanel = new HorizontalPanel();
         buttonPanel.add(submitButton);
         buttonPanel.add(cancelButton);
+        statusLabel = new Label();
+        buttonPanel.add(statusLabel);
 
         panel.add(buttonPanel);
 
@@ -118,7 +123,7 @@ public class InferSchemaWizard extends DialogBox
     {
         public void onSubmit(FormSubmitEvent event)
         {
-            if (tsvButton.isChecked())
+            if (tsvButton.getValue())
             {
                 String tsv = StringUtils.trimToNull(tsvTextArea.getText());
                 if (tsv == null)
@@ -153,7 +158,7 @@ public class InferSchemaWizard extends DialogBox
                 GWTTabLoader loader = new GWTTabLoader(result);
                 if (loader.processTsv(propertiesEditor))
                 {
-                    statusLabel.setText("&nbsp;");
+                    statusLabel.setText("");
                     hide();
                 }
             }

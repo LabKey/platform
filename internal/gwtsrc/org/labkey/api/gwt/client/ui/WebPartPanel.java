@@ -31,7 +31,7 @@ public class WebPartPanel extends FlexTable
         setText(0, 0, title);
 
         getRowFormatter().setStyleName(0, "labkey-wp-header");
-        getCellFormatter().setStyleName(0, 0, "labkey-wp-title");
+        getCellFormatter().setStyleName(0, 0, "labkey-wp-title-left");
 
         getCellFormatter().setStyleName(1, 0, "labkey-wp-body");
         setWidget(1, 0, contents);

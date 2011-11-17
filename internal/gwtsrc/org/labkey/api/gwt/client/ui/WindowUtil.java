@@ -188,6 +188,7 @@ public class WindowUtil
         }
         confirmDialog.setText(title);
         VerticalPanel panel = new VerticalPanel();
+        panel.setSpacing(10);
         panel.add(new Label(message));
         HorizontalPanel buttonPanel = new HorizontalPanel();
 

@@ -15,6 +15,8 @@
  */
 package org.labkey.api.gwt.client.ui.property;
 
+import com.google.gwt.event.dom.client.ClickEvent;
+import com.google.gwt.event.dom.client.ClickHandler;
 import com.google.gwt.user.client.ui.*;
 import com.google.gwt.user.client.Window;
 import org.labkey.api.gwt.client.model.GWTPropertyValidator;
@@ -231,9 +233,9 @@ public class RangeValidatorDialog extends ValidatorDialog
         panel.setWidget(row++, 1, errorMessage);
 
         ImageButton save = new ImageButton("OK");
-        save.addClickListener(new ClickListener()
+        save.addClickHandler(new ClickHandler()
         {
-            public void onClick(Widget sender)
+            public void onClick(ClickEvent e)
             {
                 if (validate(prop))
                 {
@@ -245,9 +247,9 @@ public class RangeValidatorDialog extends ValidatorDialog
         });
 
         ImageButton cancel = new ImageButton("Cancel");
-        cancel.addClickListener(new ClickListener()
+        cancel.addClickHandler(new ClickHandler()
         {
-            public void onClick(Widget sender)
+            public void onClick(ClickEvent e)
             {
                 RangeValidatorDialog.this.hide();
             }

@@ -202,16 +202,9 @@ public class PropertiesEditor<DomainType extends GWTDomain<FieldType>, FieldType
         {
             public void onClick(ClickEvent e)
             {
-                ImageButton confirmButton = new ImageButton("OK", new ClickHandler()
-                {
-                    public void onClick(ClickEvent event)
-                    {
-                        final InferSchemaWizard popup = new InferSchemaWizard(PropertiesEditor.this);
-                        popup.setText("Infer Fields");
-                        popup.center();
-                    }
-                });
-                WindowUtil.showConfirmDialog("Infer Fields From File", "This will delete all existing fields and data. Are you sure you wish to proceed?", confirmButton);
+                final InferSchemaWizard popup = new InferSchemaWizard(PropertiesEditor.this);
+                popup.setText("Infer Fields from File");
+                popup.center();
             }
         };
 

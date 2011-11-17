@@ -16,6 +16,9 @@
 
 package org.labkey.api.gwt.client.ui;
 
+import com.google.gwt.event.dom.client.ClickEvent;
+import com.google.gwt.event.dom.client.ClickHandler;
+import com.google.gwt.event.dom.client.KeyCodes;
 import com.google.gwt.user.client.ui.*;
 
 /**
@@ -37,11 +40,11 @@ public abstract class TextBoxDialogBox extends DialogBox
         {
             public void onKeyDown(Widget sender, char keyCode, int modifiers)
             {
-                if (keyCode == KeyboardListener.KEY_ENTER)
+                if (keyCode == KeyCodes.KEY_ENTER)
                 {
                     commit();
                 }
-                else if (keyCode == KeyboardListener.KEY_ESCAPE)
+                else if (keyCode == KeyCodes.KEY_ESCAPE)
                 {
                     hide();
                 }
@@ -62,18 +65,18 @@ public abstract class TextBoxDialogBox extends DialogBox
 
         ImageButton okButton = new ImageButton("OK");
         buttonPanel.add(okButton);
-        okButton.addClickListener(new ClickListener()
+        okButton.addClickHandler(new ClickHandler()
         {
-            public void onClick(Widget sender)
+            public void onClick(ClickEvent e)
             {
                 commit();
             }
         });
 
         ImageButton cancelButton = new ImageButton("Cancel");
-        cancelButton.addClickListener(new ClickListener()
+        cancelButton.addClickHandler(new ClickHandler()
         {
-            public void onClick(Widget sender)
+            public void onClick(ClickEvent e)
             {
                 hide();
             }
