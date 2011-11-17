@@ -344,7 +344,9 @@ public class SavePaths implements DavCrawler.SavePaths
         }
         catch (SQLException x)
         {
-            throw new RuntimeSQLException(x);
+            if (!SqlDialect.isTransactionException(x))
+                throw new RuntimeSQLException(x);
+            return Collections.emptyMap();
         }
         finally
         {
