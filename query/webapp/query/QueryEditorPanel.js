@@ -318,18 +318,20 @@ LABKEY.query.SourceEditorPanel = Ext.extend(Ext.Panel,
     /**
      * Returns false if the query has been executed in it's current state. Otherwise, true.
      */
-    isQueryDirty : function()
+    isQueryDirty : function(update)
     {
-        if (!this.cachedSql)
-            return true;
-        return this.cachedSql != this.eal.getValue(this.editorId);
+        var res = !this.cachedSql || this.cachedSql != this.getValue();
+        if (update)
+            this.cachedSql = this.getValue();
+        return res;
     },
 
     getValue : function()
     {
-        if (!this.eal)
-            return null;
-        return this.eal.getValue(this.editorId);
+        var queryText = this.query.queryText;
+        if (this.eal)
+            queryText = this.eal.getValue(this.editorId);
+        return queryText;
     }
 });
 
@@ -533,14 +535,7 @@ LABKEY.query.MetadataXMLEditorPanel = Ext.extend(Ext.Panel,
 
     isQueryDirty : function(update)
     {
-        if (!this.cachedMeta)
-        {
-            if (update)
-                this.cachedMeta = this.getValue();
-            return true;
-        }
-
-        var res = (this.cachedMeta != this.getValue());
+        var res = !this.cachedMeta || (this.cachedMeta != this.getValue());
         if (update)
             this.cachedMeta = this.getValue();
         return res;
@@ -594,7 +589,7 @@ LABKEY.query.QueryEditorPanel = Ext.extend(Ext.Panel,
                 activate : function(p)
                 {
                     this.sourceEditor.setDisplay(_dataTabId);
-                    this.sourceEditor.execute(this.metaEditor.isQueryDirty(true));
+                    this.sourceEditor.execute();
                 },
                 scope : this
             }
@@ -745,7 +740,9 @@ LABKEY.query.QueryEditorPanel = Ext.extend(Ext.Panel,
 
     onExecuteQuery : function(force)
     {
-        var dirty = !this.query.builtIn && this.getSourceEditor().isQueryDirty();
+        var sourceDirty = !this.query.builtIn && this.getSourceEditor().isQueryDirty(true);
+        var metaDirty   = this.getMetadataEditor().isQueryDirty(true);
+        var dirty = sourceDirty || metaDirty;
         if (this._executeSucceeded && !force && !dirty)
             return;
         this.getSourceEditor().setDisplay(this._dataTabId);
@@ -785,7 +782,7 @@ LABKEY.query.QueryEditorPanel = Ext.extend(Ext.Panel,
                     var errors = [];
                     for (var e=0; e < response.parseErrors.length; e++)
                         errors.push(response.parseErrors[e]);
-                    this.showErrors(errors, this.display);
+                    this.showErrors(errors, this.getSourceEditor().display);
                 }
             },
             scope : this
@@ -795,19 +792,18 @@ LABKEY.query.QueryEditorPanel = Ext.extend(Ext.Panel,
         if (this.query.builtIn)
         {
             config.queryName = this.query.query;
+            console.log("config.queryName : " + config.queryName);
         }
         else
         {
             config.sql = this.getSourceEditor().getValue();
+            console.log("config.sql : " + config.sql);
         }
 
         // Apply Metadata Override
-        if (this.metadata || force)
-        {
-            var _meta = this.getMetadata();
-            if (_meta && _meta.length > 0)
-                config.metadata = { type : 'xml', value: _meta };
-        }
+        var _meta = this.getMetadataEditor().getValue();
+        if (_meta && _meta.length > 0)
+            config.metadata = { type : 'xml', value: _meta };
 
         console.info(config);
         var qwp = new LABKEY.QueryWebPart(config);
