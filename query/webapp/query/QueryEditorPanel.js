@@ -10,33 +10,50 @@ LABKEY.requiresCss("_images/icons.css");
 
 Ext.QuickTips.init();
 
-LABKEY.query.SourceEditorPanel = Ext.extend(Ext.Panel, {
-
-    constructor : function(config){
-        Ext.applyIf(config, {
+LABKEY.query.SourceEditorPanel = Ext.extend(Ext.Panel,
+{
+    constructor : function(config)
+    {
+        Ext.applyIf(config,
+        {
             title: 'Source',
             bodyStyle: 'padding:5px',
             monitorValid: true
         });
 
-        this.addEvents('beforeExecute', 'execute', 'executeTab', 'beforeSave', 'loaded');
-        
         LABKEY.query.SourceEditorPanel.superclass.constructor.call(this, config);
     },
 
-    initComponent : function() {
-
+    initComponent : function()
+    {
         var items = [];
 
-        items.push({
-            xtype   : 'button',
-            text    : 'Save & Finish',
-            cls     : 'query-button',
-            tooltip : 'Save & View Results',
-            handler : function() { this.onSave(true); },
-            disabled: !this.query.canEdit,
-            scope   : this
-        },{
+        if (this.query.canEdit)
+        {
+            items.push(
+            {
+                xtype   : 'button',
+                text    : 'Save & Finish',
+                cls     : 'query-button',
+                tooltip : 'Save & View Results',
+                handler : function() { this.onSave(true); },
+                scope   : this
+            });
+        }
+        else
+        {
+            items.push(
+            {
+                xtype   : 'button',
+                text    : 'Done',
+                cls     : 'query-button',
+                tooltip : 'Save & View Results',
+                handler : this.onDone,
+                scope   : this
+            });
+        }
+        items.push(
+        {
             xtype   : 'button',
             text    : 'Save',
             cls     : 'query-button',
@@ -143,31 +160,35 @@ LABKEY.query.SourceEditorPanel = Ext.extend(Ext.Panel, {
                 }
             ],
             listeners : {
-                afterrender : function(){
+                afterrender : function()
+                {
                     this.eal = editAreaLoader;
-                    var config = {
+                    var config =
+                    {
                         id     : this.editorId,
                         syntax : 'sql',
                         start_highlight: true,
-                        is_editable : !this.query.builtIn && this.query.canEdit,
+                        is_editable : !this.query.builtIn && this.query.canEditSql,
                         plugins : "save"
                     };
-                    if (Ext.isIE) config.start_highlight = false;                    
+                    if (Ext.isIE)
+                        config.start_highlight = false;
                     this.eal.init(config);
-                    
                     this.doLayout(false, true);
                 },
-                resize : function(x) {
-                    if (!x) {
+                resize : function(x)
+                {
+                    if (!x)
+                    {
                         var h = this.getHeight() - 160;
                         this.editor.setHeight(h);
                         var box = Ext.getCmp(this.editorBoxId);
-                        if (box) {
+                        if (box)
+                        {
                             box.setHeight(h);
                             var _f = Ext.get('frame_' + this.editorId);
-                            if (_f) {
+                            if (_f)
                                 _f.setHeight(h, false);
-                            }
                         }
                         this.doLayout(false, true);
                     }
@@ -180,7 +201,8 @@ LABKEY.query.SourceEditorPanel = Ext.extend(Ext.Panel, {
         items.push(this.editor);
 
         this.display = 'query-response-panel';
-        this.queryResponse = new Ext.Panel({
+        this.queryResponse = new Ext.Panel(
+        {
             autoScroll : true,
             border: false, frame: false,
             items : [{
@@ -201,82 +223,28 @@ LABKEY.query.SourceEditorPanel = Ext.extend(Ext.Panel, {
         });
     },
 
-    setDisplay : function(id) {
+    setDisplay : function(id)
+    {
         if (id) this.display = id;           
     },
 
-    focusEditor : function() {
+    focusEditor : function()
+    {
         this.eal.execCommand(this.editorId, 'focus');
     },
 
-    execute : function(force) {
-        this.onExecuteQuery(this.query.schema, this.eal.getValue(this.editorId), force);
+    execute : function(force)
+    {
+        this.onExecuteQuery(force);
     },
 
-    onExecuteQuery : function(schema, sql, force) {
-
-        this.fireEvent('beforeExecute', schema, sql);
-
-        if (this.isQueryDirty() || force) {
-            this.cachedSql = sql;
-            var el = Ext.get(this.display);
-            if (el) { el.update(''); }
-
-            // QueryWebPart Configuration
-            var config = {
-                renderTo     : this.display,
-                schemaName   : schema,
-                errorType    : 'json',
-                allowChooseQuery : false,
-                allowChooseView  : false,
-                frame     : 'none',
-                title     : '',
-                masking   : false,
-                timeout   : Ext.Ajax.timeout, // 12451 -- control the timeout
-                buttonBarPosition : 'top',    // 12644 -- only have a top toolbar
-                success   : function(response) {
-                    console.info('have success');
-                    this.showErrors();
-                    this.fireEvent('loaded', true);
-                },
-                failure   : function(response) {
-                    console.info('have failure');
-                    this.fireEvent('loaded', false);
-                    if (response && response.parseErrors) {
-                        var errors = [];
-                        for (var e=0; e < response.parseErrors.length; e++) {
-                            errors.push(response.parseErrors[e]);
-                        }
-                        this.showErrors(errors, this.display);
-                    }
-                },
-                scope : this
-            };
-
-            // Choose queryName or SQL as source
-            if ((!this.isSaveDirty() && !force) || this.query.builtIn) {
-                config.queryName = this.query.query;
-            }
-            else { config.sql = sql; }
-
-            // Apply Metadata Override
-            if (this.metadata || force) {
-                var _meta = this.getMetadata();
-                if (_meta && _meta.length > 0) {
-                    config.metadata = {
-                        type : 'xml',
-                        value: this.getMetadata()
-                    };
-                }
-            }
-
-            console.info(config);
-            var qwp = new LABKEY.QueryWebPart(config);
-        }
-        else { this.fireEvent('loaded', true); }
+    onExecuteQuery : function(schema, sql, force)
+    {
+        this.queryEditorPanel.onExecuteQuery(force);
     },
 
-    getMetadata : function() {
+    getMetadata : function()
+    {
         var cmp = Ext.getCmp(this.metaId);
         if (cmp) {
             return cmp.getValue();
@@ -284,148 +252,93 @@ LABKEY.query.SourceEditorPanel = Ext.extend(Ext.Panel, {
         console.error('Failed to retrieve metadata.');
     },
 
+    gotoError : function(error)
+    {
+        var cmd = this.eal.execCommand;
+        if (cmd)
+        {
+            // First highlight the line
+            this.eal.execCommand(this.editorId, 'resync_highlight', true);
+            if (error && error.line)
+                cmd(this.editorId, 'go_to_line', error.line.toString());
+
+            // Highlight selected text
+            var val = this.eal.getValue(this.editorId);
+            var _s = val.search(error.errorStr);
+            if (_s >= 0) {
+                var end = _s + error.errorStr.length;
+                this.eal.setSelectionRange(this.editorId, _s, end);
+            }
+            this.eal.getSelectedText(this.editorId);
+        }
+    },
+
     save : function(showView) {
         this.onSave(showView);
     },
-    
-    onSave : function(showView) {
 
-        if (!this.query.canEdit) { return; }
-        
-        var _sql = this.eal.getValue(this.editorId);
-
-        this.fireEvent('beforeSave', this.query.schema, _sql);
-
-        var json = {
-            schemaName   : this.query.schema,
-            queryName    : this.query.query,
-            ff_metadataText : this.getMetadata()
-        };
-        !this.query.builtIn ? json.ff_queryText = _sql : null;
-
-        Ext.Ajax.request({
-            url    : LABKEY.ActionURL.buildURL('query', 'saveSourceQuery.api'),
-            method : 'POST',
-            success: LABKEY.Utils.getCallbackWrapper(onSuccess, this),
-            jsonData : Ext.encode(json),
-            failure: LABKEY.Utils.getCallbackWrapper(onError, this, true),
-            headers : {
-                'Content-Type' : 'application/json'
-            },
-            scope : this
-        });
-
-        function onSuccess(json, response, opts) {
-
-            if (json.parseErrors) {
-                // There are errors
-                var msgs = [];
-                var $ = json.parseErrors;
-                for (var i=0; i<$.length;i++){
-                    msgs.push($[i]);
-                }
-                this.showErrors(msgs);
-            }
-            else {
-                this.showErrors();
-                if (showView === true && this.query.executeUrl) {
-
-                    this.query.queryText = this.eal.getValue(this.editorId);
-                    
-                    this.fireEvent('save', true, json);
-                    
-                    window.location = this.query.executeUrl;
-                }
-            }
-
-            this.query.queryText = this.eal.getValue(this.editorId);
-            
-            this.fireEvent('save', true, json);
-        }
-
-        function onError(json, response, opts) { this.fireEvent('save', false, json); }
+    onDone : function()
+    {
+        this.queryEditorPanel.onDone();
     },
 
-    onShow : function() {
+    onSave : function(showView)
+    {
+        this.queryEditorPanel.onSave(showView);
+    },
 
+    onShow : function()
+    {
         LABKEY.query.SourceEditorPanel.superclass.onShow.call(this);
         
         this.eal.show(this.editorId);
     },
 
-    onHide : function() {
-
+    onHide : function()
+    {
         this.eal.hide(this.editorId);
         
         LABKEY.query.SourceEditorPanel.superclass.onHide.call(this);
     },
 
+
+    saved : function()
+    {
+        this.query.queryText = this.getValue();
+    },
+
     /**
      * Returns whether the query has changed from its last saved state.
      */
-    isSaveDirty : function() {
+    isSaveDirty : function()
+    {
         return this.eal.getValue(this.editorId).toLowerCase() != this.query.queryText.toLowerCase();
     },
 
     /**
      * Returns false if the query has been executed in it's current state. Otherwise, true.
      */
-    isQueryDirty : function() {
-        if (!this.cachedSql) {
+    isQueryDirty : function()
+    {
+        if (!this.cachedSql)
             return true;
-        }
-
         return this.cachedSql != this.eal.getValue(this.editorId);
     },
 
-    showErrors : function(errors, elementId) {
-
-        var errorEl = Ext.get(elementId);
-        var queryEl = Ext.get('query-response-panel');
-
-        if (!errors){
-            if (errorEl) errorEl.update('');
-            if (queryEl) queryEl.update('');
-            return;
-        }
-        
-        var inner = '<div class="labkey-error error-container"><ul>';
-        for (var e = 0; e < errors.length; e++) {
-            inner += '<li>' + errors[e].msg + '</li>'
-        }
-        inner += '</ul></div>';
-
-        if (errorEl) {
-            errorEl.update('');
-            errorEl.update(inner);
-        }
-
-        if (queryEl) {
-            queryEl.update('');
-            queryEl.update(inner);
-            
-            var cmd = this.eal.execCommand;
-            if (cmd) {
-                // First highlight the line
-                this.eal.execCommand(this.editorId, 'resync_highlight', true);
-                if (errors[0] && errors[0].line) cmd(this.editorId, 'go_to_line', errors[0].line.toString());
-
-                // Highlight selected text
-                var val = this.eal.getValue(this.editorId);
-                var _s = val.search(errors[0].errorStr);
-                if (_s >= 0) {
-                    var end = _s + errors[0].errorStr.length;
-                    this.eal.setSelectionRange(this.editorId, _s, end);
-                }
-                this.eal.getSelectedText(this.editorId);
-            }
-        }
+    getValue : function()
+    {
+        if (!this.eal)
+            return null;
+        return this.eal.getValue(this.editorId);
     }
 });
 
-LABKEY.query.MetadataXMLEditorPanel = Ext.extend(Ext.Panel, {
 
-    constructor : function(config){
+
+LABKEY.query.MetadataXMLEditorPanel = Ext.extend(Ext.Panel,
+{
+    constructor : function(config)
+    {
         Ext.applyIf(config, {
             title: 'XML Metadata',
             bodyStyle: 'padding:5px',
@@ -437,32 +350,59 @@ LABKEY.query.MetadataXMLEditorPanel = Ext.extend(Ext.Panel, {
             save       : function() {}
         });
 
-        this.addEvents('beforeSave');
+//        this.addEvents('beforeSave');
         
         LABKEY.query.MetadataXMLEditorPanel.superclass.constructor.call(this, config);
     },
 
-    initComponent : function() {
-
+    initComponent : function()
+    {
         var items = [];
 
-        items.push({
-            xtype   : 'button',
-            text    : 'Save',
-            cls     : 'query-button',
-            disabled: !this.query.canEdit,
-            handler : this.onSave,
-            scope   : this
-        },
-
+        if (this.query.canEdit)
         {
-            xtype   : 'button',
-            text    : 'Help',
-            cls     : 'query-button',
-            style   : 'float: none;',
-            handler : function() { window.open(this.query.metadataHelp, '_blank'); },
-            scope   : this
-        });
+            items.push(
+                {
+                    xtype   : 'button',
+                    text    : 'Save & Finish',
+                    cls     : 'query-button',
+                    tooltip : 'Save & View Results',
+                    handler : function() { this.onSave(true); },
+                    scope   : this
+                }
+            );
+        }
+        else
+        {
+            items.push(
+                {
+                    xtype   : 'button',
+                    text    : 'Done',
+                    cls     : 'query-button',
+                    tooltip : 'View Results',
+                    handler : this.onDone,
+                    scope   : this
+                }
+            );
+        }
+        items.push(
+            {
+                xtype   : 'button',
+                text    : 'Save',
+                cls     : 'query-button',
+                disabled: !this.query.canEdit,
+                handler : this.onSave,
+                scope   : this
+            },
+            {
+                xtype   : 'button',
+                text    : 'Help',
+                cls     : 'query-button',
+                style   : 'float: none;',
+                handler : function() { window.open(this.query.metadataHelp, '_blank'); },
+                scope   : this
+            }
+        );
 
 
         this.editorBoxId = Ext.id();
@@ -485,8 +425,10 @@ LABKEY.query.MetadataXMLEditorPanel = Ext.extend(Ext.Panel, {
                     }
                 }
             ],
-            listeners : {
-                afterrender : function(){
+            listeners :
+            {
+                afterrender : function()
+                {
                     this.eal = editAreaLoader;
                     var config = {
                         id     : this.editorId,
@@ -497,7 +439,8 @@ LABKEY.query.MetadataXMLEditorPanel = Ext.extend(Ext.Panel, {
                     if (Ext.isIE) config.start_highlight = false;
                     this.eal.init(config);
                 },
-                resize : function(x) {
+                resize : function(x)
+                {
                     if (!x) {
                         var h = this.getHeight() - 160;
                         this.editor.setHeight(h);
@@ -523,12 +466,14 @@ LABKEY.query.MetadataXMLEditorPanel = Ext.extend(Ext.Panel, {
         
         LABKEY.query.MetadataXMLEditorPanel.superclass.initComponent.apply(this, arguments);
 
-        this.on('resize', function(){
+        this.on('resize', function()
+        {
             this.editor.fireEvent('resize');
         });
     },
 
-    onShow : function() {
+    onShow : function()
+    {
 
         if (Ext.isIE) {
             // Doing this due to faulty editor when tabbing back
@@ -546,7 +491,8 @@ LABKEY.query.MetadataXMLEditorPanel = Ext.extend(Ext.Panel, {
             this.eal.show(this.editorId);
     },
 
-    onHide : function() {
+    onHide : function()
+    {
 
         if (this.eal) {
             if (Ext.isIE)
@@ -558,90 +504,81 @@ LABKEY.query.MetadataXMLEditorPanel = Ext.extend(Ext.Panel, {
         LABKEY.query.MetadataXMLEditorPanel.superclass.onHide.call(this);
     },
 
-    saved : function() {
+    saved : function()
+    {
         this.query.metadataText = this.getValue();
     },
 
-    isSaveDirty : function() {
+    isSaveDirty : function()
+    {
         var _val = this.getValue().toLowerCase().replace(/(\s)/g, '');
         var _meta = this.query.metadataText.toLowerCase().replace(/(\s)/g, '');
         return _val != _meta;
     },
 
-    getValue : function() {
-        if (this.eal) {
+    getValue : function()
+    {
+        if (this.eal)
+        {
             return this.eal.getValue(this.editorId);
         }
-        else {
+        else
+        {
             var el = Ext.get('metadataText');
-            if (el) {
+            if (el)
                 return el.getValue();
-            }
         }
         return this.query.metadataText;
     },
 
-    isQueryDirty : function(update) {
-        if (!this.cachedMeta) {
-            if (update) {
+    isQueryDirty : function(update)
+    {
+        if (!this.cachedMeta)
+        {
+            if (update)
                 this.cachedMeta = this.getValue();
-            }
             return true;
         }
 
         var res = (this.cachedMeta != this.getValue());
-        if (update) {
+        if (update)
             this.cachedMeta = this.getValue();
-        }
         return res;
     },
 
-    onSave : function() {
+    onDone : function()
+    {
+        this.queryEditorPanel.onDone();
+    },
 
-        var _xml = this.getValue();
-
-        this.fireEvent('beforeSave', this.query.schema, _xml);
-
-        var json = {};
-        json.schemaName = this.query.schema;
-        json.queryName  = this.query.query;
-        !this.query.builtIn ? json.ff_queryText = Ext.get('queryText').getValue() : null;
-        json.ff_metadataText = _xml;
-        
-        Ext.Ajax.request({
-            url    : LABKEY.ActionURL.buildURL('query', 'saveSourceQuery.api'),
-            method : 'POST',
-            success: onSuccess,
-            jsonData : Ext.encode(json),
-            failure: onError,
-            headers : {
-                'Content-Type' : 'application/json'
-            },
-            scope : this
-        });
-
-        function onSuccess(response, opts) {
-            this.saved();            
-            this.fireEvent('save', true);
-        }
-
-        function onError(x,y,z) {
-            this.fireEvent('save', false);
-        }
-    }    
+    onSave : function(showView)
+    {
+        this.queryEditorPanel.onSave(showView);
+    }
 });
 
-LABKEY.query.QueryEditorPanel = Ext.extend(Ext.Panel, {
 
-    constructor : function(config) {
 
+LABKEY.query.QueryEditorPanel = Ext.extend(Ext.Panel,
+{
+    EVENTS : { Save : 'save', BeforeSave : 'beforesave' },
+
+    constructor : function(config)
+    {
         Ext.apply(this, config);
+
+        if (!Ext.isDefined(this.query.canEdit))
+            this.query.canEdit = true;
+        if (!Ext.isDefined(this.query.canEditSql))
+            this.query.canEditSql = this.query.canEdit;
+        if (!Ext.isDefined(this.query.canEditMetaData))
+            this.query.canEditMetaData = this.canEdit;
 
         LABKEY.query.QueryEditorPanel.superclass.constructor.call(this);
     },
 
-    initComponent : function() {
-
+    initComponent : function()
+    {
         var items = [];
 
         var _dataTabId = Ext.id();
@@ -654,7 +591,8 @@ LABKEY.query.QueryEditorPanel = Ext.extend(Ext.Panel, {
                 border: false, frame : false
             }],
             listeners : {
-                activate : function(p) {
+                activate : function(p)
+                {
                     this.sourceEditor.setDisplay(_dataTabId);
                     this.sourceEditor.execute(this.metaEditor.isQueryDirty(true));
                 },
@@ -666,31 +604,19 @@ LABKEY.query.QueryEditorPanel = Ext.extend(Ext.Panel, {
         this.sourceEditor = new LABKEY.query.SourceEditorPanel({
             query : this.query,
             metadata : true,
-            metaId : _metaId
+            metaId : _metaId,
+            queryEditorPanel : this // back pointer for onSave()
         });
 
-        this.sourceEditor.on('beforeExecute', function(schema, sql){
-            this.sourceEditor.setDisplay(_dataTabId);
-            this.tabPanel.setActiveTab(this.dataTab);
-            this.dataTab.getEl().mask('Loading Query...', 'loading-indicator indicator-helper');
-        }, this);
-
-        this.sourceEditor.on('loaded', function(loaded){
-            this.dataTab.getEl().unmask();
-            if (!loaded) this.openSourceEditor();
-        }, this);
-
-        this.sourceEditor.on('save', function(success){
-            if (success) { this.metaEditor.saved(); }
-        }, this);
 
         this.metaEditor = new LABKEY.query.MetadataXMLEditorPanel({
             id    : _metaId,
-            query : this.query
+            query : this.query,
+            queryEditorPanel : this // back pointer for onSave()
         });
 
         this.tabPanel = new Ext.TabPanel({
-            activeTab : 0,
+            activeTab : this.activeTab,
             width     : '100%',
             items     : [this.sourceEditor, this.dataTab, this.metaEditor]
         });
@@ -702,17 +628,193 @@ LABKEY.query.QueryEditorPanel = Ext.extend(Ext.Panel, {
         LABKEY.query.QueryEditorPanel.superclass.initComponent.apply(this, arguments);
     },
 
-    onRender : function() {
+    onRender : function()
+    {
         LABKEY.query.QueryEditorPanel.superclass.onRender.apply(this, arguments);
         
         window.onbeforeunload = LABKEY.beforeunload(this.isDirty, this);
     },
 
-    isDirty : function() {
+    isDirty : function()
+    {
         return this.sourceEditor.isSaveDirty() || this.metaEditor.isSaveDirty();
     },
 
-    addTab : function(config, makeActive) {
+
+    onDone : function()
+    {
+        if (this.query.executeUrl);
+            window.location = this.query.executeUrl;
+    },
+
+    onSave : function(showView)
+    {
+        if (!this.query.canEdit)
+            return;
+
+        this.fireEvent(this.EVENTS.BeforeSave, this);
+
+        var json = {
+            schemaName   : this.query.schema,
+            queryName    : this.query.query,
+            ff_metadataText : this.getMetadataEditor().getValue()
+        };
+
+        if (this.query.builtIn)
+            json.ff_queryText = null;
+        else
+            json.ff_queryText = this.getSourceEditor().getValue();
+
+        Ext.Ajax.request(
+        {
+            url    : LABKEY.ActionURL.buildURL('query', 'saveSourceQuery.api'),
+            method : 'POST',
+            success: LABKEY.Utils.getCallbackWrapper(onSuccess, this),
+            jsonData : Ext.encode(json),
+            failure: LABKEY.Utils.getCallbackWrapper(onError, this, true),
+            headers : {
+                'Content-Type' : 'application/json'
+            },
+            scope : this
+        });
+
+        function onSuccess(json, response, opts)
+        {
+            if (json.parseErrors)
+            {
+                // There are errors
+                var msgs = [];
+                var errors = json.parseErrors;
+                for (var i=0; i<errors.length;i++)
+                    msgs.push(errors[i]);
+                this.showErrors(msgs);
+            }
+            else
+                this.showErrors();
+
+            this.getMetadataEditor().saved();
+            this.getSourceEditor().saved();
+            this.fireEvent(this.EVENTS.Save, this, true, json);
+
+            if (showView === true && this.query.executeUrl)
+                this.onDone();
+        }
+
+        function onError(json, response, opts)
+        {
+            this.fireEvent(this.EVENTS.Save, this, false, json);
+        }
+    },
+
+
+    showErrors : function(errors, elementId)
+    {
+        var errorEl = Ext.get(elementId);
+        var queryEl = Ext.get('query-response-panel');
+
+        if (!errors)
+        {
+            if (errorEl) errorEl.update('');
+            if (queryEl) queryEl.update('');
+            return;
+        }
+
+        var inner = '<div class="labkey-error error-container"><ul>';
+        for (var e = 0; e < errors.length; e++)
+        {
+            inner += '<li>' + errors[e].msg + '</li>'
+        }
+        inner += '</ul></div>';
+
+        if (errorEl)
+        {
+            errorEl.update('');
+            errorEl.update(inner);
+        }
+
+        if (queryEl)
+        {
+            queryEl.update('');
+            queryEl.update(inner);
+            this.getSourceEditor().gotoError(errors[0]);
+        }
+    },
+
+
+    _executeSucceeded : false,
+
+    onExecuteQuery : function(force)
+    {
+        var dirty = !this.query.builtIn && this.getSourceEditor().isQueryDirty();
+        if (this._executeSucceeded && !force && !dirty)
+            return;
+        this.getSourceEditor().setDisplay(this._dataTabId);
+        this.tabPanel.setActiveTab(this.dataTab);
+        this.dataTab.getEl().mask('Loading Query...', 'loading-indicator indicator-helper');
+
+        var qwpEl = Ext.get(this.getSourceEditor().display);
+        if (qwpEl) { qwpEl.update(''); }
+
+        // QueryWebPart Configuration
+        var config =
+        {
+            renderTo     : qwpEl,
+            schemaName   : this.query.schema,
+            errorType    : 'json',
+            allowChooseQuery : false,
+            allowChooseView  : false,
+            frame     : 'none',
+            title     : '',
+            masking   : false,
+            timeout   : Ext.Ajax.timeout, // 12451 -- control the timeout
+            buttonBarPosition : 'top',    // 12644 -- only have a top toolbar
+            success   : function(response)
+            {
+                this._executeSucceeded = true;
+                this.dataTab.getEl().unmask();
+                console.info('have success');
+                this.showErrors();
+            },
+            failure   : function(response)
+            {
+                this._executeSucceeded = false;
+                this.dataTab.getEl().unmask();
+                console.info('have failure');
+                if (response && response.parseErrors)
+                {
+                    var errors = [];
+                    for (var e=0; e < response.parseErrors.length; e++)
+                        errors.push(response.parseErrors[e]);
+                    this.showErrors(errors, this.display);
+                }
+            },
+            scope : this
+        };
+
+        // Choose queryName or SQL as source
+        if (this.query.builtIn)
+        {
+            config.queryName = this.query.query;
+        }
+        else
+        {
+            config.sql = this.getSourceEditor().getValue();
+        }
+
+        // Apply Metadata Override
+        if (this.metadata || force)
+        {
+            var _meta = this.getMetadata();
+            if (_meta && _meta.length > 0)
+                config.metadata = { type : 'xml', value: _meta };
+        }
+
+        console.info(config);
+        var qwp = new LABKEY.QueryWebPart(config);
+    },
+
+    addTab : function(config, makeActive)
+    {
 
         this.tabPanel.add(config);
         this.tabPanel.doLayout();
@@ -721,11 +823,13 @@ LABKEY.query.QueryEditorPanel = Ext.extend(Ext.Panel, {
         this.tabPanel.setActiveTab(this.tabPanel.items.length-1);
     },
 
-    save : function() {
+    save : function()
+    {
         this.tabPanel.getActiveTab().onSave();
     },
 
-    openSourceEditor : function(focus) {
+    openSourceEditor : function(focus)
+    {
         this.tabPanel.setActiveTab(this.sourceEditor);
         if (focus) {
             this.sourceEditor.focusEditor();

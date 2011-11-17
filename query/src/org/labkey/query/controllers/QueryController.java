@@ -1493,7 +1493,7 @@ public class QueryController extends SpringActionController
             Map<String, String> props = new HashMap<String, String>();
             props.put("schemaName", form.getSchemaName().toString());
             props.put("queryName", form.getQueryName());
-            props.put(MetadataEditor.EDIT_SOURCE_URL, _form.getQueryDef().urlFor(QueryAction.sourceQuery, getContainer()).toString());
+            props.put(MetadataEditor.EDIT_SOURCE_URL, _form.getQueryDef().urlFor(QueryAction.sourceQuery, getContainer()).toString() + "#metadata");
             props.put(MetadataEditor.VIEW_DATA_URL, _form.getQueryDef().urlFor(QueryAction.executeQuery, getContainer()).toString());
 
             return new GWTView(MetadataEditor.class, props);

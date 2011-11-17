@@ -86,11 +86,6 @@ public class TableQueryDefinition extends QueryDefinitionImpl
             return null;
         }
 
-        if (action == QueryAction.sourceQuery)
-        {
-            return new QueryController.QueryUrlsImpl().urlSchemaBrowser(container, getSchemaName(), getName());
-        }
-
         return url != null ? url : super.urlFor(action, container);
     }
 

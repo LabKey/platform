@@ -46,11 +46,12 @@
         });
     });
 
-    function onSchemasLoaded(browser) {
+    function onSchemasLoaded(browser)
+    {
         var params = LABKEY.ActionURL.getParameters();
 
         var schemaName = params.schemaName;
-        var queryName = params.queryName;
+        var queryName = params['queryName'] || params['query.queryName'];
         if (queryName && schemaName)
         {
             browser.selectQuery(schemaName, queryName, function(){

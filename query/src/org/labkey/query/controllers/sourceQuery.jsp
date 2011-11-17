@@ -128,7 +128,9 @@
             schema    : LABKEY.ActionURL.getParameter('schemaName'),
             query     : LABKEY.ActionURL.getParameter('query.queryName'),
             executeUrl: <%= PageFlowUtil.jsString(exeUrl.toString()) %>,
-            canEdit   : <%= form.canEditSql() %>,
+            canEdit   : <%= form.canEdit() %>,
+            canEditSql   : <%= form.canEditSql() %>,
+            canEditMetaData   : <%= form.canEditMetaData() %>,
             builtIn   : <%= builtIn %>,
             metadataEdit : <%= form.canEditMetaData() %>,
             propEdit     : <%= form.canEditMetaData() && !builtIn %>,
@@ -138,12 +140,22 @@
             metadataHelp : <%=PageFlowUtil.jsString(new HelpTopic(metadataHelpTopic).toString())%>
         };
 
+        var activeTab = 0;
+        var hash = window.location.hash;
+        if (hash == "#source")
+            activeTab = 0;
+        else if (hash == "#data")
+            activeTab = 1;
+        else if (hash == "#metadata")
+            activeTab = 2;
+
         var queryEditor = new LABKEY.query.QueryEditorPanel({
             id          : 'qep',
             border      : false,
             layout      : 'fit',
             bodyCssClass: 'query-editor-panel',
-            query       : query
+            query       : query,
+            activeTab   : activeTab
         });
 
         var panel = new Ext.Panel({
@@ -162,26 +174,32 @@
         Ext.EventManager.onWindowResize(_resize);
         Ext.EventManager.fireWindowResize();
 
-        function beforeSave() {
+        function beforeSave(qep)
+        {
             setStatus('Saving...');
         }
-        function afterSave(saved, json)  {
-            if (saved) {
-                setStatus("Saved", true);
+        function afterSave(qep, saved, json)
+        {
+            if (saved)
+            {
+                if (json && json.parseErrors)
+                    setStatus("Saved with parse errors", true);
+                else
+                    setStatus("Saved", true);
             }
-            else {
+            else
+            {
                 var msg = "Failed to Save";
                 if (json && json.exception)
                     msg += ": " + json.exception;
                 setError(msg);
             }
         }
-        queryEditor.getSourceEditor().on('beforeSave', beforeSave);
-        queryEditor.getSourceEditor().on('save', afterSave);
-        queryEditor.getMetadataEditor().on('beforeSave', beforeSave);
-        queryEditor.getMetadataEditor().on('save', afterSave);
+        queryEditor.on('beforeSave', beforeSave);
+        queryEditor.on('save', afterSave);
 
-        function clearStatus() {
+        function clearStatus()
+        {
             var elem = Ext.get("status");
             elem.update("&nbsp;");
             elem.setVisible(false);
