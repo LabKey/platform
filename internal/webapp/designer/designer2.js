@@ -24,6 +24,7 @@ LABKEY.ext.SplitGroupTabPanel = Ext.extend(Ext.ux.GroupTabPanel, {
             pinned: true, // always show the splitter
             constrainTo: this.bwrap,
             minWidth: 100,
+            maxWidth: 700,
             resizeElement : function () {
                 var box = this.proxy.getBox();
                 splitItem.setWidth(box.width);

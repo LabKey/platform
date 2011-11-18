@@ -1,3 +1,36 @@
+Ext.apply(Ext, {
+    /**
+     * @author Nigel (Animal) White
+     * @contributor Shea Frederick - http://www.vinylfox.com
+     * @license MIT License
+     * <p>Override to allow mouse event forwarding through masking layers - .</p>
+     * http://www.vinylfox.com/forwarding-mouse-events-through-layers/
+     * http://code.google.com/p/ext-ux-datadrop/source/browse/trunk/src/Override.js
+     */
+    num: function(v, defaultValue){
+        v = Number(Ext.isEmpty(v) || Ext.isBoolean(v) ? NaN : v);
+        return isNaN(v) ? defaultValue : v;
+    },
+
+    /**
+     * 13407: Fix Ext _dc parameter appending
+     * The default Ext.urlAppend method does not work with LabKey URL generation as LabKey
+     * appends a ? at the end of the URL by default (e.g. controller/action.view? ).
+     * To satisfy backwards compatibility this check just assures that an 'invalid chunk' is
+     * not in the URL such as ?&.
+     * See Ext.urlAppend in ext-3.4.0/src/ext-core/src/core/Ext.js
+     */
+    urlAppend : function(url, s) {
+        if (!Ext.isEmpty(s)){
+            url = url + (url.indexOf('?') === -1 ? '?' : '&') + s;
+        }
+        if (url.indexOf('?&') !== -1) {
+            url = url.replace('?&', '?');
+        }
+        return url;
+    }
+});
+
 // Adding 'tooltip' property to menu items
 // http://www.sencha.com/forum/showthread.php?77656-How-to-put-a-tooltip-on-a-menuitem&p=374038#post374038
 Ext.override(Ext.menu.Item, {
@@ -27,23 +60,6 @@ Ext.override(Ext.menu.Item, {
     }
 });
 
-/**
- * @author Nigel (Animal) White
- * @contributor Shea Frederick - http://www.vinylfox.com
- * @license MIT License
- * <p>Override to allow mouse event forwarding through masking layers - .</p>
- * http://www.vinylfox.com/forwarding-mouse-events-through-layers/
- * http://code.google.com/p/ext-ux-datadrop/source/browse/trunk/src/Override.js
- */
-Ext.apply(Ext, {
-    num: function(v, defaultValue){
-        v = Number(Ext.isEmpty(v) || Ext.isBoolean(v) ? NaN : v);
-        return isNaN(v) ? defaultValue : v;
-    },
-    isBoolean: function(v){
-        return typeof v === 'boolean';
-    }
-});
 Ext.override(Ext.Element, (function(){
     var doc = document,
         SCROLLLEFT = 'scrollLeft',
