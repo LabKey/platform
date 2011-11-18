@@ -71,14 +71,14 @@ Ext4.onReady(function(){
                 iconurl: {
                     createIfDoesNotExist: true,
                     setValueOnLoad: true,
-                    setInitialValue: function(val, rec){
+                    getInitialValue: function(val, rec){
                         return LABKEY.ActionURL.buildURL('project', 'downloadProjectIcon', rec.get('Name'))
                     }
                 },
                 url: {
                     createIfDoesNotExist: true,
                     setValueOnLoad: true,
-                    setInitialValue: function(val, rec){
+                    getInitialValue: function(val, rec){
                         return LABKEY.ActionURL.buildURL('project', 'begin', rec.get('Name'))
                     }
                 }
