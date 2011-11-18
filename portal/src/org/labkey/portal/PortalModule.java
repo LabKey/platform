@@ -62,6 +62,7 @@ public class PortalModule extends DefaultModule
     protected void init()
     {
         addController("project", ProjectController.class);
+        addController("util", UtilController.class);
     }
 
     protected Collection<WebPartFactory> createWebPartFactories()

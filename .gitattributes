@@ -1838,7 +1838,9 @@ pipeline/webapp/share/schema/wsrf/servicegroup/WS-ServiceGroup_service.wsdl -tex
 portal/module.properties -text
 portal/src/org/labkey/portal/PortalJUnitTest.java -text
 portal/src/org/labkey/portal/PortalModule.java -text
+portal/src/org/labkey/portal/UtilController.java -text
 portal/src/org/labkey/portal/customizeErrors.jsp -text
+portal/src/org/labkey/portal/testsvg.jsp -text
 query/gwtsrc/org/labkey/query/metadata/MetadataEditor.gwt.xml -text
 query/gwtsrc/org/labkey/query/metadata/client/GWTColumnInfo.java -text
 query/gwtsrc/org/labkey/query/metadata/client/GWTTableInfo.java -text

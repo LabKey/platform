@@ -1695,13 +1695,22 @@ public class SecurityController extends SpringActionController
             {
                 String dot = GroupManager.getGroupGraphSvg(groups, getUser());
                 File dir = FileUtil.getTempDirectory();
-                File svgFile = File.createTempFile("groups", ".svg", dir);
-                DotRunner runner = new DotRunner(dir, dot);
-                runner.addSvgOutput(svgFile);
-                runner.execute();
-                String svg = PageFlowUtil.getFileContentsAsString(svgFile);
-                svgFile.delete();
-                html = svg.substring(svg.indexOf("<svg"));
+                File svgFile = null;
+                try
+                {
+                    svgFile = File.createTempFile("groups", ".svg", dir);
+                    svgFile.deleteOnExit();
+                    DotRunner runner = new DotRunner(dir, dot);
+                    runner.addSvgOutput(svgFile);
+                    runner.execute();
+                    String svg = PageFlowUtil.getFileContentsAsString(svgFile);
+                    html = svg.substring(svg.indexOf("<svg"));
+                }
+                finally
+                {
+                    if (null != svgFile)
+                        svgFile.delete();
+                }
             }
 
             return new ApiSimpleResponse("html", html);
