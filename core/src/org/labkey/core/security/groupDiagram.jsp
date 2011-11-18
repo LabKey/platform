@@ -24,11 +24,6 @@
 <div id="groupDiagram"></div>
 <script type="text/javascript">
     Ext.onReady(function() {
-        refreshDiagram();
-    });
-
-    function refreshDiagram()
-    {
         if (Ext.isIE && (Ext.isIE6 || Ext.isIE7 || Ext.isIE8))
         {
             render("This feature is not supported on older versions of Internet Explorer. " +
@@ -37,12 +32,20 @@
         }
         else
         {
-            Ext.Ajax.request({
-                url: <%=q(groupDiagramURL.toString())%>,
-                success: renderGroupDiagram,
-                failure: onError
-            });
+            refreshDiagram();
+            securityCache.principalsStore.on("add", refreshDiagram, this);
+            securityCache.principalsStore.on("remove", refreshDiagram, this);
+            securityCache.principalsStore.on("update", refreshDiagram, this);
         }
+    });
+
+    function refreshDiagram()
+    {
+        Ext.Ajax.request({
+            url: <%=q(groupDiagramURL.toString())%>,
+            success: renderGroupDiagram,
+            failure: onError
+        });
     }
 
     function renderGroupDiagram(response)
