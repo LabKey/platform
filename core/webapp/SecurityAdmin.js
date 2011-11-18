@@ -672,7 +672,6 @@ var UserInfoPopup = Ext.extend(Ext.Window,{
             minWidth:200,
             width:400,
             height:300,
-            autoScroll:true,
             minHeight:200,
             buttons: [
                 {

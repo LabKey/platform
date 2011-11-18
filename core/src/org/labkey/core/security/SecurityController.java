@@ -1704,7 +1704,6 @@ public class SecurityController extends SpringActionController
                 html = svg.substring(svg.indexOf("<svg"));
             }
 
-
             return new ApiSimpleResponse("html", html);
         }
     }
