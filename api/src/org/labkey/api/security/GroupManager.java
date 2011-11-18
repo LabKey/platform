@@ -36,11 +36,11 @@ import org.labkey.api.view.ViewContext;
 import java.beans.PropertyChangeEvent;
 import java.sql.SQLException;
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedHashSet;
 import java.util.LinkedList;
-import java.util.List;
 import java.util.Set;
 
 /**
@@ -147,9 +147,9 @@ public class GroupManager
     }
 
 
-    public static String getGroupGraph(Container c)
+    // groups is a collection of one or more root groups to diagram
+    public static String getGroupGraphSvg(Collection<Group> groups, User user)
     {
-        List<Group> groups = Arrays.asList(SecurityManager.getGroups(c.getProject(), false));
         StringBuilder sb = new StringBuilder("digraph groups\n{\n");
         HashSet<Group> groupSet = new HashSet<Group>();
         LinkedList<Group> recurse = new LinkedList<Group>();
@@ -179,8 +179,18 @@ public class GroupManager
             int userCount = SecurityManager.getGroupMembers(g, SecurityManager.GroupMemberType.Users).size();
 
             sb.append("\t").append(g.getUserId()).append(" [");
-            sb.append("label=\"").append(g.getName()).append("\\n").append(userCount).append(" users\"");
-            sb.append(", URL=\"javascript:window.parent.showPopupId(").append(g.getUserId()).append(")\"");
+            appendDotAttribute(sb, false, "label", g.getName() + "\\n" + userCount + " users");
+
+            if (g.isProjectGroup() || user.isAdministrator())
+            {
+                appendDotAttribute(sb, true, "URL", "javascript:window.parent.showPopupId(" + g.getUserId() + ")");
+                appendDotAttribute(sb, true, "tooltip", "Click to manage the '" + g.getName() + "' " + (g.isProjectGroup() ? "project" : "site") + " group");
+            }
+            else
+            {
+                appendDotAttribute(sb, true, "URL", "javascript:void()");
+                appendDotAttribute(sb, true, "tooltip", "You must be a site administrator to manage site groups");
+            }
 
             if (!g.isProjectGroup())
                 sb.append(", shape=box");
@@ -191,6 +201,15 @@ public class GroupManager
         sb.append("}");
 
         return sb.toString();
+    }
+
+
+    private static void appendDotAttribute(StringBuilder sb, boolean prependComma, String name, String value)
+    {
+        if (prependComma)
+            sb.append(", ");
+
+        sb.append(name).append("=\"").append(value).append("\"");
     }
 
 

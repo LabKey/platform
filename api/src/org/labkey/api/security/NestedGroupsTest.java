@@ -29,6 +29,7 @@ import java.sql.SQLException;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Set;
 
 /**
@@ -189,8 +190,10 @@ public class NestedGroupsTest extends Assert
         expected(allGroups, projectX, coders, divA, user, all);
         notExpected(allGroups, divB, divC, testers, writers, siteGroup1);
 
-        String gv = GroupManager.getGroupGraph(_project);
-        System.out.println(gv);
+        List<Group> projectGroups = Arrays.asList(SecurityManager.getGroups(_project, false));
+        String svg = GroupManager.getGroupGraphSvg(projectGroups, user);
+
+        // TODO: Assert something about gv... maybe just length of svg?
     }
 
     private Group create(String name)
