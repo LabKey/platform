@@ -439,7 +439,7 @@ LABKEY.DataRegion = Ext.extend(Ext.Component,
                 }
                 else
                 {
-                    this.hideMessage();
+                    this.removeMessage('selection');
                 }
             }});
         }
@@ -758,6 +758,15 @@ LABKEY.DataRegion = Ext.extend(Ext.Component,
         {
             this.msgbox.setVisible(false);
             this.msgbox.clear();
+        }
+    },
+
+    /** If a message is currently showing, remove the specified part*/
+    removeMessage : function (part)
+    {
+        if (this.msgbox)
+        {
+            this.msgbox.removeMessage(part);
         }
     },
 
@@ -2771,6 +2780,7 @@ LABKEY.MessageArea = Ext.extend(Ext.util.Observable, {
     render : function() {
 
         this.clear();
+        var hasMsg = false;
         for (var name in this.parts)
         {
             var msg = this.parts[name];
@@ -2782,9 +2792,10 @@ LABKEY.MessageArea = Ext.extend(Ext.util.Observable, {
                 var el = div.createChild({tag: 'div', cls: 'labkey-dataregion-msg', html: msg});
 
                 this.fireEvent('rendermsg', this, name, el);
+                hasMsg = true;
             }
         }
-        this.setVisible(true);
+        this.setVisible(hasMsg);
     },
 
     setVisible : function(visible) {
