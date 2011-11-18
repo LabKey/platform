@@ -29,22 +29,47 @@
 
     function refreshDiagram()
     {
-        Ext.Ajax.request({
-            url: <%=q(groupDiagramURL.toString())%>,
-            success: renderGroupDiagram,
-            failure: onError
-        });
+        if (Ext.isIE && (Ext.isIE6 || Ext.isIE7 || Ext.isIE8))
+        {
+            render("This feature is not supported on older versions of Internet Explorer. " +
+                "Please upgrade to the latest version of Internet Explorer, or switch to using Firefox, Chrome, or Safari. " +
+                "See <a href='https://www.labkey.org/wiki/home/Documentation/page.view?name=supportedBrowsers' target='browserVersions'>this page</a> for more information.");
+        }
+        else
+        {
+            Ext.Ajax.request({
+                url: <%=q(groupDiagramURL.toString())%>,
+                success: renderGroupDiagram,
+                failure: onError
+            });
+        }
     }
 
     function renderGroupDiagram(response)
     {
         var bean = Ext.util.JSON.decode(response.responseText);
 
-        document.getElementById("groupDiagram").innerHTML = bean.html;
+        render(bean.html);
     }
 
     function onError(response)
     {
-        alert("Error: " + response);
+        if (response.responseText)
+        {
+            var bean = Ext.util.JSON.decode(response.responseText);
+
+            if (bean.exception)
+            {
+                render("Error: " + bean.exception);
+                return;
+            }
+        }
+
+        render("Error generating or retrieving diagram");
+    }
+
+    function render(html)
+    {
+        Ext.fly("groupDiagram").update(html);
     }
 </script>
