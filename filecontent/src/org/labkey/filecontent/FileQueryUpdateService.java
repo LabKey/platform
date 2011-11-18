@@ -15,6 +15,7 @@
  */
 package org.labkey.filecontent;
 
+import org.apache.commons.beanutils.ConvertUtils;
 import org.apache.commons.beanutils.converters.IntegerConverter;
 import org.apache.log4j.Logger;
 import org.labkey.api.data.Container;
@@ -40,9 +41,12 @@ import org.labkey.api.query.QueryUpdateServiceException;
 import org.labkey.api.query.ValidationException;
 import org.labkey.api.search.SearchService;
 import org.labkey.api.security.User;
+import org.labkey.api.security.permissions.DeletePermission;
 import org.labkey.api.security.permissions.Permission;
 import org.labkey.api.services.ServiceRegistry;
+import org.labkey.api.util.Pair;
 import org.labkey.api.util.Path;
+import org.labkey.api.view.UnauthorizedException;
 import org.labkey.api.webdav.WebdavResource;
 import org.labkey.api.webdav.WebdavService;
 import org.labkey.api.writer.ContainerUser;
@@ -199,13 +203,15 @@ public class FileQueryUpdateService extends AbstractQueryUpdateService
         return _setRow(user, container, row, false);
     }
 
-    private Map<String, Object> _setRow(final User user, final Container container, Map<String, Object> row, boolean isUpdate) throws ValidationException
+    /** @return Pair of the data object (if found), and the requested dataFileUrl (if specified in the row) */
+    private Pair<ExpData, String> findData(Container container, Map<String, Object> row) throws ValidationException
     {
         String dataFileUrl = null;
 
         if (!row.containsKey(ExpDataTable.Column.DataFileUrl.name()))
         {
-            try {
+            try
+            {
                 Filter filter = getQueryFilter(row);
                 Map<String, Object> rowMap = Table.selectObject(getQueryTable(), getQueryColumns(container), filter, null, Map.class);
                 if (rowMap != null)
@@ -220,7 +226,18 @@ public class FileQueryUpdateService extends AbstractQueryUpdateService
             dataFileUrl = String.valueOf(row.get(ExpDataTable.Column.DataFileUrl.name()));
 
         ExpData data = ExperimentService.get().getExpDataByURL(dataFileUrl, container);
+        return new Pair<ExpData, String>(data, dataFileUrl);
+    }
+
+    private Map<String, Object> _setRow(final User user, final Container container, Map<String, Object> row, boolean isUpdate) throws ValidationException
+    {
+
         WebdavResource resource = davResourceFromKeys(row);
+
+        Pair<ExpData, String> p = findData(container, row);
+        ExpData data = p.getKey();
+        String dataFileUrl = p.getValue();
+
 
         if (resource != null)
         {
@@ -288,7 +305,34 @@ public class FileQueryUpdateService extends AbstractQueryUpdateService
     @Override
     protected Map<String, Object> deleteRow(User user, Container container, Map<String, Object> oldRow) throws InvalidKeyException, QueryUpdateServiceException, SQLException
     {
-        throw new UnsupportedOperationException("DeleteRow not supported");
+        ExpData data = null;
+        if (oldRow.get("RowId") != null)
+        {
+            int rowId = ((Integer)ConvertUtils.convert(oldRow.get("RowId").toString(), Integer.class)).intValue();
+            data = ExperimentService.get().getExpData(rowId);
+        }
+        if (data == null)
+        {
+            try
+            {
+                data = findData(container, oldRow).getKey();
+            }
+            catch (ValidationException e)
+            {
+                throw new QueryUpdateServiceException(e);
+            }
+        }
+        if (data == null)
+        {
+            throw new InvalidKeyException("No matching data rows found");
+        }
+        if (!data.getContainer().hasPermission(user, DeletePermission.class))
+        {
+            throw new UnauthorizedException("You do not have permission to delete from " + data.getContainer().getPath());
+        }
+        data.delete(user);
+        
+        return oldRow;
     }
 
     private WebdavResource davResourceFromKeys(Map<String, Object> keys)

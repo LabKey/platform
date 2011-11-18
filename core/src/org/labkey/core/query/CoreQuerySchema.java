@@ -327,7 +327,6 @@ public class CoreQuerySchema extends UserSchema
                 return getMembersTable();
             }
         }, "Group"));
-        groupsCol.setIsUnselectable(true);
         users.addColumn(groupsCol);
     }
 

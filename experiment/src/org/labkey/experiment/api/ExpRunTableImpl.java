@@ -31,6 +31,7 @@ import org.labkey.api.data.DisplayColumn;
 import org.labkey.api.data.DisplayColumnFactory;
 import org.labkey.api.data.ForeignKey;
 import org.labkey.api.data.JdbcType;
+import org.labkey.api.data.MultiValuedForeignKey;
 import org.labkey.api.data.RenderContext;
 import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.SimpleFilter;
@@ -54,6 +55,7 @@ import org.labkey.api.query.DuplicateKeyException;
 import org.labkey.api.query.ExprColumn;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.InvalidKeyException;
+import org.labkey.api.query.LookupForeignKey;
 import org.labkey.api.query.QueryUpdateService;
 import org.labkey.api.query.QueryUpdateServiceException;
 import org.labkey.api.query.RowIdForeignKey;
@@ -305,6 +307,40 @@ public class ExpRunTableImpl extends ExpTableImpl<ExpRunTable.Column> implements
                 return createInputLookupColumn();
             case Output:
                 return createOutputLookupColumn();
+            case DataOutputs:
+                ColumnInfo dataOutputsCol = wrapColumn(alias, _rootTable.getColumn("RowId"));
+                dataOutputsCol.setFk(new MultiValuedForeignKey(new LookupForeignKey("RunId")
+                {
+                    @Override
+                    public TableInfo getLookupTableInfo()
+                    {
+                        VirtualTable t = new VirtualTable(ExperimentServiceImpl.get().getSchema())
+                        {
+                            @NotNull
+                            @Override
+                            public SQLFragment getFromSQL()
+                            {
+                                SQLFragment sql = new SQLFragment("SELECT pa.RunId, di.DataId FROM ");
+                                sql.append(ExperimentServiceImpl.get().getTinfoProtocolApplication(), "pa");
+                                sql.append(", ");
+                                sql.append(ExperimentServiceImpl.get().getTinfoDataInput(), "di");
+                                sql.append(" WHERE di.TargetApplicationId = pa.RowId AND pa.CpasType = '");
+                                sql.append(ExpProtocol.ApplicationType.ExperimentRunOutput);
+                                sql.append("'");
+                                return sql;
+                            }
+                        };
+                        ColumnInfo runCol = new ColumnInfo("RunId", t);
+                        runCol.setJdbcType(JdbcType.INTEGER);
+                        t.addColumn(runCol);
+                        ColumnInfo dataCol = new ColumnInfo("DataId", t);
+                        dataCol.setJdbcType(JdbcType.INTEGER);
+                        dataCol.setFk(getExpSchema().getDataIdForeignKey());
+                        t.addColumn(dataCol);
+                        return t;
+                    }
+                }, "DataId"));
+                return dataOutputsCol;
 
             default:
                 throw new IllegalArgumentException("Unknown column " + column);
@@ -393,6 +429,7 @@ public class ExpRunTableImpl extends ExpTableImpl<ExpRunTable.Column> implements
         addColumn(Column.RunGroups);
         addColumn(Column.Input);
         addColumn(Column.Output);
+        addColumn(Column.DataOutputs);
 
         ActionURL urlDetails = new ActionURL(ExperimentController.ShowRunTextAction.class, schema.getContainer());
         setDetailsURL(new DetailsURL(urlDetails, Collections.singletonMap("rowId", "RowId")));
@@ -401,6 +438,7 @@ public class ExpRunTableImpl extends ExpTableImpl<ExpRunTable.Column> implements
         List<FieldKey> defaultVisibleColumns = new ArrayList<FieldKey>(getDefaultVisibleColumns());
         defaultVisibleColumns.remove(FieldKey.fromParts(Column.Comments));
         defaultVisibleColumns.remove(FieldKey.fromParts(Column.Folder));
+        defaultVisibleColumns.remove(FieldKey.fromParts(Column.DataOutputs));
         setDefaultVisibleColumns(defaultVisibleColumns);
     }
 

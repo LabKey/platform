@@ -105,11 +105,11 @@ abstract class DataLinkColumn extends DataColumn
 
     protected ExpData getData(RenderContext ctx)
     {
-        Object rowIdObject = getColumnInfo().getValue(ctx);
+        Integer rowIdObject = ctx.get(getColumnInfo().getFieldKey(), Integer.class);
         ExpData data = null;
         if (rowIdObject != null)
         {
-            int rowId = ((Number) rowIdObject).intValue();
+            int rowId = rowIdObject.intValue();
             // Check if another column has already grabbed the value
             data = (ExpData)ctx.get(DATA_OBJECT_KEY);
             if (data == null || data.getRowId() != rowId)

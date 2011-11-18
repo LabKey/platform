@@ -183,6 +183,12 @@ public class CoreController extends SpringActionController
 
             return url;
         }
+
+        @Override
+        public ActionURL getProjectsURL(Container c)
+        {
+            return new ActionURL(ProjectsAction.class, c);
+        }
     }
 
     abstract class BaseStylesheetAction extends ExportAction
@@ -243,6 +249,27 @@ public class CoreController extends SpringActionController
                 _themeStylesheetCache.put(c, content);
             }
             return content;
+        }
+    }
+
+    @RequiresPermissionClass(ReadPermission.class)
+    public class ProjectsAction extends SimpleViewAction
+    {
+        @Override
+        public ModelAndView getView(Object o, BindException errors) throws Exception
+        {
+            Portal.WebPart config = new Portal.WebPart();
+            config.setIndex(1);
+            config.setRowId(-1);
+            JspView<Portal.WebPart> view = new JspView<Portal.WebPart>("/org/labkey/core/project/projects.jsp", config);
+            view.setTitle("Projects");
+            return view;
+        }
+
+        @Override
+        public NavTree appendNavTrail(NavTree root)
+        {
+            return root;
         }
     }
 

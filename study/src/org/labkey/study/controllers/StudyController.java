@@ -225,7 +225,6 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.text.DecimalFormat;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Comparator;
@@ -1345,16 +1344,7 @@ public class StudyController extends BaseStudyController
 
         public NavTree appendNavTrail(NavTree root)
         {
-            try
-            {
-                Study study = getStudy();
-                if (study != null)
-                    root.addChild(study.getLabel(), new ActionURL(BeginAction.class, getContainer()));
-            }
-            catch (ServletException e)
-            {
-            }
-            return root.addChild("Manage Study");
+            return _appendManageStudy(root);
         }
     }
 

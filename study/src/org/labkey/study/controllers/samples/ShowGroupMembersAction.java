@@ -27,6 +27,7 @@ import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.ReturnURLString;
 import org.labkey.api.view.NotFoundException;
 import org.labkey.study.SampleManager;
+import org.labkey.study.controllers.BaseStudyController;
 import org.labkey.study.controllers.StudyController;
 import org.labkey.study.model.SampleRequestActor;
 import org.labkey.study.model.SiteImpl;
@@ -150,10 +151,7 @@ public class ShowGroupMembersAction extends FormViewAction<ShowGroupMembersActio
 
     public NavTree appendNavTrail(NavTree root)
     {
-        Study study = StudyManager.getInstance().getStudy(getViewContext().getContainer());
-
-        root.addChild(study.getLabel(), new ActionURL(StudyController.OverviewAction.class, getViewContext().getContainer()));
-        root.addChild("Manage Study", new ActionURL(StudyController.ManageStudyAction.class, getViewContext().getContainer()));
+        BaseStudyController._appendManageStudy(root, getViewContext().getContainer(), getViewContext().getUser());
 
         if (_site != null)
             root.addChild("Manage Actors", new ActionURL(SpecimenController.ManageActorsAction.class, getViewContext().getContainer()).addParameter("showMemberSites", _actor.getRowId()));

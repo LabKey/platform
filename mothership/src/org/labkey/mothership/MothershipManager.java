@@ -41,6 +41,7 @@ public class MothershipManager
     private static final String UPGRADE_MESSAGE_PROP = "upgradeMessage";
     private static final String CREATE_ISSUE_URL_PROP = "createIssueURL";
     private static final String ISSUES_CONTAINER_PROP = "issuesContainer";
+    private static final Object INSERT_EXCEPTION_LOCK = new Object();
 
     public static MothershipManager get()
     {
@@ -62,45 +63,49 @@ public class MothershipManager
 
     public void insertException(ExceptionStackTrace stackTrace, ExceptionReport report) throws SQLException
     {
-        DbScope scope = getSchema().getScope();
-        scope.ensureTransaction();
-        try
+        // Synchronize to prevent two different threads from creating duplicate rows in the ExceptionStackTrace table
+        synchronized (INSERT_EXCEPTION_LOCK)
         {
-            stackTrace.hashStackTrace();
-            ExceptionStackTrace existingStackTrace = getExceptionStackTrace(stackTrace.getStackTraceHash(), stackTrace.getContainer());
-            if (existingStackTrace != null)
+            DbScope scope = getSchema().getScope();
+            scope.ensureTransaction();
+            try
             {
-                stackTrace = existingStackTrace;
+                stackTrace.hashStackTrace();
+                ExceptionStackTrace existingStackTrace = getExceptionStackTrace(stackTrace.getStackTraceHash(), stackTrace.getContainer());
+                if (existingStackTrace != null)
+                {
+                    stackTrace = existingStackTrace;
+                }
+                else
+                {
+                    stackTrace = Table.insert(null, getTableInfoExceptionStackTrace(), stackTrace);
+                }
+
+                report.setExceptionStackTraceId(stackTrace.getExceptionStackTraceId());
+
+                String url = report.getUrl();
+                if (null != url && url.length() > 512)
+                    report.setURL(url.substring(0, 506) + "...");
+
+                String referrerURL = report.getReferrerURL();
+                if (null != referrerURL && referrerURL.length() > 512)
+                    report.setReferrerURL(referrerURL.substring(0, 506) + "...");
+
+                String browser = report.getBrowser();
+                if (null != browser && browser.length() > 100)
+                    report.setBrowser(browser.substring(0,90) + "...");
+
+                String exceptionMessage = report.getExceptionMessage();
+                if (null != exceptionMessage && exceptionMessage.length() > 1000)
+                    report.setExceptionMessage(exceptionMessage.substring(0,990) + "...");
+
+                Table.insert(null, getTableInfoExceptionReport(), report);
+                scope.commitTransaction();
             }
-            else
+            finally
             {
-                stackTrace = Table.insert(null, getTableInfoExceptionStackTrace(), stackTrace);
+                scope.closeConnection();
             }
-
-            report.setExceptionStackTraceId(stackTrace.getExceptionStackTraceId());
-
-            String url = report.getUrl();
-            if (null != url && url.length() > 512)
-                report.setURL(url.substring(0, 506) + "...");
-
-            String referrerURL = report.getReferrerURL();
-            if (null != referrerURL && referrerURL.length() > 512)
-                report.setReferrerURL(referrerURL.substring(0, 506) + "...");
-
-            String browser = report.getBrowser();
-            if (null != browser && browser.length() > 100)
-                report.setBrowser(browser.substring(0,90) + "...");
-
-            String exceptionMessage = report.getExceptionMessage();
-            if (null != exceptionMessage && exceptionMessage.length() > 1000)
-                report.setExceptionMessage(exceptionMessage.substring(0,990) + "...");
-
-            Table.insert(null, getTableInfoExceptionReport(), report);
-            scope.commitTransaction();
-        }
-        finally
-        {
-            scope.closeConnection();
         }
     }
 

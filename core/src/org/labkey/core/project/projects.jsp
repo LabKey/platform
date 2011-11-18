@@ -23,7 +23,6 @@
     JspView<Portal.WebPart> me = (JspView) HttpView.currentView();
     int webPartId = me.getModelBean().getRowId();
     String renderTarget = "project-" + me.getModelBean().getIndex();
-    String x = "";
 %>
 <div>
     <div id='<%=renderTarget%>'></div>

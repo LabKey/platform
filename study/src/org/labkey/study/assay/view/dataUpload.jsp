@@ -30,54 +30,48 @@
     AssayRunUploadForm bean = me.getModelBean();
 %>
 <table>
-    <tr>
-        <td colspan="2">
-            <table>
-                <%
-                    boolean first = true;
-                    List<AssayDataCollector> visibleCollectors = new ArrayList<AssayDataCollector>();
-                    Map<String, File> uploadedData = null;
-                    try
-                    {
-                        uploadedData = bean.getUploadedData();
-                    }
-                    // These exceptions are reported and handled in UploadWizardAction
-                    catch (ExperimentException e)
-                    {
-                    }
+    <%
+        boolean first = true;
+        List<AssayDataCollector> visibleCollectors = new ArrayList<AssayDataCollector>();
+        Map<String, File> uploadedData = null;
+        try
+        {
+            uploadedData = bean.getUploadedData();
+        }
+        // These exceptions are reported and handled in UploadWizardAction
+        catch (ExperimentException e)
+        {
+        }
 
-                    for (AssayDataCollector collector : bean.getProvider().getDataCollectors(uploadedData, bean))
-                    {
-                        if (collector.isVisible())
-                        {
-                            visibleCollectors.add(collector);
-                        }
-                    }
-                    for (AssayDataCollector collector : visibleCollectors)
-                    { %>
-                    <tr>
-                        <% if (visibleCollectors.size() > 1)
-                        { %>
-                            <td><input value="<%= h(collector.getShortName()) %>" type="radio" name="dataCollectorName" <% if (first) { %>checked="true" <% } %> onchange="hideAllCollectors(); showCollector('<%= h(collector.getShortName()) %>')"></td>
-                        <% }
-                        else
-                        { %>
-                            <td><input value="<%= h(collector.getShortName()) %>" type="hidden" name="dataCollectorName" /></td>
-                        <% } %>
-                        <td><%= collector.getDescription(bean) %></td>
-                    </tr>
-                    <tr style="visibility: <%= first ? "visible" : "collapse" %>;" id="collector-<%= h(collector.getShortName()) %>">
-                        <td></td>
-                        <td>
-                            <% include(collector.getView(bean), out); %>
-                        </td>
-                    </tr>
-                <%
-                    first = false;
-                } %>
-            </table>
-        </td >
-    </tr >
+        for (AssayDataCollector collector : bean.getProvider().getDataCollectors(uploadedData, bean))
+        {
+            if (collector.isVisible())
+            {
+                visibleCollectors.add(collector);
+            }
+        }
+        for (AssayDataCollector collector : visibleCollectors)
+        { %>
+        <tr>
+            <% if (visibleCollectors.size() > 1)
+            { %>
+                <td><input value="<%= h(collector.getShortName()) %>" type="radio" name="dataCollectorName" <% if (first) { %>checked="true" <% } %> onchange="hideAllCollectors(); showCollector('<%= h(collector.getShortName()) %>')"></td>
+            <% }
+            else
+            { %>
+                <td><input value="<%= h(collector.getShortName()) %>" type="hidden" name="dataCollectorName" /></td>
+            <% } %>
+            <td><%= collector.getDescription(bean) %></td>
+        </tr>
+        <tr style="visibility: <%= first ? "visible" : "collapse" %>;" id="collector-<%= h(collector.getShortName()) %>">
+            <td></td>
+            <td>
+                <% include(collector.getView(bean), out); %>
+            </td>
+        </tr>
+    <%
+        first = false;
+    } %>
 </table>
 <script type="text/javascript">
     function hideAllCollectors()

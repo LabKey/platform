@@ -21,6 +21,7 @@ import org.labkey.api.action.HasPageConfig;
 import org.labkey.api.action.NavTrailAction;
 import org.labkey.api.action.SpringActionController;
 import org.labkey.api.data.Container;
+import org.labkey.api.security.User;
 import org.labkey.api.study.DataSet;
 import org.labkey.api.study.Study;
 import org.labkey.api.study.TimepointType;
@@ -214,10 +215,15 @@ public abstract class BaseStudyController extends SpringActionController
 
     protected NavTree _appendManageStudy(NavTree root)
     {
+        return _appendManageStudy(root, getContainer(), getUser());
+    }
+
+    public static NavTree _appendManageStudy(NavTree root, Container container, User user)
+    {
         try
         {
-            appendRootNavTrail(root);
-            root.addChild("Manage Study", new ActionURL(StudyController.ManageStudyAction.class, getContainer()));
+            appendRootNavTrail(root, container, user);
+            root.addChild("Manage Study", new ActionURL(StudyController.ManageStudyAction.class, container));
         }
         catch (ServletException e)
         {
@@ -227,15 +233,20 @@ public abstract class BaseStudyController extends SpringActionController
 
     protected Study appendRootNavTrail(NavTree root) throws ServletException
     {
-        Study study = getStudy();
+        return appendRootNavTrail(root, getContainer(), getUser());
+    }
+
+    public static Study appendRootNavTrail(NavTree root, Container container, User user) throws ServletException
+    {
+        Study study = getStudy(false, container);
         ActionURL rootURL;
-        if (getContainer().getFolderType().getDefaultModule() instanceof StudyModule)
+        if (container.getFolderType().getDefaultModule() instanceof StudyModule)
         {
-            rootURL = getContainer().getFolderType().getStartURL(getContainer(), getUser());
+            rootURL = container.getFolderType().getStartURL(container, user);
         }
         else
         {
-            rootURL = new ActionURL(StudyController.BeginAction.class, getContainer());
+            rootURL = new ActionURL(StudyController.BeginAction.class, container);
         }
         root.addChild(study.getLabel(), rootURL);
         return study;
