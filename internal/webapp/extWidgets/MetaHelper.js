@@ -165,10 +165,10 @@ LABKEY.ext.MetaHelper = {
      * @param {function} [buildDisplayString] This function will be used to generate the qTip for the field when it appears in a grid instead of the default function.  See example below for usage.
      //TODO
      * @param {function} [buildUrl] This function will be used to generate the URL encapsulating the field
-     * @param (boolean) [setValueOnLoad] If true, the store will attempt to set a value for this field on load.  This is determined by the defaultValue or setInitialValue function, if either is defined
-     * @param {function} [setInitialValue] When a new record is added to this store, this function will be called on that field.  If setValueOnLoad is true, this will also occur on load.  It will be passed the record and metadata.  The advantage of using a function over defaultValue is that more complex and dynamic initial values can be created.  For example:
+     * @param (boolean) [setValueOnLoad] If true, the store will attempt to set a value for this field on load.  This is determined by the defaultValue or getInitialValue function, if either is defined
+     * @param {function} [getInitialValue] When a new record is added to this store, this function will be called on that field.  If setValueOnLoad is true, this will also occur on load.  It will be passed the record and metadata.  The advantage of using a function over defaultValue is that more complex and dynamic initial values can be created.  For example:
      *  //sets the value to the current date
-     *  setInitialValue(val, rec, meta){
+     *  getInitialValue(val, rec, meta){
      *      return val || new Date()
      *  }
      *
@@ -184,7 +184,7 @@ LABKEY.ext.MetaHelper = {
         var field =
         {
             //added 'caption' for assay support
-            fieldLabel: Ext4.util.Format.htmlEncode(meta.label || meta.shortCaption || meta.caption || meta.header || meta.name),
+            fieldLabel: Ext4.util.Format.htmlEncode(meta.label || meta.caption || meta.caption || meta.header || meta.name),
             originalConfig: meta,
             //we assume the store's translateMeta() will handle this
             allowBlank: meta.allowBlank!==false,
@@ -680,7 +680,7 @@ LABKEY.ext.MetaHelper = {
 
     /**
      * Identify the proper name of a field using an input string such as an excel column label.  This helper will
-     * perform a case-insensitive comparison of the field name, label, shortCaption and aliases.
+     * perform a case-insensitive comparison of the field name, label, caption, shortCaption and aliases.
      *
      * @name resolveFieldNameFromLabel
      * @function
@@ -738,43 +738,43 @@ LABKEY.ext.MetaHelper = {
     },
 
     //Newer Ext
-//    labelableRenderTpl: [
-//        '<tpl if="!hideLabel && !(!fieldLabel && hideEmptyLabel)">',
-//            '<label id="{id}-labelEl"<tpl if="inputId"> for="{inputId}"</tpl> class="{labelCls}"',
-//                '<tpl if="labelStyle"> style="{labelStyle}"</tpl>>',
-//                '<tpl if="fieldLabel">{fieldLabel}' +
-//                    '{labelSeparator}' +
-//                    '<tpl if="helpPopup"> <a href="#" data-qtip="{helpPopup}"><span class="labkey-help-pop-up">?</span></a></tpl>' +
-//                '</tpl>',
-//            '</label>',
-//        '</tpl>',
-//        '<div class="{baseBodyCls} {fieldBodyCls}" id="{id}-bodyEl" role="presentation">{subTplMarkup}</div>',
-//        '<div id="{id}-errorEl" class="{errorMsgCls}" style="display:none"></div>',
-//        '<div class="{clearCls}" role="presentation"><!-- --></div>',
-//        {
-//            compiled: true,
-//            disableFormats: true
-//        }
-//    ],
-
-    //Ext4.02a
-    //@override
     labelableRenderTpl: [
         '<tpl if="!hideLabel && !(!fieldLabel && hideEmptyLabel)">',
-            '<label<tpl if="inputId"> for="{inputId}"</tpl> class="{labelCls}"<tpl if="labelStyle"> style="{labelStyle}"</tpl>>',
-                '<tpl if="fieldLabel">{fieldLabel}{labelSeparator}' +
+            '<label id="{id}-labelEl"<tpl if="inputId"> for="{inputId}"</tpl> class="{labelCls}"',
+                '<tpl if="labelStyle"> style="{labelStyle}"</tpl>>',
+                '<tpl if="fieldLabel">{fieldLabel}' +
+                    '{labelSeparator}' +
                     '<tpl if="helpPopup"> <a href="#" data-qtip="{helpPopup}"><span class="labkey-help-pop-up">?</span></a></tpl>' +
                 '</tpl>',
             '</label>',
         '</tpl>',
-        '<div class="{baseBodyCls} {fieldBodyCls}"<tpl if="inputId"> id="{baseBodyCls}-{inputId}"</tpl> role="presentation">{subTplMarkup}</div>',
-        '<div class="{errorMsgCls}" style="display:none"></div>',
+        '<div class="{baseBodyCls} {fieldBodyCls}" id="{id}-bodyEl" role="presentation">{subTplMarkup}</div>',
+        '<div id="{id}-errorEl" class="{errorMsgCls}" style="display:none"></div>',
         '<div class="{clearCls}" role="presentation"><!-- --></div>',
         {
             compiled: true,
             disableFormats: true
         }
     ],
+
+    //Ext4.02a
+    //@override
+//    labelableRenderTpl: [
+//        '<tpl if="!hideLabel && !(!fieldLabel && hideEmptyLabel)">',
+//            '<label<tpl if="inputId"> for="{inputId}"</tpl> class="{labelCls}"<tpl if="labelStyle"> style="{labelStyle}"</tpl>>',
+//                '<tpl if="fieldLabel">{fieldLabel}{labelSeparator}' +
+//                    '<tpl if="helpPopup"> <a href="#" data-qtip="{helpPopup}"><span class="labkey-help-pop-up">?</span></a></tpl>' +
+//                '</tpl>',
+//            '</label>',
+//        '</tpl>',
+//        '<div class="{baseBodyCls} {fieldBodyCls}"<tpl if="inputId"> id="{baseBodyCls}-{inputId}"</tpl> role="presentation">{subTplMarkup}</div>',
+//        '<div class="{errorMsgCls}" style="display:none"></div>',
+//        '<div class="{clearCls}" role="presentation"><!-- --></div>',
+//        {
+//            compiled: true,
+//            disableFormats: true
+//        }
+//    ],
 
     //private
     findJsonType: function(fieldObj){

@@ -116,7 +116,7 @@ Ext4.define('LABKEY.ext.DetailsPanel', {
                 xtype: 'form',
                 title: Ext4.isDefined(this.sectionTitle) ?  this.sectionTitle : 'Details',
                 items: [],
-                style: 'margin-bottom:20px',
+                style: 'margin-bottom:10px',
                 border: true,
                 bodyStyle: 'padding:5px',
                 autoHeight: true,
@@ -139,6 +139,8 @@ Ext4.define('LABKEY.ext.DetailsPanel', {
                     panel.items.push({
                         fieldLabel: field.label || field.caption || field.name,
                         xtype: 'displayfield',
+                        style: 'word-wrap: break-word;',
+                        width: 300,
                         value: value
                     });
 

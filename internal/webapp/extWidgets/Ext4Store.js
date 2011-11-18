@@ -345,13 +345,13 @@ LABKEY.ext4.Store = Ext4.define('LABKEY.ext4.Store', {
     },
 
     //private
-    //NOTE: the intent of this is to allow fields to have an initial value defined through a function.  see setInitialValue in LABKEY.ext.MetaHelper.getDefaultEditorConfig
+    //NOTE: the intent of this is to allow fields to have an initial value defined through a function.  see getInitialValue in LABKEY.ext.MetaHelper.getDefaultEditorConfig
     onAdd: function(store, records, idx, opts){
         var val;
         this.getFields().each(function(meta){
-            if(meta.setInitialValue){
+            if(meta.getInitialValue){
                 Ext4.each(records, function(record){
-                    val = meta.setInitialValue(record.get(meta.name), record, meta);
+                    val = meta.getInitialValue(record.get(meta.name), record, meta);
                     record.set(meta.name, val);
                 }, this);
             }
@@ -375,14 +375,14 @@ LABKEY.ext4.Store = Ext4.define('LABKEY.ext4.Store', {
         //the intent is to let the client set default values for created fields
         var toUpdate = [];
         this.getFields().each(function(f){
-            if(f.setValueOnLoad && (f.setInitialValue || f.defaultValue))
+            if(f.setValueOnLoad && (f.getInitialValue || f.defaultValue))
                 toUpdate.push(f);
         }, this);
         if(toUpdate.length){
             this.each(function(rec){
                 Ext4.each(toUpdate, function(meta){
-                    if(meta.setInitialValue)
-                        rec.set(meta.name, meta.setInitialValue(rec.get(meta.name), rec, meta));
+                    if(meta.getInitialValue)
+                        rec.set(meta.name, meta.getInitialValue(rec.get(meta.name), rec, meta));
                     else if (meta.defaultValue && !rec.get(meta.name))
                         rec.set(meta.name, meta.defaultValue)
                 }, this);

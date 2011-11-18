@@ -74,14 +74,6 @@ Ext4.define('LABKEY.ext4.GridPanel', {
     ,setupColumnModel : function() {
         var columns = this.getColumnsConfig();
 
-        //if a sel model has been set, and if it needs to be added as a column,
-        //add it to the front of the list.
-        //CheckBoxSelectionModel needs to be added to the column model for
-        //the check boxes to show up.
-        //(not sure why its constructor doesn't do this automatically).
-//        if(this.getSelectionModel() && this.getSelectionModel().renderer)
-//            columns = [this.getSelectionModel()].concat(columns);
-
         //fire the "columnmodelcustomize" event to allow clients
         //to modify our default configuration of the column model
         this.fireEvent("columnmodelcustomize", this, columns);

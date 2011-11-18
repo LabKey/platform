@@ -31,7 +31,7 @@ Ext4.namespace('LABKEY.ext');
         width: 350,
         renderer: function(item){
             return {
-                html: '<div style="float:left;width:250px;">'+item.name+':</div> [<a href="'+LABKEY.ActionURL.buildURL('laboratory', 'AssaySearchPanel', null, {schemaName: item.schemaName, queryName: item.queryName})+'">Search</a>] [<a href="'+LABKEY.ActionURL.buildURL('query', 'executeQuery', null, {schemaName: item.schemaName, 'query.queryName': item.queryName})+'">Browse Records</a>]',
+                html: '<div style="float:left;width:250px;">'+item.name+':</div> [<a href="'+LABKEY.ActionURL.buildURL('laboratory', 'AssaySearchPanel', null, {schemaName: item.schemaName, queryName: item.queryName})+'">Search</a>] [<a href="'+LABKEY.ActionURL.buildURL('query', 'executeQuery', null, {schemaName: item.schemaName, 'query.queryName': item.queryName})+'">Browse All</a>]',
                 style: 'padding-left:5px;padding-bottom:8px'
             }
         },
@@ -148,7 +148,7 @@ Ext4.define('LABKEY.ext.NavPanel', {
                 },{
                     xtype: 'labkey-linkbutton',
                     href: LABKEY.ActionURL.buildURL('query', 'executeQuery', null, {schemaName: item.schemaName, 'query.queryName': item.queryName, 'query.containerFilterName': 'CurrentAndSubfolders'}),
-                    text: 'Browse Records'
+                    text: 'Browse All'
                 },{
                     xtype: 'labkey-linkbutton',
                     text: 'Import Data',
@@ -210,7 +210,7 @@ Ext4.define('LABKEY.ext.NavPanel', {
                 },{
                     xtype: 'labkey-linkbutton',
                     href: LABKEY.ActionURL.buildURL('query', 'executeQuery', null, {schemaName: item.schemaName, 'query.queryName': item.queryName, 'query.containerFilterName': 'CurrentAndSubfolders'}),
-                    text: 'Browse Records'
+                    text: 'Browse All'
                 },{
                     xtype: 'labkey-linkbutton',
                     text: 'Import Data',
@@ -254,7 +254,7 @@ Ext4.define('LABKEY.ext.NavPanel', {
                 },{
                     xtype: 'labkey-linkbutton',
                     href: LABKEY.ActionURL.buildURL('query', 'executeQuery', null, {schemaName: item.schemaName, 'query.queryName': item.queryName, 'query.containerFilterName': 'CurrentAndSubfolders'}),
-                    text: 'Browse Files'
+                    text: 'Browse All'
                 },{
                     xtype: 'labkey-linkbutton',
                     text: 'Import Data',
