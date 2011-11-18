@@ -4289,6 +4289,9 @@ api/webapp/gtheme/img/lkbtn.png -text
 api/webapp/gtheme/img/lkbtn2.png -text
 api/webapp/gtheme/img/rct.png -text
 api/webapp/gtheme/img/rdr.png -text
+api/webapp/labkey-ext-theme/resources/css/labkey-ext-theme.css -text
+api/webapp/labkey-ext-theme/resources/sass/config.rb -text
+api/webapp/labkey-ext-theme/resources/sass/labkey-ext-theme.scss -text
 internal/gwtsrc/org/labkey/api/gwt/Internal.gwt.xml -text
 internal/gwtsrc/org/labkey/api/gwt/client/DefaultValueType.java -text
 internal/gwtsrc/org/labkey/api/gwt/client/assay/AssayDesignerMainPanel.java -text

@@ -15,6 +15,7 @@ if (typeof LABKEY == "undefined")
     LABKEY.demoMode = false;
     LABKEY.extJsRoot = "ext-3.4.0";
     LABKEY.extJsRoot_40 = "ext-4.0.7";
+    LABKEY.extThemeRoot = "labkey-ext-theme";
     LABKEY.verbose = false;
     LABKEY.widget = {};
     LABKEY.hash = 0;
@@ -259,7 +260,8 @@ LABKEY.requiresExt4Sandbox = function(immediate)
 {
     if (arguments.length < 1) immediate = true;
 
-    LABKEY.requiresCss(LABKEY.extJsRoot_40 + '/resources/css/ext-sandbox.css', true);
+//    LABKEY.requiresCss(LABKEY.extJsRoot_40 + '/resources/css/ext-sandbox.css', true);
+    LABKEY.requiresCss(LABKEY.extThemeRoot + '/resources/css/labkey-ext-theme.css', true);
     LABKEY.requiresScript(LABKEY.extJsRoot_40 + "/ext-all-sandbox" + (LABKEY.devMode ?  "-debug.js" : ".js"), immediate);
     LABKEY.requiresScript(LABKEY.extJsRoot_40 + "/ext-patches.js", immediate);
 };
