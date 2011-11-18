@@ -1684,17 +1684,28 @@ public class SecurityController extends SpringActionController
         @Override
         public ApiResponse execute(Object o, BindException errors) throws Exception
         {
-            String dot = GroupManager.getGroupGraph(getContainer());
-            File dir = FileUtil.getTempDirectory();
-            File svgFile = new File(dir, "groups.svg");  // TODO: Randomize
-            DotRunner runner = new DotRunner(dir, dot);
-            runner.addSvgOutput(svgFile);
-            runner.execute();
-            String svg = PageFlowUtil.getFileContentsAsString(svgFile);
-            svgFile.delete();
-            svg = svg.substring(svg.indexOf("<svg"));
+            List<Group> groups = Arrays.asList(SecurityManager.getGroups(getContainer().getProject(), false));
+            String html;
 
-            return new ApiSimpleResponse("svg", svg);
+            if (groups.isEmpty())
+            {
+                html = "This project has no security groups defined";
+            }
+            else
+            {
+                String dot = GroupManager.getGroupGraphSvg(groups, getUser());
+                File dir = FileUtil.getTempDirectory();
+                File svgFile = File.createTempFile("groups", ".svg", dir);
+                DotRunner runner = new DotRunner(dir, dot);
+                runner.addSvgOutput(svgFile);
+                runner.execute();
+                String svg = PageFlowUtil.getFileContentsAsString(svgFile);
+                svgFile.delete();
+                html = svg.substring(svg.indexOf("<svg"));
+            }
+
+
+            return new ApiSimpleResponse("html", html);
         }
     }
 

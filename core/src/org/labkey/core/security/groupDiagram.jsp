@@ -23,7 +23,7 @@
     {
         var bean = Ext.util.JSON.decode(response.responseText);
 
-        document.getElementById("groupDiagram").innerHTML = bean.svg;
+        document.getElementById("groupDiagram").innerHTML = bean.html;
     }
 
     function onError(response)
