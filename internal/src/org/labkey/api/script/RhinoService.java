@@ -50,6 +50,7 @@ import java.lang.ref.WeakReference;
 import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.net.URI;
+import java.net.URISyntaxException;
 import java.util.*;
 
 public final class RhinoService
@@ -385,13 +386,13 @@ class LabKeyModuleSourceProvider extends ModuleSourceProviderBase
     }
 
     @Override
-    protected ModuleSource loadModuleSourceFromUri(URI uri, Object validator) throws IOException
+    protected ModuleSource loadFromUri(URI uri, URI base, Object validator) throws IOException, URISyntaxException
     {
         return load(uri.getPath(), validator);
     }
 
     @Override
-    protected ModuleSource loadModuleSourceFromPrivilegedLocations(String moduleId, Object validator) throws IOException
+    protected ModuleSource loadFromPrivilegedLocations(String moduleId, Object validator) throws IOException
     {
         return load(moduleId + ".js", validator);
     }
@@ -403,7 +404,7 @@ class LabKeyModuleSourceProvider extends ModuleSourceProviderBase
         //    return NOT_MODIFIED;
 
         // load non-relative modules from the root "/scripts" directory
-        if (!moduleScript.startsWith("./") || !moduleScript.startsWith("../"))
+        if ((!moduleScript.startsWith("./") || !moduleScript.startsWith("../")) && !moduleScript.startsWith("scripts/"))
             moduleScript = "/scripts/" + moduleScript;
 
         Path path = Path.parse(moduleScript);
@@ -414,7 +415,14 @@ class LabKeyModuleSourceProvider extends ModuleSourceProviderBase
         RhinoService.LOG.debug("Loading require()'ed resource '" + path.toString() + "'");
 
         ResourceRef ref = new ResourceRef(res);
-        return new LabKeyModuleSource(ref);
+        try
+        {
+            return new LabKeyModuleSource(ref);
+        }
+        catch (URISyntaxException e)
+        {
+            throw new UnexpectedException(e);
+        }
     }
 
     /**
@@ -427,9 +435,9 @@ class LabKeyModuleSourceProvider extends ModuleSourceProviderBase
         /**
          * Creates a new module source.
          */
-        public LabKeyModuleSource(ResourceRef ref)
+        public LabKeyModuleSource(ResourceRef ref) throws URISyntaxException
         {
-            super(null, null, ref.getResource().getPath().toString(), ref);
+            super(null, null, new URI(ref.getResource().getPath().toString()), new URI("module://scripts/"), ref);
             _ref = ref;
         }
 
@@ -548,10 +556,10 @@ class RhinoEngine extends RhinoScriptEngine
     {
         try
         {
-            ModuleScript global = _moduleScriptProvider.getModuleScript(cx, "global", null);
+            ModuleScript global = _moduleScriptProvider.getModuleScript(cx, "global", null, null);
             global.getScript().exec(cx, scope);
         }
-        catch (IOException e)
+        catch (Exception e)
         {
             UnexpectedException.rethrow(e);
         }
