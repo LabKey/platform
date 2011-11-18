@@ -415,6 +415,7 @@ core/resources/schemas/dbscripts/sqlserver/core-11.10-11.20.sql -text
 core/resources/schemas/dbscripts/sqlserver/core-11.20-11.21.sql -text
 core/resources/schemas/dbscripts/sqlserver/core-11.21-11.22.sql -text
 core/resources/schemas/dbscripts/sqlserver/core-11.22-11.23.sql -text
+core/resources/schemas/dbscripts/sqlserver/core-11.25-11.26.sql -text
 core/resources/schemas/dbscripts/sqlserver/core-9.30-10.10.sql -text
 core/resources/schemas/dbscripts/sqlserver/core-create.sql -text
 core/resources/schemas/dbscripts/sqlserver/core-drop.sql -text
