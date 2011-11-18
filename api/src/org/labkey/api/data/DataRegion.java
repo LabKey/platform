@@ -1028,13 +1028,25 @@ public class DataRegion extends AbstractDataRegion
                     out.write("<script type=\"text/javascript\">\n");
                     out.write("Ext.onReady(\n");
                     out.write("function () {\n");
-                    out.write("\tvar dr = LABKEY.DataRegions[" + PageFlowUtil.jsString(getName()) + "];\n");
                 }
                 // We need to give any included scripts time to load, so wait for our desired function to available
                 // before invoking it.
-                out.write("\t var tester = function() { return undefined != " + buttonBarConfig.getOnRenderScript() + "; };\n");
-                out.write("\t var onTrue = function() { " + buttonBarConfig.getOnRenderScript() + "(dr); };\n");
-                out.write("\t LABKEY.Utils.onTrue( { testCallback: tester, success: onTrue });\n");
+                //NOTE: because the onRender function could be part of a namespace not yet defined, we split the string and test
+                //whether each node exists
+                out.write("var tester = function() {  \n" +
+                "\tvar name = '" + buttonBarConfig.getOnRenderScript() + "'.split('.'); \n" +
+                "\tvar obj = this; \n" +
+                "\tfor(var i=0;i<name.length;i++){\n" +
+                "\tobj = obj[name[i]];\n" +
+                "\tif(undefined === obj) return false;\n" +
+                "\tif(!LABKEY || !LABKEY.DataRegions || !LABKEY.DataRegions[" + PageFlowUtil.jsString(getName()) + "]) return false;\n" +
+                "\treturn true;\n" +
+                "\t}\n" +
+                "}\n" +
+                "var onTrue = function() { " +
+                "\t" + buttonBarConfig.getOnRenderScript() + "(LABKEY.DataRegions[" + PageFlowUtil.jsString(getName()) + "]); \n" +
+                "}\n" +
+                "LABKEY.Utils.onTrue( { testCallback: tester, scope: this, success: onTrue, failure: function(e){console.log('Error calling dataregion onRender function');console.log(e);} });\n");
             }
         }
 
