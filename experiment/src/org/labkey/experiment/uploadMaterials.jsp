@@ -142,7 +142,7 @@
         <td>
             Sample set uploads must formatted as tab separated values (TSV).<br>
             The first row should contain column names; subsequent rows should contain the data.<br>
-            Copy/paste from Microsoft Excel works well. <% if (!form.isCreateNewSampleSet()) { %><%=textLink("Download an Excel template workbook", templateURL)%><% } %><br>
+            Copy/paste from Microsoft Excel works well. <% if (sampleSet != null) { %><%=textLink("Download an Excel template workbook", templateURL)%><% } %><br>
             <% if (!form.isImportMoreSamples()) { %>
                 <b>Note:</b> If there is a <em>'Name'</em> column, it will be used as each sample's unique identifier.
                 <br>
