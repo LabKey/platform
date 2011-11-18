@@ -26,16 +26,31 @@
     JspView<WorkbookSearchBean> me = (JspView<WorkbookSearchBean>) HttpView.currentView();
     Container container = me.getViewContext().getContainer();
 %>
+<table><tr>
+<td>
 <form method="GET" action="<%=new ActionURL(CoreController.LookupWorkbookAction.class, container)%>">
-    <input type="text" id="wbsearch-id" name="id" size="20" value=""/>
+    Jump To Workbook: <input type="text" id="wbsearch-id" name="id" size="10" value=""/>
     <%=generateSubmitButton("Go")%>
 </form>
-
+</td><td style="padding-left:20px;">
+<form method="GET" action="<%=new ActionURL("search", "search", container)%>">
+    Search Workbooks: <input type="text" id="wbtextsearch-id" name="q" size="40" value=""/>
+    <input type="hidden" name="container" value="<%=h(container.getId())%>"/>
+    <input type="hidden" name="includeSubfolders" value="1"/>
+    <%=generateSubmitButton("Search")%>
+</form>
+</td></tr></table>
 <script type="text/javascript">
     Ext.onReady(function(){
         new Ext.form.TextField({
             applyTo: 'wbsearch-id',
-            emptyText: 'Jump to ID'
+            emptyText: 'Enter ID'
         });
+
+        new Ext.form.TextField({
+            applyTo: 'wbtextsearch-id',
+            emptyText: 'Enter Text'
+        });
+
     });
 </script>
