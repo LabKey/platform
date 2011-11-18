@@ -43,6 +43,7 @@ public interface ExpRunTable extends ExpTable<ExpRunTable.Column>
         RunGroups,
         Input,
         Output,
+        DataOutputs,
     }
 
     /**

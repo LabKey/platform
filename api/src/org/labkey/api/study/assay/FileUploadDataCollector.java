@@ -69,7 +69,7 @@ public class FileUploadDataCollector<ContextType extends AssayRunUploadContext> 
 
     public String getDescription(ContextType context)
     {
-        return "Upload a data file";
+        return _maxFileInputs == 1 ? "Upload a data file" : "Upload one or more data files";
     }
 
     @NotNull

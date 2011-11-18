@@ -17,6 +17,7 @@ package org.labkey.api.module;
 
 import org.jetbrains.annotations.NotNull;
 import org.labkey.api.admin.AdminUrls;
+import org.labkey.api.admin.CoreUrls;
 import org.labkey.api.data.Container;
 import org.labkey.api.portal.ProjectUrls;
 import org.labkey.api.security.User;
@@ -101,9 +102,10 @@ public class CustomFolderType implements FolderType
         List<NavTree> tabs = new ArrayList<NavTree>();
 
         Container container = context.getContainer();
+        String name = container.getName();
+        ActionURL url = container.getStartURL(context.getUser()); 
         if (!container.isRoot())
         {
-
             Set<Module> containerModules = container.getActiveModules();
             Module activeModule = pageConfig.getModuleOwner();
             String currentPageflow = context.getActionURL().getPageFlow();
@@ -128,12 +130,18 @@ public class CustomFolderType implements FolderType
                 }
             }
         }
-        else if (context.getUser().isAdministrator())
+        else
         {
-            tabs.add(new NavTree("Admin Console", PageFlowUtil.urlProvider(AdminUrls.class).getAdminConsoleURL()));
+            tabs.add(new NavTree("Projects", PageFlowUtil.urlProvider(CoreUrls.class).getProjectsURL(context.getContainer())));
+            if (context.getUser().isAdministrator())
+            {
+                url = PageFlowUtil.urlProvider(AdminUrls.class).getAdminConsoleURL();
+                tabs.add(new NavTree("Admin Console", url));
+                name = "Site Administration";
+            }
         }
 
-        return new AppBar(container.getName(), container.getStartURL(context.getUser()), tabs);
+        return new AppBar(name, url, tabs);
     }
 
     @NotNull

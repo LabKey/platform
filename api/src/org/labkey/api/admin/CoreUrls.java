@@ -34,6 +34,7 @@ public interface CoreUrls extends UrlProvider
     ActionURL getCombinedStylesheetURL(Container c);
     ActionURL getContainerRedirectURL(Container c, String pageFlow, String action);
     ActionURL getAttachmentIconURL(Container c, String filename);
+    ActionURL getProjectsURL(Container c);
 
     /** Still needs objectURI parameter and value tacked on */
     ActionURL getDownloadFileLinkBaseURL(Container container, PropertyDescriptor pd);

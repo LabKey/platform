@@ -501,11 +501,8 @@ public class ExceptionUtil
 
         errorView = ExceptionUtil.getErrorView(responseStatus, message, unhandledException, request, startupFailure);
 
-        if (responseStatus == HttpServletResponse.SC_NOT_FOUND)
-        {
-            log.warn(null == message ? "" : message, ex);
-        }
-        else if (responseStatus != HttpServletResponse.SC_UNAUTHORIZED) //don't log unauthorized (basic-auth challenge)
+        //don't log unauthorized (basic-auth challenge) or simple not found (404s)
+        if (responseStatus != HttpServletResponse.SC_UNAUTHORIZED && responseStatus != HttpServletResponse.SC_NOT_FOUND)
         {
             log.error("Unhandled exception: " + (null == message ? "" : message), ex);
         }

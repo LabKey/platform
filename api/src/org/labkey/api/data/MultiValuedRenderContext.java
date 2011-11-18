@@ -15,6 +15,7 @@
  */
 package org.labkey.api.data;
 
+import org.apache.commons.beanutils.ConvertUtils;
 import org.apache.commons.collections15.iterators.ArrayIterator;
 import org.labkey.api.query.FieldKey;
 
@@ -84,8 +85,20 @@ public class MultiValuedRenderContext extends RenderContextDecorator
     {
         Object value = _currentValues.get(key);
 
-        if (null == value)
+        if (null != value)
+        {
+            ColumnInfo columnInfo = getFieldMap().get(key);
+            // The value was concatenated with others, so it's become a string.
+            // Do conversion to switch it back to the expected type. 
+            if (columnInfo != null && !columnInfo.getJavaClass().isInstance(value))
+            {
+                value = ConvertUtils.convert(value.toString(), columnInfo.getJavaClass());
+            }
+        }
+        else
+        {
             value = super.get(key);
+        }
 
         return value;
     }

@@ -37,9 +37,21 @@ public class MultiValuedDisplayColumn extends DisplayColumnDecorator
 
     public MultiValuedDisplayColumn(DisplayColumn dc)
     {
+        this(dc, false);
+    }
+
+    /** @param boundColumnIsNotMultiValued true in the case when the bound column is the one that declares the multi-valued FK */
+    public MultiValuedDisplayColumn(DisplayColumn dc, boolean boundColumnIsNotMultiValued)
+    {
         super(dc);
         addQueryFieldKeys(_fieldKeys);
         assert _fieldKeys.contains(getColumnInfo().getFieldKey());
+        if (boundColumnIsNotMultiValued)
+        {
+            // The bound column won't have multiple values, so don't put it in the set that should split the string
+            // and iterate through individual values
+            _fieldKeys.remove(getColumnInfo().getFieldKey());
+        }
     }
 
     @Override         // TODO: Need similar for renderDetailsCellContents()

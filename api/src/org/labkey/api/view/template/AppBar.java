@@ -241,6 +241,12 @@ public class AppBar extends NavTree
                 boolean foundMatch = false;
                 if (!stopLooking)
                 {
+                    // First check the folder title's link
+                    if (ObjectUtils.equals(getValue(), link))
+                    {
+                        foundMatch = true;
+                    }
+                    // Then look at all of the tabs
                     for (NavTree button : buttons)
                     {
                         if (ObjectUtils.equals(button.getValue(), link) || (actionURL != null && ObjectUtils.equals(actionURL.getLocalURIString(), link)))

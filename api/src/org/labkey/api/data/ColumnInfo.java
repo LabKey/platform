@@ -65,7 +65,12 @@ public class ColumnInfo extends ColumnRenderProperties implements SqlColumn
             {
                 return new UserIdRenderer(colInfo);
             }
-            return new DataColumn(colInfo);
+            DataColumn dataColumn = new DataColumn(colInfo);
+            if (colInfo.getFk() instanceof MultiValuedForeignKey)
+            {
+                return new MultiValuedDisplayColumn(dataColumn, true);
+            }
+            return dataColumn;
         }
 
         private boolean isUserId(ColumnInfo col)
@@ -1486,8 +1491,7 @@ public class ColumnInfo extends ColumnRenderProperties implements SqlColumn
 
     public Object getValue(RenderContext context)
     {
-        //noinspection unchecked
-        return getValue(context.getRow());
+        return context.get(getFieldKey());
     }
 
     public Object getValue(Map<String, ?> map)

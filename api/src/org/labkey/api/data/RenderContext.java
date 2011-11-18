@@ -16,6 +16,7 @@
 
 package org.labkey.api.data;
 
+import org.apache.commons.beanutils.ConvertUtils;
 import org.apache.log4j.Logger;
 import org.labkey.api.collections.BoundMap;
 import org.labkey.api.collections.NullPreventingSet;
@@ -701,5 +702,16 @@ public class RenderContext extends BoundMap // extends ViewContext
     public CustomView getView()
     {
         return _view;
+    }
+
+    /** Gets the value and does type conversion */
+    public <Type> Type get(FieldKey fieldKey, Class<? extends Type> clazz)
+    {
+        Object value = get(fieldKey);
+        if (value != null && !clazz.isInstance(value))
+        {
+            return (Type)ConvertUtils.convert(value.toString(), clazz);
+        }
+        return (Type)value;
     }
 }
