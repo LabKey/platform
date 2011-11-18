@@ -347,9 +347,9 @@ Ext4.define('LABKEY.ext4.DataViewsPanel', {
             store    : this.store,
             border   : false, frame: false,
             layout   : 'fit',
-//            height   : 550,
-//            cls      : 'iScroll', // webkit custom scroll bars
-            autoScroll: true,
+            height   : 575,
+            cls      : 'iScroll', // webkit custom scroll bars
+            scroll   : 'vertical',
             columns  : this.initGridColumns(),
             multiSelect: true,
             viewConfig : {
@@ -880,7 +880,7 @@ Ext4.define('LABKEY.ext4.DataViewsPanel', {
         var grid = Ext4.create('Ext.grid.Panel', {
             store    : store,
             border   : false, frame: false,
-            autoScroll : true,
+            scroll   : 'vertical',
             columns  : [{
                 text     : 'Category',
                 flex     : 1,
