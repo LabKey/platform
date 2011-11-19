@@ -13,6 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+Ext.namespace("LABKEY.util");
 
  Ext.ux.clone = function(o) {
     if(!o || 'object' !== typeof o) {
@@ -173,41 +174,6 @@ LABKEY.PipelineActionConfig.prototype = {
             }
         }
         return false;
-    },
-
-    createButtonAction : function(handler, scope)
-    {
-        if (!this.links && !this.links.length) return null;
-
-        var items = [];
-        for (var i=0; i < this.links.length; i++)
-        {
-            var link = this.links[i];
-            if (link.display == 'toolbar')
-                items.push({id: link.id,  actionId: this.id, text: link.label, handler: handler, scope: scope, tooltip: link.label});
-        }
-
-        if (items.length > 1)
-        {
-            // an action with a menu button
-            return new Ext.Action({text: this.label, tooltip: this.label, menu: {
-                    cls: 'extContainer',
-                    items: items
-                }
-            });
-        }
-        else if (items.length == 1)
-        {
-            // a single button, use the parent action label with the child action as a tooltip
-            var config = {};
-            
-            Ext.apply(config, items[0]);
-            config.text = this.label;
-
-            return new Ext.Action(config);
-        }
-
-        return null;
     }
 };
 
@@ -436,5 +402,120 @@ LABKEY.FileContentConfig = Ext.extend(Ext.util.Observable, {
             }
         }
         return config;
+    }
+});
+
+LABKEY.util.PipelineActionUtil = function() {
+    return {
+
+        /**
+         * Parses a json array and returns an array of PipelineActions, the input config would take the form
+         * returned by the server pipeline actions:
+         *
+         *  {
+         *      files:[],
+         *      multiSelect: boolean,
+         *      emptySelect: boolean,
+         *      description: '',
+         *      links: {
+         *          id: '',
+         *          text: '',
+         *          items: [{
+         *              id: '',
+         *              text: '',
+         *              leaf: boolean,
+         *              href: ''
+         *          }]
+         *      }
+         *  }
+         *
+         * and create a PipelineAction for each object in the items array.
+         */
+        parseActions : function(actions) {
+
+            var pipelineActions = [];
+            if (actions && actions.length)
+            {
+                for (var i=0; i < actions.length; i++)
+                {
+                    var action = actions[i];
+                    var config = {
+                        files: action.files,
+                        groupId: action.links.id,
+                        groupLabel: action.links.text,
+                        multiSelect: action.multiSelect,
+                        emptySelect: action.emptySelect,
+                        description: action.description
+                    };
+
+                    // only a single target for the action (no submenus)
+                    if (!action.links.items && action.links.text && action.links.href)
+                    {
+                        config.id = action.links.id;
+                        config.link = {text: action.links.text, id: action.links.id, href: action.links.href};
+
+                        pipelineActions.push(new LABKEY.util.PipelineAction(config));
+                    }
+                    else
+                    {
+                        for (var j=0; j < action.links.items.length; j++)
+                        {
+                            var item = action.links.items[j];
+
+                            config.id = item.id;
+                            config.link = item;
+
+                            pipelineActions.push(new LABKEY.util.PipelineAction(config));
+                        }
+                    }
+                }
+            }
+            return pipelineActions;
+        }
+    };
+}();
+
+LABKEY.util.PipelineAction = Ext.extend(Object, {
+
+    constructor : function(config) {
+
+        Ext.apply(this, config);
+    },
+
+    getText : function() {
+        return this.link.text;
+    },
+
+    getId : function() {
+        return this.link.id;
+    },
+
+    getLink : function() {
+        return this.link;
+    },
+
+    getFiles : function() {
+        return this.files;
+    },
+
+    getShortMessage : function() {
+        return this.msgShort ? this.msgShort : '';
+    },
+
+    getLongMessage : function() {
+        return this.msgLong ? this.msgLong : '';
+    },
+
+    setMessage : function(short, long) {
+        this.msgShort = short;
+        this.msgLong = long;
+    },
+
+    setEnabled : function(enabled) {
+        this.enabled = enabled;
+    },
+
+    getEnabled : function() {
+        return this.enabled;
     }
 });

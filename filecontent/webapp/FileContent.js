@@ -319,42 +319,43 @@ LABKEY.FilesWebPartPanel = Ext.extend(LABKEY.FileBrowser, {
 
         this.pipelineActions = [];
         this.actionMap = {};
+        this.actionGroups = {};
 
         if (actions && actions.length && this.canImportData())
         {
-            for (var i=0; i < actions.length; i++)
+            var pipelineActions = LABKEY.util.PipelineActionUtil.parseActions(actions);
+            for (var i=0; i < pipelineActions.length; i++)
             {
-                var pUtil = new LABKEY.PipelineActionUtil(actions[i]);
-                var links = pUtil.getLinks();
+                var pa = pipelineActions[i];
                 var isEnabled = false;
 
-                if (!links) continue;
+                if (!pa.link) continue;
 
-                var config = this.adminOptions.getActionConfig(pUtil.getId());
-                for (var j=0; j < links.length; j++)
+                var config = this.adminOptions.getActionConfig(pa.groupId);
+                if (pa.link.href)
                 {
-                    var link = links[j];
-
-                    if (link.href)
+                    var display = 'enabled';
+                    if (config)
                     {
-                        var display = 'enabled';
-                        if (config)
-                        {
-                            var linkConfig = config.getLink(link.id);
-                            if (linkConfig)
-                                display = linkConfig.display;
-                        }
-
-                        link.enabled = (display != 'disabled');
-                        if (link.enabled)
-                            isEnabled = true;
+                        var linkConfig = config.getLink(pa.link.id);
+                        if (linkConfig)
+                            display = linkConfig.display;
                     }
+
+                    pa.link.enabled = (display != 'disabled');
+                    if (pa.link.enabled)
+                        isEnabled = true;
                 }
 
                 if (this.adminUser || isEnabled)
                 {
-                    this.pipelineActions.push(pUtil);
-                    this.actionMap[pUtil.getId()] = pUtil;
+                    this.pipelineActions.push(pa);
+                    this.actionMap[pa.id] = pa;
+
+                    if (pa.groupId in this.actionGroups)
+                        this.actionGroups[pa.groupId].actions.push(pa);
+                    else
+                        this.actionGroups[pa.groupId] = {label: pa.groupLabel, actions: [pa]};
                 }
             }
         }
@@ -412,10 +413,9 @@ LABKEY.FilesWebPartPanel = Ext.extend(LABKEY.FileBrowser, {
             var a = actionConfigs[i];
             if (a.isDisplayOnToolbar())
             {
-                var action = a.createButtonAction(this.executeToolbarAction, this);
+                var action = this.createButtonAction(a);
                 if (action)
                 {
-                    this.toolbarActions[a.id] = action;
                     this.hasToolbarButtons = true;
                     buttons.push(action);
                 }
@@ -428,6 +428,42 @@ LABKEY.FilesWebPartPanel = Ext.extend(LABKEY.FileBrowser, {
             // force a relayout on this component
             toolbar.doLayout();
         }
+    },
+
+    createButtonAction : function(cfg)
+    {
+        if (!cfg.links && !cfg.links.length) return null;
+
+        var items = [];
+        for (var i=0; i < cfg.links.length; i++)
+        {
+            var link = cfg.links[i];
+            if (link.display == 'toolbar')
+            {
+                var action = new Ext.Action({actionId: link.id, text: link.label, handler: this.executeToolbarAction, scope: this, tooltip: link.label});
+                this.toolbarActions[link.id] = action;
+
+                items.push(action);
+            }
+        }
+
+        if (items.length > 1)
+        {
+            // an action with a menu button
+            return new Ext.Action({text: cfg.label, tooltip: cfg.label, menu: {
+                    cls: 'extContainer',
+                    items: items
+                }
+            });
+        }
+        else if (items.length == 1)
+        {
+            // a single button, use the parent action label with the child action as a tooltip
+            action = items[0];
+            return action;
+        }
+
+        return null;
     },
 
     adjustAction : function(action, hideText, hideIcon)
@@ -595,12 +631,12 @@ LABKEY.FilesWebPartPanel = Ext.extend(LABKEY.FileBrowser, {
             this.onSelectionChange();
     },
 
-    executeImportAction : function(action, id)
+    executeImportAction : function(action)
     {
         if (action)
         {
             var selections = this.grid.selModel.getSelections(), i;
-            var link = action.getLink(id);
+            var link = action.link;
 
             // if there are no selections, treat as if all are selected
             if (selections.length == 0)
@@ -651,8 +687,8 @@ LABKEY.FilesWebPartPanel = Ext.extend(LABKEY.FileBrowser, {
     {
         var action = this.actionMap[item.actionId];
 
-        if (action && item.id)
-            this.executeImportAction(action, item.id);
+        if (action)
+            this.executeImportAction(action);
     },
 
     onAdmin : function(btn)
@@ -700,42 +736,43 @@ LABKEY.FilesWebPartPanel = Ext.extend(LABKEY.FileBrowser, {
 
         // make sure we have processed the current selection
         this.ensureSelection();
-        for (var i=0; i < this.pipelineActions.length; i++)
+        for (var ag in this.actionGroups)
         {
-            pa         = this.pipelineActions[i];
-            links      = pa.getLinks();
+            var group = this.actionGroups[ag];
+            pa = group.actions[0];
 
             var radioGroup = new Ext.form.RadioGroup({
-                fieldLabel : pa.getText() + '<br>' + pa.getShortMessage(),
+                fieldLabel : group.label + '<br>' + pa.getShortMessage(),
                 itemCls    : 'x-check-group',
                 columns    : 1,
                 labelSeparator: '',
                 items      : []
             });
 
-            for (var j=0; j < links.length; j++)
+            for (var i=0; i < group.actions.length; i++)
             {
-                var link = links[j];
+                var action = group.actions[i];
 
-                if (link.href && (link.enabled || this.adminUser))
+                if (action.link.href && (action.link.enabled || this.adminUser))
                 {
-                    var label = link.text;
+                    var label = action.link.text;
 
                     // administrators always see all actions
-                    if (!link.enabled && this.adminUser)
+                    if (!action.link.enabled && this.adminUser)
                     {
                         label = label.concat(' <span class="labkey-error">*</span>');
                         hasAdmin = true;
                     }
 
-                    actionMap[link.id] = pa;
+                    actionMap[action.id] = action;
                     radioGroup.items.push({
                         xtype: 'radio',
                         checked: checked,
+                        disabled: !action.enabled,
                         labelSeparator: '',
                         boxLabel: label,
                         name: 'importAction',
-                        inputValue: link.id
+                        inputValue: action.id
                         //width: 250
                     });
                     checked = false;
@@ -814,7 +851,7 @@ LABKEY.FilesWebPartPanel = Ext.extend(LABKEY.FileBrowser, {
         var action = actionMap[selection.importAction];
 
         if ('object' == typeof action)
-            this.executeImportAction(action, selection.importAction);
+            this.executeImportAction(action);
     },
 
     canImportData : function()
