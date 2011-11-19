@@ -3,6 +3,7 @@ package org.labkey.portal;
 import org.apache.log4j.Logger;
 import org.labkey.api.action.SimpleViewAction;
 import org.labkey.api.action.SpringActionController;
+import org.labkey.api.security.CSRF;
 import org.labkey.api.security.RequiresNoPermission;
 import org.labkey.api.security.RequiresPermissionClass;
 import org.labkey.api.security.permissions.ReadPermission;
@@ -53,7 +54,7 @@ public class UtilController extends SpringActionController
     }
 
 
-    @RequiresPermissionClass(ReadPermission.class)
+    @RequiresPermissionClass(ReadPermission.class) @CSRF
     public static class DotSvgAction extends SimpleViewAction<DotForm>
     {
         @Override
