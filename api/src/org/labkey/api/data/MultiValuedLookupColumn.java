@@ -95,6 +95,9 @@ public class MultiValuedLookupColumn extends LookupColumn
         Map<String, SQLFragment> joins = new LinkedHashMap<String, SQLFragment>();
         _lookupColumn.declareJoins(joinAlias, joins);
 
+        assert joins.size() == 1 : "Expected exactly one join to be declared, but found " + joins.size();
+        String baseJoinTarget = joins.keySet().iterator().next();
+
         // Select and aggregate all columns in the far right table for now.  TODO: Select only required columns.
         for (ColumnInfo col : _rightFk.getLookupTableInfo().getColumns())
         {
@@ -116,6 +119,7 @@ public class MultiValuedLookupColumn extends LookupColumn
                 valueSql.append(") AS VARCHAR)");
             }
 
+            col.declareJoins(baseJoinTarget, joins);
             if (groupConcat)
             {
                 strJoin.append(getAggregateFunction(valueSql));
