@@ -99,6 +99,6 @@
     {
         document.getElementById("uploadFile").style.display = "none";
         document.getElementById("filePath").style.display = "";
-        document.getElementById("fileTitle").innerHTML = "Enter full path of file on server.";
+        document.getElementById("fileTitle").innerHTML = "Enter full path of file on server";
     }
 </script>

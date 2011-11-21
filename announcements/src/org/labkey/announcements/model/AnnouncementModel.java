@@ -33,10 +33,13 @@ import org.labkey.api.wiki.WikiRendererType;
 import org.labkey.api.wiki.WikiService;
 
 import java.io.Serializable;
+import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Date;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 
 /**
@@ -65,6 +68,7 @@ public class AnnouncementModel extends AttachmentParentEntity implements Seriali
     private int _responseCount = 0;
 
     private Collection<AnnouncementModel> _responses = new ArrayList<AnnouncementModel>();
+    private Set<User> _authors;
 
 
     /**
@@ -161,20 +165,6 @@ public class AnnouncementModel extends AttachmentParentEntity implements Seriali
         _body = body;
     }
 
-/*      @ManyToOne
-        @JoinColumn(name = "parent")
-    public AnnouncementModel getParent()
-        {
-        return _parentAnnouncement;
-        }
-
-
-    public void setParent(AnnouncementModel parent)
-        {
-        _parentAnnouncement = parent;
-        }
-*/
-
     public String getParent()
     {
         return _parentId;
@@ -191,6 +181,7 @@ public class AnnouncementModel extends AttachmentParentEntity implements Seriali
         return _broadcast;
     }
 
+    @SuppressWarnings({"UnusedDeclaration"})
     public void setBroadcast(boolean broadcast)
     {
         _broadcast = broadcast;
@@ -226,12 +217,6 @@ public class AnnouncementModel extends AttachmentParentEntity implements Seriali
         }
 
         return name;
-    }
-
-
-    public String getModifiedByName(User currentUser)
-    {
-        return UserManager.getDisplayNameOrUserId(getModifiedBy(), currentUser);
     }
 
 
@@ -324,6 +309,7 @@ public class AnnouncementModel extends AttachmentParentEntity implements Seriali
         return _assignedTo;
     }
 
+    @SuppressWarnings({"UnusedDeclaration"})
     public void setAssignedTo(Integer assignedTo)
     {
         _assignedTo = assignedTo;
@@ -334,6 +320,7 @@ public class AnnouncementModel extends AttachmentParentEntity implements Seriali
         return _emailList;
     }
 
+    @SuppressWarnings({"UnusedDeclaration"})
     public void setEmailList(String emailList)
     {
         _emailList = emailList;
@@ -354,6 +341,7 @@ public class AnnouncementModel extends AttachmentParentEntity implements Seriali
         return _discussionSrcIdentifier;
     }
 
+    @SuppressWarnings({"UnusedDeclaration"})
     public void setDiscussionSrcIdentifier(String discussionSrcIdentifier)
     {
         _discussionSrcIdentifier = discussionSrcIdentifier;
@@ -374,9 +362,46 @@ public class AnnouncementModel extends AttachmentParentEntity implements Seriali
         return _responseCount;
     }
 
+    @SuppressWarnings({"UnusedDeclaration"})
     public void setResponseCount(int responseCount)
     {
         _responseCount = responseCount;
+    }
+
+    public Set<User> getAuthors()
+    {
+        if (null == _authors)
+            _authors = lookupAuthors();
+
+        return _authors;
+    }
+
+    private Set<User> lookupAuthors()
+    {
+        Set<User> responderSet = new HashSet<User>();
+        boolean isResponse = null != getParent();
+
+        // if this is a response get parent and all previous responses
+        if (isResponse)
+        {
+            AnnouncementModel a = AnnouncementManager.getAnnouncement(lookupContainer(), getParent(), true);
+
+            Collection<AnnouncementModel> responses = a.getResponses();
+
+            //add creator of each response to responder set
+            for (AnnouncementModel response : responses)
+            {
+                //do we need to handle case where responder is not in a project group?
+                User user = UserManager.getUser(response.getCreatedBy());
+                //add to responder set, so we know who responders are
+                responderSet.add(user);
+            }
+        }
+
+        //add creator of parent to responder set
+        responderSet.add(UserManager.getUser(getCreatedBy()));
+
+        return responderSet;
     }
 }
 

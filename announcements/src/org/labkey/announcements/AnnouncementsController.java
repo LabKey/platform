@@ -493,16 +493,7 @@ public class AnnouncementsController extends SpringActionController
             User user = getUser();
             Settings settings = getSettings();
 
-            AnnouncementModel thread = null;
-
-            try
-            {
-                thread = AnnouncementManager.getAnnouncement(getContainer(), form.getMessageId(), AnnouncementManager.INCLUDE_MEMBERLIST);
-            }
-            catch (SQLException e)
-            {
-                //
-            }
+            AnnouncementModel thread = AnnouncementManager.getAnnouncement(getContainer(), form.getMessageId(), AnnouncementManager.INCLUDE_MEMBERLIST);
 
             if (form.getUserId() != user.getUserId())
             {
@@ -550,7 +541,7 @@ public class AnnouncementsController extends SpringActionController
     }
 
 
-    private AnnouncementModel getAnnouncement(AttachmentForm form) throws SQLException, ServletException
+    private AnnouncementModel getAnnouncement(AttachmentForm form)
     {
         AnnouncementModel ann = AnnouncementManager.getAnnouncement(getContainer(), form.getEntityId(), true);  // Force member list to be selected
 
@@ -1758,7 +1749,7 @@ public class AnnouncementsController extends SpringActionController
     }
 
 
-    public static Collection<String> getBroadcastEmailAddresses(Container c) throws SQLException
+    public static Collection<String> getBroadcastEmailAddresses(Container c)
     {
         // Get all site users' email addresses
         List<String> emails = UserManager.getUserEmailList();
@@ -2609,19 +2600,12 @@ public class AnnouncementsController extends SpringActionController
             }
         }
 
-        try
-        {
-            if (0 != rowId)
-                return AnnouncementManager.getAnnouncement(c, rowId, AnnouncementManager.INCLUDE_RESPONSES + AnnouncementManager.INCLUDE_MEMBERLIST);
-            else if (null == entityId)
-                throw createThreadNotFoundException(c);
+        if (0 != rowId)
+            return AnnouncementManager.getAnnouncement(c, rowId, AnnouncementManager.INCLUDE_RESPONSES + AnnouncementManager.INCLUDE_MEMBERLIST);
+        else if (null == entityId)
+            throw createThreadNotFoundException(c);
 
-            return AnnouncementManager.getAnnouncement(c, entityId, true);
-        }
-        catch (SQLException x)
-        {
-            throw new RuntimeSQLException(x);
-        }
+        return AnnouncementManager.getAnnouncement(c, entityId, true);
     }
 
     

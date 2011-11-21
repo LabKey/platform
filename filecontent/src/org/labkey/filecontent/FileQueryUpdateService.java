@@ -90,17 +90,21 @@ public class FileQueryUpdateService extends AbstractQueryUpdateService
 
         Map<String, Object> selectMap = Table.selectObject(getQueryTable(), queryColumns, filter, null, Map.class);
         Map<String, Object> rowMap = new HashMap<String, Object>();
+
         if (selectMap != null)
         {
             Domain domain = getFileProperties(container);
+
             if (domain != null)
             {
                 for (DomainProperty prop : domain.getProperties())
                 {
                     Object o = selectMap.get(prop.getName());
+
                     if (o != null)
                     {
-                        try {
+                        try
+                        {
                             String fmt = DomainUtil.getFormattedDefaultValue(user, prop, o);
                             
                             if (!String.valueOf(o).equals(fmt) && !rowMap.containsKey(prop.getName() + "_displayValue"))

@@ -78,8 +78,7 @@ public class AnnouncementServiceImpl implements AnnouncementService.Interface
             throw new RuntimeSQLException(e);
         }
 
-        AnnouncementImpl announcement = new AnnouncementImpl(insert);
-        return announcement;
+        return new AnnouncementImpl(insert);
     }
 
     @Override
@@ -88,21 +87,16 @@ public class AnnouncementServiceImpl implements AnnouncementService.Interface
         AnnouncementModel model = new AnnouncementModel();
         DiscussionService.Settings settings = AnnouncementsController.getSettings(container);
         Permissions perm = AnnouncementsController.getPermissions(container, user, settings);
-        try
-        {
-            if (RowId != 0)
-                model = AnnouncementManager.getAnnouncement(container, RowId);
 
-            if (null == model)
-                return null;
-            
-            if (!perm.allowRead(model))
-                return null;
-        }
-        catch (SQLException e)
-        {
-            throw new RuntimeSQLException(e);
-        }
+        if (RowId != 0)
+            model = AnnouncementManager.getAnnouncement(container, RowId);
+
+        if (null == model)
+            return null;
+
+        if (!perm.allowRead(model))
+            return null;
+
         return new AnnouncementImpl(model);
     }
 

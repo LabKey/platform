@@ -39,7 +39,8 @@
         }
     });
 
-    function refreshDiagram()
+    // TODO: This is getting called twice for each group add/remove... filter? different listener?
+    function refreshDiagram(s, record, type)
     {
         Ext.Ajax.request({
             url: <%=q(groupDiagramURL.toString())%>,

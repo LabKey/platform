@@ -19,15 +19,9 @@ import org.labkey.announcements.model.MessageConfigManager;
 import org.labkey.api.data.Container;
 import org.labkey.api.message.settings.MessageConfigService;
 import org.labkey.api.security.User;
-import org.labkey.api.services.ServiceRegistry;
-import org.labkey.api.view.HttpView;
-import org.labkey.api.view.ViewContext;
-import org.springframework.validation.BindException;
-import org.springframework.validation.Errors;
 
-import java.util.LinkedHashMap;
 import java.util.Map;
-import java.util.TreeMap;
+import java.util.concurrent.ConcurrentSkipListMap;
 
 /**
  * User: klum
@@ -36,7 +30,7 @@ import java.util.TreeMap;
  */
 public class MessageConfigServiceImpl implements MessageConfigService.I
 {
-    private final Map<String, MessageConfigService.ConfigTypeProvider> _providers = new TreeMap<String, MessageConfigService.ConfigTypeProvider>();
+    private final Map<String, MessageConfigService.ConfigTypeProvider> _providers = new ConcurrentSkipListMap<String, MessageConfigService.ConfigTypeProvider>();
 
     @Override
     public void savePreference(User currentUser, Container c, User projectUser, MessageConfigService.ConfigTypeProvider provider, int preference) throws Exception
@@ -51,13 +45,7 @@ public class MessageConfigServiceImpl implements MessageConfigService.I
     }
 
     @Override
-    public MessageConfigService.UserPreference[] getPreference(Container c, User user) throws Exception
-    {
-        return MessageConfigManager.getUserEmailPrefRecord(c, user);
-    }
-
-    @Override
-    public MessageConfigService.UserPreference[] getPreferences(Container c, MessageConfigService.ConfigTypeProvider provider) throws Exception
+    public MessageConfigService.UserPreference[] getPreferences(Container c, MessageConfigService.ConfigTypeProvider provider)
     {
         return MessageConfigManager.getUserEmailPrefs(c, provider.getType());
     }
@@ -74,35 +62,23 @@ public class MessageConfigServiceImpl implements MessageConfigService.I
         return MessageConfigManager.getEmailOptions(provider.getType());
     }
 
-    @Override
-    public MessageConfigService.NotificationOption[] getOptions() throws Exception
-    {
-        return MessageConfigManager.getEmailOptions(null);
-    }
-
     public void registerConfigType(MessageConfigService.ConfigTypeProvider provider)
     {
-        synchronized(_providers){
+        String key = provider.getType();
 
-            String key = provider.getType();
-            if (_providers.containsKey(key))
-                throw new IllegalArgumentException("ConfigService provider " + key + " has already been registered");
+        if (_providers.containsKey(key))
+            throw new IllegalArgumentException("ConfigService provider " + key + " has already been registered");
 
-            _providers.put(key, provider);
-        }
+        _providers.put(key, provider);
     }
 
     public MessageConfigService.ConfigTypeProvider[] getConfigTypes()
     {
-        synchronized(_providers){
-            return _providers.values().toArray(new MessageConfigService.ConfigTypeProvider[_providers.size()]);
-        }
+        return _providers.values().toArray(new MessageConfigService.ConfigTypeProvider[_providers.size()]);
     }
 
     public MessageConfigService.ConfigTypeProvider getConfigType(String identifier)
     {
-        synchronized(_providers){
-            return _providers.get(identifier);
-        }
+        return _providers.get(identifier);
     }
 }

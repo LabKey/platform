@@ -36,9 +36,12 @@ import org.labkey.api.data.DbSchema;
 import org.labkey.api.data.PropertyManager;
 import org.labkey.api.data.RuntimeSQLException;
 import org.labkey.api.data.SQLFragment;
+import org.labkey.api.data.Selector;
 import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.Sort;
+import org.labkey.api.data.SqlSelector;
 import org.labkey.api.data.Table;
+import org.labkey.api.data.TableSelector;
 import org.labkey.api.message.settings.MessageConfigService;
 import org.labkey.api.search.SearchService;
 import org.labkey.api.security.User;
@@ -72,7 +75,6 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 
 /**
  * User: mbellew
@@ -103,7 +105,7 @@ public class AnnouncementManager
     {
     }
 
-    protected static void attachResponses(Container c, AnnouncementModel[] announcementModels) throws SQLException
+    protected static void attachResponses(Container c, AnnouncementModel[] announcementModels)
     {
         for (AnnouncementModel announcementModel : announcementModels)
         {
@@ -113,7 +115,7 @@ public class AnnouncementManager
     }
 
 
-    protected static void attachMemberLists(AnnouncementModel[] announcementModels) throws SQLException
+    protected static void attachMemberLists(AnnouncementModel[] announcementModels)
     {
         for (AnnouncementModel announcementModel : announcementModels)
             announcementModel.setMemberList(getMemberList(announcementModel));
@@ -154,15 +156,7 @@ public class AnnouncementManager
     {
         filter.addCondition("Container", c.getId());
 
-        try
-        {
-            AnnouncementModel[] recent = Table.select(_comm.getTableInfoThreads(), Table.ALL_COLUMNS, filter, sort, BareAnnouncementModel.class);
-            return recent;
-        }
-        catch (SQLException x)
-        {
-            throw new RuntimeSQLException(x);
-        }
+        return new TableSelector(_comm.getTableInfoThreads(), filter, sort).getArray(BareAnnouncementModel.class);
     }
 
     /**
@@ -180,20 +174,14 @@ public class AnnouncementManager
         SimpleFilter filter = new SimpleFilter("Container", ids, CompareType.IN);
         Sort sort = new Sort("-Created");
 
-        try
-        {
-            return Table.select(_comm.getTableInfoAnnouncements(), Table.ALL_COLUMNS, filter, sort, AnnouncementModel.class);
-        }
-        catch (SQLException e)
-        {
-            throw new RuntimeSQLException(e);
-        }
+        return new TableSelector(_comm.getTableInfoAnnouncements(), filter, sort).getArray(AnnouncementModel.class);
     }
     
     public static AnnouncementModel[] getAnnouncements(Container c, String parent)
     {
         SimpleFilter filter = new SimpleFilter();
         filter.addCondition("container", c.getId());
+
         if (null == parent)
             filter.addCondition("parent", null, CompareType.ISBLANK);
         else
@@ -201,31 +189,22 @@ public class AnnouncementManager
 
         Sort sort = new Sort("Created");
 
-        try
-        {
-            AnnouncementModel[] ann = Table.select(_comm.getTableInfoAnnouncements(),
-                    Table.ALL_COLUMNS, filter, sort, AnnouncementModel.class);
-
-            return ann;
-        }
-        catch (SQLException x)
-        {
-            throw new RuntimeSQLException(x);
-        }
+        return new TableSelector(_comm.getTableInfoAnnouncements(), filter, sort).getArray(AnnouncementModel.class);
     }
 
 
-    public static AnnouncementModel getAnnouncement(Container c, String entityId) throws SQLException
+    public static AnnouncementModel getAnnouncement(Container c, String entityId)
     {
         return getAnnouncement(c, entityId, false);
     }
 
 
-    public static AnnouncementModel getAnnouncement(Container c, String entityId, boolean eager) throws SQLException
+    public static AnnouncementModel getAnnouncement(Container c, String entityId, boolean eager)
     {
-        AnnouncementModel[] ann = Table.select(_comm.getTableInfoAnnouncements(), Table.ALL_COLUMNS,
-                new SimpleFilter("container", c.getId()).addCondition("entityId", entityId),
-                null, AnnouncementModel.class);
+        SimpleFilter filter = new SimpleFilter("Container", c.getId()).addCondition("EntityId", entityId);
+        Selector selector = new TableSelector(_comm.getTableInfoAnnouncements(), filter, null);
+        AnnouncementModel[] ann = selector.getArray(AnnouncementModel.class);
+
         if (ann.length < 1)
             return null;
 
@@ -234,6 +213,7 @@ public class AnnouncementManager
             attachResponses(c, ann);
             attachMemberLists(ann);
         }
+
         return ann[0];
     }
 
@@ -248,7 +228,7 @@ public class AnnouncementManager
         return _configProvider;
     }
 
-    public static AnnouncementModel getAnnouncement(Container c, int rowId) throws SQLException
+    public static AnnouncementModel getAnnouncement(Container c, int rowId)
     {
         return getAnnouncement(c, rowId, INCLUDE_NOTHING);
     }
@@ -260,7 +240,8 @@ public class AnnouncementManager
 
     public static synchronized void saveEmailPreference(User currentUser, Container c, User projectUser, int emailPreference) throws SQLException
     {
-        try {
+        try
+        {
             getAnnouncementConfigProvider().savePreference(currentUser, c, projectUser, emailPreference);
         }
         catch (Exception e)
@@ -274,37 +255,38 @@ public class AnnouncementManager
     public static final int INCLUDE_RESPONSES = 2;
     public static final int INCLUDE_MEMBERLIST = 4;
 
-    public static AnnouncementModel getAnnouncement(Container c, int rowId, int mask) throws SQLException
+    public static AnnouncementModel getAnnouncement(Container c, int rowId, int mask)
     {
-        AnnouncementModel[] ann = Table.select(_comm.getTableInfoAnnouncements(), Table.ALL_COLUMNS,
-                new SimpleFilter("container", c.getId()).addCondition("rowId", rowId),
-                null, AnnouncementModel.class);
-        if (ann.length < 1)
+        Selector selector = new TableSelector(_comm.getTableInfoAnnouncements(), new SimpleFilter("Container", c.getId()).addCondition("RowId", rowId), null);
+        AnnouncementModel ann = selector.getObject(AnnouncementModel.class);
+
+        if (null == ann)
             return null;
 
+        // TODO: Eliminate bitmasks and proactive retrieval of responses and memberlists; replace with lazy loading (similar to wiki)
+        AnnouncementModel[] annArray = new AnnouncementModel[]{ann};
+
         if ((mask & INCLUDE_RESPONSES) != 0)
-            attachResponses(c, ann);
+            attachResponses(c, annArray);
         if ((mask & INCLUDE_MEMBERLIST) != 0)
-            attachMemberLists(ann);
-        return ann[0];
+            attachMemberLists(annArray);
+
+        return ann;
     }
 
 
     public static AnnouncementModel getLatestPost(Container c, AnnouncementModel parent)
     {
-        try
-        {
-            Integer postId = Table.executeSingleton(_comm.getSchema(), "SELECT LatestId FROM " + _comm.getTableInfoThreads() + " WHERE RowId=?", new Object[]{parent.getRowId()}, Integer.class);
+        SQLFragment sql = new SQLFragment( "SELECT LatestId FROM ");
+        sql.append(_comm.getTableInfoThreads(), "t");
+        sql.append(" WHERE RowId = ?");
+        sql.add(parent.getRowId());
+        Integer postId = new SqlSelector(_comm.getSchema(), sql).getObject(Integer.class);
 
-            if (null == postId)
-                throw new NotFoundException("Can't find most recent post");
+        if (null == postId)
+            throw new NotFoundException("Can't find most recent post");
 
-            return getAnnouncement(c, postId, INCLUDE_MEMBERLIST);
-        }
-        catch (SQLException x)
-        {
-            throw new RuntimeSQLException(x);
-        }
+        return getAnnouncement(c, postId, INCLUDE_MEMBERLIST);
     }
 
 
@@ -346,16 +328,17 @@ public class AnnouncementManager
     }
 
 
-    private static List<User> getMemberList(AnnouncementModel ann) throws SQLException
+    private static List<User> getMemberList(AnnouncementModel ann)
     {
-        Integer[] userIds;
+        SQLFragment sql;
 
         if (null == ann.getParent())
-            userIds = Table.executeArray(_comm.getSchema(), "SELECT UserId FROM " + _comm.getTableInfoMemberList() + " WHERE MessageId = ?", new Object[]{ann.getRowId()}, Integer.class);
+            sql = new SQLFragment("SELECT UserId FROM " + _comm.getTableInfoMemberList() + " WHERE MessageId = ?", ann.getRowId());
         else
-            userIds = Table.executeArray(_comm.getSchema(), "SELECT UserId FROM " + _comm.getTableInfoMemberList() + " WHERE MessageId = (SELECT RowId FROM " + _comm.getTableInfoAnnouncements() + " WHERE EntityId=?)", new Object[]{ann.getParent()}, Integer.class);
+            sql = new SQLFragment("SELECT UserId FROM " + _comm.getTableInfoMemberList() + " WHERE MessageId = (SELECT RowId FROM " + _comm.getTableInfoAnnouncements() + " WHERE EntityId = ?)", new Object[]{ann.getParent()}, Integer.class);
 
-        List<User> users = new ArrayList<User>(userIds.length);
+        Collection<Integer> userIds = new SqlSelector(_comm.getSchema(), sql).getCollection(Integer.class);
+        List<User> users = new ArrayList<User>(userIds.size());
 
         for (int userId : userIds)
             users.add(UserManager.getUser(userId));
@@ -428,38 +411,10 @@ public class AnnouncementManager
         Table.delete(_comm.getTableInfoMemberList(), new SimpleFilter("UserId", user.getUserId()).addCondition("MessageId", messageId));
     }
 
-    public static Set<User> getAuthors(Container c, AnnouncementModel a) throws SQLException
+    public static int getUserEmailOption(Container c, User user)
     {
-        assert c.equals(a.lookupContainer());
-        Set<User> responderSet = new HashSet<User>();
-        boolean isResponse = null != a.getParent();
-
-        // if this is a response get parent and all previous responses
-        if (isResponse)
+        try
         {
-            a = AnnouncementManager.getAnnouncement(c, a.getParent(), true);
-
-            Collection<AnnouncementModel> responses = a.getResponses();
-
-            //add creator of each response to responder set
-            for (AnnouncementModel response : responses)
-            {
-                //do we need to handle case where responder is not in a project group?
-                User user = UserManager.getUser(response.getCreatedBy());
-                //add to responder set, so we know who responders are
-                responderSet.add(user);
-            }
-        }
-
-        //add creator of parent to responder set
-        responderSet.add(UserManager.getUser(a.getCreatedBy()));
-
-        return responderSet;
-    }
-
-    public static int getUserEmailOption(Container c, User user) throws SQLException
-    {
-        try {
             MessageConfigService.UserPreference emailPref = getAnnouncementConfigProvider().getPreference(c, user);
 
             //user has not yet defined email preference; return project default
@@ -474,15 +429,15 @@ public class AnnouncementManager
         }
     }
 
-    public static long getMessageCount(Container c)
-            throws SQLException
+    public static long getMessageCount(Container c) throws SQLException
     {
         return Table.executeSingleton(_comm.getSchema(), "SELECT COUNT(*) FROM " + _comm.getTableInfoAnnouncements() + " WHERE Container = ?", new Object[]{c.getId()}, Long.class);
     }
 
     public static MessageConfigService.NotificationOption[] getEmailOptions() throws SQLException
     {
-        try {
+        try
+        {
             return getAnnouncementConfigProvider().getOptions();
         }
         catch (Exception e)
@@ -716,9 +671,9 @@ public class AnnouncementManager
     {
         try
         {
-        Table.execute(_comm.getSchema(),
-                "UPDATE comm.announcements SET lastIndexed=? WHERE entityId=?",
-                new Timestamp(ms), entityId);
+            Table.execute(_comm.getSchema(),
+                    "UPDATE comm.announcements SET lastIndexed=? WHERE entityId=?",
+                    new Timestamp(ms), entityId);
         }
         catch (SQLException sql)
         {
@@ -776,6 +731,7 @@ public class AnnouncementManager
             int docs = Table.execute(_comm.getSchema(), deleteDocuments, c.getId(), c.getId());
             String deleteAnnouncements = "DELETE FROM " + _comm.getTableInfoAnnouncements() + " WHERE Container = ?";
             int pages = Table.execute(_comm.getSchema(), deleteAnnouncements, c.getId());
+
             if (verifyEmpty)
             {
                 assertEquals(0, docs);

@@ -17,14 +17,19 @@
 package org.labkey.announcements.model;
 
 import org.labkey.announcements.AnnouncementsController;
+import org.labkey.api.announcements.DiscussionService;
 import org.labkey.api.data.Container;
+import org.labkey.api.data.RuntimeSQLException;
 import org.labkey.api.message.settings.MessageConfigService;
 import org.labkey.api.security.User;
-import org.labkey.api.announcements.DiscussionService;
 
 import javax.servlet.ServletException;
 import java.sql.SQLException;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
 
 /**
  * User: adam
@@ -38,7 +43,7 @@ public abstract class EmailPrefsSelector
     protected List<MessageConfigService.UserPreference> _emailPrefs;
     protected Container _c;
 
-    protected EmailPrefsSelector(Container c) throws SQLException
+    protected EmailPrefsSelector(Container c)
     {
         initEmailPrefs(c);
         _c = c;
@@ -46,7 +51,7 @@ public abstract class EmailPrefsSelector
 
 
     // Initialize list of email preferences: get all settings from the database, add the default values, and remove NONE.
-    private void initEmailPrefs(Container c) throws SQLException
+    private void initEmailPrefs(Container c)
     {
         try
         {
@@ -63,9 +68,9 @@ public abstract class EmailPrefsSelector
                     _emailPrefs.add(ep);
             }
         }
-        catch (Exception e)
+        catch (SQLException e)
         {
-            throw new SQLException(e);
+            throw new RuntimeSQLException(e);
         }
     }
 
@@ -89,13 +94,13 @@ public abstract class EmailPrefsSelector
     }
 
 
-    protected boolean shouldSend(AnnouncementModel ann, MessageConfigService.UserPreference ep) throws ServletException, SQLException
+    protected boolean shouldSend(AnnouncementModel ann, MessageConfigService.UserPreference ep)
     {
         int emailPreference = ep.getEmailOptionId() & AnnouncementManager.EMAIL_PREFERENCE_MASK;
 
         User user = ep.getUser();
 
-        //if user is inactive, don't sent email
+        //if user is inactive, don't send email
         if (!user.isActive())
             return false;
 
@@ -103,7 +108,7 @@ public abstract class EmailPrefsSelector
 
         if (AnnouncementManager.EMAIL_PREFERENCE_MINE == emailPreference)
         {
-            Set<User> authors = AnnouncementManager.getAuthors(_c, ann);
+            Set<User> authors = ann.getAuthors();
 
             if (!authors.contains(user))
                 if (!settings.hasMemberList() || !ann.getMemberList().contains(user))

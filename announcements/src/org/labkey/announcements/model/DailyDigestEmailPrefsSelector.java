@@ -20,8 +20,6 @@ import org.labkey.api.data.Container;
 import org.labkey.api.message.settings.MessageConfigService;
 import org.labkey.api.security.User;
 
-import javax.servlet.ServletException;
-import java.sql.SQLException;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -34,7 +32,7 @@ public class DailyDigestEmailPrefsSelector extends EmailPrefsSelector
 {
     Map<User, MessageConfigService.UserPreference> _epMap;
 
-    protected DailyDigestEmailPrefsSelector(Container c) throws SQLException
+    protected DailyDigestEmailPrefsSelector(Container c)
     {
         super(c);
 
@@ -53,7 +51,7 @@ public class DailyDigestEmailPrefsSelector extends EmailPrefsSelector
     }
 
 
-    public boolean shouldSend(AnnouncementModel ann, User user) throws SQLException, ServletException
+    public boolean shouldSend(AnnouncementModel ann, User user)
     {
         return shouldSend(ann, _epMap.get(user));
     }

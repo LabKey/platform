@@ -15,12 +15,14 @@
  */
 package org.labkey.announcements.model;
 
+import org.jetbrains.annotations.NotNull;
 import org.labkey.api.announcements.CommSchema;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.CoreSchema;
 import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.Sort;
+import org.labkey.api.data.SqlSelector;
 import org.labkey.api.data.Table;
 import org.labkey.api.message.settings.MessageConfigService;
 import org.labkey.api.security.User;
@@ -43,12 +45,6 @@ public class MessageConfigManager
     public static final int EMAIL_PREFERENCE_DEFAULT = -1;
     public static final int EMAIL_FORMAT_HTML = 1;
     public static final int PAGE_TYPE_MESSAGE = 0;
-
-    //returns explicit record from EmailPrefs table for this user if there is one.
-    public static MessageConfigService.UserPreference[] getUserEmailPrefRecord(Container c, User user) throws SQLException
-    {
-        return _getUserEmailPrefRecord(c, user, null);
-    }
 
     public static EmailPref getUserEmailPrefRecord(Container c, User user, String type) throws SQLException
     {
@@ -84,7 +80,7 @@ public class MessageConfigManager
             return emailPrefs;
     }
 
-    public static EmailPref[] getUserEmailPrefs(Container c, String type) throws SQLException
+    public static EmailPref[] getUserEmailPrefs(Container c, String type)
     {
         SQLFragment sql = new SQLFragment();
         List<EmailPref> prefs = new ArrayList<EmailPref>();
@@ -93,10 +89,10 @@ public class MessageConfigManager
         sql.append(CoreSchema.getInstance().getTableInfoUsers(), "u").append(" LEFT JOIN ");
         sql.append(_comm.getTableInfoEmailPrefs(), "prefs").append(" ON u.userId = prefs.userId ");
         sql.append("AND type = ? AND container = ?");
+        sql.add(type);
+        sql.add(c);
 
-        EmailPref[] p = Table.executeQuery(_comm.getSchema(), sql.getSQL(), new Object[]{type, c.getId()}, EmailPref.class);
-
-        for (EmailPref ep : p)
+        for (EmailPref ep : new SqlSelector(_comm.getSchema(), sql).getCollection(EmailPref.class))
         {
             User user = ep.getUser();
             if (c.hasPermission(user, ReadPermission.class) && user.isActive())
@@ -174,13 +170,9 @@ public class MessageConfigManager
         }
     }
 
-    public static EmailOption[] getEmailOptions(String type) throws SQLException
+    public static EmailOption[] getEmailOptions(@NotNull String type) throws SQLException
     {
-        SimpleFilter filter = null;
-
-        if (type != null)
-            filter = new SimpleFilter("Type", type);
-
+        SimpleFilter filter = new SimpleFilter("Type", type);
         return Table.select(_comm.getTableInfoEmailOptions(), Table.ALL_COLUMNS, filter, new Sort("EmailOptionId"), EmailOption.class);
     }
 
@@ -240,7 +232,7 @@ public class MessageConfigManager
             return _email;
         }
 
-        public void setEmail(String email)
+        @SuppressWarnings({"UnusedDeclaration"}) public void setEmail(String email)
         {
             _email = email;
         }
@@ -270,7 +262,7 @@ public class MessageConfigManager
             return _firstName;
         }
 
-        public void setFirstName(String firstName)
+        @SuppressWarnings({"UnusedDeclaration"}) public void setFirstName(String firstName)
         {
             _firstName = firstName;
         }
@@ -280,7 +272,7 @@ public class MessageConfigManager
             return _lastName;
         }
 
-        public void setLastName(String lastName)
+        @SuppressWarnings({"UnusedDeclaration"}) public void setLastName(String lastName)
         {
             _lastName = lastName;
         }
@@ -290,7 +282,7 @@ public class MessageConfigManager
             return _displayName;
         }
 
-        public void setDisplayName(String displayName)
+        @SuppressWarnings({"UnusedDeclaration"}) public void setDisplayName(String displayName)
         {
             _displayName = displayName;
         }

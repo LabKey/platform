@@ -20,8 +20,6 @@ import org.labkey.api.data.Container;
 import org.labkey.api.message.settings.MessageConfigService;
 import org.labkey.api.security.User;
 
-import javax.servlet.ServletException;
-import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -32,7 +30,7 @@ import java.util.List;
  */
 public class IndividualEmailPrefsSelector extends EmailPrefsSelector
 {
-    public IndividualEmailPrefsSelector(Container c) throws SQLException
+    public IndividualEmailPrefsSelector(Container c)
     {
         super(c);
     }
@@ -45,7 +43,7 @@ public class IndividualEmailPrefsSelector extends EmailPrefsSelector
     }
 
 
-    public List<User> getNotificationUsers(AnnouncementModel ann) throws ServletException, SQLException
+    public List<User> getNotificationUsers(AnnouncementModel ann)
     {
         List<User> authorized = new ArrayList<User>(_emailPrefs.size());
 
