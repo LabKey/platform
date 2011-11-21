@@ -2730,8 +2730,12 @@ td.sort-desc .x-grid3-hd-inner, td.sort-asc .x-grid3-hd-inner {
 	background-image:none;
 }
 
+td.x-grid3-hd-over, td.x-grid3-hd-menu-open {
+   background-color:#D0D0D0;
+}
+
 td.x-grid3-hd-over .x-grid3-hd-inner, td.x-grid3-hd-menu-open .x-grid3-hd-inner {
-	background-color:#D0D0D0;
+	background-color: transparent;
 	background-image:none;
 }
 
@@ -2750,6 +2754,22 @@ td a.x-grid3-hd-btn:hover {
 #fileBrowser x-grid3-hd-inner
 {
     padding: 2px 0px;
+}
+
+/* File browser applet buttons */
+table.applet-button {
+    padding: 2px 0;
+    *margin: 4px 0;
+}
+
+div.single-upload-panel div.x-box-inner
+{
+    height: 27px !important;
+}
+
+div.single-upload-panel input.x-form-field
+{
+    height : 22px;
 }
 
 .x-menu {

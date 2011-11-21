@@ -2902,11 +2902,10 @@ LABKEY.FileBrowser = Ext.extend(Ext.Panel,
         });
 
         actions.appletFileAction = new Ext.Action({
-            text:'Choose File...', scope:this, disabled:false, iconCls:'iconFileNew',
-            handler:function()
-            {
-                if (this.applet)
-                {
+            text    : '&nbsp;&nbsp;&nbsp;&nbsp;Choose File&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;', scope:this, disabled:false,
+            cls     : 'applet-button',
+            handler : function() {
+                if (this.applet) {
                     var a = this.applet.getApplet();
                     if (a) a.showFileChooser();
                 }
@@ -2914,11 +2913,10 @@ LABKEY.FileBrowser = Ext.extend(Ext.Panel,
         });
 
         actions.appletDirAction = new Ext.Action({
-            text:'Choose Folder...', scope:this, disabled:false,  iconCls:'iconFileOpen',
-            handler:function()
-            {
-                if (this.applet)
-                {
+            text    : '&nbsp;Choose Folder&nbsp;', scope:this, disabled:false,
+            cls     : 'applet-button',
+            handler : function() {
+                if (this.applet) {
                     var a = this.applet.getApplet();
                     if (a) a.showDirectoryChooser();
                 }
@@ -2926,12 +2924,10 @@ LABKEY.FileBrowser = Ext.extend(Ext.Panel,
         });
 
         actions.appletDragAndDropAction = new Ext.Action({
-            text:'Open Drag and Drop Window...', scope:this, disabled:false,
-            iconCls:'iconFileShare',
-            handler:function()
-            {
-                if (this.applet)
-                {
+            text    : 'Drag and Drop&nbsp;', scope:this, disabled:false,
+            cls     : 'applet-button',
+            handler : function() {
+                if (this.applet) {
                     var a = this.applet.getApplet();
                     if (a) a.openDragAndDropWindow();
                 }
@@ -2989,12 +2985,9 @@ LABKEY.FileBrowser = Ext.extend(Ext.Panel,
         if (this.showFileUpload)
         {
             // the file upload collapsible panel
-            this.fileUploadField = new Ext.form.FileUploadField(
-            {
-                //id: this.id ? this.id + 'Upload' : 'fileUpload',
-                buttonText: "Browse...",
-                fieldLabel: 'Choose a file',
-                width: 340
+            this.fileUploadField = new Ext.form.FileUploadField({
+                buttonText: "Browse",
+                fieldLabel: 'Choose a File'
             });
 
             // the description field is hidden by default until a file is selected
@@ -3002,7 +2995,7 @@ LABKEY.FileBrowser = Ext.extend(Ext.Panel,
                 name       : 'description',
                 disabled   : true,
                 fieldLabel : 'Description',
-                width      : 350,
+                width      : 290,
                 listeners  : { render : function(field) { field.label.addClass('labkey-disabled'); } }
             });
 
@@ -3025,15 +3018,13 @@ LABKEY.FileBrowser = Ext.extend(Ext.Panel,
                 method : 'POST',
                 fileUpload: true,
                 enctype:'multipart/form-data',
+                cls   : 'single-upload-panel',
                 border:false,
                 stateful: false,
-                bodyStyle : 'background-color:#f0f0f0; padding:10px;',
+                bodyStyle : 'background-color:#f0f0f0;',
                 buttonAlign: 'left',
                 items: [
-                    {xtype:'compositefield', items:[
-                        this.fileUploadField,
-                        {xtype:'displayfield', value: '&nbsp;&nbsp;'},
-                        btn]},
+                    {xtype:'compositefield', items:[this.fileUploadField, btn]},
                     this.descriptionField
                 ],
                 listeners: {
@@ -3059,11 +3050,11 @@ LABKEY.FileBrowser = Ext.extend(Ext.Panel,
             var qtipHtml =  '<span id="testJavaLink"><br>[<a target=_blank href="http://www.java.com/en/download/testjava.jsp">test java plugin</a>]</span>';
 
             this.appletPanel = new Ext.Panel({
-                fieldLabel: 'Java Applet' + qtipHtml,
-                isFormField: true,
-                height: 80,
-                width: 80,
-                items : {html:'<img src="' + loadingImageSrc + '"><br>loading Java applet...'}
+                fieldLabel  : 'Upload Tool' + qtipHtml,
+                isFormField : true,
+                height      : 85,
+                width       : 85,
+                items       : {html:'<img src="' + loadingImageSrc + '"><br>loading Java applet...'}
             });
 
             this.uploadMultiPanel = new Ext.FormPanel({
@@ -3083,17 +3074,19 @@ LABKEY.FileBrowser = Ext.extend(Ext.Panel,
 
             // default settings
             var defaults = {
-                labelWidth: 130,
+                labelWidth: 110,
                 labelAlign: 'right',
                 labelPad: 15,
                 bodyStyle : 'background-color:#f0f0f0'
             };
 
+            var baseHeight = 100;
+
             // panel to contain the 2 upload panels
             var uploadPanelOuter = new Ext.Panel({
                 border: false,
                 layout: 'card',
-                height: 115,
+                height: baseHeight,
                 deferredRender: true,
                 defaults: defaults,
                 activeItem: this.uploadPanel.getId(),
@@ -3102,39 +3095,58 @@ LABKEY.FileBrowser = Ext.extend(Ext.Panel,
 
             // main panel with the radio button selectors and the upload panel
             var panel = new Ext.Panel({
-                border: true,
-                stateful: false,
-                layout: 'form',
-                buttonAlign: 'left',
-                items: [{
-                    xtype: 'radiogroup',
-                    width: 240,
-                    columns:2,
-                    fieldLabel: 'File Upload Type',
-                    items: [
-                        {boxLabel: 'Single&nbsp;file', name: 'rb-file-upload-type', checked: true, handler: function(cmp, checked){
-                            if (checked)
-                            {
-                                this.applet.setEnabled(false);
-                                uploadPanelOuter.getLayout().setActiveItem(this.uploadPanel.getId());
-                            }
-                        }, scope:this},
-                        {boxLabel: 'Multiple&nbsp;files', name: 'rb-file-upload-type', handler: function(cmp, checked){
-                            if (checked)
-                            {
-                                uploadPanelOuter.getLayout().setActiveItem(this.uploadMultiPanel.getId());
-                                this.onMultipleFileUpload();
-                            }
-                        }, scope: this}
-                    ]},
-                    uploadPanelOuter
-                ]
+                border  : false,
+                layout  : 'table',
+                columns : 2,
+                height  : baseHeight,
+                items   : [{
+                    xtype : 'panel',
+                    layout: 'form',
+                    height  : baseHeight * .9,
+                    flex    : 1,
+                    buttonAlign : 'left',
+                    bodyStyle : 'background-color:#f0f0f0; padding-left: 25px;',
+                    border : false,
+                    items : [{
+                        xtype      : 'radiogroup',
+                        width      : 110,
+                        columns    : 1,
+                        fieldLabel : 'Upload Type',
+                        hideLabel  : true,
+                        items      : [{
+                            boxLabel : 'Single&nbsp;file', name: 'rb-file-upload-type', checked: true,
+                            handler  : function(cmp, checked) {
+                                if (checked) {
+                                    this.applet.setEnabled(false);
+                                    uploadPanelOuter.getLayout().setActiveItem(this.uploadPanel.getId());
+                                }
+                            }, scope:this
+                        },{
+                            boxLabel : 'Multiple&nbsp;files', name: 'rb-file-upload-type',
+                            handler  : function(cmp, checked) {
+                                if (checked) {
+                                    uploadPanelOuter.getLayout().setActiveItem(this.uploadMultiPanel.getId());
+                                    this.onMultipleFileUpload();
+                                }
+                            }, scope: this
+                        }]
+                    }]
+                },{
+                    xtype       : 'panel',
+                    layout      : 'form',
+                    height      : baseHeight * .9,
+                    flex        : 2,
+                    buttonAlign : 'left',
+                    width       : 550,
+                    border      : false,
+                    items       : [uploadPanelOuter]
+                }]
             });
 
             this.fileUploadPanel = new Ext.Panel({
                 region: 'north',
                 collapseMode: 'mini',
-                height: 140,
+                height: baseHeight + 20,
                 defaults: defaults,
                 header: false,
                 margins:'0 0 0 0',
