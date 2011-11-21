@@ -237,7 +237,8 @@ public class ExperimentController extends SpringActionController
 
     private NavTree appendRootNavTrail(NavTree root)
     {
-        root.addChild("Experiment", ExperimentUrlsImpl.get().getOverviewURL(getContainer()));
+        // Intentionally don't add an "Experiment" node to the list because it's too overloaded. All content on the
+        // default action can be added to a portal page if desired.
         return root;
     }
 
@@ -256,7 +257,7 @@ public class ExperimentController extends SpringActionController
     {
         public VBox getView(Object o, BindException errors) throws Exception
         {
-            VBox result = super.getView(o, errors);
+            VBox result = new VBox(super.getView(o, errors));
             RunGroupWebPart runGroups = new RunGroupWebPart(getViewContext(), false);
             runGroups.showHeader();
             result.addView(runGroups);
@@ -283,7 +284,11 @@ public class ExperimentController extends SpringActionController
             JspView chooserView = new JspView<ChooseExperimentTypeBean>("/org/labkey/experiment/experimentRunQueryHeader.jsp", bean);
 
             ExperimentRunListView view = ExperimentService.get().createExperimentRunWebPart(getViewContext(), bean.getSelectedFilter());
-            return new VBox(chooserView, view);
+            VBox result = new VBox(chooserView, view);
+            result.setTitle(view.getTitle());
+            result.setFrame(WebPartView.FrameType.PORTAL);
+            view.setFrame(WebPartView.FrameType.NONE);
+            return result;
         }
 
         public NavTree appendNavTrail(NavTree root)
@@ -391,9 +396,11 @@ public class ExperimentController extends SpringActionController
             runListView.setShowAddToRunGroupButton(true);
             runListView.setShowExportButtons(true);
             runListView.setShowMoveRunsButton(true);
-            chooserView.setTitle("Experiment Runs");
-            vbox.addView(chooserView);
-            vbox.addView(runListView);
+
+            VBox runsVBox = new VBox(chooserView, runListView);
+            runsVBox.setTitle("Experiment Runs");
+            runsVBox.setFrame(WebPartView.FrameType.PORTAL);
+            vbox.addView(runsVBox);
 
             return vbox;
         }

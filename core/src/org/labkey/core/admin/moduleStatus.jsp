@@ -150,11 +150,12 @@ String verbing = loader.isNewInstall() ? "Installing" : "Upgrading";
         else
         {
             Ext4.get("completeDiv").setStyle('visibility', 'visible');
+            document.getElementById("nextButton").focus();
         }
     }
 </script>
 <br/>
 <div id="completeDiv" style="visibility: hidden">
     <%--Could send install/upgrade paths to different pages for settings, but for now use the same simple one for both --%>
-    <%= PageFlowUtil.generateButton("Next", new ActionURL(AdminController.NewInstallSiteSettingsAction.class, ContainerManager.getRoot())) %>
+    <%= PageFlowUtil.generateButton("Next", new ActionURL(AdminController.NewInstallSiteSettingsAction.class, ContainerManager.getRoot()), null, "id=\"nextButton\"") %>
 </div>
