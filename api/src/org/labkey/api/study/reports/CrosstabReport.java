@@ -16,27 +16,31 @@
 
 package org.labkey.api.study.reports;
 
-import org.apache.log4j.Logger;
 import org.labkey.api.data.DataRegion;
 import org.labkey.api.data.ExcelWriter;
 import org.labkey.api.data.RenderContext;
 import org.labkey.api.data.Results;
 import org.labkey.api.data.ResultsImpl;
 import org.labkey.api.data.Table;
-import org.labkey.api.query.*;
+import org.labkey.api.query.DefaultSchema;
+import org.labkey.api.query.FieldKey;
+import org.labkey.api.query.QueryParam;
+import org.labkey.api.query.QuerySettings;
+import org.labkey.api.query.UserSchema;
 import org.labkey.api.reports.Report;
 import org.labkey.api.reports.report.AbstractReport;
 import org.labkey.api.reports.report.ReportDescriptor;
 import org.labkey.api.reports.report.ReportUrls;
 import org.labkey.api.reports.report.view.ReportQueryView;
-import org.labkey.api.util.ExceptionUtil;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.ResultSetUtil;
-import org.labkey.api.view.*;
+import org.labkey.api.view.ActionURL;
+import org.labkey.api.view.DataView;
+import org.labkey.api.view.HttpView;
+import org.labkey.api.view.Stats;
+import org.labkey.api.view.ViewContext;
 
-import javax.servlet.http.HttpServletResponse;
 import java.sql.ResultSet;
-import java.sql.SQLException;
 import java.util.LinkedHashSet;
 import java.util.Set;
 

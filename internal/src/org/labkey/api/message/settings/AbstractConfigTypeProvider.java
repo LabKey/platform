@@ -39,7 +39,7 @@ public abstract class AbstractConfigTypeProvider implements MessageConfigService
     }
 
     @Override
-    public MessageConfigService.UserPreference[] getPreferences(Container c) throws Exception
+    public MessageConfigService.UserPreference[] getPreferences(Container c)
     {
         return MessageConfigService.getInstance().getPreferences(c, this);
     }

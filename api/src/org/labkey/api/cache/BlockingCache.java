@@ -78,7 +78,7 @@ public class BlockingCache<K, V> implements BasicCache<K, V>
     }
 
 
-    public V get(K key, Object argument)
+    public V get(K key, @Nullable Object argument)
     {
         if (null == _loader)
             throw new IllegalStateException("Set loader before calling this method");

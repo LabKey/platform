@@ -19,6 +19,7 @@ package org.labkey.api.data;
 import junit.framework.Assert;
 import org.apache.commons.beanutils.ConvertUtils;
 import org.apache.commons.lang.StringUtils;
+import org.jetbrains.annotations.Nullable;
 import org.junit.Test;
 import org.labkey.api.data.CompareType.CompareClause;
 import org.labkey.api.data.dialect.SqlDialect;
@@ -603,7 +604,7 @@ public class SimpleFilter implements Filter
         return addCondition(column.getAlias(), value, compare);
     }
 
-    public SimpleFilter addCondition(String colName, Object value, CompareType compare)
+    public SimpleFilter addCondition(String colName, @Nullable Object value, CompareType compare)
     {
         _clauses.add(compare.createFilterClause(colName, value));
         return this;

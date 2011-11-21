@@ -17,17 +17,12 @@ package org.labkey.api.message.settings;
 
 import org.labkey.api.data.Container;
 import org.labkey.api.security.User;
-import org.labkey.api.security.UserManager;
 import org.labkey.api.services.ServiceRegistry;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.HttpView;
 import org.labkey.api.view.ViewContext;
 import org.springframework.validation.BindException;
 import org.springframework.validation.Errors;
-
-import java.sql.SQLException;
-import java.util.LinkedHashMap;
-import java.util.Map;
 
 /**
  * Created by IntelliJ IDEA.
@@ -50,17 +45,15 @@ public class MessageConfigService
         public void savePreference(User currentUser, Container c, User projectUser, ConfigTypeProvider provider, int preference) throws Exception;
 
         public UserPreference getPreference(Container c, User user, ConfigTypeProvider provider) throws Exception;
-        public UserPreference[] getPreference(Container c, User user) throws Exception;
 
         /**
          * Returns preference settings for all users who have read access to the specified container
          * for the config type requested.
          */
-        public UserPreference[] getPreferences(Container c, ConfigTypeProvider provider) throws Exception;
+        public UserPreference[] getPreferences(Container c, ConfigTypeProvider provider);
 
         public NotificationOption getOption(int optionId) throws Exception;
         public NotificationOption[] getOptions(ConfigTypeProvider provider) throws Exception;
-        public NotificationOption[] getOptions() throws Exception;
 
         public void registerConfigType(ConfigTypeProvider provider);
         public ConfigTypeProvider[] getConfigTypes();
@@ -83,7 +76,7 @@ public class MessageConfigService
         /**
          * Returns preference settings for all users who have read access to the specified container.
          */
-        public UserPreference[] getPreferences(Container c) throws Exception;
+        public UserPreference[] getPreferences(Container c);
 
         public NotificationOption getOption(int optionId) throws Exception;
         public NotificationOption[] getOptions() throws Exception;

@@ -92,18 +92,10 @@ public class AttachmentCache
     // We don't cache custom stylesheets -- CoreController caches them in encoded form
     public static Attachment lookupCustomStylesheetAttachment(AttachmentParent parent)
     {
-        // TODO: Put the try/catch in lookupAttachment(parent, name) instead
-        try
-        {
-            return lookupAttachment(parent, STYLESHEET_FILE_NAME);
-        }
-        catch (SQLException e)
-        {
-            throw new RuntimeSQLException(e);
-        }
+        return lookupAttachment(parent, STYLESHEET_FILE_NAME);
     }
 
-    public static Attachment lookupAttachment(AttachmentParent parent, String name) throws SQLException
+    public static Attachment lookupAttachment(AttachmentParent parent, String name)
     {
         return AttachmentService.get().getAttachment(parent, name);
     }

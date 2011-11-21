@@ -13,9 +13,9 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package org.labkey.api.util;
 
-//import org.apache.log4j.Logger;
 import org.labkey.api.data.CoreSchema;
 import org.labkey.api.data.DatabaseTableType;
 import org.labkey.api.data.Table;
@@ -33,8 +33,6 @@ import java.sql.SQLException;
 
 public class ContainerUtil
 {
-//    private static Logger _log = Logger.getLogger(ContainerUtil.class);
-
     public static int purgeTable(TableInfo tinfo, String key) throws SQLException
     {
         assert tinfo.getTableType() != DatabaseTableType.NOT_IN_DB;
