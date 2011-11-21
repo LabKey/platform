@@ -295,7 +295,7 @@ public class CBCAssayController extends SpringActionController
         QueryView getResultsView()
         {
             // XXX: need to debug why I can't use the provider's queryView in the UpdateView
-//            QueryView queryView = provider.createRunDataView(getViewContext(), _protocol);
+            //QueryView queryView = getProvider().createResultsQueryView(getViewContext(), _protocol);
             QuerySettings settings = getProvider().getResultsQuerySettings(getViewContext(), _protocol);
             return new ResultsQueryView(_protocol, getViewContext(), settings);
         }
@@ -305,7 +305,14 @@ public class CBCAssayController extends SpringActionController
         // XXX: or change these columns return false for .getShowInUpdateView()
         private List<DisplayColumn> getUpdateableColumns(QueryView queryView)
         {
-            List<DisplayColumn> displayColumns = queryView.getDisplayColumns();
+            // Issue 12280: Get columns from the table's default visible list rather than the default view's columns.
+            List<DisplayColumn> displayColumns = new ArrayList<DisplayColumn>();
+            Map<FieldKey, ColumnInfo> columnMap = QueryService.get().getColumns(queryView.getTable(), queryView.getTable().getDefaultVisibleColumns());
+            for (ColumnInfo col : columnMap.values())
+            {
+                displayColumns.add(col.getRenderer());
+            }
+
             ListIterator<DisplayColumn> iter = displayColumns.listIterator();
             while (iter.hasNext())
             {
