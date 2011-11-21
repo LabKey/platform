@@ -17,6 +17,7 @@ package org.labkey.api.data;
 
 import org.apache.commons.beanutils.ConversionException;
 import org.apache.commons.beanutils.ConvertUtils;
+import org.apache.commons.lang.StringUtils;
 import org.jetbrains.annotations.NotNull;
 import org.junit.Assert;
 import org.junit.Test;
@@ -317,6 +318,8 @@ public enum JdbcType
         String s = o instanceof String ? (String)o : ConvertUtils.convert(o);
         if (cls == String.class)
             return s;
+        if (StringUtils.isEmpty(s))
+            return null;
 
         try
         {
@@ -332,6 +335,7 @@ public enum JdbcType
         // CONSIDER: convert may return default values instead of ConversionException
         return converter.convert(cls, s);
     }
+
 
     protected Object _fromNumber(Number n)
     {

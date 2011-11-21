@@ -307,6 +307,15 @@ public class ConvertHelper implements PropertyEditorRegistrar
     }
 
 
+    public static class ContainerConversionException extends ConversionException
+    {
+        public ContainerConversionException(String msg)
+        {
+            super(msg);
+        }
+    }
+
+
     public static class ContainerConverter implements Converter
     {
         public Object convert(Class clss, Object o)
@@ -324,7 +333,9 @@ public class ConvertHelper implements PropertyEditorRegistrar
             Container c;
 
             if (str.startsWith("/"))
+            {
                 c = ContainerManager.getForPath(str);
+            }
             else if (str.startsWith(Container.class.getName() + "@") && str.indexOf(" ") != -1)
             {
                 // Sometimes we get called with a Container.toString() value since the Apache conversion code
@@ -333,10 +344,12 @@ public class ConvertHelper implements PropertyEditorRegistrar
                 c = ContainerManager.getForId(id);
             }
             else
+            {
                 c = ContainerManager.getForId(str);
+            }
 
             if (null == c)
-                throw new ConversionException("Could not convert: " + str + " to container.");
+                throw new ContainerConversionException("Could not convert: " + str + " to container.  Container not found.");
 
             return c;
         }
