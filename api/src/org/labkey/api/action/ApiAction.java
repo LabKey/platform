@@ -24,8 +24,6 @@ import org.labkey.api.query.InvalidKeyException;
 import org.labkey.api.query.ValidationException;
 import org.labkey.api.util.ExceptionUtil;
 import org.labkey.api.view.NotFoundException;
-import org.labkey.api.view.RequestBasicAuthException;
-import org.labkey.api.view.TermsOfUseException;
 import org.labkey.api.view.UnauthorizedException;
 import org.springframework.beans.MutablePropertyValues;
 import org.springframework.mock.web.MockHttpServletRequest;
@@ -143,11 +141,24 @@ public abstract class ApiAction<FORM> extends BaseViewAction<FORM>
         {
             createResponseWriter().write((Errors)e);
         }
+        //don't log exceptions that result from bad inputs
         catch (BatchValidationException e)
         {
             createResponseWriter().write(e);
         }
         catch (ValidationException e)
+        {
+            createResponseWriter().write(e);
+        }
+        catch (IllegalArgumentException e)
+        {
+            createResponseWriter().write(e);
+        }
+        catch (NotFoundException e)
+        {
+            createResponseWriter().write(e);
+        }
+        catch (InvalidKeyException e)
         {
             createResponseWriter().write(e);
         }
@@ -158,18 +169,10 @@ public abstract class ApiAction<FORM> extends BaseViewAction<FORM>
         }
         catch (Exception e)
         {
-            //don't log exceptions that result from bad inputs
-            if (e instanceof ValidationException || e instanceof IllegalArgumentException || e instanceof NotFoundException || e instanceof InvalidKeyException)
-            {
-                createResponseWriter().write(e);
-            }
-            else
-            {
-                ExceptionUtil.logExceptionToMothership(getViewContext().getRequest(), e);
-                Logger.getLogger(ApiAction.class).warn("ApiAction exception: ", e);
+            ExceptionUtil.logExceptionToMothership(getViewContext().getRequest(), e);
+            Logger.getLogger(ApiAction.class).warn("ApiAction exception: ", e);
 
-                createResponseWriter().write(e);
-            }
+            createResponseWriter().write(e);
         }
 
         return null;

@@ -1168,6 +1168,14 @@ public class PageFlowUtil
         return generateButton(text, href.toString(), onClick);
     }
 
+    public static String generateButton(String text, URLHelper href, @Nullable String onClick, String attributes)
+    {
+        // 11525 : NPE caused by generateButton.
+        if (href == null)
+            return generateButton(text, "", onClick, attributes);
+        return generateButton(text, href.toString(), onClick, attributes);
+    }
+
     /* Renders an input of type submit wrapped in a span */
     public static String generateSubmitButton(String text)
     {

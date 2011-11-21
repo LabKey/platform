@@ -1592,9 +1592,9 @@ public class OntologyManager
 			if (null == property)
 				continue;
 
+            PropertyDescriptor pd = descriptors.get(property.getPropertyURI());
 			if (0 == property.getPropertyId())
 			{
-				PropertyDescriptor pd = descriptors.get(property.getPropertyURI());
 				if (null == pd)
 				{
                     PropertyDescriptor pdIn = new PropertyDescriptor(property.getPropertyURI(), property.getRangeURI(), property.getName(), c);
@@ -1607,7 +1607,6 @@ public class OntologyManager
 					descriptors.put(property.getPropertyURI(), pd);
 				}
 				property.setPropertyId(pd.getPropertyId());
-                validateProperty(PropertyService.get().getPropertyValidators(pd), pd, property.value(), errors, validatorCache);
             }
 			if (0 == property.getObjectId())
 			{
@@ -1620,6 +1619,11 @@ public class OntologyManager
 				}
 				property.setObjectId(objectId);
 			}
+            if (pd == null)
+            {
+                pd = getPropertyDescriptor(property.getPropertyId());
+            }
+            validateProperty(PropertyService.get().getPropertyValidators(pd), pd, property.value(), errors, validatorCache);
         }
         if (!errors.isEmpty())
             throw new ValidationException(errors);

@@ -17,6 +17,7 @@
 package org.labkey.api.study.actions;
 
 import org.apache.commons.beanutils.ConversionException;
+import org.apache.commons.lang.StringUtils;
 import org.jetbrains.annotations.NotNull;
 import org.labkey.api.exp.*;
 import org.labkey.api.exp.property.DomainProperty;
@@ -108,6 +109,7 @@ public class AssayRunUploadForm<ProviderType extends AssayProvider> extends Prot
             if (pd.getPropertyDescriptor().getPropertyType() == PropertyType.BOOLEAN &&
                     (value == null || value.length() == 0))
                 value = Boolean.FALSE.toString();
+            value = StringUtils.trimToNull(value);
 
             if (additionalFiles.containsKey(pd))
                 properties.put(pd, additionalFiles.get(pd).getPath());

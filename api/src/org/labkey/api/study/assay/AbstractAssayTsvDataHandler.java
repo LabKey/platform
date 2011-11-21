@@ -65,7 +65,14 @@ public abstract class AbstractAssayTsvDataHandler extends AbstractExperimentData
 
         Map<DataType, List<Map<String, Object>>> rawData = getValidationDataMap(data, dataFile, info, log, context, new DataLoaderSettings());
         assert(rawData.size() <= 1);
-        importRows(data, info.getUser(), run, protocol, provider, rawData.values().iterator().next());
+        try
+        {
+            importRows(data, info.getUser(), run, protocol, provider, rawData.values().iterator().next());
+        }
+        catch (ValidationException e)
+        {
+            throw new ExperimentException(e.toString(), e);
+        }
     }
 
     @Override
@@ -103,7 +110,7 @@ public abstract class AbstractAssayTsvDataHandler extends AbstractExperimentData
         }
     }
 
-    public void importRows(ExpData data, User user, ExpRun run, ExpProtocol protocol, AssayProvider provider, List<Map<String, Object>> rawData) throws ExperimentException
+    public void importRows(ExpData data, User user, ExpRun run, ExpProtocol protocol, AssayProvider provider, List<Map<String, Object>> rawData) throws ExperimentException, ValidationException
     {
         try
         {
@@ -143,10 +150,6 @@ public abstract class AbstractAssayTsvDataHandler extends AbstractExperimentData
             }
 
             ExperimentService.get().commitTransaction();
-        }
-        catch (ValidationException ve)
-        {
-            throw new ExperimentException(ve.toString(), ve);
         }
         catch (SQLException e)
         {

@@ -71,9 +71,6 @@ public abstract class XarSource implements Serializable
 
     /**
      * Transforms the dataFileURL, which may be relative, to a canonical, absolute URI
-     * @param dataFileURL
-     * @return
-     * @throws XarFormatException
      */
     public final String getCanonicalDataFileURL(String dataFileURL) throws XarFormatException
     {
@@ -93,8 +90,8 @@ public abstract class XarSource implements Serializable
                     urlToLookup = new File(uri).getPath();
                 }
             }
-            catch (IllegalArgumentException e) {}
-            catch (URISyntaxException e) {}
+            catch (IllegalArgumentException ignored) {}
+            catch (URISyntaxException ignored) {}
             result = canonicalizeDataFileURL(urlToLookup);
             _dataFileURLs.put(dataFileURL, result);
             _dataFileURLs.put(urlToLookup, result);
@@ -239,12 +236,7 @@ public abstract class XarSource implements Serializable
 
     public boolean allowImport(PipeRoot pr, Container container, File file)
     {
-        if (pr == null)
-        {
-            return false;
-        }
-
-        return pr.isUnderRoot(file);
+        return pr != null && pr.isUnderRoot(file);
     }
 
     public XarContext getXarContext()
