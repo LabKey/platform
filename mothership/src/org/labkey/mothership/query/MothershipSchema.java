@@ -336,6 +336,14 @@ public class MothershipSchema extends UserSchema
                 MothershipManager.get().getTableInfoServerSession() + " ss " +
                 " WHERE er.ExceptionStackTraceId = " + ExprColumn.STR_TABLE_ALIAS + ".ExceptionStackTraceId" +
                 " AND ss.ServerSessionId = er.ServerSessionId AND ss.SoftwareReleaseId = sr.SoftwareReleaseId)"), JdbcType.INTEGER);
+        maxRevisionColumn.setFk(new LookupForeignKey("SVNRevision", "SVNRevision")
+        {
+            @Override
+            public TableInfo getLookupTableInfo()
+            {
+                return getTable(MothershipSchema.SOFTWARE_RELEASES_TABLE_NAME);
+            }
+        });
         result.addColumn(maxRevisionColumn);
 
         ExprColumn minRevisionColumn = new ExprColumn(result, "MinSVNRevision", new SQLFragment("(SELECT MIN(SVNRevision) FROM " +
@@ -344,6 +352,14 @@ public class MothershipSchema extends UserSchema
                 MothershipManager.get().getTableInfoServerSession() + " ss " +
                 " WHERE er.ExceptionStackTraceId = " + ExprColumn.STR_TABLE_ALIAS + ".ExceptionStackTraceId" +
                 " AND ss.ServerSessionId = er.ServerSessionId AND ss.SoftwareReleaseId = sr.SoftwareReleaseId)"), JdbcType.INTEGER);
+        minRevisionColumn.setFk(new LookupForeignKey("SVNRevision", "SVNRevision")
+        {
+            @Override
+            public TableInfo getLookupTableInfo()
+            {
+                return getTable( MothershipSchema.SOFTWARE_RELEASES_TABLE_NAME);
+            }
+        });
         result.addColumn(minRevisionColumn);
 
         String path = MothershipManager.get().getIssuesContainer(getContainer());
