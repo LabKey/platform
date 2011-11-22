@@ -639,13 +639,19 @@ LABKEY.Security = new function()
          * that container. If the includeSubfolders config option is set to true, it will also return information
          * about all descendants the user is allowed to see.
          * @param config A configuration object with the following properties
+         * @param {Mixed} [config.container] A container id or full-path String or an Array of container id/full-path Strings.  If not present, the current container is used.
          * @param {boolean} [config.includeSubfolders] If set to true, the entire branch of containers will be returned.
          * If false, only the immediate children of the starting container will be returned (defaults to false).
          * @param {int} [config.depth] May be used to control the depth of recursion if includeSubfolders is set to true.
          * @param {function} config.success A reference to a function to call with the API results. This
          * function will be passed the following parameters:
          * <ul>
-         * <li><b>containersInfo:</b> an object with the following properties:
+         * <li><b>containersInfo:</b>
+         * If <code>config.container</code> is an Array, an object with property
+         * <code>containers</code> and value Array of 'container info' is returned.
+         * If <code>config.container</code> is a String, a object of 'container info' is returned.
+         * <br>
+         * The 'container info' properties are as follows:
          *  <ul>
          *      <li>id: the id of the requested container</li>
          *      <li>name: the name of the requested container</li>
@@ -680,6 +686,19 @@ LABKEY.Security = new function()
         getContainers : function(config)
         {
             var params = {};
+            config = config || {};
+            if (undefined != config.container)
+            {
+                if (Ext.isArray(config.container))
+                {
+                    params.multipleContainers = true;
+                }
+                else
+                {
+                    config.container = [ config.container ];
+                }
+                params.container = config.container;
+            }
             if(undefined != config.includeSubfolders)
                 params.includeSubfolders = config.includeSubfolders;
             if(undefined != config.depth)
