@@ -191,6 +191,21 @@ public class FilteredTable extends AbstractTableInfo implements ContainerFiltera
         return ret;
     }
 
+    @Override
+    public boolean hasContainerContext()
+    {
+        TableInfo t = getRealTable();
+        return t instanceof AbstractTableInfo && ((AbstractTableInfo)t).hasContainerContext();
+    }
+
+    @Override
+    public Container getContainer(Map context)
+    {
+        TableInfo t = getRealTable();
+        return ((AbstractTableInfo)t).getContainer(context);
+    }
+
+
     private String filterName(ColumnInfo c)
 	{
 		return c.getAlias();

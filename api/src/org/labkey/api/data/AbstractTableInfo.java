@@ -474,10 +474,12 @@ abstract public class AbstractTableInfo implements TableInfo, ContainerContext
 
     public StringExpression getDetailsURL(Set<FieldKey> columns, Container container)
     {
+        ContainerContext containerContext = hasContainerContext() ? this : container;
+
         for (DetailsURL dUrl : _detailsURLs)
         {
             if (dUrl.validateFieldKeys(columns))
-                return dUrl.copy(container);
+                return dUrl.copy(containerContext);
         }
         return null;
     }
