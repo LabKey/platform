@@ -1406,7 +1406,7 @@ public class DavController extends SpringActionController
                                 pathStr = pathStr + "/";
                             xml.writeProperty(null, "path", h(pathStr));
                         }
-                        if (property.equals("actions"))
+                        else if (property.equals("actions"))
                         {
                             Collection<NavTree> actions = resource.getActions(getUser());
                             xml.writeElement(null, "actions", XMLWriter.OPENING);
