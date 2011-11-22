@@ -478,7 +478,9 @@ public class AssayDesignerMainPanel extends VerticalPanel implements Saveable<GW
                 transformNamePanel.add(new InlineHTML("Transform Script"));
                 transformNamePanel.add(new HelpPopup("Transform Script", "<div>The full path to the transform script file. " +
                         "Transform scripts run before the assay data is imported and can reshape the data file to match " +
-                        "the expected import format.</div>" +
+                        "the expected import format. " +
+                        "For help writing a transform script refer to the " +
+                        "<a href=\"https://www.labkey.org/wiki/home/Documentation/page.view?name=programmaticQC\" target=\"_blank\">Programmatic Quality Control & Transformations</a> guide.</div>" +
                         "<br><div>The extension of the script file " +
                         "identifies the script engine that will be used to run the validation script. For example, " +
                         "a script named test.pl will be run with the Perl scripting engine. The scripting engine must be " +

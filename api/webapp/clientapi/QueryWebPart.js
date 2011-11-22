@@ -445,7 +445,7 @@ LABKEY.QueryWebPart = Ext.extend(Ext.util.Observable,
 
         //add the button bar config if any
         var json = {};
-        if (this.buttonBar && this.buttonBar.items && this.buttonBar.items.length > 0)
+        if (this.buttonBar && (this.buttonBar.position || (this.buttonBar.items && this.buttonBar.items.length > 0)))
             json.buttonBar = this.processButtonBar();
 
         // 10505: add non-removable sorts and filters to json (not url params).  These will be handled in QueryWebPart.java
