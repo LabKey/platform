@@ -1015,7 +1015,7 @@ public class QueryView extends WebPartView<Object>
         return button;
     }
 
-    protected ReportService.ItemFilter getItemFilter()
+    public ReportService.ItemFilter getItemFilter()
     {
         QueryDefinition def = QueryService.get().getQueryDef(getUser(), getContainer(), getSchema().getSchemaName(), getSettings().getQueryName());
         if (def == null)

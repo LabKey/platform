@@ -51,6 +51,7 @@ public class ViewInfo
 
     private ActionURL _editUrl;
     private ActionURL _runUrl;
+    private ActionURL _infoUrl;
 
     private String _description;
     private Container _container;
@@ -332,6 +333,16 @@ public class ViewInfo
         _dataType = dataType;
     }
 
+    public ActionURL getInfoUrl()
+    {
+        return _infoUrl;
+    }
+
+    public void setInfoUrl(ActionURL infoUrl)
+    {
+        _infoUrl = infoUrl;
+    }
+
     public JSONObject toJSON(User user)
     {
         JSONObject o = new JSONObject();
@@ -375,6 +386,8 @@ public class ViewInfo
             o.put("editUrl", getEditUrl().getLocalURIString());
         if (getRunUrl() != null)
             o.put("runUrl", getRunUrl().getLocalURIString());
+        if (getInfoUrl() != null)
+            o.put("infoUrl", getInfoUrl().getLocalURIString());
 
         if (getDescription() != null)
             o.put("description", getDescription());

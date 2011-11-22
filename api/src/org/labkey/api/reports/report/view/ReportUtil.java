@@ -47,6 +47,7 @@ import org.labkey.api.reports.report.ScriptReportDescriptor;
 import org.labkey.api.security.SecurityManager;
 import org.labkey.api.security.User;
 import org.labkey.api.security.UserManager;
+import org.labkey.api.security.permissions.AdminPermission;
 import org.labkey.api.study.DataSet;
 import org.labkey.api.study.StudyService;
 import org.labkey.api.util.PageFlowUtil;
@@ -478,6 +479,8 @@ public class ReportUtil
                         else
                             continue;
                     }
+                    if (c.hasPermission(user, AdminPermission.class))
+                        info.setInfoUrl(PageFlowUtil.urlProvider(ReportUrls.class).urlReportInfo(c).addParameter("reportId", descriptor.getReportId().toString()));
                     info.setDescription(descriptor.getReportDescription());
                     info.setContainer(descriptor.lookupContainer());
 
