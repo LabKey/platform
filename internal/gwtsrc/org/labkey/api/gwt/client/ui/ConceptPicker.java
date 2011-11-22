@@ -222,7 +222,8 @@ public class ConceptPicker extends TriggerField<ConceptPicker.ConceptType>
             super();
             _service = lookupService;
             setModal(true);
-            setAutoHide(true);
+// TODO : josh changed this to setAutoHide(true), but that breaks the lookup combo boxes, so matt removed it
+//            setAutoHide(true);
             setSize(400, 500);
             setAutoHeight(true);
             setHeading("Choose Field Type");
@@ -312,7 +313,13 @@ public class ConceptPicker extends TriggerField<ConceptPicker.ConceptType>
             apply(true);
         }
 
-        
+
+        @Override
+        public void hide()
+        {
+            super.hide();
+        }
+
         void init(ConceptPicker picker)
         {
             _current = picker;
