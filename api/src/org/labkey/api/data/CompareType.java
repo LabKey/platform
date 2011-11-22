@@ -32,7 +32,6 @@ import org.labkey.api.query.FieldKey;
 import org.labkey.api.util.DateUtil;
 import org.labkey.data.xml.queryCustomView.OperatorType;
 
-import java.sql.SQLException;
 import java.sql.Types;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -629,9 +628,16 @@ public enum CompareType
             case Types.TINYINT:
             case Types.SMALLINT:
             {
+                // Treat the empty string as null
+                String stringValue = (String)paramVal;
+                stringValue = StringUtils.trimToNull(stringValue);
+                if (stringValue == null)
+                {
+                    return null;
+                }
                 try
                 {
-                    return new Integer((String) paramVal);
+                    return new Integer(stringValue);
                 }
                 catch (NumberFormatException e)
                 {
@@ -656,7 +662,14 @@ public enum CompareType
             {
                 try
                 {
-                    return ConvertUtils.convert((String) paramVal, Boolean.class);
+                    // Treat the empty string as null
+                    String stringValue = (String)paramVal;
+                    stringValue = StringUtils.trimToNull(stringValue);
+                    if (stringValue == null)
+                    {
+                        return null;
+                    }
+                    return ConvertUtils.convert(stringValue, Boolean.class);
                 }
                 catch (Exception e)
                 {
@@ -687,7 +700,14 @@ public enum CompareType
             {
                 try
                 {
-                    return new Double((String) paramVal);
+                    // Treat the empty string as null
+                    String stringValue = (String)paramVal;
+                    stringValue = StringUtils.trimToNull(stringValue);
+                    if (stringValue == null)
+                    {
+                        return null;
+                    }
+                    return new Double(stringValue);
                 }
                 catch (NumberFormatException e)
                 {

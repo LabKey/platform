@@ -19,6 +19,7 @@ package org.labkey.api.study.assay;
 import org.labkey.api.data.*;
 import org.labkey.api.exp.ExperimentRunType;
 import org.labkey.api.exp.api.ExpProtocol;
+import org.labkey.api.exp.property.Domain;
 import org.labkey.api.view.DataView;
 import org.labkey.api.view.ViewContext;
 import org.labkey.api.view.ActionURL;
@@ -57,16 +58,26 @@ public class AssayRunType extends ExperimentRunType
         viewSelectedButton.setActionType(ActionButton.Action.POST);
         bar.add(viewSelectedButton);
 
-        ActionURL copyURL = PageFlowUtil.urlProvider(AssayUrls.class).getCopyToStudyURL(context.getContainer(), _protocol);
-        copyURL.addParameter("runIds", true);
-        if (table.getContainerFilter() != null)
-            copyURL.addParameter("containerFilterName", table.getContainerFilter().getType().name());
-        ActionButton copySelectedButton = new ActionButton(copyURL, "Copy to Study");
-        copySelectedButton.setDisplayPermission(InsertPermission.class);
-        copySelectedButton.setURL(copyURL);
-        copySelectedButton.setRequiresSelection(true);
-        copySelectedButton.setActionType(ActionButton.Action.POST);
-        bar.add(copySelectedButton);
+        // Hack - this check is to prevent us from showing Copy-To-Study for Illumina or other prototype assays that
+        // don't implement any results import yet
+        AssayProvider provider = AssayService.get().getProvider(_protocol);
+        if (provider != null)
+        {
+            Domain domain = provider.getResultsDomain(_protocol);
+            if (domain != null && domain.getTypeId() > 0)
+            {
+                ActionURL copyURL = PageFlowUtil.urlProvider(AssayUrls.class).getCopyToStudyURL(context.getContainer(), _protocol);
+                copyURL.addParameter("runIds", true);
+                if (table.getContainerFilter() != null)
+                    copyURL.addParameter("containerFilterName", table.getContainerFilter().getType().name());
+                ActionButton copySelectedButton = new ActionButton(copyURL, "Copy to Study");
+                copySelectedButton.setDisplayPermission(InsertPermission.class);
+                copySelectedButton.setURL(copyURL);
+                copySelectedButton.setRequiresSelection(true);
+                copySelectedButton.setActionType(ActionButton.Action.POST);
+                bar.add(copySelectedButton);
+            }
+        }
 
         List<ActionButton> buttons = AssayService.get().getImportButtons(_protocol, context.getUser(), context.getContainer(), false);
         bar.addAll(buttons);

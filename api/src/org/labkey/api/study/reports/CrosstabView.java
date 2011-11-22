@@ -99,7 +99,7 @@ public class CrosstabView extends WebPartView
         {
             for (Object rowVal : _crosstab.getRowHeaders())
             {
-                pw.printf("<tr>\n\t<td class=\"labkey-row-header\" rowspan=\"%d\">%s</td>\n", statSet.size(), rowVal);
+                pw.printf("<tr>\n\t<td class=\"labkey-row-header\" rowspan=\"%d\">%s</td>\n", statSet.size(), rowVal == null ? "" : rowVal);
 
                 int statRow = 0;
                 for (Stats.StatDefinition rowStat : statSet)

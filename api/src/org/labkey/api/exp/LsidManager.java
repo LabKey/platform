@@ -164,7 +164,13 @@ public class LsidManager
 
     private LsidHandler findHandler(Lsid lsid)
     {
-        Map<String, LsidHandler> handlerMap = authorityMap.get(lsid.getAuthority());
+        String authority = lsid.getAuthority();
+        if (authority == null)
+        {
+            // ConcurrentHashMap doesn't support null keys, so do our own check
+            return null;
+        }
+        Map<String, LsidHandler> handlerMap = authorityMap.get(authority);
         //Try the default authority for this server if not found
         if (null == handlerMap)
             handlerMap = authorityMap.get(AppProps.getInstance().getDefaultLsidAuthority());

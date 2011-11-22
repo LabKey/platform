@@ -237,7 +237,7 @@ public class AssayResultTable extends FilteredTable implements UpdateableTableIn
         if (folderCol == null)
         {
             // Insert a folder/container column so that we can build up the right URL for links to this row of data 
-            SQLFragment folderSQL = new SQLFragment("(SELECT Container FROM exp.Data d WHERE RowId = DataId)");
+            SQLFragment folderSQL = new SQLFragment("(SELECT Container FROM exp.Data d WHERE d.RowId = " + ExprColumn.STR_TABLE_ALIAS + ".DataId)");
             folderCol = new ExprColumn(this, "Folder", folderSQL, JdbcType.VARCHAR);
             folderCol.setHidden(true);
             folderCol.setFk(new ContainerForeignKey());
