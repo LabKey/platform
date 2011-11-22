@@ -48,7 +48,15 @@ public class AssignedToDisplayColumn extends DataColumn
     public void renderInputHtml(RenderContext ctx, Writer out, Object value) throws IOException
     {
         List<User> projectUsers = SecurityManager.getProjectUsers(_container.getProject());
-        List<User> list = new ArrayList<User>(projectUsers);
+        List<User> list = new ArrayList<User>();
+        // Filter list to only show active users
+        for (User user : projectUsers)
+        {
+            if (user.isActive())
+            {
+                list.add(user);
+            }
+        }
         Collections.sort(list, new UserDisplayNameComparator());
 
         out.write("<select name='");

@@ -216,7 +216,7 @@ public class DefaultValueServiceImpl extends DefaultValueService
         Container checkContainer = container;
         if (user != null)
         {
-            while (!checkContainer.isRoot() && (userValues == null || userValues.isEmpty()))
+            while (checkContainer != null && !checkContainer.isRoot() && (userValues == null || userValues.isEmpty()))
             {
                 String userDefaultLSID = getUserDefaultsLSID(checkContainer, user, domain, scope);
                 userValues = getObjectValues(checkContainer, domain, userDefaultLSID);
@@ -226,7 +226,7 @@ public class DefaultValueServiceImpl extends DefaultValueService
 
         Map<DomainProperty, Object> globalValues = null;
         checkContainer = container;
-        while (!checkContainer.isRoot() && (globalValues == null || globalValues.isEmpty()))
+        while (checkContainer != null && !checkContainer.isRoot() && (globalValues == null || globalValues.isEmpty()))
         {
             String globalDefaultLSID = getContainerDefaultsLSID(checkContainer, domain);
             globalValues = getObjectValues(checkContainer, domain, globalDefaultLSID);

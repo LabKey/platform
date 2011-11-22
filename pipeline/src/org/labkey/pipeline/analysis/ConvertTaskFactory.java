@@ -170,8 +170,10 @@ public class ConvertTaskFactory extends AbstractTaskFactory<ConvertTaskFactorySe
     public boolean isJobComplete(PipelineJob job)
     {
         TaskFactory factory = findCommandFactory(job);
-        assert factory != null : "Unexpected missing converter for job: \n" +
-                PipelineJobService.get().getJobStore().toXML(job);
+        if (factory == null)
+        {
+            throw new IllegalStateException("Unexpected missing converter for job: \n" + PipelineJobService.get().getJobStore().toXML(job));
+        }
 
         return factory.isJobComplete(job);
     }

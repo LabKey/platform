@@ -593,7 +593,7 @@ public class UploadSamplesHelper
                 }
                 else if (potentialParents == null)
                 {
-                    throw new ExperimentException("Could not find parent material with name '" + parentName + "'.");
+                    throw new ValidationException("Could not find parent material with name '" + parentName + "'.");
                 }
                 else if (potentialParents.size() > 1)
                 {

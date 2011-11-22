@@ -309,6 +309,9 @@ public class ExpRunTableImpl extends ExpTableImpl<ExpRunTable.Column> implements
                 return createOutputLookupColumn();
             case DataOutputs:
                 ColumnInfo dataOutputsCol = wrapColumn(alias, _rootTable.getColumn("RowId"));
+                dataOutputsCol.setReadOnly(true);
+                dataOutputsCol.setShownInInsertView(false);
+                dataOutputsCol.setShownInUpdateView(false);
                 dataOutputsCol.setFk(new MultiValuedForeignKey(new LookupForeignKey("RunId")
                 {
                     @Override

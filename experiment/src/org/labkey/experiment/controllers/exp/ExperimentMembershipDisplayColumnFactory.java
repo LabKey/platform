@@ -152,7 +152,12 @@ public class ExperimentMembershipDisplayColumnFactory implements DisplayColumnFa
                 ColumnInfo columnInfo = ctx.getFieldMap().get(getRunRowIdFieldKey());
                 if (columnInfo != null)
                 {
-                    return ((Number)columnInfo.getValue(ctx)).intValue();
+                    Object value = columnInfo.getValue(ctx);
+                    if (value instanceof Number)
+                    {
+                        return ((Number) value).intValue();
+                    }
+                    return -1;
                 }
                 else
                 {

@@ -811,10 +811,8 @@ public class MothershipController extends SpringActionController
 
         if (getUser() != null && !getUser().isGuest())
         {
-            builder.append("<a class=\"labkey-text-link\" href=\"");
-            builder.append("showExceptions.view?ExceptionSummary.BugNumber~isblank=&ExceptionSummary.AssignedTo/DisplayName~eq=");
-            builder.append(getUser().getDisplayName(getViewContext().getUser()));
-            builder.append("\">My Exceptions</a><br>");
+            String link = "showExceptions.view?ExceptionSummary.BugNumber~isblank=&ExceptionSummary.AssignedTo~eq=" + getUser().getUserId();
+            builder.append(PageFlowUtil.textLink("My Exceptions", link));
         }
 
         return builder.toString();

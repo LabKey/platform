@@ -253,11 +253,14 @@ public class AssaySchemaImpl extends AssaySchema
 
         // UNDONE: need to add batch domain to table.getDomain()
         Domain batchDomain = provider.getBatchDomain(protocol);
-        ColumnInfo propsCol = result.addColumns(batchDomain, BATCH_PROPERTIES_COLUMN_NAME);
-        if (propsCol != null)
+        if (batchDomain != null)
         {
-            // Will be null if the domain doesn't have any properties
-            propsCol.setFk(new AssayPropertyForeignKey(batchDomain));
+            ColumnInfo propsCol = result.addColumns(batchDomain, BATCH_PROPERTIES_COLUMN_NAME);
+            if (propsCol != null)
+            {
+                // Will be null if the domain doesn't have any properties
+                propsCol.setFk(new AssayPropertyForeignKey(batchDomain));
+            }
         }
 
         for (ColumnInfo col : result.getColumns())
@@ -277,11 +280,14 @@ public class AssaySchemaImpl extends AssaySchema
 
         // UNDONE: need to add run domain to table.getDomain()
         Domain runDomain = provider.getRunDomain(protocol);
-        ColumnInfo propsCol = runTable.addColumns(runDomain, RUN_PROPERTIES_COLUMN_NAME);
-        if (propsCol != null)
+        if (runDomain != null)
         {
-            // Will be null if the domain doesn't have any properties
-            propsCol.setFk(new AssayPropertyForeignKey(runDomain));
+            ColumnInfo propsCol = runTable.addColumns(runDomain, RUN_PROPERTIES_COLUMN_NAME);
+            if (propsCol != null)
+            {
+                // Will be null if the domain doesn't have any properties
+                propsCol.setFk(new AssayPropertyForeignKey(runDomain));
+            }
         }
 
         List<FieldKey> visibleColumns = new ArrayList<FieldKey>(runTable.getDefaultVisibleColumns());

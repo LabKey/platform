@@ -3704,7 +3704,16 @@ public class ExperimentController extends SpringActionController
         {
             Container c = getContainer();
 
+            if (form.getOutputCount() <= 0)
+            {
+                form.setOutputCount(1);
+            }
+
             ExpSampleSet sampleSet = ExperimentService.get().getSampleSet(form.getTargetSampleSetId());
+            if (form.getTargetSampleSetId() != 0 && sampleSet == null)
+            {
+                throw new NotFoundException("Could not find sample set with rowId " + form.getTargetSampleSetId());
+            }
 
             InsertView insertView = new InsertView(new DataRegion(), errors);
 
