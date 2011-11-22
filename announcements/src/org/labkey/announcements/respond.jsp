@@ -37,13 +37,17 @@
 <script type="text/javascript">
 function validateForm(form)
 {
-    var trimmedTitle = form.title.value.trim();
+    if(form.title){
+        var trimmedTitle = form.title.value.trim();
 
-    if (trimmedTitle.length > 0)
+        if (trimmedTitle.length > 0)
+            return true;
+
+        Ext.Msg.alert("Error", "Title must not be blank");
+        return false;
+    } else {
         return true;
-
-    Ext.Msg.alert("Error", "Title must not be blank");
-    return false;
+    }
 }
 Ext.onReady(function(){
     new Ext.Resizable('body', { handles:'se', minWidth:200, minHeight:100, wrap:true });

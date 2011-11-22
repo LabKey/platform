@@ -28,6 +28,8 @@
 <%@ page import="org.labkey.api.view.ViewContext" %>
 <%@ page import="java.util.LinkedHashMap" %>
 <%@ page import="java.util.Map" %>
+<%@ page import="java.util.ArrayList" %>
+<%@ page import="java.util.Collections" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 
@@ -39,6 +41,7 @@
     Map<String, String> pm = webPart.getPropertyMap();
 
     Map<String, String> reportMap = new LinkedHashMap<String, String>();
+    ArrayList<String> reportNames = new ArrayList<String>();
     for (Report report : ReportService.get().getReports(context.getUser(), context.getContainer()))
     {
         if (!StringUtils.isEmpty(report.getDescriptor().getReportName()))
@@ -46,9 +49,11 @@
             if ("Study.attachmentReport".equals(report.getType()) || "Study.exportExcelReport".equals(report.getType()))
                 continue;
 
-            reportMap.put(report.getDescriptor().getReportId().toString(), report.getDescriptor().getReportName());
+            reportMap.put(report.getDescriptor().getReportName(), report.getDescriptor().getReportId().toString());
+            reportNames.add(report.getDescriptor().getReportName().toString());
         }
     }
+    Collections.sort(reportNames, String.CASE_INSENSITIVE_ORDER);
 %>
 
 <form name="frmCustomize" method="post" action="<%=h(webPart.getCustomizePostURL(context))%>">
@@ -61,7 +66,24 @@
             <td class="labkey-form-label">Report or View:</td>
             <td>
                 <select id="reportId" name="<%=Report.renderParam.reportId.name()%>" onchange="getSectionNames(this);">
-                    <labkey:options value="<%=pm.get(Report.renderParam.reportId.name())%>" map="<%=reportMap%>" />
+                    <%
+                        for (String reportName : reportNames)
+                        {
+                            if (reportMap.get(reportName).equals(pm.get(Report.renderParam.reportId.name())))
+                            {
+                                %>
+                                    <option value="<%=reportMap.get(reportName)%>" selected><%=reportName%></option>
+                                <%
+                            }
+                            else
+                            {
+                                %>
+                                    <option value="<%=reportMap.get(reportName)%>"><%=reportName%></option>
+                                <%
+                            }
+                        }
+
+                    %>
                 </select>
             </td>
         </tr>

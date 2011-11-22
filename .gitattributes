@@ -128,6 +128,7 @@ audit/module.properties -text
 audit/resources/schemas/audit.xml -text
 audit/resources/schemas/dbscripts/postgresql/audit-0.00-9.20.sql -text
 audit/resources/schemas/dbscripts/postgresql/audit-10.10-10.20.sql -text
+audit/resources/schemas/dbscripts/postgresql/audit-11.20-11.21.sql -text
 audit/resources/schemas/dbscripts/postgresql/obsolete/audit-0.00-0.01.sql -text
 audit/resources/schemas/dbscripts/postgresql/obsolete/audit-0.00-2.30.sql -text
 audit/resources/schemas/dbscripts/postgresql/obsolete/audit-0.00-8.30.sql -text
@@ -143,6 +144,7 @@ audit/resources/schemas/dbscripts/postgresql/obsolete/audit-9.10-9.11.sql -text
 audit/resources/schemas/dbscripts/postgresql/obsolete/audit-9.10-9.20.sql -text
 audit/resources/schemas/dbscripts/sqlserver/audit-0.00-9.20.sql -text
 audit/resources/schemas/dbscripts/sqlserver/audit-10.10-10.20.sql -text
+audit/resources/schemas/dbscripts/sqlserver/audit-11.20-11.21.sql -text
 audit/resources/schemas/dbscripts/sqlserver/obsolete/audit-0.00-0.01.sql -text
 audit/resources/schemas/dbscripts/sqlserver/obsolete/audit-0.00-2.30.sql -text
 audit/resources/schemas/dbscripts/sqlserver/obsolete/audit-0.00-8.30.sql -text

@@ -34,7 +34,7 @@ public class LogManager
     private static final Logger _log = Logger.getLogger(LogManager.class);
     static private final LogManager _instance = new LogManager();
     static final int COMMENT_MAX = 500;
-    static final int STRING_KEY_MAX = 200;
+    static final int STRING_KEY_MAX = 1000;
 
     private LogManager(){}
     static public LogManager get()
@@ -85,7 +85,7 @@ public class LogManager
     {
         if (input != null && input.length() > max)
         {
-            _log.error("Audit field input : \n" + input + "\nexceeded the maximum length : " + max);
+            _log.warn("Audit field input : \n" + input + "\nexceeded the maximum length : " + max);
             return input.substring(0, max-3) + "...";
         }
         return input;
