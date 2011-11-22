@@ -260,9 +260,9 @@ LABKEY.Portal = new function()
         /**
          * Move an existing web part up within its portal page, identifying the web part by its unique web part ID.
          * @param config An object which contains the following configuration properties.
-         * @param {String} config.pageId Optional, reserved for a time when multiple portal pages are allowed per container.
+         * @param {String} [config.pageId] Reserved for a time when multiple portal pages are allowed per container.
          * If not provided, main portal page for the container will be queried.
-         * @param {String} config.containerPath Optional.  Specifies the container in which the web part query should be performed.
+         * @param {String} [config.containerPath] Specifies the container in which the web part query should be performed.
          * If not provided, the method will operate on the current container.
          * @param {Function} config.success
                 Function called when the this function completes successfully.
@@ -302,12 +302,13 @@ LABKEY.Portal = new function()
         /**
          * Move an existing web part up within its portal page, identifying the web part by index.
          * @param config An object which contains the following configuration properties.
-         * @param {String} config.pageId Optional, reserved for a time when multiple portal pages are allowed per container.
+         * @param {String} [config.pageId] Reserved for a time when multiple portal pages are allowed per container.
          * If not provided, main portal page for the container will be modified.
-         * @param {String} config.containerPath Optional.  Specifies the container in which the web part modification should be performed.
+         * @param {String} [config.containerPath] Specifies the container in which the web part modification should be performed.
          * If not provided, the method will operate on the current container.
          * @param {String} config.webPartId The unique integer ID of the web part to be moved.
-         * @param {Boolean} config.updateDOM Optional, defaults to false.  Indicates whether the current page's DOM should be updated to reflect changes to web part layout.
+         * @param {Boolean} [config.updateDOM] Indicates whether the current page's DOM should be updated to reflect changes to web part layout.
+         * Defaults to false.
          * @param {Function} config.success
                 Function called when the this function completes successfully.
                 This function will be called with the following arguments:
@@ -351,12 +352,13 @@ LABKEY.Portal = new function()
          * Move an existing web part up within its portal page, identifying the web part by the unique ID of the containing span.
          * This span will have name 'webpart'.
          * @param config An object which contains the following configuration properties.
-         * @param {String} config.pageId Optional, reserved for a time when multiple portal pages are allowed per container.
+         * @param {String} [config.pageId] Reserved for a time when multiple portal pages are allowed per container.
          * If not provided, main portal page for the container will be modified.
-         * @param {String} config.containerPath Optional.  Specifies the container in which the web part modification should be performed.
+         * @param {String} [config.containerPath] Specifies the container in which the web part modification should be performed.
          * If not provided, the method will operate on the current container.
          * @param {String} config.webPartId The unique integer ID of the web part to be moved.
-         * @param {Boolean} config.updateDOM Optional, defaults to false.  Indicates whether the current page's DOM should be updated to reflect changes to web part layout.
+         * @param {Boolean} [config.updateDOM] Indicates whether the current page's DOM should be updated to reflect changes to web part layout.
+         * Defaults to false.
          * @param {Function} config.success
                 Function called when the this function completes successfully.
                 This function will be called with the following arguments:
@@ -397,12 +399,13 @@ LABKEY.Portal = new function()
         /**
          * Move an existing web part up within its portal page.
          * @param config An object which contains the following configuration properties.
-         * @param {String} config.pageId Optional, reserved for a time when multiple portal pages are allowed per container.
+         * @param {String} [config.pageId] Reserved for a time when multiple portal pages are allowed per container.
          * If not provided, main portal page for the container will be modified.
-         * @param {String} config.containerPath Optional.  Specifies the container in which the web part modification should be performed.
+         * @param {String} [config.containerPath] Specifies the container in which the web part modification should be performed.
          * If not provided, the method will operate on the current container.
          * @param {String} config.webPartId The unique integer ID of the web part to be moved.
-         * @param {Boolean} config.updateDOM Optional, defaults to false.  Indicates whether the current page's DOM should be updated to reflect changes to web part layout.
+         * @param {Boolean} [config.updateDOM] Indicates whether the current page's DOM should be updated to reflect changes to web part layout.
+         * Defaults to false.
          * @param {Function} config.success
                 Function called when the this function completes successfully.
                 This function will be called with the following arguments:

@@ -24,7 +24,7 @@
  * @constructor
  * @param {Object} config A configuration ojbect containing the following properties:
  * @param {Element} config.formElement A reference to the HTML form element you want to track.
- * @param {String} [config.warningMessage] An optional warning message to display if the user
+ * @param {String} [config.warningMessage] A warning message to display if the user
  * attempts to leave the page while the form is still dirty. If not supplied, a default message is used.
  * @param {Boolean} [config.showWarningMessage] Set to false to stop this from displaying the warning message
  * when the user attempts to leave the page while the form is still dirty. If you only want to use this class

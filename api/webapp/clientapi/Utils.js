@@ -156,8 +156,8 @@ LABKEY.Utils = new function()
         * any error messages from the server.
         * @param {XMLHttpRequest} responseObj The XMLHttpRequest object containing the response data.
         * @param {Error} [exceptionObj] A JavaScript Error object caught by the calling code.
-        * @param {boolean} showExceptionClass Optional flag to display the java class of the exception.
-        * @param {String} msgPrefix Optional prefix to the error message (defaults to: 'An error occurred trying to load:')
+        * @param {boolean} [showExceptionClass] Flag to display the java class of the exception.
+        * @param {String} [msgPrefix] Prefix to the error message (defaults to: 'An error occurred trying to load:')
         * The error dialog will display the Error's name and message, if available. Ext.data.DataReader implementations
         * may throw this type of error object.
         */
@@ -591,12 +591,12 @@ LABKEY.Utils.convertToExcel(
          * @param {Object} config a configuration object with the following properties:
          * @param {Function} config.testCallback A function that returns true or false. This will be called every
          * ten milliseconds until it returns true or the maximum number of tests have been made.
-         * @param {Array} [config.testArguments] An optional array of arguments to pass to the testCallback function
+         * @param {Array} [config.testArguments] A array of arguments to pass to the testCallback function
          * @param {Function} config.success The function to call when the testCallback returns true.
-         * @param {Array} [config.successArguments] An optional array of arguments to pass to the successCallback function
+         * @param {Array} [config.successArguments] A array of arguments to pass to the successCallback function
          * @param {Object} [config.failure] A function to call when the testCallback throws an exception, or when
          * the maximum number of tests have been made.
-         * @param {Array} [config.errorArguments] An optional array of arguments to pass to the errorCallback function
+         * @param {Array} [config.errorArguments] A array of arguments to pass to the errorCallback function
          * @param {Object} [config.scope] A scope to use when calling any of the callback methods (defaults to this)
          * @param {int} [config.maxTests] Maximum number of tests before the errorCallback is called (defaults to 1000).
          *
@@ -805,8 +805,8 @@ LABKEY.Utils.convertToExcel(
          * with client-side code.  If noAuditLog=true is used, the helper will not log the error.
          *
          * @param {Object} error The error object passed to the callback function
-         * @param {String} error.containerPath Optional. container where errors will be logged. Defaults to /shared
-         * @param {Boolean} error.noAuditLog Optional. If false, the errors will not be logged in the audit table.  Defaults to true
+         * @param {String} [error.containerPath] Container where errors will be logged. Defaults to /shared
+         * @param {Boolean} [error.noAuditLog] If false, the errors will not be logged in the audit table.  Defaults to true
          *
          * @example &lt;script type="text/javascript"&gt;
         //basic usage

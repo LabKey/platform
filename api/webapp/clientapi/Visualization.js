@@ -17,25 +17,6 @@
  * <p/>
  */
 
-function getSuccessCallbackWrapper(createMeasureFn, fn, scope)
-{
-    return function(response, options)
-    {
-        //ensure response is JSON before trying to decode
-        var json = null;
-        var measures = null;
-        if (response && response.getResponseHeader && response.getResponseHeader('Content-Type')
-                && response.getResponseHeader('Content-Type').indexOf('application/json') >= 0)
-        {
-            json = Ext.util.JSON.decode(response.responseText);
-            measures = createMeasureFn(json);
-        }
-
-        if(fn)
-            fn.call(scope || this, measures, response);
-    };
-}
-
 /**
  * @namespace Visualization static class to programmatically retrieve visualization-ready data.  Also allows
  * persistence of various visualization types.
@@ -78,6 +59,32 @@ LABKEY.Visualization = new function() {
         }
     }
 
+    /**
+     * This is used internally to automatically parse returned JSON and call another success function. It is based off of
+     * LABKEY.Utils.getCallbackWrapper, however, it will call the createMeasureFn function before calling the success function.
+     * @param createMeasureFn
+     * @param fn
+     * @param scope
+     */
+    function getSuccessCallbackWrapper(createMeasureFn, fn, scope)
+    {
+        return function(response, options)
+        {
+            //ensure response is JSON before trying to decode
+            var json = null;
+            var measures = null;
+            if (response && response.getResponseHeader && response.getResponseHeader('Content-Type')
+                    && response.getResponseHeader('Content-Type').indexOf('application/json') >= 0)
+            {
+                json = Ext.util.JSON.decode(response.responseText);
+                measures = createMeasureFn(json);
+            }
+
+            if(fn)
+                fn.call(scope || this, measures, response);
+        };
+    }
+
     /*-- public methods --*/
     /** @scope LABKEY.Visualization */
     return {
@@ -107,7 +114,8 @@ LABKEY.Visualization = new function() {
          * Returns the set of plottable measures found in the current container.
          * @param config An object which contains the following configuration properties.
          * @param {Array} config.filters An array of {@link LABKEY.Visualization.Filter} objects.
-         * @param {Boolean} [config.dateMeasures] Optional, defaults to 'false'.  Indicates whether date measures should be returned instead of numeric measures.
+         * @param {Boolean} [config.dateMeasures] Indicates whether date measures should be returned instead of numeric measures.
+         * Defaults to false.
          * @param {Function} config.success
 				Function called when execution succeeds. Will be called with one argument:
 				<ul><li><b>measures</b>: an array of {@link LABKEY.Visualization.Measure} objects.</li>
@@ -239,9 +247,9 @@ LABKEY.Visualization = new function() {
          * @param {Boolean} [config.replace] Whether this 'save' call should replace an existing report with the same name.
          * If false, the call to 'save' will fail if another report with the same name exists.
          * @param {String} [config.description] A description of the saved report.
-         * @param {String} [config.shared] Optional boolean indicating whether this report is viewable by all users with read
+         * @param {String} [config.shared] Boolean indicating whether this report is viewable by all users with read
          * permissions to the visualization's folder.  If false, only the creating user can see the visualization.  Defaults to true.
-         * @param {String} [config.svg] Optional string svg to be used to generate a thumbnail
+         * @param {String} [config.svg] String svg to be used to generate a thumbnail
          * @param {String} [config.schemaName] Optional, but required if config.queryName is provided.  Allows the visualization to
          * be scoped to a particular query.  If scoped, this visualization will appear in the 'views' menu for that query.
          * @param {String} [config.queryName] Optional, but required if config.schemaName is provided.  Allows the visualization to

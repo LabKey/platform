@@ -193,7 +193,7 @@ LABKEY.Query = new function()
                    related properties (url, mvValue, mvIndicator, etc.)
          * @param {Integer} [config.timeout] The maximum number of milliseconds to allow for this operation before
          *       generating a timeout error (defaults to 30000).
-         * @param {Object} [config.scope] An optional scope for the callback functions. Defaults to "this"
+         * @param {Object} [config.scope] A scope for the callback functions. Defaults to "this"
          * @returns {Mixed} In client-side scripts, this method will return a transaction id
          * for the async request that can be used to cancel the request
          * (see <a href="http://dev.sencha.com/deploy/dev/docs/?class=Ext.data.Connection&member=abort" target="_blank">Ext.data.Connection.abort</a>).
@@ -363,7 +363,7 @@ LABKEY.Query = new function()
                   ExtendedSelectRowsResults format each column in each row
                   will be another object (not just a scalar value) with a "value" property as well as other
                   related properties (url, mvValue, mvIndicator, etc.)
-        * @param {Object} [config.scope] An optional scope for the callback functions. Defaults to "this"
+        * @param {Object} [config.scope] A scope for the callback functions. Defaults to "this"
          * @returns {Mixed} In client-side scripts, this method will return a transaction id
          * for the async request that can be used to cancel the request
          * (see <a href="http://dev.sencha.com/deploy/dev/docs/?class=Ext.data.Connection&member=abort" target="_blank">Ext.data.Connection.abort</a>).
@@ -500,7 +500,7 @@ LABKEY.Query = new function()
         * @param {Integer} [config.timeout] The maximum number of milliseconds to allow for this operation before
         *       generating a timeout error (defaults to 30000).
         * @param {boolean} [config.transacted] Whether all of the updates should be done in a single transaction, so they all succeed or all fail. Defaults to true
-        * @param {Object} [config.scope] An optional scope for the callback functions. Defaults to "this"
+        * @param {Object} [config.scope] A scope for the callback functions. Defaults to "this"
          * @returns {Mixed} In client-side scripts, this method will return a transaction id
          * for the async request that can be used to cancel the request
          * (see <a href="http://dev.sencha.com/deploy/dev/docs/?class=Ext.data.Connection&member=abort" target="_blank">Ext.data.Connection.abort</a>).
@@ -545,7 +545,7 @@ LABKEY.Query = new function()
         *       generating a timeout error (defaults to 30000).
         * @param {boolean} [config.transacted] Whether all of the row changes for all of the tables
         * should be done in a single transaction, so they all succeed or all fail. Defaults to true
-        * @param {Object} [config.scope] An optional scope for the callback functions. Defaults to "this"
+        * @param {Object} [config.scope] A scope for the callback functions. Defaults to "this"
          * @returns {Mixed} In client-side scripts, this method will return a transaction id
          * for the async request that can be used to cancel the request
          * (see <a href="http://dev.sencha.com/deploy/dev/docs/?class=Ext.data.Connection&member=abort" target="_blank">Ext.data.Connection.abort</a>).
@@ -604,7 +604,7 @@ LABKEY.Query = new function()
         * @param {Integer} [config.timeout] The maximum number of milliseconds to allow for this operation before
         *       generating a timeout error (defaults to 30000).
         * @param {boolean} [config.transacted] Whether all of the inserts should be done in a single transaction, so they all succeed or all fail. Defaults to true
-        * @param {Object} [config.scope] An optional scope for the callback functions. Defaults to "this"
+        * @param {Object} [config.scope] A scope for the callback functions. Defaults to "this"
          * @returns {Mixed} In client-side scripts, this method will return a transaction id
          * for the async request that can be used to cancel the request
          * (see <a href="http://dev.sencha.com/deploy/dev/docs/?class=Ext.data.Connection&member=abort" target="_blank">Ext.data.Connection.abort</a>).
@@ -666,7 +666,7 @@ LABKEY.Query = new function()
         * @param {Integer} [config.timeout] The maximum number of milliseconds to allow for this operation before
         *       generating a timeout error (defaults to 30000).
         * @param {boolean} [config.transacted] Whether all of the deletes should be done in a single transaction, so they all succeed or all fail. Defaults to true
-        * @param {Object} [config.scope] An optional scope for the callback functions. Defaults to "this"
+        * @param {Object} [config.scope] A scope for the callback functions. Defaults to "this"
          * @returns {Mixed} In client-side scripts, this method will return a transaction id
          * for the async request that can be used to cancel the request
          * (see <a href="http://dev.sencha.com/deploy/dev/docs/?class=Ext.data.Connection&member=abort" target="_blank">Ext.data.Connection.abort</a>).
@@ -728,7 +728,7 @@ LABKEY.Query = new function()
          * </ul>
          * @param {String} [config.containerPath] A container path in which to execute this command. If not supplied,
          * the current container will be used.
-         * @param {Object} [config.scope] An optional scope for the callback functions. Defaults to "this"
+         * @param {Object} [config.scope] A scope for the callback functions. Defaults to "this"
          * @returns {Mixed} In client-side scripts, this method will return a transaction id
          * for the async request that can be used to cancel the request
          * (see <a href="http://dev.sencha.com/deploy/dev/docs/?class=Ext.data.Connection&member=abort" target="_blank">Ext.data.Connection.abort</a>).
@@ -790,7 +790,7 @@ LABKEY.Query = new function()
          * query will not be included in the results. Default is true.
          * @param {String} [config.containerPath] A container path in which to execute this command. If not supplied,
          * the current container will be used.
-         * @param {Object} [config.scope] An optional scope for the callback functions. Defaults to "this"
+         * @param {Object} [config.scope] A scope for the callback functions. Defaults to "this"
          * @returns {Mixed} In client-side scripts, this method will return a transaction id
          * for the async request that can be used to cancel the request
          * (see <a href="http://dev.sencha.com/deploy/dev/docs/?class=Ext.data.Connection&member=abort" target="_blank">Ext.data.Connection.abort</a>).
@@ -822,8 +822,8 @@ LABKEY.Query = new function()
          * @param config An object that contains the following configuration parameters
          * @param {String} config.schemaName The name of the schema.
          * @param {String} config.queryName the name of the query.
-         * @param {String} [config.viewName] An optional view name (empty string for the default view), otherwise return all views for the query.
-         * @param {Boolean} [config.metadata] Optionally include view column field metadata.
+         * @param {String} [config.viewName] A view name (empty string for the default view), otherwise return all views for the query.
+         * @param {Boolean} [config.metadata] Include view column field metadata.
          * @param {function} config.success The function to call when the function finishes successfully.
          * This function will be called with the following parameters:
          * <ul>
@@ -860,7 +860,7 @@ LABKEY.Query = new function()
          * </ul>
          * @param {String} [config.containerPath] A container path in which to execute this command. If not supplied,
          * the current container will be used.
-         * @param {Object} [config.scope] An optional scope for the callback functions. Defaults to "this"
+         * @param {Object} [config.scope] A scope for the callback functions. Defaults to "this"
          * @returns {Mixed} In client-side scripts, this method will return a transaction id
          * for the async request that can be used to cancel the request
          * (see <a href="http://dev.sencha.com/deploy/dev/docs/?class=Ext.data.Connection&member=abort" target="_blank">Ext.data.Connection.abort</a>).
@@ -903,7 +903,7 @@ LABKEY.Query = new function()
          * </ul>
          * @param {String} [config.containerPath] A container path in which to execute this command. If not supplied,
          * the current container will be used.
-         * @param {Object} [config.scope] An optional scope for the callback functions. Defaults to "this"
+         * @param {Object} [config.scope] A scope for the callback functions. Defaults to "this"
          * @returns {Mixed} In client-side scripts, this method will return a transaction id
          * for the async request that can be used to cancel the request
          * (see <a href="http://dev.sencha.com/deploy/dev/docs/?class=Ext.data.Connection&member=abort" target="_blank">Ext.data.Connection.abort</a>).
@@ -936,9 +936,9 @@ LABKEY.Query = new function()
          * @param {Object} config An object that contains the following configuration parameters
          * @param {String} config.schemaName The name of the schema.
          * @param {String} config.queryName The name of the query.
-         * @param {String} [config.viewName] An optional view name or Array of view names to include custom view details.
-         * @param {String} [config.fields] An optional field key or Array of field keys to include in the metadata.
-         * @param {Boolean} [config.initializeMissingView] Optionally initialize the view based on the default view iff the view doesn't yet exist.
+         * @param {String} [config.viewName] A view name or Array of view names to include custom view details.
+         * @param {String} [config.fields] A field key or Array of field keys to include in the metadata.
+         * @param {Boolean} [config.initializeMissingView] Initialize the view based on the default view iff the view doesn't yet exist.
          * @param {function} config.success The function to call when the function finishes successfully.
          * This function will be called with the following parameters:
          * <ul>
@@ -966,7 +966,7 @@ LABKEY.Query = new function()
          * </ul>
          * @param {String} [config.containerPath] A container path in which to execute this command. If not supplied,
          * the current container will be used.
-         * @param {Object} [config.scope] An optional scope for the callback functions. Defaults to "this"
+         * @param {Object} [config.scope] A scope for the callback functions. Defaults to "this"
          * @returns {Mixed} In client-side scripts, this method will return a transaction id
          * for the async request that can be used to cancel the request
          * (see <a href="http://dev.sencha.com/deploy/dev/docs/?class=Ext.data.Connection&member=abort" target="_blank">Ext.data.Connection.abort</a>).
@@ -1018,7 +1018,7 @@ LABKEY.Query = new function()
          * </ul>
          * @param {String} [config.containerPath] A container path in which to execute this command. If not supplied,
          * the current container will be used.
-         * @param {Object} [config.scope] An optional scope for the callback functions. Defaults to "this"
+         * @param {Object} [config.scope] A scope for the callback functions. Defaults to "this"
          * @returns {Mixed} In client-side scripts, this method will return a transaction id
          * for the async request that can be used to cancel the request
          * (see <a href="http://dev.sencha.com/deploy/dev/docs/?class=Ext.data.Connection&member=abort" target="_blank">Ext.data.Connection.abort</a>).

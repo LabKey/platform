@@ -42,15 +42,15 @@
  * @param {String} [config.reportId] the report id of a saved report you wish to display for the given schema and query name.
  * @param {Mixed} [config.renderTo] The element id, DOM element, or Ext element inside of which the part should be rendered. This is typically a &lt;div&gt;.
  * If not supplied in the configuration, you must call the render() method to render the part into the page.
- * @param {Mixed} [config.maskEl] An optional element id, DOM element, or Ext element that should be masked while the part is rendered. (default renderTo).
- * @param {Object} [config.metadata] Optional metadata that can be applied to the properties of the table fields. For full documentation on
+ * @param {Mixed} [config.maskEl] A element id, DOM element, or Ext element that should be masked while the part is rendered. (default renderTo).
+ * @param {Object} [config.metadata] Metadata that can be applied to the properties of the table fields. For full documentation on
  * available properties, see <a href="https://www.labkey.org/download/schema-docs/xml-schemas/">LabKey XML Schema Reference</a>.
  * This object may contain the following properties:
  * <ul>
  *  <li><b>type</b>: The type of metadata being specified. Currently, only 'xml' is supported.</li>
  *  <li><b>value</b>: The metadata value.</li>
  * </ul>
- * @param {String} config.errorType An optional parameter to specify how query parse errors are returned. (default 'html'). Valid
+ * @param {String} [config.errorType] A parameter to specify how query parse errors are returned. (default 'html'). Valid
  * values are either 'html' or 'json'. If 'html' is specified the error will be rendered to an HTML view, if 'json' is specified
  * the errors will be returned to the callback handlers as an array of objects named 'parseErrors' with the following properties:
  * <ul>
@@ -59,8 +59,8 @@
  *  <li><b>col</b>: The column number the error occurred at (optional).</li>
  *  <li><b>errorStr</b>: The line from the source query that caused the error (optional).</li>
  * </ul>
- * @param {String} config.sql An optional SQL query that can be used instead of an existing schema name/query name combination.
- * @param {String} [config.title] An optional title for the web part. If not supplied, the query name will be used as the title.
+ * @param {String} [config.sql] A SQL query that can be used instead of an existing schema name/query name combination.
+ * @param {String} [config.title] A title for the web part. If not supplied, the query name will be used as the title.
  * @param {String} [config.titleHref] If supplied, the title will be rendered as a hyperlink with this value as the href attribute.
  * @param {String} [config.buttonBarPosition] DEPRECATED--see config.buttonBar.position
  * @param {boolean} [config.allowChooseQuery] If the button bar is showing, whether or not it should be include a button
@@ -90,7 +90,7 @@
  *  If 'showDeleteButton' is true, the checkboxes will be  included regardless of the 'showRecordSelectors' config option.
  * @param {boolean} [config.showPagination] Show the pagination links and count (default true).
  * @param {boolean} [config.shadeAlternatingRows] Shade every other row with a light gray background color (default true).
- * @param {Object} [config.buttonBar] Optional button bar configuration. This object may contain any of the following properties:
+ * @param {Object} [config.buttonBar] Button bar configuration. This object may contain any of the following properties:
  * <ul>
  *  <li><b>position</b>: Configures where the button bar will appear with respect to the data grid: legal values are 'top', 'bottom', 'none', or 'both'. Default is 'both'.</li>
  *  <li><b>includeStandardButtons</b>: If true, all standard buttons not specifically mentioned in the items array will be included at the end of the button bar. Default is false.</li>
@@ -153,12 +153,12 @@
  * @param {String} [config.frame] The frame style to use for the web part. This may be one of the following:
  * 'div', 'portal', 'none', 'dialog', 'title', 'left-nav'.
  * @param {String} [config.bodyClass] A CSS style class that will be added to the enclosing element for the web part.
- * @param {Function} [config.success] An optional function to call after the part has been rendered. It will be passed two arguments:
+ * @param {Function} [config.success] A function to call after the part has been rendered. It will be passed two arguments:
  * <ul>
  * <li><b>dataRegion:</b> the LABKEY.DataRegion object representing the rendered QueryWebPart</li>
  * <li><b>request:</b> the XMLHTTPRequest that was issued to the server</li>
  * </ul>
- * @param {Function} [config.failure] An optional function to call if the request to retrieve the content fails. It will be passed three arguments:
+ * @param {Function} [config.failure] A function to call if the request to retrieve the content fails. It will be passed three arguments:
  * <ul>
  * <li><b>json:</b> JSON object containing the exception.</li>
  * <li><b>response:</b> The XMLHttpRequest object containing the response data.</li>

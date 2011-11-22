@@ -171,7 +171,7 @@ LABKEY.ActionURL = new function()
         * of a single value. Use Ext.isArray() to determine if the value is an array or not, or use
         * getParameter() or getParameterArray() to retrieve a specific parameter name as a single value
         * or array respectively.
-        * @param {String} url the URL to parse (optional). If not specified, the browser's current location will be used. 
+        * @param {String} [url] The URL to parse. If not specified, the browser's current location will be used.
         * @return {Object} Map of parameter names to values.
         */
         getParameters : function(url)

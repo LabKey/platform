@@ -66,7 +66,7 @@
  *                  The partConfig parameter will contain all the parameters sent to the server.
  * @param {String} [config.containerPath] The container path in which this web part is defined. If not supplied,
  *                  the current container path will be used.
- * @param {Object} [config.scope] An optional scope object to use when calling the successCallback or errorCallback functions (defaults to this).
+ * @param {Object} [config.scope] A scope object to use when calling the successCallback or errorCallback functions (defaults to this).
  * @example Example for a Wiki web part:<pre name="code" class="xml">
  &lt;div id='wikiTestDiv'/&gt;
  &lt;script type="text/javascript"&gt;

@@ -182,7 +182,7 @@ LABKEY.Security = new function()
          * @param {boolean} [config.includeSubfolders] Set to true to recurse down the subfolders (defaults to false)
          * @param {string} [config.containerPath] An alternate container path to get permissions from. If not specified,
          * the current container path will be used.
-         * @param {object} [config.scope] An optional scoping object for the success and error callback functions (default to this).
+         * @param {object} [config.scope] A scoping object for the success and error callback functions (default to this).
          * @returns {Mixed} In client-side scripts, this method will return a transaction id
          * for the async request that can be used to cancel the request
          * (see <a href="http://dev.sencha.com/deploy/dev/docs/?class=Ext.data.Connection&member=abort" target="_blank">Ext.data.Connection.abort</a>).
@@ -315,7 +315,7 @@ LABKEY.Security = new function()
          * @param {boolean} [config.includeSubfolders] Set to true to recurse down the subfolders (defaults to false)
          * @param {string} [config.containerPath] An alternate container path to get permissions from. If not specified,
          * the current container path will be used.
-         * @param {object} [config.scope] An optional scoping object for the success and error callback functions (default to this).
+         * @param {object} [config.scope] A scoping object for the success and error callback functions (default to this).
          * @returns {Mixed} In client-side scripts, this method will return a transaction id
          * for the async request that can be used to cancel the request
          * (see <a href="http://dev.sencha.com/deploy/dev/docs/?class=Ext.data.Connection&member=abort" target="_blank">Ext.data.Connection.abort</a>).
@@ -374,7 +374,7 @@ LABKEY.Security = new function()
          * </ul>
          * @param {string} [config.containerPath] An alternate container path to get permissions from. If not specified,
          * the current container path will be used.
-         * @param {object} [config.scope] An optional scoping object for the success and error callback functions (default to this).
+         * @param {object} [config.scope] A scoping object for the success and error callback functions (default to this).
          * @returns {Mixed} In client-side scripts, this method will return a transaction id
          * for the async request that can be used to cancel the request
          * (see <a href="http://dev.sencha.com/deploy/dev/docs/?class=Ext.data.Connection&member=abort" target="_blank">Ext.data.Connection.abort</a>).
@@ -433,7 +433,7 @@ LABKEY.Security = new function()
          * </ul>
          * @param {string} [config.containerPath] An alternate container in which to create a new container. If not specified,
          * the current container path will be used.
-         * @param {object} [config.scope] An optional scoping object for the success and error callback functions (default to this).
+         * @param {object} [config.scope] A scoping object for the success and error callback functions (default to this).
          * @returns {Mixed} In client-side scripts, this method will return a transaction id
          * for the async request that can be used to cancel the request
          * (see <a href="http://dev.sencha.com/deploy/dev/docs/?class=Ext.data.Connection&member=abort" target="_blank">Ext.data.Connection.abort</a>).
@@ -474,7 +474,7 @@ LABKEY.Security = new function()
          * </ul>
          * @param {string} [config.containerPath] An alternate container in which to create a new container. If not specified,
          * the current container path will be used.
-         * @param {object} [config.scope] An optional scoping object for the success and error callback functions (default to this).
+         * @param {object} [config.scope] A scoping object for the success and error callback functions (default to this).
          * @returns {Mixed} In client-side scripts, this method will return a transaction id
          * for the async request that can be used to cancel the request
          * (see <a href="http://dev.sencha.com/deploy/dev/docs/?class=Ext.data.Connection&member=abort" target="_blank">Ext.data.Connection.abort</a>).
@@ -511,7 +511,7 @@ LABKEY.Security = new function()
          * <li><b>errorInfo:</b> an object containing detailed error information (may be null)</li>
          * <li><b>response:</b> The XMLHttpResponse object</li>
          * </ul>
-         * @param {object} [config.scope] An optional scoping object for the success and error callback functions (default to this).
+         * @param {object} [config.scope] A scoping object for the success and error callback functions (default to this).
          */
         moveContainer : function(config) {
 
@@ -574,7 +574,7 @@ LABKEY.Security = new function()
          * <li><b>errorInfo:</b> an object containing detailed error information (may be null)</li>
          * <li><b>response:</b> The XMLHttpResponse object</li>
          * </ul>
-         * @param {object} [config.scope] An optional scoping object for the success and error callback functions (default to this).
+         * @param {object} [config.scope] A scoping object for the success and error callback functions (default to this).
          * @returns {Mixed} In client-side scripts, this method will return a transaction id
          * for the async request that can be used to cancel the request
          * (see <a href="http://dev.sencha.com/deploy/dev/docs/?class=Ext.data.Connection&member=abort" target="_blank">Ext.data.Connection.abort</a>).
@@ -616,7 +616,7 @@ LABKEY.Security = new function()
          * <li><b>errorInfo:</b> an object containing detailed error information (may be null)</li>
          * <li><b>response:</b> The XMLHttpResponse object</li>
          * </ul>
-         * @param {object} [config.scope] An optional scoping object for the success and error callback functions (default to this).
+         * @param {object} [config.scope] A scoping object for the success and error callback functions (default to this).
          * @returns {Mixed} In client-side scripts, this method will return a transaction id
          * for the async request that can be used to cancel the request
          * (see <a href="http://dev.sencha.com/deploy/dev/docs/?class=Ext.data.Connection&member=abort" target="_blank">Ext.data.Connection.abort</a>).
@@ -677,7 +677,7 @@ LABKEY.Security = new function()
          * </ul>
          * @param {string} [config.containerPath] An alternate container path to get permissions from. If not specified,
          * the current container path will be used.
-         * @param {object} [config.scope] An optional scoping object for the success and error callback functions (default to this).
+         * @param {object} [config.scope] A scoping object for the success and error callback functions (default to this).
          * @returns {Mixed} In client-side scripts, this method will return a transaction id
          * for the async request that can be used to cancel the request
          * (see <a href="http://dev.sencha.com/deploy/dev/docs/?class=Ext.data.Connection&member=abort" target="_blank">Ext.data.Connection.abort</a>).
@@ -759,7 +759,7 @@ LABKEY.Security = new function()
          * </ul>
          * @param {string} [config.containerPath] An alternate container path to get permissions from. If not specified,
          * the current container path will be used.
-         * @param {object} [config.scope] An optional scoping object for the success and error callback functions (default to this).
+         * @param {object} [config.scope] A scoping object for the success and error callback functions (default to this).
          * @returns {Mixed} In client-side scripts, this method will return a transaction id
          * for the async request that can be used to cancel the request
          * (see <a href="http://dev.sencha.com/deploy/dev/docs/?class=Ext.data.Connection&member=abort" target="_blank">Ext.data.Connection.abort</a>).
@@ -800,7 +800,7 @@ LABKEY.Security = new function()
          * <li><b>errorInfo:</b> an object containing detailed error information (may be null)</li>
          * <li><b>response:</b> The XMLHttpResponse object</li>
          * </ul>
-         * @param {object} [config.scope] An optional scoping object for the success and error callback functions (default to this).
+         * @param {object} [config.scope] A scoping object for the success and error callback functions (default to this).
          * @param {boolean} [config.force] Set to true to force a login even if the user is already logged in.
          * This is useful for keeping a session alive during a long-lived page. To do so, call this function
          * with config.force set to true, and config.useSiteLoginPage to false (or omit).
@@ -873,7 +873,7 @@ LABKEY.Security = new function()
          * <li><b>errorInfo:</b> an object containing detailed error information (may be null)</li>
          * <li><b>response:</b> The XMLHttpResponse object</li>
          * </ul>
-         * @param {object} [config.scope] An optional scoping object for the success and error callback functions (default to this).
+         * @param {object} [config.scope] A scoping object for the success and error callback functions (default to this).
          * @param {string} [config.containerPath] An alternate container path to get permissions from. If not specified,
          * the current container path will be used.
          * @returns {Mixed} In client-side scripts, this method will return a transaction id
@@ -902,7 +902,7 @@ LABKEY.Security = new function()
          * EXPERIMENTAL! gets permissions for a set of tables within a schema.
          * Currently only study tables have individual permissions so only works on the study schema
          * @param config A configuration object with the following properties:
-         * @param {object} [config.scope] An optional scoping object for the success and error callback functions (default to this).
+         * @param {object} [config.scope] A scoping object for the success and error callback functions (default to this).
          * @param {object} [config.schemaName] Name of the schema to retrieve information on.
          * @param {string} [config.containerPath] An alternate container path to get permissions from. If not specified,
          * the current container path will be used.
@@ -1011,7 +1011,7 @@ LABKEY.Security = new function()
          * <li><b>errorInfo:</b> an object containing detailed error information (may be null)</li>
          * <li><b>response:</b> The XMLHttpResponse object</li>
          * </ul>
-         * @param {object} [config.scope] An optional scoping object for the success and error callback functions (default to this).
+         * @param {object} [config.scope] A scoping object for the success and error callback functions (default to this).
          * @returns {Mixed} In client-side scripts, this method will return a transaction id
          * for the async request that can be used to cancel the request
          * (see <a href="http://dev.sencha.com/deploy/dev/docs/?class=Ext.data.Connection&member=abort" target="_blank">Ext.data.Connection.abort</a>).
@@ -1073,7 +1073,7 @@ LABKEY.Security = new function()
          * <li><b>errorInfo:</b> an object containing detailed error information (may be null)</li>
          * <li><b>response:</b> The XMLHttpResponse object</li>
          * </ul>
-         * @param {object} [config.scope] An optional scoping object for the success and error callback functions (default to this).
+         * @param {object} [config.scope] A scoping object for the success and error callback functions (default to this).
          * @param {string} [config.containerPath] An alternate container path to get permissions from. If not specified,
          * the current container path will be used.
          * @returns {Mixed} In client-side scripts, this method will return a transaction id
@@ -1114,7 +1114,7 @@ LABKEY.Security = new function()
          * <li><b>errorInfo:</b> an object containing detailed error information (may be null)</li>
          * <li><b>response:</b> The XMLHttpResponse object</li>
          * </ul>
-         * @param {Object} [config.scope] An optional scoping object for the success and error callback functions (default to this).
+         * @param {Object} [config.scope] A scoping object for the success and error callback functions (default to this).
          * @param {string} [config.containerPath] An alternate container path to get permissions from. If not specified,
          * the current container path will be used.
          * @returns {Mixed} In client-side scripts, this method will return a transaction id
@@ -1157,7 +1157,7 @@ LABKEY.Security = new function()
          * <li><b>errorInfo:</b> an object containing detailed error information (may be null)</li>
          * <li><b>response:</b> The XMLHttpResponse object</li>
          * </ul>
-         * @param {Object} [config.scope] An optional scoping object for the success and error callback functions (default to this).
+         * @param {Object} [config.scope] A scoping object for the success and error callback functions (default to this).
          * @param {string} [config.containerPath] An alternate container path to get permissions from. If not specified,
          * the current container path will be used.
          * @returns {Mixed} In client-side scripts, this method will return a transaction id
@@ -1197,7 +1197,7 @@ LABKEY.Security = new function()
          * <li><b>errorInfo:</b> an object containing detailed error information (may be null)</li>
          * <li><b>response:</b> The XMLHttpResponse object</li>
          * </ul>
-         * @param {Object} [config.scope] An optional scoping object for the success and error callback functions (default to this).
+         * @param {Object} [config.scope] A scoping object for the success and error callback functions (default to this).
          * @param {string} [config.containerPath] An alternate container path to get permissions from. If not specified,
          * the current container path will be used.
          * @returns {Mixed} In client-side scripts, this method will return a transaction id
@@ -1236,7 +1236,7 @@ LABKEY.Security = new function()
          * <li><b>errorInfo:</b> an object containing detailed error information (may be null)</li>
          * <li><b>response:</b> The XMLHttpResponse object</li>
          * </ul>
-         * @param {Object} [config.scope] An optional scoping object for the success and error callback functions (default to this).
+         * @param {Object} [config.scope] A scoping object for the success and error callback functions (default to this).
          * @param {string} [config.containerPath] An alternate container path to get permissions from. If not specified,
          * the current container path will be used.
          * @returns {Mixed} In client-side scripts, this method will return a transaction id
@@ -1276,7 +1276,7 @@ LABKEY.Security = new function()
          * <li><b>errorInfo:</b> an object containing detailed error information (may be null)</li>
          * <li><b>response:</b> The XMLHttpResponse object</li>
          * </ul>
-         * @param {Object} [config.scope] An optional scoping object for the success and error callback functions (default to this).
+         * @param {Object} [config.scope] A scoping object for the success and error callback functions (default to this).
          * @param {string} [config.containerPath] An alternate container path to get permissions from. If not specified,
          * the current container path will be used.
          * @returns {Mixed} In client-side scripts, this method will return a transaction id
@@ -1316,7 +1316,7 @@ LABKEY.Security = new function()
          * <li><b>errorInfo:</b> an object containing detailed error information (may be null)</li>
          * <li><b>response:</b> The XMLHttpResponse object</li>
          * </ul>
-         * @param {Object} [config.scope] An optional scoping object for the success and error callback functions (default to this).
+         * @param {Object} [config.scope] A scoping object for the success and error callback functions (default to this).
          * @param {string} [config.containerPath] An alternate container path to get permissions from. If not specified,
          * the current container path will be used.
          * @returns {Mixed} In client-side scripts, this method will return a transaction id
@@ -1360,7 +1360,7 @@ LABKEY.Security = new function()
          * <li><b>errorInfo:</b> an object containing detailed error information (may be null)</li>
          * <li><b>response:</b> The XMLHttpResponse object</li>
          * </ul>
-         * @param {Object} [config.scope] An optional scoping object for the success and error callback functions (default to this).
+         * @param {Object} [config.scope] A scoping object for the success and error callback functions (default to this).
          * @param {string} [config.containerPath] An alternate container path to get permissions from. If not specified,
          * the current container path will be used.
          * @returns {Mixed} In client-side scripts, this method will return a transaction id
@@ -1403,7 +1403,7 @@ LABKEY.Security = new function()
          * <li><b>errorInfo:</b> an object containing detailed error information (may be null)</li>
          * <li><b>response:</b> The XMLHttpResponse object</li>
          * </ul>
-         * @param {Object} [config.scope] An optional scoping object for the success and error callback functions (default to this).
+         * @param {Object} [config.scope] A scoping object for the success and error callback functions (default to this).
          * @param {string} [config.containerPath] An alternate container path to get permissions from. If not specified,
          * the current container path will be used.
          * @returns {Mixed} In client-side scripts, this method will return a transaction id

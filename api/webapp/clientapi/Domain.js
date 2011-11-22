@@ -82,10 +82,10 @@ LABKEY.Domain = new function()
          * <b>Note: this is an experimental API and may change unexpectedly.</b>
          *
          * @param {Function} success Required success callback.
-         * @param {Function} [failure] Optional failure callback.
+         * @param {Function} [failure] Failure callback.
          * @param {String} kind The domain kind name to create.
          * @param {LABKEY.Domain.DomainDesign} domainDesign The domain design to save.
-         * @param {Object} [options] Optional arguments used to create the specific domain type.
+         * @param {Object} [options] Arguments used to create the specific domain type.
          * @param {String} [containerPath] The container path in which to create the domain.
          * @ignore hide from JsDoc for now
          */

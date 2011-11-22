@@ -26,7 +26,7 @@
  * @class Make multiple ajax requests and fires an event when all are complete.
  * @memberOf LABKEY
  *
- * @param [config] Optional. Either an array of [function, config] array pairs
+ * @param [config] Either an array of [function, config] array pairs
  * to be added or a config object with the shape:
  * <ul>
  * <li>listeners: a config object containing event handlers.
@@ -161,7 +161,7 @@ Ext.extend(LABKEY.MultiRequest, Ext.util.Observable,
      * Send the queued up requests.  When all requesta have returned, the callback
      * will be called.
      * @param callback {Function} A function with a single argument of 'this'.
-     * @param [scope] {Object} Optional. The scope in which to execute the callback.
+     * @param [scope] {Object} The scope in which to execute the callback.
      */
     send : function (callback, scope) {
         if (this.sending || this.waitQ.length == 0)

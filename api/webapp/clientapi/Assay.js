@@ -354,11 +354,11 @@ LABKEY.Assay = new function()
          * This method will ignore requests to graph any object IDs that the current user does not have permission to view.
          * @param {String} config.captionColumn The data column that should be used for per-specimen captions.  If the column
          * doesn't exist, or if it has a null value, a sensible default will be chosen, generally specimen ID or participant/visit.
-         * @param {String} config.chartTitle Optional, defaults to no title. The desired title for the chart.
-         * @param {String} config.fitType Optional, defaults to FIVE_PARAMETER.  Allowable values are FIVE_PARAMETER,
-         * FOUR_PARAMETER, and POLYNOMIAL.
-         * @param {String} config.height Optional, defaults to 300.  Desired height of the graph image in pixels.
-         * @param {String} config.width Optional, defaults to 425.  Desired width of the graph image in pixels.
+         * @param {String} [config.chartTitle] The desired title for the chart. Defaults to no title.
+         * @param {String} [config.fitType] Allowable values are FIVE_PARAMETER, FOUR_PARAMETER, and POLYNOMIAL.
+         * Defaults to FIVE_PARAMETER.
+         * @param {String} [config.height] Desired height of the graph image in pixels. Defaults to 300.
+         * @param {String} [config.width] Desired width of the graph image in pixels. Defaults to 425.
          * @param {String} [config.containerPath] The path to the study container containing the NAb summary data,
          *       if different than the current container. If not supplied, the current container's path will be used.
          * @param {Function} config.success

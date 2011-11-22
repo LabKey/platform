@@ -97,7 +97,7 @@ LABKEY.Message = new function()
          * <li><b>errorInfo:</b> an object containing detailed error information (may be null)</li>
          * <li><b>response:</b> The XMLHttpResponse object</li>
          * </ul>
-         * @param {object} [config.scope] An optional scoping object for the success and error callback functions (default to this).
+         * @param {object} [config.scope] A scoping object for the success and error callback functions (default to this).
          * @returns {Mixed} In client-side scripts, this method will return a transaction id
          * for the async request that can be used to cancel the request
          * (see <a href="http://dev.sencha.com/deploy/dev/docs/?class=Ext.data.Connection&member=abort" target="_blank">Ext.data.Connection.abort</a>).
