@@ -119,8 +119,15 @@ public class CBCDataProperty
     {
         if (value == null)
             return false;
-        if (value < getMinValue() || value > getMaxValue())
+
+        Double minValue = getMinValue();
+        if (minValue != null && value < minValue)
             return false;
+
+        Double maxValue = getMaxValue();
+        if (maxValue != null && value > maxValue)
+            return false;
+
         return true;
     }
 

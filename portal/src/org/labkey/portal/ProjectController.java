@@ -80,10 +80,14 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.File;
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
 import java.util.Enumeration;
 import java.util.HashMap;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 
 public class ProjectController extends SpringActionController
@@ -1100,8 +1104,30 @@ public class ProjectController extends SpringActionController
 
     public static class GetContainersForm
     {
+        private Container[] _container;
+        private boolean _multipleContainers = false;
         private boolean _includeSubfolders = false;
         private int _depth = Integer.MAX_VALUE;
+
+        public Container[] getContainer()
+        {
+            return _container;
+        }
+
+        public void setContainer(Container[] container)
+        {
+            _container = container;
+        }
+
+        public boolean isMultipleContainers()
+        {
+            return _multipleContainers;
+        }
+
+        public void setMultipleContainers(boolean multipleContainers)
+        {
+            _multipleContainers = multipleContainers;
+        }
 
         public boolean isIncludeSubfolders()
         {
@@ -1137,12 +1163,39 @@ public class ProjectController extends SpringActionController
             _requestedDepth = form.isIncludeSubfolders() ? form.getDepth() : 1;
             ApiSimpleResponse response = new ApiSimpleResponse();
             User user = getViewContext().getUser();
-            Container container = getViewContext().getContainer();
-            Map<String, Object> containerMap = container.toJSON(user);
-            containerMap.put("children", getVisibleChildren(container, user, 0));
 
-            response.putAll(containerMap);
+            Map<String, Object> resultMap;
+            if (form.isMultipleContainers())
+            {
+                Set<Container> containers = new LinkedHashSet<Container>();
+                if (form.getContainer() != null)
+                    containers.addAll(Arrays.asList(form.getContainer()));
+
+                if (containers.isEmpty())
+                    containers.add(getViewContext().getContainer());
+
+                List<Map<String, Object>> containerJSON = new ArrayList<Map<String, Object>>();
+                for (Container c : containers)
+                {
+                    if (c != null)
+                        containerJSON.add(getContainerJSON(c, user));
+                }
+                resultMap = Collections.<String, Object>singletonMap("containers", containerJSON);
+            }
+            else
+            {
+                resultMap = getContainerJSON(getViewContext().getContainer(), user);
+            }
+
+            response.putAll(resultMap);
             return response;
+        }
+
+        Map<String, Object> getContainerJSON(Container container, User user)
+        {
+            Map<String, Object> resultMap = container.toJSON(user);
+            resultMap.put("children", getVisibleChildren(container, user, 0));
+            return resultMap;
         }
 
         //return only those paths through the container tree leading to a container to which the user has permission

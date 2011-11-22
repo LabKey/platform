@@ -16,6 +16,7 @@
 
 package org.labkey.study.query;
 
+import org.labkey.api.data.ContainerForeignKey;
 import org.labkey.api.query.QueryForeignKey;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.ForeignKey;
@@ -35,9 +36,14 @@ public class SiteTable extends BaseStudyTable
         for (ColumnInfo baseColumn : _rootTable.getColumns())
         {
             String name = baseColumn.getName();
-            if ("Container".equalsIgnoreCase(name) || "EntityId".equalsIgnoreCase(name))
+            if ("EntityId".equalsIgnoreCase(name))
                 continue;
             ColumnInfo column = addWrapColumn(baseColumn);
+            if ("Container".equalsIgnoreCase(name))
+            {
+                column = ContainerForeignKey.initColumn(column);
+                column.setHidden(true);
+            }
             if ("RowId".equalsIgnoreCase(name))
             {
                 // If there were a pageflow action which showed details on a particular site, we would set the fk of rowid here.
