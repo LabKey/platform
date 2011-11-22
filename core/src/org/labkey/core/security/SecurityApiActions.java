@@ -999,6 +999,9 @@ public class SecurityApiActions
 
             if (errors.getErrorCount() > 0)
                 return null;
+
+            // get the udpated group information with the new name
+            group = getGroup(form);
             
             ApiSimpleResponse resp = new ApiSimpleResponse();
             resp.put("success", true);
