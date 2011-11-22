@@ -34,6 +34,13 @@
     List<EmailTemplate> emailTemplates = EmailTemplateService.get().getEditableEmailTemplates(c);
     String errorHTML = formatMissedErrors("form");
 %>
+<!-- 11769: Layout of email customization page -->
+<style type="text/css">
+    .labkey-form-label
+    {
+        width: 85px;
+    }
+</style>
 <%=errorHTML%>
 
 <form action="customizeEmail.view" method="post">
