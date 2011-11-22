@@ -96,7 +96,7 @@ public class CoreQuerySchema extends UserSchema
         if (CONTAINERS_TABLE_NAME.equalsIgnoreCase(name))
             return getContainers();
         if (USERS_MSG_SETTINGS_TABLE_NAME.equalsIgnoreCase(name))
-            return new UsersMsgPrefTable(getUsers(), getContainer());
+            return new UsersMsgPrefTable(getUserTable(), getContainer());
         return null;
     }
 

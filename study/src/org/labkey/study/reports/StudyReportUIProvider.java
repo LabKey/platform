@@ -121,15 +121,6 @@ public class StudyReportUIProvider extends DefaultReportUIProvider
             designers.add(new DesignerInfoImpl(CrosstabReport.TYPE, "Crosstab View", crossTabURL));
         }
 
-        if (ReportUtil.canCreateScript(context))
-        {
-            ScriptReportBean bean = new ScriptReportBean(settings);
-            bean.setRedirectUrl(returnUrl.getLocalURIString());
-            bean.setScriptExtension(".js");
-            bean.setReportType(JavaScriptReport.TYPE);
-            designers.add(new DesignerInfoImpl(JavaScriptReport.TYPE, "JavaScript View", "JavaScript View", ReportUtil.getScriptReportDesignerURL(context, bean)));
-        }
-
         return designers;
     }
 

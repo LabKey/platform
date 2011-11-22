@@ -28,6 +28,7 @@ import org.labkey.api.action.ApiSimpleResponse;
 import org.labkey.api.action.ExtFormAction;
 import org.labkey.api.action.FormViewAction;
 import org.labkey.api.action.GWTServiceAction;
+import org.labkey.api.action.NullSafeBindException;
 import org.labkey.api.action.ReturnUrlForm;
 import org.labkey.api.action.SimpleViewAction;
 import org.labkey.api.action.SpringActionController;
@@ -48,6 +49,7 @@ import org.labkey.api.query.DefaultSchema;
 import org.labkey.api.query.QueryDefinition;
 import org.labkey.api.query.QueryForm;
 import org.labkey.api.query.QueryParam;
+import org.labkey.api.query.QuerySchema;
 import org.labkey.api.query.QueryService;
 import org.labkey.api.query.QuerySettings;
 import org.labkey.api.query.QueryView;
@@ -128,6 +130,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.Comparator;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
@@ -235,6 +238,12 @@ public class ReportsController extends SpringActionController
         public Class<? extends Controller> getDownloadClass()
         {
             return DownloadAction.class;
+        }
+
+        @Override
+        public ActionURL urlReportInfo(Container c)
+        {
+            return new ActionURL(ReportInfoAction.class, c);
         }
     }
 
@@ -1253,20 +1262,50 @@ public class ReportsController extends SpringActionController
                 for (ViewOptions.ViewFilterItem item : def.getViewOptions().getViewFilterItems())
                     filterItemMap.put(item.getViewType(), item);
 
-                for (ReportService.DesignerInfo info : getAvailableReportDesigners(form))
+                Collection<ReportService.DesignerInfo> designers = getAvailableReportDesigners(form);
+                Map<String, Integer> duplicates = new HashMap<String, Integer>();
+
+                for (ReportService.DesignerInfo info : designers)
                 {
-                    Map<String, String> record = new HashMap<String, String>();
+                    Integer count = 0;
+                    if (duplicates.containsKey(info.getLabel()))
+                    {
+                        count = duplicates.get(info.getLabel());
+                        count++;
+                    }
+                    duplicates.put(info.getLabel(), count);
+                }
 
-                    record.put("reportType", info.getReportType());
-                    record.put("reportLabel", info.getLabel());
-                    record.put("reportDescription", info.getDescription());
+                UserSchema schema = QueryService.get().getUserSchema(getViewContext().getUser(), getViewContext().getContainer(), form.getSchemaName());
+                QuerySettings settings = schema.getSettings(getViewContext(), null, form.getQueryName());
+                QueryView view = schema.createView(getViewContext(), settings, errors);
 
-                    if (filterItemMap.containsKey(info.getReportType()))
-                        record.put("enabled", String.valueOf(filterItemMap.get(info.getReportType()).isEnabled()));
-                    else
-                        record.put("enabled", String.valueOf(baseItemMap.containsKey(info.getReportType())));
+                if (view != null)
+                {
+                    ReportService.ItemFilter filter = view.getItemFilter();
 
-                    response.add(record);
+                    for (ReportService.DesignerInfo info : getAvailableReportDesigners(form))
+                    {
+                        Map<String, String> record = new HashMap<String, String>();
+                        String label = info.getLabel();
+
+                        // if there are duplicates, let the view item filter choose which one to display
+                        if (duplicates.get(label) > 0)
+                        {
+                            if (!filter.accept(info.getReportType(), info.getLabel()))
+                                continue;
+                        }
+                        record.put("reportType", info.getReportType());
+                        record.put("reportLabel", label);
+                        record.put("reportDescription", info.getDescription());
+
+                        if (filterItemMap.containsKey(info.getReportType()))
+                            record.put("enabled", String.valueOf(filterItemMap.get(info.getReportType()).isEnabled()));
+                        else
+                            record.put("enabled", String.valueOf(baseItemMap.containsKey(info.getReportType())));
+
+                        response.add(record);
+                    }
                 }
             }
             return new ApiSimpleResponse("viewOptions", response);
@@ -1275,16 +1314,7 @@ public class ReportsController extends SpringActionController
 
     private Collection<ReportService.DesignerInfo> getAvailableReportDesigners(ViewOptionsForm form)
     {
-        Map<String, ReportService.DesignerInfo> designerMap = new HashMap<String, ReportService.DesignerInfo>();
-        Map<String, String> baseItemMap = new HashMap<String, String>();
-
-        if (!StringUtils.isBlank(form.getBaseFilterItems()))
-        {
-            String baseFilterItems = PageFlowUtil.decode(form.getBaseFilterItems());
-            for (String item : baseFilterItems.split("&"))
-                baseItemMap.put(item, item);
-        }
-
+        List<ReportService.DesignerInfo> designers = new ArrayList<ReportService.DesignerInfo>();
         UserSchema schema = QueryService.get().getUserSchema(getViewContext().getUser(), getViewContext().getContainer(), form.getSchemaName());
         QuerySettings settings = schema.getSettings(getViewContext(), null, form.getQueryName());
 
@@ -1293,11 +1323,18 @@ public class ReportsController extends SpringActionController
         {
             for (ReportService.DesignerInfo info : provider.getDesignerInfo(getViewContext(), settings))
             {
-                if (!designerMap.containsKey(info.getLabel()) || baseItemMap.containsKey(info.getReportType()))
-                    designerMap.put(info.getLabel(), info);
+                designers.add(info);
             }
         }
-        return designerMap.values();
+
+        Collections.sort(designers, new Comparator<ReportService.DesignerInfo>(){
+            @Override
+            public int compare(ReportService.DesignerInfo o1, ReportService.DesignerInfo o2)
+            {
+                return o1.getLabel().compareToIgnoreCase(o2.getLabel());
+            }
+        });
+        return designers;
     }
 
     @RequiresPermissionClass(AdminPermission.class)

@@ -190,22 +190,26 @@ LABKEY.FilesWebPartPanel = Ext.extend(LABKEY.FileBrowser, {
         if (FileBrowser.startsWith(this.path,"/"))
             this.path = this.path.substring(1);
 
-        Ext.Ajax.request({
-            url:this.actionsURL + encodeURIComponent(this.path),
-            method:'GET',
-            disableCaching:false,
-            success : function(resp, opt){
-                this.updatePipelineActions(resp, opt); 
-                this.onGridDataChanged(true)
-            },
-            failure: function(resp, opt){
-                this.onGridDataChanged(true);
-                if (this.isPipelineRoot)
+        if (this.isPipelineRoot)
+        {
+            Ext.Ajax.request({
+                url:this.actionsURL + encodeURIComponent(this.path),
+                method:'GET',
+                disableCaching:false,
+                success : function(resp, opt){
+                    this.updatePipelineActions(resp, opt);
+                    this.onGridDataChanged(true)
+                },
+                failure: function(resp, opt){
+                    this.onGridDataChanged(true);
                     LABKEY.Utils.displayAjaxErrorResponse(resp, opt);
-            },
-            updateSelection: true,
-            scope: this
-        });
+                },
+                updateSelection: true,
+                scope: this
+            });
+        }
+        else
+            this.onGridDataChanged(true);
     },
 
     updateActionConfiguration : function(updatePipelineActions, updateSelection) {
@@ -263,14 +267,14 @@ LABKEY.FilesWebPartPanel = Ext.extend(LABKEY.FileBrowser, {
             this.actions.upload.initialConfig.pressed = config.expandFileUpload;
         }
 
-        if (e.updatePipelineActions)
+        if (e.updatePipelineActions && this.isPipelineRoot)
         {
             Ext.Ajax.request({
                 url:this.actionsURL + encodeURIComponent(this.path),
                 method:'GET',
                 disableCaching:false,
                 success : this.updatePipelineActions,
-                failure: this.isPipelineRoot ? LABKEY.Utils.displayAjaxErrorResponse : undefined,
+                failure: LABKEY.Utils.displayAjaxErrorResponse,
                 scope: this,
                 updateSelection: e.updateSelection
             });

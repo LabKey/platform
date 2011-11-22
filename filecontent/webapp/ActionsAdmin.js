@@ -117,19 +117,26 @@ LABKEY.ActionsAdminPanel = Ext.extend(Ext.util.Observable, {
             }
         }
 
-        Ext.Ajax.request({
-            autoAbort:true,
-            url:this.actionsURL,
-            method:'GET',
-            disableCaching:false,
-            success : this.getPipelineActions,
-            failure: this.isPipelineRoot ? LABKEY.Utils.displayAjaxErrorResponse : undefined,
-            scope: this
-        });
+        if (this.isPipelineRoot)
+        {
+            Ext.Ajax.request({
+                autoAbort:true,
+                url:this.actionsURL,
+                method:'GET',
+                disableCaching:false,
+                success : this.getPipelineActions,
+                failure: this.isPipelineRoot ? LABKEY.Utils.displayAjaxErrorResponse : undefined,
+                scope: this
+            });
+        }
+        else
+            this.renderDialog();
     },
 
     getPipelineActions : function(response)
     {
+        if (!this.isPipelineRoot) return;
+
         var o = eval('var $=' + response.responseText + ';$;');
         var actions = o.success ? o.actions : [];
 
