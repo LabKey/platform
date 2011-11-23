@@ -712,7 +712,6 @@ api/src/org/labkey/api/reports/model/ViewCategoryManager.java -text
 api/src/org/labkey/api/reports/model/ViewInfo.java -text
 api/src/org/labkey/api/reports/report/AbstractReport.java -text
 api/src/org/labkey/api/reports/report/AbstractReportIdentifier.java -text
-api/src/org/labkey/api/reports/report/AbstractScriptRunner.java -text
 api/src/org/labkey/api/reports/report/ChartQueryReport.java -text
 api/src/org/labkey/api/reports/report/ChartReport.java -text
 api/src/org/labkey/api/reports/report/ChartReportDescriptor.java -text
@@ -730,7 +729,6 @@ api/src/org/labkey/api/reports/report/QueryReportDescriptor.java -text
 api/src/org/labkey/api/reports/report/RReport.java -text
 api/src/org/labkey/api/reports/report/RReportDescriptor.java -text
 api/src/org/labkey/api/reports/report/RReportJob.java -text
-api/src/org/labkey/api/reports/report/RScriptRunner.java -text
 api/src/org/labkey/api/reports/report/RedirectReport.java -text
 api/src/org/labkey/api/reports/report/ReportDB.java -text
 api/src/org/labkey/api/reports/report/ReportDescriptor.java -text

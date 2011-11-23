@@ -83,6 +83,7 @@ public class DesignerAction extends BaseAssayAction<DesignerAction.DesignerForm>
             provider = form.getProvider();
         }
         properties.put("providerName", provider.getName());
+        properties.put("osName", System.getProperty("os.name").toLowerCase());
         properties.put("supportsEditableResults", Boolean.toString(provider.supportsEditableResults()));
         if (form.getReturnUrl() != null)
         {

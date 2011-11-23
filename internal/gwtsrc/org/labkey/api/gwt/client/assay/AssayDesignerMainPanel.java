@@ -95,6 +95,9 @@ public class AssayDesignerMainPanel extends VerticalPanel implements Saveable<GW
     private BooleanProperty _debugScriptFiles = new BooleanProperty(false);
     private BooleanProperty _editableRuns = new BooleanProperty(false);
     private BooleanProperty _editableResults = new BooleanProperty(false);
+    private BoundTextBox _transformFile;
+    private BoundTextBox _validationFile;
+    private boolean _allowSpacesInPath;
 
     public AssayDesignerMainPanel(RootPanel rootPanel)
     {
@@ -114,6 +117,8 @@ public class AssayDesignerMainPanel extends VerticalPanel implements Saveable<GW
         _autoCopyCheckBox = new CheckBox();
         _autoCopyCheckBox.getElement().setId("auto-copy-checkbox");
         _autoCopyCheckBox.setEnabled(false);
+
+        _allowSpacesInPath = !PropertyUtil.getServerProperty("osName").contains("linux");
     }
 
     public void showAsync()
@@ -462,7 +467,7 @@ public class AssayDesignerMainPanel extends VerticalPanel implements Saveable<GW
         {
             if (assay.isAllowTransformationScript())
             {
-                BoundTextBox transformFile = new BoundTextBox("Transform Script", "AssayDesignerTransformScript", assay.getProtocolTransformScript(), new WidgetUpdatable()
+                _transformFile = new ValidatorTextBox("Transform Script", "AssayDesignerTransformScript", assay.getProtocolTransformScript(), new WidgetUpdatable()
                 {
                     public void update(Widget widget)
                     {
@@ -472,8 +477,8 @@ public class AssayDesignerMainPanel extends VerticalPanel implements Saveable<GW
                             assay.setProtocolTransformScript(StringUtils.trimToEmpty(((TextBox)widget).getText()));
                         }
                     }
-                }, this);
-                transformFile.getBox().setVisibleLength(79);
+                }, this, _debugScriptFiles, _allowSpacesInPath);
+                _transformFile.getBox().setVisibleLength(79);
                 FlowPanel transformNamePanel = new FlowPanel();
                 transformNamePanel.add(new InlineHTML("Transform Script"));
                 transformNamePanel.add(new HelpPopup("Transform Script", "<div>The full path to the transform script file. " +
@@ -488,7 +493,7 @@ public class AssayDesignerMainPanel extends VerticalPanel implements Saveable<GW
                         "the <a href=\"https://www.labkey.org/wiki/home/Documentation/page.view?name=configureScripting\" target=\"_blank\">help documentation</a>.</div>"));
                 table.getFlexCellFormatter().setStyleName(row, 0, "labkey-form-label");
                 table.setWidget(row, 0, transformNamePanel);
-                table.setWidget(row++, 1, transformFile);
+                table.setWidget(row++, 1, _transformFile);
             }
 
             // validation scripts defined at the type or global level are read only
@@ -513,7 +518,7 @@ public class AssayDesignerMainPanel extends VerticalPanel implements Saveable<GW
                 table.setWidget(row++, 1, text);
             }
 
-            BoundTextBox scriptFile = new BoundTextBox("Validation Script", "AssayDesignerQCScript", assay.getProtocolValidationScript(), new WidgetUpdatable()
+            _validationFile = new ValidatorTextBox("Validation Script", "AssayDesignerQCScript", assay.getProtocolValidationScript(), new WidgetUpdatable()
             {
                 public void update(Widget widget)
                 {
@@ -523,8 +528,8 @@ public class AssayDesignerMainPanel extends VerticalPanel implements Saveable<GW
                         assay.setProtocolValidationScript(StringUtils.trimToEmpty(((TextBox)widget).getText()));
                     }
                 }
-            }, this);
-            scriptFile.getBox().setVisibleLength(79);
+            }, this, _debugScriptFiles, _allowSpacesInPath);
+            _validationFile.getBox().setVisibleLength(79);
 
             FlowPanel validationPanel = new FlowPanel();
             validationPanel.add(new InlineHTML("Validation Script"));
@@ -537,7 +542,7 @@ public class AssayDesignerMainPanel extends VerticalPanel implements Saveable<GW
                     "the <a href=\"https://www.labkey.org/wiki/home/Documentation/page.view?name=configureScripting\" target=\"_blank\">help documentation</a>.</div>"));
             table.setWidget(row, 0, validationPanel);
             table.getFlexCellFormatter().setStyleName(row, 0, "labkey-form-label");
-            table.setWidget(row, 1, scriptFile);
+            table.setWidget(row, 1, _validationFile);
 
             // add a download sample data button if the protocol already exists
             if (_protocolId != null)
@@ -553,7 +558,14 @@ public class AssayDesignerMainPanel extends VerticalPanel implements Saveable<GW
             // add a checkbox to enter debug mode
             _debugScriptFiles.setBool(assay.isSaveScriptFiles());
             BoundCheckBox debugScriptFilesCheckBox = new BoundCheckBox("id_debug_script", _debugScriptFiles, this);
-            scriptFile.getBox().setVisibleLength(79);
+            debugScriptFilesCheckBox.addValueChangeHandler(new ValueChangeHandler<Boolean>(){
+                public void onValueChange(ValueChangeEvent<Boolean> event)
+                {
+                    _transformFile.checkValid();
+                    _validationFile.checkValid();
+                }
+            });
+            _validationFile.getBox().setVisibleLength(79);
             FlowPanel debugPanel = new FlowPanel();
             debugPanel.add(new InlineHTML("Save Script Data"));
             debugPanel.add(new HelpPopup("Save Script Data", "Typically transform and validation script data files are deleted on script completion. " +
@@ -643,6 +655,11 @@ public class AssayDesignerMainPanel extends VerticalPanel implements Saveable<GW
 
         if (_isPlateBased && _assay.getSelectedPlateTemplate() == null)
             errors.add("You must select a plate template from the list, or create one first.");
+
+        if (_transformFile != null && !_transformFile.checkValid())
+            errors.add(_transformFile.validate());
+        if (_validationFile != null && !_validationFile.checkValid())
+            errors.add(_validationFile.validate());
 
         if (errors.size() > 0)
         {
@@ -784,6 +801,31 @@ public class AssayDesignerMainPanel extends VerticalPanel implements Saveable<GW
             }
             if (dirty)
                 event.setMessage("Changes have not been saved and will be discarded.");
+        }
+    }
+
+    class ValidatorTextBox extends BoundTextBox
+    {
+        private BooleanProperty _debugMode;
+        private boolean _allowSpacesInPath;
+
+        public ValidatorTextBox(String caption, String id, String initialValue, WidgetUpdatable updatable,
+                                DirtyCallback dirtyCallback, BooleanProperty debugMode, boolean allowSpacesInPath)
+        {
+            super(caption, id, initialValue, updatable, dirtyCallback);
+            _debugMode = debugMode;
+            _allowSpacesInPath = allowSpacesInPath;
+        }
+
+        @Override
+        protected String validateValue(String text)
+        {
+            if (!_allowSpacesInPath && _debugMode.booleanValue())
+            {
+                if (text.contains(" "))
+                    return _caption + ": The path to the script should not contain spaces when the Save Script Data check box is selected.";
+            }
+            return super.validateValue(text);
         }
     }
 }
