@@ -29,6 +29,7 @@ import org.labkey.api.jsp.JspLoader;
 import org.labkey.api.security.User;
 import org.labkey.api.settings.AppProps;
 import org.labkey.api.settings.LookAndFeelProperties;
+import org.labkey.api.util.ConfigurationException;
 import org.labkey.api.util.MailHelper;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.JspView;
@@ -108,7 +109,7 @@ public class AnnouncementDigestProvider implements MessageDigest.Provider
                 {
                     MailHelper.send(m, null, c);
                 }
-                catch (MessagingException e)
+                catch (ConfigurationException e)
                 {
                     // Just record these exceptions to the local log (don't send to mothership)
                     _log.error(e.getMessage());

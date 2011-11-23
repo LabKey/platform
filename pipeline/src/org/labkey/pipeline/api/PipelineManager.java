@@ -239,7 +239,7 @@ public class PipelineManager
                 MailHelper.send(m, null, c);
             }
         }
-        catch (MessagingException me)
+        catch (ConfigurationException me)
         {
             _log.error("Failed sending an email notification message for a pipeline job", me);
         }
@@ -266,7 +266,7 @@ public class PipelineManager
                 }
             }
         }
-        catch (MessagingException me)
+        catch (ConfigurationException me)
         {
             _log.error("Failed sending an email notification message for a pipeline job", me);
         }

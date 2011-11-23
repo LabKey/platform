@@ -109,6 +109,7 @@ import org.labkey.api.settings.PreferenceService;
 import org.labkey.api.settings.WriteableAppProps;
 import org.labkey.api.settings.WriteableLookAndFeelProperties;
 import org.labkey.api.util.BreakpointThread;
+import org.labkey.api.util.ConfigurationException;
 import org.labkey.api.util.DateUtil;
 import org.labkey.api.util.ExceptionReportingLevel;
 import org.labkey.api.util.Formats;
@@ -4313,7 +4314,7 @@ public class AdminController extends SpringActionController
     {
         private String _to;
         private String _body;
-        private MessagingException _exception;
+        private ConfigurationException _exception;
 
         public String getTo()
         {
@@ -4335,12 +4336,12 @@ public class AdminController extends SpringActionController
             _body = body;
         }
 
-        public MessagingException getException()
+        public ConfigurationException getException()
         {
             return _exception;
         }
 
-        public void setException(MessagingException exception)
+        public void setException(ConfigurationException exception)
         {
             _exception = exception;
         }
@@ -4368,7 +4369,7 @@ public class AdminController extends SpringActionController
                 {
                     MailHelper.send(msg, getUser(), getContainer());
                 }
-                catch(MessagingException e)
+                catch(ConfigurationException e)
                 {
                     form.setException(e);
                 }

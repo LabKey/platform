@@ -23,6 +23,7 @@ import org.labkey.api.notification.EmailPref;
 import org.labkey.api.notification.EmailPrefFilter;
 import org.labkey.api.notification.EmailService;
 import org.labkey.api.security.User;
+import org.labkey.api.util.ConfigurationException;
 import org.labkey.api.util.MailHelper;
 import org.labkey.api.view.HttpView;
 import org.labkey.api.view.JspView;
@@ -53,7 +54,7 @@ public class EmailServiceImpl implements EmailService.I
     private static final Logger _log = Logger.getLogger(EmailService.class);
 
     @Override
-    public void sendMessage(EmailMessage msg, User user, Container c) throws MessagingException
+    public void sendMessage(EmailMessage msg, User user, Container c) throws MessagingException, ConfigurationException
     {
         MailHelper.send(msg.createMessage(), user, c);
     }
@@ -300,6 +301,10 @@ public class EmailServiceImpl implements EmailService.I
                 catch (MessagingException e)
                 {
                     _log.error("Failed to send message: " + msg.getSubject(), e);
+                }
+                catch (ConfigurationException ex)
+                {
+                    _log.error("Unable to send email.", ex);
                 }
             }
         }
