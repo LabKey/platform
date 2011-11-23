@@ -138,6 +138,17 @@ public class SimpleFolderType extends DefaultFolderType
 
     private void reload()
     {
+        if (!_folderTypeFile.isFile())
+        {
+            // The file has been deleted.
+            if (_name != null)
+            {
+                // Remove this folder from the master list
+                ModuleLoader.getInstance().unregisterFolderType(_name);
+            }
+            // Don't try to reload it
+            return;
+        }
         Logger log = Logger.getLogger(SimpleFolderType.class);
         FolderType type = parseFile(_folderTypeFile);
         _name = type.getName();

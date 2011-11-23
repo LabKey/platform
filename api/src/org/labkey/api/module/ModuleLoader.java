@@ -1229,6 +1229,15 @@ public class ModuleLoader implements Filter
         }
     }
 
+    /** Remove the named folder type from the list of known options */
+    public void unregisterFolderType(String name)
+    {
+        synchronized (_folderTypes)
+        {
+            _folderTypes.remove(name);
+        }
+    }
+
     public void registerFolderType(Module sourceModule, FolderType folderType)
     {
         synchronized (_folderTypes)
@@ -1246,11 +1255,12 @@ public class ModuleLoader implements Filter
         }
     }
 
+    /** @return an unmodifiable collection of all registered folder types */
     public Collection<FolderType> getFolderTypes()
     {
         synchronized (_folderTypes)
         {
-            return Collections.unmodifiableCollection(_folderTypes.values());
+            return Collections.unmodifiableCollection(new ArrayList<FolderType>(_folderTypes.values()));
         }
     }
 
