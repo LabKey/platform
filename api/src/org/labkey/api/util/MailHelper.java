@@ -167,7 +167,7 @@ public class MailHelper
      * @param user for auditing purposes, the user who originated the message
      * @param c    for auditing purposes, the container in which this message originated
      */
-    public static void send(Message m, User user, Container c) throws MessagingException
+    public static void send(Message m, User user, Container c) throws ConfigurationException, RuntimeException
     {
         try
         {
@@ -181,12 +181,12 @@ public class MailHelper
         catch (MessagingException e)
         {
             logMessagingException(m, e);
-            throw e;
+            throw new ConfigurationException("Error sending email.", e);
         }
         catch (RuntimeException e)
         {
             logMessagingException(m, e);
-            throw new MessagingException(ERROR_MESSAGE, e);
+            throw e;
         }
     }
 
@@ -232,12 +232,19 @@ public class MailHelper
 
     private static final String ERROR_MESSAGE = "Exception sending email; check your SMTP configuration in " + AppProps.getInstance().getWebappConfigurationFilename();
 
-    private static void logMessagingException(Message m, Exception e) throws MessagingException
+    private static void logMessagingException(Message m, Exception e)
     {
+        try
+        {
         _log.log(Level.WARN, ERROR_MESSAGE +
                 "\nfrom: " + StringUtils.join(m.getFrom(), "; ") + "\n" +
                 "to: " + StringUtils.join(m.getRecipients(RecipientType.TO), "; ") + "\n" +
                 "subject: " + m.getSubject(), e);
+        }
+        catch (MessagingException ex)
+        {
+            //ignore
+        }
     }
 
 
@@ -429,6 +436,10 @@ public class MailHelper
                     catch (MessagingException e)
                     {
                         _log.error("Failed to send message to " + email, e);
+                    }
+                    catch (ConfigurationException e)
+                    {
+                        _log.error("Error sending email.", e);
                     }
                 }
             }

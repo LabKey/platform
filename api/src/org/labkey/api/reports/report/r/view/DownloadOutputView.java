@@ -27,6 +27,7 @@ import org.labkey.api.util.GUID;
 import org.labkey.api.util.PageFlowUtil;
 
 import java.io.File;
+import java.io.IOException;
 import java.io.PrintWriter;
 import java.util.Collections;
 
@@ -55,9 +56,23 @@ public abstract class DownloadOutputView extends ROutputView
         {
             if (_parent.getEntityId() != null)
             {
-                AttachmentFile form = new FileAttachmentFile(getFile());
-                AttachmentService.get().deleteAttachment(_parent, getFile().getName(), null);
-                AttachmentService.get().addAttachments(_parent, Collections.singletonList(form), getViewContext().getUser());
+                try
+                {
+                    AttachmentFile form = new FileAttachmentFile(getFile());
+                    AttachmentService.get().deleteAttachment(_parent, getFile().getName(), null);
+                    AttachmentService.get().addAttachments(_parent, Collections.singletonList(form), getViewContext().getUser());
+                }
+                catch (IOException e)
+                {
+                    if (e.getMessage().contains("larger than the maximum"))
+                    {
+                        out.write("Error, unable to upload file: " + e.getMessage() + ". Contact your administrator to have the maximum file size increased.");
+                    }
+                    else
+                    {
+                        out.write("Error, unable to upload file: " + e.getMessage());
+                    }
+                }
             }
             out.write("<table class=\"labkey-output\">");
             renderTitle(model, out);
