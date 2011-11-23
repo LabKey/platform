@@ -14,6 +14,10 @@
  * limitations under the License.
  */
 
+-- Create an index to make the upgrade go faster
+CREATE INDEX idx_exceptionstacktrace ON
+  mothership.exceptionstacktrace(container, stacktracehash, exceptionstacktraceid);
+
 -- Consolidate duplicate exceptions rows that have the same hash in the same container
 UPDATE mothership.ExceptionReport SET ExceptionStackTraceId =
   (SELECT MIN(est.ExceptionStackTraceId) FROM mothership.ExceptionStackTrace est
@@ -23,6 +27,10 @@ UPDATE mothership.ExceptionReport SET ExceptionStackTraceId =
 -- Delete all but the first report for rows with the same hash and container
 DELETE FROM mothership.ExceptionStackTrace WHERE ExceptionStackTraceId NOT IN
   (SELECT MIN(est2.ExceptionStackTraceId) FROM mothership.ExceptionStackTrace est2 GROUP BY Container, StackTraceHash);
+
+-- We don't need the index anymore, since we're going to be adding a UNIQUE constraint
+-- now that we've de-deduped the rows
+DROP INDEX mothership.idx_exceptionstacktrace;
 
 -- Add a constraint to prevent us from getting duplicate rows in the future
 ALTER TABLE mothership.ExceptionStackTrace
