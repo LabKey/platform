@@ -56,6 +56,7 @@ import org.labkey.api.security.roles.RoleManager;
 import org.labkey.api.security.roles.SiteAdminRole;
 import org.labkey.api.services.ServiceRegistry;
 import org.labkey.api.settings.LookAndFeelProperties;
+import org.labkey.api.util.ConfigurationException;
 import org.labkey.api.util.HelpTopic;
 import org.labkey.api.util.MailHelper;
 import org.labkey.api.util.PageFlowUtil;
@@ -790,7 +791,7 @@ public class SecurityManager
     }
 
 
-    public static void sendEmail(Container c, User user, SecurityMessage message, String to, ActionURL verificationURL) throws MessagingException
+    public static void sendEmail(Container c, User user, SecurityMessage message, String to, ActionURL verificationURL) throws ConfigurationException, MessagingException
     {
         MimeMessage m = createMessage(c, user, message, to, verificationURL);
         MailHelper.send(m, user, c);
