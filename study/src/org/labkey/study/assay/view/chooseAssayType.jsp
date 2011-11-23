@@ -47,25 +47,25 @@
     <table>
         <% for (AssayProvider provider : providers) { %>
         <tr>
-            <td><input id="providerName_<%=provider.getName()%>" name="providerName" type="radio" value="<%= h(provider.getName()) %>"/></td>
-            <td><label for="providerName_<%=provider.getName()%>"><strong><%= h(provider.getName())%></strong></label></td>
+            <td><input id="providerName_<%=h(provider.getName())%>" name="providerName" type="radio" value="<%= h(provider.getName()) %>"/></td>
+            <td><label for="providerName_<%=h(provider.getName())%>"><strong><%= h(provider.getName())%></strong></label></td>
         </tr>
         <tr>
             <td />
-            <td><label for="providerName_<%=provider.getName()%>"><%= provider.getDescription() %></label></td>
+            <td><label for="providerName_<%=h(provider.getName())%>"><%= provider.getDescription() %></label></td>
         </tr>
         <% } %>
         <tr><td>&nbsp;</td><td>&nbsp;</td></tr>
         <%
             Container project = getViewContext().getContainer().getProject();
-            if (!getViewContext().getContainer().equals(project))
+            if (project != null && !getViewContext().getContainer().equals(project))
             {
                 boolean canCreateInProject = project.hasPermission(getViewContext().getUser(), DesignAssayPermission.class);
         %>
         <tr>
             <td><input id="createInProject" name="createInProject" type="checkbox" value="true" <%=canCreateInProject ? "checked" : ""%> <%=canCreateInProject ? "" : "disabled"%>></td>
             <td><label for="createInProject"><span class="<%=canCreateInProject ? "" : "labkey-disabled"%>">
-                Create assay in project folder so it can be shared in sub-folders?
+                Create assay in <%= h(project.getPath()) %> project so it is visible in subfolders
                 </span></label>
                 <% if (!canCreateInProject) { %>
                     <br><em>Requires project administrator permission.</em>

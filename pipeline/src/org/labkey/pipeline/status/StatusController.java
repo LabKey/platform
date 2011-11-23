@@ -16,7 +16,6 @@
 
 package org.labkey.pipeline.status;
 
-import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang.StringUtils;
 import org.apache.log4j.Logger;
 import org.labkey.api.action.*;
@@ -282,9 +281,16 @@ public class StatusController extends SpringActionController
                 File f = new File(_statusFile.getFilePath());
                 if (NetworkDrive.exists(f))
                 {
-                    WebPartView logFileView = new ReaderView(new FileInputStream(f), true, "<pre>", "</pre>");
-                    logFileView.setTitle(f.getName());
-                    result.addView(logFileView);
+                    try
+                    {
+                        WebPartView logFileView = new ReaderView(new FileInputStream(f), true, "<pre>", "</pre>");
+                        logFileView.setTitle(f.getName());
+                        result.addView(logFileView);
+                    }
+                    catch (IOException e)
+                    {
+                        result.addView(new HtmlView("Unable to view file - " + (e.getMessage() == null ? e.toString() : e.getMessage())));
+                    }
                 }
             }
 

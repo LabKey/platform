@@ -180,38 +180,55 @@ public class ModuleAssayProvider extends TsvAssayProvider
         return description;
     }
 
-    protected DomainDescriptorType parseDomain(IAssayDomainType domainType) throws IOException, XmlException
+    protected DomainDescriptorType parseDomain(IAssayDomainType domainType) throws ModuleAssayException
     {
         Resource domainFile = module.getModuleResolver().lookup(basePath.getPath().append(ModuleAssayLoader.DOMAINS_DIR_NAME, domainType.getName().toLowerCase() + ".xml"));
         if (domainFile == null || !domainFile.exists())
             return null;
 
-        DomainDocument doc = DomainDocument.Factory.parse(domainFile.getInputStream());
-        DomainDescriptorType xDomain = doc.getDomain();
-        ArrayList<XmlError> errors = new ArrayList<XmlError>();
-        XmlOptions options = new XmlOptions().setErrorListener(errors);
-        if (xDomain != null && xDomain.validate(options))
+        try
         {
-            if (!xDomain.isSetName())
-                xDomain.setName(domainType.getName() + " Fields");
-
-            if (!xDomain.isSetDomainURI())
-                xDomain.setDomainURI(domainType.getLsidTemplate());
-
-            return xDomain;
-        }
-
-        if (errors.size() > 0)
-        {
-            StringBuffer sb = new StringBuffer();
-            while (errors.size() > 0)
+            DomainDocument doc = DomainDocument.Factory.parse(domainFile.getInputStream());
+            DomainDescriptorType xDomain = doc.getDomain();
+            ArrayList<XmlError> errors = new ArrayList<XmlError>();
+            XmlOptions options = new XmlOptions().setErrorListener(errors);
+            if (xDomain != null && xDomain.validate(options))
             {
-                XmlError error = errors.remove(0);
-                sb.append(error.toString());
-                if (errors.size() > 0)
-                    sb.append("\n");
+                if (!xDomain.isSetName())
+                    xDomain.setName(domainType.getName() + " Fields");
+
+                if (!xDomain.isSetDomainURI())
+                    xDomain.setDomainURI(domainType.getLsidTemplate());
+
+                return xDomain;
             }
-            throw new XmlException(sb.toString());
+
+            if (errors.size() > 0)
+            {
+                StringBuffer sb = new StringBuffer();
+                while (errors.size() > 0)
+                {
+                    XmlError error = errors.remove(0);
+                    sb.append(error.toString());
+                    if (errors.size() > 0)
+                        sb.append("\n");
+                }
+                ModuleAssayException e = new ModuleAssayException("Unable to parse " + domainFile + ": " + sb.toString());
+                ExceptionUtil.decorateException(e, ExceptionUtil.ExceptionInfo.SkipMothershipLogging, "true", true);
+                throw e;
+            }
+        }
+        catch (IOException e)
+        {
+            ModuleAssayException wrapped = new ModuleAssayException("Unable to parse " + domainFile + ": " + e.toString(), e);
+            ExceptionUtil.decorateException(wrapped, ExceptionUtil.ExceptionInfo.SkipMothershipLogging, "true", true);
+            throw wrapped;
+        }
+        catch (XmlException e)
+        {
+            ModuleAssayException wrapped = new ModuleAssayException("Unable to parse " + domainFile + ": " + e.toString(), e);
+            ExceptionUtil.decorateException(wrapped, ExceptionUtil.ExceptionInfo.SkipMothershipLogging, "true", true);
+            throw wrapped;
         }
 
         return null;
@@ -220,15 +237,7 @@ public class ModuleAssayProvider extends TsvAssayProvider
     /** @return a domain and its default values */
     protected Pair<Domain, Map<DomainProperty, Object>> createDomain(Container c, User user, IAssayDomainType domainType)
     {
-        DomainDescriptorType xDomain;
-        try
-        {
-            xDomain = parseDomain(domainType);
-        }
-        catch (Exception e)
-        {
-            throw new ModuleAssayException("Failed to load '" + domainType.getName().toLowerCase() + "' domain xml file:\n" + e.getMessage(), e);
-        }
+        DomainDescriptorType xDomain = parseDomain(domainType);
 
         if (xDomain != null)
         {
@@ -270,16 +279,9 @@ public class ModuleAssayProvider extends TsvAssayProvider
         Map<IAssayDomainType, DomainDescriptorType> domainsDescriptors = new LinkedHashMap<IAssayDomainType, DomainDescriptorType>(AssayDomainTypes.values().length);
         for (IAssayDomainType domainType : AssayDomainTypes.values())
         {
-            try
-            {
-                DomainDescriptorType xDomain = parseDomain(domainType);
-                if (xDomain != null)
-                    domainsDescriptors.put(domainType, xDomain);
-            }
-            catch (Exception e)
-            {
-                throw new ModuleAssayException("Failed to load '" + domainType.getName().toLowerCase() + "' domain xml file:\n" + e.getMessage(), e);
-            }
+            DomainDescriptorType xDomain = parseDomain(domainType);
+            if (xDomain != null)
+                domainsDescriptors.put(domainType, xDomain);
         }
 
         Map<String, Set<String>> required = new HashMap<String, Set<String>>();

@@ -774,6 +774,8 @@ public class MothershipController extends SpringActionController
                     "and core.principals.userid = core.usersdata.userid\n" +
                     "group by core.usersdata.displayname order by ExceptionCount DESC");
             getDataRegion().getDisplayColumn("Owner").setURL("mothership/showExceptions.view?ExceptionSummary.BugNumber~isblank=&ExceptionSummary.AssignedTo/DisplayName~eq=${Owner}");
+            getDataRegion().getDisplayColumn("Owner").setWidth("200");
+            getDataRegion().getDisplayColumn("ExceptionCount").setCaption("Exception Count");
         }
     }
 
