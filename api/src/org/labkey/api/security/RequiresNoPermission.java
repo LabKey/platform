@@ -20,10 +20,11 @@ import java.lang.annotation.Retention;
 import java.lang.annotation.Target;
 import java.lang.annotation.ElementType;
 
-/*
-* User: adam
-* Date: Dec 22, 2009
-* Time: 10:52:20 AM
+/**
+ * Indicates that an action does not require any kind of authentication or permission to invoke.
+ * User: adam
+ * Date: Dec 22, 2009
+ * Time: 10:52:20 AM
 */
 public @Retention(java.lang.annotation.RetentionPolicy.RUNTIME) @Target(ElementType.TYPE)
 @interface RequiresNoPermission

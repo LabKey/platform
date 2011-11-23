@@ -21,6 +21,8 @@ import java.lang.annotation.Retention;
 import java.lang.annotation.Target;
 
 /**
+ * Indicates that the user must be authenticated as a site administrator (not just have admin permission in the current
+ * container) to invoke the action.
  * User: matthewb
  * Date: Jan 11, 2007
  * Time: 11:35:28 AM

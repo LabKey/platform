@@ -21,15 +21,12 @@ import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;
 import java.lang.annotation.Target;
 
-/*
-* User: Dave
-* Date: Apr 28, 2009
-* Time: 3:49:17 PM
-*/
-
 /**
- * Specifies the required permissions for an action.
- */
+ * Specifies the required permission for an action. It does not imply that the user needs to be logged in or otherwise
+ * authenticated.
+ * User: Dave
+ * Date: Apr 28, 2009
+*/
 @Retention(java.lang.annotation.RetentionPolicy.RUNTIME) @Target(ElementType.TYPE)
 public @interface RequiresPermissionClass
 {

@@ -21,6 +21,7 @@ import java.lang.annotation.Target;
 import java.lang.annotation.ElementType;
 
 /**
+ * Indicates that a user must be authenticated (not a guest), but does not require any particular permission.
  * User: matthewb
  * Date: Jan 11, 2007
  * Time: 11:35:28 AM
