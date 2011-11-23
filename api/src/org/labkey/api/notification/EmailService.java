@@ -18,6 +18,7 @@ package org.labkey.api.notification;
 import org.labkey.api.data.Container;
 import org.labkey.api.security.User;
 import org.labkey.api.services.ServiceRegistry;
+import org.labkey.api.util.ConfigurationException;
 
 import javax.mail.MessagingException;
 
@@ -46,7 +47,7 @@ public class EmailService
          * @param user for auditing purposes, the user who is considered to have originated the message
          * @param c for auditing purposes, the container that is considered to have originated the message
          */
-        void sendMessage(EmailMessage msg, User user, Container c) throws MessagingException;
+        void sendMessage(EmailMessage msg, User user, Container c) throws MessagingException, ConfigurationException;
 
         /**
          * Send the email message asynchronously in a background thread
