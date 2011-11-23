@@ -29,6 +29,7 @@ import org.labkey.api.exp.property.PropertyService;
 import org.labkey.api.query.AliasedColumn;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.FilteredTable;
+import org.labkey.api.query.LookupForeignKey;
 import org.labkey.api.query.QueryService;
 import org.labkey.api.query.QueryView;
 import org.labkey.api.security.User;
@@ -39,6 +40,7 @@ import org.labkey.api.view.ViewContext;
 import org.labkey.api.study.Study;
 import org.labkey.api.study.StudyService;
 import org.labkey.api.study.DataSet;
+import org.labkey.study.StudySchema;
 import org.labkey.study.controllers.DatasetController;
 import org.labkey.study.controllers.StudyController;
 import org.labkey.study.model.DataSetDefinition;
@@ -117,10 +119,17 @@ public class DatasetAuditViewFactory extends SimpleAuditViewFactory
     public void setupTable(final FilteredTable table)
     {
         final ColumnInfo containerColumn = table.getColumn("ContainerId");
-        final ColumnInfo datasetDefColumn = table.getColumn("IntKey1");
-        datasetDefColumn.setLabel("Dataset");
 
-        datasetDefColumn.setDisplayColumnFactory(new DisplayColumnFactory()
+        ColumnInfo datasetColumn = new AliasedColumn(table, "Dataset", table.getColumn("IntKey1"));
+        LookupForeignKey fk = new LookupForeignKey("DatasetId", "Label") {
+            public TableInfo getLookupTableInfo()
+            {
+                return StudySchema.getInstance().getTableInfoDataSet();
+            }
+        };
+        fk.addJoin(table.getColumn("ContainerId"), "container");
+        datasetColumn.setFk(fk);
+        datasetColumn.setDisplayColumnFactory(new DisplayColumnFactory()
         {
             public DisplayColumn createRenderer(final ColumnInfo colInfo)
             {
@@ -135,7 +144,7 @@ public class DatasetAuditViewFactory extends SimpleAuditViewFactory
                     public void renderGridCellContents(RenderContext ctx, Writer out) throws IOException
                     {
                         Object containerId = containerColumn.getValue(ctx);
-                        Integer datasetId = (Integer)getValue(ctx);
+                        Integer datasetId = (Integer)getBoundColumn().getValue(ctx);
                         if (datasetId == null)
                             return;
 
@@ -163,13 +172,13 @@ public class DatasetAuditViewFactory extends SimpleAuditViewFactory
                         out.write("<a href=\"");
                         out.write(PageFlowUtil.filter(url.getLocalURIString()));
                         out.write("\">");
-                        out.write(def.getName());
+                        out.write((String)ctx.get(getDisplayColumn().getFieldKey()));
                         out.write("</a>");
                     }
                 };
             }
         });
-
+        table.addColumn(datasetColumn);
 
         FieldKey oldFieldKey = FieldKey.fromParts("Property", "oldRecordMap");
         FieldKey newFieldKey = FieldKey.fromParts("Property", "newRecordMap");
@@ -252,7 +261,7 @@ public class DatasetAuditViewFactory extends SimpleAuditViewFactory
         columns.add(FieldKey.fromParts("ImpersonatedBy"));
         columns.add(FieldKey.fromParts("ProjectId"));
         columns.add(FieldKey.fromParts("ContainerId"));
-        columns.add(FieldKey.fromParts("IntKey1"));
+        columns.add(FieldKey.fromParts("Dataset"));
         columns.add(FieldKey.fromParts("Comment"));
 
         return columns;

@@ -60,6 +60,7 @@ import java.util.TreeMap;
 public class AuditLogTable extends FilteredTable
 {
     private AuditLogService.AuditViewFactory _viewFactory;
+    private QuerySchema _schema;
 
     public AuditLogTable(QuerySchema schema, TableInfo tInfo, String viewFactoryName)
     {
@@ -93,6 +94,11 @@ public class AuditLogTable extends FilteredTable
         addColumn(wrapColumn("RowId", getRealTable().getColumn("RowId")));
         addColumn(wrapColumn("Date", getRealTable().getColumn("Created")));
         addColumn(wrapColumn("EventType", getRealTable().getColumn("EventType")));
+
+        // set the filter for the audit view type
+        if (_viewFactory != null)
+            addCondition(getRealTable().getColumn("EventType"), _viewFactory.getEventType());
+
         addColumn(wrapColumn("Comment", getRealTable().getColumn("Comment")));
 
         addColumn(wrapColumn("Key1", getRealTable().getColumn("Key1")));
