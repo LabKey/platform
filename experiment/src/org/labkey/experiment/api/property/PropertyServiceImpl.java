@@ -225,6 +225,8 @@ public class PropertyServiceImpl implements PropertyService.Interface
         prop.setName(xProp.getName());
         prop.setRangeURI(xProp.getRangeURI());
         String propertyURI = xProp.getPropertyURI();
+        // Deal with legacy property URIs that don't have % in the name part properly encoded
+        propertyURI = Lsid.fixupPropertyURI(propertyURI);
         if (context != null  && propertyURI != null && propertyURI.indexOf("${") != -1)
         {
             propertyURI = LsidUtils.resolveLsidFromTemplate(propertyURI, context);

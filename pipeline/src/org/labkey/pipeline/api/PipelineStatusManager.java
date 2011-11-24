@@ -523,9 +523,15 @@ public class PipelineStatusManager
 
                 if (!hasActiveChildren)
                 {
-                    // Delete all the children too if nothing is active
-                    deleteable.addAll(Arrays.asList(children));
-                    deleteable.add(sf);
+                    if (children.length == 0)
+                    {
+                        deleteable.add(sf);
+                    }
+                    else
+                    {
+                        // Delete the children first and let the recursion delete the parent.
+                        deleteable.addAll(Arrays.asList(children));
+                    }
                 }
             }
         }
@@ -541,7 +547,7 @@ public class PipelineStatusManager
             List<Object> params = new ArrayList<Object>();
             for (PipelineStatusFile pipelineStatusFile : deleteable)
             {
-                // Allow the provider to do any necessary clean-up, or veto the deletion.
+                // Allow the provider to do any necessary clean-up
                 PipelineProvider provider = PipelineService.get().getPipelineProvider(pipelineStatusFile.getProvider());
                 if (provider != null)
                     provider.preDeleteStatusFile(pipelineStatusFile);

@@ -433,7 +433,8 @@ public class XarExporter
             xProp.setDescription(domainProp.getDescription());
         }
         xProp.setName(domainProp.getName());
-        xProp.setPropertyURI(_relativizedLSIDs.relativize(domainProp.getPropertyURI()));
+        // Deal with legacy property URIs that don't have % in the name part properly encoded
+        xProp.setPropertyURI(_relativizedLSIDs.relativize(Lsid.fixupPropertyURI(domainProp.getPropertyURI())));
         PropertyDescriptor prop = domainProp.getPropertyDescriptor();
         if (prop.getConceptURI() != null)
         {

@@ -3725,7 +3725,7 @@ public class StudyManager
                 try
                 {
                     _import(def, rows, errors);
-                    assertTrue("Should have thrown exception before this line", false);
+                    fail("Should have failed due to duplicate rows");
                 }
                 catch(Exception e)
                 {

@@ -238,11 +238,11 @@ public enum LSIDRelativizer
         {
             StringBuilder sb = new StringBuilder(prefix);
             sb.append(":");
-            sb.append(objectId);
+            sb.append(Lsid.encodePart(objectId).replace("%23", "#"));
             if (version != null && !(version.length() == 0))
             {
                 sb.append(":");
-                sb.append(version);
+                sb.append(Lsid.encodePart(version));
 
                 if (exportVersion != null)
                 {
@@ -331,6 +331,13 @@ public enum LSIDRelativizer
             assertEquals("urn:lsid:" + XarContext.LSID_AUTHORITY_SUBSTITUTION + ":Protocol.Folder-" + XarContext.CONTAINER_ID_SUBSTITUTION + ":MS2.PreSearch:v1", set.relativize("urn:lsid:localhost:Protocol.Folder-1:MS2.PreSearch:v1"));
             assertEquals("urn:lsid:" + XarContext.LSID_AUTHORITY_SUBSTITUTION + ":Protocol.Folder-" + XarContext.CONTAINER_ID_SUBSTITUTION + ":MS2.PreSearch:v1-Export1", set.relativize("urn:lsid:localhost:Protocol.Folder-2:MS2.PreSearch:v1"));
             assertEquals("urn:lsid:" + XarContext.LSID_AUTHORITY_SUBSTITUTION + ":Protocol.Folder-" + XarContext.CONTAINER_ID_SUBSTITUTION + ":MS2.PreSearch:v1-Export2", set.relativize("urn:lsid:localhost:Protocol.Folder-3:MS2.PreSearch:v1"));
+        }
+
+        @Test
+        public void testSpecialCharacters()
+        {
+            RelativizedLSIDs set = new RelativizedLSIDs(FOLDER_RELATIVE);
+            assertEquals("urn:lsid:" + XarContext.LSID_AUTHORITY_SUBSTITUTION + ":AssayDomain-Run.Folder-" + XarContext.CONTAINER_ID_SUBSTITUTION + ":WithPercent#%25IDs", set.relativize("urn:lsid:labkey.com:AssayDomain-Run.Folder-18698:WithPercent#%25IDs"));
         }
     }
 }
