@@ -27,6 +27,8 @@ import org.labkey.api.study.assay.AssayService;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.view.*;
 
+import java.io.IOException;
+import java.io.Writer;
 import java.util.Collections;
 import java.util.List;
 
@@ -169,13 +171,46 @@ public class ExperimentRunListView extends QueryView
             if (!protocols.isEmpty())
             {
                 Collections.sort(protocols);
-                MenuButton addRunsButton = new MenuButton("Upload Assay Runs");
+                MenuButton addRunsButton;
+                if(c.getFolderType().getForceAssayUploadIntoWorkbooks() && !c.isWorkbook())
+                {
+                    addRunsButton = new MenuButton("Upload Assay Runs"){
+                        public void render(RenderContext ctx, Writer out) throws IOException
+                        {
+                            out.write("<script type=\"text/javascript\">\n");
+                            out.write("LABKEY.requiresExt4ClientAPI()\n");
+                            out.write("LABKEY.requiresScript('extWidgets/ImportWizard.js')\n");
+                            out.write("</script>\n");
+                            super.render(ctx, out);
+                        }
+                    };
+                }
+                else
+                {
+                    addRunsButton = new MenuButton("Upload Assay Runs");
+                }
+
                 for (ExpProtocol protocol : protocols)
                 {
                     AssayProvider provider = AssayService.get().getProvider(protocol);
                     if (provider != null)
                     {
-                        addRunsButton.addMenuItem(protocol.getName() + " (" + provider.getName() + ")", provider.getImportURL(getContainer(), protocol));
+                        NavTree btn;
+                        if(c.getFolderType().getForceAssayUploadIntoWorkbooks() && !c.isWorkbook())
+                        {
+                            btn = new NavTree(protocol.getName() + " (" + provider.getName() + ")");
+                            btn.setScript("Ext4.create('LABKEY.ext.ImportWizardWin', {" +
+                                "controller: 'assay'," +
+                                "action: '" + provider.getImportURL(c, protocol).getAction() + "'," +
+                                "urlParams: {rowId: " + protocol.getRowId() + "}" +
+                                "}).show();");
+                        }
+                        else
+                        {
+                            btn = new NavTree(protocol.getName() + " (" + provider.getName() + ")", provider.getImportURL(getContainer(), protocol));
+                        }
+
+                        addRunsButton.addMenuItem(btn);
                     }
                 }
                 bar.add(addRunsButton);
