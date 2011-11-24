@@ -1,11 +1,9 @@
-<%@ page import="org.labkey.api.data.Container" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.portal.UtilController" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%
     UtilController.DotForm form = (UtilController.DotForm)HttpView.currentModel();
-    Container c = getViewContext().getContainer();
 %>
 <labkey:errors/>
 <form>

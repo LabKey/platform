@@ -23,6 +23,7 @@ import org.labkey.api.query.CustomViewInfo;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.security.User;
 import org.labkey.api.security.UserManager;
+import org.labkey.api.settings.AppProps;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.Pair;
 import org.labkey.api.util.URLHelper;
@@ -172,8 +173,7 @@ public class CustomViewInfoImpl implements CustomViewInfo
 
     public String getCustomIconUrl()
     {
-        //might support this in the future
-        return null;
+        return AppProps.getInstance().getContextPath() + "/reports/icon_query_view.png";
     }
 
     public boolean hasFilterOrSort()
@@ -185,6 +185,7 @@ public class CustomViewInfoImpl implements CustomViewInfo
     {
         if (!hasFilterOrSort())
             return null;
+
         try
         {
             URLHelper src = new URLHelper(_cstmView.getFilter());

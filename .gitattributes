@@ -2110,6 +2110,7 @@ query/webapp/query/validateQueries.js -text
 query/webapp/reports/chart.gif -text
 query/webapp/reports/grid.gif -text
 query/webapp/reports/grid_shared.gif -text
+query/webapp/reports/icon_query_view.png -text
 query/webapp/reports/js.png -text
 query/webapp/reports/manageViews.js -text
 query/webapp/reports/output_chart.jpg -text
