@@ -396,7 +396,7 @@ public class DomainUtil
 
         if (StringUtils.isEmpty(pd.getPropertyURI()))
         {
-            String newPropertyURI = createUniquePropertyURI(domain.getTypeURI() + "#" + pd.getName(), propertyUrisInUse);
+            String newPropertyURI = createUniquePropertyURI(domain.getTypeURI() + "#" + Lsid.encodePart(pd.getName()), propertyUrisInUse);
             assert !propertyUrisInUse.contains(newPropertyURI) : "Attempting to assign an existing PropertyURI to a new property";
             pd.setPropertyURI(newPropertyURI);
             propertyUrisInUse.add(newPropertyURI);

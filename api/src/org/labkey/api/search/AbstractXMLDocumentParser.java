@@ -57,29 +57,39 @@ public abstract class AbstractXMLDocumentParser extends AbstractDocumentParser
 
     public static class SAXHandler extends DefaultHandler
     {
+        /** Suggested default is 1 MB */
+        public static final long DEFAULT_MAX_INDEXABLE_SIZE = 1024 * 1024;
+
         private final ContentHandler _xhtmlHandler;
         private final boolean _includeElementNames;
         private final boolean _includeAttributeNames;
         private final boolean _includeAttributeValues;
         private final boolean _includeText;
+        private final long _maxIndexableSize;
 
         private Set<String> _stopElements = new HashSet<String>();
+
+        /** How many characters have been included in document to be indexed so far */
+        private long _indexedSize = 0;
 
         /**
          * @param handler Lucene listener for content
          * @param includeElementNames whether to include the names of XML elements in the index
          * @param includeAttributeNames whether to include the names of XML attributes in the index
          * @param includeAttributeValues whether to include the values of XML attributes in the index
-         * @param includeText whether to XML character data in the index 
+         * @param includeText whether to XML character data in the index
+         * @param maxIndexableSize maximum number of characters to add to index. -1 to have no limit. Parsing
+         * stops once the max has been reached.
          */
         public SAXHandler(ContentHandler handler, boolean includeElementNames, boolean includeAttributeNames,
-                          boolean includeAttributeValues, boolean includeText)
+                          boolean includeAttributeValues, boolean includeText, long maxIndexableSize)
         {
             _xhtmlHandler = handler;
             _includeElementNames = includeElementNames;
             _includeAttributeNames = includeAttributeNames;
             _includeAttributeValues = includeAttributeValues;
             _includeText = includeText;
+            _maxIndexableSize = maxIndexableSize;
         }
 
         /** Element name at which the parsing should stop completely */
@@ -123,6 +133,17 @@ public abstract class AbstractXMLDocumentParser extends AbstractDocumentParser
             }
             sb.append("\n");
             _xhtmlHandler.characters(sb.toString().toCharArray(), 0, sb.length());
+
+            contentAdded(sb.length());
+        }
+
+        private void contentAdded(int length) throws ParseFinishedException
+        {
+            _indexedSize += length;
+            if (_maxIndexableSize >= 0 && _indexedSize > _maxIndexableSize)
+            {
+                throw new ParseFinishedException();
+            }
         }
 
         @Override
@@ -131,6 +152,7 @@ public abstract class AbstractXMLDocumentParser extends AbstractDocumentParser
             if (_includeText)
             {
                 _xhtmlHandler.characters(ch, start, length);
+                contentAdded(length);
             }
         }
     }

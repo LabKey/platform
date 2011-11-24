@@ -20,6 +20,8 @@ import org.junit.Test;
 import org.labkey.api.settings.AppProps;
 
 import java.io.UnsupportedEncodingException;
+import java.net.URI;
+import java.net.URISyntaxException;
 import java.net.URLDecoder;
 import java.net.URLEncoder;
 import java.util.regex.Matcher;
@@ -85,7 +87,8 @@ public class Lsid
         this.suffix = namespaceSuffix;
     }
 
-    private String encodePart(String original)
+    /** URI encode a part of a URI. Colons will be encoded into %3A, for example */
+    public static String encodePart(String original)
     {
         try
         {
@@ -99,7 +102,8 @@ public class Lsid
         }
     }
 
-    private String decodePart(String original)
+    /** URI decode a part of a URI. */
+    public static String decodePart(String original)
     {
         if (original == null)
         {
@@ -395,5 +399,32 @@ public class Lsid
             assertEquals("Repro+Set", lsid.getObjectId());
             assertEquals(null, lsid.getVersion());
         }
+
+        @Test
+        public void testFixupPropertyURI()
+        {
+            assertEquals("urn:lsid:labkey.com:AssayDomain-Run.Folder-18698:WithPercent#%25IDs", fixupPropertyURI("urn:lsid:labkey.com:AssayDomain-Run.Folder-18698:WithPercent#%IDs"));
+            assertEquals("urn:lsid:labkey.com:AssayDomain-Batch.Folder-18698:WithPercent#Bad%25Name", fixupPropertyURI("urn:lsid:labkey.com:AssayDomain-Batch.Folder-18698:WithPercent#Bad%Name"));
+            assertEquals("urn:lsid:labkey.com:AssayDomain-Batch.Folder-18698:WithPercent#TargetStudy", fixupPropertyURI("urn:lsid:labkey.com:AssayDomain-Batch.Folder-18698:WithPercent#TargetStudy"));
+        }
     }
+
+    /** Handle an unencoded % in the property name part of a property URI (after the hash) by encoding it, if needed */
+    public static String fixupPropertyURI(String uri)
+    {
+        try
+        {
+            new URI(uri);
+        }
+        catch (URISyntaxException e)
+        {
+            int hashIndex = uri.indexOf("#");
+            if (hashIndex > -1 && uri.substring(hashIndex).contains("%"))
+            {
+                return uri.substring(0, hashIndex + 1) + Lsid.encodePart(uri.substring(hashIndex + 1));
+            }
+        }
+        return uri;
+    }
+
 }
