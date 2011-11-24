@@ -123,7 +123,7 @@ public class ROutputView extends HttpView
     {
         File root = ScriptEngineReport.getTempRoot(ReportService.get().createDescriptorInstance(RReportDescriptor.TYPE));
 
-        File newFile = new File(root, FileUtil.makeFileNameWithTimestamp(file.getName(), FileUtil.getExtension(file)));
+        File newFile = new File(root, FileUtil.makeFileNameWithTimestamp(FileUtil.getBaseName(file.getName()), FileUtil.getExtension(file)));
         newFile.delete();
 
         if (file.renameTo(newFile))
