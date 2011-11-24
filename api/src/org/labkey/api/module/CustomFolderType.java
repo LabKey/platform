@@ -147,7 +147,7 @@ public class CustomFolderType implements FolderType
     @NotNull
     public String getFolderIconPath()
     {
-        return "_images/defaultlogosmall.gif";
+        return "_icons/icon_folder2.png";
     }
 
     public boolean getForceAssayUploadIntoWorkbooks()

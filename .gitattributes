@@ -4513,6 +4513,8 @@ internal/webapp/_icons/file_temporary.png -text
 internal/webapp/_icons/folder.gif -text
 internal/webapp/_icons/gz.gif -text
 internal/webapp/_icons/html.png -text
+internal/webapp/_icons/icon_folder1.png -text
+internal/webapp/_icons/icon_folder2.png -text
 internal/webapp/_icons/image.png -text
 internal/webapp/_icons/iqy.gif -text
 internal/webapp/_icons/jar.gif -text

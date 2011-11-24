@@ -53,7 +53,7 @@ public class DefaultFolderType implements FolderType
     protected String name;
     protected Module defaultModule;
     protected boolean workbookType = false;
-    protected String folderIconPath = "_images/defaultlogosmall.gif";
+    protected String folderIconPath = "_icons/icon_folder2.png";
     protected boolean forceAssayUploadIntoWorkbooks = false;
 
     public DefaultFolderType(String name, String description)
