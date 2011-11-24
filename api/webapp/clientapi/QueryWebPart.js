@@ -273,6 +273,16 @@ LABKEY.QueryWebPart = Ext.extend(Ext.util.Observable,
 
     constructor : function(config)
     {
+        this.addEvents(
+                /**
+                 * @memberOf LABKEY.QueryWebPart#
+                 * @name render
+                 * @event
+                 * @description Fired after the web part html is rendered into the page.
+                 */
+                "render"
+        );
+
         this.errorType = 'html';
 
         Ext.apply(this, config, {
@@ -332,14 +342,6 @@ LABKEY.QueryWebPart = Ext.extend(Ext.util.Observable,
         //{
         //    this.userAggregates = LABKEY.Filter.appendAggregateParams({}, config.removeableAggregates, this.dataRegionName);
         //}
-
-        /**
-         * @memberOf LABKEY.QueryWebPart#
-         * @name render
-         * @event
-         * @description Fired after the web part html is rendered into the page.
-         */
-        this.addEvents("render");
 
         if (this.renderTo)
             this.render();
