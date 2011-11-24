@@ -15,6 +15,7 @@ Ext4.define('LABKEY.ext.ImportPanel', {
             schemaName: this.schemaName,
             queryName: this.queryName,
             viewName: this.viewName,
+            columns: '*',
             maxRows: 0,
             autoLoad: true,
             listeners: {

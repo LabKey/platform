@@ -361,7 +361,7 @@ LABKEY.ext4.FORMBUTTONS = {
                 }
 
                 function onSuccess(store){
-                    Ext4.Msg.alert("Success", "Record successfully inserted", function(){
+                    Ext4.Msg.alert("Success", "Your upload was successful!", function(){
                         window.location = btn.successURL || LABKEY.ActionURL.buildURL('query', 'executeQuery', null, {schemaName: this.store.schemaName, 'query.queryName': this.store.queryName})
                     }, panel);
                 }

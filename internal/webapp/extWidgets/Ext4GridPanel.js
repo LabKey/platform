@@ -18,23 +18,27 @@ Ext4.define('LABKEY.ext4.GridPanel', {
     extend: 'Ext.grid.Panel',
     alias: 'widget.labkey-gridpanel',
     config: {
-        defaultFieldWidth: 200
+        defaultFieldWidth: 200,
+        editable: true,
+        pageSize: 200,
+        autoSave: false,
+        multiSelect: true
     },
     initComponent: function(){
 
         this.store = this.store || this.createStore();
 
         Ext4.applyIf(this, {
-            columns: [],
-            pageSize: 200,
-            autoSave: false,
-            editable: true,
-            multiSelect: true
+            columns: []
         });
 
         this.configurePlugins();
 
         this.callParent();
+
+        //if we sort/filter remotely, we risk losing changes made on the client
+        this.remoteSort = !this.editable;
+        this.remoteFilter = !this.editable;
 
         if(this.autoSave)
             this.store.autoSync = true;  //could we just obligate users to put this on the store directly?
@@ -160,7 +164,7 @@ LABKEY.ext4.GRIDBUTTONS = {
             handler: function(btn, key){
                 var panel = btn.up('gridpanel');
                 panel.store.on('write', function(store, success){
-                    Ext4.Msg.alert("Success", "Record successfully inserted", function(){
+                    Ext4.Msg.alert("Success", "Your upload was successful!", function(){
                         window.location = btn.successURL || LABKEY.ActionURL.buildURL('query', 'executeQuery', null, {schemaName: this.store.schemaName, 'query.queryName': this.store.queryName})
                     }, panel);
                 }, this);

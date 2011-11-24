@@ -5,9 +5,11 @@
  */
 
 LABKEY.requiresExt4ClientAPI();
+LABKEY.requiresScript('/extWidgets/QueryPanel.js');
+LABKEY.requiresScript('/extWidgets/DetailsPanel.js');
+LABKEY.requiresScript('/extWidgets/GraphPanel.js');
 
 Ext4.namespace('LABKEY.ext');
-
 
 Ext4.define('LABKEY.ext4.TabbedReportPanel', {
     extend: 'Ext.form.Panel',
@@ -17,9 +19,7 @@ Ext4.define('LABKEY.ext4.TabbedReportPanel', {
     },
     initComponent: function(){
         Ext4.apply(this, {
-            autoHeight: true
-            ,bodyBorder: false
-            ,autoScroll: true
+            bodyBorder: false
             ,border: false
             ,reportTabs: {}
             ,defaults: {
@@ -34,13 +34,19 @@ Ext4.define('LABKEY.ext4.TabbedReportPanel', {
                     width: 500,
                     items: [{
                         xtype: 'radiogroup',
-                        //style: 'padding: 5px;',
                         width: 300,
                         columns: 1,
-                        autoHeight: true,
                         itemId: 'filterType',
                         fieldLabel: 'Type of Search',
-                        items: this.getFilterTypes()
+                        items: this.getFilterTypes(),
+                        listeners: {
+                            scope: this,
+                            change: {fn: function(o, val){
+                                this.processSubj();
+                                if(!Ext4.isArray(val))
+                                    this['render'+val.filterType]();
+                            }, scope: this, buffer: 20}
+                        }
                     },{
                         xtype: 'panel',
                         border: false,
@@ -52,7 +58,10 @@ Ext4.define('LABKEY.ext4.TabbedReportPanel', {
                     }]
                 },{
                     width: 'auto',
-                    itemId: 'idPanel'
+                    itemId: 'idPanel',
+                    defaults: {
+                        border: false
+                    }
                 }]
             },{
                 xtype: 'button'
@@ -62,16 +71,13 @@ Ext4.define('LABKEY.ext4.TabbedReportPanel', {
                 ,itemId: 'submitBtn'
                 ,type: 'submit'
                 ,scope: this
-                ,style:'margin-left:200px;'
+                ,style:'margin-left:110px;'
             },{
                 tag: 'span',
                 style: 'padding: 10px'
             },{
                 xtype: 'tabpanel',
-                itemId: 'tabPanel',
-                autoHeight: true,
-                activeTab: 0,
-                cls: 'extContainer'
+                itemId: 'tabPanel'
             }]
 
         });
@@ -80,8 +86,13 @@ Ext4.define('LABKEY.ext4.TabbedReportPanel', {
 
         this.createTabPanel();
         this.renderSingleSubject();
+        this.restoreFromUrl();
 
-        this.on('beforeRender', this.restoreUrl);
+        Ext4.create('Ext.util.KeyNav', Ext4.getBody(), {
+            scope: this,
+            enter: this.onSubmit
+        });
+
     },
     getFilterTypes: function(){
         return [{
@@ -95,7 +106,16 @@ Ext4.define('LABKEY.ext4.TabbedReportPanel', {
             name: 'filterType',
             inputValue: 'MultiSubject',
             boxLabel: 'Multiple Subjects'
+        },{
+            xtype: 'radio',
+            name: 'filterType',
+            inputValue: 'AllData',
+            boxLabel: 'All Data'
         }];
+    },
+    renderAllData: function(){
+        var target = this.down('#filterPanel');
+        target.removeAll();
     },
     renderSingleSubject: function(){
         var target = this.down('#filterPanel');
@@ -130,105 +150,108 @@ Ext4.define('LABKEY.ext4.TabbedReportPanel', {
 
     },
     renderMultiSubject: function(){
-        var target = this.filterPanel;
+        var target = this.down('#filterPanel');
         target.removeAll();
-        target.add({width: 200, html: 'Enter Subject Id(s):<br><i>(Separated by commas, semicolons, space or line breaks)</i>'});
+        //target.add({width: 200, html: 'Enter Subject Id(s):<br><i>(Separated by commas, semicolons, space or line breaks)</i>'});
 
-        var thePanel = target.add({xtype: 'panel'});
+        var thePanel = target.add({
+            xtype: 'form',
+            layout: 'hbox'
+        });
 
         thePanel.add({
             xtype: 'textarea',
             fieldLabel: 'Subject(s)',
-            width:165,
+            width: 250,
+            height: 100,
             itemId: 'subjArea'
         });
 
-        var subjButton = target.add({
-            bodyStyle:'padding-left: 16px;padding-right: 16px',
+        var subjButton = thePanel.add({
+            bodyStyle:'padding-left: 10px;padding-right: 10px',
+            width: 100,
             buttonAlign: 'center',
-            defaults: {buttonAlign: 'center'}
+            border: false,
+            defaults: {
+                buttonAlign: 'center'
+                ,scope: this
+                ,bodyStyle:'align: center'
+                ,xtype: 'button'
+                ,minWidth: 85
+                ,style: 'margin: 2px;'
+            }
         });
 
         subjButton.add({
-            xtype: 'button'
-            ,text: '  Append -->'
-            ,minWidth: 85
+            text: '  Append -->'
             ,handler: this.processSubj
-            ,scope: this
-            //,style:'align: center'
-            ,bodyStyle:'align: center'
-            ,buttonAlign: 'center'
-            //,cls: 'labkey-button'
         });
 
         subjButton.add({
-            xtype: 'button'
-            ,text: '  Replace -->'
-            ,minWidth: 85
+            text: '  Replace -->'
             ,handler: function(){
                 this.subjectArray = [];
                 this.processSubj()
             }
-            ,scope: this
-            ,bodyStyle:'align: center'
         });
 
         subjButton.add({
-            xtype: 'button'
-            ,text: ' Clear '
-            ,minWidth: 85
+            text: ' Clear '
             ,handler: function(c){
                 this.subjectArray = [];
                 this.down('#idPanel').removeAll();
             }
-            ,scope: this
-            ,bodyStyle:'align: center'
-            ,buttonAlign: 'center'
         });
 
         target.doLayout();
     },
 
-    restoreUrl: function(){
+    restoreFromUrl: function(){
         if(document.location.hash){
             var token = document.location.hash.split('#');
             token = token[1].split('&');
+            var doLoad;
+            var reportName;
             for (var i=0;i<token.length;i++){
                 var t = token[i].split(':');
                 switch(t[0]){
-                    case 'inputType':
-                        Ext4.each(this.down('#inputType').items, function(c){
-                            c.checked = (c.inputValue == t[1]);
-                        }, this);
-
-                        this[t[1]]();
+                    case 'filterType':
+                        this.down('#filterType').setValue({filterType: t[1]});
                         break;
                     case 'subjects':
                         if(this.down('#subjArea')){
                             this.down('#subjArea').setValue(t[1]);
-                            //this.processSubj();
+                            this.processSubj();
                         }
                         break;
                     case 'showReport':
-                        this.doLoad = 1;
+                        doLoad = true;
                         break;
                     case 'activeReport':
-                        this.activeReport = t[1];
+                        reportName = t[1];
                         break;
                 }
+            }
+
+            if(doLoad && reportName){
+                this.activeReport = this.down('#'+reportName);
+                this.activeReport.ownerCt.setActiveTab(this.activeReport);
+                this.down('tabpanel').setActiveTab(this.activeReport.ownerCt);
+                this.onSubmit();
             }
         }
     },
 
     processSubj: function(){
-        var type = this.down('#filterType');
+        var type = this.down('#filterType').getValue().filterType;
         var subjArea = this.down('#subjArea');
+        var idPanel = this.down('#idPanel');
 
-        this.subjectArray = [];
-        this.down('#idPanel').removeAll();
-
-        if(!subjArea)
+        if(!subjArea){
+            this.subjectArray = [];
+            idPanel.removeAll();
             return;
+        }
 
         //we clean up, combine, then split the subjectBox and subject inputs
         var subjectArray = subjArea.getValue();
@@ -254,8 +277,6 @@ Ext4.define('LABKEY.ext4.TabbedReportPanel', {
 
         if(type == 'MultiSubject'){
             this.down('#subjArea').setValue('');
-
-            //we display the result
             this.makeSubjGrid();
         }
         else {
@@ -275,19 +296,24 @@ Ext4.define('LABKEY.ext4.TabbedReportPanel', {
 
         var thePanel = target.add({
             xtype: 'panel'
-            ,layout: 'table'
-            ,layoutConfig: {
+            ,border: false
+            ,layout: {
+                type: 'table',
                 columns: 4
+            }
+            ,defaults: {
+                border: false
+                ,style: 'margin: 2px;'
             }
         });
         
-        for (var i = 0; i < this.subjectArray.length; i++)
-        {
+        Ext4.each(this.subjectArray, function(subj){
             thePanel.add({
                 xtype: 'button'
-                ,text: this.subjectArray[i]+' (X)'
-                ,subjectID: this.subjectArray[i]
-                ,style: 'padding-right:0px;padding-left:0px'
+                ,text: subj+' (X)'
+                ,minWidth: 60
+                ,subjectID: subj
+                //,style: 'padding-right:0px;padding-left:0px'
                 ,handler: function(button){
                     var subject = button.subjectID;
 
@@ -299,42 +325,41 @@ Ext4.define('LABKEY.ext4.TabbedReportPanel', {
                 }
                 ,scope: this
             });
+        }, this);
 
-        }
         target.add(thePanel);
         target.doLayout();
     },
 
-    onSubmit: function(b){
+    onSubmit: function(btn){
        if (!this.checkValid())
             return;
 
-       if(b)
-            this.forceRefresh = b.forceRefresh;
+       if(btn)
+            this.forceRefresh = btn.forceRefresh;
 
-        if (!this.activeReport){
-           this.activeReport = this.tabPanel['General']['abstract'];
-           var parent = this.activeReport.ownerCt;
-           this.tabPanel.activate(parent);
-           parent.activate(this.activeReport);
-       }
-       else {
-           this.loadTab(this.activeReport);    
+       if (!this.activeReport){
+            var parent = this.down('tabpanel').items.first();
+            this.activeReport = parent.items.first();
+
+            this.down('#tabPanel').setActiveTab(parent);
+            parent.setActiveTab(this.activeReport);
        }
 
+       this.loadTab(this.activeReport);
     },
 
     //separated so subclasses can override as needed
     checkValid: function(){
        this.processSubj();
-       var type = this.down('#filterType').getValue();
+       var type = this.down('#filterType').getValue().filterType;
 
        switch (type){
-       case 'renderColony':
+       case 'AllData':
            break;
        default:
            if(!this.subjectArray.length){
-                alert('Must Enter At Least 1 Animal ID');
+                alert('Must Enter At Least 1 Subject Id');
                 return 0;
            }
        }
@@ -385,8 +410,11 @@ Ext4.define('LABKEY.ext4.TabbedReportPanel', {
             case 'js':
                 this.loadJS(tab, subject);
                 break;
+            case 'lineGraph':
+                this.loadLineGraph(tab, subject);
+                break;
             default:
-                LABKEY.Utils.onError({message: 'Improper Report Type'});
+                LABKEY.Utils.onError({exception: 'Improper Report Type'});
         }
     },
 
@@ -397,8 +425,9 @@ Ext4.define('LABKEY.ext4.TabbedReportPanel', {
             nonRemovable: []
         };
 
-        if(tab.subjectArray && tab.subjectArray.length){
-            filterArray.nonRemovable.push(LABKEY.Filter.create('Id', subject.join(';'), LABKEY.Filter.Types.EQUALS_ONE_OF));
+        var subjectFieldName = rowData.get('subjectfieldname');
+        if(tab.subjectArray && tab.subjectArray.length && subjectFieldName){
+            filterArray.nonRemovable.push(LABKEY.Filter.create(subjectFieldName, subject.join(';'), LABKEY.Filter.Types.EQUALS_ONE_OF));
         }
 
         tab.filterArray = filterArray;
@@ -416,62 +445,43 @@ Ext4.define('LABKEY.ext4.TabbedReportPanel', {
 
     loadQuery: function(tab, subject, target){
         var filterArray = this.getFilterArray(tab, subject);
-        var targetId = Ext4.id();
-        target = tab.add({
-            labout: 'fit',
-            defaults: {
-                border: false
-            },
-            items: [{
-                tag: 'div',
-                id : targetId
-            }]
-        });
-
         var title = this.makeTitle(tab, subject);
+
+        tab.removeAll();
+
         var queryConfig = {
             title: tab.rowData.get("reporttitle") + ": " + title,
             containerPath: tab.rowData.get("containerpath"),
             schemaName: tab.rowData.get("schemaname"),
             queryName: tab.rowData.get("queryname"),
             viewName: tab.rowData.get("viewname"),
+            containerFilter: 'CurrentOrParentAndWorkbooks',
             allowChooseQuery: false,
-            allowChooseView: true,
             showInsertNewButton: false,
             showDeleteButton: false,
             showDetailsColumn: true,
             showUpdateColumn: false,
             showRecordSelectors: true,
             showReports: false,
-            tab: tab,
-            frame: 'portal',            
-            buttonBarPosition: 'top',
+            buttonBarPosition: 'both',
             timeout: 0,
             filters: filterArray.nonRemovable,
             removeableFilters: filterArray.removable,
             linkTarget: '_blank',
-            renderTo: target.id,
-            success: function(dataRegion){
-                var target = this.down('#tabPanel');
-                var width1 = Ext4.get('dataregion_'+dataRegion.id).getSize().width;
-                var width2 = Ext4.get(target.id).getSize().width;
-
-                if(width1 > width2){
-                    target.setWidth(width1+50);
-                }
-                else {
-                    target.setWidth('100%');
-                }
-
-                target.doLayout();
-            },
+            //renderTo: targetId,
             failure: LABKEY.Utils.onError,
+            success: function(dataRegion, panel){
+                panel.doLayout();
+            },
             scope: this
         };
 
-        tab.QWP = new LABKEY.QueryWebPart(queryConfig);
+        tab.add({
+            xtype: 'labkey-querypanel',
+            style: 'padding-bottom: 10px;',
+            queryConfig: queryConfig
+        });
     },
-
 
     loadReport: function(tab, subject, target){
         var filterArray = this.getFilterArray(tab, subject);
@@ -488,6 +498,7 @@ Ext4.define('LABKEY.ext4.TabbedReportPanel', {
                 title: tab.rowData.get("reporttitle") + ": " + title,
                 schemaName: tab.rowData.get("schemaname"),
                 reportId : tab.rowData.get("report"),
+                'query.containerFilterName': 'CurrentOrParentAndWorkbooks',
                 'query.queryName': tab.rowData.get("queryname"),
                 'query.Id~in': subject.join(";")
             },
@@ -506,8 +517,43 @@ Ext4.define('LABKEY.ext4.TabbedReportPanel', {
                 this.jsReportNamespace = eval(this.jsReportNamespace);
             }
 
-            if(this.jsReportNamespace[tab.rowData.get('queryname')])
-                this.jsReportNamespace[tab.rowData.get('queryname')].call(this, tab, subject, target);
+            if(this.jsReportNamespace[tab.rowData.get('jsfunctionname')])
+                this.jsReportNamespace[tab.rowData.get('jsfunctionname')].call(this, tab, subject, target);
+        }
+    },
+
+    loadLineGraph: function(tab, subject, target){
+        var filterArray = this.getFilterArray(tab, subject);
+        filterArray = filterArray.nonRemovable.concat(filterArray.removable);
+
+        var store = Ext4.create('LABKEY.ext4.Store', {
+            schemaName: tab.rowData.get("schemaname"),
+            queryName: tab.rowData.get("queryname"),
+            containerFilter: 'CurrentOrParentAndWorkbooks',
+            filterArray: filterArray,
+            sort: (tab.rowData.get("subjectfieldname") ? tab.rowData.get("subjectfieldname") : null),
+            listeners: {
+                scope: this,
+                load: renderGraph
+            },
+            failure: LABKEY.Utils.onError
+        });
+
+        if (tab.rowData.get("viewname")){
+            store.viewName = tab.rowData.get("viewname")
+        }
+
+        store.load();
+
+        function renderGraph(store){
+            tab.add({
+                xtype: 'labkey-graphpanel',
+                store: store,
+                title: (subject ? subject.join("; ") : ''),
+                type: 'line',
+                xField: 'SampleDate',
+                yField: 'ViralLoad'
+            });
         }
     },
 
@@ -518,30 +564,23 @@ Ext4.define('LABKEY.ext4.TabbedReportPanel', {
         target = target || tab.add({tag: 'span', html: 'Loading...', cls: 'loading-indicator'});
         var title = (subject ? subject.join("; ") : '');
 
-        var store = new LABKEY.ext.Store({
+        var store = Ext4.create('LABKEY.ext4.Store', {
             schemaName: tab.rowData.get("schemaname"),
             queryName: tab.rowData.get("queryname"),
             filterArray: filterArray,
-            sort: 'Id'
+            sort: (tab.rowData.get("subjectfieldname") ? tab.rowData.get("subjectfieldname") : null),
+            failure: LABKEY.Utils.onError
         });
 
         if (tab.rowData.get("viewname")){
             store.viewName = tab.rowData.get("viewname")
         }
 
-        new LABKEY.ext.EditorGridPanel({
+        Ext4.create('LABKEY.ext4.GridPanel', {
             store: store
             ,title: tab.rowData.get("reporttitle") + ": " + title
-            ,width: 1000
-            ,autoHeight: true
             ,editable: false
-            ,stripeRows: true
-            ,disableSelection: true
-            //,successCallback: this.endMsg
-            ,failure: LABKEY.Utils.onError
-            ,scope: this
         }).render(target);
-
     },
 
     loadWebPart: function(tab, subject, target){
@@ -553,7 +592,6 @@ Ext4.define('LABKEY.ext4.TabbedReportPanel', {
 
         this.params = {};
         this.subject = subject;
-        this.params.rowData = rowData;
 
         var WebPartRenderer = new LABKEY.WebPart({
             partName: tab.rowData.get("queryname"),
@@ -569,7 +607,9 @@ Ext4.define('LABKEY.ext4.TabbedReportPanel', {
         var filterArray = this.getFilterArray(tab, subject);
         filterArray = filterArray.nonRemovable.concat(filterArray.removable);
 
-        target = target || tab.add({tag: 'span', html: 'Loading...', cls: 'loading-indicator'});
+        target = target || tab.add({
+            xtype: 'panel'
+        });
         var title = (subject ? subject.join("; ") : '');
 
         tab.doLayout();
@@ -579,7 +619,7 @@ Ext4.define('LABKEY.ext4.TabbedReportPanel', {
             queryName: tab.rowData.get("queryname"),
             title: tab.rowData.get("reporttitle") + ":",
             titleField: 'Id',
-            renderTo: target.id,
+            renderTo: target.body.id,
             filterArray: filterArray,
             multiToGrid: this.multiToGrid
         };
@@ -588,7 +628,7 @@ Ext4.define('LABKEY.ext4.TabbedReportPanel', {
             config.viewName = tab.rowData.get("viewname");
         }
 
-        new LABKEY.ext4.DetailsPanel(config);
+        Ext4.create('LABKEY.ext.DetailsPanel', config);
 
     },
 
@@ -596,100 +636,82 @@ Ext4.define('LABKEY.ext4.TabbedReportPanel', {
         if(!this.reports || !this.reports.length)
             return;
 
-        Ext4.Array.each(this.reports, function(rec){
+        var tabPanel = this.down('#tabPanel');
+        Ext4.each(this.reports, function(rec){
             var category = rec.get('category');
-
             //create top-level tab
-            var tabPanel = this.down('#tabPanel');
-            if(!tabPanel.down('#category')){
-                tabPanel.add({
+            var queryString = 'panel[itemId="'+category+'"]';
+            var subTab;
+            if(!tabPanel.down(queryString)){
+                subTab = tabPanel.add({
                     xtype: 'tabpanel',
-                    autoHeight: true,
                     itemId: category,
-                    title: category,
-                    enableTabScroll: true,
-                    listeners: {
-                        scope: this,
-                        activate: function(t){
-                            if(t.activeTab){
-                                this.activeReport = t.activeTab;
-                                this.onSubmit();
-                            }
-                        }
-                    }
-                })
+                    title: category
+                });
             }
 
-            var subTab = tabPanel.down('#'+category);
-            var reportName = rec.get('reportname');
+            subTab = subTab || tabPanel.down(queryString);
+            var reportName = 'report' + rec.get('rowid');
 
             //create 2nd tier tab
-            var lowerTab = subTab.down('#'+reportName);
+            var lowerTab = subTab.down('#report'+reportName);
             if(!lowerTab){
                 lowerTab = subTab.add({
-                    xtype: 'panel',
-                    autoHeight: true,
-                    height: 400,
-                    title: rec.get('reporttitle') || rec.get('queryname'),
+                    //xtype: 'tab',
+                    title: rec.get('reporttitle') || rec.get('queryname') || 'default',
                     itemId: reportName,
                     rowData: rec,
-                    bodyStyle:'padding:5px',
+                    //bodyStyle:'padding:5px',
                     border: false,
-                    autoScroll: true,
+                    bodyBorder: false,
                     subjectArray: [],
                     filterArray: {},
                     tbar: {style: 'padding-left:10px'},
-                    combineSubj: true,
-                    listeners: {
-                        scope: this,
-                        activate: function(t){
-                            this.activeReport = t;
-                            this.onSubmit();
-                        },
-                        click: function(t){
-                            console.log('click');
-                            this.activeReport = t;
-                            this.onSubmit();
-                        }
-                    }
+                    combineSubj: true
                 });
 
-                if(this.activeReport==reportName){
-                    this.activeReport = lowerTab;
-                }
-
-                this.reportTabs[rec.get('reportname')] = lowerTab;
+//                if(this.activeReport==reportName){
+//                    this.activeReport = lowerTab;
+//                }
             }
 
         }, this);
 
-        if(this.activeReport){
-            this.down('#tabPanel').setActiveTab(this.activeReport.ownerCt);
-            this.activeReport.suspendEvents();
-            this.activeReport.ownerCt.setActiveTab(this.activeReport);
-            this.activeReport.resumeEvents();
-            if(this.doLoad){
-                this.onSubmit(this.activeReport);
-            }
-        }
-        else{
-            this.down('#tabPanel').setActiveTab(this.down('#tabPanel').down('#General'));
-        }
+        tabPanel.setActiveTab(0);
+        tabPanel.getActiveTab().setActiveTab(0);
 
-//        if(this.submitBtn)
-//            this.submitBtn.setDisabled(false);
+        tabPanel.items.each(function(tab){
+            tab.getTabBar().on('change', function(bar, tab, card){
+                this.onTabChange(card)
+            }, this);
+        }, this);
+
+        //set the active tabs
+//        if(this.activeReportName){
+//            this.activeReport = tabPanel.down('#'+this.activeReportName);
+//            tabPanel.setActiveTab(this.activeReport);
+//            delete this.activeReportName;
+//            if(this.doLoad){
+//                this.onSubmit(this.activeReport);
+//            }
+//        }
+//        else {
+//        }
+
+        if(this.down('#submitBtn'))
+            this.down('#submitBtn').setDisabled(false);
 
     },
+    onTabChange: function(tab){
+        this.activeReport = tab;
+        this.onSubmit();
+    },
     loadTab: function(o){
-        o.combineSubj = o.combineSubj;
-        
-        this.setFilters(o);
-
+        var filters = this.getFilters(o);
         var reload = 0;
-        for (var i in this.filters){
-            if(!o.filters || this.filters[i]!==o.filters[i]){
+        for (var i in filters){
+            if(!o.queryFilters || filters[i]!==o.queryFilters[i])
                 reload = 1;
-            }
         }
                 
         //indicates tab already has up to date content
@@ -699,8 +721,7 @@ Ext4.define('LABKEY.ext4.TabbedReportPanel', {
         }
         this.forceRefresh = null;
 
-
-        o.filters = this.filters;
+        o.queryFilters = filters;
         o.subjectArray = this.subjectArray;
         
         o.removeAll();
@@ -708,25 +729,26 @@ Ext4.define('LABKEY.ext4.TabbedReportPanel', {
         this.displayReport(o);
         this.activeReport = o;
         o.doLayout();
-        
     },
-    setFilters: function(tab){
-        this.filters = {
+    getFilters: function(tab){
+        var filters = {
             filterType : this.down('#filterType').getValue().filterType,
             showReport: 1,
             subjects: this.subjectArray.join(';'),
             combineSubj : tab.combineSubj,
-            activeReport: tab.rowData.get('reportname')
+            activeReport: tab.itemId
         };
 
         this.processSubj();
         var token = [];
-        for (var i in this.filters){
-            if(this.filters[i]){
-                token.push(i+':'+this.filters[i]);
+        for (var i in filters){
+            if(filters[i]){
+                token.push(i+':'+filters[i]);
             }
         }
-        Ext.History.add(token.join('&'));
+        Ext4.History.add(token.join('&'));
+
+        return filters;
     },
     addHeader: function(tab, items){
 //        var tb = tab.getTopToolbar();
