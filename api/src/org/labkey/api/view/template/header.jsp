@@ -17,10 +17,10 @@
 %>
 <%@ page import="org.labkey.api.data.Container" %>
 <%@ page import="org.labkey.api.data.ContainerManager" %>
+<%@ page import="org.labkey.api.search.SearchUrls" %>
 <%@ page import="org.labkey.api.security.AuthenticationManager" %>
 <%@ page import="org.labkey.api.security.LoginUrls" %>
 <%@ page import="org.labkey.api.security.User" %>
-<%@ page import="org.labkey.api.security.UserUrls" %>
 <%@ page import="org.labkey.api.security.permissions.AdminPermission" %>
 <%@ page import="org.labkey.api.security.permissions.AdminReadPermission" %>
 <%@ page import="org.labkey.api.settings.AppProps" %>
@@ -28,10 +28,15 @@
 <%@ page import="org.labkey.api.settings.TemplateResourceHandler" %>
 <%@ page import="org.labkey.api.util.HelpTopic" %>
 <%@ page import="org.labkey.api.util.PageFlowUtil" %>
-<%@ page import="org.labkey.api.view.*" %>
+<%@ page import="org.labkey.api.view.ActionURL" %>
+<%@ page import="org.labkey.api.view.HttpView" %>
+<%@ page import="org.labkey.api.view.PopupAdminView" %>
+<%@ page import="org.labkey.api.view.PopupDeveloperView" %>
+<%@ page import="org.labkey.api.view.PopupUserView" %>
+<%@ page import="org.labkey.api.view.ThemeFont" %>
+<%@ page import="org.labkey.api.view.ViewContext" %>
 <%@ page import="org.labkey.api.view.template.PageConfig" %>
 <%@ page import="org.labkey.api.view.template.TemplateHeaderView" %>
-<%@ page import="org.labkey.api.search.SearchUrls" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
     TemplateHeaderView me = ((TemplateHeaderView) HttpView.currentView());

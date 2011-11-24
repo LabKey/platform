@@ -124,16 +124,23 @@ public class GroupMembershipCache
     }
 
 
-    private static int[] computeAllGroups(UserPrincipal user)
+    private static int[] computeAllGroups(UserPrincipal principal)
     {
-        int userId = user.getUserId();
+        int userId = principal.getUserId();
 
         HashSet<Integer> groupSet = new HashSet<Integer>();
         LinkedList<Integer> recurse = new LinkedList<Integer>();
-        recurse.add(Group.groupGuests);
-        if (user.getUserId() != User.guest.getUserId())
-            recurse.add(Group.groupUsers);
+
+        // All principals are themselves
         recurse.add(userId);
+
+        // Every user is a member of the guests group; logged in users are members of Site Users.
+        if ("u".equals(principal.getType()))
+        {
+            recurse.add(Group.groupGuests);
+            if (principal.getUserId() != User.guest.getUserId())
+                recurse.add(Group.groupUsers);
+        }
 
         while (!recurse.isEmpty())
         {
