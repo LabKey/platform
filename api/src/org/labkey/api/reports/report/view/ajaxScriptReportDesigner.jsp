@@ -89,24 +89,24 @@
 // for all the properties and methods.  The Save button needs to call saveReport(), so new up a class and return an
 // object that provides outside access to saveReport().
 var f_scope<%=uid%> = new (function() {
-    var previousScript = null;
-    var previousViewURL = null;
-    var scriptText;
-    var viewDivExtElement;
-    var dataDivExtElement = null;
-    var tabsDivExtElement;
-    var downloadLink;
-    var downloadHelp;
-    var initialViewURL = <%=q(initialViewURL.toString())%>;   // Use original URL filter/sort params if data tab hasn't been used
-    var baseViewURL = <%=q(baseViewURL.toString())%>;     // URL with filter and sort stripped out; we'll use filter/sort from data tab instead
-    var dataFirstLoad = true;
-    var dataRegion = null;
-    var readOnly = <%=readOnly%>;
+    var previousScript = null,
+    previousViewURL    = null,
+    scriptText,
+    viewDivExtElement,
+    dataDivExtElement  = null,
+    tabsDivExtElement,
+    downloadLink,
+    downloadHelp,
+    initialViewURL     = <%=q(initialViewURL.toString())%>, // Use original URL filter/sort params if data tab hasn't been used
+    baseViewURL        = <%=q(baseViewURL.toString())%>,    // URL with filter and sort stripped out; we'll use filter/sort from data tab instead
+    dataFirstLoad      = true,
+    dataRegion         = null,
+    readOnly           = <%=readOnly%>;
 
     // We might be rendering within a data region or on a page with multiple reports... so we need a different
     // data region name for the data tab.
 
-    var dataRegionName = <%=q(report.getDescriptor().getProperty(ReportDescriptor.Prop.dataRegionName))%>;
+    var dataRegionName    = <%=q(report.getDescriptor().getProperty(ReportDescriptor.Prop.dataRegionName))%>;
     var dataTabRegionName = <%=q(report.getDescriptor().getProperty(ReportDescriptor.Prop.dataRegionName) + "_report")%>;
 
     Ext.onReady(function(){
@@ -117,10 +117,10 @@ var f_scope<%=uid%> = new (function() {
         downloadHelp = document.getElementById("downloadHelp<%=uid%>");
 
         var activeTab = 0;
-        var items = new Array();
+        var items = [];
 
-        items.push({title: 'View', autoHeight: true, contentEl: '<%=viewDivId%>', listeners: {activate: activateViewTab}});
-        items.push({title: 'Data', autoHeight: true, contentEl: 'dataTabDiv<%=uid%>', listeners: {activate: activateDataTab}});
+        items.push({title: 'View', contentEl: '<%=viewDivId%>',     listeners: {activate: activateViewTab}});
+        items.push({title: 'Data', contentEl: 'dataTabDiv<%=uid%>', listeners: {activate: activateDataTab}});
 
         var sourceAndHelp = <%=sourceAndHelp%>;
         var help = <%=null != helpHtml%>;
@@ -128,13 +128,13 @@ var f_scope<%=uid%> = new (function() {
 
         if (sourceAndHelp)
         {
-            items.push({title: 'Source', autoHeight: true, contentEl: 'scriptDiv<%=uid%>', listeners: {render: activateSourceTab}});
+            items.push({title: 'Source', contentEl: 'scriptDiv<%=uid%>', listeners: {render: activateSourceTab}});
 
             if (preferSourceTab)
                 activeTab = 2;
 
             if (help)
-                items.push({title: 'Help', autoHeight: true, contentEl: 'reportHelpDiv<%=uid%>'});
+                items.push({title: 'Help', contentEl: 'reportHelpDiv<%=uid%>'});
         }
 
         var tabs = new Ext.TabPanel({
@@ -144,7 +144,7 @@ var f_scope<%=uid%> = new (function() {
             activeTab: activeTab,
             frame: true,
             plain: true,
-            defaults: {autoScroll: true},
+            defaults: {autoScroll: true, autoHeight: true},
             listeners: {beforetabchange: beforeTabChange},
             boxMinWidth: 500,
             items: items
@@ -160,10 +160,7 @@ var f_scope<%=uid%> = new (function() {
 
     function beforeTabChange()
     {
-        // Work around editarea.js + Ext TabPanel focus issue on Firefox. See #11727.
-        // Do this only on Firefox, since it steals focus from the editarea. 
-        if (Ext.isGecko)
-            Ext.get("bogusTextArea").focus();
+        editAreaLoader.execCommand("<%=scriptId%>", 'focus');
     }
 
     function activateSourceTab(tab)
@@ -328,7 +325,7 @@ var f_scope<%=uid%> = new (function() {
     function getFilterArray(url, dataRegionName)
     {
         var params = LABKEY.ActionURL.getParameters(url);
-        var filterArray = new Array();
+        var filterArray = [];
 
         for (var paramName in params)
         {
@@ -534,7 +531,6 @@ var f_scope<%=uid%> = new (function() {
         return includedScripts.contains(String.valueOf(id));
     }
 %>
-<textarea cols=0 rows=0 id="bogusTextArea" style="height:0;width:0;left:-10px;top:-10px;position:absolute;"></textarea>
 <div id="tabsDiv<%=uid%>" class="extContainer">
     <div id="<%=viewDivId%>" class="x-hide-display">
     </div>
