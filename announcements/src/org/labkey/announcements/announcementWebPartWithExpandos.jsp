@@ -193,7 +193,7 @@ if (0 == bean.announcementModels.length)
 for (AnnouncementModel a : bean.announcementModels)
 {
     %><tr>
-        <td class="labkey-announcement-title labkey-force-word-break" colspan=3 align="left"><span><a href="<%=h(a.getThreadURL(c))%>rowId=<%=a.getRowId()%>"><%=h(a.getTitle())%></a></span></td>
+        <td class="labkey-announcement-title labkey-force-word-break" colspan=3 align="left"><span><a class="announcement-title-link" href="<%=h(a.getThreadURL(c))%>rowId=<%=a.getRowId()%>"><%=h(a.getTitle())%></a></span></td>
     </tr>
     <tr>
         <td width="40%" align="left"><%
