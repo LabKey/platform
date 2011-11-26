@@ -155,16 +155,14 @@ LABKEY.query.SourceEditorPanel = Ext.extend(Ext.Panel, {
                 afterrender : function()
                 {
                     this.eal = editAreaLoader;
-                    var config =
-                    {
+                    var config = {
                         id     : this.editorId,
                         syntax : 'sql',
-                        start_highlight: true,
+                        start_highlight: Ext.isIE ? false : true,
                         is_editable : !this.query.builtIn && this.query.canEditSql,
                         plugins : "save"
                     };
-                    if (Ext.isIE)
-                        config.start_highlight = false;
+//                    Ext.EventManager.on(this.editorId, 'keydown', handleTabsInTextArea);
                     this.eal.init(config);
                     this.doLayout(false, true);
                 },
@@ -237,14 +235,6 @@ LABKEY.query.SourceEditorPanel = Ext.extend(Ext.Panel, {
     onExecuteQuery : function(force)
     {
         this.queryEditorPanel.onExecuteQuery(force);
-    },
-
-    getMetadata : function()
-    {
-        var cmp = Ext.getCmp(this.metaId);
-        if (cmp) {
-            return cmp.getValue();
-        }
     },
 
     save : function(showView) {
@@ -403,10 +393,10 @@ LABKEY.query.MetadataXMLEditorPanel = Ext.extend(Ext.Panel, {
                     var config = {
                         id     : this.editorId,
                         syntax : 'xml',
-                        start_highlight: true,
+                        start_highlight: Ext.isIE ? false : true,
                         plugins : "save"
                     };
-                    if (Ext.isIE) config.start_highlight = false;
+                    Ext.EventManager.on(this.editorId, 'keydown', handleTabsInTextArea);
                     this.eal.init(config);
                 },
                 resize : function(x)
@@ -467,6 +457,7 @@ LABKEY.query.MetadataXMLEditorPanel = Ext.extend(Ext.Panel, {
         if (Ext.isIE) {
             // Doing this due to faulty editor when tabbing back
             this.eal = editAreaLoader;
+            Ext.EventManager.on(this.editorId, 'keydown', handleTabsInTextArea);
             this.eal.init({
                 id     : this.editorId,
                 syntax : 'xml',
