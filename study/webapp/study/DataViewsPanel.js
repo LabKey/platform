@@ -11,6 +11,8 @@ Ext4.define('LABKEY.ext4.DataViewsPanel', {
 
     constructor : function(config) {
 
+        Ext4.QuickTips.init();
+
         // TODO : Make the following not required since it might not be its own webpart
         // REQUIRES:
         // pageId
@@ -18,13 +20,11 @@ Ext4.define('LABKEY.ext4.DataViewsPanel', {
         // webpartId
 
         Ext4.applyIf(config, {
-            layout : 'fit',
-            border : false,
-            frame  : false,
+            layout : 'border',
+            frame  : false, border : false,
+            height : 700,
             allowCustomize : true
         });
-
-        Ext4.QuickTips.init();
 
         // Define an override for RowModel to fix page jumping on first click
         // LabKey Issue : 12940: Data Browser - First click on a row scrolls down slightly, doesn't trigger metadata popup
@@ -99,17 +99,43 @@ Ext4.define('LABKEY.ext4.DataViewsPanel', {
 
         this.items = [];
 
-        this.store  = this.initializeViewStore(true);
-        this.searchPanel = this.initSearch();
-        this.gridPanel   = this.initGrid();
-        this.customPanel = this.initCustomization();
+        this.store = null;
+        this.gridPanel = null;
 
-        this.items.push(this.customPanel, this.searchPanel, this.gridPanel);
+        // primary display panels
+        this.items = this.initializeBorderLayout();
+        this.items.push(this.initGrid(true));
+
+        // secondary display panels
+        this.customPanel = this.initCustomization();
 
         this.callParent([arguments]);
     },
 
+    initializeBorderLayout : function() {
+//        var regions = ['north', 'south', 'east', 'west'];
+        var regions = ['north']; // only need north at this time
+        var items = [];
+
+        for (var r=0; r < regions.length; r++) {
+            this[regions[r]] = Ext4.create('Ext.panel.Panel', {
+                layout : 'fit',
+                region : regions[r],
+                style : 'margin-bottom: 10px',
+                hidden : true,
+                preventHeader : true,
+                flex   : 1,
+                border : false, frame : false
+            });
+            items.push(this[regions[r]]);
+        }
+        return items;
+    },
+
     initializeViewStore : function(useGrouping) {
+
+        if (this.store)
+            return this.store;
 
         var config = {
             pageSize: 100,
@@ -139,11 +165,12 @@ Ext4.define('LABKEY.ext4.DataViewsPanel', {
             config["groupField"] = 'category';
         }
 
-        return Ext4.create('Ext.data.Store', config);
+        this.store = Ext4.create('Ext.data.Store', config);
+        return this.store;
     },
 
-    initializeCategoriesStore : function(useGrouping)
-    {
+    initializeCategoriesStore : function(useGrouping) {
+
         var config = {
             pageSize: 100,
             model   : 'Dataset.Browser.Category',
@@ -189,51 +216,7 @@ Ext4.define('LABKEY.ext4.DataViewsPanel', {
         return Ext4.create('Ext.data.Store', config);
     },
 
-    initSearch : function() {
-
-        function filterSearch() {
-            this.searchVal = searchField.getValue();
-            this.hiddenFilter();
-        }
-
-        var filterTask = new Ext.util.DelayedTask(filterSearch, this);
-
-        var searchField = Ext4.create('Ext.form.field.Text', {
-            emptyText       : 'name, category, etc.',
-            enableKeyEvents : true,
-            cls             : 'dataset-search',
-            size            : 57,
-            border: false, frame : false,
-            listeners       : {
-                change       : function(cmp, e){
-                    filterTask.delay(350);
-                }
-            }
-        });
-
-        return Ext4.create('Ext.panel.Panel',{
-            bodyStyle : 'border: none !important;',
-            border: false, frame : false,
-            layout: { type: 'table' },
-            defaults : {
-                border: false, frame : false
-            },
-            items : [searchField, {
-                xtype : 'box',
-                border: false, frame : false,
-                autoEl: {
-                    tag : 'img',
-                    style : {
-                        position : 'relative',
-                        left     : '-20px'
-                    },
-                    src : LABKEY.ActionURL.getContextPath() + '/_images/search.png'
-                }
-            }]
-        });
-    },
-
-    initGrid : function() {
+    initGrid : function(useGrouping) {
 
         /**
          * Enable Grouping by Category
@@ -342,9 +325,9 @@ Ext4.define('LABKEY.ext4.DataViewsPanel', {
             });
         }
 
-        var grid = Ext4.create('Ext.grid.Panel', {
+        this.gridPanel = Ext4.create('Ext.grid.Panel', {
             id       : 'data-browser-grid-' + this.webpartId,
-            store    : this.store,
+            store    : this.initializeViewStore(useGrouping),
             border   : false, frame: false,
             layout   : 'fit',
             height   : 575,
@@ -352,11 +335,12 @@ Ext4.define('LABKEY.ext4.DataViewsPanel', {
             scroll   : 'vertical',
             columns  : this.initGridColumns(),
             multiSelect: true,
+            region   : 'center',
             viewConfig : {
                 stripRows : true,
                 listeners : {
                     render : initToolTip,
-                    scope : this
+                    scope  : this
                 },
                 emptyText : '0 Matching Results'
             },
@@ -370,7 +354,7 @@ Ext4.define('LABKEY.ext4.DataViewsPanel', {
                         this.onEditClick(view, record);
                 },
                 afterlayout : function(p) {
-                    grid.setLoading(false);
+                    p.setLoading(false);
                     /* Apply selector for tests */
                     var el = Ext4.query("*[class=x4-grid-table x4-grid-table-resizer]");
                     if (el && el.length == 1) {
@@ -381,12 +365,7 @@ Ext4.define('LABKEY.ext4.DataViewsPanel', {
                     }
                 },
                 reconfigure : function() {
-                    this.store.sort([
-                        {
-                            property : 'name',
-                            direction: 'ASC'
-                        }
-                    ]);
+                    this.hiddenFilter();
                     this.customize();
                 },
                 scope : this
@@ -394,7 +373,14 @@ Ext4.define('LABKEY.ext4.DataViewsPanel', {
             scope     : this
         });
 
-        return grid;
+        var _panel = Ext4.create('Ext.panel.Panel', {
+            border : false, frame : false,
+            layout : 'border',
+            flex   : 4,
+            region : 'center',
+            items  : [this.initSearch(), this.gridPanel]
+        });
+        return _panel;
     },
 
     initGridColumns : function() {
@@ -414,9 +400,9 @@ Ext4.define('LABKEY.ext4.DataViewsPanel', {
                 if (!this._inCustomMode())
                     meta.style = 'display: none;';  // what a nightmare
                 if (!rec.data.entityId) {
-                    return '<span height="18px" class="edit-link-cls-' + this.webpartId + '"></span>'; // entityId is required for editing
+                    return '<span height="16px" class="edit-link-cls-' + this.webpartId + '"></span>'; // entityId is required for editing
                 }
-                return '<span height="18px" class="edit-link-cls-' + this.webpartId + ' edit-views-link"></span>';
+                return '<span height="16px" class="edit-link-cls-' + this.webpartId + ' edit-views-link"></span>';
             },
             hidden   : true,
             scope    : this
@@ -427,7 +413,7 @@ Ext4.define('LABKEY.ext4.DataViewsPanel', {
             sortable : true,
             dataIndex: 'name',
             tdCls    : 'x4-name-column-cell',
-            tpl      : '<div height="18px" width="100%"><a href="{runUrl}">{name}</a></div>',
+            tpl      : '<div height="16px" width="100%"><a href="{runUrl}">{name}</a></div>',
             scope    : this
         },{
             text     : 'Category',
@@ -454,14 +440,67 @@ Ext4.define('LABKEY.ext4.DataViewsPanel', {
         return _columns;
     },
 
+    initSearch : function() {
+
+        if (this.searchPanel)
+            return this.searchPanel;
+
+        function filterSearch() {
+            this.searchVal = searchField.getValue();
+            this.hiddenFilter();
+        }
+
+        var filterTask = new Ext.util.DelayedTask(filterSearch, this);
+
+        var searchField = Ext4.create('Ext.form.field.Text', {
+            emptyText       : 'name, category, etc.',
+            enableKeyEvents : true,
+            cls             : 'dataset-search',
+            size            : 57,
+            border: false, frame : false,
+            listeners       : {
+                change       : function(cmp, e){
+                    filterTask.delay(350);
+                }
+            }
+        });
+
+        this.searchPanel = Ext4.create('Ext.panel.Panel',{
+            bodyStyle : 'border: none !important;',
+            border: false, frame : false,
+            layout: { type: 'table' },
+            region : 'north',
+            defaults : {
+                border: false, frame : false
+            },
+            items : [searchField, {
+                xtype : 'box',
+                border: false, frame : false,
+                autoEl: {
+                    tag : 'img',
+                    style : {
+                        position : 'relative',
+                        left     : '-20px'
+                    },
+                    src : LABKEY.ActionURL.getContextPath() + '/_images/search.png'
+                }
+            }]
+        });
+
+        return this.searchPanel;
+    },
+
     initCustomization : function() {
 
-         var customPanel = Ext4.create('Ext.panel.Panel', {
+        var customPanel = Ext4.create('Ext.panel.Panel', {
             layout : 'fit',
             border : false, frame : false,
-            hidden : true,
-            disabled : !this.isCustomizable()
+            flex   : 1
+//            hidden : true,
+//            disabled : !this.isCustomizable()
         });
+
+        this.north.add(customPanel);
 
         this.on('enableCustomMode',  this.onEnableCustomMode,  this);
         this.on('disableCustomMode', this.onDisableCustomMode, this);
@@ -469,18 +508,8 @@ Ext4.define('LABKEY.ext4.DataViewsPanel', {
         return customPanel;
     },
 
-    isCustomizable : function() {
-        return this.allowCustomize;
-    },
-
-    // private
-    _inCustomMode : function() {
-        return this.customMode;
-    },
-
     onViewLoad : function(s, recs, success, operation, ops) {
         this.hiddenFilter();
-        var s = this.store;
         // sorting 'groups' as opposed to the rows in a group on a grouping feature is not immediately present
         // TODO: Possible option (from Ext 3.4) : http://www.sencha.com/forum/showthread.php?109047-Grid-grouping-and-sorting&p=515917#post515917
 //        for (var i = 0; i < s.groupers.items.length; i++) {
@@ -495,13 +524,68 @@ Ext4.define('LABKEY.ext4.DataViewsPanel', {
 //                return 1;
 //            });
 //        }
-        s.sort([
+    },
+
+    /**
+     * Aggregates the filters applied by search and by custom mode.
+     */
+    hiddenFilter : function() {
+
+        this.store.clearFilter();
+        var _custom = this._inCustomMode();
+        this.store.sort([
             {
                 property : 'name',
                 direction: 'ASC'
             }
         ]);
-        this.doLayout(false, true);
+        this.store.filterBy(function(rec, id){
+
+            var answer = true;
+            if (rec.data && this.searchVal && this.searchVal != "")
+            {
+                var t = new RegExp(Ext4.escapeRe(this.searchVal), 'i');
+                var s = '';
+                if (rec.data.name)
+                    s += rec.data.name;
+                if (rec.data.category)
+                    s += rec.data.category;
+                if (rec.data.type)
+                    s += rec.data.type;
+                answer = t.test(s);
+            }
+
+            // custom mode will show hidden
+            if (_custom)
+                return answer;
+
+            // otherwise never show hidden records
+            if (rec.data.hidden)
+                return false;
+
+            return answer;
+        }, this);
+    },
+
+    isCustomizable : function() {
+        return this.allowCustomize;
+    },
+
+    // private
+    _inCustomMode : function() {
+        return this.customMode;
+    },
+
+    /**
+     * Takes the panel into/outof customize mode. Customize mode allows users to view edit links,
+     * adminstrate view categories and determine what data types should be shown.
+     */
+    customize : function() {
+
+        if (!this.isCustomizable())
+            return false;
+
+        this.fireEvent((this._inCustomMode() ? 'disableCustomMode' : 'enableCustomMode'), this);
     },
 
     onEnableCustomMode : function() {
@@ -513,6 +597,10 @@ Ext4.define('LABKEY.ext4.DataViewsPanel', {
             pageId : this.pageId,
             index  : this.index
         };
+
+        this.north.show(null, function(){
+            this.north.getEl().mask('Loading Customize...');
+        }, this);
 
         Ext4.Ajax.request({
             url    : LABKEY.ActionURL.buildURL('study', 'browseData.api', null, extraParams),
@@ -531,7 +619,7 @@ Ext4.define('LABKEY.ext4.DataViewsPanel', {
     onDisableCustomMode : function() {
         if (this.customPanel && this.customPanel.isVisible())
         {
-            this.customPanel.hide();
+            this.north.hide();
         }
 
         this.customMode = false;
@@ -561,8 +649,7 @@ Ext4.define('LABKEY.ext4.DataViewsPanel', {
                 editColumn.show();
             }
 
-            this.customPanel.show();
-            this.doLayout(false, true);
+            this.north.getEl().unmask();
             return;
         }
 
@@ -630,11 +717,13 @@ Ext4.define('LABKEY.ext4.DataViewsPanel', {
                     var form = panel.getForm(); // this.up('form')
                     if (form.isValid())
                     {
+                        this.north.getEl().mask('Saving...');
                         Ext4.Ajax.request({
                             url    : LABKEY.ActionURL.buildURL('project', 'customizeWebPartAsync.api', null, form.getValues()),
                             method : 'POST',
-                            success : function(){
-                                this.customPanel.hide();
+                            success : function() {
+                                this.north.getEl().unmask();
+                                this.north.hide();
                                 this.store.load();
 
                                 // Modify Title
@@ -647,7 +736,7 @@ Ext4.define('LABKEY.ext4.DataViewsPanel', {
 
                                 this.fireEvent('disableCustomMode');
                             },
-                            failure : function(){
+                            failure : function() {
                                 Ext4.Msg.alert('Failure');
                             },
                             scope : this
@@ -669,56 +758,7 @@ Ext4.define('LABKEY.ext4.DataViewsPanel', {
         }
 
         this.customPanel.add(panel);
-        this.customPanel.show();
-        this.doLayout(false, true);
-    },
-
-    /**
-     * Takes the panel into/outof customize mode. Customize mode allows users to view edit links,
-     * adminstrate view categories and determine what data types should be shown.
-     */
-    customize : function() {
-
-        if (!this.isCustomizable())
-            return false;
-
-        this.fireEvent((this._inCustomMode() ? 'disableCustomMode' : 'enableCustomMode'), this);
-    },
-
-    /**
-     * Aggregates the filters applied by search and by custom mode.
-     */
-    hiddenFilter : function() {
-
-        this.store.clearFilter();
-        var _custom = this._inCustomMode();
-        this.store.filterBy(function(rec, id){
-
-            var answer = true;
-            if (rec.data && this.searchVal && this.searchVal != "")
-            {
-                var t = new RegExp(Ext4.escapeRe(this.searchVal), 'i');
-                var s = '';
-                if (rec.data.name)
-                    s += rec.data.name;
-                if (rec.data.category)
-                    s += rec.data.category;
-                if (rec.data.type)
-                    s += rec.data.type;
-                answer = t.test(s);
-                console.log(answer);
-            }
-
-            // custom mode will show hidden
-            if (_custom)
-                return answer;
-
-            // otherwise never show hidden records
-            if (rec.data.hidden)
-                return false;
-
-            return answer;
-        }, this);
+        this.north.getEl().unmask();
     },
 
     onEditClick : function(view, record) {
@@ -791,7 +831,7 @@ Ext4.define('LABKEY.ext4.DataViewsPanel', {
             xtype      : 'radiogroup',
             fieldLabel : 'Visibility',
             items      : [{boxLabel : 'Visible',  name : 'hidden', checked : !record.data.hidden, inputValue : false},
-                          {boxLabel : 'Hidden',   name : 'hidden', checked : record.data.hidden,  inputValue : true}]
+                {boxLabel : 'Hidden',   name : 'hidden', checked : record.data.hidden,  inputValue : true}]
         });
 
         if (record.data.created) {
@@ -927,7 +967,7 @@ Ext4.define('LABKEY.ext4.DataViewsPanel', {
                                             store.load();
                                         },
                                         failure: function(response) {
-                                           Ext4.Msg.alert('Failure', Ext4.decode(response.responseText).exception);
+                                            Ext4.Msg.alert('Failure', Ext4.decode(response.responseText).exception);
                                         }
                                     });
                                 }
