@@ -17,7 +17,10 @@ package org.labkey.api.util;
 
 import org.apache.commons.lang.StringUtils;
 import org.jetbrains.annotations.NotNull;
+import org.junit.Assert;
+import org.junit.Test;
 
+import javax.servlet.ServletException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -98,4 +101,50 @@ public class StringUtilsLabKey
 
         return false;
     }
+
+
+    public static boolean isText(String s)
+    {
+        for (char c : s.toCharArray())
+        {
+            if (c <= 32)
+            {
+                if (Character.isWhitespace(c))
+                    continue;
+            }
+            else if (c < 127)
+            {
+                continue;
+            }
+            else if (c == 127)
+            {
+                // DEL??
+                return false;
+            }
+            else if (Character.isValidCodePoint(c))
+            {
+                continue;
+            }
+            return false;
+        }
+        return true;
+    }
+
+
+    public static class TestCase extends Assert
+    {
+        @Test
+        public void testIsText()
+        {
+            assertTrue(isText("this is a test\n\r"));
+            assertTrue(isText(""));
+            assertFalse(isText("DEL\u007F"));
+            assertFalse(isText("NUL\u0000"));
+            assertFalse(isText("NUL\u0001"));
+            assertTrue(isText("\u00c0t\u00e9"));
+            assertFalse(isText("\ufffe"));
+            assertFalse(isText("\ufeff"));
+        }
+    }
+
 }
