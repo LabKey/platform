@@ -138,7 +138,9 @@
                         specialkey: function(field, e){
                             if(e.getKey() == e.ENTER){
                                 var f = field.up('form').getForm();
-                                f.submit();
+                                if(!f.submitInProgress)
+                                    f.submit();
+                                f.submitInProgress = true;
                             }
                         }
                     }
@@ -208,8 +210,11 @@
                     text: 'Next',
                     handler: function(btn){
                         var f = btn.up('form').getForm();
-                        if (f.isValid())
-                            f.submit();
+                        if (f.isValid()){
+                            if(!f.submitInProgress)
+                                f.submit();
+                            f.submitInProgress = true;
+                        }
                     }
                 },{
                     xtype: 'button',
@@ -328,8 +333,11 @@
                 scope: this,
                 enter: function(){
                     var f = panel.getForm();
-                    if (f.isValid())
-                        f.submit();
+                    if (f.isValid()){
+                        if(!f.submitInProgress)
+                            f.submit();
+                        f.submitInProgress = true;
+                    }
                 }
             });
         }
