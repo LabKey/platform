@@ -227,16 +227,6 @@ public class ExperimentRunGraph
                 runner.addCmapOutput(mapFile);
                 runner.addPngOutput(imageFile);
                 runner.execute();
-/*
-                ProcessBuilder pb = new ProcessBuilder(dotExePath, "-Tcmap", "-o" + mapFile.getName(), "-Tpng", "-o" + imageFile.getName());
-                pb.directory(getFolderDirectory(run.getContainer()));
-                ProcessResult result = executeProcess(pb, dotInput);
-
-                if (result._returnCode != 0)
-                {
-                    throw new IOException("Graph generation failed with error code " + result._returnCode + " - " + result._output);
-                }
-*/
 
                 mapFile.deleteOnExit();
                 imageFile.deleteOnExit();
@@ -248,7 +238,7 @@ public class ExperimentRunGraph
 
                     // Write it back out to disk
                     fOut = new FileOutputStream(imageFile);
-                    double scale = ImageUtil.resizeImage(originalImage, fOut, .85, 6);
+                    double scale = ImageUtil.resizeImage(originalImage, fOut, .85, 6, BufferedImage.TYPE_INT_RGB);
 
                     // Need to rewrite the image map to change the coordinates according to the scaling factor
                     resizeImageMap(mapFile, scale);
