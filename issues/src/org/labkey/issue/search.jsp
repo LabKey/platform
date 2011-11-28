@@ -108,7 +108,7 @@
                     //
                 }
 
-                %><a href="<%=h(hit.url)%>"><%=h(hit.displayTitle)%></a><br><%
+                %><a href="<%=h(href)%>"><%=h(hit.displayTitle)%></a><br><%
                 if (!StringUtils.isEmpty(hit.summary))
                 {
                     %><div style="margin-left:10px;"><%=h(StringUtils.trimToEmpty(hit.summary), false)%></div><%
