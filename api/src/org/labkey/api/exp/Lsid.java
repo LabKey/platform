@@ -15,6 +15,7 @@
  */
 package org.labkey.api.exp;
 
+import org.jetbrains.annotations.Nullable;
 import org.junit.Assert;
 import org.junit.Test;
 import org.labkey.api.settings.AppProps;
@@ -410,8 +411,12 @@ public class Lsid
     }
 
     /** Handle an unencoded % in the property name part of a property URI (after the hash) by encoding it, if needed */
-    public static String fixupPropertyURI(String uri)
+    public static @Nullable String fixupPropertyURI(@Nullable String uri)
     {
+        if (uri == null)
+        {
+            return null;
+        }
         try
         {
             new URI(uri);
