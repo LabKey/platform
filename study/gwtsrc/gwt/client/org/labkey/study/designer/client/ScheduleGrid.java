@@ -59,6 +59,17 @@ public abstract class ScheduleGrid extends EditableGrid
     {
         super.updateAll();
         getFlexCellFormatter().setColSpan(0, 1 + getCategoryColumnCount(), schedule.getTimepoints().size() + 1);
+        if (!designer.isReadOnly())
+        {
+            //Timepoint headers are clickable
+            for (int col = 1 + getCategoryColumnCount(); col < getCellCount(1); col++)
+                getFlexCellFormatter().setStyleName(1, col, "labkey-col-header-active");
+
+            //As are the cells that indicate an event...
+            for (int row = getHeaderRows(); row < getRowCount(); row++)
+                for (int col = 1 + getCategoryColumnCount(); col < getCellCount(getHeaderRows()); col++)
+                    getFlexCellFormatter().setStyleName(row, col, "labkey-row-active");
+        }
     }
 
     int getDataColumnCount()
@@ -112,7 +123,10 @@ public abstract class ScheduleGrid extends EditableGrid
         int oldGhostRowIndex = categoryIndex + getHeaderRows();
         makeGhostCategoryReal();
         for (int i = 0; i < schedule.getTimepoints().size(); i++)
+        {
+            getFlexCellFormatter().setStyleName(oldGhostRowIndex,  i + getCategoryColumnCount() + 1, "labkey-row-active");
             setWidget(oldGhostRowIndex, i + getCategoryColumnCount() + 1, getEventWidget(categoryIndex, schedule.getTimepoint(i)));
+        }
     }
 
     int getHeaderRows()
@@ -127,7 +141,11 @@ public abstract class ScheduleGrid extends EditableGrid
             if (column < getCategoryColumnCount())
                 return new Label("");
             if (column == getCategoryColumnCount())
-                return new Label(timelineTitle);
+            {
+                Label label = new Label(timelineTitle);
+                label.setStyleName("schedule-header");
+                return label;
+            }
             else
                 return null;
         }
@@ -149,12 +167,14 @@ public abstract class ScheduleGrid extends EditableGrid
             {
                  tp = schedule.getTimepoint(index);
                 setText(tp.toString());
+                setTitle("Click to modify or delete this timepoint.");
             }
             else
             {
                 isGhost = true;
                 tp = new GWTTimepoint();
-                setText("Click to Add Timepoint");
+                setText("Add Timepoint");
+                setTitle("Click to add a new timepoint.");
             }
             setWidth("100%");
 

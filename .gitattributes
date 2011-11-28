@@ -2955,6 +2955,7 @@ study/src/org/labkey/study/view/StudyToolsWebPartFactory.java -text
 study/src/org/labkey/study/view/StudyViewLoader.java -text
 study/src/org/labkey/study/view/SubjectDetailsWebPartFactory.java -text
 study/src/org/labkey/study/view/SubjectsWebPart.java -text
+study/src/org/labkey/study/view/VaccineStudyWebPart.java -text
 study/src/org/labkey/study/view/assayList2.jsp -text
 study/src/org/labkey/study/view/bulkDatasetDelete.jsp -text
 study/src/org/labkey/study/view/bulkImportDataTypes.jsp -text
@@ -3058,6 +3059,7 @@ study/src/org/labkey/study/view/typeSummary.jsp -text
 study/src/org/labkey/study/view/updateDatasetVisitMapping.jsp -text
 study/src/org/labkey/study/view/updateQCState.jsp -text
 study/src/org/labkey/study/view/uploadVisitMap.jsp -text
+study/src/org/labkey/study/view/vaccineStudy.jsp -text
 study/src/org/labkey/study/view/viewPreferences.jsp -text
 study/src/org/labkey/study/view/visitImportMapping.jsp -text
 study/src/org/labkey/study/view/visitOrder.jsp -text

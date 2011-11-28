@@ -121,6 +121,8 @@ public class StudyDefinitionServiceImpl extends BaseRemoteService implements Stu
             GWTStudyDefinition def = XMLSerializer.fromXML(version.getXML(), template.getCavdStudyId() == studyId ? null : template);
             def.setCavdStudyId(version.getStudyId());
             def.setRevision(version.getRevision());
+            StudyDesignInfo info = StudyDesignManager.get().getStudyDesign(getContainer(), studyId);
+            StudyDesignManager.get().mergeStudyProperties(def, info);
             return def;
         }
         catch (Exception e)

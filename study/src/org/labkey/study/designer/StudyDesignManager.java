@@ -23,6 +23,7 @@ import org.labkey.api.exp.PropertyType;
 import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.security.SecurityManager;
 import org.labkey.api.security.User;
+import org.labkey.api.security.permissions.AdminPermission;
 import org.labkey.api.study.TimepointType;
 import org.labkey.api.study.assay.AssayPublishService;
 import org.labkey.api.study.Study;
@@ -34,6 +35,7 @@ import org.labkey.study.StudyFolderType;
 import org.labkey.study.StudyModule;
 import org.labkey.study.assay.AssayPublishManager;
 import gwt.client.org.labkey.study.designer.client.model.*;
+import org.labkey.study.controllers.designer.DesignerController;
 import org.labkey.study.importer.SimpleSpecimenImporter;
 import org.labkey.study.model.StudyImpl;
 import org.labkey.study.model.StudyManager;
@@ -158,8 +160,28 @@ public class StudyDesignManager
         StudyDesignVersion version = getStudyDesignVersion(info.getContainer(), info.getStudyId());
 
         GWTStudyDefinition def = XMLSerializer.fromXML(version.getXML());
+        mergeStudyProperties(def, info);
         def.setCavdStudyId(info.getStudyId());
-        
+
+        return def;
+    }
+
+    public GWTStudyDefinition mergeStudyProperties(GWTStudyDefinition def, StudyDesignInfo info)
+    {
+        if (!info.isActive())
+            return def;
+
+        if (info.isActive())
+        {
+            Study study = StudyManager.getInstance().getStudy(info.getContainer());
+            if (null != study.getDescription())
+                def.setDescription(study.getDescription());
+            if (null != study.getInvestigator())
+                def.setInvestigator(study.getInvestigator());
+            if (null != study.getStudyGrant())
+                def.setGrant(study.getStudyGrant());
+        }
+
         return def;
     }
 
@@ -321,6 +343,9 @@ public class StudyDesignManager
         study.setSubjectNounSingular(subjectNounSingular);
         study.setSubjectNounPlural(subjectNounPlural);
         study.setSubjectColumnName(subjectColumnName);
+        study.setDescription(def.getDescription());
+        study.setStudyGrant(def.getGrant());
+        study.setInvestigator(def.getInvestigator());
         study = StudyManager.getInstance().createStudy(user, study);
 
         List<GWTTimepoint> timepoints = def.getAssaySchedule().getTimepoints();
@@ -535,6 +560,28 @@ public class StudyDesignManager
         SimpleFilter filter = new SimpleFilter("Container", study.getContainer());
         filter.addCondition("Active", Boolean.TRUE);
         StudyDesignInfo info = Table.selectObject(getStudyDesignTable(), filter, null, StudyDesignInfo.class);
+        return info;
+    }
+
+
+    public StudyDesignInfo getDesignForStudy(User user, Study study, boolean createIfNull) throws Exception
+    {
+        StudyDesignInfo info = getDesignForStudy(study);
+        if (null == info && createIfNull)
+        {
+            GWTStudyDefinition def = DesignerController.getTemplate(user, study.getContainer());
+            StudyDesignVersion version = new StudyDesignVersion();
+            version.setContainer(study.getContainer());
+            version.setDescription(study.getDescription());
+            version.setLabel(study.getLabel());
+            version.setXML(XMLSerializer.toXML(def).toString());
+            version = saveStudyDesign(user, study.getContainer(), version);
+            info = getStudyDesign(study.getContainer(), version.getStudyId());
+            info.setLabel(study.getLabel());
+            info.setActive(true);
+            Table.update(user, getStudyDesignTable(), info, info.getStudyId());
+        }
+
         return info;
     }
 }

@@ -54,6 +54,7 @@ import org.labkey.study.designer.view.StudyDesignsWebPart;
 import org.labkey.study.importer.SimpleSpecimenImporter;
 import org.labkey.study.model.StudyManager;
 import org.labkey.study.view.StudyGWTView;
+import org.labkey.study.view.VaccineStudyWebPart;
 import org.springframework.validation.BindException;
 import org.springframework.validation.Errors;
 import org.springframework.web.servlet.ModelAndView;
@@ -184,57 +185,77 @@ public class DesignerController extends SpringActionController
 
         public NavTree appendNavTrail(NavTree root)
         {
-            return root.addChild("Study Protocol Registration");
+            try
+            {
+            if (null != getCommand().getPanel())
+                root.addChild("Study Protocol Registration");
+            } catch(Exception e)
+            {}
+            return root;
         }
 
         public ModelAndView getView(StudyDesignForm form, BindException errors) throws Exception
         {
-            Map<String, String> params = new HashMap<String,String>();
-            params.put("studyId", Integer.toString(form.getStudyId()));
-            StudyDesignInfo info = StudyDesignManager.get().getStudyDesign(getContainer(), form.getStudyId());
-            //If url is to source container and we've moved to study folder throw the new container
-            if (null != info && !info.getContainer().equals(getContainer()))
-            {
-                ActionURL url = new ActionURL(DesignerAction.class, info.getContainer());
-                url.addParameter("studyId", form.getStudyId());
-                throw new RedirectException(url);
-            }
-
-            int revision = form.getRevision();
-            if (revision == 0 && form.getStudyId() > 0)
-            {
-                Integer revInteger = StudyDesignManager.get().getLatestRevisionNumber(getContainer(), form.getStudyId());
-                if (revInteger == null)
+            if (null == form.getPanel()) {
+                Map<String, String> params = new HashMap<String,String>();
+                params.put("studyId", Integer.toString(form.getStudyId()));
+                StudyDesignInfo info = StudyDesignManager.get().getStudyDesign(getContainer(), form.getStudyId());
+                //If url is to source container and we've moved to study folder throw the new container
+                if (null != info && !info.getContainer().equals(getContainer()))
                 {
-                    throw new NotFoundException("No revision found for Study ID: " + form.getStudyId());
+                    ActionURL url = new ActionURL(DesignerAction.class, info.getContainer());
+                    url.addParameter("studyId", form.getStudyId());
+                    throw new RedirectException(url);
                 }
-                revision = revInteger.intValue();
-            }
-            params.put("revision", Integer.toString(revision));
-            params.put("edit", getViewContext().hasPermission(UpdatePermission.class) && form.isEdit() ? "true" : "false");
-            boolean canEdit = getViewContext().hasPermission(UpdatePermission.class);
-            params.put("canEdit",  Boolean.toString(canEdit));
-            params.put("canCreateRepository", Boolean.toString(canEdit && null != info && !info.isActive()));
-            if (null != StringUtils.trimToNull(form.getFinishURL()))
-                params.put("finishURL", form.getFinishURL());
 
-            HttpView studyView = new StudyGWTView(gwt.client.org.labkey.study.designer.client.Designer.class, params);
-            if (0 != form.getStudyId() && info != null)
-            {
-                HttpView discussion = DiscussionService.get().getDisussionArea(
-                        getViewContext(),
-                        info.getLsid().toString(),
-                        getViewContext().getActionURL(),
-                        "Discussion of " + info.getLabel() + " revision " + revision,
-                        true, false);
-                VBox vbox = new VBox();
-                if (null != HttpView.currentRequest().getParameter("discussion.start") || null != HttpView.currentRequest().getParameter("discussion.id"))
-                    vbox.addView(new HtmlView("Study information is on this page below the discussion."));
-                vbox.addView(discussion);
-                vbox.addView(studyView);
-                studyView = vbox;
+                int revision = form.getRevision();
+                if (revision == 0 && form.getStudyId() > 0)
+                {
+                    Integer revInteger = StudyDesignManager.get().getLatestRevisionNumber(getContainer(), form.getStudyId());
+                    if (revInteger == null)
+                    {
+                        throw new NotFoundException("No revision found for Study ID: " + form.getStudyId());
+                    }
+                    revision = revInteger.intValue();
+                }
+                params.put("revision", Integer.toString(revision));
+                params.put("edit", getViewContext().hasPermission(UpdatePermission.class) && form.isEdit() ? "true" : "false");
+                boolean canEdit = getViewContext().hasPermission(UpdatePermission.class);
+                params.put("canEdit",  Boolean.toString(canEdit));
+                params.put("canCreateRepository", Boolean.toString(canEdit && null != info && !info.isActive()));
+                if (null != StringUtils.trimToNull(form.getFinishURL()))
+                    params.put("finishURL", form.getFinishURL());
+
+                HttpView studyView = new StudyGWTView(gwt.client.org.labkey.study.designer.client.Designer.class, params);
+                if (0 != form.getStudyId() && info != null)
+                {
+                    HttpView discussion = DiscussionService.get().getDisussionArea(
+                            getViewContext(),
+                            info.getLsid().toString(),
+                            getViewContext().getActionURL(),
+                            "Discussion of " + info.getLabel() + " revision " + revision,
+                            true, false);
+                    VBox vbox = new VBox();
+                    if (null != HttpView.currentRequest().getParameter("discussion.start") || null != HttpView.currentRequest().getParameter("discussion.id"))
+                        vbox.addView(new HtmlView("Study information is on this page below the discussion."));
+                    vbox.addView(discussion);
+                    vbox.addView(studyView);
+                    studyView = vbox;
+                }
+                return studyView;
             }
-            return studyView;
+            else
+            {
+
+                VaccineStudyWebPart.Model model = new VaccineStudyWebPart.Model();
+                model.setStudyId(form.getStudyId());
+                model.setEditMode(form.isEdit());
+                model.setPanel(form.getPanel());
+                model.setFinishURL(form.getFinishURL());
+                VaccineStudyWebPart part = new VaccineStudyWebPart(model);
+
+                return part;
+            }
         }
     }
 
@@ -310,6 +331,7 @@ public class DesignerController extends SpringActionController
                 jsonObject.put("sourceContainer", containerJSON(info.getSourceContainer()));
                 jsonObject.put("label", info.getLabel());
                 jsonObject.put("studyId", info.getStudyId());
+                jsonObject.put("active", info.isActive());
                 jsonObject.put("container", containerJSON(info.getContainer()));
                 jsonObject.put("studyDefinition", JSONSerializer.toJSON(StudyDesignManager.get().getGWTStudyDefinition(getContainer(), info)));
                 jsonDesigns.put(jsonObject);
@@ -1041,6 +1063,7 @@ public class DesignerController extends SpringActionController
         private int revision;
         private String finishURL;
         private boolean edit;
+        private String panel;
 
         public int getRevision()
         {
@@ -1080,6 +1103,16 @@ public class DesignerController extends SpringActionController
         public void setFinishURL(String finishURL)
         {
             this.finishURL = finishURL;
+        }
+
+        public String getPanel()
+        {
+            return panel;
+        }
+
+        public void setPanel(String panel)
+        {
+            this.panel = panel;
         }
     }
 }

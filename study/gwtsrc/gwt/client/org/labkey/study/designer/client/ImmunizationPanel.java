@@ -30,7 +30,6 @@ import org.labkey.api.gwt.client.util.StringUtils;
  * User: Mark Igra
  * Date: Dec 18, 2006
  * Time: 9:09:13 AM
- * To change this template use File | Settings | File Templates.
  */
 public class ImmunizationPanel extends Composite
 {
@@ -47,7 +46,31 @@ public class ImmunizationPanel extends Composite
         immunizationGrid = new ImmunizationGrid(parent);
         immunizationGrid.updateAll();
         VerticalPanel vpanel = new VerticalPanel();
-        vpanel.add(immunizationGrid);
+        if (designer.isReadOnly()) {
+            if (immunizationSchedule.getTimepoints().size() == 0)
+            {
+                String html = "No immunizations have been scheduled.";
+                if (designer.canEdit)
+                    html += "<br>Click the edit button to add immunizations.";
+                vpanel.add(new HTML(html));
+            }
+            else
+            {
+                vpanel.add(new HTML("This section shows the immunization schedule. Each immunization may consist of several adjuvants and immunizations."));
+                vpanel.add(immunizationGrid);
+            }
+        }
+        else
+        {
+            String html = "Enter the immunization schedule below." +
+                    "<ul><li>Enter each cohort name on a line" +
+                    "<li>Enter the number of subjects in the cohort in the count column" +
+                    "<li>Use the 'Add Timepoint' link to add new timepoints" +
+                    "<li>Click on the cells underneath a timepoint to define adjuvants and immunogens used at that timepoint" +
+                    "</ul>";
+            vpanel.add(new HTML(html));
+            vpanel.add(immunizationGrid);
+        }
         initWidget(vpanel);
         DOM.setAttribute(getElement(), "id", "ImmunizationPanel");
     }

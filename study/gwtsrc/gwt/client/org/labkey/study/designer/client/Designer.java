@@ -23,6 +23,7 @@ import com.google.gwt.event.dom.client.ClickHandler;
 import com.google.gwt.user.client.ui.*;
 import com.google.gwt.user.client.rpc.AsyncCallback;
 import com.google.gwt.user.client.*;
+import com.google.gwt.http.client.URL;
 import gwt.client.org.labkey.study.StudyApplication;
 import gwt.client.org.labkey.study.designer.client.model.*;
 import org.labkey.api.gwt.client.util.ErrorDialogAsyncCallback;
@@ -60,6 +61,8 @@ public class Designer implements EntryPoint
     AssayPanel assayPanel;
     VaccinePanel vaccinePanel;
     ImmunizationPanel immunizationPanel;
+    private String panelName;
+    boolean canEdit;
     Label saveStatus;
     ImageButton saveButton;
 
@@ -72,7 +75,9 @@ public class Designer implements EntryPoint
         StudyApplication.getRootPanel().add(new Label("Loading..."));
         final int studyId = Integer.parseInt(PropertyUtil.getServerProperty("studyId"));
         final int revision = Integer.parseInt(PropertyUtil.getServerProperty("revision"));
+        panelName = PropertyUtil.getServerProperty("panel");
         readOnly = !"true".equals(PropertyUtil.getServerProperty("edit"));
+        canEdit = "true".equals(PropertyUtil.getServerProperty("canEdit"));
         if (0 == studyId)
         {
             getService().getBlank(new ErrorDialogAsyncCallback<GWTStudyDefinition>("Couldn't get blank protocol"){
@@ -102,10 +107,10 @@ public class Designer implements EntryPoint
 
     private boolean validate()
     {
-        return overviewPanel.validate() &&
-                vaccinePanel.validate() &&
-                immunizationPanel.validate() &&
-                assayPanel.validate();
+        return (null == overviewPanel || overviewPanel.validate()) &&
+                (null == vaccinePanel || vaccinePanel.validate()) &&
+                (null == immunizationPanel || immunizationPanel.validate()) &&
+                (null == assayPanel || assayPanel.validate());
     }
 
     void showStudy(final int studyId, final int revision)
@@ -123,21 +128,40 @@ public class Designer implements EntryPoint
     {
         definition = def;
         VerticalPanel mainPanel = new VerticalPanel();
+        mainPanel.setStylePrimaryName("cavd-study");
         mainPanel.add(label);
-        mainPanel.add(new HTML("<br><p style=\"font:bold 12pt Arial\">Study Protocol Overview</p>"));
-        overviewPanel = new OverviewPanel(this);
-        mainPanel.add(overviewPanel);
 
-        mainPanel.add(new HTML("<br><p style=\"font:bold 12pt Arial\">Vaccine Design</p>"));
-        vaccinePanel = new VaccinePanel(this, definition.getImmunogens(), definition.getAdjuvants());
-        mainPanel.add(vaccinePanel);
+        if (null == panelName || panelName.toLowerCase().equals("overview"))
+        {
+            if (null == panelName)
+                mainPanel.add(new HTML("<h2>Study Protocol Overview</h2>"));
+            overviewPanel = new OverviewPanel(this);
+            mainPanel.add(overviewPanel);
+        }
 
-        mainPanel.add(new HTML("<br><p style=\"font:bold 12pt Arial\">Immunization Protocol</p>"));
-        immunizationPanel = new ImmunizationPanel(this);
-        mainPanel.add(immunizationPanel);
-        mainPanel.add(new HTML("<br><p style=\"font:bold 12pt Arial\">Assays</p>"));
-        assayPanel = new AssayPanel(this);
-        mainPanel.add(assayPanel);
+        if (null == panelName || panelName.toLowerCase().equals("vaccine"))
+        {
+            //Vaccine panel contains its own headings.
+            vaccinePanel = new VaccinePanel(this, definition.getImmunogens(), definition.getAdjuvants());
+            mainPanel.add(vaccinePanel);
+        }
+
+        if (null == panelName || panelName.toLowerCase().equals("immunizations"))
+        {
+            if (null == panelName)
+                mainPanel.add(new HTML("<h2>Immunization Protocol</h2>"));
+            immunizationPanel = new ImmunizationPanel(this);
+            mainPanel.add(immunizationPanel);
+        }
+
+        if (null == panelName || panelName.toLowerCase().equals("assays"))
+        {
+            if (null == panelName)
+                mainPanel.add(new HTML("<h2>Assays</h2>"));
+            assayPanel = new AssayPanel(this);
+            mainPanel.add(assayPanel);
+        }
+
         HorizontalPanel buttonPanel = new HorizontalPanel();
         buttonPanel.getElement().setClassName("gwt-ButtonBar");
         buttonPanel.setSpacing(3);
@@ -145,10 +169,13 @@ public class Designer implements EntryPoint
 
         if (readOnly)
         {
-            if ("true".equals(PropertyUtil.getServerProperty("canEdit")))
+            if (canEdit)
             {
 
                 String editURL = PropertyUtil.getRelativeURL("designer.view") + "?edit=true&studyId=" + definition.getCavdStudyId();
+                if (null != panelName)
+                    editURL += "&panel=" + panelName;
+                editURL += "&finishURL=" + URL.encodeComponent(PropertyUtil.getCurrentURL());
                 buttonPanel.add(new LinkButton("Edit", editURL));
 
                 if ("true".equals(PropertyUtil.getServerProperty("canCreateRepository")))
@@ -175,10 +202,14 @@ public class Designer implements EntryPoint
                     {
                         new Saver() {
                             void afterSave(GWTStudyDesignVersion info) {
-                                if (null != PropertyUtil.getServerProperty("finishURL"))
-                                     WindowUtil.setLocation(PropertyUtil.getServerProperty("finishURL"));
-                                else
-                                    WindowUtil.setLocation(PropertyUtil.getRelativeURL("designer.view") + "?studyId=" + info.getStudyId());
+                                String location = PropertyUtil.getServerProperty("finishURL");
+                                if (null == location)
+                                {
+                                    location = PropertyUtil.getRelativeURL("designer.view") + "?studyId=" + info.getStudyId();
+                                    if (null != panelName)
+                                        location = location + "&panel=" + panelName;
+                                }
+                                WindowUtil.setLocation(location);
                             }
                         }.save();
                         //Do the rest async.
@@ -245,7 +276,8 @@ public class Designer implements EntryPoint
 
         void afterSave(GWTStudyDesignVersion info)
         {
-            overviewPanel.updateRevisionInfo();
+            if (null != overviewPanel)
+                overviewPanel.updateRevisionInfo();
             saveStatus.setText("Revision " + info.getRevision() + " saved successfully.");
         }
     }
@@ -303,6 +335,11 @@ public class Designer implements EntryPoint
             saveStatus.setText("");
         if (!readOnly)
             saveButton.setEnabled(dirty);
+    }
+
+    public boolean isCanEdit()
+    {
+        return canEdit;
     }
 
     public boolean isReadOnly()

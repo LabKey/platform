@@ -30,9 +30,13 @@
 <%@ page import="java.util.List" %>
 <%@ page import="org.labkey.study.controllers.StudyController" %>
 <%@ page import="org.labkey.study.controllers.designer.DesignerController" %>
+<%@ page import="org.labkey.api.security.User" %>
+<%@ page import="org.labkey.api.security.permissions.AdminPermission" %>
+<%@ page import="org.labkey.api.attachments.Attachment" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
     Container c = HttpView.currentContext().getContainer();
+    User user = HttpView.currentContext().getUser();
     Study study = StudyManager.getInstance().getStudy(c);
     if (null == study)
     {      %>
@@ -42,7 +46,7 @@
         return;
     }
 
-    StudyDesignInfo info = StudyDesignManager.get().getDesignForStudy(study);
+    StudyDesignInfo info = StudyDesignManager.get().getDesignForStudy(user, study, c.hasPermission(user, AdminPermission.class));
     if (null == info)
     {%>
         No protocol has been registered for this study.<%
@@ -56,6 +60,10 @@
 
     }
     GWTStudyDefinition revision = StudyDesignManager.get().getGWTStudyDefinition(info.getContainer(), info);
+%>
+<%
+    if (null == study.getDescription() && null != revision.getDescription()) //No study description. Generate one from the study design
+    {
 %>
 This study was created from a vaccine study protocol with the following description.
 <blockquote>
@@ -93,3 +101,83 @@ This study was created from a vaccine study protocol with the following descript
     url.replaceParameter("studyId", String.valueOf(info.getStudyId()));
 %>
 <%=textLink("View Complete Protocol", url)%>
+<%
+    }
+    else
+    {
+        boolean isAdmin = c.hasPermission(user, AdminPermission.class);
+        ActionURL url = new ActionURL(StudyController.BeginAction.class, study.getContainer());
+        String descriptionHtml = study.getDescriptionHtml();
+        String investigator = study.getInvestigator();
+        String studyGrant = study.getStudyGrant();
+        List<Attachment> protocolDocs = study.getProtocolDocuments();
+        ActionURL editMetadataURL = new ActionURL(StudyController.ManageStudyPropertiesAction.class, c);
+        editMetadataURL.addParameter("returnURL", HttpView.currentContext().getActionURL().toString());
+    %>
+    <script type="text/javascript">
+        LABKEY.requiresCss("editInPlaceElement.css");
+    </script>
+    <table width="100%">
+        <tr>
+            <td valign="top">
+                <div>
+                    <span style="float: left">
+                        <%
+                            if(investigator != null)
+                            {
+                                out.print("Investigator: " + investigator);
+                            }
+                        %>
+                    </span>
+
+                    <span style="float: right">
+                        <%
+                            if(studyGrant != null)
+                            {
+                                out.print("Grant: " + studyGrant);
+                            }
+                        %>
+                    </span>
+                </div>
+                <br><br>
+                    <div style="clear: both;">
+                    <%=descriptionHtml%>
+                    </div>
+                <p>
+                    <%
+                        if (protocolDocs.size() == 1)
+                        {
+                            Attachment attachment = protocolDocs.get(0);
+                    %>
+                    <a href="<%= h(attachment.getDownloadUrl(StudyController.ProtocolDocumentDownloadAction.class).getLocalURIString()) %>">
+                        <img src="<%= getViewContext().getContextPath() + attachment.getFileIcon() %>" alt="[<%= h(attachment.getName()) %>]">
+                        Study Protocol Document
+                    </a>
+                    <%
+                        }
+                        else if (protocolDocs.size() > 1)
+                        {
+                    %>
+                    Protocol documents:
+                    <%
+                            for (Attachment doc : protocolDocs)
+                            {
+                    %>
+                        <br><a href="<%= h(doc.getDownloadUrl(StudyController.ProtocolDocumentDownloadAction.class).getLocalURIString()) %>">
+                            <img src="<%= getViewContext().getContextPath() + doc.getFileIcon() %>" alt="[<%= h(doc.getName()) %>]">
+                            <%= h(h(doc.getName())) %>
+                        </a><%
+                            }
+                        }
+                    %>
+                </p>
+            </td>
+        </tr>
+    </table>
+<%
+      if (isAdmin)
+      { %>
+<%=textLink("Edit", editMetadataURL)%>
+<%    }
+  }
+%>
