@@ -43,7 +43,7 @@ function validateForm(form)
         if (trimmedTitle.length > 0)
             return true;
 
-        Ext.Msg.alert("Error", "Title must not be blank");
+        Ext.Msg.alert("Error", "Title must not be blank.");
         return false;
     } else {
         return true;
@@ -61,7 +61,7 @@ Ext.onReady(function(){
 
 if (settings.isTitleEditable())
 {
-    %><tr><td class="labkey-form-label">Title</td><td colspan="2"><input type="text" size="60" name="title" value="<%=h(form.get("title"))%>"></td></tr><%
+    %><tr><td class="labkey-form-label">Title * <%= PageFlowUtil.helpPopup("Title", "This field is required.") %></td><td colspan="2"><input type="text" size="60" name="title" value="<%=h(form.get("title"))%>"></td></tr><%
 }
 else
 {

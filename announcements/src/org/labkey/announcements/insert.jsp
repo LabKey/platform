@@ -44,7 +44,7 @@ function validateForm(form)
     if (trimmedTitle.length > 0)
         return true;
 
-    Ext.Msg.alert("Error", "Title must not be blank");
+    Ext.Msg.alert("Error", "Title must not be blank.");
     return false;
 }
 Ext.onReady(function(){
@@ -57,7 +57,7 @@ Ext.onReady(function(){
 <input type=hidden name=fromDiscussion value="<%=bean.fromDiscussion%>">
 <input type=hidden name=allowMultipleDiscussions value="<%=bean.allowMultipleDiscussions%>">
 <table>
-  <tr><td class='labkey-form-label'>Title</td><td colspan="2"><input type='text' size='60' id="title" name='title' value="<%=h(form.get("title"))%>"></td></tr><%
+  <tr><td class='labkey-form-label'>Title * <%= PageFlowUtil.helpPopup("Title", "This field is required.") %></td><td colspan="2"><input type='text' size='60' id="title" name='title' value="<%=h(form.get("title"))%>"></td></tr><%
     if (settings.hasStatus())
     {
         %><tr><td class='labkey-form-label'>Status</td><td colspan="2"><%=bean.statusSelect%></td></tr><%

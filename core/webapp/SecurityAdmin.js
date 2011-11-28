@@ -250,7 +250,7 @@ var SecurityCache = Ext.extend(Ext.util.Observable,{
         if (principal == this.groupUsers)
             return [];
         if (principal == this.groupGuests)
-            return [{UserId:0, Name:'Guest'}];
+            return [{UserId:0, Name:'Guest', Type:'u'}];
         if (!this.mapPrincipalToGroups)
             this._computeMembershipMaps();
         var users = [];
@@ -264,6 +264,17 @@ var SecurityCache = Ext.extend(Ext.util.Observable,{
         return users;
     },
 
+    getMemberGroups : function(principal)
+    {
+        var members = this.getMembersOf(principal);
+        var groups = [];
+        for (var i = 0; i < members.length; i++)
+        {
+            if (members[i].Type != 'u')
+                groups.push(members[i]);
+        }
+        return groups;
+    },
 
     // recursive, returns objects
     getEffectiveMembers : function(principal, users, set)
@@ -1262,13 +1273,18 @@ var GroupPicker = Ext.extend(Ext.Panel,{
             reserveScrollOffset: true,
             columns: [{
                 header: 'Group',
-                width: .80,
+                width: .50,
                 dataIndex: 'name',
                 tpl:'<div class="{extraClass}" style="cursor:pointer;">{name}</div>'
             },{
-                header: 'Members',
-                width: .20,
-                dataIndex: 'count',
+                header: 'Member Groups',
+                width: .25,
+                dataIndex: 'countGroups',
+                align:'right'
+            },{
+                header: 'Member Users',
+                width: .25,
+                dataIndex: 'countUsers',
                 align:'right'
             }
             ]
@@ -1303,11 +1319,12 @@ var GroupPicker = Ext.extend(Ext.Panel,{
         var data = [];
         principalsStore.each(function(r){
             var name = r.data.Name;
-            var count = this.cache.getMembersOf(r.data.UserId).length;
+            var countAllMembers = this.cache.getMembersOf(r.data.UserId).length;
+            var countMemberGroups = this.cache.getMemberGroups(r.data.UserId).length;
             var extraCls = this.extraClass(r.data);
-            data.push([name,count,r.data.Type,extraCls,r.data.UserId]);
+            data.push([name,(countAllMembers-countMemberGroups),countMemberGroups,r.data.Type,extraCls,r.data.UserId]);
         }, this);
-        this.store = new Ext.data.ArrayStore({data:data, fields:['name','count','type','extraClass','id']});
+        this.store = new Ext.data.ArrayStore({data:data, fields:['name','countUsers','countGroups','type','extraClass','id']});
     },
 
     onViewClick : function(view,index,item,e)
