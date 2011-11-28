@@ -54,6 +54,7 @@ import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.PageFlowUtil.Content;
 import org.labkey.api.util.PageFlowUtil.NoContent;
 import org.labkey.api.util.Path;
+import org.labkey.api.util.StringUtilsLabKey;
 import org.labkey.api.view.*;
 import org.labkey.api.webdav.ModuleStaticResolverImpl;
 import org.labkey.api.webdav.WebdavResource;
@@ -445,9 +446,8 @@ public class CoreController extends SpringActionController
                     _appendCss(out, custom);
 
                     String css = out.toString();
-                    String compiled = compileCSS(css);
-                    content = new Content(compiled);
-                    content.compressed = compressCSS(compiled);
+                    content = new Content(css);
+                    content.compressed = compressCSS(css);
                     content.dependencies = dependsOn;
                     // save space
                     content.content = null; out = null;
@@ -504,30 +504,53 @@ public class CoreController extends SpringActionController
 
     void _appendCss(StringWriter out, Path p, String s)
     {
+        String compiled = compileCSS(s);
         if (null != p)
-            s = s.replaceAll("url\\(\\s*([^/])", "url(" + p.toString("/","/") + "$1");
-        out.write(s);
+            compiled = compiled.replaceAll("url\\(\\s*([^/])", "url(" + p.toString("/","/") + "$1");
+        out.write(compiled);
         out.write("\n");
     }
     
 
     private static String compileCSS(String s)
     {
-        return s;
+        if (!StringUtilsLabKey.isText(s))
+        {
+            return "\n/* CSS FILE CONTAINS NON-PRINTABLE CHARACTERS */\n";
+        }
+        else
+        {
+            return s;
+        }
     }
 
 
     private static byte[] compressCSS(String s)
     {
         String c = s;
-        c = c.replaceAll("/\\*(?:.|[\\n\\r])*?\\*/", "");
-        c = c.replaceAll("(?:\\s|[\\n\\r])+", " ");
-        c = c.replaceAll("\\s*}\\s*", "}\r\n");
+
+        try
+        {
+            if (!StringUtilsLabKey.isText(s))
+            {
+                c = "\n/* CSS FILE CONTAINS NON-PRINTABLE CHARACTERS */\n";
+            }
+            else
+            {
+                c = c.replaceAll("/\\*(?:.|[\\n\\r])*?\\*/", "");
+                c = c.replaceAll("(?:\\s|[\\n\\r])+", " ");
+                c = c.replaceAll("\\s*}\\s*", "}\r\n");
+            }
+        }
+        catch (StackOverflowError e)
+        {
+            // replaceAll() can blow up
+        }
         return PageFlowUtil.gzip(c.trim());
     }
 
 
-    static AtomicReference<Content> _combinedJavascript = new AtomicReference<Content>(); 
+    static AtomicReference<Content> _combinedJavascript = new AtomicReference<Content>();
 
     @RequiresNoPermission
     @IgnoresTermsOfUse
