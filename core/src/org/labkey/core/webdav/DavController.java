@@ -3291,6 +3291,10 @@ public class DavController extends SpringActionController
             destinationPath = destinationPath.substring(contextPath.length());
         }
 
+/*
+        This is kinda correct, but really need to have access to the servet config parameters or something,
+        for now we don't need this since we always resolve starting from "/"
+
         String pathInfo = request.getPathInfo();
         if (pathInfo != null)
         {
@@ -3300,6 +3304,7 @@ public class DavController extends SpringActionController
                 destinationPath = destinationPath.substring(servletPath.length());
             }
         }
+*/
 
         Path path = Path.parse(destinationPath).normalize();
         log("Dest path: " + path.toString());
