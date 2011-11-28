@@ -30,6 +30,11 @@
                 "Please upgrade to the latest version of Internet Explorer, or switch to using Firefox, Chrome, or Safari. " +
                 "See <a href='https://www.labkey.org/wiki/home/Documentation/page.view?name=supportedBrowsers' target='browserVersions'>this page</a> for more information.");
         }
+        else if (Ext.isGecko2 || Ext.isGecko3)
+        {
+            render("This feature is not supported on older versions of Firefox; please upgrade to the latest version of Firefox. " +
+                "See <a href='https://www.labkey.org/wiki/home/Documentation/page.view?name=supportedBrowsers' target='browserVersions'>this page</a> for more information.");
+        }
         else
         {
             refreshDiagram();

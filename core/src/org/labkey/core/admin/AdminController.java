@@ -4615,8 +4615,29 @@ public class AdminController extends SpringActionController
             ModuleLoader ml = ModuleLoader.getInstance();
             StringBuilder html = new StringBuilder();
 
-            for (ModuleContext moduleContext : ml.getUnknownModuleContexts())
-                html.append(moduleContext.getName()).append("<br>\n");
+            Collection<ModuleContext> unknownModules = ml.getUnknownModuleContexts();
+
+            if (unknownModules.isEmpty())
+            {
+                html.append("No unknown modules");
+            }
+            else
+            {
+                html.append("<table>\n");
+                html.append("<tr><th>Name</th><th>Version</th><th>Class</th><th>Schemas</th></tr>\n");
+
+                for (ModuleContext moduleContext : unknownModules)
+                {
+                    html.append("  <tr>");
+                    html.append("    <td>").append(PageFlowUtil.filter(moduleContext.getName())).append("</td>");
+                    html.append("    <td>").append(moduleContext.getInstalledVersion()).append("</td>");
+                    html.append("    <td>").append(PageFlowUtil.filter(moduleContext.getClassName())).append("</td>");
+                    html.append("    <td>").append(PageFlowUtil.filter(moduleContext.getSchemas())).append("</td>");
+                    html.append("  </tr>\n");
+                }
+
+                html.append("</table>\n");
+            }
 
             return new HtmlView(html.toString());
         }

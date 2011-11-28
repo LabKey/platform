@@ -618,20 +618,7 @@ public class ReportsController extends SpringActionController
             {
                 if (report instanceof RReport)
                 {
-//                    VBox vbox = new VBox();
                     resultsView = new JspView<RReport>("/org/labkey/api/reports/report/view/ajaxReportRenderBackground.jsp", (RReport)report);
-
-/*
-                    File logFile = new File(((RReport)report).getReportDir(), RReportJob.LOG_FILE_NAME);
-                    PipelineStatusFile statusFile = PipelineService.get().getStatusFile(logFile.getAbsolutePath());
-
-                   TODO: Remove -- we want to AJAX the results in place
-                   if (statusFile != null &&
-                            !(statusFile.getStatus().equals(PipelineJob.WAITING_STATUS) ||
-                              statusFile.getStatus().equals(RReportJob.PROCESSING_STATUS)))
-                        vbox.addView(new RenderBackgroundRReportView((RReport)report));
-*/
-//                    resultsView = vbox;
                 }
             }
             else

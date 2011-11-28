@@ -592,7 +592,9 @@ public class UserController extends SpringActionController
         @Override
         protected ModelAndView getHtmlView(ShowUsersForm form, BindException errors) throws Exception
         {
-            ImpersonateView impersonateView = new ImpersonateView(getContainer(), getUser(), false);
+            Container c = getContainer();
+
+            ImpersonateView impersonateView = new ImpersonateView(c, getUser(), false);
 
             VBox users = new VBox();
             users.setTitle("Users");
