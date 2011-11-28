@@ -105,7 +105,8 @@ public class LabFolderTabs
         @Override
         public List<Portal.WebPart> createWebParts()
         {
-            List<Portal.WebPart> parts = Arrays.asList(Portal.getPortalPart("Assay List").createWebPart());
+            List<Portal.WebPart> parts = Arrays.asList(Portal.getPortalPart("Assay List").createWebPart(),
+                    Portal.getPortalPart("Lists").createWebPart());
             return parts;
         }
     }

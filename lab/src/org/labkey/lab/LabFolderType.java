@@ -47,7 +47,7 @@ public class LabFolderType extends MultiPortalFolderType
     private static final List<FolderTab> PAGES = Arrays.asList(
             (FolderTab) new LabFolderTabs.OverviewPage("Overview"),
             new LabFolderTabs.ExperimentsPage("Experiments"),
-            new LabFolderTabs.AssaysPage("Assays"),
+            new LabFolderTabs.AssaysPage("Data"),
             new LabFolderTabs.MaterialsPage("Materials")
     );
 
