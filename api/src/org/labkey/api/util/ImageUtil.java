@@ -33,6 +33,12 @@ public class ImageUtil
     /** Rewrite the output files so that they look nice and antialiased */
     public static double resizeImage(BufferedImage originalImage, OutputStream outputStream, double incrementalScale, int iterations) throws IOException
     {
+        int imageType = (originalImage.getType() == BufferedImage.TYPE_CUSTOM ? BufferedImage.TYPE_INT_RGB : originalImage.getType());
+        return resizeImage(originalImage, outputStream, incrementalScale, iterations, imageType);
+    }
+
+    public static double resizeImage(BufferedImage originalImage, OutputStream outputStream, double incrementalScale, int iterations, int imageType) throws IOException
+    {
         double finalScale = 1;
 
         BufferedImage bufferedResizedImage = null;
@@ -46,7 +52,7 @@ public class ImageUtil
             int height = (int) (originalImage.getHeight() * incrementalScale);
 
             // Create a new empty image buffer to render into
-            bufferedResizedImage = new BufferedImage(width, height, originalImage.getType());
+            bufferedResizedImage = new BufferedImage(width, height, imageType);
             Graphics2D g2d = bufferedResizedImage.createGraphics();
 
             // Set up the hints to make it look decent
