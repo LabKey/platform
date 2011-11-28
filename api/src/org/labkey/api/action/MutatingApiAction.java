@@ -17,6 +17,9 @@ package org.labkey.api.action;
 
 import org.springframework.web.servlet.ModelAndView;
 
+import javax.servlet.ServletException;
+import javax.servlet.http.HttpServletResponse;
+
 /*
 * User: Dave
 * Date: May 25, 2009
@@ -42,6 +45,7 @@ public abstract class MutatingApiAction<FORM> extends ApiAction<FORM>
     @Override
     protected ModelAndView handleGet() throws Exception
     {
-        throw new IllegalArgumentException("You must use the POST method when calling this action!");
+        getViewContext().getResponse().sendError(HttpServletResponse.SC_METHOD_NOT_ALLOWED, "You must use the POST method when calling this action.");
+        return null;
     }
 }
