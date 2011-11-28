@@ -253,7 +253,7 @@ public class ListController extends SpringActionController
             if (null == _list)
                 root.addChild("Create new List");
             else
-                root.addChild(_list.getName());
+                appendListNavTrail(root, _list, null);
             return root;
         }
     }
