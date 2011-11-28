@@ -40,6 +40,7 @@ public abstract class Method
     {
         labkeyMethod.put("abs", new JdbcMethod("abs", JdbcType.DOUBLE, 1, 1));
         labkeyMethod.put("acos", new JdbcMethod("acos", JdbcType.DOUBLE, 1, 1));
+        labkeyMethod.put("asin", new JdbcMethod("asin", JdbcType.DOUBLE, 1, 1));
         labkeyMethod.put("atan", new JdbcMethod("atan", JdbcType.DOUBLE, 1, 1));
         labkeyMethod.put("atan2", new JdbcMethod("atan2", JdbcType.DOUBLE, 2, 2));
         labkeyMethod.put("ceiling", new JdbcMethod("ceiling", JdbcType.DOUBLE, 1, 1));
@@ -70,9 +71,9 @@ public abstract class Method
         labkeyMethod.put("truncate", new JdbcMethod("truncate", JdbcType.DOUBLE, 2, 2));
 
 
+        labkeyMethod.put("concat", new JdbcMethod("concat", JdbcType.VARCHAR, 2, 2));
         labkeyMethod.put("lcase", new JdbcMethod("lcase", JdbcType.VARCHAR, 1, 1));
-        labkeyMethod.put("lower", new JdbcMethod("lcase", JdbcType.VARCHAR, 1, 1));
-        labkeyMethod.put("left", new JdbcMethod("left", JdbcType.VARCHAR, 2, 2));
+        labkeyMethod.put("length", new JdbcMethod("length", JdbcType.INTEGER, 1, 1));
         labkeyMethod.put("locate", new Method("locate", JdbcType.INTEGER, 2, 3)
             {
                 public MethodInfo getMethodInfo()
@@ -90,13 +91,14 @@ public abstract class Method
                     };
                 }
             });
+        labkeyMethod.put("lower", new JdbcMethod("lcase", JdbcType.VARCHAR, 1, 1));
+        labkeyMethod.put("left", new JdbcMethod("left", JdbcType.VARCHAR, 2, 2));
         labkeyMethod.put("ltrim", new JdbcMethod("ltrim", JdbcType.VARCHAR, 1, 1));
         labkeyMethod.put("repeat", new JdbcMethod("repeat", JdbcType.VARCHAR, 2, 2));
         labkeyMethod.put("rtrim", new JdbcMethod("rtrim", JdbcType.VARCHAR, 1, 1));
         labkeyMethod.put("substring", new JdbcMethod("substring", JdbcType.VARCHAR, 2, 3));
         labkeyMethod.put("ucase", new JdbcMethod("ucase", JdbcType.VARCHAR, 1, 1));
         labkeyMethod.put("upper", new JdbcMethod("ucase", JdbcType.VARCHAR, 1, 1));
-        labkeyMethod.put("length", new JdbcMethod("length", JdbcType.INTEGER, 1, 1));
 
 
         labkeyMethod.put("curdate", new JdbcMethod("curdate", JdbcType.DATE, 0, 0));
