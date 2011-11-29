@@ -758,6 +758,7 @@ LABKEY.DataRegion = Ext.extend(Ext.Component,
         {
             this.msgbox.setVisible(false);
             this.msgbox.clear();
+            this._resizeContainer(); // #13498
         }
     },
 
@@ -2177,7 +2178,7 @@ LABKEY.DataRegion._filterUI =
 
         if(this._mappedType == "DATE"){
             inputFieldConfig1.altFormats = LABKEY.Utils.getDateAltFormats();
-            inputFieldConfig1.altFormats = LABKEY.Utils.getDateAltFormats();
+            inputFieldConfig2.altFormats = LABKEY.Utils.getDateAltFormats();
         }
 
         var inputField1 = new Ext.form.TextField(inputFieldConfig1);
