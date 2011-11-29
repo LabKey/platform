@@ -158,7 +158,7 @@ public class SimpleWebPartFactory extends BaseWebPartFactory
             loadDefinition(_webPartFile);
 
         if(null != _loadException)
-            throw _loadException;
+            throw new Exception("Error thrown during load", _loadException);
 
         if(null == getViewName())
             throw new Exception("No view name specified for the module web part defined in " + _webPartFile.getAbsolutePath());
