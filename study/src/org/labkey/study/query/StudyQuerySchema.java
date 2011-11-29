@@ -146,11 +146,14 @@ public class StudyQuerySchema extends UserSchema
     {
         Map<String, DataSetDefinition> ret = new LinkedHashMap<String, DataSetDefinition>();
         assert _study != null : "Attempt to get datasets without a study";
-        for (DataSetDefinition dsd : _study.getDataSets())
+        if (_study == null)
         {
-            if (dsd.getLabel() == null)
-                continue;
-            ret.put(dsd.getLabel(), dsd);
+            for (DataSetDefinition dsd : _study.getDataSets())
+            {
+                if (dsd.getLabel() == null)
+                    continue;
+                ret.put(dsd.getLabel(), dsd);
+            }
         }
         return ret;
     }
@@ -159,10 +162,13 @@ public class StudyQuerySchema extends UserSchema
     public DataSetDefinition getDataSetDefinitionByName(String name)
     {
         assert _study != null : "Attempt to get datasets without a study";
-        for (DataSetDefinition dsd : _study.getDataSets())
+        if (_study != null)
         {
-            if (name.equalsIgnoreCase(dsd.getName()))
-                return dsd;
+            for (DataSetDefinition dsd : _study.getDataSets())
+            {
+                if (name.equalsIgnoreCase(dsd.getName()))
+                    return dsd;
+            }
         }
         return null;
     }
