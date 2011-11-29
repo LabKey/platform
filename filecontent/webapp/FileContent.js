@@ -301,21 +301,6 @@ LABKEY.FilesWebPartPanel = Ext.extend(LABKEY.FileBrowser, {
         }
     },
 
-    /**
-     * Adds a marker class to determine when a directory change
-     * event is complete with respect to the file content tool.
-     * This is used to help with the selenium tests.
-     */
-    onGridDataChanged : function(complete) {
-
-        var el = this.getTopToolbar().getEl();
-
-        if (complete)
-            el.addClass('labkey-file-grid-initialized');
-        else
-            el.removeClass('labkey-file-grid-initialized');
-    },
-
     updatePipelineActions : function(response, e)
     {
         var o = eval('var $=' + response.responseText + ';$;');
