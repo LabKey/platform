@@ -354,6 +354,7 @@ public class StudyManager
         return DbSchema.get(SCHEMA_NAME);
     }
 
+    @Nullable
     public synchronized StudyImpl getStudy(Container c)
     {
         try

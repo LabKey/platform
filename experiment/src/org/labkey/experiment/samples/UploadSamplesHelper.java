@@ -76,9 +76,9 @@ public class UploadSamplesHelper
                 }
                 return ret;
             }
-            catch (Exception e)
+            catch (IOException e)
             {
-                // ignore
+                _log.error("Failed to initialize columns from loader.", e);
             }
         }
         return Collections.singletonMap(0, "<Please paste data>");
@@ -89,6 +89,7 @@ public class UploadSamplesHelper
         return _form.getContainer();
     }
 
+    // TODO: This function is way to long and difficult to read. Break it out.
     public Pair<MaterialSource, List<ExpMaterial>> uploadMaterials() throws ExperimentException, ValidationException, IOException
     {
         MaterialSource source;

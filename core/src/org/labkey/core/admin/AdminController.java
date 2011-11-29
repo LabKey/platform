@@ -53,6 +53,7 @@ import org.labkey.api.collections.CaseInsensitiveTreeSet;
 import org.labkey.api.collections.CsvSet;
 import org.labkey.api.data.ConnectionWrapper;
 import org.labkey.api.data.Container;
+import org.labkey.api.data.Container.ContainerException;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.ContainerManager.ContainerParent;
 import org.labkey.api.data.CoreSchema;
@@ -4277,7 +4278,16 @@ public class AdminController extends SpringActionController
                 Container child = nameToContainer.get(childName);
                 sorted.add(child);
             }
-            ContainerManager.setChildOrder(parent, sorted);
+
+            try
+            {
+                ContainerManager.setChildOrder(parent, sorted);
+            }
+            catch (ContainerException e)
+            {
+                errors.reject(ERROR_MSG, e.getMessage());
+                return false;
+            }
         }
 
         return true;

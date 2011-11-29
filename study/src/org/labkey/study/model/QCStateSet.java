@@ -204,6 +204,8 @@ public class QCStateSet
             if (state.isPublicData())
                 selectedStates.add(state);
         }
+        if (study == null)
+            return new QCStateSet(container, selectedStates.toArray(new QCState[selectedStates.size()]), false, PUBLIC_STATES_LABEL);
         return new QCStateSet(container, selectedStates.toArray(new QCState[selectedStates.size()]), study.isBlankQCStatePublic(), PUBLIC_STATES_LABEL);
     }
 
@@ -217,13 +219,15 @@ public class QCStateSet
             if (!state.isPublicData())
                 selectedStates.add(state);
         }
+        if (study == null)
+            return new QCStateSet(container, selectedStates.toArray(new QCState[selectedStates.size()]), false, PRIVATE_STATES_LABEL);
         return new QCStateSet(container, selectedStates.toArray(new QCState[selectedStates.size()]), !study.isBlankQCStatePublic(), PRIVATE_STATES_LABEL);
     }
 
     public static QCStateSet getDefaultStates(Container container)
     {
         StudyImpl study = StudyManager.getInstance().getStudy(container);
-        return study.isShowPrivateDataByDefault() ? getAllStates(container) : getPublicStates(container);
+        return (study != null && study.isShowPrivateDataByDefault()) ? getAllStates(container) : getPublicStates(container);
     }
 
     public static QCStateSet getSelectedStates(Container container, int[] stateRowIds, boolean includeUnmarked)

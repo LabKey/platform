@@ -111,7 +111,7 @@ class SampleSetUpdateService extends AbstractQueryUpdateService
         }
         catch (ExperimentException e)
         {
-            throw new QueryUpdateServiceException(e);
+            throw new ValidationException(e.getMessage());
         }
     }
 

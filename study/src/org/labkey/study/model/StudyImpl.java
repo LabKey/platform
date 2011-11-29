@@ -18,6 +18,7 @@ package org.labkey.study.model;
 
 import org.apache.commons.lang.StringUtils;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import org.junit.Assert;
 import org.junit.Test;
 import org.labkey.api.attachments.Attachment;
@@ -640,6 +641,7 @@ public class StudyImpl extends ExtensibleStudyEntity<StudyImpl> implements Study
         return getSourceStudy() != null;
     }
 
+    @Nullable
     public StudyImpl getSourceStudy()
     {
         if (getSourceStudyContainerId() == null)

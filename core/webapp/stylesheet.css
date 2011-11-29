@@ -128,12 +128,6 @@ input, select, .gwt-TextBox
 	font-size:10pt;
 }
 
-select:focus
-{
-    border-color: #E0E6EA; /*#b4b4b4;*/
-    border:  1px solid;
-}
-
 fieldset
 {
     border: 1px solid #b4b4b4;
