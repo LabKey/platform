@@ -3007,7 +3007,8 @@ LABKEY.FileBrowser = Ext.extend(Ext.Panel,
             // the file upload collapsible panel
             this.fileUploadField = new Ext.form.FileUploadField({
                 buttonText: "Browse",
-                fieldLabel: 'Choose a File'
+                fieldLabel: 'Choose a File',
+                width: 350
             });
 
             // the description field is hidden by default until a file is selected
@@ -3043,8 +3044,7 @@ LABKEY.FileBrowser = Ext.extend(Ext.Panel,
                 stateful: false,
                 bodyStyle : 'background-color:#f0f0f0;',
                 buttonAlign: 'left',
-                items: [
-                    {xtype:'compositefield', items:[this.fileUploadField, btn]},
+                items: [{xtype:'compositefield', items:[this.fileUploadField, btn]},
                     this.descriptionField
                 ],
                 listeners: {
@@ -3104,7 +3104,9 @@ LABKEY.FileBrowser = Ext.extend(Ext.Panel,
 
             // panel to contain the 2 upload panels
             var uploadPanelOuter = new Ext.Panel({
+                width : 550,
                 border: false,
+                flex  : 2,
                 layout: 'card',
                 height: baseHeight,
                 deferredRender: true,
@@ -3151,16 +3153,7 @@ LABKEY.FileBrowser = Ext.extend(Ext.Panel,
                             }, scope: this
                         }]
                     }]
-                },{
-                    xtype       : 'panel',
-                    layout      : 'form',
-                    height      : baseHeight * .9,
-                    flex        : 2,
-                    buttonAlign : 'left',
-                    width       : 550,
-                    border      : false,
-                    items       : [uploadPanelOuter]
-                }]
+                },uploadPanelOuter]
             });
 
             this.fileUploadPanel = new Ext.Panel({
