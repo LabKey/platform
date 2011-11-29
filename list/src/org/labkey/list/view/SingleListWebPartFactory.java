@@ -31,7 +31,8 @@ public class SingleListWebPartFactory extends AlwaysAvailableWebPartFactory
 {
     public SingleListWebPartFactory()
     {
-        super("Single List", null, true, true);
+        super("List - Single", null, true, true);
+        addLegacyNames("Single List");
     }
 
     public WebPartView getWebPartView(ViewContext portalCtx, Portal.WebPart webPart) throws Exception
@@ -40,7 +41,7 @@ public class SingleListWebPartFactory extends AlwaysAvailableWebPartFactory
 
         String listIdParam = props.get("listId");
         String viewName = props.get("viewName");
-        String title = (null == props.get("title") ? "Single List" : props.get("title"));
+        String title = (null == props.get("title") ? "List" : props.get("title"));
 
         if (null == listIdParam)
             return new HtmlView(title, "There is no list selected to be displayed in this webpart");
