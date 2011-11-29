@@ -1071,8 +1071,8 @@ public class ContainerManager
     {
         for (Container child : orderedChildren)
         {
-            if (child.getParent() == null || !child.getParent().equals(parent)) // #13481
-                throw new ContainerException("Invalid parent container of " + child.getPath());
+            if (child == null || child.getParent() == null || !child.getParent().equals(parent)) // #13481
+                throw new ContainerException("Invalid parent container of " + (child == null ? "null child container" : child.getPath()));
         }
         setChildOrder(orderedChildren, false);
     }

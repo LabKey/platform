@@ -160,7 +160,7 @@ var f_scope<%=uid%> = new (function() {
 
     function beforeTabChange()
     {
-        editAreaLoader.execCommand("<%=scriptId%>", 'focus');
+        if (editAreaLoader) editAreaLoader.execCommand("<%=scriptId%>", 'focus');
     }
 
     function activateSourceTab(tab)
