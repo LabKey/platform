@@ -21,6 +21,7 @@ import org.springframework.web.multipart.MultipartFile;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 
@@ -90,10 +91,17 @@ public class SpringAttachmentFile implements AttachmentFile
     public static List<AttachmentFile> createList(Map<String, MultipartFile> fileMap)
     {
         List<AttachmentFile> files = new ArrayList<AttachmentFile>(fileMap.size());
+        ArrayList<String> keys = new ArrayList<String>(fileMap.keySet());
+        Collections.sort(keys, String.CASE_INSENSITIVE_ORDER);
 
-        for (MultipartFile file : fileMap.values())
+        for (String fileKey : keys)
+        {
+            MultipartFile file = fileMap.get(fileKey);
             if (!file.isEmpty())
+            {
                 files.add(new SpringAttachmentFile(file));
+            }
+        }
 
         return files;
     }

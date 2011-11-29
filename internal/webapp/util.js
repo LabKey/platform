@@ -363,12 +363,20 @@ function addFilePicker(tblId, linkId)
     newRow.id = "row" + filePickerIndex;
     newRow.style.minHeight = '20px';
     var filePickerCell = newRow.insertCell(0);
-    var filePickerId = "formFile" + filePickerIndex;
-    filePickerCell.innerHTML = '<input type="file" id="' + filePickerId + '" name="formFiles[' + filePickerIndex + ']" size="45" onChange="showPathname(this, \'filename' + filePickerIndex + '\')">';
+    var filePickerId = "formFile" + twoDigit(filePickerIndex);
+    filePickerCell.innerHTML = '<input type="file" id="' + filePickerId + '" name="formFiles[' + twoDigit(filePickerIndex) + ']" size="45" onChange="showPathname(this, \'filename' + twoDigit(filePickerIndex) + '\')">';
     var removePathnameCell = newRow.insertCell(1);
     removePathnameCell.innerHTML = '<table><tr><td><a href="javascript:removeFilePicker(\'' + tblId + '\', \'' + linkId + '\', \'' + newRow.id + '\')">remove</a></td>' +
-        '<td><label id="filename' + filePickerIndex + '"></label></td></tr></table>';
+        '<td><label id="filename' + twoDigit(filePickerIndex) + '"></label></td></tr></table>';
     updateInstructions(document.getElementById(linkId), table.rows.length);
+}
+
+function twoDigit(num)
+{
+	if (num < 10)
+            return "0" + num;
+        else
+            return "" + num;
 }
 
 function removeFilePicker(tblId, linkId, rowId)
