@@ -110,16 +110,18 @@ public class QueryWebPart extends WebPartView
             }
 
             TableInfo td = null;
-            try {
+            try
+            {
                 ArrayList<QueryException> errors = new ArrayList<QueryException>();
                 QueryDefinition qd = _settings.getQueryDef(_schema);
                 if (null != qd)
                 {
-                    td = qd.getTable(_schema, errors, false);
+                    td = qd.getTable(errors, false);
                 }
                 if (!errors.isEmpty())
                     td = null;
-            }catch(Exception x){}
+            }
+            catch(Exception x){}
             if (null == td)
             {
                 url = _schema.urlSchemaDesigner();
@@ -187,7 +189,7 @@ public class QueryWebPart extends WebPartView
 
             // additionally, check for any render time errors not caught at parse time
             List<QueryException> queryErrors = new ArrayList<QueryException>();
-            queryDef.getTable(_schema, queryErrors, true);
+            queryDef.getTable(queryErrors, true);
             if (!queryErrors.isEmpty())
             {
                 createErrorResponse(response, queryDef, queryErrors);
