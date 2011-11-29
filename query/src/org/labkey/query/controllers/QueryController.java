@@ -1825,7 +1825,7 @@ public class QueryController extends SpringActionController
             String returnURL = (String)this.getProperty(QueryParam.srcURL); // UNDONE: add to QueryForm
             if (returnURL != null)
                 forward = new ActionURL(returnURL);
-            TableInfo table = form.getQueryDef().getTable(form.getSchema(), null, true);
+            TableInfo table = form.getQueryDef().getTable(null, true);
 
             if (!table.hasPermission(getUser(), DeletePermission.class))
             {
@@ -2494,7 +2494,7 @@ public class QueryController extends SpringActionController
 
             QueryDefinition query = form.getQueryDef();
             List<QueryException> qpe = new ArrayList<QueryException>();
-            TableInfo t = query.getTable(form.getSchema(), qpe, true);
+            TableInfo t = query.getTable(qpe, true);
             if (!qpe.isEmpty())
                 throw qpe.get(0);
             if (null != t)

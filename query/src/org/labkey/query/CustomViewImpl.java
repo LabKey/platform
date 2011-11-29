@@ -392,6 +392,7 @@ public class CustomViewImpl extends CustomViewInfoImpl implements CustomView
         CustomViewUtil.update(this, jsonView, saveFilterAndSort);
     }
 
+/*
     public ViewDocument getDesignDocument(UserSchema schema)
     {
         ViewDocument ret = ViewDocument.Factory.newInstance();
@@ -478,6 +479,7 @@ public class CustomViewImpl extends CustomViewInfoImpl implements CustomView
         TableXML.initTable(tableOutput.addNewMetadata(), tinfo, null, getColumnInfos(tinfo, allKeys).values());
         return ret;
     }
+*/
 
     static public Map<FieldKey, ColumnInfo> getColumnInfos(TableInfo table, Collection<FieldKey> fields)
     {

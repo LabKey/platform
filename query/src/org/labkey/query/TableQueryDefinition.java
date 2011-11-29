@@ -38,11 +38,13 @@ public class TableQueryDefinition extends QueryDefinitionImpl
     TableInfo _table;
     private String _sql;
 
+
     public TableQueryDefinition(UserSchema schema, String tableName)
     {
         super(schema.getUser(), getQueryDef(schema, tableName));
         _schema = schema;
     }
+
 
     private static QueryDef getQueryDef(UserSchema schema, String tableName)
     {
@@ -56,6 +58,7 @@ public class TableQueryDefinition extends QueryDefinitionImpl
         }
         return result;
     }
+
 
     public ActionURL urlFor(QueryAction action, Container container)
     {
@@ -88,6 +91,7 @@ public class TableQueryDefinition extends QueryDefinitionImpl
 
         return url != null ? url : super.urlFor(action, container);
     }
+
 
     public ActionURL urlFor(QueryAction action, Container container, Map<String, Object> pks)
     {
@@ -198,22 +202,21 @@ public class TableQueryDefinition extends QueryDefinitionImpl
     }
 
 
-    public TableInfo getTable(UserSchema schema, List<QueryException> errors, boolean includeMetadata)
+    public TableInfo getTable(List<QueryException> errors, boolean includeMetadata)
     {
-        if (schema == getSchema())
+        if (includeMetadata)
         {
-            if (_table == null)
-                _table = schema.getTable(getName(), includeMetadata);
-            if (_table != null)
-            {
+            if (null == _table)
+                _table = getSchema().getTable(getName(), includeMetadata);
+            if (null != _table)
                 return _table;
-            }
         }
-        TableInfo table = schema.getTable(getName(), includeMetadata);
-        if (table != null)
-            return table;
 
-        return super.getTable(schema, errors, includeMetadata);
+        return getSchema().getTable(getName(), includeMetadata);
+
+        // UserSchema.getTable() calls _getTableOrQuery(),
+        // I don't think we need to call super.getTable()
+        // return super.getTable(errors, includeMetadata);
     }
 
 
@@ -222,6 +225,7 @@ public class TableQueryDefinition extends QueryDefinitionImpl
     {
         return super.canEdit(user);
     }
+
 
     public String getSql()
     {
@@ -237,21 +241,25 @@ public class TableQueryDefinition extends QueryDefinitionImpl
         return _sql;
     }
 
+
     public void setSql(String sql)
     {
         // Can't change the SQL
     }
+
 
     public boolean isTableQueryDefinition()
     {
         return true;
     }
 
+
     @Override
     public boolean isSqlEditable()
     {
         return false;
     }
+
 
     public boolean isMetadataEditable()
     {
