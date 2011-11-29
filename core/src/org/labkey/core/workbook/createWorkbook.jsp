@@ -114,7 +114,7 @@
         <tr>
             <td colspan="2" class="cwb-button-bar">
                 <%=generateButton("Cancel", container.getStartURL(me.getViewContext().getUser()))%>
-                <%=PageFlowUtil.generateSubmitButton("Create Workbook", null, null, true, false)%>
+                <%=PageFlowUtil.generateSubmitButton("Create Workbook", null, null, true, true)%>
             </td>
         </tr>
     </table>

@@ -188,7 +188,6 @@ LABKEY.vis.ChartEditorChartsPanel = Ext.extend(Ext.FormPanel, {
         // slider field to set the line width for the chart(s)
         this.lineWidthSliderField = new Ext.form.SliderField({
             fieldLabel: 'Line Width',
-            width: '100%',
             value: this.lineWidth || 4, // default to 4 if not specified
             increment: 1,
             minValue: 1,
@@ -240,7 +239,7 @@ LABKEY.vis.ChartEditorChartsPanel = Ext.extend(Ext.FormPanel, {
                     columnWidth: (1/3),
                     layout: 'form',
                     border: false,
-                    bodyStyle: 'padding: 3px',
+                    bodyStyle: 'padding: 10px',
                     items: [colThreeItems]
                 }
             ]

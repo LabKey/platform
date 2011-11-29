@@ -473,15 +473,6 @@ public class IssuePage implements DataRegionSelection.DataSelectionKeyForm
         StringBuilder sb = new StringBuilder();
         boolean canEdit = isEditable("attachments");
 
-        Collections.sort(attachments, new Comparator<Attachment>()
-        {
-            @Override
-            public int compare(Attachment o1, Attachment o2)
-            {
-                return o1.getName().compareTo(o2.getName());
-            }
-        });
-
         if (attachments.size() > 0)
         {
             sb.append("<table>");

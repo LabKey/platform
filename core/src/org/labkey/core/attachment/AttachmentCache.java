@@ -54,7 +54,7 @@ public class AttachmentCache
                 Attachment[] attachments = Table.select(CoreSchema.getInstance().getTableInfoDocuments(),
                         AttachmentServiceImpl.ATTACHMENT_COLUMNS,
                         new SimpleFilter("Parent", parent.getEntityId()),
-                        new Sort("+Created"),
+                        new Sort("+RowId"),
                         Attachment.class
                 );
 

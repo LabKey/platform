@@ -25,7 +25,6 @@ import org.labkey.api.exp.OntologyManager;
 import org.labkey.api.exp.PropertyDescriptor;
 import org.labkey.api.exp.PropertyType;
 import org.labkey.api.exp.api.ExpProtocol;
-import org.labkey.api.exp.api.ExperimentService;
 import org.labkey.api.exp.property.Domain;
 import org.labkey.api.exp.property.DomainEditorServiceBase;
 import org.labkey.api.exp.property.DomainProperty;
@@ -184,10 +183,9 @@ class DatasetServiceImpl extends DomainEditorServiceBase implements DatasetServi
 
     private List updateDataset(GWTDataset ds, String domainURI)
     {
+        List<String> errors = new ArrayList<String>();
         try
         {
-            List<String> errors = new ArrayList<String>();
-
             // CONSIDER: optimistic concurrency validate against current
             // validate that this smells right
             DataSetDefinition def = study.getDataSet(ds.getDatasetId());
@@ -268,6 +266,11 @@ class DatasetServiceImpl extends DomainEditorServiceBase implements DatasetServi
 
             studyManager.updateDataSetDefinition(getUser(), updated);
 
+            return errors;
+        }
+        catch (SQLException e)
+        {
+            errors.add("Additional key column must have unique values.");
             return errors;
         }
         catch (Exception x)

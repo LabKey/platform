@@ -108,6 +108,11 @@ LABKEY.vis.ChartEditorXAxisPanel = Ext.extend(Ext.FormPanel, {
 
                         this.fireEvent('chartDefinitionChanged', true);
                     }
+                },
+                'enable': function(cmp){
+                    if(this.timepointType == "date"){
+                        cmp.setDisabled(true);
+                    }
                 }
             }
         });
@@ -230,7 +235,7 @@ LABKEY.vis.ChartEditorXAxisPanel = Ext.extend(Ext.FormPanel, {
             inputValue: 'automatic',
             disabled: this.time == "visit",
             boxLabel: 'Automatic',
-            height: 1,
+            height: 10,
             checked: this.axis.range.type == "automatic",
             listeners: {
                 scope: this,
@@ -269,50 +274,55 @@ LABKEY.vis.ChartEditorXAxisPanel = Ext.extend(Ext.FormPanel, {
         this.rangeMinNumberField = new Ext.form.NumberField({
             emptyText: 'Min',
             selectOnFocus: true,
+            enableKeyEvents: true,
             width: 75,
             disabled: this.axis.range.type == "automatic" || this.time == "visit",
-            value: this.axis.range.min,
-            listeners: {
-                scope: this,
-                'change': function(cmp, newVal, oldVal) {
-                    // check to make sure that, if set, the min value is <= to max
-                    if(typeof this.axis.range.max == "number" && typeof newVal == "number" && newVal > this.axis.range.max){
-                        Ext.Msg.alert("ERROR", "Range 'min' value must be less than or equal to 'max' value.", function(){
-                            this.rangeMinNumberField.focus();
-                        }, this);
-                        return;
-                    }
-
-                    this.axis.range.min = newVal;
-                    // fire change event, (max value may or may not be set)
-                    this.fireEvent('chartDefinitionChanged', false);
-                }
-            }
+            value: this.axis.range.min
         });
+
+        this.rangeMinNumberField.addListener('keyup', function(cmp){
+            var newVal = cmp.getValue();
+            // check to make sure that, if set, the min value is <= to max
+            this.axis.range.min = newVal;
+            if(typeof this.axis.range.max == "number" && typeof newVal == "number" && newVal > this.axis.range.max){
+                Ext.Msg.alert("ERROR", "Range 'min' value must be less than or equal to 'max' value.", function(){
+                    this.rangeMinNumberField.focus();
+                }, this);
+                return;
+            }
+            // fire change event, (max value may or may not be set)
+            this.fireEvent('chartDefinitionChanged', false);
+        }, this, {buffer: 500});
 
         this.rangeMaxNumberField = new Ext.form.NumberField({
             emptyText: 'Max',
             selectOnFocus: true,
+            enableKeyEvents: true,
             width: 75,
             disabled: this.axis.range.type == "automatic" || this.time == "visit",
-            value: this.axis.range.max,
-            listeners: {
-                scope: this,
-                'change': function(cmp, newVal, oldVal) {
-                    // check to make sure that, if set, the max value is >= to min
-                    if(typeof this.axis.range.min == "number" && typeof newVal == "number" && newVal < this.axis.range.min){
-                        Ext.Msg.alert("ERROR", "Range 'max' value must be greater than or equal to 'min' value.", function(){
-                            this.rangeMaxNumberField.focus();
-                        }, this);
-                        return;
-                    }
-
-                    this.axis.range.max = newVal;
-                    // fire change event, (min value may or may not be set)
-                    this.fireEvent('chartDefinitionChanged', false);
-                }
-            }
+            value: this.axis.range.max
         });
+
+        this.rangeMaxNumberField.addListener('keyup', function(cmp){
+            var newVal = cmp.getValue();
+            // check to make sure that, if set, the max value is >= to min
+            this.axis.range.max = newVal;
+            var min = typeof this.axis.range.min == "number" ? this.axis.range.min : 0;
+            if(typeof newVal == "number" && newVal <= min){
+                this.rangeMaxNumberField.suspendEvents(false);
+                Ext.Msg.alert("ERROR", "Range 'max' value must be greater than or equal to 'min' value.", function(){
+                    this.rangeMaxNumberField.focus();
+                    var task = new Ext.util.DelayedTask(function(){
+                        this.rangeMaxNumberField.resumeEvents();
+                    }, this);
+                    task.delay(100);
+                }, this);
+                return;
+            }
+
+            // fire change event, (min value may or may not be set)
+            this.fireEvent('chartDefinitionChanged', false);
+        }, this, {buffer: 500});
 
         this.rangeCompositeField = new Ext.form.CompositeField({
             xtype: 'compositefield',
