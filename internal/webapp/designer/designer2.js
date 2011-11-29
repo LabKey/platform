@@ -167,6 +167,7 @@ LABKEY.DataRegion.ViewDesigner = Ext.extend(LABKEY.ext.SplitGroupTabPanel, {
         this.allowableContainerFilters = config.allowableContainerFilters || [];
 
         this.columnsTab = new LABKEY.DataRegion.ColumnsTab({
+            name: "ColumnsTab",
             designer: this,
             schemaName: this.schemaName,
             queryName: this.queryName,
@@ -176,12 +177,14 @@ LABKEY.DataRegion.ViewDesigner = Ext.extend(LABKEY.ext.SplitGroupTabPanel, {
         });
 
         this.filterTab = new LABKEY.DataRegion.FilterTab({
+            name: "FilterTab",
             designer: this,
             fieldMetaStore: this.fieldMetaStore,
             customView: this.customView
         });
 
         this.sortTab = new LABKEY.DataRegion.SortTab({
+            name: "SortTab",
             designer: this,
             fieldMetaStore: this.fieldMetaStore,
             customView: this.customView
@@ -238,6 +241,9 @@ LABKEY.DataRegion.ViewDesigner = Ext.extend(LABKEY.ext.SplitGroupTabPanel, {
             FilterTab: 1,
             SortTab: 2
         };
+
+        if (config.activeGroup)
+            config.activeGroup = this.translateGroupName(config.activeGroup);
 
         var footerBar = [{
                 text: "Delete",
@@ -369,11 +375,16 @@ LABKEY.DataRegion.ViewDesigner = Ext.extend(LABKEY.ext.SplitGroupTabPanel, {
             delete this.dataRegion;
     },
 
-    // Issue 11188: Translate friendly group tab name into item index.
-    setActiveGroup : function (group) {
+    translateGroupName : function (group) {
         // translate group tab name into index.
         if (Ext.isString(group))
-            group = this.groupNames[group];
+            return this.groupNames[group];
+        return group;
+    },
+
+    // Issue 11188: Translate friendly group tab name into item index.
+    setActiveGroup : function (group) {
+        group = this.translateGroupName(group);
         return LABKEY.DataRegion.ViewDesigner.superclass.setActiveGroup.call(this, group);
     },
 
@@ -1169,6 +1180,7 @@ LABKEY.DataRegion.FilterTab = Ext.extend(LABKEY.DataRegion.Tab, {
             scope: this
         });
 
+        var thisTab = this;
         config = Ext.applyIf({
             title: "Filter",
             cls: "test-filter-tab",
@@ -1246,6 +1258,16 @@ LABKEY.DataRegion.FilterTab = Ext.extend(LABKEY.DataRegion.Tab, {
                         fieldMetaStore: this.fieldMetaStore,
                         listeners: {
                             select: this.updateValueTextFieldVisibility,
+                            afterrender: function () {
+                                if (this.getWidth() == 0) {
+                                    // If the activeGroup tab is specified in the customize view config,
+                                    // the initial size of the items in the SortTab/FilterTab will be zero.
+                                    // As a bruteforce workaround, refresh the entire list forcing a redraw.
+                                    setTimeout(function () {
+                                        thisTab.filterList.refresh();
+                                    }, 200);
+                                }
+                            },
                             scope: this
                         },
                         mode: 'local',
@@ -1602,6 +1624,7 @@ LABKEY.DataRegion.SortTab = Ext.extend(LABKEY.DataRegion.Tab, {
             scope: this
         });
 
+        var thisTab = this;
         config = Ext.applyIf({
             title: "Sort",
             cls: "test-sort-tab",
@@ -1673,6 +1696,14 @@ LABKEY.DataRegion.SortTab = Ext.extend(LABKEY.DataRegion.Tab, {
                             'afterrender': function () {
                                 // XXX: work around annoying focus bug for Fields in DataView.
                                 this.mon(this.el, 'mousedown', function () { this.focus(); }, this);
+                                if (this.getWidth() == 0) {
+                                    // If the activeGroup tab is specified in the customize view config,
+                                    // the initial size of the items in the SortTab/FilterTab will be zero.
+                                    // As a bruteforce workaround, refresh the entire list forcing a redraw.
+                                    setTimeout(function () {
+                                        thisTab.sortList.refresh();
+                                    }, 200);
+                                }
                             }
                         }
                     },{

@@ -152,6 +152,7 @@
  * QueryWebPart. If not supplied, links will generally be opened in the same browser window/tab where the QueryWebPart. 
  * @param {String} [config.frame] The frame style to use for the web part. This may be one of the following:
  * 'div', 'portal', 'none', 'dialog', 'title', 'left-nav'.
+ * @param {String} [config.showViewPanel] Open the customize view panel after rendering.  The value of this option can be one of "ColumnsTab", "FilterTab", or "SortTab".
  * @param {String} [config.bodyClass] A CSS style class that will be added to the enclosing element for the web part.
  * @param {Function} [config.success] A function to call after the part has been rendered. It will be passed two arguments:
  * <ul>
@@ -268,7 +269,8 @@ LABKEY.QueryWebPart = Ext.extend(Ext.util.Observable,
         offset: false,
         scope: false,
         metadata: false,
-        parameters: false
+        parameters: false,
+        showViewPanel: false
     },
 
     constructor : function(config)
@@ -469,12 +471,17 @@ LABKEY.QueryWebPart = Ext.extend(Ext.util.Observable,
         }
 
         // re-open designer after update
+        var customizeViewTab = this.showViewPanel;
         if (dr)
         {
-            var customizeViewVisible = false;
             if (dr.customizeView)
             {
-                customizeViewVisible = dr.customizeView.isVisible();
+                if (dr.customizeView.isVisible())
+                {
+                    // Currently open designer tab overrides the showViewPanel config option.
+                    var tab = dr.customizeView.getActiveDesignerTab();
+                    customizeViewTab = tab ? tab.name : true;
+                }
                 dr.hideCustomizeView();
             }
         }
@@ -518,8 +525,8 @@ LABKEY.QueryWebPart = Ext.extend(Ext.util.Observable,
 
 
 
-                            if (customizeViewVisible)
-                                dr.showCustomizeView(null, false, false);
+                            if (customizeViewTab)
+                                dr.showCustomizeView(customizeViewTab, false, false);
 
                             if (this._success) //11425 : Make callback consistent with documentation
                                 Ext.onReady(function(){this._success.call(this.scope || this, dr, response);}, this, {delay: 100}); //8721: need to use onReady()
