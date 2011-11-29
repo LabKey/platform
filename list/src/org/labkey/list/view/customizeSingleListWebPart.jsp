@@ -22,6 +22,7 @@
 <%@ page import="org.labkey.api.view.ViewContext" %>
 <%@ page import="java.util.Map" %>
 <%@ page import="java.util.TreeMap" %>
+<%@ page import="java.util.Comparator" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%
@@ -30,12 +31,22 @@
     ViewContext ctx = me.getViewContext();
     Map<String, String> props = part.getPropertyMap();
 
-    Map<String, String> listOptions = new TreeMap<String, String>();
+    final TreeMap<String, String> listOptions = new TreeMap<String, String>();
+
     Map<String, ListDefinition> lists = ListService.get().getLists(ctx.getContainer());
     for (String name : lists.keySet())
     {
         listOptions.put(String.valueOf(lists.get(name).getListId()), name);
     }
+
+    //to sort on values
+    TreeMap<String, String> sortedListOptions = new TreeMap<String, String>(new Comparator() {
+        public int compare(Object o1, Object o2) {
+            return listOptions.get(o1).compareTo(listOptions.get(o2));
+        }
+    });
+    sortedListOptions.putAll(listOptions);
+
 %>
 This webpart displays data from a single list.<br><br>
 
@@ -51,7 +62,7 @@ If you want to let users change the list that's displayed or customize the view 
             <td>List:</td>
             <td>
                 <select name="listId">
-                    <labkey:options value="<%=props.get(\"listId\")%>" map="<%=listOptions%>" />
+                    <labkey:options value="<%=props.get(\"listId\")%>" map="<%=sortedListOptions%>" />
                 </select>
             </td>
         </tr>
