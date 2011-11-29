@@ -30,6 +30,7 @@ import org.labkey.api.cache.CacheManager;
 import org.labkey.api.cache.StringKeyCache;
 import org.labkey.api.collections.CaseInsensitiveHashSet;
 import org.labkey.api.collections.ConcurrentHashSet;
+import org.labkey.api.data.Container.ContainerException;
 import org.labkey.api.data.dialect.SqlDialect;
 import org.labkey.api.module.FolderType;
 import org.labkey.api.module.ModuleLoader;
@@ -1066,12 +1067,12 @@ public class ContainerManager
         setChildOrder(parent.getChildren(), true);
     }
 
-    public static void setChildOrder(Container parent, List<Container> orderedChildren)
+    public static void setChildOrder(Container parent, List<Container> orderedChildren) throws ContainerException
     {
         for (Container child : orderedChildren)
         {
-            if (!child.getParent().equals(parent))
-                throw new IllegalArgumentException(parent.getPath() + " is not parent of " + child.getPath());
+            if (child.getParent() == null || !child.getParent().equals(parent)) // #13481
+                throw new ContainerException("Invalid parent container of " + child.getPath());
         }
         setChildOrder(orderedChildren, false);
     }
