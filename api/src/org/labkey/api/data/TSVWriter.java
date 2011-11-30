@@ -214,22 +214,6 @@ public class TSVWriter extends TextWriter
         pw.append(_rowSeparator);
     }
 
-    protected void writeLine(String[] values)
-    {
-        if (values == null || values.length == 0)
-            return;
-
-        PrintWriter pw = getPrintWriter();
-        for (int i = 0; i < values.length; i++)
-        {
-            pw.write(quoteValue(values[i]));
-            if (i < values.length-1)
-                pw.write(_chDelimiter);
-        }
-
-        pw.append(_rowSeparator);
-    }
-
     public static class TestCase extends Assert
     {
         private static class FakeTSVWriter extends TSVWriter

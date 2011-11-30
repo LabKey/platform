@@ -137,7 +137,7 @@ public class ChartQueryReport extends ChartReport implements Report.ImageMapGene
         }
         else
         {
-            StringBuffer sb = new StringBuffer();
+            StringBuilder sb = new StringBuilder();
             for (String error : errors)
             {
                 sb.append(error);

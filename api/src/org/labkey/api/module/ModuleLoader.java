@@ -34,6 +34,7 @@ import org.labkey.api.data.RuntimeSQLException;
 import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.Table;
 import org.labkey.api.data.TableInfo;
+import org.labkey.api.data.TableSelector;
 import org.labkey.api.data.dialect.SqlDialect;
 import org.labkey.api.resource.Resource;
 import org.labkey.api.security.User;
@@ -309,9 +310,7 @@ public class ModuleLoader implements Filter
 
         boolean coreRequiredUpgrade = upgradeCoreModule();
 
-        ModuleContext[] contexts = getAllModuleContexts();
-
-        for (ModuleContext context : contexts)
+        for (ModuleContext context : getAllModuleContexts())
             contextMap.put(context.getName(), context);
 
         //Make sure we have a context for all modules, even ones we haven't seen before
@@ -811,7 +810,7 @@ public class ModuleLoader implements Filter
 
 
     // Not transacted: SQL Server sp_dropapprole can't be called inside a transaction
-    private void removeModule(ModuleContext context)
+    public void removeModule(ModuleContext context)
     {
         DbScope scope = _core.getSchema().getScope();
         SqlDialect dialect = _core.getSqlDialect();
@@ -878,7 +877,7 @@ public class ModuleLoader implements Filter
     // Remove all unknown modules that are marked as AutoUninstall
     private void handleUnkownModules()
     {
-        for (ModuleContext moduleContext : getUnknownModuleContexts())
+        for (ModuleContext moduleContext : getUnknownModuleContexts().values())
             if (moduleContext.isAutoUninstall())
                 removeModule(moduleContext);
     }
@@ -1294,26 +1293,15 @@ public class ModuleLoader implements Filter
     }
 
 
-    private ModuleContext[] getAllModuleContexts()
+    public Collection<ModuleContext> getAllModuleContexts()
     {
-        try
-        {
-            TableInfo modules = getTableInfoModules();
-            SQLFragment sql = new SQLFragment("SELECT * FROM " + modules.getSelectName());
-            ModuleContext[] contexts;
-            contexts = Table.executeQuery(modules.getSchema(), sql, ModuleContext.class);
-            return contexts;
-        }
-        catch (SQLException x)
-        {
-            throw new RuntimeSQLException(x);
-        }
+        return new TableSelector(getTableInfoModules()).getCollection(ModuleContext.class);
     }
 
 
-    public Collection<ModuleContext> getUnknownModuleContexts()
+    public Map<String, ModuleContext> getUnknownModuleContexts()
     {
-        LinkedList<ModuleContext> unknownContexts = new LinkedList<ModuleContext>();
+        Map<String, ModuleContext> unknownContexts = new HashMap<String, ModuleContext>();
 
         for (ModuleContext moduleContext : getAllModuleContexts())
         {
@@ -1321,7 +1309,7 @@ public class ModuleLoader implements Filter
             Module module = getModule(moduleContext.getName());
 
             if (null == module || !name.equals(module.getName()))
-                unknownContexts.add(moduleContext);
+                unknownContexts.put(name, moduleContext);
         }
 
         return unknownContexts;
