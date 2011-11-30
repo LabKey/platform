@@ -304,7 +304,7 @@ LABKEY.DataRegion = Ext.extend(Ext.Component,
         {
             if (toggle)
                 toggle.checked = false;
-            this.hideMessage();
+            this.removeMessage('selection');
             this.onSelectChange(this.hasSelected());
         }
     },
@@ -542,7 +542,7 @@ LABKEY.DataRegion = Ext.extend(Ext.Component,
         else
         {
             this._setAllCheckboxes(false);
-            this.hideMessage();
+            this.removeMessage('selection');
         }
     },
 
