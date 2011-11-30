@@ -52,7 +52,7 @@ public abstract class ParticipantCommentAction extends InsertUpdateAction<Specim
 
     protected NavTree appendExtraNavTrail(NavTree root)
     {
-        return null;  //To change body of implemented methods use File | Settings | File Templates.
+        return null;
     }
 
     @Override
@@ -79,7 +79,7 @@ public abstract class ParticipantCommentAction extends InsertUpdateAction<Specim
         return false;
     }
 
-    @RequiresPermissionClass(InsertPermission.class)
+    @RequiresPermissionClass(ReadPermission.class)
     public static class SpecimenCommentInsertAction extends ParticipantCommentAction
     {
         private DataView _dataView;
@@ -87,7 +87,8 @@ public abstract class ParticipantCommentAction extends InsertUpdateAction<Specim
         @Override
         public ModelAndView getView(final SpecimenController.ParticipantCommentForm form, boolean reshow, BindException errors) throws Exception
         {
-           ModelAndView view = super.getView(form, reshow, errors);
+            // super.getView() checks permissions
+            ModelAndView view = super.getView(form, reshow, errors);
             if (!reshow && _dataView instanceof InsertView)
             {
                 ((InsertView)_dataView).setInitialValue(StudyService.get().getSubjectColumnName(getViewContext().getContainer()), form.getParticipantId());
@@ -126,7 +127,8 @@ public abstract class ParticipantCommentAction extends InsertUpdateAction<Specim
         @Override
         protected DataView createNewView(final SpecimenController.ParticipantCommentForm form, QueryUpdateForm updateForm, BindException errors)
         {
-            try {
+            try
+            {
                 if (!StringUtils.isBlank(form.getComment()))
                 {
                     updateForm.refreshFromDb();

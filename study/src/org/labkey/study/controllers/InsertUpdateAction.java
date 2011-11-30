@@ -28,8 +28,11 @@ import org.labkey.api.exp.property.Domain;
 import org.labkey.api.exp.property.DomainProperty;
 import org.labkey.api.exp.property.PropertyService;
 import org.labkey.api.query.BatchValidationException;
+import org.labkey.api.query.DefaultSchema;
+import org.labkey.api.query.QuerySchema;
 import org.labkey.api.query.QueryUpdateForm;
 import org.labkey.api.query.QueryUpdateService;
+import org.labkey.api.query.UserSchema;
 import org.labkey.api.security.User;
 import org.labkey.api.study.Cohort;
 import org.labkey.api.study.Study;
@@ -62,6 +65,7 @@ public abstract class InsertUpdateAction<Form extends DatasetController.EditData
 {
     protected abstract boolean isInsert();
     protected abstract NavTree appendExtraNavTrail(NavTree root);
+    protected StudyImpl _study = null;
     private QueryUpdateForm _updateForm;
     protected DataSetDefinition _ds = null;
 
@@ -92,8 +96,14 @@ public abstract class InsertUpdateAction<Form extends DatasetController.EditData
         {
             throw new UnauthorizedException("User does not have permission to view this dataset");
         }
+        if (!_ds.canWrite(getViewContext().getUser()))
+        {
+            throw new UnauthorizedException("User does not have permission to edit this dataset");
+        }
 
-        TableInfo datasetTable = _ds.getTableInfo(getViewContext().getUser());
+        // we want to use the actual user schema table, since it implements UpdateService and permissions checks
+//        TableInfo datasetTable = _ds.getTableInfo(getViewContext().getUser());
+        TableInfo datasetTable = getQueryTable();
 
         // if this is our cohort assignment dataset, we may want to display drop-downs for cohort, rather
         // than a text entry box:
@@ -228,36 +238,34 @@ public abstract class InsertUpdateAction<Form extends DatasetController.EditData
     {
         int datasetId = form.getDatasetId();
         StudyImpl study = getStudy();
-        DataSetDefinition ds = StudyManager.getInstance().getDataSetDefinition(study, datasetId);
-        if (null == ds)
+        _ds = StudyManager.getInstance().getDataSetDefinition(study, datasetId);
+        if (null == _ds)
         {
             redirectTypeNotFound(form.getDatasetId());
             return false;
         }
         final Container c = getViewContext().getContainer();
         final User user = getViewContext().getUser();
-        if (!ds.canWrite(user))
+        if (!_ds.canWrite(user))
         {
             throw new UnauthorizedException("User does not have permission to edit this dataset");
         }
-        if (ds.isAssayData())
+        if (_ds.isAssayData())
         {
             throw new UnauthorizedException("This dataset comes from an assay. You cannot update it directly");
         }
 
-        TableInfo datasetTable = ds.getTableInfo(getViewContext().getUser());
+        TableInfo datasetTable = getQueryTable();
         QueryUpdateForm updateForm = getUpdateForm(datasetTable, errors);
 
         if (errors.hasErrors())
             return false;
 
         // The query DataSet table supports QueryUpdateService while the table returned from ds.getTableInfo() doesn't.
-        StudyQuerySchema schema = new StudyQuerySchema(study, user, true);
-        TableInfo datasetQueryTable = schema.getDataSetTable(ds);
-        QueryUpdateService qus = datasetQueryTable.getUpdateService();
+        QueryUpdateService qus = datasetTable.getUpdateService();
         assert qus != null;
 
-        DbSchema dbschema = schema.getDbSchema();
+        DbSchema dbschema = datasetTable.getSchema();
         try
         {
             dbschema.getScope().ensureTransaction();
@@ -274,7 +282,7 @@ public abstract class InsertUpdateAction<Form extends DatasetController.EditData
                     return false;
 
                 // save last inputs for use in default value population:
-                Domain domain = PropertyService.get().getDomain(c, ds.getTypeURI());
+                Domain domain = PropertyService.get().getDomain(c, _ds.getTypeURI());
                 DomainProperty[] properties = domain.getProperties();
                 Map<String, Object> requestMap = updateForm.getTypedValues();
                 Map<DomainProperty, Object> dataMap = new HashMap<DomainProperty, Object>(requestMap.size());
@@ -346,11 +354,23 @@ public abstract class InsertUpdateAction<Form extends DatasetController.EditData
 
     protected StudyImpl getStudy() throws ServletException
     {
-        return BaseStudyController.getStudy(false, getViewContext().getContainer());
+        if (null == _study)
+            _study = BaseStudyController.getStudy(false, getViewContext().getContainer());
+        return _study;
     }
 
     protected void redirectTypeNotFound(int datasetId) throws RedirectException
     {
         throw new RedirectException(new ActionURL(StudyController.TypeNotFoundAction.class, getViewContext().getContainer()).addParameter("id", datasetId));
+    }
+
+
+    TableInfo getQueryTable() throws ServletException
+    {
+        StudyQuerySchema schema = new StudyQuerySchema(getStudy(), getViewContext().getUser(), true);
+        TableInfo datasetQueryTable = schema.getDataSetTable(_ds);
+        if (null == datasetQueryTable) // shouldn't happen...
+            throw new NotFoundException("table: study." + _ds.getName());
+        return datasetQueryTable;
     }
 }

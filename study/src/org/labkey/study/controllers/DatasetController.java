@@ -61,7 +61,7 @@ public class DatasetController extends BaseStudyController
         setActionResolver(ACTION_RESOLVER);
     }
 
-    @RequiresPermissionClass(UpdatePermission.class)
+    @RequiresPermissionClass(ReadPermission.class)
     public class UpdateAction extends InsertUpdateAction
     {
         public UpdateAction()
@@ -80,7 +80,7 @@ public class DatasetController extends BaseStudyController
         }
     }
 
-    @RequiresPermissionClass(InsertPermission.class)
+    @RequiresPermissionClass(ReadPermission.class)
     public class InsertAction extends InsertUpdateAction
     {
         public InsertAction()
