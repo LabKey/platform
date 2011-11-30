@@ -38,6 +38,7 @@ import org.labkey.api.query.QueryUpdateService;
 import org.labkey.api.query.UserSchema;
 import org.labkey.api.query.ValidationException;
 import org.labkey.api.security.User;
+import org.labkey.api.security.UserPrincipal;
 import org.labkey.api.security.permissions.Permission;
 import org.labkey.api.util.ResultSetUtil;
 import org.labkey.api.util.SimpleNamedObject;
@@ -529,7 +530,7 @@ public class SchemaTableInfo implements TableInfo, UpdateableTableInfo
     }
 
 
-    public boolean hasPermission(User user, Class<? extends Permission> perm)
+    public boolean hasPermission(UserPrincipal user, Class<? extends Permission> perm)
     {
         return false;
     }

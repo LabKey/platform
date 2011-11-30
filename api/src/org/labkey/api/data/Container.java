@@ -29,10 +29,12 @@ import org.labkey.api.reports.Report;
 import org.labkey.api.reports.ReportService;
 import org.labkey.api.search.SearchService;
 import org.labkey.api.security.ACL;
+import org.labkey.api.security.HasPermission;
 import org.labkey.api.security.SecurableResource;
 import org.labkey.api.security.SecurityManager;
 import org.labkey.api.security.SecurityPolicy;
 import org.labkey.api.security.User;
+import org.labkey.api.security.UserPrincipal;
 import org.labkey.api.security.permissions.AdminPermission;
 import org.labkey.api.security.permissions.DeletePermission;
 import org.labkey.api.security.permissions.InsertPermission;
@@ -72,7 +74,7 @@ import java.util.Set;
  *
  * CONSIDER: extend org.labkey.api.data.Entity
  */
-public class Container implements Serializable, Comparable<Container>, SecurableResource, ContainerContext
+public class Container implements Serializable, Comparable<Container>, SecurableResource, ContainerContext, HasPermission
 {
     private GUID _id;
     private Path _path;
@@ -256,14 +258,18 @@ public class Container implements Serializable, Comparable<Container>, Securable
         return SecurityManager.getPolicy(this);
     }
 
-    public boolean hasPermission(@NotNull User user, @NotNull Class<? extends Permission> perm)
+    public boolean hasPermission(@NotNull UserPrincipal user, @NotNull Class<? extends Permission> perm)
     {
-        return !isForbiddenProject(user) && getPolicy().hasPermission(user, perm);
+        if (user instanceof User && isForbiddenProject((User)user))
+            return false;
+        return getPolicy().hasPermission(user, perm);
     }
 
-    public boolean hasPermission(@NotNull User user, @NotNull Class<? extends Permission> perm, @Nullable Set<Role> contextualRoles)
+    public boolean hasPermission(@NotNull UserPrincipal user, @NotNull Class<? extends Permission> perm, @Nullable Set<Role> contextualRoles)
     {
-        return !isForbiddenProject(user) && getPolicy().hasPermission(user, perm, contextualRoles);
+        if (user instanceof User && isForbiddenProject((User)user))
+            return false;
+        return getPolicy().hasPermission(user, perm, contextualRoles);
     }
 
     public boolean hasOneOf(@NotNull User user, @NotNull Collection<Class<? extends Permission>> perms)

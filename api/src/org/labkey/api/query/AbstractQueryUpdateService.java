@@ -41,7 +41,6 @@ import org.labkey.api.security.permissions.*;
 import org.labkey.api.view.NotFoundException;
 import org.labkey.api.view.UnauthorizedException;
 
-import java.io.IOException;
 import java.sql.SQLException;
 import java.util.*;
 

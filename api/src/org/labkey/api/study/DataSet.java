@@ -21,6 +21,7 @@ import org.labkey.api.data.TableInfo;
 import org.labkey.api.exp.api.ExpProtocol;
 import org.labkey.api.exp.property.Domain;
 import org.labkey.api.security.User;
+import org.labkey.api.security.UserPrincipal;
 import org.labkey.api.security.permissions.Permission;
 import org.labkey.api.view.UnauthorizedException;
 
@@ -79,11 +80,11 @@ public interface DataSet<T extends DataSet> extends StudyEntity, StudyCachable<T
 
     void save(User user) throws SQLException;
 
-    public boolean canRead(User user);
+    public boolean canRead(UserPrincipal user);
 
-    public boolean canWrite(User user);
+    public boolean canWrite(UserPrincipal user);
 
-    public Set<Class<? extends Permission>> getPermissions(User user);
+    public Set<Class<? extends Permission>> getPermissions(UserPrincipal user);
 
     KeyType getKeyType();
 

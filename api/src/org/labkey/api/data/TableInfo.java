@@ -31,7 +31,9 @@ import org.labkey.api.query.QueryService;
 import org.labkey.api.query.QueryUpdateService;
 import org.labkey.api.query.UserSchema;
 import org.labkey.api.query.ValidationException;
+import org.labkey.api.security.HasPermission;
 import org.labkey.api.security.User;
+import org.labkey.api.security.UserPrincipal;
 import org.labkey.api.security.permissions.Permission;
 import org.labkey.api.util.StringExpression;
 import org.labkey.api.view.ActionURL;
@@ -47,7 +49,7 @@ import java.util.Set;
  * Date: Apr 27, 2006
  * Time: 11:29:43 AM
  */
-public interface TableInfo
+public interface TableInfo extends HasPermission
 {
     /** Used as a marker to indicate that a URL (such as insert or update) has been explicitly disabled. Null values get filled in with default URLs in some cases */
     public static final ActionURL LINK_DISABLER_ACTION_URL = new ActionURL();
@@ -183,7 +185,7 @@ public interface TableInfo
     boolean hasDetailsURL();
     public Set<FieldKey> getDetailsURLKeys();
 
-    boolean hasPermission(User user, Class<? extends Permission> perm);
+    boolean hasPermission(UserPrincipal user, Class<? extends Permission> perm);
 
     /**
      * Return the method of a given name.  Methods are accessible via the QueryModule's query

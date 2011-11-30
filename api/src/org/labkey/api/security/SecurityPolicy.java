@@ -37,7 +37,7 @@ import java.util.*;
  * be used by multiple threads at the same time. To make changes to an existing policy, construct a new
  * {@link MutableSecurityPolicy} passing the existing SecurityPolicy instance in the constructor.
  */
-public class SecurityPolicy
+public class SecurityPolicy implements HasPermission
 {
     protected final SortedSet<RoleAssignment> _assignments = new TreeSet<RoleAssignment>();
     protected String _resourceId;

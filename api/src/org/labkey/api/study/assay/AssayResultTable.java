@@ -31,9 +31,7 @@ import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.Table;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.UpdateableTableInfo;
-import org.labkey.api.etl.DataIterator;
 import org.labkey.api.etl.DataIteratorBuilder;
-import org.labkey.api.etl.Pump;
 import org.labkey.api.etl.TableInsertDataIterator;
 import org.labkey.api.exp.RawValueColumn;
 import org.labkey.api.exp.api.ExpProtocol;
@@ -51,6 +49,7 @@ import org.labkey.api.query.LookupForeignKey;
 import org.labkey.api.query.PdLookupForeignKey;
 import org.labkey.api.query.QueryUpdateService;
 import org.labkey.api.security.User;
+import org.labkey.api.security.UserPrincipal;
 import org.labkey.api.security.permissions.DeletePermission;
 import org.labkey.api.security.permissions.Permission;
 import org.labkey.api.security.permissions.ReadPermission;
@@ -378,7 +377,7 @@ public class AssayResultTable extends FilteredTable implements UpdateableTableIn
     }
 
     @Override
-    public boolean hasPermission(User user, Class<? extends Permission> perm)
+    public boolean hasPermission(UserPrincipal user, Class<? extends Permission> perm)
     {
         return (DeletePermission.class.isAssignableFrom(perm) || UpdatePermission.class.isAssignableFrom(perm) || ReadPermission.class.isAssignableFrom(perm)) &&
                 _provider.isEditableResults(_protocol) &&

@@ -17,11 +17,14 @@ package org.labkey.api.view;
 
 import org.apache.commons.beanutils.ConvertUtils;
 import org.apache.commons.lang.StringUtils;
+import org.jetbrains.annotations.NotNull;
 import org.labkey.api.collections.BoundMap;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
+import org.labkey.api.security.HasPermission;
 import org.labkey.api.security.SecurityManager;
 import org.labkey.api.security.User;
+import org.labkey.api.security.UserPrincipal;
 import org.labkey.api.security.permissions.Permission;
 import org.labkey.api.security.roles.Role;
 import org.labkey.api.security.roles.RoleManager;
@@ -58,7 +61,7 @@ import java.util.Set;
  *
  * UNDONE: kill BoundMap functionality of ViewContext
  */
-public class ViewContext extends BoundMap implements MessageSource, ContainerContext, ContainerUser, ApplicationContextAware
+public class ViewContext extends BoundMap implements MessageSource, ContainerContext, ContainerUser, ApplicationContextAware, HasPermission
 {
     private ApplicationContext _applicationContext;
     private HttpServletRequest _request;
@@ -190,10 +193,16 @@ public class ViewContext extends BoundMap implements MessageSource, ContainerCon
     }
 
 
+    @Override
+    public boolean hasPermission(@NotNull UserPrincipal user, @NotNull Class<? extends Permission> perm)
+    {
+        return null != user && getContainer().hasPermission(user, perm, _contextualRoles);
+    }
+
+
     public boolean hasPermission(Class<? extends Permission> perm) throws NotFoundException
     {
         User user = getUser();
-
         return null != user && getContainer().hasPermission(user, perm, _contextualRoles);
     }
 

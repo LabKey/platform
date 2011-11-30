@@ -40,7 +40,7 @@ import org.labkey.api.query.ValidationException;
 import org.labkey.api.resource.Resource;
 import org.labkey.api.script.ScriptReference;
 import org.labkey.api.script.ScriptService;
-import org.labkey.api.security.User;
+import org.labkey.api.security.UserPrincipal;
 import org.labkey.api.security.permissions.Permission;
 import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.services.ServiceRegistry;
@@ -484,7 +484,7 @@ abstract public class AbstractTableInfo implements TableInfo, ContainerContext
         return null;
     }
 
-    public boolean hasPermission(User user, Class<? extends Permission> perm)
+    public boolean hasPermission(UserPrincipal user, Class<? extends Permission> perm)
     {
         return false;
     }
