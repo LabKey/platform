@@ -200,7 +200,7 @@ public class ExperimentRunListView extends QueryView
                         {
                             btn = new NavTree(protocol.getName() + " (" + provider.getName() + ")");
                             btn.setScript("Ext4.create('LABKEY.ext.ImportWizardWin', {" +
-                                "controller: 'assay'," +
+                                "controller: '" + provider.getImportURL(c, protocol).getController() + "'," +
                                 "action: '" + provider.getImportURL(c, protocol).getAction() + "'," +
                                 "urlParams: {rowId: " + protocol.getRowId() + "}" +
                                 "}).show();");

@@ -464,6 +464,12 @@ LABKEY.Assay = new function()
 */
 
 /**
+* @name importController
+* @description The name of the controller used for data import
+* @type String
+*/
+
+/**
 * @name importAction
 * @description The name of the action used for data import
 * @type String

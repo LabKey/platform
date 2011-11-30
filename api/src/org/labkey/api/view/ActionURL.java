@@ -494,7 +494,11 @@ public class ActionURL extends URLHelper implements Cloneable
         return this;
     }
 
-
+    /**
+     *
+     * @deprecated use getController() instead
+     */
+    @Deprecated
     public String getPageFlow()
     {
         return _controller;
@@ -527,6 +531,10 @@ public class ActionURL extends URLHelper implements Cloneable
         return _action;
     }
 
+    public String getController()
+    {
+        return _controller;
+    }
 
     @Override
     protected boolean isDirectory()
