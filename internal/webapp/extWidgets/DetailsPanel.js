@@ -47,6 +47,7 @@ Ext4.define('LABKEY.ext.DetailsPanel', {
 
         Ext4.applyIf(this.queryConfig, {
             containerPath: this.containerPath,
+            containerFilter: this.containerFilter,
             queryName: this.queryName,
             schemaName: this.schemaName,
             viewName: this.viewName,

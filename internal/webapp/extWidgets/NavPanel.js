@@ -83,21 +83,19 @@ Ext4.define('LABKEY.ext.NavPanel', {
         Ext4.each(this.sections, function(sectionCfg){
             section = this.add({
                 xtype: 'panel',
-                cls: 'labkey-navmenu',
                 frame: false,
-                //frameHeader: false,
                 width: this.colWidth,
-                style: 'padding-bottom:15px;padding-right:10px;background-color: transparent;',
+                style: 'padding-right:10px;background-color: transparent;',
                 bodyStyle: 'background-color: transparent;',
                 defaults: {
-                    border: false
+                    border: false,
+                    cls: 'labkey-wiki'
                 },
                 items: [{
                     dock: 'top',
                     xtype: 'header',
                     title: sectionCfg.header + ':',
-                    cls: 'labkey-wp-header',
-                    style: 'margin-bottom:5px;font-weight:bold;' //border-bottom:solid;
+                    style: 'margin-bottom:5px;font-weight:bold;'
                 }]
             });
 
@@ -123,7 +121,7 @@ Ext4.define('LABKEY.ext.NavPanel', {
                 section.add(item);
             }
 
-            section.add({tag: 'p'});
+            section.add({tag: 'p', style: 'padding-bottom: 15px;'});
         }, this);
     },
     renderers: {
@@ -131,11 +129,10 @@ Ext4.define('LABKEY.ext.NavPanel', {
             return {
                 layout: 'hbox',
                 defaults: {
-                    style: 'padding-left:5px',
+                    style: 'padding-left:5px;padding-bottom:5px;',
                     border: false,
                     target: '_self',
-                    linkPrefix: '[',
-                    linkSuffix: ']'
+                    linkCls: 'labkey-text-link'
                 },
                 items: [{
                     tag: 'div',
@@ -157,47 +154,46 @@ Ext4.define('LABKEY.ext.NavPanel', {
                     useSimpleImport: item.simpleImport,
                     urlParams: {rowId: item.id, srcURL: LABKEY.ActionURL.buildURL('project', 'begin')},
                     importAction: item.importAction || 'moduleAssayUpload',
+                    importController: item.importController || 'assay',
                     handler: function(btn){
                         if(btn.useSimpleImport)
-                            window.location = LABKEY.ActionURL.buildURL('assay', btn.importAction, null, btn.urlParams);
+                            window.location = LABKEY.ActionURL.buildURL(btn.importController, btn.importAction, null, btn.urlParams);
                         else
                             Ext4.create('LABKEY.ext.ImportWizardWin', {
-                                controller: 'assay',
+                                controller: btn.importController,
                                 action: btn.importAction,
                                 urlParams: btn.urlParams,
                                 workbookFolderType: 'Expt Workbook'
                             }).show();
                     }
-                }],
-                style: 'padding-bottom:8px'
+                }]
             };
         },
         defaultRenderer: function(item){
             return {
                 layout: 'hbox',
                 defaults: {
-                    style: 'padding-left:5px',
+                    style: 'padding-left:5px;padding-bottom:5px;',
                     border: false,
-                    target: '_self'
+                    target: '_self',
+                    linkCls: 'labkey-text-link'
                 },
                 items: [{
                     xtype: 'labkey-linkbutton',
                     text: item.name,
                     href: item.url,
                     showBrackets: false
-                }],
-                style: 'padding-bottom:8px'
+                }]
              }
         },
         queryRenderer: function(item){
             return {
                 layout: 'hbox',
                 defaults: {
-                    style: 'padding-left:5px',
+                    style: 'padding-left:5px;padding-bottom:5px;',
                     border: false,
                     target: '_self',
-                    linkPrefix: '[',
-                    linkSuffix: ']'
+                    linkCls: 'labkey-text-link'
                 },
                 items: [{
                     tag: 'div',
@@ -229,19 +225,16 @@ Ext4.define('LABKEY.ext.NavPanel', {
                                 workbookFolderType: 'Expt Workbook'
                             }).show();
                     }
-                }],
-                style: 'padding-bottom:8px'
+                }]
             };
         },
         fileRenderer: function(item){
             return {
                 layout: 'hbox',
                 defaults: {
-                    style: 'padding-left:5px',
+                    style: 'padding-left:5px;padding-bottom:5px;',
                     border: false,
-                    target: '_self',
-                    linkPrefix: '[',
-                    linkSuffix: ']'
+                    target: '_self'
                 },
                 items: [{
                     tag: 'div',
@@ -271,8 +264,7 @@ Ext4.define('LABKEY.ext.NavPanel', {
                                 workbookFolderType: 'Expt Workbook'
                             }).show();
                     }
-                }],
-                style: 'padding-bottom:8px'
+                }]
             };
         }
 }

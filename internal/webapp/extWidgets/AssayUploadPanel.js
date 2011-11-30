@@ -370,6 +370,8 @@ Ext4.define('LABKEY.ext.AssayUploadPanel', {
                 LABKEY.ext4.GRIDBUTTONS['ADDRECORD'](),
                 LABKEY.ext4.GRIDBUTTONS['DELETERECORD']()
             ],
+            forceFit: true,
+            editable: true,
             store: Ext4.create('LABKEY.ext4.Store', {
                 schemaName: 'assay',
                 queryName: LABKEY.page.assay.name + ' Data',

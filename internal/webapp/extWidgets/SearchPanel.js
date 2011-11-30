@@ -60,7 +60,7 @@ Ext4.namespace('LABKEY.ext4');
 
 Ext4.define('LABKEY.ext4.SearchPanel', {
     extend: 'Ext.panel.Panel',
-    alias: 'labkey-searchpanel',
+    alias: 'widget.labkey-searchpanel',
     initComponent: function(){
         Ext4.apply(this, {
             title: this.title,

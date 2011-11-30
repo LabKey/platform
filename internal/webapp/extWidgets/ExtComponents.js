@@ -231,7 +231,8 @@ Ext4.define('LABKEY.ext.LinkButton', {
         this.renderData = this.renderData || {};
         Ext4.apply(this.renderData, {
             linkPrefix: this.linkPrefix,
-            linkSuffix: this.linkSuffix
+            linkSuffix: this.linkSuffix,
+            linkCls: this.linkCls
         });
     },
     showBrackets: true,
@@ -242,11 +243,12 @@ Ext4.define('LABKEY.ext.LinkButton', {
     renderTpl:
         '<em id="{id}-btnWrap" class="{splitCls}">' +
             '{linkPrefix}' +
-            '<a id="{id}-btnEl" href="{href}" target="{target}"<tpl if="tabIndex"> tabIndex="{tabIndex}"</tpl> role="link">' +
+            '<a id="{id}-btnEl" href="{href}" class="{linkCls}" target="{target}"<tpl if="tabIndex"> tabIndex="{tabIndex}"</tpl> role="link">' +
                 '<span id="{id}-btnInnerEl" class="{baseCls}-inner">' +
                     '{text}' +
                 '</span>' +
-                    '<span id="{id}-btnIconEl" class="{baseCls}-icon"></span>' +
+                '<tpl if="linkCls==\'labkey-text-link\'"><span class="css-arrow-right"></span></tpl>' +
+                '<span id="{id}-btnIconEl" class="{baseCls}-icon"></span>' +
             '</a>' +
             '{linkSuffix}' +
         '</em>'
@@ -431,7 +433,7 @@ Ext4.define('LABKEY.ext4.ComboBox', {
         this.store.on('load', function(){
             if(this.picker)
                 this.alignPicker();
-        }, this, {delay: 20});
+        }, this, {delay: 50});
     },
     //allows value to be set if store has not yet loaded
     setValue: function(val){
