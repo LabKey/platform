@@ -927,7 +927,7 @@ public class StudyController extends BaseStudyController
             final TableInfo table = queryView.getTable();
             if (table != null)
             {
-                addParticipantGroupToCache(context, def.getDataSetId(), viewName, generateParticipantGroup(queryView), _cohortFilter, form.getQCState());
+                addParticipantListToCache(context, def.getDataSetId(), viewName, generateParticipantList(queryView), _cohortFilter, form.getQCState());
                 getExpandedState(context, def.getDataSetId()).clear();
             }
 
@@ -940,7 +940,7 @@ public class StudyController extends BaseStudyController
                 return null;
             }
 
-            StringBuffer sb = new StringBuffer();
+            StringBuilder sb = new StringBuilder();
             if (def.getDescription() != null && def.getDescription().length() > 0)
                 sb.append(PageFlowUtil.filter(def.getDescription(), true, true)).append("<br/>");
             if (_cohortFilter != null)
@@ -1112,7 +1112,7 @@ public class StudyController extends BaseStudyController
             if (_cohortFilter != null && !StudyManager.getInstance().showCohorts(getContainer(), getUser()))
                 throw new UnauthorizedException("User does not have permission to view cohort information");
 
-            List<String> participants = getParticipantGroupFromCache(getViewContext(), form.getDatasetId(), viewName, _cohortFilter, form.getQCState());
+            List<String> participants = getParticipantListFromCache(getViewContext(), form.getDatasetId(), viewName, _cohortFilter, form.getQCState());
             if (participants != null)
             {
                 int idx = participants.indexOf(form.getParticipantId());
@@ -2851,7 +2851,7 @@ public class StudyController extends BaseStudyController
         return new CaseInsensitiveHashMap<Integer>(sortMap);
     }
 
-    private static String getParticipantGroupCacheKey(int dataset, String viewName, CohortFilter cohortFilter, String encodedQCState)
+    private static String getParticipantListCacheKey(int dataset, String viewName, CohortFilter cohortFilter, String encodedQCState)
     {
         String key = Integer.toString(dataset);
         // if there is also a view associated with the dataset, incorporate it into the key as well
@@ -2864,10 +2864,10 @@ public class StudyController extends BaseStudyController
         return key;
     }
 
-    public static void addParticipantGroupToCache(ViewContext context, int dataset, String viewName, List<String> participants, CohortFilter cohortFilter, String encodedQCState)
+    public static void addParticipantListToCache(ViewContext context, int dataset, String viewName, List<String> participants, CohortFilter cohortFilter, String encodedQCState)
     {
         Map<String, List<String>> map = getParticipantMapFromCache(context);
-        map.put(getParticipantGroupCacheKey(dataset, viewName, cohortFilter, encodedQCState), participants);
+        map.put(getParticipantListCacheKey(dataset, viewName, cohortFilter, encodedQCState), participants);
     }
 
     @SuppressWarnings("unchecked")
@@ -2903,23 +2903,24 @@ public class StudyController extends BaseStudyController
         return expandedMap;
     }
 
-    public static List<String> getParticipantGroupFromCache(ViewContext context, int dataset, String viewName, CohortFilter cohortFilter, String encodedQCState)
+    public static List<String> getParticipantListFromCache(ViewContext context, int dataset, String viewName, CohortFilter cohortFilter, String encodedQCState)
     {
         Map<String, List<String>> map = getParticipantMapFromCache(context);
-        String key = getParticipantGroupCacheKey(dataset, viewName, cohortFilter, encodedQCState);
+        String key = getParticipantListCacheKey(dataset, viewName, cohortFilter, encodedQCState);
         List<String> plist = map.get(key);
         if (plist == null)
         {
             // not in cache, or session expired, try to regenerate the list
-            plist = generateParticipantGroupFromURL(context, dataset, viewName, cohortFilter, encodedQCState);
+            plist = generateParticipantListFromURL(context, dataset, viewName, cohortFilter, encodedQCState);
             map.put(key, plist);
         }
         return plist;
     }
 
-    private static List<String> generateParticipantGroupFromURL(ViewContext context, int dataset, String viewName, CohortFilter cohortFilter, String encodedQCState)
+    private static List<String> generateParticipantListFromURL(ViewContext context, int dataset, String viewName, CohortFilter cohortFilter, String encodedQCState)
     {
-        try {
+        try
+        {
             final StudyManager studyMgr = StudyManager.getInstance();
             final StudyImpl study = studyMgr.getStudy(context.getContainer());
             QCStateSet qcStateSet = null;
@@ -2949,7 +2950,7 @@ public class StudyController extends BaseStudyController
 
             QueryView queryView = querySchema.createView(context, qs, null);
 
-            return generateParticipantGroup(queryView);
+            return generateParticipantList(queryView);
         }
         catch (Exception e)
         {
@@ -2958,7 +2959,7 @@ public class StudyController extends BaseStudyController
         return Collections.emptyList();
     }
 
-    public static List<String> generateParticipantGroup(QueryView queryView)
+    public static List<String> generateParticipantList(QueryView queryView)
     {
         final TableInfo table = queryView.getTable();
 

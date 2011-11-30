@@ -5,6 +5,7 @@ import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.query.CustomView;
 import org.labkey.api.study.Study;
 import org.labkey.api.study.StudyService;
+import org.labkey.api.util.DemoMode;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.Pair;
 import org.labkey.api.view.ViewForm;
@@ -392,7 +393,7 @@ public abstract class SpecimenVisitReportParameters extends ViewForm
                         (selectedParticipantId == null && first))
                     builder.append(" SELECTED");
                 builder.append(">");
-                builder.append(PageFlowUtil.filter(participant.getParticipantId()));
+                builder.append(PageFlowUtil.filter(DemoMode.id(participant.getParticipantId(), getContainer(), getUser())));
                 builder.append("</option>\n");
                 first = false;
             }

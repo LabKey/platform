@@ -1,5 +1,6 @@
 package org.labkey.study.samples.report;
 
+import org.labkey.api.util.DemoMode;
 import org.labkey.study.SampleManager;
 import org.labkey.study.controllers.samples.SpecimenController;
 import org.labkey.study.model.VisitImpl;
@@ -159,7 +160,7 @@ public class SpecimenTypeVisitReport extends SpecimenVisitReport<SampleManager.S
                         url.addParameter(SpecimenVisitReportParameters.PARAMS.baseCustomViewName, getBaseCustomViewName());
                     }
                     cellHtml.append("<a href=\"").append(url.getLocalURIString()).append("\">");
-                    cellHtml.append(PageFlowUtil.filter(participantId));
+                    cellHtml.append(PageFlowUtil.filter(DemoMode.id(participantId, getContainer(), getUser())));
                     cellHtml.append("</a>");
                     if (it.hasNext())
                         cellHtml.append("<br>");

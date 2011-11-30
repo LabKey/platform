@@ -15,22 +15,26 @@
  * limitations under the License.
  */
 %>
-<%@ page import="org.labkey.api.view.HttpView"%>
-<%@ page import="org.labkey.api.view.JspView" %>
-<%@ page import="org.labkey.study.controllers.samples.SpecimenController" %>
-<%@ page import="org.labkey.api.view.WebPartView" %>
-<%@ page import="org.labkey.study.samples.report.SpecimenVisitReportParameters" %>
-<%@ page import="org.labkey.api.view.ActionURL" %>
-<%@ page import="org.labkey.api.data.Container" %>
-<%@ page import="org.labkey.study.model.*" %>
-<%@ page import="java.util.List" %>
-<%@ page import="org.labkey.api.security.User" %>
-<%@ page import="org.labkey.api.util.Pair" %>
-<%@ page import="org.labkey.study.CohortFilter" %>
-<%@ page import="java.util.Map" %>
-<%@ page import="org.labkey.api.study.Study" %>
+<%@ page import="org.labkey.api.data.Container"%>
 <%@ page import="org.labkey.api.query.CustomView" %>
+<%@ page import="org.labkey.api.security.User" %>
+<%@ page import="org.labkey.api.study.Study" %>
 <%@ page import="org.labkey.api.study.StudyService" %>
+<%@ page import="org.labkey.api.util.Pair" %>
+<%@ page import="org.labkey.api.view.ActionURL" %>
+<%@ page import="org.labkey.api.view.HttpView" %>
+<%@ page import="org.labkey.api.view.JspView" %>
+<%@ page import="org.labkey.api.view.WebPartView" %>
+<%@ page import="org.labkey.study.CohortFilter" %>
+<%@ page import="org.labkey.study.controllers.samples.SpecimenController" %>
+<%@ page import="org.labkey.study.model.CohortImpl" %>
+<%@ page import="org.labkey.study.model.ParticipantCategory" %>
+<%@ page import="org.labkey.study.model.ParticipantGroup" %>
+<%@ page import="org.labkey.study.model.ParticipantGroupManager" %>
+<%@ page import="org.labkey.study.model.StudyManager" %>
+<%@ page import="org.labkey.study.samples.report.SpecimenVisitReportParameters" %>
+<%@ page import="java.util.List" %>
+<%@ page import="java.util.Map" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
     JspView<SpecimenController.ReportConfigurationBean> me = (JspView<SpecimenController.ReportConfigurationBean>) HttpView.currentView();

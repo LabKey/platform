@@ -32,9 +32,7 @@ import org.labkey.api.query.UserSchema;
 import org.labkey.api.security.RequiresPermissionClass;
 import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.study.model.ParticipantCategory;
-import org.labkey.study.model.ParticipantDataset;
 import org.labkey.study.model.ParticipantGroupManager;
-import org.labkey.study.model.StudyManager;
 import org.springframework.validation.BindException;
 
 import java.sql.SQLException;
@@ -238,7 +236,7 @@ public class ParticipantGroupController extends BaseStudyController
                 {
                     if (form.isSelectAll())
                     {
-                        for (String ptid : StudyController.generateParticipantGroup(view))
+                        for (String ptid : StudyController.generateParticipantList(view))
                             ptids.add(ptid);
                     }
                     else

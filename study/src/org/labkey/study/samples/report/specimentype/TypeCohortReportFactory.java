@@ -44,6 +44,7 @@ public class TypeCohortReportFactory extends TypeReportFactory
     {
         return SpecimenController.TypeCohortReportAction.class;
     }
+
     public List<Pair<String, String>> getAdditionalFormInputHtml()
     {
         List<Pair<String, String>> inputs = super.getAdditionalFormInputHtml();

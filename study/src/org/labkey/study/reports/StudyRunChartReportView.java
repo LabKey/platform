@@ -67,7 +67,7 @@ public class StudyRunChartReportView extends RunChartReportView
                     datasetId = def.getRowId();
 
                 String qcState = getViewContext().getActionURL().getParameter(BaseStudyController.SharedFormParameters.QCState);
-                List<String> participants = StudyController.getParticipantGroupFromCache(context, datasetId,
+                List<String> participants = StudyController.getParticipantListFromCache(context, datasetId,
                         getReport().getDescriptor().getProperty(ReportDescriptor.Prop.viewName), null, qcState);
 
                 view.addView(ReportsController.getParticipantNavTrail(context, participants));

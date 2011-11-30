@@ -1,5 +1,6 @@
 package org.labkey.study.samples.report.specimentype;
 
+import org.labkey.api.util.DemoMode;
 import org.labkey.study.samples.report.SpecimenVisitReport;
 import org.labkey.study.samples.report.SpecimenTypeVisitReport;
 import org.labkey.study.model.*;
@@ -50,7 +51,7 @@ public class TypeParticipantReportFactory extends TypeReportFactory
     public String getLabel()
     {
         String subjectNoun = StudyService.get().getSubjectNounSingular(getContainer());
-        return _participantId == null || ALL_SUBJECTS_OPTION.equals(_participantId) ? "By " + subjectNoun : subjectNoun + " " + _participantId;
+        return _participantId == null || ALL_SUBJECTS_OPTION.equals(_participantId) ? "By " + subjectNoun : subjectNoun + " " + DemoMode.id(_participantId, getContainer(), getUser());
     }
 
     public boolean allowsCohortFilter()
@@ -110,7 +111,7 @@ public class TypeParticipantReportFactory extends TypeReportFactory
                         allVisits = StudyManager.getInstance().getVisits(study, Visit.Order.DISPLAY);
                     visits = allVisits;
                 }
-                reports.add(new SpecimenTypeVisitReport(participantId, visits, filter, this));
+                reports.add(new SpecimenTypeVisitReport(DemoMode.id(participantId, getContainer(), getUser()), visits, filter, this));
             }
             catch (SQLException e)
             {

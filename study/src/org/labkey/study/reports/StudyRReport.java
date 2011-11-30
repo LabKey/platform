@@ -80,7 +80,7 @@ public class StudyRReport extends RReport
             datasetId = def.getRowId();
 
         String qcState = context.getActionURL().getParameter(BaseStudyController.SharedFormParameters.QCState);
-        List<String> participants = StudyController.getParticipantGroupFromCache(context, datasetId,
+        List<String> participants = StudyController.getParticipantListFromCache(context, datasetId,
                 getDescriptor().getProperty(ReportDescriptor.Prop.viewName), null, qcState);
 
         VBox vBox = new VBox();
