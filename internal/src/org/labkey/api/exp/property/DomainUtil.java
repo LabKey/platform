@@ -327,6 +327,11 @@ public class DomainUtil
             }
             // UNDONE: DomainProperty does not support all PropertyDescriptor fields
             DomainProperty p = d.getProperty(pd.getPropertyId());
+            if(p == null)
+            {
+                throw new RuntimeException("Column " + pd.getName() + " not found");
+            }
+
             defaultValues.put(p, pd.getDefaultValue());
 
             if (old == null)
