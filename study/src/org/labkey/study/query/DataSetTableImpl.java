@@ -98,6 +98,17 @@ public class DataSetTableImpl extends FilteredTable implements DataSetTable
             if (subjectColName.equalsIgnoreCase(name))
             {
                 ColumnInfo column = new AliasedColumn(this, subjectColName, baseColumn);
+                column.setInputType("text");
+                // TODO, need a way for a lookup to have a "text" input
+                column.setDisplayColumnFactory(new DisplayColumnFactory()
+                {
+                    public DisplayColumn createRenderer(ColumnInfo colInfo)
+                    {
+                        DataColumn dataColumn = new DataColumn(colInfo);
+                        dataColumn.setInputType("text");
+                        return dataColumn;
+                    }
+                });
                 column.setFk(new QueryForeignKey(_schema,StudyService.get().getSubjectTableName(dsd.getContainer()),
                         subjectColName, subjectColName)
                 {
