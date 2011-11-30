@@ -30,6 +30,7 @@ import org.labkey.api.query.ExprColumn;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.QueryUpdateService;
 import org.labkey.api.security.User;
+import org.labkey.api.security.UserPrincipal;
 import org.labkey.api.security.permissions.AdminPermission;
 import org.labkey.api.security.permissions.Permission;
 import org.labkey.api.security.permissions.ReadPermission;
@@ -142,7 +143,7 @@ public class StudyPropertiesTable extends BaseStudyTable
     }
 
     @Override
-    public boolean hasPermission(User user, Class<? extends Permission> perm)
+    public boolean hasPermission(UserPrincipal user, Class<? extends Permission> perm)
     {
         if (perm == UpdatePermission.class)
             return getContainer().hasPermission(user, AdminPermission.class);

@@ -48,6 +48,7 @@ import org.labkey.api.query.QueryUpdateService;
 import org.labkey.api.query.UserIdQueryForeignKey;
 import org.labkey.api.query.UserSchema;
 import org.labkey.api.security.User;
+import org.labkey.api.security.UserPrincipal;
 import org.labkey.api.security.permissions.Permission;
 import org.labkey.api.view.NotFoundException;
 
@@ -283,7 +284,7 @@ public class SimpleUserSchema extends UserSchema
         }
 
         @Override
-        public boolean hasPermission(User user, Class<? extends Permission> perm)
+        public boolean hasPermission(UserPrincipal user, Class<? extends Permission> perm)
         {
             return _userSchema.getContainer().hasPermission(user, perm);
         }

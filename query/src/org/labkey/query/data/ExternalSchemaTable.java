@@ -16,24 +16,17 @@
 
 package org.labkey.query.data;
 
-import org.labkey.api.collections.CaseInsensitiveHashMap;
-import org.labkey.api.collections.CaseInsensitiveHashSet;
 import org.labkey.api.data.*;
-import org.labkey.api.etl.DataIteratorBuilder;
-import org.labkey.api.etl.TableInsertDataIterator;
-import org.labkey.api.query.BatchValidationException;
 import org.labkey.api.query.QueryUpdateService;
-import org.labkey.api.security.User;
+import org.labkey.api.security.UserPrincipal;
 import org.labkey.api.security.permissions.Permission;
 import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.data.xml.TableType;
 import org.labkey.query.ExternalSchema;
 
-import java.sql.Connection;
-import java.sql.SQLException;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
+
 
 public class ExternalSchemaTable extends SimpleUserSchema.SimpleTable implements UpdateableTableInfo
 {
@@ -56,7 +49,7 @@ public class ExternalSchemaTable extends SimpleUserSchema.SimpleTable implements
         return (ExternalSchema)super.getUserSchema();
     }
 
-    public boolean hasPermission(User user, Class<? extends Permission> perm)
+    public boolean hasPermission(UserPrincipal user, Class<? extends Permission> perm)
     {
         List<ColumnInfo> columns = getPkColumns();
         return (perm.isAssignableFrom(ReadPermission.class) || (super.hasPermission(user, perm) && getUserSchema().areTablesEditable() && columns.size() > 0));

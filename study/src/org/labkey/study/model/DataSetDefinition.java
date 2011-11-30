@@ -61,6 +61,7 @@ import org.labkey.api.reports.model.ViewCategoryManager;
 import org.labkey.api.security.SecurityManager;
 import org.labkey.api.security.SecurityPolicy;
 import org.labkey.api.security.User;
+import org.labkey.api.security.UserPrincipal;
 import org.labkey.api.security.permissions.AdminPermission;
 import org.labkey.api.security.permissions.DeletePermission;
 import org.labkey.api.security.permissions.InsertPermission;
@@ -558,7 +559,7 @@ public class DataSetDefinition extends AbstractStudyEntity<DataSetDefinition> im
         return _study;
     }
 
-    public Set<Class<? extends Permission>> getPermissions(User user)
+    public Set<Class<? extends Permission>> getPermissions(UserPrincipal user)
     {
         Set<Class<? extends Permission>> result = new HashSet<Class<? extends Permission>>();
 
@@ -580,7 +581,7 @@ public class DataSetDefinition extends AbstractStudyEntity<DataSetDefinition> im
             // Now check if they can write
             if (securityType == SecurityType.BASIC_WRITE)
             {
-                if (user.isAdministrator())
+                if (user instanceof User && ((User)user).isAdministrator())
                 {
                     result.addAll(RoleManager.getRole(SiteAdminRole.class).getPermissions());
                 }
@@ -595,7 +596,7 @@ public class DataSetDefinition extends AbstractStudyEntity<DataSetDefinition> im
             }
             else if (securityType == SecurityType.ADVANCED_WRITE)
             {
-                if (user.isAdministrator())
+                if (user instanceof User && ((User)user).isAdministrator())
                 {
                     result.addAll(RoleManager.getRole(SiteAdminRole.class).getPermissions());
                 }
@@ -616,12 +617,14 @@ public class DataSetDefinition extends AbstractStudyEntity<DataSetDefinition> im
         return result;
     }
 
-    public boolean canRead(User user)
+    @Override
+    public boolean canRead(UserPrincipal user)
     {
         return getPermissions(user).contains(ReadPermission.class);
     }
 
-    public boolean canWrite(User user)
+    @Override
+    public boolean canWrite(UserPrincipal user)
     {
         if (getContainer().hasPermission(user, AdminPermission.class))
             return true;

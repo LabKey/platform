@@ -25,7 +25,7 @@ import org.labkey.api.exp.property.DomainProperty;
 import org.labkey.api.exp.query.ExpSchema;
 import org.labkey.api.exp.query.ExpTable;
 import org.labkey.api.query.*;
-import org.labkey.api.security.User;
+import org.labkey.api.security.UserPrincipal;
 import org.labkey.api.security.permissions.DeletePermission;
 import org.labkey.api.security.permissions.Permission;
 import org.labkey.api.security.permissions.ReadPermission;
@@ -168,7 +168,7 @@ abstract public class ExpTableImpl<C extends Enum> extends FilteredTable impleme
         addCondition(sqlCondition);
     }
 
-    public boolean hasPermission(User user, Class<? extends Permission> perm)
+    public boolean hasPermission(UserPrincipal user, Class<? extends Permission> perm)
     {
         if (getUpdateService() != null)
             return _allowablePermissions.contains(perm) && _schema.getContainer().hasPermission(user, perm);

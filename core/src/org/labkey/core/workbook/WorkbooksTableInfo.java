@@ -18,6 +18,7 @@ package org.labkey.core.workbook;
 import org.labkey.api.query.*;
 import org.labkey.api.data.*;
 import org.labkey.api.security.User;
+import org.labkey.api.security.UserPrincipal;
 import org.labkey.api.security.permissions.DeletePermission;
 import org.labkey.api.security.permissions.InsertPermission;
 import org.labkey.api.security.permissions.Permission;
@@ -64,7 +65,7 @@ public class WorkbooksTableInfo extends ContainerTable
     }
 
     @Override
-    public boolean hasPermission(User user, Class<? extends Permission> perm)
+    public boolean hasPermission(UserPrincipal user, Class<? extends Permission> perm)
     {
         if (getUpdateService() != null)
             return (DeletePermission.class.isAssignableFrom(perm) || ReadPermission.class.isAssignableFrom(perm) || InsertPermission.class.isAssignableFrom(perm)) && _schema.getContainer().hasPermission(user, perm);

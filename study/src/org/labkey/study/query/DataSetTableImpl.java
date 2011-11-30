@@ -27,6 +27,7 @@ import org.labkey.api.exp.property.Domain;
 import org.labkey.api.exp.query.ExpRunTable;
 import org.labkey.api.query.*;
 import org.labkey.api.security.User;
+import org.labkey.api.security.UserPrincipal;
 import org.labkey.api.security.permissions.*;
 import org.labkey.api.study.DataSet;
 import org.labkey.api.study.DataSetTable;
@@ -569,7 +570,7 @@ public class DataSetTableImpl extends FilteredTable implements DataSetTable
     }
 
     @Override
-    public boolean hasPermission(User user, Class<? extends Permission> perm)
+    public boolean hasPermission(UserPrincipal user, Class<? extends Permission> perm)
     {
         DataSet def = getDatasetDefinition();
         if (ReadPermission.class.isAssignableFrom(perm))

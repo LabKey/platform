@@ -41,6 +41,7 @@ import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.FilteredTable;
 import org.labkey.api.query.QueryUpdateService;
 import org.labkey.api.security.User;
+import org.labkey.api.security.UserPrincipal;
 import org.labkey.api.security.permissions.Permission;
 import org.labkey.api.view.ActionURL;
 import org.labkey.list.view.AttachmentDisplayColumn;
@@ -220,7 +221,7 @@ public class ListTable extends FilteredTable implements UpdateableTableInfo
         return _list;
     }
 
-    public boolean hasPermission(User user, Class<? extends Permission> perm)
+    public boolean hasPermission(UserPrincipal user, Class<? extends Permission> perm)
     {
         return _list.getContainer().hasPermission(user, perm);
     }
