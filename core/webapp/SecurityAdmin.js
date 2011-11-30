@@ -684,6 +684,7 @@ var UserInfoPopup = Ext.extend(Ext.Window,{
             width:400,
             height:300,
             minHeight:200,
+            bodyStyle: 'background-color: white;',
             buttons: [
                 {
                     text: 'Done',

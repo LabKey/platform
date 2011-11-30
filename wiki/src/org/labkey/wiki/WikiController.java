@@ -46,6 +46,7 @@ import org.labkey.api.data.RenderContext;
 import org.labkey.api.data.RuntimeSQLException;
 import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.Sort;
+import org.labkey.api.data.Table;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.module.Module;
 import org.labkey.api.module.ModuleLoader;
@@ -376,8 +377,15 @@ public class WikiController extends SpringActionController
             if (!perms.allowDelete(_wiki))
                 throw new UnauthorizedException("You do not have permissions to delete this wiki page");
 
-            //delete page and all versions
-            getWikiManager().deleteWiki(getUser(), c, _wiki);
+            try
+            {
+                //delete page and all versions
+                getWikiManager().deleteWiki(getUser(), c, _wiki);
+            }
+            catch (Table.OptimisticConflictException e)
+            {
+                // Issue 13549: if someone else already deleted the wiki, no need to throw exception
+            }
             return true;
         }
 
