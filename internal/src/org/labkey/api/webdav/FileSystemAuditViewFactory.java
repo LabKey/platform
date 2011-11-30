@@ -76,9 +76,7 @@ public class FileSystemAuditViewFactory extends SimpleAuditViewFactory
 
     public QueryView createDefaultQueryView(ViewContext context)
     {
-        SimpleFilter filter = new SimpleFilter("EventType", EVENT_TYPE);
-
-        AuditLogQueryView view = AuditLogService.get().createQueryView(context, filter, getEventType());
+        AuditLogQueryView view = AuditLogService.get().createQueryView(context, null, getEventType());
         view.setSort(new Sort("-Date"));
         view.setButtonBarPosition(DataRegion.ButtonBarPosition.BOTH);
 
@@ -101,6 +99,7 @@ public class FileSystemAuditViewFactory extends SimpleAuditViewFactory
 
     public void setupTable(FilteredTable table)
     {
+        super.setupTable(table);
         ColumnInfo dir = table.getColumn("Key1");
         if (dir != null)
         {
@@ -142,7 +141,6 @@ public class FileSystemAuditViewFactory extends SimpleAuditViewFactory
     public static AuditLogQueryView createAttachmentView(ViewContext context, File dir)
     {
         SimpleFilter filter = new SimpleFilter("ContainerId", context.getContainer().getId());
-        filter.addCondition("EventType", EVENT_TYPE);
 
         AuditLogQueryView view = AuditLogService.get().createQueryView(context, filter, EVENT_TYPE);
         view.setTitle("<b>Directory Log:</b>");
@@ -154,7 +152,6 @@ public class FileSystemAuditViewFactory extends SimpleAuditViewFactory
     public AuditLogQueryView createFileContentView(ViewContext context)
     {
         SimpleFilter filter = new SimpleFilter("ContainerId", context.getContainer().getId());
-        filter.addCondition("EventType", EVENT_TYPE);
 
         AuditLogQueryView view = AuditLogService.get().createQueryView(context, filter, getEventType());
         view.setSort(new Sort("-Date"));

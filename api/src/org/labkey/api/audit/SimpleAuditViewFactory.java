@@ -69,6 +69,8 @@ public abstract class SimpleAuditViewFactory implements AuditLogService.AuditVie
 
     public void setupTable(FilteredTable table)
     {
+        // set the filter for the audit view type
+        table.addCondition(table.getRealTable().getColumn("EventType"), getEventType());
     }
 
     private static Object _82decodeObject(String s) throws IOException
