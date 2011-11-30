@@ -1949,7 +1949,9 @@ public class DataRegion extends AbstractDataRegion
         //if user doesn't have read permissions, don't render anything
         User user = viewContext.getUser();
         HasPermission p = viewForm.getTable();
-        if (null == p)
+        // TODO : tables need to accurately represent their own permissions
+        // TODO : or maybe we need DataRegion.setPermissionToCheck(HasPermissions)
+        if (null == p || p instanceof SchemaTableInfo)
             p = viewContext;
         if ((action == MODE_INSERT && !p.hasPermission(user, InsertPermission.class)) || (action == MODE_UPDATE && !p.hasPermission(user, UpdatePermission.class)))
         {
