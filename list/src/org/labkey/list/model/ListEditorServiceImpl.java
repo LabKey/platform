@@ -17,6 +17,7 @@ package org.labkey.list.model;
 
 import org.apache.axis.utils.StringUtils;
 import org.labkey.api.data.DbScope;
+import org.labkey.api.data.RuntimeSQLException;
 import org.labkey.api.data.dialect.SqlDialect;
 import org.labkey.api.exp.ChangePropertyDescriptorException;
 import org.labkey.api.exp.DomainDescriptor;
@@ -71,6 +72,13 @@ public class ListEditorServiceImpl extends DomainEditorServiceBase implements Li
             if (SqlDialect.isConstraintException(x))
                 throw new DuplicateNameException(list.getName());
             throw new RuntimeException(x);
+        }
+        catch (RuntimeSQLException x)
+        {
+            //issue: 12162
+            if(SqlDialect.isConstraintException(x.getSQLException()))
+                throw new DuplicateNameException(list.getName());
+            throw x;
         }
         catch (RuntimeException x)
         {
