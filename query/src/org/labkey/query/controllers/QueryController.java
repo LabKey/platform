@@ -4154,10 +4154,6 @@ public class QueryController extends SpringActionController
                 {
                     ActionURL viewDataUrl = QueryService.get().urlFor(getUser(), getContainer(), QueryAction.executeQuery, uschema.getSchemaName(), qname);
                     TableInfo tinfo = uschema.getTable(qname);
-                    if (tinfo == null)
-                    {
-                        tinfo = uschema.getTable(qname);
-                    }
                     qinfos.add(getQueryProps(qname, tinfo.getDescription(), viewDataUrl, false, uschema, form.isIncludeColumns()));
                 }
             }
