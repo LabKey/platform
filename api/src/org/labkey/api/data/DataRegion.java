@@ -27,6 +27,8 @@ import org.labkey.api.query.CustomView;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.QueryService;
 import org.labkey.api.query.QuerySettings;
+import org.labkey.api.security.HasPermission;
+import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.InsertPermission;
 import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.security.permissions.UpdatePermission;
@@ -1945,7 +1947,11 @@ public class DataRegion extends AbstractDataRegion
         ViewContext viewContext = ctx.getViewContext();
 
         //if user doesn't have read permissions, don't render anything
-        if ((action == MODE_INSERT && !viewContext.hasPermission(InsertPermission.class)) || (action == MODE_UPDATE && !viewContext.hasPermission(UpdatePermission.class)))
+        User user = viewContext.getUser();
+        HasPermission p = viewForm.getTable();
+        if (null == p)
+            p = viewContext;
+        if ((action == MODE_INSERT && !p.hasPermission(user, InsertPermission.class)) || (action == MODE_UPDATE && !p.hasPermission(user, UpdatePermission.class)))
         {
             out.write("You do not have permission to " +
                     (action == MODE_INSERT ? "Insert" : "Update") +
