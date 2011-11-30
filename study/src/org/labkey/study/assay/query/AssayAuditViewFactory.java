@@ -89,10 +89,7 @@ public class AssayAuditViewFactory extends SimpleAuditViewFactory
 
     public QueryView createDefaultQueryView(ViewContext context)
     {
-        SimpleFilter filter = new SimpleFilter();
-        filter.addCondition("EventType", AssayPublishManager.ASSAY_PUBLISH_AUDIT_EVENT);
-
-        AuditLogQueryView view = AuditLogService.get().createQueryView(context, filter, AssayPublishManager.ASSAY_PUBLISH_AUDIT_EVENT);
+        AuditLogQueryView view = AuditLogService.get().createQueryView(context, null, AssayPublishManager.ASSAY_PUBLISH_AUDIT_EVENT);
         view.setButtonBarPosition(DataRegion.ButtonBarPosition.BOTH);
         view.setSort(new Sort("-Date"));
         addDetailsColumn(view);
@@ -105,7 +102,6 @@ public class AssayAuditViewFactory extends SimpleAuditViewFactory
         SimpleFilter filter = new SimpleFilter();
         if (protocolId != -1)
             filter.addCondition("IntKey1", protocolId);
-        filter.addCondition("EventType", AssayPublishManager.ASSAY_PUBLISH_AUDIT_EVENT);
         filter.addInClause("ContainerId", containerFilter.getIds(context.getContainer()));
 
         AuditLogQueryView view = AuditLogService.get().createQueryView(context, filter, AssayPublishManager.ASSAY_PUBLISH_AUDIT_EVENT);
@@ -130,6 +126,7 @@ public class AssayAuditViewFactory extends SimpleAuditViewFactory
 
     public void setupTable(FilteredTable table)
     {
+        super.setupTable(table);
         ColumnInfo col = table.getColumn("Key1");
 
         if (col != null)

@@ -65,9 +65,7 @@ public class MessageAuditViewFactory extends SimpleAuditViewFactory
 
     public QueryView createDefaultQueryView(ViewContext context)
     {
-        SimpleFilter filter = new SimpleFilter("EventType", MailHelper.MESSAGE_AUDIT_EVENT);
-
-        AuditLogQueryView view = AuditLogService.get().createQueryView(context, filter, getEventType());
+        AuditLogQueryView view = AuditLogService.get().createQueryView(context, null, getEventType());
         view.setSort(new Sort("-Date"));
         view.setButtonBarPosition(DataRegion.ButtonBarPosition.BOTH);
 
@@ -90,6 +88,7 @@ public class MessageAuditViewFactory extends SimpleAuditViewFactory
 
     public void setupTable(FilteredTable table)
     {
+        super.setupTable(table);
         ColumnInfo col1 = table.getColumn("Key1");
         if (col1 != null)
         {

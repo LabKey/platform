@@ -90,11 +90,7 @@ public class DatasetAuditViewFactory extends SimpleAuditViewFactory
 
     public QueryView createDefaultQueryView(ViewContext context)
     {
-        SimpleFilter filter = new SimpleFilter();
-
-        filter.addCondition("EventType", DATASET_AUDIT_EVENT, CompareType.EQUAL);
-
-        AuditLogQueryView view = AuditLogService.get().createQueryView(context, filter, getEventType());
+        AuditLogQueryView view = AuditLogService.get().createQueryView(context, null, getEventType());
         view.setSort(new Sort("-Date"));
         view.setButtonBarPosition(DataRegion.ButtonBarPosition.BOTH);
         addDetailsColumn(view);
@@ -105,7 +101,6 @@ public class DatasetAuditViewFactory extends SimpleAuditViewFactory
     public AuditLogQueryView createDatasetView(ViewContext context, DataSetDefinition def)
     {
         SimpleFilter filter = new SimpleFilter("IntKey1", def.getRowId());
-        filter.addCondition("EventType", DATASET_AUDIT_EVENT, CompareType.EQUAL);
 
         AuditLogQueryView view = AuditLogService.get().createQueryView(context, filter, getEventType());
         view.setSort(new Sort("-Date"));
@@ -118,6 +113,7 @@ public class DatasetAuditViewFactory extends SimpleAuditViewFactory
     @Override
     public void setupTable(final FilteredTable table)
     {
+        super.setupTable(table);
         final ColumnInfo containerColumn = table.getColumn("ContainerId");
 
         ColumnInfo datasetColumn = new AliasedColumn(table, "Dataset", table.getColumn("IntKey1"));

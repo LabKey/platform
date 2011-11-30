@@ -99,17 +99,7 @@ public class ListAuditViewFactory extends SimpleAuditViewFactory
 
     public QueryView createDefaultQueryView(ViewContext context)
     {
-        SimpleFilter filter = new SimpleFilter();
-
-        SimpleFilter.OrClause or = new SimpleFilter.OrClause();
-        or.addClause(new CompareType.CompareClause("EventType", CompareType.EQUAL, ListManager.LIST_AUDIT_EVENT));
-        or.addClause(new CompareType.CompareClause("EventType", CompareType.EQUAL, DomainAuditViewFactory.DOMAIN_AUDIT_EVENT));
-        filter.addClause(or);
-
-        // try to filter on just list domains
-        filter.addCondition("Key1", ":" + ListDefinitionImpl.NAMESPACE_PREFIX + ".", CompareType.CONTAINS);
-
-        AuditLogQueryView view = AuditLogService.get().createQueryView(context, filter, getEventType());
+        AuditLogQueryView view = AuditLogService.get().createQueryView(context, null, getEventType());
         view.setSort(new Sort("-Date"));
         view.setButtonBarPosition(DataRegion.ButtonBarPosition.BOTH);
         addDetailsColumn(view);
@@ -120,7 +110,6 @@ public class ListAuditViewFactory extends SimpleAuditViewFactory
     public AuditLogQueryView createListItemDetailsView(ViewContext context, String entityId)
     {
         SimpleFilter filter = new SimpleFilter();
-        filter.addCondition("EventType", ListManager.LIST_AUDIT_EVENT);
         filter.addCondition("Key2", entityId);
 
         AuditLogQueryView view = AuditLogService.get().createQueryView(context, filter, getEventType());
@@ -160,6 +149,18 @@ public class ListAuditViewFactory extends SimpleAuditViewFactory
 
     public void setupTable(final FilteredTable table)
     {
+        SimpleFilter filter = new SimpleFilter();
+
+        SimpleFilter.OrClause or = new SimpleFilter.OrClause();
+        or.addClause(new CompareType.CompareClause("EventType", CompareType.EQUAL, ListManager.LIST_AUDIT_EVENT));
+        or.addClause(new CompareType.CompareClause("EventType", CompareType.EQUAL, DomainAuditViewFactory.DOMAIN_AUDIT_EVENT));
+        filter.addClause(or);
+
+        // try to filter on just list domains
+        filter.addCondition("Key1", ":" + ListDefinitionImpl.NAMESPACE_PREFIX + ".", CompareType.CONTAINS);
+
+        table.addCondition(filter);
+
         final ColumnInfo containerId = table.getColumn("ContainerId");
         ColumnInfo col = table.getColumn("Key1");
         col.setLabel("List");
@@ -182,11 +183,6 @@ public class ListAuditViewFactory extends SimpleAuditViewFactory
     public AuditLogQueryView createListHistoryView(ViewContext context, ListDefinition def)
     {
         SimpleFilter filter = new SimpleFilter();
-
-        SimpleFilter.OrClause or = new SimpleFilter.OrClause();
-        or.addClause(new CompareType.CompareClause("EventType", CompareType.EQUAL, ListManager.LIST_AUDIT_EVENT));
-        or.addClause(new CompareType.CompareClause("EventType", CompareType.EQUAL, DomainAuditViewFactory.DOMAIN_AUDIT_EVENT));
-        filter.addClause(or);
         filter.addCondition("Key1", def.getDomain().getTypeURI());
 
         AuditLogQueryView view = AuditLogService.get().createQueryView(context, filter, getEventType());

@@ -87,10 +87,7 @@ public class ExperimentAuditViewFactory extends SimpleAuditViewFactory
 
     public QueryView createDefaultQueryView(ViewContext context)
     {
-        SimpleFilter filter = new SimpleFilter();
-        filter.addCondition("EventType", EXPERIMENT_AUDIT_EVENT);
-
-        AuditLogQueryView view = AuditLogService.get().createQueryView(context, filter, getEventType());
+        AuditLogQueryView view = AuditLogService.get().createQueryView(context, null, getEventType());
         view.setSort(new Sort("-Date"));
         view.setButtonBarPosition(DataRegion.ButtonBarPosition.BOTH);
 
@@ -131,6 +128,7 @@ public class ExperimentAuditViewFactory extends SimpleAuditViewFactory
 
     public void setupTable(final FilteredTable table)
     {
+        super.setupTable(table);
         final ColumnInfo containerId = table.getColumn("ContainerId");
 
         ColumnInfo protocolCol = table.getColumn("Key1");

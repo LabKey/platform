@@ -194,6 +194,7 @@ public class SearchModule extends DefaultModule
         @Override
         public void setupTable(FilteredTable table)
         {
+            super.setupTable(table);
             ColumnInfo col = table.getColumn("Key1");
             col.setLabel("Query");
         }
@@ -213,9 +214,7 @@ public class SearchModule extends DefaultModule
 
         public QueryView createDefaultQueryView(ViewContext context)
         {
-            SimpleFilter filter = new SimpleFilter("EventType", EVENT_TYPE);
-
-            AuditLogQueryView view = AuditLogService.get().createQueryView(context, filter, getEventType());
+            AuditLogQueryView view = AuditLogService.get().createQueryView(context, null, getEventType());
             view.setSort(new Sort("-Date"));
             view.setButtonBarPosition(DataRegion.ButtonBarPosition.BOTH);
 

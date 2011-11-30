@@ -106,7 +106,7 @@ public class EnrollmentReport extends ChartReport implements Report.ImageReport
 
                 if (ReportManager.get().canReadReport(viewContext.getUser(), viewContext.getContainer(), this))
                 {
-                    ResultSet rs = getVisitDateResultSet(study, datasetId, sequenceNum);
+                    ResultSet rs = getVisitDateResultSet(study, datasetId, sequenceNum, viewContext.getUser());
                     try
                     {
                         int indexX = 1;
@@ -207,10 +207,10 @@ public class EnrollmentReport extends ChartReport implements Report.ImageReport
         return out.toByteArray();
     }
 
-    private static ResultSet getVisitDateResultSet(Study study, int datasetId, double sequenceNum) throws ServletException, SQLException
+    private static ResultSet getVisitDateResultSet(Study study, int datasetId, double sequenceNum, User user) throws ServletException, SQLException
     {
         DataSetDefinition def = StudyManager.getInstance().getDataSetDefinition(study, datasetId);
-        TableInfo ti = def.getTableInfo(null);
+        TableInfo ti = def.getTableInfo(user);
         SQLFragment sql = new SQLFragment();
         sql.append(
                 "SELECT PV.VisitDate\n" +
@@ -251,7 +251,7 @@ public class EnrollmentReport extends ChartReport implements Report.ImageReport
                 if (descriptor.getProperty(VisitImpl.SEQUENCEKEY) != null)
                 {
                     double sequenceNum = VisitImpl.parseSequenceNum(descriptor.getProperty(VisitImpl.SEQUENCEKEY));
-                    ResultSet rs = getVisitDateResultSet(study, datasetId, sequenceNum);
+                    ResultSet rs = getVisitDateResultSet(study, datasetId, sequenceNum, getViewContext().getUser());
 
                     try
                     {

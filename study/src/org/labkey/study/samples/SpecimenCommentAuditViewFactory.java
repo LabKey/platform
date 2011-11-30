@@ -70,11 +70,7 @@ public class SpecimenCommentAuditViewFactory extends SimpleAuditViewFactory
 
     public QueryView createDefaultQueryView(ViewContext context)
     {
-        SimpleFilter filter = new SimpleFilter();
-
-        filter.addCondition("EventType", SPECIMEN_COMMENT_EVENT, CompareType.EQUAL);
-
-        AuditLogQueryView view = AuditLogService.get().createQueryView(context, filter, getEventType());
+        AuditLogQueryView view = AuditLogService.get().createQueryView(context, null, getEventType());
         view.setSort(new Sort("-Date"));
         view.setButtonBarPosition(DataRegion.ButtonBarPosition.BOTH);
 
@@ -84,6 +80,8 @@ public class SpecimenCommentAuditViewFactory extends SimpleAuditViewFactory
     @Override
     public void setupTable(final FilteredTable table)
     {
+        super.setupTable(table);
+
         final ColumnInfo containerColumn = table.getColumn("ContainerId");
         final ColumnInfo vialIdColumn = table.getColumn("Key1");
         vialIdColumn.setLabel("Vial Id");

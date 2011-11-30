@@ -78,7 +78,7 @@ public class UserAuditViewFactory extends SimpleAuditViewFactory
 
     public AuditLogQueryView createUserHistoryView(ViewContext context, SimpleFilter extraFilter)
     {
-        SimpleFilter filter = new SimpleFilter("EventType", UserManager.USER_AUDIT_EVENT);
+        SimpleFilter filter = new SimpleFilter();
 
         if (null != extraFilter)
             filter.addAllClauses(extraFilter);
@@ -105,6 +105,7 @@ public class UserAuditViewFactory extends SimpleAuditViewFactory
 
     public void setupTable(FilteredTable table)
     {
+        super.setupTable(table);
         ColumnInfo col = table.getColumn("IntKey1");
         if (col != null)
         {
