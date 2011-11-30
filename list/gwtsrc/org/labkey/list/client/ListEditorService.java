@@ -21,7 +21,6 @@ import org.labkey.api.gwt.client.model.GWTDomain;
 import org.labkey.api.gwt.client.ui.LookupService;
 
 import java.util.List;
-import java.util.Map;
 
 /**
  * Created by IntelliJ IDEA.

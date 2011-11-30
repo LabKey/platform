@@ -37,12 +37,12 @@ class ScriptReorderer
     {
         if (CoreSchema.getInstance().getSqlDialect().isSqlServer())
         {
-            TABLE_NAME_REGEX = "((?:(?:\\w+)\\.)?(?:#?[a-zA-Z0-9]+))";  // # allows for temp table names
+            TABLE_NAME_REGEX = "((?:(?:\\w+)\\.)?(?:#?\\w+))";  // # allows for temp table names
             STATEMENT_ENDING_REGEX = "((; GO$)|(;$)|( GO$))\\s*";       // Semicolon, GO, or both
         }
         else
         {
-            TABLE_NAME_REGEX = "((?:(?:\\w+)\\.)?(?:[a-zA-Z0-9]+))";
+            TABLE_NAME_REGEX = "((?:(?:\\w+)\\.)?(?:\\w+))";
             STATEMENT_ENDING_REGEX = ";$(\\s*)";
         }
     }
@@ -69,14 +69,14 @@ class ScriptReorderer
         patterns.add(new SqlPattern(getRegExWithPrefix("UPDATE "), Type.Table, RowEffect.Alter));
         patterns.add(new SqlPattern(getRegExWithPrefix("DELETE FROM "), Type.Table, RowEffect.Alter));
 
-        patterns.add(new SqlPattern("CREATE (?:UNIQUE )?(?:CLUSTERED )?INDEX [a-zA-Z0-9_]+? ON " + TABLE_NAME_REGEX + ".+?" + STATEMENT_ENDING_REGEX, Type.Table, RowEffect.None));
+        patterns.add(new SqlPattern("CREATE (?:UNIQUE )?(?:CLUSTERED )?INDEX \\w+? ON " + TABLE_NAME_REGEX + ".+?" + STATEMENT_ENDING_REGEX, Type.Table, RowEffect.None));
         patterns.add(new SqlPattern(getRegExWithPrefix("CREATE TABLE "), Type.Table, RowEffect.None));
         patterns.add(new SqlPattern(getRegExWithPrefix("ALTER TABLE "), Type.Table, RowEffect.None));
-        patterns.add(new SqlPattern(getRegExWithPrefix("DROP TABLE "), Type.Table, RowEffect.None));
         patterns.add(new SqlPattern(getRegExWithPrefix("DROP INDEX "), Type.Table, RowEffect.None));    // By convention, index names start with their associated table names
 
         if (CoreSchema.getInstance().getSqlDialect().isSqlServer())
         {
+            patterns.add(new SqlPattern(getRegExWithPrefix("DROP TABLE "), Type.Table, RowEffect.None));
             patterns.add(new SqlPattern(getRegExWithPrefix("CREATE TABLE "), Type.Table, RowEffect.None));
             patterns.add(new SqlPattern("(?:EXEC )?sp_rename (?:@objname\\s*=\\s*)?'" + TABLE_NAME_REGEX + ".*?'.+?" + STATEMENT_ENDING_REGEX, Type.Table, RowEffect.None));
             patterns.add(new SqlPattern("EXEC core\\.fn_dropifexists '(\\w+)', '(\\w+)'.+?" + STATEMENT_ENDING_REGEX, Type.Table, RowEffect.None));
@@ -85,10 +85,11 @@ class ScriptReorderer
         }
         else
         {
+            patterns.add(new SqlPattern(getRegExWithPrefix("DROP TABLE (?:IF EXISTS )?"), Type.Table, RowEffect.None));
             patterns.add(new SqlPattern(getRegExWithPrefix("CREATE (?:TEMPORARY )?TABLE "), Type.Table, RowEffect.None));
             patterns.add(new SqlPattern("SELECT core\\.fn_dropifexists\\s*\\('(\\w+)', '(\\w+)'.+?" + STATEMENT_ENDING_REGEX, Type.Table, RowEffect.None));
             patterns.add(new SqlPattern("SELECT SETVAL\\('([a-zA-Z]+)\\.([a-zA-Z]+)_.+?" + STATEMENT_ENDING_REGEX, Type.Table, RowEffect.None));
-            patterns.add(new SqlPattern(getRegExWithPrefix("CLUSTER [a-zA-Z0-9_]+ ON "), Type.Table, RowEffect.None));   // e.g. CLUSTER PK_Keyword ON flow.Keyword
+            patterns.add(new SqlPattern(getRegExWithPrefix("CLUSTER \\w+ ON "), Type.Table, RowEffect.None));   // e.g. CLUSTER PK_Keyword ON flow.Keyword
             patterns.add(new SqlPattern(getRegExWithPrefix("CLUSTER "), Type.Table, RowEffect.None));
             patterns.add(new SqlPattern(getRegExWithPrefix("ANALYZE "), Type.Table, RowEffect.None));
 

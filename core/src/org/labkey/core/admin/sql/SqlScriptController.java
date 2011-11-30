@@ -425,7 +425,7 @@ public class SqlScriptController extends SpringActionController
         // Concatenate all the recommended scripts together, removing all but the first copyright notice
         protected String getConsolidatedScript()
         {
-            Pattern copyrightPattern = Pattern.compile("^/\\*\\s*\\*\\s*Copyright.*under the License.\\s*\\*/\\s*", Pattern.CASE_INSENSITIVE + Pattern.DOTALL + Pattern.MULTILINE);
+            Pattern copyrightPattern = Pattern.compile("^/\\*\\s*\\*\\s*Copyright.*?\\*/\\s*", Pattern.CASE_INSENSITIVE + Pattern.DOTALL + Pattern.MULTILINE);
             StringBuilder sb = new StringBuilder();
             boolean firstScript = true;
 
