@@ -44,6 +44,7 @@ import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.DataRegion;
 import org.labkey.api.data.DisplayColumn;
+import org.labkey.api.data.Table;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.UrlColumn;
 import org.labkey.api.data.dialect.SqlDialect;
@@ -283,7 +284,14 @@ public class ListController extends SpringActionController
 
         public boolean handlePost(ListDefinitionForm form, BindException errors) throws Exception
         {
-            form.getList().delete(getUser());
+            try
+            {
+                form.getList().delete(getUser());
+            }
+            catch (Table.OptimisticConflictException e)
+            {
+                //bug 11729: if someone else already deleted the list, no need to throw exception
+            }
             return true;
         }
 
