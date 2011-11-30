@@ -33,7 +33,6 @@ import org.labkey.api.action.ConfirmAction;
 import org.labkey.api.action.ExportAction;
 import org.labkey.api.action.FormViewAction;
 import org.labkey.api.action.HasValidator;
-import org.labkey.api.action.LabkeyError;
 import org.labkey.api.action.MutatingApiAction;
 import org.labkey.api.action.RedirectAction;
 import org.labkey.api.action.ReturnUrlForm;
@@ -91,7 +90,6 @@ import org.labkey.api.security.RequiresSiteAdmin;
 import org.labkey.api.security.RoleAssignment;
 import org.labkey.api.security.SecurityManager;
 import org.labkey.api.security.SecurityPolicy;
-import org.labkey.api.security.SecurityUrls;
 import org.labkey.api.security.User;
 import org.labkey.api.security.UserManager;
 import org.labkey.api.security.UserPrincipal;
@@ -99,6 +97,7 @@ import org.labkey.api.security.ValidEmail;
 import org.labkey.api.security.permissions.AdminPermission;
 import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.security.roles.FolderAdminRole;
+import org.labkey.api.security.roles.ProjectAdminRole;
 import org.labkey.api.security.roles.Role;
 import org.labkey.api.security.roles.RoleManager;
 import org.labkey.api.services.ServiceRegistry;
@@ -154,9 +153,7 @@ import org.springframework.validation.BindException;
 import org.springframework.validation.Errors;
 import org.springframework.web.servlet.ModelAndView;
 import org.springframework.web.servlet.mvc.Controller;
-import org.labkey.api.security.roles.ProjectAdminRole;
 
-import javax.mail.MessagingException;
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
@@ -3821,21 +3818,18 @@ public class AdminController extends SpringActionController
 
         public ModelAndView getView(ManageFoldersForm form, boolean reshow, BindException errors) throws Exception
         {
-
             VBox vbox = new VBox();
 
             JspView statusView = new JspView<ManageFoldersForm>("/org/labkey/core/admin/createFolder.jsp", form, errors);
             vbox.addView(statusView);
 
-            Container c = this.getViewContext().getContainer();
-            String containerNoun = c.isRoot() ? "Project" : "Folder";
+            Container c = getViewContext().getContainer();
 
             getPageConfig().setNavTrail(getCreateProjectWizardSteps(c.isRoot()));
             getPageConfig().setTemplate(Template.Wizard);
             getPageConfig().setTitle("Name and Type");
 
             return vbox;
-
         }
 
         public boolean handlePost(ManageFoldersForm form, BindException errors) throws Exception
@@ -3851,8 +3845,20 @@ public class AdminController extends SpringActionController
                 else
                 {
                     String folderType = form.getFolderType();
-                    assert null != folderType;
+
+                    if (null == folderType)
+                    {
+                        errors.reject(null, "Folder type must be specified");
+                        return false;
+                    }
+
                     FolderType type = ModuleLoader.getInstance().getFolderType(folderType);
+
+                    if (type == null)
+                    {
+                        errors.reject(null, "Folder type not recognized");
+                        return false;
+                    }
 
                     String[] modules = form.getActiveModules();
 
@@ -4617,45 +4623,168 @@ public class AdminController extends SpringActionController
 
 
     @AdminConsoleAction
-    public class UnknownModulesAction extends SimpleViewAction
+    public class ModulesAction extends SimpleViewAction
     {
         @Override
         public ModelAndView getView(Object o, BindException errors) throws Exception
         {
             ModuleLoader ml = ModuleLoader.getInstance();
-            StringBuilder html = new StringBuilder();
 
-            Collection<ModuleContext> unknownModules = ml.getUnknownModuleContexts();
+            Collection<ModuleContext> unknownModules = ml.getUnknownModuleContexts().values();
+            Collection<ModuleContext> knownModules = ml.getAllModuleContexts();
+            knownModules.removeAll(unknownModules);
 
-            if (unknownModules.isEmpty())
+            HttpView known = new ModulesView(knownModules, "Known");
+            HttpView unknown = new ModulesView(unknownModules, "Unknown");
+
+            return new VBox(known, unknown);
+        }
+
+        private class ModulesView extends WebPartView
+        {
+            private final Collection<ModuleContext> _contexts;
+            private final String _type;
+
+            private ModulesView(Collection<ModuleContext> contexts, String type)
             {
-                html.append("No unknown modules");
+                _contexts = contexts;
+                _type = type;
+                setTitle(_type + " Modules");
             }
-            else
-            {
-                html.append("<table>\n");
-                html.append("<tr><th>Name</th><th>Version</th><th>Class</th><th>Schemas</th></tr>\n");
 
-                for (ModuleContext moduleContext : unknownModules)
+            @Override
+            protected void renderView(Object model, PrintWriter out) throws Exception
+            {
+                if (_contexts.isEmpty())
                 {
-                    html.append("  <tr>");
-                    html.append("    <td>").append(PageFlowUtil.filter(moduleContext.getName())).append("</td>");
-                    html.append("    <td>").append(moduleContext.getInstalledVersion()).append("</td>");
-                    html.append("    <td>").append(PageFlowUtil.filter(moduleContext.getClassName())).append("</td>");
-                    html.append("    <td>").append(PageFlowUtil.filter(moduleContext.getSchemas())).append("</td>");
-                    html.append("  </tr>\n");
+                    out.println("No " + _type.toLowerCase() + " modules");
                 }
+                else
+                {
+                    out.println("<table>\n");
+                    out.println("<tr><th>Name</th><th>Version</th><th>Class</th><th>Schemas</th></tr>\n");
 
-                html.append("</table>\n");
+                    for (ModuleContext moduleContext : _contexts)
+                    {
+                        List<String> schemas = moduleContext.getSchemaList();
+                        out.println("  <tr>");
+
+                        out.print("    <td>");
+                        out.print(PageFlowUtil.filter(moduleContext.getName()));
+                        out.println("</td>");
+
+                        out.print("    <td>");
+                        out.print(moduleContext.getInstalledVersion());
+                        out.println("</td>");
+
+                        out.print("    <td>");
+                        out.print(PageFlowUtil.filter(moduleContext.getClassName()));
+                        out.println("</td>");
+
+                        out.print("    <td>");
+                        out.print(PageFlowUtil.filter(StringUtils.join(schemas, ", ")));
+                        out.println("</td>");
+
+                        out.print("    <td>");
+                        out.print(PageFlowUtil.textLink("Delete Module" + (schemas.isEmpty() ? "" : (" and Schema" + (schemas.size() > 1 ? "s" : ""))), getDeleteURL(moduleContext.getName())));
+                        out.println("</td>");
+
+                        out.println("  </tr>");
+                    }
+
+                    out.println("</table>");
+                }
             }
+        }
 
-            return new HtmlView(html.toString());
+        private ActionURL getDeleteURL(String name)
+        {
+            ActionURL url = new ActionURL(DeleteModuleAction.class, ContainerManager.getRoot());
+            url.addParameter("name", name);
+
+            return url;
         }
 
         @Override
         public NavTree appendNavTrail(NavTree root)
         {
-            return appendAdminNavTrail(root, "Unknown Modules", getClass());
+            return appendAdminNavTrail(root, "Modules", getClass());
+        }
+    }
+    
+    
+    public static class ModuleForm
+    {
+        private String _name;
+
+        public String getName()
+        {
+            return _name;
+        }
+
+        @SuppressWarnings({"UnusedDeclaration"})
+        public void setName(String name)
+        {
+            _name = name;
+        }
+
+        private ModuleContext getModuleContext()
+        {
+            ModuleLoader ml = ModuleLoader.getInstance();
+            Module module = ml.getModule(getName());
+            ModuleContext ctx;
+
+            if (null != module)
+            {
+                ctx = ml.getModuleContext(module);
+
+                if (null != ctx)
+                    return ctx;
+            }
+
+            return ml.getUnknownModuleContexts().get(getName());
+        }
+    }
+
+
+    @RequiresSiteAdmin
+    public class DeleteModuleAction extends ConfirmAction<ModuleForm>
+    {
+        @Override
+        public void validateCommand(ModuleForm form, Errors errors)
+        {
+        }
+
+        @Override
+        public ModelAndView getConfirmView(ModuleForm form, BindException errors) throws Exception
+        {
+            ModuleContext ctx = form.getModuleContext();
+            List<String> schemas = ctx.getSchemaList();
+            String description = "\"" + ctx.getName() + "\" module";
+
+            if (!schemas.isEmpty())
+            {
+                description += " and delete all data in ";
+                description += schemas.size() > 1 ? "these schemas: " + StringUtils.join(schemas, ", ") : "the \"" + schemas.get(0) + "\" schema";
+            }
+
+            String message = "Are you sure you want to remove the " + PageFlowUtil.filter(description) + "? This operation may render the server unusable and cannot be undone!<br><br>";
+            message += "Deleting modules on a running server could leave it in an unpredictable state; be sure to restart your server.";
+            return new HtmlView(message);
+        }
+
+        @Override
+        public boolean handlePost(ModuleForm form, BindException errors) throws Exception
+        {
+            ModuleLoader.getInstance().removeModule(form.getModuleContext());
+
+            return true;
+        }
+
+        @Override
+        public URLHelper getSuccessURL(ModuleForm form)
+        {
+            return new ActionURL(ModulesAction.class, ContainerManager.getRoot());
         }
     }
 }

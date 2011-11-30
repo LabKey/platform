@@ -60,7 +60,6 @@ import org.labkey.api.exp.list.ListService;
 import org.labkey.api.exp.property.Domain;
 import org.labkey.api.exp.property.DomainProperty;
 import org.labkey.api.gwt.server.BaseRemoteService;
-import org.labkey.api.jsp.FormPage;
 import org.labkey.api.lists.permissions.DesignListPermission;
 import org.labkey.api.query.AbstractQueryImportAction;
 import org.labkey.api.query.BatchValidationException;

@@ -29,6 +29,8 @@
 <%@ page import="java.util.Map" %>
 <%@ page import="java.util.TreeMap" %>
 <%@ page import="org.labkey.api.util.GUID" %>
+<%@ page import="org.labkey.api.view.ActionURL" %>
+<%@ page import="org.labkey.api.data.ContainerManager" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
     HttpView<AdminController.AdminBean> me = (HttpView<AdminController.AdminBean>) HttpView.currentView();
@@ -115,7 +117,7 @@
     <tr><td>&nbsp;</td></tr>
 </table>
 <table>
-    <tr><td colspan="4"><b>Module Information</b></td></tr><%
+    <tr><td colspan="4"><b>Module Information</b>&nbsp;&nbsp;<%=textLink("Module Details", new ActionURL(AdminController.ModulesAction.class, c))%></td></tr><%
 
     for (Module module : bean.modules)
     {
