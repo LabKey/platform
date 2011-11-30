@@ -48,7 +48,7 @@ public class StudyQuerySchema extends UserSchema
     @Nullable // if no study defined in this container
     final StudyImpl _study;
 
-    boolean _mustCheckPermissions;
+    final boolean _mustCheckPermissions;
 
     private Map<Integer, List<Double>> _datasetSequenceMap;
     public static final String SIMPLE_SPECIMEN_TABLE_NAME = "SimpleSpecimen";
@@ -146,7 +146,7 @@ public class StudyQuerySchema extends UserSchema
     {
         Map<String, DataSetDefinition> ret = new LinkedHashMap<String, DataSetDefinition>();
         assert _study != null : "Attempt to get datasets without a study";
-        if (_study == null)
+        if (_study != null)
         {
             for (DataSetDefinition dsd : _study.getDataSets())
             {
