@@ -1725,6 +1725,7 @@ public class DataSetDefinition extends AbstractStudyEntity<DataSetDefinition> im
         Converter convertDate = ConvertUtils.lookup(Date.class);
         List<String> lsids;
         User user;
+        private int _maxPTIDLength;
 //        boolean requiresKeyLock = false;
 
         // these columns are used to compute derived columns, should occur early in the output list
@@ -1737,6 +1738,7 @@ public class DataSetDefinition extends AbstractStudyEntity<DataSetDefinition> im
         _DatasetColumnsIterator(DataIterator data, BatchValidationException errors) // , String keyPropertyURI, boolean qc, QCState defaultQC, Map<String, QCState> qcLabels)
         {
             super(data, errors);
+            _maxPTIDLength = getTableInfo(user, false).getColumn("ParticipantID").getScale();
         }
 
         void setSpecialInputColumns(Integer indexPTID, Integer indexSequenceNum, Integer indexVisitDate, Integer indexKeyProperty)
@@ -1776,6 +1778,11 @@ public class DataSetDefinition extends AbstractStudyEntity<DataSetDefinition> im
             boolean hasNext = super.next();
             if (hasNext)
             {
+                Object ptidObject = get(indexPtidOutput);
+                if (ptidObject != null && ptidObject.toString().length() > _maxPTIDLength)
+                {
+                    throw new BatchValidationException(Collections.singletonList(new ValidationException(_study.getSubjectColumnName() + " value '" + ptidObject + "' is too long, maximum length is " + _maxPTIDLength + " characters")), Collections.<String, Object>emptyMap());
+                }
                 if (null != lsids && null != indexLSIDOutput)
                 {
                     try
@@ -2225,7 +2232,13 @@ public class DataSetDefinition extends AbstractStudyEntity<DataSetDefinition> im
         }
         catch (BatchValidationException vex)
         {
-            assert vex == errors;
+            if (vex != errors)
+            {
+                for (ValidationException validationException : vex.getRowErrors())
+                {
+                    errors.addRowError(validationException);
+                }
+            }
             return null;
         }
         catch (SQLException sqlx)

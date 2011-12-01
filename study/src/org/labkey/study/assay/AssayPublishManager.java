@@ -908,7 +908,8 @@ public class AssayPublishManager implements AssayPublishService.Service
                             Map<Integer, AssayPublishKey> keys = new HashMap<Integer, AssayPublishKey>();
                             while (rs.next())
                             {
-                                String ptid = (String)ptidColumn.getValue(rs);
+                                Object ptidObject = ptidColumn.getValue(rs);
+                                String ptid = ptidObject == null ? null : ptidObject.toString();
                                 int objectId = ((Number)objectIdColumn.getValue(rs)).intValue();
                                 Object visit = visitColumn.getValue(rs);
                                 // Only copy rows that have a participant and a visit/date

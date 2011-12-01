@@ -117,7 +117,7 @@ class SampleSetUpdateService extends AbstractQueryUpdateService
 
     /** Write any files that were posted into a sampleset subdirectory */
     private List<Map<String, Object>> writePostedFiles(Container container, List<Map<String, Object>> originalRows)
-            throws QueryUpdateServiceException
+            throws QueryUpdateServiceException, ValidationException
     {
         List<Map<String, Object>> rows = new ArrayList<Map<String, Object>>(originalRows.size());
         // Iterate through all of the values in all of the rows, looking for MultipartFiles
@@ -133,6 +133,10 @@ class SampleSetUpdateService extends AbstractQueryUpdateService
                     {
                         // Once we've found one, write it to disk and replace the row's value with just the File reference to it
                         MultipartFile multipartFile = (MultipartFile)value;
+                        if (multipartFile.isEmpty())
+                        {
+                            throw new ValidationException("File " + multipartFile.getOriginalFilename() + " for field " + entry.getKey() + " has no content");
+                        }
                         File dir = AssayFileWriter.ensureUploadDirectory(container, "sampleset");
                         File file = AssayFileWriter.findUniqueFileName(multipartFile.getOriginalFilename(), dir);
                         multipartFile.transferTo(file);

@@ -48,7 +48,7 @@
     <div style="padding-top: 1em;">
         <label for="<%=input.getObject()%>"><%=h(input.getName())%></label>
         <br/>
-        <input id="<%=input.getObject()%>" type="text" name="<%=input.getObject()%>" value="<%= h(input.getDefaultValue()) %>" style="width:40em;">
+        <input id="<%=input.getObject()%>" type="text" name="<%=input.getObject()%>" value="<%= h(input.getDefaultValue()) %>" style="width:20em;">
     </div><%
     }
 
@@ -63,7 +63,7 @@
         <% } %>
 
         <br/>
-        <input id="<%=input.getObject()%>" type="password" name="<%=input.getObject()%>" style="width:40em;">
+        <input id="<%=input.getObject()%>" type="password" name="<%=input.getObject()%>" style="width:20em;">
     </div><%
     }
     %>

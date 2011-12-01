@@ -330,36 +330,21 @@ public class MothershipSchema extends UserSchema
                 ExprColumn.STR_TABLE_ALIAS + ".ExceptionStackTraceId)"), JdbcType.INTEGER);
         result.addColumn(countColumn);
 
-        ExprColumn maxRevisionColumn = new ExprColumn(result, "MaxSVNRevision", new SQLFragment("(SELECT MAX(SVNRevision) FROM " +
-                MothershipManager.get().getTableInfoExceptionReport() + " er, " +
-                MothershipManager.get().getTableInfoSoftwareRelease() + " sr, " +
-                MothershipManager.get().getTableInfoServerSession() + " ss " +
-                " WHERE er.ExceptionStackTraceId = " + ExprColumn.STR_TABLE_ALIAS + ".ExceptionStackTraceId" +
-                " AND ss.ServerSessionId = er.ServerSessionId AND ss.SoftwareReleaseId = sr.SoftwareReleaseId)"), JdbcType.INTEGER);
-        maxRevisionColumn.setFk(new LookupForeignKey("SVNRevision", "SVNRevision")
+        LookupForeignKey softwareReleaseFK = new LookupForeignKey("SoftwareReleaseId")
         {
             @Override
             public TableInfo getLookupTableInfo()
             {
                 return getTable(MothershipSchema.SOFTWARE_RELEASES_TABLE_NAME);
             }
-        });
+        };
+
+        ExprColumn maxRevisionColumn = new ExprColumn(result, "MaxSVNRevision", getSoftwareReleaseSQL("DESC"), JdbcType.INTEGER);
+        maxRevisionColumn.setFk(softwareReleaseFK);
         result.addColumn(maxRevisionColumn);
 
-        ExprColumn minRevisionColumn = new ExprColumn(result, "MinSVNRevision", new SQLFragment("(SELECT MIN(SVNRevision) FROM " +
-                MothershipManager.get().getTableInfoExceptionReport() + " er, " +
-                MothershipManager.get().getTableInfoSoftwareRelease() + " sr, " +
-                MothershipManager.get().getTableInfoServerSession() + " ss " +
-                " WHERE er.ExceptionStackTraceId = " + ExprColumn.STR_TABLE_ALIAS + ".ExceptionStackTraceId" +
-                " AND ss.ServerSessionId = er.ServerSessionId AND ss.SoftwareReleaseId = sr.SoftwareReleaseId)"), JdbcType.INTEGER);
-        minRevisionColumn.setFk(new LookupForeignKey("SVNRevision", "SVNRevision")
-        {
-            @Override
-            public TableInfo getLookupTableInfo()
-            {
-                return getTable( MothershipSchema.SOFTWARE_RELEASES_TABLE_NAME);
-            }
-        });
+        ExprColumn minRevisionColumn = new ExprColumn(result, "MinSVNRevision", getSoftwareReleaseSQL("ASC"), JdbcType.INTEGER);
+        minRevisionColumn.setFk(softwareReleaseFK);
         result.addColumn(minRevisionColumn);
 
         String path = MothershipManager.get().getIssuesContainer(getContainer());
@@ -388,6 +373,25 @@ public class MothershipSchema extends UserSchema
         defaultCols.add(FieldKey.fromParts("StackTrace"));
         result.setDefaultVisibleColumns(defaultCols);
 
+        return result;
+    }
+
+    private SQLFragment getSoftwareReleaseSQL(String sort)
+    {
+        // We want the SoftwareReleaseId from the row that has the minimum SVN revision value
+
+        // Do a sort by SVNRevision 
+        SQLFragment subselect = new SQLFragment("SELECT ss.SoftwareReleaseId FROM " +
+                MothershipManager.get().getTableInfoExceptionReport() + " er, " +
+                MothershipManager.get().getTableInfoSoftwareRelease() + " sr, " +
+                MothershipManager.get().getTableInfoServerSession() + " ss " +
+                " WHERE er.ExceptionStackTraceId = " + ExprColumn.STR_TABLE_ALIAS + ".ExceptionStackTraceId" +
+                " AND ss.ServerSessionId = er.ServerSessionId AND ss.SoftwareReleaseId = sr.SoftwareReleaseId ORDER BY SVNRevision " + sort);
+
+        // Then apply a limit so that we only get one row back
+        SQLFragment result = new SQLFragment("(");
+        result.append(getDbSchema().getSqlDialect().limitRows(subselect, 1));
+        result.append(")");
         return result;
     }
 
