@@ -2352,7 +2352,7 @@ public class SecurityManager
                 UserManager.addToUserHistory(newUser, newUser.getEmail() + " was added to the system and the administrator chose not to send a verification email.");
             }
         }
-        catch (MessagingException e)
+        catch (ConfigurationException e)
         {
             message.append("<br>");
             message.append(email.getEmailAddress());

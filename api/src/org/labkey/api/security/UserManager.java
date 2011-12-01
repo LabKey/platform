@@ -557,10 +557,11 @@ public class UserManager
             {
                 Table.execute(CORE.getSchema(), "UPDATE " + CORE.getTableInfoLogins() + " SET Email=? WHERE Email=?", newEmail.getEmailAddress(), oldEmail.getEmailAddress());
                 UserManager.addToUserHistory(UserManager.getUser(userId), currentUser + " changed email from " + oldEmail.getEmailAddress() + " to " + newEmail.getEmailAddress() + ".");
+                User userToBeEdited = getUser(userId);
 
-                if (currentUser.getDisplayName(currentUser).equals(oldEmail.getEmailAddress()))
+                if (userToBeEdited.getDisplayName(userToBeEdited).equals(oldEmail.getEmailAddress()))
                 {
-                    Table.execute(CORE.getSchema(), "UPDATE " + CORE.getTableInfoUsersData() + " SET DisplayName=? WHERE UserId=?", newEmail.getEmailAddress(), currentUser.getUserId());
+                    Table.execute(CORE.getSchema(), "UPDATE " + CORE.getTableInfoUsersData() + " SET DisplayName=? WHERE UserId=?", newEmail.getEmailAddress(), userId);
                 }
             }
 
