@@ -67,7 +67,7 @@ public interface Study extends StudyEntity
 
     String getInvestigator();
 
-    String getStudyGrant();
+    String getGrant();
 
     void attachProtocolDocument(List<AttachmentFile> files , User user)  throws SQLException, IOException;
 
