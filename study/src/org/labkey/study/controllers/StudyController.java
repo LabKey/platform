@@ -1318,7 +1318,7 @@ public class StudyController extends BaseStudyController
             study.setSubjectNounPlural(form.getSubjectNounPlural());
             study.setSubjectColumnName(form.getSubjectColumnName());
             study.setDescription(form.getDescription());
-            study.setStudyGrant(form.getStudyGrant());
+            study.setGrant(form.getGrant());
             study.setInvestigator(form.getInvestigator());
             StudyManager.getInstance().createStudy(user, study);
         }
@@ -1415,7 +1415,7 @@ public class StudyController extends BaseStudyController
                 StudyImpl updated = getStudy().createMutable();
                 updated.setLabel(form.getLabel());
                 updated.setInvestigator(form.getInvestigator());
-                updated.setStudyGrant((form.getStudyGrant()));
+                updated.setGrant((form.getGrant()));
                 updated.setDescription(form.getDescription());
                 updated.setDescriptionRendererType(form.getDescriptionRendererType());
                 StudyManager.getInstance().updateStudy(getUser(), updated);
@@ -5797,7 +5797,7 @@ public class StudyController extends BaseStudyController
         private String _returnURL;
         private String _description;
         private String _descriptionRendererType;
-        private String _studyGrant;
+        private String _grant;
         private String _investigator;
 
         public String getLabel()
@@ -5930,14 +5930,14 @@ public class StudyController extends BaseStudyController
             _investigator = investigator;
         }
 
-        public String getStudyGrant()
+        public String getGrant()
         {
-            return _studyGrant;
+            return _grant;
         }
 
-        public void setStudyGrant(String studyGrant)
+        public void setGrant(String grant)
         {
-            _studyGrant = studyGrant;
+            _grant = grant;
         }
     }
 

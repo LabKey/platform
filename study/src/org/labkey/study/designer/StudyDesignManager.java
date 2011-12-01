@@ -23,7 +23,6 @@ import org.labkey.api.exp.PropertyType;
 import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.security.SecurityManager;
 import org.labkey.api.security.User;
-import org.labkey.api.security.permissions.AdminPermission;
 import org.labkey.api.study.TimepointType;
 import org.labkey.api.study.assay.AssayPublishService;
 import org.labkey.api.study.Study;
@@ -178,8 +177,8 @@ public class StudyDesignManager
                 def.setDescription(study.getDescription());
             if (null != study.getInvestigator())
                 def.setInvestigator(study.getInvestigator());
-            if (null != study.getStudyGrant())
-                def.setGrant(study.getStudyGrant());
+            if (null != study.getGrant())
+                def.setGrant(study.getGrant());
         }
 
         return def;
@@ -344,7 +343,7 @@ public class StudyDesignManager
         study.setSubjectNounPlural(subjectNounPlural);
         study.setSubjectColumnName(subjectColumnName);
         study.setDescription(def.getDescription());
-        study.setStudyGrant(def.getGrant());
+        study.setGrant(def.getGrant());
         study.setInvestigator(def.getInvestigator());
         study = StudyManager.getInstance().createStudy(user, study);
 

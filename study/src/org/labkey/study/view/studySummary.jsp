@@ -70,7 +70,7 @@
     ActionURL url = new ActionURL(StudyController.BeginAction.class, bean.getStudy().getContainer());
     String descriptionHtml = bean.getDescriptionHtml();
     String investigator = bean.getInvestigator();
-    String studyGrant = bean.getStudyGrant();
+    String grant = bean.getGrant();
     List<Attachment> protocolDocs = bean.getProtocolDocuments();
     ActionURL editMetadataURL = new ActionURL(StudyController.ManageStudyPropertiesAction.class, c);
     editMetadataURL.addParameter("returnURL", bean.getCurrentURL());
@@ -93,9 +93,9 @@
 
                 <span style="float: right">
                     <%
-                        if(studyGrant != null)
+                        if(grant != null)
                         {
-                            out.print("Grant: " + studyGrant);
+                            out.print("Grant: " + grant);
                         }
                     %>
                 </span>

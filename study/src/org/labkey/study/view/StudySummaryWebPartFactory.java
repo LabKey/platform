@@ -129,8 +129,8 @@ public class StudySummaryWebPartFactory extends BaseWebPartFactory
             return getStudy().getInvestigator();
         }
 
-        public String getStudyGrant(){
-            return getStudy().getStudyGrant();
+        public String getGrant(){
+            return getStudy().getGrant();
         }
     }
 

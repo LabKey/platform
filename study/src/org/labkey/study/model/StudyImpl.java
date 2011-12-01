@@ -109,7 +109,7 @@ public class StudyImpl extends ExtensibleStudyEntity<StudyImpl> implements Study
     private String _protocolDocumentEntityId;
     private String _sourceStudyContainerId;
     private String _investigator;
-    private String _studyGrant;
+    private String _grant;
 
     public StudyImpl()
     {
@@ -610,14 +610,14 @@ public class StudyImpl extends ExtensibleStudyEntity<StudyImpl> implements Study
         _investigator = investigator;
     }
 
-    public String getStudyGrant()
+    public String getGrant()
     {
-        return _studyGrant;
+        return _grant;
     }
 
-    public void setStudyGrant(String grant)
+    public void setGrant(String grant)
     {
-        _studyGrant = grant;
+        _grant = grant;
     }
 
     public List<Attachment> getProtocolDocuments()

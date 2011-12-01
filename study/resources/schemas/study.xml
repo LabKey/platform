@@ -114,7 +114,7 @@
       <ns:column columnName="Investigator">
         <ns:description>The investigator of the study.</ns:description>
       </ns:column>
-      <ns:column columnName="studyGrant">
+      <ns:column columnName="Grant">
         <ns:description>The grant for the study.</ns:description>
       </ns:column>
     </ns:columns>

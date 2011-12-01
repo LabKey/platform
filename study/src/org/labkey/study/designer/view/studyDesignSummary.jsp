@@ -109,7 +109,7 @@ This study was created from a vaccine study protocol with the following descript
         ActionURL url = new ActionURL(StudyController.BeginAction.class, study.getContainer());
         String descriptionHtml = study.getDescriptionHtml();
         String investigator = study.getInvestigator();
-        String studyGrant = study.getStudyGrant();
+        String grant = study.getGrant();
         List<Attachment> protocolDocs = study.getProtocolDocuments();
         ActionURL editMetadataURL = new ActionURL(StudyController.ManageStudyPropertiesAction.class, c);
         editMetadataURL.addParameter("returnURL", HttpView.currentContext().getActionURL().toString());
@@ -132,9 +132,9 @@ This study was created from a vaccine study protocol with the following descript
 
                     <span style="float: right">
                         <%
-                            if(studyGrant != null)
+                            if(grant != null)
                             {
-                                out.print("Grant: " + studyGrant);
+                                out.print("Grant: " + grant);
                             }
                         %>
                     </span>

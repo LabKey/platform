@@ -81,7 +81,7 @@ public class StudyPropertiesTable extends BaseStudyTable
         addRootColumn("subjectNounSingular", false, true);
         addRootColumn("subjectNounPlural", false, true);
         addRootColumn("subjectColumnName", false, true);
-        addRootColumn("studyGrant", true, true);
+        addRootColumn("grant", true, true);
         addRootColumn("investigator", true, true);
         ColumnInfo descriptionColumn = addRootColumn("description", true, true);
         final ColumnInfo descriptionRendererTypeColumn = addRootColumn("descriptionRendererType", false, true);

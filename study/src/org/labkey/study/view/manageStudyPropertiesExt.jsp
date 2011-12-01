@@ -30,6 +30,20 @@
     if (cancelLink == null || cancelLink.length() == 0)
         cancelLink = new ActionURL(StudyController.ManageStudyAction.class, context.getContainer()).toString();
 %>
+
+<%!
+
+    public String shortenFileName(String fileName)
+    {
+        if (fileName.length() > 55)
+        {
+            fileName = fileName.substring(0, 54) + "...";
+        }
+
+        return fileName;
+    }
+%>
+
 <div class="extContainer" id="manageStudyPropertiesDiv"></div>
 <script type="text/javascript">
 
@@ -308,8 +322,8 @@ function renderFormPanel(data, editable)
     handledFields['Label'] = true;
     items.push({name:'Investigator'});
     handledFields['Investigator'] = true;
-    items.push({name:'studyGrant'});
-    handledFields['studyGrant'] = true;
+    items.push({name:'Grant'});
+    handledFields['Grant'] = true;
     items.push({name:'Description', width:500});
     handledFields['Description'] = true;
     if (editableFormPanel)
@@ -397,7 +411,7 @@ Ext.onReady(createPage);
             x++;
             %><tr id="attach-<%=x%>" style="min-width:20px;">
                 <td>&nbsp;<img src="<%=request.getContextPath() + att.getFileIcon()%>" alt="logo"/></td>
-                <td>&nbsp;<%= h(att.getName()) %></td>
+                <td>&nbsp;<%= h(shortenFileName(att.getName())) %></td>
                 <td>&nbsp;[<a onclick="removeProtocolDocument(<%=PageFlowUtil.jsString(att.getName())%>, 'attach-<%=x%>'); ">remove</a>]</td>
             </tr ><%
         }

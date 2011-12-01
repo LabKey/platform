@@ -59,7 +59,7 @@ class StudyXmlWriter implements InternalStudyWriter
         studyXml.setSubjectColumnName(study.getSubjectColumnName());
         studyXml.setDescription(study.getDescription());
         studyXml.setInvestigator(study.getInvestigator());
-        studyXml.setStudyGrant(study.getStudyGrant());
+        studyXml.setGrant(study.getGrant());
 
         if (null != study.getStartDate())
         {

@@ -78,7 +78,7 @@
         </tr>
         <tr>
             <td class="labkey-form-label">Grant</td>
-            <td><input type="text" size="40" name="studyGrant" value="<%= h(getStudy().getStudyGrant()) %>"></td>
+            <td><input type="text" size="40" name="grant" value="<%= h(getStudy().getGrant()) %>"></td>
         </tr>
         <tr>
             <td class="labkey-form-label">Description</td>
