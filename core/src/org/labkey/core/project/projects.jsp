@@ -64,7 +64,8 @@ Ext4.onReady(function(){
             columns: 'name',
             autoLoad: true,
             filterArray: [
-                LABKEY.Filter.create('containerType', 'project', LABKEY.Filter.Types.EQUALS)
+                LABKEY.Filter.create('containerType', 'project', LABKEY.Filter.Types.EQUALS),
+                LABKEY.Filter.create('createdby', '', LABKEY.Filter.Types.NONBLANK)
             ],
             metadata: {
                 iconurl: {
