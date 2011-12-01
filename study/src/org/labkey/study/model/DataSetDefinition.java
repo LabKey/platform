@@ -1478,7 +1478,7 @@ public class DataSetDefinition extends AbstractStudyEntity<DataSetDefinition> im
             if (null == input && null != builder)
                 input = builder.getDataIterator(errors);
 
-            _DatasetColumnsIterator it = new _DatasetColumnsIterator(input, errors);
+            _DatasetColumnsIterator it = new _DatasetColumnsIterator(input, errors, user);
 
             ValidationException matchError = new ValidationException();
             ArrayList<ColumnInfo> inputMatches = DataIteratorUtil.matchColumns(input,table,useImportAliases, matchError);
@@ -1735,10 +1735,11 @@ public class DataSetDefinition extends AbstractStudyEntity<DataSetDefinition> im
 
         TimepointType timetype;
 
-        _DatasetColumnsIterator(DataIterator data, BatchValidationException errors) // , String keyPropertyURI, boolean qc, QCState defaultQC, Map<String, QCState> qcLabels)
+        _DatasetColumnsIterator(DataIterator data, BatchValidationException errors, User user) // , String keyPropertyURI, boolean qc, QCState defaultQC, Map<String, QCState> qcLabels)
         {
             super(data, errors);
-            _maxPTIDLength = getTableInfo(user, false).getColumn("ParticipantID").getScale();
+            this.user = user; 
+            _maxPTIDLength = getTableInfo(this.user, false).getColumn("ParticipantID").getScale();
         }
 
         void setSpecialInputColumns(Integer indexPTID, Integer indexSequenceNum, Integer indexVisitDate, Integer indexKeyProperty)
