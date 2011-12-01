@@ -233,13 +233,31 @@ span.css-arrow-down
 /* Used for tabs */
 
 .labkey-app-bar div.folder-header
-{
+{  /* TODO: this should be replaced by adding a new color to the theme.  */
     background-color:#<%= webpart %>;
 }
 
-.labkey-app-bar li.labkey-tab-inactive a 
+.labkey-app-bar ul.labkey-tab-strip a { /* map bottom border to Primary background color */
+	border-bottom: 1px solid #<%= primary %>;
+}
+
+.labkey-app-bar li.labkey-tab-inactive a { /* map text color to Link color */
+    color: #<%= link %>;
+}
+
+.labkey-app-bar li.labkey-tab-active a { /* map bottom border and background color to Primary background color */
+    background-color: #<%= primary %>;
+	border-bottom: 1px solid #<%= primary %>;
+}
+
+.labkey-app-bar ul.labkey-tab-strip a:hover { /* map bottom border and background color to Primary background color */
+    background-color: #<%= primary %>;
+    border-bottom: 1px solid #<%= primary %>;
+}
+
+.labkey-tab-active
 {
-    background-color:#<%= grid %>;
+    <%--background-color: #<%= grid %>;--%>
 }
 
 td.labkey-app-button-bar-button a
@@ -340,8 +358,8 @@ td.labkey-site-nav-panel
 
 td.labkey-main-menu
 {
-    background-color: #<%= grid %>;
-    border-color: #<%= link %>;
+    background-color: #<%= link %>;
+    border-color: none;
 }
 
 td.labkey-main-menu a.selected

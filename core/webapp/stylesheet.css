@@ -248,7 +248,7 @@ table.labkey-expandable-nav th.labkey-header {
     color: #000000;
 }
 
-.labkey-announcement-title a.announcement-title-link {
+.labkey-announcement-title a {
 	color:#126495;
 	font-size: 14px;
 }
@@ -801,18 +801,29 @@ div.labkey-pagination
 table.labkey-nav-trail
 {
     width: 100%;
-    padding:0 20px;
+    padding: 10px 20px 0 20px;
     border-spacing: 0;
     *border-collapse: collapse;
     *margin: 5px 0 20px 0;
 }
 
+
+
 /* Used for the "App Bar" containing the main title and the application button bar */
 /* Used for tabs */
-.labkey-app-bar div.folder-header
-{
-    background: #ccc;
-    width:100%;
+
+.labkey-app-bar div.folder-header { /* THIS IS A NEW COLOR */
+    /*
+        TODO: this will be overridden by the themeStylesheet.  We need to add another background color to the theme.
+        This is included for now to allow the other changes to be added.
+    */
+	background: #8abede;
+    /*background: #008000;*/
+	width: 100%;
+	
+	box-shadow: inset 0 0 5px rgba(0, 0, 0,.3);
+	-moz-box-shadow: inset 0 0 5px rgba(0, 0, 0,.3);
+	-webkit-box-shadow: inset 0 0 5px rgba(0, 0, 0,.3);
 }
 
 .labkey-app-bar table.folder-header
@@ -823,14 +834,61 @@ table.labkey-nav-trail
 	height: 40px;
 }
 
-.labkey-app-bar td.folder-title {
+.labkey-app-bar td.folder-title { /* this should map to the link and top border color in theme */
 	font-family: Arial, Helvetica, sans serif;
-    font-size: 16pt;
+    font-size: 14pt;
     line-height: 22px;
 	*padding-left: 30px;
 	*padding-top: 0px;
-    white-space:nowrap;
+    white-space: nowrap;
 }
+
+.labkey-app-bar td.folder-title a:hover { /* this is new, should be same across themes */
+	color: #fff;
+}
+
+
+/* tabs */
+
+.labkey-app-bar ul.labkey-tab-strip a { /* map bottom border to Primary background color */
+/*
+    border-color: 0 none !important;
+    border-style: 0 none !important;
+    border-width: 0 none !important;
+	border: none !important;
+*/
+	border-color: none;
+    border-style: none none none;
+    border-width: 1px 1px medium;
+	border-bottom: 1px solid #f8f8f8;
+	
+    float: left;
+    line-height: 14px;
+    margin-right: 2px;
+    padding: 6px 9px;
+    text-decoration: none;
+
+	border-radius: 5px 5px 0 0;
+	-moz-border-radius: 5px 5px 0 0;
+	-webkit-border-radius: 5px 5px 0 0;
+	
+	box-shadow: 0 -2px 2px rgba(0, 0, 0,.2);
+	-moz-box-shadow: 0 -2px 2px rgba(0, 0, 0,.2);
+	-webkit-box-shadow: 0 -2px 2px rgba(0, 0, 0,.2);
+}
+
+.labkey-app-bar li.labkey-tab-inactive a { /* map text color to Link color */
+    background: rgba(255, 255, 255, .5);
+	
+	/* For IE 7 and 8  */
+	filter: progid:DXImageTransform.Microsoft.gradient(GradientType=0, startColorstr=#7fffffff, endColorstr=#7fffffff);
+	-ms-filter: "progid:DXImageTransform.Microsoft.gradient(GradientType=0, startColorstr=#7fffffff, endColorstr=#7fffffff)";	
+	
+    border-bottom: 1px solid transparent;
+    color: #126495;
+    white-space: nowrap;
+}
+
 
 .labkey-app-bar td.button-bar {
 	padding: 0;
@@ -844,15 +902,8 @@ table.labkey-nav-trail
     float:right;
 }
 
-.labkey-app-bar li.labkey-tab-inactive a {
-    background-color: #e5e5e5;
-	opacity: 1.0;
-	color: #676767;
-	border-bottom: 1px solid #ccc;
-    white-space:nowrap;
-}
 
-.labkey-app-bar li.labkey-tab-active a {
+.labkey-app-bar li.labkey-tab-active a { /* map bottom border and background color to Primary background color */
     background-color: #f8f8f8;
     opacity: 1.0;
 	color: #000;
@@ -861,25 +912,8 @@ table.labkey-nav-trail
     white-space:nowrap;
 }
 
-.labkey-app-bar ul.labkey-tab-strip a {
-/*
-    border-color: 0 none !important;
-    border-style: 0 none !important;
-    border-width: 0 none !important;
-	border: none !important;
-*/
-    float: left;
-    line-height: 14px;
-    margin-right: 1px;
-    padding: 6px 12px;
-    text-decoration: none;
 
-	border-radius: 5px 5px 0 0;
-	-moz-border-radius: 5px 5px 0 0;
-	-webkit-border-radius: 5px 5px 0 0;
-}
-
-.labkey-app-bar ul.labkey-tab-strip a:hover {
+.labkey-app-bar ul.labkey-tab-strip a:hover { /* map bottom border and background color to Primary background color */
     background-color: #f8f8f8;
     opacity: 1.0;
 	color: #000;
@@ -888,8 +922,12 @@ table.labkey-nav-trail
 
 .labkey-app-bar .labkey-tab-selected a /*, .labkey-tab a, .labkey-tab-inactive a */ {
    	outline: 0 none;
-	color: #010101 !important;
+	color: #000 !important;
 }
+
+
+
+
 
 /* Used for text fields with auto completion */
 div.labkey-completion
@@ -1227,7 +1265,6 @@ th.labkey-col-header-filter:hover, td.labkey-col-header-filter:hover, tr.labkey-
 
 .labkey-data-region-header
 {
-    width: 100%;
     border-collapse: collapse;
 }
 
@@ -1486,6 +1523,10 @@ table.labkey-main
     padding: 0px;
 }
 
+
+
+
+
 /* Optional Top Menu */
 #topmenu
 {
@@ -1524,23 +1565,28 @@ td.labkey-main-title-area
 
 
 td.labkey-main-menu
-{
-    margin:4px;
-    padding:4px;
-    background-color: #E7EFF4;
-    border-bottom: 1px solid #126495;
+{ /* maps to main link and top border colors in the theme */
+    margin: 0;
+    padding: 0; /* reset */
+	padding-bottom: 4px;
+	padding-left: 12px;
+    background-color: #126495;
+    border: none;
     font-weight: normal;
 }
 
 td.labkey-main-menu a
 {
-    font-weight:bold;
-    padding-left:1em;
-    padding-right:1em;
+    font-weight: normal;
+    color: #fff;
+	padding: 0; /* reset */
+    padding-left: 0.9em !important;
+    padding-right: 0.9em !important;
+	padding-bottom: 4px;
     position:relative;
     z-index:1001;
     vertical-align:baseline;
-    border-bottom:1px solid transparent;
+    border-bottom: 0;
 }
 
 td.labkey-main-menu a.selected
@@ -1552,14 +1598,22 @@ td.labkey-main-menu a.selected
 
 .labkey-webpart-menu
 {
-    display:none;
-    position:absolute;
-    border:5px solid #dae1e6;
-    margin:3px;
+    display: none;
+    position: absolute;
+	top: 5;
+    border: 1px solid #aaa;
+    margin: 3px;
     background-color:#FFFFFF;
-    padding:8px;
-    z-index:1000
+    padding: 5px 15px;
+    z-index:1000;
+	
+	box-shadow: 0 2px 4px rgba(0,0,0,.3);
+	-moz-box-shadow: 0 2px 4px rgba(0,0,0,.3);
+	-webkit-box-shadow: 0 2px 4px rgba(0,0,0,.3);
 }
+
+
+
 
 
 /* The site title */
@@ -1580,6 +1634,10 @@ a.labkey-main-title
 .labkey-main-title:hover {
     text-decoration: underline;
 }
+
+
+
+
 
 
 
@@ -1744,9 +1802,16 @@ table.labkey-expandable-nav
     padding: 0;
 }
 
+.labkey-expandable-nav tr
+{
+    width: 100%;
+}
+
+/* expandable nav in dropdown custom menu */
+
 #menuBarFolder_menu .labkey-expandable-nav
 {
-    border: 1px solid #89A1B4;
+    border: none;
 }
 
 #menuBarFolder_menu .labkey-expandable-nav-body
@@ -1754,10 +1819,9 @@ table.labkey-expandable-nav
     padding-left: 4px;
 }
 
-
-.labkey-expandable-nav tr
-{
-    width: 100%;
+#menuBarFolder_menu table.labkey-expandable-nav {
+    background-color: #fff;
+	width: 180px;
 }
 
 
@@ -2409,6 +2473,13 @@ div.labkey-wiki h1
     color: #2020BE;
     font-family: "Bitstream Vera Sans Mono", "Courier New", monospace;
 }
+
+
+/* for wikis in custom menus */
+div.labkey-webpart-menu div.labkey-wiki p {
+    padding: 0 2px 2px;
+}
+
 
 /* R reports */
 table.labkey-r-tsvout
@@ -3508,3 +3579,4 @@ ul.x-tab-strip-top li {
     white-space: normal;
     word-wrap: normal;
 }
+
