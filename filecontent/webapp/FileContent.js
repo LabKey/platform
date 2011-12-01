@@ -925,6 +925,10 @@ LABKEY.FilesWebPartPanel = Ext.extend(LABKEY.FileBrowser, {
         if (!this.adminOptions.isCustomFileProperties())
             return;
 
+        // no file fields specified yet
+        if (this.adminOptions.fileFields.length == 0)
+            return;
+
         var fileDlg = new LABKEY.FilePropertiesPanel({fileFields: this.adminOptions.fileFields,
             files: options.files,
             containerPath: this.adminOptions.getFilePropContainerPath()});

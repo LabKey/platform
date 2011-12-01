@@ -31,6 +31,8 @@ import org.labkey.api.files.FilesAdminOptions;
 import org.labkey.api.files.MissingRootDirectoryException;
 import org.labkey.api.files.UnsetRootDirectoryException;
 import org.labkey.api.module.ModuleLoader;
+import org.labkey.api.pipeline.PipeRoot;
+import org.labkey.api.pipeline.PipelineService;
 import org.labkey.api.query.QueryUpdateService;
 import org.labkey.api.security.User;
 import org.labkey.api.settings.AppProps;
@@ -76,6 +78,24 @@ public class FileContentServiceImpl implements FileContentService, ContainerMana
 
     public @Nullable File getFileRoot(Container c, ContentType type)
     {
+        switch (type)
+        {
+            case files:
+                String folderName = getFolderName(type);
+                File dir = _getFileRoot(c);
+                return dir != null ? new File(dir, folderName) : dir;
+            
+            case pipeline:
+                PipeRoot root = PipelineService.get().findPipelineRoot(c);
+                if (root != null)
+                    return root.getRootPath();
+                break;
+        }
+        return null;
+    }
+
+    private @Nullable File _getFileRoot(Container c)
+    {
         File root = getProjectFileRoot(c);
         if (root != null)
         {
@@ -92,8 +112,7 @@ public class FileContentServiceImpl implements FileContentService, ContainerMana
                 dir = new File(root, extraPath);
             }
 
-            String folderName = getFolderName(type);
-            return folderName != null ? new File(dir, folderName) : dir;
+            return dir;
         }
         return null;
     }
@@ -351,7 +370,7 @@ public class FileContentServiceImpl implements FileContentService, ContainerMana
                 return null;
         }
 
-        File dir = getFileRoot(c, null);
+        File dir = _getFileRoot(c);
 
         if (!dir.exists() && create)
             dir.mkdirs();
@@ -448,11 +467,11 @@ public class FileContentServiceImpl implements FileContentService, ContainerMana
         // only attempt to move the root if this is a managed file system
         if (isUseDefaultRoot(c))
         {
-            File prevParent = getFileRoot(oldParent, null);
+            File prevParent = _getFileRoot(oldParent);
             if (prevParent != null)
             {
                 File src = new File(prevParent, c.getName());
-                File dst = getFileRoot(c, null);
+                File dst = _getFileRoot(c);
 
                 if (src.exists() && dst != null)
                     moveFileRoot(src, dst);
