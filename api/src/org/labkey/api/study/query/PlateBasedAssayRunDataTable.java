@@ -52,8 +52,50 @@ public abstract class PlateBasedAssayRunDataTable extends FilteredTable
         final AssayProvider provider = AssayService.get().getProvider(protocol);
         List<FieldKey> visibleColumns = new ArrayList<FieldKey>();
 
-        try
+        // add any property columns
+        addPropertyColumns(schema, protocol, provider, visibleColumns);
+
+        // TODO - we should have a more reliable (and speedier) way of identifying just the data rows here
+        SQLFragment dataRowClause = new SQLFragment("ObjectURI LIKE '%" + getDataRowLsidPrefix() + "%'");
+        addCondition(dataRowClause, "ObjectURI");
+
+        ExprColumn runColumn = new ExprColumn(this, "Run", new SQLFragment(ExprColumn.STR_TABLE_ALIAS + ".RunID"), JdbcType.INTEGER);
+        runColumn.setFk(new LookupForeignKey("RowID")
         {
+            public TableInfo getLookupTableInfo()
+            {
+                ExpRunTable expRunTable = AssayService.get().createRunTable(protocol, provider, schema.getUser(), schema.getContainer());
+                expRunTable.setContainerFilter(getContainerFilter());
+                return expRunTable;
+            }
+        });
+        addColumn(runColumn);
+
+        ExprColumn runIdColumn = new ExprColumn(this, RUN_ID_COLUMN_NAME, new SQLFragment(ExprColumn.STR_TABLE_ALIAS + ".RunID"), JdbcType.INTEGER);
+        ColumnInfo addedRunIdColumn = addColumn(runIdColumn);
+        addedRunIdColumn.setHidden(true);
+
+        Set<String> hiddenProperties = new HashSet<String>();
+        hiddenProperties.add(AbstractAssayProvider.PARTICIPANTID_PROPERTY_NAME);
+        hiddenProperties.add(AbstractAssayProvider.PARTICIPANT_VISIT_RESOLVER_PROPERTY_NAME);
+        Domain runDomain = provider.getRunDomain(protocol);
+        for (DomainProperty prop : runDomain.getProperties())
+        {
+            if (!hiddenProperties.contains(prop.getName()))
+                visibleColumns.add(FieldKey.fromParts("Run", prop.getName()));
+        }
+        Domain uploadSetDomain = provider.getBatchDomain(protocol);
+        for (DomainProperty prop : uploadSetDomain.getProperties())
+        {
+            if (!hiddenProperties.contains(prop.getName()))
+                visibleColumns.add(FieldKey.fromParts("Run", AssayService.BATCH_COLUMN_NAME, prop.getName()));
+        }
+        setDefaultVisibleColumns(visibleColumns);
+    }
+
+    protected void addPropertyColumns(final AssaySchema schema, final ExpProtocol protocol, final AssayProvider provider, List<FieldKey> visibleColumns)
+    {
+        try {
             // add material lookup columns to the view first, so they appear at the left:
             String sampleDomainURI = AbstractAssayProvider.getDomainURIForPrefix(protocol, AbstractPlateBasedAssayProvider.ASSAY_DOMAIN_SAMPLE_WELLGROUP);
             final ExpSampleSet sampleSet = ExperimentService.get().getSampleSet(sampleDomainURI);
@@ -132,43 +174,6 @@ public abstract class PlateBasedAssayRunDataTable extends FilteredTable
         {
             throw new RuntimeSQLException(e);
         }
-
-        // TODO - we should have a more reliable (and speedier) way of identifying just the data rows here
-        SQLFragment dataRowClause = new SQLFragment("ObjectURI LIKE '%" + getDataRowLsidPrefix() + "%'");
-        addCondition(dataRowClause, "ObjectURI");
-
-        ExprColumn runColumn = new ExprColumn(this, "Run", new SQLFragment(ExprColumn.STR_TABLE_ALIAS + ".RunID"), JdbcType.INTEGER);
-        runColumn.setFk(new LookupForeignKey("RowID")
-        {
-            public TableInfo getLookupTableInfo()
-            {
-                ExpRunTable expRunTable = AssayService.get().createRunTable(protocol, provider, schema.getUser(), schema.getContainer());
-                expRunTable.setContainerFilter(getContainerFilter());
-                return expRunTable;
-            }
-        });
-        addColumn(runColumn);
-
-        ExprColumn runIdColumn = new ExprColumn(this, RUN_ID_COLUMN_NAME, new SQLFragment(ExprColumn.STR_TABLE_ALIAS + ".RunID"), JdbcType.INTEGER);
-        ColumnInfo addedRunIdColumn = addColumn(runIdColumn);
-        addedRunIdColumn.setHidden(true);
-
-        Set<String> hiddenProperties = new HashSet<String>();
-        hiddenProperties.add(AbstractAssayProvider.PARTICIPANTID_PROPERTY_NAME);
-        hiddenProperties.add(AbstractAssayProvider.PARTICIPANT_VISIT_RESOLVER_PROPERTY_NAME);
-        Domain runDomain = provider.getRunDomain(protocol);
-        for (DomainProperty prop : runDomain.getProperties())
-        {
-            if (!hiddenProperties.contains(prop.getName()))
-                visibleColumns.add(FieldKey.fromParts("Run", prop.getName()));
-        }
-        Domain uploadSetDomain = provider.getBatchDomain(protocol);
-        for (DomainProperty prop : uploadSetDomain.getProperties())
-        {
-            if (!hiddenProperties.contains(prop.getName()))
-                visibleColumns.add(FieldKey.fromParts("Run", AssayService.BATCH_COLUMN_NAME, prop.getName()));
-        }
-        setDefaultVisibleColumns(visibleColumns);
     }
 
     protected Set<String> getHiddenColumns(ExpProtocol protocol)

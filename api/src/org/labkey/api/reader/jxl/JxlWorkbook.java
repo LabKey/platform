@@ -347,7 +347,7 @@ public class JxlWorkbook implements Workbook
     @Override
     public CreationHelper getCreationHelper()
     {
-        throw new UnsupportedOperationException("method not yet supported");
+        return new JxlCreationHelper();
     }
 
     @Override

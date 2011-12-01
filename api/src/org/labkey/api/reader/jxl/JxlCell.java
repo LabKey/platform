@@ -80,6 +80,11 @@ public class JxlCell implements Cell
         return _row;
     }
 
+    public jxl.Cell getRawCell()
+    {
+        return _cell;
+    }
+
     @Override
     public void setCellType(int cellType)
     {
