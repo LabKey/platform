@@ -85,7 +85,15 @@ LABKEY.study.ParticipantGroupPanel = Ext.extend(Ext.Panel, {
                 allowBlank: false,
                 selectOnFocus: true,
                 preventMark: true,
-                anchor: '100%'
+                anchor: '100%',
+                listeners: {
+                    scope:this,
+                    specialkey: function(f, e){
+                        if(e.getKey() == e.ENTER){
+                            this.saveCategory();
+                        }
+                    }
+                }
             },{
                 id: 'categoryIdentifiers',
                 xtype: 'textarea',
@@ -143,7 +151,7 @@ LABKEY.study.ParticipantGroupPanel = Ext.extend(Ext.Panel, {
             });
         }
 
-        console.info('category shared : ' + this.categoryShared);
+
         this.sharedfield = new Ext.form.Checkbox({
             fieldLabel     : 'Shared',
             labelSeparator : '',

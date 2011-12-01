@@ -85,6 +85,7 @@ LABKEY.study.CreateStudyWizard = Ext.extend(Ext.util.Observable, {
             name: 'sidebar',
             width: 175,
             border: false,
+            cls: 'extContainer',
             tpl: this.sideBarTemplate,
             data: {
                 steps: [{value: 'General Setup', currentStep: true}, {value: this.subject.nounPlural, currentStep: false}, {value: 'Datasets', currentStep: false}]
@@ -109,7 +110,6 @@ LABKEY.study.CreateStudyWizard = Ext.extend(Ext.util.Observable, {
             title: 'Create Ancillary Study',
             width: 875,
             height: 600,
-            cls: 'extContainer',
             autoScroll: true,
             closeAction:'close',
             border: false,
@@ -408,7 +408,7 @@ LABKEY.study.CreateStudyWizard = Ext.extend(Ext.util.Observable, {
         });
 
         this.existingGroupRadio = new Ext.form.Radio({
-            boxLabel:'Select from existing ' + this.subject.nounPlural.toLowerCase() + ' groups',
+            boxLabel:'Select from existing ' + this.subject.nounSingular.toLowerCase() + ' groups',
             name: 'renderType',
             inputValue: 'existing',
             checked: true,
@@ -491,7 +491,7 @@ LABKEY.study.CreateStudyWizard = Ext.extend(Ext.util.Observable, {
             plugins: expander,
             //hideHeaders: true,
             viewConfig: {forceFit: true, scrollOffset: 0},
-            cls: 'extContainer studyWizardParticipantList',
+            cls: 'studyWizardParticipantList',
             listeners: {
                 cellclick: function(cmp, rowIndex, colIndex, event){
                     // ignore the checkbox selection
@@ -512,7 +512,7 @@ LABKEY.study.CreateStudyWizard = Ext.extend(Ext.util.Observable, {
 
         this.participantGroupTemplate = new Ext.DomHelper.createTemplate(
                 '<span style="margin-left:10px;" class="labkey-link">{0}</span>&nbsp;<span class="labkey-disabled">' +
-                '<i>({1} ' + this.subject.nounPlural + ')</i></span>').compile();
+                '<i>({1} ' + this.subject.nounPlural.toLowerCase() + ')</i></span>').compile();
 
         items.push(grid);
 
@@ -563,7 +563,7 @@ LABKEY.study.CreateStudyWizard = Ext.extend(Ext.util.Observable, {
 
         var txt = Ext.DomHelper.markup({tag:'div', cls:'labkey-nav-page-header', html: 'Datasets'}) +
                 Ext.DomHelper.markup({tag:'div', html:'&nbsp;'}) +
-                Ext.DomHelper.markup({tag:'div', html:'Choose the datasets you would like to use from the parent study:'}) +
+                Ext.DomHelper.markup({tag:'div', html:'Choose the datasets you would like to use from the source study:'}) +
                 Ext.DomHelper.markup({tag:'div', html:'&nbsp;'});
 
         items.push({xtype:'displayfield', html: txt});
@@ -582,12 +582,17 @@ LABKEY.study.CreateStudyWizard = Ext.extend(Ext.util.Observable, {
             editable: false,
             stripeRows: true,
             pageSize: 300000,
-            cls: 'extContainer studyWizardDatasetList',
+            cls: 'studyWizardDatasetList',
             flex: 1,
-            bbar: [],
-            tbar: []
+            bbar: [{hidden:true}],
+            tbar: [{hidden:true}]
         });
         items.push(grid);
+        grid.on('render', function(cmp){
+            //This is to hide the background color of the bbar/tbar.
+            cmp.getTopToolbar().getEl().dom.style.background = 'transparent';
+            cmp.getBottomToolbar().getEl().dom.style.background = 'transparent';
+        });
         grid.on('columnmodelcustomize', this.customizeColumnModel, this);
         grid.selModel.on('selectionchange', function(cmp){this.info.datasets = cmp.getSelections();}, this);
 
@@ -598,11 +603,11 @@ LABKEY.study.CreateStudyWizard = Ext.extend(Ext.util.Observable, {
                 '</div>' +
                 '<div class=\'g-tip-subheader\'>' +
                     '<span>Automatic:</span>' +
-                    ' When data refreshes or changes in the parent study, the data will ' +
+                    ' When data refreshes or changes in the source study, the data will ' +
                     'automatically refresh in the ancillary study as well.' +
                 '</div>' +
                 '<div class=\'g-tip-subheader\'>' +
-                    '<span>Manual:</span> When data refreshes or changes in the parent study, ' +
+                    '<span>Manual:</span> When data refreshes or changes in the source study, ' +
                     'the ancillary data will <b>not</b> refresh until you specifically choose to refresh.' +
                 '</div>' +
             '</div>';
