@@ -282,7 +282,7 @@ public class CachedResultSet implements ResultSet, Table.TableResultSet
             return (Boolean) o;
         if (o instanceof Number)
             return ((Number) o).intValue() != 0;
-        throwConversionError();
+        throwConversionError("Can't convert '" + o.getClass() + "' to boolean");
         return false;
     }
 
@@ -302,7 +302,7 @@ public class CachedResultSet implements ResultSet, Table.TableResultSet
             return 0;
         if (o instanceof Byte)
             return (Byte) o;
-        throwConversionError();
+        throwConversionError("Can't convert '" + o.getClass() + "' to byte");
         return 0;
     }
 
@@ -322,7 +322,7 @@ public class CachedResultSet implements ResultSet, Table.TableResultSet
             return 0;
         if (o instanceof Short || o instanceof Byte)
             return ((Number) o).shortValue();
-        throwConversionError();
+        throwConversionError("Can't convert '" + o.getClass() + "' to short");
         return 0;
     }
 
@@ -342,7 +342,7 @@ public class CachedResultSet implements ResultSet, Table.TableResultSet
             return 0;
         if (o instanceof Integer || o instanceof Short || o instanceof Byte)
             return ((Number) o).intValue();
-        throwConversionError();
+        throwConversionError("Can't convert '" + o.getClass() + "' to int");
         return 0;
     }
 
@@ -362,7 +362,7 @@ public class CachedResultSet implements ResultSet, Table.TableResultSet
             return 0;
         if (o instanceof Long || o instanceof Short || o instanceof Byte)
             return ((Number) o).longValue();
-        throwConversionError();
+        throwConversionError("Can't convert '" + o.getClass() + "' to long");
         return 0;
     }
 
@@ -382,7 +382,7 @@ public class CachedResultSet implements ResultSet, Table.TableResultSet
             return 0;
         if (o instanceof Number)
             return ((Number) o).floatValue();
-        throwConversionError();
+        throwConversionError("Can't convert '" + o.getClass() + "' to float");
         return 0;
     }
 
@@ -405,7 +405,7 @@ public class CachedResultSet implements ResultSet, Table.TableResultSet
             double value = ((Number) o).doubleValue();
             return ResultSetUtil.mapDatabaseDoubleToJavaDouble(value);
         }
-        throwConversionError();
+        throwConversionError("Can't convert '" + o.getClass() + "' to double");
         return 0;
     }
 
@@ -432,7 +432,7 @@ public class CachedResultSet implements ResultSet, Table.TableResultSet
                 return d;
             return d.setScale(scale);
         }
-        throwConversionError();
+        throwConversionError("Can't convert '" + o.getClass() + "' to BigDecimal");
         return null;
     }
 
@@ -452,7 +452,7 @@ public class CachedResultSet implements ResultSet, Table.TableResultSet
             return null;
         if (o instanceof byte[])
             return (byte[]) o;
-        throwConversionError();
+        throwConversionError("Can't convert '" + o.getClass() + "' to byte[]");
         return null;
     }
 
@@ -474,7 +474,7 @@ public class CachedResultSet implements ResultSet, Table.TableResultSet
             return (java.sql.Date) o;
         if (o instanceof Timestamp)
             return new java.sql.Date(((Timestamp)o).getTime());
-        throwConversionError();
+        throwConversionError("Can't convert '" + o.getClass() + "' to java.sql.Date");
         return null;
     }
 
@@ -494,7 +494,7 @@ public class CachedResultSet implements ResultSet, Table.TableResultSet
             return null;
         if (o instanceof Time)
             return (Time) o;
-        throwConversionError();
+        throwConversionError("Can't convert '" + o.getClass() + "' to java.sql.Time");
         return null;
     }
 
@@ -518,7 +518,7 @@ public class CachedResultSet implements ResultSet, Table.TableResultSet
             return new Timestamp(((java.util.Date) o).getTime());
         if (o instanceof Long)
             return new Timestamp((Long) o);
-        throwConversionError();
+        throwConversionError("Can't convert '" + o.getClass() + "' to java.sql.Timestamp");
         return null;
     }
 
@@ -1154,9 +1154,9 @@ public class CachedResultSet implements ResultSet, Table.TableResultSet
     }
 
 
-    private static Object throwConversionError() throws SQLException
+    private static Object throwConversionError(String msg) throws SQLException
     {
-        throw new SQLException("Conversion error");
+        throw new SQLException(msg);
     }
 
 
