@@ -473,6 +473,7 @@ LABKEY.ext.FormHelper =
         {
             //added 'caption' for assay support
             fieldLabel: h(config.label) || h(config.caption) || h(config.header) || h(config.name),
+            name: config.name,
             originalConfig: config,
             allowBlank: !config.required,
             disabled: !config.editable
@@ -574,6 +575,7 @@ LABKEY.ext.FormHelper =
                     }
                     break;
                 default:
+                    field.xtype = 'textfield';
             }
 
         }
