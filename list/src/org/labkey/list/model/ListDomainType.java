@@ -84,10 +84,16 @@ public class ListDomainType extends AbstractDomainKind
         return ret;
     }
 
-    public static Lsid generateDomainURI(String name, Container c)
+    public static Lsid generateDomainURI(String name, Container c, String entityId)
     {
-        String typeURI = "urn:lsid:" + PageFlowUtil.encode(AppProps.getInstance().getDefaultLsidAuthority()) + ":" + ListDefinitionImpl.NAMESPACE_PREFIX + ".Folder-" + c.getRowId() + ":" + PageFlowUtil.encode(name);
+        //bug 13131.  now include entityId in lsid to ensure uniqueness
+        String typeURI = "urn:lsid:" + PageFlowUtil.encode(AppProps.getInstance().getDefaultLsidAuthority()) + ":" + ListDefinitionImpl.NAMESPACE_PREFIX + ".Folder-" + c.getRowId() + ":EntityId-" + PageFlowUtil.encode(entityId) + ":" + PageFlowUtil.encode(name);
         return new Lsid(typeURI);
+    }
+
+    public static Lsid generateDomainURI(String name, Container container)
+    {
+        return generateDomainURI(name, container, "");
     }
 
     public String generateDomainURI(String schemaName, String name, Container container, User user)

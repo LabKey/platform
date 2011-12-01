@@ -22,6 +22,7 @@ import org.labkey.api.audit.AuditLogService;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.collections.CaseInsensitiveHashSet;
 import org.labkey.api.data.*;
+import org.labkey.api.data.dialect.SqlDialect;
 import org.labkey.api.exp.*;
 import org.labkey.api.exp.api.ExperimentService;
 import org.labkey.api.exp.list.ListDefinition;
@@ -47,6 +48,8 @@ import java.io.File;
 import java.io.IOException;
 import java.sql.SQLException;
 import java.util.*;
+
+import static org.labkey.api.util.GUID.makeGUID;
 
 public class ListDefinitionImpl implements ListDefinition
 {
@@ -74,7 +77,9 @@ public class ListDefinitionImpl implements ListDefinition
         _def = new ListDef();
         _def.setContainer(container.getId());
         _def.setName(name);
-        Lsid lsid = ListDomainType.generateDomainURI(name, container);
+        String guid = makeGUID();
+        _def.setEntityId(guid);
+        Lsid lsid = ListDomainType.generateDomainURI(name, container, guid);
         _domain = PropertyService.get().createDomain(container, lsid.toString(), name);
     }
 
@@ -209,6 +214,12 @@ public class ListDefinitionImpl implements ListDefinition
             }
 
             ExperimentService.get().commitTransaction();
+        }
+        catch (SQLException e) //issue 12162
+        {
+            if(SqlDialect.isConstraintException(e))
+                throw Table.OptimisticConflictException.create(Table.ERROR_ROWVERSION);
+            throw e;
         }
         finally
         {
