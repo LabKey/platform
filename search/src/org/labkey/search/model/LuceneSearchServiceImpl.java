@@ -440,7 +440,7 @@ public class LuceneSearchServiceImpl extends AbstractSearchService
             // IndexOutOfBoundsException has a dumb message
             String rootMessage = (rootCause instanceof IndexOutOfBoundsException ? rootCause.getClass().getSimpleName() : rootCause.getMessage());
 
-            if (topMessage.startsWith("TIKA-237: Illegal SAXException"))
+            if (topMessage.startsWith("XML parse error") || topMessage.startsWith("TIKA-237: Illegal SAXException"))
             {
                 // Malformed XML document -- CONSIDER: run XML tidy on the document and retry
                 logAsWarning(r, "Malformed XML document");
