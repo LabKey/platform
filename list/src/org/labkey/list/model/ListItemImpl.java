@@ -29,9 +29,11 @@ import org.labkey.api.data.Container;
 import org.labkey.api.data.DataColumn;
 import org.labkey.api.data.PkFilter;
 import org.labkey.api.data.RenderContext;
+import org.labkey.api.data.RuntimeSQLException;
 import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.Table;
 import org.labkey.api.data.TableInfo;
+import org.labkey.api.data.dialect.SqlDialect;
 import org.labkey.api.exp.ChangePropertyDescriptorException;
 import org.labkey.api.exp.ObjectProperty;
 import org.labkey.api.exp.OntologyManager;
@@ -298,7 +300,16 @@ public class ListItemImpl implements ListItem
                         if (dp.getPropertyDescriptor().getPropertyType() == PropertyType.ATTACHMENT)
                             newAttachments.add(newProperty.getAttachmentFile());
 
-                        OntologyManager.insertProperties(obj.getContainer(), obj.getObjectURI(), insertProperty);
+                        try
+                        {
+                            OntologyManager.insertProperties(obj.getContainer(), obj.getObjectURI(), insertProperty);
+                        }
+                        catch (RuntimeSQLException e) //issue 12152
+                        {
+                            if(SqlDialect.isConstraintException(e.getSQLException()))
+                                throw Table.OptimisticConflictException.create(Table.ERROR_ROWVERSION);
+                            throw e;
+                        }
                     }
                 }
                 _oldProperties = null;

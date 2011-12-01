@@ -494,6 +494,10 @@ public class ListController extends SpringActionController
                     else
                         errors.reject(ERROR_MSG, "Error: A record with that key already exists.");
                 }
+				else if (e instanceof Table.OptimisticConflictException)
+                {
+                    errors.reject(ERROR_MSG, "Error: The record was updated prior to your changes.  It is recommended that you refresh the page to ensure the values are accurate.");
+                }
             }
             finally
             {
