@@ -14,4 +14,4 @@
  * limitations under the License.
  */
 
-ALTER TABLE study.study RENAME COLUMN grant TO "Grant";
+ALTER TABLE study.study RENAME COLUMN studyGrant TO "Grant";
