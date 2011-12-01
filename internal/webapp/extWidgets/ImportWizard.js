@@ -147,7 +147,7 @@ Ext4.define('LABKEY.ext.ImportWizard', {
         target.add({
             xtype: 'labkey-combo',
             labelAlign: 'top',
-            displayField: 'title',
+            displayField: 'Title',
             valueField: 'RowId',
             itemId: 'workbookName',
             fieldLabel: 'Choose Workbook',
@@ -156,7 +156,7 @@ Ext4.define('LABKEY.ext.ImportWizard', {
             store: Ext4.create('LABKEY.ext4.Store', {
                 schemaName: 'core',
                 queryName: 'workbooks',
-                columns: 'RowId,title,CreatedBy,Name',
+                columns: 'RowId,Title,CreatedBy,Name',
                 sort: 'rowid',
                 autoLoad: true
             })
