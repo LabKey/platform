@@ -66,6 +66,7 @@ public class ChartPreviewPanel extends AbstractChartPanel
     public Widget createWidget()
     {
         _panel = new VerticalPanel();
+        _panel.setStyleName("chart-preview");
 
         ImageButton plotButton = new ImageButton("Refresh Chart");
         plotButton.addClickHandler(new ClickHandler()
