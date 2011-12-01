@@ -2623,6 +2623,10 @@ table.labkey-r-tsvout
     padding: 4px 0px;
 }
 
+/* Create Chart View */
+table.chart-preview td {
+    padding: 5px 0;
+}
 
 /*
     Applying a width triggers "haslayout" in IE so that the module's
