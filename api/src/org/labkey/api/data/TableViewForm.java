@@ -523,8 +523,7 @@ public class TableViewForm extends ViewForm implements DynaBean, HasBindParamete
                 // Only set the parameter value if there was a form element that was posted
                 if (f != null)
                 {
-                    // Translate an empty file to null so that everyone else doesn't have to check
-                    values.put(column.getName(), f.isEmpty() ? null : f);
+                    values.put(column.getName(), f.getOriginalFilename() == null || f.getOriginalFilename().isEmpty() ? null : f);
                 }
             }
 
