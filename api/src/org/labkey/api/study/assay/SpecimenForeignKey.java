@@ -176,13 +176,12 @@ public class SpecimenForeignKey extends LookupForeignKey
             return foreignKey;
         }
         TableInfo table = getLookupTableInfo();
-        
+        if (null == table)
+            return null;
         ColumnInfo lookupKey = getPkColumn(table);
         ColumnInfo lookupColumn = table.getColumn(displayField);
-        if (lookupColumn == null)
-        {
+        if (null == lookupColumn)
             return null;
-        }
 
         SpecimenLookupColumn ret = new SpecimenLookupColumn(foreignKey, lookupKey, lookupColumn);
         ret.copyAttributesFrom(lookupColumn);
