@@ -16,6 +16,7 @@
 
 package org.labkey.api.data;
 
+import org.apache.commons.beanutils.ConversionException;
 import org.apache.log4j.Logger;
 import org.labkey.api.action.ApiJsonWriter;
 import org.labkey.api.action.ApiQueryResponse;
@@ -692,7 +693,7 @@ public class DataRegion extends AbstractDataRegion
         try
         {
             StringBuilder headerMessage = new StringBuilder();
-            SQLException sqlx = null;
+            boolean errorCreatingResults = false;
 
             boolean showParameterForm = false;
             try
@@ -709,12 +710,17 @@ public class DataRegion extends AbstractDataRegion
             }
             catch (SQLException x)
             {
-                sqlx = x;
+                errorCreatingResults = true;
                 headerMessage.append("<span class=error>").append(PageFlowUtil.filter(x.getMessage())).append("</span><br>");
             }
             catch (RuntimeSQLException x)
             {
-                sqlx = x.getSQLException();
+                errorCreatingResults = true;
+                headerMessage.append("<span class=error>").append(PageFlowUtil.filter(x.getMessage())).append("</span><br>");
+            }
+            catch (ConversionException x)
+            {
+                errorCreatingResults = true;
                 headerMessage.append("<span class=error>").append(PageFlowUtil.filter(x.getMessage())).append("</span><br>");
             }
 
@@ -725,7 +731,7 @@ public class DataRegion extends AbstractDataRegion
             }
             else
             {
-                _renderTable(ctx, out, rs, headerMessage, sqlx);
+                _renderTable(ctx, out, rs, headerMessage, errorCreatingResults);
             }
         }
         finally
@@ -755,7 +761,7 @@ public class DataRegion extends AbstractDataRegion
         }
     }
 
-    private void _renderTable(RenderContext ctx, Writer out, ResultSet rs, StringBuilder headerMessage, SQLException sqlx) throws IOException, SQLException
+    private void _renderTable(RenderContext ctx, Writer out, ResultSet rs, StringBuilder headerMessage, boolean errorCreatingResults) throws IOException, SQLException
     {
         boolean renderButtons = _gridButtonBar.shouldRender(ctx);
         if (renderButtons && _buttonBarConfigs != null && !_buttonBarConfigs.isEmpty())
@@ -798,18 +804,22 @@ public class DataRegion extends AbstractDataRegion
                 _totalRows = getOffset() + _rowCount.intValue();
         }
 
-        if (sqlx != null)
-        {
-            _showPagination = false;
-            _allowHeaderLock = false;
-        }
-
         StringBuilder viewMsg = new StringBuilder();
         StringBuilder filterMsg = new StringBuilder();
 
         Map<String, String> messages = new LinkedHashMap<String, String>();
 
-        addFilterMessage(filterMsg, ctx, isShowFilterDescription());
+        if (errorCreatingResults)
+        {
+            _showPagination = false;
+            _allowHeaderLock = false;
+        }
+        else
+        {
+            //issue 13538: do not try to display filters if error, since this could result in a ConversionException
+            addFilterMessage(filterMsg, ctx, isShowFilterDescription());
+        }
+
         // don't generate a view message if this is the default view and the filter is empty
         if (!isDefaultView(ctx) || filterMsg.length() > 0)
             addViewMessage(viewMsg, ctx);
@@ -836,7 +846,7 @@ public class DataRegion extends AbstractDataRegion
 
         renderHeader(ctx, out, renderButtons, colCount);
 
-        if (null == sqlx)
+        if (false == errorCreatingResults)
         {
             renderGridHeaderColumns(ctx, out, showRecordSelectors, renderers);
 

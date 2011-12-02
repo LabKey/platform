@@ -17,6 +17,7 @@
 package org.labkey.api.data;
 
 import junit.framework.Assert;
+import org.apache.commons.beanutils.ConversionException;
 import org.apache.commons.beanutils.ConvertUtils;
 import org.apache.commons.lang.StringUtils;
 import org.jetbrains.annotations.Nullable;
@@ -548,9 +549,16 @@ public class SimpleFilter implements Filter
                 if (null == type)
                     continue;
 
-                FilterClause fc = type.createFilterClause(columnName, param);
-                fc.setUrlClause(true);
-                _clauses.add(fc);
+                try
+                {
+                    FilterClause fc = type.createFilterClause(columnName, param);
+                    fc.setUrlClause(true);
+                    _clauses.add(fc);
+                }
+                catch (ConversionException e)
+                {
+                    throw new ConversionException("Could not convert \"" + param + "\" for column \"" + columnName + "");
+                }
             }
         }
     }
