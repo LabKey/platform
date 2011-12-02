@@ -91,13 +91,8 @@ public class AssayHeaderView extends JspView<AssayHeaderView>
 
             if (allowDelete(_protocol))
             {
-                ActionURL deleteURL = PageFlowUtil.urlProvider(AssayUrls.class).getDeleteDesignURL(_protocol.getContainer(), _protocol);
-                String extraWarning = "";
-                if (!_protocol.getContainer().equals(getViewContext().getContainer()))
-                {
-                    extraWarning = " It is defined in " + _protocol.getContainer().getPath() + " and deleting it will remove it from all subfolders.";
-                }
-                manageMenu.addChild("delete assay design", "javascript: if (window.confirm('Are you sure you want to delete this assay and all of its runs?" + extraWarning + "')) { window.location = '" + deleteURL + "' }");
+                String onClickDelete = getDeleteOnClick(_protocol, getViewContext().getContainer());
+                manageMenu.addChild("delete assay design", "javascript: " + onClickDelete);
             }
 
             ActionURL exportURL = PageFlowUtil.urlProvider(ExperimentUrls.class).getExportProtocolURL(_protocol.getContainer(), _protocol);
@@ -146,6 +141,17 @@ public class AssayHeaderView extends JspView<AssayHeaderView>
                 links.add(new NavTree(AbstractAssayProvider.IMPORT_DATA_LINK_NAME, _provider.getImportURL(getViewContext().getContainer(), _protocol)));
         }
         return links;
+    }
+
+    public static String getDeleteOnClick(ExpProtocol protocol, Container currentContainer)
+    {
+        ActionURL deleteURL = PageFlowUtil.urlProvider(AssayUrls.class).getDeleteDesignURL(protocol);
+        String extraWarning = "";
+        if (!protocol.getContainer().equals(currentContainer))
+        {
+            extraWarning = " It is defined in " + protocol.getContainer().getPath() + " and deleting it will remove it from all subfolders.";
+        }
+        return "if (window.confirm('Are you sure you want to delete this assay design and all of its runs?" + extraWarning + "')) { window.location = '" + deleteURL + "' }";
     }
 
     public ExpProtocol getProtocol()

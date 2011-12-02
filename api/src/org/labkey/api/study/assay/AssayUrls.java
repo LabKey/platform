@@ -54,7 +54,7 @@ public interface AssayUrls extends UrlProvider
 
     ActionURL getChooseCopyDestinationURL(ExpProtocol protocol, Container container);
 
-    ActionURL getDeleteDesignURL(Container container, ExpProtocol protocol);
+    ActionURL getDeleteDesignURL(ExpProtocol protocol);
 
     /**
      * Returns the URL for the assay import data wizard for an existing assay definition.

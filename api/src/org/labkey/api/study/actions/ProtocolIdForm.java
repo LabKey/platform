@@ -120,7 +120,9 @@ public class ProtocolIdForm extends ViewForm
             AssayProvider provider = AssayService.get().getProvider(protocol);
             if (provider == null)
             {
-                throw new NotFoundException("Could not find assay provider for assay id " + protocol.getRowId());
+                // Throw a special subclass so callers who are interested in knowing when the design exists but the
+                // provider doesn't can catch it.
+                throw new ProviderNotFoundException("Could not find AssayProvider for assay design '" + protocol.getName() + "' (id " + protocol.getRowId() + ")", protocol);
             }
             
             _provider = provider;
@@ -144,6 +146,23 @@ public class ProtocolIdForm extends ViewForm
             getProtocol();
         }
         return _provider;
+    }
+
+    /** Special subclass that indicates the assay design was found but the provider has disappeared */
+    public static class ProviderNotFoundException extends NotFoundException
+    {
+        private final ExpProtocol _protocol;
+
+        public ProviderNotFoundException(String string, @NotNull ExpProtocol protocol)
+        {
+            super(string);
+            _protocol = protocol;
+        }
+
+        public @NotNull ExpProtocol getProtocol()
+        {
+            return _protocol;
+        }
     }
 }
 

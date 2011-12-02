@@ -40,7 +40,16 @@ public class DeleteAction extends BaseAssayAction<ProtocolIdForm>
 {
     public ModelAndView getView(ProtocolIdForm protocolIdForm, BindException errors) throws Exception
     {
-        ExpProtocol protocol = protocolIdForm.getProtocol();
+        ExpProtocol protocol;
+        try
+        {
+            protocol = protocolIdForm.getProtocol();
+        }
+        catch (ProtocolIdForm.ProviderNotFoundException e)
+        {
+            // We're OK attempting to delete even though the AssayProvider can't be found  
+            protocol = e.getProtocol();
+        }
         
         if(!allowDelete(protocol))
             throw new UnauthorizedException("You do not have sufficient permissions to delete this assay design.");
@@ -54,7 +63,7 @@ public class DeleteAction extends BaseAssayAction<ProtocolIdForm>
         ViewContext ctx = getViewContext();
         User user = ctx.getUser();
 
-        //user must have both design assay AND delete permission, as this will delete both the design and updloaded data
+        //user must have both design assay AND delete permission, as this will delete both the design and uploaded data
         return protocol.getContainer().getPolicy().hasPermissions(user, DesignAssayPermission.class, DeletePermission.class);
     }
 }
