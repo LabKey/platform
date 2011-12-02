@@ -1427,6 +1427,22 @@ LABKEY.Security = new function()
                     'Content-Type' : 'application/json'
                 }
             });
+        },
+
+        /**
+         * Returns the name of the home container, which is automatically created when your server is set up.  It is usually 'home'
+         * @returns {string} The name of the home container automatically created on this server.
+         */
+        getHomeContainer: function(){
+            return LABKEY.homeContainer;
+        },
+
+        /**
+         * Returns the name of the shared container, which is automatically created when your server is setup. It is usually 'Shared'
+         * @returns {string} The name of the shared container automatically created on this server.
+         */
+        getSharedContainer: function(){
+            return LABKEY.sharedContainer;
         }
 
     };

@@ -2040,6 +2040,8 @@ public class PageFlowUtil
         json.put("imagePath", contextPath + "/_images");
         json.put("extJsRoot", extJsRoot);
         json.put("devMode", props.isDevMode());
+        json.put("homeContainer", ContainerManager.getHomeContainer().getName());
+        json.put("sharedContainer", ContainerManager.getSharedContainer().getName());
         json.put("hash", getServerSessionHash());
 
         //TODO: these should be passed in by callers
@@ -2073,6 +2075,7 @@ public class PageFlowUtil
             containerProps.put("id", container.getId());
             containerProps.put("path", container.getPath());
             containerProps.put("name", container.getName());
+            containerProps.put("isWorkbook", container.isWorkbook());
             json.put("container", containerProps);
             json.put("demoMode", DemoMode.isDemoMode(container, user));
         }
