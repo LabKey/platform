@@ -74,8 +74,9 @@ public class DbLoginAuthenticationProvider implements LoginFormAuthenticationPro
     {
         ValidEmail email = new ValidEmail(id);
         String hash = SecurityManager.getPasswordHash(email);
+        User user = UserManager.getUser(email);
 
-        if (null == hash)
+        if (null == hash || null == user)
             return AuthenticationResponse.createFailureResponse(FailureReason.userDoesNotExist);
 
         if (!SecurityManager.matchPassword(password,hash))
@@ -84,8 +85,6 @@ public class DbLoginAuthenticationProvider implements LoginFormAuthenticationPro
         // Password is correct for this user.  Now check password rules and expiration.
 
         PasswordRule rule = DbLoginManager.getPasswordRule();
-        User user = UserManager.getUser(email);
-        assert null != user;
         Collection<String> messages = new LinkedList<String>();
 
         if (!rule.isValidForLogin(password, user, messages))
