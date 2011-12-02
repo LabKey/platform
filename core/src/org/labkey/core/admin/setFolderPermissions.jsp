@@ -124,7 +124,7 @@
                         name: 'permissionType',
                         inputValue: 'CopyExistingProject',
                         autoEl: {
-                            'data-qtip': 'If selected, the permissions for all users and groups from the selected project will be applied to this project.  If this project has project groups, copies of those groups will be made in the new project.'
+                            'data-qtip': 'If selected, the permissions for all users and groups from the selected project will be applied to this project.  If this project has project groups, copies of all groups will be made in the new project.'
                         }
                     },{
                         xtype: 'panel',

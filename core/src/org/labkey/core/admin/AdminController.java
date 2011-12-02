@@ -3992,6 +3992,10 @@ public class AdminController extends SpringActionController
                 }
                 Container source = ContainerManager.getForId(targetProject);
                 assert source != null;
+
+                HashMap<Group, Group> groupMap = GroupManager.copyGroupsToContainer(source, c);
+
+                //copy role assignments
                 SecurityPolicy op = SecurityManager.getPolicy(source);
                 MutableSecurityPolicy np = new MutableSecurityPolicy(c);
                 for (RoleAssignment assignment : op.getAssignments()){
@@ -4005,8 +4009,7 @@ public class AdminController extends SpringActionController
                             np.addRoleAssignment(p, r);
                         }
                         else {
-                            Group newGroup = GroupManager.copyGroupToContainer(g, c);
-                            np.addRoleAssignment(newGroup, r);
+                            np.addRoleAssignment(groupMap.get(p), r);
                         }
                     }
                     else {
