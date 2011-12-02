@@ -19,6 +19,7 @@ import org.labkey.api.data.*;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.QueryService;
 
+import java.io.File;
 import java.util.Set;
 import java.util.Collections;
 
@@ -50,7 +51,12 @@ public class AttachmentDisplayColumn extends AbstractFileDisplayColumn
     @Override
     protected String getFileName(Object value)
     {
-        return (String)value;
+        if(value instanceof File)
+            return ((File) value).getName();
+        else if (value instanceof String)
+            return (String)value;
+        else
+            return null;
     }
 
     public void addQueryColumns(Set<ColumnInfo> columns)

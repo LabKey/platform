@@ -499,6 +499,17 @@ public class ListController extends SpringActionController
                     errors.reject(ERROR_MSG, "Error: The record was updated prior to your changes.  It is recommended that you refresh the page to ensure the values are accurate.");
                 }
             }
+            catch (IOException e)
+            {
+                if (e instanceof AttachmentService.FileTooLargeException)
+                {
+                    errors.reject(ERROR_MSG, e.getMessage());
+                }
+                else
+                {
+                    throw e;
+                }
+            }
             finally
             {
                 ExperimentService.get().closeTransaction();
