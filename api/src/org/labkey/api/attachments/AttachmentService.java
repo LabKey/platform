@@ -38,6 +38,7 @@ import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.sql.SQLException;
+import java.text.NumberFormat;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Date;
@@ -124,6 +125,38 @@ public class AttachmentService
         private void addError(String filename)
         {
             _errors.add("New file " + filename + " was not attached; A duplicate file was detected.");
+        }
+
+        public List<String> getErrors()
+        {
+            return _errors;
+        }
+
+        @Override
+        public String getMessage()
+        {
+            return StringUtils.join(_errors, " ");
+        }
+    }
+
+    public static class FileTooLargeException extends IOException
+    {
+        private List<String> _errors = new ArrayList<String>();
+
+        public FileTooLargeException(Collection<String> filenames, int maxSize)
+        {
+            for (String filename : filenames)
+                addError(filename, maxSize);
+        }
+
+        public FileTooLargeException(String filename, int maxSize)
+        {
+            addError(filename, maxSize);
+        }
+
+        private void addError(String filename, int maxSize)
+        {
+            _errors.add("File " + filename + " is larger than the maximum allowed size, " + NumberFormat.getIntegerInstance().format(maxSize) + " bytes");
         }
 
         public List<String> getErrors()
