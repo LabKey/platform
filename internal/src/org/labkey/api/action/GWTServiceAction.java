@@ -40,7 +40,16 @@ public abstract class GWTServiceAction extends BaseViewAction<Object>
     protected ModelAndView handleRequestInternal(HttpServletRequest httpServletRequest, HttpServletResponse httpServletResponse) throws Exception
     {
         BaseRemoteService service = createService();
-        service.doPost(getViewContext().getRequest(), getViewContext().getResponse());
+        if (!"POST".equalsIgnoreCase(httpServletRequest.getMethod()))
+        {
+            // GWT service requests must be POSTs
+            httpServletResponse.setStatus(HttpServletResponse.SC_METHOD_NOT_ALLOWED);
+            httpServletResponse.setHeader("Allow", "POST");
+        }
+        else
+        {
+            service.doPost(getViewContext().getRequest(), getViewContext().getResponse());
+        }
         return null;
     }
 

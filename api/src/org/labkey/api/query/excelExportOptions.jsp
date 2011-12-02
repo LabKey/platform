@@ -35,7 +35,11 @@
 <table class="labkey-export-tab-contents">
     <tr>
         <td valign="center"><input type="radio" id="<%=guid%>" name="excelExportType" value="<%=h(model.getXlsURL()) %>" checked="true" /></td>
-        <td valign="center"><label for="<%=guid%>">Standard Excel File (.xls)</label><span style="padding-left: 4em; font-size: smaller">Note: The Excel export format is limited to 65,536 rows and 256 columns of data.</span></td>
+        <td valign="center"><label for="<%=guid%>">Standard Excel File (.xls)</label></td>
+    </tr>
+    <tr>
+        <td></td>
+        <td><span style="font-size: smaller">Maximum 65,536 rows and 256 columns.</span></td>
     </tr>
     <% if (model.getIqyURL() != null) { %>
         <tr>

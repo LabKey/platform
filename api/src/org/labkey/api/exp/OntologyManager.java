@@ -1903,7 +1903,7 @@ public class OntologyManager
                                                                     proj.getId(),
                                                                     _sharedContainer.getId()},
                                                                     DomainDescriptor.class);
-            if (null != ddArray && ddArray.length > 0)
+            if (ddArray.length > 0)
             {
                 dd = ddArray[0];
 
