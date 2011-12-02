@@ -1775,9 +1775,9 @@ public class ExperimentServiceImpl implements ExperimentService.Interface
 
                 for (Material material : materials)
                 {
-                    if (!material.getContainer().equals(container))
+                    if (!material.getContainer().hasPermission(user, DeletePermission.class))
                     {
-                        throw new SQLException("Attemping to delete a Material from another container");
+                        throw new UnauthorizedException();
                     }
 
                     // Delete any runs using the material if the ProtocolImplementation allows deleting the run when an input is deleted.
@@ -2176,7 +2176,7 @@ public class ExperimentServiceImpl implements ExperimentService.Interface
 
             Table.execute(getExpSchema(), "DELETE FROM " + getTinfoActiveMaterialSource() + " WHERE MaterialSourceLSID = ?", source.getLSID());
 
-            Table.delete(getTinfoMaterialSource(), rowId);
+            Table.execute(getExpSchema(), "DELETE FROM " + getTinfoMaterialSource() + " WHERE RowId = ?", rowId);
 
             getExpSchema().getScope().commitTransaction();
         }

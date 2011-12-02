@@ -353,6 +353,10 @@ public class MetadataServiceImpl extends DomainEditorServiceBase implements Meta
                 rawColumnInfo = new ColumnInfo((String)null);
                 // Establish the type of the column
                 ColumnInfo columnToBeWrapped = rawTableInfo.getColumn(gwtColumnInfo.getWrappedColumnName());
+                if (columnToBeWrapped == null)
+                {
+                    continue;
+                }
                 rawColumnInfo.setJdbcType(columnToBeWrapped.getJdbcType());
             }
 
