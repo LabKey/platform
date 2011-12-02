@@ -827,9 +827,9 @@ public class AssayController extends SpringActionController
             return getProtocolURL(container, protocol, ChooseCopyDestinationAction.class);
         }
 
-        public ActionURL getDeleteDesignURL(Container container, ExpProtocol protocol)
+        public ActionURL getDeleteDesignURL(ExpProtocol protocol)
         {
-            return getProtocolURL(container, protocol, DeleteAction.class);
+            return getProtocolURL(protocol.getContainer(), protocol, DeleteAction.class);
         }
 
         public ActionURL getImportURL(Container container, ExpProtocol protocol, String path, File[] files)

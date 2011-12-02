@@ -21,6 +21,7 @@ import org.labkey.api.action.HasPageConfig;
 import org.labkey.api.action.NavTrailAction;
 import org.labkey.api.action.SpringActionController;
 import org.labkey.api.data.Container;
+import org.labkey.api.module.FolderType;
 import org.labkey.api.security.User;
 import org.labkey.api.study.DataSet;
 import org.labkey.api.study.Study;
@@ -34,6 +35,7 @@ import org.labkey.api.view.RedirectException;
 import org.labkey.api.view.ViewContext;
 import org.labkey.api.view.template.HomeTemplate;
 import org.labkey.api.view.template.PageConfig;
+import org.labkey.study.AssayFolderType;
 import org.labkey.study.CohortFilter;
 import org.labkey.study.StudyModule;
 import org.labkey.study.controllers.samples.SpecimenUtils;
@@ -240,9 +242,11 @@ public abstract class BaseStudyController extends SpringActionController
     {
         Study study = getStudy(false, container);
         ActionURL rootURL;
-        if (container.getFolderType().getDefaultModule() instanceof StudyModule)
+        FolderType folderType = container.getFolderType();
+        // AssayFolderType is defined in the study module, but it's not really a folder of type study
+        if (folderType.getDefaultModule() instanceof StudyModule && !(folderType instanceof AssayFolderType))
         {
-            rootURL = container.getFolderType().getStartURL(container, user);
+            rootURL = folderType.getStartURL(container, user);
         }
         else
         {

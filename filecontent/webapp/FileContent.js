@@ -720,7 +720,7 @@ LABKEY.FilesWebPartPanel = Ext.extend(LABKEY.FileBrowser, {
         var actionMap = [],
         actions = [],
         items   = [],
-        checked = true,
+        alreadyChecked = false, // Whether we've already found an enabled action to make the default selection
         hasAdmin = false, pa, links;
 
         // make sure we have processed the current selection
@@ -756,7 +756,7 @@ LABKEY.FilesWebPartPanel = Ext.extend(LABKEY.FileBrowser, {
                     actionMap[action.id] = action;
                     radioGroup.items.push({
                         xtype: 'radio',
-                        checked: checked,
+                        checked: action.enabled && !alreadyChecked,
                         disabled: !action.enabled,
                         labelSeparator: '',
                         boxLabel: label,
@@ -764,7 +764,10 @@ LABKEY.FilesWebPartPanel = Ext.extend(LABKEY.FileBrowser, {
                         inputValue: action.id
                         //width: 250
                     });
-                    checked = false;
+                    if (action.enabled)
+                    {
+                        alreadyChecked = true;
+                    }
                 }
             }
             if (!pa.getEnabled())

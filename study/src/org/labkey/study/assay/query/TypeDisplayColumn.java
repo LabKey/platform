@@ -19,9 +19,14 @@ package org.labkey.study.assay.query;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.DataColumn;
 import org.labkey.api.data.RenderContext;
+import org.labkey.api.exp.api.ExpProtocol;
 import org.labkey.api.exp.api.ExperimentService;
+import org.labkey.api.security.permissions.DeletePermission;
+import org.labkey.api.study.actions.AssayHeaderView;
 import org.labkey.api.study.assay.AssayProvider;
 import org.labkey.api.study.assay.AssayService;
+import org.labkey.api.study.assay.AssayUrls;
+import org.labkey.api.study.permissions.DesignAssayPermission;
 import org.labkey.api.util.PageFlowUtil;
 
 import java.io.IOException;
@@ -55,17 +60,28 @@ public class TypeDisplayColumn extends DataColumn
 
     public void renderDetailsCellContents(RenderContext ctx, Writer out) throws IOException
     {
-        String lsid = (String)ctx.getRow().get(getColumnInfo().getAlias());
+        String lsid = (String)getColumnInfo().getValue(ctx);
         if (lsid != null)
         {
-            AssayProvider provider = AssayService.get().getProvider(ExperimentService.get().getExpProtocol(lsid));
+            ExpProtocol protocol = ExperimentService.get().getExpProtocol(lsid);
+            AssayProvider provider = AssayService.get().getProvider(protocol);
             if (provider != null)
             {
                 out.write(PageFlowUtil.filter(provider.getName()));
                 return;
             }
+            else if (protocol != null)
+            {
+                // We won't be showing our normal UI that lets an admin delete the design, so let the do it directly
+                // from here
+                if (protocol.getContainer().getPolicy().hasPermissions(ctx.getViewContext().getUser(), DesignAssayPermission.class, DeletePermission.class))
+                {
+                    out.write(PageFlowUtil.textLink("Delete Assay Design", "javascript: " + AssayHeaderView.getDeleteOnClick(protocol, ctx.getViewContext().getContainer())));
+                }
+                return;
+            }
         }
 
-        out.write(PageFlowUtil.filter("<Unknown>"));
+        out.write(PageFlowUtil.filter("<AssayProvider Not Found>"));
     }
 }

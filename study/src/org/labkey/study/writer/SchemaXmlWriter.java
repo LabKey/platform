@@ -20,6 +20,7 @@ import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.TableInfoWriter;
 import org.labkey.api.exp.PropertyDescriptor;
 import org.labkey.api.exp.property.SystemProperty;
+import org.labkey.api.exp.query.ExpRunTable;
 import org.labkey.api.study.DataSet;
 import org.labkey.api.study.StudyContext;
 import org.labkey.api.study.assay.SpecimenForeignKey;
@@ -117,8 +118,27 @@ public class SchemaXmlWriter implements Writer<List<DataSetDefinition>, StudyCon
 
             if (column.getFk() instanceof SpecimenForeignKey)
             {
+                // SpecimenForeignKey is a special FK implementation that won't be wired up correctly at import time, so
+                // exclude it from the export
                 columnXml.unsetFk();
             }
+            else if (column.getFk() != null)
+            {
+                if (column.getFk().getLookupTableInfo() instanceof ExpRunTable)
+                {
+                    // We're not exporting assay runs, so it's useless to have a lookup that's looking for them
+                    // after the dataset has been imported
+                    columnXml.unsetFk();
+                }
+            }
+
+            if (column.getName() != null && column.getName().contains(".") && columnXml.isSetNullable() && !columnXml.getNullable())
+            {
+                // Assay datasets contain columns that are flattened from lookups. The lookup target may not allow
+                // nulls in its own table, but if the parent column is nullable, the joined result might be null.
+                columnXml.unsetNullable();
+            }
+            
             if (column.getURL() != null && column.getURL().getSource().startsWith("/assay/assayDetailRedirect.view?"))
             {
                 // We don't include assay runs in study exports, so the link target won't be available in the target system
