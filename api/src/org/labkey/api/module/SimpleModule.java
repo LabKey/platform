@@ -26,6 +26,7 @@ import org.labkey.api.exp.property.Domain;
 import org.labkey.api.query.*;
 import org.labkey.api.resource.Resource;
 import org.labkey.api.security.User;
+import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.WebPartFactory;
 import org.labkey.data.xml.TablesDocument;
@@ -145,6 +146,19 @@ public class SimpleModule extends SpringModule implements ContainerManager.Conta
             }
         }
         return _schemaNames;
+    }
+
+    @Override
+    @NotNull
+    public Set<DbSchema> getSchemasToTest()
+    {
+        Set<DbSchema> result = PageFlowUtil.set();
+        for (String name : getSchemaNames())
+        {
+            DbSchema s = DbSchema.get(name);
+            result.add(s);
+        }
+        return result;
     }
 
     @Override
