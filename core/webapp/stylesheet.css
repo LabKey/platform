@@ -1265,6 +1265,7 @@ th.labkey-col-header-filter:hover, td.labkey-col-header-filter:hover, tr.labkey-
 
 .labkey-data-region-header
 {
+    width: 100%;
     border-collapse: collapse;
 }
 
