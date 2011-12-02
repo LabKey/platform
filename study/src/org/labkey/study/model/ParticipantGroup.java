@@ -77,6 +77,16 @@ public class ParticipantGroup extends Entity
         _categoryId = categoryId;
     }
 
+    public Set<String> getParticipantSet()
+    {
+        return new LinkedHashSet<String>(_participantIds);
+    }
+
+    public void setParticipantSet(Set<String> participantSet)
+    {
+        _participantIds = new LinkedHashSet<String>(participantSet);
+    }
+
     public String[] getParticipantIds()
     {
         return _participantIds.toArray(new String[_participantIds.size()]);
@@ -134,6 +144,7 @@ public class ParticipantGroup extends Entity
 
         _participantIds.add(participantId);
     }
+
 
     public String getCategoryLabel()
     {

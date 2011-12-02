@@ -52,6 +52,7 @@ import org.labkey.study.controllers.StudyController;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
@@ -423,6 +424,141 @@ public class ParticipantGroupManager
             scope.closeConnection();
         }
     }
+
+    public ParticipantCategory addCategoryParticipants(Container c, User user, ParticipantCategory def, String[] participants) throws ValidationException
+    {
+        return modifyParticipantCategory(c, user, def, participants, Modification.ADD);
+    }
+
+    public ParticipantCategory removeCategoryParticipants(Container c, User user, ParticipantCategory def, String[] participants) throws ValidationException
+    {
+        return modifyParticipantCategory(c, user, def, participants, Modification.REMOVE);
+    }
+
+    private enum Modification {ADD, REMOVE}
+    private ParticipantCategory modifyParticipantCategory(Container c, User user, ParticipantCategory def, String[] participants, Modification modification) throws ValidationException
+    {
+        if (!def.canEdit(c, user))
+            throw new ValidationException("You don't have permission to edit this participant category");
+
+        DbScope scope = StudySchema.getInstance().getSchema().getScope();
+
+        try {
+            scope.ensureTransaction();
+            ParticipantCategory ret;
+            List<Throwable> errors;
+
+            ParticipantGroup[] groups = getParticipantGroups(c, user, def);
+            if (groups.length != 1)
+                throw new RuntimeException("Expected one group in category " + def.getLabel());
+            ParticipantGroup group = groups[0];
+
+            switch (ParticipantCategory.Type.valueOf(def.getType()))
+            {
+                case list:
+                    if (modification == Modification.REMOVE)
+                        removeGroupParticipants(c, user, group, participants);
+                    else
+                        addGroupParticipants(c, user, group, participants);
+                    break;
+                case query:
+                    throw new UnsupportedOperationException("Participant category type: query not yet supported");
+                case cohort:
+                    throw new UnsupportedOperationException("Participant category type: cohort not yet supported");
+            }
+            scope.commitTransaction();
+            DbCache.remove(StudySchema.getInstance().getTableInfoParticipantCategory(), getCacheKey(group.getCategoryId()));
+
+            //Reselect
+            ret = getParticipantCategory(c, user, def.getRowId());
+
+            errors = fireUpdateCategory(user, ret);
+
+            if (errors.size() != 0)
+            {
+                Throwable first = errors.get(0);
+                if (first instanceof RuntimeException)
+                    throw (RuntimeException)first;
+                else
+                    throw new RuntimeException(first);
+            }
+            return ret;
+        }
+        catch (SQLException x)
+        {
+            throw new RuntimeSQLException(x);
+        }
+        finally
+        {
+            scope.closeConnection();
+        }
+    }
+
+    private void addGroupParticipants(Container c, User user, ParticipantGroup group, String[] participantsToAdd) throws ValidationException
+    {
+        DbScope scope = StudySchema.getInstance().getSchema().getScope();
+
+        try {
+            scope.ensureTransaction();
+
+            if (group.isNew())
+                throw new IllegalArgumentException("Adding participants to non-existent group.");
+
+            // add the mapping from group to participants
+            SQLFragment sql = new SQLFragment("INSERT INTO ").append(getTableInfoParticipantGroupMap(), "");
+            sql.append(" (GroupId, ParticipantId, Container) VALUES (?, ?, ?)");
+
+            Set<String> existingMembers = group.getParticipantSet();
+            Study study = StudyManager.getInstance().getStudy(ContainerManager.getForId(group.getContainerId()));
+            for (String id : participantsToAdd)
+            {
+                if (existingMembers.contains(id))
+                    continue;
+
+                Participant p = StudyManager.getInstance().getParticipant(study, id);
+
+                // don't let the database catch the invalid ptid, so we can show a more reasonable error
+                if (p == null)
+                    throw new ValidationException(String.format("The %s ID specified : %s does not exist in this study. Please enter a valid identifier.", study.getSubjectNounSingular(), id));
+
+                Table.execute(StudySchema.getInstance().getSchema(), sql.getSQL(), group.getRowId(), id, group.getContainerId());
+
+                group.addParticipantId(id);
+            }
+            DbCache.remove(StudySchema.getInstance().getTableInfoParticipantCategory(), getCacheKey(group.getCategoryId()));
+
+            scope.commitTransaction();
+        }
+        catch (SQLException x)
+        {
+            throw new RuntimeSQLException(x);
+        }
+        finally
+        {
+            scope.closeConnection();
+        }
+
+    }
+
+
+    private void removeGroupParticipants(Container c, User user, ParticipantGroup group, String[] participantsToRemove)
+    {
+        try {
+            // remove the mapping from group to participants
+            SQLFragment sql = new SQLFragment("DELETE FROM ").append(getTableInfoParticipantGroupMap(), "");
+            SimpleFilter filter = new SimpleFilter().addInClause("ParticipantId", Arrays.asList(participantsToRemove));
+            filter.addCondition("GroupId", group.getRowId());
+            sql.append(filter.getSQLFragment(StudySchema.getInstance().getSchema().getSqlDialect()));
+
+            Table.execute(StudySchema.getInstance().getSchema(), sql);
+            DbCache.remove(StudySchema.getInstance().getTableInfoParticipantCategory(), getCacheKey(group.getCategoryId()));
+        }
+        catch (SQLException x)
+        {
+            throw new RuntimeSQLException(x);
+        }
+    }
+
 
     private void deleteGroupParticipants(Container c, User user, ParticipantGroup group)
     {

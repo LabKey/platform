@@ -32,6 +32,7 @@ import org.labkey.api.query.UserSchema;
 import org.labkey.api.security.RequiresPermissionClass;
 import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.study.model.ParticipantCategory;
+import org.labkey.study.model.ParticipantGroup;
 import org.labkey.study.model.ParticipantGroupManager;
 import org.springframework.validation.BindException;
 
@@ -140,6 +141,65 @@ public class ParticipantGroupController extends BaseStudyController
                 throw new RuntimeException("Unable to update the category with rowId: " + form.getRowId());
         }
     }
+
+    enum Modification {ADD, REMOVE};
+
+    private abstract class ModifyCategoryParticipants extends MutatingApiAction<ParticipantCategorySpecification>
+    {
+        public ApiResponse execute(ParticipantCategorySpecification form, BindException errors, Modification modification) throws Exception
+        {
+            ApiSimpleResponse resp = new ApiSimpleResponse();
+
+            if (form.isNew())
+            {
+                throw new IllegalArgumentException("The specified category does not exist, you must pass in the RowId");
+            }
+
+            SimpleFilter filter = new SimpleFilter("RowId", form.getRowId());
+            ParticipantCategory[] defs = ParticipantGroupManager.getInstance().getParticipantCategories(getContainer(), getUser(), filter);
+            if (defs.length == 1)
+            {
+                ParticipantCategory def = defs[0];
+                form.copySpecialFields(def);
+
+                ParticipantCategory category;
+
+                if (modification == Modification.ADD)
+                    category = ParticipantGroupManager.getInstance().addCategoryParticipants(getContainer(), getUser(), def, form.getParticipantIds());
+                else
+                    category = ParticipantGroupManager.getInstance().removeCategoryParticipants(getContainer(), getUser(), def, form.getParticipantIds());
+
+                resp.put("success", true);
+                resp.put("category", category.toJSON());
+
+                return resp;
+            }
+            else
+                throw new RuntimeException("Unable to update the category with rowId: " + form.getRowId());
+        }
+
+    }
+
+    @RequiresPermissionClass(ReadPermission.class)
+    public class AddParticipantsToCategory extends ModifyCategoryParticipants
+    {
+        @Override
+        public ApiResponse execute(ParticipantCategorySpecification form, BindException errors) throws Exception
+        {
+            return super.execute(form, errors, Modification.ADD);
+        }
+    }
+
+    @RequiresPermissionClass(ReadPermission.class)
+    public class RemoveParticipantsFromCategory extends ModifyCategoryParticipants
+    {
+        @Override
+        public ApiResponse execute(ParticipantCategorySpecification form, BindException errors) throws Exception
+        {
+            return super.execute(form, errors, Modification.REMOVE);
+        }
+    }
+
 
     @RequiresPermissionClass(ReadPermission.class)
     public class GetParticipantCategory extends ApiAction<ParticipantCategory>
