@@ -37,6 +37,12 @@
 <script type="text/javascript">
 
 Ext4.onReady(function(){
+    var filterArray = [LABKEY.Filter.create('containerType', 'project', LABKEY.Filter.Types.EQUALS)];
+    if(LABKEY.Security.getHomeContainer())
+        filterArray.push(LABKEY.Filter.create('name', LABKEY.Security.getHomeContainer(), LABKEY.Filter.Types.NEQ_OR_NULL))
+    if(LABKEY.Security.getSharedContainer())
+        filterArray.push(LABKEY.Filter.create('name', LABKEY.Security.getSharedContainer(), LABKEY.Filter.Types.NOT_EQUAL))
+
     Ext4.create('LABKEY.ext.IconPanel', {
         id: 'projects-panel-<%=webPartId%>',
         iconField: 'iconurl',
@@ -55,7 +61,7 @@ Ext4.onReady(function(){
             href: LABKEY.ActionURL.buildURL('admin', 'createFolder', '/')
         }],
         store: Ext4.create('LABKEY.ext4.Store', {
-            containerPath: 'home',
+            containerPath: LABKEY.Security.getHomeContainer(),
             schemaName: 'core',
             queryName: 'Containers',
             title: 'Projects',
@@ -63,10 +69,7 @@ Ext4.onReady(function(){
             containerFilter: 'CurrentAndSiblings',
             columns: 'name',
             autoLoad: true,
-            filterArray: [
-                LABKEY.Filter.create('containerType', 'project', LABKEY.Filter.Types.EQUALS),
-                LABKEY.Filter.create('createdby', '', LABKEY.Filter.Types.NONBLANK)
-            ],
+            filterArray: filterArray,
             metadata: {
                 iconurl: {
                     createIfDoesNotExist: true,
