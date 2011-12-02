@@ -456,4 +456,17 @@ public class GroupManager
         SecurityManager.addMembers(newGroup, translatedMembers);
         return newGroup;
     }
+
+    public static HashMap<Group, Group> copyGroupsToContainer(Container source, Container target)
+    {
+        //copy all project groups to new project.  returns a map between old groups and new groups
+        //note: site-groups are not copied, but the map will contain them anyway
+        HashMap<Group, Group> groupMap = new HashMap<Group, Group>();
+        for (Group g : SecurityManager.getGroups(source, false))
+        {
+            groupMap.put(g, GroupManager.copyGroupToContainer(g, target));
+        }
+
+        return groupMap;
+    }
 }
