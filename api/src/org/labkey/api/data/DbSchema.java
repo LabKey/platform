@@ -17,6 +17,7 @@ package org.labkey.api.data;
 
 import junit.framework.Assert;
 import org.apache.log4j.Logger;
+import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.junit.Test;
 import org.labkey.api.cache.DbCache;
@@ -65,7 +66,7 @@ public class DbSchema
 
     private ResourceRef _resourceRef = null;
 
-    public static DbSchema get(String schemaName)
+    public static @NotNull DbSchema get(String schemaName)
     {
         return DbScope.getLabkeyScope().getSchema(schemaName);
     }
@@ -89,7 +90,7 @@ public class DbSchema
     }
 
 
-    public static DbSchema createFromMetaData(String schemaName, DbScope scope) throws SQLException
+    public static @NotNull DbSchema createFromMetaData(String schemaName, DbScope scope) throws SQLException
     {
         DbSchema schema = new DbSchema(schemaName, scope);
         schema.loadMetaData();

@@ -17,6 +17,7 @@ package org.labkey.api.data;
 
 import org.apache.commons.lang.StringUtils;
 import org.apache.log4j.Logger;
+import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.junit.Assert;
 import org.junit.Test;
@@ -462,7 +463,7 @@ public class DbScope
     }
 
 
-    public DbSchema getSchema(String schemaName)
+    public @NotNull DbSchema getSchema(String schemaName)
     {
         return _schemaCache.get(schemaName);
     }
@@ -477,7 +478,7 @@ public class DbScope
 
 
     // External data source case: no schema.xml file to check, no isStale() check (for now)
-    protected DbSchema loadSchema(String schemaName) throws Exception
+    protected @NotNull DbSchema loadSchema(String schemaName) throws Exception
     {
         return DbSchema.createFromMetaData(schemaName, this);
     }

@@ -16,6 +16,7 @@
 
 package org.labkey.api.data;
 
+import org.jetbrains.annotations.NotNull;
 import org.labkey.api.cache.BlockingStringKeyCache;
 import org.labkey.api.cache.CacheLoader;
 import org.labkey.api.cache.CacheManager;
@@ -35,7 +36,7 @@ import org.labkey.api.util.Filter;
 public class DbSchemaCache
 {
     private final DbScope _scope;
-    private final BlockingStringKeyCache<DbSchema> _blockingCache = new DbSchemaBlockingCache();  // TODO: BlockingStringKeyCache?
+    private final BlockingStringKeyCache<DbSchema> _blockingCache = new DbSchemaBlockingCache();
     private final IncompleteSchemaFilter _incompleteFilter = new IncompleteSchemaFilter();
 
     public DbSchemaCache(DbScope scope)
@@ -43,7 +44,7 @@ public class DbSchemaCache
         _scope = scope;
     }
 
-    DbSchema get(String schemaName)
+    @NotNull DbSchema get(String schemaName)
     {
         return _blockingCache.get(schemaName);
     }

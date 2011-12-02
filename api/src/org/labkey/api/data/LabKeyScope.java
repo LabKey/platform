@@ -16,6 +16,7 @@
 package org.labkey.api.data;
 
 import org.apache.log4j.Logger;
+import org.jetbrains.annotations.NotNull;
 import org.labkey.api.resource.AbstractResource;
 import org.labkey.api.resource.Resource;
 import org.labkey.api.util.Path;
@@ -42,6 +43,7 @@ public class LabKeyScope extends DbScope
         super(dsName, dataSource);
     }
 
+    @NotNull
     @Override
     // LabKey data source case.  Load meta data from database, load schema.xml, and stash it for later use.
     protected DbSchema loadSchema(String schemaName) throws Exception
@@ -53,6 +55,7 @@ public class LabKeyScope extends DbScope
         // Load from database meta data
         DbSchema schema = super.loadSchema(schemaName);
 
+        // TODO: Remove this check
         if (null != schema)
         {
             Resource resource = DbSchema.getSchemaResource(schemaName);
