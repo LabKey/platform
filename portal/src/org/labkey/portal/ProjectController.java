@@ -425,7 +425,7 @@ public class ProjectController extends SpringActionController
 
             if (!NetworkDrive.exists(iconFile))
             {
-                iconFile = new File(FolderType.NONE.getFolderIconPath());  //fall back to default
+                iconFile = new File(ModuleLoader.getServletContext().getRealPath(FolderType.NONE.getFolderIconPath()));  //fall back to default
                 _log.warn("Could not find specified icon: "+iconPath);
             }
             PageFlowUtil.streamFile(response, iconFile, false);
