@@ -124,6 +124,8 @@ public class ActionButton extends DisplayElement implements Cloneable
     private @Nullable String _pluralConfirmText;
     private String _encodedSubmitForm;
 
+    private String _id;
+
     public ActionButton(String caption, URLHelper link)
     {
         _caption = StringExpressionFactory.create(caption);
@@ -339,12 +341,29 @@ public class ActionButton extends DisplayElement implements Cloneable
         }
     }
 
+    public String getId()
+    {
+        return _id;
+    }
+
+    public void setId(String id)
+    {
+        _id = id;
+    }
+
     public void render(RenderContext ctx, Writer out) throws IOException
     {
         if (!shouldRender(ctx))
             return;
 
         StringBuilder attributes = new StringBuilder();
+
+        if (_id != null)
+        {
+            attributes.append("id=\"");
+            attributes.append(PageFlowUtil.filter(_id));
+            attributes.append("\"" );
+        }
 
         if (_requiresSelection)
         {

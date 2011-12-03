@@ -39,11 +39,11 @@ public class ExpSchema extends AbstractExpSchema
                 return expSchema.setupTable(ret);
             }
         },
-        Datas
+        Data
         {
             public TableInfo createTable(ExpSchema expSchema, String queryName)
             {
-                ExpDataTable ret = ExperimentService.get().createDataTable(TableType.Datas.toString(), expSchema);
+                ExpDataTable ret = ExperimentService.get().createDataTable(TableType.Data.toString(), expSchema);
                 return expSchema.setupTable(ret);
             }
         },
@@ -194,6 +194,16 @@ public class ExpSchema extends AbstractExpSchema
             ExpExperimentTable ret = ExperimentService.get().createExperimentTable(name, this);
             return setupTable(ret);
         }
+        if ("Experiments".equalsIgnoreCase(name))
+        {
+            // Support "Experiments" as a legacy name for the RunGroups table
+            return TableType.RunGroups.createTable(this, name);
+        }
+        if ("Datas".equalsIgnoreCase(name))
+        {
+            /// Support "Datas" as a legacy name for the Data table
+            return TableType.Data.createTable(this, name);
+        }
         if (EXPERIMENTS_MEMBERSHIP_FOR_RUN_TABLE_NAME.equalsIgnoreCase(name))
         {
             return createExperimentsTableWithRunMemberships(null);
@@ -204,7 +214,7 @@ public class ExpSchema extends AbstractExpSchema
 
     public ExpDataTable getDatasTable()
     {
-        return (ExpDataTable)getTable(TableType.Datas);
+        return (ExpDataTable)getTable(TableType.Data);
     }
 
     public ExpRunTable getRunsTable()
@@ -264,7 +274,7 @@ public class ExpSchema extends AbstractExpSchema
         {
             public TableInfo getLookupTableInfo()
             {
-                return getTable(TableType.Datas);
+                return getTable(TableType.Data);
             }
         };
     }

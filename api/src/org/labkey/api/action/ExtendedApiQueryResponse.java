@@ -74,7 +74,7 @@ public class ExtendedApiQueryResponse extends ApiQueryResponse
         colMap.put(ColMapEntry.value.name(), value);
 
         //display value (if different from value)
-        Object displayValue = dc.getDisplayValue(getRenderContext());
+        Object displayValue = ensureJSONDate(dc.getDisplayValue(getRenderContext()));
         if(null != displayValue && !displayValue.equals(value))
             colMap.put(ColMapEntry.displayValue.name(), displayValue);
 

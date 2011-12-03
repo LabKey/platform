@@ -362,6 +362,11 @@ public class ApiQueryResponse implements ApiResponse, ApiStreamResponse
     protected Object getColumnValue(DisplayColumn dc)
     {
         Object value = dc.getJsonValue(_ctx);
+        return ensureJSONDate(value);
+    }
+
+    protected Object ensureJSONDate(Object value)
+    {
         return value instanceof Date ? _dateFormat.format(value) : value;
     }
 
