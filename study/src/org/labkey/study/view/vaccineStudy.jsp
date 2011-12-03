@@ -149,11 +149,12 @@ table.cavd-study .labkey-row-active {
 	background-color: #e7ebf3;
 }
 
-table.cavd-study .labkey-row-active .gwt-Label {
+table.cavd-study .labkey-row-active .gwt-Label, table.cavd-study .labkey-row-header .gwt-Label {
 	color: #21309a;
+    cursor: pointer;
 }
 
-table.cavd-study .labkey-row-active .gwt-Label:hover {
+table.cavd-study .labkey-row-active .gwt-Label:hover, table.cavd-study .labkey-row-header .gwt-Label:hover {
 	color: #21309a;
 	text-decoration: underline;
 	cursor: pointer;

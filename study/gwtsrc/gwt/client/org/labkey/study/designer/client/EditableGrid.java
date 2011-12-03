@@ -128,7 +128,7 @@ public abstract class EditableGrid extends FlexTable
     {
         int row = getRowCount() - 1;
         getCellFormatter().setStyleName(row, 0, "labkey-row-header");
-        setText(row, 0, "*");
+        setWidget(row, 0, getGhostRowHeaderWidget());
         for (int col = 0; col < getDataColumnCount(); col++)
         {
             Widget widget =  getGhostRowWidget(col);
@@ -155,7 +155,15 @@ public abstract class EditableGrid extends FlexTable
             return EMPTY_LABEL;
 
         final Label rowLabel = new Label(Integer.toString(row + 1));
-        rowLabel.setTitle("Click for menu");
+        rowLabel.setTitle("Click to delete " + getRowNoun());
+
+        return rowLabel;
+    }
+
+    public Widget getGhostRowHeaderWidget()
+    {
+        final Label rowLabel = new Label("+");
+        rowLabel.setTitle("Use this row to add a new " + getRowNoun());
 
         return rowLabel;
     }
@@ -174,11 +182,12 @@ public abstract class EditableGrid extends FlexTable
 
     public PopupMenu getRowPopupMenu(final int dataRow)
     {
-        PopupMenu popupMenu = new PopupMenu();
-        popupMenu.addItem("Delete Row", new Command() {
+        final PopupMenu popupMenu = new PopupMenu();
+        popupMenu.addItem("Delete " + getRowNoun(), new Command() {
             public void execute()
             {
                 deleteRow(dataRow);
+                popupMenu.hide();
             }
         });
 
@@ -229,6 +238,11 @@ public abstract class EditableGrid extends FlexTable
         return l;
     }
     
+    public String getRowNoun()
+    {
+        return "row";
+    }
+
     class RowHeaderClickListener implements TableListener
     {
         public void onCellClicked(SourcesTableEvents sender, int row, int cell)

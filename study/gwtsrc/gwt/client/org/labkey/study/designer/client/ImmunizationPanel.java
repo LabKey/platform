@@ -207,6 +207,12 @@ public class ImmunizationPanel extends Composite
             return new ImmunizationWidget(cohort, tp);
         }
 
+        @Override
+        public String getRowNoun()
+        {
+            return "group";
+        }
+
         public class ImmunizationWidget extends FocusPanel implements ClickListener, KeyboardListener
         {
             private GWTCohort group;

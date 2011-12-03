@@ -309,6 +309,12 @@ public class AssayPanel extends Composite
             setWidget(getHeaderRows() + assayIndex, 2, getCategoryWidget(assayIndex, 1));
         }
 
+        @Override
+        public String getRowNoun()
+        {
+            return "assay";
+        }
+
         void deleteCategory(int index)
         {
             assaySchedule.getAssays().remove(index);

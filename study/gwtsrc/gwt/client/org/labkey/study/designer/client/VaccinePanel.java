@@ -102,7 +102,7 @@ public class VaccinePanel extends Composite
             return immunogens.size();
         }
 
-        Label[] colHeaders = {new Label("Immunogen Name"), new Label("Type"), new Label("Dose"), new Label("Route"), new Label("HIV Antigens")};
+        Label[] colHeaders = {new Label("Immunogen Name"), new Label("Type"), new Label("Dose and units"), new Label("Route"), new Label("HIV Antigens")};
         public Widget getColumnHeader(int row, int column)
         {
             if (column >= colHeaders.length)
@@ -236,6 +236,12 @@ public class VaccinePanel extends Composite
 
         }
 
+        @Override
+        public String getRowNoun()
+        {
+            return "immunogen";
+        }
+
         public void makeGhostRowReal()
         {
             immunogens.add(ghostImmunogen);
@@ -367,6 +373,12 @@ public class VaccinePanel extends Composite
             ghostAntigen = new GWTAntigen();
         }
 
+        @Override
+        public String getRowNoun()
+        {
+            return "antigen";
+        }
+
         void deleteRow(int dataRow)
         {
             antigens.remove(dataRow);
@@ -456,7 +468,7 @@ public class VaccinePanel extends Composite
 
     public class AdjuvantGrid extends EditableGrid
     {
-        private Widget[] columnNames = new Widget[] {new Label("Name"), new Label("Dose"), new Label("Route")};
+        private Widget[] columnNames = new Widget[] {new Label("Name"), new Label("Dose and units"), new Label("Route")};
 
         public AdjuvantGrid()
         {
@@ -562,6 +574,12 @@ public class VaccinePanel extends Composite
         public int getHeaderRows()
         {
             return 1;
+        }
+
+        @Override
+        public String getRowNoun()
+        {
+            return "adjuvant";
         }
 
         public void makeGhostRowReal()
