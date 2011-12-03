@@ -531,8 +531,23 @@ public abstract class QueryDefinitionImpl implements QueryDefinition
             {
                 return ret;
             }
+
+            if (view.getName() != null)
+            {
+                // Try and grab the columns from the default view
+                CustomView defaultView = QueryService.get().getCustomView(getUser(), getContainer(), getSchemaName(), getQueryDef().getName(), null);
+                if (defaultView != null)
+                {
+                    ret = QueryService.get().getDisplayColumns(table, defaultView.getColumnProperties());
+                    if (!ret.isEmpty())
+                    {
+                        return ret;
+                    }
+                }
+            }
         }
         ret = new ArrayList<DisplayColumn>();
+        // Fall back on the table's default set of columns
         for (ColumnInfo column : QueryService.get().getColumns(table, table.getDefaultVisibleColumns()).values())
         {
             ret.add(column.getRenderer());

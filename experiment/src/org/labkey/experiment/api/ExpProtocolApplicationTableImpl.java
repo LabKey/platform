@@ -112,7 +112,7 @@ public class ExpProtocolApplicationTableImpl extends ExpTableImpl<ExpProtocolApp
         {
             public TableInfo getLookupTableInfo()
             {
-                ExpDataTable expDataTable = (ExpDataTable)schema.getTable(ExpSchema.TableType.Datas.name(), true);
+                ExpDataTable expDataTable = (ExpDataTable)schema.getTable(ExpSchema.TableType.Data.name(), true);
                 expDataTable.setContainerFilter(getContainerFilter());
                 return expDataTable;
             }

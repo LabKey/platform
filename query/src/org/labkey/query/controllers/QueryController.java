@@ -93,6 +93,7 @@ import org.labkey.api.thumbnail.StaticThumbnailProvider;
 import org.labkey.api.thumbnail.Thumbnail;
 import org.labkey.api.util.ExceptionUtil;
 import org.labkey.api.util.FileUtil;
+import org.labkey.api.util.GUID;
 import org.labkey.api.util.HelpTopic;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.ResultSetUtil;
@@ -1939,6 +1940,24 @@ public class QueryController extends SpringActionController
         {
         }
 
+        protected ButtonBar createSubmitCancelButtonBar(QueryUpdateForm tableForm)
+        {
+            ButtonBar bb = new ButtonBar();
+            bb.setStyle(ButtonBar.Style.separateButtons);
+            String submitGUID = "submit-" + GUID.makeGUID();
+            String cancelGUID = "cancel-" + GUID.makeGUID();
+            String disableButtonScript = "Ext.get('" + submitGUID + "').replaceClass('labkey-button', 'labkey-disabled-button'); Ext.get('" + cancelGUID + "').replaceClass('labkey-button', 'labkey-disabled-button'); return true;";
+            ActionButton btnSubmit = new ActionButton(getViewContext().getActionURL(), "Submit");
+            btnSubmit.setScript(disableButtonScript);
+            btnSubmit.setActionType(ActionButton.Action.POST);
+            btnSubmit.setId(submitGUID);
+            ActionButton btnCancel = new ActionButton(getCancelURL(tableForm), "Cancel");
+            btnCancel.setId(cancelGUID);
+            bb.add(btnSubmit);
+            bb.add(btnCancel);
+            return bb;
+        }
+
         public ActionURL getSuccessURL(QueryUpdateForm form)
         {
             String returnURL = getViewContext().getRequest().getParameter(QueryParam.srcURL.toString());
@@ -2097,14 +2116,8 @@ public class QueryController extends SpringActionController
     {
         public ModelAndView getView(QueryUpdateForm tableForm, boolean reshow, BindException errors) throws Exception
         {
-            ButtonBar bb = new ButtonBar();
-            bb.setStyle(ButtonBar.Style.separateButtons);
-            ActionButton btnSubmit = new ActionButton(getViewContext().getActionURL(), "Submit");
-            ActionButton btnCancel = new ActionButton(getCancelURL(tableForm), "Cancel");
-            bb.add(btnSubmit);
-            bb.add(btnCancel);
             InsertView view = new InsertView(tableForm, errors);
-            view.getDataRegion().setButtonBar(bb);
+            view.getDataRegion().setButtonBar(createSubmitCancelButtonBar(tableForm));
             return view;
         }
 
@@ -2127,12 +2140,7 @@ public class QueryController extends SpringActionController
     {
         public ModelAndView getView(QueryUpdateForm tableForm, boolean reshow, BindException errors) throws Exception
         {
-            ButtonBar bb = new ButtonBar();
-            bb.setStyle(ButtonBar.Style.separateButtons);
-            ActionButton btnSubmit = new ActionButton(getViewContext().getActionURL(), "Submit");
-            ActionButton btnCancel = new ActionButton(getCancelURL(tableForm), "Cancel");
-            bb.add(btnSubmit);
-            bb.add(btnCancel);
+            ButtonBar bb = createSubmitCancelButtonBar(tableForm);
             UpdateView view = new UpdateView(tableForm, errors);
             view.getDataRegion().setButtonBar(bb);
             return view;

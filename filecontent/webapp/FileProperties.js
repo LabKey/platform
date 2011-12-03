@@ -59,7 +59,7 @@ LABKEY.FilePropertiesPanel = Ext.extend(Ext.util.Observable, {
 
         LABKEY.Query.selectRows({
             schemaName:'exp',
-            queryName:'Datas',
+            queryName:'Data',
             maxRows: 0,
             scope: this,
             containerPath: this.containerPath,

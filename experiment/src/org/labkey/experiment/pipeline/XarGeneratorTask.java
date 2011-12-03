@@ -87,7 +87,9 @@ public class XarGeneratorTask extends PipelineJob.Task<XarGeneratorTask.Factory>
 
         public boolean isJobComplete(PipelineJob job)
         {
-            return job.getActionSet().getActions().isEmpty() || NetworkDrive.exists(getXarFile(job));
+            // We can use an existing XAR file from disk if it's been generated, but we need to load it because
+            // there's no simple way to tell if it's already been imported or not, or if it's been subsequently deleted
+            return false;
         }
 
         public void configure(XarGeneratorFactorySettings settings)
@@ -171,13 +173,21 @@ public class XarGeneratorTask extends PipelineJob.Task<XarGeneratorTask.Factory>
      * 5. Import the temporary XAR (not reloading the runs it references), which causes its referenced data files to load.
      * 6. Rename the temporary XAR to its permanent name.
      *
-     * This allows us to quickly tell if the task is already complete by checking for the XAR file. If it exists, we're
-     * done. If the temporary file exists, we can skip directly to step 5 above. 
+     * This allows us to quickly tell if the task is already complete by checking for the XAR file. If it exists, we
+     * can simply reimport it. If the temporary file exists, we can skip directly to step 5 above. 
      */
     public RecordedActionSet run() throws PipelineJobException
     {
         try
         {
+            File permanentXAR = _factory.getXarFile(getJob());
+            if (NetworkDrive.exists(permanentXAR))
+            {
+                // Be sure that it's been imported (and not already deleted from the database)
+                ExperimentService.get().importXar(new FileXarSource(permanentXAR, getJob()), getJob(), false);
+                return new RecordedActionSet();
+            }
+
             if (!NetworkDrive.exists(getLoadingXarFile()))
             {
                 insertRun();
@@ -186,7 +196,7 @@ public class XarGeneratorTask extends PipelineJob.Task<XarGeneratorTask.Factory>
             // Load the data files for this run
             ExperimentService.get().importXar(new FileXarSource(getLoadingXarFile(), getJob()), getJob(), false);
             
-            getLoadingXarFile().renameTo(_factory.getXarFile(getJob()));
+            getLoadingXarFile().renameTo(permanentXAR);
         }
         catch (SQLException e)
         {
