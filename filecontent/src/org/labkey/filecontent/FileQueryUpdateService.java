@@ -88,11 +88,16 @@ public class FileQueryUpdateService extends AbstractQueryUpdateService
         Filter filter = getQueryFilter(keys);
         Set<String> queryColumns = getQueryColumns(container);
 
-        Map<String, Object> selectMap = Table.selectObject(getQueryTable(), queryColumns, filter, null, Map.class);
+        Map<String, Object>[] rows = Table.select(getQueryTable(), queryColumns, filter, null, Map.class);
         Map<String, Object> rowMap = new HashMap<String, Object>();
 
-        if (selectMap != null)
+        if (rows.length >= 0)
         {
+            Map<String, Object> selectMap = rows[0];
+
+            if (rows.length > 1)
+                _log.error("More than one row returned for data file: " + filter);
+
             Domain domain = getFileProperties(container);
 
             if (domain != null)
@@ -217,9 +222,18 @@ public class FileQueryUpdateService extends AbstractQueryUpdateService
             try
             {
                 Filter filter = getQueryFilter(row);
-                Map<String, Object> rowMap = Table.selectObject(getQueryTable(), getQueryColumns(container), filter, null, Map.class);
-                if (rowMap != null)
-                    dataFileUrl = String.valueOf(rowMap.get(ExpDataTable.Column.DataFileUrl.name()));
+                Map<String, Object>[] rows = Table.select(getQueryTable(), getQueryColumns(container), filter, null, Map.class);
+
+                if (rows.length >= 0)
+                {
+                    Map<String, Object> rowMap = rows[0];
+
+                    if (rows.length > 1)
+                        _log.error("More than one row returned for data file: " + filter);
+
+                    if (rowMap != null)
+                        dataFileUrl = String.valueOf(rowMap.get(ExpDataTable.Column.DataFileUrl.name()));
+                }
             }
             catch (Exception e)
             {

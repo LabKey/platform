@@ -256,7 +256,7 @@ public class DomainPropertyManager
             }
             catch (ValidationException e)
             {
-                throw new ChangePropertyDescriptorException(e.getMessage());
+                throw new ChangePropertyDescriptorException(String.format("An error occurred saving the field: '%s'. %s", property.getName(), e.getMessage()));
             }
         }
     }

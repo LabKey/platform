@@ -341,6 +341,17 @@ public class DatasetSnapshotProvider extends AbstractSnapshotProvider implements
 
         if (fieldMap != null)
         {
+            if (fieldKeys.isEmpty())
+            {
+                fieldKeys = new ArrayList<FieldKey>();
+                for (DisplayColumn dc : view.getDisplayColumns())
+                {
+                    ColumnInfo colInfo = dc.getColumnInfo();
+                    if (colInfo != null)
+                        fieldKeys.add(colInfo.getFieldKey());
+                }
+            }
+
             for (FieldKey fieldKey : fieldKeys)
             {
                 ColumnInfo col = fieldMap.get(fieldKey);

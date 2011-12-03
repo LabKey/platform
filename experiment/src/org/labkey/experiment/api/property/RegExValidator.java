@@ -73,7 +73,7 @@ public class RegExValidator extends DefaultPropertyValidator implements Validato
         {
             StringBuffer sb = new StringBuffer();
 
-            sb.append("Regular Expression Validator '");
+            sb.append("The regular expression validator: '");
             sb.append(validator.getName());
             sb.append("' has a syntax error : ");
             sb.append(se.getMessage());
