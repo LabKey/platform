@@ -44,7 +44,6 @@ import org.springframework.web.servlet.ModelAndView;
 import javax.servlet.http.HttpServletResponse;
 import java.io.Serializable;
 import java.sql.SQLException;
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
@@ -54,7 +53,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.TreeSet;
+import java.util.TreeMap;
 
 
 public class Portal
@@ -489,13 +488,12 @@ public class Portal
         WebPartCache.remove(c, pageId);
     }
 
-
     public static class AddWebParts
     {
         public String pageId;
         public String location;
-        public List<String> webPartNames;
-        public List<String> rightWebPartNames;
+        public Map<String, String> webPartNames;
+        public Map<String, String> rightWebPartNames;
     }
 
     private static void addCustomizeDropdowns(Container c, HttpView template, String id, Collection occupiedLocations)
@@ -503,11 +501,11 @@ public class Portal
         Set<String> regionNames = getRegionMap().keySet();
         boolean rightEmpty = !occupiedLocations.contains(WebPartFactory.LOCATION_RIGHT);
         AddWebParts bodyAddPart = null;
-        List<String> rightParts = null;
+        Map<String, String> rightParts = null;
         
         for (String regionName : regionNames)
         {
-            List<String> partsToAdd = Portal.getPartsToAdd(c, regionName);
+            Map<String, String> partsToAdd = Portal.getPartsToAdd(c, regionName);
 
             if (WebPartFactory.LOCATION_RIGHT.equals(regionName) && rightEmpty)
                 rightParts = partsToAdd;
@@ -749,22 +747,26 @@ public class Portal
         }
     }
 
-    public static List<String> getPartsToAdd(Container c, String location)
+    public static Map<String, String> getPartsToAdd(Container c, String location)
     {
         //TODO: Cache these
-        Set<String> webPartNames = new TreeSet<String>();
+        Map<String, String> webPartNames = new TreeMap<String, String>();
 
         for (Module module : ModuleLoader.getInstance().getModules())
         {
             Collection<WebPartFactory> factories = module.getWebPartFactories();
 
             if (null != factories)
+            {
                 for (WebPartFactory factory : factories)
+                {
                     if (factory.isAvailable(c, location))
-                        webPartNames.add(factory.getName());
+                        webPartNames.put(factory.getName(), factory.getDisplayName(c, location));
+                }
+            }
         }
 
-        return new ArrayList<String>(webPartNames);
+        return webPartNames;
     }
 
     public static int purge() throws SQLException

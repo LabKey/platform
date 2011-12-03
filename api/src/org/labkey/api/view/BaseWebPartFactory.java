@@ -68,6 +68,12 @@ public abstract class BaseWebPartFactory implements WebPartFactory
         return name;
     }
 
+    @Override
+    public String getDisplayName(Container container, String location)
+    {
+        return getName();
+    }
+
     public void setName(String name)
     {
         this.name = name;

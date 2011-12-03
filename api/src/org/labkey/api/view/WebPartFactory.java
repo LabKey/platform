@@ -33,6 +33,16 @@ public interface WebPartFactory
 
     String getName();
 
+    /**
+     * Returns a display name that will appear in the 'add webpart' drop down.  This name can be customized for the
+     * current container.  Used by the study module, for example, to provide allow the subjects webpart to appear
+     * with a name that reflects the study-specific customized subject noun.
+     * @param container The container in which this webpart will be added.
+     * @param location The location on the page in which this webpart will be added.
+     * @return A string title for the webpart.
+     */
+    String getDisplayName(Container container, String location);
+
     String getDefaultLocation();
 
     WebPartView getWebPartView(ViewContext portalCtx, Portal.WebPart webPart) throws Exception;

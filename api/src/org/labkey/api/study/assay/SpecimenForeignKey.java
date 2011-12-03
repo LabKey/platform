@@ -42,6 +42,7 @@ public class SpecimenForeignKey extends LookupForeignKey
     private static final String VIAL_SUBQUERY_SUFFIX = "$VialJoin";
     private static final String STUDY_SUBQUERY_SUFFIX = "$StudyJoin";
     private static final String DRAW_DT_COLUMN_NAME = "DrawDT";
+    private Container _targetStudyOverride;
 
     public SpecimenForeignKey(AssaySchema schema, AssayProvider provider, ExpProtocol protocol)
     {
@@ -60,12 +61,14 @@ public class SpecimenForeignKey extends LookupForeignKey
 
     public TableInfo getLookupTableInfo()
     {
-        if (!_schema.getContainer().hasPermission(_schema.getUser(), ReadPermission.class))
+        Container permissionsCheckContainer = _targetStudyOverride != null ? _targetStudyOverride : _schema.getContainer();
+
+        if (!permissionsCheckContainer.hasPermission(_schema.getUser(), ReadPermission.class))
         {
             return null;
         }
         
-        UserSchema studySchema = QueryService.get().getUserSchema(_schema.getUser(), _schema.getContainer(), "study");
+        UserSchema studySchema = QueryService.get().getUserSchema(_schema.getUser(), permissionsCheckContainer, "study");
         FilteredTable tableInfo = (FilteredTable)studySchema.getTable("Vial");
         tableInfo.setContainerFilter(_studyContainerFilter);
 
@@ -79,7 +82,7 @@ public class SpecimenForeignKey extends LookupForeignKey
         FieldKey visitFK = _tableMetadata.getVisitIDFieldKey(TimepointType.VISIT);
         FieldKey dateFK = _tableMetadata.getVisitIDFieldKey(TimepointType.DATE);
         FieldKey drawDateFK = new FieldKey(dateFK.getParent(), DRAW_DT_COLUMN_NAME);
-        AssaySchema assaySchema = AssayService.get().createSchema(studySchema.getUser(), studySchema.getContainer());
+        AssaySchema assaySchema = AssayService.get().createSchema(studySchema.getUser(), _schema.getContainer());
         Map<FieldKey, ColumnInfo> columns = QueryService.get().getColumns(_provider.createDataTable(assaySchema, _protocol, true), Arrays.asList(participantFK, visitFK, dateFK, drawDateFK));
 
         ColumnInfo participantIdCol = columns.get(participantFK);
@@ -159,6 +162,12 @@ public class SpecimenForeignKey extends LookupForeignKey
         return tableInfo;
     }
 
+    public void setTargetStudyOverride(Container targetStudy)
+    {
+        _targetStudyOverride = targetStudy;
+    }
+
+
     public StringExpression getURL(ColumnInfo parent)
     {
         // SpecimenForeignKeys never have details URLs, and it's very expensive to instantiate a TableInfo to check,
@@ -231,7 +240,12 @@ public class SpecimenForeignKey extends LookupForeignKey
             Map<FieldKey, ColumnInfo> columns = QueryService.get().getColumns(getParentTable(), targetStudyFieldKeys);
 
             ColumnInfo targetStudyCol = columns.get(targetStudyFK);
-            Container targetStudy = _schema.getTargetStudy();
+            Container targetStudy;
+            if (_targetStudyOverride != null)
+                targetStudy = _targetStudyOverride;
+            else
+                targetStudy = _schema.getTargetStudy();
+
             // Do a complicated join if we can identify a target study so that we choose the right specimen
             if (targetStudyCol != null || targetStudy != null)
             {

@@ -459,6 +459,12 @@ public class DataColumn extends DisplayColumn
                 _boundColumn.isReadOnly() || !_boundColumn.isUserEditable();
     }
 
+    protected String getSelectInputDisplayValue(NamedObject entry)
+    {
+        return entry.getObject().toString();
+    }
+
+
     public void renderInputHtml(RenderContext ctx, Writer out, Object value) throws IOException
     {
         boolean disabledInput = isDisabledInput();
@@ -518,7 +524,7 @@ public class DataColumn extends DisplayColumn
                     out.write(" selected ");
                 out.write(" >");
                 if (null != entry.getObject())
-                    out.write(entry.getObject().toString());
+                    out.write(getSelectInputDisplayValue(entry));
                 out.write("</option>\n");
             }
             out.write("</select>");
