@@ -37,6 +37,7 @@ import org.labkey.api.study.assay.AbstractAssayProvider;
 import org.labkey.api.study.assay.AssayProvider;
 import org.labkey.api.study.assay.AssaySchema;
 import org.labkey.api.study.assay.AssayService;
+import org.labkey.api.study.assay.SpecimenForeignKey;
 import org.labkey.api.util.DemoMode;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.StringExpression;
@@ -286,6 +287,9 @@ public class DataSetTableImpl extends FilteredTable implements DataSetTable
                             }
                         };
                         wrappedColumn.copyAttributesFrom(columnInfo);
+                        ForeignKey fk = wrappedColumn.getFk();
+                        if (fk != null && fk instanceof SpecimenForeignKey)
+                            ((SpecimenForeignKey) fk).setTargetStudyOverride(dsd.getContainer());
                         addColumn(wrappedColumn);
                     }
                 }

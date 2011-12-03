@@ -1157,10 +1157,6 @@ table.labkey-show-borders
 in the table tag.  They are necessary so that the borders take precedence correctly when they collapse */
 .labkey-has-row-totals td, .labkey-has-col-totals td
 {
-    /* Firefox and Safari use column and row borders along with table borders, since
-    we want the bold borders for the column and row header and totals and stat titles
-    to take precedence over them */
-    border: 0;
     /* Again, IE 7 and below gives precendence to table borders over cell borders, also it doesn't do
     column or row borders, but it does do correct precedence for cells
      (top and left over bottom and right) so we can use cell borders */

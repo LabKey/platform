@@ -153,7 +153,11 @@ public class ShowUploadSpecimensAction extends FormViewAction<ShowUploadSpecimen
         {
             String participant = (String) row.get(SimpleSpecimenImporter.PARTICIPANT_ID);
             if (null == participant)
-                errors.reject(SpringActionController.ERROR_MSG, "Error, Row " + rowNum + " field " + (null == labels.get(SimpleSpecimenImporter.PARTICIPANT_ID) ? SimpleSpecimenImporter.PARTICIPANT_ID : labels.get(SimpleSpecimenImporter.PARTICIPANT_ID)) + " is not supplied");
+            {
+                errors.reject(SpringActionController.ERROR_MSG, "Error in row " + rowNum + ": required field " + (null == labels.get(SimpleSpecimenImporter.PARTICIPANT_ID) ?
+                        StudyService.get().getSubjectNounSingular(getViewContext().getContainer()) :
+                        labels.get(SimpleSpecimenImporter.PARTICIPANT_ID)) + " was not supplied");
+            }
             else
                 participants.add((String) row.get(SimpleSpecimenImporter.PARTICIPANT_ID));
 
@@ -164,7 +168,7 @@ public class ShowUploadSpecimensAction extends FormViewAction<ShowUploadSpecimen
                 if (sampleIdMap.containsKey(sampleId))
                 {
                     if (!participantVisit.equals(sampleIdMap.get(sampleId)))
-                        errors.reject(SpringActionController.ERROR_MSG, "Error, Row " + rowNum + " same sample id has multiple " +
+                        errors.reject(SpringActionController.ERROR_MSG, "Error in row " + rowNum + ": the same sample id has multiple " +
                                 StudyService.get().getSubjectNounSingular(getViewContext().getContainer()) + "/visits.");
                 }
                 else
@@ -180,11 +184,11 @@ public class ShowUploadSpecimensAction extends FormViewAction<ShowUploadSpecimen
                 }
                 else
                 {
-                    errors.reject(SpringActionController.ERROR_MSG, "Error, Row " + rowNum + " missing " + (null == labels.get(SimpleSpecimenImporter.VIAL_ID) ? SimpleSpecimenImporter.VIAL_ID : labels.get(SimpleSpecimenImporter.VIAL_ID)));
+                    errors.reject(SpringActionController.ERROR_MSG, "Error in row " + rowNum + ": missing " + (null == labels.get(SimpleSpecimenImporter.VIAL_ID) ? SimpleSpecimenImporter.VIAL_ID : labels.get(SimpleSpecimenImporter.VIAL_ID)));
                 }
             }
             if (!vialIds.add(vialId))
-                errors.reject(SpringActionController.ERROR_MSG, "Error, Row " + rowNum + " duplicate vial id " + vialId);
+                errors.reject(SpringActionController.ERROR_MSG, "Error in row " + rowNum + ": duplicate vial id " + vialId);
 
             Set<String> requiredFields = PageFlowUtil.set(SimpleSpecimenImporter.DRAW_TIMESTAMP);
             if (study.getTimepointType() == TimepointType.VISIT)
@@ -192,7 +196,7 @@ public class ShowUploadSpecimensAction extends FormViewAction<ShowUploadSpecimen
             for (String col : requiredFields)
             {
                 if (null == row.get(col))
-                    errors.reject(SpringActionController.ERROR_MSG, "Error, Row " + rowNum + " does not contain a value for field " + (null == labels.get(col) ? col : labels.get(col)));
+                    errors.reject(SpringActionController.ERROR_MSG, "Error: row " + rowNum + " does not contain a value for field " + (null == labels.get(col) ? col : labels.get(col)));
             }
 
             if (errors.getAllErrors().size() >= 3)

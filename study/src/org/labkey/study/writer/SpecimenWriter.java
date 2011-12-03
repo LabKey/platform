@@ -16,6 +16,7 @@
 package org.labkey.study.writer;
 
 import org.labkey.api.data.*;
+import org.labkey.api.query.FieldKey;
 import org.labkey.api.study.StudyContext;
 import org.labkey.api.writer.VirtualFile;
 import org.labkey.api.writer.Writer;
@@ -28,7 +29,9 @@ import java.io.PrintWriter;
 import java.sql.ResultSet;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 /**
  * User: adam
@@ -54,6 +57,7 @@ class SpecimenWriter implements Writer<StudyImpl, StudyContext>
 
         SQLFragment sql = new SQLFragment().append("\nSELECT ");
         List<DisplayColumn> displayColumns = new ArrayList<DisplayColumn>(columns.size());
+        List<ColumnInfo> selectColumns = new ArrayList<ColumnInfo>(columns.size());
         String comma = "";
 
         for (SpecimenColumn column : columns)
@@ -61,8 +65,8 @@ class SpecimenWriter implements Writer<StudyImpl, StudyContext>
             SpecimenImporter.TargetTable tt = column.getTargetTable();
             TableInfo tinfo = tt.isEvents() ? schema.getTableInfoSpecimenEvent() : schema.getTableInfoSpecimenDetail();
             ColumnInfo ci = tinfo.getColumn(column.getDbColumnName());
-
             DataColumn dc = new DataColumn(ci);
+            selectColumns.add(dc.getDisplayColumn());
             dc.setCaption(column.getTsvColumnName());
             displayColumns.add(dc);
 
@@ -105,11 +109,22 @@ class SpecimenWriter implements Writer<StudyImpl, StudyContext>
         sql.append("\nWHERE se.Container = ? ORDER BY se.ExternalId");
         sql.add(c);
 
-        // Note: must be uncached result set -- this query can be very large
-        ResultSet rs = Table.executeQuery(StudySchema.getInstance().getSchema(), sql.getSQL(), sql.getParamsArray(), Table.ALL_ROWS, false);
+        ResultSet rs = null;
+        TSVGridWriter gridWriter = null;
+        try
+        {
+            // Note: must be uncached result set -- this query can be very large
+            rs = Table.executeQuery(StudySchema.getInstance().getSchema(), sql.getSQL(), sql.getParamsArray(), Table.ALL_ROWS, false);
 
-        TSVGridWriter gridWriter = new TSVGridWriter(new ResultsImpl(rs), displayColumns);
-        gridWriter.write(pw);
-        gridWriter.close();  // Closes ResultSet and PrintWriter
+            gridWriter = new TSVGridWriter(new ResultsImpl(rs, selectColumns), displayColumns);
+            gridWriter.write(pw);
+        }
+        finally
+        {
+            if (gridWriter != null)
+                gridWriter.close();  // Closes ResultSet and PrintWriter
+            else if (rs != null)
+                rs.close();
+        }
     }
 }

@@ -172,7 +172,7 @@
                     {
                 %>
                         <tr>
-                            <td style="<%= optionLabelStyle %>"><%= study.getSubjectNounSingular() %> Group</td>
+                            <td style="<%= optionLabelStyle %>"><%= h(study.getSubjectNounSingular()) %> Group</td>
                             <td>
                                 <select name="participantGroupFilter">
                                     <option value="">All Groups</option>
@@ -190,13 +190,13 @@
                                                             if (!grp.getLabel().equals(cat.getLabel()))
                                                             {
                                                         %>
-                                                        <%= cat.getLabel() + " : " + grp.getLabel() %>
+                                                        <%= h(cat.getLabel() + " : " + grp.getLabel()) %>
                                                         <%
                                                         }
                                                             else
                                                         {
                                                         %>
-                                                            <%= cat.getLabel() %>
+                                                            <%= h(cat.getLabel()) %>
                                                         <%
                                                         }
                                                         %>

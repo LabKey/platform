@@ -910,8 +910,18 @@ public class ProjectController extends SpringActionController
 
         public NavTree appendNavTrail(NavTree root)
         {
+            // Subclasses may have overridden the display name of this webpart for a given container:
+            String name;
+            if (_webPart != null)
+            {
+                WebPartFactory factory = Portal.getPortalPart(_webPart.getName());
+                name = factory.getDisplayName(getContainer(), _webPart.getLocation());
+            }
+            else
+                name = "Web Part";
+
             return (new BeginAction()).appendNavTrail(root)
-                    .addChild("Customize " + (null != _webPart ? _webPart.getName() : "Web Part"));
+                    .addChild("Customize " + name);
         }
     }
 

@@ -45,7 +45,6 @@ import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -112,7 +111,7 @@ public class SpecimenSummaryTable extends BaseStudyTable
         {
             public DisplayColumn createRenderer(ColumnInfo colInfo)
             {
-                return new CommentDisplayColumn(colInfo);
+                return new CommentDisplayColumn(colInfo, SpecimenSummaryTable.this);
             }
         });
 
@@ -150,11 +149,13 @@ public class SpecimenSummaryTable extends BaseStudyTable
 
     public static class CommentDisplayColumn extends DataColumn
     {
+        private TableInfo _summaryTable;
         private ColumnInfo _specimenHashColumn;
 
-        public CommentDisplayColumn(ColumnInfo commentColumn)
+        public CommentDisplayColumn(ColumnInfo commentColumn, TableInfo summaryTable)
         {
             super(commentColumn);
+            _summaryTable = summaryTable;
             setWidth("200px");
         }
 
@@ -211,33 +212,43 @@ public class SpecimenSummaryTable extends BaseStudyTable
 
         private Map<String, String> getCommentCache(RenderContext ctx, String lineSeparator) throws SQLException
         {
-            ResultSet rs = ctx.getResultSet();
-            if (_commentCache == null && rs instanceof Table.TableResultSet)
+            if (_commentCache == null)
             {
-                Table.TableResultSet tableRs = (Table.TableResultSet) rs;
-                Set<String> hashes = new HashSet<String>();
-                Map<String, List<SpecimenComment>> hashToComments = new HashMap<String, List<SpecimenComment>>();
-                for (Iterator<Map<String, Object>> it = tableRs.iterator(); it.hasNext(); )
+                Set<String> columns = new HashSet<String>();
+                columns.add("Comments");
+                columns.add("SpecimenHash");
+                ResultSet rs = null;
+                try
                 {
-                    Map<String, Object> row = it.next();
-                    String maxPossibleCount = (String) row.get("Comments");
-                    if (maxPossibleCount != null && !"0".equals(maxPossibleCount))
-                        hashes.add((String) row.get("SpecimenHash"));
-
-                    if (hashes.size() >= 1000)
+                    rs = Table.select(_summaryTable, columns, ctx.getBaseFilter(), ctx.getBaseSort());
+                    Set<String> hashes = new HashSet<String>();
+                    Map<String, List<SpecimenComment>> hashToComments = new HashMap<String, List<SpecimenComment>>();
+                    while (rs.next())
                     {
-                        addComments(ctx.getContainer(), hashes, hashToComments);
-                        hashes.clear();
+                        String maxPossibleCount = rs.getString("Comments");
+                        if (maxPossibleCount != null && !"0".equals(maxPossibleCount))
+                            hashes.add(rs.getString("SpecimenHash"));
+
+                        if (hashes.size() >= 1000)
+                        {
+                            addComments(ctx.getContainer(), hashes, hashToComments);
+                            hashes.clear();
+                        }
+                    }
+                    addComments(ctx.getContainer(), hashes, hashToComments);
+
+                    _commentCache = new HashMap<String, String>();
+                    for (Map.Entry<String, List<SpecimenComment>> entry : hashToComments.entrySet())
+                    {
+                        List<SpecimenComment> commentList = entry.getValue();
+                        String formatted = formatCommentText(commentList.toArray(new SpecimenComment[commentList.size()]), lineSeparator);
+                        _commentCache.put(entry.getKey(), formatted);
                     }
                 }
-                addComments(ctx.getContainer(), hashes, hashToComments);
-
-                _commentCache = new HashMap<String, String>();
-                for (Map.Entry<String, List<SpecimenComment>> entry : hashToComments.entrySet())
+                finally
                 {
-                    List<SpecimenComment> commentList = entry.getValue();
-                    String formatted = formatCommentText(commentList.toArray(new SpecimenComment[commentList.size()]), lineSeparator);
-                    _commentCache.put(entry.getKey(), formatted);
+                    if (rs != null)
+                        try { rs.close(); } catch (SQLException e) {}
                 }
             }
             return _commentCache;

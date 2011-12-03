@@ -318,6 +318,7 @@ public class SpecimenUtils
         if (getViewContext().hasPermission(AdminPermission.class))
         {
             ActionButton upload = new ActionButton(new ActionURL(ShowUploadSpecimensAction.class, getContainer()), "Import Specimens");
+            upload.setActionType(ActionButton.Action.GET);
             buttons.add(upload);
         }
 

@@ -40,6 +40,23 @@
 <script>
     var CREATE_REQUEST_BASE_LINK = '<%= createRequestURL.getLocalURIString() %>';
     LABKEY.requiresScript('sampleRequest.js');
+    <%
+    if (bean.getSelectedRequest() != null && bean.getSelectedRequestTime() != null)
+    {
+        // We only want to overwrite the selected request with the most recently created request if no other request
+        // selection has taken place via the shopping cart.  We ensure this by storing the timestamp of the last selection:
+    %>
+    var lastRequestSelectionTimeRaw = LABKEY.Utils.getCookie("selectedRequestTime");
+    var lastRequestSelectionTime = lastRequestSelectionTimeRaw ? Date.parse(lastRequestSelectionTimeRaw) : undefined;
+    var lastNewRequestCreationTime = Date.parse('<%= bean.getSelectedRequestTime() %>');
+    if (!lastRequestSelectionTime || lastRequestSelectionTime < lastNewRequestCreationTime)
+    {
+        LABKEY.Utils.setCookie("selectedRequest", <%= bean.getSelectedRequest() %>, true);
+        LABKEY.Utils.setCookie("selectedRequestTime", new Date(), true);
+    }
+    <%
+    }
+    %>
 </script>
 <%
    // boolean enableRequests = SampleManager.getInstance().getRepositorySettings(me.getViewContext().getContainer()).isEnableRequests();

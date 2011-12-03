@@ -326,8 +326,13 @@ public class SpecimenController extends BaseStudyController
                 throw new NotFoundException("No study exists in this folder.");
 
             SpecimenQueryView view = createInitializedQueryView(form, errors, form.getExportType() != null, null);
-            JspView<SpecimenHeaderBean> header = new JspView<SpecimenHeaderBean>("/org/labkey/study/view/samples/samplesHeader.jsp",
-                    new SpecimenHeaderBean(getViewContext(), view));
+            SpecimenHeaderBean bean = new SpecimenHeaderBean(getViewContext(), view);
+            if (form.getSelectedRequest() >= 0)
+            {
+                bean.setSelectedRequest(form.getSelectedRequest());
+                bean.setSelectedRequestTime(form.getSelectedRequestTime());
+            }
+            JspView<SpecimenHeaderBean> header = new JspView<SpecimenHeaderBean>("/org/labkey/study/view/samples/samplesHeader.jsp", bean);
             return new VBox(header, view);
         }
 
@@ -344,6 +349,8 @@ public class SpecimenController extends BaseStudyController
         private ActionURL _otherViewURL;
         private ViewContext _viewContext;
         private boolean _showingVials;
+        private Integer _selectedRequest;
+        private String _selectedRequestTime;
         private Set<Pair<String, String>> _filteredPtidVisits;
 
         public SpecimenHeaderBean(ViewContext context, SpecimenQueryView view)
@@ -413,6 +420,26 @@ public class SpecimenController extends BaseStudyController
             _filteredPtidVisits = filteredPtidVisits;
         }
 
+        public Integer getSelectedRequest()
+        {
+            return _selectedRequest;
+        }
+
+        public void setSelectedRequest(Integer selectedRequest)
+        {
+            _selectedRequest = selectedRequest;
+        }
+
+        public String getSelectedRequestTime()
+        {
+            return _selectedRequestTime;
+        }
+
+        public void setSelectedRequestTime(String selectedRequestTime)
+        {
+            _selectedRequestTime = selectedRequestTime;
+        }
+
         public ActionURL getOtherViewURL()
         {
             return _otherViewURL;
@@ -457,6 +484,8 @@ public class SpecimenController extends BaseStudyController
         }
 
         private boolean _showVials;
+        private int _selectedRequest = -1;
+        private String _selectedRequestTime;
         private SpecimenQueryView.Mode _viewMode = SpecimenQueryView.Mode.DEFAULT;
 
         public boolean isShowVials()
@@ -483,6 +512,26 @@ public class SpecimenController extends BaseStudyController
         {
             if (viewMode != null)
                 _viewMode = SpecimenQueryView.Mode.valueOf(viewMode);
+        }
+
+        public int getSelectedRequest()
+        {
+            return _selectedRequest;
+        }
+
+        public void setSelectedRequest(int selectedRequest)
+        {
+            _selectedRequest = selectedRequest;
+        }
+
+        public String getSelectedRequestTime()
+        {
+            return _selectedRequestTime;
+        }
+
+        public void setSelectedRequestTime(String selectedRequestTime)
+        {
+            _selectedRequestTime = selectedRequestTime;
         }
     }
 
@@ -1639,10 +1688,20 @@ public class SpecimenController extends BaseStudyController
 
         public ActionURL getSuccessURL(CreateSampleRequestForm createSampleRequestForm)
         {
-            if (createSampleRequestForm.getReturnUrl() != null && !createSampleRequestForm.isIgnoreReturnUrl())
-                return new ActionURL(createSampleRequestForm.getReturnUrl());
+            ActionURL modifiedReturnURL = null;
+            if (createSampleRequestForm.getReturnUrl() != null)
+            {
+                modifiedReturnURL = createSampleRequestForm.getReturnUrl().getActionURL();
+                if (modifiedReturnURL != null)
+                {
+                    modifiedReturnURL.replaceParameter("selectedRequest", Integer.toString(_sampleRequest.getRowId()));
+                    modifiedReturnURL.replaceParameter("selectedRequestTime", DateUtil.formatDateTime(_sampleRequest.getCreated()));
+                }
+            }
+            if (modifiedReturnURL != null && !createSampleRequestForm.isIgnoreReturnUrl())
+                return modifiedReturnURL;
             else
-                return getManageRequestURL(_sampleRequest.getRowId(), createSampleRequestForm.getReturnUrl());
+                return getManageRequestURL(_sampleRequest.getRowId(), modifiedReturnURL != null ? new ReturnURLString(modifiedReturnURL.getLocalURIString()) : null);
         }
     }
 
@@ -4469,13 +4528,13 @@ public class SpecimenController extends BaseStudyController
     {
         public ModelAndView getView(Object o, BindException errors) throws Exception
         {
-            Container c = getContainer();
+            Container specimenTemplateContainer = getContainer();
             //Search for a template in all folders up to root.
             Workbook inputWorkbook = null;
-            while (!c.equals(ContainerManager.getRoot()))
+            while (!specimenTemplateContainer.equals(ContainerManager.getRoot()))
             {
                 FileContentService svc = ServiceRegistry.get().getService(FileContentService.class);
-                AttachmentDirectory dir = svc.getMappedAttachmentDirectory(c, false);
+                AttachmentDirectory dir = svc.getMappedAttachmentDirectory(specimenTemplateContainer, false);
                 if (null != dir && dir.getFileSystemDirectory().exists())
                 {
                     if (new File(dir.getFileSystemDirectory(), "Samples.xls").exists())
@@ -4485,7 +4544,7 @@ public class SpecimenController extends BaseStudyController
                         inputWorkbook = Workbook.getWorkbook(new File(dir.getFileSystemDirectory(), "Samples.xls"), settings);
                     }
                 }
-                c = c.getParent();
+                specimenTemplateContainer = specimenTemplateContainer.getParent();
             }
             int startRow = 0;
             if (null != inputWorkbook)
@@ -4498,7 +4557,7 @@ public class SpecimenController extends BaseStudyController
             }
 
             List<Map<String,Object>> defaultSpecimens = new ArrayList<Map<String, Object>>();
-            SimpleSpecimenImporter importer = new SimpleSpecimenImporter(getStudy().getTimepointType(),  StudyService.get().getSubjectNounSingular(c));
+            SimpleSpecimenImporter importer = new SimpleSpecimenImporter(getStudy().getTimepointType(),  StudyService.get().getSubjectNounSingular(getContainer()));
             MapArrayExcelWriter xlWriter = new MapArrayExcelWriter(defaultSpecimens, importer.getSimpleSpecimenColumns());
             for (ExcelColumn col : xlWriter.getColumns())
                 col.setCaption(importer.label(col.getName()));

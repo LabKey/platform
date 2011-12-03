@@ -16,6 +16,7 @@
 
 package org.labkey.study.query;
 
+import org.labkey.api.collections.NamedObject;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.DataColumn;
 import org.labkey.api.data.RenderContext;
@@ -43,5 +44,11 @@ public class PtidObfuscatingDisplayColumn extends DataColumn
     public String getFormattedValue(RenderContext ctx)
     {
         return getValue(ctx);
+    }
+
+    @Override
+    protected String getSelectInputDisplayValue(NamedObject entry)
+    {
+        return DemoMode.obfuscate(super.getSelectInputDisplayValue(entry));
     }
 }

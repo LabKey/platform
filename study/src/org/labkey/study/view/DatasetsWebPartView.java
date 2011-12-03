@@ -30,7 +30,7 @@ public class DatasetsWebPartView extends JspView<Object>
     public DatasetsWebPartView()
     {
         super("/org/labkey/study/view/datasets.jsp");
-        setTitle("Study Datasets");
+        setTitle("Datasets");
     }
 
     @Override

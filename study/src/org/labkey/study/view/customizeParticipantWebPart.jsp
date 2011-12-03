@@ -40,7 +40,7 @@
         selectedData = SubjectDetailsWebPartFactory.DataType.ALL.name();
     
     boolean includePrivateData = Boolean.parseBoolean(bean.getPropertyMap().get(SubjectDetailsWebPartFactory.QC_STATE_INCLUDE_PRIVATE_DATA_KEY));
-    String subjectNoun = StudyService.get().getSubjectColumnName(getViewContext().getContainer());
+    String subjectNoun = StudyService.get().getSubjectNounSingular(getViewContext().getContainer());
 %>
 <script type="text/javascript">LABKEY.requiresScript("completion.js");</script>
 <p>Each <%= subjectNoun.toLowerCase() %> webpart will display datasets from a single <%= subjectNoun.toLowerCase() %>.</p>

@@ -485,15 +485,31 @@ public class StudyModule extends SpringModule implements SearchService.DocumentP
         }
 
         @Override
+        public String getDisplayName(Container container, String location)
+        {
+            return StudyModule.getWebPartSubjectNoun(container) + " List";
+        }
+
+        @Override
         public WebPartView getWebPartView(ViewContext portalCtx, Portal.WebPart webPart) throws IllegalAccessException, InvocationTargetException, InstantiationException
         {
             if (!portalCtx.hasPermission(ReadPermission.class))
-                return new HtmlView("Subject List", portalCtx.getUser().isGuest() ? "Please log in to see this data." : "You do not have permission to see this data");
+                return new HtmlView(getDisplayName(portalCtx.getContainer(),  webPart.getLocation()), portalCtx.getUser().isGuest() ? "Please log in to see this data." : "You do not have permission to see this data");
 
             if (null == StudyManager.getInstance().getStudy(portalCtx.getContainer()))
                 return new HtmlView("Subject List", "This folder does not contain a study.");
-            return new SubjectsWebPart(HttpView.BODY.equals(webPart.getLocation()));
+            return new SubjectsWebPart(HttpView.BODY.equals(webPart.getLocation()), webPart.getIndex());
         }
+    }
+
+    public static String getWebPartSubjectNoun(Container container)
+    {
+        String subjectNoun = StudyService.get().getSubjectNounSingular(container);
+        if (subjectNoun == null)
+            subjectNoun = "Subject";
+        if (!Character.isUpperCase(subjectNoun.charAt(0)))
+            subjectNoun = Character.toUpperCase(subjectNoun.charAt(0)) + subjectNoun.substring(1);
+        return subjectNoun;
     }
 
     private static class DatasetsWebPartFactory extends DefaultWebPartFactory

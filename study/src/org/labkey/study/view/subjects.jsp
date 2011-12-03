@@ -36,7 +36,8 @@
     int cols = bean.getCols();
     int rows = bean.getRows();
     int maxSubjects = cols * rows;
-    String divId = "subjectList";
+    String divId = "subjectList-" + bean.getIndex();
+    String viewObject = "subjectHandler" + bean.getIndex();
 %>
 <style type="text/css">
 ul.subjectlist li {
@@ -53,7 +54,8 @@ ul.subjectlist {
 </style>
 
 <script type="text/javascript">
-
+var <%= viewObject %> = new function()
+{
     var _subjects = [];
     var _urlTemplate = '<%= urlTemplate %>';
     var _maxSubjects = <%= maxSubjects %>;
@@ -62,109 +64,114 @@ ul.subjectlist {
     var _pluralNoun = '<%= pluralNoun %>';
     var _cols = <%= cols %>;
     var _divId = '<%= divId %>';
-
-    function onFailure(errorInfo, options, responseObj)
-    {
-        var html;
-        if (errorInfo && errorInfo.exception)
-            html = "Failure: " + errorInfo.exception;
-        else
-            html = "Failure: " + responseObj.statusText;
-        document.getElementById(_divId).innerHTML = html;
-    }
-
-    function onSuccess(data)
-    {
-        _subjects = [];
-        for (var rowIndex = 0; rowIndex < data.rows.length; rowIndex++)
-        {
-            var dataRow = data.rows[rowIndex];
-            _subjects[_subjects.length] = dataRow[_subjectColName];
-        }
-        renderSubjects(_maxSubjects, _cols, undefined);
-    }
-
     var _initialRenderComplete = false;
-    function renderSubjects(maxCount, cols, substr)
-    {
-        if (_subjects.length == 0)
-        {
-            document.getElementById(_divId + 'wrapper').innerHTML = 'No ' + _pluralNoun.toLowerCase() + " were found in this study.  " +
-                    _singularNoun + " IDs will appear here after specimens or datasets are imported.";
-            return;
-        }
 
-        // Lock the initial div size on first render, but allow it to change if we're filtering:
-        if (_initialRenderComplete)
-        {
-            var outerDiv = document.getElementById(_divId + 'wrapper');
-            outerDiv.removeAttribute('style');
-        }
-        _initialRenderComplete = true;
+    return {
 
-        var maxPerCol = Math.ceil(maxCount / cols);
-        var html = '<table><tr><td valign="top"><ul class="subjectlist">';
-        var count = 0;
-        for (var subjectIndex = 0; subjectIndex < _subjects.length; subjectIndex++)
+        onFailure: function(errorInfo, options, responseObj)
         {
-            var subjectId = _subjects[subjectIndex];
-            if (!substr || subjectId.indexOf(substr) >= 0)
+            var html;
+            if (errorInfo && errorInfo.exception)
+                html = "Failure: " + errorInfo.exception;
+            else
+                html = "Failure: " + responseObj.statusText;
+            document.getElementById(_divId).innerHTML = html;
+        },
+
+        onSuccess: function(data)
+        {
+            _subjects = [];
+            for (var rowIndex = 0; rowIndex < data.rows.length; rowIndex++)
             {
-                if (++count > 1 && count % maxPerCol == 1 && count <= maxCount)
-                    html += '</ul></td><td  valign="top"><ul class="subjectlist">';
-
-                if (count <= maxCount)
-                    html += '<li><a href="' + _urlTemplate + subjectId + '">' + LABKEY.id(subjectId) + '</a></li>';
+                var dataRow = data.rows[rowIndex];
+                _subjects[_subjects.length] = dataRow[_subjectColName];
             }
-        }
+            this.renderSubjects(_maxSubjects, _cols, undefined);
+        },
 
-        html += '</ul></td></tr></table>';
-        if (count > maxCount)
+        renderSubjects: function(maxCount, cols, substr)
         {
-            if (substr)
-                html += 'Showing ' + maxCount + ' of ' + count + ' matching ' + _pluralNoun.toLowerCase() + '.';
+            if (_subjects.length == 0)
+            {
+                document.getElementById(_divId + 'wrapper').innerHTML = 'No ' + _pluralNoun.toLowerCase() + " were found in this study.  " +
+                        _singularNoun + " IDs will appear here after specimens or datasets are imported.";
+                return;
+            }
+
+            // Lock the initial div size on first render, but allow it to change if we're filtering:
+            if (_initialRenderComplete)
+            {
+                var outerDiv = document.getElementById(_divId + 'wrapper');
+                outerDiv.removeAttribute('style');
+            }
+            _initialRenderComplete = true;
+
+            var maxPerCol = Math.ceil(maxCount / cols);
+            var html = '<table><tr><td valign="top"><ul class="subjectlist">';
+            var count = 0;
+            for (var subjectIndex = 0; subjectIndex < _subjects.length; subjectIndex++)
+            {
+                var subjectId = _subjects[subjectIndex];
+                if (!substr || subjectId.indexOf(substr) >= 0)
+                {
+                    if (++count > 1 && count % maxPerCol == 1 && count <= maxCount)
+                        html += '</ul></td><td  valign="top"><ul class="subjectlist">';
+
+                    if (count <= maxCount)
+                        html += '<li><a href="' + _urlTemplate + subjectId + '">' + LABKEY.id(subjectId) + '</a></li>';
+                }
+            }
+
+            html += '</ul></td></tr></table>';
+            if (count > maxCount)
+            {
+                if (substr)
+                    html += 'Showing ' + maxCount + ' of ' + count + ' matching ' + _pluralNoun.toLowerCase() + '.';
+                else
+                    html += 'Showing first ' + maxCount + ' of ' + count + ' ' + _pluralNoun.toLowerCase() + '.';
+                var substrParam = substr ? '\'' + substr + '\'' : 'undefined';
+                html += ' <a href="#" onClick="<%= viewObject %>.renderSubjects(' + count + ', ' + cols + ', ' + substrParam + '); return false;">Show all</a>';
+            }
+            else if (count > 0)
+            {
+                if (substr)
+                    html += 'Found ' + count + ' ' + (count > 1 ? _pluralNoun.toLowerCase() : _singularNoun.toLowerCase()) + '.';
+                else
+                    html += 'Showing all ' + count + ' ' + _pluralNoun.toLowerCase() + '.';
+            }
             else
-                html += 'Showing first ' + maxCount + ' of ' + count + ' ' + _pluralNoun.toLowerCase() + '.';
-            var substrParam = substr ? '\'' + substr + '\'' : 'undefined';
-            html += ' <a href="#" onClick="renderSubjects(' + count + ', ' + cols + ', ' + substrParam + '); return false;">Show all</a>';
-        }
-        else if (count > 0)
+                html += 'No ' + _singularNoun.toLowerCase() + ' IDs contain \"' + substr + '\".';
+            document.getElementById(_divId).innerHTML = html;
+        },
+
+        updateSubjects: function(substring)
         {
-            if (substr)
-                html += 'Found ' + count + ' ' + (count > 1 ? _pluralNoun.toLowerCase() : _singularNoun.toLowerCase()) + '.';
-            else
-                html += 'Showing all ' + count + ' ' + _pluralNoun.toLowerCase() + '.';
+            // Use a timer to coalesce keystrokes
+            clearTimeout();
+            var refreshScript = '<%= viewObject %>.renderSubjects(' + _maxSubjects + ', ' + _cols + ', "' + substring + '");';
+            setTimeout(refreshScript, 100);
+        },
+
+        loadParticipants: function()
+        {
+            LABKEY.Query.selectRows({
+                    schemaName: 'study',
+                    queryName: _singularNoun,
+                    columns: _subjectColName,
+                    sort: _subjectColName,
+                    success: this.onSuccess,
+                    failure: this.onFailure,
+                    scope: this
+                });
         }
-        else
-            html += 'No ' + _singularNoun.toLowerCase() + ' IDs contain \"' + substr + '\".';
-        document.getElementById(_divId).innerHTML = html;
-    }
+    };
+};
 
-    function updateSubjects(substring)
-    {
-        // Use a timer to coalesce keystrokes
-        clearTimeout();
-        var refreshScript = 'renderSubjects(' + _maxSubjects + ', ' + _cols + ', "' + substring + '");';
-        setTimeout(refreshScript, 100);
-    }
-
-    function loadParticipants()
-    {
-        LABKEY.Query.selectRows({
-                schemaName: 'study',
-                queryName: _singularNoun,
-                columns: _subjectColName,
-                sort: _subjectColName,
-                success: onSuccess,
-                failure: onFailure
-            });
-    }
-
-    Ext.onReady(function() {
-        loadParticipants();
-    });
+Ext.onReady(function() {
+    <%= viewObject %>.loadParticipants();
+});
 </script>
 <div id="<%= divId %>wrapper" style="height:<%= 1.5 * rows + 4 %>em">
-    Filter: <input type="text" size="15" onKeyUp="updateSubjects(this.value); return false;">
+    Filter: <input type="text" size="15" onKeyUp="<%= viewObject %>.updateSubjects(this.value); return false;">
     <div id="<%= divId %>">Loading...</div>
 </div>

@@ -89,9 +89,15 @@ function setSelectedRequestId(requestId)
 {
     _requestWin.selectedRequestId = requestId;
     if (requestId)
+    {
         LABKEY.Utils.setCookie("selectedRequest", requestId, true);
+        LABKEY.Utils.setCookie("selectedRequestTime", new Date(), true);
+    }
     else
+    {
         LABKEY.Utils.deleteCookie("selectedRequest", true);
+        LABKEY.Utils.deleteCookie("selectedRequestTime", true);
+    }
 }
 
 function submitRequest()

@@ -2,6 +2,7 @@ package org.labkey.study.view;
 
 import org.labkey.api.data.Container;
 import org.labkey.api.view.*;
+import org.labkey.study.StudyModule;
 import org.labkey.study.model.QCStateSet;
 import org.labkey.study.model.Participant;
 import org.labkey.study.model.StudyManager;
@@ -62,6 +63,12 @@ public class SubjectDetailsWebPartFactory extends BaseWebPartFactory
     {
         super("Subject Details", null, true, true);
         addLegacyNames("Participant Details");
+    }
+
+    @Override
+    public String getDisplayName(Container container, String location)
+    {
+        return StudyModule.getWebPartSubjectNoun(container) + " Details";
     }
 
     public WebPartView getWebPartView(ViewContext portalCtx, Portal.WebPart webPart) throws Exception

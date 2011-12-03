@@ -3,6 +3,7 @@ package org.labkey.study.view;
 import org.labkey.api.study.StudyService;
 import org.labkey.api.view.JspView;
 import org.labkey.api.view.ViewContext;
+import org.labkey.study.StudyModule;
 
 /**
  * Copyright (c) 2010-2011 LabKey Corporation
@@ -30,6 +31,7 @@ public class SubjectsWebPart extends JspView<SubjectsWebPart.SubjectsBean>
         private ViewContext _viewContext;
         private int _rows = 5;
         private int _cols = 5;
+        private int _index;
 
         public ViewContext getViewContext()
         {
@@ -60,15 +62,26 @@ public class SubjectsWebPart extends JspView<SubjectsWebPart.SubjectsBean>
         {
             _cols = cols;
         }
+
+        public void setIndex(int index)
+        {
+            _index = index;
+        }
+
+        public int getIndex()
+        {
+            return _index;
+        }
     }
 
-    public SubjectsWebPart(boolean wide)
+    public SubjectsWebPart(boolean wide, int index)
     {
         super("/org/labkey/study/view/subjects.jsp", new SubjectsWebPart.SubjectsBean());
         getModelBean().setViewContext(getViewContext());
         getModelBean().setRows(wide ? 5 : 10);
         getModelBean().setCols(wide ? 6 : 2);
-        String title = StudyService.get().getSubjectNounPlural(getViewContext().getContainer());
+        getModelBean().setIndex(index);
+        String title = StudyModule.getWebPartSubjectNoun(getContextContainer()) + " List";
         setTitle(title);
     }
 }
