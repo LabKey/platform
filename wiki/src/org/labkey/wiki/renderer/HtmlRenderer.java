@@ -80,34 +80,43 @@ public class HtmlRenderer implements WikiRenderer
 
         // process A and IMG
         NodeList nl = doc.getElementsByTagName("a");
+        Map<Element, String> linkExceptions = new HashMap<Element, String>();
         for (int i=0 ; i<nl.getLength() ; i++)
         {
             Element a = (Element)nl.item(i);
-            String href = PageFlowUtil.decode(a.getAttribute("href"));
-
-            Attachment at = _attachments.get(href);
-            if (null != at)
+            try
             {
-                a.setAttribute("href", _attachPrefix + PageFlowUtil.encode(at.getName()));
-                continue;
+                String href = PageFlowUtil.decode(a.getAttribute("href"));
+
+                Attachment at = _attachments.get(href);
+                if (null != at)
+                {
+                    a.setAttribute("href", _attachPrefix + PageFlowUtil.encode(at.getName()));
+                    continue;
+                }
+
+                if (href.startsWith("#"))
+                    continue;
+
+                HString title = _nameTitleMap.get(new HString(href));
+                if (null != title)
+                {
+                    // UNDONE: why is l.getName() null???
+                    //a.setAttribute("href", _hrefPrefix + PageFlowUtil.encode(.getName()));
+                    a.setAttribute("href", _hrefPrefix + PageFlowUtil.encode(href));
+                    continue;
+                }
+
+                // if this doesn't look like a url, then link to it as a wiki page
+                if (StringUtils.containsNone(href, "?:/.&"))
+                {
+                    a.setAttribute("href", _hrefPrefix + PageFlowUtil.encode(href));
+                }
             }
-
-            if (href.startsWith("#"))
-                continue;
-            
-            HString title = _nameTitleMap.get(new HString(href));
-            if (null != title)
+            catch (IllegalArgumentException e)
             {
-                // UNDONE: why is l.getName() null???
-                //a.setAttribute("href", _hrefPrefix + PageFlowUtil.encode(.getName()));
-                a.setAttribute("href", _hrefPrefix + PageFlowUtil.encode(href));
-                continue;
-            }
-
-            // if this doesn't look like a url, then link to it as a wiki page
-            if (StringUtils.containsNone(href, "?:/.&"))
-            {
-                a.setAttribute("href", _hrefPrefix + PageFlowUtil.encode(href));
+                // Issue 12160: there was an issue with decoding the href for the link, so store the exception text and link index for later
+                linkExceptions.put(a, e.getMessage());
             }
         }
 
@@ -142,6 +151,17 @@ public class HtmlRenderer implements WikiRenderer
             // inspectNode(bodyNode, 0);
 
             String bodyHtml = PageFlowUtil.convertNodeToHtml(bodyNode);
+
+            // Issue 12160: if there were any link decoding exceptions, replace the link with the error message
+            if (linkExceptions.size() > 0)
+            {
+                for (Map.Entry<Element, String> link : linkExceptions.entrySet())
+                {
+                    String linkHtml = "<span class='labkey-error'>" + link.getValue() + "</span>";
+                    bodyHtml = bodyHtml.replace(PageFlowUtil.convertNodeToHtml(link.getKey()), linkHtml);
+                }
+            }
+
             innerHtml.append(bodyHtml.substring("<body>".length(), bodyHtml.length()-"</body>".length()));
         }
         catch (Exception e)

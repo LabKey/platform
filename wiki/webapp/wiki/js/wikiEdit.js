@@ -625,7 +625,9 @@ function textContainsNonVisualElements(content)
 
 function setTabStripVisible(isVisible)
 {
-    Ext.get("wiki-tab-strip").setDisplayed(isVisible);
+    Ext.get("wiki-tab-visual").setDisplayed(isVisible);
+    Ext.get("wiki-tab-source").setDisplayed(isVisible);
+    Ext.get("wiki-tab-strip-spacer").setDisplayed(isVisible);
 }
 
 function updateExistingAttachments(attachments, encodeNames)

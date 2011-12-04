@@ -158,15 +158,15 @@
                     <td width="99%">
                         <div>
                           <!--
-                             start the wiki-tab-strip out hidden, so that it does not appear and then disappear
+                             start the wiki-tab-strip tabs and spacer out hidden, so that it does not appear and then disappear
                              when wiki editor loads and hides it with javascript.
                           -->
-                            <ul id="wiki-tab-strip" class="labkey-tab-strip" style="display: none;">
-                                <li id="wiki-tab-visual" class="labkey-tab-active"><a href="#" onclick="userSwitchToVisual()">Visual</a></li>
-                                <li id="wiki-tab-source" class="labkey-tab-inactive"><a href="#" onclick="userSwitchToSource()">Source</a></li>
+                            <ul id="wiki-tab-strip" class="labkey-tab-strip">
+                                <li id="wiki-tab-visual" class="labkey-tab-active" style="display: none;"><a href="#" onclick="userSwitchToVisual()">Visual</a></li>
+                                <li id="wiki-tab-source" class="labkey-tab-inactive" style="display: none;"><a href="#" onclick="userSwitchToSource()">Source</a></li>
                                 <div class="x-clear"></div>
                             </ul>
-                            <div class="labkey-tab-strip-spacer"></div>
+                            <div id="wiki-tab-strip-spacer" class="labkey-tab-strip-spacer" style="display: none;"></div>
                             <div id="wiki-tab-content" class="labkey-tab-strip-content" style="padding: 0;">
                                 <form action="">
                                 <textarea rows="30" cols="80" style="width:100%; border:none;" id="<%=ID_PREFIX%>body"
