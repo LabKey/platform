@@ -48,7 +48,6 @@ import org.labkey.api.security.permissions.ReadPermission;
 
 import java.sql.SQLException;
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 import java.util.TreeMap;
@@ -167,11 +166,7 @@ public class AuditLogTable extends FilteredTable
         if (containerColumn != null && getContainer() != null)
         {
             clearConditions(containerColumn.getName());
-            Collection<String> ids = filter.getIds(getContainer());
-            if (ids != null)
-            {
-                addCondition(new SimpleFilter(new SimpleFilter.InClause("ContainerId", ids)));
-            }
+            addCondition(new SimpleFilter(filter.createFilterClause(getSchema(), containerColumn.getName(), getContainer())));
         }
     }
 

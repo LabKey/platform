@@ -64,34 +64,17 @@ public class ExpRunGroupMapTableImpl extends ExpTableImpl<ExpRunGroupMapTable.Co
 
     /**
      * Use the Run's Container to filter the RunList table.
-     * @param filter
      */
     @Override
     protected void applyContainerFilter(ContainerFilter filter)
     {
         clearConditions("FolderFilter");
 
-        Collection<String> ids = getContainerFilter().getIds(getContainer());
-        if (ids != null)
-        {
-            SQLFragment sql = new SQLFragment();
-            sql.append("(SELECT er.Container FROM ");
-            sql.append(ExperimentServiceImpl.get().getTinfoExperimentRun()).append(" er ");
-            sql.append("WHERE er.RowId = ExperimentRunId");
+        SQLFragment sql = new SQLFragment();
+        sql.append("(SELECT er.Container FROM ");
+        sql.append(ExperimentServiceImpl.get().getTinfoExperimentRun(), "er");
+        sql.append(" WHERE er.RowId = ExperimentRunId)");
 
-            sql.append(") IN (");
-
-            String q = "?";
-            for (String id : ids)
-            {
-                sql.append(q);
-                sql.add(id);
-                q = ", ?";
-            }
-
-            sql.append(")");
-
-            addCondition(sql, "FolderFilter");
-        }
+        addCondition(filter.getSQLFragment(getSchema(), sql, getContainer()), "FolderFilter");
     }
 }

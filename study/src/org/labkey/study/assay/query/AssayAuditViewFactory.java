@@ -22,12 +22,12 @@ import org.labkey.api.audit.SimpleAuditViewFactory;
 import org.labkey.api.audit.query.AuditLogQueryView;
 import org.labkey.api.data.*;
 import org.labkey.api.exp.PropertyType;
+import org.labkey.api.exp.api.ExperimentService;
 import org.labkey.api.exp.property.Domain;
 import org.labkey.api.exp.property.PropertyService;
 import org.labkey.api.query.*;
 import org.labkey.api.security.User;
 import org.labkey.api.util.StringExpression;
-import org.labkey.api.view.DataView;
 import org.labkey.api.view.ViewContext;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.study.Study;
@@ -102,7 +102,7 @@ public class AssayAuditViewFactory extends SimpleAuditViewFactory
         SimpleFilter filter = new SimpleFilter();
         if (protocolId != -1)
             filter.addCondition("IntKey1", protocolId);
-        filter.addInClause("ContainerId", containerFilter.getIds(context.getContainer()));
+        filter.addCondition(containerFilter.createFilterClause(ExperimentService.get().getSchema(), "ContainerId", context.getContainer()));
 
         AuditLogQueryView view = AuditLogService.get().createQueryView(context, filter, AssayPublishManager.ASSAY_PUBLISH_AUDIT_EVENT);
         view.setSort(new Sort("-Date"));

@@ -537,21 +537,8 @@ public class ExperimentServiceImpl implements ExperimentService.Interface
             }
 
             sql.append(" m.RowId = mi.MaterialId AND mi.TargetApplicationId = pa.RowId AND " +
-                    "pa.RunId = r.RowId ");
-            Collection<String> ids = filter.getIds(container);
-            if (ids != null)
-            {
-                sql.append("AND r.Container IN (");
-                String separator = "";
-                for (String id : ids)
-                {
-                    sql.append(separator);
-                    sql.append("?");
-                    sql.add(id);
-                    separator = ", ";
-                }
-                sql.append(") ");
-            }
+                    "pa.RunId = r.RowId AND ");
+            sql.append(filter.getSQLFragment(getSchema(), new SQLFragment("r.Container"), container));
             sql.append(" GROUP BY mi.Role ORDER BY mi.Role");
 
             Map<String, Object>[] queryResults = Table.executeQuery(getSchema(), sql, Map.class);
@@ -1025,20 +1012,8 @@ public class ExperimentServiceImpl implements ExperimentService.Interface
             }
             sql.append(" pa.runid IN (SELECT rowid FROM ");
             sql.append(getTinfoExperimentRun());
-            Collection<String> ids = filter.getIds(container);
-            if (ids != null)
-            {
-                sql.append(" WHERE Container IN (");
-                String separator = "";
-                for (String id : ids)
-                {
-                    sql.append(separator);
-                    sql.append("?");
-                    sql.add(id);
-                    separator = ", ";
-                }
-                sql.append(")");
-            }
+            sql.append(" WHERE ");
+            sql.append(filter.getSQLFragment(getSchema(), new SQLFragment("Container"), container));
             sql.append("))");
             String[] result = Table.executeArray(getSchema(), sql, String.class);
             return new TreeSet<String>(Arrays.asList(result));

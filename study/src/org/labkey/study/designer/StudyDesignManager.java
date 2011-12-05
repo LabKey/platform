@@ -103,7 +103,7 @@ public class StudyDesignManager
     {
         SimpleFilter filter = new SimpleFilter();
         ContainerFilter cf = new ContainerFilter.CurrentAndSubfolders(u);
-        filter.addInClause("Container", cf.getIds(root));
+        filter.addClause(cf.createFilterClause(getSchema(), "Container", root));
 
         return Table.select(getStudyDesignTable(), Table.ALL_COLUMNS, filter, null, StudyDesignInfo.class);
     }

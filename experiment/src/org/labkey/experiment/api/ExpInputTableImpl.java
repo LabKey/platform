@@ -50,42 +50,23 @@ public abstract class ExpInputTableImpl<C extends Enum> extends ExpTableImpl<C> 
     {
         clearConditions("FolderRunType");
 
-        Collection<String> ids = getContainerFilter().getIds(getContainer());
-        if (ids != null || _run != null || _type != null)
+        SQLFragment sqlFragment = new SQLFragment("(SELECT er.Container FROM " +
+            ExperimentServiceImpl.get().getTinfoExperimentRun() + " er, " +
+            ExperimentServiceImpl.get().getTinfoProtocolApplication() + " pa WHERE er.RowId = pa.RunId AND " +
+            "pa.RowId = " + "TargetApplicationId");
+        if (_run != null)
         {
-            SQLFragment sqlFragment = new SQLFragment("(SELECT er.Container FROM " +
-                ExperimentServiceImpl.get().getTinfoExperimentRun() + " er, " +
-                ExperimentServiceImpl.get().getTinfoProtocolApplication() + " pa WHERE er.RowId = pa.RunId AND " +
-                "pa.RowId = " + "TargetApplicationId");
-            if (_run != null)
-            {
-                sqlFragment.append(" AND er.RowId = ?");
-                sqlFragment.add(_run.getRowId());
-            }
-            if (_type != null)
-            {
-                sqlFragment.append(" AND pa.CpasType = ?");
-                sqlFragment.add(_type.toString());
-            }
-            if (ids != null)
-            {
-                sqlFragment.append(") IN (");
-                String q = "?";
-                for (String id : ids)
-                {
-                    sqlFragment.append(q);
-                    sqlFragment.add(id);
-                    q = ", ?";
-                }
-                sqlFragment.append(")");
-            }
-            else
-            {
-                sqlFragment.append(") IS NOT NULL");
-            }
-
-            addCondition(sqlFragment, "FolderRunType");
+            sqlFragment.append(" AND er.RowId = ?");
+            sqlFragment.add(_run.getRowId());
         }
+        if (_type != null)
+        {
+            sqlFragment.append(" AND pa.CpasType = ?");
+            sqlFragment.add(_type.toString());
+        }
+        sqlFragment.append(")");
+
+        addCondition(getContainerFilter().getSQLFragment(getSchema(), sqlFragment, getContainer(), true, false), "FolderRunType");
     }
 
     @Override
