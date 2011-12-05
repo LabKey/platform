@@ -4745,7 +4745,12 @@ public class AdminController extends SpringActionController
                     return ctx;
             }
 
-            return ml.getUnknownModuleContexts().get(getName());
+            ctx = ml.getUnknownModuleContexts().get(getName());
+
+            if (null == ctx)
+                throw new NotFoundException("Module not found");
+
+            return ctx;
         }
     }
 
