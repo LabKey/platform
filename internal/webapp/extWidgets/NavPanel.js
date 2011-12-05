@@ -144,7 +144,11 @@ Ext4.define('LABKEY.ext.NavPanel', {
                     text: 'Search'
                 },{
                     xtype: 'labkey-linkbutton',
-                    href: LABKEY.ActionURL.buildURL('query', 'executeQuery', null, {schemaName: item.schemaName, 'query.queryName': item.queryName, 'query.containerFilterName': 'CurrentAndSubfolders'}),
+                    href: function(item){
+                        var params = {rowId: item.id}; //schemaName: item.schemaName, 'query.queryName': item.queryName,
+                        params[item.name+'.containerFilterName'] = 'CurrentAndSubfolders';
+                        return LABKEY.ActionURL.buildURL('assay', 'assayResults', null, params)
+                    }(item),
                     text: 'Browse All'
                 },{
                     xtype: 'labkey-linkbutton',
@@ -181,7 +185,7 @@ Ext4.define('LABKEY.ext.NavPanel', {
                 items: [{
                     xtype: 'labkey-linkbutton',
                     text: item.name,
-                    href: item.url,
+                    href: item.url || LABKEY.ActionURL.buildURL(item.controller, item.action, null, item.urlParams),
                     showBrackets: false
                 }]
              }

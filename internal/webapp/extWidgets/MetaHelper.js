@@ -742,9 +742,9 @@ LABKEY.ext.MetaHelper = {
         '<tpl if="!hideLabel && !(!fieldLabel && hideEmptyLabel)">',
             '<label id="{id}-labelEl"<tpl if="inputId"> for="{inputId}"</tpl> class="{labelCls}"',
                 '<tpl if="labelStyle"> style="{labelStyle}"</tpl>>',
-                '<tpl if="fieldLabel">{fieldLabel}' +
+                '<tpl if="fieldLabel">{fieldLabel:htmlEncode}' +
                     '{labelSeparator}' +
-                    '<tpl if="helpPopup"> <a href="#" data-qtip="{helpPopup}"><span class="labkey-help-pop-up">?</span></a></tpl>' +
+                    '<tpl if="helpPopup"> <a href="#" data-qtip="{helpPopup:htmlEncode}"><span class="labkey-help-pop-up">?</span></a></tpl>' +
                 '</tpl>',
             '</label>',
         '</tpl>',
