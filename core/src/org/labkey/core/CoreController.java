@@ -436,10 +436,12 @@ public class CoreController extends SpringActionController
                     Content custom = c.isRoot() ? null : getCustomStylesheetContent(c);
                     WebdavResource extAll = r.lookup(Path.parse("/" + PageFlowUtil.extJsRoot() + "/resources/css/ext-all.css"));
                     WebdavResource extPatches = r.lookup(Path.parse("/" + PageFlowUtil.extJsRoot() + "/resources/css/ext-patches.css"));
+                    WebdavResource ext4All = r.lookup(Path.parse(PageFlowUtil.resolveExtThemePath(c)));
                     StringWriter out = new StringWriter();
 
-                    _appendCss(out, extAll);
+                    _appendCss(out, extAll);     // Ext 3
                     _appendCss(out, extPatches);
+                    _appendCss(out, ext4All);    // Ext 4
                     _appendCss(out, stylesheet);
                     _appendCss(out, root);
                     _appendCss(out, theme);

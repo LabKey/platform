@@ -113,7 +113,6 @@ Ext4.define('LABKEY.ext4.DataViewsPanel', {
     },
 
     initializeBorderLayout : function() {
-//        var regions = ['north', 'south', 'east', 'west'];
         var regions = ['north']; // only need north at this time
         var items = [];
 
@@ -124,7 +123,7 @@ Ext4.define('LABKEY.ext4.DataViewsPanel', {
                 style : 'margin-bottom: 10px',
                 hidden : true,
                 preventHeader : true,
-                flex   : 1,
+                flex   : 1.1,
                 border : false, frame : false
             });
             items.push(this[regions[r]]);
