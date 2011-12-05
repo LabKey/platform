@@ -20,6 +20,7 @@ import org.labkey.api.attachments.AttachmentParent;
 import org.labkey.api.attachments.AttachmentService;
 import org.labkey.api.data.*;
 import org.labkey.api.exp.Lsid;
+import org.labkey.api.exp.OntologyManager;
 import org.labkey.api.exp.PropertyDescriptor;
 import org.labkey.api.exp.PropertyType;
 import org.labkey.api.exp.list.ListDefinition;
@@ -86,9 +87,15 @@ public class ListDomainType extends AbstractDomainKind
 
     public static Lsid generateDomainURI(String name, Container c, String entityId)
     {
-        //bug 13131.  now include entityId in lsid to ensure uniqueness
-        String typeURI = "urn:lsid:" + PageFlowUtil.encode(AppProps.getInstance().getDefaultLsidAuthority()) + ":" + ListDefinitionImpl.NAMESPACE_PREFIX + ".Folder-" + c.getRowId() + ":EntityId-" + PageFlowUtil.encode(entityId) + ":" + PageFlowUtil.encode(name);
-        return new Lsid(typeURI);
+        String typeURI = "urn:lsid:" + PageFlowUtil.encode(AppProps.getInstance().getDefaultLsidAuthority()) + ":" + ListDefinitionImpl.NAMESPACE_PREFIX + ".Folder-" + c.getRowId() + ":" + PageFlowUtil.encode(name);
+        //bug 13131.  uniqueify the lsid for situations where a preexisting list was renamed
+        int i = 1;
+        String uniqueURI = typeURI;
+        while (OntologyManager.getDomainDescriptor(uniqueURI, c) != null)
+        {
+            uniqueURI = typeURI + '-' + (i++);
+        }
+        return new Lsid(uniqueURI);
     }
 
     public static Lsid generateDomainURI(String name, Container container)
