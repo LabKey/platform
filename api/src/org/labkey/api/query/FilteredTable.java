@@ -394,11 +394,7 @@ public class FilteredTable extends AbstractTableInfo implements ContainerFiltera
         if (containerColumn != null && getContainer() != null)
         {
             clearConditions(containerColumn.getName());
-            Collection<String> ids = filter.getIds(getContainer());
-            if (ids != null)
-            {
-                addCondition(new SimpleFilter(new SimpleFilter.InClause(getContainerFilterColumn(), ids)));
-            }
+            addCondition(new SimpleFilter(filter.createFilterClause(getSchema(), getContainerFilterColumn(), getContainer())));
         }
     }
 

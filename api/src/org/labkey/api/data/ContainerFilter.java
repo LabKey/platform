@@ -16,6 +16,8 @@
 package org.labkey.api.data;
 
 import org.jetbrains.annotations.Nullable;
+import org.labkey.api.data.dialect.SqlDialect;
+import org.labkey.api.query.FieldKey;
 import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.Permission;
 import org.labkey.api.security.permissions.ReadPermission;
@@ -25,6 +27,8 @@ import org.labkey.api.study.StudyService;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
 /**
@@ -34,10 +38,12 @@ import java.util.Set;
 public abstract class ContainerFilter
 {
     /**
+     * Users of ContainerFilter should use getSQLFragment() or createFilterClause(), not build up their own SQL using
+     * the IDs.
      * @return null if no filtering should be done, otherwise the set of valid container ids
      */
     @Nullable
-    public abstract Collection<String> getIds(Container currentContainer);
+    protected abstract Collection<String> getIds(Container currentContainer);
 
     public abstract Type getType();
 
@@ -56,6 +62,86 @@ public abstract class ContainerFilter
             // Revert to Current
         }
         return type.create(user);
+    }
+
+    /** Create a FilterClause that restiracts based on the containers that meet the filter */
+    public SimpleFilter.FilterClause createFilterClause(DbSchema schema, String containerFilterColumn, Container container)
+    {
+        return new ContainerClause(schema, containerFilterColumn, this, container);
+    }
+
+    /** Create an expression for a WHERE clause */
+    public SQLFragment getSQLFragment(DbSchema schema, String containerColumnSQL, Container container)
+    {
+        return getSQLFragment(schema, new SQLFragment(containerColumnSQL), container);
+    }
+
+    /** Create an expression for a WHERE clause */
+    public SQLFragment getSQLFragment(DbSchema schema, SQLFragment containerColumnSQL, Container container)
+    {
+        return getSQLFragment(schema, containerColumnSQL, container, true, true);
+    }
+
+    /**
+     * Create an expression for a WHERE clause
+     * @param useJDBCParameters whether or not to use JDBC parameters for the container ids, or embed them directly.
+     * Generally parameters are preferred, but can cause perf problems in certain cases
+     * @param allowNulls - if looking at ALL rows, whether to allow nulls in the Container column
+     */
+    public SQLFragment getSQLFragment(DbSchema schema, SQLFragment containerColumnSQL, Container container, boolean useJDBCParameters, boolean allowNulls)
+    {
+        Collection<String> ids = getIds(container);
+        if (ids == null)
+        {
+            if (allowNulls)
+            {
+                return new SQLFragment("1 = 1");
+            }
+            else
+            {
+                SQLFragment result = new SQLFragment(containerColumnSQL);
+                result.append(" IS NOT NULL");
+                return result;
+            }
+        }
+
+        if (ids.isEmpty())
+        {
+            return new SQLFragment("1 = 0");
+        }
+
+        SQLFragment result = new SQLFragment(containerColumnSQL);
+        result.append(" IN (SELECT c.EntityId FROM ");
+        result.append(CoreSchema.getInstance().getTableInfoContainers(), "c");
+        result.append(" INNER JOIN (");
+        String separator = "";
+        for (String containerId : ids)
+        {
+            result.append(separator);
+            separator = " UNION ";
+            result.append("SELECT ");
+            // Need to add casts to make Postgres happy
+            if (useJDBCParameters)
+            {
+                result.append("CAST(? AS ");
+                result.append(schema.getSqlDialect().getGuidType());
+                result.append(")");
+                result.add(containerId);
+            }
+            else
+            {
+                result.append("CAST ('");
+                result.append(containerId);
+                result.append("'AS ");
+                result.append(schema.getSqlDialect().getGuidType());
+                result.append(")");
+            }
+            result.append(" AS Id");
+        }
+        // Filter based on the container's ID, or the container is a child of the ID and of type workbook
+        result.append(") x ON c.EntityId = x.Id OR (c.Parent = x.Id AND c.Workbook = ?)) ");
+        result.add(Boolean.TRUE);
+        return result;
     }
 
     public enum Type
@@ -400,6 +486,10 @@ public abstract class ContainerFilter
         public Collection<String> getIds(Container currentContainer)
         {
             Collection<String> result = super.getIds(currentContainer);
+            if (result == null)
+            {
+                return null;
+            }
             if (currentContainer.isWorkbook() && currentContainer.getParent().hasPermission(_user, _perm))
             {
                 result.add(currentContainer.getParent().getId());
@@ -692,5 +782,39 @@ public abstract class ContainerFilter
             ids.add(container.getId());
         }
         return ids;
+    }
+
+    public static class ContainerClause extends SimpleFilter.FilterClause
+    {
+        private final DbSchema _schema;
+        private final String _columnName;
+        private final ContainerFilter _filter;
+        private final Container _container;
+
+        public ContainerClause(DbSchema schema, String columnName, ContainerFilter filter, Container container)
+        {
+            _schema = schema;
+            _columnName = columnName;
+            _filter = filter;
+            _container = container;
+        }
+
+        @Override
+        public List<String> getColumnNames()
+        {
+            return Collections.singletonList(_columnName);
+        }
+
+        @Override
+        public String getLabKeySQLWhereClause(Map<FieldKey, ? extends ColumnInfo> columnMap)
+        {
+            throw new UnsupportedOperationException();
+        }
+
+        @Override
+        public SQLFragment toSQLFragment(Map<String, ? extends ColumnInfo> columnMap, SqlDialect dialect)
+        {
+            return _filter.getSQLFragment(_schema, _columnName, _container);
+        }
     }
 }

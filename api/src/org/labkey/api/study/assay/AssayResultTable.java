@@ -15,7 +15,6 @@
  */
 package org.labkey.api.study.assay;
 
-import org.apache.commons.lang.StringUtils;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.collections.CaseInsensitiveHashSet;
 import org.labkey.api.data.ColumnInfo;
@@ -254,15 +253,7 @@ public class AssayResultTable extends FilteredTable implements UpdateableTableIn
         {
             String containerColumn = "Run/Folder";
             clearConditions(containerColumn);
-            Collection<String> ids = filter.getIds(getContainer());
-            if (ids != null)
-            {
-                SQLFragment sql = new SQLFragment("(SELECT Container FROM exp.Data WHERE RowId = DataId) IN (");
-                sql.append(StringUtils.repeat("?", ", ", ids.size()));
-                sql.append(")");
-                sql.addAll(ids);
-                addCondition(sql, containerColumn);
-            }
+            addCondition(filter.getSQLFragment(getSchema(), "(SELECT d.Container FROM exp.Data d WHERE d.RowId = DataId)", getContainer()), containerColumn);
         }
     }
 
