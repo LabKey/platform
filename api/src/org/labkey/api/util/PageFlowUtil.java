@@ -41,6 +41,7 @@ import org.labkey.api.security.permissions.AdminPermission;
 import org.labkey.api.security.permissions.DeletePermission;
 import org.labkey.api.security.permissions.InsertPermission;
 import org.labkey.api.security.permissions.UpdatePermission;
+import org.labkey.api.services.ServiceRegistry;
 import org.labkey.api.settings.AppProps;
 import org.labkey.api.settings.ResourceURL;
 import org.labkey.api.settings.TemplateResourceHandler;
@@ -51,6 +52,7 @@ import org.labkey.api.view.NotFoundException;
 import org.labkey.api.view.ViewContext;
 import org.labkey.api.view.WebTheme;
 import org.labkey.api.view.WebThemeManager;
+import org.labkey.api.webdav.WebdavResolver;
 import org.springframework.beans.PropertyValue;
 import org.springframework.beans.PropertyValues;
 import org.springframework.web.servlet.ModelAndView;
@@ -1719,7 +1721,6 @@ public class PageFlowUtil
     /** */
     public static String getStylesheetIncludes(Container c, @Nullable String userAgent)
     {
-        boolean oldIE = null != userAgent && (-1 != userAgent.indexOf("MSIE 6") || -1 != userAgent.indexOf("MSIE 7"));
         boolean useLESS = null != HttpView.currentRequest().getParameter("less");
         boolean combinedCSS = false;
         WebTheme theme = WebThemeManager.getTheme(c);
@@ -1738,10 +1739,9 @@ public class PageFlowUtil
         else
         {
             F.format(link, AppProps.getInstance().getContextPath() + "/" + extJsRoot + "/resources/css/ext-all.css");
+            F.format(link, Path.parse(AppProps.getInstance().getContextPath() + resolveExtThemePath(c)));
 
             F.format(link, PageFlowUtil.filter(new ResourceURL(theme.getStyleSheet(), ContainerManager.getRoot())));
-            if (oldIE)
-                F.format(link, PageFlowUtil.filter(new ResourceURL("stylesheetIE7.css", ContainerManager.getRoot())));
 
             ActionURL rootCustomStylesheetURL = coreUrls.getCustomStylesheetURL();
 
@@ -1792,6 +1792,7 @@ public class PageFlowUtil
     static final String extMin = extJsRoot + "/ext-all.js";
     static final String extBaseDebug = extJsRoot + "/adapter/ext/ext-base-debug.js";
     static final String extBase = extJsRoot + "/adapter/ext/ext-base.js";
+    static final String ext4ThemeRoot = "labkey-ext-theme";
 
     static String[] clientExploded = new String[]
     {
@@ -1832,6 +1833,29 @@ public class PageFlowUtil
     public static String extJsRoot()
     {
         return extJsRoot;
+    }
+
+    public static String ext4ThemeRoot()
+    {
+        return ext4ThemeRoot;
+    }
+
+    public static String resolveExtThemePath(Container container)
+    {
+        String path = "/" + ext4ThemeRoot() + "/resources/css/ext";
+        String themeName = WebTheme.DEFAULT.getFriendlyName();
+
+        WebTheme theme = WebThemeManager.getTheme(container);
+
+        // Custom Theme -- TODO: Should have a better way to lookup built-in themes
+        if (!theme.isEditable())
+        {
+            themeName = theme.getFriendlyName();
+        }
+
+        // Each built-in theme must have a corresponging labkey-ext-theme-<theme name>.scss
+        path += "-" + themeName.toLowerCase() + ".css";
+        return path;
     }
 
     private static void explodedExtPaths(Map<String, JSONObject> packages, String pkgDep, Set<String> scripts)
