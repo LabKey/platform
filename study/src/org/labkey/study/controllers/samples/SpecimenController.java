@@ -130,6 +130,8 @@ public class SpecimenController extends BaseStudyController
         @Override
         public ModelAndView getView(Object form, BindException errors) throws Exception
         {
+            if (null == StudyService.get().getStudy(getContainer()))
+                return new HtmlView("This folder does not contain a study.");
             SampleSearchWebPart sampleSearch = new SampleSearchWebPart(true);
             SamplesWebPart sampleSummary = new SamplesWebPart(true);
             return new VBox(sampleSummary, sampleSearch);
@@ -3122,17 +3124,20 @@ public class SpecimenController extends BaseStudyController
             registerReportFactory(COUNTS_BY_DERIVATIVE_TYPE_TITLE, new TypeParticipantReportFactory());
             if (StudyManager.getInstance().showCohorts(_viewContext.getContainer(), _viewContext.getUser()))
                 registerReportFactory(COUNTS_BY_DERIVATIVE_TYPE_TITLE, new TypeCohortReportFactory());
-            if (study != null && !study.isAncillaryStudy())
+            if (study != null)
             {
-                registerReportFactory(REQUESTS_BY_DERIVATIVE_TYPE_TITLE, new RequestReportFactory());
-                registerReportFactory(REQUESTS_BY_DERIVATIVE_TYPE_TITLE, new RequestSiteReportFactory());
-                registerReportFactory(REQUESTS_BY_DERIVATIVE_TYPE_TITLE, new RequestEnrollmentSiteReportFactory());
-                registerReportFactory(REQUESTS_BY_DERIVATIVE_TYPE_TITLE, new RequestParticipantReportFactory());
+                if (!study.isAncillaryStudy())
+                {
+                    registerReportFactory(REQUESTS_BY_DERIVATIVE_TYPE_TITLE, new RequestReportFactory());
+                    registerReportFactory(REQUESTS_BY_DERIVATIVE_TYPE_TITLE, new RequestSiteReportFactory());
+                    registerReportFactory(REQUESTS_BY_DERIVATIVE_TYPE_TITLE, new RequestEnrollmentSiteReportFactory());
+                    registerReportFactory(REQUESTS_BY_DERIVATIVE_TYPE_TITLE, new RequestParticipantReportFactory());
+                }
+                String subjectNoun = StudyService.get().getSubjectNounSingular(viewContext.getContainer());
+                registerReportFactory("Collected Vials by " + subjectNoun + " By Timepoint", new ParticipantSummaryReportFactory());
+                registerReportFactory("Collected Vials by " + subjectNoun + " By Timepoint", new ParticipantTypeReportFactory());
+                registerReportFactory("Collected Vials by " + subjectNoun + " By Timepoint", new ParticipantSiteReportFactory());
             }
-            String subjectNoun = StudyService.get().getSubjectNounSingular(viewContext.getContainer());
-            registerReportFactory("Collected Vials by " + subjectNoun + " By Timepoint", new ParticipantSummaryReportFactory());
-            registerReportFactory("Collected Vials by " + subjectNoun + " By Timepoint", new ParticipantTypeReportFactory());
-            registerReportFactory("Collected Vials by " + subjectNoun + " By Timepoint", new ParticipantSiteReportFactory());
         }
 
         public ReportConfigurationBean(SpecimenVisitReportParameters singleFactory, boolean listView)

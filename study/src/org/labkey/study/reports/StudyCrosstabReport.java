@@ -79,9 +79,13 @@ public class StudyCrosstabReport extends CrosstabReport
             String queryName = getDescriptor().getProperty(ReportDescriptor.Prop.queryName);
             if (queryName != null)
             {
-                DataSetDefinition def = StudyManager.getInstance().getDataSetDefinition(StudyManager.getInstance().getStudy(context.getContainer()), queryName);
-                if (def != null)
-                    datasetId = def.getDataSetId();
+                Study study = StudyManager.getInstance().getStudy(context.getContainer());
+                if (study != null)
+                {
+                    DataSetDefinition def = StudyManager.getInstance().getDataSetDefinition(study, queryName);
+                    if (def != null)
+                        datasetId = def.getDataSetId();
+                }
             }
         }
 

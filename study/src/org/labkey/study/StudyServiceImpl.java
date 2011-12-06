@@ -86,6 +86,8 @@ public class StudyServiceImpl implements StudyService.Service
     public int getDatasetId(Container c, String datasetLabel)
     {
         Study study = StudyManager.getInstance().getStudy(c);
+        if (study == null)
+            return -1;
         DataSet def = StudyManager.getInstance().getDataSetDefinition(study, datasetLabel);
         if (def == null)
             return -1;

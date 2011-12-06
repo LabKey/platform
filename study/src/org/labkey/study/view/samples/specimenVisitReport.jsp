@@ -23,10 +23,21 @@
 <%@ page import="java.util.Collection" %>
 <%@ page import="org.labkey.api.util.Pair" %>
 <%@ page import="org.apache.commons.lang.StringUtils" %>
+<%@ page import="org.labkey.study.model.StudyManager" %>
+<%@ page import="org.labkey.api.study.Study" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
     JspView<SpecimenVisitReportParameters> me = (JspView<SpecimenVisitReportParameters>) HttpView.currentView();
     SpecimenVisitReportParameters bean = me.getModelBean();
+    Study study = StudyManager.getInstance().getStudy(me.getViewContext().getContainer());
+
+    if (study == null)
+    {
+%>
+This folder does not contain a study.
+<%
+        return;
+    }
 
     for (SpecimenVisitReport report : bean.getReports())
     {

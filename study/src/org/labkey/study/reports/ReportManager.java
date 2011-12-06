@@ -31,6 +31,8 @@ import org.labkey.api.security.User;
 import org.labkey.api.security.SecurityPolicy;
 import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
+import org.labkey.api.study.Study;
+import org.labkey.api.study.StudyService;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.NotFoundException;
 import org.labkey.api.view.UnauthorizedException;
@@ -344,7 +346,10 @@ public class ReportManager implements StudyManager.DataSetListener
             {
                 _datasets = new CaseInsensitiveHashMap<DataSetDefinition>();
 
-                for (DataSetDefinition ds : StudyManager.getInstance().getDataSetDefinitions(StudyManager.getInstance().getStudy(c)))
+                Study study = StudyManager.getInstance().getStudy(c);
+                if (study == null)
+                    return Collections.emptyMap();
+                for (DataSetDefinition ds : StudyManager.getInstance().getDataSetDefinitions(study))
                     _datasets.put(ds.getLabel(), ds);
             }
 

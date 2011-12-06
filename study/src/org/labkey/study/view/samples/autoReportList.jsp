@@ -52,6 +52,16 @@
     ParticipantCategory[] categories = ParticipantGroupManager.getInstance().getParticipantCategories(container, user);
     boolean showParticipantGroups = categories != null && categories.length > 0;
 %>
+<%
+    if (study == null)
+    {
+%>
+This folder does not contain a study.
+<%
+    }
+    else
+    {
+%>
 <script type="text/javascript">
     function showOrHide(suffix)
     {
@@ -307,5 +317,6 @@
 <%
         if (bean.isListView())
             WebPartView.endTitleFrame(out);
+    }
     }
 %>
