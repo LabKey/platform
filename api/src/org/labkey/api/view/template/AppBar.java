@@ -212,12 +212,19 @@ public class AppBar extends NavTree
         }
 
         if (null == selected)
+        {
             for (NavTree crumb : crumbTrail)
             {
                 for (NavTree button : buttons)
                     if (button.getValue().equalsIgnoreCase(crumb.getValue()) || button.getKey().equalsIgnoreCase(crumb.getKey()))
                         selected = button;
             }
+        }
+
+        if (selected == null && buttons.length > 0)
+        {
+            selected = buttons[0];
+        }
 
         if (null != selected)
             selected.setSelected(true);

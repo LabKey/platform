@@ -423,7 +423,12 @@ abstract public class PipelineJob extends Job implements Serializable
         _settingStatus = true;
         try
         {
-            return PipelineJobService.get().getStatusWriter().setStatus(this, status, info, false);
+            boolean statusSet = PipelineJobService.get().getStatusWriter().setStatus(this, status, info, false);
+            if (!statusSet)
+            {
+                setActiveTaskStatus(TaskStatus.error);
+            }
+            return statusSet;
         }
         catch (RuntimeException e)
         {
