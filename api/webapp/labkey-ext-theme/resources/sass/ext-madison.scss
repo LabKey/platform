@@ -89,6 +89,12 @@ $window-header-color: #fff;
 //grids
 $grid-row-cell-selected-background-color: #C5C5C5 !default;
 
+//toolbars
+$toolbar-background-color: #eeeeee;
+
+//qtips
+$tip-base-color: #eeeeee;
+
 @import 'ext4/default/all';
 
 // This line changes the location of your images when creating UIs to be relative instead of within the ExtJS directory.
