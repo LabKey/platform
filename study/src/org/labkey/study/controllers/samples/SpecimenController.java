@@ -3175,7 +3175,8 @@ public class SpecimenController extends BaseStudyController
 
         public Map<String, CustomView> getCustomViews(ViewContext context)
         {
-            StudyQuerySchema schema = new StudyQuerySchema(StudyManager.getInstance().getStudy(context.getContainer()), context.getUser(), true);
+            // 13485 - Use provider to handle NULL study
+            StudyQuerySchema schema = (StudyQuerySchema) new StudySchemaProvider().getSchema(DefaultSchema.get(context.getUser(), context.getContainer()));
             QueryDefinition def = QueryService.get().createQueryDefForTable(schema, "SpecimenDetail");
             return def.getCustomViews(context.getUser(), context.getRequest());
         }

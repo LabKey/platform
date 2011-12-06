@@ -696,7 +696,7 @@ LABKEY.study.CreateStudyWizard = Ext.extend(Ext.util.Observable, {
         if (refreshOptions.autoRefresh === 'true')
             params.updateDelay = refreshOptions.updateDelay;
 
-        this.win.getEl().mask("creating study...", "x-mask-loading");
+        this.win.getEl().mask("creating study...");
 
         var createForm = new Ext.form.BasicForm(this.nameFormPanel.getForm().getEl(), {
             method : 'POST',

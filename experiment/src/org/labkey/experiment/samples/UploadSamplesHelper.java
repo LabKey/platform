@@ -352,8 +352,9 @@ public class UploadSamplesHelper
                             continue;
                         }
 
+                        // 13483 : Better handling of SQLException
                         if (!material.getContainer().equals(getContainer()))
-                            throw new SQLException("A material with LSID " + lsid + " is already loaded into the folder " + material.getContainer().getPath());
+                            throw new ExperimentException("A material with LSID " + lsid + " is already loaded into the folder " + material.getContainer().getPath());
 
                         // 8309 : preserve comment property on existing materials
                         // 10164 : Deleting flag/comment doesn't clear flag/comment after reupload
