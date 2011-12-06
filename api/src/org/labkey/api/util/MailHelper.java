@@ -181,7 +181,7 @@ public class MailHelper
         catch (MessagingException e)
         {
             logMessagingException(m, e);
-            throw new ConfigurationException("Error sending email.", e);
+            throw new ConfigurationException("Error sending email: " + e.getMessage(), e);
         }
         catch (RuntimeException e)
         {
@@ -439,7 +439,7 @@ public class MailHelper
                     }
                     catch (ConfigurationException e)
                     {
-                        _log.error("Error sending email.", e);
+                        _log.error("Error sending email: " + e.getMessage(), e);
                     }
                 }
             }
