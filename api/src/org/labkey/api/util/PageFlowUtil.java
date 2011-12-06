@@ -1722,7 +1722,6 @@ public class PageFlowUtil
     public static String getStylesheetIncludes(Container c, @Nullable String userAgent)
     {
         boolean useLESS = null != HttpView.currentRequest().getParameter("less");
-        boolean combinedCSS = false;
         WebTheme theme = WebThemeManager.getTheme(c);
 
         CoreUrls coreUrls = urlProvider(CoreUrls.class);
@@ -1731,52 +1730,43 @@ public class PageFlowUtil
         Formatter F = new Formatter(sb);
         String link = useLESS ? "<link href=\"%s\" type=\"text/x-less\" rel=\"stylesheet\">\n" : "<link href=\"%s\" type=\"text/css\" rel=\"stylesheet\">\n";
 
-        // Combined CSS
-        if (combinedCSS)
+        F.format(link, AppProps.getInstance().getContextPath() + "/" + extJsRoot + "/resources/css/ext-all.css");
+        F.format(link, Path.parse(AppProps.getInstance().getContextPath() + resolveExtThemePath(c)));
+        F.format(link, PageFlowUtil.filter(new ResourceURL(theme.getStyleSheet(), ContainerManager.getRoot())));
+
+        ActionURL rootCustomStylesheetURL = coreUrls.getCustomStylesheetURL();
+
+        if (!c.isRoot())
         {
-            sb.append("<link href=\"").append(filter(coreUrls.getCombinedStylesheetURL(c))).append("\" type=\"text/css\" rel=\"stylesheet\" >\n");
-        }
-        else
-        {
-            F.format(link, AppProps.getInstance().getContextPath() + "/" + extJsRoot + "/resources/css/ext-all.css");
-            F.format(link, Path.parse(AppProps.getInstance().getContextPath() + resolveExtThemePath(c)));
-
-            F.format(link, PageFlowUtil.filter(new ResourceURL(theme.getStyleSheet(), ContainerManager.getRoot())));
-
-            ActionURL rootCustomStylesheetURL = coreUrls.getCustomStylesheetURL();
-
-            if (!c.isRoot())
-            {
-                /* Add the themeStylesheet */
-                if (coreUrls.getThemeStylesheetURL(c) != null)
-                    F.format(link, PageFlowUtil.filter(coreUrls.getThemeStylesheetURL(c)));
-                else
-                {
-                    /* In this case a themeStylesheet was not found in a subproject to default to the root */
-                    if (coreUrls.getThemeStylesheetURL() != null)
-                        F.format(link, PageFlowUtil.filter(coreUrls.getThemeStylesheetURL()));
-                }
-                ActionURL containerCustomStylesheetURL = coreUrls.getCustomStylesheetURL(c);
-
-                /* Add the customStylesheet */
-                if (null != containerCustomStylesheetURL)
-                    F.format(link, PageFlowUtil.filter(containerCustomStylesheetURL));
-                else
-                {
-                    if (null != rootCustomStylesheetURL)
-                        F.format(link, PageFlowUtil.filter(rootCustomStylesheetURL));
-                }
-            }
+            /* Add the themeStylesheet */
+            if (coreUrls.getThemeStylesheetURL(c) != null)
+                F.format(link, PageFlowUtil.filter(coreUrls.getThemeStylesheetURL(c)));
             else
             {
-                /* Add the root themeStylesheet */
+                /* In this case a themeStylesheet was not found in a subproject to default to the root */
                 if (coreUrls.getThemeStylesheetURL() != null)
                     F.format(link, PageFlowUtil.filter(coreUrls.getThemeStylesheetURL()));
+            }
+            ActionURL containerCustomStylesheetURL = coreUrls.getCustomStylesheetURL(c);
 
-                /* Add the root customStylesheet */
+            /* Add the customStylesheet */
+            if (null != containerCustomStylesheetURL)
+                F.format(link, PageFlowUtil.filter(containerCustomStylesheetURL));
+            else
+            {
                 if (null != rootCustomStylesheetURL)
                     F.format(link, PageFlowUtil.filter(rootCustomStylesheetURL));
             }
+        }
+        else
+        {
+            /* Add the root themeStylesheet */
+            if (coreUrls.getThemeStylesheetURL() != null)
+                F.format(link, PageFlowUtil.filter(coreUrls.getThemeStylesheetURL()));
+
+            /* Add the root customStylesheet */
+            if (null != rootCustomStylesheetURL)
+                F.format(link, PageFlowUtil.filter(rootCustomStylesheetURL));
         }
 
         ResourceURL printStyleURL = new ResourceURL("printStyle.css", ContainerManager.getRoot());
