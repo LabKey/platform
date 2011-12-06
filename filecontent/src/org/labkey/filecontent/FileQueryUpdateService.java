@@ -18,6 +18,7 @@ package org.labkey.filecontent;
 import org.apache.commons.beanutils.ConvertUtils;
 import org.apache.commons.beanutils.converters.IntegerConverter;
 import org.apache.log4j.Logger;
+import org.labkey.api.data.CompareType;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.Filter;
 import org.labkey.api.data.SimpleFilter;
@@ -85,7 +86,7 @@ public class FileQueryUpdateService extends AbstractQueryUpdateService
     @Override
     protected Map<String, Object> getRow(User user, Container container, Map<String, Object> keys) throws InvalidKeyException, QueryUpdateServiceException, SQLException
     {
-        Filter filter = getQueryFilter(keys);
+        Filter filter = getQueryFilter(container, keys);
         Set<String> queryColumns = getQueryColumns(container);
 
         Map<String, Object>[] rows = Table.select(getQueryTable(), queryColumns, filter, null, Map.class);
@@ -142,9 +143,9 @@ public class FileQueryUpdateService extends AbstractQueryUpdateService
 
     IntegerConverter _converter = new IntegerConverter();
 
-    private Filter getQueryFilter(Map<String, Object> keys) throws QueryUpdateServiceException
+    private Filter getQueryFilter(Container container, Map<String, Object> keys) throws QueryUpdateServiceException
     {
-        Filter filter;
+        SimpleFilter filter;
 
         if (keys.containsKey(ExpDataTable.Column.RowId.name()))
         {
@@ -163,6 +164,9 @@ public class FileQueryUpdateService extends AbstractQueryUpdateService
         }
         else
             throw new QueryUpdateServiceException("Either RowId, LSID, or DataFileURL is required to get ExpData.");
+
+        // Just look in the current container
+        filter.addClause(new CompareType.EqualsCompareClause(ExpDataTable.Column.Folder.name(), CompareType.EQUAL, container.getId()));
 
         return filter;
     }
@@ -221,7 +225,7 @@ public class FileQueryUpdateService extends AbstractQueryUpdateService
         {
             try
             {
-                Filter filter = getQueryFilter(row);
+                Filter filter = getQueryFilter(container, row);
                 Map<String, Object>[] rows = Table.select(getQueryTable(), getQueryColumns(container), filter, null, Map.class);
 
                 if (rows.length >= 0)
