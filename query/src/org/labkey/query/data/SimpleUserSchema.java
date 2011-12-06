@@ -23,6 +23,7 @@ import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.collections.CaseInsensitiveHashSet;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
+import org.labkey.api.data.ContainerForeignKey;
 import org.labkey.api.data.DatabaseTableType;
 import org.labkey.api.data.DbSchema;
 import org.labkey.api.data.ForeignKey;
@@ -161,6 +162,14 @@ public class SimpleUserSchema extends UserSchema
                    (_userSchema.getDbSchema().getScope().isLabKeyScope()))
                 {
                     wrap.setFk(new UserIdQueryForeignKey(_userSchema.getUser(), _userSchema.getContainer()));
+                }
+                // also add FK to container field
+                else if (JdbcType.VARCHAR == col.getJdbcType() &&
+                   colName.equalsIgnoreCase("container") &&
+                   (_userSchema.getDbSchema().getScope().isLabKeyScope()))
+                {
+                    wrap.setFk(new ContainerForeignKey());
+                    wrap.setLabel("Folder");
                 }
                 else if (col.getFk() != null)
                 {
