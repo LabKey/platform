@@ -1567,18 +1567,14 @@ public class SecurityController extends SpringActionController
 
             String rawEmail = form.getEmail();
 
-            sbReset.append("<p>").append(rawEmail);
+            sbReset.append("<p>").append(PageFlowUtil.filter(rawEmail));
 
-            ValidEmail email = new ValidEmail(rawEmail);
+            try
+            {
+                ValidEmail email = new ValidEmail(rawEmail);
 
-            if (SecurityManager.isLdapEmail(email))
-            {
-                sbReset.append(" failed: can't reset the password for an LDAP user.");
-            }
-            else
-            {
-                // We allow admins to create passwords (i.e., entries in the logins table) if they don't already exist.
-                // This addresses an SSO scenario.  See #10374.
+                // We let admins create passwords (i.e., entries in the logins table) if they don't already exist.
+                // This addresses SSO and LDAP scenarios, see #10374.
                 boolean loginExists = SecurityManager.loginExists(email);
                 String pastVerb = loginExists ? "reset" : "created";
                 String infinitiveVerb = loginExists ? "reset" : "create";
@@ -1635,6 +1631,10 @@ public class SecurityController extends SpringActionController
                     sbReset.append(": failed to reset password due to: ").append(e.getMessage());
                     UserManager.addToUserHistory(UserManager.getUser(email), user.getEmail() + " attempted to " + infinitiveVerb + " the password, but the " + infinitiveVerb + " failed: " + e.getMessage());
                 }
+            }
+            catch (ValidEmail.InvalidEmailException e)
+            {
+                sbReset.append(" failed: invalid email address.");
             }
 
             sbReset.append("</p>");
