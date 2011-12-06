@@ -689,6 +689,9 @@ public class Container implements Serializable, Comparable<Container>, Securable
 
     public void setActiveModules(Set<Module> modules) throws SQLException
     {
+        if(isWorkbook())
+            return;
+
         PropertyManager.PropertyMap props = PropertyManager.getWritableProperties(getId(), "activeModules", true);
         props.clear();
         for (Module module : modules)
@@ -712,6 +715,9 @@ public class Container implements Serializable, Comparable<Container>, Securable
 
     public Set<Module> getActiveModules(boolean init)
     {
+        if(isWorkbook())
+            return getParent().getActiveModules();
+
         if (_activeModules == null)
         {
             //Short-circuit for root module
