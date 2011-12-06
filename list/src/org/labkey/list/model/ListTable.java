@@ -82,7 +82,6 @@ public class ListTable extends FilteredTable implements UpdateableTableInfo
         addCondition(getRealTable().getColumn("ListId"), listDef.getListId());
 
         // All columns visible by default, except for auto-increment integer
-        List<FieldKey> defaultVisible = new ArrayList<FieldKey>();
         ColumnInfo colKey = wrapColumn(listDef.getKeyName(), getRealTable().getColumn("Key"));
         colKey.setKeyField(true);
         colKey.setInputType("text");
@@ -92,10 +91,7 @@ public class ListTable extends FilteredTable implements UpdateableTableInfo
         {
             colKey.setUserEditable(false);
             colKey.setAutoIncrement(true);
-        }
-        else
-        {
-            defaultVisible.add(FieldKey.fromParts(colKey.getName()));
+            colKey.setHidden(true);
         }
         addColumn(colKey);
         ColumnInfo colObjectId = wrapColumn(getRealTable().getColumn("ObjectId"));
@@ -116,10 +112,6 @@ public class ListTable extends FilteredTable implements UpdateableTableInfo
             if (property.isMvEnabled())
             {
                 MVDisplayColumnFactory.addMvColumns(this, column, property, colObjectId, user);
-            }
-            if (!property.isHidden())
-            {
-                defaultVisible.add(FieldKey.fromParts(column.getName()));
             }
 
             if (property.getPropertyDescriptor().getPropertyType() == PropertyType.MULTI_LINE)
@@ -144,14 +136,13 @@ public class ListTable extends FilteredTable implements UpdateableTableInfo
             }
         }
 
-        setDefaultVisibleColumns(defaultVisible);
-
         boolean auto = (null == listDef.getTitleColumn());
         setTitleColumn(findTitleColumn(listDef, colKey), auto);
 
         // Make EntityId column available so AttachmentDisplayColumn can request it as a dependency
         // Do this last so the column doesn't get selected as title column, etc.
         ColumnInfo colEntityId = wrapColumn(getRealTable().getColumn("EntityId"));
+        colEntityId.setHidden(true);
         addColumn(colEntityId);
         colEntityId.setHidden(true);
 
