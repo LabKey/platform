@@ -1777,7 +1777,18 @@ public class UserController extends SpringActionController
 
     public static class ShowWarningMessagesForm
     {
+        private String _action;
         private boolean _showMessages = true;
+
+        public String getAction()
+        {
+            return _action;
+        }
+
+        public void setAction(String action)
+        {
+            _action = action;
+        }
 
         public boolean isShowMessages()
         {
@@ -1795,7 +1806,10 @@ public class UserController extends SpringActionController
     {
         public ApiResponse execute(ShowWarningMessagesForm form, BindException errors) throws Exception
         {
-            getViewContext().getSession().setAttribute(TemplateHeaderView.SHOW_WARNING_MESSAGES_SESSION_PROP, form.isShowMessages());
+            if (form.getAction() != null || !form.getAction().equals(""))
+                getViewContext().getSession().setAttribute(form.getAction(), form.isShowMessages());
+            else
+                getViewContext().getSession().setAttribute(TemplateHeaderView.SHOW_WARNING_MESSAGES_SESSION_PROP, form.isShowMessages());
             return new ApiSimpleResponse("success", true);
         }
     }
