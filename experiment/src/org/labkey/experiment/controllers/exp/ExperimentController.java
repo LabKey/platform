@@ -850,7 +850,7 @@ public class ExperimentController extends SpringActionController
                     return table;
                 }
             };
-            materialsView.setAllowableContainerFilterTypes();
+            materialsView.disableContainerFilterSelection();
             materialsView.setShowBorders(true);
             materialsView.setShowDetailsColumn(false);
             materialsView.setShowExportButtons(false);
@@ -1260,7 +1260,7 @@ public class ExperimentController extends SpringActionController
             setShadeAlternatingRows(true);
             setShowExportButtons(false);
             setShowPagination(false);
-            setAllowableContainerFilterTypes(Collections.<ContainerFilter.Type>emptyList());
+            disableContainerFilterSelection();
         }
 
         @Override

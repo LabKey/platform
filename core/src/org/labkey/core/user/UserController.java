@@ -585,7 +585,7 @@ public class UserController extends SpringActionController
             queryView.setShowBorders(true);
             queryView.setShowDetailsColumn(true);
             queryView.setFrame(WebPartView.FrameType.NONE);
-            queryView.setAllowableContainerFilterTypes();
+            queryView.disableContainerFilterSelection();
             return queryView;
         }
 

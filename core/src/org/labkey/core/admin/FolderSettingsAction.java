@@ -505,7 +505,7 @@ public class FolderSettingsAction extends FormViewAction<FolderSettingsAction.Fo
             queryView.setShowDetailsColumn(false);
             queryView.setShowRecordSelectors(true);
             queryView.setFrame(WebPartView.FrameType.NONE);
-            queryView.setAllowableContainerFilterTypes();
+            queryView.disableContainerFilterSelection();
             queryView.setButtonBarPosition(DataRegion.ButtonBarPosition.TOP);
 
             VBox view = new VBox();
