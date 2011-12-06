@@ -3723,15 +3723,11 @@ public class StudyManager
                 // duplicate row
                 // Issue 12985
                 rows.add(map);
-                try
-                {
-                    _import(def, rows, errors);
-                    fail("Should have failed due to duplicate rows");
-                }
-                catch(Exception e)
-                {
-                    assertTrue("Unexpected Exception", e.getMessage().contains("duplicate key"));
-                }
+                _import(def, rows, errors);
+                assertTrue("Expected one error", errors.size() == 1);
+                assertTrue("Unexpected error", errors.get(0).contains("duplicate key"));
+                assertTrue("Unexpected error", errors.get(0).contains("All rows must have unique SubjectID/Date/GUID values."));
+
                 //study:Label: Only one row is allowed for each Subject/Visit/Measure Triple.  Duplicates were found in the database or imported data.; Duplicate: Subject = A1Date = Sat Jan 01 00:00:00 PST 2011, Measure = Test1
 //                assertTrue(-1 != errors.get(0).indexOf("duplicate key value violates unique constraint"));
 

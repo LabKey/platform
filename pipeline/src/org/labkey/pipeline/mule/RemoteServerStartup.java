@@ -30,6 +30,7 @@ import org.apache.log4j.Logger;
 
 import javax.jms.*;
 import java.io.*;
+import java.lang.IllegalStateException;
 import java.util.*;
 
 /*
@@ -72,6 +73,9 @@ public class RemoteServerStartup extends AbstractPipelineStartup
 
         LabKeySpringContainerContext.setContext(factories.get(PipelineService.MODULE_NAME));
 
+        // Hack - wait a little bit for Mule to connect to the JMS server
+        Thread.sleep(5000);
+
         // Grab the set of job ids before we start trying to process anything
         RequeueLostJobsRequest request = getRequeueRequest(factories.get("Pipeline"));
 
@@ -103,22 +107,8 @@ public class RemoteServerStartup extends AbstractPipelineStartup
     /**
      * Browse the JMS queue to grab all the tasks currently assigned to this location and build up a set of JobIds.
      */
-    private RequeueLostJobsRequest getRequeueRequest(BeanFactory beanFactory) throws InterruptedException
+    private RequeueLostJobsRequest getRequeueRequest(BeanFactory beanFactory)
     {
-        // Hack - wait a little bit for Mule to connect to the JMS server
-        Thread.sleep(5000);
-
-        // Figure out where to talk to the JMS queue
-        Object bean = beanFactory.getBean("activeMqConnectionFactory");
-        if (bean == null)
-        {
-            throw new java.lang.IllegalStateException("Could not find activeMqConnectionFactory bean in the pipeline module's bean factory");
-        }
-        if (!(bean instanceof ConnectionFactory))
-        {
-            throw new java.lang.IllegalStateException("The activeMqConnectionFactory bean in the pipeline module's bean factory was expected to be a " + ConnectionFactory.class.getName() + " but was a " + bean.getClass().getName());
-        }
-
         // Figure out what location we're supposed to be
         PipelineJobService.RemoteServerProperties remoteProps = PipelineJobService.get().getRemoteServerProperties();
         if (remoteProps == null)
@@ -127,24 +117,45 @@ public class RemoteServerStartup extends AbstractPipelineStartup
         }
         String location = remoteProps.getLocation();
 
+        // Figure out where to talk to the JMS queue
+        Object bean = beanFactory.getBean("activeMqConnectionFactory");
+        if (bean == null)
+        {
+            throw new IllegalStateException("Could not find activeMqConnectionFactory bean in the pipeline module's bean factory");
+        }
+        if (!(bean instanceof ConnectionFactory))
+        {
+            throw new IllegalStateException("The activeMqConnectionFactory bean in the pipeline module's bean factory was expected to be a " + ConnectionFactory.class.getName() + " but was a " + bean.getClass().getName());
+        }
+
+        return getRequeueRequest((ConnectionFactory)bean, Collections.singleton(location));
+    }
+
+    /**
+     * Browse the JMS queue to grab all the tasks currently assigned to this location and build up a set of JobIds.
+     */
+    public RequeueLostJobsRequest getRequeueRequest(ConnectionFactory connectionFactory, Collection<String> locations)
+    {
         Set<String> ids = new HashSet<String>();
         Connection conn = null;
         try
         {
-            conn = ((ConnectionFactory)bean).createConnection();
+            conn = connectionFactory.createConnection();
             Session session = conn.createSession(false, Session.AUTO_ACKNOWLEDGE);
-
-            TaskJmsSelectorFilter filter = new TaskJmsSelectorFilter();
-            filter.setLocation(location);
-
-            QueueBrowser browser = session.createBrowser(session.createQueue(JOB_QUEUE_ADDRESS), filter.getExpression());
-            conn.start();
-            for (Enumeration msgs = browser.getEnumeration(); msgs.hasMoreElements() ;)
+            for (String location : locations)
             {
-                Message msg = (Message) msgs.nextElement();
+                TaskJmsSelectorFilter filter = new TaskJmsSelectorFilter();
+                filter.setLocation(location);
 
-                PipelineJob job = PipelineJobService.get().getJobStore().fromXML(((TextMessage)msg).getText());
-                ids.add(job.getJobGUID());
+                QueueBrowser browser = session.createBrowser(session.createQueue(JOB_QUEUE_ADDRESS), filter.getExpression());
+                conn.start();
+                for (Enumeration msgs = browser.getEnumeration(); msgs.hasMoreElements() ;)
+                {
+                    Message msg = (Message) msgs.nextElement();
+
+                    PipelineJob job = PipelineJobService.get().getJobStore().fromXML(((TextMessage)msg).getText());
+                    ids.add(job.getJobGUID());
+                }
             }
         }
         catch (JMSException e)
@@ -153,9 +164,9 @@ public class RemoteServerStartup extends AbstractPipelineStartup
         }
         finally
         {
-            if (conn != null) { try { conn.close(); } catch (JMSException e) {} }
+            if (conn != null) { try { conn.close(); } catch (JMSException ignored) {} }
         }
-        return new RequeueLostJobsRequest(location, ids);
+        return new RequeueLostJobsRequest(locations, ids);
     }
 
 }

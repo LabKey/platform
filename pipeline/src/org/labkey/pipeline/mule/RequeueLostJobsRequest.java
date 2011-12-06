@@ -15,14 +15,15 @@
  */
 package org.labkey.pipeline.mule;
 
-import org.labkey.api.pipeline.PipelineService;
+import org.apache.log4j.Logger;
 import org.labkey.api.pipeline.PipelineJobService;
+import org.labkey.api.pipeline.PipelineService;
 import org.labkey.pipeline.api.PipelineStatusFileImpl;
 import org.labkey.pipeline.api.PipelineStatusManager;
-import org.apache.log4j.Logger;
 
-import java.util.Set;
 import java.io.IOException;
+import java.util.Arrays;
+import java.util.Collection;
 
 /**
  * User: jeckels
@@ -32,12 +33,12 @@ public class RequeueLostJobsRequest implements StatusRequest
 {
     private static final Logger _log = Logger.getLogger(RequeueLostJobsRequest.class);
 
-    private String _location;
-    private Set<String> _jobIds;
+    private Collection<String> _locations;
+    private Collection<String> _jobIds;
 
-    public RequeueLostJobsRequest(String location, Set<String> jobIds)
+    public RequeueLostJobsRequest(Collection<String> locations, Collection<String> jobIds)
     {
-        _location = location;
+        _locations = locations;
         _jobIds = jobIds;
     }
 
@@ -45,7 +46,7 @@ public class RequeueLostJobsRequest implements StatusRequest
     {
         if (PipelineService.get().getPipelineQueue().isLocal())
         {
-            _log.error("Attempted to requeue lost jobs for location " + _location + " but this server " +
+            _log.error("Attempted to requeue lost jobs for location " + Arrays.asList(_locations) + " but this server " +
                 "is not using an external JMS queue. Change your configuration to point to a different JMS queue.");
         }
 
@@ -55,17 +56,21 @@ public class RequeueLostJobsRequest implements StatusRequest
         {
             public void run()
             {
-                for (PipelineStatusFileImpl sf : PipelineStatusManager.getStatusFilesForLocation(_location, true))
+                for (String location : _locations)
                 {
-                    if (!_jobIds.contains(sf.getJobId()) && sf.getJobStore() != null)
+                    _log.info("Requeueing jobs for location " + location);
+                    for (PipelineStatusFileImpl sf : PipelineStatusManager.getStatusFilesForLocation(location, true))
                     {
-                        try
+                        if (!_jobIds.contains(sf.getJobId()) && sf.getJobStore() != null)
                         {
-                            PipelineJobService.get().getJobStore().retry(sf);
-                        }
-                        catch (IOException e)
-                        {
-                            PipelineJobService.get().getJobStore().fromXML(sf.getJobStore()).error("Failed to requeue job", e);
+                            try
+                            {
+                                PipelineJobService.get().getJobStore().retry(sf);
+                            }
+                            catch (IOException e)
+                            {
+                                PipelineJobService.get().getJobStore().fromXML(sf.getJobStore()).error("Failed to requeue job", e);
+                            }
                         }
                     }
                 }

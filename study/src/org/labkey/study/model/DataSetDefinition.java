@@ -1352,16 +1352,16 @@ public class DataSetDefinition extends AbstractStudyEntity<DataSetDefinition> im
 
             if (!isDemographicData())
             {
-                error.append(_study.getTimepointType() != TimepointType.DATE ? "/Date" : "/Visit");
+                error.append(_study.getTimepointType() != TimepointType.VISIT ? "/Visit" : "/Date");
 
                 if (getKeyPropertyName() != null)
-                    error.append("/").append(getKeyPropertyName()).append(" Triple");
+                    error.append("/").append(getKeyPropertyName()).append(" combination");
                 else
-                    error.append(" Pair");
+                    error.append(" combination");
             }
             else if (getKeyPropertyName() != null)
             {
-                error.append("/").append(getKeyPropertyName()).append(" Pair");
+                error.append("/").append(getKeyPropertyName()).append(" combination");
             }
             error.append(".  ");
 
@@ -2047,10 +2047,52 @@ public class DataSetDefinition extends AbstractStudyEntity<DataSetDefinition> im
             assert x == errors;
             return Collections.emptyList();
         }
+        catch (RuntimeSQLException e)
+        {
+            ValidationException translated = translateSQLException(e);
+            if (translated != null)
+            {
+                errors.addRowError(translated);
+                return Collections.emptyList();
+            }
+            throw e;
+        }
         finally
         {
             scope.closeConnection();
         }
+    }
+
+    public ValidationException translateSQLException(RuntimeSQLException e)
+    {
+        if (SqlDialect.isConstraintException(e.getSQLException()) && e.getMessage() != null && e.getMessage().contains("_pk"))
+        {
+            StringBuilder sb = new StringBuilder("Duplicate dataset row. All rows must have unique ");
+            sb.append(getStudy().getSubjectColumnName());
+            if (!isDemographicData())
+            {
+                sb.append("/");
+                if (getStudy().getTimepointType() == TimepointType.VISIT)
+                {
+                    sb.append("SequenceNum");
+                }
+                else
+                {
+                    sb.append("Date");
+                }
+            }
+            if (getKeyPropertyName() != null)
+            {
+                sb.append("/");
+                sb.append(getKeyPropertyName());
+            }
+            sb.append(" values. (");
+            sb.append(e.getMessage());
+            sb.append(")");
+
+            return new ValidationException(sb.toString());
+        }
+        return null;
     }
 
 

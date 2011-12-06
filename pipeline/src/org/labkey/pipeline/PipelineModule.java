@@ -24,6 +24,7 @@ import org.labkey.api.module.ModuleContext;
 import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.module.SpringModule;
 import org.labkey.api.pipeline.PipelineJob;
+import org.labkey.api.pipeline.PipelineQueue;
 import org.labkey.api.pipeline.PipelineService;
 import org.labkey.api.security.User;
 import org.labkey.api.util.ContextListener;
@@ -49,6 +50,9 @@ import org.labkey.pipeline.api.PipelineStatusFileImpl;
 import org.labkey.pipeline.api.PipelineStatusManager;
 import org.labkey.pipeline.api.properties.ApplicationPropertiesSiteSettings;
 import org.labkey.pipeline.mule.EPipelineContextListener;
+import org.labkey.pipeline.mule.EPipelineQueueImpl;
+import org.labkey.pipeline.mule.RemoteServerStartup;
+import org.labkey.pipeline.mule.filters.AbstractTaskJmsSelectorFilter;
 import org.labkey.pipeline.status.StatusController;
 import org.labkey.pipeline.xstream.PathMapperImpl;
 import org.mule.MuleManager;
@@ -138,15 +142,10 @@ public class PipelineModule extends SpringModule implements ContainerManager.Con
             ContextListener.addShutdownListener(listener);
         }
 
-        // If the queue is in local server memory, then we need to restart all
-        // jobs on server restart.  Otherwise, an external JMS queue will retain
-        // all jobs between server restarts.
-        if (PipelineService.get().getPipelineQueue().isTransient())
-        {
-            Thread restarterThread = new Thread(new JobRestarter());
-            restarterThread.start();
-        }
-
+        // Restart any jobs that were in process or in the queue when the server shut down
+        Thread restarterThread = new Thread(new JobRestarter());
+        restarterThread.start();
+        
         PipelineEmailPreferences.get().startNotificationTasks();
         PipelineController.registerAdminConsoleLinks();
         StatusController.registerAdminConsoleLinks();
@@ -206,6 +205,8 @@ public class PipelineModule extends SpringModule implements ContainerManager.Con
     {
         public void run()
         {
+            // Wait for the server to finish starting up. This is required so that all modules have a chance to register
+            // their task and job implementations
             while (!ModuleLoader.getInstance().isStartupComplete())
             {
                 try
@@ -214,6 +215,23 @@ public class PipelineModule extends SpringModule implements ContainerManager.Con
                 }
                 catch (InterruptedException e) {}
             }
+
+            // If the queue is in local server memory, then we need to restart all
+            // jobs on server restart.
+            PipelineQueue queue = PipelineService.get().getPipelineQueue();
+            if (queue.isTransient())
+            {
+                requeueAllPendingJobs();
+            }
+            else if (!queue.isLocal() && queue instanceof EPipelineQueueImpl)
+            {
+                // Restart jobs that have been dropped from the queue and are supposed to run on the web server
+                new RemoteServerStartup().getRequeueRequest(((EPipelineQueueImpl) queue).getJMSFactory(), AbstractTaskJmsSelectorFilter.getAllLocalLocations()).performRequest();
+            }
+        }
+
+        private void requeueAllPendingJobs()
+        {
             try
             {
                 PipelineStatusFileImpl[] incompleteStatusFiles = PipelineStatusManager.getQueuedStatusFiles();

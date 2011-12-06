@@ -17,11 +17,19 @@ package org.labkey.study.query;
 
 import org.apache.commons.lang.ObjectUtils;
 import org.jetbrains.annotations.NotNull;
-import org.labkey.api.data.*;
+import org.labkey.api.data.Container;
+import org.labkey.api.data.RuntimeSQLException;
+import org.labkey.api.data.SimpleFilter;
+import org.labkey.api.data.Table;
 import org.labkey.api.etl.DataIterator;
 import org.labkey.api.etl.DataIteratorBuilder;
-import org.labkey.api.etl.StandardETL;
-import org.labkey.api.query.*;
+import org.labkey.api.query.AbstractQueryUpdateService;
+import org.labkey.api.query.BatchValidationException;
+import org.labkey.api.query.DuplicateKeyException;
+import org.labkey.api.query.InvalidKeyException;
+import org.labkey.api.query.QueryUpdateServiceException;
+import org.labkey.api.query.SimpleValidationError;
+import org.labkey.api.query.ValidationException;
 import org.labkey.api.security.User;
 import org.labkey.api.study.DataSet;
 import org.labkey.api.study.StudyService;
@@ -31,7 +39,12 @@ import org.labkey.study.model.StudyImpl;
 import org.labkey.study.model.StudyManager;
 
 import java.sql.SQLException;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 
 /*
 * User: Dave
@@ -120,16 +133,29 @@ public class DatasetUpdateService extends AbstractQueryUpdateService
     @Override
     protected int _pump(DataIteratorBuilder etl, final ArrayList<Map<String, Object>> rows, BatchValidationException errors)
     {
-        boolean hasRowId = _dataset.getKeyManagementType() == DataSet.KeyManagementType.RowId;
-
-        if (!hasRowId)
+        try
         {
-            return super._pump(etl, rows, errors);
+            boolean hasRowId = _dataset.getKeyManagementType() == DataSet.KeyManagementType.RowId;
+
+            if (!hasRowId)
+            {
+                return super._pump(etl, rows, errors);
+            }
+
+            synchronized (_dataset.getManagedKeyLock())
+            {
+                return super._pump(etl, rows, errors);
+            }
         }
-
-        synchronized (_dataset.getManagedKeyLock())
+        catch (RuntimeSQLException e)
         {
-            return super._pump(etl, rows, errors);
+            ValidationException translated = _dataset.translateSQLException(e);
+            if (translated != null)
+            {
+                errors.addRowError(translated);
+                return 0;
+            }
+            throw e;
         }
     }
 

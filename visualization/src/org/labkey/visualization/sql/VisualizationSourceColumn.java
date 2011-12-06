@@ -9,6 +9,7 @@ import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.QueryParseException;
 import org.labkey.api.query.QueryService;
 import org.labkey.api.query.UserSchema;
+import org.labkey.api.util.UnexpectedException;
 import org.labkey.api.view.ViewContext;
 
 import java.util.*;
@@ -143,20 +144,28 @@ public class VisualizationSourceColumn
 
     public String getSelectName()
     {
-        String[] parts = _name.split("[\\./]");
-        StringBuilder selectName = new StringBuilder();
-        String sep = "";
-        for (String part : parts)
+        try
         {
-            selectName.append(sep);
-            String identifier = _schema.getDbSchema().getSqlDialect().makeLegalIdentifier(part);
-            if (identifier.charAt(0) == '"')
-                selectName.append(identifier);
-            else
-                selectName.append("\"").append(identifier).append("\"");
-            sep = ".";
+            ColumnInfo columnInfo = findColumnInfo();
+            List<String> parts = columnInfo.getFieldKey().getParts();
+            StringBuilder selectName = new StringBuilder();
+            String sep = "";
+            for (String part : parts)
+            {
+                selectName.append(sep);
+                String identifier = _schema.getDbSchema().getSqlDialect().makeLegalIdentifier(part);
+                if (identifier.charAt(0) == '"')
+                    selectName.append(identifier);
+                else
+                    selectName.append("\"").append(identifier).append("\"");
+                sep = ".";
+            }
+            return selectName.toString();
         }
-        return selectName.toString();
+        catch (VisualizationSQLGenerator.GenerationException e)
+        {
+            throw new UnexpectedException(e);
+        }
     }
 
     public JdbcType getType() throws VisualizationSQLGenerator.GenerationException
@@ -165,16 +174,7 @@ public class VisualizationSourceColumn
         {
             try
             {
-                TableInfo tinfo = _schema.getTable(_queryName);
-                if (tinfo == null)
-                {
-                    throw new VisualizationSQLGenerator.GenerationException("Unable to find table " + _schema.getName() + "." + _queryName +
-                            ".  The table may not exist, or you may not have permissions to read the data.");
-                }
-
-                FieldKey dimensionKey = FieldKey.fromString(_name);
-                Map<FieldKey, ColumnInfo> cols = QueryService.get().getColumns(tinfo, Collections.singleton(dimensionKey));
-                ColumnInfo column = cols.get(dimensionKey);
+                ColumnInfo column = findColumnInfo();
                 if (column == null)
                 {
                     throw new VisualizationSQLGenerator.GenerationException("Unable to find field " + _name + " in " + _schema.getName() + "." + _queryName +
@@ -190,6 +190,27 @@ public class VisualizationSourceColumn
             }
         }
         return _type;
+    }
+
+    private ColumnInfo findColumnInfo() throws VisualizationSQLGenerator.GenerationException
+    {
+        TableInfo tinfo = _schema.getTable(_queryName);
+        if (tinfo == null)
+        {
+            throw new VisualizationSQLGenerator.GenerationException("Unable to find table " + _schema.getName() + "." + _queryName +
+                    ".  The table may not exist, or you may not have permissions to read the data.");
+        }
+
+        FieldKey fieldKey = FieldKey.fromString(_name);
+        Map<FieldKey, ColumnInfo> cols = QueryService.get().getColumns(tinfo, Collections.singleton(fieldKey));
+        ColumnInfo column = cols.get(fieldKey);
+        if (column == null && _name.contains("."))
+        {
+            fieldKey = FieldKey.fromParts(_name.split("[\\./]"));
+            cols = QueryService.get().getColumns(tinfo, Collections.singleton(fieldKey));
+            column = cols.get(fieldKey);
+        }
+        return column;
     }
 
     public Set<Object> getValues()

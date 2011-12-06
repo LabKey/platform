@@ -15,11 +15,15 @@
  */
 package org.labkey.pipeline.mule.filters;
 
+import org.jetbrains.annotations.NotNull;
 import org.labkey.api.pipeline.PipelineJob;
 import org.labkey.api.pipeline.TaskFactory;
 import org.labkey.pipeline.api.PipelineJobServiceImpl;
 import org.mule.providers.jms.filters.JmsSelectorFilter;
 import org.apache.log4j.Logger;
+
+import java.util.HashSet;
+import java.util.Set;
 
 /**
  * <code>TaskJmsSelectorFilter</code> builds and applies a JMS selector for
@@ -29,6 +33,8 @@ import org.apache.log4j.Logger;
  */
 abstract public class AbstractTaskJmsSelectorFilter extends JmsSelectorFilter
 {
+    private static Set<String> ALL_LOCAL_LOCATIONS = new HashSet<String>(); 
+
     private static Logger _log = Logger.getLogger(AbstractTaskJmsSelectorFilter.class);
 
     private boolean _includeMonolithic;
@@ -38,6 +44,16 @@ abstract public class AbstractTaskJmsSelectorFilter extends JmsSelectorFilter
     public String getLocation()
     {
         return _location;
+    }
+
+    public void setLocation(@NotNull String location)
+    {
+        if (location == null)
+        {
+            throw new IllegalArgumentException("Location may not be null");
+        }
+        ALL_LOCAL_LOCATIONS.add(location);
+        _location = location;
     }
 
     public boolean isIncludeMonolithic()
@@ -89,5 +105,10 @@ abstract public class AbstractTaskJmsSelectorFilter extends JmsSelectorFilter
         _log.debug("JMS Select: " + expr);
 
         return expr.toString();
+    }
+
+    public static Set<String> getAllLocalLocations()
+    {
+        return ALL_LOCAL_LOCATIONS;
     }
 }

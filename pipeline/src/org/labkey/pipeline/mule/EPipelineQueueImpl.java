@@ -81,6 +81,11 @@ public class EPipelineQueueImpl implements PipelineQueue
         _factoryJms = factory;
     }
 
+    public ConnectionFactory getJMSFactory()
+    {
+        return _factoryJms;
+    }
+
     public boolean cancelJob(Container c, String jobId)
     {
         // todo: implement this!
