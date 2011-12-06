@@ -16,6 +16,7 @@
 
 package org.labkey.api.exp.api;
 
+import org.labkey.api.data.Container;
 import org.labkey.api.security.User;
 
 import java.sql.SQLException;
@@ -48,5 +49,15 @@ public class ProtocolImplementation
     public boolean deleteRunWhenInputDeleted()
     {
         return false;
+    }
+
+    /**
+     * Called after a ExpRun and all it's ExpDatas have been deleted.
+     * @param container The container the run was deleted from.
+     * @param user The user who deleted the run.
+     * @throws SQLException
+     */
+    public void onRunDeleted(Container container, User user) throws SQLException
+    {
     }
 }
