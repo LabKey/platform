@@ -262,6 +262,12 @@ Ext4.define('LABKEY.ext4.DataViewsPanel', {
                 cls    : 'tip-panel',
                 tpl    : tipTpl,
                 renderTipRecord : function(rec){
+                    for (var d in rec.data) {
+                        if (rec.data.hasOwnProperty(d))
+                        {
+                            rec.data[d] = Ext4.htmlEncode(rec.data[d]);
+                        }
+                    }
                     tipPanel.update(rec);
                 }
             });
@@ -412,7 +418,7 @@ Ext4.define('LABKEY.ext4.DataViewsPanel', {
             sortable : true,
             dataIndex: 'name',
             tdCls    : 'x4-name-column-cell',
-            tpl      : '<div height="16px" width="100%"><a href="{runUrl}">{name}</a></div>',
+            tpl      : '<div height="16px" width="100%"><a href="{runUrl}">{name:htmlEncode}</a></div>',
             scope    : this
         },{
             text     : 'Category',
@@ -729,7 +735,7 @@ Ext4.define('LABKEY.ext4.DataViewsPanel', {
                                 var titleEl = Ext.query('th[class=labkey-wp-title-left]:first', 'webpart_' + this.webpartId);
                                 if (titleEl && (titleEl.length >= 1))
                                 {
-                                    titleEl[0].innerHTML = form.findField('webpart.title').getValue();
+                                    titleEl[0].innerHTML = LABKEY.Utils.encodeHtml(form.findField('webpart.title').getValue());
                                 }
                                 // else it will get displayed on refresh
 
@@ -921,10 +927,12 @@ Ext4.define('LABKEY.ext4.DataViewsPanel', {
             border   : false, frame: false,
             scroll   : 'vertical',
             columns  : [{
+                xtype    : 'templatecolumn',
                 text     : 'Category',
                 flex     : 1,
                 sortable : true,
                 dataIndex: 'label',
+                tpl      : '{label:htmlEncode}',
                 editor   : {
                     xtype:'textfield',
                     allowBlank:false
