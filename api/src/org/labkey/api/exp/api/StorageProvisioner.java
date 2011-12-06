@@ -227,11 +227,14 @@ public class StorageProvisioner
 
         for (DomainProperty prop : properties)
         {
+            if (prop.getName() == null || prop.getName().length() == 0)
+                throw new IllegalArgumentException("Can't add property with no name: " + prop.getPropertyURI());
+
             if (base.contains(prop.getName()))
             {
                 // apparently this is a case where the domain allows a propertydescriptor to be defined with the same
                 // name as a built-in column. e.g. to allow setting overrides?
-                log.info("StorageProvisioner ignored property with name of build-in column: " + prop.getPropertyURI());
+                log.warn("StorageProvisioner ignored property with name of build-in column: " + prop.getPropertyURI());
                 continue;
             }
             change.addColumn(prop.getPropertyDescriptor());
