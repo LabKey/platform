@@ -20,8 +20,26 @@
 <%@ page import="org.labkey.query.persist.CstmView" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.query.controllers.QueryController.*" %>
+<%@ page import="org.labkey.api.util.DateUtil" %>
+<%@ page import="org.labkey.api.security.UserManager" %>
+<%@ page import="org.labkey.api.security.User" %>
+<%@ page import="org.labkey.query.persist.QueryManager" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
+<%! String userIdToString(Integer userId)
+{
+    if (userId == null)
+    {
+        return "";
+    }
+    User user = UserManager.getUser(userId);
+    if (user == null)
+    {
+        return "Unknown user #" + userId;
+    }
+    return user.getDisplayName(user);
+}
+%>
 <%
     InternalSourceViewForm form = (InternalSourceViewForm) HttpView.currentModel();
     ActionURL urlPost = new ActionURL(InternalSourceViewAction.class, getViewContext().getContainer());
@@ -29,13 +47,24 @@
     ActionURL urlCancel = new ActionURL(ManageViewsAction.class, getViewContext().getContainer());
     CstmView view = form.getViewAndCheckPermission();
 
+    QueryManager mgr = QueryManager.get();
 %>
 <labkey:errors />
 <form method = "POST" action="<%=h(urlPost)%>">
     <p>Schema: <%=h(view.getSchema())%><br>
         Query: <%=h(view.getQueryName())%><br>
         Name: <%=h(view.getName())%><br>
-        Owner: <%=h(String.valueOf(view.getCustomViewOwner()))%><br>
+        Owner: <%=h(userIdToString(view.getCustomViewOwner()))%><br>
+        <br>
+        Inherit: <%=mgr.canInherit(view.getFlags()) ? "yes" : "no"%><br>
+        Hidden: <%=mgr.isHidden(view.getFlags()) ? "yes" : "no"%><br>
+        Snapshot: <%=mgr.isSnapshot(view.getFlags()) ? "yes" : "no"%><br>
+        <br>
+        Container: <%=h(view.getContainerPath())%><br>
+        Created: <%=h(DateUtil.formatDateTime(view.getCreated()))%><br>
+        Created By: <%=h(userIdToString(view.getCreatedBy()))%><br>
+        Modified: <%=h(DateUtil.formatDateTime(view.getModified()))%><br>
+        Modified: <%=h(userIdToString(view.getModifiedBy()))%><br>
     </p>
     <table><tr><th>Columns</th><th>Filter/Sort</th></tr>
         <tr><td><textarea name="ff_columnList" rows="20" cols="40"><%=h(form.ff_columnList)%></textarea></td>

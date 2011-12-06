@@ -27,6 +27,7 @@
 <%@ page import="org.labkey.query.persist.QueryManager" %>
 <%@ page import="java.util.*" %>
 <%@ page import="org.labkey.query.controllers.QueryController.*" %>
+<%@ page import="org.labkey.api.util.DateUtil" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%! String userIdToString(Integer userId)
@@ -40,7 +41,7 @@
     {
         return "Unknown user #" + userId;
     }
-    return user.toString();
+    return user.getDisplayName(user);
 }
 %>
 <%
@@ -89,8 +90,12 @@
         <th>Schema</th>
         <th>Query</th>
         <th>View Name</th>
-        <th>Owner</th>
         <th>Inherit</th>
+        <th>Owner</th>
+        <th>Created</th>
+        <th>Created&nbsp;By</th>
+        <th>Modified</th>
+        <th>Modified&nbsp;By</th>
     </tr>
     <% if (form.getViewContext().hasPermission(UpdatePermission.class))
     {
@@ -103,9 +108,13 @@
         </td>
         <td><%=h(view.getName())%>
         </td>
+        <td><%=mgr.canInherit(view.getFlags()) ? "yes" : ""%></td>
         <td><%=userIdToString(view.getCustomViewOwner())%>
         </td>
-        <td><%=mgr.canInherit(view.getFlags()) ? "yes" : ""%></td>
+        <td><%=DateUtil.formatDateTime(view.getCreated()).replaceAll(" ", "&nbsp;")%></td>
+        <td><%=userIdToString(view.getCreatedBy())%></td>
+        <td><%=DateUtil.formatDateTime(view.getModified()).replaceAll(" ", "&nbsp;")%></td>
+        <td><%=userIdToString(view.getModifiedBy())%></td>
         <td><% ActionURL urlDelete = new ActionURL(InternalDeleteView.class, c);
         urlDelete.addParameter("customViewId", Integer.toString(view.getCustomViewId())); %>
             <labkey:link href="<%=urlDelete%>" text="delete" />
