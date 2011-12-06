@@ -1524,6 +1524,12 @@ public class ExperimentServiceImpl implements ExperimentService.Interface
             {
                 getExpSchema().getScope().ensureTransaction();
              
+                ExpRunImpl run = getExpRun(runId);
+                ExpProtocol protocol = run.getProtocol();
+                ProtocolImplementation protocolImpl = null;
+                if (protocol != null)
+                    protocolImpl = protocol.getImplementation();
+
                 // Grab these to delete after we've deleted the Data rows
                 ExpDataImpl[] datasToDelete = getAllDataOwnedByRun(runId);
 
@@ -1534,6 +1540,10 @@ public class ExperimentServiceImpl implements ExperimentService.Interface
                     ExperimentDataHandler handler = data.findDataHandler();
                     handler.deleteData(data, container, user);
                 }
+
+                if (protocolImpl != null)
+                    protocolImpl.onRunDeleted(container, user);
+
                 getExpSchema().getScope().commitTransaction();
             }
         }
