@@ -1073,6 +1073,7 @@ public class SecurityApiActions
             return principal;
         }
 
+        // Not used... TODO: Delete?
         protected void writeToAuditLog(Group group, UserPrincipal principal, MembershipModification mod)
         {
             StringBuilder sb = new StringBuilder("The user/group ");
@@ -1095,7 +1096,14 @@ public class SecurityApiActions
             for (int id : form.getPrincipalIds())
             {
                 UserPrincipal principal = getPrincipal(id);
-                SecurityManager.addMember(group, principal);
+                try
+                {
+                    SecurityManager.addMember(group, principal);
+                }
+                catch (InvalidGroupMembershipException e)
+                {
+                    errors.reject(null, e.getMessage());
+                }
                 //group cache listener already writes to audit log
             }
             return new ApiSimpleResponse("added", form.getPrincipalIds());

@@ -25,6 +25,7 @@ import org.labkey.api.module.DefaultModule;
 import org.labkey.api.module.Module;
 import org.labkey.api.module.ModuleContext;
 import org.labkey.api.security.Group;
+import org.labkey.api.security.InvalidGroupMembershipException;
 import org.labkey.api.security.MutableSecurityPolicy;
 import org.labkey.api.security.SecurityManager;
 import org.labkey.api.security.User;
@@ -32,6 +33,7 @@ import org.labkey.api.security.roles.NoPermissionsRole;
 import org.labkey.api.security.roles.ProjectAdminRole;
 import org.labkey.api.security.roles.Role;
 import org.labkey.api.security.roles.RoleManager;
+import org.labkey.api.util.ExceptionUtil;
 import org.labkey.api.util.MothershipReport;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.view.WebPartFactory;
@@ -102,7 +104,15 @@ public class MothershipModule extends DefaultModule
             policy.addRoleAssignment(mothershipGroup, projAdminRole);
             SecurityManager.savePolicy(policy);
 
-            SecurityManager.addMember(mothershipGroup, moduleContext.getUpgradeUser());
+            try
+            {
+                SecurityManager.addMember(mothershipGroup, moduleContext.getUpgradeUser());
+            }
+            catch (InvalidGroupMembershipException e)
+            {
+                // Not really possible, but just in case
+                ExceptionUtil.logExceptionToMothership(null, e);
+            }
 
             Set<Module> modules = new HashSet<Module>(c.getActiveModules());
             modules.add(this);

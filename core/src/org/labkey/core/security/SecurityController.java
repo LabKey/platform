@@ -49,6 +49,7 @@ import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.security.CSRF;
 import org.labkey.api.security.Group;
 import org.labkey.api.security.GroupManager;
+import org.labkey.api.security.InvalidGroupMembershipException;
 import org.labkey.api.security.MutableSecurityPolicy;
 import org.labkey.api.security.RequiresNoPermission;
 import org.labkey.api.security.RequiresPermissionClass;
@@ -810,8 +811,11 @@ public class SecurityController extends SpringActionController
                         }
                     }
 
-                    SecurityManager.addMembers(_group, addGroups);
-                    SecurityManager.addMembers(_group, addUsers);
+                    List<String> addErrors = SecurityManager.addMembers(_group, addGroups);
+                    addErrors.addAll(SecurityManager.addMembers(_group, addUsers));
+
+                    for (String error : addErrors)
+                        errors.reject(ERROR_MSG, error);
                 }
             }
 
@@ -1467,8 +1471,18 @@ public class SecurityController extends SpringActionController
                     if (!user.isInGroup(groupId))
                     {
                         final Group group = SecurityManager.getGroup(groupId);
+
                         if (group != null)
-                            SecurityManager.addMember(group, user);
+                        {
+                            try
+                            {
+                                SecurityManager.addMember(group, user);
+                            }
+                            catch (InvalidGroupMembershipException e)
+                            {
+                                // Best effort... fail quietly
+                            }
+                        }
                     }
                 }
             }

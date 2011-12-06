@@ -23,6 +23,7 @@ import org.labkey.api.data.RuntimeSQLException;
 import org.labkey.api.data.Table;
 import org.labkey.api.data.DbScope;
 import org.labkey.api.data.TableInfo;
+import org.labkey.api.util.ExceptionUtil;
 import org.labkey.study.model.StudyManager;
 import org.labkey.study.StudySchema;
 import org.labkey.api.util.Pair;
@@ -40,6 +41,7 @@ import java.sql.SQLException;
  */
 public abstract class DefaultActor<A extends DefaultActor<A>> implements RequirementActor<A>
 {
+    // TODO: Unused... delete this?
     public void addMembers(User... users)
     {
         addMembers(null, users);
@@ -49,8 +51,20 @@ public abstract class DefaultActor<A extends DefaultActor<A>> implements Require
     {
         Integer groupId = getGroupId(site, true);
         Group group = SecurityManager.getGroup(groupId);
+
         for (User user : users)
-            SecurityManager.addMember(group, user);
+        {
+            try
+            {
+                SecurityManager.addMember(group, user);
+            }
+            catch (InvalidGroupMembershipException e)
+            {
+                // Best effort, but log any exceptions. Exception is unlikely at this point, since
+                // actors don't currently support groups as members.
+                ExceptionUtil.logExceptionToMothership(null, e);
+            }
+        }
     }
 
     public User[] getMembers()
