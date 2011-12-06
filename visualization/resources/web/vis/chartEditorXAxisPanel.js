@@ -66,7 +66,15 @@ LABKEY.vis.ChartEditorXAxisPanel = Ext.extend(Ext.FormPanel, {
                         }
 
                         if(this.labelTextField.getValue()== "Visit") {
-                            var newLabel = this.intervalCombo.getValue() + " Since " + this.zeroDateCombo.getStore().getAt(this.zeroDateCombo.getStore().find('longlabel', this.zeroDateCombo.getValue())).data.label;
+                            var newLabel = "";
+                            if(this.zeroDateCombo.getValue() != ""){
+                                newLabel = this.intervalCombo.getValue() + " Since " + this.zeroDateCombo.getStore().getAt(this.zeroDateCombo.getStore().find('longlabel', this.zeroDateCombo.getValue())).data.label;
+                            } else {
+                                //If the zeroDateCombo is blank then we try the zeroDateCol, this prevents errors if a
+                                //dataset has been hidden after a chart has been made (Issue 13554: Time chart doesn't refresh when switching chart type).
+                                newLabel = this.intervalCombo.getValue() + " Since " + this.zeroDateCol.label;
+                            }
+
                             this.labelTextField.setValue(newLabel);
 
                             this.axis.label = newLabel;

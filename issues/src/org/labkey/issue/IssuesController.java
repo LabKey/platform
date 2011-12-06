@@ -75,6 +75,7 @@ import org.labkey.api.security.roles.RoleManager;
 import org.labkey.api.services.ServiceRegistry;
 import org.labkey.api.settings.AppProps;
 import org.labkey.api.settings.LookAndFeelProperties;
+import org.labkey.api.util.ConfigurationException;
 import org.labkey.api.util.ExceptionUtil;
 import org.labkey.api.util.GUID;
 import org.labkey.api.util.HString;
@@ -1210,6 +1211,10 @@ public class IssuesController extends SpringActionController
                     MailHelper.send(m, getUser(), getContainer());
                 }
             }
+            catch (ConfigurationException e)
+            {
+                _log.error("error sending update email to " + to, e);
+            }
             catch (Exception e)
             {
                 _log.error("error sending update email to " + to, e);
@@ -1596,9 +1601,9 @@ public class IssuesController extends SpringActionController
                 errors.reject("assignedToGroup", "Invalid assigned to setting!");
             }
 
-            if (form.getEntrySingularName().trimToEmpty().length() == 0)
+            if (form.getEntrySingularName() == null || form.getEntrySingularName().trimToEmpty().length() == 0)
                 errors.reject(ConfigureIssuesForm.ParamNames.entrySingularName.name(), "You must specify a value for the entry type singular name!");
-            if (form.getEntryPluralName().trimToEmpty().length() == 0)
+            if (form.getEntryPluralName()== null || form.getEntryPluralName().trimToEmpty().length() == 0)
                 errors.reject(ConfigureIssuesForm.ParamNames.entryPluralName.name(), "You must specify a value for the entry type plural name!");
 
             try

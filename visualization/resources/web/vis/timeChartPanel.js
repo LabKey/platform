@@ -374,7 +374,6 @@ LABKEY.vis.TimeChartPanel = Ext.extend(Ext.Panel, {
                 cls: 'series-selector-tabpanel-test',
                 activeTab: (this.chartInfo.chartSubjectSelection != "subjects" ? 0 : 1),
                 padding: 5,
-                enablePanelScroll: true,
                 enableTabScroll: true,
                 items: [
                     this.subjectSelector,
@@ -401,7 +400,7 @@ LABKEY.vis.TimeChartPanel = Ext.extend(Ext.Panel, {
             this.seriesSelector = new Ext.Panel({
                 region: 'east',
                 layout: 'fit',
-                width: 200,
+                width: 220,
                 border: false,
                 split: true,
                 collapsible: true,
@@ -1149,7 +1148,7 @@ LABKEY.vis.TimeChartPanel = Ext.extend(Ext.Panel, {
                 for (var i = 0; i < (this.chartInfo.subject.values.length > this.maxCharts ? this.maxCharts : this.chartInfo.subject.values.length); i++)
                 {
                     var subject = this.chartInfo.subject.values[i];
-                    charts.push(this.newLineChart(size, series, {parameter: "subject", value: subject}, subject));
+                    charts.push(this.newLineChart(size, series, {parameter: "subject", value: subject}, subject, this.chartInfo.chartLayout));
                 }
             }
         }
@@ -1171,7 +1170,7 @@ LABKEY.vis.TimeChartPanel = Ext.extend(Ext.Panel, {
                 for (var i = 0; i < (this.chartInfo.subject.groups.length > this.maxCharts ? this.maxCharts : this.chartInfo.subject.groups.length); i++)
                 {
                     var group = this.chartInfo.subject.groups[i];
-                    charts.push(this.newLineChart(size, series, {parameter: "subject", value: group.participantIds}, group.label));
+                    charts.push(this.newLineChart(size, series, {parameter: "subject", value: group.participantIds}, group.label, this.chartInfo.chartLayout));
                 }
             }
         }
@@ -1186,7 +1185,7 @@ LABKEY.vis.TimeChartPanel = Ext.extend(Ext.Panel, {
                 for (var i = 0; i < (seriesList.length > this.maxCharts ? this.maxCharts : seriesList.length); i++)
                 {
                     var md = seriesList[i].name;
-                    charts.push(this.newLineChart(size, series, {parameter: "yAxisSeries", value: md}, md));
+                    charts.push(this.newLineChart(size, series, {parameter: "yAxisSeries", value: md}, md, this.chartInfo.chartLayout));
                 }
 
                 // warn if user doesn't have an dimension values selected or if the max number has been exceeded
@@ -1211,7 +1210,7 @@ LABKEY.vis.TimeChartPanel = Ext.extend(Ext.Panel, {
                 this.addWarningText("Please select at least one dimension value.")
             } else {
                 //Single Line Chart, with all participants or groups.
-                charts.push(this.newLineChart(size, series, null, null));
+                charts.push(this.newLineChart(size, series, null, null, this.chartInfo.chartLayout));
             }
         }
 
@@ -1298,7 +1297,7 @@ LABKEY.vis.TimeChartPanel = Ext.extend(Ext.Panel, {
         return series;
     },
 
-    newLineChart: function(size, series, seriesFilter, title)
+    newLineChart: function(size, series, seriesFilter, title, chartLayout)
     {
         // hold on to the x and y axis index
         var xAxisIndex = this.getAxisIndex(this.chartInfo.axis, "x-axis");
@@ -1340,7 +1339,8 @@ LABKEY.vis.TimeChartPanel = Ext.extend(Ext.Panel, {
                 }
             },
             series: tempSeries.length > 0 ? tempSeries : series,
-            title: mainTitle
+            title: mainTitle,
+            chartLayout: chartLayout
         };
 
         if (leftAxisIndex > -1)

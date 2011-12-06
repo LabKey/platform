@@ -1283,20 +1283,29 @@ public class SpecimenController extends BaseStudyController
                         comment, files);
                 List<? extends NotificationRecipientSet> recipients = getUtils().getNotifications(_sampleRequest, form.getNotificationIdPairs());
                 final List<Attachment> attachments = AttachmentService.get().getAttachments(event);
-                getUtils().sendNotification(new DefaultRequestNotification(_sampleRequest, recipients, eventSummary)
+                try
                 {
-                    @Override
-                    public @NotNull List<Attachment> getAttachments()
+                    getUtils().sendNotification(new DefaultRequestNotification(_sampleRequest, recipients, eventSummary)
                     {
-                        return attachments;
-                    }
+                        @Override
+                        public @NotNull List<Attachment> getAttachments()
+                        {
+                            return attachments;
+                        }
 
-                    @Override
-                    public String getComments()
-                    {
-                        return form.getComments();
-                    }
-                });
+                        @Override
+                        public String getComments()
+                        {
+                            return form.getComments();
+                        }
+                    });
+                }
+                catch (ConfigurationException e)
+                {
+                    errors.reject(ERROR_MSG, e.getMessage());
+                    return false;
+                }
+
             }
             return true;
         }
@@ -1682,7 +1691,18 @@ public class SpecimenController extends BaseStudyController
             }
 
             if (!SampleManager.getInstance().isSpecimenShoppingCartEnabled(getContainer()))
-                getUtils().sendNewRequestNotifications(_sampleRequest);
+            {
+                try
+                {
+                    getUtils().sendNewRequestNotifications(_sampleRequest);
+                }
+                catch (ConfigurationException e)
+                {
+                    errors.reject(ERROR_MSG, e.getMessage());
+                    return false;
+                }
+            }
+
             return true;
         }
 
@@ -2124,26 +2144,35 @@ public class SpecimenController extends BaseStudyController
             List<? extends NotificationRecipientSet> recipients = getUtils().getNotifications(_sampleRequest, form.getNotificationIdPairs());
             final List<Attachment> attachments = AttachmentService.get().getAttachments(event);
 
-            getUtils().sendNotification(new DefaultRequestNotification(_sampleRequest, recipients, eventSummary)
+            try
             {
-                @Override
-                public SampleRequestRequirement getRequirement()
+                getUtils().sendNotification(new DefaultRequestNotification(_sampleRequest, recipients, eventSummary)
                 {
-                    return requirement;
-                }
+                    @Override
+                    public SampleRequestRequirement getRequirement()
+                    {
+                        return requirement;
+                    }
 
-                @Override
-                public String getComments()
-                {
-                    return form.getComment();
-                }
+                    @Override
+                    public String getComments()
+                    {
+                        return form.getComment();
+                    }
 
-                @Override
-                public @NotNull List<Attachment> getAttachments()
-                {
-                    return attachments;
-                }
-            });
+                    @Override
+                    public @NotNull List<Attachment> getAttachments()
+                    {
+                        return attachments;
+                    }
+                });
+            }
+            catch (ConfigurationException e)
+            {
+                errors.reject(ERROR_MSG, e.getMessage());
+                return false;
+            }
+
             return true;
         }
 
@@ -2480,7 +2509,17 @@ public class SpecimenController extends BaseStudyController
                     SampleManager.getInstance().createRequestEvent(getUser(), request,
                             SampleManager.RequestEventType.REQUEST_STATUS_CHANGED, "Request submitted for processing.", null);
                     if (SampleManager.getInstance().isSpecimenShoppingCartEnabled(getContainer()))
-                        getUtils().sendNewRequestNotifications(request);
+                    {
+                        try
+                        {
+                            getUtils().sendNewRequestNotifications(request);
+                        }
+                        catch (ConfigurationException e)
+                        {
+                            errors.reject(ERROR_MSG, e.getMessage());
+                            return false;
+                        }
+                    }
                 }
                 catch (RequestabilityManager.InvalidRuleException e)
                 {
@@ -2630,27 +2669,36 @@ public class SpecimenController extends BaseStudyController
 
                     List<ActorNotificationRecipientSet> emailRecipients = notifications.get(originatingOrProvidingSite);
                     final List<Attachment> attachments = AttachmentService.get().getAttachments(event);
-                    getUtils().sendNotification(new DefaultRequestNotification(request, emailRecipients, header)
+                    try
                     {
-                        @Override
-                        protected Specimen[] getSpecimenList() throws SQLException
+                        getUtils().sendNotification(new DefaultRequestNotification(request, emailRecipients, header)
                         {
-                            SimpleFilter filter = getUtils().getSpecimenListFilter(getSampleRequest(), originatingOrProvidingSite, type);
-                            return Table.select(StudySchema.getInstance().getTableInfoSpecimenDetail(), Table.ALL_COLUMNS, filter, null, Specimen.class);
-                        }
+                            @Override
+                            protected Specimen[] getSpecimenList() throws SQLException
+                            {
+                                SimpleFilter filter = getUtils().getSpecimenListFilter(getSampleRequest(), originatingOrProvidingSite, type);
+                                return Table.select(StudySchema.getInstance().getTableInfoSpecimenDetail(), Table.ALL_COLUMNS, filter, null, Specimen.class);
+                            }
 
-                        @Override
-                        public @NotNull List<Attachment> getAttachments()
-                        {
-                            return attachments;
-                        }
+                            @Override
+                            public @NotNull List<Attachment> getAttachments()
+                            {
+                                return attachments;
+                            }
 
-                        @Override
-                        public String getComments()
-                        {
-                            return content.toString();
-                        }
-                    });
+                            @Override
+                            public String getComments()
+                            {
+                                return content.toString();
+                            }
+                        });
+                    }
+                    catch (ConfigurationException e)
+                    {
+                        errors.reject(ERROR_MSG, e.getMessage());
+                        return false;
+                    }
+
                 }
             }
             return true;

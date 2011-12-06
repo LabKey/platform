@@ -580,14 +580,14 @@ LABKEY.vis.XYChartComponent = Ext.extend(Ext.BoxComponent, {
 
     // if there is a left axes, set the leftMargin style value
     setLeftMargin: function() {
-        var newMarginVal = 90;
+        var newMarginVal = 70;
         this.chartWidth -= (newMarginVal - this.style.leftMargin);
         this.style.leftMargin = newMarginVal;
     },
 
     // if there is a right axes, set the rightMargin style value
     setRightMargin: function() {
-        var newMarginVal = 90;
+        var newMarginVal = 70;
         this.chartWidth -= (newMarginVal - this.style.rightMargin);
         this.style.rightMargin = newMarginVal;
     }
@@ -669,6 +669,7 @@ LABKEY.vis.LineChart = Ext.extend(LABKEY.vis.XYChartComponent, {
 
        // if the chart has a left axis, set up the scale for it
        var left;
+       var leftOnly= this.chartLayout == "per_dimension" && this.series[0].axis == "left";
        if (this.axes[leftAxesName]) {
            left = this.getScale(this.axes[leftAxesName], this.chartHeight, this.series, "getY", "left");
            this.setLeftMargin();
@@ -679,6 +680,7 @@ LABKEY.vis.LineChart = Ext.extend(LABKEY.vis.XYChartComponent, {
 
        // if the chart has a right axis, set up the scale for it
        var right;
+       var rightOnly = this.chartLayout == "per_dimension" && this.series[0].axis == "right";
        if (this.axes[rightAxesName]) {
            right = this.getScale(this.axes["right"], this.chartHeight, this.series, "getY", "right");
            this.setRightMargin();
@@ -691,10 +693,10 @@ LABKEY.vis.LineChart = Ext.extend(LABKEY.vis.XYChartComponent, {
        var chartPanel = this.addChartPanel();
 
        this.drawRule(bottom, "bottom", this.axes[bottomAxesName]);
-       if (left) {
+       if (left && !rightOnly) {
            this.drawRule(left, "left", this.axes[leftAxesName]);
        }
-       if (right) {
+       if (right && !leftOnly) {
            this.drawRule(right, "right", this.axes[rightAxesName]);
        }
 

@@ -716,6 +716,12 @@ LABKEY.vis.ChartEditorMeasurePanel = Ext.extend(Ext.FormPanel, {
                     this.fireEvent('chartDefinitionChanged', true);
                 }, this, {buffer: 1000}); // buffer allows single event to fire if bulk changes are made within the given time (in ms)
 
+                var ttRenderer = function(value, p, record) {
+                    var msg = Ext.util.Format.htmlEncode(value);
+                    p.attr = 'ext:qtip="' + msg + '"';
+                    return msg;
+                };
+
                 this.measures[index].dimensionSelectorPanel = new Ext.Panel({
                     title: dimension.label,
                     autoScroll: true,
@@ -738,7 +744,7 @@ LABKEY.vis.ChartEditorMeasurePanel = Ext.extend(Ext.FormPanel, {
                             frame: false,
                             columns: [
                                 sm,
-                                {header: dimension.label, dataIndex:'value'}
+                                {header: dimension.label, dataIndex:'value', renderer: ttRenderer}
                             ],
                             selModel: sm,
                             header: false,

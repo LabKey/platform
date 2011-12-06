@@ -104,6 +104,12 @@ LABKEY.vis.SubjectSeriesSelector = Ext.extend(Ext.Panel, {
             this.fireEvent('chartDefinitionChanged', true);
         }, this, {buffer: 1000}); // buffer allows single event to fire if bulk changes are made within the given time (in ms)
 
+        var ttRenderer = function(value, p, record) {
+            var msg = Ext.util.Format.htmlEncode(value);
+            p.attr = 'ext:qtip="' + msg + '"';
+            return msg;
+        };
+
         this.subjectListViewId = Ext.id();
         // initialize the subject gridPanel with the subjectValues from the getDimensionValues call
         var subjectGridPanel = new Ext.grid.GridPanel({
@@ -126,7 +132,7 @@ LABKEY.vis.SubjectSeriesSelector = Ext.extend(Ext.Panel, {
             }),
             columns: [
                 sm,
-                {header: this.subjectNounPlural, dataIndex:'value'}
+                {header: this.subjectNounPlural, dataIndex:'value', renderer: ttRenderer}
             ],
             listeners: {
                 scope: this,

@@ -63,6 +63,12 @@ LABKEY.vis.GroupSelector = Ext.extend(Ext.Panel, {
             this.fireEvent('chartDefinitionChanged', true);
         }, this, {buffer: 1000}); // buffer allows single event to fire if bulk changes are made within the given time (in ms)
 
+        var ttRenderer = function(value, p, record) {
+            var msg = Ext.util.Format.htmlEncode(value);
+            p.attr = 'ext:qtip="' + msg + '"';
+            return msg;
+        };
+
         this.groupGridPanel = new Ext.grid.GridPanel({
             autoHeight: true,
             viewConfig: {forceFit: true},
@@ -149,7 +155,7 @@ LABKEY.vis.GroupSelector = Ext.extend(Ext.Panel, {
             }),
             columns: [
                 sm,
-                {header: 'Groups', dataIndex:'label'}
+                {header: 'Groups', dataIndex:'label', renderer: ttRenderer}
             ],
             listeners: {
                 scope: this,
