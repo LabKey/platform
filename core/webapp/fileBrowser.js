@@ -3304,8 +3304,9 @@ LABKEY.FileBrowser = Ext.extend(Ext.Panel,
             this.doPost = function(overwrite) {
                 var options = {method:'POST',
                     url:overwrite ? this.currentDirectory.data.uri + '?overwrite=t' : this.currentDirectory.data.uri,
-                    record:this.currentDirectory, 
-                    name:this.fileUploadField.getValue()
+                    record:this.currentDirectory,
+                    name:this.fileUploadField.getValue(),
+                    failure: LABKEY.Utils.displayAjaxErrorResponse
                 };
                 // set errorReader, so that handleResponse() doesn't try to eval() the XML response
                 // assume that we've got a WebdavFileSystem

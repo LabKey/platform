@@ -99,6 +99,18 @@ public class MothershipManager
                 if (null != exceptionMessage && exceptionMessage.length() > 1000)
                     report.setExceptionMessage(exceptionMessage.substring(0,990) + "...");
 
+                String actionName = report.getPageflowAction();
+                if (null != actionName && actionName.length() > 40)
+                {
+                    report.setPageflowAction(actionName.substring(0, 39));
+                }
+
+                String controllerName = report.getPageflowName();
+                if (null != controllerName && controllerName.length() > 30)
+                {
+                    report.setPageflowName(controllerName.substring(0, 29));
+                }
+
                 Table.insert(null, getTableInfoExceptionReport(), report);
                 scope.commitTransaction();
             }

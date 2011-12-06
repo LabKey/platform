@@ -2354,6 +2354,11 @@ public class DavController extends SpringActionController
                     data.setName(file.getName());
                     data.setDataFileURI(file.toURI());
                 }
+                if (data.getDataFileUrl() == null && data.getDataFileUrl().length() > ExperimentService.get().getTinfoData().getColumn("DataFileURL").getScale())
+                {
+                    // If the path is too long to store, bail out without creating an exp.data row
+                    return;
+                }
                 data.save(getUser());
 
                 if (getRequest().getParameter("description") != null)

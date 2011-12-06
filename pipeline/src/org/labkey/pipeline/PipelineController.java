@@ -394,7 +394,7 @@ public class PipelineController extends SpringActionController
 
         public NavTree appendNavTrail(NavTree root)
         {
-            root.addChild("Manage files");
+            root.addChild("Files");
             return root;
         }
     }
