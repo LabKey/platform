@@ -40,6 +40,7 @@ public class ModuleContext implements Cloneable
     private volatile double _originalVersion = 0.0;
     private volatile String _className;
     private volatile String _name;
+
     private volatile boolean _autoUninstall;
     private volatile String _schemas;
 
@@ -190,5 +191,27 @@ public class ModuleContext implements Cloneable
     public void setSchemas(String schemas)
     {
         _schemas = schemas;
+    }
+
+    @Override
+    public boolean equals(Object o)
+    {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+
+        ModuleContext that = (ModuleContext) o;
+
+        if (_className != null ? !_className.equals(that._className) : that._className != null) return false;
+        if (_name != null ? !_name.equals(that._name) : that._name != null) return false;
+
+        return true;
+    }
+
+    @Override
+    public int hashCode()
+    {
+        int result = _className != null ? _className.hashCode() : 0;
+        result = 31 * result + (_name != null ? _name.hashCode() : 0);
+        return result;
     }
 }

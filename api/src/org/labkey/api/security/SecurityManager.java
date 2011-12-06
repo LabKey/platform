@@ -1141,36 +1141,42 @@ public class SecurityManager
         fireDeletePrincipalFromGroup(groupId, principal);
     }
 
-    public static void addMembers(Group group, Collection<? extends UserPrincipal> principals)
+
+    // Returns a list of errors
+    public static List<String> addMembers(Group group, Collection<? extends UserPrincipal> principals)
     {
+        List<String> errors = new LinkedList<String>();
+
         for (UserPrincipal principal : principals)
         {
             try
             {
                 addMember(group, principal);
             }
-            catch (IllegalStateException e)
+            catch (InvalidGroupMembershipException e)
             {
-                _log.error("Error adding principal to a group", e);
+                errors.add(principal.getName() + ": " + e.getMessage());
             }
         }
+
+        return errors;
     }
 
 
     // Add a single user/group to a single group
-    public static void addMember(Group group, UserPrincipal principal)
+    public static void addMember(Group group, UserPrincipal principal) throws InvalidGroupMembershipException
     {
         addMember(group, principal, null);
     }
 
 
     // Internal only; used by junit test
-    static void addMember(Group group, UserPrincipal principal, @Nullable Runnable afterAddRunnable)
+    static void addMember(Group group, UserPrincipal principal, @Nullable Runnable afterAddRunnable) throws InvalidGroupMembershipException
     {
         String errorMessage = getAddMemberError(group, principal);
 
         if (null != errorMessage)
-            throw new IllegalStateException(errorMessage);
+            throw new InvalidGroupMembershipException(errorMessage);
 
         addMemberWithoutValidation(group, principal);
 
@@ -1178,11 +1184,11 @@ public class SecurityManager
             afterAddRunnable.run();
 
         // If we added a group then check for circular relationship... we check this above, but it's possible that
-        // another thread concurrently made a change that introduced a cycle.
+        // another thread concurrently made a change that introduced a cycle.  If so, revert the add.
         if (principal instanceof Group && hasCycle(group))
         {
             deleteMember(group, principal);
-            throw new IllegalStateException(CIRCULAR_GROUP_ERROR_MESSAGE);
+            throw new InvalidGroupMembershipException(CIRCULAR_GROUP_ERROR_MESSAGE);
         }
     }
 

@@ -166,7 +166,7 @@ public class NestedGroupsTest extends Assert
             });
             fail("Add member of circular group addition should have throw IllegalStateException");
         }
-        catch (IllegalStateException e)
+        catch (InvalidGroupMembershipException e)
         {
             assertEquals(SecurityManager.CIRCULAR_GROUP_ERROR_MESSAGE, e.getMessage());
         }
@@ -206,8 +206,15 @@ public class NestedGroupsTest extends Assert
 
     private void addMember(Group group, UserPrincipal principal)
     {
-        SecurityManager.addMember(group, principal);
-        expected(group, principal);
+        try
+        {
+            SecurityManager.addMember(group, principal);
+            expected(group, principal);
+        }
+        catch (InvalidGroupMembershipException e)
+        {
+            throw new RuntimeException(e);
+        }
     }
 
     // Adding this principal should fail
@@ -220,7 +227,7 @@ public class NestedGroupsTest extends Assert
             SecurityManager.addMember(group, principal);
             fail("Expected failure when adding principal \"" + principal.getName() + "\" to group \"" + group.getName() + "\"");
         }
-        catch (IllegalStateException e)
+        catch (InvalidGroupMembershipException e)
         {
             assertEquals(expectedMessage, e.getMessage());
         }

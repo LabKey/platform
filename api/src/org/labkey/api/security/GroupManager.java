@@ -41,6 +41,7 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedHashSet;
 import java.util.LinkedList;
+import java.util.List;
 import java.util.Set;
 
 /**
@@ -453,7 +454,11 @@ public class GroupManager
 
         Group newGroup = SecurityManager.createGroup(c, newGroupName);
         groupMap.put(g, newGroup);
-        SecurityManager.addMembers(newGroup, translatedMembers);
+        List<String> errors = SecurityManager.addMembers(newGroup, translatedMembers);
+
+        for (String error : errors)
+            _log.warn(error);
+
         return newGroup;
     }
 
