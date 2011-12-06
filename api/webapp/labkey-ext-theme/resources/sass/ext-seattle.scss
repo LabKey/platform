@@ -15,7 +15,6 @@ $panel-header-background-color: $base-color;
 $panel-header-color: #fff;
 $panel-body-background-color: #fff;
 $panel-border-color: adjust-color($base-color, $hue: 0deg, $saturation: 7.644%, $lightness: 2.627%) !default;
-// $panel-border-color: #18181a;
 $panel-header-inner-border: false;
 $panel-header-background-gradient: color-stops($base-color, $base-color);
 
@@ -88,6 +87,12 @@ $window-header-color: #fff;
 
 //grids
 $grid-row-cell-selected-background-color: #C5C5C5 !default;
+
+//toolbars
+$toolbar-background-color: #eeeeee;
+
+//qtips
+$tip-base-color: #eeeeee;
 
 @import 'ext4/default/all';
 
