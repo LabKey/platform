@@ -236,12 +236,11 @@ public class SecurityController extends SpringActionController
     }
     
 
-    private static void ensureGroupInContainer(String group, Container c)
-        throws ServletException
+    private static void ensureGroupInContainer(String group, Container c) throws ServletException
     {
         if (group.startsWith("/"))
             group = group.substring(1);
-        if (-1 == group.indexOf("/"))
+        if (!group.contains("/"))
         {
             if (!c.isRoot())
             {
@@ -1491,6 +1490,7 @@ public class SecurityController extends SpringActionController
             return _email;
         }
 
+        @SuppressWarnings({"UnusedDeclaration"})
         public void setEmail(String email)
         {
             _email = email;
@@ -1501,6 +1501,7 @@ public class SecurityController extends SpringActionController
             return _mailPrefix;
         }
 
+        @SuppressWarnings({"UnusedDeclaration"})
         public void setMailPrefix(String mailPrefix)
         {
             _mailPrefix = mailPrefix;
@@ -1516,17 +1517,29 @@ public class SecurityController extends SpringActionController
         {
             Writer out = getViewContext().getResponse().getWriter();
             String rawEmail = form.getEmail();
-            ValidEmail email = new ValidEmail(rawEmail);
 
-            SecurityMessage message = createMessage(form);
-            if (SecurityManager.isVerified(email))
-                out.write("Can't display " + message.getType().toLowerCase() + "; " + email + " has already chosen a password.");
-            else
+            try
             {
-                String verification = SecurityManager.getVerification(email);
-                ActionURL verificationURL = SecurityManager.createVerificationURL(getContainer(), email, verification, null);
-                SecurityManager.renderEmail(getContainer(), getUser(), message, email.getEmailAddress(), verificationURL, out);
+                ValidEmail email = new ValidEmail(rawEmail);
+
+                SecurityMessage message = createMessage(form);
+
+                if (SecurityManager.isVerified(email))
+                {
+                    out.write("Can't display " + message.getType().toLowerCase() + "; " + PageFlowUtil.filter(email) + " has already chosen a password.");
+                }
+                else
+                {
+                    String verification = SecurityManager.getVerification(email);
+                    ActionURL verificationURL = SecurityManager.createVerificationURL(getContainer(), email, verification, null);
+                    SecurityManager.renderEmail(getContainer(), getUser(), message, email.getEmailAddress(), verificationURL, out);
+                }
             }
+            catch (ValidEmail.InvalidEmailException e)
+            {
+                out.write("Invalid email address: " + PageFlowUtil.filter(rawEmail));
+            }
+
             return null;
         }
 
