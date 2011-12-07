@@ -33,10 +33,7 @@
 <script type="text/javascript">
 
     LABKEY.requiresExt4Sandbox(true);
-
-    LABKEY.requiresCss("studyRedesign/redesign.css");
     LABKEY.requiresCss("study/DataViewsPanel.css");
-
     LABKEY.requiresScript("study/DataViewsPanel.js");
 
 </script>
