@@ -3993,7 +3993,7 @@ public class AdminController extends SpringActionController
                 Container source = ContainerManager.getForId(targetProject);
                 assert source != null;
 
-                HashMap<Group, Group> groupMap = GroupManager.copyGroupsToContainer(source, c);
+                HashMap<UserPrincipal, UserPrincipal> groupMap = GroupManager.copyGroupsToContainer(source, c);
 
                 //copy role assignments
                 SecurityPolicy op = SecurityManager.getPolicy(source);
