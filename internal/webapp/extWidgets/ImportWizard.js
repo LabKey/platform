@@ -151,18 +151,24 @@ Ext4.define('LABKEY.ext.ImportWizard', {
             valueField: 'RowId',
             itemId: 'workbookName',
             fieldLabel: 'Choose Workbook',
+            typeAhead: true,
+            minChars: 0,
+            listConfig: {
+                itemTpl: Ext4.create('Ext.XTemplate', '<tpl for=".">{Title} ({RowId})</tpl>').compile()
+            },
             width: 400,
             queryMode: 'local',
             store: Ext4.create('LABKEY.ext4.Store', {
                 schemaName: 'core',
                 queryName: 'workbooks',
                 columns: 'RowId,Title,CreatedBy,Name',
-                sort: 'rowid',
+                sort: '-rowid',
                 autoLoad: true
             })
         },{
             xtype: 'checkbox',
             fieldLabel: 'My Workbooks Only',
+            labelWidth: 150,
             listeners: {
                 change: function(btn, val){
                     var panel = btn.up('form');
