@@ -22,7 +22,6 @@
 <%@ page import="org.labkey.api.view.JspView" %>
 <%@ page import="org.labkey.api.view.ViewContext" %>
 <%@ page import="org.labkey.api.webdav.FileSystemResource" %>
-<%@ page import="org.labkey.api.util.PageFlowUtil" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 
@@ -43,7 +42,7 @@ You have received this email because <%
         {
             case FileContentEmailPref.FOLDER_DEFAULT:
             case FileContentEmailPref.INDIVIDUAL: %>
-            you are signed up to receive notifications about updates to files at <%= PageFlowUtil.filter(bean.getContainerPath()) %>.
+            you are signed up to receive notifications about updates to files at <%=bean.getContainerPath()%>.
             If you no longer wish to receive these notifications you can change your email preferences by pasting this web address into
             your browser: <%=bean.getUrlEmailPrefs().getURIString()%>. <%
             break;
