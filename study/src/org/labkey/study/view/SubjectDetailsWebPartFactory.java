@@ -137,7 +137,7 @@ public class SubjectDetailsWebPartFactory extends BaseWebPartFactory
             return new HtmlView("This folder does not contain a study.");
         Participant participant = StudyManager.getInstance().getParticipant(study, participantId);
         if (participant == null)
-            return new HtmlView(subjectNoun + " \"" + filter(participantId) + "\" does not exist in study \"" + study.getLabel() + "\".");
+            return new HtmlView(filter(subjectNoun) + " \"" + filter(participantId) + "\" does not exist in study \"" + study.getLabel() + "\".");
 
         StudyManager.ParticipantViewConfig config = new StudyManager.ParticipantViewConfig()
         {

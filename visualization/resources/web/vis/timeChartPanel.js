@@ -202,7 +202,8 @@ LABKEY.vis.TimeChartPanel = Ext.extend(Ext.Panel, {
                         }
                     },
                     'measureMetadataRequestPending': this.measureMetadataRequestPending,
-                    'measureMetadataRequestComplete': this.measureMetadataRequestComplete
+                    'measureMetadataRequestComplete': this.measureMetadataRequestComplete,
+                    'noDemographicData': this.disableTabPanels
                 }
             });
 
@@ -295,7 +296,7 @@ LABKEY.vis.TimeChartPanel = Ext.extend(Ext.Panel, {
                 layout: 'fit',
                 header: false,
                 region: 'north',
-                height: 220,
+                height: 230,
                 border: false,
                 split: true,
                 collapsible: true,
@@ -647,6 +648,18 @@ LABKEY.vis.TimeChartPanel = Ext.extend(Ext.Panel, {
         this.editorYAxisRightPanel.disable();
         this.editorYAxisLeftPanel.disable();
         this.editorChartsPanel.disable();
+    },
+
+    disableTabPanels: function(){
+        this.editorOverviewPanel.disable();
+        this.editorMeasurePanel.disable();
+        this.editorXAxisPanel.disable();
+        this.editorYAxisRightPanel.disable();
+        this.editorYAxisLeftPanel.disable();
+        this.editorChartsPanel.disable();
+        this.seriesSelectorTabPanel.disable();
+        this.chart.ownerCt.getEl().mask("There are no demographic date options available in this study. "
+                            + "Please contact an administrator to have them configure the study to work with the Time Chart wizard.");
     },
 
     isDirty : function() {

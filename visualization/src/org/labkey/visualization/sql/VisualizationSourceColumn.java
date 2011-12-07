@@ -147,7 +147,18 @@ public class VisualizationSourceColumn
         try
         {
             ColumnInfo columnInfo = findColumnInfo();
-            List<String> parts = columnInfo.getFieldKey().getParts();
+            List<String> parts;
+            if (columnInfo != null)
+            {
+                // We found the column
+                parts = columnInfo.getFieldKey().getParts();
+            }
+            else
+            {
+                // The column can't be found, but try to select it anyway to give a reasonable error to the user
+                parts = Arrays.asList(_name.split("[\\./]"));
+            }
+
             StringBuilder selectName = new StringBuilder();
             String sep = "";
             for (String part : parts)

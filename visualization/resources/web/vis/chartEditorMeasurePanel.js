@@ -353,7 +353,7 @@ LABKEY.vis.ChartEditorMeasurePanel = Ext.extend(Ext.FormPanel, {
         });
         this.dataFilterRemoveButton = new Ext.Button({
             hidden: true,
-            text: 'Remove',
+            text: 'Remove Filter',
             listeners: {
                 scope: this,
                 'click' : function()
@@ -362,8 +362,8 @@ LABKEY.vis.ChartEditorMeasurePanel = Ext.extend(Ext.FormPanel, {
                 }
             }
         });
-        columnTwoItems.push(this.dataFilterWarning);
-        columnTwoItems.push(this.dataFilterRemoveButton);
+        columnOneItems.push(this.dataFilterWarning);
+//        columnTwoItems.push(this.dataFilterRemoveButton);
 
         this.items = [{
             border: false,
@@ -377,7 +377,8 @@ LABKEY.vis.ChartEditorMeasurePanel = Ext.extend(Ext.FormPanel, {
                 buttonAlign: 'left',
                 buttons: [
                     this.addMeasureButton,
-                    this.removeMeasureButton
+                    this.removeMeasureButton,
+                    this.dataFilterRemoveButton
                 ]
             },{
                 columnWidth: .5,
@@ -387,7 +388,6 @@ LABKEY.vis.ChartEditorMeasurePanel = Ext.extend(Ext.FormPanel, {
                 items: columnTwoItems
             }]
         }];
-
         this.on('activate', function(){
            this.doLayout();
         }, this);
@@ -397,7 +397,18 @@ LABKEY.vis.ChartEditorMeasurePanel = Ext.extend(Ext.FormPanel, {
 
     setFilterWarningText: function(text)
     {
-        var warning = "<b>This chart data is filtered:</b> " + LABKEY.Utils.encodeHtml(text);
+        var tipText;
+        var tip;
+        text = LABKEY.Utils.encodeHtml(text);
+        if(text.length > 25) {
+            tipText = text;
+            Ext.QuickTips.register({
+                target: this.dataFilterWarning,
+                text: tipText
+            });
+            text = text.substr(0, 24) + "...";
+        }
+        var warning = "<b>This chart data is filtered:</b> " + text;
         this.dataFilterWarning.setText(warning, false);
         this.dataFilterRemoveButton.show();
     },

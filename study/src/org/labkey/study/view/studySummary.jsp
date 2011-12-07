@@ -86,7 +86,7 @@
                     <%
                         if(investigator != null)
                         {
-                            out.print("Investigator: " + investigator);
+                            out.print("Investigator: " + h(investigator));
                         }
                     %>
                 </span>
@@ -95,7 +95,7 @@
                     <%
                         if(grant != null)
                         {
-                            out.print("Grant: " + grant);
+                            out.print("Grant: " + h(grant));
                         }
                     %>
                 </span>

@@ -75,7 +75,7 @@ var <%= viewObject %> = new function()
                 html = "Failure: " + errorInfo.exception;
             else
                 html = "Failure: " + responseObj.statusText;
-            document.getElementById(_divId).innerHTML = html;
+            document.getElementById(_divId).innerHTML = LABKEY.Utils.encodeHtml(html);
         },
 
         onSuccess: function(data)

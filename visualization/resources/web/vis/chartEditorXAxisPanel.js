@@ -33,7 +33,8 @@ LABKEY.vis.ChartEditorXAxisPanel = Ext.extend(Ext.FormPanel, {
         this.addEvents(
             'chartDefinitionChanged',
             'measureMetadataRequestPending',
-            'measureMetadataRequestComplete'
+            'measureMetadataRequestComplete',
+            'noDemographicData'
         );
 
         LABKEY.vis.ChartEditorXAxisPanel.superclass.constructor.call(this, config);
@@ -396,7 +397,8 @@ LABKEY.vis.ChartEditorXAxisPanel = Ext.extend(Ext.FormPanel, {
                     if (store.getTotalCount() == 0)
                     {
                         Ext.Msg.alert("Error", "There are no demographic date options available in this study. "
-                            + "Please contact an administrator to have them configure the study to work with the Time Chart wizard.");
+                            + "Please contact an administrator to have them configure the study to work with the Time Chart wizard.", function(){this.fireEvent('noDemographicData');}, this);
+                        return;
                     }
 
                     // if this is a saved report, we will have a zero date to select

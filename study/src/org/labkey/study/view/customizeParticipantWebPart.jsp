@@ -43,7 +43,7 @@
     String subjectNoun = StudyService.get().getSubjectNounSingular(getViewContext().getContainer());
 %>
 <script type="text/javascript">LABKEY.requiresScript("completion.js");</script>
-<p>Each <%= subjectNoun.toLowerCase() %> webpart will display datasets from a single <%= subjectNoun.toLowerCase() %>.</p>
+<p>Each <%= h(subjectNoun.toLowerCase()) %> webpart will display datasets from a single <%= h(subjectNoun.toLowerCase()) %>.</p>
 
 <form action="<%=postUrl%>" method="post">
 <table>
