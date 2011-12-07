@@ -17,7 +17,6 @@
 %>
 <%@ page import="org.labkey.announcements.AnnouncementsController" %><%@ page import="org.labkey.announcements.model.AnnouncementModel" %><%@ page import="org.labkey.api.util.DateUtil" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
-<%@ page import="org.labkey.api.util.PageFlowUtil" %>
 <%@ page extends="org.labkey.announcements.DailyDigestPage" %>The following new posts were made yesterday in folder: <%=c.getPath()%>
 
 <%
@@ -69,5 +68,5 @@ View this <%=conversationName%> here:
 <%  }  %>
 
 
-You have received this email because you are signed up for a daily digest of new posts to <%= PageFlowUtil.filter(boardPath) %> at <%=siteUrl%>.
+You have received this email because you are signed up for a daily digest of new posts to <%=boardPath%> at <%=siteUrl%>.
 If you no longer wish to receive these notifications, please change your email preferences here: <%=removeUrl%>

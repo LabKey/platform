@@ -68,7 +68,7 @@ Summary of notifications of files at <%=form.getContainer().getPath()%>.
         {
             case FileContentEmailPref.FOLDER_DEFAULT:
             case FileContentEmailPref.INDIVIDUAL: %>
-            you are signed up to receive notifications about updates to files at <%= PageFlowUtil.filter(form.getContainer().getPath()) %>.
+            you are signed up to receive notifications about updates to files at <%=form.getContainer().getPath()%>.
             If you no longer wish to receive these notifications you can change your email preferences here: <%=emailPrefs.getURIString()%>. <%
             break;
         } %>
