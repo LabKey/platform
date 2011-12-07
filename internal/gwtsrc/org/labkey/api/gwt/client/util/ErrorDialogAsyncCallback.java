@@ -72,7 +72,7 @@ public abstract class ErrorDialogAsyncCallback<Type> implements AsyncCallback<Ty
                     message = "Not found.";
                     break;
                 default:
-                    message = "[Status code " + statusCodeException.getStatusCode() + "]";
+                    message = "There was an error: Status code " + statusCodeException.getStatusCode();
                     break;
             }
         }

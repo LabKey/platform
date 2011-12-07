@@ -19,6 +19,7 @@ import com.google.gwt.event.dom.client.ClickEvent;
 import com.google.gwt.event.dom.client.ClickHandler;
 import com.google.gwt.user.client.Timer;
 import com.google.gwt.user.client.Window;
+import com.google.gwt.user.client.rpc.AsyncCallback;
 import com.google.gwt.user.client.ui.ChangeListener;
 import com.google.gwt.user.client.ui.FormHandler;
 import com.google.gwt.user.client.ui.FormPanel;
@@ -248,11 +249,18 @@ public class DomainImporter
     @SuppressWarnings("unchecked")
     private void resetDomainFields(GWTDomain domain)
     {
+        resetDomainFields(domain, null);
+    }
+
+    private void resetDomainFields(GWTDomain domain, final AsyncCallback<List<String>> callback)
+    {
         service.getDomainDescriptor(domain.getDomainURI(), new ErrorDialogAsyncCallback<GWTDomain>()
         {
             public void handleFailure(String message, Throwable caught)
             {
                 onCancel();
+                if(callback != null)
+                    callback.onFailure(caught);
             }
 
             public void onSuccess(GWTDomain result)
@@ -264,9 +272,14 @@ public class DomainImporter
                     public void handleFailure(String message, Throwable caught)
                     {
                         onCancel();
+                        if(callback != null)
+                            callback.onFailure(caught);
                     }
 
-                    public void onSuccess(List<String> errors){}
+                    public void onSuccess(List<String> errors){
+                        if(callback != null)
+                            callback.onSuccess(errors);
+                    }
                 });
             }
         });
@@ -437,7 +450,7 @@ public class DomainImporter
 
     private void handleComplete(ImportStatus status, GWTDomain domain)
     {
-        List<String> errors = status.getMessages();
+        final List<String> errors = status.getMessages();
 
         if (errors == null || errors.isEmpty())
         {
@@ -445,8 +458,16 @@ public class DomainImporter
         }
         else
         {
-            resetDomainFields(domain);
-            handleServerFailure(errors);
+            resetDomainFields(domain, new AsyncCallback<List<String>>()
+            {
+                public void onFailure(Throwable caught){}
+
+                public void onSuccess(List<String> result)
+                {
+                    handleServerFailure(errors);
+                }
+            });
+
         }
     }
 
