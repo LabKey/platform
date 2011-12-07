@@ -17,7 +17,7 @@ LABKEY.study.ParticipantGroupDialog = Ext.extend(Ext.Window, {
 
         LABKEY.study.ParticipantGroupDialog.superclass.constructor.call(this, {
             cls: 'extContainer',
-            title: 'Define ' + config.subject.nounSingular + ' Group',
+            title: 'Define ' + Ext.util.Format.htmlEncode(config.subject.nounSingular) + ' Group',
             layout:'fit',
             width: Ext.getBody().getViewSize().width < 850 ? Ext.getBody().getViewSize().width * .9 : 800,
             height: config.hideDataRegion ? 250 : Ext.getBody().getViewSize().height * .75,
@@ -137,7 +137,7 @@ LABKEY.study.ParticipantGroupPanel = Ext.extend(Ext.Panel, {
                 store: demoStore,
                 valueField: 'Label',
                 displayField: 'Label',
-                fieldLabel: 'Select ' + this.subject.nounPlural + ' from',
+                fieldLabel: 'Select ' + Ext.util.Format.htmlEncode(this.subject.nounPlural) + ' from',
                 labelStyle: 'width: 150px;',
                 labelSeparator : '',
                 minListWidth : 300,
@@ -162,7 +162,7 @@ LABKEY.study.ParticipantGroupPanel = Ext.extend(Ext.Panel, {
 
         Ext.QuickTips.register({
             target : this.sharedfield,
-            text   : 'Share this ' + this.subject.nounSingular + ' group with all users'
+            text   : 'Share this ' + Ext.util.Format.htmlEncode(this.subject.nounSingular) + ' group with all users'
         });
 
         if (!this.categoryShared || this.categoryShared == "false")

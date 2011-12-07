@@ -22,6 +22,7 @@
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.api.view.JspView" %>
 <%@ page import="org.labkey.study.model.StudyManager" %>
+<%@ page import="org.labkey.api.util.PageFlowUtil" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
     JspView<Object> me = (JspView<Object>) HttpView.currentView();
@@ -33,8 +34,8 @@
     boolean isAdmin = c.hasPermission(getViewContext().getUser(), SharedParticipantGroupPermission.class) || c.hasPermission(getViewContext().getUser(), AdminPermission.class);
 %>
 
-<p><%= subjectNounSingular %> groups allow you to quickly filter data in a study to groups of <%= subjectNounPlural.toLowerCase() %> you define.
-    Use this page to define a group and add <%= subjectNounPlural.toLowerCase() %> to it.</p>
+<p><%= PageFlowUtil.filter(subjectNounSingular) %> groups allow you to quickly filter data in a study to groups of <%= PageFlowUtil.filter(subjectNounPlural.toLowerCase()) %> you define.
+    Use this page to define a group and add <%= PageFlowUtil.filter(subjectNounPlural.toLowerCase()) %> to it.</p>
 <div id="participantCategoriesGrid" class="extContainer"></div>
 
 <script type="text/javascript">

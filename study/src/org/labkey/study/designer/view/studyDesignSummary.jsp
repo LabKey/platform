@@ -33,6 +33,7 @@
 <%@ page import="org.labkey.api.security.User" %>
 <%@ page import="org.labkey.api.security.permissions.AdminPermission" %>
 <%@ page import="org.labkey.api.attachments.Attachment" %>
+<%@ page import="org.labkey.api.util.PageFlowUtil" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
     Container c = HttpView.currentContext().getContainer();
@@ -106,7 +107,6 @@ This study was created from a vaccine study protocol with the following descript
     else
     {
         boolean isAdmin = c.hasPermission(user, AdminPermission.class);
-        ActionURL url = new ActionURL(StudyController.BeginAction.class, study.getContainer());
         String descriptionHtml = study.getDescriptionHtml();
         String investigator = study.getInvestigator();
         String grant = study.getGrant();
@@ -125,7 +125,7 @@ This study was created from a vaccine study protocol with the following descript
                         <%
                             if(investigator != null)
                             {
-                                out.print("Investigator: " + investigator);
+                                out.print("Investigator: " + PageFlowUtil.filter(investigator));
                             }
                         %>
                     </span>
@@ -134,7 +134,7 @@ This study was created from a vaccine study protocol with the following descript
                         <%
                             if(grant != null)
                             {
-                                out.print("Grant: " + grant);
+                                out.print("Grant: " + PageFlowUtil.filter(grant));
                             }
                         %>
                     </span>

@@ -563,7 +563,7 @@ public class StudyImpl extends ExtensibleStudyEntity<StudyImpl> implements Study
             String subjectNoun = (count == 1 ? this.getSubjectNounSingular() : this.getSubjectNounPlural());
             TimepointType timepointType = getTimepointType();
             return PageFlowUtil.filter(getLabel() + " tracks data in ") + "<a href=\"" + new ActionURL(StudyController.DatasetsAction.class, getContainer()) + "\">" + getDataSets().size() + " datasets</a>" + PageFlowUtil.filter(" over " + getVisits(Visit.Order.DISPLAY).length + " " + (timepointType.isVisitBased() ? "visits" : "time points") +
-                ". Data is present for " + count + " " + subjectNoun + ".");
+                ". Data is present for " + count + " " + PageFlowUtil.filter(subjectNoun) + ".");
         }
         else
         {
