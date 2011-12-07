@@ -39,7 +39,7 @@ public class CrosstabTableInfo extends VirtualTable
     public static final String COL_SORT_PATTERN = "SortPattern";
 
     private CrosstabSettings _settings = null;
-    private List<CrosstabMember> _colMembers = null;
+    private List<CrosstabMember> _colMembers = Collections.emptyList();
     private Filter _aggFilter = null;
     private boolean _orAggFilters = false;
     private GroupTableInfo _groupTable = null;
