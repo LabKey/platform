@@ -153,6 +153,7 @@ import java.util.Arrays;
 import java.util.Calendar;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.Comparator;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -1527,7 +1528,31 @@ public class StudyManager
                 filter = new SimpleFilter("Container", study.getContainer().getId());
                 filter.addWhereClause("(CohortId IS NULL OR CohortId = ?)", new Object[] { cohort.getRowId() });
             }
-            return _dataSetHelper.get(study.getContainer(), filter, "DisplayOrder,DataSetId");
+            List<DataSetDefinition> datasets = Arrays.asList(_dataSetHelper.get(study.getContainer(), filter, null));
+
+            // sort by display order, category, and dataset ID
+            Collections.sort(datasets, new Comparator<DataSetDefinition>(){
+                @Override
+                public int compare(DataSetDefinition o1, DataSetDefinition o2)
+                {
+                    if (o1.getDisplayOrder() != 0 || o2.getDisplayOrder() != 0)
+                        return o1.getDisplayOrder() - o2.getDisplayOrder();
+
+                    if (StringUtils.equals(o1.getCategory(), o2.getCategory()))
+                        return o1.getDataSetId() - o2.getDataSetId();
+
+                    if (o1.getCategory() != null && o2.getCategory() == null)
+                        return -1;
+                    if (o1.getCategory() == null && o2.getCategory() != null)
+                        return 1;
+                    if (o1.getCategory() != null && o2.getCategory() != null)
+                        return o1.getCategory().compareTo(o2.getCategory());
+
+                    return o1.getDataSetId() - o2.getDataSetId();
+                }
+            });
+
+            return datasets.toArray(new DataSetDefinition[datasets.size()]);
         }
         catch (SQLException x)
         {

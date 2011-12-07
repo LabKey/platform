@@ -4627,8 +4627,8 @@ public class StudyController extends BaseStudyController
                 {
                     int id = ids[i];
                     DatasetVisibilityData data = bean.get(id);
-                    data.label = labels[i];
-                    data.category = categories[i];
+                    data.label = labels != null ? labels[i] : null;
+                    data.category = categories != null ? categories[i] : null;
                     data.cohort = cohorts[i] == -1 ? null : cohorts[i];
                     data.visible = visible.contains(id);
                 }

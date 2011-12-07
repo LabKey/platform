@@ -149,6 +149,10 @@ public class TsvDataHandler extends AbstractAssayTsvDataHandler implements Trans
             }
             Map<DataType, List<Map<String, Object>>> datas = new HashMap<DataType, List<Map<String, Object>>>();
             List<Map<String, Object>> dataRows = loader.load();
+
+            // loader did not parse any rows
+            if (dataRows.isEmpty())
+                throw new ExperimentException("Unable to load any rows from the input data. Please check the format of the input data to make sure it matches the assay data columns.");
             adjustFirstRowOrder(dataRows, loader);
 
             datas.put(DATA_TYPE, dataRows);
