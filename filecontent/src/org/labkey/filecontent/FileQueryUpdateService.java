@@ -92,7 +92,7 @@ public class FileQueryUpdateService extends AbstractQueryUpdateService
         Map<String, Object>[] rows = Table.select(getQueryTable(), queryColumns, filter, null, Map.class);
         Map<String, Object> rowMap = new HashMap<String, Object>();
 
-        if (rows.length >= 0)
+        if (rows.length > 0)
         {
             Map<String, Object> selectMap = rows[0];
 
@@ -228,7 +228,7 @@ public class FileQueryUpdateService extends AbstractQueryUpdateService
                 Filter filter = getQueryFilter(container, row);
                 Map<String, Object>[] rows = Table.select(getQueryTable(), getQueryColumns(container), filter, null, Map.class);
 
-                if (rows.length >= 0)
+                if (rows.length > 0)
                 {
                     Map<String, Object> rowMap = rows[0];
 
@@ -241,7 +241,7 @@ public class FileQueryUpdateService extends AbstractQueryUpdateService
             }
             catch (Exception e)
             {
-                throw new ValidationException("Unable to get the DataFileUrl");
+                throw new ValidationException("Unable to get the DataFileUrl: " + e.getMessage());
             }
         }
         else
