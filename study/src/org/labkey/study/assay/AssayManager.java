@@ -267,8 +267,16 @@ public class AssayManager implements AssayService.Interface
 
         List<ActionButton> result = new ArrayList<ActionButton>();
 
+
+        if(currentContainer.isWorkbook())
+        {
+            ActionButton button = new ActionButton(provider.getImportURL(currentContainer, protocol), AbstractAssayProvider.IMPORT_DATA_LINK_NAME);
+            button.setActionType(ActionButton.Action.LINK);
+            result.add(button);
+        }
+
         //this is the previous assay btn
-        if(currentContainer.getFolderType().getForceAssayUploadIntoWorkbooks() == false)
+        else if(currentContainer.getFolderType().getForceAssayUploadIntoWorkbooks() == false)
         {
             if (containers.size() == 1 && containers.iterator().next().equals(currentContainer))
             {
@@ -305,39 +313,30 @@ public class AssayManager implements AssayService.Interface
             }
         }
 
-        else //btn for workbook-upload
+        else
         {
-            if(currentContainer.isWorkbook())
-            {
-                ActionButton button = new ActionButton(provider.getImportURL(currentContainer, protocol), AbstractAssayProvider.IMPORT_DATA_LINK_NAME);
-                button.setActionType(ActionButton.Action.LINK);
-                result.add(button);
-            }
-            else
-            {
-                ActionButton button = new ActionButton("#", AbstractAssayProvider.IMPORT_DATA_LINK_NAME){
-                    public void render(RenderContext ctx, Writer out) throws IOException
-                    {
-                        if (!shouldRender(ctx))
-                            return;
+            ActionButton button = new ActionButton("#", AbstractAssayProvider.IMPORT_DATA_LINK_NAME){
+                public void render(RenderContext ctx, Writer out) throws IOException
+                {
+                    if (!shouldRender(ctx))
+                        return;
 
-                        out.write("<script type=\"text/javascript\">\n");
-                        out.write("LABKEY.requiresExt4ClientAPI()\n");
-                        out.write("LABKEY.requiresScript('extWidgets/ImportWizard.js')\n");
-                        out.write("</script>\n");
-                        super.render(ctx, out);
-                    }
-                };
-                button.setURL("javascript:void(0)");
-                button.setActionType(ActionButton.Action.SCRIPT);
-                button.setScript("Ext4.create('LABKEY.ext.ImportWizardWin', {" +
-                    "controller: '" + provider.getImportURL(currentContainer, protocol).getController() + "'," +
-                    "action: '" + provider.getImportURL(currentContainer, protocol).getAction() + "'," +
-                    "urlParams: {rowId: " + protocol.getRowId() + "}" +
-                    "}).show();");
-                result.add(button);
+                    out.write("<script type=\"text/javascript\">\n");
+                    out.write("LABKEY.requiresExt4ClientAPI()\n");
+                    out.write("LABKEY.requiresScript('extWidgets/ImportWizard.js')\n");
+                    out.write("</script>\n");
+                    super.render(ctx, out);
+                }
+            };
+            button.setURL("javascript:void(0)");
+            button.setActionType(ActionButton.Action.SCRIPT);
+            button.setScript("Ext4.create('LABKEY.ext.ImportWizardWin', {" +
+                "controller: '" + provider.getImportURL(currentContainer, protocol).getController() + "'," +
+                "action: '" + provider.getImportURL(currentContainer, protocol).getAction() + "'," +
+                "urlParams: {rowId: " + protocol.getRowId() + "}" +
+                "}).show();");
+            result.add(button);
 
-            }
         }
 
         return result;
