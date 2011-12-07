@@ -44,6 +44,7 @@ function validateForm(form)
             return true;
 
         Ext.Msg.alert("Error", "Title must not be blank.");
+        Ext.get('submitButton').replaceClass('labkey-disabled-button', 'labkey-button');
         return false;
     } else {
         return true;
@@ -136,7 +137,7 @@ if (settings.hasFormatPicker())
         </td>
     </tr>
 </table>
-<br>&nbsp;<%=PageFlowUtil.generateSubmitButton("Submit", null, null, true, false)%>&nbsp;<%
+<br>&nbsp;<%=PageFlowUtil.generateSubmitButton("Submit", null, "id=submitButton", true, true)%>&nbsp;<%
 if (null != bean.cancelURL)
 {
     %><%=generateButton("Cancel", bean.cancelURL)%><%

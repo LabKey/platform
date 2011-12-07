@@ -1553,9 +1553,11 @@ LABKEY.ext.SchemaBrowser = Ext.extend(Ext.Panel, {
     },
 
     parseQueryPanelId : function(id) {
-        var parts = id.substring(this.qdpPrefix.length).split('&');
-        if (parts.length >= 2)
-            return {schemaName: decodeURIComponent(parts[0]), queryName: decodeURIComponent(parts[1])};
+        if (id.indexOf(this.qdpPrefix) > -1)
+            id = id.substring(this.qdpPrefix.length);
+
+        if (id.indexOf('&') > -1)
+            return {schemaName: decodeURIComponent(id.substring(0, id.indexOf('&'))), queryName: decodeURIComponent(id.substring(id.indexOf('&')+1))};
         else
             return {};
     },
@@ -1569,6 +1571,12 @@ LABKEY.ext.SchemaBrowser = Ext.extend(Ext.Panel, {
             token = "lk-sb-panel-home"; //back to home panel
         else
             token = token.substring(this.historyPrefix.length);
+
+        if (this.qdpPrefix == token.substring(0, this.qdpPrefix.length))
+        {
+            var idMap = this.parseQueryPanelId(token);
+            token = this.buildQueryPanelId(idMap.schemaName, idMap.queryName);
+        }
 
         this.showPanel(token);
     },
