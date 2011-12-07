@@ -615,9 +615,9 @@ public abstract class VisitManager
                 ColumnInfo col = tInfo.getColumn("StartDate");
                 if (null != col)
                 {
-                    String subselect = "(SELECT MIN(" + col.getSelectName() + ") FROM " + tInfo +
+                    String subselect = schema.getSqlDialect().getDateTimeToDateCast("(SELECT MIN(" + col.getSelectName() + ") FROM " + tInfo +
                             " WHERE " + tInfo + ".ParticipantId = " + tableParticipant + ".ParticipantId" +
-                            " AND " + tableParticipant + ".Container = ?)";
+                            " AND " + tableParticipant + ".Container = ?)");
                     String sql = "UPDATE " + tableParticipant + " SET StartDate = " + subselect + " WHERE (" +
                             tableParticipant + ".StartDate IS NULL OR NOT " + tableParticipant + ".StartDate = " + subselect +
                             ") AND Container = ?";

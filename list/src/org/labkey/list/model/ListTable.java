@@ -144,7 +144,6 @@ public class ListTable extends FilteredTable implements UpdateableTableInfo
         ColumnInfo colEntityId = wrapColumn(getRealTable().getColumn("EntityId"));
         colEntityId.setHidden(true);
         addColumn(colEntityId);
-        colEntityId.setHidden(true);
 
         DetailsURL gridURL = new DetailsURL(_list.urlShowData(), Collections.<String, String>emptyMap());
         setGridURL(gridURL);
