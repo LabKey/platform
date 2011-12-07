@@ -883,8 +883,8 @@ table.labkey-nav-trail
 	/* For IE 7 and 8  */
 	filter: progid:DXImageTransform.Microsoft.gradient(GradientType=0, startColorstr=#7fffffff, endColorstr=#7fffffff);
 	-ms-filter: "progid:DXImageTransform.Microsoft.gradient(GradientType=0, startColorstr=#7fffffff, endColorstr=#7fffffff)";	
-	
-    border-bottom: 1px solid transparent;
+
+    border-bottom: 1px solid transparent !important;
     color: #126495;
     white-space: nowrap;
 }
