@@ -576,8 +576,7 @@ public class DataRegion extends AbstractDataRegion
                 TableInfo tinfoMain = getTable();
                 if (null == tinfoMain)
                 {
-                    _log.info("DataRegion.getResultSet: Could not find table to query from");
-                    throw new SQLException("No query table in DataRegion.getResultSet");
+                    throw new SQLException("Table or query not found: " + getSettings().getQueryName());
                 }
                 else
                 {
