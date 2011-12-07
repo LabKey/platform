@@ -292,7 +292,7 @@ if (!bean.isResponse && !bean.print)
 </table><%
 if (bean.isResponse)
 {
-    %><a name="response"/><%
+    %><a name="response"></a><%
 }
 
 %>
