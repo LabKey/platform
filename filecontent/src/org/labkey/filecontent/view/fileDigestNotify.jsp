@@ -90,7 +90,7 @@
                 {
                     case FileContentEmailPref.FOLDER_DEFAULT:
                     case FileContentEmailPref.INDIVIDUAL: %>
-                    you are signed up to receive notifications about updates to files at <a href="<%=fileBrowser.getURIString()%>"><%=form.getContainer().getPath()%></a>.
+                    you are signed up to receive notifications about updates to files at <a href="<%=fileBrowser.getURIString()%>"><%= PageFlowUtil.filter(form.getContainer().getPath()) %></a>.
                     If you no longer wish to receive these notifications you can <a href="<%=emailPrefs.getURIString()%>">change your email preferences</a>. <%
                     break;
                 } %>

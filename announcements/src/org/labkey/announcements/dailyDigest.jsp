@@ -78,7 +78,7 @@
 <hr size="1">
 
 <table width=100%>
-    <tr><td>You have received this email because you are signed up for a daily digest of new posts to <a href="<%=boardUrl%>"><%=boardPath%></a> at <a href="<%=siteUrl%>"><%=siteUrl%></a>.
+    <tr><td>You have received this email because you are signed up for a daily digest of new posts to <a href="<%=boardUrl%>"><%= PageFlowUtil.filter(boardPath) %></a> at <a href="<%=siteUrl%>"><%=siteUrl%></a>.
   If you no longer wish to receive these notifications, please <a href="<%=removeUrl%>">change your email preferences</a>.</td></tr>
 </table>    
 </body>

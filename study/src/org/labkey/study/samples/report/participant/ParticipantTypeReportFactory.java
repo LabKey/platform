@@ -118,9 +118,12 @@ public class ParticipantTypeReportFactory extends SpecimenVisitReportParameters
         for (String typeLabel : typeLabels)
         {
             selected = getTypeCountByLabel(types, typeLabel);
-            types = selected.getChildren();
+            if (selected != null)
+                types = selected.getChildren();
         }
-        return Collections.singletonList(selected);
+
+        // issue 13510: default to showing one report per primary type (if no type match found in list)
+        return selected == null ? summary.getPrimaryTypes() : Collections.singletonList(selected);
     }
 
     private String getLabel(SpecimenTypeSummary.TypeCount type)

@@ -17,6 +17,7 @@
 %>
 <%@ page import="org.labkey.api.security.User" %>
 <%@ page import="org.labkey.api.attachments.Attachment" %>
+<%@ page import="org.labkey.api.util.PageFlowUtil" %>
 <%@ page extends="org.labkey.announcements.EmailNotificationPage" %>
 <%
     User user = getViewContext().getUser();
@@ -59,7 +60,7 @@ You have received this email because <%
         break;
 
         case signedUp:
-%>you are signed up to receive notifications about new posts to <%=boardPath%> at <%=siteURL%>.
+%>you are signed up to receive notifications about new posts to <%= PageFlowUtil.filter(boardPath) %> at <%=siteURL%>.
 If you no longer wish to receive these notifications you can change your email preferences by
 navigating here: <%=removeUrl%>.<%
         break;

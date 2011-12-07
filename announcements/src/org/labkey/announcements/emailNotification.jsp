@@ -76,7 +76,7 @@
             break;
 
             case signedUp:
-    %>you are signed up to receive notifications about new posts to <a href="<%=boardURL%>"><%=boardPath%></a> at <a href="<%=siteURL%>"><%=siteURL%></a>.
+    %>you are signed up to receive notifications about new posts to <a href="<%=boardURL%>"><%= PageFlowUtil.filter(boardPath) %></a> at <a href="<%=siteURL%>"><%=siteURL%></a>.
 If you no longer wish to receive these notifications you can <a href="<%=removeUrl%>">change your email preferences</a>.<%
             break;
 
