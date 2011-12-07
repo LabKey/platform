@@ -84,7 +84,7 @@ public class ActionButton extends DisplayElement implements Cloneable
         BUTTON_SHOW_UPDATE.lock();
         assert MemTracker.remove(BUTTON_SHOW_UPDATE);
 
-        BUTTON_SHOW_GRID = new ActionButton("begin.view?.lastFilter=true", "Show Grid");
+        BUTTON_SHOW_GRID = new ActionButton("begin.view?" + DataRegion.LAST_FILTER_PARAM + "=true", "Show Grid");
         BUTTON_SHOW_GRID.setActionType(Action.LINK);
         BUTTON_SHOW_GRID.lock();
         assert MemTracker.remove(BUTTON_SHOW_GRID);

@@ -35,6 +35,7 @@ import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.DataRegion;
 import org.labkey.api.module.ModuleLoader;
+import org.labkey.api.query.QueryParam;
 import org.labkey.api.security.ACL;
 import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.AdminPermission;
@@ -2364,6 +2365,17 @@ public class PageFlowUtil
         if (lastFilter)
             return;
         ActionURL clone = url.clone();
+
+        // Don't store offset. It's especially bad because there may not be that many rows the next time you
+        // get to a URL that uses the .lastFilter
+        for (String paramName : clone.getParameterMap().keySet())
+        {
+            if (paramName.endsWith("." + QueryParam.offset))
+            {
+                clone.deleteParameter(paramName);
+            }
+        }
+
         clone.deleteParameter(scope + DataRegion.LAST_FILTER_PARAM);
         HttpSession session = context.getRequest().getSession(false);
         // We should already have a session at this point, but check anyway - see bug #7761
