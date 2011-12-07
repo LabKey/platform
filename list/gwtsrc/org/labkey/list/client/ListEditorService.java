@@ -30,22 +30,23 @@ import java.util.List;
  */
 public interface ListEditorService extends LookupService
 {
-    public static class DuplicateNameException extends Exception implements IsSerializable
+    public static class ListImportException extends Exception implements IsSerializable
     {
-        public DuplicateNameException()
+        public ListImportException()
         {
             
         }
 
-        public DuplicateNameException(String name)
+        public ListImportException(String msg)
         {
-            super("The name '" + name + "' is already in use.");
+            super(msg);
         }
     }
 
     public GWTList getList(int id);
-    public GWTList createList(GWTList list) throws DuplicateNameException;
+    public GWTList createList(GWTList list) throws ListImportException;
     public List<String> getListNames(); // names in use already
+    public static final int MAX_NAME_LENGTH = 100;
     public List<String> updateListDefinition(GWTList list, GWTDomain orig, GWTDomain dd) throws Exception;
     public GWTDomain getDomainDescriptor(GWTList list) throws Exception;
 }

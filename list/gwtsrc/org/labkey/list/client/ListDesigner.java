@@ -230,6 +230,14 @@ public class ListDesigner implements EntryPoint, Saveable<GWTList>
                                     setList(result);
                                 }
                             }
+
+                            protected void reportFailure(String message, Throwable caught)
+                            {
+                                if(caught instanceof ListEditorService.ListImportException)
+                                    message = caught.getMessage();
+
+                                Window.alert(message);
+                            }
                         });
                     }
                 }
@@ -946,6 +954,9 @@ public class ListDesigner implements EntryPoint, Saveable<GWTList>
 
             if (isEmpty(_list.getKeyPropertyName()))
                 errors.add("Please select a field name for the key column.");
+
+            if (_list.getName().length() > ListEditorService.MAX_NAME_LENGTH)
+                errors.add("List name cannot be longer than " + ListEditorService.MAX_NAME_LENGTH + " characters");
         }
     }
 
@@ -1067,8 +1078,18 @@ public class ListDesigner implements EntryPoint, Saveable<GWTList>
         @Override
         protected void onCancel()
         {
-            setReadOnly(true);
-            asyncGetList(_list.getListId(), null);
+            if(!_importFromFile.booleanValue())
+            {
+                setReadOnly(true);
+                asyncGetList(_list.getListId(), null);
+            }
+            else
+            {
+                //if an error happens when trying to infer the list from an excel file
+                //rather than abort back to the list designer with no columns, we
+                //re-render that UI
+                showImporterUI();
+            }
         }
 
         @Override

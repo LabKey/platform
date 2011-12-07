@@ -333,6 +333,11 @@ public class ListDefinitionImpl implements ListDefinition
         // that tells the loader all the types.
         String[][] firstLine = loader.getFirstNLines(1);
 
+        if (firstLine.length == 0){
+            errors.add("The header line cannot be blank");
+            return errors;
+        }
+
         ArrayList<ColumnDescriptor> columnList = new ArrayList<ColumnDescriptor>(firstLine.length);
 
         for (String columnHeader : firstLine[0])

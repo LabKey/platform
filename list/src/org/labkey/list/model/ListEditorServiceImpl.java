@@ -53,12 +53,14 @@ public class ListEditorServiceImpl extends DomainEditorServiceBase implements Li
         super(context);
     }
 
-    public GWTList createList(GWTList list) throws DuplicateNameException
+    public GWTList createList(GWTList list) throws ListImportException
     {
         if (!getContainer().hasPermission(getUser(), DesignListPermission.class))
             throw new UnauthorizedException();
         if (list.getListId() != 0)
             throw new IllegalArgumentException();
+        if (list.getName().length() > ListEditorService.MAX_NAME_LENGTH)
+            throw new ListImportException("List name cannot be longer than " + ListEditorService.MAX_NAME_LENGTH + " characters");
 
         try
         {
@@ -70,15 +72,15 @@ public class ListEditorServiceImpl extends DomainEditorServiceBase implements Li
         catch (SQLException x)
         {
             if (SqlDialect.isConstraintException(x))
-                throw new DuplicateNameException(list.getName());
+                throw new ListImportException("The name '" + list.getName() + "' is already in use.");
             throw new RuntimeException(x);
         }
         catch (RuntimeSQLException x)
         {
             //issue: 12162
-            if(SqlDialect.isConstraintException(x.getSQLException()))
-                throw new DuplicateNameException(list.getName());
-            throw x;
+            if (SqlDialect.isConstraintException(x.getSQLException()))
+                throw new ListImportException("The name '" + list.getName() + "' is already in use.");
+            throw new RuntimeException(x);
         }
         catch (RuntimeException x)
         {
@@ -167,7 +169,7 @@ public class ListEditorServiceImpl extends DomainEditorServiceBase implements Li
     }
 
 
-    public List<String> updateListDefinition(GWTList list, GWTDomain orig, GWTDomain dd) throws ListEditorService.DuplicateNameException
+    public List<String> updateListDefinition(GWTList list, GWTDomain orig, GWTDomain dd) throws ListEditorService.ListImportException
     {
         if (!getContainer().hasPermission(getUser(), DesignListPermission.class))
             throw new UnauthorizedException();
@@ -177,6 +179,11 @@ public class ListEditorServiceImpl extends DomainEditorServiceBase implements Li
         ListDef def = ListManager.get().getList(getContainer(), list.getListId());
         if (def.getDomainId() != orig.getDomainId() || def.getDomainId() != dd.getDomainId() || !orig.getDomainURI().equals(dd.getDomainURI()))
             throw new IllegalArgumentException();
+
+        if (list.getName().length() > ListEditorService.MAX_NAME_LENGTH)
+        {
+            throw new ListImportException("List name cannot be longer than " + ListEditorService.MAX_NAME_LENGTH + " characters");
+        }
 
         // handle key column name change
         GWTPropertyDescriptor key = findField(def.getKeyName(), orig.getFields());
@@ -224,7 +231,7 @@ public class ListEditorServiceImpl extends DomainEditorServiceBase implements Li
             catch (SQLException x)
             {
                 if (changedName && SqlDialect.isConstraintException(x))
-                    throw new DuplicateNameException(def.getName());
+                    throw new ListImportException("The name '" + def.getName() + "' is already in use.");
                 throw x;
             }
             scope.commitTransaction();
@@ -268,7 +275,7 @@ public class ListEditorServiceImpl extends DomainEditorServiceBase implements Li
             {
                 updateListDefinition(list, domain, update);
             }
-            catch (DuplicateNameException x)
+            catch (ListImportException x)
             {
                 throw new RuntimeException(x);
             }
