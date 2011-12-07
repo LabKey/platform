@@ -31,6 +31,7 @@
 <%@ page import="org.labkey.api.util.PageFlowUtil" %>
 <%@ page import="org.labkey.api.util.HString" %>
 <%@ page import="java.util.List" %>
+<%@ page import="org.labkey.api.data.DataRegion" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
     HttpView<IssuesController.AdminBean> me = (HttpView<IssuesController.AdminBean>) HttpView.currentView();
@@ -42,7 +43,7 @@
 <br>
 <table>
 <tr><td>
-    <%=generateButton("Back to " + bean.entryTypeNames.pluralName, "list.view?.lastFilter=true")%>
+    <%=generateButton("Back to " + bean.entryTypeNames.pluralName, "list.view?" + DataRegion.LAST_FILTER_PARAM + "=true")%>
     <%=generateButton("Customize Email Template", urlProvider(AdminUrls.class).getCustomizeEmailURL(c, IssueUpdateEmailTemplate.class, me.getViewContext().getActionURL()))%>
 </td></tr>
 <tr><td>&nbsp;</td></tr>

@@ -27,7 +27,7 @@
     UserController.UserPreference bean = me.getModelBean();
 
     ActionURL showGridLink = urlProvider(UserUrls.class).getSiteUsersURL();
-    showGridLink.addParameter(".lastFilter", "true");
+    showGridLink.addParameter(org.labkey.api.data.DataRegion.LAST_FILTER_PARAM, "true");
 %>
 <form action="" method="post">
     <table>

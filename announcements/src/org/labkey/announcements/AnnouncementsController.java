@@ -239,7 +239,7 @@ public class AnnouncementsController extends SpringActionController
 
     private static ActionURL getListURL(Container c)
     {
-        return new ActionURL(ListAction.class, c).addParameter(".lastFilter", "true");
+        return new ActionURL(ListAction.class, c).addParameter(DataRegion.LAST_FILTER_PARAM, "true");
     }
 
 

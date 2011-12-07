@@ -330,7 +330,7 @@ public class IssuesController extends SpringActionController
 
         public ActionURL getURL()
         {
-            return issueURL(ListAction.class).addParameter(".lastFilter","true");
+            return issueURL(ListAction.class).addParameter(DataRegion.LAST_FILTER_PARAM, "true");
         }
     }
 
@@ -1810,7 +1810,7 @@ public class IssuesController extends SpringActionController
             url.deleteParameters();
             url.addParameter("error", "Invalid issue id '" + issueId + "'");
             url.setAction(ListAction.class);
-            url.addParameter(".lastFilter", "true");
+            url.addParameter(DataRegion.LAST_FILTER_PARAM, "true");
             return HttpView.redirect(url);
         }
 
