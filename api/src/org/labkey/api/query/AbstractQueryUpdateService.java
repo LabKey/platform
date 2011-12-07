@@ -272,9 +272,9 @@ public abstract class AbstractQueryUpdateService implements QueryUpdateService
             Map<String, Object> row = rows.get(i);
             try
             {
+                row = coerceTypes(row);
                 if (hasTableScript)
                 {
-                    row = coerceTypes(row);
                     getQueryTable().fireRowTrigger(container, TableInfo.TriggerType.INSERT, true, i, row, null, extraScriptContext);
                 }
                 row = insertRow(user, container, row);
