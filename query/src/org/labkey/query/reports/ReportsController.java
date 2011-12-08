@@ -245,6 +245,12 @@ public class ReportsController extends SpringActionController
         {
             return new ActionURL(ReportInfoAction.class, c);
         }
+
+        @Override
+        public ActionURL urlAttachmentReport(Container c, ActionURL returnURL)
+        {
+            return getAttachmentReportURL(c, returnURL);
+        }
     }
 
     public ReportsController() throws Exception

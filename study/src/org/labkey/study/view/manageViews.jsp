@@ -39,6 +39,8 @@
 <%@ page import="org.labkey.api.visualization.TimeChartReport" %>
 <%@ page import="org.labkey.api.visualization.VisualizationUrls" %>
 <%@ page import="org.labkey.api.util.PageFlowUtil" %>
+<%@ page import="org.labkey.api.reports.report.ReportUrls" %>
+<%@ page import="org.labkey.api.data.Container" %>
 <%@ page extends="org.labkey.api.jsp.JspBase"%>
 
 <script type="text/javascript">
@@ -52,22 +54,23 @@
     StudyManageReportsBean form = me.getModelBean();
 
     ViewContext context = HttpView.currentContext();
+    Container c = context.getContainer();
 
     String schemaName = form.getSchemaName();
     String queryName = form.getQueryName();
 
-    ActionURL permissionURL = new ActionURL(SecurityController.ReportPermissionsAction.class, context.getContainer());
+    ActionURL permissionURL = new ActionURL(SecurityController.ReportPermissionsAction.class, c);
 
     RReportBean reportBean = new RReportBean();
     reportBean.setReportType(RReport.TYPE);
     reportBean.setRedirectUrl(context.getActionURL().getLocalURIString());
 
     ActionURL newRView = ReportUtil.getRReportDesignerURL(context, reportBean);
-    ActionURL newTimeChart = PageFlowUtil.urlProvider(VisualizationUrls.class).getTimeChartDesignerURL(context.getContainer());
+    ActionURL newTimeChart = PageFlowUtil.urlProvider(VisualizationUrls.class).getTimeChartDesignerURL(c);
 
-    boolean hasEnrollmentReport = EnrollmentReport.getEnrollmentReport(context.getUser(), StudyManager.getInstance().getStudy(context.getContainer()), false) != null;
+    boolean hasEnrollmentReport = EnrollmentReport.getEnrollmentReport(context.getUser(), StudyManager.getInstance().getStudy(c), false) != null;
 
-    Study study = StudyManager.getInstance().getStudy(context.getContainer());
+    Study study = StudyManager.getInstance().getStudy(c);
     ActionURL customizeParticipantURL = new ActionURL(StudyController.CustomizeParticipantViewAction.class, study.getContainer());
     boolean showCustomizeParticipant = context.hasPermission(AdminPermission.class) && context.getUser().isDeveloper();
 
@@ -190,7 +193,7 @@
                 },
                 filterDiv: 'filterMsg',
             <% } %>
-            container: '<%=context.getContainer().getPath()%>',
+            container: '<%=c.getPath()%>',
             dataConnection : new Ext.data.Connection({
                 url: LABKEY.ActionURL.buildURL("study-reports", "manageViewsSummary", this.container),
                 method: 'GET',
@@ -226,22 +229,27 @@
                 text:'Grid View',
                 disabled: <%=!context.hasPermission(AdminPermission.class)%>,
                 icon: '<%=ReportService.get().getReportIcon(getViewContext(), StudyQueryReport.TYPE)%>',
-                listeners:{click:function(button, event) {window.location = '<%=new ActionURL(ReportsController.CreateQueryReportAction.class, context.getContainer())%>';}}
+                listeners:{click:function(button, event) {window.location = '<%=new ActionURL(ReportsController.CreateQueryReportAction.class, c)%>';}}
             },{
                 id: 'create_crosstabView',
                 text:'Crosstab View',
                 disabled: <%=!context.hasPermission(AdminPermission.class)%>,
-                listeners:{click:function(button, event) {window.location = '<%=new ActionURL(ReportsController.CreateCrosstabReportAction.class, context.getContainer())%>';}}
+                listeners:{click:function(button, event) {window.location = '<%=new ActionURL(ReportsController.CreateCrosstabReportAction.class, c)%>';}}
             },{
                 id: 'create_exportXlsView',
                 text:'Workbook (.xls)',
                 icon: '<%=ReportService.get().getReportIcon(getViewContext(), ExportExcelReport.TYPE)%>',
-                listeners:{click:function(button, event) {window.location = '<%=new ActionURL(ReportsController.ExportExcelConfigureAction.class, context.getContainer())%>';}}
+                listeners:{click:function(button, event) {window.location = '<%=new ActionURL(ReportsController.ExportExcelConfigureAction.class, c)%>';}}
+            },{
+                id: 'create_staticView',
+                text:'Attachment Report',
+                disabled: <%=!context.hasPermission(AdminPermission.class)%>,
+                listeners:{click:function(button, event) {window.location = '<%=urlProvider(ReportUrls.class).urlAttachmentReport(c, context.getActionURL())%>';}}
             },{
                 id: 'create_enrollmentView',
                 text:'<%=hasEnrollmentReport ? "Configure Enrollment View" : "Enrollment View"%>',
                 disabled: <%=!context.hasPermission(AdminPermission.class)%>,
-                listeners:{click:function(button, event) {window.location = '<%=new ActionURL(ReportsController.EnrollmentReportAction.class, context.getContainer())%>';}}
+                listeners:{click:function(button, event) {window.location = '<%=new ActionURL(ReportsController.EnrollmentReportAction.class, c)%>';}}
             },{
                 id: 'create_timeChart',
                 text:'Time Chart',
