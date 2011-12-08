@@ -38,7 +38,6 @@ import java.util.List;
  */
 public class FooterMenu extends NavTreeMenu
 {
-
     public FooterMenu(ViewContext context, PageConfig page)
     {
         super(context, "leftNavFooter", getNavTree(context, page));

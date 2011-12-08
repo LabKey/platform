@@ -37,6 +37,7 @@
 <%@ page import="org.labkey.api.view.ViewContext" %>
 <%@ page import="org.labkey.api.view.template.PageConfig" %>
 <%@ page import="org.labkey.api.view.template.TemplateHeaderView" %>
+<%@ page import="org.labkey.api.view.PopupHelpView" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
     TemplateHeaderView me = ((TemplateHeaderView) HttpView.currentView());
@@ -97,23 +98,24 @@ if ("true".equals(request.getParameter("testFont"))) {
               include(new PopupDeveloperView(currentContext), out);
               out.write(" | ");
           }
-      %>
-      <a href="<%= bean.pageConfig.getHelpTopic().getHelpTopicLink() %>" target="_new">Help<% if (AppProps.getInstance().isDevMode() && bean.pageConfig.getHelpTopic() == HelpTopic.DEFAULT_HELP_TOPIC) { %> (default)<% } %></a>
-      <%
-      if (null != user && !user.isGuest())
-      { %> | <%
-          include(new PopupUserView(currentContext), out);
-      }
-      else if (bean.pageConfig.shouldIncludeLoginLink())
-      {
-          String authLogoHtml = AuthenticationManager.getHeaderLogoHtml(currentURL);
 
-          if (null != authLogoHtml)
-              out.print(authLogoHtml + "&nbsp;");
+          include(new PopupHelpView(c, user, bean.pageConfig.getHelpTopic()), out);
 
-          %> | <a href="<%=h(urlProvider(LoginUrls.class).getLoginURL())%>">Sign&nbsp;In</a><%
-      }
-      if ("true".equals(request.getParameter("testFont"))) {
+          if (null != user && !user.isGuest())
+          {
+              out.write(" | ");
+              include(new PopupUserView(currentContext), out);
+          }
+          else if (bean.pageConfig.shouldIncludeLoginLink())
+          {
+              String authLogoHtml = AuthenticationManager.getHeaderLogoHtml(currentURL);
+
+              if (null != authLogoHtml)
+                  out.print(authLogoHtml + "&nbsp;");
+
+              %> | <a href="<%=h(urlProvider(LoginUrls.class).getLoginURL())%>">Sign&nbsp;In</a><%
+          }
+          if ("true".equals(request.getParameter("testFont"))) {
         %><span onclick="changeFont()"></span><span class="labkey-theme-font-smallest" onclick="changeFont('Smallest')">A</span><span class="labkey-theme-font-small" onclick="changeFont('Small')">A</span><span class="labkey-theme-font-medium" onclick="changeFont('Medium')">A</span><span class="labkey-theme-font-large" onclick="changeFont('Large')">A</span></span><%}%>
     </td>
   </tr>
