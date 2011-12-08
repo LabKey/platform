@@ -330,7 +330,6 @@ LABKEY.requiresExt4ClientAPI = function(immediate)
     LABKEY.requiresScript("extWidgets/ExtComponents.js", immediate);
     LABKEY.requiresScript("extWidgets/Ext4FormPanel.js", immediate);
     LABKEY.requiresScript("extWidgets/Ext4GridPanel.js", immediate);
-    LABKEY.requiresCss("extWidgets/ext4.css", immediate);
 };
 
 /** Pull in the required JS files and invoke the callback when they're loaded */
