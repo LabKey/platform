@@ -38,6 +38,7 @@ import org.labkey.api.exp.MvFieldWrapper;
 import org.labkey.api.iterator.CloseableIterator;
 import org.labkey.api.iterator.IteratorUtil;
 import org.labkey.api.query.BatchValidationException;
+import org.labkey.api.util.ExceptionUtil;
 import org.labkey.api.webdav.WebdavResource;
 import org.springframework.web.multipart.MultipartFile;
 import javax.servlet.ServletException;
@@ -412,7 +413,13 @@ public abstract class DataLoader implements Iterable<Map<String, Object>>, Loade
         {
             if (!columnNames.add(colDesc.name))
             {
-                throw new IOException("All columns must have unique names, but the column name '" + colDesc.name + "' appeared more than once.");
+                // TODO: This should be refactored to not throw this here, but rather, have the callers check themselves. It
+                // is not in the interest of inferring columns that we validate duplicate columns.
+                IOException e = new IOException("All columns must have unique names, but the column name '" + colDesc.name + "' appeared more than once.");
+
+                // 12908: IOException in DataLoader.inferColumnInfo() is not the correct exception type -- disabled logging for now
+                ExceptionUtil.decorateException(e, ExceptionUtil.ExceptionInfo.SkipMothershipLogging, "true", true);
+                throw e;
             }
         }
 
