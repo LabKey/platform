@@ -16,6 +16,7 @@
 package org.labkey.study.writer;
 
 import org.labkey.api.data.MvUtil;
+import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.util.XmlBeansUtil;
 import org.labkey.api.writer.VirtualFile;
 import org.labkey.study.model.StudyImpl;
@@ -50,6 +51,9 @@ class StudyXmlWriter implements InternalStudyWriter
 
         // Insert standard comment explaining where the data lives, who exported it, and when
         XmlBeansUtil.addStandardExportComment(studyXml, ctx.getContainer(), ctx.getUser());
+
+        // Archive version
+        studyXml.setArchiveVersion(ModuleLoader.getInstance().getCoreModule().getVersion());
 
         // Study attributes
         studyXml.setLabel(study.getLabel());
