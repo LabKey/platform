@@ -303,18 +303,6 @@ public abstract class BaseViewAction<FORM> extends BaseCommandController impleme
     }
 
 
-    public BindException springBindParameters(Object command, PropertyValues params)
-    {
-        return springBindParameters(command, getCommandName(), params);
-    }
-
-
-    public static BindException springBindParameters(Object command, HttpServletRequest request)
-    {
-        return springBindParameters(command, "form", new ServletRequestParameterPropertyValues(request));
-    }
-
-
     public static BindException springBindParameters(Object command, String commandName, PropertyValues params)
     {
         ServletRequestDataBinder binder = new ServletRequestDataBinder(command, commandName);
@@ -322,9 +310,20 @@ public abstract class BaseViewAction<FORM> extends BaseCommandController impleme
         BindingErrorProcessor defaultBEP = binder.getBindingErrorProcessor();
         binder.setBindingErrorProcessor(getBindingErrorProcessor(defaultBEP));
         binder.setFieldMarkerPrefix(SpringActionController.FIELD_MARKER);
-        binder.bind(params);
-        BindException errors = new NullSafeBindException(binder.getBindingResult());
-        return errors;
+        try
+        {
+            binder.bind(params);
+            BindException errors = new NullSafeBindException(binder.getBindingResult());
+            return errors;
+        }
+        catch (InvalidPropertyException x)
+        {
+            // Maybe we should propagate exception and return SC_BAD_REQUEST (in ExceptionUtil.handleException())
+            // most POST handlers check erros.hasErrors(), but not all GET handlers do
+            BindException errors = new BindException(command, commandName);
+            errors.reject(SpringActionController.ERROR_MSG, "Error binding property: " + x.getPropertyName());
+            return errors;
+        }
     }
 
 
