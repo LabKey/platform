@@ -556,10 +556,20 @@ public class RenderContext extends BoundMap // extends ViewContext
                     throw new RuntimeSQLException(x);
                 }
             }
-            // <UNDONE>
+
+            // NOTE: Ideally we should not need to convert FieldKey to String at all
+            // but _row is currently a <String,Object> map (not <FieldKey,Object>)
             FieldKey f = (FieldKey)key;
             key = f.getParent() == null ? f.getName() : f.encode();
-            // </UNDONE>
+
+            // 13607 : Nonconforming field names in datasets cause data loss on edit
+            // use FieldKey->ColumnInfo.getAlias() mapping if available
+            if (null != getFieldMap())
+            {
+                ColumnInfo col = getFieldMap().get(key);
+                if (null != col)
+                    key = getFieldMap().get(key).getAlias();
+            }
         }
 
         if (null != _row)
