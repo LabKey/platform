@@ -268,7 +268,7 @@ public interface SearchService
     boolean isBusy();
     void waitForIdle() throws InterruptedException;
 
-
+    
     /** default implementation saving lastIndexed */
     void setLastIndexedForPath(Path path, long indexed, long modified);
 
@@ -383,7 +383,11 @@ public interface SearchService
                 _colNames.add(modified.getName());
             }
 
-            if (!_sqlf.isEmpty())
+            if (_sqlf.isEmpty())
+            {
+                _sqlf.append("1=1");
+            }
+            else
             {
                 _sqlf.insert(0, "(");
                 _sqlf.append(")");
