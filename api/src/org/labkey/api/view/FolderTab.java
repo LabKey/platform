@@ -20,6 +20,7 @@ import org.labkey.api.data.ContainerManager;
 import org.labkey.api.portal.ProjectUrls;
 import org.labkey.api.util.PageFlowUtil;
 
+import java.util.Collection;
 import java.util.List;
 
 /**
@@ -82,13 +83,15 @@ public abstract class FolderTab
         public void initializeContent(Container container)
         {
             // Initialize the portal pages for each of the tabs
-            Portal.WebPart[] webParts = Portal.getParts(container, getName());
-            if (webParts.length == 0)
+            Collection<Portal.WebPart> webParts = Portal.getParts(container, getName());
+
+            if (webParts.size() == 0)
             {
                 List<Portal.WebPart> parts = createWebParts();
+
                 if (parts.size() > 0)
                 {
-                    Portal.saveParts(container, getName(), parts.toArray(new Portal.WebPart[parts.size()]));
+                    Portal.saveParts(container, getName(), parts);
                 }
             }
         }

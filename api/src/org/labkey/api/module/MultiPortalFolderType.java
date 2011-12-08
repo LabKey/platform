@@ -24,6 +24,7 @@ import org.labkey.api.view.template.AppBar;
 import org.labkey.api.view.template.PageConfig;
 
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.List;
 import java.util.Set;
 
@@ -57,13 +58,13 @@ public abstract class MultiPortalFolderType extends DefaultFolderType
     @Override @NotNull
     public AppBar getAppBar(ViewContext ctx, PageConfig pageConfig)
     {
-        Portal.WebPart[] tabs = Portal.getParts(ctx.getContainer(), FolderTab.FOLDER_TAB_PAGE_ID);
-        if (tabs == null || tabs.length == 0)
-        {
+        Collection<Portal.WebPart> tabs = Portal.getParts(ctx.getContainer(), FolderTab.FOLDER_TAB_PAGE_ID);
+
+        if (tabs == null || tabs.isEmpty())
             tabs = resetDefaultTabs(ctx.getContainer());
-        }
 
         List<NavTree> buttons = new ArrayList<NavTree>();
+
         for (Portal.WebPart tab : tabs)
         {
             FolderTab folderTab = findTab(tab.getName());
@@ -76,6 +77,7 @@ public abstract class MultiPortalFolderType extends DefaultFolderType
                     nav.setSelected(true);
             }
         }
+
         return new AppBar(getFolderTitle(ctx), ctx.getContainer().getStartURL(ctx.getUser()), buttons);
     }
 

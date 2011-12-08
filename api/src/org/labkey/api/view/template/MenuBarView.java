@@ -23,6 +23,7 @@ import org.labkey.api.view.JspView;
 import org.labkey.api.view.Portal;
 import org.apache.commons.collections15.MultiMap;
 
+import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 
@@ -51,7 +52,7 @@ public class MenuBarView extends JspView<List<Portal.WebPart>>
 
         if (laf.isMenuUIEnabled())
         {
-            Portal.WebPart[] allParts = Portal.getParts(project);
+            Collection<Portal.WebPart> allParts = Portal.getParts(project);
             MultiMap<String, Portal.WebPart> locationMap = Portal.getPartsByLocation(allParts);
             List<Portal.WebPart> menuParts = (List<Portal.WebPart>) locationMap.get("menubar");
 

@@ -25,7 +25,13 @@ import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.Sort;
 import org.labkey.api.data.Table;
 import org.labkey.api.data.TableSelector;
+import org.labkey.api.util.Pair;
 import org.labkey.api.view.Portal.WebPart;
+
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.LinkedHashMap;
+import java.util.Map;
 
 /**
  * User: adam
@@ -34,7 +40,7 @@ import org.labkey.api.view.Portal.WebPart;
  */
 public class WebPartCache
 {
-    private static final BlockingStringKeyCache<WebPart[]> CACHE = CacheManager.getBlockingStringKeyCache(10000, CacheManager.DAY, "Webparts", null);
+    private static final BlockingStringKeyCache<Pair<ArrayList<WebPart>, Map<Integer, WebPart>>> CACHE = CacheManager.getBlockingStringKeyCache(10000, CacheManager.DAY, "Webparts", null);
 
     private static String getCacheKey(@NotNull Container c, @Nullable String id)
     {
@@ -46,18 +52,34 @@ public class WebPartCache
         return result;
     }
 
-    static WebPart[] get(@NotNull final Container c, @NotNull final String pageId)
+    static ArrayList<WebPart> getWebParts(@NotNull Container c, @NotNull String pageId)
+    {
+        return get(c, pageId).getKey();
+    }
+
+    static WebPart getWebPart(@NotNull Container c, @NotNull String pageId, int rowId)
+    {
+        return get(c, pageId).getValue().get(rowId);
+    }
+
+    private static Pair<ArrayList<WebPart>, Map<Integer, WebPart>> get(@NotNull final Container c, @NotNull final String pageId)
     {
         String key = getCacheKey(c, pageId);
-        return CACHE.get(key, null, new CacheLoader<String, WebPart[]>()
+        return CACHE.get(key, null, new CacheLoader<String, Pair<ArrayList<WebPart>, Map<Integer, WebPart>>>()
         {
             @Override
-            public WebPart[] load(String key, Object argument)
+            public Pair<ArrayList<WebPart>, Map<Integer, WebPart>> load(String key, Object argument)
             {
                 SimpleFilter filter = new SimpleFilter("PageId", pageId);
                 filter.addCondition("Container", c.getId());
+                Map<Integer, WebPart> map = new LinkedHashMap<Integer, WebPart>();
 
-                return new TableSelector(Portal.getTableInfoPortalWebParts(), Table.ALL_COLUMNS, filter, new Sort("Index")).getArray(WebPart.class);
+                ArrayList<WebPart> list = new ArrayList<WebPart>(new TableSelector(Portal.getTableInfoPortalWebParts(), Table.ALL_COLUMNS, filter, new Sort("Index")).getCollection(WebPart.class));
+
+                for (WebPart webPart : list)
+                    map.put(webPart.getRowId(), webPart);
+
+                return new Pair<ArrayList<WebPart>, Map<Integer, WebPart>>(list, map);
             }
         });
     }

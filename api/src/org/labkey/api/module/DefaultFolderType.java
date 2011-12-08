@@ -118,7 +118,7 @@ public class DefaultFolderType implements FolderType
 
         try
         {
-            Portal.WebPart[] existingParts = Portal.getParts(c);
+            Portal.WebPart[] existingParts = Portal.getPartsOld(c);
             if (null == existingParts || existingParts.length == 0)
             {
                 if (null != required)
@@ -173,7 +173,7 @@ public class DefaultFolderType implements FolderType
 
             active.addAll(requiredActive);
             c.setActiveModules(active);
-            Portal.saveParts(c, all.toArray(new Portal.WebPart[all.size()]));
+            Portal.saveParts(c, all);
         }
         catch (SQLException e)
         {
@@ -190,9 +190,10 @@ public class DefaultFolderType implements FolderType
         }
     }
 
-    public Portal.WebPart[] resetDefaultTabs(Container c)
+    public List<Portal.WebPart> resetDefaultTabs(Container c)
     {
         List<Portal.WebPart> tabs = new ArrayList<Portal.WebPart>();
+
         for (FolderTab p : getDefaultTabs())
         {
             Portal.WebPart tab = new Portal.WebPart();
@@ -201,14 +202,15 @@ public class DefaultFolderType implements FolderType
             tabs.add(tab);
         }
 
-        Portal.saveParts(c, FolderTab.FOLDER_TAB_PAGE_ID, tabs.toArray(new Portal.WebPart[tabs.size()]));
+        Portal.saveParts(c, FolderTab.FOLDER_TAB_PAGE_ID, tabs);
         return Portal.getParts(c, FolderTab.FOLDER_TAB_PAGE_ID);
     }
 
 
     public void unconfigureContainer(Container c)
     {
-        WebPart[] parts = Portal.getParts(c);
+        List<WebPart> parts = Portal.getParts(c);
+
         if (null != parts)
         {
             boolean saveRequired = false;

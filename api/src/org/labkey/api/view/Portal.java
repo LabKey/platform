@@ -44,12 +44,14 @@ import org.springframework.web.servlet.ModelAndView;
 import javax.servlet.http.HttpServletResponse;
 import java.io.Serializable;
 import java.sql.SQLException;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -272,16 +274,30 @@ public class Portal
     }
 
 
-    public static WebPart[] getParts(Container c)
+    @Deprecated   // Use list-returning methods below
+    public static WebPart[] getPartsOld(Container c)
+    {
+        return getPartsOld(c, DEFAULT_PORTAL_PAGE_ID);
+    }
+
+    @Deprecated   // Use list-returning methods below
+    public static WebPart[] getPartsOld(Container c, String pageId)
+    {
+        ArrayList<WebPart> parts = getParts(c, pageId);
+        return parts.toArray(new WebPart[parts.size()]);
+    }
+
+    public static ArrayList<WebPart> getParts(Container c)
     {
         return getParts(c, DEFAULT_PORTAL_PAGE_ID);
     }
 
-    public static WebPart[] getParts(Container c, String pageId)
+    public static ArrayList<WebPart> getParts(Container c, String pageId)
     {
-        return WebPartCache.get(c, pageId);
+        return WebPartCache.getWebParts(c, pageId);
     }
 
+    // TODO: Use WebPartCache... but we need folder & pageId to do that. Fortunately, this is used infrequently now (see #13267).
     public static WebPart getPart(int webPartRowId)
     {
         return Table.selectObject(getTableInfoPortalWebParts(), webPartRowId, WebPart.class);
@@ -290,22 +306,7 @@ public class Portal
     @Nullable
     public static WebPart getPart(Container c, String pageId, int index)
     {
-        try
-        {
-            SimpleFilter filter = new SimpleFilter("PageId", pageId);
-            filter.addCondition("Container", c.getId());
-            filter.addCondition("index", index);
-            WebPart[] webParts = Table.select(getTableInfoPortalWebParts(), Table.ALL_COLUMNS, filter, null, WebPart.class);
-            assert webParts.length == 0 || webParts.length == 1 : "Cannot have multiple web parts with the same page and index.";
-            if (webParts.length == 1)
-                return webParts[0];
-            else
-                return null;
-        }
-        catch (SQLException e)
-        {
-            throw new RuntimeSQLException(e);
-        }
+        return WebPartCache.getWebPart(c, pageId, index);
     }
 
 
@@ -318,8 +319,7 @@ public class Portal
     /**
      * Add a web part to the container at the end of the list
      */
-    public static WebPart addPart(Container c, WebPartFactory desc, String location)
-            throws SQLException
+    public static WebPart addPart(Container c, WebPartFactory desc, String location) throws SQLException
     {
         return addPart(c, desc, location, -1);
     }
@@ -361,13 +361,14 @@ public class Portal
      */
     public static WebPart addPart(Container c, String pageId, WebPartFactory desc, String location, int partIndex, @Nullable Map<String, String> properties)
     {
-        WebPart[] parts = getParts(c, pageId);
+        Collection<WebPart> parts = getParts(c, pageId);
 
         WebPart newPart = new Portal.WebPart();
         newPart.setContainer(c);
         newPart.setPageId(pageId);
         newPart.setName(desc.getName());
-        newPart.setIndex(partIndex >= 0 ? partIndex : parts.length);
+        newPart.setIndex(partIndex >= 0 ? partIndex : parts.size());
+
         if (location == null)
         {
             newPart.setLocation(desc.getDefaultLocation());
@@ -388,22 +389,26 @@ public class Portal
         }
 
         if (parts == null)
-            parts = new Portal.WebPart[]{newPart};
+        {
+            parts = Collections.singleton(newPart);
+        }
         else
         {
-            Portal.WebPart[] partsNew = new Portal.WebPart[parts.length + 1];
-            int iNext = 0;
+            List<Portal.WebPart> partsNew = new LinkedList<WebPart>();
+
             for (final WebPart currentPart : parts)
             {
-                if (iNext == newPart.getIndex())
-                    partsNew[iNext++] = newPart;
+                if (partsNew.size() == newPart.getIndex())
+                    partsNew.add(newPart);
                 final int iPart = currentPart.getIndex();
                 if (iPart > newPart.getIndex())
                     currentPart.setIndex(iPart + 1);
-                partsNew[iNext++] = currentPart;
+                partsNew.add(currentPart);
             }
-            if (iNext == newPart.getIndex())
-                partsNew[iNext++] = newPart;
+
+            if (partsNew.size() <= parts.size())
+                partsNew.add(newPart);
+
             parts = partsNew;
         }
 
@@ -419,9 +424,14 @@ public class Portal
         return newPart;
     }
 
-    public static void saveParts(Container c, WebPart[] newParts)
+    public static void saveParts(Container c, Collection<WebPart> newParts)
     {
-        saveParts(c, DEFAULT_PORTAL_PAGE_ID, newParts);
+        saveParts(c, DEFAULT_PORTAL_PAGE_ID, newParts.toArray(new WebPart[newParts.size()]));
+    }
+
+    public static void saveParts(Container c, String pageId, Collection<WebPart> newParts)
+    {
+        saveParts(c, pageId, newParts.toArray(new WebPart[newParts.size()]));
     }
 
     public static void saveParts(Container c, String pageId, WebPart[] newParts)
@@ -445,7 +455,7 @@ public class Portal
 
         try
         {
-            WebPart[] oldParts = getParts(c, pageId);
+            List<WebPart> oldParts = getParts(c, pageId);
             Set<Integer> oldPartIds = new HashSet<Integer>();
             for (WebPart oldPart : oldParts)
                 oldPartIds.add(oldPart.getRowId());
@@ -557,7 +567,7 @@ public class Portal
             throws Exception
     {
         String contextPath = context.getContextPath();
-        WebPart[] parts = getParts(context.getContainer(), id);
+        WebPart[] parts = getPartsOld(context.getContainer(), id);
 
         // Initialize content for non-default portal pages that are folder tabs
         if (parts.length == 0 && !DEFAULT_PORTAL_PAGE_ID.equalsIgnoreCase(id))
@@ -567,7 +577,7 @@ public class Portal
                 if (folderTab instanceof FolderTab.PortalPage && id.equalsIgnoreCase(folderTab.getName()))
                 {
                     folderTab.initializeContent(context.getContainer());
-                    parts = getParts(context.getContainer(), id);
+                    parts = getPartsOld(context.getContainer(), id);
                 }
             }
         }
@@ -659,6 +669,22 @@ public class Portal
         }
         else
             return PageFlowUtil.urlProvider(ProjectUrls.class).getDeleteWebPartURL(context.getContainer(), webPart, context.getActionURL()).getLocalURIString();
+    }
+
+
+    public static MultiMap<String, WebPart> getPartsByLocation(Collection<WebPart> parts)
+    {
+        MultiMap<String, WebPart> multiMap = new MultiHashMap<String, WebPart>();
+
+        for (WebPart part : parts)
+        {
+            if (null == part.getName() || 0 == part.getName().length())
+                continue;
+            String location = part.getLocation();
+            multiMap.put(location, part);
+        }
+
+        return multiMap;
     }
 
 

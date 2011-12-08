@@ -733,7 +733,7 @@ public class Container implements Serializable, Comparable<Container>, Securable
             //get set of all modules
             List<Module> allModules = ModuleLoader.getInstance().getModules();
             //get active web parts for this container
-            Portal.WebPart[] activeWebparts = Portal.getParts(this);
+            Portal.WebPart[] activeWebparts = Portal.getPartsOld(this);
 
             // store active modules, checking first that the container still exists -- junit test creates and deletes
             // containers quickly and this check helps keep the search indexer from creating orphaned property sets.

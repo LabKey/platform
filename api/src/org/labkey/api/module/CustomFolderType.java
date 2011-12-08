@@ -199,7 +199,7 @@ public class CustomFolderType implements FolderType
     }
 
     @Override
-    public Portal.WebPart[] resetDefaultTabs(Container c)
+    public List<Portal.WebPart> resetDefaultTabs(Container c)
     {
         throw new UnsupportedOperationException();
     }
