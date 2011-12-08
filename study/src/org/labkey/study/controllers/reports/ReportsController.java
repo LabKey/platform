@@ -59,6 +59,7 @@ import org.labkey.api.security.RequiresPermissionClass;
 import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.AdminPermission;
 import org.labkey.api.security.permissions.ReadPermission;
+import org.labkey.api.security.permissions.UpdatePermission;
 import org.labkey.api.study.DataSet;
 import org.labkey.api.study.Study;
 import org.labkey.api.study.StudyService;
@@ -154,7 +155,7 @@ public class ReportsController extends BaseStudyController
         }
     }
 
-    @RequiresPermissionClass(AdminPermission.class)
+    @RequiresPermissionClass(UpdatePermission.class)
     public class DeleteReportAction extends SimpleViewAction
     {
         public ModelAndView getView(Object o, BindException errors) throws Exception

@@ -1,8 +1,15 @@
 package org.labkey.study.query;
 
-import org.labkey.api.query.FilteredTable;
 import org.labkey.api.data.ColumnInfo;
+import org.labkey.api.data.JdbcType;
+import org.labkey.api.data.SQLFragment;
+import org.labkey.api.data.TableInfo;
+import org.labkey.api.data.dialect.SqlDialect;
+import org.labkey.api.query.ExprColumn;
+import org.labkey.api.query.FilteredTable;
+import org.labkey.api.query.snapshot.QuerySnapshotService;
 import org.labkey.study.StudySchema;
+import org.labkey.study.model.StudyManager;
 
 /**
  * Copyright (c) 2008-2010 LabKey Corporation
@@ -36,6 +43,27 @@ public class DataSetsTable extends FilteredTable
             if ("Container".equalsIgnoreCase(name) || "EntityId".equalsIgnoreCase(name))
                 colInfo.setHidden(true);
         }
+
+        // add a column to indicate whether the dataset is sourced from a query snapshot
+        ExprColumn result = new ExprColumn(this, "QuerySnapshot", new SQLFragment("~~PLACEHOLDER~~"), JdbcType.BOOLEAN)
+        {
+            @Override
+            public SQLFragment getValueSql(String tableAlias)
+            {
+                TableInfo tinfo = QuerySnapshotService.get(StudyManager.getSchemaName()).getTableInfoQuerySnapshotDef();
+                SqlDialect d = getSqlDialect();
+
+                SQLFragment sql = new SQLFragment("(CASE WHEN EXISTS (SELECT RowId FROM ");
+                sql.append(tinfo, "qs");
+                sql.append(" WHERE qs.schema = '").append(StudyManager.getSchemaName()).append("' AND ").append(tableAlias).append(".Name = qs.Name AND ");
+                sql.append(tableAlias).append(".Container = qs.Container) THEN " + d.getBooleanTRUE() + " ELSE " + d.getBooleanFALSE() + " END)");
+                
+                return sql;
+            }
+        };
+        result.setDescription("Whether the source is from a Query Snapshot");
+        addColumn(result);
+
         setTitleColumn("Label");
     }
 }
