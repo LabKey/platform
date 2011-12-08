@@ -31,6 +31,7 @@ import org.labkey.api.exp.list.ListItem;
 import org.labkey.api.exp.property.Domain;
 import org.labkey.api.exp.property.DomainProperty;
 import org.labkey.api.exp.property.PropertyService;
+import org.apache.commons.lang.StringUtils;
 import org.labkey.api.query.ValidationError;
 import org.labkey.api.query.ValidationException;
 import org.labkey.api.reader.ColumnDescriptor;
@@ -342,6 +343,7 @@ public class ListDefinitionImpl implements ListDefinition
 
         for (String columnHeader : firstLine[0])
         {
+            columnHeader = StringUtils.trimToEmpty(columnHeader);
             ColumnDescriptor descriptor;
 
             if (getKeyName().equalsIgnoreCase(columnHeader))
