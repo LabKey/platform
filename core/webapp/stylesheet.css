@@ -198,7 +198,6 @@ th.labkey-header a:hover {
 }
 
 table.labkey-expandable-nav th.labkey-header {
-	width: 148px;
 	border-bottom: 1px solid #e5e5e5;
 }
 
@@ -812,7 +811,7 @@ table.labkey-nav-trail
 /* Used for the "App Bar" containing the main title and the application button bar */
 /* Used for tabs */
 
-.labkey-app-bar div.folder-header { /* THIS IS A NEW COLOR */
+.labkey-app-bar div.labkey-folder-header { /* THIS IS A NEW COLOR */
     /*
         TODO: this will be overridden by the themeStylesheet.  We need to add another background color to the theme.
         This is included for now to allow the other changes to be added.
@@ -826,7 +825,7 @@ table.labkey-nav-trail
 	-webkit-box-shadow: inset 0 0 5px rgba(0, 0, 0,.3);
 }
 
-.labkey-app-bar table.folder-header
+.labkey-app-bar table.labkey-folder-header
 {
     padding:0 20px;
     border-spacing: 0; *border-collapse: collapse;
@@ -834,7 +833,7 @@ table.labkey-nav-trail
 	height: 40px;
 }
 
-.labkey-app-bar td.folder-title { /* this should map to the link and top border color in theme */
+.labkey-app-bar td.labkey-folder-title { /* this should map to the link and top border color in theme */
 	font-family: Arial, Helvetica, sans serif;
     font-size: 14pt;
     line-height: 22px;
@@ -843,7 +842,7 @@ table.labkey-nav-trail
     white-space: nowrap;
 }
 
-.labkey-app-bar td.folder-title a:hover { /* this is new, should be same across themes */
+.labkey-app-bar td.labkey-folder-title a:hover { /* this is new, should be same across themes */
 	color: #fff;
 }
 
@@ -1768,9 +1767,8 @@ td.labkey-site-nav-panel {
 }
 
 div.menu-wrapper {
-    width: auto;
-    overflow: hidden;
-    *overflow: visible;
+    width: 175px;
+    overflow: auto;
 }
 
 
@@ -1790,7 +1788,6 @@ table.labkey-expandable-nav
     border-spacing: 0;
 	*border-collapse: collapse;
     border-collapse: collapse;
-    width: 160px;
 }
 
 /* The individual expandable nav menus */
@@ -1801,7 +1798,6 @@ table.labkey-expandable-nav
 
 .labkey-expandable-nav tr
 {
-    width: 100%;
 }
 
 /* expandable nav in dropdown custom menu */
@@ -1857,7 +1853,7 @@ table.labkey-expandable-nav
 /* are we sure about this - side nav and study seem to be using labkey-nav-tree-node et al below */
 td.labkey-expand-collapse-area
 {
-    border-bottom: 1px solid #e5e5e5;
+    /*border-bottom: 1px solid #e5e5e5;*/
 }
 
 td.labkey-expand-collapse-area a
@@ -1885,7 +1881,6 @@ td.labkey-expand-collapse-area img {
 table.labkey-nav-tree
 {
     border-spacing: 0; *border-collapse: collapse;
-    width: 100%;
 }
 
 span.labkey-nav-tree-selected
@@ -1928,7 +1923,6 @@ td.labkey-nav-tree-node img
 td.labkey-nav-tree-text
 {
     padding: 4px 0;
-    width: 100%;
     vertical-align: top;
 	line-height: 1.2em;
 }
@@ -1951,7 +1945,6 @@ td.labkey-nav-tree-total
 table.labkey-nav-tree-child
 {
     border-collapse: collapse;
-    width: 100%;
     border-spacing: 0; *border-collapse: collapse;
 }
 

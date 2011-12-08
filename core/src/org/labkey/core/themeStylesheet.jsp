@@ -232,7 +232,7 @@ span.css-arrow-down
 /* Used for the "App Bar" containing the main title and the application button bar */
 /* Used for tabs */
 
-.labkey-app-bar div.folder-header
+.labkey-app-bar div.labkey-folder-header
 {  /* TODO: this should be replaced by adding a new color to the theme.  */
     background-color:#<%= webpart %>;
 }
