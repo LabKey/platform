@@ -81,6 +81,7 @@ import javax.servlet.http.HttpServletResponse;
 import java.io.File;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.Enumeration;
 import java.util.HashMap;
@@ -609,9 +610,10 @@ public class ProjectController extends SpringActionController
 
     private ApiResponse getWebPartLayoutApiResponse(String pageId)
     {
-        Portal.WebPart[] parts = Portal.getParts(getViewContext().getContainer(), pageId);
+        Collection<Portal.WebPart> parts = Portal.getParts(getViewContext().getContainer(), pageId);
         final Map<String, Object> properties = new HashMap<String, Object>();
         int lastIndex = -1;
+
         for (Portal.WebPart part : parts)
         {
             if (part.getIndex() < lastIndex)
@@ -647,7 +649,7 @@ public class ProjectController extends SpringActionController
 
     private boolean handleDeleteWebPart(Container c, String pageId, int index)
     {
-        Portal.WebPart[] parts = Portal.getParts(c, pageId);
+        Portal.WebPart[] parts = Portal.getPartsOld(c, pageId);
         //Changed on us..
         if (null == parts || parts.length == 0)
             return true;
@@ -657,13 +659,13 @@ public class ProjectController extends SpringActionController
             if (part.getIndex() != index)
                 newParts.add(part);
 
-        Portal.saveParts(c, pageId, newParts.toArray(new Portal.WebPart[newParts.size()]));
+        Portal.saveParts(c, pageId, newParts);
         return true;
     }
 
     private boolean handleMoveWebPart(String pageId, int index, int direction)
     {
-        Portal.WebPart[] parts = Portal.getParts(getContainer(), pageId);
+        Portal.WebPart[] parts = Portal.getPartsOld(getContainer(), pageId);
         if (null == parts)
             return true;
 

@@ -5119,7 +5119,7 @@ public class StudyController extends BaseStudyController
 
                     webParts.add(part);
                 }
-                Portal.saveParts(studyFolder, webParts.toArray(new Portal.WebPart[webParts.size()]));
+                Portal.saveParts(studyFolder, webParts);
             }
 
             ApiSimpleResponse response = new ApiSimpleResponse();

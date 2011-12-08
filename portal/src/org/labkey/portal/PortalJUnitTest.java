@@ -28,6 +28,8 @@ import org.labkey.api.view.Portal;
 import org.labkey.api.view.WebPartFactory;
 
 import java.sql.SQLException;
+import java.util.LinkedList;
+import java.util.List;
 import java.util.Map;
 
 /**
@@ -53,8 +55,8 @@ public class PortalJUnitTest extends Assert
         Container proj = ContainerManager.ensureContainer(_testDirName);
         Container folder = ContainerManager.ensureContainer(_testDirName + "/Test");
 
-        Portal.WebPart[] defaultWebParts = Portal.getParts(folder);
-        assertTrue(defaultWebParts.length == 0);
+        List<Portal.WebPart> defaultWebParts = Portal.getParts(folder);
+        assertTrue(defaultWebParts.isEmpty());
 
         WebPartFactory wikiFactory = Portal.getPortalPart("Wiki");
         assertNotNull(wikiFactory);
@@ -67,32 +69,31 @@ public class PortalJUnitTest extends Assert
         Portal.addPart(folder, searchFactory, "body");
         Portal.addPart(folder, pagesFactory, WebPartFactory.LOCATION_RIGHT);
 
-        Portal.WebPart[] parts = Portal.getParts(folder);
-        assertEquals(parts.length, 3);
+        List<Portal.WebPart> parts = Portal.getParts(folder);
+        assertEquals(parts.size(), 3);
 
         MultiMap<String, Portal.WebPart> locMap = Portal.getPartsByLocation(parts);
         Portal.WebPart[] bodyParts = locMap.get("body").toArray(new Portal.WebPart[locMap.get("body").size()]);
         assertEquals(bodyParts.length, 2);
-        assertEquals(parts[0].getName(), "Wiki");
-        assertEquals(parts[1].getName(), "Search");
+        assertEquals(parts.get(0).getName(), "Wiki");
+        assertEquals(parts.get(1).getName(), "Search");
 
         Portal.WebPart[] rightParts = locMap.get(WebPartFactory.LOCATION_RIGHT).toArray(new Portal.WebPart[locMap.get(WebPartFactory.LOCATION_RIGHT).size()]);
         assertEquals(1, rightParts.length);
         assertEquals("Wiki Table of Contents", rightParts[0].getName());
 
-
         //Delete a part
-        Portal.WebPart[] modifiedParts = new Portal.WebPart[2];
-        modifiedParts[0] = parts[0];
-        modifiedParts[1] = parts[2];
+        List<Portal.WebPart> modifiedParts = new LinkedList<Portal.WebPart>();
+        modifiedParts.add(parts.get(0));
+        modifiedParts.add(parts.get(2));
         Portal.saveParts(folder, modifiedParts);
 
         parts = Portal.getParts(folder);
-        assertEquals(parts.length, 2);
+        assertEquals(parts.size(), 2);
         locMap = Portal.getPartsByLocation(parts);
         bodyParts = locMap.get("body").toArray(new Portal.WebPart[locMap.get("body").size()]);
         assertEquals(bodyParts.length, 1);
-        assertEquals(parts[0].getName(), "Wiki");
+        assertEquals(parts.get(0).getName(), "Wiki");
 
         rightParts = locMap.get(WebPartFactory.LOCATION_RIGHT).toArray(new Portal.WebPart[locMap.get(WebPartFactory.LOCATION_RIGHT).size()]);
         assertEquals(rightParts.length, 1);
@@ -101,50 +102,47 @@ public class PortalJUnitTest extends Assert
         ///Now add it back at a specific position
         Portal.addPart(folder, searchFactory, "body", 0);
         parts = Portal.getParts(folder);
-        assertEquals(parts.length, 3);
+        assertEquals(parts.size(), 3);
         locMap = Portal.getPartsByLocation(parts);
         bodyParts = locMap.get("body").toArray(new Portal.WebPart[locMap.get("body").size()]);
         assertEquals(bodyParts.length, 2);
-        assertEquals(parts[0].getName(), "Search");
+        assertEquals(parts.get(0).getName(), "Search");
 
         //Create some parts on a new page
         String newPageGuid = GUID.makeGUID();
         parts = Portal.getParts(folder, newPageGuid);
-        assertEquals(parts.length, 0);
-        Portal.addPart(folder,  newPageGuid, wikiFactory, "body", -1, PageFlowUtil.map("pageName", "testPage"));
+        assertEquals(parts.size(), 0);
+        Portal.addPart(folder, newPageGuid, wikiFactory, "body", -1, PageFlowUtil.map("pageName", "testPage"));
         //Make sure we have a part on our new page
         parts = Portal.getParts(folder, newPageGuid);
-        assertEquals(parts.length, 1);
-        Map<String,String> props = parts[0].getPropertyMap();
+        assertEquals(parts.size(), 1);
+        Map<String,String> props = parts.get(0).getPropertyMap();
         assertEquals(props.get("pageName"), "testPage");
         Portal.addPart(folder,  newPageGuid, searchFactory, "body", -1, null);
         parts = Portal.getParts(folder, newPageGuid);
-        assertEquals(parts.length, 2);
-        assertEquals(parts[0].getName(), "Wiki");
-        assertEquals(parts[1].getName(), "Search");
+        assertEquals(parts.size(), 2);
+        assertEquals(parts.get(0).getName(), "Wiki");
+        assertEquals(parts.get(1).getName(), "Search");
         //Now swap the parts
         //Should come back in index order
-        parts[0].setIndex(1);
-        parts[1].setIndex(0);
+        parts.get(0).setIndex(1);
+        parts.get(1).setIndex(0);
         Portal.saveParts(folder, newPageGuid, parts);
         parts = Portal.getParts(folder, newPageGuid);
-        assertEquals(parts[0].getName(), "Search");
-        assertEquals(parts[1].getName(), "Wiki");
+        assertEquals(parts.get(0).getName(), "Search");
+        assertEquals(parts.get(1).getName(), "Wiki");
 
         //Check to see that the old page is still the same length
         parts = Portal.getParts(folder);
-        assertEquals(parts.length, 3);
-
-
+        assertEquals(parts.size(), 3);
 
         // clean up
         ContainerManager.deleteAll(proj, user);
 
         //
         parts = Portal.getParts(folder);
-        assertEquals(parts.length, 0);
+        assertEquals(parts.size(), 0);
         parts = Portal.getParts(folder, newPageGuid);
-        assertEquals(parts.length, 0);
-
+        assertEquals(parts.size(), 0);
     }
 }
