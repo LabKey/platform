@@ -30,7 +30,6 @@
 <script type="text/javascript">
 
     LABKEY.requiresExt4ClientAPI(true);
-    LABKEY.requiresCss("extWidgets/ext4.css");
     LABKEY.requiresScript("extWidgets/IconPanel.js");
 
 </script>

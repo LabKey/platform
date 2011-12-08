@@ -46,7 +46,6 @@
 %>
 <script type="text/javascript">
     LABKEY.requiresExt4Sandbox(true);
-    LABKEY.requiresCss('/extWidgets/ext4.css');
     LABKEY.requiresCss('/createFolder.css');
 </script>
 <script type="text/javascript">
