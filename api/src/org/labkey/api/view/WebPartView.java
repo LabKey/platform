@@ -134,16 +134,6 @@ public abstract class WebPartView<ModelBean> extends HttpView<ModelBean>
     public String getTitle()
     {
         Object ret = getViewContext().get("title");
-
-        // If a webpart provides a title override use it
-        Portal.WebPart wp = Portal.getPart(getWebPartRowId());
-        if (wp != null)
-        {
-            Map<String, String> props = wp.getPropertyMap();
-            if (props.containsKey("webpart.title"))
-                return props.get("webpart.title");
-        }
-
         if (ret != null && !(ret instanceof String))
         {
             return ret.toString();

@@ -785,6 +785,9 @@ public class Portal
             {
                 view.setWebPartRowId(webPart.getRowId());
                 view.setLocation(webPart.getLocation());
+                Map<String, String> props = webPart.getPropertyMap();
+                if (null != props && props.containsKey("webpart.title"))
+                    view.setTitle(props.get("webpart.title"));
             }
         }
         catch(Throwable t)

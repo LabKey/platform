@@ -15,19 +15,16 @@
  * limitations under the License.
  */
 %>
+<%@ page import="org.labkey.api.portal.ProjectUrls" %>
+<%@ page import="org.labkey.api.util.PageFlowUtil" %>
+<%@ page import="org.labkey.api.view.ActionURL" %>
+<%@ page import="org.labkey.api.view.FolderTab" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.api.view.NavTree" %>
+<%@ page import="org.labkey.api.view.PopupMenu" %>
+<%@ page import="org.labkey.api.view.ViewContext" %>
 <%@ page import="org.labkey.api.view.template.AppBar" %>
 <%@ page import="org.labkey.api.view.template.AppBarView" %>
-<%@ page import="org.labkey.api.view.ViewContext" %>
-<%@ page import="org.labkey.api.data.Container" %>
-<%@ page import="org.labkey.api.view.ActionURL" %>
-<%@ page import="org.labkey.api.security.permissions.AdminPermission" %>
-<%@ page import="org.labkey.api.view.PopupMenu" %>
-<%@ page import="org.labkey.api.view.PopupMenuView" %>
-<%@ page import="org.labkey.api.util.PageFlowUtil" %>
-<%@ page import="org.labkey.api.portal.ProjectUrls" %>
-<%@ page import="org.labkey.api.view.FolderTab" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 
 <%
@@ -38,10 +35,10 @@
         return;
 %>
 <div class="labkey-app-bar">
-<div class="folder-header">
-<table class="folder-header" id="labkey-app-bar-table">
+<div class="labkey-folder-header">
+<table class="labkey-folder-header" id="labkey-app-bar-table">
     <tr>
-        <td class="folder-title"><a href="<%=h(bean.getValue())%>"><%=h(bean.getFolderTitle())%></a></td>
+        <td class="labkey-folder-title"><a href="<%=h(bean.getValue())%>"><%=h(bean.getFolderTitle())%></a></td>
         <td class="button-bar">
             <ul class="labkey-tab-strip">
                 <table cellpadding="0" cellspacing="0">

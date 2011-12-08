@@ -566,9 +566,9 @@ public class RenderContext extends BoundMap // extends ViewContext
             // use FieldKey->ColumnInfo.getAlias() mapping if available
             if (null != getFieldMap())
             {
-                ColumnInfo col = getFieldMap().get(key);
+                ColumnInfo col = getFieldMap().get(f);
                 if (null != col)
-                    key = getFieldMap().get(key).getAlias();
+                    key = getFieldMap().get(f).getAlias();
             }
         }
 
