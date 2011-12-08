@@ -74,7 +74,7 @@ public class StackTraceDisplayColumn extends DataColumn
     private void renderContents(RenderContext ctx, Writer out, int maxLines) throws IOException
     {
         String stackTrace = (String)getValue(ctx);
-        out.write("<pre>");
+        out.write("<pre style=\"margin: 4px 0px\">");
         StringBuilder sb = new StringBuilder();
         LineNumberReader reader = new LineNumberReader(new StringReader(stackTrace));
         List<String> lines = new ArrayList<String>();

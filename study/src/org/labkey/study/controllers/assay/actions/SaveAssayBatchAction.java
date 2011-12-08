@@ -220,7 +220,10 @@ public class SaveAssayBatchAction extends AbstractAssayAPIAction<SimpleApiJsonFo
         // First, clear out any old data analysis results
         for (ExpData data : run.getOutputDatas(provider.getDataType()))
         {
-            data.delete(context.getUser());
+            if (data.getDataFileUrl() == null)
+            {
+                data.delete(context.getUser());
+            }
         }
 
         Map<ExpData, String> inputData = new HashMap<ExpData, String>();

@@ -339,13 +339,23 @@ public class MothershipSchema extends UserSchema
             }
         };
 
-        ExprColumn maxRevisionColumn = new ExprColumn(result, "MaxSVNRevision", getSoftwareReleaseSQL("DESC"), JdbcType.INTEGER);
-        maxRevisionColumn.setFk(softwareReleaseFK);
+        ExprColumn maxRevisionColumn = new ExprColumn(result, "MaxSVNRevision", getSoftwareReleaseSQL("DESC", false), JdbcType.VARCHAR);
+        maxRevisionColumn.setDescription("Highest SVN revision (and corresponding SVN branch)");
         result.addColumn(maxRevisionColumn);
 
-        ExprColumn minRevisionColumn = new ExprColumn(result, "MinSVNRevision", getSoftwareReleaseSQL("ASC"), JdbcType.INTEGER);
-        minRevisionColumn.setFk(softwareReleaseFK);
+        ExprColumn maxRevisionLookupColumn = new ExprColumn(result, "MaxSVNRevisionLookup", getSoftwareReleaseSQL("DESC", true), JdbcType.INTEGER);
+        maxRevisionLookupColumn.setFk(softwareReleaseFK);
+        maxRevisionLookupColumn.setDescription("Highest SVN revision (and corresponding SVN branch). Slower, but full lookup to mothership.SoftwareRelease");
+        result.addColumn(maxRevisionLookupColumn);
+
+        ExprColumn minRevisionColumn = new ExprColumn(result, "MinSVNRevision", getSoftwareReleaseSQL("ASC", false), JdbcType.VARCHAR);
+        minRevisionColumn.setDescription("Lowest SVN revision (and corresponding SVN branch)");
         result.addColumn(minRevisionColumn);
+
+        ExprColumn minRevisionLookupColumn = new ExprColumn(result, "MinSVNRevisionLookup", getSoftwareReleaseSQL("ASC", true), JdbcType.INTEGER);
+        minRevisionLookupColumn.setFk(softwareReleaseFK);
+        minRevisionColumn.setDescription("Smallest SVN revision (and corresponding SVN branch). Slower, but full lookup to mothership.SoftwareRelease");
+        result.addColumn(minRevisionLookupColumn);
 
         String path = MothershipManager.get().getIssuesContainer(getContainer());
         ActionURL issueURL = PageFlowUtil.urlProvider(IssuesUrls.class).getDetailsURL(ContainerManager.getForPath(path));
@@ -364,9 +374,7 @@ public class MothershipSchema extends UserSchema
         List<FieldKey> defaultCols = new ArrayList<FieldKey>();
         defaultCols.add(FieldKey.fromParts("ExceptionStackTraceId"));
         defaultCols.add(FieldKey.fromParts("Instances"));
-        defaultCols.add(FieldKey.fromParts("MinSVNRevision"));
         defaultCols.add(FieldKey.fromParts("MaxSVNRevision"));
-        defaultCols.add(FieldKey.fromParts("FirstReport"));
         defaultCols.add(FieldKey.fromParts("LastReport"));
         defaultCols.add(FieldKey.fromParts("BugNumber"));
         defaultCols.add(FieldKey.fromParts("AssignedTo"));
@@ -376,12 +384,12 @@ public class MothershipSchema extends UserSchema
         return result;
     }
 
-    private SQLFragment getSoftwareReleaseSQL(String sort)
+    private SQLFragment getSoftwareReleaseSQL(String sort, boolean lookup)
     {
         // We want the SoftwareReleaseId from the row that has the minimum SVN revision value
 
         // Do a sort by SVNRevision 
-        SQLFragment subselect = new SQLFragment("SELECT ss.SoftwareReleaseId FROM " +
+        SQLFragment subselect = new SQLFragment("SELECT " + (lookup ? "ss.SoftwareReleaseId" : "sr.Description" ) + " FROM " +
                 MothershipManager.get().getTableInfoExceptionReport() + " er, " +
                 MothershipManager.get().getTableInfoSoftwareRelease() + " sr, " +
                 MothershipManager.get().getTableInfoServerSession() + " ss " +
