@@ -36,6 +36,8 @@ public enum PropertyType
     expFileLink("http://cpas.fhcrc.org/exp/xml#fileLink", false, "File", "CLOB"),
     expAttachment("http://www.labkey.org/exp/xml#attachment", false, "Attachment", "VARCHAR");
 
+    public static final String PARTICIPANT_CONCEPT_URI = "http://cpas.labkey.com/Study#ParticipantId";
+
     private final String _uri;
     private final String _display;
     private final String _sqlName;

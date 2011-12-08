@@ -141,6 +141,10 @@ public class DomainUtil
 
         // Handle reserved property names
         DomainKind domainKind = domain.getDomainKind();
+        if (domainKind == null)
+        {
+            throw new IllegalStateException("Could not find a DomainKind for " + domain.getTypeURI());
+        }
         Set<String> reservedProperties = domainKind.getReservedPropertyNames(domain);
         d.setReservedFieldNames(new HashSet<String>(reservedProperties));
 

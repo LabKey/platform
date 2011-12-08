@@ -553,7 +553,7 @@ public class ConceptPicker extends TriggerField<ConceptPicker.ConceptType>
     public static final ConceptType datetimeType = new BaseConceptType(PropertyType.xsdDateTime);
     public static final ConceptType attachmentType = new BaseConceptType(PropertyType.expAttachment);
     public static final ConceptType fileType = new BaseConceptType(PropertyType.expFileLink);
-    public static final ConceptType subjectType = new BaseConceptType(PropertyType.xsdString.toString(), "Subject/Participant (String)", "http://cpas.labkey.com/Study#ParticipantId");
+    public static final ConceptType subjectType = new BaseConceptType(PropertyType.xsdString.toString(), "Subject/Participant (String)", PropertyType.PARTICIPANT_CONCEPT_URI);
     public static final ConceptType userType = new BaseConceptType(PropertyType.xsdInt.toString(), "User")
     {
         @Override

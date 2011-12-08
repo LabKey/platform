@@ -68,7 +68,7 @@ public class TabLoader extends DataLoader
     private int _commentLines = 0;
     private Map<String, String> _comments = new HashMap<String, String>();
     private char _chDelimiter = '\t';
-    private String _strDelimiter = null;
+    private String _strDelimiter = new String(new char[]{_chDelimiter});
     private String _strQuote = null;
     private String _strQuoteQuote = null;
     private boolean _parseQuotes = true;
@@ -218,8 +218,6 @@ public class TabLoader extends DataLoader
     {
         if (!_parseQuotes)
         {
-            if (_strDelimiter == null)
-                _strDelimiter = new String(new char[]{_chDelimiter});
             String line = readLine(r, true);
             if (line == null)
                 return null;
@@ -260,8 +258,6 @@ public class TabLoader extends DataLoader
                     _strQuoteQuote = new String(new char[] {chQuote, chQuote});
                     _replaceDoubleQuotes = Pattern.compile("\\" + chQuote + "\\" + chQuote);
                 }
-                if (_strDelimiter == null)
-                    _strDelimiter = new String(new char[]{_chDelimiter});
 
                 end = start;
                 boolean hasQuotes = false;
@@ -311,8 +307,6 @@ public class TabLoader extends DataLoader
             }
             else
             {
-                if (_strDelimiter == null)
-                    _strDelimiter = new String(new char[]{_chDelimiter});
                 end = buf.indexOf(_strDelimiter, start);
                 if (end == -1)
                     end = buf.length();
@@ -379,6 +373,7 @@ public class TabLoader extends DataLoader
     public void setDelimiterCharacter(char delimiter)
     {
         _chDelimiter = delimiter;
+        _strDelimiter = new String(new char[]{_chDelimiter});
     }
 
     public void setParseQuotes(boolean parseQuotes)
