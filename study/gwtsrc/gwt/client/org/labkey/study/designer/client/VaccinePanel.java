@@ -386,6 +386,8 @@ public class VaccinePanel extends Composite
             updateAll();
         }
 
+        private static final String GEN_BANK_HELP_STRING = "Enter the GenBank ID for this HIV Antigen";
+        private static final String GEN_BANK_HELP_STRING_DISABLED = "To edit, choose 'GenBank Id' or 'Both' for the sequence identifier type";
         public class SequencePanel extends FlexTable
         {
             private ListBox entryType = new ListBox();
@@ -400,11 +402,11 @@ public class VaccinePanel extends Composite
                 entryType.addItem("Sequence");
                 entryType.addItem("Both");
                 genBankIdBox.setText(StringUtils.trimToEmpty(antigen.getGenBankId()));
-                genBankIdBox.setTitle("Enter the GenBank ID for this HIV Antigen");
+                genBankIdBox.setTitle(GEN_BANK_HELP_STRING);
                 sequenceTextArea.setWidth("100%");
                 sequenceTextArea.setVisibleLines(4);
                 sequenceTextArea.setText(StringUtils.trimToEmpty(antigen.getSequence()));
-                sequenceTextArea.setTitle("Enter the full sequence for this HIV Antigen.");
+                sequenceTextArea.setTitle("Enter the full sequence for this HIV Antigen");
                 if (null != antigen.getSequence() && null != antigen.getGenBankId())
                     entryType.setSelectedIndex(2);
                 else if (null != antigen.getSequence())
@@ -442,6 +444,7 @@ public class VaccinePanel extends Composite
                                 genBankIdBox.setEnabled(true);
                                 setWidget(1, 0, sequenceTextArea);
                         }
+                        genBankIdBox.setTitle(genBankIdBox.isEnabled() ? GEN_BANK_HELP_STRING : GEN_BANK_HELP_STRING_DISABLED);
                         designer.setDirty(true);
                     }
                 });
