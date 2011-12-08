@@ -185,7 +185,6 @@ public class DatasetImportRunnable implements Runnable
                         msg += " (skipped " + skippedRowCount[0] + " rows older than cutoff)";
                     pj.info(msg);
                     assert cpuCommit.stop();
-//                    getDatasetDefinition().unmaterialize();
                 }
 
                 for (String err : errors)

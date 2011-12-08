@@ -908,10 +908,11 @@ public class AssayPublishManager implements AssayPublishService.Service
                             Map<Integer, AssayPublishKey> keys = new HashMap<Integer, AssayPublishKey>();
                             while (rs.next())
                             {
-                                Object ptidObject = ptidColumn.getValue(rs);
+                                // Be careful to not assume that we have participant or visit columns in our data domain
+                                Object ptidObject = ptidColumn == null ? null : ptidColumn.getValue(rs);
                                 String ptid = ptidObject == null ? null : ptidObject.toString();
                                 int objectId = ((Number)objectIdColumn.getValue(rs)).intValue();
-                                Object visit = visitColumn.getValue(rs);
+                                Object visit = visitColumn == null ? null : visitColumn.getValue(rs);
                                 // Only copy rows that have a participant and a visit/date
                                 if (ptid != null && visit != null)
                                 {

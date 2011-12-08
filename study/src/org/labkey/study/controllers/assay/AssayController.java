@@ -72,6 +72,7 @@ import org.labkey.api.view.JspView;
 import org.labkey.api.view.NavTree;
 import org.labkey.api.view.NotFoundException;
 import org.labkey.api.view.RedirectException;
+import org.labkey.api.view.UnauthorizedException;
 import org.labkey.api.view.VBox;
 import org.labkey.study.assay.AssayImportServiceImpl;
 import org.labkey.study.assay.AssayManager;
@@ -295,19 +296,23 @@ public class AssayController extends SpringActionController
                 UserSchema schema = QueryService.get().getUserSchema(user, lookupContainer, l.getSchemaName());
                 if (schema != null)
                 {
-                    TableInfo table = schema.getTable(property.getLookup().getQueryName());
-                    if (table != null)
+                    try
                     {
-                        String key = null;
-                        List<String> pks = table.getPkColumnNames();
-                        if (null != pks && pks.size() > 0)
-                            key = pks.get(0);
-                        if (null != pks && pks.size() == 2 && ("container".equalsIgnoreCase(key) || "containerid".equalsIgnoreCase(key)))
-                            key = pks.get(1);
-                        String title = table.getTitleColumn();
-                        lookup.put("keyColumn", key);
-                        lookup.put("displayColumn", title);
+                        TableInfo table = schema.getTable(property.getLookup().getQueryName());
+                        if (table != null)
+                        {
+                            String key = null;
+                            List<String> pks = table.getPkColumnNames();
+                            if (null != pks && pks.size() > 0)
+                                key = pks.get(0);
+                            if (null != pks && pks.size() == 2 && ("container".equalsIgnoreCase(key) || "containerid".equalsIgnoreCase(key)))
+                                key = pks.get(1);
+                            String title = table.getTitleColumn();
+                            lookup.put("keyColumn", key);
+                            lookup.put("displayColumn", title);
                         }
+                    }
+                    catch (UnauthorizedException ignored) { /* If the current user can't read the target schema, just ignore the lookup */ }
                 }
                 properties.put("lookup", lookup);
             }
