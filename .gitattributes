@@ -3019,6 +3019,7 @@ study/src/org/labkey/study/view/pipelineSetup.jsp -text
 study/src/org/labkey/study/view/reportPermission.jsp -text
 study/src/org/labkey/study/view/requirePipeline.jsp -text
 study/src/org/labkey/study/view/samples/addSamplesToRequest.jsp -text
+study/src/org/labkey/study/view/samples/advancedSearch.jsp -text
 study/src/org/labkey/study/view/samples/autoReportList.jsp -text
 study/src/org/labkey/study/view/samples/configRequestabilityRules.jsp -text
 study/src/org/labkey/study/view/samples/configurationRequired.jsp -text
@@ -3100,6 +3101,7 @@ study/webapp/study/DataViewsPanel.js -text
 study/webapp/study/ParticipantGroup.js -text
 study/webapp/study/StudyWizard.js -text
 study/webapp/study/assay/SampleLookupTemplate.xls -text
+study/webapp/study/redesignUtils.js -text
 study/webapp/study/tools/participant_list.png -text
 study/webapp/study/tools/settings.png -text
 study/webapp/study/tools/specimen_report.png -text

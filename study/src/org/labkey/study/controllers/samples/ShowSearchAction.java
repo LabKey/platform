@@ -51,7 +51,7 @@ public class ShowSearchAction extends FormViewAction<ShowSearchAction.SearchForm
 
         SampleSearchBean bean = new SampleSearchBean(getViewContext(), form.isShowVials(), false);
         bean.setAdvancedExpanded(form.isShowAdvanced());
-        return new JspView<SampleSearchBean>("/org/labkey/study/view/samples/search.jsp", bean);
+        return new JspView<SampleSearchBean>("/org/labkey/study/view/samples/advancedSearch.jsp", bean);
     }
 
     public boolean handlePost(SearchForm form, BindException errors) throws Exception

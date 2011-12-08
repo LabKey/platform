@@ -444,6 +444,7 @@ public class StudyModule extends SpringModule implements SearchService.DocumentP
         public SamplesWebPartFactory(String position)
         {
             super("Specimens", position, SamplesWebPart.class);
+            addLegacyNames("Specimen Browse (Experimental)");
         }
 
         @Override
@@ -463,6 +464,7 @@ public class StudyModule extends SpringModule implements SearchService.DocumentP
         public SampleSearchWebPartFactory(String position)
         {
             super("Specimen Search", position, SampleSearchWebPart.class);
+            addLegacyNames("Specimen Search (Experimental)");
         }
 
         @Override

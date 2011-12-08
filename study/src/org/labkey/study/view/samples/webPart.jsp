@@ -17,20 +17,11 @@
 %>
 <%@ page import="org.labkey.api.data.Container"%>
 <%@ page import="org.labkey.api.security.User"%>
-<%@ page import="org.labkey.api.view.ActionURL"%>
 <%@ page import="org.labkey.api.view.HttpView"%>
 <%@ page import="org.labkey.api.view.ViewContext"%>
-<%@ page import="org.labkey.api.view.WebPartView"%>
 <%@ page import="org.labkey.study.SampleManager" %>
 <%@ page import="org.labkey.study.samples.SamplesWebPart" %>
-<%@ page import="org.labkey.study.samples.settings.RepositorySettings" %>
-<%@ page import="org.labkey.study.security.permissions.ManageRequestSettingsPermission" %>
-<%@ page import="org.labkey.study.security.permissions.RequestSpecimensPermission" %>
-<%@ page import="org.labkey.study.controllers.samples.ShowSearchAction" %>
-<%@ page import="org.labkey.study.controllers.samples.SpecimenController.*" %>
-<%@ page import="org.labkey.study.controllers.samples.ShowUploadSpecimensAction" %>
-<%@ page import="org.labkey.study.controllers.samples.SpecimenController" %>
-<%@ page import="org.labkey.api.study.StudyService" %>
+<%@ page import="org.labkey.api.security.permissions.AdminPermission" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
     ViewContext currentContext = HttpView.currentContext();
@@ -38,107 +29,277 @@
 
     Container c = currentContext.getContainer();
     User user = currentContext.getUser();
-
-    boolean shoppingCart = SampleManager.getInstance().isSpecimenShoppingCartEnabled(c);
-    RepositorySettings settings = SampleManager.getInstance().getRepositorySettings(c);
-
-    if (bean.isWide())
-    {
+    String contextPath = currentContext.getContextPath();
 %>
-<table width="100%" class="labkey-manage-display">
-    <tr>
-        <td valign="top" width="30%">
-<%
-    }
-%>
-    <% WebPartView.startTitleFrame(out, "Search", null, "100%", null, 0); %>
-<a href="<%=h(new ActionURL(ShowSearchAction.class, c).addParameter("showVials", "false"))%>">Search For Vial Groups</a><%= helpPopup("Vial group search", "Vial group search returns a single row per " +
-                StudyService.get().getSubjectNounSingular(c).toLowerCase() + ", time point, and sample type.  Results include the number of vials in each group.")%><br>
-<a href="<%=h(new ActionURL(ShowSearchAction.class, c).addParameter("showVials", "true"))%>">Search For Individual Vials</a><br>
-<%
-    WebPartView.endTitleFrame(out);
-    WebPartView.startTitleFrame(out, "Vials by Primary Type", null, "100%", null); %>
-<%= bean.getPrimaryTypeListHtml() %>
-<%
-    WebPartView.endTitleFrame(out);
+<script type="text/javascript">
+    LABKEY.requiresScript("study/redesignUtils.js", true);
+</script>
+<script type="text/javascript">
 
-    if (bean.isWide())
+    function populateTypeSummaryContent(typeList, hidden)
     {
-%>
-    </td>
-    <td valign="top" width="45%">
-<%
-    }
-
-    WebPartView.startTitleFrame(out, "Vials by Derivative", null, "100%", null); %>
-<%=bean.getDerivativeTypeListHtml() %>
-<%
-    WebPartView.endTitleFrame(out);
-
-    if (bean.isWide())
-    {
-%>
-    </td>
-    <td valign="top" width="25%">
-<%
-    }
-
-    WebPartView.startTitleFrame(out, "View All Specimens", null, "100%", null); %>
-<a href="<%=h(SpecimenController.getSamplesURL(c).addParameter("showVials", "false"))%>">By Vial Group</a><%= helpPopup("Vial Viewing Options", "Vials may be viewed individually, with one row per vial, or by vial group, with one row per " +
-            StudyService.get().getSubjectNounSingular(c).toLowerCase() + ", time point, and sample type combination.") %><br>
-<a href="<%=h(SpecimenController.getSamplesURL(c).addParameter("showVials", "true"))%>">By Vial</a><br>
-<%
-    WebPartView.endTitleFrame(out);
-
-    if (settings.isEnableRequests())
-    {
-        WebPartView.startTitleFrame(out, "Specimen Requests", null, "100%", null); %>
-<a href="<%=new ActionURL(ViewRequestsAction.class, c)%>">View Existing Requests</a><br>
-<%
-        if (shoppingCart && c.hasPermission(user, RequestSpecimensPermission.class))
+        var innerHTML = '<table width="100%" class="labkey-study-expandable-nav">';
+        for (var i = 0; i < typeList.length; i++)
         {
-%>
-<a href="<%=new ActionURL(ShowCreateSampleRequestAction.class, c)%>">Create New Request</a><br>
-<%      }
+            var details = typeList[i];
+            innerHTML += '<tr class="labkey-header">';
+            if (details.children)
+                innerHTML += '<td class="labkey-nav-tree-node"><a onclick="return toggleLink(this, false);" href="#"><img src="<%=contextPath%>/_images/plus.gif"></a></td>';
+            else
+                innerHTML += '<td class="labkey-nav-tree-node"><img width="9" src="<%=contextPath%>/_.gif"></td>';
 
-        WebPartView.endTitleFrame(out);
+            innerHTML += '<td class="labkey-nav-tree-text" width="100%"><a href=\"' + details.url + '\">' + details.label + '</a></td><td align="right" class="labkey-nav-tree-total">' + details.count + '</td</tr>';
+            if (details.children)
+                innerHTML += '<tr style="display:none;"><td></td><td colspan="2">' + populateTypeSummaryContent(details.children, true) + '</td></tr>';
+        }
+        innerHTML += '</table>';
+        return innerHTML;
     }
 
-    WebPartView.startTitleFrame(out, "Specimen Reports", null, "100%", null); %>
-<a href="<%=new ActionURL(AutoReportListAction.class, c)%>">View Available Reports</a><br>
-<%
-    WebPartView.endTitleFrame(out);
-
-    if (c.hasPermission(user, ManageRequestSettingsPermission.class))
+    function populateTypeSummary(typeList, elementId)
     {
-        WebPartView.startTitleFrame(out, "Administration", null, "100%", null);
+        var innerHTML = populateTypeSummaryContent(typeList, false);
+        document.getElementById(elementId).innerHTML = innerHTML;
+    }
 
-        if (settings.isSimple())
+    function handleTypeSummary(allTypes)
+    {
+        if (allTypes.primaryTypes.length == 0)
         {
-%>
-<a href="<%=new ActionURL(ShowUploadSpecimensAction.class, c)%>">Import Specimens</a>
-<%
+            document.getElementById('specimen-browse-webpart-content').innerHTML = '<i>No specimens found.</i>';
         }
         else
         {
-%>
-<a href="<%=new ActionURL(ManageStatusesAction.class, c)%>">Manage Statuses</a><br>
-<a href="<%=new ActionURL(ManageActorsAction.class, c)%>">Manage Actors and Groups</a><br>
-<a href="<%=new ActionURL(ManageDefaultReqsAction.class, c)%>">Manage Default Requirements</a><br>
-<a href="<%=new ActionURL(ManageRequestInputsAction.class, c)%>">Manage New Request Form</a><br>
-<a href="<%=new ActionURL(ManageNotificationsAction.class, c)%>">Manage Notifications</a><br>
-<%
+            populateTypeSummary(allTypes.primaryTypes, 'primaryTypes');
+            populateTypeSummary(allTypes.derivativeTypes, 'derivativeTypes');
         }
-
-        WebPartView.endTitleFrame(out);
     }
 
-    if (bean.isWide())
+    Ext.onReady(function() {
+        LABKEY.Specimen.getVialTypeSummary({
+            success: handleTypeSummary
+        });
+    });
+</script>
+<span id="specimen-browse-webpart-content">
+<table class="labkey-manage-display" style="width: 100%;">
+    <tbody>
+    <tr><!-- removed lines beneath headings --> <!-- using labkey nav tree markup, which probably doesn't display in wikis --> <!-- hardcoding plus minus images for looks only --> <!-- removed search links, as that's now handled by a new webpart --> <!-- left column -->
+        <td valign="top" width="45%">
+            <table class="labkey-nav-tree" style="width: 100%;">
+                <tbody>
+                <tr class="labkey-nav-tree-row labkey-header">
+                    <td class="labkey-nav-tree-text" align="left">
+                        <a  style="color:#000000;" onclick="return toggleLink(this, false);" href="#"><img src="<%=contextPath%>/_images/minus.gif" alt="" />
+                            <span>View All Specimens<a onmouseover="return showHelpDivDelay(this, 'Vial Viewing Options', 'Vials may be viewed individually, with one row per vial, or by vial group, with one row per subject, time point, and sample type combination.');"
+                               onmouseout="return hideHelpDivDelay();"
+                               onclick="return showHelpDiv(this, 'Vial Viewing Options', 'Vials may be viewed individually, with one row per vial, or by vial group, with one row per subject, time point, and sample type combination.');"
+                               tabindex="-1"
+                               href="#"><span class="labkey-help-pop-up">?</span></a></span>
+                        </a>
+                    </td>
+                </tr>
+                <tr>
+                    <td style="padding-left:1em">
+                        <table class="labkey-nav-tree-child">
+                            <tbody>
+                            <tr class="labkey-nav-tree-row labkey-header">
+                                <td class="labkey-nav-tree-text"><a href="#" onclick="return clickLink('study-samples', 'samples', {showVials: 'false'})">By Vial Group</a>
+                                </td>
+                            </tr>
+                            <tr class="labkey-nav-tree-row labkey-header">
+                                <td class="labkey-nav-tree-text"><a href="#" onclick="return clickLink('study-samples', 'samples', {showVials: 'true'})">By Individual Vial</a></td>
+                            </tr>
+                            </tbody>
+                        </table>
+                    </td>
+                </tr>
+                </tbody>
+            </table>
+
+            <table class="labkey-nav-tree" style="width: 100%;margin-top:0.5em">
+                <tbody>
+                <tr class="labkey-nav-tree-row labkey-header">
+                    <td class="labkey-nav-tree-text" align="left">
+                        <a style="color:#000000;" onclick="return toggleLink(this, false);" href="#"><img src="<%=contextPath%>/_images/minus.gif" alt="" />
+                            <span>Search Specimens</span>
+                        </a>
+                    </td>
+                </tr>
+                <tr>
+                    <td style="padding-left:1em">
+                        <table class="labkey-nav-tree-child">
+                            <tbody>
+                            <tr class="labkey-nav-tree-row labkey-header">
+                                <td class="labkey-nav-tree-text">
+                                    <a href="#" onclick="return clickLink('study-samples', 'showSearch', {showVials: 'false'})">For Vial Groups</a></td>
+                            </tr>
+                            </tbody>
+                        </table>
+                    </td>
+                </tr>
+                <tr>
+                    <td style="padding-left:1em">
+                        <table class="labkey-nav-tree-child">
+                            <tbody>
+                            <tr class="labkey-nav-tree-row labkey-header">
+                                <td class="labkey-nav-tree-text">
+                                    <a href="#" onclick="return clickLink('study-samples', 'showSearch', {showVials: 'true'})">For Individual Vials</a></td>
+                            </tr>
+                            </tbody>
+                        </table>
+                    </td>
+                </tr>
+                </tbody>
+            </table>
+
+
+
+            <table class="labkey-nav-tree" style="width: 100%;margin-top:0.5em">
+                <tbody>
+                <tr class="labkey-nav-tree-row labkey-header">
+                    <td class="labkey-nav-tree-text" align="left">
+                        <a style="color:#000000;" onclick="return toggleLink(this, false);" href="#"><img src="<%=contextPath%>/_images/plus.gif" alt="" />
+                            <span>Specimen Reports</span>
+                        </a>
+                    </td>
+                </tr>
+                <tr style="display:none">
+                    <td style="padding-left:1em">
+                        <table class="labkey-nav-tree-child">
+                            <tbody>
+                            <tr class="labkey-nav-tree-row labkey-header">
+                                <td class="labkey-nav-tree-text">
+                                    <a href="#" onclick="return clickLink('study-samples', 'autoReportList')">View Available Reports</a></td>
+                            </tr>
+                            </tbody>
+                        </table>
+                    </td>
+                </tr>
+                </tbody>
+            </table>
+<%
+    if (SampleManager.getInstance().isSampleRequestEnabled(c))
     {
 %>
-    </td>
-</tr>
-</table>
+            <table class="labkey-nav-tree" style="width: 100%;margin-top:0.5em">
+                <tbody>
+                <tr class="labkey-nav-tree-row labkey-header">
+                    <td class="labkey-nav-tree-text" align="left">
+                        <a  style="color:#000000;" onclick="return toggleLink(this, false);" href="#">
+                            <img src="<%=contextPath%>/_images/plus.gif" alt="" />
+                            <span>Specimen Requests</span>
+                        </a>
+                    </td>
+                </tr>
+                <tr style="display:none">
+                    <td style="padding-left:1em">
+                        <table class="labkey-nav-tree-child">
+                            <tbody>
+                            <tr class="labkey-nav-tree-row labkey-header">
+                                <td class="labkey-nav-tree-text"><a href="#" onclick="return clickLink('study-samples', 'showCreateSampleRequest')">Create New Request</a></td>
+                            </tr>
+                            <tr class="labkey-nav-tree-row labkey-header">
+                                <td class="labkey-nav-tree-text"><a href="#" onclick="return clickLink('study-samples', 'viewRequests')">View Current Requests</a></td>
+                            </tr>
+                            </tbody>
+                        </table>
+                    </td>
+                </tr>
+                </tbody>
+            </table>
 <%
     }
 %>
+        </td>
+<%
+    if (!bean.isWide())
+    {
+%>
+        </tr><tr>
+<%
+    }
+%>
+        <!-- end left column --> <!-- right column -->
+        <td valign="top" width="55%">
+            <table class="labkey-nav-tree" style="width: 100%">
+                <tbody>
+                <tr class="labkey-nav-tree-row labkey-header" >
+                    <td class="labkey-nav-tree-text" align="left">
+                        <a  style="color:#000000;" onclick="return toggleLink(this, false);" href="#">
+                            <img src="<%=contextPath%>/_images/minus.gif" alt="" />
+                            <span>Vials by Primary Type</span>
+                        </a>
+                    </td>
+                </tr>
+                <tr>
+                    <td style="padding-left:1em;width: 100%;">
+                        <span id="primaryTypes">Loading...</span>
+                    </td>
+                </tr>
+                </tbody>
+            </table>
+            <table class="labkey-nav-tree" style="width: 100%;;margin-top:1em">
+                <tbody>
+                <tr class="labkey-nav-tree-row labkey-header">
+                    <td class="labkey-nav-tree-text" align="left">
+                        <a  style="color:#000000;" onclick="return toggleLink(this, false);" href="#">
+                            <img src="<%=contextPath%>/_images/plus.gif" alt="" />
+                            <span>Vials by Derivative</span>
+                        </a>
+                    </td>
+                </tr>
+                <tr style="display:none">
+                    <td style="padding-left:1em;width: 100%;">
+                        <span id="derivativeTypes">Loading...</span>
+                    </td>
+                </tr>
+                </tbody>
+            </table>
+<%
+    if (c.hasPermission(user, AdminPermission.class))
+    {
+%>
+            <table class="labkey-nav-tree" style="width: 100%;margin-top:0.5em">
+                <tbody>
+                <tr class="labkey-nav-tree-row labkey-header">
+                    <td class="labkey-nav-tree-text" align="left">
+                        <a style="color:#000000;" onclick="return toggleLink(this, false);" href="#"><img src="<%=contextPath%>/_images/plus.gif" alt="" />
+                            <span>Administration</span>
+                        </a>
+                    </td>
+                </tr>
+                <tr style="display:none">
+                    <td style="padding-left:1em">
+                        <table class="labkey-nav-tree-child">
+                            <tbody>
+                            <tr class="labkey-nav-tree-row labkey-header">
+                                <td class="labkey-nav-tree-text">
+                                    <a href="#" onclick="return clickLink('study-samples', 'showUploadSpecimens')">Import Specimens</a></td>
+                            </tr>
+                            </tbody>
+                        </table>
+                    </td>
+                </tr>
+                <tr style="display:none">
+                    <td style="padding-left:1em">
+                        <table class="labkey-nav-tree-child">
+                            <tbody>
+                            <tr class="labkey-nav-tree-row labkey-header">
+                                <td class="labkey-nav-tree-text">
+                                    <a href="#" onclick="return clickLink('study', 'manageStudy')">Study Settings</a></td>
+                            </tr>
+                            </tbody>
+                        </table>
+                    </td>
+                </tr>
+                </tbody>
+            </table>
+<%
+    }
+%>
+        </td>
+        <!-- end right column --></tr>
+    </tbody>
+</table>
+</span>

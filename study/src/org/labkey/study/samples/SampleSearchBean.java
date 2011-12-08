@@ -4,6 +4,7 @@ import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.DisplayColumn;
 import org.labkey.api.data.TableInfo;
+import org.labkey.api.security.User;
 import org.labkey.api.study.StudyService;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.ViewContext;
@@ -44,6 +45,7 @@ public class SampleSearchBean
     private ActionURL _baseViewURL;
     private String _dataRegionName;
     private Container _container;
+    private User _user;
     private Map<String, DisplayColumnInfo> _defaultDetailCols;
     private Map<String, DisplayColumnInfo> _defaultSummaryCols;
     private boolean _inWebPart;
@@ -120,6 +122,7 @@ public class SampleSearchBean
     {
         _inWebPart = inWebPart;
         _container = context.getContainer();
+        _user = context.getUser();
         _detailsView = detailsView;
         SpecimenQueryView view = SpecimenQueryView.createView(context, detailsView ? SpecimenQueryView.ViewType.VIALS :
                 SpecimenQueryView.ViewType.SUMMARY);
@@ -199,7 +202,7 @@ public class SampleSearchBean
         Map<String, DisplayColumnInfo> defaultColumns = isDetailsView() ? _defaultDetailCols : _defaultSummaryCols;
         DisplayColumnInfo colInfo = defaultColumns.get(info.getName());
         assert colInfo != null : info.getName() + " is not a picklist column.";
-        return SampleManager.getInstance().getDistinctColumnValues(_container, info, colInfo.isForceDistinctQuery(), colInfo.getOrderBy(), colInfo.getTableInfo());
+        return SampleManager.getInstance().getDistinctColumnValues(_container, _user, info, colInfo.isForceDistinctQuery(), colInfo.getOrderBy(), colInfo.getTableInfo());
     }
 
     public boolean isInWebPart()

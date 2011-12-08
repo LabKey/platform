@@ -15,207 +15,276 @@
  * limitations under the License.
  */
 %>
-<%@ page import="org.labkey.api.data.CompareType"%>
-<%@ page import="org.labkey.api.data.DataColumn"%>
-<%@ page import="org.labkey.api.data.DisplayColumn"%>
-<%@ page import="org.labkey.api.view.HttpView" %>
-<%@ page import="org.labkey.api.view.JspView" %>
-<%@ page import="org.labkey.study.controllers.samples.ShowSearchAction" %>
-<%@ page import="java.util.HashSet" %>
-<%@ page import="java.util.List" %>
-<%@ page import="java.util.Set" %>
-<%@ page import="org.labkey.api.data.RenderContext" %>
-<%@ page import="org.labkey.study.samples.SampleSearchBean" %>
-<%@ page import="org.labkey.api.view.ActionURL" %>
-<%@ page import="org.labkey.study.query.PtidObfuscatingDisplayColumn" %>
-<%@ page import="org.labkey.api.study.StudyService" %>
+<%@ page import="org.labkey.api.data.Container"%>
+<%@ page import="org.labkey.api.view.HttpView"%>
+<%@ page import="org.labkey.api.view.ViewContext"%>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
-    JspView<SampleSearchBean> me = (JspView<SampleSearchBean>) HttpView.currentView();
-    SampleSearchBean bean = me.getModelBean();
-
-    String hideExtraColumnsLabel = "Hide extra columns";
-    String showExtraColumnsLabel = "Show all columns";
-
-    Set<String> availableColumns = new HashSet<String>();
-    for (DisplayColumn dc : bean.getDisplayColumns())
-        availableColumns.add(dc.getColumnInfo().getName());
+    ViewContext currentContext = HttpView.currentContext();
 %>
 <script type="text/javascript">
-    var inputRequiredMap = {
-        <%
-        boolean first = true;
-        for (CompareType type : CompareType.values())
-        {
-            if (first)
-                first = false;
-            else
-            {
-                %>,<%
-            }
-        %>"<%= h(type.name()) %>" : <%= type.isDataValueRequired() ? "true" : "false" %>
-        <%
-        }
-        %>
-    };
-
-    function updateVisibility(elemPrefix)
-    {
-        var inputElement = document.getElementById(elemPrefix + ".value");
-        var compareElement = document.getElementById(elemPrefix + ".compareType");
-        var selectedCompare = compareElement.options[compareElement.selectedIndex].value;
-        var inputValueRequired;
-        if (!selectedCompare)
-            inputValueRequired = false;
-        else
-            inputValueRequired = inputRequiredMap[selectedCompare];
-        if (!inputValueRequired)
-        {
-            if (!inputElement.disabled)
-                inputElement.value = "";
-            inputElement.disabled = true;
-        }
-        else
-            inputElement.disabled = false;
-
-        return true;
-    }
-
-    function showOrHideAdditionalColumns()
-    {
-        var additionalColumnsTable = document.getElementById('additionalColumnsTable');
-        var additionalColumnsLink = document.getElementById('additionalColumnsLink');
-        if (additionalColumnsTable.style.display == "none")
-        {
-            additionalColumnsTable.style.display = "block";
-            additionalColumnsLink.innerHTML = "<%= hideExtraColumnsLabel %>";
-        }
-        else
-        {
-            additionalColumnsTable.style.display = "none";
-            additionalColumnsLink.innerHTML = "<%= showExtraColumnsLabel %>";
-        }
-    }
-
+    LABKEY.requiresScript("study/redesignUtils.js", true);
 </script>
-<%
-    if (!bean.isInWebPart())
+<style type="text/css">
+    .labkey-specimen-search-toggle {
+	display: block;
+	margin: 5px 0 15px 2px;
+	color: #ccc;
+}
+
+.labkey-specimen-search-toggle a {
+	font-weight: normal;
+}
+
+.labkey-specimen-search-toggle a.youarehere {
+	color: #000;
+	font-weight: bold;
+}
+
+#labkey-specimen-search {
+
+}
+
+#labkey-vial-search {
+	display: none;
+}
+
+td.labkey-padright {
+	padding-right: 10px;
+	white-space: nowrap;
+}
+
+td.labkey-specimen-search-button {
+	padding: 10px 0;
+}
+
+.labkey-wp-footer {
+	width: 98%;
+	text-align: right;
+	padding: 5px 5px 6px 5px;
+	margin-top: 10px;
+}
+
+span.labkey-advanced-search {
+	display: inline;
+	padding: 2px 10px 0 0;
+}
+
+select {
+	font-family: verdana, arial, helvetica, sans serif;
+	font-size: 100%;
+}
+</style>
+<script type="text/javascript">
+    var studyMetadata = null;
+
+    function populateSearchDropDowns()
     {
-%>
-This page may be used to search for <%= bean.isDetailsView() ? " individual vials" : " vials grouped by " + StudyService.get().getSubjectNounSingular(me.getViewContext().getContainer()).toLowerCase() + ", time point, and type" %>.<br>
-<%= textLink("Search " + (!bean.isDetailsView() ? " individual vials" : "grouped vials"), "showSearch.view?showVials=" + !bean.isDetailsView())%><br><br>
-<%
+        populateDropDown("participantId", 'study', studyMetadata.SubjectNounSingular, studyMetadata.SubjectColumnName, 'Any ' + studyMetadata.SubjectNounSingular, '');
+        populateDropDown('primaryType', 'study', 'SpecimenPrimaryType', 'Description', 'Any Primary Type', '');
+        populateDropDown('derivativeType', 'study', 'SpecimenDerivative', 'Description', 'Any Derivative Type', '');
+        populateDropDown('additiveType', 'study', 'SpecimenAdditive', 'Description', 'Any Additive Type', '');
+
+        LABKEY.Query.selectRows({
+            schemaName: 'study',
+            queryName: 'Visit',
+            columns: "SequenceNumMin,Label",
+            sort: "DisplayOrder,Label",
+            success: getDropDownPopulator('visit', 'Any Visit', '', function(row)
+            {
+                var text = row.Label ? row.Label : row.SequenceNumMin;
+                return { text : text, value : row.SequenceNumMin };
+            })
+        });
     }
-    int paramNumber = 0;
-%>
-<form action="<%= new ActionURL(ShowSearchAction.class, getViewContext().getContainer()).getLocalURIString() %>" id="searchForm" method="POST">
-    <input type="hidden" name="showVials" value="<%= bean.isDetailsView() ? "true" : "false" %>" >
-    <%
-        for (int pass = 0; pass < (bean.isInWebPart() ? 1 : 2); pass++)
+
+    function toggleSearchType(selectId)
+    {
+        var specimenSelected = selectId == 'specimen-search-selector';
+        var deselectId = specimenSelected ? 'vial-search-selector' : 'specimen-search-selector';
+        document.getElementById(selectId).className = 'youarehere';
+        document.getElementById(deselectId).className = '';
+        document.getElementById('globalUniqueIdLabel').style.display = specimenSelected ? 'none' : 'block';
+        document.getElementById('globalUniqueIdChooser').style.display = specimenSelected ? 'none' : 'block';
+        return false;
+    }
+
+    function addSearchParameter(params, paramName, paramElementId)
+    {
+        var value = getDropDownValue(paramElementId);
+        if (value)
+            params[paramName] = value;
+    }
+
+    function submitSearch()
+    {
+        var vialSearch = (document.getElementById('vial-search-selector').className == 'youarehere');
+        var params = {
+            showVials: vialSearch
+        };
+
+        var paramBase = vialSearch ? "SpecimenDetail." : "SpecimenSummary.";
+        if (vialSearch)
         {
-    %>
-    <table id="<%= pass == 0 ? "specialColumnsTable" : "additionalColumnsTable" %>" style="display:<%= (pass == 0 || bean.isAdvancedExpanded()) ? "block" : "none" %>">
-    <%
-            RenderContext renderContext = new RenderContext(me.getViewContext());
-
-            for (DisplayColumn col : bean.getDisplayColumns())
-            {
-                // Bit of a hack... should consider changing getPickListValues to return a Map<Key, Value> and/or get the
-                // displaycolumn to filter the values.
-                boolean obfuscate = col instanceof PtidObfuscatingDisplayColumn;
-                boolean display;
-
-                if (pass == 0)
-                    display = col.isVisible(renderContext) && bean.isDefaultColumn(col.getColumnInfo());
-                else
-                    display = col.isVisible(renderContext) && availableColumns.contains(col.getColumnInfo().getName());
-
-                if (display)
-                {
-                    String columnName = bean.getDataRegionName() + "." + (col instanceof DataColumn ?
-                            ((DataColumn) col).getDisplayColumn().getName() : col.getColumnInfo().getName());
-
-                    if (bean.isPickListColumn(col.getColumnInfo()))
-                    {
-                        List<String> pickList = bean.getPickListValues(col.getColumnInfo());
-        %>
-                    <tr>
-                        <td><%= h(col.getCaption()) %></td>
-                        <td colspan="2">
-                            <input type="hidden" name="searchParams[<%= paramNumber %>].columnName" value="<%= h(columnName) %>">
-                            <input type="hidden" name="searchParams[<%= paramNumber %>].compareType" value="<%= CompareType.EQUAL.name() %>">
-                            <select name="searchParams[<%= paramNumber %>].value" id="searchParams[<%= paramNumber %>].value">
-                                <option value="">&lt;has any value&gt;</option><%
-                                    for (Object value : pickList)
-                                    {
-                                        String keyValue = (value != null ? h(value.toString()) : "");
-                                        String displayValue = obfuscate ? id(keyValue) : keyValue;
-                                %>
-                                <option value="<%= keyValue %>"><%= displayValue %></option><%
-                                    }
-                                %>
-                            </select>
-                        </td>
-                    </tr>
-                    <%
-                }
-                else
-                {
-                    %>
-                        <tr>
-                            <td><%= h(col.getCaption()) %></td>
-                            <td>
-                                <input type="hidden" name="searchParams[<%= paramNumber %>].columnName" value="<%= h(columnName) %>">
-                                <select name="searchParams[<%= paramNumber %>].compareType"
-                                        id="searchParams[<%= paramNumber %>].compareType"
-                                        onChange="updateVisibility('searchParams[<%= paramNumber %>]')">
-                                    <option value="">&lt;has any value&gt;</option><%
-                                        for (CompareType type : CompareType.getValidCompareSet(col.getColumnInfo()))
-                                        { %>
-                                    <option value="<%= h(type.name()) %>"><%= h(type.getDisplayValue()) %></option><%
-                                        }
-                                    %>
-                                </select>
-                            </td>
-                            <td><input type="text"
-                                       name="searchParams[<%= paramNumber %>].value"
-                                       id="searchParams[<%= paramNumber %>].value"
-                                       size="30"
-                                       DISABLED></td>
-                        </tr>
-                    <%
-                }
-                availableColumns.remove(col.getColumnInfo().getName());
-                paramNumber++;
-            }
+            var guid = document.getElementById('globalUniqueId').value;
+            var compareType = getDropDownValue('globalUniqueId.compareType');
+            if (compareType)
+                params[paramBase + "GlobalUniqueId~" + compareType] = guid;
         }
-        %>
-    </table><br>
-    <%
-            if (pass == 0 && !bean.isInWebPart())
-            {
-            %>
-    <%= textLink(bean.isAdvancedExpanded() ? hideExtraColumnsLabel: showExtraColumnsLabel, "#", "showOrHideAdditionalColumns()", "additionalColumnsLink") %><br>
-            <%
-            }
-            if (bean.isInWebPart())
-            {
-                ActionURL advancedVialSearch = new ActionURL(ShowSearchAction.class, getViewContext().getContainer());
-                advancedVialSearch.addParameter("showAdvanced", "true");
-                advancedVialSearch.addParameter("showVials", "true");
-            %>
-    <%= textLink("More options", advancedVialSearch) %><br><br>
-            <%
-            }
-        }
-    %>
-<%= generateSubmitButton("Search") %>
-<%
-    if (!bean.isInWebPart())
-    {
-%>
-    <%= generateButton("Cancel", "samples.view?_lastFilter=1&showVials=" + bean.isDetailsView())%>
-<%
+
+        addSearchParameter(params, paramBase + studyMetadata.SubjectColumnName + '~eq', 'participantId');
+        addSearchParameter(params, paramBase + 'PrimaryType/Description~eq', 'primaryType');
+        addSearchParameter(params, paramBase + 'DerivativeType/Description~eq', 'derivativeType');
+        addSearchParameter(params, paramBase + 'AdditiveType/Description~eq', 'additiveType');
+        addSearchParameter(params, paramBase + 'Visit/SequenceNumMin~eq', 'visit');
+
+        document.location = LABKEY.ActionURL.buildURL('study-samples', 'samples', LABKEY.ActionURL.getContainer(), params);
     }
-%>
+
+    function verifySpecimenData()
+    {
+        var multi = new LABKEY.MultiRequest();
+        var requestFailed = false;
+        var errorMessages = [];
+
+        multi.add(LABKEY.Query.selectRows, {schemaName:"study",
+            queryName:"StudyProperties",
+            success:function (result) {
+                if (result.rows.length > 0)
+                {
+                    studyMetadata = result.rows[0];
+                    Ext.get("participantIdLabel").update(studyMetadata.SubjectNounSingular);
+                }
+                else
+                    errorMessages.push("<i>No study found in this folder</i>");
+            },
+            failure: function(result) {
+                errorMessages.push("<i>Could not retrieve study information for this folder: " + result.exception);
+            },
+        columns:"*"});
+
+        // Test query to verify that there's specimen data in this study:
+        multi.add(LABKEY.Query.selectRows,
+            {
+                schemaName: 'study',
+                queryName: 'SimpleSpecimen',
+                maxRows: 1,
+                success : function(data)
+                {
+                    if (data.rows.length == 0)
+                         errorMessages.push('<i>No specimens found.</i>');
+                },
+                failure: function(result) {
+                    errorMessages.push("<i>Could not retrieve specimen information for this folder: </i>" + result.exception);
+                }
+        });
+
+        multi.send(function() {
+            if (errorMessages.length > 0)
+                document.getElementById('specimen-search-webpart-content').innerHTML = errorMessages.join("<br>");
+            else
+                populateSearchDropDowns();
+        })
+    }
+
+    Ext.onReady(verifySpecimenData);
+</script>
+<!-- specimen search -->
+<span id="specimen-search-webpart-content">
+<div class="labkey-specimen-search-toggle">
+    <a id="vial-search-selector" href="#"  class="youarehere" onclick="return toggleSearchType('vial-search-selector');">Individual Vials</a> |
+    <a href="#" id="specimen-search-selector" onclick="return toggleSearchType('specimen-search-selector');">Grouped Vials</a><a
+                                       onmouseover="return showHelpDivDelay(this, 'Grouped Vials', 'Vial group search returns a single row per subject, time point, and sample type.  These results may be easier to read and navigate, but lack vial-level detail.');"
+                                       onmouseout="return hideHelpDivDelay();"
+                                       onclick="return showHelpDiv(this, 'Grouped Vials', 'Vial group search returns a single row per subject, time point, and sample type.  These results may be easier to read and navigate, but lack vial-level detail.');"
+                                       tabindex="-1"
+                                       href="#"><span class="labkey-help-pop-up">?</span></a>
+</div>
+<div id="labkey-specimen-search">
+
+    <form>
+    <table>
+        <tr>
+            <td class="labkey-padright"><span id="globalUniqueIdLabel" style="display:block">Global Unique ID</span></td>
+            <td>
+                <span id="globalUniqueIdChooser" style="display:block">
+                    <select id="globalUniqueId.compareType" onchange="document.getElementById('globalUniqueId').disabled = (this.value) ? false : true; document.getElementById('globalUniqueId').style.display = (this.value) ? 'block' : 'none';">
+                        <option value="">Any Global Unique ID</option>
+                        <option value="eq">Equals</option>
+                        <option value="neq">Does Not Equal</option>
+                        <option value="isblank">Is Blank</option>
+                        <option value="isnonblank">Is Not Blank</option>
+                        <option value="gt">Is Greater Than</option>
+                        <option value="lt">Is Less Than</option>
+                        <option value="gte">Is Greater Than or Equal To</option>
+                        <option value="lte">Is Less Than or Equal To</option>
+                        <option value="contains">Contains</option>
+                        <option value="doesnotcontain">Does Not Contain</option>
+                        <option value="doesnotstartwith">Does Not Start With</option>
+                        <option value="startswith">Starts With</option>
+                        <option value="in">Equals One Of (e.g. 'a;b;c')</option>
+                    </select>&nbsp;<input type="text" size="30" id="globalUniqueId"  style="display:none" disabled>
+                </span>
+            </td>
+        </tr>
+        <tr>
+            <td id="participantIdLabel" class="labkey-padright">Participant ID</td>
+            <td>
+                <select id="participantId">
+                    <option value="">Loading...</option>
+                </select>
+            </td>
+        </tr>
+        <tr>
+            <td class="labkey-padright">Visit</td>
+            <td>
+                <select id="visit">
+                    <option value="">Loading...</option>
+                </select>
+            </td>
+        </tr>
+        <tr>
+            <td  class="labkey-padright">Primary Type</td>
+            <td>
+                <select id="primaryType">
+                    <option value="">Loading...</option>
+                </select>
+            </td>
+        </tr>
+        <tr>
+            <td  class="labkey-padright">Derivative Type</td>
+            <td>
+                <select id="derivativeType">
+                    <option value="">Loading...</option>
+                </select>
+            </td>
+        </tr>
+        <tr>
+            <td  class="labkey-padright">Additive Type</td>
+            <td>
+                <select id="additiveType">
+                    <option value="">Loading...</option>
+                </select>
+            </td>
+        </tr>
+        <tr>
+            <td></td>
+            <td class="labkey-specimen-search-button">
+                <a class="labkey-button" href="#" onclick="submitSearch(); return false;">
+                    <span>Search</span>
+                </a>
+            </td>
+        </tr>
+    </table>
 </form>
+</div>
+<!-- end specimen search -->
+
+<!-- webpart footer -->
+<div class="labkey-wp-footer">
+<span class="labkey-advanced-search">Advanced Search:</span>
+<a class="labkey-text-link" href="#" onClick="return clickLink('study-samples', 'showSearch', {showAdvanced: 'true', showVials: 'true'});">Individual Vials<span class="css-arrow-right"></span></a>
+    <a class="labkey-text-link" href="#" onClick="return clickLink('study-samples', 'showSearch', {showAdvanced: 'true', showVials: 'false'});">Grouped Vials<span class="css-arrow-right"></span></a>
+</div>
+<!-- end webpart footer -->
+</span>

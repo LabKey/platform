@@ -31,7 +31,9 @@ import org.labkey.api.exp.api.ExperimentService;
 import org.labkey.api.query.*;
 import org.labkey.api.security.User;
 import org.labkey.api.security.UserManager;
+import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.settings.AppProps;
+import org.labkey.api.study.Study;
 import org.labkey.api.study.StudyCachable;
 import org.labkey.api.study.StudyService;
 import org.labkey.api.util.DateUtil;
@@ -1489,7 +1491,7 @@ public class SampleManager
         }
     }
 
-    public List<String> getDistinctColumnValues(Container container, ColumnInfo col, boolean forceDistinctQuery, String orderBy, TableInfo forcedTable) throws SQLException
+    public List<String> getDistinctColumnValues(Container container, User user, ColumnInfo col, boolean forceDistinctQuery, String orderBy, TableInfo forcedTable) throws SQLException
     {
         String cacheKey = "DistinctColumnValues." + col.getColumnName();
         boolean isLookup = col.getFk() != null && !forceDistinctQuery;
@@ -1515,7 +1517,16 @@ public class SampleManager
                     {
                         if (tinfo instanceof ContainerFilterable)
                         {
-                            ((ContainerFilterable)tinfo).setContainerFilter(new ContainerFilter.SimpleContainerFilter(Collections.singleton(container)));
+                            Set<Container> containers = new HashSet<Container>();
+                            containers.add(container);
+                            Study study = StudyManager.getInstance().getStudy(container);
+                            if (study != null && study.isAncillaryStudy())
+                            {
+                                Container sourceStudy = study.getSourceStudy().getContainer();
+                                if (sourceStudy != null && sourceStudy.hasPermission(user, ReadPermission.class))
+                                    containers.add(sourceStudy);
+                            }
+                            ((ContainerFilterable)tinfo).setContainerFilter(new ContainerFilter.SimpleContainerFilter(containers));
                         }
                         rs = Table.select(tinfo, Arrays.asList(tinfo.getColumn(tinfo.getTitleColumn())), null,
                                 new Sort(orderBy != null ? orderBy : tinfo.getTitleColumn()));
