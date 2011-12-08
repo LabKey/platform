@@ -34,6 +34,8 @@ import org.springframework.validation.BindException;
 import org.springframework.validation.Errors;
 import org.springframework.web.servlet.ModelAndView;
 
+import java.util.Collections;
+
 public class LdapController extends SpringActionController
 {
     private static final DefaultActionResolver _actionResolver = new DefaultActionResolver(LdapController.class);
@@ -94,7 +96,7 @@ public class LdapController extends SpringActionController
 
     public static class Config extends ReturnUrlForm
     {
-        public String helpLink = "<a href=\"" + (new HelpTopic("configLdap")).getHelpTopicLink() + "\" target=\"_new\">More information about LDAP authentication</a>";
+        public String helpLink = PageFlowUtil.textLink("More information about LDAP authentication", new HelpTopic("configLdap").getHelpTopicLink(), null, null, Collections.singletonMap("target", "_new"));
         public boolean reshow = false;
 
         private String servers = StringUtils.join(LdapAuthenticationManager.getServers(), ";");

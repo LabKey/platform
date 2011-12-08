@@ -53,7 +53,7 @@
     </tr>
     <tr><td colspan="2">&nbsp;</td></tr>
     <tr>
-        <td colspan=2>[<%=bean.helpLink%>]</td>
+        <td colspan=2><%=bean.helpLink%></td>
     </tr>
     <tr>
         <td colspan=2><%=textLink("Test LDAP settings", urlFor(LdapController.TestLdapAction.class).addReturnURL(me.getViewContext().getActionURL()))%></td>
