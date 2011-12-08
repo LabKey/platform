@@ -362,7 +362,12 @@ public class FilesAdminOptions
                 {
                     PipelineActionConfig config = PipelineActionConfig.fromJSON(jarray.getJSONObject(i));
                     if (config != null)
-                        _pipelineConfig.put(config.getId(), config);
+                    {
+                        if (_pipelineConfig.containsKey(config.getId()))
+                            _pipelineConfig.get(config.getId()).update(config);
+                        else
+                            _pipelineConfig.put(config.getId(), config);
+                    }
                 }
             }
         }

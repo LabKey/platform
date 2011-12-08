@@ -17,6 +17,7 @@ package org.labkey.api.query.snapshot;
 
 import org.labkey.api.data.Container;
 import org.labkey.api.data.DisplayColumn;
+import org.labkey.api.data.TableInfo;
 import org.labkey.api.query.QueryForm;
 import org.labkey.api.query.QuerySettings;
 import org.labkey.api.security.User;
@@ -121,6 +122,8 @@ public class QuerySnapshotService
          * pertaining to a snapshot can be modified.  
          */
         public List<DisplayColumn> getDisplayColumns(QueryForm queryForm, BindException errors) throws Exception;
+
+        public TableInfo getTableInfoQuerySnapshotDef();
     }
 
     public interface AutoUpdateable {

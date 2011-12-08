@@ -170,4 +170,10 @@ public abstract class AbstractSnapshotProvider implements QuerySnapshotService.I
     {
         return domain.getTypeURI() + "." + column.getName();
     }
+
+    @Override
+    public TableInfo getTableInfoQuerySnapshotDef()
+    {
+        return DbSchema.get("query").getTable("QuerySnapshotDef");
+    }
 }

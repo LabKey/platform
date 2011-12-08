@@ -135,6 +135,36 @@ public class PipelineActionConfig
         return o;
     }
 
+    // merge changes from the specified configuration
+    public void update(PipelineActionConfig config)
+    {
+        _state = config.getState();
+        _label = config.getLabel();
+
+        // update or add any links
+        for (PipelineActionConfig link : config.getLinks())
+        {
+            PipelineActionConfig currentLink = getLink(link.getId());
+            if (currentLink != null)
+            {
+                currentLink.setLabel(link.getLabel());
+                currentLink.setState(link.getState());
+            }
+            else
+                _links.add(link);
+        }
+    }
+
+    private PipelineActionConfig getLink(String id)
+    {
+        for (PipelineActionConfig link : _links)
+        {
+            if (link.getId().equals(id))
+                return link;
+        }
+        return null;
+    }
+    
     private JSONObject createObject(String id, String state, String label)
     {
         JSONObject o = new JSONObject();
