@@ -55,7 +55,7 @@ public class DataSetsTable extends FilteredTable
 
                 SQLFragment sql = new SQLFragment("(CASE WHEN EXISTS (SELECT RowId FROM ");
                 sql.append(tinfo, "qs");
-                sql.append(" WHERE qs.schema = '").append(StudyManager.getSchemaName()).append("' AND ").append(tableAlias).append(".Name = qs.Name AND ");
+                sql.append(" WHERE 'qs.schema' = '").append(StudyManager.getSchemaName()).append("' AND ").append(tableAlias).append(".Name = qs.Name AND ");
                 sql.append(tableAlias).append(".Container = qs.Container) THEN " + d.getBooleanTRUE() + " ELSE " + d.getBooleanFALSE() + " END)");
                 
                 return sql;
