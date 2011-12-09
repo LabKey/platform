@@ -39,16 +39,6 @@ public abstract class MultiPortalFolderType extends DefaultFolderType
         super(name, description, requiredParts, preferredParts, activeModules, defaultModule);
     }
 
-    public String getPageCaption(String pageId)
-    {
-        for (FolderTab page : getDefaultTabs())
-        {
-            if (page instanceof FolderTab.PortalPage && page.getName().equals(pageId))
-                return page.getCaption();
-        }
-        return null;
-    }
-
     @Override
     public boolean hasConfigurableTabs()
     {
@@ -70,7 +60,7 @@ public abstract class MultiPortalFolderType extends DefaultFolderType
             FolderTab folderTab = findTab(tab.getName());
             if (folderTab != null && folderTab.isVisible(ctx))
             {
-                String label = folderTab.getCaption();
+                String label = folderTab.getCaption(ctx);
                 NavTree nav = new NavTree(label, folderTab.getURL(ctx));
                 buttons.add(nav);
                 if (folderTab.isSelectedPage(ctx))

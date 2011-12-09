@@ -117,7 +117,7 @@ public abstract class FolderTab
         return _name;
     }
 
-    public String getCaption()
+    public String getCaption(ViewContext viewContext)
     {
         return _caption;
     }

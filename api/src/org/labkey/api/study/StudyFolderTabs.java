@@ -134,13 +134,23 @@ public class StudyFolderTabs
         }
     }
 
-    public static class ShortcutsPage extends FolderTab.PortalPage
+    public static class ParticipantsPage extends FolderTab.PortalPage
     {
-        public static final String PAGE_ID = "study.SHORTCUTS";
+        public static final String PAGE_ID = "study.PARTICIPANTS";
 
-        public ShortcutsPage(String caption)
+        public ParticipantsPage(String caption)
         {
             super(PAGE_ID, caption);
+        }
+
+        @Override
+        public String getCaption(ViewContext viewContext)
+        {
+            Study study = StudyService.get().getStudy(viewContext.getContainer());
+            if (null == study)
+                return super.getCaption(viewContext);
+            else
+                return study.getSubjectNounPlural();
         }
 
         @Override
