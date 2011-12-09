@@ -43,6 +43,7 @@ import org.labkey.api.security.RequiresPermissionClass;
 import org.labkey.api.security.RequiresSiteAdmin;
 import org.labkey.api.security.permissions.AdminPermission;
 import org.labkey.api.settings.AppProps;
+import org.labkey.api.util.Formats;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.HtmlView;
@@ -529,8 +530,8 @@ public class SqlScriptController extends SpringActionController
         ActionURL url = new ActionURL(ConsolidateSchemaAction.class, ContainerManager.getRoot());
         url.addParameter("module", moduleName);
         url.addParameter("schema", schemaName);
-        url.addParameter("fromVersion", String.valueOf(fromVersion));
-        url.addParameter("toVersion", String.valueOf(toVersion));
+        url.addParameter("fromVersion", ModuleContext.formatVersion(fromVersion));
+        url.addParameter("toVersion", ModuleContext.formatVersion(toVersion));
         return url;
     }
 
