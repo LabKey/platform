@@ -1340,6 +1340,7 @@ LABKEY.vis.TimeChartPanel = Ext.extend(Ext.Panel, {
         var lineChartConfig = {
             width: size.width,
             height: size.height - 25,
+            xAxisInterval: this.chartInfo.measures[0].dateOptions ? this.chartInfo.measures[0].dateOptions.interval : null,
             axes: {
                 x: {
                     min: (typeof this.chartInfo.axis[xAxisIndex].range.min == "number"

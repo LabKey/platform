@@ -185,14 +185,22 @@ LABKEY.vis.XYChartComponent = Ext.extend(Ext.BoxComponent, {
 
              if (!series.getTitle){
                  if(!this.labels){
-                     series.getTitle = function (d) {return series.caption + ": " + series.getX(d) + ",  " + series.getY(d)};
+                     series.getTitle = dateHoverTitle(this.xAxisInterval, series);
                  } else {
-                     series.getTitle = hoverTitle(this.labels, series);
+                     series.getTitle = visitHoverTitle(this.labels, series);
                  }
              }
-             function hoverTitle(labels, series){
+
+             function dateHoverTitle(xInterval, series){
+                 xInterval = xInterval.substr(0, xInterval.length -1);
                  return function (d){
-                     return series.caption + ": " + labels[d.interval] + ",  " + series.getY(d);
+                     return series.caption + ", " + xInterval + " " + series.getX(d) + ",  " + series.getY(d) + ")";
+                 }
+             }
+
+             function visitHoverTitle(labels, series){
+                 return function (d){
+                     return series.caption + ", " + labels[d.interval] + ",  " + series.getY(d);
                  }
              }
             //The graphing doesn't work with missing values, so we strip them out of the series in the first place.
