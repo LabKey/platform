@@ -75,6 +75,14 @@ LABKEY.ActionURL = new function()
         return parameters;
     }
 
+    function codePath(path, method)
+    {
+        var a = path.split('/');
+        for (var i=0 ; i<a.length ; i++)
+            a[i] = method(a[i]);
+        return a.join('/');
+    }
+
     /** @scope LABKEY.ActionURL */
     return {
         // public functions
@@ -102,17 +110,17 @@ LABKEY.ActionURL = new function()
         },
 
 		/**
-		* Gets the current (unencoded) container path
+		* Gets the current (unencoded) container path.
 		* @return {String} Current container path.
 		*/
-        getContainer : function()
+        getContainer : function(useWindow)
         {
             if (LABKEY.container && LABKEY.container.path)
-                return decodeURIComponent(LABKEY.container.path); // OK to double decode
+                return LABKEY.container.path;
             var path = window.location.pathname;
             var start = path.indexOf("/", LABKEY.contextPath.length + 1);
             var end = path.lastIndexOf("/");
-            return decodeURIComponent(path.substring(start, end));
+            return LABKEY.ActionURL.decodePath(path.substring(start, end));
         },
 
         /**
@@ -259,15 +267,24 @@ that points back to the current page:
          * @private
          * Encoder for LabKey container paths that accounts for / to only encode the proper names. NOTE: This method is
          * marked as private and could change at any time.
-         * @param {String} path An unencoded container path.
+         * @param {String} decodedPath An unencoded container path.
          * @returns {String} An URI encoded container path.
          */
-        encodePath : function(path)
+        encodePath : function(decodedPath)
         {
-            var a = path.split('/');
-            for (var i=0 ; i<a.length ; i++)
-                a[i] = encodeURIComponent(a[i]);
-            return a.join('/');
+            return codePath(decodedPath, encodeURIComponent);
+        },
+
+        /**
+         * @private
+         * Decoder for LabKey container paths that accounts for / to only decode the proper names. NOTE: This method is
+         * marked as private and could change at any time.
+         * @param {String} encodedPath An encoded container path.
+         * @returns {String} An URI decoded container path.
+         */
+        decodePath : function(encodedPath)
+        {
+            return codePath(encodedPath, decodeURIComponent);
         },
 
         /**

@@ -158,7 +158,9 @@ public class Container implements Serializable, Comparable<Container>, Securable
         return parent;
     }
 
-
+    /**
+     * @return the unencoded container path ignoring "/"
+     */
     public String getPath()
     {
         if (_path.size() == 0)

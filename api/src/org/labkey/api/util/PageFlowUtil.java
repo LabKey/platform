@@ -2087,8 +2087,10 @@ public class PageFlowUtil
         {
             JSONObject containerProps = new JSONObject();
 
-            containerProps.put("id", container.getId());
+            // This is by contract the unencoded container path -- see LABKEY.ActionURL.getContainer
             containerProps.put("path", container.getPath());
+
+            containerProps.put("id", container.getId());
             containerProps.put("name", container.getName());
             containerProps.put("isWorkbook", container.isWorkbook());
             json.put("container", containerProps);
