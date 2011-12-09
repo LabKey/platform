@@ -162,14 +162,18 @@ public class SimpleUserSchema extends UserSchema
                    (_userSchema.getDbSchema().getScope().isLabKeyScope()))
                 {
                     wrap.setFk(new UserIdQueryForeignKey(_userSchema.getUser(), _userSchema.getContainer()));
+                    wrap.setUserEditable(false);
+                    wrap.setShownInInsertView(false);
+                    wrap.setShownInUpdateView(false);
+                    wrap.setReadOnly(true);
                 }
                 // also add FK to container field
                 else if (JdbcType.VARCHAR == col.getJdbcType() &&
                    colName.equalsIgnoreCase("container") &&
                    (_userSchema.getDbSchema().getScope().isLabKeyScope()))
                 {
-                    wrap.setFk(new ContainerForeignKey());
                     wrap.setLabel("Folder");
+                    ContainerForeignKey.initColumn(wrap);
                 }
                 else if (col.getFk() != null)
                 {

@@ -53,15 +53,15 @@ public class ExpExperimentTableImpl extends ExpTableImpl<ExpExperimentTable.Colu
             case Comments:
                 return wrapColumn(alias, _rootTable.getColumn("Comments"));
             case Folder:
-                return wrapColumn(alias, _rootTable.getColumn("Container"));
+                return setupNonEditableCol(wrapColumn(alias, _rootTable.getColumn("Container")));
             case Created:
-                return wrapColumn(alias, _rootTable.getColumn("Created"));
+                return setupNonEditableCol(wrapColumn(alias, _rootTable.getColumn("Created")));
             case CreatedBy:
-                return createUserColumn(alias, _rootTable.getColumn("CreatedBy"));
+                return setupNonEditableCol(createUserColumn(alias, _rootTable.getColumn("CreatedBy")));
             case Modified:
-                return wrapColumn(alias, _rootTable.getColumn("Modified"));
+                return setupNonEditableCol(wrapColumn(alias, _rootTable.getColumn("Modified")));
             case ModifiedBy:
-                return createUserColumn(alias, _rootTable.getColumn("ModifiedBy"));
+                return setupNonEditableCol(createUserColumn(alias, _rootTable.getColumn("ModifiedBy")));
             case Hypothesis:
                 return wrapColumn(alias, _rootTable.getColumn("Hypothesis"));
             case LSID:
@@ -86,6 +86,14 @@ public class ExpExperimentTableImpl extends ExpTableImpl<ExpExperimentTable.Colu
         }
     }
 
+    private ColumnInfo setupNonEditableCol (ColumnInfo col)
+    {
+        col.setUserEditable(false);
+        col.setReadOnly(true);
+        col.setShownInInsertView(false);
+        col.setShownInUpdateView(false);
+        return col;
+    }
     public void addExperimentMembershipColumn(ExpRun run)
     {
         SQLFragment sql;

@@ -48,6 +48,7 @@ public class WorkbooksTableInfo extends ContainerTable
         List<FieldKey> defCols = new ArrayList<FieldKey>();
         defCols.add(FieldKey.fromParts("ID"));
         defCols.add(FieldKey.fromParts("Title"));
+        defCols.add(FieldKey.fromParts("Description"));
         defCols.add(FieldKey.fromParts("CreatedBy"));
         defCols.add(FieldKey.fromParts("Created"));
         this.setDefaultVisibleColumns(defCols);
