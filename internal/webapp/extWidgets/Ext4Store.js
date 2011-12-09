@@ -161,10 +161,11 @@ LABKEY.ext4.Store = Ext4.define('LABKEY.ext4.Store', {
          * @name beforemetachange
          * @event
          * @description Fired when the initial query metadata is returned from the server. Provides an opportunity to manipulate it.
+         * @param {Object} store A reference to the LABKEY store
          * @param {Object} metadata The metadata object that will be supplied to the Ext.data.Model.
          */
 
-        this.addEvents('metadataload', 'syncexception', 'synccomplete');
+        this.addEvents('beforemetachange', 'syncexception', 'synccomplete');
     },
     //private
     generateBaseParams: function(config){
@@ -258,6 +259,8 @@ LABKEY.ext4.Store = Ext4.define('LABKEY.ext4.Store', {
                     }
                 }
             }
+
+            this.fireEvent('beforemetachange', this, meta);
         }
     },
 

@@ -1075,6 +1075,10 @@ public abstract class AbstractAssayProvider implements AssayProvider
             final StudyDataSetColumn datasetColumn = new StudyDataSetColumn(table,
                 datasetIdColumnName, this, assayDataSet, user);
             datasetColumn.setHidden(true);
+            datasetColumn.setUserEditable(false);
+            datasetColumn.setShownInInsertView(false);
+            datasetColumn.setShownInUpdateView(false);
+            datasetColumn.setReadOnly(true);
             table.addColumn(datasetColumn);
 
             String studyCopiedSql = "(SELECT CASE WHEN " + datasetColumn.getDatasetIdAlias() +
@@ -1097,6 +1101,10 @@ public abstract class AbstractAssayProvider implements AssayProvider
                 datasetColumn);
             final String copiedToStudyColumnCaption = "Copied to " + studyName;
             studyCopiedColumn.setLabel(copiedToStudyColumnCaption);
+            studyCopiedColumn.setUserEditable(false);
+            studyCopiedColumn.setReadOnly(true);
+            studyCopiedColumn.setShownInInsertView(false);
+            studyCopiedColumn.setShownInUpdateView(false);
             studyCopiedColumn.setURL(StringExpressionFactory.createURL(StudyService.get().getDatasetURL(assayDataSet.getContainer(), assayDataSet.getDataSetId())));
 
             table.addColumn(studyCopiedColumn);

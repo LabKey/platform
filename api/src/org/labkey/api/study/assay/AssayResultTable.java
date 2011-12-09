@@ -207,6 +207,9 @@ public class AssayResultTable extends FilteredTable implements UpdateableTableIn
                 return expRunTable;
             }
         });
+        runColumn.setUserEditable(false);
+        runColumn.setShownInInsertView(false);
+        runColumn.setShownInUpdateView(false);
         addColumn(runColumn);
 
         Domain runDomain = _provider.getRunDomain(protocol);
@@ -238,8 +241,11 @@ public class AssayResultTable extends FilteredTable implements UpdateableTableIn
             SQLFragment folderSQL = new SQLFragment("(SELECT Container FROM exp.Data d WHERE d.RowId = " + ExprColumn.STR_TABLE_ALIAS + ".DataId)");
             folderCol = new ExprColumn(this, "Folder", folderSQL, JdbcType.VARCHAR);
             folderCol.setHidden(true);
-            folderCol.setFk(new ContainerForeignKey());
+            folderCol.setUserEditable(false);
+            folderCol.setShownInInsertView(false);
+            folderCol.setShownInUpdateView(false);
             addColumn(folderCol);
+            ContainerForeignKey.initColumn(folderCol);
         }
 
         setDefaultVisibleColumns(visibleColumns);

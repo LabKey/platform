@@ -372,6 +372,7 @@ Ext4.define('LABKEY.ext.AssayUploadPanel', {
             ],
             forceFit: true,
             editable: true,
+            hideNonEditableColumns: true,
             store: Ext4.create('LABKEY.ext4.Store', {
                 schemaName: 'assay',
                 queryName: LABKEY.page.assay.name + ' Data',
@@ -380,11 +381,6 @@ Ext4.define('LABKEY.ext.AssayUploadPanel', {
                 maxRows: 0,
                 metadataDefaults: Ext4.Object.merge({}, this.metadataDefaults.Results, {
                     ignoreColWidths: true
-                }),
-                metadata: Ext4.Object.merge({}, this.metadata.Results, {
-                    Run: {
-                        hidden: true
-                    }
                 })
             })
         })

@@ -12,6 +12,7 @@ Ext4.namespace('LABKEY.ext4');
  * Constructs a new LabKey GridPanel using the supplied configuration.
  *
  * @param (boolean) [config.noAlertOnError] If true, no dialog will appear on if the store fires a syncerror event
+ * @param {boolean} [config.hideNonEditableColumns] If true, columns that are non-editable will be hidden
  */
 
 Ext4.define('LABKEY.ext4.GridPanel', {
@@ -106,6 +107,9 @@ Ext4.define('LABKEY.ext4.GridPanel', {
             if(meta.isAutoExpandColumn && !col.hidden){
                 this.autoExpandColumn = idx;
             }
+
+            if(this.hideNonEditableColumns && !col.editable)
+                col.hidden = true;
         }, this);
 
         return columns;
