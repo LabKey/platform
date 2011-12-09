@@ -40,7 +40,7 @@ Ext4.define('LABKEY.ext4.RemoteGroup', {
             this.store = Ext4.create(this.store, 'labkey-store');
 
         if(!this.store || !this.store.model || !this.store.model.prototype.fields.getCount())
-            this.store.on('load', this.onStoreLoad, this, {single: true});
+            this.mon(this.store, 'load', this.onStoreLoad, this, {single: true});
         else
             this.onStoreLoad();
     }
@@ -406,7 +406,7 @@ Ext4.define('LABKEY.ext4.ComboBox', {
     alias: 'widget.labkey-combo',
     initComponent: function(){
         this.listConfig = this.listConfig || {};
-        this.listConfig.itemTpl = Ext4.create('Ext.XTemplate',
+        this.listConfig.itemTpl = this.listConfig.itemTpl || Ext4.create('Ext.XTemplate',
             '<tpl for=".">' +
                 '{[(typeof values === "string" ? values : (values["' + this.displayField + '"] ? values["' + this.displayField + '"] : '+(Ext4.isDefined(this.lookupNullCaption) ? '"' + '1'+this.lookupNullCaption + '"' : '"[none]"')+'))]}' +
                 //allow a flag to display both display and value fields
@@ -421,27 +421,48 @@ Ext4.define('LABKEY.ext4.ComboBox', {
         this.listConfig.listeners = this.listConfig.listeners || {};
         Ext4.apply(this.listConfig.listeners, {
             scope: this,
-            refresh: function(view){
-                view.setSize({width: 'auto', height: null});
-                view.minWidth = this.getWidth();
-            }
+            viewready: this.resizeToFitContent
         });
-        this.matchFieldWidth = false;
+
+        //note: will be addressed in resizeToFitContent()
+        this.matchFieldWidth = true;
 
         this.callParent();
-
-        this.store.on('load', function(){
-            if(this.picker)
-                this.alignPicker();
-        }, this, {delay: 50});
     },
+
+    onLoad: function(){
+        this.callParent(arguments);
+
+        //will only run if picker has been created
+        this.resizeToFitContent();
+    },
+
+    //this is designed to autosize the width of the BoundList.  the hope is that by measuring the list as a whole, we avoid measuring
+    //each list item, which can be extremely expensive.
+    resizeToFitContent: function(){
+        //NOTE: prematurely creating the picker can have bad consequences, so we wait until it has been loaded to resize
+        if(this.picker && this.picker.el){
+            var picker = this.getPicker();
+            var el = this.getPicker().el;
+            if(!this.metrics)
+                this.metrics = new Ext4.util.TextMetrics(this.inputEl);
+
+            var v = el.dom.innerHTML;
+            var w = this.metrics.getWidth(v) + 10 + this.getTriggerWidth(); /* add extra padding, plus width of scroll bar */
+            var fieldWidth = this.inputEl.getWidth() + this.getTriggerWidth();
+            w = Math.max(w, fieldWidth);
+
+            //if width is less than fieldwidth, expand.  otherwise turn off or Ext will coerce the list to match the field
+            this.matchFieldWidth = fieldWidth >= w;
+            picker.setWidth(w);
+        }
+    },
+
     //allows value to be set if store has not yet loaded
     setValue: function(val){
         if(!this.store || !this.store.model || !this.store.model.prototype.fields.getCount()){
-            this.initialValue = val;
-            this.mon(this.store, 'load', function(){
-                this.setValue(this.initialValue);
-            }, this, {single: true});
+            this.value = val;
+            this.mon(this.store, 'load', this.setValue.createDelegate(this, arguments), null, {single: true});
         }
 
         this.callParent(arguments);
@@ -506,7 +527,7 @@ Ext4.define('LABKEY.ext.UserEditableComboPlugin', {
                     }
 
                     if(!this.store || !this.store.model || !this.store.model.prototype.fields.getCount()){
-                        this.store.on('load', function(store){
+                        this.mon(this.store, 'load', function(store){
                             console.log('load')
                             this.addRecord(value);
                         }, this, {single: true});
@@ -529,7 +550,7 @@ Ext4.define('LABKEY.ext.UserEditableComboPlugin', {
                 if (!combo.store.on)
                     combo.store = Ext4.create(combo.store);
 
-                combo.store.on('load', function(){
+                combo.mon(combo.store, 'load', function(){
                     combo.addRecord('Other');
                 }, combo);
             }
