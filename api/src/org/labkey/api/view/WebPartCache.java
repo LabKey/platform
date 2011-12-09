@@ -29,7 +29,6 @@ import org.labkey.api.util.Pair;
 import org.labkey.api.view.Portal.WebPart;
 
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.LinkedHashMap;
 import java.util.Map;
 
@@ -57,9 +56,9 @@ public class WebPartCache
         return get(c, pageId).getKey();
     }
 
-    static WebPart getWebPart(@NotNull Container c, @NotNull String pageId, int rowId)
+    static WebPart getWebPart(@NotNull Container c, @NotNull String pageId, int index)
     {
-        return get(c, pageId).getValue().get(rowId);
+        return get(c, pageId).getValue().get(index);
     }
 
     private static Pair<ArrayList<WebPart>, Map<Integer, WebPart>> get(@NotNull final Container c, @NotNull final String pageId)
@@ -76,8 +75,9 @@ public class WebPartCache
 
                 ArrayList<WebPart> list = new ArrayList<WebPart>(new TableSelector(Portal.getTableInfoPortalWebParts(), Table.ALL_COLUMNS, filter, new Sort("Index")).getCollection(WebPart.class));
 
+                // List order should match index, but use a map to be safe.  TODO: In 12.1, just index the list and switch map to RowId->WebPart
                 for (WebPart webPart : list)
-                    map.put(webPart.getRowId(), webPart);
+                    map.put(webPart.getIndex(), webPart);
 
                 return new Pair<ArrayList<WebPart>, Map<Integer, WebPart>>(list, map);
             }
