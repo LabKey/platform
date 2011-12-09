@@ -149,8 +149,7 @@ public class ViewServlet extends HttpServlet
         }
         catch (Exception x)
         {
-            log("ViewServlet unexpected ActionURL exception: " + request.getRequestURL(), x);
-            response.setStatus(HttpServletResponse.SC_NOT_FOUND);
+            response.sendError(HttpServletResponse.SC_NOT_FOUND, "Invalid URL");
             return;
         }
 
