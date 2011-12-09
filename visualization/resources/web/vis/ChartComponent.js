@@ -194,7 +194,7 @@ LABKEY.vis.XYChartComponent = Ext.extend(Ext.BoxComponent, {
              function dateHoverTitle(xInterval, series){
                  xInterval = xInterval.substr(0, xInterval.length -1);
                  return function (d){
-                     return series.caption + ", " + xInterval + " " + series.getX(d) + ",  " + series.getY(d) + ")";
+                     return series.caption + ", " + xInterval + " " + series.getX(d) + ",  " + series.getY(d);
                  }
              }
 

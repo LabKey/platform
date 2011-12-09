@@ -1284,7 +1284,6 @@ LABKEY.vis.TimeChartPanel = Ext.extend(Ext.Panel, {
                     }
                 }
 
-
                 var style = {lineWidth: this.chartInfo.lineWidth};
                 if(this.chartInfo.hideDataPoints){
                     style.shape = {name: "square", lineWidth: 1, markSize: 20, hidden: true};
@@ -1328,6 +1327,7 @@ LABKEY.vis.TimeChartPanel = Ext.extend(Ext.Panel, {
                 else if (series[i][seriesFilter.parameter] == seriesFilter.value)
                 {
                     series[i].caption = series[i].caption.replace(seriesFilter.value, "");
+                    series[i].caption = series[i].caption.trim();
                     tempSeries.push(series[i]);
                 } else if(series[i][seriesFilter.parameter] == title){
                     tempSeries.push(series[i]);
