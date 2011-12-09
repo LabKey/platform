@@ -246,7 +246,7 @@ public class UserController extends SpringActionController
         return rgn;
     }
 
-    private void populateUserGridButtonBar(ButtonBar gridButtonBar, boolean siteAdmin, boolean anyAdmin)
+    private void populateUserGridButtonBar(ButtonBar gridButtonBar, boolean siteAdmin, boolean isProjectAdminOrBetter)
     {
         if (siteAdmin && getContainer().isRoot())
         {
@@ -274,7 +274,7 @@ public class UserController extends SpringActionController
             gridButtonBar.add(preferences);
         }
 
-        if (anyAdmin)
+        if (isProjectAdminOrBetter)
         {
             if (AuditLogService.get().isViewable())
             {
@@ -555,6 +555,9 @@ public class UserController extends SpringActionController
             settings.getBaseFilter().addAllClauses(filter);
 
             final boolean forExport2 = forExport;
+            final boolean isSiteAdmin = getUser().isAdministrator();
+            final boolean isProjectAdminOrBetter = isSiteAdmin || isProjectAdmin();
+
             QueryView queryView = new QueryView(new CoreQuerySchema(getUser(), getContainer()), settings, errors)
             {
                 @Override
@@ -562,7 +565,7 @@ public class UserController extends SpringActionController
                 {
                     super.setupDataView(ret);
 
-                    if (!forExport2)
+                    if (!forExport2 && isProjectAdminOrBetter)
                     {
                         ActionURL permissions = new UserUrlsImpl().getUserAccessURL(getContainer());
                         permissions.addParameter("userId", "${UserId}");
@@ -575,9 +578,7 @@ public class UserController extends SpringActionController
                 protected void populateButtonBar(DataView view, ButtonBar bar)
                 {
                     super.populateButtonBar(view, bar);
-                    boolean isSiteAdmin = getUser().isAdministrator();
-                    boolean isAnyAdmin = isSiteAdmin || getContainer().hasPermission(getUser(), AdminPermission.class);
-                    populateUserGridButtonBar(bar, isSiteAdmin, isAnyAdmin);
+                    populateUserGridButtonBar(bar, isSiteAdmin, isProjectAdminOrBetter);
                 }
             };
             queryView.setUseQueryViewActionExportURLs(true);
@@ -605,7 +606,8 @@ public class UserController extends SpringActionController
             users.addView(toggleInactiveView);
             users.addView(createQueryView(form, errors, false, "Users"));
 
-            if (impersonateView.hasUsers())
+            // Folder admins can't impersonate
+            if (impersonateView.hasUsers() && (getUser().isAdministrator() || isProjectAdmin()))
             {
                 return new VBox(impersonateView, users);
             }
@@ -632,7 +634,7 @@ public class UserController extends SpringActionController
 
     // Site admins can act on any user
     // Project admins can only act on users who are project users
-    private void authorizeUserAction(Integer userId, String action) throws UnauthorizedException
+    private void authorizeUserAction(Integer targetUserId, String action, boolean allowFolderAdmins) throws UnauthorizedException
     {
         User user = getUser();
 
@@ -649,18 +651,26 @@ public class UserController extends SpringActionController
         }
         else
         {
-            Container project = c.getProject();
-
-            // Must be project admin to view outside the root...
-            if (!project.hasPermission(user, AdminPermission.class))
-            {
-                throw new UnauthorizedException();
-            }
+            if (!allowFolderAdmins)
+                requiresProjectOrSiteAdmin();
 
             // ...and user must be a project user
-            if (!SecurityManager.getProjectUsersIds(project).contains(userId))
-                throw new UnauthorizedException("Project administrators can only " + action + " project users");
+            if (!SecurityManager.getProjectUsersIds(c.getProject()).contains(targetUserId))
+                throw new UnauthorizedException("You can only " + action + " project users");
         }
+    }
+
+
+    private void requiresProjectOrSiteAdmin() throws UnauthorizedException
+    {
+        if (!(getUser().isAdministrator() || isProjectAdmin()))
+            throw new UnauthorizedException();
+    }
+
+    private boolean isProjectAdmin()
+    {
+        Container project = getContainer().getProject();
+        return (null != project && project.hasPermission(getUser(), AdminPermission.class));
     }
 
 
@@ -696,6 +706,14 @@ public class UserController extends SpringActionController
     @RequiresPermissionClass(AdminPermission.class)
     public class ShowUserHistoryAction extends SimpleViewAction
     {
+        @Override
+        public void checkPermissions() throws TermsOfUseException, UnauthorizedException
+        {
+            super.checkPermissions();
+
+            requiresProjectOrSiteAdmin();
+        }
+
         public ModelAndView getView(Object o, BindException errors) throws Exception
         {
             SimpleFilter projectMemberFilter = authorizeAndGetProjectMemberFilter("IntKey1");
@@ -940,6 +958,15 @@ public class UserController extends SpringActionController
         private boolean _showNavTrail;
         private Integer _userId;
 
+        @Override
+        public void checkPermissions() throws TermsOfUseException, UnauthorizedException
+        {
+            super.checkPermissions();
+
+            // Folder admins can't view permissions, #13465
+            requiresProjectOrSiteAdmin();
+        }
+
         public ModelAndView getView(UserForm form, BindException errors) throws Exception
         {
             String email = form.getNewEmail();
@@ -1051,15 +1078,14 @@ public class UserController extends SpringActionController
 
             // Anyone can view their own record; otherwise, make sure current user can view the details of this user
             if (!isOwnRecord)
-                authorizeUserAction(_detailsUserId, "view details of");
+                authorizeUserAction(_detailsUserId, "view details of", true);
 
             if (null == detailsUser || detailsUser.isGuest())
                 throw new NotFoundException("User does not exist");
 
             Container c = getContainer();
             boolean isSiteAdmin = user.isAdministrator();
-            boolean hasAdminPerm = c.hasPermission(user, AdminPermission.class);
-            boolean isAnyAdmin = isSiteAdmin || hasAdminPerm;
+            boolean isProjectAdminOrBetter = isSiteAdmin || isProjectAdmin();
             ValidEmail detailsEmail = new ValidEmail(detailsUser.getEmail());
             boolean loginExists = SecurityManager.loginExists(detailsEmail);
 
@@ -1081,7 +1107,9 @@ public class UserController extends SpringActionController
                 if (!isOwnRecord)
                 {
                     // Allow admins to create a logins entry if it doesn't exist.  Addresses scenario of user logging
-                    // in with SSO and later needing to use database authentication.
+                    // in with SSO and later needing to use database authentication.  Also allows site admin to have
+                    // an alternate login, in case LDAP server goes down (this happened recently on one of our
+                    // production installations).
                     ActionURL resetURL = new ActionURL(SecurityController.AdminResetPasswordAction.class, c);
                     resetURL.addParameter("email", detailsEmail.getEmailAddress());
                     resetURL.addReturnURL(getViewContext().getActionURL());
@@ -1118,7 +1146,7 @@ public class UserController extends SpringActionController
                 }
             }
 
-            if (isAnyAdmin)
+            if (isProjectAdminOrBetter)
             {
                 ActionURL viewPermissionsURL = getViewContext().cloneActionURL().setAction(UserAccessAction.class);
                 ActionButton viewPermissions = new ActionButton(viewPermissionsURL, "View Permissions");
@@ -1159,7 +1187,7 @@ public class UserController extends SpringActionController
 
             VBox view = new VBox(detailsView);
 
-            if (isAnyAdmin)
+            if (isProjectAdminOrBetter)
             {
                 SimpleFilter filter = new SimpleFilter("IntKey1", _detailsUserId);
                 filter.addCondition("EventType", UserManager.USER_AUDIT_EVENT);
@@ -1723,7 +1751,7 @@ public class UserController extends SpringActionController
             if (impersonatedUser.equals(getUser()))
                 throw new UnauthorizedException("Can't impersonate yourself");
 
-            authorizeUserAction(impersonatedUser.getUserId(), "impersonate");
+            authorizeUserAction(impersonatedUser.getUserId(), "impersonate", false);
             Container c = getContainer();
 
             if (c.isRoot())
@@ -1760,6 +1788,13 @@ public class UserController extends SpringActionController
     @RequiresPermissionClass(AdminPermission.class)
     public class ImpersonateGroupAction extends SimpleRedirectAction<ImpersonateGroupForm>
     {
+        @Override
+        public void checkPermissions() throws TermsOfUseException, UnauthorizedException
+        {
+            super.checkPermissions();
+            requiresProjectOrSiteAdmin();
+        }
+
         public ActionURL getRedirectURL(ImpersonateGroupForm form) throws Exception
         {
             if (getUser().isImpersonated())
