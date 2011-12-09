@@ -3332,10 +3332,16 @@ LABKEY.FileBrowser = Ext.extend(Ext.Panel,
     // gets just the name portion of a path (if any)
     getName : function(path)
     {
-        var separator = Ext.isWindows ? "\\" : "/";
-        var i = path.lastIndexOf(separator);
+        var i = path.lastIndexOf("\\");
         if (i > -1)
             path = path.substring(i+1);
+        else if (!Ext.isWindows)
+        {
+            // try both types of separators on non-windows systems (issue: 13516)
+            i = path.lastIndexOf("/");
+            if (i > -1)
+                path = path.substring(i+1);
+        }
 
         return path;
     },
