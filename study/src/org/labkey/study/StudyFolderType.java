@@ -44,7 +44,7 @@ public class StudyFolderType extends MultiPortalFolderType
 
     private static final List<FolderTab> PAGES = Arrays.asList(
             new StudyFolderTabs.OverviewPage("Overview"),
-            new StudyFolderTabs.ShortcutsPage("Shortcuts"),
+            new StudyFolderTabs.ParticipantsPage("Participants"),
             new StudyFolderTabs.DataAnalysisPage("Clinical and Assay Data"),
             new StudyFolderTabs.SpecimensPage("Specimen Data"),
             new StudyFolderTabs.ManagePage("Manage")
