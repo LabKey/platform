@@ -16,12 +16,11 @@
 
 package org.labkey.study.designer;
 
+import org.apache.poi.ss.usermodel.Sheet;
+import org.apache.poi.ss.usermodel.Workbook;
 import org.labkey.api.data.*;
 import org.labkey.api.view.HttpView;
 import org.labkey.api.reader.ColumnDescriptor;
-import org.labkey.api.query.FieldKey;
-import jxl.write.WritableSheet;
-import jxl.write.WriteException;
 
 import java.util.*;
 import java.sql.SQLException;
@@ -39,8 +38,9 @@ public class MapArrayExcelWriter extends ExcelWriter
     List<Map<String,Object>> maps;
     int currentRow = 0;
 
-    public MapArrayExcelWriter(List<Map<String,Object>> maps, ColumnDescriptor[] cols)
+    public MapArrayExcelWriter(List<Map<String,Object>> maps, ColumnDescriptor[] cols, Workbook template)
     {
+        super(ExcelDocumentType.xls, template);
         this.maps = maps;
         List<DisplayColumn> xlcols = new ArrayList<DisplayColumn>();
         for (ColumnDescriptor col : cols)
@@ -50,7 +50,7 @@ public class MapArrayExcelWriter extends ExcelWriter
     }
 
     @Override
-    public void renderGrid(WritableSheet sheet, List<ExcelColumn> visibleColumns) throws SQLException, WriteException, MaxRowsExceededException
+    public void renderGrid(Sheet sheet, List<ExcelColumn> visibleColumns) throws SQLException, MaxRowsExceededException
     {
         RenderContext ctx = new RenderContext(HttpView.currentContext());
 

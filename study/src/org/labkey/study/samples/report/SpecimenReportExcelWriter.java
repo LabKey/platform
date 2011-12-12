@@ -15,7 +15,10 @@
  */
 package org.labkey.study.samples.report;
 
+import jxl.Workbook;
+import jxl.WorkbookSettings;
 import org.labkey.api.data.ExcelWriter;
+import org.labkey.api.util.ExceptionUtil;
 import org.labkey.study.model.VisitImpl;
 
 import javax.servlet.http.HttpServletResponse;
@@ -24,6 +27,8 @@ import javax.servlet.ServletOutputStream;
 import jxl.write.*;
 import jxl.write.Number;
 
+import java.io.File;
+import java.io.IOException;
 import java.util.Collection;
 /*
  * User: brittp
@@ -47,12 +52,16 @@ public class SpecimenReportExcelWriter
         ServletOutputStream ostream = null;
         try
         {
-            WritableFont boldFont = new WritableFont(ExcelWriter.DEFAULT_FONT, 10, WritableFont.BOLD);
+            WritableFont boldFont = new WritableFont(WritableFont.ARIAL, 10, WritableFont.BOLD);
             _headerFormat = new WritableCellFormat(boldFont);
             _headerFormat.setWrap(true);
             _headerFormat.setVerticalAlignment(jxl.format.VerticalAlignment.TOP);
-            ostream = ExcelWriter.getOutputStream(response, _parameters.getLabel());
-            workbook = ExcelWriter.getWorkbook(ostream);
+            ostream = ExcelWriter.getOutputStream(response, _parameters.getLabel(), ExcelWriter.ExcelDocumentType.xls);
+
+            WorkbookSettings settings = new WorkbookSettings();
+            settings.setArrayGrowSize(300000);
+            workbook = Workbook.createWorkbook(ostream, settings);
+
             for (SpecimenVisitReport report : _parameters.getReports())
                 writeReport(workbook, report);
         }
@@ -60,10 +69,33 @@ public class SpecimenReportExcelWriter
         {
             throw new RuntimeException(e);
         }
+        catch (IOException e)
+        {
+            throw new RuntimeException(e);
+        }
         finally
         {
             if (workbook != null)
-                ExcelWriter.closeWorkbook(workbook, ostream);
+            {
+                try
+                {
+                    workbook.write();
+                    workbook.close();
+
+                    // Flush the outpustream
+                    ostream.flush();
+                    // Finally, close the outputstream
+                    ostream.close();
+                }
+                catch (WriteException e)
+                {
+                    ExceptionUtil.logExceptionToMothership(null, e);
+                }
+                catch (IOException e)
+                {
+                    ExceptionUtil.logExceptionToMothership(null, e);
+                }
+            }
         }
     }
 

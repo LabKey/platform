@@ -18,21 +18,26 @@ package org.labkey.study.controllers.designer;
 
 import gwt.client.org.labkey.study.designer.client.model.GWTCohort;
 import gwt.client.org.labkey.study.designer.client.model.GWTStudyDefinition;
-import jxl.Range;
-import jxl.Workbook;
-import jxl.WorkbookSettings;
 import org.apache.commons.lang.StringUtils;
+import org.apache.poi.ss.usermodel.Workbook;
 import org.json.JSONArray;
 import org.json.JSONObject;
-import org.labkey.api.action.*;
+import org.labkey.api.action.ApiAction;
+import org.labkey.api.action.ApiJsonWriter;
+import org.labkey.api.action.ApiResponse;
+import org.labkey.api.action.ApiSimpleResponse;
+import org.labkey.api.action.ExportAction;
+import org.labkey.api.action.FormHandlerAction;
+import org.labkey.api.action.GWTServiceAction;
+import org.labkey.api.action.SimpleRedirectAction;
+import org.labkey.api.action.SimpleViewAction;
+import org.labkey.api.action.SpringActionController;
 import org.labkey.api.announcements.DiscussionService;
-import org.labkey.api.attachments.AttachmentDirectory;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.DataRegionSelection;
 import org.labkey.api.data.ExcelColumn;
-import org.labkey.api.files.FileContentService;
 import org.labkey.api.gwt.server.BaseRemoteService;
 import org.labkey.api.portal.ProjectUrls;
 import org.labkey.api.reader.ColumnDescriptor;
@@ -43,13 +48,27 @@ import org.labkey.api.security.permissions.AdminPermission;
 import org.labkey.api.security.permissions.DeletePermission;
 import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.security.permissions.UpdatePermission;
-import org.labkey.api.services.ServiceRegistry;
 import org.labkey.api.study.Study;
 import org.labkey.api.study.StudyService;
 import org.labkey.api.study.TimepointType;
 import org.labkey.api.util.PageFlowUtil;
-import org.labkey.api.view.*;
-import org.labkey.study.designer.*;
+import org.labkey.api.util.Pair;
+import org.labkey.api.view.ActionURL;
+import org.labkey.api.view.HtmlView;
+import org.labkey.api.view.HttpView;
+import org.labkey.api.view.JspView;
+import org.labkey.api.view.NavTree;
+import org.labkey.api.view.NotFoundException;
+import org.labkey.api.view.RedirectException;
+import org.labkey.api.view.VBox;
+import org.labkey.study.controllers.samples.SpecimenController;
+import org.labkey.study.designer.JSONSerializer;
+import org.labkey.study.designer.MapArrayExcelWriter;
+import org.labkey.study.designer.StudyDefinitionServiceImpl;
+import org.labkey.study.designer.StudyDesignInfo;
+import org.labkey.study.designer.StudyDesignManager;
+import org.labkey.study.designer.StudyDesignVersion;
+import org.labkey.study.designer.XMLSerializer;
 import org.labkey.study.designer.view.StudyDesignsWebPart;
 import org.labkey.study.importer.SimpleSpecimenImporter;
 import org.labkey.study.model.StudyManager;
@@ -61,10 +80,17 @@ import org.springframework.web.servlet.ModelAndView;
 
 import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpSession;
-import java.io.File;
 import java.io.IOException;
 import java.sql.SQLException;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.LinkedHashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 
 /**
  * User: jgarms
@@ -306,7 +332,7 @@ public class DesignerController extends SpringActionController
             xlCols[0] = new ColumnDescriptor("SubjectId", Integer.class);
             xlCols[1] = new ColumnDescriptor("Cohort", String.class);
             xlCols[2] = new ColumnDescriptor("StartDate", Date.class);
-            MapArrayExcelWriter xlWriter = new MapArrayExcelWriter(participantGroup, xlCols);
+            MapArrayExcelWriter xlWriter = new MapArrayExcelWriter(participantGroup, xlCols, null);
             xlWriter.setHeaders(Arrays.asList("#Update the SubjectId column of this spreadsheet to the identifiers used when sending a sample to labs", "#"));
             xlWriter.write(response);
         }
@@ -372,44 +398,16 @@ public class DesignerController extends SpringActionController
     {
         public void export(CreateRepositoryForm form, HttpServletResponse response, BindException errors) throws Exception
         {
-            Container c = getContainer();
             //Search for a template in all folders up to root.
-            Workbook inputWorkbook = null;
-            while (!c.equals(ContainerManager.getRoot()))
-            {
-                FileContentService svc = ServiceRegistry.get().getService(FileContentService.class);
-                AttachmentDirectory dir = svc.getMappedAttachmentDirectory(c, false);
-                if (null != dir && dir.getFileSystemDirectory().exists())
-                {
-                    if (new File(dir.getFileSystemDirectory(), "Samples.xls").exists())
-                    {
-                        WorkbookSettings settings = new WorkbookSettings();
-                        settings.setGCDisabled(true);
-                        inputWorkbook = Workbook.getWorkbook(new File(dir.getFileSystemDirectory(), "Samples.xls"), settings);
-                    }
-                }
-                c = c.getParent();
-            }
-            int startRow = 0;
-            if (null != inputWorkbook)
-            {
-                Range[] range = inputWorkbook.findByName("specimen_headers");
-                if (null != range && range.length > 0)
-                    startRow = range[0].getTopLeft().getRow();
-                else
-                    inputWorkbook = null;
-            }
-
+            Pair<Workbook, Integer> template = SpecimenController.getTemplate(getContainer());
             SimpleSpecimenImporter importer = new SimpleSpecimenImporter(TimepointType.DATE, "Subject Id");
             List<Map<String,Object>> defaultSpecimens = StudyDesignManager.get().generateSampleList(getStudyDefinition(form), getParticipants(), form.getBeginDate());
-            MapArrayExcelWriter xlWriter = new MapArrayExcelWriter(defaultSpecimens, importer.getSimpleSpecimenColumns());
+            MapArrayExcelWriter xlWriter = new MapArrayExcelWriter(defaultSpecimens, importer.getSimpleSpecimenColumns(), template.getKey());
             for (ExcelColumn col : xlWriter.getColumns())
             {
                 col.setCaption(importer.label(col.getName()));
             }
-            xlWriter.setCurrentRow(startRow);
-            if (null != inputWorkbook)
-                xlWriter.setTemplate(inputWorkbook);
+            xlWriter.setStartRow(template.getValue().intValue());
 
             xlWriter.write(response);
         }

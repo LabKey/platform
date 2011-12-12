@@ -16,26 +16,97 @@
 
 package org.labkey.study.controllers.samples;
 
-import jxl.Range;
-import jxl.Workbook;
-import jxl.WorkbookSettings;
 import org.apache.commons.lang.ObjectUtils;
 import org.apache.log4j.Logger;
+import org.apache.poi.hssf.util.AreaReference;
+import org.apache.poi.openxml4j.exceptions.InvalidFormatException;
+import org.apache.poi.ss.usermodel.Name;
+import org.apache.poi.ss.usermodel.Workbook;
+import org.apache.poi.ss.usermodel.WorkbookFactory;
 import org.jetbrains.annotations.NotNull;
-import org.labkey.api.action.*;
-import org.labkey.api.attachments.*;
-import org.labkey.api.data.*;
+import org.labkey.api.action.ApiAction;
+import org.labkey.api.action.ApiResponse;
+import org.labkey.api.action.FormHandlerAction;
+import org.labkey.api.action.FormViewAction;
+import org.labkey.api.action.HasViewContext;
+import org.labkey.api.action.QueryViewAction;
+import org.labkey.api.action.RedirectAction;
+import org.labkey.api.action.ReturnUrlForm;
+import org.labkey.api.action.SimpleRedirectAction;
+import org.labkey.api.action.SimpleViewAction;
+import org.labkey.api.action.SpringActionController;
+import org.labkey.api.attachments.Attachment;
+import org.labkey.api.attachments.AttachmentDirectory;
+import org.labkey.api.attachments.AttachmentFile;
+import org.labkey.api.attachments.AttachmentForm;
+import org.labkey.api.attachments.AttachmentService;
+import org.labkey.api.attachments.ByteArrayAttachmentFile;
+import org.labkey.api.data.ActionButton;
+import org.labkey.api.data.BeanViewForm;
+import org.labkey.api.data.ColumnInfo;
+import org.labkey.api.data.Container;
+import org.labkey.api.data.ContainerManager;
+import org.labkey.api.data.DataRegion;
+import org.labkey.api.data.DataRegionSelection;
+import org.labkey.api.data.DbScope;
+import org.labkey.api.data.ExcelColumn;
+import org.labkey.api.data.ExcelWriter;
+import org.labkey.api.data.MenuButton;
+import org.labkey.api.data.RuntimeSQLException;
+import org.labkey.api.data.SimpleFilter;
+import org.labkey.api.data.TSVGridWriter;
+import org.labkey.api.data.Table;
+import org.labkey.api.data.TableInfo;
+import org.labkey.api.files.FileContentService;
 import org.labkey.api.pipeline.PipeRoot;
 import org.labkey.api.pipeline.PipelineService;
 import org.labkey.api.pipeline.PipelineStatusUrls;
 import org.labkey.api.pipeline.browse.PipelinePathForm;
-import org.labkey.api.query.*;
-import org.labkey.api.security.*;
+import org.labkey.api.query.CustomView;
+import org.labkey.api.query.DefaultSchema;
+import org.labkey.api.query.FieldKey;
+import org.labkey.api.query.QueryDefinition;
+import org.labkey.api.query.QueryService;
+import org.labkey.api.query.QueryView;
+import org.labkey.api.security.RequiresPermissionClass;
+import org.labkey.api.security.User;
+import org.labkey.api.security.ValidEmail;
 import org.labkey.api.security.permissions.AdminPermission;
+import org.labkey.api.security.permissions.InsertPermission;
 import org.labkey.api.security.permissions.ReadPermission;
-import org.labkey.api.study.*;
-import org.labkey.api.util.*;
-import org.labkey.api.view.*;
+import org.labkey.api.services.ServiceRegistry;
+import org.labkey.api.study.SamplesUrls;
+import org.labkey.api.study.Site;
+import org.labkey.api.study.Study;
+import org.labkey.api.study.StudyService;
+import org.labkey.api.study.TimepointType;
+import org.labkey.api.study.Visit;
+import org.labkey.api.util.ConfigurationException;
+import org.labkey.api.util.DateUtil;
+import org.labkey.api.util.ExceptionUtil;
+import org.labkey.api.util.GUID;
+import org.labkey.api.util.HelpTopic;
+import org.labkey.api.util.PageFlowUtil;
+import org.labkey.api.util.Pair;
+import org.labkey.api.util.ReturnURLString;
+import org.labkey.api.view.ActionURL;
+import org.labkey.api.view.BaseWebPartFactory;
+import org.labkey.api.view.DataView;
+import org.labkey.api.view.DisplayElement;
+import org.labkey.api.view.GridView;
+import org.labkey.api.view.HBox;
+import org.labkey.api.view.HtmlView;
+import org.labkey.api.view.HttpView;
+import org.labkey.api.view.JspView;
+import org.labkey.api.view.NavTree;
+import org.labkey.api.view.NotFoundException;
+import org.labkey.api.view.Portal;
+import org.labkey.api.view.RedirectException;
+import org.labkey.api.view.UnauthorizedException;
+import org.labkey.api.view.VBox;
+import org.labkey.api.view.ViewBackgroundInfo;
+import org.labkey.api.view.ViewContext;
+import org.labkey.api.view.WebPartView;
 import org.labkey.study.CohortFilter;
 import org.labkey.study.SampleManager;
 import org.labkey.study.StudySchema;
@@ -45,17 +116,31 @@ import org.labkey.study.controllers.StudyController;
 import org.labkey.study.designer.MapArrayExcelWriter;
 import org.labkey.study.importer.RequestabilityManager;
 import org.labkey.study.importer.SimpleSpecimenImporter;
-import org.labkey.study.model.*;
+import org.labkey.study.model.DataSetDefinition;
+import org.labkey.study.model.ParticipantDataset;
+import org.labkey.study.model.SampleRequest;
+import org.labkey.study.model.SampleRequestActor;
+import org.labkey.study.model.SampleRequestEvent;
+import org.labkey.study.model.SampleRequestRequirement;
+import org.labkey.study.model.SampleRequestStatus;
+import org.labkey.study.model.SecurityType;
+import org.labkey.study.model.SiteImpl;
+import org.labkey.study.model.Specimen;
+import org.labkey.study.model.SpecimenComment;
+import org.labkey.study.model.StudyImpl;
+import org.labkey.study.model.StudyManager;
+import org.labkey.study.model.VisitImpl;
 import org.labkey.study.pipeline.SpecimenArchive;
 import org.labkey.study.pipeline.SpecimenBatch;
-import org.labkey.study.query.*;
+import org.labkey.study.query.DataSetQuerySettings;
+import org.labkey.study.query.DataSetQueryView;
+import org.labkey.study.query.SpecimenEventQueryView;
+import org.labkey.study.query.SpecimenQueryView;
+import org.labkey.study.query.SpecimenRequestQueryView;
+import org.labkey.study.query.StudyQuerySchema;
+import org.labkey.study.query.StudySchemaProvider;
 import org.labkey.study.requirements.RequirementProvider;
-import org.labkey.api.security.RequiresPermissionClass;
-import org.labkey.api.security.permissions.*;
-import org.labkey.api.services.ServiceRegistry;
-import org.labkey.api.files.FileContentService;
 import org.labkey.study.requirements.SpecimenRequestRequirementType;
-import org.labkey.api.attachments.ByteArrayAttachmentFile;
 import org.labkey.study.samples.SampleSearchWebPart;
 import org.labkey.study.samples.SamplesWebPart;
 import org.labkey.study.samples.notifications.ActorNotificationRecipientSet;
@@ -77,7 +162,17 @@ import org.labkey.study.samples.settings.DisplaySettings;
 import org.labkey.study.samples.settings.RepositorySettings;
 import org.labkey.study.samples.settings.RequestNotificationSettings;
 import org.labkey.study.samples.settings.StatusSettings;
-import org.labkey.study.security.permissions.*;
+import org.labkey.study.security.permissions.ManageDisplaySettingsPermission;
+import org.labkey.study.security.permissions.ManageNewRequestFormPermission;
+import org.labkey.study.security.permissions.ManageNotificationsPermission;
+import org.labkey.study.security.permissions.ManageRequestRequirementsPermission;
+import org.labkey.study.security.permissions.ManageRequestSettingsPermission;
+import org.labkey.study.security.permissions.ManageRequestStatusesPermission;
+import org.labkey.study.security.permissions.ManageRequestsPermission;
+import org.labkey.study.security.permissions.ManageSpecimenActorsPermission;
+import org.labkey.study.security.permissions.ManageStudyPermission;
+import org.labkey.study.security.permissions.RequestSpecimensPermission;
+import org.labkey.study.security.permissions.SetSpecimenCommentsPermission;
 import org.springframework.validation.BindException;
 import org.springframework.validation.Errors;
 import org.springframework.validation.ObjectError;
@@ -85,11 +180,26 @@ import org.springframework.web.servlet.ModelAndView;
 
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpSession;
-import java.io.*;
+import java.io.BufferedOutputStream;
+import java.io.ByteArrayOutputStream;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.IOException;
+import java.io.OutputStream;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Timestamp;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Iterator;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.TreeMap;
 
 /**
  * User: brittp
@@ -4582,42 +4692,14 @@ public class SpecimenController extends BaseStudyController
     {
         public ModelAndView getView(Object o, BindException errors) throws Exception
         {
-            Container specimenTemplateContainer = getContainer();
             //Search for a template in all folders up to root.
-            Workbook inputWorkbook = null;
-            while (!specimenTemplateContainer.equals(ContainerManager.getRoot()))
-            {
-                FileContentService svc = ServiceRegistry.get().getService(FileContentService.class);
-                AttachmentDirectory dir = svc.getMappedAttachmentDirectory(specimenTemplateContainer, false);
-                if (null != dir && dir.getFileSystemDirectory().exists())
-                {
-                    if (new File(dir.getFileSystemDirectory(), "Samples.xls").exists())
-                    {
-                        WorkbookSettings settings = new WorkbookSettings();
-                        settings.setGCDisabled(true);
-                        inputWorkbook = Workbook.getWorkbook(new File(dir.getFileSystemDirectory(), "Samples.xls"), settings);
-                    }
-                }
-                specimenTemplateContainer = specimenTemplateContainer.getParent();
-            }
-            int startRow = 0;
-            if (null != inputWorkbook)
-            {
-                Range[] range = inputWorkbook.findByName("specimen_headers");
-                if (null != range && range.length > 0)
-                    startRow = range[0].getTopLeft().getRow();
-                else
-                    inputWorkbook = null;
-            }
-
+            Pair<Workbook, Integer> template = getTemplate(getContainer());
             List<Map<String,Object>> defaultSpecimens = new ArrayList<Map<String, Object>>();
             SimpleSpecimenImporter importer = new SimpleSpecimenImporter(getStudy().getTimepointType(),  StudyService.get().getSubjectNounSingular(getContainer()));
-            MapArrayExcelWriter xlWriter = new MapArrayExcelWriter(defaultSpecimens, importer.getSimpleSpecimenColumns());
+            MapArrayExcelWriter xlWriter = new MapArrayExcelWriter(defaultSpecimens, importer.getSimpleSpecimenColumns(), template.getKey());
             for (ExcelColumn col : xlWriter.getColumns())
                 col.setCaption(importer.label(col.getName()));
-            xlWriter.setCurrentRow(startRow);
-            if (null != inputWorkbook)
-                xlWriter.setTemplate(inputWorkbook);
+            xlWriter.setStartRow(template.getValue().intValue());
 
             xlWriter.write(getViewContext().getResponse());
 
@@ -4628,6 +4710,37 @@ public class SpecimenController extends BaseStudyController
         {
             return null;
         }
+    }
+
+    public static Pair<Workbook, Integer> getTemplate(Container container) throws IOException, InvalidFormatException
+    {
+        Workbook inputWorkbook = null;
+        while (!container.equals(ContainerManager.getRoot()))
+        {
+            FileContentService svc = ServiceRegistry.get().getService(FileContentService.class);
+            AttachmentDirectory dir = svc.getMappedAttachmentDirectory(container, false);
+            if (null != dir && dir.getFileSystemDirectory().exists())
+            {
+                if (new File(dir.getFileSystemDirectory(), "Samples.xls").exists())
+                {
+                    inputWorkbook = WorkbookFactory.create(new FileInputStream(new File(dir.getFileSystemDirectory(), "Samples.xls")));
+                }
+            }
+            container = container.getParent();
+        }
+        int startRow = 0;
+        if (null != inputWorkbook)
+        {
+            Name name = inputWorkbook.getName("specimen_headers");
+            if (null != name)
+            {
+                AreaReference aref = new AreaReference(name.getRefersToFormula());
+                startRow = aref.getFirstCell().getRow();
+            }
+            else
+                inputWorkbook = null;
+        }
+        return new Pair<Workbook, Integer>(inputWorkbook, startRow);
     }
 
     public static class IdForm extends ReturnUrlForm

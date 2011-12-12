@@ -16,8 +16,6 @@
 
 package org.labkey.study.reports;
 
-import jxl.write.WritableWorkbook;
-import jxl.write.WriteException;
 import org.apache.commons.lang.math.NumberUtils;
 import org.labkey.api.data.*;
 import org.labkey.api.reports.report.RedirectReport;
@@ -32,7 +30,6 @@ import org.labkey.study.model.DataSetDefinition;
 import org.labkey.study.model.StudyImpl;
 
 import javax.servlet.ServletException;
-import javax.servlet.ServletOutputStream;
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.sql.ResultSet;
@@ -141,7 +138,7 @@ public class ExportExcelReport extends RedirectReport
 
 
     public void runExportToExcel(HttpServletResponse response, StudyImpl study, User user)
-            throws IOException, ServletException, SQLException, WriteException
+            throws IOException, ServletException, SQLException
     {
         // TODO: wire up the security
         boolean checkUserPermissions = true;//mustCheckDatasetPermissions(user, ACL.PERM_READ);
@@ -160,9 +157,7 @@ public class ExportExcelReport extends RedirectReport
             siteFilter.addWhereClause(study.getSubjectColumnName() + " IN (SELECT ParticipantId FROM study.Participant WHERE CurrentSiteId=" + siteId + ")", new Object[0]);
         }
 
-        ServletOutputStream outputStream = ExcelWriter.getOutputStream(response, study.getLabel());
-        WritableWorkbook workbook = ExcelWriter.getWorkbook(outputStream);
-        ExcelWriter writer = new ExcelWriter();
+        ExcelWriter writer = new ExcelWriter(ExcelWriter.ExcelDocumentType.xls);
 
         for (DataSetDefinition def : study.getDataSets())
         {
@@ -191,13 +186,13 @@ public class ExportExcelReport extends RedirectReport
             }
 
             writer.setColumns(destColumns);
-            renderSheet(workbook, writer, label, rs);
+            renderSheet(writer, label, rs);
         }
 
-        if (workbook.getNumberOfSheets() == 0)
+        if (writer.getWorkbook().getNumberOfSheets() == 0)
         {
             writer.setHeaders(Arrays.asList("No permissions"));
-            writer.renderNewSheet(workbook);
+            writer.renderNewSheet();
         }
         else
         {
@@ -212,14 +207,14 @@ public class ExportExcelReport extends RedirectReport
                     null);
 
             writer.createColumns(rs.getMetaData());
-            renderSheet(workbook, writer, StudyService.get().getSubjectNounPlural(study.getContainer()), rs);
+            renderSheet(writer, StudyService.get().getSubjectNounPlural(study.getContainer()), rs);
         }
 
-        ExcelWriter.closeWorkbook(workbook, outputStream);
+        writer.write(response, study.getLabel());
     }
 
 
-    private static void renderSheet(WritableWorkbook workbook, ExcelWriter writer, String label, ResultSet rs)
+    private static void renderSheet(ExcelWriter writer, String label, ResultSet rs)
     {
         writer.setResultSet(rs);
         writer.setAutoSize(true);
@@ -228,6 +223,6 @@ public class ExportExcelReport extends RedirectReport
         if (label.length() > 0)
             writer.setSheetName(label);
 
-        writer.renderNewSheet(workbook);
+        writer.renderNewSheet();
     }
 }

@@ -1215,10 +1215,18 @@ public class QueryController extends SpringActionController
     {
         void _export(QueryForm form, QueryView view) throws Exception
         {
-            view.exportToExcel(getViewContext().getResponse());
+            view.exportToExcel(getViewContext().getResponse(), ExcelWriter.ExcelDocumentType.xls);
         }
     }
 
+    @RequiresPermissionClass(ReadPermission.class)
+    public class ExportRowsXLSXAction extends _ExportQuery
+    {
+        void _export(QueryForm form, QueryView view) throws Exception
+        {
+            view.exportToExcel(getViewContext().getResponse(), ExcelWriter.ExcelDocumentType.xlsx);
+        }
+    }
 
     public static class TemplateForm extends QueryForm
     {

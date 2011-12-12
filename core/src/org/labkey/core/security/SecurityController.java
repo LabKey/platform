@@ -15,9 +15,8 @@
  */
 package org.labkey.core.security;
 
-import jxl.write.WritableSheet;
-import jxl.write.WriteException;
 import org.apache.commons.lang.StringUtils;
+import org.apache.poi.ss.usermodel.Sheet;
 import org.junit.Assert;
 import org.junit.Test;
 import org.labkey.api.action.ApiAction;
@@ -1112,7 +1111,7 @@ public class SecurityController extends SpringActionController
             ExcelWriter ew = new ExcelWriter(rgn.getResultSet(ctx), rgn.getDisplayColumns())
             {
                 @Override
-                public void renderGrid(WritableSheet sheet, List<ExcelColumn> visibleColumns) throws SQLException, WriteException, MaxRowsExceededException
+                public void renderGrid(Sheet sheet, List<ExcelColumn> visibleColumns) throws SQLException, MaxRowsExceededException
                 {
                     RenderContext ctx = new RenderContext(HttpView.currentContext());
                     for (Pair<Integer, String> memberGroup : memberGroups)
