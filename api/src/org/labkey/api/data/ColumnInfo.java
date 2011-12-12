@@ -278,6 +278,10 @@ public class ColumnInfo extends ColumnRenderProperties implements SqlColumn
         setDescription(col.getDescription());
         if (col.isFormatStringSet())
             setFormat(col.getFormat());
+        if (col.getExcelFormatString() != null)
+            setExcelFormatString(col.getExcelFormatString());
+        if (col.getTsvFormatString() != null)
+            setTsvFormatString(col.getTsvFormatString());
         // Don't call the getter, because if it hasn't been explicitly set we want to
         // fetch the value lazily so we don't have to traverse FKs to get the display
         // field at this point.

@@ -15,17 +15,16 @@
  */
 package org.labkey.api.query;
 
+import org.apache.poi.ss.usermodel.Cell;
+import org.apache.poi.ss.usermodel.Row;
+import org.apache.poi.ss.usermodel.Sheet;
 import org.labkey.api.data.ExcelWriter;
 import org.labkey.api.data.ExcelColumn;
 import org.labkey.api.data.DisplayColumn;
 import org.labkey.api.data.CrosstabMember;
-import jxl.write.WritableSheet;
-import jxl.write.WriteException;
-import jxl.write.Label;
 import org.labkey.api.data.Results;
 
 import java.util.List;
-import java.sql.ResultSet;
 
 /**
  * Used when exporting a crosstab view to Excel.
@@ -41,22 +40,30 @@ public class CrosstabExcelWriter extends ExcelWriter
     private int _numRowAxisCols = 0;
     private int _numMeasures = 0;
 
-    public CrosstabExcelWriter(Results rs, List<DisplayColumn> displayColumns, List<CrosstabMember> colMembers, int numRowAxisCols, int numMeasures)
+    public CrosstabExcelWriter(Results rs, List<DisplayColumn> displayColumns, List<CrosstabMember> colMembers, int numRowAxisCols, int numMeasures, ExcelDocumentType docType)
     {
-        super(rs, displayColumns);
+        super(rs, displayColumns, docType);
         _colMembers = colMembers;
         _numRowAxisCols = numRowAxisCols;
         _numMeasures = numMeasures;
     }
 
-    public void renderColumnCaptions(WritableSheet sheet, List<ExcelColumn> visibleColumns) throws WriteException, MaxRowsExceededException
+    @Override
+    public void renderColumnCaptions(Sheet sheet, List<ExcelColumn> visibleColumns) throws MaxRowsExceededException
     {
         //add the column members above the normal captions
         int column = _numRowAxisCols;
 
         for(CrosstabMember member : _colMembers)
         {
-            sheet.addCell(new Label(column, getCurrentRow(), member.getCaption(), getBoldFormat()));
+            Row row = sheet.getRow(getCurrentRow());
+            if (row == null)
+            {
+                row = sheet.createRow(getCurrentRow());
+            }
+            Cell cell = row.getCell(column, Row.CREATE_NULL_AS_BLANK);
+            cell.setCellStyle(getBoldFormat());
+            cell.setCellValue(member.getCaption());
             column += _numMeasures;
         }
 

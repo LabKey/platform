@@ -60,9 +60,9 @@ import java.util.Date;
  */
 public class ExcelFactory
 {
-    private static final String SUB_TYPE_XSSF = "vnd.openxmlformats-officedocument.spreadsheetml.sheet";
-    private static final String SUB_TYPE_BIFF5 = "x-tika-msoffice";
-    private static final String SUB_TYPE_BIFF8 = "vnd.ms-excel";
+    public static final String SUB_TYPE_XSSF = "vnd.openxmlformats-officedocument.spreadsheetml.sheet";
+    public static final String SUB_TYPE_BIFF5 = "x-tika-msoffice";
+    public static final String SUB_TYPE_BIFF8 = "vnd.ms-excel";
 
     public static Workbook create(File dataFile) throws IOException, InvalidFormatException
     {

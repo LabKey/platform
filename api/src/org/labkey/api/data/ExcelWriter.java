@@ -16,22 +16,26 @@
 
 package org.labkey.api.data;
 
-import jxl.HeaderFooter;
-import jxl.Workbook;
-import jxl.WorkbookSettings;
-import jxl.format.PaperSize;
-import jxl.format.VerticalAlignment;
-import jxl.write.*;
-import org.apache.log4j.Logger;
+import org.apache.poi.hssf.usermodel.HSSFWorkbook;
+import org.apache.poi.ss.usermodel.Cell;
+import org.apache.poi.ss.usermodel.CellStyle;
+import org.apache.poi.ss.usermodel.Font;
+import org.apache.poi.ss.usermodel.Footer;
+import org.apache.poi.ss.usermodel.PrintSetup;
+import org.apache.poi.ss.usermodel.Row;
+import org.apache.poi.ss.usermodel.Sheet;
+import org.apache.poi.ss.usermodel.Workbook;
+import org.apache.poi.ss.util.CellRangeAddress;
+import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 import org.labkey.api.collections.ResultSetRowMapFactory;
 import org.labkey.api.query.FieldKey;
+import org.labkey.api.reader.ExcelFactory;
 import org.labkey.api.util.ExceptionUtil;
 import org.labkey.api.util.FileUtil;
 import org.labkey.api.view.HttpView;
 
 import javax.servlet.ServletOutputStream;
 import javax.servlet.http.HttpServletResponse;
-import java.io.File;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.sql.ResultSet;
@@ -41,7 +45,6 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
-import java.util.Iterator;
 import java.util.Map;
 import java.util.regex.Pattern;
 
@@ -65,12 +68,59 @@ public class ExcelWriter
         public abstract String getText(ExcelColumn c);
     }
 
+    public enum ExcelDocumentType
+    {
+        xls
+        {
+            @Override
+            public Workbook createWorkbook()
+            {
+                return new HSSFWorkbook();
+            }
+
+            @Override
+            public String getMimeType()
+            {
+                return "application/" + ExcelFactory.SUB_TYPE_BIFF8; 
+            }
+
+            @Override
+            public int getMaxRows()
+            {
+                return 65535;
+            }
+        },
+        xlsx
+        {
+            @Override
+            public Workbook createWorkbook()
+            {
+                return new XSSFWorkbook();
+            }
+
+            @Override
+            public String getMimeType()
+            {
+                return "application/" + ExcelFactory.SUB_TYPE_XSSF; 
+            }
+
+            @Override
+            public int getMaxRows()
+            {
+                return 1048576;
+            }
+        };
+
+        public abstract Workbook createWorkbook();
+        public abstract String getMimeType();
+        public abstract int getMaxRows();
+    }
+
     public static final int MAX_ROWS = 65535;
 
     protected Results _rs;
-    Map<FieldKey,ColumnInfo> _fieldMap;
 
-    private static Logger _log = Logger.getLogger(ExcelWriter.class);
+    private final ExcelDocumentType _docType;
 
     private String _sheetName;
     private String _footer;
@@ -83,40 +133,65 @@ public class ExcelWriter
     private boolean _captionRowVisible = true;
 
     // Careful: these can't be static.  As a cell format is added to a workbook, it gets assigned an internal index number, so each workbook must have a new one.
-    private WritableCellFormat _boldFormat = null;
-    private WritableCellFormat _wrappingTextFormat = null;
-    private WritableCellFormat _nonWrappingTextFormat = null;
+    private CellStyle _boldFormat = null;
+    private CellStyle _wrappingTextFormat = null;
+    private CellStyle _nonWrappingTextFormat = null;
 
-    public static final WritableFont.FontName DEFAULT_FONT = WritableFont.ARIAL;
+    private Map<ExcelColumn.ExcelFormatDescriptor, CellStyle> _formatters = new HashMap<ExcelColumn.ExcelFormatDescriptor, CellStyle>();
 
-    private Map<ExcelColumn.ExcelFormatDescriptor, WritableCellFormat> _formatters = new HashMap<ExcelColumn.ExcelFormatDescriptor, WritableCellFormat>();
-
+    /** First row to write to when starting a new sheet */
+    private int _startRow = 0;
     private int _currentRow = 0;
     private int _currentSheet = -1;
 
-    private Workbook _template;
+    protected final Workbook _workbook;
 
     public ExcelWriter()
     {
+        this(ExcelDocumentType.xls);
     }
 
-
-    public ExcelWriter(Results rs) throws SQLException
+    public ExcelWriter(ExcelDocumentType docType)
     {
-        setResults(rs);
-        createColumns(rs.getMetaData());
+        this(docType, null);
     }
 
+    protected ExcelWriter(ExcelDocumentType docType, Workbook workbook)
+    {
+        _docType = docType;
+        _workbook = workbook == null ? docType.createWorkbook() : workbook;
+    }
+
+    public ExcelWriter(Results rs, List<DisplayColumn> displayColumns, ExcelWriter parentWriter)
+    {
+        this(parentWriter._docType, parentWriter._workbook);
+        _wrappingTextFormat = parentWriter.getWrappingTextFormat();
+        _nonWrappingTextFormat = parentWriter.getNonWrappingTextFormat();
+        _boldFormat = parentWriter.getBoldFormat();
+        _formatters = parentWriter._formatters;
+
+        setResults(rs);
+        addDisplayColumns(displayColumns);
+    }
+
+    public ExcelWriter(Results rs, List<DisplayColumn> displayColumns, ExcelDocumentType docType)
+    {
+        this(docType);
+        setResults(rs);
+        addDisplayColumns(displayColumns);
+    }
 
     public ExcelWriter(Results rs, List<DisplayColumn> displayColumns)
     {
+        this(rs, displayColumns, ExcelDocumentType.xls);
         setResults(rs);
         addDisplayColumns(displayColumns);
     }
 
 
-    public ExcelWriter(ResultSet rs, Map<FieldKey, ColumnInfo> fieldMap, List<DisplayColumn> displayColumns)
+    public ExcelWriter(ResultSet rs, Map<FieldKey, ColumnInfo> fieldMap, List<DisplayColumn> displayColumns, ExcelDocumentType docType)
     {
+        this(docType);
         setResultSet(rs, fieldMap);
         addDisplayColumns(displayColumns);
     }
@@ -124,7 +199,8 @@ public class ExcelWriter
 
     public ExcelWriter(DbSchema schema, String query) throws SQLException
     {
-        ResultSet rs = Table.executeQuery(schema, new SQLFragment(query), MAX_ROWS);
+        this(ExcelDocumentType.xls);
+        ResultSet rs = Table.executeQuery(schema, new SQLFragment(query), _docType.getMaxRows());
         setResultSet(rs);
         createColumns(rs.getMetaData());
     }
@@ -208,15 +284,13 @@ public class ExcelWriter
         return sheetName;
     }
 
-
-    public String getSheetName()
+    public String getSheetName(int index)
     {
         if (null == _sheetName)
-            return "data";
+            return "data" + (index == 0 ? "" : Integer.toString(index));
         else
             return _sheetName;
     }
-
 
     public void setFooter(String footer)
     {
@@ -226,7 +300,7 @@ public class ExcelWriter
     public String getFooter()
     {
         if (null == _footer)
-            return getSheetName();
+            return getSheetName(0);
         else
             return _footer;
     }
@@ -235,7 +309,7 @@ public class ExcelWriter
     public String getFilenamePrefix()
     {
         if (null == _filenamePrefix)
-            return getSheetName().replaceAll(" ", "_");
+            return getSheetName(0).replaceAll(" ", "_");
         else
             return _filenamePrefix;
     }
@@ -303,7 +377,7 @@ public class ExcelWriter
 
     private void addColumn(DisplayColumn col)
     {
-        _columns.add(new ExcelColumn(col, _formatters));
+        _columns.add(new ExcelColumn(col, _formatters, _workbook));
     }
 
 
@@ -373,74 +447,59 @@ public class ExcelWriter
             _column.setAutoSize(autoSize);
     }
 
-
-    // Write the spreadsheet to the file system.  Used for testing.
-    public void write(String fileName)
-    {
-        try
-        {
-            WorkbookSettings settings = new WorkbookSettings();
-            settings.setArrayGrowSize(300000);
-            WritableWorkbook workbook = Workbook.createWorkbook(new File(fileName), settings);
-            renderNewSheet(workbook);
-            workbook.write();
-            workbook.close();
-        }
-        catch (IOException e)
-        {
-            ExceptionUtil.logExceptionToMothership(null, e);
-        }
-        catch (WriteException e)
-        {
-            ExceptionUtil.logExceptionToMothership(null, e);
-        }
-    }
-
     // Write the spreadsheet to the file system.
     public void write(OutputStream stream)
     {
         try
         {
-            WritableWorkbook workbook = (null == _template) ? Workbook.createWorkbook(stream) : Workbook.createWorkbook(stream, _template);
-            renderNewSheet(workbook);
-            workbook.write();
+            renderNewSheet();
+            _workbook.write(stream);
             stream.flush();
-            workbook.close();
         }
         catch (IOException e)
         {
             ExceptionUtil.logExceptionToMothership(null, e);
         }
-        catch (WriteException e)
+    }
+
+    public void write(HttpServletResponse response)
+    {
+        write(response, getFilenamePrefix());
+    }
+
+    // Create the spreadsheet and stream it to the browser.
+    public void write(HttpServletResponse response, String filenamePrefix)
+    {
+        ServletOutputStream outputStream = getOutputStream(response, filenamePrefix, _docType);
+
+        // The workbook will be streamed to the outputstream
+        renderNewSheet();
+
+        try
+        {
+            _workbook.write(outputStream);
+
+            // Flush the outpustream
+            outputStream.flush();
+            // Finally, close the outputstream
+            outputStream.close();
+        }
+        catch (IOException e)
         {
             ExceptionUtil.logExceptionToMothership(null, e);
         }
     }
 
-    // Create the spreadsheet and stream it to the browser.
-    public void write(HttpServletResponse response)
-    {
-        ServletOutputStream outputStream = getOutputStream(response, getFilenamePrefix());
-
-        // The workbook will be streamed to the outputstream
-        WritableWorkbook workbook = getWorkbook(outputStream);
-
-        renderNewSheet(workbook);
-
-        closeWorkbook(workbook, outputStream);
-    }
-
-
     // Create a ServletOutputStream to stream an Excel workbook to the browser.
     // This streaming code is adapted from Guillaume Laforge's sample posted to the JExcelApi Yahoo!
     // group: http://groups.yahoo.com/group/JExcelApi/message/1692
-    public static ServletOutputStream getOutputStream(HttpServletResponse response, String filenamePrefix)
+    public static ServletOutputStream getOutputStream(HttpServletResponse response, String filenamePrefix, ExcelDocumentType docType)
     {
         // Flush any extraneous output (e.g., <CR><LF> from JSPs)
         response.reset();
 
         // First, set the content-type, so that your browser knows which application to launch
-        response.setContentType("application/vnd.ms-excel");
+        response.setContentType(docType.getMimeType());
 
         // Set the content-disposition for two reasons :
         // 1) Specify that it is an attachment, so that your browser will open the file as if
@@ -451,7 +510,7 @@ public class ExcelWriter
         // 2) Specify the file name of the workbook with a different file name each time
         // so that your browser doesn't put the generated file into its cache
 
-        String filename = FileUtil.makeFileNameWithTimestamp(filenamePrefix, "xls");
+        String filename = FileUtil.makeFileNameWithTimestamp(filenamePrefix, docType.name());
         response.setHeader("Content-disposition", "attachment; filename=\"" + filename +"\"");
 
         try
@@ -469,45 +528,18 @@ public class ExcelWriter
     }
 
 
-    public static WritableWorkbook getWorkbook(ServletOutputStream outputStream)
+    public static Workbook getWorkbook(ServletOutputStream outputStream, Workbook template)
     {
-        return getWorkbook(outputStream, null);
-    }
-
-    public static WritableWorkbook getWorkbook(ServletOutputStream outputStream, Workbook template)
-    {
-        try
-        {
-            return null == template ? Workbook.createWorkbook(outputStream) : Workbook.createWorkbook(outputStream, template);
-        }
-        catch (IOException e)
-        {
-            ExceptionUtil.logExceptionToMothership(null, e);
-            return null;
-        }
-    }
-
-
-    public static void closeWorkbook(WritableWorkbook workbook, ServletOutputStream outputStream)
-    {
-        try
-        {
-            workbook.write();
-            workbook.close();
-
-            // Flush the outpustream
-            outputStream.flush();
-            // Finally, close the outputstream
-            outputStream.close();
-        }
-        catch (IOException e)
-        {
-            ExceptionUtil.logExceptionToMothership(null, e);
-        }
-        catch (WriteException e)
-        {
-            ExceptionUtil.logExceptionToMothership(null, e);
-        }
+        throw new UnsupportedOperationException();
+//        try
+//        {
+//            return null == template ? Workbook.createWorkbook(outputStream) : Workbook.createWorkbook(outputStream, template);
+//        }
+//        catch (IOException e)
+//        {
+//            ExceptionUtil.logExceptionToMothership(null, e);
+//            return null;
+//        }
     }
 
 
@@ -533,20 +565,9 @@ public class ExcelWriter
 
     private void checkCurrentRow()  throws MaxRowsExceededException
     {
-        if (_currentRow > MAX_ROWS)
+        if (_currentRow > _docType.getMaxRows())
             throw new MaxRowsExceededException();
     }
-
-    public Workbook getTemplate()
-    {
-        return _template;
-    }
-
-    public void setTemplate(Workbook template)
-    {
-        _template = template;
-    }
-
 
     public static class MaxRowsExceededException extends Exception
     {
@@ -556,35 +577,41 @@ public class ExcelWriter
         }
     }
 
-
-    public void renderNewSheet(WritableWorkbook workbook)
+    public void renderNewSheet()
     {
         _currentSheet++;
-        _currentRow = 0;
-        renderSheet(workbook, _currentSheet);
+        _currentRow = _startRow;
+        renderSheet(_currentSheet);
     }
 
-
-    public void renderCurrentSheet(WritableWorkbook workbook)
+    public void setStartRow(int startRow)
     {
-        renderSheet(workbook, _currentSheet);
+        _startRow = startRow;
     }
 
-
-    public void renderSheet(WritableWorkbook workbook, int sheetNumber)
+    public void renderCurrentSheet()
     {
-        WritableSheet sheet;
+        renderSheet(_currentSheet);
+    }
+
+    public void renderSheet(int sheetNumber)
+    {
+        Sheet sheet;
         //TODO: Pass render context all the way through Excel writers...
         RenderContext ctx = new RenderContext(HttpView.currentContext());
 
-        if (workbook.getNumberOfSheets() > sheetNumber)
+        if (_workbook.getNumberOfSheets() > sheetNumber)
         {
-            sheet = workbook.getSheet(sheetNumber);
+            sheet = _workbook.getSheetAt(sheetNumber);
         }
         else
         {
-            sheet = workbook.createSheet(getSheetName(), sheetNumber);
-            sheet.getSettings().setPaperSize(PaperSize.LETTER);
+            sheet = _workbook.getSheet(getSheetName(sheetNumber));
+            if (sheet == null)
+            {
+                sheet = _workbook.createSheet(getSheetName(sheetNumber));
+                sheet.getPrintSetup().setPaperSize(PrintSetup.LETTER_PAPERSIZE);
+            }
         }
 
         List<ExcelColumn> visibleColumns = getVisibleColumns(ctx);
@@ -611,24 +638,20 @@ public class ExcelWriter
 
             if (null != getFooter())
             {
-                HeaderFooter hf = sheet.getSettings().getFooter();
-                hf.getLeft().append("&D");
-                hf.getCentre().append(getFooter());
-                hf.getRight().append("Page &P/&N");
+                Footer hf = sheet.getFooter();
+                hf.setLeft("&D");
+                hf.setCenter(getFooter());
+                hf.setRight("Page &P/&N");
             }
-        }
-        catch (WriteException e)
-        {
-            _log.error("render", e);
         }
         catch (SQLException e)
         {
-            _log.error("render", e);
+            throw new RuntimeSQLException(e);
         }
     }
 
 
-    public void adjustColumnWidths(WritableSheet sheet, int firstGridRow, List visibleColumns)
+    public void adjustColumnWidths(Sheet sheet, int firstGridRow, List visibleColumns)
     {
         int lastGridRow = getCurrentRow() - 1;
 
@@ -637,14 +660,14 @@ public class ExcelWriter
     }
 
 
-    public void renderGrid(WritableSheet sheet, ResultSet rs) throws SQLException, WriteException, MaxRowsExceededException
+    public void renderGrid(Sheet sheet, ResultSet rs) throws SQLException, MaxRowsExceededException
     {
         //TODO: Figure out how to pass this through...
         RenderContext ctx = new RenderContext(HttpView.currentContext());
         renderGrid(sheet, getVisibleColumns(ctx), new ResultsImpl(rs));
     }
 
-    public void renderGrid(WritableSheet sheet, Results rs) throws SQLException, WriteException, MaxRowsExceededException
+    public void renderGrid(Sheet sheet, Results rs) throws SQLException, MaxRowsExceededException
     {
         //TODO: Figure out how to pass this through...
         RenderContext ctx = new RenderContext(HttpView.currentContext());
@@ -652,13 +675,13 @@ public class ExcelWriter
     }
 
     // Initialize non-wrapping text format for this worksheet
-    protected WritableCellFormat getWrappingTextFormat() throws WriteException
+    protected CellStyle getWrappingTextFormat()
     {
         if (null == _wrappingTextFormat)
         {
-            _wrappingTextFormat = new WritableCellFormat();
-            _wrappingTextFormat.setWrap(true);
-            _wrappingTextFormat.setVerticalAlignment(VerticalAlignment.TOP);
+            _wrappingTextFormat = _workbook.createCellStyle();
+            _wrappingTextFormat.setWrapText(true);
+            _wrappingTextFormat.setVerticalAlignment(CellStyle.VERTICAL_TOP);
         }
 
         return _wrappingTextFormat;
@@ -666,12 +689,14 @@ public class ExcelWriter
 
 
     // Initialize bold format for this worksheet
-    protected WritableCellFormat getBoldFormat()
+    protected CellStyle getBoldFormat()
     {
         if (null == _boldFormat)
         {
-            WritableFont boldFont = new WritableFont(DEFAULT_FONT, 10, WritableFont.BOLD);
-            _boldFormat = new WritableCellFormat(boldFont);
+            Font boldFont = _workbook.createFont();
+            boldFont.setBoldweight(Font.BOLDWEIGHT_BOLD);
+            _boldFormat = _workbook.createCellStyle();
+            _boldFormat.setFont(boldFont);
         }
 
         return _boldFormat;
@@ -679,20 +704,20 @@ public class ExcelWriter
 
 
     // Initialize non-wrapping text format for this worksheet
-    protected WritableCellFormat getNonWrappingTextFormat() throws WriteException
+    protected CellStyle getNonWrappingTextFormat()
     {
         if (null == _nonWrappingTextFormat)
         {
-            _nonWrappingTextFormat = new WritableCellFormat();
-            _nonWrappingTextFormat.setWrap(false);
-            _nonWrappingTextFormat.setVerticalAlignment(VerticalAlignment.TOP);
+            _nonWrappingTextFormat = _workbook.createCellStyle();
+            _nonWrappingTextFormat.setWrapText(false);
+            _nonWrappingTextFormat.setVerticalAlignment(CellStyle.VERTICAL_TOP);
         }
 
         return _nonWrappingTextFormat;
     }
 
 
-    public void renderSheetHeaders(WritableSheet sheet, int columnCount) throws WriteException, MaxRowsExceededException
+    public void renderSheetHeaders(Sheet sheet, int columnCount) throws MaxRowsExceededException
     {
         if (null != _headers)
         {
@@ -707,21 +732,27 @@ public class ExcelWriter
 
                 for (int j = 0; j < headerColumnCount; j++)
                 {
-                    int row = getCurrentRow();
+                    int rowNum = getCurrentRow();
 
-                    // Give all the remaining space to the last column
-                    if (j == headerColumnCount - 1)
-                        sheet.mergeCells(j * columnWidth, getCurrentRow(), headerWidth - 1, row);
-                    else
-                        sheet.mergeCells(j * columnWidth, row, (j + 1) * columnWidth - 1, row);
+                    Row row = sheet.getRow(getCurrentRow());
+                    if (row == null)
+                    {
+                        row = sheet.createRow(getCurrentRow());
+                    }
 
-                    WritableCell cell = new Label(j * columnWidth, row, headerColumns[j]);
+                    Cell cell = row.getCell(j * columnWidth, Row.CREATE_NULL_AS_BLANK);
+                    cell.setCellValue(headerColumns[j]);
 
                     // Wrap text in the case of full-size headers; don't wrap text in column mode.
                     // This helps in cases like "FileName: t:/data/databases/rat051004_NCBI.fasta" in columns.
                     // If text wrap were on, path+filename may appear blank since Excel wraps at spaces.
-                    cell.setCellFormat(headerColumnCount > 1 ? getNonWrappingTextFormat() : getWrappingTextFormat());
-                    sheet.addCell(cell);
+                    cell.setCellStyle(headerColumnCount > 1 ? getNonWrappingTextFormat() : getWrappingTextFormat());
+
+                    // Give all the remaining space to the last column
+                    if (j == headerColumnCount - 1)
+                        sheet.addMergedRegion(new CellRangeAddress(rowNum, rowNum, j * columnWidth, headerWidth - 1));
+                    else
+                        sheet.addMergedRegion(new CellRangeAddress(rowNum, rowNum, j * columnWidth, (j + 1) * columnWidth - 1));
                 }
 
                 incrementRow();
@@ -730,7 +761,7 @@ public class ExcelWriter
     }
 
 
-    public void renderColumnCaptions(WritableSheet sheet, List<ExcelColumn> visibleColumns) throws WriteException, MaxRowsExceededException
+    public void renderColumnCaptions(Sheet sheet, List<ExcelColumn> visibleColumns) throws MaxRowsExceededException
     {
         if (!_captionRowVisible)
             return;
@@ -741,17 +772,17 @@ public class ExcelWriter
         incrementRow();
 
         if (_captionRowFrozen)
-            sheet.getSettings().setVerticalFreeze(getCurrentRow());
+            sheet.createFreezePane(0, getCurrentRow());
     }
 
 
-    public void renderGrid(WritableSheet sheet, List<ExcelColumn> visibleColumns) throws SQLException, WriteException, MaxRowsExceededException
+    public void renderGrid(Sheet sheet, List<ExcelColumn> visibleColumns) throws SQLException, MaxRowsExceededException
     {
         renderGrid(sheet, visibleColumns, _rs);
     }
 
 
-    public void renderGrid(WritableSheet sheet, List<ExcelColumn> visibleColumns, Results rs) throws SQLException, WriteException, MaxRowsExceededException
+    public void renderGrid(Sheet sheet, List<ExcelColumn> visibleColumns, Results rs) throws SQLException, MaxRowsExceededException
     {
         if (null == rs)
             return;
@@ -776,7 +807,7 @@ public class ExcelWriter
     }
 
 
-    protected void renderGridRow(WritableSheet sheet, RenderContext ctx, List<ExcelColumn> columns) throws SQLException, WriteException, MaxRowsExceededException
+    protected void renderGridRow(Sheet sheet, RenderContext ctx, List<ExcelColumn> columns) throws SQLException, MaxRowsExceededException
     {
         int row = getCurrentRow();
 
@@ -784,5 +815,15 @@ public class ExcelWriter
             columns.get(column).writeCell(sheet, column, row, ctx);
 
         incrementRow();
+    }
+
+    public Workbook getWorkbook()
+    {
+        return _workbook;
+    }
+
+    public ExcelDocumentType getDocumentType()
+    {
+        return _docType;
     }
 }

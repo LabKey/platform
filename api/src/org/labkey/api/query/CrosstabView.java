@@ -19,7 +19,6 @@ import org.labkey.api.data.*;
 import org.labkey.api.reports.ReportService;
 import org.labkey.api.view.DataView;
 
-import java.sql.ResultSet;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -166,10 +165,8 @@ public class CrosstabView extends QueryView
         return view;
     }
 
-    public ExcelWriter getExcelWriter() throws Exception
+    public ExcelWriter getExcelWriter(ExcelWriter.ExcelDocumentType docType) throws Exception
     {
-        getSettings().setMaxRows(ExcelWriter.MAX_ROWS);
-        
         DataView view = createDataView();
         DataRegion rgn = view.getDataRegion();
         rgn.setAllowAsync(false);
@@ -178,6 +175,6 @@ public class CrosstabView extends QueryView
         CrosstabTableInfo table = (CrosstabTableInfo)getTable();
         List<DisplayColumn> displayColumns = rgn.getDisplayColumns();
 
-        return new CrosstabExcelWriter(rs, getExportColumns(displayColumns), table.getColMembers(), _numRowAxisCols, _numMeasures);
+        return new CrosstabExcelWriter(rs, getExportColumns(displayColumns), table.getColMembers(), _numRowAxisCols, _numMeasures, docType);
     }
 }

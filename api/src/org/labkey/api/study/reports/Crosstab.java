@@ -15,13 +15,10 @@
  */
 package org.labkey.api.study.reports;
 
-import jxl.format.Alignment;
-import jxl.format.VerticalAlignment;
-import jxl.write.WritableCellFormat;
-import jxl.write.WritableSheet;
-import jxl.write.WriteException;
 import org.apache.commons.beanutils.ConvertUtils;
 import org.apache.commons.lang.StringUtils;
+import org.apache.poi.ss.usermodel.CellStyle;
+import org.apache.poi.ss.usermodel.Sheet;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.data.*;
 import org.labkey.api.query.FieldKey;
@@ -29,7 +26,6 @@ import org.labkey.api.util.ResultSetUtil;
 import org.labkey.api.view.HttpView;
 import org.labkey.api.view.Stats;
 
-import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.*;
 
@@ -318,6 +314,7 @@ public class Crosstab
 
         public CrosstabExcelWriter(Crosstab crosstab)
         {
+            super(ExcelDocumentType.xls);
             _crosstab = crosstab;
             Class statColumnCls;
 
@@ -350,18 +347,18 @@ public class Crosstab
             setHeaders(headers);
         }
 
-        protected WritableCellFormat getWrappingTextFormat() throws WriteException
+        protected CellStyle getWrappingTextFormat()
         {
-            WritableCellFormat format = new WritableCellFormat();
-            format.setWrap(true);
-            format.setVerticalAlignment(VerticalAlignment.TOP);
-            format.setAlignment(Alignment.CENTRE);
+            CellStyle format = _workbook.createCellStyle();
+            format.setWrapText(true);
+            format.setVerticalAlignment(CellStyle.VERTICAL_TOP);
+            format.setAlignment(CellStyle.ALIGN_CENTER);
 
             return format;
         }
 
         @Override
-        public void renderGrid(WritableSheet sheet, List<ExcelColumn> visibleColumns) throws SQLException, WriteException, MaxRowsExceededException
+        public void renderGrid(Sheet sheet, List<ExcelColumn> visibleColumns) throws SQLException, MaxRowsExceededException
         {
             Map<String, Object> rowMap = new CaseInsensitiveHashMap<Object>();
             RenderContext ctx = new RenderContext(HttpView.currentContext());

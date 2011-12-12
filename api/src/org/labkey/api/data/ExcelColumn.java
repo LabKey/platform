@@ -16,22 +16,18 @@
 
 package org.labkey.api.data;
 
-import jxl.Cell;
-import jxl.CellType;
-import jxl.DateCell;
-import jxl.NumberCell;
-import jxl.format.*;
 import jxl.format.Colour;
-import jxl.write.*;
-import jxl.write.Label;
-import jxl.write.Number;
 import org.apache.commons.lang.time.FastDateFormat;
 import org.apache.log4j.Logger;
+import org.apache.poi.ss.usermodel.Cell;
+import org.apache.poi.ss.usermodel.CellStyle;
+import org.apache.poi.ss.usermodel.Font;
+import org.apache.poi.ss.usermodel.Row;
+import org.apache.poi.ss.usermodel.Sheet;
+import org.apache.poi.ss.usermodel.Workbook;
 import org.labkey.api.util.DateUtil;
 import org.labkey.api.util.Pair;
-import org.labkey.api.util.UnexpectedException;
 
-import java.awt.*;
 import java.io.IOException;
 import java.io.Writer;
 import java.lang.Boolean;
@@ -56,13 +52,13 @@ public class ExcelColumn extends RenderColumn
 
     // CONSIDER: Add support for left/right/center alignment (from DisplayColumn)
     private int _simpleType = TYPE_UNKNOWN;
-    private WritableCellFormat _format = null;
-    private int _width = 10;
+    private CellStyle _style = null;
     private boolean _autoSize = false;
     private int _autoSizeWidth = 0;
     private String _name = null;
     private String _caption = null;
-    private Map<ConditionalFormat, WritableCellFormat> _formats = new HashMap<ConditionalFormat, WritableCellFormat>();
+    private final Map<ConditionalFormat, CellStyle> _formats = new HashMap<ConditionalFormat, CellStyle>();
+    private final Workbook _workbook;
 
     public static class ExcelFormatDescriptor extends Pair<Class, String>
     {
@@ -73,14 +69,15 @@ public class ExcelColumn extends RenderColumn
     }
 
     private DisplayColumn _dc;
-    private final Map<ExcelFormatDescriptor, WritableCellFormat> _formatters;
+    private final Map<ExcelFormatDescriptor, CellStyle> _formatters;
 
-    ExcelColumn(DisplayColumn dc, Map<ExcelFormatDescriptor, WritableCellFormat> formatters)
+    ExcelColumn(DisplayColumn dc, Map<ExcelFormatDescriptor, CellStyle> formatters, Workbook workbook)
     {
         super();
         _dc = dc;
         _dc.setHtmlFiltered(false);
         _formatters = formatters;
+        _workbook = workbook;
         setSimpleType(dc);
         if (dc.getExcelFormatString() != null)
         {
@@ -129,8 +126,10 @@ public class ExcelColumn extends RenderColumn
         else if (String.class.isAssignableFrom(valueClass))
         {
             _simpleType = TYPE_STRING;
-            if (dc instanceof DataColumn && ((DataColumn)dc).isPreserveNewlines())
+            if (_dc.getColumnInfo() != null && _dc.getColumnInfo().getInputRows() > 1)
+            {
                 _simpleType = TYPE_MULTILINE_STRING;
+            }
         }
         else if (Date.class.isAssignableFrom(valueClass))
             _simpleType = TYPE_DATE;
@@ -174,43 +173,39 @@ public class ExcelColumn extends RenderColumn
             case(TYPE_INT):
             case(TYPE_DOUBLE):
             {
-                ExcelFormatDescriptor formatDescriptor = new ExcelFormatDescriptor(NumberFormat.class, getFormatString());
-                _format = _formatters.get(formatDescriptor);
-                if (_format == null)
+                ExcelFormatDescriptor formatDescriptor = new ExcelFormatDescriptor(Number.class, getFormatString());
+                _style = _formatters.get(formatDescriptor);
+                if (_style == null)
                 {
-                    _format = new WritableCellFormat(new NumberFormat(getFormatString()));
-                    _formatters.put(formatDescriptor, _format);
+                    _style = _workbook.createCellStyle();
+                    short formatIndex = _workbook.createDataFormat().getFormat(getFormatString());
+                    _style.setDataFormat(formatIndex);
+                    _formatters.put(formatDescriptor, _style);
                 }
                 break;
             }
             case(TYPE_DATE):
             {
-                ExcelFormatDescriptor formatDescriptor = new ExcelFormatDescriptor(DateFormat.class, getFormatString());
-                _format = _formatters.get(formatDescriptor);
-                if (_format == null)
+                ExcelFormatDescriptor formatDescriptor = new ExcelFormatDescriptor(Date.class, getFormatString());
+                _style = _formatters.get(formatDescriptor);
+                if (_style == null)
                 {
-                    _format = new WritableCellFormat(new DateFormat(getFormatString()));
-                    _formatters.put(formatDescriptor, _format);
+                    _style = _workbook.createCellStyle();
+                    short formatIndex = _workbook.createDataFormat().getFormat(getFormatString());
+                    _style.setDataFormat(formatIndex);
+                    _formatters.put(formatDescriptor, _style);
                 }
                 break;
             }
             case(TYPE_MULTILINE_STRING):
             {
                 ExcelFormatDescriptor formatDescriptor = new ExcelFormatDescriptor(String.class, getFormatString());
-                _format = _formatters.get(formatDescriptor);
-                if (_format == null)
+                _style = _formatters.get(formatDescriptor);
+                if (_style == null)
                 {
-                    _format = new WritableCellFormat();
-                    try
-                    {
-                        _format.setWrap(true);
-                    }
-                    catch (WriteException e)
-                    {
-                        // shouldn't happen for newly created WritableCellFormat
-                        throw new UnexpectedException(e);
-                    }
-                    _formatters.put(formatDescriptor, _format);
+                    _style = _workbook.createCellStyle();
+                    _style.setWrapText(true);
+                    _formatters.put(formatDescriptor, _style);
                 }
             }
         }
@@ -235,9 +230,8 @@ public class ExcelColumn extends RenderColumn
     }
 
 
-    protected void writeCell(WritableSheet sheet, int column, int row, RenderContext ctx) throws SQLException, WriteException
+    protected void writeCell(Sheet sheet, int column, int row, RenderContext ctx) throws SQLException
     {
-        WritableCell cell;
         Object o = _dc.getDisplayValue(ctx);
 
         // For null values, leave the cell blank
@@ -246,6 +240,9 @@ public class ExcelColumn extends RenderColumn
 
         ColumnInfo columnInfo = _dc.getColumnInfo();
 
+        Row rowObject = getRow(sheet, row);
+        Cell cell = rowObject.getCell(column, Row.CREATE_NULL_AS_BLANK); 
+
         try
         {
             switch (_simpleType)
@@ -253,20 +250,21 @@ public class ExcelColumn extends RenderColumn
                 case(TYPE_DATE):
                     // Careful here... need to make sure we adjust dates for GMT.  This constructor automatically does the conversion, but there seem to be
                     // bugs in other jxl 2.5.7 constructors: DateTime(c, r, d) forces the date to time-only, DateTime(c, r, d, gmt) doesn't adjust for gmt
-                    cell = new DateTime(column, row, (Date) o, _format);
+                    cell.setCellValue((Date) o);
+                    cell.setCellStyle(_style);
                     break;
                 case(TYPE_INT):
                 case(TYPE_DOUBLE):
-                    cell = new Number(column, row, ((java.lang.Number) o).doubleValue(), _format);
+                    cell.setCellValue(((java.lang.Number) o).doubleValue());
+                    cell.setCellStyle(_style);
                     break;
                 case(TYPE_STRING):
                 default:
                     // 9729 : CRs are doubled in list data exported to Excel, normalize newlines as '\n'
                     String s = o.toString().replaceAll("\r\n", "\n");
-                    if (_format == null)
-                        cell = new Label(column, row, s);
-                    else
-                        cell = new Label(column, row, s, _format);
+                    cell.setCellValue(s);
+                    if (_style != null)
+                        cell.setCellStyle(_style);
                     break;
             }
 
@@ -274,14 +272,12 @@ public class ExcelColumn extends RenderColumn
             {
                 if (columnInfo != null)
                 {
-                    CellFormat cellFormat = getExcelFormat(o, columnInfo);
+                    CellStyle cellFormat = getExcelFormat(o, columnInfo);
                     if (cellFormat != null)
                     {
-                        cell.setCellFormat(cellFormat);
+                        cell.setCellStyle(cellFormat);
                     }
                 }
-
-                sheet.addCell(cell);
             }
         }
         catch(ClassCastException cce)
@@ -298,38 +294,40 @@ public class ExcelColumn extends RenderColumn
         }
     }
 
-    private CellFormat getExcelFormat(Object o, ColumnInfo columnInfo) throws WriteException
+    private CellStyle getExcelFormat(Object o, ColumnInfo columnInfo)
     {
         for (ConditionalFormat format : columnInfo.getConditionalFormats())
         {
             if (format.meetsCriteria(o))
             {
-                WritableCellFormat excelFormat = _formats.get(format);
+                CellStyle excelFormat = _formats.get(format);
                 if (excelFormat == null)
                 {
-                    WritableFont font = new WritableFont(ExcelWriter.DEFAULT_FONT);
+                    Font font = _workbook.createFont();
                     if (format.isItalic())
                     {
                         font.setItalic(true);
                     }
                     if (format.isStrikethrough())
                     {
-                        font.setStruckout(true);
+                        font.setStrikeout(true);
                     }
                     if (format.isBold())
                     {
-                        font.setBoldStyle(WritableFont.BOLD);
+                        font.setBoldweight(Font.BOLDWEIGHT_BOLD);
                     }
-                    Color textColor = format.getParsedTextColor();
+                    java.awt.Color textColor = format.getParsedTextColor();
                     if (textColor != null)
                     {
-                        font.setColour(findBestColour(textColor));
+                        font.setColor(findBestColour(textColor));
                     }
-                    excelFormat = new WritableCellFormat(font);
-                    Color backgroundColor = format.getParsedBackgroundColor();
+                    excelFormat = _workbook.createCellStyle();
+                    excelFormat.setFont(font);
+                    java.awt.Color backgroundColor = format.getParsedBackgroundColor();
                     if (backgroundColor != null)
                     {
-                        excelFormat.setBackground(findBestColour(backgroundColor));
+                        excelFormat.setFillForegroundColor(findBestColour(backgroundColor));
+                        excelFormat.setFillPattern(CellStyle.SOLID_FOREGROUND);
                     }
                     _formats.put(format, excelFormat);
                 }
@@ -340,10 +338,13 @@ public class ExcelColumn extends RenderColumn
     }
 
     /** Since our Excel library has an enum of allowable colors, find the one that's closest to the one the user selected */
-    private Colour findBestColour(Color color)
+    private short findBestColour(java.awt.Color color)
     {
-        Colour bestMatch = null;
+        int bestMatch = 0;
         int bestScore = Integer.MAX_VALUE;
+        // The POI library doesn't give us any information about what each color in its enum actually looks like in
+        // terms of RGB, so use the JXL library. The colors are indexed and standardized, so it's safe to use the
+        // value across libraries
         for (Colour colour : Colour.getAllColours())
         {
             // Evaluate based on simple per-color difference in intensity
@@ -354,29 +355,41 @@ public class ExcelColumn extends RenderColumn
             if (score < bestScore)
             {
                 bestScore = score;
-                bestMatch = colour;
+                bestMatch = colour.getValue();
             }
         }
-        return bestMatch;
+        return (short)bestMatch;
     }
 
-    protected void renderCaption(WritableSheet sheet, int row, int column, WritableCellFormat cellFormat, ExcelWriter.CaptionType captionType) throws WriteException
+    protected Row getRow(Sheet sheet, int rowNumber)
     {
-        sheet.addCell(new Label(column, row, captionType.getText(this), cellFormat));
+        Row row = sheet.getRow(rowNumber);
+        if (row == null)
+        {
+            row = sheet.createRow(rowNumber);
+        }
+        return row;
+    }
+
+    protected void renderCaption(Sheet sheet, int rowNumber, int column, CellStyle cellFormat, ExcelWriter.CaptionType captionType)
+    {
+        Cell cell = getRow(sheet, rowNumber).createCell(column);
+        cell.setCellValue(captionType.getText(this));
+        cell.setCellStyle(cellFormat);
     }
 
     // Note: width of the column will be adjusted once per call to ExcelWriter.render(), which potentially means
     // multiple times per sheet.  This shouldn't be a problem, though.
-    protected void adjustWidth(WritableSheet sheet, int column, int startRow, int endRow)
+    protected void adjustWidth(Sheet sheet, int column, int startRow, int endRow)
     {
         if (_autoSize)
         {
             calculateAutoSize(sheet, column, startRow, endRow);
-            sheet.setColumnView(column, _autoSizeWidth + 1);
+            sheet.setColumnWidth(column, (_autoSizeWidth + 1) * 256);
         }
         else
         {
-            sheet.setColumnView(column, _width);
+            sheet.setColumnWidth(column, 10 * 256);
         }
     }
 
@@ -394,7 +407,7 @@ public class ExcelColumn extends RenderColumn
     // The results are actually fairly good and performance seems reasonable.  But setting display widths
     // in the schema XML file may be preferable.
     //
-    private void calculateAutoSize(WritableSheet sheet, int column, int startRow, int endRow)
+    private void calculateAutoSize(Sheet sheet, int column, int startRow, int endRow)
     {
         Format format = null;
 
@@ -417,16 +430,16 @@ public class ExcelColumn extends RenderColumn
         // Assumes column has same cell type from startRow to endRow, and that cell type matches the Excel column type (which it should, since we just wrote it)
         for (int row = startRow; row <= endRow; row++)
         {
-            Cell cell = sheet.getCell(column, row);
+            Cell cell = getRow(sheet, row).getCell(column);
 
             String formatted;
 
-            if (CellType.DATE == cell.getType() && null != format)
-                formatted = format.format(((DateCell) cell).getDate());
-            else if (CellType.NUMBER == cell.getType() && null != format)
-                formatted = format.format(((NumberCell) cell).getValue());
+            if (cell.getCellType() == Cell.CELL_TYPE_NUMERIC && org.apache.poi.ss.usermodel.DateUtil.isCellDateFormatted(cell) && null != format)
+                formatted = format.format(cell.getDateCellValue());
+            else if (Cell.CELL_TYPE_NUMERIC == cell.getCellType() && null != format)
+                formatted = format.format(cell.getNumericCellValue());
             else
-                formatted = cell.getContents();
+                formatted = cell.getStringCellValue();
 
             if (formatted.length() > _autoSizeWidth)
                 _autoSizeWidth = formatted.length();

@@ -16,6 +16,7 @@
 
 package org.labkey.api.action;
 
+import org.labkey.api.data.ExcelWriter;
 import org.labkey.api.query.ExportScriptModel;
 import org.labkey.api.query.QueryAction;
 import org.labkey.api.query.QueryView;
@@ -47,7 +48,12 @@ public abstract class QueryViewAction<Form extends QueryViewAction.QueryExportFo
     {
         if (QueryAction.exportRowsExcel.name().equals(form.getExportType()))
         {
-            createInitializedQueryView(form, errors, true, form.getExportRegion()).exportToExcel(getViewContext().getResponse());
+            createInitializedQueryView(form, errors, true, form.getExportRegion()).exportToExcel(getViewContext().getResponse(), ExcelWriter.ExcelDocumentType.xls);
+            return null;
+        }
+        if (QueryAction.exportRowsXLSX.name().equals(form.getExportType()))
+        {
+            createInitializedQueryView(form, errors, true, form.getExportRegion()).exportToExcel(getViewContext().getResponse(), ExcelWriter.ExcelDocumentType.xlsx);
             return null;
         }
         else if (QueryAction.exportRowsTsv.name().equals(form.getExportType()))

@@ -450,6 +450,7 @@ public class QueryView extends WebPartView<Object>
             case createSnapshot:
 
             case exportRowsExcel:
+            case exportRowsXLSX:
             case exportRowsTsv:
             case exportScript:
             case printRows:
@@ -799,12 +800,19 @@ public class QueryView extends WebPartView<Object>
     public static class ExcelExportOptionsBean
     {
         private final ActionURL _xlsURL;
+        private final ActionURL _xlsxURL;
         private final ActionURL _iqyURL;
 
-        public ExcelExportOptionsBean(ActionURL xlsURL, ActionURL iqyURL)
+        public ExcelExportOptionsBean(ActionURL xlsURL, ActionURL xlsxURL, ActionURL iqyURL)
         {
             _xlsURL = xlsURL;
+            _xlsxURL = xlsxURL;
             _iqyURL = iqyURL;
+        }
+
+        public ActionURL getXlsxURL()
+        {
+            return _xlsxURL;
         }
 
         public ActionURL getIqyURL()
@@ -821,7 +829,7 @@ public class QueryView extends WebPartView<Object>
     public PanelButton createExportButton(boolean exportAsWebPage)
     {
         PanelButton exportButton = new PanelButton("Export", getDataRegionName());
-        ExcelExportOptionsBean excelBean = new ExcelExportOptionsBean(urlFor(QueryAction.exportRowsExcel), _allowExportExternalQuery ? urlFor(QueryAction.excelWebQueryDefinition) : null);
+        ExcelExportOptionsBean excelBean = new ExcelExportOptionsBean(urlFor(QueryAction.exportRowsExcel), urlFor(QueryAction.exportRowsXLSX), _allowExportExternalQuery ? urlFor(QueryAction.excelWebQueryDefinition) : null);
         exportButton.addSubPanel("Excel", new JspView<ExcelExportOptionsBean>("/org/labkey/api/query/excelExportOptions.jsp", excelBean));
         ActionURL tsvURL = urlFor(QueryAction.exportRowsTsv);
         if (exportAsWebPage)
@@ -1667,19 +1675,19 @@ public class QueryView extends WebPartView<Object>
         return ret;
     }
 
-    public ExcelWriter getExcelWriter() throws Exception
+    public ExcelWriter getExcelWriter(ExcelWriter.ExcelDocumentType docType) throws Exception
     {
         DataView view = createDataView();
         DataRegion rgn = view.getDataRegion();
         getSettings().setShowRows(ShowRows.PAGINATED);
-        getSettings().setMaxRows(ExcelWriter.MAX_ROWS);
+        getSettings().setMaxRows(docType.getMaxRows());
         getSettings().setOffset(Table.NO_OFFSET);
         rgn.setAllowAsync(false);
         RenderContext rc = view.getRenderContext();
         rc.setCache(false);
         ResultSet rs = rgn.getResultSet(rc);
         Map<FieldKey,ColumnInfo> map = rc.getFieldMap();
-        ExcelWriter ew = new ExcelWriter(rs, map, getExportColumns(rgn.getDisplayColumns()));
+        ExcelWriter ew = new ExcelWriter(rs, map, getExportColumns(rgn.getDisplayColumns()), docType);
         ew.setFilenamePrefix(getSettings().getQueryName());
         return ew;
     }
@@ -1717,22 +1725,27 @@ public class QueryView extends WebPartView<Object>
 
     public void exportToExcel(HttpServletResponse response) throws Exception
     {
-        exportToExcel(response, false, ExcelWriter.CaptionType.Label, false);
+        exportToExcel(response, ExcelWriter.ExcelDocumentType.xls);
+    }
+
+    public void exportToExcel(HttpServletResponse response, ExcelWriter.ExcelDocumentType docType) throws Exception
+    {
+        exportToExcel(response, false, ExcelWriter.CaptionType.Label, false, docType);
     }
 
     // Export with no data rows -- just captions
     public void exportToExcelTemplate(HttpServletResponse response, ExcelWriter.CaptionType captionType, boolean insertColumnsOnly) throws Exception
     {
-        exportToExcel(response, true, captionType, insertColumnsOnly);
+        exportToExcel(response, true, captionType, insertColumnsOnly, ExcelWriter.ExcelDocumentType.xls);
     }
 
-    private void exportToExcel(HttpServletResponse response, boolean templateOnly, ExcelWriter.CaptionType captionType, boolean insertColumnsOnly) throws Exception
+    private void exportToExcel(HttpServletResponse response, boolean templateOnly, ExcelWriter.CaptionType captionType, boolean insertColumnsOnly, ExcelWriter.ExcelDocumentType docType) throws Exception
     {
         _exportView = true;
         TableInfo table = getTable();
         if (table != null)
         {
-            ExcelWriter ew = templateOnly ? getExcelTemplateWriter() : getExcelWriter();
+            ExcelWriter ew = templateOnly ? getExcelTemplateWriter() : getExcelWriter(docType);
             ew.setCaptionType(captionType);
             ew.setShowInsertableColumnsOnly(insertColumnsOnly);
             ew.write(response);

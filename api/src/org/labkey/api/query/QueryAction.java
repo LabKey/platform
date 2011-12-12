@@ -30,6 +30,7 @@ public enum QueryAction
     deleteQuery,
     propertiesQuery,
     exportRowsExcel,
+    exportRowsXLSX,
     exportExcelTemplate,
     exportRowsTsv,
     exportScript,
