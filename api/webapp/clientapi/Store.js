@@ -148,7 +148,8 @@ LABKEY.ext.Store = Ext.extend(Ext.data.Store, {
                                 : LABKEY.ActionURL.buildURL("query", "selectRows", config.containerPath)),
                         listeners: {
                             beforerequest: {fn: this.onBeforeRequest, scope: this}
-                        }
+                        },
+                        timeout: Ext.Ajax.timeout
                     })),
             baseParams: baseParams,
             autoLoad: false
