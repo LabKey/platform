@@ -92,6 +92,11 @@ LABKEY.vis.TimeChartPanel = Ext.extend(Ext.Panel, {
         // chartInfo will be all of the information needed to render the line chart (axis info and data)
         if(typeof this.chartInfo != "object") {
             this.chartInfo = this.getInitializedChartInfo();
+            this.savedChartInfo = null;
+        } else {
+            // If we have a saved chart we want to save a copy of config.chartInfo so we know if any chart settings
+            // get changed. This way we can set the dirty bit. Ext.encode gives us a copy not a reference.
+            this.savedChartInfo = Ext.encode(this.chartInfo);
         }
 
         // hold on to the x and y axis measure index
@@ -1017,6 +1022,37 @@ LABKEY.vis.TimeChartPanel = Ext.extend(Ext.Panel, {
         
     },
 
+    getSimplifiedConfig: function(config)
+    {
+        // Here we generate a config that is similar, but strips out info that isnt neccessary.
+        // We use this to compare two configs to see if the user made any changes to the chart.
+        var simplified = {};
+        simplified.axis = config.axis;
+        simplified.chartLayout = config.chartLayout;
+        simplified.chartSubjectSelection = config.chartSubjectSelection;
+        simplified.displayAggregate = config.displayAggregate;
+        simplified.displayIndividual = config.displayIndividual;
+        simplified.filterQuery = config.filterQuery;
+        simplified.filterUrl = config.filterUrl;
+        simplified.hideDataPoints = config.hideDataPoints;
+        simplified.lineWidth = config.lineWidth;
+        simplified.saveThumbnail = config.saveThumbnail;
+        simplified.subject = config.subject;
+        simplified.title = config.title;
+
+        simplified.measures = [];
+        for(var i = 0; i < config.measures.length; i++){
+            var measure = {};
+            measure = config.measures[i]
+            //Delete id's, they're just for the Ext components ordering.
+            delete measure.dateOptions.zeroDateCol.id;
+            delete measure.dateOptions.dateCol.id;
+            simplified.measures.push(measure);
+        }
+
+        return Ext.encode(simplified);
+    },
+
     renderLineChart: function(force)
     {
         // mask panel and remove the chart(s)
@@ -1025,6 +1061,14 @@ LABKEY.vis.TimeChartPanel = Ext.extend(Ext.Panel, {
 
         // get the updated chart information from the varios tabs of the chartEditor
         this.chartInfo = this.getChartInfoFromEditorTabs();
+
+        if(this.savedChartInfo){
+                if(this.getSimplifiedConfig(Ext.decode(this.savedChartInfo)) == this.getSimplifiedConfig(this.chartInfo)){
+                    this.markDirty(false);
+                } else {
+                    this.markDirty(true);
+                }
+        }
 
         // enable/disable the left and right axis tabs
         (this.getAxisIndex(this.chartInfo.axis, "y-axis", "left") > -1 ? enableAndSetRangeOptions(this.editorYAxisLeftPanel) : this.editorYAxisLeftPanel.disable());
