@@ -38,5 +38,6 @@ public interface SecurityUrls extends UrlProvider
     ActionURL getShowRegistrationEmailURL(Container container, ValidEmail email, String mailPrefix);
     ActionURL getUpdateMembersURL(Container container, String groupPath, String deleteEmail, boolean quickUI);
     ActionURL getAddUsersURL();
+    ActionURL getFolderAccessURL(Container container);
     String getCompleteUserURLPrefix(Container container);
 }
