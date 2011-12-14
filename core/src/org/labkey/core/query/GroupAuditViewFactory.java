@@ -188,6 +188,16 @@ public class GroupAuditViewFactory extends SimpleAuditViewFactory
         return view;
     }
 
+    public AuditLogQueryView createFolderView(ViewContext context, Container container)
+    {
+        SimpleFilter filter = new SimpleFilter("ContainerId", container.getId());
+        AuditLogQueryView view = AuditLogService.get().createQueryView(context, filter, getEventType());
+        view.setTitle("Access Modification History For This Folder");
+        view.setVisibleColumns(new String[]{"Date", "CreatedBy", "Comment"});
+        view.setSort(new Sort("-Date"));
+        return view;
+    }
+
     public static class GroupForeignKey extends LookupForeignKey
     {
         public GroupForeignKey()

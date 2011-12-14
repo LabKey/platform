@@ -797,6 +797,7 @@ public class UserController extends SpringActionController
     {
         private List<AccessDetailRow> _rows;
         private boolean _showGroups;
+        private boolean _showUserCol;
         private boolean _active = true;
 
         public AccessDetail(List<AccessDetailRow> rows)
@@ -805,8 +806,13 @@ public class UserController extends SpringActionController
         }
         public AccessDetail(List<AccessDetailRow> rows, boolean showGroups)
         {
+            this(rows, showGroups, false);
+        }
+        public AccessDetail(List<AccessDetailRow> rows, boolean showGroups, boolean showUserCol)
+        {
             _rows = rows;
             _showGroups = showGroups;
+            _showUserCol = showUserCol;
         }
 
         public List<AccessDetailRow> getRows()
@@ -816,6 +822,11 @@ public class UserController extends SpringActionController
         public boolean showGroups()
         {
             return _showGroups;
+        }
+        
+        public boolean showUserCol()
+        {
+            return _showUserCol;
         }
 
         public boolean isActive()
@@ -832,13 +843,15 @@ public class UserController extends SpringActionController
     public static class AccessDetailRow
     {
         private Container _container;
+        private UserPrincipal _userPrincipal;
         private String _access;
         private List<Group> _groups;
         private int _depth;
 
-        public AccessDetailRow(Container container, String access, List<Group> groups, int depth)
+        public AccessDetailRow(Container container, UserPrincipal userPrincipal, String access, List<Group> groups, int depth)
         {
             _container = container;
+            _userPrincipal = userPrincipal;
             _access = access;
             _groups = groups;
             _depth = depth;
@@ -852,6 +865,11 @@ public class UserController extends SpringActionController
         public Container getContainer()
         {
             return _container;
+        }
+
+        public UserPrincipal getUser()
+        {
+            return _userPrincipal;
         }
 
         public int getDepth()
@@ -947,7 +965,7 @@ public class UserController extends SpringActionController
                     }
                 }
             }
-            rows.add(new AccessDetailRow(child, access.toString(), relevantGroups, depth));
+            rows.add(new AccessDetailRow(child, requestedUser, access.toString(), relevantGroups, depth));
             buildAccessDetailList(containerTree, child, rows, requestedUser, depth + 1, projectGroupCache);
         }
     }

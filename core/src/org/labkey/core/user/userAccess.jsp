@@ -23,13 +23,18 @@
 <%@ page import="org.labkey.api.data.Container"%>
 <%@ page import="org.labkey.api.data.ContainerManager"%>
 <%@ page import="org.labkey.api.view.ActionURL"%>
-<%@ page import="org.labkey.api.util.PageFlowUtil" %>
 <%@ page import="org.labkey.api.security.SecurityUrls" %>
+<%@ page import="org.labkey.api.security.UserUrls" %>
+<%@ page import="org.labkey.api.view.ViewContext" %>
+<%@ page import="org.labkey.api.security.User" %>
+<%@ page import="org.labkey.api.security.UserManager" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%
-    JspView<UserController.AccessDetail> me =
-            (JspView<UserController.AccessDetail>) HttpView.currentView();
+    ViewContext context = HttpView.currentContext();
+    User currentUser = context.getUser();
+    Container c = context.getContainer();
+    JspView<UserController.AccessDetail> me = (JspView<UserController.AccessDetail>) HttpView.currentView();
     UserController.AccessDetail bean = me.getModelBean();
     List<UserController.AccessDetailRow> rows = bean.getRows();
 
@@ -43,24 +48,28 @@ However, If this account is re-enabled, it would have the following permissions.
 <% } %>
 
 <table class="labkey-data-region labkey-show-borders">
-    <colgroup><col><col></colgroup>
-    <%
+    <colgroup><col><col><col></colgroup>
+<%
     if (bean.showGroups())
     {
-%>
-        <col>
-<%
+        out.print("<col>");
     }
 %>
     <tr>
-        <th>Container</th>
-        <th>Current Access</th>
 <%
+    out.print("<th>&nbsp;</th>");
+    if (!bean.showUserCol())
+    {
+        out.print("<th>Container</th>");
+    }
+    else
+    {
+        out.print("<th>User</th>");
+    }
+    out.print("<th>Current Access</th>");
     if (bean.showGroups())
     {
-%>
-        <th>Relevant Group(s)</th>
-<%
+        out.print("<th>Relevant Group(s)</th>");
     }
 %>
     </tr>
@@ -69,12 +78,38 @@ However, If this account is re-enabled, it would have the following permissions.
     for (UserController.AccessDetailRow row : rows)
     {
         boolean inherited = row.isInheritedAcl() && !row.getContainer().isProject();
-        ActionURL containerPermissionsLink = urlProvider(SecurityUrls.class).getProjectURL(row.getContainer());
+        boolean isUser = null != UserManager.getUser(row.getUser().getUserId());
+        String userColDisplay = h(isUser ? ((User)row.getUser()).getDisplayName(currentUser) : row.getUser().getName());
 %>
-    <tr class="<%= rowNumber++ % 2 == 0 ?  "labkey-alternate-row" : "labkey-row"%>">
-        <td style="padding-left:<%= cellPadding + (10 * row.getDepth()) %>px;">
-            <a href="<%= containerPermissionsLink.getLocalURIString() %>"><%= h(row.getContainer().getName()) %></a>
-        </td>
+      <tr class="<%= rowNumber++ % 2 == 0 ?  "labkey-alternate-row" : "labkey-row"%>">
+<%
+        if (!bean.showUserCol())
+        {
+            ActionURL containerPermissionsLink = urlProvider(SecurityUrls.class).getProjectURL(row.getContainer());
+            ActionURL folderAccessLink = urlProvider(SecurityUrls.class).getFolderAccessURL(row.getContainer());
+%>
+            <td><%= textLink("permissions", containerPermissionsLink) %></td>
+            <td style="padding-left:<%= cellPadding + (10 * row.getDepth()) %>px;">
+                <a href="<%= folderAccessLink.getLocalURIString() %>"><%= h(row.getContainer().getName()) %></a>
+            </td>
+<%
+        }
+        else
+        {
+            %><td><%= textLink("details", urlProvider(UserUrls.class).getUserDetailsURL(c, row.getUser().getUserId(), context.getActionURL())) %></td><%
+            out.print("<td>");
+            if (isUser)
+            {
+                ActionURL userAccessLink = urlProvider(UserUrls.class).getUserAccessURL(row.getContainer(), row.getUser().getUserId());
+                %><a href="<%= userAccessLink.getLocalURIString() %>"><%= userColDisplay %></a><%
+            }
+            else
+            {
+                %><%= userColDisplay %><%
+            }
+            out.print("</td>");
+        }
+    %>
         <td ><%= row.getAccess() %><%= inherited ? "*" : "" %></td>
     <%
         if (bean.showGroups())
@@ -105,4 +140,4 @@ However, If this account is re-enabled, it would have the following permissions.
     }
 %>
 </table><br>
-*Indicates that this group's permissions are inherited from the parent folder
+*Indicates that permissions are inherited from the parent folder
