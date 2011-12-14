@@ -840,26 +840,50 @@ public class UserController extends SpringActionController
         }
     }
 
-    public static class AccessDetailRow
+    public static class AccessDetailRow implements Comparable<AccessDetailRow>
     {
+        private ViewContext _viewContext;
         private Container _container;
         private UserPrincipal _userPrincipal;
-        private String _access;
-        private List<Group> _groups;
+        private Map<Role, List<Group>> _accessGroups;
         private int _depth;
 
-        public AccessDetailRow(Container container, UserPrincipal userPrincipal, String access, List<Group> groups, int depth)
+        public AccessDetailRow(ViewContext viewContext, Container container, UserPrincipal userPrincipal, List<Role> roles, int depth)
         {
+            _viewContext = viewContext;
             _container = container;
             _userPrincipal = userPrincipal;
-            _access = access;
-            _groups = groups;
+            _depth = depth;
+
+            Map<Role, List<Group>> accessGroups = new HashMap<Role, List<Group>>();
+            for (Role role : roles)
+                accessGroups.put(role, new ArrayList<Group>());
+            _accessGroups = accessGroups;
+
+        }
+        public AccessDetailRow(ViewContext viewContext,Container container, UserPrincipal userPrincipal, Map<Role, List<Group>> accessGroups, int depth)
+        {
+            _viewContext = viewContext;
+            _container = container;
+            _userPrincipal = userPrincipal;
+            _accessGroups = accessGroups;
             _depth = depth;
         }
 
         public String getAccess()
         {
-            return _access;
+            if (null == _accessGroups || _accessGroups.size() == 0)
+                return "";
+
+            String sep = "";
+            StringBuilder access = new StringBuilder();
+            for (Role role : _accessGroups.keySet())
+            {
+                access.append(sep);
+                access.append(role.getName());
+                sep = ", ";
+            }
+            return access.toString();
         }
 
         public Container getContainer()
@@ -879,12 +903,42 @@ public class UserController extends SpringActionController
 
         public List<Group> getGroups()
         {
-            return _groups;
+            if (null == _accessGroups || _accessGroups.size() == 0)
+                return Collections.emptyList();
+
+            List<Group> allGroups = new ArrayList<Group>();
+            for (List<Group> groups : _accessGroups.values())
+            {
+                allGroups.addAll(groups);
+            }
+            return allGroups;
+        }
+
+        public Map<Role, List<Group>> getAccessGroups()
+        {
+            return _accessGroups;
+        }
+
+        public ViewContext getViewContext()
+        {
+            return _viewContext;
         }
 
         public boolean isInheritedAcl()
         {
             return _container.isInheritedAcl();
+        }
+
+        @Override
+        public int compareTo(AccessDetailRow o)
+        {
+            // if both UserPrincipals are Users, compare based on the DisplayName
+            User thisUser = UserManager.getUser(this.getUser().getUserId());
+            User thatUser = UserManager.getUser(o.getUser().getUserId());
+            if (null != thisUser && null != thatUser)
+                return thisUser.getDisplayName(getViewContext().getUser()).compareTo(thatUser.getDisplayName(getViewContext().getUser()));
+            else
+                return this.getUser().getName().compareTo(o.getUser().getName());
         }
     }
 
@@ -930,19 +984,16 @@ public class UserController extends SpringActionController
 
         for (Container child : children)
         {
-            String sep = "";
-            StringBuilder access = new StringBuilder();
+            Map<Role, List<Group>> childAccessGroups = new HashMap<Role, List<Group>>();
+
             SecurityPolicy policy = SecurityManager.getPolicy(child);
             Set<Role> effectiveRoles = policy.getEffectiveRoles(requestedUser);
             effectiveRoles.remove(RoleManager.getRole(NoPermissionsRole.class)); //ignore no perms
             for (Role role : effectiveRoles)
             {
-                access.append(sep);
-                access.append(role.getName());
-                sep = ", ";
+                childAccessGroups.put(role, new ArrayList<Group>());
             }
 
-            List<Group> relevantGroups = new ArrayList<Group>();
             if (effectiveRoles.size() > 0)
             {
                 Container project = child.getProject();
@@ -960,12 +1011,12 @@ public class UserController extends SpringActionController
                         for (Role role : effectiveRoles)
                         {
                             if (groupRoles.contains(role))
-                                relevantGroups.add(group);
+                                childAccessGroups.get(role).add(group);
                         }
                     }
                 }
             }
-            rows.add(new AccessDetailRow(child, requestedUser, access.toString(), relevantGroups, depth));
+            rows.add(new AccessDetailRow(getViewContext(), child, requestedUser, childAccessGroups, depth));
             buildAccessDetailList(containerTree, child, rows, requestedUser, depth + 1, projectGroupCache);
         }
     }
@@ -1052,7 +1103,7 @@ public class UserController extends SpringActionController
             {
                 addUserDetailsNavTrail(root, _userId);
                 root.addChild("Permissions");
-                return root.addChild("Access Details: " + UserManager.getEmailForId(_userId));
+                return root.addChild("User Access Details: " + UserManager.getEmailForId(_userId));
             }
             return null;
         }

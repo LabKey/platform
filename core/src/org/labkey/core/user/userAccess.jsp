@@ -31,6 +31,13 @@
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%
+/*
+ * This JSP is used to display an access report for the following actions:
+ *  UserController.UserAccessAction          : displays folder access for a single user (within a project or the full container tree)
+ *  SecurityController.GroupPermissionAction : displays folder access for a single group (within a project)
+ *  SecurityController.FolderAccessAction    : displays user access for a single folder
+ */
+
     ViewContext context = HttpView.currentContext();
     User currentUser = context.getUser();
     Container c = context.getContainer();

@@ -1554,13 +1554,15 @@ var PolicyEditor = Ext.extend(Ext.Panel, {
         {
             var html = [];
 
+            html.push(_link("view permissions report", LABKEY.ActionURL.buildURL('security', 'folderAccess', LABKEY.ActionURL.getContainer())));
+
             if (this.canInherit)
             {
                 var label = "Inherit permissions from " + (this.parentName || 'parent') + "<br>";
-                html.push('<table><tr><td id=checkboxTD></td><td>&nbsp;' + label + '</td></tr></table>');
+                html.push("<table style='padding-top:5px;padding-bottom:5px'><tr><td id=checkboxTD></td><td>&nbsp;" + label + "</td></tr></table>");
             }
 
-            html.push(['<table cellspacing=0 style="border-collapse:collapse;"><tr><td></td><th><h3>Roles<br><img src="' +Ext.BLANK_IMAGE_URL + '" width=300 height=1></h3></th><th><h3>Groups</h3></th></tr>']);
+            html.push(['<table cellspacing=0 style="border-collapse:collapse;"><tr><td></td><th><h3>Roles<br><img src="' +Ext.BLANK_IMAGE_URL + '" width=300 height=1></h3></th><th><h3>Groups<br><img src="' +Ext.BLANK_IMAGE_URL + '" width=300 height=1></h3></th></tr>']);
             var spacerRow = ''; // '<tr class="spacerTR"><td><img src="' + Ext.BLANK_IMAGE_URL + '"></td></tr>';
             for (r=0 ; r<this.roles.length ; r++)
             {

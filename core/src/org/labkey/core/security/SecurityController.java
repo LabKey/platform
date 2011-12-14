@@ -63,6 +63,7 @@ import org.labkey.api.security.UserPrincipal;
 import org.labkey.api.security.UserUrls;
 import org.labkey.api.security.ValidEmail;
 import org.labkey.api.security.permissions.AdminPermission;
+import org.labkey.api.security.roles.DeveloperRole;
 import org.labkey.api.security.roles.EditorRole;
 import org.labkey.api.security.roles.NoPermissionsRole;
 import org.labkey.api.security.roles.ReaderRole;
@@ -1167,17 +1168,8 @@ public class SecurityController extends SpringActionController
                 if (child != null)
                 {
                     SecurityPolicy policy = child.getPolicy();
-                    String sep = "";
-                    StringBuilder access = new StringBuilder();
                     Collection<Role> roles = policy.getEffectiveRoles(requestedGroup);
-                    for(Role role : roles)
-                    {
-                        access.append(sep);
-                        access.append(role.getName());
-                        sep = ", ";
-                    }
-
-                    rows.add(new UserController.AccessDetailRow(child, requestedGroup, access.toString(), null, depth));
+                    rows.add(new UserController.AccessDetailRow(getViewContext(), child, requestedGroup, new ArrayList<Role>(roles), depth));
                     buildAccessDetailList(child.getChildren(), rows, requestedGroup, depth + 1);
                 }
             }
@@ -1755,15 +1747,12 @@ public class SecurityController extends SpringActionController
         public ModelAndView getView(FolderAccessForm form, BindException errors) throws Exception
         {
             VBox view = new VBox();
-            view.addView(new JspView<FolderAccessForm>("/org/labkey/core/user/userAccessHeaderLinks.jsp", form));
+            view.addView(new JspView<FolderAccessForm>("/org/labkey/core/user/toggleShowAll.jsp", form));
 
             List<UserController.AccessDetailRow> rows = new ArrayList<UserController.AccessDetailRow>();
-
-            // todo: what should the default set of users be? project users? folder users?
-            // todo: how should the users be sorted? email, displayname?
-            List<User> projectUsers = SecurityManager.getProjectUsers(getContainer(), true);
-
-            buildAccessDetailList(projectUsers, rows, form.showInactive());
+            User[] activeUsers = UserManager.getActiveUsers();
+            buildAccessDetailList(activeUsers, rows, form.showAll());
+            Collections.sort(rows); // the sort is done using the user display name
             UserController.AccessDetail bean = new UserController.AccessDetail(rows, true, true);
             view.addView(new JspView<UserController.AccessDetail>("/org/labkey/core/user/userAccess.jsp", bean, errors));
             
@@ -1771,34 +1760,23 @@ public class SecurityController extends SpringActionController
             return view;
         }
 
-        private void buildAccessDetailList(List<User> projectUsers, List<UserController.AccessDetailRow> rows, boolean showInactive)
+        private void buildAccessDetailList(User[] activeUsers, List<UserController.AccessDetailRow> rows, boolean showAll)
         {
-            if (projectUsers.size() == 0)
+            if (activeUsers.length == 0)
                 return;
 
             // add an AccessDetailRow for each user that has perm within the project
-            for (User user : projectUsers)
+            for (User user : activeUsers)
             {
-                if (!showInactive && !user.isActive())
-                    continue;
-
-                String sep = "";
-                StringBuilder access = new StringBuilder();
+                Map<Role, List<Group>> userAccessGroups = new HashMap<Role, List<Group>>();
                 SecurityPolicy policy = SecurityManager.getPolicy(getContainer());
                 Set<Role> effectiveRoles = policy.getEffectiveRoles(user);
                 effectiveRoles.remove(RoleManager.getRole(NoPermissionsRole.class)); //ignore no perms
                 for (Role role : effectiveRoles)
                 {
-                    access.append(sep);
-                    access.append(role.getName());
-                    sep = ", ";
+                    userAccessGroups.put(role, new ArrayList<Group>());
                 }
 
-                // only need to continue if the user has some access within the given folder
-                if (access.length() == 0)
-                    continue;
-
-                List<Group> relevantGroups = new ArrayList<Group>();
                 if (effectiveRoles.size() > 0)
                 {
                     Container project = getContainer().getProject();
@@ -1811,12 +1789,14 @@ public class SecurityController extends SpringActionController
                             for (Role role : effectiveRoles)
                             {
                                 if (groupRoles.contains(role))
-                                    relevantGroups.add(group);
+                                    userAccessGroups.get(role).add(group);
                             }
                         }
                     }
                 }
-                rows.add(new UserController.AccessDetailRow(getContainer(), user, access.toString(), relevantGroups, 0));
+
+                if (showAll || userAccessGroups.size() > 0)
+                    rows.add(new UserController.AccessDetailRow(getViewContext(), getContainer(), user, userAccessGroups, 0));
             }
         }
 
@@ -1825,22 +1805,22 @@ public class SecurityController extends SpringActionController
         {
             root.addChild("Permissions", new ActionURL(ProjectAction.class, getContainer()));
             root.addChild("Folder Permissions");
-            return root.addChild("Access Details: " + getContainer().getPath());
+            return root.addChild("Folder Access Details");
         }
     }
 
     public static class FolderAccessForm
     {
-        private boolean _showInactive;
+        private boolean _showAll;
 
-        public boolean showInactive()
+        public boolean showAll()
         {
-            return _showInactive;
+            return _showAll;
         }
 
-        public void setShowInactive(boolean showInactive)
+        public void setShowAll(boolean showAll)
         {
-            _showInactive = showInactive;
+            _showAll = showAll;
         }
     }
 

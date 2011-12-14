@@ -24,15 +24,15 @@
     SecurityController.FolderAccessForm form = (SecurityController.FolderAccessForm) HttpView.currentModel();
     ActionURL url = getViewContext().cloneActionURL();
 
-    if (!form.showInactive())
+    if (!form.showAll())
     {
-        url.addParameter("showInactive", true);
-        caption = "include inactive users";
+        url.addParameter("showAll", true);
+        caption = "show all users";
     }
     else
     {
-        url.deleteParameter("showInactive");
-        caption = "hide inactive users";
+        url.deleteParameter("showAll");
+        caption = "hide unassigned users";
     }
 %>
 <table>
