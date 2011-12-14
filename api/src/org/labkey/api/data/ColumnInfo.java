@@ -540,12 +540,15 @@ public class ColumnInfo extends ColumnRenderProperties implements SqlColumn
     {
         if (null != displayWidth)
             return displayWidth;
-        if (fk != null)
-        {
-            ColumnInfo fkTitleColumn = getDisplayField();
-            if (null != fkTitleColumn && fkTitleColumn != this)
-                return displayWidth = fkTitleColumn.getWidth();
-        }
+
+//        This is the DisplayColumn's job to swap display type, shouldn't do this here
+//        Also, this causes table construction recursion in the case of self-join
+//        if (fk != null)
+//        {
+//            ColumnInfo fkTitleColumn = getDisplayField();
+//            if (null != fkTitleColumn && fkTitleColumn != this)
+//                return displayWidth = fkTitleColumn.getWidth();
+//        }
 
         if (isStringType())
             return displayWidth = String.valueOf(Math.max(10, Math.min(getScale() * 6, 200)));
