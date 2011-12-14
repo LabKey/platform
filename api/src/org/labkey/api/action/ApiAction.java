@@ -21,6 +21,7 @@ import org.json.JSONException;
 import org.json.JSONObject;
 import org.labkey.api.query.BatchValidationException;
 import org.labkey.api.query.InvalidKeyException;
+import org.labkey.api.query.QueryException;
 import org.labkey.api.query.ValidationException;
 import org.labkey.api.util.ExceptionUtil;
 import org.labkey.api.view.NotFoundException;
@@ -147,6 +148,10 @@ public abstract class ApiAction<FORM> extends BaseViewAction<FORM>
             createResponseWriter().write(e);
         }
         catch (ValidationException e)
+        {
+            createResponseWriter().write(e);
+        }
+        catch (QueryException e)
         {
             createResponseWriter().write(e);
         }
