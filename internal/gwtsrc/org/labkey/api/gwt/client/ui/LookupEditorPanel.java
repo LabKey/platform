@@ -16,6 +16,7 @@
 
 package org.labkey.api.gwt.client.ui;
 
+import com.extjs.gxt.ui.client.core.XTemplate;
 import com.extjs.gxt.ui.client.data.BaseModelData;
 import com.extjs.gxt.ui.client.event.BaseEvent;
 import com.extjs.gxt.ui.client.event.ComponentEvent;
@@ -376,8 +377,8 @@ public class LookupEditorPanel extends LayoutContainer
                     _listExpand();
                 }
             });
-            setTemplate("<tpl for=\".\"><div class=\"x-combo-list-item\" title=\"{" + getDisplayField() + "}\">{" + getDisplayField() + "}</div></tpl>");
-        }
+//            setTemplate("<tpl for=\".\"><div class=\"x-combo-list-item\" title=\"{" + getDisplayField() + "}\">{" + getDisplayField() + "}</div></tpl>");
+            setTemplate(XTemplate.create("<tpl for=\".\"><div class=\"x-combo-list-item\" title=\"{[fm.htmlEncode(values." + getDisplayField() + ")]}\">{[fm.htmlEncode(values." + getDisplayField() + ")]}</div></tpl>"));         }
 
         void setAutoSizeList(boolean b)
         {

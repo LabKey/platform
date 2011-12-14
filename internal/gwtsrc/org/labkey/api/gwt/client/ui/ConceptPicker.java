@@ -28,6 +28,7 @@ import com.google.gwt.user.client.Event;
 import com.google.gwt.user.client.Window;
 import org.labkey.api.gwt.client.model.GWTPropertyDescriptor;
 import org.labkey.api.gwt.client.util.ErrorDialogAsyncCallback;
+import org.labkey.api.gwt.client.util.StringUtils;
 
 import java.util.ArrayList;
 import java.util.Map;
@@ -101,7 +102,7 @@ public class ConceptPicker extends TriggerField<ConceptPicker.ConceptType>
     public void setValue(ConceptType t)
     {
         assert t != genericLookup;
-        setToolTip(t == null ? null : t.getDisplay());
+        setToolTip(t == null ? null : StringUtils.filter(t.getDisplay()));
         super.setValue(t);
     }
 
