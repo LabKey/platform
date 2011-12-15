@@ -16,6 +16,8 @@
 
 package org.labkey.api.query;
 
+import org.apache.commons.lang.StringUtils;
+import org.jetbrains.annotations.Nullable;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.DbSchema;
@@ -197,6 +199,22 @@ public class AliasManager
             return;
         claimAlias(column.getAlias(), column.getName());
     }
+
+
+    /* assumes won't be called on same columninfo twice
+     * does not assume that names are unique (e.g. might be fieldkey.toString() or just fieldKey.getname())
+     */
+    public void ensureAlias(ColumnInfo column, @Nullable String extra)
+    {
+        if (column.isAliasSet())
+        {
+            assert null == _aliases.get(column.getAlias()) : "alias is already in use!";
+            claimAlias(column.getAlias(), column.getName());
+        }
+        else
+            column.setAlias(decideAlias(column.getName() + StringUtils.defaultString(extra,"")));
+    }
+
 
     public void claimAliases(Collection<ColumnInfo> columns)
     {

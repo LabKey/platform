@@ -38,6 +38,7 @@ public class FilteredTable extends AbstractTableInfo implements ContainerFiltera
     final private SimpleFilter _filter;
     private String _innerAlias = null;
     protected TableInfo _rootTable;
+    AliasManager _aliasManager = null;
 
     private Container _container;
 
@@ -81,12 +82,14 @@ public class FilteredTable extends AbstractTableInfo implements ContainerFiltera
             applyContainerFilter(ContainerFilter.CURRENT);
     }
 
+
     @Override
     public String getTitleColumn()
     {
         lazyLoadTitleColumnProperties();
         return super.getTitleColumn();
     }
+
 
     @Override
     public boolean hasDefaultTitleColumn()
@@ -357,6 +360,16 @@ public class FilteredTable extends AbstractTableInfo implements ContainerFiltera
     }
 
 
+    @Override
+    public ColumnInfo addColumn(ColumnInfo column)
+    {
+        if (null == _aliasManager)
+            _aliasManager = new AliasManager(getSchema());
+        _aliasManager.ensureAlias(column, null);
+        return super.addColumn(column);
+    }
+
+
     public ColumnInfo addWrapColumn(ColumnInfo column)
     {
         assert column.getParentTable() == getRealTable();
@@ -368,6 +381,7 @@ public class FilteredTable extends AbstractTableInfo implements ContainerFiltera
         addColumn(ret);
         return ret;
     }
+
 
     protected TableInfo getFromTable()
     {
