@@ -249,7 +249,7 @@ public class FilteredTable extends AbstractTableInfo implements ContainerFiltera
 
     public void addCondition(ColumnInfo col, Container container)
     {
-        assert col.getParentTable() == _rootTable : "Column is from the wrong table";
+        assertCorrectParentTable(col);
         // This CAST improves performance on Postgres for some queries by choosing a more efficient query plan
         SQLFragment frag = new SQLFragment();
         frag.append(filterName(col));
@@ -261,8 +261,7 @@ public class FilteredTable extends AbstractTableInfo implements ContainerFiltera
 
     public void addCondition(ColumnInfo col, String value)
     {
-        assert col.getParentTable() == _rootTable : "Column isn't from the expected table. Should be '" +
-                _rootTable + "' but was '" + col.getParentTable() + "'";
+        assertCorrectParentTable(col);
         SQLFragment frag = new SQLFragment();
         frag.append(filterName(col));
         frag.append(" = ");
@@ -270,9 +269,15 @@ public class FilteredTable extends AbstractTableInfo implements ContainerFiltera
         addCondition(frag, col.getName());
     }
 
+    private void assertCorrectParentTable(ColumnInfo col)
+    {
+        assert col.getParentTable() == _rootTable : "Column '" + col.getName() + "' isn't from the expected table. Should be '" +
+                _rootTable + "' but was '" + col.getParentTable() + "'";
+    }
+
     public void addCondition(ColumnInfo col, int value)
     {
-        assert col.getParentTable() == _rootTable : "Column is from the wrong table";
+        assertCorrectParentTable(col);
         SQLFragment frag = new SQLFragment();
         frag.append(filterName(col));
         frag.append(" = ");
@@ -282,7 +287,7 @@ public class FilteredTable extends AbstractTableInfo implements ContainerFiltera
 
     public void addCondition(ColumnInfo col, float value)
     {
-        assert col.getParentTable() == _rootTable : "Column is from the wrong table";
+        assertCorrectParentTable(col);
         SQLFragment frag = new SQLFragment();
         frag.append(filterName(col));
         frag.append(" = ");
@@ -293,7 +298,7 @@ public class FilteredTable extends AbstractTableInfo implements ContainerFiltera
     public void addCondition(ColumnInfo col1, ColumnInfo col2)
     {
         assert col1.getParentTable() == col2.getParentTable() : "Column is from the wrong table";
-        assert col1.getParentTable() == _rootTable : "Column is from the wrong table";
+        assertCorrectParentTable(col1);
         SQLFragment frag = new SQLFragment();
         frag.append(filterName(col1));
         frag.append(" = ");
@@ -304,7 +309,7 @@ public class FilteredTable extends AbstractTableInfo implements ContainerFiltera
 
     public void addInClause(ColumnInfo col, Collection<?> params)
     {
-        assert col.getParentTable() == _rootTable : "Column is from the wrong table";
+        assertCorrectParentTable(col);
         SimpleFilter.InClause clause = new SimpleFilter.InClause(filterName(col), params);
         SQLFragment frag = clause.toSQLFragment(Collections.<String, ColumnInfo>emptyMap(), _schema.getSqlDialect());
         addCondition(frag);

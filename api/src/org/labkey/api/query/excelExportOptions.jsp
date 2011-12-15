@@ -33,7 +33,7 @@
 <table class="labkey-export-tab-contents">
     <tr>
         <td valign="center"><input type="radio" id="<%=xlsGUID%>" name="excelExportType" value="<%=h(model.getXlsURL()) %>" checked="true" /></td>
-        <td valign="center"><label for="<%=xlsGUID%>">Excel '97 File (.xls)</label> <span style="font-size: smaller">Maximum 65,536 rows and 256 columns.</span></td>
+        <td valign="center"><label for="<%=xlsGUID%>">Excel 97 File (.xls)</label> <span style="font-size: smaller">Maximum 65,536 rows and 256 columns.</span></td>
     </tr>
     <tr>
         <td valign="center"><input type="radio" id="<%=xlsxGUID%>" name="excelExportType" value="<%=h(model.getXlsxURL()) %>" /></td>

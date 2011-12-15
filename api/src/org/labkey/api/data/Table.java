@@ -1152,7 +1152,7 @@ public class Table
         try
         {
             K[] values = select(table, ALL_COLUMNS, filter, null, clss);
-            assert (values.length == 0 || values.length == 1);
+            assert (values.length == 0 || values.length == 1) : "Expected a zero or one row but got " + values.length;
 
             if (values.length == 0)
                 return null;
