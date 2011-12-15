@@ -813,7 +813,7 @@ public class MothershipController extends SpringActionController
 
         if (getUser() != null && !getUser().isGuest())
         {
-            String link = "showExceptions.view?ExceptionSummary.BugNumber~isblank=&ExceptionSummary.AssignedTo~eq=" + getUser().getUserId();
+            String link = "showExceptions.view?ExceptionSummary.BugNumber~isblank=&ExceptionSummary.AssignedTo/DisplayName~eq=" + getUser().getDisplayName(getViewContext().getUser());
             builder.append(PageFlowUtil.textLink("My Exceptions", link));
         }
 
