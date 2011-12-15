@@ -1172,6 +1172,11 @@ public class ExperimentServiceImpl implements ExperimentService.Interface
         return getExpSchema().getTable("RunList");
     }
 
+    public TableInfo getTinfoAssayQCFlag()
+    {
+        return getExpSchema().getTable("AssayQCFlag");
+    }
+
     /**
      * return the object of any known experiment type that is identified with the LSID
      *
@@ -1523,7 +1528,10 @@ public class ExperimentServiceImpl implements ExperimentService.Interface
             for (int runId : selectedRunIds)
             {
                 getExpSchema().getScope().ensureTransaction();
-             
+
+                SimpleFilter containerFilter = new SimpleFilter("RunId", runId);
+                Table.delete(getTinfoAssayQCFlag(), containerFilter);
+
                 ExpRunImpl run = getExpRun(runId);
                 ExpProtocol protocol = run.getProtocol();
                 ProtocolImplementation protocolImpl = null;
