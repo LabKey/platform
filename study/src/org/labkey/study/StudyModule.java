@@ -351,7 +351,7 @@ public class StudyModule extends SpringModule implements SearchService.DocumentP
     @NotNull
     public Set<String> getSchemaNames()
     {
-        return PageFlowUtil.set(StudyManager.getSchemaName(), "studydataset");
+        return PageFlowUtil.set(StudyManager.getSchemaName(), "studydataset", "assayresult");
     }
 
     @Override

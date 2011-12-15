@@ -180,7 +180,7 @@ public class AssaySchemaImpl extends AssaySchema
                     else
                     {
                         AssaySchema providerSchema = provider.getProviderSchema(getUser(), getContainer(), protocol);
-                        if (providerSchema != null && name.startsWith(protocol.getName() + " "))
+                        if (providerSchema != null && name.toLowerCase().startsWith(protocol.getName().toLowerCase() + " "))
                         {
                             table = providerSchema.createTable(name);
                         }
