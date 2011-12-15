@@ -28,6 +28,9 @@
 <%@ page import="org.labkey.api.view.ViewContext" %>
 <%@ page import="org.labkey.api.security.User" %>
 <%@ page import="org.labkey.api.security.UserManager" %>
+<%@ page import="org.labkey.api.security.roles.Role" %>
+<%@ page import="java.util.Map" %>
+<%@ page import="java.util.Set" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%
@@ -39,6 +42,7 @@
  */
 
     ViewContext context = HttpView.currentContext();
+    String contextPath = context.getContextPath();
     User currentUser = context.getUser();
     Container c = context.getContainer();
     JspView<UserController.AccessDetail> me = (JspView<UserController.AccessDetail>) HttpView.currentView();
@@ -56,12 +60,6 @@ However, If this account is re-enabled, it would have the following permissions.
 
 <table class="labkey-data-region labkey-show-borders">
     <colgroup><col><col><col></colgroup>
-<%
-    if (bean.showGroups())
-    {
-        out.print("<col>");
-    }
-%>
     <tr>
 <%
     out.print("<th>&nbsp;</th>");
@@ -74,10 +72,6 @@ However, If this account is re-enabled, it would have the following permissions.
         out.print("<th>User</th>");
     }
     out.print("<th>Current Access</th>");
-    if (bean.showGroups())
-    {
-        out.print("<th>Relevant Group(s)</th>");
-    }
 %>
     </tr>
 <%
@@ -104,7 +98,7 @@ However, If this account is re-enabled, it would have the following permissions.
         else
         {
             %><td><%= textLink("details", urlProvider(UserUrls.class).getUserDetailsURL(c, row.getUser().getUserId(), context.getActionURL())) %></td><%
-            out.print("<td>");
+            out.print("<td style='padding-left:" + cellPadding + "px;'>");
             if (isUser)
             {
                 ActionURL userAccessLink = urlProvider(UserUrls.class).getUserAccessURL(row.getContainer(), row.getUser().getUserId());
@@ -116,30 +110,69 @@ However, If this account is re-enabled, it would have the following permissions.
             }
             out.print("</td>");
         }
-    %>
-        <td ><%= row.getAccess() %><%= inherited ? "*" : "" %></td>
-    <%
-        if (bean.showGroups())
+
+        // the group permissions view doesn't need to show access/group details, so just display the access as a comma separated string
+        if (!bean.showGroups())
         {
-            out.print("<td>");
-            boolean first = true;
-            for (Group group : row.getGroups())
+            %><td><%= row.getAccess() %><%= inherited ? "*" : "" %></td><%
+        }
+        else
+        {
+            Map<Role, List<Group>> accessGroups = row.getAccessGroups();
+            Set<Role> roles = accessGroups.keySet();
+            if (roles.size() > 0)
             {
-                Container groupContainer = group.isAdministrators() ? ContainerManager.getRoot() : row.getContainer().getProject();
-                String displayName = (group.isProjectGroup() ? groupContainer.getName() + "/" : "Site ") + group.getName();
-                if (group.isAdministrators() || group.isProjectGroup())
-                {
-                    String groupName = group.isProjectGroup() ? groupContainer.getPath() + "/" + group.getName() : group.getName();
-                    ActionURL groupURL = urlProvider(SecurityUrls.class).getManageGroupURL(groupContainer, groupName);
-                    %><%= !first ? ", " : "" %><a href="<%=h(groupURL)%>"><%=h(displayName)%></a><%
-                }
-                else
-                {
-                    %><%= !first ? ", " : "" %><%=h(displayName)%><%
-                }
-                first = false;
+%>
+            <td style="padding-left:<%=cellPadding%>px;">
+                <table class="labkey-nav-tree" style="width: 100%;">
+                    <tbody>
+                    <tr class="labkey-nav-tree-row labkey-header" >
+                        <td class="labkey-nav-tree-text" align="left" style="border:0 none;">
+                            <a  style="color:#000000;" onclick="return toggleLink(this, false);" href="#">
+                                <img src="<%=contextPath%>/_images/plus.gif" alt="" />
+                                <span><%= row.getAccess() %><%= inherited ? "*" : "" %></span>
+                            </a>
+                        </td>
+                    </tr>
+                    <tr style="display:none">
+                        <td style="padding-left:1em;width: 100%;border:0 none;">
+                            <table class='labkey-data-region labkey-show-borders'>
+                                <tr><th>Role</th><th>Group(s)</th></tr>
+<%
+                                for (Role role : roles)
+                                {
+                                    out.print("<tr><td>" + role.getName() + (inherited ? "*" : "") + "</td>");
+                                    out.print("<td>");
+                                    boolean first = true;
+                                    for (Group group : accessGroups.get(role))
+                                    {
+                                        Container groupContainer = group.isAdministrators() ? ContainerManager.getRoot() : row.getContainer().getProject();
+                                        String displayName = (group.isProjectGroup() ? groupContainer.getName() + "/" : "Site ") + group.getName();
+                                        if (group.isAdministrators() || group.isProjectGroup())
+                                        {
+                                            String groupName = group.isProjectGroup() ? groupContainer.getPath() + "/" + group.getName() : group.getName();
+                                            ActionURL groupURL = urlProvider(SecurityUrls.class).getManageGroupURL(groupContainer, groupName);
+                                            %><%= !first ? ", " : "" %><a href="<%=h(groupURL)%>"><%=h(displayName)%></a><%
+                                        }
+                                        else
+                                        {
+                                            %><%= !first ? ", " : "" %><%=h(displayName)%><%
+                                        }
+                                        first = false;
+                                    }
+                                    out.print("</td></tr>");
+                                }
+%>
+                            </table>
+                        </td>
+                    </tr>
+                    </tbody>
+                </table>
+            </td>
+<%
             }
-            out.print("&nbsp;</td>");
+            else
+                out.print("<td>&nbsp;</td>");  
         }
     %>
     </tr>

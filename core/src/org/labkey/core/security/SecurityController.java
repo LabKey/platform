@@ -1768,6 +1768,7 @@ public class SecurityController extends SpringActionController
             // add an AccessDetailRow for each user that has perm within the project
             for (User user : activeUsers)
             {
+                user = UserManager.getUser(user.getUserId()); // the cache from UserManager.getActiveUsers might not have the udpated groups list
                 Map<Role, List<Group>> userAccessGroups = new HashMap<Role, List<Group>>();
                 SecurityPolicy policy = SecurityManager.getPolicy(getContainer());
                 Set<Role> effectiveRoles = policy.getEffectiveRoles(user);
