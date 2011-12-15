@@ -181,6 +181,7 @@ public class ExperimentService
         TableInfo getTinfoData();
         TableInfo getTinfoDataInput();
         TableInfo getTinfoPropertyDescriptor();
+        TableInfo getTinfoAssayQCFlag();
         ExpSampleSet ensureDefaultSampleSet();
         ExpSampleSet ensureActiveSampleSet(Container container);
         public String getDefaultSampleSetLsid();

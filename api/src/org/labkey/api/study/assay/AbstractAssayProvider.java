@@ -621,7 +621,12 @@ public abstract class AbstractAssayProvider implements AssayProvider
             runTable.addAllowablePermission(UpdatePermission.class);
         }
         runTable.populate();
-        
+
+        runTable.addColumn(new AssayQCFlagColumn(runTable));
+        ColumnInfo qcEnabled = runTable.addColumn(new ExprColumn(runTable, "QCFlagsEnabled", AssayQCFlagColumn.createSQLFragment(runTable.getSqlDialect(), "Enabled"), JdbcType.VARCHAR));
+        qcEnabled.setLabel("QC Flags Enabled State");
+        qcEnabled.setHidden(true);
+
         ColumnInfo dataLinkColumn = runTable.getColumn(ExpRunTable.Column.Name);
         dataLinkColumn.setLabel("Assay Id");
         dataLinkColumn.setDescription("The assay/experiment ID that uniquely identifies this assay run.");

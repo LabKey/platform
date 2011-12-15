@@ -1,0 +1,134 @@
+package org.labkey.api.study.assay;
+
+import org.apache.commons.beanutils.ConvertUtils;
+import org.labkey.api.data.ColumnInfo;
+import org.labkey.api.data.DataColumn;
+import org.labkey.api.data.DisplayColumn;
+import org.labkey.api.data.DisplayColumnFactory;
+import org.labkey.api.data.JdbcType;
+import org.labkey.api.data.RenderContext;
+import org.labkey.api.data.SQLFragment;
+import org.labkey.api.data.TableInfo;
+import org.labkey.api.data.dialect.SqlDialect;
+import org.labkey.api.exp.api.ExperimentService;
+import org.labkey.api.query.ExprColumn;
+import org.labkey.api.query.FieldKey;
+import org.labkey.api.util.PageFlowUtil;
+import org.labkey.api.util.Pair;
+
+import java.io.IOException;
+import java.io.Writer;
+import java.util.HashSet;
+import java.util.Set;
+
+/**
+ * User: jeckels
+ * Date: Dec 12, 2011
+ */
+public class AssayQCFlagColumn extends ExprColumn
+{
+    public AssayQCFlagColumn(TableInfo parent)
+    {
+        super(parent, "QCFlags", createSQLFragment(parent.getSqlDialect(), "FlagType"), JdbcType.VARCHAR);
+        setLabel("QC Flags");
+    }
+
+    @Override
+    public DisplayColumnFactory getDisplayColumnFactory()
+    {
+        return new DisplayColumnFactory()
+        {
+            @Override
+            public DisplayColumn createRenderer(ColumnInfo colInfo)
+            {
+                return new DataColumn(colInfo)
+                {
+                    @Override
+                    public void renderDetailsCellContents(RenderContext ctx, Writer out) throws IOException
+                    {
+                        renderGridCellContents(ctx, out);
+                    }
+
+                    @Override
+                    public void renderGridCellContents(RenderContext ctx, Writer out) throws IOException
+                    {
+                        String[] values = ((String)getValue(ctx)).split(",");
+                        Boolean[] enabled = parseBooleans(values, ctx.get(getEnabledFieldKey(), String.class));
+                        // Keep track of which ones we've already rendered so we can eliminate dupes
+                        Set<Pair<String, Boolean>> alreadyRendered = new HashSet<Pair<String, Boolean>>();
+                        String separator = "";
+                        for (int i = 0; i < values.length; i++)
+                        {
+                            if (alreadyRendered.add(new Pair<String, Boolean>(values[i], enabled[i])))
+                            {
+                                out.write(separator);
+                                // Disabled flags are rendered with strike-through
+                                if (enabled[i] != null && !enabled[i].booleanValue())
+                                {
+                                    out.write("<span style=\"text-decoration: line-through;\">");
+                                }
+                                out.write(PageFlowUtil.filter(values[i]));
+                                if (enabled[i] != null && !enabled[i].booleanValue())
+                                {
+                                    out.write("</span>");
+                                }
+                                separator = ", ";
+                            }
+                        }
+                    }
+
+                    @Override
+                    public void addQueryFieldKeys(Set<FieldKey> keys)
+                    {
+                        keys.add(getEnabledFieldKey());
+                    }
+
+                    private FieldKey getEnabledFieldKey()
+                    {
+                        return new FieldKey(getBoundColumn().getFieldKey().getParent(), "QCFlagsEnabled");
+                    }
+                };
+            }
+        };
+    }
+
+    private Boolean[] parseBooleans(String[] values, String s)
+    {
+        Boolean[] enabled = new Boolean[values.length];
+        if (s != null)
+        {
+            String[] enabledSplit = s.split(",");
+            if (enabledSplit.length != values.length)
+            {
+                throw new IllegalStateException("Expected to get the same number of values for the FlagType and Enabled columns, but got " + values.length + " and " + enabledSplit.length);
+            }
+            for (int i = 0; i < enabledSplit.length; i++)
+            {
+                // The standard Boolean converter doesn't understand "f" or "t", which is what Postgres returns
+                if ("f".equalsIgnoreCase(enabledSplit[i]))
+                {
+                    enabled[i] = false;
+                }
+                else if ("t".equalsIgnoreCase(enabledSplit[i]))
+                {
+                    enabled[i] = true;
+                }
+                else
+                {
+                    enabled[i] = (Boolean) ConvertUtils.convert(enabledSplit[i], Boolean.class);
+                }
+            }
+        }
+        return enabled;
+    }
+
+    public static SQLFragment createSQLFragment(SqlDialect sqlDialect, String selectColumn)
+    {
+        SQLFragment innerSQL = new SQLFragment(" ");
+        innerSQL.append("SELECT qcf." + selectColumn + " FROM ");
+        innerSQL.append(ExperimentService.get().getTinfoAssayQCFlag(), "qcf");
+        innerSQL.append(" WHERE qcf.RunId = " + STR_TABLE_ALIAS + ".RowId ORDER BY qcf.FlagType, qcf.Enabled, qcf.RowId");
+
+        return sqlDialect.getSelectConcat(innerSQL);
+    }
+}
