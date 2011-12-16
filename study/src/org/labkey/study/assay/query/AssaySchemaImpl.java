@@ -128,6 +128,7 @@ public class AssaySchemaImpl extends AssaySchema
                 names.add(getBatchesTableName(protocol));
                 names.add(getRunsTableName(protocol));
                 names.add(getResultsTableName(protocol));
+                names.add(getQCFlagTableName(protocol));
                 AssaySchema providerSchema = provider.getProviderSchema(getUser(), getContainer(), protocol);
                 if (providerSchema != null)
                     names.addAll(providerSchema.getTableNames());
@@ -176,6 +177,10 @@ public class AssaySchemaImpl extends AssaySchema
                         table = provider.createDataTable(this, protocol, true);
                         if (table != null && null != table.getColumn("Properties"))
                             fixupPropertyURLs(table.getColumn("Properties"));
+                    }
+                    else if (name.equalsIgnoreCase(getQCFlagTableName(protocol)) || name.equalsIgnoreCase(protocol.getName() + " Data"))
+                    {
+                        table = provider.createQCFlagTable(this, protocol);
                     }
                     else
                     {

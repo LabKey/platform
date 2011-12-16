@@ -916,6 +916,8 @@
         <ns:column columnName="CreatedBy"/>
         <ns:column columnName="Modified"/>
         <ns:column columnName="ModifiedBy"/>
+        <ns:column columnName="IntKey1"/>
+        <ns:column columnName="IntKey2"/>
       </ns:columns>
     </ns:table>
 </ns:tables>

@@ -741,6 +741,12 @@ public class ExperimentServiceImpl implements ExperimentService.Interface
         return new ExpProtocolApplicationTableImpl(name, schema);
     }
 
+    @Override
+    public ExpQCFlagTableImpl createQCFlagsTable(String name, UserSchema schema)
+    {
+        return new ExpQCFlagTableImpl(name, schema);
+    }
+
     private String getNamespacePrefix(Class<? extends ExpObject> clazz)
     {
         if (clazz == ExpData.class)
