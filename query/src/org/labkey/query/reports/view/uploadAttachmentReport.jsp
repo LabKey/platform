@@ -22,6 +22,10 @@
 <%@ page import="org.springframework.validation.ObjectError" %>
 <%@ page import="java.util.List" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
+
+<script type="text/javascript">
+    LABKEY.requiresExt4Sandbox(true);
+</script>
 <%
     JspView<UploadForm> me = (JspView<UploadForm>) HttpView.currentView();
     ReportsController.UploadForm bean = me.getModelBean();
@@ -38,67 +42,200 @@
 %>
 </table>
 
-<form method="post" action="" enctype="multipart/form-data">
-    <table>
-        <tr>
-            <td class="labkey-form-label">
-                Report Name
-            </td>
-            <td>
-                <%
-                if (null == bean.getLabel()) {
-                %>
-                    <input name="label">
-                <%
-                } else {
-                %>
-                    <input type="hidden" name="reportId" value="<%=h(bean.getReportId())%>"><%=h(bean.getLabel())%>
-             <% } %>
-            </td>
-        </tr>
-        <tr>
-            <td class="labkey-form-label">
-                Report Date
-            </td>
-            <td>
-                <input type="text" name="reportDateString">
-            </td>
-        </tr>
-        <% if (canUseDiskFile)
-        {%>
-        <tr>
-            <td colspan=2 class="labkey-form-label">
-                <input type="radio" checked name="uploadType" onclick="showUpload()">Upload File &nbsp;&nbsp;
-                <input type="radio" name="uploadType" onclick="showPath()">Use a file on server <%=request.getServerName()%>
-            </td>
-        </tr>
-        <%}%>
-        <tr>
-            <td id="fileTitle" class="labkey-form-label">Choose file to upload</td>
-            <td><input id=uploadFile type="file" name="formFiles[0]">
-        <% if (canUseDiskFile)
-        {%>
-            <input size=50 id="filePath" style="display:none" name="filePath">
-      <%}%>
-            </td>
-        </tr>
-    </table>
+<div id="attachmentReportForm">
+</div>
 
-<br>
-    <%=generateSubmitButton("Submit")%>
-    <%=generateBackButton("Cancel")%>
-    </form>
 <script type="text/javascript">
-    function showUpload()
-    {
-        document.getElementById("uploadFile").style.display = "";
-        document.getElementById("filePath").style.display = "none";
-        document.getElementById("fileTitle").innerHTML = "Choose file to upload";
-    }
-    function showPath()
-    {
-        document.getElementById("uploadFile").style.display = "none";
-        document.getElementById("filePath").style.display = "";
-        document.getElementById("fileTitle").innerHTML = "Enter full path of file on server";
-    }
+
+    Ext4.onReady(function(){
+
+        Ext4.define('Dataset.Browser.Category', {
+            extend : 'Ext.data.Model',
+            fields : [
+                {name : 'created',      type : 'date'},
+                {name : 'createdBy'                  },
+                {name : 'displayOrder', type : 'int' },
+                {name : 'label'                      },
+                {name : 'modfied',      type : 'date'},
+                {name : 'modifiedBy'                 },
+                {name : 'rowid',        type : 'int' }
+            ]
+        });
+
+        function initializeCategoriesStore  () {
+            var config = {
+                pageSize: 100,
+                model   : 'Dataset.Browser.Category',
+                autoLoad: true,
+                autoSync: false,
+                proxy   : {
+                    type   : 'ajax',
+                    url    : LABKEY.ActionURL.buildURL('study', 'getCategories.api'),
+                    reader : {
+                        type : 'json',
+                        root : 'categories'
+                    },
+                    listeners : {
+                        exception : function(p, response, operations, eOpts)
+                        {
+                        }
+                    }
+                },
+                listeners: {
+                    scope: this,
+                    load : function(s, recs, success, operation, ops) {
+                        s.sort('displayOrder', 'ASC');
+                    }
+                }
+            };
+
+            return Ext4.create('Ext.data.Store', config);
+        }
+
+        var label = {
+            xtype: 'textfield',
+            name: "label",
+            fieldLabel: "Report Name"
+        };
+        var reportDateString = {
+            xtype: 'datefield',
+            name: "reportDateString",
+            fieldLabel: "Report Date"
+        };
+        var description = {
+            xtype: 'textareafield',
+            grow: true,
+            name: "description",
+            fieldLabel: "Description"
+        };
+
+        var store = initializeCategoriesStore();
+
+        this.category = Ext4.create('Ext.form.field.ComboBox', {
+            xtype: 'combobox',
+            name: 'category',
+            store: store,
+            editable: false,
+            displayField: 'label',
+            valueField: 'rowid',
+            fieldLabel: 'Category'
+        });
+
+        var shared = {
+            xtype: 'checkbox',
+            value: false,
+            inputValue: false,
+            boxLabel: 'Share this report with all users?',
+            name: "shared",
+            fieldLabel: "Shared",
+            listeners: {
+                change: function(cmp, newVal, oldVal){
+                    cmp.inputValue = newVal;
+                }
+            }
+        };
+
+        var hiddenShared = {
+            xtype: 'hidden',
+            name: "@shared"
+        };
+
+        var localFileUploadRadio = {
+            boxLabel: 'Upload File',
+            name: 'fileUploadRadio',
+            inputValue: 'local',
+            checked: true,
+            listeners: {
+                scope: this,
+                change: function(cmp, newVal, oldVal){
+                    if(newVal){
+                        serverFileTextField.setVisible(false);
+                        serverFileTextField.disable();
+                        fileUploadField.setVisible(true);
+                        fileUploadField.enable();
+                    }
+                }
+            }
+        };
+
+        var serverFileRadio = {
+            boxLabel: 'Use a file on server localhost',
+//            width: 350,
+            name: 'fileUploadRadio',
+            inputValue: 'server',
+            listeners: {
+                scope: this,
+                change: function(cmp, newVal, oldVal){
+                    if(newVal){
+                        serverFileTextField.setVisible(true);
+                        serverFileTextField.enable();
+                        fileUploadField.setVisible(false);
+                        fileUploadField.disable();
+                    }
+                }
+            }
+        };
+
+        var fileUploadRadioGroup = {
+            xtype: 'radiogroup',
+            fieldLabel: 'Upload Type',
+            items: [
+                localFileUploadRadio,
+                serverFileRadio
+            ]
+        };
+
+        var fileUploadField = Ext4.create('Ext.form.field.File', {
+            name: 'uploadFile',
+            id: 'uploadFile',
+            fieldLabel: "Choose a file"
+        });
+
+        var serverFileTextField = Ext4.create('Ext.form.field.Text', {
+            name: "filePath",
+            hidden: true,
+            fieldLabel: "Full path on server"
+        });
+
+        var form = Ext4.create('Ext.form.Panel', {
+            renderTo: "attachmentReportForm",
+            url: LABKEY.ActionURL.buildURL('reports', 'uploadReport', null, {returnUrl: LABKEY.ActionURL.getParameter('returnUrl')}),
+            standardSubmit: true,
+            bodyStyle:'background-color: transparent;',
+            border: false,
+            buttonAlign: "left",
+            width: 500,
+            fieldDefaults: {
+                width: 500,
+                labelSeparator: '',
+                labelWidth: 125
+            },
+            items: [
+                label,
+                reportDateString,
+                description,
+                this.category,
+                shared,
+                hiddenShared,
+                fileUploadRadioGroup,
+                fileUploadField,
+                serverFileTextField
+            ],
+            buttons: [
+                {
+                    text: 'Submit',
+                    scope: this,
+                    handler: function() {
+                        form.submit();
+                    }
+                },
+                {
+                    text: 'Cancel',
+                    handler: function(){
+                        window.location = LABKEY.ActionURL.getParameter('returnUrl');
+                    }
+                }
+            ]
+        });
+    });
 </script>

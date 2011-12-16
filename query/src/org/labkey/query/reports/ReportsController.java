@@ -28,7 +28,6 @@ import org.labkey.api.action.ApiSimpleResponse;
 import org.labkey.api.action.ExtFormAction;
 import org.labkey.api.action.FormViewAction;
 import org.labkey.api.action.GWTServiceAction;
-import org.labkey.api.action.NullSafeBindException;
 import org.labkey.api.action.ReturnUrlForm;
 import org.labkey.api.action.SimpleViewAction;
 import org.labkey.api.action.SpringActionController;
@@ -49,7 +48,6 @@ import org.labkey.api.query.DefaultSchema;
 import org.labkey.api.query.QueryDefinition;
 import org.labkey.api.query.QueryForm;
 import org.labkey.api.query.QueryParam;
-import org.labkey.api.query.QuerySchema;
 import org.labkey.api.query.QueryService;
 import org.labkey.api.query.QuerySettings;
 import org.labkey.api.query.QueryView;
@@ -1016,6 +1014,9 @@ public class ReportsController extends SpringActionController
         private String label;
         private String reportDate;
         private String filePath;
+        private String description;
+        private Integer category;
+        private Boolean shared;
         private BindException _errors;
 
         public String getReportDateString()
@@ -1056,6 +1057,36 @@ public class ReportsController extends SpringActionController
         public void setFilePath(String filePath)
         {
             this.filePath = filePath;
+        }
+
+        public String getDescription()
+        {
+            return description;
+        }
+
+        public void setDescription(String description)
+        {
+            this.description = description;
+        }
+
+        public Integer getCategory()
+        {
+            return category;
+        }
+
+        public void setCategory(Integer category)
+        {
+            this.category = category;
+        }
+
+        public Boolean getShared()
+        {
+            return shared;
+        }
+
+        public void setShared(Boolean shared)
+        {
+            this.shared = shared;
         }
 
         public void setErrors(BindException errors){_errors = errors;}
@@ -1132,6 +1163,14 @@ public class ReportsController extends SpringActionController
             if (!StringUtils.isEmpty(form.getReportDateString()))
                 report.setModified(new Date(DateUtil.parseDateTime(form.getReportDateString())));
             report.setFilePath(form.getFilePath());
+            report.setDescription(form.getDescription());
+            report.setCategory(form.getCategory());
+            if(!form.getShared())
+            {
+                report.setOwner(getUser().getUserId());
+            } else {
+                report.setOwner(null);
+            }
 
             int id = ReportService.get().saveReport(getViewContext(), form.getLabel(), report);
 

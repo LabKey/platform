@@ -65,19 +65,24 @@
                 filterDiv: 'filterMsg',
             <% } %>
             container: <%=PageFlowUtil.jsString(context.getContainer().getPath())%>
-            <% if (RReport.isEnabled()) { %>
-            ,createMenu :[{
-                id: 'create_rView',
-                text:'R View',
-                icon: <%=PageFlowUtil.jsString(ReportService.get().getReportIcon(getViewContext(), RReport.TYPE))%>,
-                disabled: <%=!ReportUtil.canCreateScript(context)%>,
-                listeners:{click:function(button, event) {window.location = <%=PageFlowUtil.jsString(newRView.getLocalURIString())%>;}}},{
-                id: 'create_attachment_report',
-                text:'Attachment Report',
-                disabled: <%=!context.hasPermission(AdminPermission.class)%>,
-                listeners:{click:function(button, event) {window.location = <%=PageFlowUtil.jsString(newAttachmentReport.getLocalURIString())%>;}}}]
-            <% } %>
+            ,createMenu :[]
         };
+        
+        <% if (RReport.isEnabled()) { %>
+        gridConfig.createMenu.push({
+            id: 'create_rView',
+            text:'R View',
+            icon: <%=PageFlowUtil.jsString(ReportService.get().getReportIcon(getViewContext(), RReport.TYPE))%>,
+            disabled: <%=!ReportUtil.canCreateScript(context)%>,
+            listeners:{click:function(button, event) {window.location = <%=PageFlowUtil.jsString(newRView.getLocalURIString())%>;}}});
+        <% } %>
+
+        gridConfig.createMenu.push({
+            id: 'create_attachment_report',
+            text:'Attachment Report',
+            disabled: <%=!context.hasPermission(AdminPermission.class)%>,
+            listeners:{click:function(button, event) {window.location = <%=PageFlowUtil.jsString(newAttachmentReport.getLocalURIString())%>;}}});
+
         var panel = new LABKEY.ViewsPanel(gridConfig);
         panel.show();
     });

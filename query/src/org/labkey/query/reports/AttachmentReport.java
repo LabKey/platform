@@ -22,6 +22,8 @@ import org.labkey.api.attachments.AttachmentService;
 import org.labkey.api.attachments.DocumentConversionService;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
+import org.labkey.api.reports.model.ViewCategory;
+import org.labkey.api.reports.model.ViewCategoryManager;
 import org.labkey.api.reports.report.RedirectReport;
 import org.labkey.api.services.ServiceRegistry;
 import org.labkey.api.thumbnail.DynamicThumbnailProvider;
@@ -149,6 +151,43 @@ public class AttachmentReport extends RedirectReport implements DynamicThumbnail
     public void setModified(Date modified)
     {
         getDescriptor().setProperty(MODIFIED, DateUtil.formatDate(modified));
+    }
+
+    public void setDescription(String description)
+    {
+        getDescriptor().setReportDescription(description);
+    }
+
+    public String getDescription()
+    {
+        return getDescriptor().getReportDescription();
+    }
+
+    public void setCategory(Integer id)
+    {
+        if (id != null)
+        {
+            getDescriptor().setCategory(ViewCategoryManager.getInstance().getCategory(id));
+        }
+        else
+        {
+            getDescriptor().setCategory(null);
+        }
+    }
+
+    public ViewCategory getCategory()
+    {
+        return getDescriptor().getCategory();
+    }
+
+    public void setOwner(Integer owner)
+    {
+        getDescriptor().setOwner(owner);
+    }
+
+    public void getOwner()
+    {
+        getDescriptor().getOwner();
     }
 
     enum Type
