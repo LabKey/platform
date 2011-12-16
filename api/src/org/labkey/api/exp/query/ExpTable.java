@@ -26,7 +26,7 @@ import org.labkey.api.exp.property.Domain;
 import org.labkey.api.query.DetailsURL;
 import org.labkey.api.security.permissions.Permission;
 
-abstract public interface ExpTable<C extends Enum> extends ContainerFilterable, TableInfo
+public interface ExpTable<C extends Enum> extends ContainerFilterable, TableInfo
 {
     public Container getContainer();
 

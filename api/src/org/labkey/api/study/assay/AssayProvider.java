@@ -20,11 +20,13 @@ import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.data.ContainerFilterable;
+import org.labkey.api.data.TableInfo;
 import org.labkey.api.exp.ExperimentException;
 import org.labkey.api.exp.Handler;
 import org.labkey.api.exp.api.*;
 import org.labkey.api.exp.property.Domain;
 import org.labkey.api.exp.property.DomainProperty;
+import org.labkey.api.exp.query.ExpQCFlagTable;
 import org.labkey.api.exp.query.ExpRunTable;
 import org.labkey.api.qc.DataExchangeHandler;
 import org.labkey.api.qc.DataTransformer;
@@ -93,6 +95,8 @@ public interface AssayProvider extends Handler<ExpProtocol>
     /** @return may return null if no results/data are tracked by this assay type */
     @Nullable
     ContainerFilterable createDataTable(AssaySchema schema, ExpProtocol protocol, boolean includeCopiedToStudyColumns);
+
+    ExpQCFlagTable createQCFlagTable(AssaySchema assaySchema, ExpProtocol protocol);
 
     ExpRunTable createRunTable(AssaySchema schema, ExpProtocol protocol);
 

@@ -414,6 +414,7 @@ api/src/org/labkey/api/exp/query/ExpMaterialInputTable.java -text
 api/src/org/labkey/api/exp/query/ExpMaterialTable.java -text
 api/src/org/labkey/api/exp/query/ExpProtocolApplicationTable.java -text
 api/src/org/labkey/api/exp/query/ExpProtocolTable.java -text
+api/src/org/labkey/api/exp/query/ExpQCFlagTable.java -text
 api/src/org/labkey/api/exp/query/ExpRunGroupMapTable.java -text
 api/src/org/labkey/api/exp/query/ExpRunTable.java -text
 api/src/org/labkey/api/exp/query/ExpSampleSetTable.java -text
@@ -959,7 +960,6 @@ api/src/org/labkey/api/study/assay/AssayProvider.java -text
 api/src/org/labkey/api/study/assay/AssayPublishKey.java -text
 api/src/org/labkey/api/study/assay/AssayPublishService.java -text
 api/src/org/labkey/api/study/assay/AssayQCFlagColumn.java -text
-api/src/org/labkey/api/study/assay/AssayQCFlagTable.java -text
 api/src/org/labkey/api/study/assay/AssayResultTable.java -text
 api/src/org/labkey/api/study/assay/AssayResultUpdateService.java -text
 api/src/org/labkey/api/study/assay/AssayResultsView.java -text

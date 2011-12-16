@@ -58,6 +58,7 @@ import org.labkey.api.exp.property.DomainProperty;
 import org.labkey.api.exp.property.Lookup;
 import org.labkey.api.exp.property.PropertyService;
 import org.labkey.api.exp.query.ExpExperimentTable;
+import org.labkey.api.exp.query.ExpQCFlagTable;
 import org.labkey.api.exp.query.ExpRunTable;
 import org.labkey.api.gwt.client.DefaultValueType;
 import org.labkey.api.gwt.client.ui.PropertiesEditorUtil;
@@ -611,6 +612,16 @@ public abstract class AbstractAssayProvider implements AssayProvider
     public ActionURL getImportURL(Container container, ExpProtocol protocol)
     {
         return PageFlowUtil.urlProvider(AssayUrls.class).getProtocolURL(container, protocol, UploadWizardAction.class);
+    }
+
+    @Override
+    public ExpQCFlagTable createQCFlagTable(AssaySchema schema, ExpProtocol protocol)
+    {
+        ExpQCFlagTable table = ExperimentService.get().createQCFlagsTable(AssaySchema.getQCFlagTableName(protocol), schema);
+        table.populate();
+        table.setAssayProtocol(protocol);
+        
+        return table;
     }
 
     public ExpRunTable createRunTable(AssaySchema schema, ExpProtocol protocol)

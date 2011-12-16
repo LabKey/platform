@@ -148,6 +148,7 @@ public class ExperimentService
         ExpMaterialTable createMaterialTable(String name, UserSchema schema);
         ExpMaterialInputTable createMaterialInputTable(String name, ExpSchema expSchema);
         ExpProtocolApplicationTable createProtocolApplicationTable(String name, UserSchema schema);
+        ExpQCFlagTable createQCFlagsTable(String name, UserSchema schema);
 
         String generateLSID(Container container, Class<? extends ExpObject> clazz, String name);
         String generateGuidLSID(Container container, Class<? extends ExpObject> clazz);

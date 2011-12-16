@@ -19,7 +19,6 @@ import org.apache.commons.beanutils.ConversionException;
 import org.apache.commons.beanutils.ConvertUtils;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.data.*;
-import org.labkey.api.etl.DataIterator;
 import org.labkey.api.exp.OntologyManager;
 import org.labkey.api.exp.OntologyObject;
 import org.labkey.api.exp.PropertyColumn;
@@ -45,17 +44,26 @@ public class DefaultQueryUpdateService extends AbstractQueryUpdateService
 {
     private TableInfo _dbTable = null;
     private DomainUpdateHelper _helper = null;
+    /** Map from DbTable column names to QueryTable column names, if they have been aliased */
+    private Map<String, String> _columnMapping = Collections.emptyMap();
 
     public DefaultQueryUpdateService(TableInfo queryTable, TableInfo dbTable)
     {
-        this(queryTable, dbTable, null);
+        super(queryTable);
+        _dbTable = dbTable;
     }
 
     public DefaultQueryUpdateService(TableInfo queryTable, TableInfo dbTable, DomainUpdateHelper helper)
     {
-        super(queryTable);
-        _dbTable = dbTable;
+        this(queryTable, dbTable);
         _helper = helper;
+    }
+
+    /** @param columnMapping Map from DbTable column names to QueryTable column names, if they have been aliased */
+    public DefaultQueryUpdateService(TableInfo queryTable, TableInfo dbTable, Map<String, String> columnMapping)
+    {
+        this(queryTable, dbTable);
+        _columnMapping = columnMapping;
     }
 
     protected TableInfo getDbTable()
@@ -133,6 +141,7 @@ public class DefaultQueryUpdateService extends AbstractQueryUpdateService
     protected Map<String, Object> getRow(User user, Container container, Map<String, Object> keys)
             throws InvalidKeyException, QueryUpdateServiceException, SQLException
     {
+        aliasColumns(keys);
         Map<String,Object> row = _select(container, getKeys(keys));
 
         //PostgreSQL includes a column named _row for the row index, but since this is selecting by
@@ -195,9 +204,22 @@ public class DefaultQueryUpdateService extends AbstractQueryUpdateService
     protected Map<String, Object> insertRow(User user, Container container, Map<String, Object> row)
             throws DuplicateKeyException, ValidationException, QueryUpdateServiceException, SQLException
     {
+        aliasColumns(row);
         convertTypes(row);
         setSpecialColumns(user, container, getDbTable(), row);
         return _insert(user, container, row);
+    }
+
+    /** Translate between the column name that query is exposing to the column name that actually lives in the database */
+    private void aliasColumns(Map<String, Object> row)
+    {
+        for (Map.Entry<String, String> entry : _columnMapping.entrySet())
+        {
+            if (row.containsKey(entry.getValue()) && !row.containsKey(entry.getKey()))
+            {
+                row.put(entry.getKey(), row.get(entry.getValue()));
+            }
+        }
     }
 
     protected Map<String, Object> _insert(User user, Container c, Map<String, Object> row)
@@ -234,6 +256,14 @@ public class DefaultQueryUpdateService extends AbstractQueryUpdateService
             throws InvalidKeyException, ValidationException, QueryUpdateServiceException, SQLException
     {
         Map<String,Object> rowStripped = new CaseInsensitiveHashMap<Object>(row.size());
+
+        // Flip the key/value pairs around for easy lookup
+        Map<String, String> queryToDb = new CaseInsensitiveHashMap<String>();
+        for (Map.Entry<String, String> entry : _columnMapping.entrySet())
+        {
+            queryToDb.put(entry.getValue(), entry.getKey());
+        }
+
         for (ColumnInfo col : getQueryTable().getColumns())
         {
             String name = col.getName();
@@ -256,7 +286,9 @@ public class DefaultQueryUpdateService extends AbstractQueryUpdateService
                     name.equalsIgnoreCase("EntityId"))
                 continue;
 
-            rowStripped.put(name, row.get(name));
+            // We want a map using the DbTable column names as keys, so figure out the right name to use
+            String dbName = queryToDb.containsKey(name) ? queryToDb.get(name) : name;
+            rowStripped.put(dbName, row.get(name));
         }
 
         convertTypes(rowStripped);
@@ -370,6 +402,8 @@ public class DefaultQueryUpdateService extends AbstractQueryUpdateService
     {
         if (oldRowMap == null)
             return null;
+
+        aliasColumns(oldRowMap);
 
         if (container != null && getDbTable().getColumn("container") != null)
         {

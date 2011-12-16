@@ -75,6 +75,11 @@ public abstract class AssaySchema extends UserSchema
         return getProviderTableName(protocol, "Data");
     }
 
+    public static String getQCFlagTableName(ExpProtocol protocol)
+    {
+        return getProviderTableName(protocol, "QCFlags");
+    }
+
     /** Tack the table type onto the protocol name to create the full table name */
     public static String getProviderTableName(ExpProtocol protocol, @NotNull String tableType)
     {
