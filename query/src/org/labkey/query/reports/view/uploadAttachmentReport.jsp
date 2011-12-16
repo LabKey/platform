@@ -95,12 +95,14 @@
         var label = {
             xtype: 'textfield',
             name: "label",
-            fieldLabel: "Report Name"
+            fieldLabel: "Report Name",
+            allowBlank: false
         };
         var reportDateString = {
             xtype: 'datefield',
             name: "reportDateString",
-            fieldLabel: "Report Date"
+            fieldLabel: "Report Date",
+            altFormats: LABKEY.Utils.getDateAltFormats()
         };
         var description = {
             xtype: 'textareafield',
@@ -160,7 +162,6 @@
 
         var serverFileRadio = {
             boxLabel: 'Use a file on server localhost',
-//            width: 350,
             name: 'fileUploadRadio',
             inputValue: 'server',
             listeners: {
@@ -179,6 +180,7 @@
         var fileUploadRadioGroup = {
             xtype: 'radiogroup',
             fieldLabel: 'Upload Type',
+            columns: [125, 100],
             items: [
                 localFileUploadRadio,
                 serverFileRadio
@@ -188,13 +190,15 @@
         var fileUploadField = Ext4.create('Ext.form.field.File', {
             name: 'uploadFile',
             id: 'uploadFile',
-            fieldLabel: "Choose a file"
+            fieldLabel: "Choose a file",
+            allowBlank: false
         });
 
         var serverFileTextField = Ext4.create('Ext.form.field.Text', {
             name: "filePath",
             hidden: true,
-            fieldLabel: "Full path on server"
+            fieldLabel: "Full path on server",
+            allowBlank: false
         });
 
         var form = Ext4.create('Ext.form.Panel', {
@@ -202,13 +206,15 @@
             url: LABKEY.ActionURL.buildURL('reports', 'uploadReport', null, {returnUrl: LABKEY.ActionURL.getParameter('returnUrl')}),
             standardSubmit: true,
             bodyStyle:'background-color: transparent;',
+            bodyPadding: 10,
             border: false,
             buttonAlign: "left",
-            width: 500,
+            width: 510,
             fieldDefaults: {
                 width: 500,
                 labelSeparator: '',
-                labelWidth: 125
+                labelWidth: 125,
+                msgTarget: 'side'
             },
             items: [
                 label,
@@ -232,7 +238,11 @@
                 {
                     text: 'Cancel',
                     handler: function(){
-                        window.location = LABKEY.ActionURL.getParameter('returnUrl');
+                        if(LABKEY.ActionURL.getParameter('returnUrl')){
+                            window.location = LABKEY.ActionURL.getParameter('returnUrl');
+                        } else {
+                            window.location = LABKEY.ActionURL.buildURL('reports', 'manageViews');
+                        }
                     }
                 }
             ]
