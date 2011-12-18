@@ -232,6 +232,39 @@ Ext4.define('LABKEY.ext.NavPanel', {
                 }]
             };
         },
+        sampleSetRenderer: function(item){
+            return {
+                layout: 'hbox',
+                defaults: {
+                    style: 'padding-left:5px;padding-bottom:5px;',
+                    border: false,
+                    target: '_self',
+                    linkCls: 'labkey-text-link'
+                },
+                items: [{
+                    tag: 'div',
+                    html: item.name+':',
+                    width: 250
+                },{
+                    xtype: 'labkey-linkbutton',
+                    href: LABKEY.ActionURL.buildURL('query', 'SearchPanel', null, {schemaName: item.schemaName, 'queryName': item.queryName, 'defaultContainerFilter': 'CurrentAndSubfolders'}),
+                    text: 'Search'
+                },{
+                    xtype: 'labkey-linkbutton',
+                    href: LABKEY.ActionURL.buildURL('query', 'executeQuery', null, {schemaName: item.schemaName, 'query.queryName': item.queryName, 'query.containerFilterName': 'CurrentAndSubfolders'}),
+                    text: 'Browse All'
+                },{
+                    xtype: 'labkey-linkbutton',
+                    text: 'Import Data',
+                    hidden: item.showImport===false,
+                    assayId: item.id,
+                    urlParams: {schemaName: item.schemaName, queryName: item.queryName, name: item.queryName, importMoreSamples: true},
+                    handler: function(btn){
+                        window.location = LABKEY.ActionURL.buildURL('experiment', 'showUploadMaterials', null, btn.urlParams);
+                    }
+                }]
+            };
+        },
         fileRenderer: function(item){
             return {
                 layout: 'hbox',

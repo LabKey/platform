@@ -422,9 +422,11 @@ public class ReportUtil
 
                     User createdBy = UserManager.getUser(descriptor.getCreatedBy());
                     User modifiedBy = UserManager.getUser(descriptor.getModifiedBy());
+                    User author = descriptor.getAuthor() != null ? UserManager.getUser(descriptor.getAuthor()) : null;
                     boolean inherited = descriptor.isInherited(c);
                     String query = descriptor.getProperty(ReportDescriptor.Prop.queryName);
                     String schema = descriptor.getProperty(ReportDescriptor.Prop.schemaName);
+                    String status = descriptor.getProperty(ReportDescriptor.Prop.status);
 
                     ViewInfo info = new ViewInfo(descriptor.getReportName(), r.getTypeDescription());
 
@@ -432,6 +434,9 @@ public class ReportUtil
                     info.setEntityId(descriptor.getEntityId());
                     info.setDataType(ViewInfo.DataType.reports);
                     info.setQuery(StringUtils.defaultIfEmpty(query, "Stand-alone views"));
+
+                    if (status != null)
+                        info.setStatus(ViewInfo.Status.valueOf(status));
 
                     if (descriptor.getCategory() != null)
                     {
@@ -449,6 +454,7 @@ public class ReportUtil
                     info.setCreatedBy(createdBy);
                     info.setCreated(descriptor.getCreated());
                     info.setModifiedBy(modifiedBy);
+                    info.setAuthor(author);
                     info.setModified(descriptor.getModified());
                     info.setEditable(descriptor.canEdit(user, c));
                     info.setInherited(inherited);
@@ -466,9 +472,11 @@ public class ReportUtil
                     {
                         ActionURL editUrl = r.getEditReportURL(context);
                         ActionURL runUrl = r.getRunReportURL(context);
+                        ActionURL detailsUrl = PageFlowUtil.urlProvider(ReportUrls.class).urlReportDetails(c, r);
 
                         info.setEditUrl(editUrl);
                         info.setRunUrl(runUrl);
+                        info.setDetailsUrl(detailsUrl);
                     }
                     else
                     {
@@ -489,7 +497,7 @@ public class ReportUtil
                         security = "private";
                     // FIXME: see 10473: ModuleRReportDescriptor extends securable resource, but doesn't properly implement it.  File-based resources don't have a Container or Owner.
                     else if (!(descriptor instanceof ModuleRReportDescriptor) && !SecurityManager.getPolicy(descriptor, false).isEmpty())
-                        security = "explicit";
+                        security = "custom"; // 13571: Explicit is a bad name for custom permissions
                     else
                         security = "public";
 

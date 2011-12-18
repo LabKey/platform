@@ -2221,6 +2221,40 @@ public class PageFlowUtil
     }
 
 
+
+
+    public static boolean isRobotUserAgent(String userAgent)
+    {
+        if (StringUtils.isEmpty(userAgent))
+            return true;
+        userAgent = userAgent.toLowerCase();
+
+        /* our big crawlers are... */
+        // Google
+        if (userAgent.contains("googlebot"))
+            return true;
+        // Yahoo
+        if (userAgent.contains("yahoo! slurp"))
+            return true;
+        // Microsoft
+        if (userAgent.contains("bingbot") || userAgent.contains("msnbot"))
+            return true;
+        if (userAgent.contains("msiecrawler"))  // client site-crawler
+            return false;
+        // Pingdom
+        if (userAgent.contains("pingdom.com_bot"))
+            return true;
+
+        // just about every bot contains "bot", "crawler" or "spider"
+        // including yandexbot, ahrefsbot, mj12bot, ezooms.bot, gigabot, voilabot, exabot
+        if (userAgent.contains("bot") || userAgent.contains("crawler") || userAgent.contains("spider"))
+            return true;
+
+        return false;
+    }
+
+
+
     //
     // TestCase
     //
@@ -2253,6 +2287,46 @@ public class PageFlowUtil
             assertEquals(filter("this is a test<"), "this is a test&lt;");
             assertEquals(filter("'t'&his is a test\""), "&#039;t&#039;&amp;his is a test&quot;");
             assertEquals(filter("<>\"&"), "&lt;&gt;&quot;&amp;");
+        }
+
+
+        @Test
+        public void testRobot()
+        {
+            List<String> bots = Arrays.asList(
+                "Mozilla/5.0 (compatible; Googlebot/2.1; +http://www.google.com/bot.html",
+                "Mozilla/5.0 (compatible; bingbot/2.0; +http://www.bing.com/bingbot.htm)",
+                "Pingdom.com_bot_version_1.4_(http://www.pingdom.com/)",
+                "Googlebot-Image/1.0",
+                "Mozilla/5.0 (compatible; AhrefsBot/2.0; +http://ahrefs.com/robot/)",
+                "Mozilla/5.0 (compatible; YandexBot/3.0; +http://yandex.com/bots)",
+                "Gigabot/3.0 (http://www.gigablast.com/spider.html)",
+                "msnbot-media/1.1 (+http://search.msn.com/msnbot.htm)",
+                "Mozilla/5.0 (compatible; Ezooms/1.0; ezooms.bot@gmail.com)",
+                "Mozilla/5.0 (iPhone; U; CPU iPhone OS 4_1 like Mac OS X; en-us) AppleWebKit/532.9 (KHTML, like Gecko) Version/4.0.5 Mobile/8B117 Safari/6531.22.7 (compatible; Googlebot-Mobile/2.1; +http://www.google.com/bot.html)",
+                "Mozilla/5.0 (compatible; MJ12bot/v1.4.0; http://www.majestic12.co.uk/bot.php?+)",
+                "Mozilla/5.0 (Windows; U; Windows NT 5.1; fr; rv:1.8.1) VoilaBot BETA 1.2 (support.voilabot@orange-ftgroup.com)",
+                "Mozilla/5.0 (compatible; Exabot/3.0; +http://www.exabot.com/go/robot)",
+                "Yeti/1.0 (NHN Corp.; http://help.naver.com/robots/)",
+                "DoCoMo/2.0 N905i(c100;TB;W24H16) (compatible; Googlebot-Mobile/2.1; +http://www.google.com/bot.html)",
+                "SAMSUNG-SGH-E250/1.0 Profile/MIDP-2.0 Configuration/CLDC-1.1 UP.Browser/6.2.3.3.c.1.101 (GUI) MMP/2.0 (compatible; Googlebot-Mobile/2.1; +http://www.google.com/bot.html)",
+                "Mozilla/5.0 (compatible; AhrefsBot/1.0; +http://ahrefs.com/robot/)",
+                "SETOOZBOT/5.0 ( compatible; SETOOZBOT/0.30 ; http://www.setooz.com/bot.html )",
+                "Mozilla/5.0 (compatible; bnf.fr_bot; +http://www.bnf.fr/fr/outils/a.dl_web_capture_robot.html)",
+                "AdMedia bot",
+                "Mozilla/5.0 (iPhone; CPU iPhone OS 5_0_1 like Mac OS X) (compatible; Yeti-Mobile/0.1; +http://help.naver.com/robots/)",
+                "Mozilla/5.0 (compatible; Dow Jones Searchbot)");
+            List<String> nots = Arrays.asList(
+                "Mozilla/5.0 (Windows NT 6.1; WOW64) AppleWebKit/535.7 (KHTML, like Gecko) Chrome/16.0.912.36 Safari/535.7",
+                "Mozilla/5.0 (Macintosh; Intel Mac OS X 10.6; rv:9.0a2) Gecko/20111101 Firefox/9.0a2",
+                "Mozilla/5.0 (compatible; MSIE 10.0; Windows NT 6.1; WOW64; Trident/6.0)",
+                "Opera/9.80 (Windows NT 6.1; U; es-ES) Presto/2.9.181 Version/12.00",
+                "Mozilla/5.0 (Macintosh; U; Intel Mac OS X 10_6_8; de-at) AppleWebKit/533.21.1 (KHTML, like Gecko) Version/5.0.5 Safari/533.21.1"
+            );
+            for (String ua : bots)
+                assertTrue(isRobotUserAgent(ua));
+            for (String ua : nots)
+                assertFalse(isRobotUserAgent(ua));
         }
     }
 

@@ -120,13 +120,6 @@ public class ViewServlet extends HttpServlet
 
         SessionAppender.initThread(request);
 
-        String userAgent = request.getHeader("User-Agent");
-        if (userAgent != null && (userAgent.indexOf("Googlebot") != -1 || userAgent.indexOf("Yahoo! Slurp") != -1 || userAgent.indexOf("msnbot") != -1))
-        {
-            // Crawlers don't send additional requests with the same session so let them time out quickly
-            session.setMaxInactiveInterval(10);
-        }
-
         ActionURL url;
         response.setBufferSize(32768);
 

@@ -156,10 +156,11 @@ public class PropertyManager
 
     public static PropertyMap getWritableProperties(int userId, String objectId, String category, boolean create)
     {
-        synchronized (objectId.intern())
+        try
         {
-            // TODO: Should transact set/properties
-            try
+            prop.getSchema().getScope().ensureTransaction();
+
+            synchronized (objectId.intern())
             {
                 String setSelectName = prop.getTableInfoProperties().getColumn("Set").getSelectName();   // Keyword in some dialects
 
@@ -172,7 +173,10 @@ public class PropertyManager
                 if (null == set)
                 {
                     if (!create)
+                    {
+                        prop.getSchema().getScope().commitTransaction();
                         return null;
+                    }
                     Table.execute(prop.getSchema(),
                             "INSERT INTO " + prop.getTableInfoPropertySets() + " (UserId, ObjectId, Category) VALUES (?,?,?)",
                             parameters);
@@ -187,12 +191,17 @@ public class PropertyManager
                         new Object[]{set},
                         (Map)m);
 
+                prop.getSchema().getScope().commitTransaction();
                 return m;
             }
-            catch (SQLException x)
-            {
-                throw new RuntimeSQLException(x);
-            }
+        }
+        catch (SQLException x)
+        {
+            throw new RuntimeSQLException(x);
+        }
+        finally
+        {
+            prop.getSchema().getScope().closeConnection();
         }
     }
 

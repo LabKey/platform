@@ -396,9 +396,9 @@ public class SecurityManager
         if (null == u)
         {
             User sessionUser = null;
-            HttpSession session = request.getSession(true);
+            HttpSession session = request.getSession(false);
 
-            Integer userId = (Integer) session.getAttribute(USER_ID_KEY);
+            Integer userId = null==session ? null : (Integer) session.getAttribute(USER_ID_KEY);
 
             if (null != userId)
                 sessionUser = UserManager.getUser(userId);
@@ -502,7 +502,7 @@ public class SecurityManager
 
     public static void invalidateSession(HttpServletRequest request)
     {
-        HttpSession s = request.getSession();
+        HttpSession s = request.getSession(false);
         if (null != s)
             s.invalidate();
     }

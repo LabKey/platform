@@ -40,6 +40,7 @@ public class ViewInfo
     private int _categoryDisplayOrder;
     private User _createdBy;
     private User _modifiedBy;
+    private User _author;
     private Date _created;
     private Date _modified;
     private DataType _dataType;
@@ -52,6 +53,7 @@ public class ViewInfo
     private ActionURL _editUrl;
     private ActionURL _runUrl;
     private ActionURL _infoUrl;
+    private ActionURL _detailsUrl;
 
     private String _description;
     private Container _container;
@@ -60,11 +62,18 @@ public class ViewInfo
     private ActionURL _thumbnailUrl;
     private boolean _hidden;
     private int _displayOrder;
+    private Status _status = Status.None;
 
     public enum DataType {
         reports,
         datasets,
         queries,
+    }
+
+    public enum Status {
+        None,
+        Draft,
+        Final
     }
 
     public ViewInfo(String name, String type)
@@ -141,6 +150,16 @@ public class ViewInfo
     public void setModifiedBy(User modifiedBy)
     {
         _modifiedBy = modifiedBy;
+    }
+
+    public User getAuthor()
+    {
+        return _author != null ? _author : _createdBy;
+    }
+
+    public void setAuthor(User author)
+    {
+        _author = author;
     }
 
     public Date getCreated()
@@ -221,6 +240,16 @@ public class ViewInfo
     public void setRunUrl(ActionURL runUrl)
     {
         _runUrl = runUrl;
+    }
+
+    public ActionURL getDetailsUrl()
+    {
+        return _detailsUrl;
+    }
+
+    public void setDetailsUrl(ActionURL detailsUrl)
+    {
+        _detailsUrl = detailsUrl;
     }
 
     public String getDescription()
@@ -343,6 +372,16 @@ public class ViewInfo
         _infoUrl = infoUrl;
     }
 
+    public Status getStatus()
+    {
+        return _status;
+    }
+
+    public void setStatus(Status status)
+    {
+        _status = status;
+    }
+
     public JSONObject toJSON(User user)
     {
         JSONObject o = new JSONObject();
@@ -352,6 +391,7 @@ public class ViewInfo
         o.put("dataType", getDataType());
         o.put("hidden", isHidden());
         o.put("displayOrder", getDisplayOrder());
+        o.put("status", getStatus().name());
 
         if (getEditable() != null)
             o.put("editable", getEditable());
@@ -370,9 +410,15 @@ public class ViewInfo
             o.put("schema", getSchema());
 
         if (getCreatedBy() != null)
+        {
             o.put("createdBy", getCreatedBy().getDisplayName(user));
+            // temporary, refactor in 12.1
+            o.put("createdByUserId", getCreatedBy().getUserId());
+        }
         if (getModifiedBy() != null)
             o.put("modifiedBy", getModifiedBy().getDisplayName(user));
+
+        o.put("author", createUserObject(getAuthor(), user));
 
         if (getCreated() != null)
             o.put("created", DateUtil.formatDate(getCreated()));
@@ -388,6 +434,8 @@ public class ViewInfo
             o.put("runUrl", getRunUrl().getLocalURIString());
         if (getInfoUrl() != null)
             o.put("infoUrl", getInfoUrl().getLocalURIString());
+        if (getDetailsUrl() != null)
+            o.put("detailsUrl", getDetailsUrl().getLocalURIString());
 
         if (getDescription() != null)
             o.put("description", getDescription());
@@ -408,5 +456,15 @@ public class ViewInfo
             o.put("thumbnail", getThumbnailUrl().getLocalURIString());
 
         return o;
+    }
+
+    private JSONObject createUserObject(User user, User currentUser)
+    {
+        JSONObject json = new JSONObject();
+
+        json.put("userId", user != null ? user.getUserId() : "");
+        json.put("displayName", user != null ? user.getDisplayName(currentUser) : "");
+
+        return json;
     }
 }

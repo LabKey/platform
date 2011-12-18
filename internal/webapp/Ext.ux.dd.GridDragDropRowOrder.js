@@ -78,10 +78,54 @@ Ext.ux.dd.GridDragDropRowOrder = Ext.extend(Ext.util.Observable,
 {
     copy: false,
 
-    scrollable: false,
+    scrollable: true,
 
     constructor : function(config)
     {
+        // HACK : 13669 - customize view jumping when using drag/drop to reorder columns/filters/sorts
+        Ext.dd.DDM.getLocation = function(oDD) {
+            if (! this.isTypeOfDD(oDD)) {
+                return null;
+            }
+
+            var el = oDD.getEl(), pos, x1, x2, y1, y2, t, r, b, l, region;
+
+            try {
+                pos= Ext.lib.Dom.getXY(el);
+            } catch (e) { }
+
+            if (!pos) {
+                return null;
+            }
+
+            x1 = pos[0];
+            x2 = x1 + el.offsetWidth;
+            y1 = pos[1];
+            y2 = y1 + el.offsetHeight;
+
+            t = y1 - oDD.padding[0];
+            r = x2 + oDD.padding[1];
+            b = y2 + oDD.padding[2];
+            l = x1 - oDD.padding[3];
+
+            region = new Ext.lib.Region( t, r, b, l );
+            /*
+             * The code below is to ensure that large scrolling elements will
+             * only have their visible area recognized as a drop target, otherwise it
+             * can potentially erronously register as a target when the element scrolls
+             * over the top of something below it.
+             */
+            el = Ext.get(el.parentNode);
+            while (el && el.dom.tagName != "BODY" && region) {
+                if (el.isScrollable()) {
+                    // check whether our element is visible in the view port:
+                    region = region.intersect(el.getRegion());
+                }
+                el = el.parent();
+            }
+            return region;
+        }
+
         if (config)
             Ext.apply(this, config);
 

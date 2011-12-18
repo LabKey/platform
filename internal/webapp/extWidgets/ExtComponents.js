@@ -464,8 +464,8 @@ Ext4.define('LABKEY.ext4.ComboBox', {
             this.value = val;
             this.mon(this.store, 'load', this.setValue.createDelegate(this, arguments), null, {single: true});
         }
-
-        this.callParent(arguments);
+        else
+            this.callParent(arguments);
     }
 });
 

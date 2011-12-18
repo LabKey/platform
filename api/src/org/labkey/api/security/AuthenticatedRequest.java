@@ -16,10 +16,13 @@
 
 package org.labkey.api.security;
 
+import org.apache.log4j.Logger;
 import org.labkey.api.util.HString;
+import org.labkey.api.util.PageFlowUtil;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletRequestWrapper;
+import javax.servlet.http.HttpSession;
 import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
@@ -41,9 +44,58 @@ public class AuthenticatedRequest extends HttpServletRequestWrapper
         _user = null == user ? User.guest : user;
     }
 
+
     public Principal getUserPrincipal()
     {
         return _user;
+    }
+
+
+    @Override
+    public HttpSession getSession()
+    {
+        return this.getSession(true);
+    }
+
+
+    final static String myMarkerAttribute = "sessionCreatedBy.marker";
+    final static Object myMarker = "AuthenticatedRequest.getSession";
+
+    @Override
+    public HttpSession getSession(boolean create)
+    {
+        HttpSession session = super.getSession(false);
+
+        // Verify that all session creation happens through this method
+        // TODO remove the _user.isGuest() check (BasicAuth breaks this by calling setAuthenticatedUser())
+        if (null != session && _user.isGuest())
+        {
+            if (!myMarker.equals(session.getAttribute(myMarkerAttribute)))
+                Logger.getLogger(AuthenticatedRequest.class).error("Someone created a session by a different code path");
+        }
+
+        if (null == session && create)
+        {
+            session = super.getSession(true);
+            session.setAttribute(myMarkerAttribute,myMarker);
+
+            if (_user.isGuest())
+            {
+                int configuredTimeout = session.getMaxInactiveInterval();
+                configuredTimeout = configuredTimeout < 0 ? Integer.MAX_VALUE : configuredTimeout;
+                int sessionTimeout = isRobot() ? 10 : 60*60;
+                session.setMaxInactiveInterval(Math.min(configuredTimeout, sessionTimeout));
+            }
+        }
+
+//        System.err.println(this.toString() + "->" + session.toString() + " [" + session.getId() + "] " + _user.getUserId());
+        return session;
+    }
+
+
+    private boolean isRobot()
+    {
+        return  PageFlowUtil.isRobotUserAgent(getHeader("User-Agent"));
     }
 
 

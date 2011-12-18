@@ -70,7 +70,20 @@ public class ContainerDisplayColumn extends DataColumn
     @Override
     public Object getJsonValue(RenderContext ctx)
     {
-        return getDisplayValue(ctx);
+        Object result = ctx.get(getBoundColumn().getFieldKey());
+        if (result == null)
+        {
+            // If we couldn't find it by FieldKey, check by alias as well
+            result = getBoundColumn().getValue(ctx);
+        }
+
+        if (_entityIdColumn != null)
+        {
+            String id = (String)_entityIdColumn.getValue(ctx);
+            _c = ContainerManager.getForId(id);
+        }
+
+        return _showPath ? _c.getPath() : result;
     }
 
     @Override

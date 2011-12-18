@@ -37,6 +37,10 @@ public class ContainerForeignKey extends LookupForeignKey
     static public ColumnInfo initColumn(ColumnInfo column, final ActionURL url)
     {
         column.setFk(new ContainerForeignKey(url));
+        column.setUserEditable(false);
+        column.setShownInInsertView(false);
+        column.setShownInUpdateView(false);
+        column.setReadOnly(true);
         column.setDisplayColumnFactory(new DisplayColumnFactory()
         {
             public DisplayColumn createRenderer(ColumnInfo colInfo)

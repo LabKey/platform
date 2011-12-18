@@ -361,6 +361,7 @@ LABKEY.ext.MetaHelper = {
         var config = {
             xtype: "labkey-store",
             storeId: LABKEY.ext.MetaHelper.getLookupStoreId(c),
+            containerFilter: 'CurrentOrParentAndWorkbooks',
             schemaName: l.schemaName,
             queryName: l.queryName,
             containerPath: l.container || l.containerPath || LABKEY.container.path,

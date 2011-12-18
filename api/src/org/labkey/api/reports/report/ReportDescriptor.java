@@ -17,10 +17,12 @@
 package org.labkey.api.reports.report;
 
 import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang.math.NumberUtils;
 import org.apache.log4j.Logger;
 import org.apache.xmlbeans.XmlException;
 import org.apache.xmlbeans.XmlOptions;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.Entity;
 import org.labkey.api.module.Module;
@@ -82,7 +84,9 @@ public class ReportDescriptor extends Entity implements SecurableResource
         dataRegionName,
         redirectUrl,
         cached,
-        version
+        version,
+        author,         // author is treated as metadata instead of a first-class field
+        status
     }
 
     public ReportDescriptor()
@@ -208,6 +212,22 @@ public class ReportDescriptor extends Entity implements SecurableResource
     public Integer getOwner(){return _owner;}
 
     public void setOwner(Integer owner){_owner = owner;}
+
+    @Nullable
+    public Integer getAuthor()
+    {
+        String value = getProperty(Prop.author);
+        if (value != null && NumberUtils.isDigits(value))
+            return NumberUtils.toInt(value);
+
+        return null;
+    }
+
+    public void setAuthor(Integer author)
+    {
+        if (author != null)
+            setProperty(Prop.author, String.valueOf(author));
+    }
 
     public void initFromQueryString(String queryString)
     {

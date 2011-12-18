@@ -124,12 +124,14 @@ Ext4.define('LABKEY.ext4.SearchPanel', {
             return;
         }
 
+        var toAdd = [];
+
         store.getFields().each(function(f){
-            this.createRow(f);
+            toAdd.push(this.addRow(f));
         }, this);
 
         if (this.showContainerFilter){
-            this.add({
+            toAdd.push({
                 html: 'Container Filter:', width: 125
             },{
                 xtype: 'labkey-containerfiltercombo'
@@ -138,11 +140,11 @@ Ext4.define('LABKEY.ext4.SearchPanel', {
                 ,fieldType: 'containerFilterName'
                 ,itemId: 'containerFilterName'
             });
-            this.add({html: ''});
+            toAdd.push({html: ''});
         }
 
         if (this.allowSelectView!==false){
-            this.add({
+            toAdd.push({
                 html: 'View:', width: 125
             },{
                 xtype: 'labkey-viewcombo'
@@ -154,28 +156,33 @@ Ext4.define('LABKEY.ext4.SearchPanel', {
                 ,fieldType: 'viewName'
                 ,itemId: 'viewNameField'
             });
-            this.add({html: ''});
+            toAdd.push({html: ''});
         }
 
-        this.doLayout();
+        this.add(toAdd);
     },
 
-   createRow: function(meta){
-        if(meta.inputType == 'textarea')
+   addRow: function(meta){
+        if(meta.inputType == 'textarea'){
             meta.inputType = 'textbox';
+        }
 
+       var rows = [];
         if (!meta.hidden && meta.selectable !== false){
             var replicates = 1;
             if(meta.duplicate)
                 replicates = 2;
 
             for(var i=0;i<replicates;i++)
-                this.addRow(meta);
+                rows.push(this.createRow(meta));
 
         }
+
+       return rows;
    },
 
-   addRow: function(meta){
+   createRow: function(meta){
+       var row = [];
         if (meta.lookup && meta.lookups!==false){
             meta.includeNullRecord = false;
             meta.editorConfig = meta.editorConfig || {};
@@ -196,7 +203,7 @@ Ext4.define('LABKEY.ext4.SearchPanel', {
         theField.disabled = false;
 
         //the label
-        this.add({html: meta.caption + ':', width: 150});
+        row.push({html: meta.caption + ':', width: 150});
 
         Ext4.apply(theField, {
             nullable: true,
@@ -208,23 +215,31 @@ Ext4.define('LABKEY.ext4.SearchPanel', {
 
         //the operator
         if(meta.jsonType=='boolean')
-            this.add({});
+            row.push({});
         else if (theField.xtype == 'labkey-combo'){
-            theField.opField = this.add({
+            var id = Ext4.id();
+            theField.opField = id;
+            row.push({
                 xtype: 'displayfield',
                 value: 'in',
+                itemId: id,
                 hidden: true
             });
         }
-        else
-            theField.opField = this.add({
+        else {
+            var id = Ext4.id();
+            theField.opField = id;
+            row.push({
                 xtype: 'labkey-operatorcombo',
                 meta: meta,
+                itemId: id,
                 width: 165
             });
+        }
 
         //the field itself
-        this.add(theField);
+        row.push(theField);
+       return row;
     },
     onSubmit: function(){
         var params = {
@@ -250,8 +265,10 @@ Ext4.define('LABKEY.ext4.SearchPanel', {
                 return;
 
             var op;
-            if (item.opField && item.opField.getValue()){
-                op = item.opField.getValue();
+            if (item.opField){
+                var opField = this.down('#'+item.opField);
+                if(opField.getValue())
+                    op = opField.getValue();
             }
             else {
                 op = 'eq';

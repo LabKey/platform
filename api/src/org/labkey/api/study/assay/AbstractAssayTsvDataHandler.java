@@ -87,8 +87,27 @@ public abstract class AbstractAssayTsvDataHandler extends AbstractExperimentData
                 ExpProtocol protocol = run.getProtocol();
                 AssayProvider provider = AssayService.get().getProvider(protocol);
 
-                Domain domain = provider.getResultsDomain(protocol);
-                if (domain.getStorageTableName() != null)
+                Domain domain;
+                if (provider != null)
+                {
+                    domain = provider.getResultsDomain(protocol);
+                }
+                else
+                {
+                    // Be tolerant of the AssayProvider no longer being available. See if we have the default
+                    // results/data domain for TSV-style assays
+                    try
+                    {
+                        domain = AbstractAssayProvider.getDomainByPrefix(protocol, ExpProtocol.ASSAY_DOMAIN_DATA);
+                    }
+                    catch (IllegalStateException ignored)
+                    {
+                        domain = null;
+                        // Be tolerant of not finding a domain anymore, if the provider has gone away
+                    }
+                }
+
+                if (domain != null && domain.getStorageTableName() != null)
                 {
                     SQLFragment deleteSQL = new SQLFragment("DELETE FROM ");
                     deleteSQL.append(domain.getDomainKind().getStorageSchemaName());

@@ -1884,7 +1884,7 @@ public class QueryView extends WebPartView<Object>
 
     protected TableInfo createTable()
     {
-        return _queryDef != null ? _queryDef.getTable(_parseErrors, true) : null;
+        return _queryDef != null ? _queryDef.getTable(_schema, _parseErrors, true) : null;
     }
 
     final public TableInfo getTable()

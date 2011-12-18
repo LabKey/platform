@@ -189,7 +189,7 @@ public class UserManager
         if (null == user)
             return null;
 
-        DbCache.put(CORE.getTableInfoUsers(), "" + userId, user, CacheManager.HOUR);
+        DbCache.put(CORE.getTableInfoUsers(), "" + userId, user, CacheManager.DAY);
 
         // these should really be readonly
         return user.cloneUser();

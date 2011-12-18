@@ -93,7 +93,7 @@ abstract public class UserSchema extends AbstractSchema
         }
         if (o instanceof QueryDefinition)
         {
-            TableInfo t = ((QueryDefinition)o).getTable(errors, true);
+            TableInfo t = ((QueryDefinition)o).getTable(this, errors, true);
             if (!errors.isEmpty())
                 throw errors.get(0);
             return t;

@@ -972,13 +972,21 @@ LABKEY.DataRegion = Ext.extend(Ext.Component,
         // initialize listeners
         Ext.EventManager.on(window,   'load',            this._resizeContainer, this, {single: true});
         Ext.EventManager.on(window,   'resize',          this._resizeContainer, this);
+        Ext.EventManager.on(window,   'scroll',          this._scrollContainer, this);
         Ext.EventManager.on(document, 'DOMNodeInserted', this._resizeContainer, this); // Issue #13121
-        // Ext.EventManager.on(document, 'DOMNodeRemoved',  this._resizeContainer, this);
 
         // initialize panel listeners
-        this.on('afterpanelshow', this._resizeContainer, this);
-        this.on('afterpanelhide', this._resizeContainer, this);
-        Ext.EventManager.on(window, "scroll", this._scrollContainer, this);
+        // 13669: customize view jumping when using drag/drop to reorder columns/filters/sorts
+        // must manage DOMNodeInserted Listeners due to panels possibly dynamically adding elements to page
+        this.on('afterpanelshow', function() {
+            Ext.EventManager.un(document, 'DOMNodeInserted', this._resizeContainer, this); // suspend listener
+            this._resizeContainer();
+        }, this);
+
+        this.on('afterpanelhide', function() {
+            Ext.EventManager.on(document, 'DOMNodeInserted', this._resizeContainer, this); // resume listener
+            this._resizeContainer();
+        }, this);
 
         // initialize timer task for resizing and scrolling
         this.hdrCoord = [];
@@ -1820,6 +1828,7 @@ LABKEY.DataRegion.saveCustomizeViewPrompt = function (config)
         var canEditSharedViews = config.canEditSharedViews;
         var targetContainers = config.targetContainers;
         var allowableContainerFilters = config.allowableContainerFilters;
+        var containerFilterable = (allowableContainerFilters && allowableContainerFilters.length > 1);
 
         var containerData = new Array();
         if (targetContainers)
@@ -1926,9 +1935,9 @@ LABKEY.DataRegion.saveCustomizeViewPrompt = function (config)
                 name: "saveCustomView_inherit",
                 fieldLabel: "Inherit",
                 boxLabel: "Make this grid view available in child folders",
-                checked: inherit,
-                disabled: disableSharedAndInherit,
-                hidden: !allowableContainerFilters || allowableContainerFilters.length <= 1,
+                checked: containerFilterable && inherit,
+                disabled: disableSharedAndInherit || !containerFilterable,
+                hidden: !containerFilterable,
                 listeners: {
                     check: function(checkbox, checked) {
                         Ext.ComponentMgr.get("saveCustomView_targetContainer").setDisabled(!checked);
@@ -1948,8 +1957,8 @@ LABKEY.DataRegion.saveCustomizeViewPrompt = function (config)
                 triggerAction: 'all',
                 mode: 'local',
                 editable: false,
-                hidden: !allowableContainerFilters || allowableContainerFilters.length <= 1,
-                disabled: !inherit,
+                hidden: !containerFilterable,
+                disabled: disableSharedAndInherit || !containerFilterable,
                 listeners: {
                     select: function(combobox) {
                         if (!warnedAboutMoving && combobox.getValue() != config.containerPath)
@@ -1989,7 +1998,8 @@ LABKEY.DataRegion.saveCustomizeViewPrompt = function (config)
                         if (!o.session && canEditSharedViews)
                         {
                             o.shared = win.sharedField.getValue();
-                            o.inherit = win.inheritField.getValue();
+                            // Issue 13594: disallow setting inherit bit if query view has no available container filters
+                            o.inherit = containerFilterable && win.inheritField.getValue();
                         }
                     }
 

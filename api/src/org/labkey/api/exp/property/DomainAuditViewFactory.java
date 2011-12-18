@@ -150,7 +150,7 @@ public class DomainAuditViewFactory extends SimpleAuditViewFactory
             }
 
             if (_defaultName != null)
-                out.write(ObjectUtils.defaultIfNull(_defaultName.getValue(ctx), "&nbsp;").toString());
+                out.write(ObjectUtils.defaultIfNull(PageFlowUtil.filter(_defaultName.getValue(ctx)), "&nbsp;").toString());
             else
                 out.write("&nbsp;");
         }

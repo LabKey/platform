@@ -54,6 +54,7 @@ public interface QueryDefinition
      * @param includeMetadata
      */
     TableInfo getTable(List<QueryException> errors, boolean includeMetadata);
+    TableInfo getTable(UserSchema schema, List<QueryException> errors, boolean includeMetadata);
     TableInfo getMainTable();
 
     String getSql();

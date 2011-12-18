@@ -149,27 +149,14 @@ public class Table
         if (null == parameters || 0 == parameters.length)
         {
             Statement statement = conn.createStatement(scrollable ? ResultSet.TYPE_SCROLL_INSENSITIVE : ResultSet.TYPE_FORWARD_ONLY, ResultSet.CONCUR_READ_ONLY);
-            if (null != statementRowCount)
-            {
-                statement.setMaxRows(statementRowCount == NO_ROWS ? 0 : statementRowCount);
-            }
-            if (asyncRequest != null)
-            {
-                asyncRequest.setStatement(statement);
-            }
+            initializeStatement(statement, asyncRequest, statementRowCount);
             rs = statement.executeQuery(sql);
         }
         else
         {
             PreparedStatement stmt = conn.prepareStatement(sql, scrollable ? ResultSet.TYPE_SCROLL_INSENSITIVE : ResultSet.TYPE_FORWARD_ONLY, ResultSet.CONCUR_READ_ONLY);
-            if (null != statementRowCount)
-            {
-                stmt.setMaxRows(statementRowCount);
-            }
-            if (asyncRequest != null)
-            {
-                asyncRequest.setStatement(stmt);
-            }
+            initializeStatement(stmt, asyncRequest, statementRowCount);
+
             try
             {
                 setParameters(stmt, parameters);
@@ -187,6 +174,21 @@ public class Table
 
         assert MemTracker.put(rs);
         return rs;
+    }
+
+
+    private static void initializeStatement(Statement statement, @Nullable AsyncQueryRequest asyncRequest, @Nullable Integer statementRowCount) throws SQLException
+    {
+        // Don't set max rows if null or special ALL_ROWS value (we're assuming statement.getMaxRows() defaults to 0, though this isn't actually documented...)
+        if (null != statementRowCount && ALL_ROWS != statementRowCount)
+        {
+            statement.setMaxRows(statementRowCount == NO_ROWS ? 1 : statementRowCount);
+        }
+
+        if (asyncRequest != null)
+        {
+            asyncRequest.setStatement(statement);
+        }
     }
 
 

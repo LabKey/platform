@@ -77,6 +77,8 @@ public class DefaultDataTransformer implements DataTransformer, DataValidator
                 if (engine != null)
                 {
                     File scriptDir = getScriptDir(context.getProtocol(), scriptFile, isDefault);
+                    // issue 13643: ensure script dir is initially empty
+                    FileUtil.deleteDirectoryContents(scriptDir);
                     try
                     {
                         DataExchangeHandler dataHandler = context.getProvider().createDataExchangeHandler();
@@ -173,6 +175,9 @@ public class DefaultDataTransformer implements DataTransformer, DataValidator
                 if (engine != null)
                 {
                     File scriptDir = getScriptDir(context.getProtocol(), scriptFile, isDefault);
+                    // issue 13643: ensure script dir is initially empty
+                    FileUtil.deleteDirectoryContents(scriptDir);
+
                     try
                     {
                         DataExchangeHandler dataHandler = context.getProvider().createDataExchangeHandler();

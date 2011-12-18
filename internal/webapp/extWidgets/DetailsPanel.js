@@ -126,11 +126,16 @@ Ext4.define('LABKEY.ext.DetailsPanel', {
                 }
             };
             fields.each(function(field){
-                if (LABKEY.ext.MetaHelper.shouldShowInInsertView(field)){
+                if (LABKEY.ext.MetaHelper.shouldShowInDetailsView(field)){
                     var value;
 
                     if(rec.raw && rec.raw[field.name]){
                         value = rec.raw[field.name].displayValue || rec.get(field.name);
+                        if(value && field.jsonType == 'date'){
+                            var format = field.format || 'Y-m-d';
+                            value = value.format(format);
+                        }
+
                         if(rec.raw[field.name].url)
                             value = '<a href="'+rec.raw[field.name].url+'" target="new">'+value+'</a>';
                     }
