@@ -29,6 +29,8 @@ Ext4.onReady(function(){
             style: 'margin-bottom:20px;',
             schemaName: LABKEY.ActionURL.getParameter('schemaName'),
             queryName: queryName,
+            viewName: LABKEY.ActionURL.getParameter('viewName') || LABKEY.ActionURL.getParameter('query.viewName'),
+            columns: LABKEY.ActionURL.getParameter('columns') || LABKEY.ActionURL.getParameter('query.columns'),
             filterArray: [
                 LABKEY.Filter.create(LABKEY.ActionURL.getParameter('keyField'), LABKEY.ActionURL.getParameter('key'), LABKEY.Filter.Types.EQUALS)
             ]
