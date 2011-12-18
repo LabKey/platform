@@ -243,6 +243,12 @@ Ext4.define('LABKEY.ext4.ExcelUploadPanel', {
     },
 
     formSubmit: function(){
+        var value = this.down('textarea') ? this.down('textarea').getValue() : this.down('fileuploadfield').getValue();
+        if(!value){
+            alert('Must paste text or upload a file');
+            return;
+        }
+
         Ext4.Msg.wait("Uploading...");
 
         this.down('#errorArea').removeAll();

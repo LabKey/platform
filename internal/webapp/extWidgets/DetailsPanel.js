@@ -4,6 +4,7 @@
  * Licensed under the Apache License, Version 2.0: http://www.apache.org/licenses/LICENSE-2.0
  */
 LABKEY.requiresExt4ClientAPI();
+LABKEY.requiresCss('/extWidgets/Ext4DetailsPanel.css');
 Ext4.namespace('LABKEY.ext');
 
 /*
@@ -51,6 +52,7 @@ Ext4.define('LABKEY.ext.DetailsPanel', {
             queryName: this.queryName,
             schemaName: this.schemaName,
             viewName: this.viewName,
+            columns: this.columns,
             metadataDefaults: this.metadataDefaults,
             metadata: this.metadata,
             filterArray: this.filterArray,
@@ -145,8 +147,8 @@ Ext4.define('LABKEY.ext.DetailsPanel', {
                     panel.items.push({
                         fieldLabel: field.label || field.caption || field.name,
                         xtype: 'displayfield',
-                        style: 'word-wrap: break-word;',
-                        width: 300,
+                        fieldCls: 'labkey-display-field',
+                        width: 600,
                         value: value
                     });
 

@@ -55,6 +55,7 @@ Ext4.define('LABKEY.ext.ImportPanel', {
                 schemaName: this.schemaName,
                 queryName: this.queryName,
                 viewName: this.viewName,
+                columns: '*',
                 listeners: {
                     uploadcomplete: function(){
                         window.location = LABKEY.ActionURL.getParameter('srcURL') || LABKEY.ActionURL.buildURL('project', 'begin');

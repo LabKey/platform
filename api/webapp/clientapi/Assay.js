@@ -49,6 +49,7 @@ LABKEY.Assay = new function()
             method : 'POST',
             success: LABKEY.Utils.getOnSuccess(config),
             failure: LABKEY.Utils.getOnFailure(config),
+            scope: config.scope || this,
             jsonData : config.parameters,
             headers : {
                 'Content-Type' : 'application/json'
@@ -56,12 +57,12 @@ LABKEY.Assay = new function()
         });
     }
 
-    function getSuccessCallbackWrapper(successCallback)
+    function getSuccessCallbackWrapper(successCallback, scope)
     {
         return LABKEY.Utils.getCallbackWrapper(function(data, response){
             if(successCallback)
-                successCallback(data.definitions, response);
-        }, this);
+                successCallback.call(this, data.definitions, response);
+        }, (scope || this));
     }
 
     function moveParameter(config, param)
@@ -83,7 +84,8 @@ LABKEY.Assay = new function()
 			"getAll" function executes successfully.  Will be called with the argument: 
 			{@link LABKEY.Assay.AssayDesign[]}.
     * @param {Object} config An object which contains the following configuration properties.
-	* @param {Function} [config.failure] Function called when execution of the "getAll" function fails.
+	* @param {Object} [config.scope] The scope to be used for the success and failure callbacks
+    * @param {Function} [config.failure] Function called when execution of the "getAll" function fails.
 	* @param {String} [config.containerPath] The container path in which the requested Assays are defined.
 	*       If not supplied, the current container path will be used.
 	* @example Example:
@@ -135,7 +137,7 @@ LABKEY.Assay = new function()
                 };
             }
 
-            config.success = getSuccessCallbackWrapper(LABKEY.Utils.getOnSuccess(config));
+            config.success = getSuccessCallbackWrapper(LABKEY.Utils.getOnSuccess(config), config.scope);
             getAssays(config);
         },
 	  /**
@@ -143,7 +145,8 @@ LABKEY.Assay = new function()
 	  * @param {Function(LABKEY.Assay.AssayDesign[])} config.success Function called when the "getByName" function executes successfully.
       * @param {Object} config An object which contains the following configuration properties.
 	  * @param {Function} [config.failure] Function called when execution of the "getByName" function fails.
-	  * @param {String} config.name String name of the assay.
+	  * @param {Object} [config.scope] The scope to be used for the success and failure callbacks
+      * @param {String} [config.name] String name of the assay.
 	  * @param {String} [config.containerPath] The container path in which the requested Assay is defined.
 	  *       If not supplied, the current container path will be used.
 	  * @see LABKEY.Assay.AssayDesign
@@ -160,7 +163,7 @@ LABKEY.Assay = new function()
             }
 
             moveParameter(config, "name");
-            config.success = getSuccessCallbackWrapper(LABKEY.Utils.getOnSuccess(config));
+            config.success = getSuccessCallbackWrapper(LABKEY.Utils.getOnSuccess(config), config.scope);
             getAssays(config);
         },
 
@@ -170,7 +173,8 @@ LABKEY.Assay = new function()
 				when the "getByType" function executes successfully.
       * @param {Object} config An object which contains the following configuration properties.
 	  * @param {Function} [config.failure] Function called when execution of the "getByType" function fails.
-	  * @param {String} config.type String name of the assay type.  "ELISpot", for example.
+	  * @param {Object} [config.scope] The scope to be used for the success and failure callbacks
+      * @param {String} config.type String name of the assay type.  "ELISpot", for example.
 	  * @param {String} [config.containerPath] The container path in which the requested Assays are defined.
 	  *       If not supplied, the current container path will be used.
  	  * @see LABKEY.Assay.AssayDesign
@@ -187,7 +191,7 @@ LABKEY.Assay = new function()
             }
 
             moveParameter(config, "type");
-            config.success = getSuccessCallbackWrapper(LABKEY.Utils.getOnSuccess(config));
+            config.success = getSuccessCallbackWrapper(LABKEY.Utils.getOnSuccess(config), config.scope);
             getAssays(config);
         },
 
@@ -197,9 +201,10 @@ LABKEY.Assay = new function()
 				when the "getById" function executes successfully.
      * @param {Object} config An object which contains the following configuration properties.
 	 * @param {Function} [config.failure] Function called when execution of the "getById" function fails.
-	 * @param {Integer} config.id Unique integer ID for the assay.
-	  * @param {String} [config.containerPath] The container path in which the requested Assay is defined.
-	  *       If not supplied, the current container path will be used.
+	 * @param {Object} [config.scope] The scope to be used for the success and failure callbacks
+     * @param {Integer} config.id Unique integer ID for the assay.
+	 * @param {String} [config.containerPath] The container path in which the requested Assay is defined.
+	 *       If not supplied, the current container path will be used.
 	 * @see LABKEY.Assay.AssayDesign
 	 */
         getById : function(config)
@@ -214,7 +219,7 @@ LABKEY.Assay = new function()
             }
 
             moveParameter(config, "id");
-            config.success = getSuccessCallbackWrapper(LABKEY.Utils.getOnSuccess(config));
+            config.success = getSuccessCallbackWrapper(LABKEY.Utils.getOnSuccess(config), config.scope);
             getAssays(config);
         },
 

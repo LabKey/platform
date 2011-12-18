@@ -4819,10 +4819,12 @@ internal/webapp/ext-exploded.js -text
 internal/webapp/extWidgets/AssayUploadPanel.js -text
 internal/webapp/extWidgets/DetailsPanel.js -text
 internal/webapp/extWidgets/ExcelUploadPanel.js -text
+internal/webapp/extWidgets/Ext4DetailsPanel.css -text
 internal/webapp/extWidgets/Ext4FormPanel.js -text
 internal/webapp/extWidgets/Ext4GridPanel.js -text
 internal/webapp/extWidgets/Ext4Store.js -text
 internal/webapp/extWidgets/ExtComponents.js -text
+internal/webapp/extWidgets/FileUploadPanel.js -text
 internal/webapp/extWidgets/GraphPanel.js -text
 internal/webapp/extWidgets/IconPanel.css -text
 internal/webapp/extWidgets/IconPanel.js -text

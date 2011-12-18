@@ -8,7 +8,19 @@ LABKEY.requiresExt4ClientAPI();
 LABKEY.NavTrail.setTrail(window.document.title, []);
 
 Ext4.namespace('LABKEY.ext');
-
+/**
+ * This class is designed to override the default assay upload page.  The primary purpose was to support multiple 'import methods', which are alternate configurations
+ * of fields or parsers.  This can be used to support outputs from multiple instruments imported through one pathway.  It also provides the ability to directly enter results into the browser through an Ext4 grid.
+ *
+ * @param {string} [config.assayName]
+ * @param {array} [config.importMethods]
+ * @param {function} [config.rowTransform]
+ * @param {object} [config.metadata]
+ * @param {object} [config.metadataDefaults]
+ * @param {string} [config.defaultImportMethod]
+ *
+ *
+ */
 Ext4.define('LABKEY.ext.AssayUploadPanel', {
     extend: 'Ext.form.Panel',
     initComponent: function(){
@@ -20,7 +32,7 @@ Ext4.define('LABKEY.ext.AssayUploadPanel', {
         var multi = new LABKEY.MultiRequest();
         multi.add(LABKEY.Query.getQueryDetails, {
             schemaName: 'assay'
-            ,queryName: LABKEY.page.assay.name+' Batches'
+            ,queryName: this.assayName+' Batches'
             ,successCallback: function(results){
                 this.domains.Batch = results;
             }
@@ -29,7 +41,7 @@ Ext4.define('LABKEY.ext.AssayUploadPanel', {
         });
         multi.add(LABKEY.Query.getQueryDetails, {
             schemaName: 'assay'
-            ,queryName: LABKEY.page.assay.name+' Runs'
+            ,queryName: this.assayName+' Runs'
             ,successCallback: function(results){
                 this.domains.Run = results;
             }
@@ -38,13 +50,22 @@ Ext4.define('LABKEY.ext.AssayUploadPanel', {
         });
         multi.add(LABKEY.Query.getQueryDetails, {
             schemaName: 'assay'
-            ,queryName: LABKEY.page.assay.name+' Data'
+            ,queryName: this.assayName+' Data'
             ,successCallback: function(results){
                 this.domains.Results = results;
             }
             ,failure: LABKEY.Utils.onError
             ,scope: this
         });
+        multi.add(LABKEY.Assay.getByName, {
+            name: this.assayName
+            ,success: function(results){
+                this.assayDesign = results[0];
+            }
+            ,failure: LABKEY.Utils.onError
+            ,scope: this
+        });
+
         multi.send(this.onMetaLoad, this);
 
         Ext4.apply(this, {
@@ -88,6 +109,7 @@ Ext4.define('LABKEY.ext.AssayUploadPanel', {
 
     },
     onMetaLoad: function(){
+        console.log(this.assayDesign)
         this.handleImportMethods();
         this.defaultImportMethod = this.defaultImportMethod || 'defaultExcel';
 
@@ -123,8 +145,8 @@ Ext4.define('LABKEY.ext.AssayUploadPanel', {
                 width: 300
             },
             items: [
-                {xtype: 'displayfield', fieldLabel: 'Assay Name', value: LABKEY.page.assay.name, isFormField: false},
-                {xtype: 'displayfield', fieldLabel: 'Assay Description', value: LABKEY.page.assay.description, isFormField: false}
+                {xtype: 'displayfield', fieldLabel: 'Assay Name', value: this.assayName, isFormField: false},
+                {xtype: 'displayfield', fieldLabel: 'Assay Description', value: this.assayDesign.description, isFormField: false}
             ]},{
                 xtype: 'form',
                 title: 'Import Properties',
@@ -346,7 +368,7 @@ Ext4.define('LABKEY.ext.AssayUploadPanel', {
 
         //TODO: Add formatting or validation in the excel sheet?
         var config = {
-            fileName : LABKEY.page.assay.name + '_' + (new Date().format('Y-m-d H_i_s')) + '.xls',
+            fileName : this.assayName + '_' + (new Date().format('Y-m-d H_i_s')) + '.xls',
             sheets : [{
                     name: 'data',
                     data:
@@ -375,7 +397,7 @@ Ext4.define('LABKEY.ext.AssayUploadPanel', {
             hideNonEditableColumns: true,
             store: Ext4.create('LABKEY.ext4.Store', {
                 schemaName: 'assay',
-                queryName: LABKEY.page.assay.name + ' Data',
+                queryName: this.assayName + ' Data',
                 columns: '*',
                 autoLoad: true,
                 maxRows: 0,
@@ -469,7 +491,14 @@ Ext4.define('LABKEY.ext.AssayUploadPanel', {
     formSubmit: function(){
         Ext4.Msg.wait("Uploading...");
 
-        LABKEY.page.batch.runs.length = 0;
+        //LABKEY.page.batch.runs = [];
+        this.batch = new LABKEY.Exp.ExpObject({
+            batchProtocolId: this.assayDesign.id,
+            properties: {},
+            runs: []
+        });
+//        this.batch.batchProtocolId = this.assayDesign.id;
+
         var fields = this.form.getFieldValues();
         var uploadType = this.down('#inputType').getValue();
         
@@ -649,8 +678,10 @@ Ext4.define('LABKEY.ext.AssayUploadPanel', {
         if (this.selectedMethod.clientParsing.contentPost)
             this.selectedMethod.clientParsing.contentPost.call(this, run.dataRows);
 
-        LABKEY.page.batch.runs = LABKEY.page.batch.runs || new Array();
-        LABKEY.page.batch.runs.push(run);
+        //LABKEY.page.batch.runs = LABKEY.page.batch.runs || new Array();
+        //LABKEY.page.batch.runs.push(run);
+        this.batch.runs = this.batch.runs || new Array();
+        this.batch.runs.push(run);
 
         LABKEY.setDirty(true);
         this.saveBatch();
@@ -675,7 +706,8 @@ Ext4.define('LABKEY.ext.AssayUploadPanel', {
             {
             //TODO: verify batch works
             case 'Batch':
-                LABKEY.page.batch.properties[field.name] = value;
+                //LABKEY.page.batch.properties[field.name] = value;
+                this.batch.properties[field.name] = value;
                 break;
             case 'Run':
                 run.properties[field.name] = value;
@@ -757,12 +789,12 @@ Ext4.define('LABKEY.ext.AssayUploadPanel', {
         if (!LABKEY.dirty) return;
 
         LABKEY.Experiment.saveBatch({
-            assayId : LABKEY.page.assay.id,
-            batch : LABKEY.page.batch,
+            assayId : this.assayDesign.id,
+            //batch : LABKEY.page.batch,
+            batch : this.batch,
             scope: this,
             successCallback : function (batch, response)
             {
-                //LABKEY.page.batch = batch;
                 LABKEY.setDirty(false);
 
                 this.getForm().getFields().each(function(f){
