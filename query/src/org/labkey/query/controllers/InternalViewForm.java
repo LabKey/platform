@@ -16,6 +16,7 @@
 
 package org.labkey.query.controllers;
 
+import org.labkey.api.security.permissions.EditSharedViewPermission;
 import org.labkey.api.security.permissions.UpdatePermission;
 import org.labkey.api.view.NotFoundException;
 import org.labkey.api.view.UnauthorizedException;
@@ -63,7 +64,7 @@ public class InternalViewForm extends ViewForm
         }
         if (view.getCustomViewOwner() == null)
         {
-            if (!context.hasPermission(UpdatePermission.class))
+            if (!context.hasPermission(EditSharedViewPermission.class))
             {
                 throw new UnauthorizedException();
             }

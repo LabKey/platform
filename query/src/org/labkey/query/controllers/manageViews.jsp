@@ -90,7 +90,7 @@
         <th>Schema</th>
         <th>Query</th>
         <th>View Name</th>
-        <th>Inherit</th>
+        <th>Flags</th>
         <th>Owner</th>
         <th>Created</th>
         <th>Created&nbsp;By</th>
@@ -100,7 +100,13 @@
     <% if (form.getViewContext().hasPermission(UpdatePermission.class))
     {
         for (CstmView view : views)
-        {%>
+        {
+            List<String> flags = new ArrayList<String>();
+            if (mgr.canInherit(view.getFlags()))
+                flags.add("inherit");
+            if (mgr.isHidden(view.getFlags()))
+                flags.add("hidden");
+    %>
     <tr>
         <td><%=h(view.getSchema())%>
         </td>
@@ -108,7 +114,7 @@
         </td>
         <td><%=h(view.getName())%>
         </td>
-        <td><%=mgr.canInherit(view.getFlags()) ? "yes" : ""%></td>
+        <td><%=StringUtils.join(flags, ",")%></td>
         <td><%=userIdToString(view.getCustomViewOwner())%>
         </td>
         <td><%=DateUtil.formatDateTime(view.getCreated()).replaceAll(" ", "&nbsp;")%></td>

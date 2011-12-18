@@ -1,5 +1,6 @@
 package org.labkey.study.samples.report.request;
 
+import org.labkey.api.util.DemoMode;
 import org.labkey.study.samples.report.SpecimenVisitReport;
 import org.labkey.study.controllers.samples.SpecimenController;
 import org.labkey.study.SampleManager;
@@ -125,7 +126,7 @@ public class RequestParticipantReportFactory extends BaseRequestReportFactory
                         allVisits = StudyManager.getInstance().getVisits(study, Visit.Order.DISPLAY);
                     visits = allVisits;
                 }
-                reports.add(new RequestParticipantReport(participantId, visits, filter, this));
+                reports.add(new RequestParticipantReport(DemoMode.id(participantId, getContainer(), getUser()), visits, filter, this));
             }
             catch (SQLException e)
             {

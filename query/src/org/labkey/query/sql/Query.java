@@ -19,6 +19,7 @@ package org.labkey.query.sql;
 import org.apache.commons.lang.StringUtils;
 import org.apache.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
@@ -66,6 +67,7 @@ import org.labkey.query.design.DgQuery;
 import org.labkey.query.design.QueryDocument;
 
 import java.io.IOException;
+import java.sql.ResultSet;
 import java.sql.ResultSetMetaData;
 import java.sql.SQLException;
 import java.util.ArrayList;
@@ -398,12 +400,22 @@ public class Query
     }
 
 
+    private void assertParsed()
+    {
+        if (_parseErrors.size() == 0 && null == _queryRoot)
+        {
+            assert false : "call parse() first";
+            // shouldn't get here, there should be a parse error if parse() failed
+            parseError(getParseErrors(), "Error parsing query", null);
+        }
+    }
+
+
     public ArrayList<QueryService.ParameterDecl> getParameters()
     {
+        assertParsed();
         if (_parseErrors.size() > 0)
             return null;
-        if (null == _queryRoot)
-            throw new IllegalStateException("call parse first");
         // don't return hidden parameters
         ArrayList<QueryService.ParameterDecl> ret = new ArrayList<QueryService.ParameterDecl>(_parameters.size());
         for (QParameter p : _parameters)
@@ -433,10 +445,9 @@ public class Query
     {
         try
         {
+            assertParsed();
             if (_parseErrors.size() > 0)
                 return null;
-            if (null == _queryRoot)
-                throw new IllegalStateException("call parse first");
             TableInfo tinfo = _queryRoot.getTableInfo();
             if (tinfo instanceof ContainerFilterable && getContainerFilter() != null)
                 ((ContainerFilterable) tinfo).setContainerFilter(getContainerFilter());
@@ -742,13 +753,16 @@ public class Query
 			countRows = rows;
 		}
 
-        void validate(QueryTestCase test)
+        void validate(QueryTestCase test, @Nullable Container container)
         {
+            if (null == container)
+                container = JunitUtil.getTestContainer();
+
             CachedResultSet rs = null;
 
             try
             {
-                rs = test.resultset(sql);
+                rs = test.resultset(sql, container==JunitUtil.getTestContainer()?null:container);
                 ResultSetMetaData md = rs.getMetaData();
                 if (countColumns >= 0)
                     QueryTestCase.assertEquals(sql, countColumns, md.getColumnCount());
@@ -758,14 +772,15 @@ public class Query
 				if (name != null)
 				{
                     User user = TestContext.get().getUser();
-                    QueryDefinition existing = QueryService.get().getQueryDef(user, JunitUtil.getTestContainer(), "lists", name);
+                    QueryDefinition existing = QueryService.get().getQueryDef(user, container, "lists", name);
                     if (null != existing)
                         existing.delete(TestContext.get().getUser());
-					QueryDefinition q = QueryService.get().createQueryDef(user, JunitUtil.getTestContainer(), "lists", name);
+					QueryDefinition q = QueryService.get().createQueryDef(user, container, "lists", name);
 					q.setSql(sql);
 					if (null != metadata)
 						q.setMetadataXml(metadata);
-					q.save(TestContext.get().getUser(), JunitUtil.getTestContainer());
+                    q.setCanInherit(true);
+					q.save(TestContext.get().getUser(), container);
 				}
             }
             catch (Exception x)
@@ -788,7 +803,7 @@ public class Query
         }
 
         @Override
-        void validate(QueryTestCase test)
+        void validate(QueryTestCase test, @Nullable Container container)
         {
             CachedResultSet rs = null;
 
@@ -1045,7 +1060,8 @@ public class Query
 
             if (0==1)
             {
-                try{
+                try
+                {
                     ListDefinition RHOME = s.createList(ContainerManager.getForPath("/home"), "R");
                     RHOME.setKeyType(ListDefinition.KeyType.AutoIncrementInteger);
                     RHOME.setKeyName("rowid");
@@ -1099,11 +1115,15 @@ public class Query
 
 
         @SuppressWarnings({"ThrowableResultOfMethodCallIgnored"})
-        CachedResultSet resultset(String sql) throws Exception
+        CachedResultSet resultset(String sql, @Nullable Container container) throws Exception
         {
+            QuerySchema schema = lists;
+            if (null != container)
+                schema = schema.getSchema("Folder").getSchema(container.getPath()).getSchema("lists");
+
 			try
 			{
-				CachedResultSet rs = (CachedResultSet)QueryService.get().select(lists, sql);
+				CachedResultSet rs = (CachedResultSet)QueryService.get().select(schema, sql);
 				assertNotNull(sql, rs);
 				return rs;
 			}
@@ -1150,7 +1170,7 @@ public class Query
 
             try
             {
-                rs = resultset(sql);
+                rs = resultset(sql, null);
                 ResultSetMetaData md = rs.getMetaData();
                 assertTrue(sql, 0 < rs.findColumn(AliasManager.makeLegalName("d", dialect)));
                 assertTrue(sql, 0 < rs.findColumn(AliasManager.makeLegalName("seven", dialect)));
@@ -1175,20 +1195,20 @@ public class Query
             // simple tests
             for (SqlTest test : tests)
             {
-                test.validate(this);
+                test.validate(this, null);
             }
 
 			if (dialect.allowSortOnSubqueryWithoutLimit())
 			{
 				for (SqlTest test : postgres)
                 {
-					test.validate(this);
+					test.validate(this, null);
                 }
 			}
 
 			for (SqlTest test : negative)
 			{
-				test.validate(this);
+				test.validate(this, null);
 			}
 
             for (SqlTest test : tests)
@@ -1199,6 +1219,62 @@ public class Query
                     assertNotNull(q);
 //                    q.delete(user);
                 }
+            }
+        }
+
+        @Test
+        public void testContainerFilter() throws Exception
+        {
+            User user = TestContext.get().getUser();
+            Container c = JunitUtil.getTestContainer();
+            Container sub = getSubfolder();
+            ResultSet rs = null;
+
+            lists = DefaultSchema.get(user, c).getSchema("lists");
+            if (1==1 || null == lists)
+            {
+                _tearDown();
+                _setUp();
+                lists = DefaultSchema.get(user, c).getSchema("lists");
+            }
+
+            {
+            QueryDefinition q = QueryService.get().getQueryDef(user, JunitUtil.getTestContainer(), "lists", "QThisContainer");
+            if (null != q)
+                q.delete(user);
+            }
+
+            try
+            {
+                //
+                // test default container filter with inherited query
+                //
+                SqlTest createQ = new SqlTest("QThisContainer", "SELECT Name, ID FROM core.Containers", null, 2, 1);
+                createQ.validate(this, c);
+                SqlTest selectQ = new SqlTest("SELECT * FROM QThisContainer");
+                selectQ.validate(this, c);
+                selectQ.validate(this, sub);
+
+                rs = resultset(selectQ.sql, c);
+                assert rs.next();
+                assertEquals(rs.getInt(2), c.getRowId());
+                ResultSetUtil.close(rs); rs = null;
+
+                rs = resultset(selectQ.sql, sub);
+                assert rs.next();
+                assertEquals(rs.getInt(2), sub.getRowId());
+                ResultSetUtil.close(rs); rs = null;
+
+                //
+                // can you think of more good tests
+                //
+            }
+            finally
+            {
+                QueryDefinition q = QueryService.get().getQueryDef(user, JunitUtil.getTestContainer(), "lists", "QThisContainer");
+                if (null != q)
+                    q.delete(user);
+                ResultSetUtil.close(rs);
             }
         }
     }

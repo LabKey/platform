@@ -129,8 +129,10 @@ public class SpecimenReportExcelWriter
             {
                 int maxRowHeight = rowData.getMaxExcelRowHeight(visits);
                 int columnIndex = 0;
-                for (String titleElement : rowData.getTitleHierarchy())
-                    sheet.addCell(new Label(columnIndex++, rowIndex, titleElement));
+
+                for (SpecimenReportTitle titleElement : rowData.getTitleHierarchy())
+                    sheet.addCell(new Label(columnIndex++, rowIndex, titleElement.getDisplayValue()));
+
                 for (VisitImpl visit : visits)
                 {
                     String[] valueSet = rowData.getCellExcelText(visit);

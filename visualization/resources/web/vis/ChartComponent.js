@@ -185,7 +185,8 @@ LABKEY.vis.XYChartComponent = Ext.extend(Ext.BoxComponent, {
 
              if (!series.getTitle){
                  if(!this.labels){
-                     series.getTitle = dateHoverTitle(this.xAxisInterval, series);
+                     var xInterval = this.xAxisInterval ? this.xAxisInterval : '';
+                     series.getTitle = dateHoverTitle(xInterval, series);
                  } else {
                      series.getTitle = visitHoverTitle(this.labels, series);
                  }

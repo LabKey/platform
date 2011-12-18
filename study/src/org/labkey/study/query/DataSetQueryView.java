@@ -145,6 +145,7 @@ public class DataSetQueryView extends QueryView
             _provider = AssayService.get().getProvider(_protocol);
 
         setViewItemFilter(StudyReportUIProvider.getItemFilter());
+        disableContainerFilterSelection();
     }
 
     private DatasetFilterForm getForm(ViewContext context)
@@ -272,28 +273,6 @@ public class DataSetQueryView extends QueryView
         {
             set.add(_sourceLsidColumn);
         }
-    }
-
-    public ActionURL urlFor(QueryAction action)
-    {
-        switch (action)
-        {
-            case createRReport:
-                RReportBean bean = new RReportBean();
-                bean.setReportType(StudyRReport.TYPE);
-                bean.setSchemaName(getSchema().getSchemaName());
-                bean.setQueryName(getSettings().getQueryName());
-                bean.setViewName(getSettings().getViewName());
-                bean.setDataRegionName(getDataRegionName());
-
-                bean.setRedirectUrl(getViewContext().getActionURL().toString());
-                return ReportUtil.getRReportDesignerURL(_viewContext, bean);
-            case exportRowsExcel:
-                return getViewContext().cloneActionURL().replaceParameter("export", "xls");
-            case exportRowsTsv:
-                return getViewContext().cloneActionURL().replaceParameter("export", "tsv");
-        }
-        return super.urlFor(action);
     }
 
     protected void populateReportButtonBar(ButtonBar bar)

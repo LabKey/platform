@@ -12,7 +12,9 @@
 .x4-reset .x4-grid-header-ct {
     background-image: none;
     background-color: transparent;
+    border: 0 none;
 }
+.x4-reset .x4-toolbar-default,
 .x4-reset .x4-column-header {
     background-image: none;
     background-color: transparent;

@@ -2018,7 +2018,7 @@ public class SampleManager
                 return list;
             }
 
-            public String[] getTitleHirarchy(SummaryByVisitType summary)
+            public String[] getTitleHierarchy(SummaryByVisitType summary)
             {
                 return new String[] { summary.getPrimaryType() };
             }
@@ -2036,7 +2036,7 @@ public class SampleManager
                 return parent;
             }
 
-            public String[] getTitleHirarchy(SummaryByVisitType summary)
+            public String[] getTitleHierarchy(SummaryByVisitType summary)
             {
                 return new String[] { summary.getPrimaryType(), summary.getDerivative() };
             }
@@ -2053,7 +2053,7 @@ public class SampleManager
                 return parent;
             }
 
-            public String[] getTitleHirarchy(SummaryByVisitType summary)
+            public String[] getTitleHierarchy(SummaryByVisitType summary)
             {
                 return new String[] { summary.getPrimaryType(), summary.getDerivative(), summary.getAdditive() };
             }
@@ -2063,7 +2063,7 @@ public class SampleManager
                 return "Additive";
             }};
 
-        public abstract String[] getTitleHirarchy(SummaryByVisitType summary);
+        public abstract String[] getTitleHierarchy(SummaryByVisitType summary);
         public abstract List<SpecimenTypeBeanProperty> getGroupingColumns();
         public abstract String getLabel();
     }

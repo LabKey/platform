@@ -79,20 +79,20 @@
     function updateDisplay()
     {
         var form = document.getElementById("permissionsForm");
-        var useExplicitInput = document.getElementById("useExplicit");
-        var useExplicit = useExplicitInput.checked;
+        var useCustomInput = document.getElementById("useCustom");
+        var useCustom = useCustomInput.checked;
         var inputs = form.getElementsByTagName("INPUT");
         for (var i=0 ; i<inputs.length ; i++)
         {
             var input = inputs[i];
             if (input.type == "checkbox")
             {
-                input.style.display = useExplicit ? "block" : "none";
+                input.style.display = useCustom ? "block" : "none";
             }
         }
 
         var buttonDiv = document.getElementById("selectionButtons");
-        buttonDiv.style.display = useExplicit ? "inline" : "none";
+        buttonDiv.style.display = useCustom ? "inline" : "none";
     }
 
     Ext.onReady(updateDisplay);
@@ -102,8 +102,7 @@
 <h3><%= bean.getDescriptor().getReportName() %></h3>
 
     <p>This page enables you to fine-tune permissions for this <%=isAttachmentReport ? "report" : "view"%>.</p>
-    <p>You can choose the default behavior as described.  Alternately, you can explicitly set permissions
-    group by group.  As always, if you don't have read permission on this folder, you don't get to see anything, regardless of any other settings.</p>
+    <p>You can choose the default behavior as described.  Alternately, you can set custom permissions for each group. As always, if you don't have read permission on this folder, you don't get to see anything, regardless of any other settings.</p>
 
     <form id=permissionsForm action="" method=POST>
         <table>
@@ -117,7 +116,7 @@
             %> this dynamic view will be readable only by users who have permission to see the source datasets<%
             }
         %></td></tr>
-        <tr><td colspan=2><input id=useExplicit name=permissionType type=radio value="<%=SecurityController.PermissionType.explicitPermission%>" <%= getPermissionType(bean) == SecurityController.PermissionType.explicitPermission ? "checked" : ""%> onclick="updateDisplay()"></td><td><b>Explicit</b> : set permissions per group
+        <tr><td colspan=2><input id=useCustom name=permissionType type=radio value="<%=SecurityController.PermissionType.customPermission%>" <%= getPermissionType(bean) == SecurityController.PermissionType.customPermission ? "checked" : ""%> onclick="updateDisplay()"></td><td><b>Custom</b> : set permissions per group
     <%
         if (isOwner(bean, context)) {
     %>
@@ -181,7 +180,7 @@
         if (report.getDescriptor().getOwner() != null)
             return SecurityController.PermissionType.privatePermission;
         if (!SecurityManager.getPolicy(report.getDescriptor(), false).isEmpty())
-            return SecurityController.PermissionType.explicitPermission;
+            return SecurityController.PermissionType.customPermission;
         return SecurityController.PermissionType.defaultPermission;
     }
 

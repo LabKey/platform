@@ -129,7 +129,7 @@ public abstract class VisualizationProvider
                 if (!qdef.isHidden())
                 {
                     List<QueryException> errors = new ArrayList<QueryException>();
-                    TableInfo table = qdef.getTable(errors, true);
+                    TableInfo table = qdef.getTable(schema, errors, true);
                     // Ignore specific errors- failed queries won't produce a table
                     if (table != null && isValid(table, qdef, matchType))
                         queries.put(qdef, table);

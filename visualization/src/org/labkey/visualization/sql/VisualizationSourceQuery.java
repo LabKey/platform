@@ -5,6 +5,7 @@ import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.QueryService;
 import org.labkey.api.query.UserSchema;
 import org.labkey.api.util.Pair;
+import org.labkey.api.view.NotFoundException;
 
 import java.util.*;
 
@@ -55,6 +56,10 @@ public class VisualizationSourceQuery implements IVisualizationSourceQuery
     {
         if (_tinfo == null)
             _tinfo = _schema.getTable(_queryName);
+        if (_tinfo == null)
+        {
+            throw new NotFoundException("Could not find query '" + _queryName + "' in schema '" + _schema.getName() + "'");
+        }
         return _tinfo;
     }
 

@@ -15,16 +15,17 @@
  * limitations under the License.
  */
 %>
-<%@ page import="org.labkey.api.view.HttpView"%>
+<%@ page import="org.apache.commons.lang.StringUtils"%>
+<%@ page import="org.labkey.api.study.Study" %>
+<%@ page import="org.labkey.api.util.Pair" %>
+<%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.api.view.JspView" %>
+<%@ page import="org.labkey.study.model.StudyManager" %>
 <%@ page import="org.labkey.study.model.VisitImpl" %>
 <%@ page import="org.labkey.study.samples.report.SpecimenVisitReport" %>
 <%@ page import="org.labkey.study.samples.report.SpecimenVisitReportParameters" %>
 <%@ page import="java.util.Collection" %>
-<%@ page import="org.labkey.api.util.Pair" %>
-<%@ page import="org.apache.commons.lang.StringUtils" %>
-<%@ page import="org.labkey.study.model.StudyManager" %>
-<%@ page import="org.labkey.api.study.Study" %>
+<%@ page import="org.labkey.study.samples.report.SpecimenReportTitle" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
     JspView<SpecimenVisitReportParameters> me = (JspView<SpecimenVisitReportParameters>) HttpView.currentView();
@@ -77,24 +78,26 @@ This folder does not contain a study.
         }
         else
         {
-            // pre-compuyte layout for header rows (Pair<text,rowspan>)
+            // pre-compute layout for header rows (Pair<text,rowspan>)
             int width = report.getLabelDepth();
             int rows = report.getRows().size();
-            Pair<String,Integer>[][] rowtitles = new Pair[rows][];
+            Pair<SpecimenReportTitle, Integer>[][] rowtitles = new Pair[rows][];
             int rowIndex = -1;
+
             for (SpecimenVisitReport.Row row : (Collection<SpecimenVisitReport.Row>) report.getRows())
             {
                 rowIndex++;
-                String[] currentTitleHierarchy = row.getTitleHierarchy();
-                Pair<String,Integer>[] titles = rowtitles[rowIndex] = new Pair[width];
+                SpecimenReportTitle[] currentTitleHierarchy = row.getTitleHierarchy();
+                rowtitles[rowIndex] = new Pair[width];
                 for (int i=0 ; i<width ; i++)
-                    titles[i] = new Pair(StringUtils.trimToEmpty(currentTitleHierarchy[i]), 1);
+                    rowtitles[rowIndex][i] = new Pair<SpecimenReportTitle, Integer>(currentTitleHierarchy[i], 1);
             }
+
             for (int row = rows-1 ; row > 0 ; row--)
             {
                 for (int col=0 ; col < width ; col++)
                 {
-                    if (!StringUtils.equals(rowtitles[row][col].first,rowtitles[row-1][col].first))
+                    if (!StringUtils.equals(rowtitles[row][col].first.getValue(), rowtitles[row-1][col].first.getValue()))
                         break;
                     rowtitles[row-1][col].second += rowtitles[row][col].second;
                     rowtitles[row][col].second = 0;
@@ -105,10 +108,10 @@ This folder does not contain a study.
             for (SpecimenVisitReport.Row row : (Collection<SpecimenVisitReport.Row>) report.getRows())
             {
                 rowIndex++;
-                %><tr class="<%=rowIndex%2==1 ? "labkey-alternate-row" : "labkey-row" %>"  style="vertical-align:top"><%
+                %><tr class="<%=rowIndex%2==1 ? "labkey-alternate-row" : "labkey-row" %>" style="vertical-align:top"><%
                 for (int col = 0; col<width ; col++)
                 {
-                    String title = rowtitles[rowIndex][col].first;
+                    String title = rowtitles[rowIndex][col].first.getDisplayValue();
                     if (title == null || title.length() == 0)
                         title = "[unspecified]";
                     int rowspan = rowtitles[rowIndex][col].second;

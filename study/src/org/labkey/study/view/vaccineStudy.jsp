@@ -25,6 +25,8 @@
 <%@ page import="org.labkey.api.security.permissions.UpdatePermission" %>
 <%@ page import="org.apache.commons.lang.StringUtils" %>
 <%@ page import="java.util.HashMap" %>
+<%@ page import="org.labkey.api.settings.LookAndFeelProperties" %>
+<%@ page import="org.labkey.api.data.Container" %>
 <%@ page extends="org.labkey.api.jsp.JspBase"%>
 
 <%
@@ -52,12 +54,19 @@
 
     StudyGWTView innerView = new StudyGWTView(gwt.client.org.labkey.study.designer.client.Designer.class, params);
 
+    Container c = currentContext.getContainer();
+    WebTheme theme = WebThemeManager.getTheme(c);
+    response.setContentType("text/css");
+
+    ThemeFont themeFont = ThemeFont.getThemeFont(c);
+    LookAndFeelProperties laf = LookAndFeelProperties.getInstance(c);
+
+    String link        = theme.getLinkColor();
+    String grid        = theme.getGridColor();
+    String webpart     = theme.getWebPartColor();
+    
 %>
 <style type="text/css">
-    table.labkey-proj {
-	background-color: #fff;
-}
-
 table.cavd-study {
 	font-family: Verdana, Arial, Helvetica, sans serif;
 	border: none;
@@ -70,7 +79,7 @@ table.cavd-study h2 {
 
 table.cavd-study td {
 	padding: 0 5px;
-	border: none; /*clears borders before it */
+	border: none; /* clears borders before it */
 }
 
 table.cavd-study input[type="text"]  {
@@ -93,23 +102,32 @@ table.cavd-study .gwt-Label {
 }
 
 table.cavd-study .labkey-col-header {
-	border: none; /*clears borders before it */
+	border: none; /* clears borders before it */
 	border-left: 1px solid #fff; /* now lets put in some new ones */
 	border-bottom: 1px solid #fff;
-	background-color: #e7e8f3;
+	background-color: #<%= grid %>;
 	padding: 2px 5px 6px 5px;
 }
 
 table.cavd-study .labkey-col-header-active {
-	border: none; /*clears borders before it */
+	border: none; /* clears borders before it */
 	border-left: 1px solid #fff; /* now lets put in some new ones */
 	border-bottom: 1px solid #fff;
-	background-color: #d0dbee;
-	padding: 2px 5px 6px 5px;
+	background-color: #<%= grid %>;
+	padding: 2px 5px 6px 5px;  
 }
 
 table.cavd-study .labkey-col-header-active .gwt-Label {
-	color: #21309a;
+	color: #<%= link %>;
+	font-weight: bold;
+}
+
+table.cavd-study table {
+    margin-top:8px;
+}
+
+table.cavd-study td.cavd-row-padded table,  table.cavd-study td.cavd-row-padded-view table {
+    margin-top:0;
 }
 
 table.cavd-study li {
@@ -120,12 +138,17 @@ table.cavd-study ul {
     list-style-type: disc;
 }
 table.cavd-study .labkey-col-header-active .gwt-Label:hover {
-	color: #21309a;
+	color: #<%= link %>;
 	text-decoration: underline;
 	cursor: pointer;
 }
 
-.schedule-header .gwt-label {
+.cavd-schedule-header {
+	font-weight: bold;
+    text-align: center;
+}
+
+.cavd-schedule-header .gwt-label {
 	font-weight: bold;
 }
 
@@ -133,29 +156,29 @@ table.cavd-study .labkey-row-header {
 	border: none;
 	border-right: 1px solid #fff; /* now lets put in some new ones */
 	border-bottom: 1px solid #fff;
-	background-color: #eee;
+	background-color: #<%= grid %>;
 }
 
 table.cavd-study .labkey-row {
 	border-bottom: 1px solid #fff;
 	border-right: 1px solid #fff;
-	background-color: #fafafa;
+	background-color: #fafafa; 
 }
 
 table.cavd-study .labkey-row-active {
 	border-bottom: 1px solid #fff;
 	border-right: 1px solid #fff;
 	padding: 3px 20px 3px 5px;
-	background-color: #e7ebf3;
+	background-color: #<%= webpart %>;
 }
 
 table.cavd-study .labkey-row-active .gwt-Label, table.cavd-study .labkey-row-header .gwt-Label {
-	color: #21309a;
+	color: #<%= link %>;
     cursor: pointer;
 }
 
 table.cavd-study .labkey-row-active .gwt-Label:hover, table.cavd-study .labkey-row-header .gwt-Label:hover {
-	color: #21309a;
+	color: #<%= link %>;
 	text-decoration: underline;
 	cursor: pointer;
 }
@@ -166,7 +189,7 @@ table.cavd-study .cavd-row-bottom {
 
 table.cavd-study .cavd-corner {
 	border: none;
-	background-color: #e7e8f3;
+	background-color: #<%= grid %>;
 	border-bottom: 1px solid #fff;
 }
 
@@ -182,6 +205,14 @@ table.cavd-study .cavd-row-padded {
 	background-color: #fafafa;
 }
 
+table.cavd-study .cavd-row-padded-view {
+	border-bottom: 1px solid #fff;
+	border-right: 1px solid #fff;
+	padding-top: 3px;
+	padding-bottom: 3px;
+	background-color: #fafafa;
+}
+
 a.labkey-button,
 a.labkey-button:visited,
 a.gwt-Anchor {
@@ -189,7 +220,7 @@ a.gwt-Anchor {
 	margin-right: 5px;
     border: 1px solid #ddd;
     background-color: #FFFFFF;
-    color: #21309a;
+    color: #<%= link %>;
     text-transform: uppercase;
     font-size: 10px;
     font-family: Verdana, Arial, Helvetica, sans serif;
@@ -198,7 +229,7 @@ a.gwt-Anchor {
 
     -moz-border-radius: 5px;
     -webkit-border-radius: 5px;
-
+	
 	background: -moz-linear-gradient(center top , #FFFFFF, #E5E5E5);
 
     *padding: 1px 5px 0px 5px;
@@ -220,7 +251,7 @@ a.gwt-Anchor:hover
     border-radius: 5px;
     -moz-border-radius: 5px;
     -webkit-border-radius: 5px;
-
+	
 	background: -moz-linear-gradient(center top , #FFFFFF, #E5E5E5);
 	background: -moz-linear-gradient(center top , #FFFFFF, #E5E5E5);
 

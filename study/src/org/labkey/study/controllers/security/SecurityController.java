@@ -445,7 +445,7 @@ public class SecurityController extends SpringActionController
     public enum PermissionType
     {
         defaultPermission,
-        explicitPermission,
+        customPermission,
         privatePermission,
     }
 

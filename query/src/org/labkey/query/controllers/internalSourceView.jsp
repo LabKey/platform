@@ -56,9 +56,9 @@
         Name: <%=h(view.getName())%><br>
         Owner: <%=h(userIdToString(view.getCustomViewOwner()))%><br>
         <br>
-        Inherit: <%=mgr.canInherit(view.getFlags()) ? "yes" : "no"%><br>
-        Hidden: <%=mgr.isHidden(view.getFlags()) ? "yes" : "no"%><br>
-        Snapshot: <%=mgr.isSnapshot(view.getFlags()) ? "yes" : "no"%><br>
+        Inherit: <labkey:checkbox id="ff_inherit" name="ff_inherit" value="true" checked="<%=form.ff_inherit%>" /><br>
+        Hidden: <labkey:checkbox id="ff_hidden" name="ff_hidden" value="true" checked="<%=form.ff_hidden%>" /><br>
+        Shared: <%=view.getCustomViewOwner() == null ? "yes" : "no"%><br>
         <br>
         Container: <%=h(view.getContainerPath())%><br>
         Created: <%=h(DateUtil.formatDateTime(view.getCreated()))%><br>

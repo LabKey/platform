@@ -113,8 +113,17 @@ public class ConvertTaskFactory extends AbstractTaskFactory<ConvertTaskFactorySe
             TaskFactory<? extends TaskFactorySettings> factory = PipelineJobService.get().getTaskFactory(tid);
             for (FileType ft : factory.getInputTypes())
             {
-                if (ft.isType(fileInput))
-                    return factory;
+                try
+                {
+                    // If we have a match based on the file type and the factory says that it's a participant based
+                    // on the search protocol parameters, use it
+                    if (ft.isType(fileInput) && factory.isParticipant(job))
+                        return factory;
+                }
+                catch (IOException ignored)
+                {
+                    // Consider this command out of the running, caller will report an error if there are no other options
+                }
             }
         }
 

@@ -21,7 +21,6 @@ import org.labkey.api.query.*;
 import org.labkey.api.security.User;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.util.StringExpression;
-import org.labkey.query.controllers.QueryController;
 import org.labkey.query.sql.Query;
 import org.labkey.query.persist.QueryManager;
 import org.labkey.query.persist.QueryDef;
@@ -202,17 +201,20 @@ public class TableQueryDefinition extends QueryDefinitionImpl
     }
 
 
-    public TableInfo getTable(List<QueryException> errors, boolean includeMetadata)
+    public TableInfo getTable(UserSchema schema, List<QueryException> errors, boolean includeMetadata)
     {
-        if (includeMetadata)
+        if (schema == getSchema())
         {
-            if (null == _table)
-                _table = getSchema().getTable(getName(), includeMetadata);
-            if (null != _table)
+            if (_table == null)
+                _table = schema.getTable(getName(), includeMetadata);
+            if (_table != null)
+            {
                 return _table;
+            }
         }
-
-        return getSchema().getTable(getName(), includeMetadata);
+        TableInfo table = schema.getTable(getName(), includeMetadata);
+//        if (table != null)
+            return table;
 
         // UserSchema.getTable() calls _getTableOrQuery(),
         // I don't think we need to call super.getTable()

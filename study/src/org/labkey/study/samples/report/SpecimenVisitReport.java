@@ -228,12 +228,27 @@ public abstract class SpecimenVisitReport<CELLDATA extends SpecimenReportCellDat
         return rows.iterator().next().getTitleHierarchy().length;
     }
 
+    private static SpecimenReportTitle[] getSpecimenReportTitle(String[] stringHierarchy)
+    {
+        SpecimenReportTitle[] titleHierarchy = new SpecimenReportTitle[stringHierarchy.length];
+
+        for (int i = 0; i < titleHierarchy.length; i++)
+            titleHierarchy[i] = new SpecimenReportTitle(stringHierarchy[i]);
+
+        return titleHierarchy;
+    }
+
     public class Row
     {
-        private String[] _titleHierarchy;
+        private final SpecimenReportTitle[] _titleHierarchy;
         private Map<Double, CELLDATA> _visitData = new HashMap<Double, CELLDATA>();
 
-        public Row(String[] titleHierarchy)
+        public Row(String[] stringHierarchy)
+        {
+            this(getSpecimenReportTitle(stringHierarchy));
+        }
+
+        public Row(SpecimenReportTitle[] titleHierarchy)
         {
             _titleHierarchy = titleHierarchy;
         }
@@ -262,7 +277,7 @@ public abstract class SpecimenVisitReport<CELLDATA extends SpecimenReportCellDat
             return max;
         }
 
-        public String[] getTitleHierarchy()
+        public SpecimenReportTitle[] getTitleHierarchy()
         {
             return _titleHierarchy;
         }

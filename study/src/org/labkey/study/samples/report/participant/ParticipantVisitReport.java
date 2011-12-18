@@ -1,10 +1,12 @@
 package org.labkey.study.samples.report.participant;
 
+import org.labkey.api.util.DemoMode;
 import org.labkey.study.model.VisitImpl;
 import org.labkey.study.model.StudyManager;
 import org.labkey.study.SampleManager;
 import org.labkey.study.CohortFilter;
 import org.labkey.study.controllers.samples.SpecimenController;
+import org.labkey.study.samples.report.SpecimenReportTitle;
 import org.labkey.study.samples.report.SpecimenVisitReportParameters;
 import org.labkey.study.samples.report.SpecimenVisitReport;
 import org.labkey.api.data.SimpleFilter;
@@ -58,11 +60,13 @@ public class ParticipantVisitReport extends SpecimenVisitReport<SampleManager.Su
                 Row row = rows.get(key);
                 if (row == null)
                 {
-                    String[] titleHierarchy;
+                    String ptid = count.getParticipantId();
+                    SpecimenReportTitle ptidTitle = new SpecimenReportTitle(ptid, DemoMode.id(ptid, getContainer(), getUser()));
+                    SpecimenReportTitle[] titleHierarchy;
                     if (_showCohorts)
-                        titleHierarchy = new String[] { cohort, count.getParticipantId() };
+                        titleHierarchy = new SpecimenReportTitle[] {new SpecimenReportTitle(cohort), ptidTitle};
                     else
-                        titleHierarchy = new String[] { count.getParticipantId() };
+                        titleHierarchy = new SpecimenReportTitle[] {ptidTitle};
                     row = new Row(titleHierarchy);
                     rows.put(key, row);
                 }

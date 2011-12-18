@@ -247,7 +247,7 @@ table.labkey-expandable-nav th.labkey-header {
     color: #000000;
 }
 
-.labkey-announcement-title a {
+.labkey-announcement-title a.announcement-title-link {
 	color:#126495;
 	font-size: 14px;
 }

@@ -323,11 +323,16 @@ public abstract class QueryDefinitionImpl implements QueryDefinition
 
     public TableInfo getTable(List<QueryException> errors, boolean includeMetadata)
     {
+        return getTable(getSchema(), errors, includeMetadata);
+    }
+
+    public TableInfo getTable(@NotNull UserSchema schema, List<QueryException> errors, boolean includeMetadata)
+    {
         if (errors == null)
         {
             errors = new ArrayList<QueryException>();
         }
-        Query query = getQuery(getSchema(), errors);
+        Query query = getQuery(schema, errors);
         if (!includeMetadata)
             query.setTablesDocument(null);
         TableInfo ret = query.getTableInfo();
@@ -339,7 +344,7 @@ public abstract class QueryDefinitionImpl implements QueryDefinition
         }
 
         if (null != ret && null != query.getTablesDocument())
-            ((QueryTableInfo)ret).loadFromXML(getSchema(), query.getTablesDocument().getTables().getTableArray(0), errors);
+            ((QueryTableInfo)ret).loadFromXML(schema, query.getTablesDocument().getTables().getTableArray(0), errors);
 
         if (!query.getParseErrors().isEmpty())
         {

@@ -57,7 +57,7 @@ public class RequestParticipantReport extends SpecimenVisitReport<SampleManager.
                 Row row = rows.get(key);
                 if (row == null)
                 {
-                    String[] typeHierarchy = level.getTitleHirarchy(count);
+                    String[] typeHierarchy = level.getTitleHierarchy(count);
                     String[] titleHierarchy = new String[typeHierarchy.length + 1];
                     titleHierarchy[0] = count.getSiteLabel();
                     System.arraycopy(typeHierarchy, 0, titleHierarchy, 1, typeHierarchy.length);

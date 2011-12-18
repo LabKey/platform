@@ -99,6 +99,7 @@ import org.labkey.api.security.RequiresPermissionClass;
 import org.labkey.api.security.RequiresSiteAdmin;
 import org.labkey.api.security.SecurityManager;
 import org.labkey.api.security.User;
+import org.labkey.api.security.UserManager;
 import org.labkey.api.security.permissions.AdminPermission;
 import org.labkey.api.security.permissions.DeletePermission;
 import org.labkey.api.security.permissions.InsertPermission;
@@ -233,6 +234,7 @@ import java.util.EnumSet;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
+import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.LinkedList;
 import java.util.List;
@@ -914,8 +916,6 @@ public class StudyController extends BaseStudyController
             settings.setShowSourceLinks(true);
 
             QueryView queryView = schema.createView(getViewContext(), settings, errors);
-
-            queryView.disableContainerFilterSelection();
 
             final ActionURL url = context.getActionURL();
             setColumnURL(url, queryView, schema, def);
@@ -6910,14 +6910,21 @@ public class StudyController extends BaseStudyController
 
             for (ViewInfo.DataType type : ViewInfo.DataType.values())
             {
-                // only if it is explicitly excluded does it not get included
-                if (props.containsKey(type.name()) && props.get(type.name()).equals("0"))
-                    types.put(type.name(), false);
-                else
-                    types.put(type.name(), true);
+                types.put(type.name(), getCheckedState(type.name(), props, true));
             }
 
             response.put("types", new JSONObject(types));
+
+            // visible columns
+            Map<String, Map<String, Boolean>> columns = new LinkedHashMap<String, Map<String, Boolean>>();
+
+            columns.put("Type", Collections.singletonMap("checked", getCheckedState("Type", props, true)));
+            columns.put("Author", Collections.singletonMap("checked", getCheckedState("Author", props, false)));
+            columns.put("Modified", Collections.singletonMap("checked", getCheckedState("Modified", props, false)));
+            columns.put("Status", Collections.singletonMap("checked", getCheckedState("Status", props, false)));
+            columns.put("Access", Collections.singletonMap("checked", getCheckedState("Access", props, true)));
+
+            response.put("visibleColumns", columns);
 
             if (form.includeData())
             {
@@ -6981,6 +6988,15 @@ public class StudyController extends BaseStudyController
             }
 
             return response;
+        }
+
+        private Boolean getCheckedState(String prop, Map<String, String> propMap, boolean defaultState)
+        {
+            if (propMap.containsKey(prop))
+            {
+                return !propMap.get(prop).equals("0");
+            }
+            return defaultState;
         }
 
         private List<ViewInfo> getDatasets()
@@ -7221,6 +7237,8 @@ public class StudyController extends BaseStudyController
         String _description;
         boolean _hidden;
         ViewInfo.DataType _dataType;
+        int _author;
+        ViewInfo.Status _status;
 
         public ReportIdentifier getReportId()
         {
@@ -7280,6 +7298,26 @@ public class StudyController extends BaseStudyController
         public void setEntityId(String entityId)
         {
             _entityId = entityId;
+        }
+
+        public int getAuthor()
+        {
+            return _author;
+        }
+
+        public void setAuthor(int author)
+        {
+            _author = author;
+        }
+
+        public ViewInfo.Status getStatus()
+        {
+            return _status;
+        }
+
+        public void setStatus(ViewInfo.Status status)
+        {
+            _status = status;
         }
     }
 
@@ -7343,11 +7381,20 @@ public class StudyController extends BaseStudyController
                 if (form.getCategory() != null)
                     category = ViewCategoryManager.getInstance().ensureViewCategory(getContainer(), getUser(), form.getCategory());
 
+                // author field
+                User author = UserManager.getUser(form.getAuthor());
+                ViewInfo.Status status = form.getStatus();
+
                 switch (dataType)
                 {
                     case reports:
                         if (category != null)
                             _report.getDescriptor().setCategory(category);
+                        if (author != null)
+                            _report.getDescriptor().setAuthor(author.getUserId());
+                        if (status != null)
+                            _report.getDescriptor().setProperty(ReportDescriptor.Prop.status, status.name());
+                        
                         ReportService.get().saveReport(getViewContext(), _report.getDescriptor().getReportKey(), _report);
                         break;
                     case datasets:

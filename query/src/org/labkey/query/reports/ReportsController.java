@@ -249,6 +249,12 @@ public class ReportsController extends SpringActionController
         {
             return getAttachmentReportURL(c, returnURL);
         }
+
+        @Override
+        public ActionURL urlReportDetails(Container c, Report r)
+        {
+            return new ActionURL(DetailsAction.class, c).addParameter("reportId", r.getDescriptor().getReportId().toString());
+        }
     }
 
     public ReportsController() throws Exception
@@ -724,6 +730,20 @@ public class ReportsController extends SpringActionController
         }
     }
 
+
+    @RequiresPermissionClass(ReadPermission.class)
+    public class DetailsAction extends SimpleViewAction<ReportDesignBean>
+    {
+        public ModelAndView getView(ReportDesignBean form, BindException errors) throws Exception
+        {
+            return new JspView<ReportDesignBean>("/org/labkey/query/reports/view/reportDetails.jsp", form);
+        }
+
+        public NavTree appendNavTrail(NavTree root)
+        {
+            return root.addChild("Report Details");
+        }
+    }
 
     @RequiresPermissionClass(ReadPermission.class)
     public class ReportInfoAction extends SimpleViewAction<ReportDesignBean>

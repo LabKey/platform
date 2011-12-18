@@ -56,7 +56,7 @@ public class SpecimenTypeVisitReport extends SpecimenVisitReport<SampleManager.S
                 Row row = rows.get(key);
                 if (row == null)
                 {
-                    String[] titleHierarchy = level.getTitleHirarchy(count);
+                    String[] titleHierarchy = level.getTitleHierarchy(count);
                     row = new Row(titleHierarchy);
                     rows.put(key, row);
                 }

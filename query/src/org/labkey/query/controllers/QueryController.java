@@ -1538,7 +1538,7 @@ public class QueryController extends SpringActionController
                                                  boolean session, boolean saveFilter,
                                                  UpdateViewCallback updateCallback,
                                                  ActionURL srcURL,
-                                                 Errors errors)
+                                                 BindException errors)
     {
         User owner = getUser();
         boolean canSaveForAllUsers = container.hasPermission(getUser(), EditSharedViewPermission.class);
@@ -1556,6 +1556,25 @@ public class QueryController extends SpringActionController
         boolean canEdit = view == null || session || view.canEdit(container, errors);
         if (canEdit)
         {
+            // Issue 13594: Disallow setting of the customview inherit bit for query views
+            // that have no available container filter types.  Unfortunately, the only way
+            // to get the container filters is from the QueryView.  Ideally, the query def
+            // would know if it was container filterable or not instead of using the QueryView.
+            if (inherit && canSaveForAllUsers && !session)
+            {
+                UserSchema schema = queryDef.getSchema();
+                QueryView queryView = schema.createView(getViewContext(), QueryView.DATAREGIONNAME_DEFAULT, queryDef.getName(), errors);
+                if (queryView != null)
+                {
+                    List<ContainerFilter.Type> allowableContainerFilterTypes = queryView.getAllowableContainerFilterTypes();
+                    if (allowableContainerFilterTypes == null || allowableContainerFilterTypes.size() <= 1)
+                    {
+                        errors.reject(ERROR_MSG, "QueryView doesn't support inherited custom views");
+                        return null;
+                    }
+                }
+            }
+
             // Create a new view if none exists or the current view is a shared view
             // and the user wants to override the shared view with a personal view.
             if (view == null || (owner != null && view.isShared()))
@@ -1683,6 +1702,7 @@ public class QueryController extends SpringActionController
             List<Map<String, Object>> views = new ArrayList<Map<String, Object>>();
             response.put("views", views);
 
+            ActionURL redirect = null;
             JSONArray jsonViews = json.getJSONArray("views");
             for (int i = 0; i < jsonViews.length(); i++)
             {
@@ -1720,10 +1740,16 @@ public class QueryController extends SpringActionController
                             }
                         }, null, errors);
 
-                if (i == 0)
-                    response.put("redirect", savedView.get("redirect"));
-                views.add((Map<String, Object>)savedView.get("view"));
+                if (savedView != null)
+                {
+                    if (redirect == null)
+                        redirect = (ActionURL)savedView.get("redirect");
+                    views.add((Map<String, Object>)savedView.get("view"));
+                }
             }
+
+            if (redirect != null)
+                response.put("redirect", redirect);
 
             if (errors.hasErrors())
                 return null;
@@ -1834,7 +1860,7 @@ public class QueryController extends SpringActionController
             String returnURL = (String)this.getProperty(QueryParam.srcURL); // UNDONE: add to QueryForm
             if (returnURL != null)
                 forward = new ActionURL(returnURL);
-            TableInfo table = form.getQueryDef().getTable(null, true);
+            TableInfo table = form.getQueryDef().getTable(form.getSchema(), null, true);
 
             if (!table.hasPermission(getUser(), DeletePermission.class))
             {
@@ -2510,7 +2536,7 @@ public class QueryController extends SpringActionController
 
             QueryDefinition query = form.getQueryDef();
             List<QueryException> qpe = new ArrayList<QueryException>();
-            TableInfo t = query.getTable(qpe, true);
+            TableInfo t = query.getTable(form.getSchema(), qpe, true);
             if (!qpe.isEmpty())
                 throw qpe.get(0);
             if (null != t)
@@ -3769,6 +3795,8 @@ public class QueryController extends SpringActionController
         public ModelAndView getView(InternalSourceViewForm form, boolean reshow, BindException errors) throws Exception
         {
             CstmView view = form.getViewAndCheckPermission();
+            form.ff_inherit = QueryManager.get().canInherit(view.getFlags());
+            form.ff_hidden = QueryManager.get().isHidden(view.getFlags());
             form.ff_columnList = view.getColumns();
             form.ff_filter = view.getFilter();
             return new JspView<InternalSourceViewForm>(QueryController.class, "internalSourceView.jsp", form, errors);
@@ -3777,6 +3805,10 @@ public class QueryController extends SpringActionController
         public boolean handlePost(InternalSourceViewForm form, BindException errors) throws Exception
         {
             CstmView view = form.getViewAndCheckPermission();
+            int flags = view.getFlags();
+            flags = QueryManager.get().setCanInherit(flags, form.ff_inherit);
+            flags = QueryManager.get().setIsHidden(flags, form.ff_hidden);
+            view.setFlags(flags);
             view.setColumns(form.ff_columnList);
             view.setFilter(form.ff_filter);
             QueryManager.get().update(getUser(), view);

@@ -18,8 +18,30 @@ package org.labkey.query.controllers;
 
 public class InternalSourceViewForm extends InternalViewForm
 {
+    public Boolean ff_inherit;
+    public Boolean ff_hidden;
     public String ff_columnList;
     public String ff_filter;
+
+    public Boolean getFf_inherit()
+    {
+        return ff_inherit;
+    }
+
+    public void setFf_inherit(Boolean ff_inherit)
+    {
+        this.ff_inherit = ff_inherit;
+    }
+
+    public Boolean getFf_hidden()
+    {
+        return ff_hidden;
+    }
+
+    public void setFf_hidden(Boolean ff_hidden)
+    {
+        this.ff_hidden = ff_hidden;
+    }
 
     public void setFf_columnList(String str)
     {

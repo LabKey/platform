@@ -240,9 +240,8 @@ public class WikiSelectManager
     {
         WikiTree tree = getWikiCollections(c).getWikiTree(rowId);
 
-        assert null != tree;
-
-        return !tree.getChildren().isEmpty();
+        // Null check wiki since it might have been deleted, #13559
+        return null != tree && !tree.getChildren().isEmpty();
     }
 
     // ====== Everything below here is deprecated ======
