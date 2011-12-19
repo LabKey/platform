@@ -1045,8 +1045,10 @@ LABKEY.vis.TimeChartPanel = Ext.extend(Ext.Panel, {
             var measure = {};
             measure = config.measures[i]
             //Delete id's, they're just for the Ext components ordering.
-            delete measure.dateOptions.zeroDateCol.id;
-            delete measure.dateOptions.dateCol.id;
+            if(measure.dateOptions){
+                delete measure.dateOptions.zeroDateCol.id;
+                delete measure.dateOptions.dateCol.id;
+            }
             simplified.measures.push(measure);
         }
 
