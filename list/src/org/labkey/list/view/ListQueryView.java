@@ -26,6 +26,7 @@ import org.labkey.api.query.QueryView;
 import org.labkey.api.security.permissions.UpdatePermission;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.DataView;
+import org.labkey.list.model.ListSchema;
 import org.springframework.validation.BindException;
 
 public class ListQueryView extends QueryView
@@ -33,11 +34,24 @@ public class ListQueryView extends QueryView
     private final ListDefinition _list;
     private final boolean _exportAsWebPage;
 
+    public ListQueryView(ListDefinition def, ListSchema schema, QuerySettings settings, BindException errors)
+    {
+        super(schema, settings, errors);
+        _list = def;
+        _exportAsWebPage = false;
+        init();
+    }
+
     public ListQueryView(ListQueryForm form, BindException errors)
     {
         super(form, errors);
         _list = form.getList();
         _exportAsWebPage = form.isExportAsWebPage();
+        init();
+    }
+
+    protected void init()
+    {
         setShowExportButtons(_list.getAllowExport());
         setShowUpdateColumn(true);
         QuerySettings settings = getSettings();
