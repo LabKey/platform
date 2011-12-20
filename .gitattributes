@@ -337,6 +337,7 @@ api/src/org/labkey/api/exp/DomainDescriptor.java -text
 api/src/org/labkey/api/exp/DomainNotFoundException.java -text
 api/src/org/labkey/api/exp/DomainURIFactory.java -text
 api/src/org/labkey/api/exp/DuplicateMaterialException.java -text
+api/src/org/labkey/api/exp/ExpQCFlag.java -text
 api/src/org/labkey/api/exp/ExperimentDataHandler.java -text
 api/src/org/labkey/api/exp/ExperimentException.java -text
 api/src/org/labkey/api/exp/ExperimentRunListView.java -text
