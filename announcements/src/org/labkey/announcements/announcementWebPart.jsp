@@ -41,12 +41,12 @@
         %><%= generateButton("New", bean.insertURL)%><%
             }
 %></div>
-            <div style="padding-top: 5px;">Showing: <%=bean.filterText.replace(" ", "&nbsp;")%></div>
+            <div style="padding-top: 5px;">Showing: <%=h(bean.filterText)%></div>
         </td>
     </tr><%
     if (0 == bean.announcementModels.length)
     {%>
-    <tr><td colspan=3 style="padding-top:4px;">No <%=bean.filterText.replace("all ", "")%></td></tr><%
+    <tr><td colspan=3 style="padding-top:4px;">No <%=h(bean.filterText.replace("all ", ""))%></td></tr><%
     }
     for (AnnouncementModel a : bean.announcementModels)
     { %>
@@ -70,7 +70,7 @@
         for (Attachment d : a.getAttachments())
         {
     %>
-        <a href="<%=h(d.getDownloadUrl(DownloadAction.class))%>"><img src="<%=request.getContextPath()%><%=d.getFileIcon()%>">&nbsp;<%=d.getName()%></a>&nbsp;<%
+        <a href="<%=h(d.getDownloadUrl(DownloadAction.class))%>"><img src="<%=request.getContextPath()%><%=d.getFileIcon()%>">&nbsp;<%=h(d.getName())%></a>&nbsp;<%
             }
         %>
     </td></tr>
