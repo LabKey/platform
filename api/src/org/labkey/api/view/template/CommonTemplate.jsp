@@ -81,7 +81,7 @@ if (null != bean.getStyleSheet())
 if (null != bean.getRssUrl())
     {
     %>
-    <link href="<%=bean.getRssUrl().getEncodedLocalURIString()%>" type="application/rss+xml" title="<%=bean.getRssTitle()%>" rel="alternate"/><%
+    <link href="<%=bean.getRssUrl().getEncodedLocalURIString()%>" type="application/rss+xml" title="<%=h(bean.getRssTitle())%>" rel="alternate"/><%
     }
 if (null != bean.getStyles())
     {
