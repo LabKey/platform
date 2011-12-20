@@ -166,6 +166,11 @@ public class SimpleUserSchema extends UserSchema
                     wrap.setShownInInsertView(false);
                     wrap.setShownInUpdateView(false);
                     wrap.setReadOnly(true);
+
+                    if(colName.equalsIgnoreCase("createdby"))
+                        wrap.setLabel("Created By");
+                    if(colName.equalsIgnoreCase("modifiedby"))
+                        wrap.setLabel("Modified By");
                 }
                 // also add FK to container field
                 else if (JdbcType.VARCHAR == col.getJdbcType() &&
