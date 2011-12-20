@@ -197,6 +197,7 @@
         var serverFileTextField = Ext4.create('Ext.form.field.Text', {
             name: "filePath",
             hidden: true,
+            disabled: true,
             fieldLabel: "Full path on server",
             allowBlank: false
         });
