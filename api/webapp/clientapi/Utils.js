@@ -847,10 +847,11 @@ LABKEY.Utils.convertToExcel(
                      queryName: 'audit',
                      rows: [{
                         EventType: "Client API Actions",
-                        Key1: "Client Error",
-                        Key2: window.location.href.substr(0,200),
-                        Key3: window.location.hash.substr(0,200),
-                        Comment: (error.exception || error.statusText).substr(0,500),
+                        Key1: 'Client Error',
+                        //NOTE: labkey should automatically crop these strings to the allowable length for that field
+                        Key2: window.location.href,
+                        Key3: (error.stackTrace && Ext.isArray(error.stackTrace) ? error.stackTrace.join('\n') : null),
+                        Comment: (error.exception || error.statusText || error.message),
                         Date: new Date()
                      }],
                      success: function(){
