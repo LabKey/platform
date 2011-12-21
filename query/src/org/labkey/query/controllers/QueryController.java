@@ -2691,8 +2691,12 @@ public class QueryController extends SpringActionController
                 List<Map<String, Object>> oldKeys = new ArrayList<Map<String, Object>>();
                 for (Map<String, Object> row : rows)
                 {
-                    newRows.add((Map<String, Object>)row.get(SaveRowsAction.PROP_VALUES));
-                    oldKeys.add((Map<String, Object>)row.get(SaveRowsAction.PROP_OLD_KEYS));
+                    //issue 13719: use CaseInsensitiveHashMaps.  Also allow either values or oldKeys to be null
+                    CaseInsensitiveHashMap newMap = row.get(SaveRowsAction.PROP_VALUES) != null ? new CaseInsensitiveHashMap((Map<String, Object>)row.get(SaveRowsAction.PROP_VALUES)) : new CaseInsensitiveHashMap();
+                    newRows.add(newMap);
+
+                    CaseInsensitiveHashMap oldMap = row.get(SaveRowsAction.PROP_OLD_KEYS) != null ? new CaseInsensitiveHashMap((Map<String, Object>)row.get(SaveRowsAction.PROP_OLD_KEYS)) : new CaseInsensitiveHashMap();
+                    oldKeys.add(oldMap);
                 }
                 BatchValidationException errors = new BatchValidationException();
                 List<Map<String, Object>> updatedRows = qus.insertRows(user, container, newRows, errors, extraContext);
@@ -2728,8 +2732,13 @@ public class QueryController extends SpringActionController
                 List<Map<String, Object>> oldKeys = new ArrayList<Map<String, Object>>();
                 for (Map<String, Object> row : rows)
                 {
-                    newRows.add((Map<String, Object>)row.get(SaveRowsAction.PROP_VALUES));
-                    oldKeys.add((Map<String, Object>)row.get(SaveRowsAction.PROP_OLD_KEYS));
+                    // issue 13719: use CaseInsensitiveHashMaps.  Also allow either values or oldKeys to be null.
+                    // this should never happen on an update, but we will let it fail later with a better error message instead of the NPE here
+                    CaseInsensitiveHashMap newMap = row.get(SaveRowsAction.PROP_VALUES) != null ? new CaseInsensitiveHashMap((Map<String, Object>)row.get(SaveRowsAction.PROP_VALUES)) : new CaseInsensitiveHashMap();
+                    newRows.add(newMap);
+
+                    CaseInsensitiveHashMap oldMap = row.get(SaveRowsAction.PROP_OLD_KEYS) != null ? new CaseInsensitiveHashMap((Map<String, Object>)row.get(SaveRowsAction.PROP_OLD_KEYS)) : new CaseInsensitiveHashMap();
+                    oldKeys.add(oldMap);
                 }
                 List<Map<String, Object>> updatedRows = qus.updateRows(user, container, newRows, oldKeys, extraContext);
                 updatedRows = qus.getRows(user, container, updatedRows);

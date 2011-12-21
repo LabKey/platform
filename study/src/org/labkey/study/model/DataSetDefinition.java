@@ -1497,15 +1497,24 @@ public class DataSetDefinition extends AbstractStudyEntity<DataSetDefinition> im
                     if (match == keyColumn && isManagedKey && !allowImportManagedKey)
                     {
                         // TODO silently ignore or add error?
-                        continue;
+                            continue;
                     }
                 }
 
                 if (null != match)
                 {
-                    // to simplify a little, use matched name/propertyuri here (even though StandardETL would rematch using the same logic)
-                    int out = it.addColumn(match.getName(),in);
-                    it.getColumnInfo(out).setPropertyURI(match.getPropertyURI());
+                    if (match == keyColumn && getKeyManagementType() == KeyManagementType.GUID)
+                    {
+                        // make sure guid is not null (12884)
+                        int out = it.addCoaleseColumn(match.getName(), in, new SimpleTranslator.GuidColumn());
+                        it.getColumnInfo(out).setPropertyURI(match.getPropertyURI());
+                    }
+                    else
+                    {
+                        // to simplify a little, use matched name/propertyuri here (even though StandardETL would rematch using the same logic)
+                        int out = it.addColumn(match.getName(),in);
+                        it.getColumnInfo(out).setPropertyURI(match.getPropertyURI());
+                    }
                 }
                 else
                 {
@@ -1600,7 +1609,7 @@ public class DataSetDefinition extends AbstractStudyEntity<DataSetDefinition> im
                 // ROWID
                 //
 
-                if (getKeyManagementType() == KeyManagementType.RowId && null == null)
+                if (getKeyManagementType() == KeyManagementType.RowId)
                 {
                     ColumnInfo key = new ColumnInfo(keyColumn);
                     Callable call = new SimpleTranslator.AutoIncrementColumn()
