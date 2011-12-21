@@ -1,6 +1,8 @@
 package org.labkey.api.study.assay;
 
 import org.apache.commons.beanutils.ConvertUtils;
+import org.junit.Assert;
+import org.junit.Test;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.DataColumn;
 import org.labkey.api.data.DisplayColumn;
@@ -54,27 +56,7 @@ public class AssayQCFlagColumn extends ExprColumn
                     {
                         String[] values = ((String)getValue(ctx)).split(",");
                         Boolean[] enabled = parseBooleans(values, ctx.get(getEnabledFieldKey(), String.class));
-                        // Keep track of which ones we've already rendered so we can eliminate dupes
-                        Set<Pair<String, Boolean>> alreadyRendered = new HashSet<Pair<String, Boolean>>();
-                        String separator = "";
-                        for (int i = 0; i < values.length; i++)
-                        {
-                            if (alreadyRendered.add(new Pair<String, Boolean>(values[i], enabled[i])))
-                            {
-                                out.write(separator);
-                                // Disabled flags are rendered with strike-through
-                                if (enabled[i] != null && !enabled[i].booleanValue())
-                                {
-                                    out.write("<span style=\"text-decoration: line-through;\">");
-                                }
-                                out.write(PageFlowUtil.filter(values[i]));
-                                if (enabled[i] != null && !enabled[i].booleanValue())
-                                {
-                                    out.write("</span>");
-                                }
-                                separator = ", ";
-                            }
-                        }
+                        out.write(getCollapsedQCFlagOutput(values, enabled));
                     }
 
                     @Override
@@ -122,6 +104,42 @@ public class AssayQCFlagColumn extends ExprColumn
         return enabled;
     }
 
+    /**
+     * Collapse an array of values to the unique combinations of value and enabled state to display in QC Flag column
+     * @param values String[] of values for QC Flags for a given run (ex. AUC, AUC, EC50, HMFI)
+     * @param enabled Boolean[] of values for QC Flags for a given run indicating which are enabled (ex. t, f, t, t)
+     * @return String with the collapsed grid cell contents to be written to the QC Flag column
+     */
+    public static String getCollapsedQCFlagOutput(String[] values, Boolean[] enabled)
+    {
+        if (values.length == 0 || values.length != enabled.length)
+            return "";
+
+        StringBuilder sb = new StringBuilder();
+        // Keep track of which ones we've already rendered so we can eliminate dupes
+        Set<Pair<String, Boolean>> alreadyRendered = new HashSet<Pair<String, Boolean>>();
+        String separator = "";
+        for (int i = 0; i < values.length; i++)
+        {
+            if (alreadyRendered.add(new Pair<String, Boolean>(values[i], enabled[i])))
+            {
+                sb.append(separator);
+                // Disabled flags are rendered with strike-through
+                if (enabled[i] != null && !enabled[i].booleanValue())
+                {
+                    sb.append("<span style=\"text-decoration: line-through;\">");
+                }
+                sb.append(PageFlowUtil.filter(values[i]));
+                if (enabled[i] != null && !enabled[i].booleanValue())
+                {
+                    sb.append("</span>");
+                }
+                separator = ", ";
+            }
+        }
+        return sb.toString();
+    }
+
     public static SQLFragment createSQLFragment(SqlDialect sqlDialect, String selectColumn)
     {
         SQLFragment innerSQL = new SQLFragment(" ");
@@ -130,5 +148,50 @@ public class AssayQCFlagColumn extends ExprColumn
         innerSQL.append(" WHERE qcf.RunId = " + STR_TABLE_ALIAS + ".RowId ORDER BY qcf.FlagType, qcf.Enabled, qcf.RowId");
 
         return sqlDialect.getSelectConcat(innerSQL);
+    }
+
+    public static class TestCase extends Assert
+    {
+        @Test
+        public void testCollapseQCFlags() throws Exception
+        {
+            String[] values;
+            Boolean[] enabled;
+            String expected;
+
+            // single flag, enabled
+            expected = "AUC";
+            assertEquals("QC Flags not collapsed as expected", expected, getCollapsedQCFlagOutput(new String[]{"AUC"}, new Boolean[]{true}));
+            // single flag, disabled
+            expected = disabledFlag("AUC");
+            assertEquals("QC Flags not collapsed as expected", expected, getCollapsedQCFlagOutput(new String[]{"AUC"}, new Boolean[]{false}));
+            // multiple enabled flags, unique
+            expected = "AUC, EC50, HMFI";
+            assertEquals("QC Flags not collapsed as expected", expected, getCollapsedQCFlagOutput(new String[]{"AUC", "EC50", "HMFI"}, new Boolean[]{true, true, true}));
+            // multiple enabled flags, duplicates
+            expected = "AUC, HMFI";
+            assertEquals("QC Flags not collapsed as expected", expected, getCollapsedQCFlagOutput(new String[]{"AUC", "AUC", "HMFI"}, new Boolean[]{true, true, true}));
+            // multiple disabled flags, unique
+            expected = disabledFlag("AUC") + ", " + disabledFlag("EC50");
+            assertEquals("QC Flags not collapsed as expected", expected, getCollapsedQCFlagOutput(new String[]{"AUC", "EC50"}, new Boolean[]{false, false}));
+            // multiple disabled flags, duplicates
+            expected = disabledFlag("AUC") + ", " + disabledFlag("EC50");
+            assertEquals("QC Flags not collapsed as expected", expected, getCollapsedQCFlagOutput(new String[]{"AUC", "EC50", "EC50"}, new Boolean[]{false, false, false}));
+            // enabled and disabled flags, unique
+            expected = "AUC, " + disabledFlag("EC50");
+            assertEquals("QC Flags not collapsed as expected", expected, getCollapsedQCFlagOutput(new String[]{"AUC", "EC50"}, new Boolean[]{true, false}));
+            // enabled and disabled flags, duplicates
+            expected = "AUC, " + disabledFlag("AUC") + ", EC50, " + disabledFlag("EC50");
+            assertEquals("QC Flags not collapsed as expected", expected, getCollapsedQCFlagOutput(new String[]{"AUC", "AUC", "AUC", "EC50", "EC50", "EC50"}, new Boolean[]{true, true, false, true, false, false}));
+            // empty list of flags
+            assertEquals("QC Flags not collapsed as expected", "", getCollapsedQCFlagOutput(new String[]{}, new Boolean[]{}));
+            // unequal array length
+            assertEquals("QC Flags not collapsed as expected", "", getCollapsedQCFlagOutput(new String[]{"AUC"}, new Boolean[]{true, true}));
+        }
+
+        private String disabledFlag(String value)
+        {
+            return "<span style=\"text-decoration: line-through;\">" + value + "</span>";
+        }
     }
 }
