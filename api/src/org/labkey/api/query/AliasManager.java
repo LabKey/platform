@@ -208,7 +208,6 @@ public class AliasManager
     {
         if (column.isAliasSet())
         {
-            assert null == _aliases.get(column.getAlias()) : "alias is already in use!";
             claimAlias(column.getAlias(), column.getName());
         }
         else

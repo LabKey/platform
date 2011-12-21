@@ -95,7 +95,7 @@ public abstract class DomainImporterServiceBase extends DomainEditorServiceBase 
         {
             //noinspection ResultOfMethodCallIgnored
             getImportFile().delete();
-            HttpSession session = getViewContext().getSession();
+            HttpSession session = getViewContext().getRequest().getSession(false);
 
             // No session if we're running in a background thread
             if (null != session)

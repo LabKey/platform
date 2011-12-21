@@ -64,19 +64,12 @@ public class AuthenticatedRequest extends HttpServletRequestWrapper
     @Override
     public HttpSession getSession(boolean create)
     {
-        HttpSession session = super.getSession(false);
+        HttpSession session = super.getSession(create);
+        if (null==session)
+            return null;
 
-        // Verify that all session creation happens through this method
-        // TODO remove the _user.isGuest() check (BasicAuth breaks this by calling setAuthenticatedUser())
-        if (null != session && _user.isGuest())
+        if (null == session.getAttribute(myMarkerAttribute))
         {
-            if (!myMarker.equals(session.getAttribute(myMarkerAttribute)))
-                Logger.getLogger(AuthenticatedRequest.class).error("Someone created a session by a different code path");
-        }
-
-        if (null == session && create)
-        {
-            session = super.getSession(true);
             session.setAttribute(myMarkerAttribute,myMarker);
 
             if (_user.isGuest())
