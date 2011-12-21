@@ -184,6 +184,38 @@ public class SimpleTranslator extends AbstractDataIterator implements DataIterat
     }
 
 
+    /** coalease, return the first column if non-null, else the second column */
+    protected class CoalesceColumn implements Callable
+    {
+        final Callable _first;
+        final Callable _second;
+
+        CoalesceColumn(int first, Callable second)
+        {
+            _first = new PassthroughColumn(first);
+            _second = second;
+        }
+
+        CoalesceColumn(Callable first, Callable second)
+        {
+            _first = first;
+            _second = second;
+        }
+
+        @Override
+        public Object call() throws Exception
+        {
+            Object v = _first.call();
+            if (v instanceof String)
+                v = StringUtils.isEmpty((String)v) ? null : v;
+            if (null != v)
+                return v;
+            return _second.call();
+        }
+    }
+
+
+
     private class SimpleConvertColumn implements Callable
     {
         final int index;
@@ -509,6 +541,12 @@ public class SimpleTranslator extends AbstractDataIterator implements DataIterat
         return addColumn(col, new PropertyConvertColumn(name, fromIndex, 0, pd, pt));
     }
 
+    public int addCoaleseColumn(String name, int fromIndex, Callable second)
+    {
+        ColumnInfo col = new ColumnInfo(_data.getColumnInfo(fromIndex));
+        col.setName(name);
+        return addColumn(col, new CoalesceColumn(fromIndex, second));
+    }
 
     public int addNullColumn(String name, JdbcType type)
     {
@@ -714,7 +752,8 @@ public class SimpleTranslator extends AbstractDataIterator implements DataIterat
             Arrays.asList(
                 as("1", "one", GUID.makeGUID(), ""),
                 as("2", "two", GUID.makeGUID(), "/N"),
-                as("3", "three", GUID.makeGUID(), "3")
+                as("3", "three", GUID.makeGUID(), "3"),
+                as("4", "four", "", "4")
             )
         );
 
@@ -735,13 +774,29 @@ public class SimpleTranslator extends AbstractDataIterator implements DataIterat
             assertTrue(t.getColumnInfo(0).getJdbcType() == JdbcType.INTEGER);
             for (int i=1 ; i<=t.getColumnCount() ; i++)
                 assertTrue(t.getColumnInfo(i).getJdbcType() == JdbcType.VARCHAR);
-            for (int i=1 ; i<=3 ; i++)
+            for (int i=1 ; i<=4 ; i++)
             {
                 assertTrue(t.next());
                 assertEquals(t.get(0), i);
                 assertEquals(t.get(1), String.valueOf(i));
             }
             assertFalse(t.next());
+        }
+
+
+        @Test
+        public void testCoalesce() throws Exception
+        {
+            BatchValidationException errors = new BatchValidationException();
+            simpleData.beforeFirst();
+            SimpleTranslator t = new SimpleTranslator(simpleData, errors);
+            int c = t.addCoaleseColumn("IntNotNull", 3, new GuidColumn());
+            for (int i=1 ; i<=4 ; i++)
+            {
+                assertTrue(t.next());
+                String guid = (String)t.get(c);
+                assertFalse(StringUtils.isEmpty(guid));
+            }
         }
 
 
@@ -757,7 +812,7 @@ public class SimpleTranslator extends AbstractDataIterator implements DataIterat
                 assertEquals(1, t.getColumnCount());
                 assertEquals(JdbcType.INTEGER, t.getColumnInfo(0).getJdbcType());
                 assertEquals(JdbcType.INTEGER, t.getColumnInfo(1).getJdbcType());
-                for (int i=1 ; i<=3 ; i++)
+                for (int i=1 ; i<=4 ; i++)
                 {
                     assertTrue(t.next());
                     assertEquals(i, t.get(0));
@@ -791,7 +846,7 @@ public class SimpleTranslator extends AbstractDataIterator implements DataIterat
                 assertEquals(t.getColumnCount(), 1);
                 assertEquals(t.getColumnInfo(0).getJdbcType(), JdbcType.INTEGER);
                 assertEquals(t.getColumnInfo(1).getJdbcType(), JdbcType.INTEGER);
-                for (int i=1 ; i<=3 ; i++)
+                for (int i=1 ; i<=4 ; i++)
                 {
                     assertTrue(t.next());
                     assertEquals(i, t.get(0));
@@ -799,7 +854,7 @@ public class SimpleTranslator extends AbstractDataIterator implements DataIterat
                     assertTrue(errors.hasErrors());
                 }
                 assertFalse(t.next());
-                assertEquals(3, errors.getRowErrors().size());
+                assertEquals(4, errors.getRowErrors().size());
             }
 
             // missing values
