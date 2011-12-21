@@ -128,7 +128,7 @@ audit/module.properties -text
 audit/resources/schemas/audit.xml -text
 audit/resources/schemas/dbscripts/postgresql/audit-0.00-9.20.sql -text
 audit/resources/schemas/dbscripts/postgresql/audit-10.10-10.20.sql -text
-audit/resources/schemas/dbscripts/postgresql/audit-11.20-11.21.sql -text
+audit/resources/schemas/dbscripts/postgresql/audit-11.20-11.30.sql -text
 audit/resources/schemas/dbscripts/postgresql/obsolete/audit-0.00-0.01.sql -text
 audit/resources/schemas/dbscripts/postgresql/obsolete/audit-0.00-2.30.sql -text
 audit/resources/schemas/dbscripts/postgresql/obsolete/audit-0.00-8.30.sql -text
@@ -144,7 +144,7 @@ audit/resources/schemas/dbscripts/postgresql/obsolete/audit-9.10-9.11.sql -text
 audit/resources/schemas/dbscripts/postgresql/obsolete/audit-9.10-9.20.sql -text
 audit/resources/schemas/dbscripts/sqlserver/audit-0.00-9.20.sql -text
 audit/resources/schemas/dbscripts/sqlserver/audit-10.10-10.20.sql -text
-audit/resources/schemas/dbscripts/sqlserver/audit-11.20-11.21.sql -text
+audit/resources/schemas/dbscripts/sqlserver/audit-11.20-11.30.sql -text
 audit/resources/schemas/dbscripts/sqlserver/obsolete/audit-0.00-0.01.sql -text
 audit/resources/schemas/dbscripts/sqlserver/obsolete/audit-0.00-2.30.sql -text
 audit/resources/schemas/dbscripts/sqlserver/obsolete/audit-0.00-8.30.sql -text
@@ -306,7 +306,7 @@ core/resources/schemas/dbscripts/postgresql/core-10.10-10.20.sql -text
 core/resources/schemas/dbscripts/postgresql/core-10.20-10.30.sql -text
 core/resources/schemas/dbscripts/postgresql/core-11.10-11.20.sql -text
 core/resources/schemas/dbscripts/postgresql/core-11.20-11.21.sql -text
-core/resources/schemas/dbscripts/postgresql/core-11.20-11.25.sql -text
+core/resources/schemas/dbscripts/postgresql/core-11.20-11.30.sql -text
 core/resources/schemas/dbscripts/postgresql/core-11.21-11.22.sql -text
 core/resources/schemas/dbscripts/postgresql/core-11.22-11.23.sql -text
 core/resources/schemas/dbscripts/postgresql/core-11.24-11.25.sql -text
@@ -405,6 +405,7 @@ core/resources/schemas/dbscripts/postgresql/portal-10.10-10.20.sql -text
 core/resources/schemas/dbscripts/postgresql/portal-11.10-11.20.sql -text
 core/resources/schemas/dbscripts/postgresql/portal-11.11-11.12.sql -text
 core/resources/schemas/dbscripts/postgresql/portal-11.20-11.24.sql -text
+core/resources/schemas/dbscripts/postgresql/portal-11.20-11.30.sql -text
 core/resources/schemas/dbscripts/postgresql/portal-11.23-11.24.sql -text
 core/resources/schemas/dbscripts/postgresql/portal-11.26-11.27.sql -text
 core/resources/schemas/dbscripts/postgresql/prop-0.00-9.10.sql -text
@@ -418,7 +419,7 @@ core/resources/schemas/dbscripts/sqlserver/core-0.00-9.20.sql -text
 core/resources/schemas/dbscripts/sqlserver/core-10.10-10.20.sql -text
 core/resources/schemas/dbscripts/sqlserver/core-11.10-11.20.sql -text
 core/resources/schemas/dbscripts/sqlserver/core-11.20-11.21.sql -text
-core/resources/schemas/dbscripts/sqlserver/core-11.20-11.26.sql -text
+core/resources/schemas/dbscripts/sqlserver/core-11.20-11.30.sql -text
 core/resources/schemas/dbscripts/sqlserver/core-11.21-11.22.sql -text
 core/resources/schemas/dbscripts/sqlserver/core-11.22-11.23.sql -text
 core/resources/schemas/dbscripts/sqlserver/core-11.25-11.26.sql -text
@@ -519,6 +520,7 @@ core/resources/schemas/dbscripts/sqlserver/portal-10.10-10.20.sql -text
 core/resources/schemas/dbscripts/sqlserver/portal-11.10-11.20.sql -text
 core/resources/schemas/dbscripts/sqlserver/portal-11.11-11.12.sql -text
 core/resources/schemas/dbscripts/sqlserver/portal-11.20-11.24.sql -text
+core/resources/schemas/dbscripts/sqlserver/portal-11.20-11.30.sql -text
 core/resources/schemas/dbscripts/sqlserver/portal-11.23-11.24.sql -text
 core/resources/schemas/dbscripts/sqlserver/portal-11.26-11.27.sql -text
 core/resources/schemas/dbscripts/sqlserver/prop-0.00-9.10.sql -text
@@ -744,7 +746,7 @@ experiment/resources/schemas/dbscripts/postgresql/exp-0.00-9.20.sql -text
 experiment/resources/schemas/dbscripts/postgresql/exp-10.10-10.20.sql -text
 experiment/resources/schemas/dbscripts/postgresql/exp-10.20-10.30.sql -text
 experiment/resources/schemas/dbscripts/postgresql/exp-11.10-11.20.sql -text
-experiment/resources/schemas/dbscripts/postgresql/exp-11.20-11.21.sql -text
+experiment/resources/schemas/dbscripts/postgresql/exp-11.20-11.30.sql -text
 experiment/resources/schemas/dbscripts/postgresql/exp-11.30-11.31.sql -text
 experiment/resources/schemas/dbscripts/postgresql/exp-11.31-11.32.sql -text
 experiment/resources/schemas/dbscripts/postgresql/exp-9.20-9.30.sql -text
@@ -854,7 +856,7 @@ experiment/resources/schemas/dbscripts/sqlserver/exp-0.00-9.20.sql -text
 experiment/resources/schemas/dbscripts/sqlserver/exp-10.10-10.20.sql -text
 experiment/resources/schemas/dbscripts/sqlserver/exp-10.20-10.30.sql -text
 experiment/resources/schemas/dbscripts/sqlserver/exp-11.10-11.20.sql -text
-experiment/resources/schemas/dbscripts/sqlserver/exp-11.20-11.21.sql -text
+experiment/resources/schemas/dbscripts/sqlserver/exp-11.20-11.30.sql -text
 experiment/resources/schemas/dbscripts/sqlserver/exp-11.30-11.31.sql -text
 experiment/resources/schemas/dbscripts/sqlserver/exp-11.31-11.32.sql -text
 experiment/resources/schemas/dbscripts/sqlserver/exp-9.20-9.30.sql -text
@@ -1181,7 +1183,7 @@ issues/module.properties -text
 issues/resources/schemas/dbscripts/postgresql/issues-0.00-8.20.sql -text
 issues/resources/schemas/dbscripts/postgresql/issues-10.10-10.20.sql -text
 issues/resources/schemas/dbscripts/postgresql/issues-10.20-10.30.sql -text
-issues/resources/schemas/dbscripts/postgresql/issues-11.20-11.21.sql -text
+issues/resources/schemas/dbscripts/postgresql/issues-11.20-11.30.sql -text
 issues/resources/schemas/dbscripts/postgresql/issues-9.30-10.10.sql -text
 issues/resources/schemas/dbscripts/postgresql/obsolete/issues-0.00-0.60.sql -text
 issues/resources/schemas/dbscripts/postgresql/obsolete/issues-0.00-1.00.sql -text
@@ -1202,7 +1204,7 @@ issues/resources/schemas/dbscripts/postgresql/obsolete/issues-9.30-9.31.sql -tex
 issues/resources/schemas/dbscripts/sqlserver/issues-0.00-8.20.sql -text
 issues/resources/schemas/dbscripts/sqlserver/issues-10.10-10.20.sql -text
 issues/resources/schemas/dbscripts/sqlserver/issues-10.20-10.30.sql -text
-issues/resources/schemas/dbscripts/sqlserver/issues-11.20-11.21.sql -text
+issues/resources/schemas/dbscripts/sqlserver/issues-11.20-11.30.sql -text
 issues/resources/schemas/dbscripts/sqlserver/issues-9.30-10.10.sql -text
 issues/resources/schemas/dbscripts/sqlserver/obsolete/cpas-0.00-0.58.sql -text
 issues/resources/schemas/dbscripts/sqlserver/obsolete/cpas-0.00-0.70.sql -text
@@ -1310,7 +1312,7 @@ list/src/org/labkey/list/view/uploadListItems.jsp -text
 mothership/module.properties -text
 mothership/resources/schemas/dbscripts/postgresql/mothership-0.00-9.10.sql -text
 mothership/resources/schemas/dbscripts/postgresql/mothership-10.10-10.20.sql -text
-mothership/resources/schemas/dbscripts/postgresql/mothership-11.20-11.21.sql -text
+mothership/resources/schemas/dbscripts/postgresql/mothership-11.20-11.30.sql -text
 mothership/resources/schemas/dbscripts/postgresql/mothership-9.20-9.30.sql -text
 mothership/resources/schemas/dbscripts/postgresql/mothership-create.sql -text
 mothership/resources/schemas/dbscripts/postgresql/mothership-drop.sql -text
@@ -1338,7 +1340,7 @@ mothership/resources/schemas/dbscripts/postgresql/obsolete/mothership-8.30-9.10.
 mothership/resources/schemas/dbscripts/postgresql/obsolete/mothership-9.20-9.21.sql -text
 mothership/resources/schemas/dbscripts/sqlserver/mothership-0.00-9.10.sql -text
 mothership/resources/schemas/dbscripts/sqlserver/mothership-10.10-10.20.sql -text
-mothership/resources/schemas/dbscripts/sqlserver/mothership-11.20-11.21.sql -text
+mothership/resources/schemas/dbscripts/sqlserver/mothership-11.20-11.30.sql -text
 mothership/resources/schemas/dbscripts/sqlserver/mothership-9.20-9.30.sql -text
 mothership/resources/schemas/dbscripts/sqlserver/mothership-create.sql -text
 mothership/resources/schemas/dbscripts/sqlserver/mothership-drop.sql -text
@@ -1904,6 +1906,7 @@ query/resources/schemas/dbscripts/postgresql/query-0.00-9.10.sql -text
 query/resources/schemas/dbscripts/postgresql/query-10.10-10.20.sql -text
 query/resources/schemas/dbscripts/postgresql/query-11.20-11.21.sql -text
 query/resources/schemas/dbscripts/postgresql/query-11.20-11.22.sql -text
+query/resources/schemas/dbscripts/postgresql/query-11.20-11.30.sql -text
 query/resources/schemas/dbscripts/postgresql/query-11.21-11.22.sql -text
 query/resources/schemas/dbscripts/postgresql/query-11.22-11.23.sql -text
 query/resources/schemas/dbscripts/postgresql/query-9.20-9.30.sql -text
@@ -1940,6 +1943,7 @@ query/resources/schemas/dbscripts/sqlserver/query-0.00-9.10.sql -text
 query/resources/schemas/dbscripts/sqlserver/query-10.10-10.20.sql -text
 query/resources/schemas/dbscripts/sqlserver/query-11.20-11.21.sql -text
 query/resources/schemas/dbscripts/sqlserver/query-11.20-11.22.sql -text
+query/resources/schemas/dbscripts/sqlserver/query-11.20-11.30.sql -text
 query/resources/schemas/dbscripts/sqlserver/query-11.21-11.22.sql -text
 query/resources/schemas/dbscripts/sqlserver/query-11.22-11.23.sql -text
 query/resources/schemas/dbscripts/sqlserver/query-9.20-9.30.sql -text
@@ -2441,7 +2445,7 @@ study/resources/schemas/dbscripts/postgresql/study-11.14-11.15.sql -text
 study/resources/schemas/dbscripts/postgresql/study-11.15-11.16.sql -text
 study/resources/schemas/dbscripts/postgresql/study-11.16-11.17.sql -text
 study/resources/schemas/dbscripts/postgresql/study-11.20-11.21.sql -text
-study/resources/schemas/dbscripts/postgresql/study-11.20-11.28.sql -text
+study/resources/schemas/dbscripts/postgresql/study-11.20-11.30.sql -text
 study/resources/schemas/dbscripts/postgresql/study-11.21-11.22.sql -text
 study/resources/schemas/dbscripts/postgresql/study-11.22-11.23.sql -text
 study/resources/schemas/dbscripts/postgresql/study-11.23-11.24.sql -text
@@ -2605,7 +2609,7 @@ study/resources/schemas/dbscripts/sqlserver/study-11.14-11.15.sql -text
 study/resources/schemas/dbscripts/sqlserver/study-11.15-11.16.sql -text
 study/resources/schemas/dbscripts/sqlserver/study-11.16-11.17.sql -text
 study/resources/schemas/dbscripts/sqlserver/study-11.20-11.21.sql -text
-study/resources/schemas/dbscripts/sqlserver/study-11.20-11.28.sql -text
+study/resources/schemas/dbscripts/sqlserver/study-11.20-11.30.sql -text
 study/resources/schemas/dbscripts/sqlserver/study-11.21-11.22.sql -text
 study/resources/schemas/dbscripts/sqlserver/study-11.22-11.23.sql -text
 study/resources/schemas/dbscripts/sqlserver/study-11.23-11.24.sql -text

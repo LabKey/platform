@@ -354,7 +354,7 @@ public class AttachmentReport extends RedirectReport implements DynamicThumbnail
             {
                 return type.getDynamicThumbnail(this, latest.getName());
             }
-            catch (Exception e)
+            catch (Throwable e)
             {
                 ExceptionUtil.logExceptionToMothership(null, e);
             }

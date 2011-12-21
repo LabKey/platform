@@ -126,7 +126,7 @@ public class ThumbnailServiceImpl implements ThumbnailService
                         // TODO: Real ViewContext
                         svc.replaceThumbnail(provider, null);
                     }
-                    catch (Exception e)  // Make sure exceptions don't kill the background thread
+                    catch (Throwable e)  // Make sure throwables don't kill the background thread
                     {
                         ExceptionUtil.logExceptionToMothership(null, e);
                     }

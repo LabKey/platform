@@ -1128,6 +1128,7 @@ LABKEY.vis.TimeChartPanel = Ext.extend(Ext.Panel, {
 	    var seriesList = this.getSeriesList();
 
         var series = [];
+        this.longestCaption = '';
 
         if((this.displayIndividualCheckbox.disabled === false && this.displayIndividualCheckbox.getValue() === true) || (this.displayIndividualCheckbox.disabled === true)){
             //generate series for individual lines.
@@ -1329,7 +1330,9 @@ LABKEY.vis.TimeChartPanel = Ext.extend(Ext.Panel, {
                         caption += " " + yAxisSeries;
                     }
                 }
-
+                if(this.longestCaption.length < caption.length){
+                    this.longestCaption = caption;
+                }
                 var style = {lineWidth: this.chartInfo.lineWidth};
                 if(this.chartInfo.hideDataPoints){
                     style.shape = {name: "square", lineWidth: 1, markSize: 20, hidden: true};
@@ -1387,6 +1390,7 @@ LABKEY.vis.TimeChartPanel = Ext.extend(Ext.Panel, {
             width: size.width,
             height: size.height - 25,
             xAxisInterval: this.chartInfo.measures[0].dateOptions ? this.chartInfo.measures[0].dateOptions.interval : null,
+            captionLength: (this.longestCaption.length * 7),
             axes: {
                 x: {
                     min: (typeof this.chartInfo.axis[xAxisIndex].range.min == "number"

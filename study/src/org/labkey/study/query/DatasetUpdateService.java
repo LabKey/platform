@@ -111,7 +111,8 @@ public class DatasetUpdateService extends AbstractQueryUpdateService
                     throw new QueryUpdateServiceException(e);
                 }
             }
-            
+
+            _participantVisitResyncRequired = true; // 13717 : Study failing to resync() on dataset insert
             StudyManager.fireDataSetChanged(_dataset);
             resyncStudy(user, container);
         }

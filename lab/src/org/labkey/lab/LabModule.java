@@ -38,7 +38,7 @@ public class LabModule extends DefaultModule
 
     public double getVersion()
     {
-        return 0.01;
+        return 11.30;
     }
 
     public boolean hasScripts()

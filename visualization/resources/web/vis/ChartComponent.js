@@ -162,6 +162,9 @@ LABKEY.vis.XYChartComponent = Ext.extend(Ext.BoxComponent, {
     rootVisPanel: null,
 
     initComponent: function () {
+        if(this.captionLength){
+            this.setLegendWidth(this.captionLength)
+        }
         LABKEY.vis.XYChartComponent.superclass.initComponent.call(this);
     },
 
@@ -599,6 +602,14 @@ LABKEY.vis.XYChartComponent = Ext.extend(Ext.BoxComponent, {
         var newMarginVal = 70;
         this.chartWidth -= (newMarginVal - this.style.rightMargin);
         this.style.rightMargin = newMarginVal;
+    },
+
+    setLegendWidth: function(width) {
+        if(width > 120){
+            this.style.legendWidth = width;
+        } else {
+            this.style.legendWidth = 120;
+        }
     }
 });
 
