@@ -134,6 +134,7 @@ public class DataSetDefinition extends AbstractStudyEntity<DataSetDefinition> im
     private Integer _cohortId;
     private Integer _protocolId; // indicates that dataset came from an assay. Null indicates no source assay
     private String _fileName; // Filename from the original import  TODO: save this at import time and load it from db
+    private Date _modified;
 
     private static final String[] BASE_DEFAULT_FIELD_NAMES_ARRAY = new String[]
     {
@@ -330,6 +331,18 @@ public class DataSetDefinition extends AbstractStudyEntity<DataSetDefinition> im
         _dataSetId = dataSetId;
     }
 
+    @Override
+    public Date getModified()
+    {
+        return _modified;
+    }
+
+    public void setModified(Date modified)
+    {
+        verifyMutability();
+        _modified = modified;
+    }
+
     public String getTypeURI()
     {
         return _typeURI;
@@ -515,6 +528,7 @@ public class DataSetDefinition extends AbstractStudyEntity<DataSetDefinition> im
             if (cutoff != null)
                 studyDataFrag.append(" AND _VisitDate > ?").add(cutoff);
             count = Table.execute(StudySchema.getInstance().getSchema(), studyDataFrag);
+            StudyManager.dataSetModified(this, user, true);
 
             time.stop();
             _log.debug("purgeDataset " + getDisplayString() + " " + DateUtil.formatDuration(time.getTotal()/1000));
@@ -525,10 +539,6 @@ public class DataSetDefinition extends AbstractStudyEntity<DataSetDefinition> im
             if ("42P01".equals(sqlState) || "42S02".equals(sqlState)) // UNDEFINED TABLE
                 return 0;
             throw new RuntimeSQLException(s);
-        }
-        finally
-        {
-            StudyManager.fireDataSetChanged(this);
         }
         return count;
     }
@@ -1296,10 +1306,9 @@ public class DataSetDefinition extends AbstractStudyEntity<DataSetDefinition> im
             List<Object> paramList = new ArrayList<Object>(rowLSIDs);
             OntologyManager.deleteOntologyObjects(StudySchema.getInstance().getSchema(), new SQLFragment(sb.toString(), paramList), c, false);
             Table.delete(data, filter);
+            StudyManager.dataSetModified(this, user, true);
 
             scope.commitTransaction();
-
-            StudyManager.fireDataSetChanged(this);
         }
         catch (SQLException s)
         {
@@ -2045,9 +2054,9 @@ public class DataSetDefinition extends AbstractStudyEntity<DataSetDefinition> im
                 throw errors;
 
             _log.info("imported " + getName() + " : " + DateUtil.formatDuration(end-start));
+            StudyManager.dataSetModified(this, user, true);
             scope.commitTransaction();
             if (logger != null) logger.debug("commit complete");
-            StudyManager.fireDataSetChanged(this);
 
             return lsids;
         }

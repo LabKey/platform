@@ -7039,6 +7039,7 @@ public class StudyController extends BaseStudyController
                         view.setContainer(ds.getContainer());
                         view.setHidden(!ds.isShowByDefault());
                         view.setThumbnailUrl(new ActionURL(ThumbnailAction.class, getContainer()));
+                        view.setModified(ds.getModified());
                         datasets.add(view);
                     }
                 }

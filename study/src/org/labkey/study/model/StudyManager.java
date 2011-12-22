@@ -891,7 +891,7 @@ public class StudyManager
                 sqlf.add(visit.getSequenceNumMax());
                 int count = Table.execute(schema.getSchema(), sqlf);
                 if (count > 0)
-                    StudyManager.fireDataSetChanged(def);
+                    StudyManager.dataSetModified(def, user, true);
             }
 
             Table.execute(schema.getSchema(), "DELETE FROM " + schema.getTableInfoParticipantVisit() + "\n" +
@@ -2927,17 +2927,33 @@ public class StudyManager
         _listeners.add(listener);
     }
 
+    /**
+     * Called when a dataset has been modified in order to set the modified time, plus any other related actions.
+     * @param fireNotification - true to fire the changed notification.
+     * @throws SQLException
+     */
+    public static void dataSetModified(DataSetDefinition def, User user, boolean fireNotification) throws SQLException
+    {
+        def = def.createMutable();
+        def.setModified(new Date());
+        def.save(user);
+
+        if (fireNotification)
+            fireDataSetChanged(def);
+    }
+    
     public static void fireDataSetChanged(DataSet def)
     {
         for (DataSetListener l : _listeners)
-            try
-            {
+        {
+            try {
                 l.dataSetChanged(def);
             }
             catch (Throwable t)
             {
                 _log.error("fireDataSetChanged", t);
             }
+        }
     }
 
     public void reindex(Container c)

@@ -136,8 +136,11 @@ public class QuerySnapshotDefImpl implements QuerySnapshotDefinition
         else if (_snapshotDef.getQueryTableName() != null)
         {
             Container queryTableContainer = ContainerManager.getForId(_snapshotDef.getQueryTableContainer());
-            UserSchema schema = QueryService.get().getUserSchema(user, queryTableContainer, _snapshotDef.getSchema());
-            return schema.getQueryDefForTable(_snapshotDef.getQueryTableName());
+            if (queryTableContainer != null)
+            {
+                UserSchema schema = QueryService.get().getUserSchema(user, queryTableContainer, _snapshotDef.getSchema());
+                return schema.getQueryDefForTable(_snapshotDef.getQueryTableName());
+            }
         }
         return null;
     }

@@ -864,15 +864,9 @@ Ext4.define('LABKEY.ext4.DataViewsPanel', {
             }
         }
 
-        var panel = Ext4.create('Ext.form.Panel',{
-            bodyPadding: 10,
-            layout: {
-                type: 'table',
-                tdAttrs : {
-                    style : {'vertical-align' : 'top'}
-                },
-                columns: 3
-            },
+        var formPanel = Ext4.create('Ext.form.Panel',{
+            border : false,
+            layout : 'hbox',
             fieldDefaults  :{
                 labelAlign : 'top',
                 labelWidth : 130,
@@ -882,38 +876,44 @@ Ext4.define('LABKEY.ext4.DataViewsPanel', {
                 xtype      : 'textfield',
                 fieldLabel : 'Name',
                 name       : 'webpart.title',
-                colspan    : 1,
                 allowBlank : false,
                 width      : 225,
-                style      : 'padding-bottom: 10px;',
                 value      : data.webpart.title ? data.webpart.title : data.webpart.name
             },{
                 xtype      : 'checkboxgroup',
                 fieldLabel : 'Types (All Users)',
                 colspan    : 1,
                 columns    : 1,
-                width      : 250,
+                flex       : 1,
                 style      : 'padding-left: 25px;',
                 items      : cbItems
             },{
                 xtype      : 'checkboxgroup',
                 fieldLabel : 'Columns (All Users)',
-                colspan    : 1,
                 columns    : 2,
-                width      : 300,
-                style      : 'padding-left: 25px;',
+                flex       : 1.2,
                 items      : cbColumns
-            },{
-                xtype   : 'button',
-                text    : 'Manage Categories',
-                handler : this.onManageCategories,
-                colspan : 1,
-                scope   : this
             },{
                 xtype   : 'hidden',
                 name    : 'webPartId',
                 value   : this.webpartId
             }],
+            scope : this
+        });
+
+        var panel = Ext4.create('Ext.panel.Panel',{
+            bodyPadding: 10,
+            items : [formPanel,{
+                xtype   : 'panel',
+                border  : false,
+                items: [{
+                    xtype   : 'button',
+                    text    : 'Manage Categories',
+                    handler : this.onManageCategories,
+                    colspan : 1,
+                    scope   : this
+                }
+            ]}],
             buttons : [{
                 text    : 'Cancel',
                 handler : function() {
@@ -924,7 +924,7 @@ Ext4.define('LABKEY.ext4.DataViewsPanel', {
                 text     : 'Save',
                 formBind : true,
                 handler  : function() {
-                    var form = panel.getForm(); // this.up('form')
+                    var form = formPanel.getForm(); // this.up('form')
                     if (form.isValid())
                     {
                         this.north.getEl().mask('Saving...');

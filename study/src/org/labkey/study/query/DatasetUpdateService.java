@@ -86,7 +86,7 @@ public class DatasetUpdateService extends AbstractQueryUpdateService
         int count = super._importRowsUsingETL(user, container, rows, null, errors, extraScriptContext, true);
         if (count > 0)
         {
-            StudyManager.fireDataSetChanged(_dataset);
+            StudyManager.dataSetModified(_dataset, user, true);
             resyncStudy(user, container);
         }
         return count;
@@ -113,7 +113,7 @@ public class DatasetUpdateService extends AbstractQueryUpdateService
             }
 
             _participantVisitResyncRequired = true; // 13717 : Study failing to resync() on dataset insert
-            StudyManager.fireDataSetChanged(_dataset);
+            StudyManager.dataSetModified(_dataset, user, true);
             resyncStudy(user, container);
         }
         return result;

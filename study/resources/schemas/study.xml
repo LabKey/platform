@@ -262,6 +262,10 @@
       <ns:column columnName="ProtocolId">
         <ns:description>The unique ID of the assay design associated with each dataset, if the data is assay-associated.</ns:description>
       </ns:column>
+      <ns:column columnName="Modified">
+        <ns:description>The timestamp of the last modification of this dataset.</ns:description>
+        <ns:formatString>DateTime</ns:formatString>
+      </ns:column>
     </ns:columns>
   </ns:table>
   <ns:table tableName="SampleRequest" tableDbType="TABLE">
