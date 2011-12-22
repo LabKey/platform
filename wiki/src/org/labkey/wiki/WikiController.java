@@ -2314,7 +2314,7 @@ public class WikiController extends SpringActionController
             PropertyManager.PropertyMap properties = PropertyManager.getWritableProperties(
                     getViewContext().getUser().getUserId(), getViewContext().getContainer().getId(),
                     SetEditorPreferenceAction.CAT_EDITOR_PREFERENCE, true);
-            properties.put(PROP_DEFAULT_FORMAT, wikiversion.getRendererType());
+            properties.put(PROP_DEFAULT_FORMAT, wikiversion.getRendererTypeEnum().name());
             PropertyManager.saveProperties(properties);
 
             //return an API response containing the current wiki and version data
@@ -2331,7 +2331,7 @@ public class WikiController extends SpringActionController
             wikiProps.put("name", wiki.getName().getSource()); //HString source will be JS encoded
             wikiProps.put("title", wikiversion.getTitle().getSource());
             wikiProps.put("body", wikiversion.getBody()); //CONSIDER: do we really need to return the body here?
-            wikiProps.put("rendererType", wikiversion.getRendererType());
+            wikiProps.put("rendererType", wikiversion.getRendererTypeEnum().name());
             wikiProps.put("parent", wiki.getParent());
             wikiProps.put("showAttachments", wiki.isShowAttachments());
 
@@ -2362,7 +2362,7 @@ public class WikiController extends SpringActionController
 
             //if title is null, use name
             HString title = form.getTitle().isEmpty() ? form.getName() : form.getTitle();
-            String currentRendererName = form.getRendererType();
+            WikiRendererType currentRendererType = WikiRendererType.valueOf(form.getRendererType());
 
             //only insert new version if something has changed
             if (wikiUpdate.getName().trim().compareTo(form.getName()) != 0 ||
@@ -2370,7 +2370,7 @@ public class WikiController extends SpringActionController
                     (null == wikiversion.getBody() && null != form.getBody()) ||
                     (null != wikiversion.getBody() && null == form.getBody()) ||
                     (null != wikiversion.getBody() && null != form.getBody() && wikiversion.getBody().compareTo(form.getBody().trim()) != 0) ||
-                    wikiversion.getRendererType().compareTo(currentRendererName) != 0 ||
+                    !wikiversion.getRendererTypeEnum().equals(currentRendererType) ||
                     wikiUpdate.getParent() != form.getParentId() ||
                     wikiUpdate.isShowAttachments() != form.isShowAttachments())
             {
@@ -2379,7 +2379,7 @@ public class WikiController extends SpringActionController
                 wikiUpdate.setParent(form.getParentId());
                 wikiversion.setTitle(title);
                 wikiversion.setBody(form.getBody());
-                wikiversion.setRendererType(currentRendererName);
+                wikiversion.setRendererTypeEnum(currentRendererType);
                 getWikiManager().updateWiki(getViewContext().getUser(), wikiUpdate, wikiversion);
             }
 

@@ -171,13 +171,10 @@ public class WikiVersion
     }
 
     @Deprecated
-    //returns string corresponding to name of enum entry
+    // Only used for bean binding -- use getRenderTypeEnum() instead
     public String getRendererType()
     {
-        if (_rendererType == null)
-            _rendererType = WikiManager.DEFAULT_WIKI_RENDERER_TYPE;
-
-        return _rendererType.name();
+        return getRendererTypeEnum().name();
     }
 
     public WikiRendererType getRendererTypeEnum()

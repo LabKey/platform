@@ -114,7 +114,7 @@ public class WikiEditModel
             return _format != null ? PageFlowUtil.jsString(_format)
                     : PageFlowUtil.jsString(WikiManager.DEFAULT_WIKI_RENDERER_TYPE.name());
         else
-            return PageFlowUtil.jsString(_wikiVersion.getRendererType());
+            return PageFlowUtil.jsString(_wikiVersion.getRendererTypeEnum().name());
     }
 
     public Set<WikiTree> getPossibleParents()

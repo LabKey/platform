@@ -1,6 +1,6 @@
 <%
 /*
- * Copyright (c) 2006-2011 LabKey Corporation
+ * Copyright (c) 2011 LabKey Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,13 +15,7 @@
  * limitations under the License.
  */
 %>
-<%@ page import="org.labkey.api.data.Container"%>
-<%@ page import="org.labkey.api.view.HttpView"%>
-<%@ page import="org.labkey.api.view.ViewContext"%>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
-<%
-    ViewContext currentContext = HttpView.currentContext();
-%>
 <script type="text/javascript">
     LABKEY.requiresScript("study/redesignUtils.js", true);
 </script>
