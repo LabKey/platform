@@ -101,11 +101,7 @@ import java.util.concurrent.ConcurrentHashMap;
  */
 public class ModuleLoader implements Filter
 {
-    private static ModuleLoader _instance = null;
-    private boolean _deferUsageReport = false;
-    private static Throwable _startupFailure = null;
-    private static boolean _newInstall = false;
-
+    private static final double EARLIEST_UPGRADE_VERSION = 9.3;
     private static final Logger _log = Logger.getLogger(ModuleLoader.class);
     private static final Map<String, Throwable> _moduleFailures = new HashMap<String, Throwable>();
     private static final Map<String, Module> _controllerNameToModule = new HashMap<String, Module>();
@@ -115,18 +111,22 @@ public class ModuleLoader implements Filter
     private static final Map<String, Collection<ResourceFinder>> _resourceFinders = new ConcurrentHashMap<String, Collection<ResourceFinder>>();
     private static final Map<Class, Class<? extends UrlProvider>> _urlProviderToImpl = new HashMap<Class, Class<? extends UrlProvider>>();
     private static final CoreSchema _core = CoreSchema.getInstance();
-
-    private File _webappDir;
-
-    private enum UpgradeState {UpgradeRequired, UpgradeInProgress, UpgradeComplete}
     private static final Object UPGRADE_LOCK = new Object();
+    private static final Object STARTUP_LOCK = new Object();
+
+    private static ModuleLoader _instance = null;
+    private static Throwable _startupFailure = null;
+    private static boolean _newInstall = false;
+
+    private boolean _deferUsageReport = false;
+    private File _webappDir;
     private UpgradeState _upgradeState;
     private User upgradeUser = null;
-
-    private static final Object STARTUP_LOCK = new Object();
     private boolean _startupComplete = false;
 
     private final List<ModuleResourceLoader> _resourceLoaders = new ArrayList<ModuleResourceLoader>();
+
+    private enum UpgradeState {UpgradeRequired, UpgradeInProgress, UpgradeComplete}
 
     public enum ModuleState
     {
@@ -613,8 +613,8 @@ public class ModuleLoader implements Filter
         }
         else
         {
-            if (coreContext.getInstalledVersion() < 9.2)
-                throw new ConfigurationException("Can't upgrade from LabKey Server version " + coreContext.getInstalledVersion() + "; installed version must be 9.2 or greater.");
+            if (coreContext.getInstalledVersion() < EARLIEST_UPGRADE_VERSION)
+                throw new ConfigurationException("Can't upgrade from LabKey Server version " + coreContext.getInstalledVersion() + "; installed version must be " + EARLIEST_UPGRADE_VERSION + " or greater.");
 
             _log.debug("Upgrading core module from " + ModuleContext.formatVersion(coreContext.getInstalledVersion()) + " to " + coreModule.getFormattedVersion());
         }
