@@ -126,11 +126,6 @@ public class ModuleContext implements Cloneable
         return df2.format(version);
     }
 
-    public static String formatVersion(String version)
-    {
-        return formatVersion(Double.parseDouble(version));
-    }
-
     public ModuleLoader.ModuleState getModuleState()
     {
         return _moduleState;
