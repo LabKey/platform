@@ -26,6 +26,7 @@ import org.labkey.api.security.permissions.Permission;
 import org.labkey.api.view.UnauthorizedException;
 
 import java.sql.SQLException;
+import java.util.Date;
 import java.util.Set;
 
 /**
@@ -57,6 +58,8 @@ public interface DataSet<T extends DataSet> extends StudyEntity, StudyCachable<T
     TableInfo getTableInfo(User user, boolean checkPermission) throws UnauthorizedException;
 
     boolean isDemographicData();
+
+    Date getModified();
 
     /**
      * @return true if this dataset is backed by assay data within LabKey Server. Note that if a dataset happens

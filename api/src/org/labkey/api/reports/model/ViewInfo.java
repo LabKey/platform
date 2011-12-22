@@ -19,7 +19,6 @@ import org.json.JSONObject;
 import org.labkey.api.data.Container;
 import org.labkey.api.reports.report.ReportIdentifier;
 import org.labkey.api.security.User;
-import org.labkey.api.util.DateUtil;
 import org.labkey.api.view.ActionURL;
 
 import java.util.Date;
@@ -421,9 +420,9 @@ public class ViewInfo
         o.put("author", createUserObject(getAuthor(), user));
 
         if (getCreated() != null)
-            o.put("created", DateUtil.formatDate(getCreated()));
+            o.put("created", getCreated());
         if (getModified() != null)
-            o.put("modified", DateUtil.formatDate(getModified()));
+            o.put("modified", getModified());
 
         if (getVersion() != null)
             o.put("version", getVersion());
