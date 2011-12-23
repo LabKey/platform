@@ -816,6 +816,117 @@ LABKEY.Exp.Data = function (config) {
      * <li><b>formatString:</b> the Java format string to be used to render the value for dates and numbers</li>
      * <li><b>formattedValue:</b> the formatted string for that value for all value types</li>
      * </ul>
+     * <br/>
+     * An example of the results for a request for 'jsonTsv' format:
+     * <pre>
+     * {
+    "sheets": [
+        {
+            "name": "Sheet1",
+            "data": [
+                [
+                    "StringColumn",
+                    "DateColumn"
+                ],
+                [
+                    "Hello",
+                    "16 May 2009 17:00:00"
+                ],
+                [
+                    "world",
+                    "12/21/2008 08:45AM"
+                ]
+            ]
+        },
+        {
+            "name": "Sheet2",
+            "data": [
+                ["NumberColumn"],
+                [55.44],
+                [100.34],
+                [-1]
+            ]
+        },
+        {
+            "name": "Sheet3",
+            "data": []
+        }
+    ],
+    "fileName": "SimpleExcelFile.xls"
+}</pre>
+     <br/>
+     An example of the same file in the 'jsonTSVExtended' format:
+     <pre>
+     * {
+    "sheets": [
+        {
+            "name": "Sheet1",
+            "data": [
+                [
+                    {
+                        "value": "StringColumn",
+                        "formattedValue": "StringColumn"
+                    },
+                    {
+                        "value": "DateColumn",
+                        "formattedValue": "DateColumn"
+                    }
+                ],
+                [
+                    {
+                        "value": "Hello",
+                        "formattedValue": "Hello"
+                    },
+                    {
+                        "formatString": "MMMM d, yyyy",
+                        "value": "16 May 2009 17:00:00",
+                        "timeOnly": false,
+                        "formattedValue": "May 17, 2009"
+                    }
+                ],
+                [
+                    {
+                        "value": "world",
+                        "formattedValue": "world"
+                    },
+                    {
+                        "value": "12/21/2008 08:45AM",
+                        "formattedValue": "12/21/2008 08:45AM"
+                    }
+                ]
+            ]
+        },
+        {
+            "name": "Sheet2",
+            "data": [
+                [{
+                    "value": "NumberColumn",
+                    "formattedValue": "NumberColumn"
+                }],
+                [{
+                    "formatString": "\"$\"#,##0.00",
+                    "value": 55.44,
+                    "formattedValue": "\"$\"55.44"
+                }],
+                [{
+                    "value": 100.34,
+                    "formattedValue": "100.34"
+                }],
+                [{
+                    "value": -1,
+                    "formattedValue": "-1"
+                }]
+            ]
+        },
+        {
+            "name": "Sheet3",
+            "data": []
+        }
+    ],
+    "fileName": "SimpleExcelFile.xls"
+}
+     </pre>
+     *
      */
     this.getContent = function(config)
     {
