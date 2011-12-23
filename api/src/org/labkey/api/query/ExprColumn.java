@@ -33,7 +33,6 @@ public class ExprColumn extends ColumnInfo
     public ExprColumn(TableInfo parent, FieldKey key, SQLFragment sql, JdbcType type, ColumnInfo ... dependentColumns)
     {
         super(key, parent);
-        setAlias(AliasManager.makeLegalName(key.toString(), parent.getSqlDialect()));
         setJdbcType(type);
         _sql = sql;
         for (ColumnInfo dependentColumn : dependentColumns)
