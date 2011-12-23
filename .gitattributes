@@ -1315,6 +1315,7 @@ mothership/module.properties -text
 mothership/resources/schemas/dbscripts/postgresql/mothership-0.00-9.30.sql -text
 mothership/resources/schemas/dbscripts/postgresql/mothership-10.10-10.20.sql -text
 mothership/resources/schemas/dbscripts/postgresql/mothership-11.20-11.30.sql -text
+mothership/resources/schemas/dbscripts/postgresql/mothership-11.30-11.31.sql -text
 mothership/resources/schemas/dbscripts/postgresql/mothership-create.sql -text
 mothership/resources/schemas/dbscripts/postgresql/mothership-drop.sql -text
 mothership/resources/schemas/dbscripts/postgresql/obsolete/mothership-0.00-0.10.sql -text
@@ -1344,6 +1345,7 @@ mothership/resources/schemas/dbscripts/postgresql/obsolete/mothership-9.20-9.30.
 mothership/resources/schemas/dbscripts/sqlserver/mothership-0.00-9.30.sql -text
 mothership/resources/schemas/dbscripts/sqlserver/mothership-10.10-10.20.sql -text
 mothership/resources/schemas/dbscripts/sqlserver/mothership-11.20-11.30.sql -text
+mothership/resources/schemas/dbscripts/sqlserver/mothership-11.30-11.31.sql -text
 mothership/resources/schemas/dbscripts/sqlserver/mothership-create.sql -text
 mothership/resources/schemas/dbscripts/sqlserver/mothership-drop.sql -text
 mothership/resources/schemas/dbscripts/sqlserver/obsolete/mothership-0.00-0.10.sql -text

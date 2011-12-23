@@ -157,6 +157,7 @@
                 <ns:columnTitle>Max Heap Size (MB)</ns:columnTitle>
             </ns:column>
             <ns:column columnName="AdministratorEmail"/>
+            <ns:column columnName="ServletContainer"/>
         </ns:columns>
     </ns:table>
 

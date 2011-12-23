@@ -201,6 +201,7 @@ public class MothershipSchema extends UserSchema
         defaultCols.add(FieldKey.fromString("ContainerCount"));
         defaultCols.add(FieldKey.fromString("ExceptionCount"));
         defaultCols.add(FieldKey.fromString("HeapSize"));
+        defaultCols.add(FieldKey.fromString("ServletContainer"));
         result.setDefaultVisibleColumns(defaultCols);
 
         ActionURL base = new ActionURL(MothershipController.ShowServerSessionDetailAction.class, getContainer());
@@ -367,6 +368,7 @@ public class MothershipSchema extends UserSchema
         result.getColumn("ExceptionStackTraceId").setURL(StringExpressionFactory.createURL(stack));
         result.getColumn("ExceptionStackTraceId").setLabel("Exception");
         result.getColumn("ExceptionStackTraceId").setFormat("'#'0");
+        result.getColumn("ExceptionStackTraceId").setExcelFormatString("0");
 
         result.setTitleColumn("ExceptionStackTraceId");
         result.setDetailsURL(new DetailsURL(new ActionURL(MothershipController.ShowStackTraceDetailAction.class, getContainer()), Collections.singletonMap("exceptionStackTraceId", "ExceptionStackTraceId")));

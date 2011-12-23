@@ -531,6 +531,7 @@ public class MothershipController extends SpringActionController
             settings.getBaseFilter().addCondition("ServerInstallationId", installation.getServerInstallationId());
 
             QueryView sessionGridView = schema.createView(getViewContext(), settings, errors);
+            sessionGridView.setShowBorders(true);
             sessionGridView.setShowExportButtons(false);
             
             return new VBox(updateView, sessionGridView);
@@ -841,6 +842,7 @@ public class MothershipController extends SpringActionController
         private String _administratorEmail;
         private boolean _ldapEnabled;
         private boolean _enterprisePipelineEnabled;
+        private String _servletContainer;
 
         public String getSvnURL()
         {
@@ -1037,6 +1039,7 @@ public class MothershipController extends SpringActionController
             session.setLdapEnabled(isLDAPEnabled());
             session.setEnterprisePipelineEnabled(isEnterprisePipelineEnabled());
             session.setHeapSize(getHeapSize());
+            session.setServletContainer(getServletContainer());
 
             return session;
         }
@@ -1059,6 +1062,16 @@ public class MothershipController extends SpringActionController
         public void setEnterprisePipelineEnabled(boolean enterprisePipelineEnabled)
         {
             _enterprisePipelineEnabled = enterprisePipelineEnabled;
+        }
+
+        public String getServletContainer()
+        {
+            return _servletContainer;
+        }
+
+        public void setServletContainer(String servletContainer)
+        {
+            _servletContainer = servletContainer;
         }
     }
 
@@ -1221,7 +1234,7 @@ public class MothershipController extends SpringActionController
         {
             super(new DataRegion(), form);
             getDataRegion().setTable(MothershipManager.get().getTableInfoServerSession());
-            getDataRegion().addColumns(MothershipManager.get().getTableInfoServerSession(), "ServerSessionId,ServerSessionGUID,ServerInstallationId,EarliestKnownTime,LastKnownTime,DatabaseProductName,DatabaseProductVersion,DatabaseDriverName,DatabaseDriverVersion,RuntimeOS,JavaVersion,SoftwareReleaseId,UserCount,ActiveUserCount,ProjectCount,ContainerCount,AdministratorEmail,EnterprisePipelineEnabled,LDAPEnabled");
+            getDataRegion().addColumns(MothershipManager.get().getTableInfoServerSession(), "ServerSessionId,ServerSessionGUID,ServerInstallationId,EarliestKnownTime,LastKnownTime,DatabaseProductName,DatabaseProductVersion,DatabaseDriverName,DatabaseDriverVersion,RuntimeOS,JavaVersion,SoftwareReleaseId,UserCount,ActiveUserCount,ProjectCount,ContainerCount,AdministratorEmail,EnterprisePipelineEnabled,LDAPEnabled,ServletContainer");
             final DisplayColumn defaultServerInstallationColumn = getDataRegion().getDisplayColumn("ServerInstallationId");
             defaultServerInstallationColumn.setVisible(false);
             DataColumn replacementServerInstallationColumn = new DataColumn(defaultServerInstallationColumn.getColumnInfo())

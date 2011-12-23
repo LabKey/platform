@@ -49,6 +49,8 @@ public class ServerSession
     private Integer _heapSize;
     private String _administratorEmail;
 
+    private String _servletContainer;
+
     public String getDatabaseProductVersion()
     {
         return _databaseProductVersion;
@@ -257,5 +259,15 @@ public class ServerSession
     public void setHeapSize(Integer heapSize)
     {
         _heapSize = heapSize;
+    }
+
+    public String getServletContainer()
+    {
+        return _servletContainer;
+    }
+
+    public void setServletContainer(String servletContainer)
+    {
+        _servletContainer = servletContainer;
     }
 }
