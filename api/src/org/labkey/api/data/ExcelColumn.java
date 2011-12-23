@@ -262,6 +262,13 @@ public class ExcelColumn extends RenderColumn
                 default:
                     // 9729 : CRs are doubled in list data exported to Excel, normalize newlines as '\n'
                     String s = o.toString().replaceAll("\r\n", "\n");
+
+                    // Check if the string is too long
+                    if (s.length() > 32767)
+                    {
+                        s = s.substring(0, 32762) + "...";
+                    }
+                    
                     cell.setCellValue(s);
                     if (_style != null)
                         cell.setCellStyle(_style);

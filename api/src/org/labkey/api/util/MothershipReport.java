@@ -16,7 +16,6 @@
 
 package org.labkey.api.util;
 
-import org.apache.log4j.Logger;
 import org.labkey.api.data.CoreSchema;
 import org.labkey.api.data.DbSchema;
 import org.labkey.api.data.DbScope;
@@ -28,6 +27,7 @@ import org.labkey.api.settings.AppProps;
 
 import javax.mail.internet.ContentType;
 import javax.net.ssl.HttpsURLConnection;
+import javax.servlet.ServletContext;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
@@ -47,8 +47,6 @@ import java.util.Map;
  */
 public class MothershipReport implements Runnable
 {
-    private static Logger _log = Logger.getLogger(MothershipReport.class);
-
     private final URL _url;
     private final Map<String, String> _params = new HashMap<String, String>();
     private int _responseCode = -1;
@@ -265,6 +263,10 @@ public class MothershipReport implements Runnable
         }
         addParam("serverSessionGUID", AppProps.getInstance().getServerSessionGUID());
         addParam("serverGUID", AppProps.getInstance().getServerGUID());
+
+        ServletContext context = ModuleLoader.getServletContext();
+        String servletContainer = context == null ? null : context.getServerInfo();
+        addParam("servletContainer", servletContainer);
     }
 
     public String getContent()
