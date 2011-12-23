@@ -82,7 +82,7 @@ LABKEY.Applet = Ext.extend(Ext.BoxComponent,
                 ' height=' + applet.height +
                 ' codebase="http://java.sun.com/products/plugin/autodl/jinstall-1_5_0-windows-i586.cab#Version=1,5,0,0">' +
                 '<PARAM name="code" value="' + applet.code + '">' +
-                '<PARAM name="arhive" value="' + archive + '">';
+                '<PARAM name="archive" value="' + archive + '">';
             for (p in applet.params)
                 html += '<PARAM name="' + p + '" value="' + h(applet.params[p]) + '">\n';
             html += 'Applet not supported</OBJECT>';

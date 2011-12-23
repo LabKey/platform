@@ -63,12 +63,12 @@ public class MVDisplayColumnFactory implements DisplayColumnFactory
     }
     
 
-    private static ColumnInfo[] createMvColumns(AbstractTableInfo table, ColumnInfo valueColumn, DomainProperty property, ColumnInfo colObjectId, User user)
+    private static ColumnInfo[] createMvColumns(AbstractTableInfo table, ColumnInfo valueColumn, DomainProperty property, ColumnInfo colObjectId, Container container, User user)
     {
         String mvColumnName = property.getName() + MvColumn.MV_INDICATOR_SUFFIX;
 
         //CONSIDER new PropertyColumn constructor
-        PropertyColumn mvColumn = new PropertyColumn(property.getPropertyDescriptor(), colObjectId, null, user);
+        PropertyColumn mvColumn = new PropertyColumn(property.getPropertyDescriptor(), colObjectId, container, user, false);
         mvColumn.setMvIndicatorColumn(true);
         mvColumn.setName(mvColumnName);
         mvColumn.setAlias(ColumnInfo.legalNameFromName(mvColumnName));
@@ -93,9 +93,9 @@ public class MVDisplayColumnFactory implements DisplayColumnFactory
     }
 
 
-    public static void addMvColumns(AbstractTableInfo table, ColumnInfo valueColumn, DomainProperty property, ColumnInfo colObjectId, User user)
+    public static void addMvColumns(AbstractTableInfo table, ColumnInfo valueColumn, DomainProperty property, ColumnInfo colObjectId, Container container, User user)
     {
-        ColumnInfo[] newColumns = createMvColumns(table, valueColumn, property, colObjectId, user);
+        ColumnInfo[] newColumns = createMvColumns(table, valueColumn, property, colObjectId, container, user);
         for (ColumnInfo column : newColumns)
         {
             table.addColumn(column);

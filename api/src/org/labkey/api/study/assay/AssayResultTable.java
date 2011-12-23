@@ -126,7 +126,7 @@ public class AssayResultTable extends FilteredTable implements UpdateableTableIn
                     domainProperty.getPropertyDescriptor().copyTo(col);
                     if (domainProperty.getPropertyDescriptor().getLookupQuery() != null)
                     {
-                        col.setFk(new PdLookupForeignKey(_schema.getUser(), domainProperty.getPropertyDescriptor()));
+                        col.setFk(new PdLookupForeignKey(_schema.getUser(), domainProperty.getPropertyDescriptor(), schema.getContainer()));
                     }
                 }
                 addColumn(col);

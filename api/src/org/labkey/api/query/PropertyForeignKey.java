@@ -132,7 +132,7 @@ public class PropertyForeignKey extends AbstractForeignKey implements PropertyCo
         }
         else
         {
-            ret = new PropertyColumn(pd, parent, null, _schema.getUser());
+            ret = new PropertyColumn(pd, parent, _schema.getContainer(), _schema.getUser(), false);
             ((PropertyColumn)ret).setParentIsObjectId(_parentIsObjectId);
             ret.setFieldKey(name);
         }
@@ -209,6 +209,6 @@ public class PropertyForeignKey extends AbstractForeignKey implements PropertyCo
         column.setImportAliasesSet(pd.getImportAliasSet());
         column.setSqlTypeName(CoreSchema.getInstance().getSqlDialect().sqlTypeNameFromSqlType(pd.getPropertyType().getSqlType()));
         column.setDescription(pd.getDescription());
-        column.setFk(new PdLookupForeignKey(user, pd));
+        column.setFk(new PdLookupForeignKey(user, pd, _schema.getContainer()));
     }
 }

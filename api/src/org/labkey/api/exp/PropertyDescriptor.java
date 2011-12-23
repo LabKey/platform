@@ -344,11 +344,11 @@ public class PropertyDescriptor extends ColumnRenderProperties implements Serial
         }
     }
 
-    public ColumnInfo createColumnInfo(TableInfo baseTable, String lsidCol, User user)
+    public ColumnInfo createColumnInfo(TableInfo baseTable, String lsidCol, User user, Container container)
     {
-        ColumnInfo info = new PropertyColumn(this, baseTable, lsidCol, getContainer(), user);
+        ColumnInfo info = new PropertyColumn(this, baseTable, lsidCol, container, user, false);
         if (getLookupQuery() != null)
-            info.setFk(new PdLookupForeignKey(user, this));
+            info.setFk(new PdLookupForeignKey(user, this, container));
         return info;
     }
 

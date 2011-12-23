@@ -159,7 +159,7 @@ public class SetDefaultValuesAction<FormType extends DomainIdForm> extends Defau
         rgn.setTable(baseTable);
         for (DomainProperty dp : properties)
         {
-            ColumnInfo info = dp.getPropertyDescriptor().createColumnInfo(baseTable, "objecturi", getViewContext().getUser());
+            ColumnInfo info = dp.getPropertyDescriptor().createColumnInfo(baseTable, "objecturi", getViewContext().getUser(), getViewContext().getContainer());
             rgn.addDisplayColumn(new DefaultableDataColumn(dp, info));
         }
         InsertView view = new InsertView(rgn, errors);

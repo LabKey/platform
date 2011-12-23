@@ -16,6 +16,7 @@
 
 package org.labkey.api.query;
 
+import org.jetbrains.annotations.NotNull;
 import org.labkey.api.data.*;
 import org.labkey.api.exp.PropertyDescriptor;
 import org.labkey.api.security.User;
@@ -26,8 +27,9 @@ public class PdLookupForeignKey extends AbstractForeignKey
 {
     User _user;
     PropertyDescriptor _pd;
+    Container _currentContainer;
 
-    public PdLookupForeignKey(User user, PropertyDescriptor pd)
+    public PdLookupForeignKey(User user, PropertyDescriptor pd, @NotNull Container container)
     {
         if (user == null)
             throw new IllegalArgumentException("user cannot be null");
@@ -37,6 +39,8 @@ public class PdLookupForeignKey extends AbstractForeignKey
         _user = user;
         setLookupSchemaName(pd.getLookupSchema());
         setTableName(pd.getLookupQuery());
+        assert container != null : "Container cannot be null";
+        _currentContainer = container;
     }
 
     @Override
@@ -64,15 +68,35 @@ public class PdLookupForeignKey extends AbstractForeignKey
         String containerId = _pd.getLookupContainer();
         Container container;
 
+        TableInfo table;
         if (containerId != null)
         {
-            container = ContainerManager.getForId(containerId);
+            // We're configured to target a specific container
+            table = findTableInfo(ContainerManager.getForId(containerId));
         }
         else
         {
-            container = _pd.getContainer();
+            // First look in the current container
+            table = findTableInfo(_currentContainer);
+            if (table == null)
+            {
+                // Fall back to the property descriptor's container - useful for finding lists and other
+                // single-container tables
+                table = findTableInfo(_pd.getContainer());
+            }
         }
 
+        if (table == null)
+            return null;
+
+        if (table.getPkColumns().size() != 1)
+            return null;
+
+        return table;
+    }
+
+    private TableInfo findTableInfo(Container container)
+    {
         if (container == null)
             return null;
 
@@ -85,15 +109,7 @@ public class PdLookupForeignKey extends AbstractForeignKey
             return null;
 
         UserSchema schema = (UserSchema) qSchema;
-        TableInfo table = schema.getTable(_pd.getLookupQuery());
-
-        if (table == null)
-            return null;
-
-        if (table.getPkColumns().size() != 1)
-            return null;
-
-        return table;
+        return schema.getTable(_pd.getLookupQuery());
     }
 
     public ColumnInfo createLookupColumn(ColumnInfo parent, String displayField)
@@ -107,6 +123,16 @@ public class PdLookupForeignKey extends AbstractForeignKey
         }
         if (displayField == null)
             return null;
+
+        if (table instanceof ContainerFilterable && parent.getParentTable().getContainerFilter() != null)
+        {
+            ContainerFilterable newTable = (ContainerFilterable)table;
+
+            // Only override if the new table doesn't already have some special filter
+            if (newTable.hasDefaultContainerFilter())
+                newTable.setContainerFilter(new DelegatingContainerFilter(parent.getParentTable()));
+        }
+        
         return LookupColumn.create(parent, table.getPkColumns().get(0), table.getColumn(displayField), false);
     }
 

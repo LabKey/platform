@@ -35,19 +35,29 @@ public class PropertyColumn extends LookupColumn
     protected PropertyDescriptor _pd;
     protected Container _container;
     protected boolean _parentIsObjectId = false;
+    private final boolean _joinOnContainer;
 
-    public PropertyColumn(PropertyDescriptor pd, TableInfo tinfoParent, String parentLsidColumn, Container container, User user)
+    public PropertyColumn(PropertyDescriptor pd, TableInfo tinfoParent, String parentLsidColumn, Container container, User user, boolean joinOnContainer)
     {
-        this(pd, tinfoParent.getColumn(parentLsidColumn), container, user);
+        this(pd, tinfoParent.getColumn(parentLsidColumn), container, user, joinOnContainer);
     }
 
-    public PropertyColumn(final PropertyDescriptor pd, final ColumnInfo lsidColumn, final Container container, User user)
+    /**
+     * @param container container in which the query is going to be executed. Used optionally as a join condition, and
+     * to construct the appropriate TableInfo for lookups.
+     * @param joinOnContainer when creating the join as a LookupColumn, whether or not to also match based on container 
+     */
+    public PropertyColumn(final PropertyDescriptor pd, final ColumnInfo lsidColumn, final Container container, User user, boolean joinOnContainer)
     {
         super(lsidColumn, OntologyManager.getTinfoObject().getColumn("ObjectURI"), OntologyManager.getTinfoObjectProperty().getColumn(getPropertyCol(pd)));
+        _joinOnContainer = joinOnContainer;
         setName(pd.getName());
         setAlias(ColumnInfo.legalNameFromName(pd.getName()));
 
-        copyAttributes(user, this, pd);
+        _pd = pd;
+        _container = container;
+        
+        copyAttributes(user, this, pd, _container);
         setSqlTypeName(getPropertySqlType(pd,OntologyManager.getSqlDialect()));
 
         // Swap out the renderer for file properties
@@ -61,13 +71,10 @@ public class PropertyColumn extends LookupColumn
                 }
             });
         }
-
-        _pd = pd;
-        _container = container;
     }
 
 
-    public static void copyAttributes(User user, ColumnInfo to, PropertyDescriptor pd)
+    public static void copyAttributes(User user, ColumnInfo to, PropertyDescriptor pd, Container container)
     {
         // ColumnRenderProperties
         pd.copyTo(to);
@@ -97,7 +104,7 @@ public class PropertyColumn extends LookupColumn
         }
 
         if (pd.getLookupSchema() != null && pd.getLookupQuery() != null && user != null)
-            to.setFk(new PdLookupForeignKey(user, pd));
+            to.setFk(new PdLookupForeignKey(user, pd, container));
 
         to.setDefaultValueType(pd.getDefaultValueTypeEnum());
         to.setConditionalFormats(PropertyService.get().getConditionalFormats(pd));
@@ -215,12 +222,14 @@ public class PropertyColumn extends LookupColumn
     public SQLFragment getJoinCondition(String tableAliasName)
     {
         SQLFragment strJoinNoContainer = super.getJoinCondition(tableAliasName);
-        if (_container == null)
+        if (_container == null || !_joinOnContainer)
         {
             return strJoinNoContainer;
         }
 
-        strJoinNoContainer.append(" AND " + tableAliasName + ".Container = '" + _container.getId() + "'");
+        strJoinNoContainer.append(" AND ");
+        strJoinNoContainer.append(getParentTable().getContainerFilter().getSQLFragment(getParentTable().getSchema(), new SQLFragment(tableAliasName + ".Container"), _container));
+
         return strJoinNoContainer;
     }
 

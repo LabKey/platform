@@ -65,7 +65,7 @@ public abstract class BaseAssayAction<T extends ProtocolIdForm> extends SimpleVi
         {
             if (dp.isShownInInsertView())
             {
-                ColumnInfo info = dp.getPropertyDescriptor().createColumnInfo(baseTable, lsidCol, getViewContext().getUser());
+                ColumnInfo info = dp.getPropertyDescriptor().createColumnInfo(baseTable, lsidCol, getViewContext().getUser(), getContainer());
                 rgn.addColumn(info);
                 if (columnNameToPropertyName != null)
                     columnNameToPropertyName.put(info.getName(), dp.getName());

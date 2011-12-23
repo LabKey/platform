@@ -310,7 +310,7 @@ public class AssayRunUploadForm<ProviderType extends AssayProvider> extends Prot
 
         if (key.getLookupQuery() != null)
         {
-            PdLookupForeignKey lookupKey = new PdLookupForeignKey(getUser(), key);
+            PdLookupForeignKey lookupKey = new PdLookupForeignKey(getUser(), key, getContainer());
             TableInfo lookupTable = lookupKey.getLookupTableInfo();
             if (lookupTable != null)
             {
