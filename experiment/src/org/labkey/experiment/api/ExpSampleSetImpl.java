@@ -232,7 +232,7 @@ public class ExpSampleSetImpl extends ExpIdentifiableEntityImpl<MaterialSource> 
         {
             TableInfo tinfoProtocol = ExperimentServiceImpl.get().getTinfoProtocol();
             ColumnInfo colLSID = tinfoProtocol.getColumn("LSID");
-            ColumnInfo colSampleLSID = new PropertyColumn(ExperimentProperty.SampleSetLSID.getPropertyDescriptor(), colLSID, null, user);
+            ColumnInfo colSampleLSID = new PropertyColumn(ExperimentProperty.SampleSetLSID.getPropertyDescriptor(), colLSID, getContainer(), user, false);
             SimpleFilter filter = new SimpleFilter();
 			filter.addCondition(colSampleLSID, getLSID());
             List<ColumnInfo> selectColumns = new ArrayList<ColumnInfo>();

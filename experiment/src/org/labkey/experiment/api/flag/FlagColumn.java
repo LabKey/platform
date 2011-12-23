@@ -17,6 +17,7 @@
 package org.labkey.experiment.api.flag;
 
 import org.labkey.api.data.ColumnInfo;
+import org.labkey.api.data.Container;
 import org.labkey.api.exp.PropertyColumn;
 import org.labkey.api.exp.property.ExperimentProperty;
 import org.labkey.api.query.FieldKey;
@@ -27,9 +28,9 @@ public class FlagColumn extends PropertyColumn
     String _urlFlagged;
     String _urlUnflagged;
 
-    public FlagColumn(ColumnInfo parent, String urlFlagged, String urlUnflagged, User user)
+    public FlagColumn(ColumnInfo parent, String urlFlagged, String urlUnflagged, Container container, User user)
     {
-        super(ExperimentProperty.COMMENT.getPropertyDescriptor(), parent, null, user);
+        super(ExperimentProperty.COMMENT.getPropertyDescriptor(), parent, container, user, false);
         setFieldKey(new FieldKey(parent.getFieldKey(),"$"));
         setAlias(parent.getAlias() + "$");
         _urlFlagged = urlFlagged;

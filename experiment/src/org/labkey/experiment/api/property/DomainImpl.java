@@ -49,7 +49,6 @@ import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.Permission;
 import org.labkey.api.util.UnexpectedException;
 import org.labkey.api.view.ActionURL;
-import org.labkey.experiment.controllers.property.PropertyController;
 
 import java.sql.SQLException;
 import java.util.ArrayList;
@@ -413,12 +412,12 @@ public class DomainImpl implements Domain
         return null;
     }
 
-    public List<ColumnInfo> getColumns(TableInfo sourceTable, ColumnInfo lsidColumn, User user)
+    public List<ColumnInfo> getColumns(TableInfo sourceTable, ColumnInfo lsidColumn, Container container, User user)
     {
         List<ColumnInfo> result = new ArrayList<ColumnInfo>();
         for (DomainProperty property : getProperties())
         {
-            ColumnInfo column = new PropertyColumn(property.getPropertyDescriptor(), lsidColumn, null, user);
+            ColumnInfo column = new PropertyColumn(property.getPropertyDescriptor(), lsidColumn, container, user, false);
             result.add(column);
             if (property.isMvEnabled())
             {

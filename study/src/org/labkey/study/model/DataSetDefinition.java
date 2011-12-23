@@ -895,7 +895,7 @@ public class DataSetDefinition extends AbstractStudyEntity<DataSetDefinition> im
                 // cached, so it's safe to include the current user 
                 PropertyDescriptor pd = p.getPropertyDescriptor();
                 if (null != pd && pd.getLookupQuery() != null)
-                    wrapped.setFk(new PdLookupForeignKey(user, pd));
+                    wrapped.setFk(new PdLookupForeignKey(user, pd, getContainer()));
 
                 if (p.isMvEnabled())
                 {
@@ -2655,7 +2655,7 @@ public class DataSetDefinition extends AbstractStudyEntity<DataSetDefinition> im
             }
 
             // Property columns
-            for (ColumnInfo c : def.getDomain().getColumns(this, getColumn("LSID"), null))
+            for (ColumnInfo c : def.getDomain().getColumns(this, getColumn("LSID"), _container, null))
                 addColumn(c);
 
             _fromSql = new SQLFragment(

@@ -112,7 +112,7 @@ public class StudyPropertiesTable extends BaseStudyTable
         _domain = PropertyService.get().getDomain(schema.getContainer(), domainURI);
         if (_domain != null)
         {
-            for (ColumnInfo extraColumn : _domain.getColumns(this, lsidColumn, schema.getUser()))
+            for (ColumnInfo extraColumn : _domain.getColumns(this, lsidColumn, schema.getContainer(), schema.getUser()))
             {
                 safeAddColumn(extraColumn);
                 _visibleColumns.add(FieldKey.fromParts(extraColumn.getName()));

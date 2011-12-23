@@ -32,7 +32,6 @@ import org.labkey.api.security.SecurityPolicy;
 import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.study.Study;
-import org.labkey.api.study.StudyService;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.NotFoundException;
 import org.labkey.api.view.UnauthorizedException;
@@ -261,7 +260,7 @@ public class ReportManager implements StudyManager.DataSetListener
 
         // UNDONE: use def.getTableInfo()
         TableInfo tinfo = StudySchema.getInstance().getTableInfoStudyData(study, ctx.getUser());
-        List<ColumnInfo> propertyColumns = def.getDomain().getColumns(tinfo, tinfo.getColumn("LSID"), ctx.getUser());
+        List<ColumnInfo> propertyColumns = def.getDomain().getColumns(tinfo, tinfo.getColumn("LSID"), ctx.getContainer(), ctx.getUser());
         if (propertyColumns == null || propertyColumns.isEmpty())
             throw new IllegalArgumentException("No columns for type: " + typeURI);
 

@@ -140,7 +140,7 @@ abstract public class ExpTableImpl<C extends Enum> extends FilteredTable impleme
     protected ColumnInfo createFlagColumn(String alias)
     {
         ColumnInfo ret = wrapColumn(alias, getLSIDColumn());
-        ret.setFk(new FlagForeignKey(urlFlag(true), urlFlag(false), _schema.getUser()));
+        ret.setFk(new FlagForeignKey(urlFlag(true), urlFlag(false), _schema.getContainer(), _schema.getUser()));
         ret.setDisplayColumnFactory(new DisplayColumnFactory()
         {
             public DisplayColumn createRenderer(ColumnInfo colInfo)
@@ -199,7 +199,7 @@ abstract public class ExpTableImpl<C extends Enum> extends FilteredTable impleme
         for (DomainProperty dp : domain.getProperties())
         {
             PropertyDescriptor pd = dp.getPropertyDescriptor();
-            ColumnInfo propColumn = new PropertyColumn(pd, getColumn("LSID"), null, _schema.getUser());
+            ColumnInfo propColumn = new PropertyColumn(pd, getColumn("LSID"), getContainer(), _schema.getUser(), false);
             if (getColumn(propColumn.getName()) == null)
             {
                 addColumn(propColumn);

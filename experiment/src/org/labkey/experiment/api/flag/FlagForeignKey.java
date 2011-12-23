@@ -18,6 +18,7 @@ package org.labkey.experiment.api.flag;
 
 import org.labkey.api.data.AbstractForeignKey;
 import org.labkey.api.data.ColumnInfo;
+import org.labkey.api.data.Container;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.VirtualTable;
 import org.labkey.api.util.StringExpression;
@@ -29,12 +30,14 @@ public class FlagForeignKey extends AbstractForeignKey
     public static final String DISPLAYFIELD_NAME = "Comment";
     String _urlFlagged;
     String _urlUnflagged;
+    private final Container _container;
     User _user;
     
-    public FlagForeignKey(String urlFlagged, String urlUnflagged, User user)
+    public FlagForeignKey(String urlFlagged, String urlUnflagged, Container container, User user)
     {
         _urlFlagged = urlFlagged;
         _urlUnflagged = urlUnflagged;
+        _container = container;
         _user = user;
     }
 
@@ -46,7 +49,7 @@ public class FlagForeignKey extends AbstractForeignKey
         }
         if (!displayField.equalsIgnoreCase(DISPLAYFIELD_NAME))
             return null;
-        return new FlagColumn(parent, _urlFlagged, _urlUnflagged, _user);
+        return new FlagColumn(parent, _urlFlagged, _urlUnflagged, _container, _user);
     }
 
     public TableInfo getLookupTableInfo()

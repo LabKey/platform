@@ -207,7 +207,7 @@ public class StudyUnionTableInfo extends VirtualTable
         for (PropertyDescriptor pd : sharedProperties)
         {
             ColumnInfo ci = new ColumnInfo(pd.getName(), this);
-            PropertyColumn.copyAttributes(_user, ci, pd);
+            PropertyColumn.copyAttributes(_user, ci, pd, _study.getContainer());
             ci.setSqlTypeName(StudySchema.getInstance().getSqlDialect().sqlTypeNameFromSqlType(pd.getSqlTypeInt()));
             safeAddColumn(ci);
         }

@@ -37,7 +37,6 @@ import org.labkey.api.exp.property.Domain;
 import org.labkey.api.exp.property.DomainProperty;
 import org.labkey.api.query.BatchValidationException;
 import org.labkey.api.query.DetailsURL;
-import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.FilteredTable;
 import org.labkey.api.query.QueryUpdateService;
 import org.labkey.api.security.User;
@@ -49,9 +48,7 @@ import org.labkey.list.view.ListController;
 
 import java.sql.Connection;
 import java.sql.SQLException;
-import java.util.ArrayList;
 import java.util.Collections;
-import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
@@ -97,7 +94,7 @@ public class ListTable extends FilteredTable implements UpdateableTableInfo
         ColumnInfo colObjectId = wrapColumn(getRealTable().getColumn("ObjectId"));
         for (DomainProperty property : listDef.getDomain().getProperties())
         {
-            PropertyColumn column = new PropertyColumn(property.getPropertyDescriptor(), colObjectId, null, user);
+            PropertyColumn column = new PropertyColumn(property.getPropertyDescriptor(), colObjectId, listDef.getContainer(), user, false);
 
             if (property.getName().equalsIgnoreCase(colKey.getName()))
             {
@@ -111,7 +108,7 @@ public class ListTable extends FilteredTable implements UpdateableTableInfo
             safeAddColumn(column);
             if (property.isMvEnabled())
             {
-                MVDisplayColumnFactory.addMvColumns(this, column, property, colObjectId, user);
+                MVDisplayColumnFactory.addMvColumns(this, column, property, colObjectId, getContainer(), user);
             }
 
             if (property.getPropertyDescriptor().getPropertyType() == PropertyType.MULTI_LINE)

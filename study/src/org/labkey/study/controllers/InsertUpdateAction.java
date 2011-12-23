@@ -159,7 +159,7 @@ public abstract class InsertUpdateAction<Form extends DatasetController.EditData
                         if (entry.getValue() != null)
                         {
                             String stringValue = entry.getValue().toString();
-                            ColumnInfo temp = entry.getKey().getPropertyDescriptor().createColumnInfo(datasetTable, "LSID", getViewContext().getUser());
+                            ColumnInfo temp = entry.getKey().getPropertyDescriptor().createColumnInfo(datasetTable, "LSID", getViewContext().getUser(), getViewContext().getContainer());
                             formDefaults.put(updateForm.getFormFieldName(temp), stringValue);
                         }
                     }
@@ -288,7 +288,7 @@ public abstract class InsertUpdateAction<Form extends DatasetController.EditData
                 Map<DomainProperty, Object> dataMap = new HashMap<DomainProperty, Object>(requestMap.size());
                 for (DomainProperty property : properties)
                 {
-                    ColumnInfo currentColumn = property.getPropertyDescriptor().createColumnInfo(datasetTable, "LSID", user);
+                    ColumnInfo currentColumn = property.getPropertyDescriptor().createColumnInfo(datasetTable, "LSID", user, getViewContext().getContainer());
                     Object value = requestMap.get(updateForm.getFormFieldName(currentColumn));
                     if (property.isMvEnabled())
                     {

@@ -216,7 +216,7 @@ public class DataSetTableImpl extends FilteredTable implements DataSetTable
                 {
                     PropertyDescriptor pd = OntologyManager.getPropertyDescriptor(propertyURI, schema.getContainer());
                     if (null != pd && pd.getLookupQuery() != null)
-                        col.setFk(new PdLookupForeignKey(schema.getUser(), pd));
+                        col.setFk(new PdLookupForeignKey(schema.getUser(), pd, schema.getContainer()));
                     
                     if (pd != null && pd.getPropertyType() == PropertyType.MULTI_LINE)
                     {
