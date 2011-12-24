@@ -58,9 +58,9 @@
 However, If this account is re-enabled, it would have the following permissions.</div>
 <% } %>
 
-<table class="labkey-data-region labkey-show-borders">
+<table id="dataregion_access" class="labkey-data-region labkey-show-borders">
     <colgroup><col><col><col></colgroup>
-    <tr>
+    <tr id="dataregion_column_header_row_access">
 <%
     out.print("<th>&nbsp;</th>");
     if (!bean.showUserCol())
@@ -74,6 +74,7 @@ However, If this account is re-enabled, it would have the following permissions.
     out.print("<th>Current Access</th>");
 %>
     </tr>
+    <tr id="dataregion_column_header_row_spacer_access" class="dataregion_column_header_row_spacer" style="display:none;"></tr>
 <%
     int rowNumber = 0;
     for (UserController.AccessDetailRow row : rows)
