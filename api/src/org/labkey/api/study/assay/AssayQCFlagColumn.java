@@ -44,10 +44,14 @@ import java.util.Set;
  */
 public class AssayQCFlagColumn extends ExprColumn
 {
-    public AssayQCFlagColumn(TableInfo parent)
+    private boolean _qcFlagToggleJSIncluded = false;
+    private String _protocolName;
+
+    public AssayQCFlagColumn(TableInfo parent, String protocolName)
     {
         super(parent, "QCFlags", createSQLFragment(parent.getSqlDialect(), "FlagType"), JdbcType.VARCHAR);
         setLabel("QC Flags");
+        _protocolName = protocolName;
     }
 
     @Override
@@ -71,7 +75,26 @@ public class AssayQCFlagColumn extends ExprColumn
                     {
                         String[] values = ((String)getValue(ctx)).split(",");
                         Boolean[] enabled = parseBooleans(values, ctx.get(getEnabledFieldKey(), String.class));
+
+                        Integer runId = null;
+                        if (null != ctx.get("rowid"))
+                            runId = (Integer)ctx.get("rowid");
+
+                        if (!_qcFlagToggleJSIncluded)
+                        {
+                            // add script block to include the necessary JS file for the QCFlag toggle panel
+                            out.write("<script type='text/javascript'>"
+                                    + "   LABKEY.requiresScript('Experiment/QCFlagTogglePanel.js');"
+                                    + "</script>");
+
+                            _qcFlagToggleJSIncluded = true;
+                        }
+
+                        // add onclick handler to call the QCFlag toggle window creation function
+                        // users with update perm will be able to change enabled state and edit comment, others will only be able to read flag details
+                        out.write("<a onclick=\"qcFlagToggleWindow('" + _protocolName + "', " + runId + ");\">");
                         out.write(getCollapsedQCFlagOutput(values, enabled));
+                        out.write("</a>");
                     }
 
                     @Override

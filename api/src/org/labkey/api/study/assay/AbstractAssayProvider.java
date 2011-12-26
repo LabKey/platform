@@ -633,7 +633,7 @@ public abstract class AbstractAssayProvider implements AssayProvider
         }
         runTable.populate();
 
-        runTable.addColumn(new AssayQCFlagColumn(runTable));
+        runTable.addColumn(new AssayQCFlagColumn(runTable, protocol.getName()));
         ColumnInfo qcEnabled = runTable.addColumn(new ExprColumn(runTable, "QCFlagsEnabled", AssayQCFlagColumn.createSQLFragment(runTable.getSqlDialect(), "Enabled"), JdbcType.VARCHAR));
         qcEnabled.setLabel("QC Flags Enabled State");
         qcEnabled.setHidden(true);
