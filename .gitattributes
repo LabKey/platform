@@ -1131,6 +1131,8 @@ experiment/src/org/labkey/experiment/xar/FileResolver.java -text
 experiment/src/org/labkey/experiment/xar/XarExpander.java -text
 experiment/src/org/labkey/experiment/xar/XarExportSelection.java -text
 experiment/webapp/Experiment/ExperimentRunNotFound.gif -text
+experiment/webapp/Experiment/QCFlagToggle.css -text
+experiment/webapp/Experiment/QCFlagTogglePanel.js -text
 experiment/webapp/Experiment/flagData.png -text
 experiment/webapp/Experiment/flagDefault.gif -text
 experiment/webapp/Experiment/flagRun.gif -text
