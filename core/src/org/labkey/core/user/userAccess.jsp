@@ -119,9 +119,9 @@ However, If this account is re-enabled, it would have the following permissions.
         }
         else
         {
-            Map<Role, List<Group>> accessGroups = row.getAccessGroups();
-            Set<Role> roles = accessGroups.keySet();
-            if (roles.size() > 0)
+            Map<String, List<Group>> accessGroups = row.getAccessGroups();
+            Set<String> roleNames = accessGroups.keySet();
+            if (roleNames.size() > 0)
             {
 %>
             <td style="padding-left:<%=cellPadding%>px;">
@@ -140,12 +140,12 @@ However, If this account is re-enabled, it would have the following permissions.
                             <table class='labkey-data-region labkey-show-borders'>
                                 <tr><th>Role</th><th>Group(s)</th></tr>
 <%
-                                for (Role role : roles)
+                                for (String roleName : roleNames)
                                 {
-                                    out.print("<tr><td>" + role.getName() + (inherited ? "*" : "") + "</td>");
+                                    out.print("<tr><td>" + roleName + (inherited ? "*" : "") + "</td>");
                                     out.print("<td>");
                                     boolean first = true;
-                                    for (Group group : accessGroups.get(role))
+                                    for (Group group : accessGroups.get(roleName))
                                     {
                                         Container groupContainer = group.isAdministrators() ? ContainerManager.getRoot() : row.getContainer().getProject();
                                         String displayName = (group.isProjectGroup() ? groupContainer.getName() + "/" : "Site ") + group.getName();

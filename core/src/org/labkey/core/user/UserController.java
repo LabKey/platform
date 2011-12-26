@@ -845,7 +845,7 @@ public class UserController extends SpringActionController
         private ViewContext _viewContext;
         private Container _container;
         private UserPrincipal _userPrincipal;
-        private Map<Role, List<Group>> _accessGroups;
+        private Map<String, List<Group>> _accessGroups;
         private int _depth;
 
         public AccessDetailRow(ViewContext viewContext, Container container, UserPrincipal userPrincipal, List<Role> roles, int depth)
@@ -855,13 +855,13 @@ public class UserController extends SpringActionController
             _userPrincipal = userPrincipal;
             _depth = depth;
 
-            Map<Role, List<Group>> accessGroups = new HashMap<Role, List<Group>>();
+            Map<String, List<Group>> accessGroups = new TreeMap<String, List<Group>>();
             for (Role role : roles)
-                accessGroups.put(role, new ArrayList<Group>());
+                accessGroups.put(role.getName(), new ArrayList<Group>());
             _accessGroups = accessGroups;
 
         }
-        public AccessDetailRow(ViewContext viewContext,Container container, UserPrincipal userPrincipal, Map<Role, List<Group>> accessGroups, int depth)
+        public AccessDetailRow(ViewContext viewContext,Container container, UserPrincipal userPrincipal, Map<String, List<Group>> accessGroups, int depth)
         {
             _viewContext = viewContext;
             _container = container;
@@ -877,10 +877,10 @@ public class UserController extends SpringActionController
 
             String sep = "";
             StringBuilder access = new StringBuilder();
-            for (Role role : _accessGroups.keySet())
+            for (String roleName : _accessGroups.keySet())
             {
                 access.append(sep);
-                access.append(role.getName());
+                access.append(roleName);
                 sep = ", ";
             }
             return access.toString();
@@ -914,7 +914,7 @@ public class UserController extends SpringActionController
             return allGroups;
         }
 
-        public Map<Role, List<Group>> getAccessGroups()
+        public Map<String, List<Group>> getAccessGroups()
         {
             return _accessGroups;
         }
@@ -984,14 +984,14 @@ public class UserController extends SpringActionController
 
         for (Container child : children)
         {
-            Map<Role, List<Group>> childAccessGroups = new HashMap<Role, List<Group>>();
+            Map<String, List<Group>> childAccessGroups = new TreeMap<String, List<Group>>();
 
             SecurityPolicy policy = SecurityManager.getPolicy(child);
             Set<Role> effectiveRoles = policy.getEffectiveRoles(requestedUser);
             effectiveRoles.remove(RoleManager.getRole(NoPermissionsRole.class)); //ignore no perms
             for (Role role : effectiveRoles)
             {
-                childAccessGroups.put(role, new ArrayList<Group>());
+                childAccessGroups.put(role.getName(), new ArrayList<Group>());
             }
 
             if (effectiveRoles.size() > 0)
@@ -1011,7 +1011,7 @@ public class UserController extends SpringActionController
                         for (Role role : effectiveRoles)
                         {
                             if (groupRoles.contains(role))
-                                childAccessGroups.get(role).add(group);
+                                childAccessGroups.get(role.getName()).add(group);
                         }
                     }
                 }

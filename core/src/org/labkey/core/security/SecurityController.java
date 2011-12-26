@@ -118,6 +118,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.TreeMap;
 
 import static org.labkey.api.util.PageFlowUtil.filter;
 
@@ -1769,13 +1770,13 @@ public class SecurityController extends SpringActionController
             for (User user : activeUsers)
             {
                 user = UserManager.getUser(user.getUserId()); // the cache from UserManager.getActiveUsers might not have the udpated groups list
-                Map<Role, List<Group>> userAccessGroups = new HashMap<Role, List<Group>>();
+                Map<String, List<Group>> userAccessGroups = new TreeMap<String, List<Group>>();
                 SecurityPolicy policy = SecurityManager.getPolicy(getContainer());
                 Set<Role> effectiveRoles = policy.getEffectiveRoles(user);
                 effectiveRoles.remove(RoleManager.getRole(NoPermissionsRole.class)); //ignore no perms
                 for (Role role : effectiveRoles)
                 {
-                    userAccessGroups.put(role, new ArrayList<Group>());
+                    userAccessGroups.put(role.getName(), new ArrayList<Group>());
                 }
 
                 if (effectiveRoles.size() > 0)
@@ -1790,7 +1791,7 @@ public class SecurityController extends SpringActionController
                             for (Role role : effectiveRoles)
                             {
                                 if (groupRoles.contains(role))
-                                    userAccessGroups.get(role).add(group);
+                                    userAccessGroups.get(role.getName()).add(group);
                             }
                         }
                     }
