@@ -75,16 +75,13 @@ public class AssayQCFlagColumn extends ExprColumn
                     {
                         String[] values = ((String)getValue(ctx)).split(",");
                         Boolean[] enabled = parseBooleans(values, ctx.get(getEnabledFieldKey(), String.class));
-
-                        Integer runId = null;
-                        if (null != ctx.get("rowid"))
-                            runId = (Integer)ctx.get("rowid");
+                        Integer runId = ctx.get(getRunRowIdFieldKey(), Integer.class);
 
                         if (!_qcFlagToggleJSIncluded)
                         {
                             // add script block to include the necessary JS file for the QCFlag toggle panel
                             out.write("<script type='text/javascript'>"
-                                    + "   LABKEY.requiresScript('Experiment/QCFlagTogglePanel.js');"
+                                    + "   LABKEY.requiresScript('Experiment/QCFlagToggleWindow.js');"
                                     + "</script>");
 
                             _qcFlagToggleJSIncluded = true;
@@ -92,7 +89,7 @@ public class AssayQCFlagColumn extends ExprColumn
 
                         // add onclick handler to call the QCFlag toggle window creation function
                         // users with update perm will be able to change enabled state and edit comment, others will only be able to read flag details
-                        out.write("<a onclick=\"qcFlagToggleWindow('" + _protocolName + "', " + runId + ");\">");
+                        out.write("<a onclick=\"showQCFlagToggleWindow('" + _protocolName + "', " + runId + ");\">");
                         out.write(getCollapsedQCFlagOutput(values, enabled));
                         out.write("</a>");
                     }
@@ -101,11 +98,17 @@ public class AssayQCFlagColumn extends ExprColumn
                     public void addQueryFieldKeys(Set<FieldKey> keys)
                     {
                         keys.add(getEnabledFieldKey());
+                        keys.add(getRunRowIdFieldKey());
                     }
 
                     private FieldKey getEnabledFieldKey()
                     {
                         return new FieldKey(getBoundColumn().getFieldKey().getParent(), "QCFlagsEnabled");
+                    }
+
+                    private FieldKey getRunRowIdFieldKey()
+                    {
+                        return new FieldKey(getBoundColumn().getFieldKey().getParent(), "RowId");
                     }
                 };
             }
