@@ -9,34 +9,33 @@ LABKEY.requiresCss('Experiment/QCFlagToggle.css');
 Ext.QuickTips.init();
 var $h = Ext.util.Format.htmlEncode;
 
-// function called onclick of Run QC Flags to open the QC Flag toggle panel (i.e. to enable/disable QC flags)
-function qcFlagToggleWindow(assayName, runId)
+// helper function called to open the QC Flag toggle window (i.e. to enable/disable QC flags)
+// and reload the page on a successful save
+function showQCFlagToggleWindow(assayName, runId)
 {
-    var win = new Ext.Window({
-        cls: 'extContainer',
-        title: 'Run QC Flags',
-        width: 700,
-        autoHeight: true,
-        padding: 15,
-        modal: true,
-        closeAction:'close',
-        bodyStyle: 'background-color: white;',
-        items: new LABKEY.QCFlagTogglePanel({
-            schemaName: "assay",
-            queryName: assayName + " QCFlags",
-            runId: runId,
-            listeners: {
-                scope: this,
-                'closeWindow': function(){
-                    win.close();
-                }
+    var win = new LABKEY.QCFlagToggleWindow({
+        schemaName: "assay",
+        queryName: assayName + " QCFlags",
+        runId: runId,
+        listeners: {
+            scope: this,
+            'saveSuccess': function(){
+                window.location.reload();
             }
-        })
+        }
     });
     win.show(this);
 }
 
-LABKEY.QCFlagTogglePanel = Ext.extend(Ext.Panel, {
+/**
+ * Displays a dialog window to allow a user with update permissions to enable/disbled run QC flags (and add comments)
+ * @param schemaName
+ * @param queryName
+ * @param runId
+ * @param analyte Optional, for Luminex Levey-Jennings report
+ * @param titration Optional, for Luminex Levey-Jennings report 
+ */
+LABKEY.QCFlagToggleWindow = Ext.extend(Ext.Window, {
     constructor : function(config){
         // check that the config properties needed are present
         if (!config.schemaName || !config.queryName || !config.runId)
@@ -44,32 +43,44 @@ LABKEY.QCFlagTogglePanel = Ext.extend(Ext.Panel, {
 
         Ext.apply(config, {
             cls: 'extContainer',
-            autoScroll: true,
-            border: false,
+            title: 'Run QC Flags',
+            width: 700,
+            autoHeight: true,
+            padding: 15,
+            modal: true,
+            closeAction:'close',
+            bodyStyle: 'background-color: white;',
             items: [],
-            buttonAlign: 'center',
-            buttons: [],
             userCanUpdate: LABKEY.user.canUpdate
         });
 
-        this.addEvents('closeWindow');
+        this.addEvents('saveSuccess');
 
-        LABKEY.QCFlagTogglePanel.superclass.constructor.call(this, config);
+        LABKEY.QCFlagToggleWindow.superclass.constructor.call(this, config);
     },
 
     initComponent : function() {
+        // setup the filter array (always filter by run, optionally filter by analyte and titration)
+        var filters = [LABKEY.Filter.create("Run/RowId", this.runId)];
+        if (this.analyte && this.titration)
+        {
+            filters.push(LABKEY.Filter.create("Analyte/Name", this.analyte));
+            filters.push(LABKEY.Filter.create("Titration/Name", this.titration));
+        }
+
         // add a grid to the panel with the QC Flags for this run
         this.flagsGrid = new Ext.grid.EditorGridPanel({
             cls: 'extContainer',
             header: false,
             autoHeight: true,
             stripeRows: true,
+            columnLines: true,
             clicksToEdit: 1,
             loadMask:{msg:"Loading, please wait..."},
             store:  new LABKEY.ext.Store({
                 schemaName: this.schemaName,
                 queryName: this.queryName,
-                filterArray: [LABKEY.Filter.create("Run/RowId", this.runId)],
+                filterArray: filters,
                 columns: "RowId, FlagType, Description, Comment, Enabled",
                 sort: "FlagType, Description",
                 autoLoad: true,
@@ -85,16 +96,15 @@ LABKEY.QCFlagTogglePanel = Ext.extend(Ext.Panel, {
                 columns: [
                     // the check column for the enabled dataIndex will be added on store load
                     {header: 'RowId', dataIndex: 'RowId', hidden: true},
-                    {header: 'Flag', sortable: true, dataIndex: 'FlagType', width: 65, editable: false},
-                    {header: 'Description', sortable: true, dataIndex: 'Description', width: 320, editable: false, renderer: this.tooltipRenderer},
+                    {header: 'Flag', sortable: true, dataIndex: 'FlagType', width: 65, editable: false, renderer: this.encodingRenderer},
+                    {header: 'Description', sortable: true, dataIndex: 'Description', width: 320, editable: false, renderer: this.encodingRenderer},
                     {header: 'Comment', sortable: false, dataIndex: 'Comment', width: 250, editable: this.userCanUpdate,
-                        renderer: this.tooltipRenderer, editor: new LABKEY.ext.LongTextField({columnName: 'Comment'})}
+                        renderer: this.encodingRenderer, editor: new LABKEY.ext.LongTextField({columnName: 'Comment'})}
                 ]
             }),
             selModel: new Ext.grid.CheckboxSelectionModel({moveEditorOnEnter: false}),
             viewConfig: {forceFit: true}
         });
-        this.items = [this.flagsGrid];
 
         // add save and cancel button if the user can update, or just an OK button otherwise
         this.saveButton = new Ext.Button({
@@ -105,17 +115,27 @@ LABKEY.QCFlagTogglePanel = Ext.extend(Ext.Panel, {
         });
         this.cancelButton = new Ext.Button({
             text: 'Cancel',
-            handler: function(){this.fireEvent('closeWindow');},
+            handler: function(){this.close();},
             scope: this
         });
         this.okButton = new Ext.Button({
             text: 'OK',
-            handler: function(){this.fireEvent('closeWindow');},
+            handler: function(){this.close();},
             scope: this
         });
-        this.buttons = this.userCanUpdate ? [this.saveButton, this.cancelButton] : [this.okButton];
 
-        LABKEY.QCFlagTogglePanel.superclass.initComponent.call(this);
+        this.items = [
+            new Ext.Panel({
+                cls: 'extContainer',
+                autoScroll: true,
+                border: false,
+                items: [this.flagsGrid],
+                buttonAlign: 'center',
+                buttons: this.userCanUpdate ? [this.saveButton, this.cancelButton] : [this.okButton]
+            })
+        ];
+
+        LABKEY.QCFlagToggleWindow.superclass.initComponent.call(this);
     },
 
     addCheckColumn : function() {
@@ -155,18 +175,18 @@ LABKEY.QCFlagTogglePanel = Ext.extend(Ext.Panel, {
             });
         }
 
-        this.findParentByType('window').getEl().mask("Saving updates...", "x-mask-loading");
+        this.getEl().mask("Saving updates...", "x-mask-loading");
         LABKEY.Query.updateRows({
             schemaName: this.schemaName,
             queryName: this.queryName,
             rows: updateRows,
             success: function(){
-                this.fireEvent('closeWindow');
-                window.location.reload();
+                this.fireEvent('saveSuccess');
+                this.close();
             },
             failure: function(info, response, options){
-                if (this.findParentByType('window').getEl().isMasked())
-                    this.findParentByType('window').getEl().unmask();
+                if (this.getEl().isMasked())
+                    this.getEl().unmask();
 
                 LABKEY.Utils.displayAjaxErrorResponse(response, options);
             },
@@ -174,9 +194,7 @@ LABKEY.QCFlagTogglePanel = Ext.extend(Ext.Panel, {
         })
     },
 
-    tooltipRenderer: function(value, p, record) {
-        var msg = $h(value);
-        p.attr = 'ext:qtip="' + (msg ? $h(msg) : "") + '"';
-        return msg;
+    encodingRenderer: function(value, p, record) {
+        return $h(value);
     }
 });
