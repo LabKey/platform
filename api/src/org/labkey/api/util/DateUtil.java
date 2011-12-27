@@ -395,7 +395,9 @@ validNum:       {
                     }
                     if (c == ':' || (hour < 0 && option == DateTimeOption.TimeOnly))
                     {
-                        if (hour < 0)
+                        if (c == '/')
+                            throw new ConversionException(s);
+                        else if (hour < 0)
                             hour = n;
                         else if (min < 0)
                             min = n;
@@ -403,9 +405,9 @@ validNum:       {
                             throw new ConversionException(s);
                         break validNum;
                     }
-                    if (c == '/')
+                    if (c == '/' || c == '-')
                     {
-                        if (option == DateTimeOption.TimeOnly)
+                        if (c == '/' && option == DateTimeOption.TimeOnly)
                             throw new ConversionException(s);
                         if (mon < 0)
                             mon = n - 1;
@@ -520,10 +522,9 @@ validNum:       {
                         month = (Month)dp;
                         mon = month.month;
                     }
-                    else if (mday < 0 && prevc == '/' && month == null)
+                    else if (mday < 0 && month == null)
                     {
                         // handle 01/Jan/2001 case (strange I know, the customer is always right)
-                        // of course this probably makes Jan/Feb/2001 legal as well
                         month = (Month)dp;
                         mday = mon+1;
                         mon = month.month;
@@ -568,6 +569,11 @@ validNum:       {
 
         if (option == DateTimeOption.TimeOnly)
         {
+            if (strict)
+            {
+                if (hour >= 24 || min >= 60 || sec >= 60)
+                    throw new ConversionException(s);
+            }
             return 1000L * (hour * (60*60) + (min * 60) + sec);
         }
         
@@ -668,16 +674,6 @@ validNum:       {
         {
             ;
         }
-
-        try
-        {
-            // One final format to try - handles "2-3-01", "02-03-01", "02-03-2001", etc
-            DateFormat format = new SimpleDateFormat("M-d-yy");
-            format.setLenient(false);
-            return format.parse(s).getTime();
-        }
-        catch (ParseException ignored) {}
-        
         throw new ConversionException(s);
     }
 
@@ -1112,6 +1108,7 @@ Parse:
             }
         }
 
+
         @Test
         public void testDateTime()
         {
@@ -1141,6 +1138,7 @@ Parse:
             assertEquals(dateExpected, DateUtil.parseDateTime(d.toLocaleString()));
             assertEquals(dateExpected, DateUtil.parseDateTime(ConvertUtils.convert(d)));
             assertEquals(dateExpected, DateUtil.parseDateTime("2001-02-03"));
+            assertEquals(dateExpected, DateUtil.parseDateTime("2001-2-03"));
             assertEquals(dateExpected, DateUtil.parseDateTime("2/3/01"));
             assertEquals(dateExpected, DateUtil.parseDateTime("3-Feb-01"));
             assertEquals(dateExpected, DateUtil.parseDateTime("3Feb01"));
@@ -1167,6 +1165,7 @@ Parse:
             assertIllegalDateTime("Jan/Feb/2001");
         }
 
+
         @Test
         public void testDate()
         {
@@ -1174,6 +1173,7 @@ Parse:
 
             // Date
             assertEquals(dateExpected, DateUtil.parseDateTime("2001-02-03"));
+            assertEquals(dateExpected, DateUtil.parseDateTime("2001-2-03"));
             assertEquals(dateExpected, DateUtil.parseDate("2/3/01"));
             assertEquals(dateExpected, DateUtil.parseDate("2-3-01"));
             assertEquals(dateExpected, DateUtil.parseDate("2-3-2001"));
@@ -1193,6 +1193,7 @@ Parse:
             assertEquals(dateExpected, DateUtil.parseDate("February 3, 2001"));
             assertIllegalDate("2");
             assertIllegalDate("2/3");
+            assertIllegalDate("Feb/Mar/2001");
             assertIllegalDate("2/3/2001 0:00:00");
             assertIllegalDate("2/3/2001 12:00am");
             assertIllegalDate("2/3/2001 12:00pm");
@@ -1223,6 +1224,19 @@ Parse:
             assertEquals(timeSecExpected+70, parseTime("4:05:06.07"));
             assertEquals(timeSecExpected+700, parseTime("4:05:06.7"));
             assertIllegalTime("2/3/2001 4:05:06");
+            assertIllegalTime("4/05:06");
+            assertIllegalTime("4:05/06");
+            assertIllegalTime("28:05:06");
+            assertIllegalTime("4:65:06");
+            assertIllegalTime("4:65:66");
+            assertIllegalTime("4.0");
+        }
+
+
+        @Test
+        public void testTimezone()
+        {
+            // UNDONE
         }
 
 
