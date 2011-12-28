@@ -17,7 +17,6 @@
 -- DROP all views (current and obsolete).
 -- NOTE: Never remove any of these drop statements, even if we stop using the view.  These drop statements must remain
 --   in place so we can correctly upgrade from older versions.  If you're not convinced, talk to adam.
-EXEC core.fn_dropifexists 'ExceptionReportSummary', 'mothership', 'VIEW', NULL
-EXEC core.fn_dropifexists 'ServerInstallationWithSession', 'mothership', 'VIEW', NULL
-EXEC core.fn_dropifexists 'ExceptionSummary', 'mothership', 'VIEW', NULL
-GO
+EXEC core.fn_dropifexists 'ExceptionReportSummary', 'mothership', 'VIEW', NULL;
+EXEC core.fn_dropifexists 'ServerInstallationWithSession', 'mothership', 'VIEW', NULL;
+EXEC core.fn_dropifexists 'ExceptionSummary', 'mothership', 'VIEW', NULL;

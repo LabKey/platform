@@ -13,8 +13,8 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 CREATE VIEW prop.PropertyEntries AS
-    SELECT ObjectId, Category, UserId, Name, Value FROM prop.Properties JOIN prop.PropertySets ON prop.PropertySets."Set" = prop.Properties."Set"
-GO
+    SELECT ObjectId, Category, UserId, Name, Value FROM prop.Properties JOIN prop.PropertySets ON prop.PropertySets."Set" = prop.Properties."Set";
 
 

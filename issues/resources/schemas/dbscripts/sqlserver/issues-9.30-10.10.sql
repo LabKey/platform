@@ -16,5 +16,4 @@
 
 /* issues-9.30-9.31.sql */
 
-ALTER TABLE issues.issues ADD LastIndexed DATETIME NULL
-GO
+ALTER TABLE issues.issues ADD LastIndexed DATETIME NULL;

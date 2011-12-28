@@ -17,6 +17,5 @@
 -- DROP current views.
 -- NOTE: Don't remove this drop statement, even if we stop using the view.  This drop statement must remain
 --   in place so we can correctly upgrade from older versions.  If you're not convinced, talk to adam.
-EXEC core.fn_dropifexists 'Threads', 'comm', 'VIEW', NULL
-EXEC core.fn_dropifexists 'PagesAndVersions', 'comm', 'VIEW', NULL
-GO
+EXEC core.fn_dropifexists 'Threads', 'comm', 'VIEW', NULL;
+EXEC core.fn_dropifexists 'PagesAndVersions', 'comm', 'VIEW', NULL;

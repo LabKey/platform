@@ -85,9 +85,8 @@ DECLARE @default sysname
 SELECT @default = object_name(cdefault)
 FROM syscolumns
 WHERE id = object_id('pipeline.PipelineRoots')
-AND name = 'PerlPipeline'
-EXEC ('ALTER TABLE pipeline.PipelineRoots DROP CONSTRAINT ' + @default)
-GO
+AND name = 'PerlPipeline';
+EXEC ('ALTER TABLE pipeline.PipelineRoots DROP CONSTRAINT ' + @default);
 
 ALTER TABLE pipeline.PipelineRoots DROP COLUMN PerlPipeline;
 

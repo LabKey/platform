@@ -49,44 +49,40 @@ CREATE TABLE core.ViewCategory
 
     CONSTRAINT pk_viewCategory PRIMARY KEY (RowId),
     CONSTRAINT uq_container_label UNIQUE (Container, Label)
-)
-GO
+);
 
-ALTER TABLE core.Report ADD CategoryId INT
-GO
-ALTER TABLE core.Report ADD DisplayOrder INT NOT NULL DEFAULT 0
-GO
+ALTER TABLE core.Report ADD CategoryId INT;
+ALTER TABLE core.Report ADD DisplayOrder INT NOT NULL DEFAULT 0;
 
 /* core-11.25-11.26.sql */
 
 -- change Containers.Name to nvarchar
-EXEC core.fn_dropifexists 'Containers', 'core', 'CONSTRAINT', 'UQ_Containers_Parent_Name'
+EXEC core.fn_dropifexists 'Containers', 'core', 'CONSTRAINT', 'UQ_Containers_Parent_Name';
 
 ALTER TABLE core.Containers
-    ALTER COLUMN Name nvarchar(255) NULL
+    ALTER COLUMN Name nvarchar(255) NULL;
 
 ALTER TABLE core.Containers
-    ADD CONSTRAINT UQ_Containers_Parent_Name UNIQUE (Parent, Name)
+    ADD CONSTRAINT UQ_Containers_Parent_Name UNIQUE (Parent, Name);
 
 
 -- change ContainerAliases.Path to nvarchar
-EXEC core.fn_dropifexists 'ContainerAliases', 'core', 'CONSTRAINT', 'UK_ContainerAliases_Paths'
+EXEC core.fn_dropifexists 'ContainerAliases', 'core', 'CONSTRAINT', 'UK_ContainerAliases_Paths';
 
 ALTER TABLE core.ContainerAliases
-    ALTER COLUMN Path nvarchar(255) NULL
+    ALTER COLUMN Path nvarchar(255) NULL;
 
 ALTER TABLE core.ContainerAliases
-    ADD CONSTRAINT UQ_ContainerAliases_Paths UNIQUE (Path)
-
+    ADD CONSTRAINT UQ_ContainerAliases_Paths UNIQUE (Path);
 
 -- change MappedDirectories.Name and .Path to nvarchar
-EXEC core.fn_dropifexists 'MappedDirectories', 'core', 'CONSTRAINT', 'UQ_MappedDirectories'
+EXEC core.fn_dropifexists 'MappedDirectories', 'core', 'CONSTRAINT', 'UQ_MappedDirectories';
 
 ALTER TABLE core.MappedDirectories
-    ALTER COLUMN Name nvarchar(80) NULL
+    ALTER COLUMN Name NVARCHAR(80) NULL;
 
 ALTER TABLE core.MappedDirectories
-    ALTER COLUMN Path nvarchar(255) NULL
+    ALTER COLUMN Path NVARCHAR(255) NULL;
 
 ALTER TABLE core.MappedDirectories
-    ADD CONSTRAINT UQ_MappedDirectories UNIQUE (Container, Name)
+    ADD CONSTRAINT UQ_MappedDirectories UNIQUE (Container, Name);

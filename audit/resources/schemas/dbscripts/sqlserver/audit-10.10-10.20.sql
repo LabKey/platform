@@ -13,18 +13,11 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-/* audit-10.10-10.11.sql */
 
 UPDATE audit.AuditLog SET ContainerId =
   (SELECT EntityId FROM core.containers WHERE Parent IS NULL)
-    WHERE ContainerId IS NULL
-GO
+    WHERE ContainerId IS NULL;
 
-DROP INDEX audit.AuditLog.IX_Audit_Container
-GO
-
-ALTER TABLE audit.AuditLog ALTER COLUMN ContainerId ENTITYID NOT NULL
-GO
-
-CREATE INDEX IX_Audit_Container ON audit.AuditLog(ContainerId)
-GO
+DROP INDEX audit.AuditLog.IX_Audit_Container;
+ALTER TABLE audit.AuditLog ALTER COLUMN ContainerId ENTITYID NOT NULL;
+CREATE INDEX IX_Audit_Container ON audit.AuditLog(ContainerId);

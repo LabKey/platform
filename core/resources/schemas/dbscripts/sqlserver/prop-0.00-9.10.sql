@@ -46,6 +46,7 @@ CREATE TABLE prop.Properties
 
     CONSTRAINT PK_Properties PRIMARY KEY CLUSTERED ("Set", Name)
 );
+
 GO
 
 CREATE PROCEDURE prop.Property_setValue(@Set INT, @Name VARCHAR(255), @Value VARCHAR(2000)) AS

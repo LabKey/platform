@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 /* issues-10.10-10.191.sql */
 
-EXEC core.executeJavaUpgradeCode 'fixupInvalidComments'
-GO
+EXEC core.executeJavaUpgradeCode 'fixupInvalidComments';

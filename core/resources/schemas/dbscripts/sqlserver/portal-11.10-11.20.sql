@@ -15,12 +15,11 @@
  */
 
 ALTER TABLE Portal.PortalWebParts
-    ADD Container ENTITYID NULL
+    ADD Container ENTITYID NULL;
+
 GO
 
-UPDATE Portal.PortalWebParts SET Container = PageId
-GO
+UPDATE Portal.PortalWebParts SET Container = PageId;
 
 ALTER TABLE Portal.PortalWebParts
-   ALTER COLUMN Container ENTITYID NOT NULL
-GO
+    ALTER COLUMN Container ENTITYID NOT NULL;

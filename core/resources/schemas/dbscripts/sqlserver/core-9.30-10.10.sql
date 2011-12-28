@@ -31,7 +31,8 @@ ALTER TABLE core.Containers
 
 -- Add ability to drop unnamed default constraint
 IF EXISTS (SELECT * FROM sysobjects WHERE id = OBJECT_ID('core.fn_dropifexists') AND sysstat & 0xf = 4)
-    DROP PROCEDURE core.fn_dropifexists
+    DROP PROCEDURE core.fn_dropifexists;
+
 GO
 
 CREATE PROCEDURE core.fn_dropifexists (@objname VARCHAR(250), @objschema VARCHAR(50), @objtype VARCHAR(50), @subobjname VARCHAR(250) = NULL)
@@ -171,25 +172,23 @@ GO
 /* core-9.35-9.36.sql */
 
 ALTER TABLE core.Containers
-  ADD Title NVARCHAR(1000);
+    ADD Title NVARCHAR(1000);
 
 /* core-9.36-9.37.sql */
 
-ALTER TABLE core.Documents ADD LastIndexed DATETIME NULL
-GO
+ALTER TABLE core.Documents ADD LastIndexed DATETIME NULL;
 
 /* core-9.37-9.38.sql */
 
 -- Add support for password expiration and password history
 ALTER TABLE core.Logins ADD
     LastChanged DATETIME NULL,
-    PreviousCrypts VARCHAR(1000)
+    PreviousCrypts VARCHAR(1000);
+
 GO
 
 -- Set all password last changed dates to account creation date
-UPDATE core.Logins SET LastChanged = (SELECT Created FROM core.UsersData ud JOIN core.Principals p ON ud.UserId = p.UserId WHERE Email = p.Name)
-GO
+UPDATE core.Logins SET LastChanged = (SELECT Created FROM core.UsersData ud JOIN core.Principals p ON ud.UserId = p.UserId WHERE Email = p.Name);
 
 -- Put current password crypt into history
-UPDATE core.Logins SET PreviousCrypts = Crypt
-GO
+UPDATE core.Logins SET PreviousCrypts = Crypt;

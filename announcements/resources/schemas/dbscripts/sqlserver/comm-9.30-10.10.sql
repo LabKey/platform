@@ -16,15 +16,13 @@
 
 /* comm-9.30-9.31.sql */
 
-ALTER TABLE comm.Pages ADD LastIndexed DATETIME NULL
-GO
+ALTER TABLE comm.Pages ADD LastIndexed DATETIME NULL;
 
 /* comm-9.31-9.32.sql */
 
-ALTER TABLE comm.Announcements ADD LastIndexed DATETIME NULL
-GO
+ALTER TABLE comm.Announcements ADD LastIndexed DATETIME NULL;
 
 /* comm-9.32-9.33.sql */
 
-insert into comm.EmailOptions (EmailOptionID, EmailOption)
-values (3, 'Broadcast only');
+INSERT INTO comm.EmailOptions (EmailOptionID, EmailOption)
+    VALUES (3, 'Broadcast only');

@@ -17,5 +17,4 @@
 /* pipeline-10.20-10.21.sql */
 
 ALTER TABLE pipeline.PipelineRoots
-    ADD SupplementalPath NVARCHAR(300)
-GO
+    ADD SupplementalPath NVARCHAR(300);

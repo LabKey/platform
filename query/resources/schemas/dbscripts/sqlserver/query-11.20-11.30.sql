@@ -13,20 +13,19 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-/* query-11.20-11.22.sql */
 
 /* query-11.20-11.21.sql */
 
-ALTER TABLE query.QuerySnapshotDef ADD QueryTableContainer ENTITYID
+ALTER TABLE query.QuerySnapshotDef
+  ADD QueryTableContainer ENTITYID;
+
 GO
 
-UPDATE query.QuerySnapshotDef SET QueryTableContainer = Container WHERE QueryTableName IS NOT NULL
-GO
+UPDATE query.QuerySnapshotDef SET QueryTableContainer = Container WHERE QueryTableName IS NOT NULL;
 
 /* query-11.21-11.22.sql */
 
-ALTER TABLE query.QuerySnapshotDef ADD ParticipantGroups TEXT
-GO
+ALTER TABLE query.QuerySnapshotDef ADD ParticipantGroups TEXT;
 
 /* query-11.22-11.23.sql */
 
@@ -41,5 +40,4 @@ WHERE customviewid IN (
 	  cv.[schema] = 'lists' OR
 	  (cv.[schema] = 'study' AND LOWER(cv.queryname) IN (SELECT LOWER(ds.name) FROM study.dataset ds))
 	)
-)
-GO
+);

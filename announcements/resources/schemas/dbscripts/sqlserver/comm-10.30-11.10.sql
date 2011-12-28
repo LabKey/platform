@@ -15,29 +15,24 @@
  */
 /* comm-10.30-10.31.sql */
 
-INSERT INTO comm.EmailOptions (EmailOptionID, EmailOption) VALUES (259, 'Daily digest of broadcast messages only')
-UPDATE comm.EmailOptions SET EmailOption = 'Broadcast messages only' WHERE EmailOptionID = 3
-GO
+INSERT INTO comm.EmailOptions (EmailOptionID, EmailOption) VALUES (259, 'Daily digest of broadcast messages only');
+UPDATE comm.EmailOptions SET EmailOption = 'Broadcast messages only' WHERE EmailOptionID = 3;
 
 /* comm-10.31-10.32.sql */
 
 -- add a new column to contain 'notification type' information for both the
 -- email prefs and options
-ALTER TABLE comm.EmailOptions ADD Type NVARCHAR(60) NOT NULL DEFAULT 'messages'
-GO
-ALTER TABLE comm.EmailPrefs ADD Type NVARCHAR(60) NOT NULL DEFAULT 'messages'
+ALTER TABLE comm.EmailOptions ADD Type NVARCHAR(60) NOT NULL DEFAULT 'messages';
+ALTER TABLE comm.EmailPrefs ADD Type NVARCHAR(60) NOT NULL DEFAULT 'messages';
 GO
 
-ALTER TABLE comm.EmailPrefs DROP CONSTRAINT PK_EmailPrefs
-GO
-ALTER TABLE comm.EmailPrefs ADD CONSTRAINT PK_EmailPrefs PRIMARY KEY (Container, UserId, Type)
-GO
+ALTER TABLE comm.EmailPrefs DROP CONSTRAINT PK_EmailPrefs;
+ALTER TABLE comm.EmailPrefs ADD CONSTRAINT PK_EmailPrefs PRIMARY KEY (Container, UserId, Type);
 
 -- new file email notification options
-INSERT INTO comm.emailOptions (EmailOptionId, EmailOption, Type) VALUES (512, 'No Email', 'files')
-INSERT INTO comm.emailOptions (EmailOptionId, EmailOption, Type) VALUES (513, '15 minute digest', 'files')
-INSERT INTO comm.emailOptions (EmailOptionId, EmailOption, Type) VALUES (514, 'Daily digest', 'files')
-GO
+INSERT INTO comm.emailOptions (EmailOptionId, EmailOption, Type) VALUES (512, 'No Email', 'files');
+INSERT INTO comm.emailOptions (EmailOptionId, EmailOption, Type) VALUES (513, '15 minute digest', 'files');
+INSERT INTO comm.emailOptions (EmailOptionId, EmailOption, Type) VALUES (514, 'Daily digest', 'files');
 
 -- migrate existing file setting from property manager props
 INSERT INTO comm.emailPrefs (Container, UserId, EmailOptionId, EmailFormatId, PageTypeId, Type) SELECT
@@ -45,15 +40,11 @@ INSERT INTO comm.emailPrefs (Container, UserId, EmailOptionId, EmailFormatId, Pa
 	UserId,
 	CAST(Value AS INT) + 512,
 	1, 0, 'files'
-	FROM prop.Properties props JOIN prop.PropertySets ps on props."set" = ps."set" AND category = 'EmailService.emailPrefs' WHERE name = 'FileContentEmailPref' AND value <> '-1'
-GO
+	FROM prop.Properties props JOIN prop.PropertySets ps on props."set" = ps."set" AND Category = 'EmailService.emailPrefs' WHERE Name = 'FileContentEmailPref' AND Value <> '-1';
 
 -- update folder default settings
-UPDATE prop.Properties SET value = '512' WHERE name = 'FileContentDefaultEmailPref' AND value = '0'
-GO
-UPDATE prop.Properties SET value = '513' WHERE name = 'FileContentDefaultEmailPref' AND value = '1'
-GO
+UPDATE prop.Properties SET value = '512' WHERE Name = 'FileContentDefaultEmailPref' AND Value = '0';
+UPDATE prop.Properties SET value = '513' WHERE Name = 'FileContentDefaultEmailPref' AND Value = '1';
 
 -- delete old user property values
-DELETE FROM prop.Properties WHERE name = 'FileContentEmailPref'
-GO
+DELETE FROM prop.Properties WHERE Name = 'FileContentEmailPref';

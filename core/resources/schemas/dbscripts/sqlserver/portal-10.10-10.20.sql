@@ -16,16 +16,11 @@
 
 /* portal-10.11-10.12.sql */
 
-/* portal-10.11-10.12.sql */
+ALTER TABLE Portal.PortalWebParts
+    ADD RowId INT IDENTITY(1, 1) NOT NULL;
 
 ALTER TABLE Portal.PortalWebParts
-    ADD RowId INT IDENTITY(1, 1) NOT NULL
-GO
+    DROP CONSTRAINT PK_PortalWebParts;
 
 ALTER TABLE Portal.PortalWebParts
-    DROP CONSTRAINT PK_PortalWebParts
-GO
-
-ALTER TABLE Portal.PortalWebParts
-    ADD CONSTRAINT PK_PortalWebParts PRIMARY KEY (RowId)
-GO
+    ADD CONSTRAINT PK_PortalWebParts PRIMARY KEY (RowId);

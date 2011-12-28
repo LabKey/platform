@@ -29,12 +29,11 @@ CREATE VIEW comm.Threads AS
             FROM comm.Announcements message
             WHERE Parent IS NULL
         ) x
-    ) y LEFT OUTER JOIN comm.Announcements props ON props.RowId = PropsId
-GO
+    ) y LEFT OUTER JOIN comm.Announcements props ON props.RowId = PropsId;
 
+GO
 
 -- View that joins each wiki with its current version.  Not used directly by LabKey, but helpful for administrators.
 CREATE VIEW comm.PagesAndVersions AS
     SELECT p.Container, p.Name, pv.Title, pv.Body
-        FROM comm.Pages p INNER JOIN comm.PageVersions pv ON p.PageVersionId = pv.RowId
-GO
+        FROM comm.Pages p INNER JOIN comm.PageVersions pv ON p.PageVersionId = pv.RowId;

@@ -15,8 +15,6 @@
  */
 
 -- Delete "workbook" module
-DELETE FROM core.Modules WHERE Name = 'Workbook'
-DELETE FROM core.SqlScripts WHERE ModuleName = 'Workbook'
-EXEC core.fn_dropifexists '*', 'workbook', 'SCHEMA'
-GO
-
+DELETE FROM core.Modules WHERE Name = 'Workbook';
+DELETE FROM core.SqlScripts WHERE ModuleName = 'Workbook';
+EXEC core.fn_dropifexists '*', 'workbook', 'SCHEMA';
