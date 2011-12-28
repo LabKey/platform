@@ -815,6 +815,8 @@ LABKEY.Exp.Data = function (config) {
      * <li><b>timeOnly:</b> whether the date part should be ignored for dates</li>
      * <li><b>formatString:</b> the Java format string to be used to render the value for dates and numbers</li>
      * <li><b>formattedValue:</b> the formatted string for that value for all value types</li>
+     * <li><b>error:</b> true if this cell has an error</li>
+     * <li><b>formula:</b> if the cell's value is specified by a formula, the text of the formula</li>
      * </ul>
      * <br/>
      * An example of the results for a request for 'jsonTsv' format:
@@ -889,10 +891,12 @@ LABKEY.Exp.Data = function (config) {
                         "value": "world",
                         "formattedValue": "world"
                     },
-                    {
-                        "value": "12/21/2008 08:45AM",
-                        "formattedValue": "12/21/2008 08:45AM"
-                    }
+                     {
+                         "formatString": "M/d/yy h:mm a",
+                         "value": "21 Dec 2008 19:31:00",
+                         "timeOnly": false,
+                         "formattedValue": "12/21/08 7:31 PM"
+                     }
                 ]
             ]
         },
@@ -904,9 +908,9 @@ LABKEY.Exp.Data = function (config) {
                     "formattedValue": "NumberColumn"
                 }],
                 [{
-                    "formatString": "\"$\"#,##0.00",
+                    "formatString": "$#,##0.00",
                     "value": 55.44,
-                    "formattedValue": "\"$\"55.44"
+                    "formattedValue": "$55.44"
                 }],
                 [{
                     "value": 100.34,

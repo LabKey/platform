@@ -325,7 +325,8 @@ LABKEY.Utils = new function()
         /**
          * Sends a JSON object to the server which turns it into an Excel file and returns it to the browser to be saved or opened.
          * @param {Object} spreadsheet the JavaScript representation of the data
-         * @param {String} spreadsheet.fileName name to suggest to the browser for saving the file
+         * @param {String} spreadsheet.fileName name to suggest to the browser for saving the file. If the fileName is
+         * specified and ends with ".xlsx", it will be returned in Excel 2007 format.
          * @param {String} spreadsheet.sheets array of sheets, which are objects with properties:
          * <ul>
          * <li><b>name:</b> name of the Excel sheet</li>
