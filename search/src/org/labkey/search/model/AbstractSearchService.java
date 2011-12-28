@@ -625,12 +625,12 @@ public abstract class AbstractSearchService implements SearchService, ShutdownLi
     }
 
     @Override
-    public Throwable getConfigurationError()
+    public @Nullable Throwable getConfigurationError()
     {
         return _configurationError;
     }
 
-    void setConfigurationError(Throwable t)
+    void setConfigurationError(@Nullable Throwable t)
     {
         _configurationError = t;
     }

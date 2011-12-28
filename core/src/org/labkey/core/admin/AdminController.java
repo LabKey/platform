@@ -4677,7 +4677,7 @@ public class AdminController extends SpringActionController
                         out.println("</td>");
 
                         out.print("    <td>");
-                        out.print(moduleContext.getInstalledVersion());
+                        out.print(ModuleContext.formatVersion(moduleContext.getInstalledVersion()));
                         out.println("</td>");
 
                         out.print("    <td>");

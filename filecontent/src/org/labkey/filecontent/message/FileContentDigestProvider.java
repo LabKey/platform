@@ -49,7 +49,6 @@ import java.util.Map;
 import java.util.Set;
 
 /**
- * Created by IntelliJ IDEA.
  * User: klum
  * Date: Jan 14, 2011
  * Time: 12:17:20 PM
