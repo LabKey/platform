@@ -35,20 +35,23 @@ abstract public class PossiblyGZIPpedFileInputStreamFactory
 
     static public InputStream getStream(File f) throws FileNotFoundException
     {
-        InputStream iStream;
         FileInputStream fis = new FileInputStream(f);
-        try {
-            GZIPInputStream gzis = new GZIPInputStream(fis,STREAM_BUFFER_SIZE);
-            iStream = gzis;
-        } catch (java.io.IOException e) {
+        try
+        {
+            return new GZIPInputStream(fis, STREAM_BUFFER_SIZE);
+        }
+        catch (java.io.IOException e)
+        {
             // not a gzip file - reopen since we ate a couple of bytes
-            try {
+            try
+            {
                 fis.close();
-            } catch (java.io.IOException ee) {
+            }
+            catch (java.io.IOException ee)
+            {
                 // seems unlikely at this point               
             }
-            iStream =  new FileInputStream(f);
+            return new FileInputStream(f);
         }
-	    return iStream;
     }
 }

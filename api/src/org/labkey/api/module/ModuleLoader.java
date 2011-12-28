@@ -1334,7 +1334,7 @@ public class ModuleLoader implements Filter
             catch (Exception x)
             {
                 _log.error("Couldn't load version.properties");
-                return "11.1";
+                return "12.1";
             }
         }
         return labkeyVersion;
