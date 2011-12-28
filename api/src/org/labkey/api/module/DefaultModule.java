@@ -22,6 +22,7 @@ import org.jetbrains.annotations.Nullable;
 import org.labkey.api.action.HasViewContext;
 import org.labkey.api.cache.Cache;
 import org.labkey.api.cache.CacheManager;
+import org.labkey.api.cache.CacheProvider;
 import org.labkey.api.collections.CaseInsensitiveHashSet;
 import org.labkey.api.collections.CaseInsensitiveTreeSet;
 import org.labkey.api.data.Container;
@@ -114,7 +115,7 @@ public abstract class DefaultModule implements Module, ApplicationContextAware
     private String _sourcePath = null;
     private File _explodedPath = null;
 
-    private static final Cache<Path, ModuleRReportDescriptor> REPORT_DESCRIPTOR_CACHE = CacheManager.getCache(Integer.MAX_VALUE, CacheManager.DAY, "Report descriptor cache");
+    private static final Cache<Path, ModuleRReportDescriptor> REPORT_DESCRIPTOR_CACHE = CacheManager.getCache(CacheProvider.UNLIMITED, CacheManager.DAY, "Report descriptor cache");
 
     private enum SchemaUpdateType
     {

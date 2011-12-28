@@ -19,6 +19,7 @@ import org.apache.commons.io.IOUtils;
 import org.apache.log4j.Logger;
 import org.labkey.api.cache.Cache;
 import org.labkey.api.cache.CacheManager;
+import org.labkey.api.cache.CacheProvider;
 import org.labkey.api.gwt.client.util.StringUtils;
 import org.labkey.api.resource.Resource;
 import org.labkey.api.security.User;
@@ -65,7 +66,7 @@ import java.util.regex.Pattern;
 public class ScssServlet extends HttpServlet
 {
     static Logger _log = Logger.getLogger(ScssServlet.class);
-    final Cache<Path,ScssContent> _cache = CacheManager.getCache(Integer.MAX_VALUE, CacheManager.YEAR, "SCSS cache");
+    final Cache<Path,ScssContent> _cache = CacheManager.getCache(CacheProvider.UNLIMITED, CacheManager.YEAR, "SCSS cache");
 
     public ScssServlet()
     {
