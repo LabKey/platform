@@ -183,13 +183,16 @@ public class UserManager
             return User.guest;
 
         User user = (User)DbCache.get(CORE.getTableInfoUsers(), "" + userId);
+
         if (null == user)
+        {
             user = Table.selectObject(CORE.getTableInfoUsers(), userId, User.class);
 
-        if (null == user)
-            return null;
+            if (null == user)
+                return null;
 
-        DbCache.put(CORE.getTableInfoUsers(), "" + userId, user, CacheManager.DAY);
+            DbCache.put(CORE.getTableInfoUsers(), "" + userId, user, CacheManager.DAY);
+        }
 
         // these should really be readonly
         return user.cloneUser();
