@@ -42,6 +42,7 @@ import org.apache.poi.hpsf.NoPropertySetStreamException;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.parser.AutoDetectParser;
+import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.Parser;
 import org.apache.tika.sax.BodyContentHandler;
 import org.jetbrains.annotations.Nullable;
@@ -572,7 +573,7 @@ public class LuceneSearchServiceImpl extends AbstractSearchService
         }
 
         Parser parser = getParser();
-        parser.parse(is, handler, metadata);
+        parser.parse(is, handler, metadata, new ParseContext());
     }
 
     
