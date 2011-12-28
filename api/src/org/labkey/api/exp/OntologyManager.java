@@ -25,6 +25,7 @@ import org.jetbrains.annotations.Nullable;
 import org.junit.Assert;
 import org.junit.Test;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
+import org.labkey.api.collections.CaseInsensitiveHashSet;
 import org.labkey.api.collections.RowMap;
 import org.labkey.api.collections.RowMapFactory;
 import org.labkey.api.data.BeanObjectFactory;
@@ -86,6 +87,7 @@ import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.TreeMap;
 
 import static org.labkey.api.search.SearchService.PROPERTY;
@@ -2242,6 +2244,8 @@ public class OntologyManager
         LinkedHashMap<String, PropertyDescriptor> propsWithoutDomains = new LinkedHashMap<String, PropertyDescriptor>();
         LinkedHashMap<String, PropertyDescriptor> allProps = new LinkedHashMap<String, PropertyDescriptor>();
         Map<String, Map<String, PropertyDescriptor>> newPropsByDomain = new  TreeMap<String, Map<String, PropertyDescriptor>>();
+        // Case insensitive set since we don't want property names that differ only by case
+        Map<String, Set<String>> newPropertyURIsByDomain = new HashMap<String, Set<String>>();
         Map<String, PropertyDescriptor> pdNewMap;
 
         Map<String, DomainDescriptor> domainMap = new HashMap<String, DomainDescriptor>();
@@ -2402,8 +2406,16 @@ public class OntologyManager
                     pdNewMap = new LinkedHashMap<String, PropertyDescriptor>();
                     newPropsByDomain.put(dd.getDomainURI(), pdNewMap);
                 }
-                PropertyDescriptor existingPD = pdNewMap.put(pd.getPropertyURI(), pd);
-                if (existingPD != null)
+                pdNewMap.put(pd.getPropertyURI(), pd);
+
+                // Need to do a case insensitive check for duplicate property names
+                Set<String> caseInsensitivePropertyNames = newPropertyURIsByDomain.get(dd.getDomainURI());
+                if (caseInsensitivePropertyNames == null)
+                {
+                    caseInsensitivePropertyNames = new CaseInsensitiveHashSet();
+                    newPropertyURIsByDomain.put(dd.getDomainURI(), caseInsensitivePropertyNames);
+                }
+                if (!caseInsensitivePropertyNames.add(pd.getPropertyURI()))
                 {
                     errors.add("'" + dd.getName() + "' has multiple fields named '" + pd.getName() + "'");
                 }
