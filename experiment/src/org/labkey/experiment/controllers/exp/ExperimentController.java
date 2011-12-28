@@ -16,17 +16,10 @@
 
 package org.labkey.experiment.controllers.exp;
 
-import jxl.BooleanCell;
-import jxl.Cell;
-import jxl.DateCell;
-import jxl.NumberCell;
-import jxl.Sheet;
-import jxl.Workbook;
-import jxl.WorkbookSettings;
-import jxl.read.biff.BiffException;
-import jxl.write.WritableWorkbook;
 import org.apache.commons.lang.StringUtils;
 import org.apache.log4j.Logger;
+import org.apache.poi.openxml4j.exceptions.InvalidFormatException;
+import org.apache.poi.ss.usermodel.Workbook;
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
@@ -57,6 +50,7 @@ import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.DataRegion;
 import org.labkey.api.data.DataRegionSelection;
 import org.labkey.api.data.DisplayColumn;
+import org.labkey.api.data.ExcelWriter;
 import org.labkey.api.data.PanelButton;
 import org.labkey.api.data.RenderContext;
 import org.labkey.api.data.SimpleDisplayColumn;
@@ -183,7 +177,6 @@ import java.awt.image.BufferedImage;
 import java.io.BufferedOutputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.File;
-import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
@@ -192,8 +185,6 @@ import java.io.Writer;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.sql.SQLException;
-import java.text.DecimalFormat;
-import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -1446,107 +1437,16 @@ public class ExperimentController extends SpringActionController
                 boolean extended = "jsonTSVExtended".equalsIgnoreCase(form.getFormat());
                 if ("jsonTSV".equalsIgnoreCase(form.getFormat()) || extended)
                 {
-                    JSONArray sheetsArray = new JSONArray();
-                    if (lowerCaseFileName.endsWith(".xls"))
+                    JSONArray sheetsArray;
+                    if (lowerCaseFileName.endsWith(".xls") || lowerCaseFileName.endsWith(".xlsx"))
                     {
-                        FileInputStream fIn = null;
                         try
                         {
-                            fIn = new FileInputStream(realContent);
-                            WorkbookSettings settings = new WorkbookSettings();
-                            settings.setGCDisabled(true);
-                            Workbook workbook;
-                            try
-                            {
-                                workbook = Workbook.getWorkbook(fIn, settings);
-                            }
-                            catch (BiffException e)
-                            {
-                                throw new NotFoundException("Unable to parse file as Excel data: " + e);
-                            }
-                            for (int sheetIndex = 0; sheetIndex < workbook.getNumberOfSheets(); sheetIndex++)
-                            {
-                                JSONArray rowsArray = new JSONArray();
-                                Sheet sheet = workbook.getSheet(sheetIndex);
-                                for (int rowIndex = 0; rowIndex < sheet.getRows(); rowIndex++)
-                                {
-                                    Cell[] rowCells = sheet.getRow(rowIndex);
-                                    JSONArray rowArray = new JSONArray();
-                                    for (Cell cell : rowCells)
-                                    {
-                                        Object value;
-                                        String formattedValue;
-                                        String formatString = null;
-                                        JSONObject metadataMap = new JSONObject();
-                                        if (cell instanceof NumberCell)
-                                        {
-                                            NumberCell numberCell = (NumberCell) cell;
-                                            value = numberCell.getValue();
-                                            java.text.NumberFormat numberFormat = numberCell.getNumberFormat();
-                                            formattedValue = numberFormat.format(numberCell.getValue());
-                                            if (numberCell.getCellFormat().getFormat().getFormatString() != null &&
-                                                !"".equals(numberCell.getCellFormat().getFormat().getFormatString()) &&
-                                                numberFormat instanceof DecimalFormat)
-                                            {
-                                                formatString = ((DecimalFormat)numberFormat).toPattern();
-                                            }
-                                        }
-                                        else if (cell instanceof BooleanCell)
-                                        {
-                                            BooleanCell booleanCell = (BooleanCell) cell;
-                                            value = booleanCell.getValue();
-                                            formattedValue = value.toString();
-                                        }
-                                        else if (cell instanceof DateCell)
-                                        {
-                                            DateCell dateCell = (DateCell) cell;
-                                            value = dateCell.getDate();
-                                            formattedValue = dateCell.getDateFormat().format(dateCell.getDate());
-                                            java.text.DateFormat dateFormat = dateCell.getDateFormat();
-                                            metadataMap.put("timeOnly", dateCell.isTime());
-                                            if (dateCell.getCellFormat().getFormat().getFormatString() != null &&
-                                                !"".equals(dateCell.getCellFormat().getFormat().getFormatString()) &&
-                                                dateFormat instanceof SimpleDateFormat)
-                                            {
-                                                formatString = ((SimpleDateFormat)dateFormat).toPattern();
-                                            }
-                                        }
-                                        else
-                                        {
-                                            value = cell.getContents();
-                                            if ("".equals(value))
-                                            {
-                                                value = null;
-                                            }
-                                            formattedValue = cell.getContents();
-                                        }
-                                        if (extended && cell.getCellFormat() != null)
-                                        {
-                                            metadataMap.put("value", value);
-                                            if (formatString != null && !"".equals(formatString))
-                                            {
-                                                metadataMap.put("formatString", formatString);
-                                            }
-                                            metadataMap.put("formattedValue", formattedValue);
-                                            rowArray.put(metadataMap);
-                                        }
-                                        else
-                                        {
-                                            rowArray.put(value);
-                                        }
-                                    }
-                                    rowsArray.put(rowArray);
-                                }
-                                JSONObject sheetJSON = new JSONObject();
-                                sheetJSON.put("name", sheet.getName());
-                                sheetJSON.put("data", rowsArray);
-                                sheetsArray.put(sheetJSON);
-                            }
+                            sheetsArray = ExcelFactory.convertExcelToJSON(realContent, extended);
                         }
-                        finally
+                        catch (InvalidFormatException e)
                         {
-                            if (fIn != null)
-                                try { fIn.close(); } catch (IOException e) { /* fall through */ }
+                            throw new NotFoundException("Could not open " + realContent.getName(), e);
                         }
                     }
                     else if (lowerCaseFileName.endsWith(".tsv") || lowerCaseFileName.endsWith(".txt") || lowerCaseFileName.endsWith(".csv"))
@@ -1597,6 +1497,7 @@ public class ExperimentController extends SpringActionController
                         JSONObject sheetJSON = new JSONObject();
                         sheetJSON.put("name", "flat");
                         sheetJSON.put("data", rowsArray);
+                        sheetsArray = new JSONArray();
                         sheetsArray.put(sheetJSON);
                     }
                     else
@@ -1665,15 +1566,15 @@ public class ExperimentController extends SpringActionController
                 JSONObject rootObject = new JSONObject(form.getJson());
                 JSONArray sheetsArray = rootObject.getJSONArray("sheets");
                 String filename = rootObject.has("fileName") ? rootObject.getString("fileName") : "ExcelExport.xls";
+                ExcelWriter.ExcelDocumentType docType = filename.toLowerCase().endsWith(".xlsx") ? ExcelWriter.ExcelDocumentType.xlsx : ExcelWriter.ExcelDocumentType.xls;
 
-                WritableWorkbook workbook =  ExcelFactory.createFromArray(response.getOutputStream(), sheetsArray);
+                Workbook workbook =  ExcelFactory.createFromArray(sheetsArray, docType);
 
-                response.setContentType("application/vnd.ms-excel");
+                response.setContentType(docType.getMimeType());
                 response.setHeader("Content-disposition", "attachment; filename=\"" + filename +"\"");
                 response.setHeader("Pragma", "private");
                 response.setHeader("Cache-Control", "private");
-                workbook.write();
-                workbook.close();
+                workbook.write(response.getOutputStream());
             }
             catch (JSONException e)
             {
