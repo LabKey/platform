@@ -543,6 +543,7 @@ Ext4.define('LABKEY.ext4.DataViewsPanel', {
             flex     : 1,
             sortable : true,
             dataIndex: 'category',
+            renderer : Ext.util.Format.htmlEncode,
             hidden   : true
         });
 
