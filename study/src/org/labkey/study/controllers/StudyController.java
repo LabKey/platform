@@ -5427,7 +5427,7 @@ public class StudyController extends BaseStudyController
 
                     HtmlView text = new HtmlView("Modify the properties and schema (form fields/properties) for this dataset.<br>Click the save button to " +
                             "save any changes, else click the cancel button to complete the snapshot.");
-                    HttpView view = new StudyGWTView(StudyApplication.GWTModule.DatasetDesigner, props);
+                    HttpView view = new StudyGWTView(new StudyApplication.DatasetDesigner(), props);
 
                     // hack for 4404 : Lookup picker performance is terrible when there are many containers
                     ContainerManager.getAllChildren(ContainerManager.getRoot());

@@ -32,7 +32,7 @@ public class StudyGWTView extends GWTView
     public StudyGWTView(StudyApplication.GWTModule module, Map<String, String> properties)
     {
         super("gwt.StudyApplication", properties);
-        getModelBean().getProperties().put("GWTModule", module.name());
+        getModelBean().getProperties().put("GWTModule", module.getClass().getSimpleName());
     }
 
     public StudyGWTView(Class<? extends EntryPoint> clss, Map<String, String> properties)
@@ -47,7 +47,7 @@ public class StudyGWTView extends GWTView
         {
             if (m.className.equals(clss))
             {
-                getModelBean().getProperties().put("GWTModule", m.name());
+                getModelBean().getProperties().put("GWTModule", m.getClass().getSimpleName());
                 return;
             }
         }

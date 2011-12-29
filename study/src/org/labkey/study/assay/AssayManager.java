@@ -216,19 +216,19 @@ public class AssayManager implements AssayService.Interface
     @Override
     public ModelAndView createAssayDesignerView(Map<String, String> properties)
     {
-        return new StudyGWTView(StudyApplication.GWTModule.AssayDesigner, properties);
+        return new StudyGWTView(new StudyApplication.AssayDesigner(), properties);
     }
 
     @Override
     public ModelAndView createAssayImportView(Map<String, String> properties)
     {
-        return new StudyGWTView(StudyApplication.GWTModule.AssayImporter, properties);
+        return new StudyGWTView(new StudyApplication.AssayImporter(), properties);
     }
 
     @Override
     public ModelAndView createListChooserView(Map<String, String> properties)
     {
-        GWTView listChooser = new StudyGWTView(StudyApplication.GWTModule.ListChooser, properties);
+        GWTView listChooser = new StudyGWTView(new StudyApplication.ListChooser(), properties);
         listChooser.getModelBean().getProperties().put("pageFlow", "assay");
         return listChooser;
     }

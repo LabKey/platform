@@ -22,6 +22,9 @@ import com.google.gwt.user.client.ui.RootPanel;
 import org.labkey.api.gwt.client.util.ErrorDialogAsyncCallback;
 import org.labkey.api.gwt.client.util.PropertyUtil;
 
+import java.util.HashSet;
+import java.util.Set;
+
 /**
  * User: matthewb
  * Date: Mar 31, 2010
@@ -29,99 +32,26 @@ import org.labkey.api.gwt.client.util.PropertyUtil;
  */
 public class StudyApplication implements EntryPoint
 {
-    public enum GWTModule implements RunAsyncCallback
+    /**
+     * As of 2.4.0, the GWT compiler NPEs if you pass an enum value in to GWT.runAsync(). Therefore, this is enum-like
+     * but not an actual enum anymore.
+     */
+    public abstract static class GWTModule implements RunAsyncCallback
     {
-        AssayDesigner("gwt.client.org.labkey.assay.designer.client.AssayDesigner")
-        {
-            public void onSuccess()
-            {
-                new gwt.client.org.labkey.assay.designer.client.AssayDesigner().onModuleLoad();
-            }
-            EntryPoint getEntryPoint()
-            {
-                return new gwt.client.org.labkey.assay.designer.client.AssayDesigner();
-            }
-        },
-        AssayImporter("gwt.client.org.labkey.assay.designer.client.AssayImporter")
-        {
-            public void onSuccess()
-            {
-                new gwt.client.org.labkey.assay.designer.client.AssayImporter().onModuleLoad();
-            }
-            EntryPoint getEntryPoint()
-            {
-                return new gwt.client.org.labkey.assay.designer.client.AssayImporter();
-            }
-        },
-        ListChooser("gwt.client.org.labkey.assay.upload.client.ListChooser")
-        {
-            public void onSuccess()
-            {
-                new gwt.client.org.labkey.assay.upload.client.ListChooser().onModuleLoad();
-            }
-            EntryPoint getEntryPoint()
-            {
-                return new gwt.client.org.labkey.assay.upload.client.ListChooser();
-            }
-        },
-        TemplateDesigner("gwt.client.org.labkey.plate.designer.client.TemplateDesigner")
-        {
-            public void onSuccess()
-            {
-                new gwt.client.org.labkey.plate.designer.client.TemplateDesigner().onModuleLoad();
-            }
-            EntryPoint getEntryPoint()
-            {
-                return new gwt.client.org.labkey.plate.designer.client.TemplateDesigner();
-            }
-        },
-        StudyChartDesigner("gwt.client.org.labkey.study.chart.client.StudyChartDesigner")
-        {
-            public void onSuccess()
-            {
-                new gwt.client.org.labkey.study.chart.client.StudyChartDesigner().onModuleLoad();
-            }
-            EntryPoint getEntryPoint()
-            {
-                return new gwt.client.org.labkey.study.chart.client.StudyChartDesigner();
-            }
-        },
-        DatasetImporter("gwt.client.org.labkey.study.dataset.client.DatasetImporter")
-        {
-            public void onSuccess()
-            {
-                new gwt.client.org.labkey.study.dataset.client.DatasetImporter().onModuleLoad();
-            }
-            EntryPoint getEntryPoint()
-            {
-                return new gwt.client.org.labkey.study.dataset.client.DatasetImporter();
-            }
-        },
-        DatasetDesigner("gwt.client.org.labkey.study.dataset.client.Designer")
-        {
-            public void onSuccess()
-            {
-                new gwt.client.org.labkey.study.dataset.client.Designer().onModuleLoad();
-            }
-            EntryPoint getEntryPoint()
-            {
-                return new gwt.client.org.labkey.study.dataset.client.Designer();
-            }
-        },
-        StudyDesigner("gwt.client.org.labkey.study.designer.client.Designer")
-        {
-            public void onSuccess()
-            {
-                new gwt.client.org.labkey.study.designer.client.Designer().onModuleLoad();
-            }
-            EntryPoint getEntryPoint()
-            {
-                return new gwt.client.org.labkey.study.designer.client.Designer();
-            }
-        };
-
-
         public final String className;
+
+        private static final Set<GWTModule> MODULES = new HashSet<GWTModule>();
+        static
+        {
+            MODULES.add(new AssayDesigner());
+            MODULES.add(new AssayImporter());
+            MODULES.add(new ListChooser());
+            MODULES.add(new TemplateDesigner());
+            MODULES.add(new StudyChartDesigner());
+            MODULES.add(new DatasetImporter());
+            MODULES.add(new DatasetDesigner());
+            MODULES.add(new StudyDesigner());
+        }
 
         GWTModule(String clss)
         {
@@ -130,13 +60,154 @@ public class StudyApplication implements EntryPoint
 
         abstract EntryPoint getEntryPoint();
 
-
         //
         // RunAsyncCallback
         //
         public void onFailure(Throwable caught)
         {
-            ErrorDialogAsyncCallback.showDialog(caught, "Failed to load code for module: " + this.name());
+            ErrorDialogAsyncCallback.showDialog(caught, "Failed to load code for module: " + getClass());
+        }
+
+        public static Set<GWTModule> values()
+        {
+            return MODULES;
+        }
+    }
+
+    public static class AssayDesigner extends GWTModule
+    {
+        public AssayDesigner()
+        {
+            super("gwt.client.org.labkey.assay.designer.client.AssayDesigner");
+        }
+
+        public void onSuccess()
+        {
+            new gwt.client.org.labkey.assay.designer.client.AssayDesigner().onModuleLoad();
+        }
+        EntryPoint getEntryPoint()
+        {
+            return new gwt.client.org.labkey.assay.designer.client.AssayDesigner();
+        }
+    }
+    
+    public static class AssayImporter extends GWTModule
+    {
+        public AssayImporter()
+        {
+            super(("gwt.client.org.labkey.assay.designer.client.AssayImporter"));
+        }
+
+        public void onSuccess()
+        {
+            new gwt.client.org.labkey.assay.designer.client.AssayImporter().onModuleLoad();
+        }
+        EntryPoint getEntryPoint()
+        {
+            return new gwt.client.org.labkey.assay.designer.client.AssayImporter();
+        }
+    }
+
+    public static class ListChooser extends GWTModule
+    {
+        public ListChooser()
+        {
+            super("gwt.client.org.labkey.assay.upload.client.ListChooser");
+        }
+
+        public void onSuccess()
+        {
+            new gwt.client.org.labkey.assay.upload.client.ListChooser().onModuleLoad();
+        }
+        EntryPoint getEntryPoint()
+        {
+            return new gwt.client.org.labkey.assay.upload.client.ListChooser();
+        }
+    }
+
+    public static class TemplateDesigner extends GWTModule
+    {
+        public TemplateDesigner()
+        {
+            super("gwt.client.org.labkey.plate.designer.client.TemplateDesigner");
+        }
+
+        public void onSuccess()
+        {
+            new gwt.client.org.labkey.plate.designer.client.TemplateDesigner().onModuleLoad();
+        }
+        EntryPoint getEntryPoint()
+        {
+            return new gwt.client.org.labkey.plate.designer.client.TemplateDesigner();
+        }
+    }
+
+    public static class StudyChartDesigner extends GWTModule
+    {
+        public StudyChartDesigner()
+        {
+            super("gwt.client.org.labkey.study.chart.client.StudyChartDesigner");
+        }
+
+        public void onSuccess()
+        {
+            new gwt.client.org.labkey.study.chart.client.StudyChartDesigner().onModuleLoad();
+        }
+        EntryPoint getEntryPoint()
+        {
+            return new gwt.client.org.labkey.study.chart.client.StudyChartDesigner();
+        }
+    }
+
+    public static class DatasetImporter extends GWTModule
+    {
+        public DatasetImporter()
+        {
+            super("gwt.client.org.labkey.study.dataset.client.DatasetImporter");
+        }
+
+        public void onSuccess()
+        {
+            new gwt.client.org.labkey.study.dataset.client.DatasetImporter().onModuleLoad();
+        }
+        EntryPoint getEntryPoint()
+        {
+            return new gwt.client.org.labkey.study.dataset.client.DatasetImporter();
+        }
+    }
+
+    public static class DatasetDesigner extends GWTModule
+    {
+        public DatasetDesigner()
+        {
+            super("gwt.client.org.labkey.study.dataset.client.Designer");
+        }
+
+        public void onSuccess()
+        {
+            new gwt.client.org.labkey.study.dataset.client.Designer().onModuleLoad();
+        }
+        EntryPoint getEntryPoint()
+        {
+            return new gwt.client.org.labkey.study.dataset.client.Designer();
+        }
+    }
+
+    public static class StudyDesigner extends GWTModule
+    {
+        public StudyDesigner()
+        {
+            super("gwt.client.org.labkey.study.designer.client.Designer");
+        }
+
+        public void onSuccess()
+        {
+            new gwt.client.org.labkey.study.designer.client.Designer().onModuleLoad();
+        }
+        
+        EntryPoint getEntryPoint()
+        {
+            return new gwt.client.org.labkey.study.designer.client.Designer();
         }
     }
     
@@ -159,37 +230,42 @@ public class StudyApplication implements EntryPoint
         }
         
         final String moduleName = PropertyUtil.getServerProperty("GWTModule");
-        GWTModule module = GWTModule.valueOf(moduleName);
-
-        // this only creates one split point, need multiple calls to GWT.runAsync() to create multiple split points
-        // GWT.runAsync(module);
-
-        switch (module)
+        
+        if ("AssayDesigner".equalsIgnoreCase(moduleName))
         {
-            case AssayDesigner:
-                GWT.runAsync(GWTModule.AssayDesigner);
-                break;
-            case AssayImporter:
-                GWT.runAsync(GWTModule.AssayImporter);
-                break;
-            case ListChooser:
-                GWT.runAsync(GWTModule.ListChooser);
-                break;
-            case TemplateDesigner:
-                GWT.runAsync(GWTModule.TemplateDesigner);
-                break;
-            case StudyChartDesigner:
-                GWT.runAsync(GWTModule.StudyChartDesigner);
-                break;
-            case DatasetImporter:
-                GWT.runAsync(GWTModule.DatasetImporter);
-                break;
-            case DatasetDesigner:
-                GWT.runAsync(GWTModule.DatasetDesigner);
-                break;
-            case StudyDesigner:
-                GWT.runAsync(GWTModule.StudyDesigner);
-                break;
+            GWT.runAsync(new AssayDesigner());
+        }
+        else if ("AssayImporter".equalsIgnoreCase(moduleName))
+        {
+            GWT.runAsync(new AssayImporter());
+        }
+        else if ("ListChooser".equalsIgnoreCase(moduleName))
+        {
+            GWT.runAsync(new ListChooser());
+        }
+        else if ("TemplateDesigner".equalsIgnoreCase(moduleName))
+        {
+            GWT.runAsync(new TemplateDesigner());
+        }
+        else if ("StudyChartDesigner".equalsIgnoreCase(moduleName))
+        {
+            GWT.runAsync(new StudyChartDesigner());
+        }
+        else if ("DatasetImporter".equalsIgnoreCase(moduleName))
+        {
+            GWT.runAsync(new DatasetImporter());
+        }
+        else if ("DatasetDesigner".equalsIgnoreCase(moduleName))
+        {
+            GWT.runAsync(new DatasetDesigner());
+        }
+        else if ("StudyDesigner".equalsIgnoreCase(moduleName))
+        {
+            GWT.runAsync(new StudyDesigner());
+        }
+        else
+        {
+            throw new IllegalArgumentException("Unknown module: " + moduleName);
         }
     }
 }
