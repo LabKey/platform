@@ -15,7 +15,7 @@
  */
 package org.labkey.api.view;
 
-import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.labkey.api.util.SkipMothershipLogging;
 
 import javax.servlet.http.HttpServletResponse;

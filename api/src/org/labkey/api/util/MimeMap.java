@@ -16,14 +16,18 @@
 package org.labkey.api.util;
 
 import junit.framework.Assert;
-import org.apache.log4j.Logger;
-import org.apache.commons.lang.StringUtils;
 import org.apache.commons.io.IOUtils;
+import org.apache.commons.lang3.StringUtils;
+import org.apache.log4j.Logger;
 import org.junit.Test;
 
-import java.io.*;
-import java.net.*;
-import java.util.*;
+import java.io.InputStream;
+import java.net.FileNameMap;
+import java.util.Enumeration;
+import java.util.HashMap;
+import java.util.Hashtable;
+import java.util.List;
+import java.util.Map;
 
 /**
  * A mime type map that implements the java.net.FileNameMap interface.

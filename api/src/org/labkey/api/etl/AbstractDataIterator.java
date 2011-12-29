@@ -16,7 +16,7 @@
 
 package org.labkey.api.etl;
 
-import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.labkey.api.query.BatchValidationException;
 import org.labkey.api.query.ValidationException;
 

@@ -16,7 +16,7 @@
 
 package org.labkey.api.files.view;
 
-import org.apache.commons.lang.BooleanUtils;
+import org.apache.commons.lang3.BooleanUtils;
 import org.labkey.api.view.JspView;
 import org.labkey.api.view.Portal;
 

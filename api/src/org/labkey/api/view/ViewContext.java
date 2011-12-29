@@ -16,7 +16,7 @@
 package org.labkey.api.view;
 
 import org.apache.commons.beanutils.ConvertUtils;
-import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.NotNull;
 import org.labkey.api.collections.BoundMap;
 import org.labkey.api.data.Container;

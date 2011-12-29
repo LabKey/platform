@@ -16,7 +16,7 @@
 package org.labkey.api.util;
 
 import org.apache.commons.collections15.iterators.ArrayIterator;
-import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.junit.Assert;
 import org.junit.Test;
 

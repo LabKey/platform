@@ -15,7 +15,7 @@
  */
 package org.labkey.api.util;
 
-import org.apache.commons.lang.mutable.MutableLong;
+import org.apache.commons.lang3.mutable.MutableLong;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.EnumMap;

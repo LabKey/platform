@@ -16,7 +16,7 @@
 
 package org.labkey.api.reports.report;
 
-import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.jfree.chart.JFreeChart;
 import org.jfree.chart.ChartRenderingInfo;
 import org.jfree.chart.imagemap.ImageMapUtilities;

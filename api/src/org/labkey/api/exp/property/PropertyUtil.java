@@ -15,10 +15,9 @@
  */
 package org.labkey.api.exp.property;
 
+import org.apache.commons.lang3.math.NumberUtils;
+import org.apache.commons.lang3.time.FastDateFormat;
 import org.labkey.api.exp.PropertyType;
-import org.labkey.api.exp.PropertyDescriptor;
-import org.apache.commons.lang.time.FastDateFormat;
-import org.apache.commons.lang.math.NumberUtils;
 
 import java.text.DecimalFormat;
 

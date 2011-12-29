@@ -15,7 +15,7 @@
  */
 package org.labkey.api.view;
 
-import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang3.StringUtils;
 
 import java.text.DecimalFormat;
 import java.util.Arrays;

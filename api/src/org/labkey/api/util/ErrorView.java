@@ -16,16 +16,15 @@
 
 package org.labkey.api.util;
 
-import org.apache.commons.lang.StringUtils;
-import org.labkey.api.settings.LookAndFeelProperties;
-import org.labkey.api.view.HttpView;
-import org.labkey.api.view.ActionURL;
+import org.apache.commons.lang3.StringUtils;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
-import org.labkey.api.settings.AppProps;
 import org.labkey.api.portal.ProjectUrls;
 import org.labkey.api.security.LoginUrls;
-import org.labkey.api.view.UnauthorizedException;
+import org.labkey.api.settings.AppProps;
+import org.labkey.api.settings.LookAndFeelProperties;
+import org.labkey.api.view.ActionURL;
+import org.labkey.api.view.HttpView;
 import org.labkey.api.view.WebTheme;
 import org.labkey.api.view.WebThemeManager;
 

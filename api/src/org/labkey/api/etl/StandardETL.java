@@ -16,13 +16,11 @@
 
 package org.labkey.api.etl;
 
-import org.apache.commons.lang.NotImplementedException;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
-import org.labkey.api.data.DbScope;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.UpdateableTableInfo;
 import org.labkey.api.exp.property.Domain;
@@ -74,7 +72,7 @@ public class StandardETL implements DataIteratorBuilder
 
     public static StandardETL forUpdate(TableInfo target, @NotNull DataIteratorBuilder in, @Nullable Container c, @NotNull User user, BatchValidationException errors)
     {
-        throw new NotImplementedException();
+        throw new UnsupportedOperationException();
     }
 
 

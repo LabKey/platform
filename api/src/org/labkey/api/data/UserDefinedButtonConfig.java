@@ -15,7 +15,7 @@
  */
 package org.labkey.api.data;
 
-import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.labkey.api.query.DetailsURL;
 import org.labkey.api.security.permissions.Permission;
 import org.labkey.api.util.PageFlowUtil;

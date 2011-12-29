@@ -15,7 +15,7 @@
  */
 package org.labkey.api.files;
 
-import org.apache.commons.lang.math.NumberUtils;
+import org.apache.commons.lang3.math.NumberUtils;
 import org.labkey.api.data.Container;
 import org.labkey.api.notification.EmailPref;
 import org.labkey.api.notification.EmailPrefFilter;
@@ -27,11 +27,9 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * Created by IntelliJ IDEA.
  * User: klum
  * Date: Apr 23, 2010
  * Time: 11:56:15 AM
- * To change this template use File | Settings | File Templates.
  */
 public class FileContentEmailPrefFilter extends EmailPrefFilter
 {

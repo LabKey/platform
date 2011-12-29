@@ -16,7 +16,7 @@
 package org.labkey.api.study.assay;
 
 import org.apache.commons.beanutils.ConvertUtils;
-import org.apache.commons.lang.ObjectUtils;
+import org.apache.commons.lang3.ObjectUtils;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.Table;

@@ -18,7 +18,7 @@ package org.labkey.api.data;
 
 import org.apache.commons.beanutils.BeanUtils;
 import org.apache.commons.beanutils.PropertyUtils;
-import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
@@ -84,8 +84,6 @@ import java.util.Map;
 import java.util.Set;
 import java.util.TreeSet;
 import java.util.concurrent.Callable;
-
-import static org.apache.commons.lang.StringUtils.stripEnd;
 
 /**
  * Table manipulation methods
@@ -728,7 +726,7 @@ public class Table
     static String _trimRight(String s)
     {
         if (null == s) return "";
-        return stripEnd(s, "\t\r\n ");
+        return StringUtils.stripEnd(s, "\t\r\n ");
     }
 
 

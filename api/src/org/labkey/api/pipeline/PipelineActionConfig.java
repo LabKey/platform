@@ -15,7 +15,7 @@
  */         
 package org.labkey.api.pipeline;
 
-import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.json.JSONObject;
 import org.json.JSONArray;
 

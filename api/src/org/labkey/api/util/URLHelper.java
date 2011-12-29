@@ -18,7 +18,7 @@ package org.labkey.api.util;
 
 import org.apache.commons.beanutils.ConversionException;
 import org.apache.commons.collections15.multimap.MultiHashMap;
-import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
 import org.labkey.api.data.CompareType;
 import org.labkey.api.query.FieldKey;

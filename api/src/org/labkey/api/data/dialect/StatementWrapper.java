@@ -16,8 +16,7 @@
 
 package org.labkey.api.data.dialect;
 
-import org.apache.commons.lang.StringEscapeUtils;
-import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
 import org.labkey.api.data.ConnectionWrapper;
@@ -1586,7 +1585,7 @@ public class StatementWrapper implements Statement, PreparedStatement, CallableS
                     else if (o instanceof Container)
                         value = "'" + ((Container)o).getId() + "'        " + ((Container)o).getPath();
                     else if (o instanceof String)
-                        value = "'" + StringEscapeUtils.escapeSql((String)o) + "'";
+                        value = "'" + escapeSql((String) o) + "'";
                     else
                         value = String.valueOf(o);
                     logEntry.append("\n    --?[").append(i).append("] ").append(value);
@@ -1612,6 +1611,18 @@ public class StatementWrapper implements Statement, PreparedStatement, CallableS
         {
             BreakpointThread.dumpThreads(_log);
         }
+    }
+
+
+    // Copied from Commons Lang 2.5 StringEscapeUtils. The method has been removed from Commons Lang 3.1 because it's
+    // simplistic and misleading. But we're only using it for logging.
+    private static String escapeSql(String str)
+    {
+        if (str == null)
+        {
+            return null;
+        }
+        return StringUtils.replace(str, "'", "''");
     }
 
 

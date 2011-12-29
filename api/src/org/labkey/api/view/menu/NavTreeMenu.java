@@ -16,15 +16,21 @@
 
 package org.labkey.api.view.menu;
 
+import org.apache.commons.lang3.StringUtils;
 import org.labkey.api.data.Container;
-import static org.labkey.api.util.PageFlowUtil.filter;
-import org.labkey.api.util.PageFlowUtil;
-import org.labkey.api.view.*;
 import org.labkey.api.portal.ProjectUrls;
-import org.apache.commons.lang.StringUtils;
+import org.labkey.api.util.PageFlowUtil;
+import org.labkey.api.view.ActionURL;
+import org.labkey.api.view.Collapsible;
+import org.labkey.api.view.NavTree;
+import org.labkey.api.view.NavTreeManager;
+import org.labkey.api.view.ViewContext;
+import org.labkey.api.view.WebPartView;
 
 import java.io.PrintWriter;
 import java.net.URISyntaxException;
+
+import static org.labkey.api.util.PageFlowUtil.filter;
 
 /**
  * User: brittp

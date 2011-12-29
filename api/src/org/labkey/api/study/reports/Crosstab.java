@@ -16,7 +16,7 @@
 package org.labkey.api.study.reports;
 
 import org.apache.commons.beanutils.ConvertUtils;
-import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.poi.ss.usermodel.CellStyle;
 import org.apache.poi.ss.usermodel.Sheet;
 import org.labkey.api.collections.CaseInsensitiveHashMap;

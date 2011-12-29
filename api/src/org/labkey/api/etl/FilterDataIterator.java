@@ -16,14 +16,12 @@
 
 package org.labkey.api.etl;
 
-import org.apache.commons.lang.NotImplementedException;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.query.BatchValidationException;
 
 import java.io.IOException;
 
 /**
- * Created by IntelliJ IDEA.
  * User: matthewb
  * Date: 2011-05-31
  * Time: 5:18 PM
@@ -38,30 +36,30 @@ public abstract class FilterDataIterator extends AbstractDataIterator
     @Override
     public int getColumnCount()
     {
-        throw new NotImplementedException();
+        throw new UnsupportedOperationException();
     }
 
     @Override
     public ColumnInfo getColumnInfo(int i)
     {
-        throw new NotImplementedException();
+        throw new UnsupportedOperationException();
     }
 
     @Override
     public boolean next() throws BatchValidationException
     {
-        throw new NotImplementedException();
+        throw new UnsupportedOperationException();
     }
 
     @Override
     public Object get(int i)
     {
-        throw new NotImplementedException();
+        throw new UnsupportedOperationException();
     }
 
     @Override
     public void close() throws IOException
     {
-        throw new NotImplementedException();
+        throw new UnsupportedOperationException();
     }
 }

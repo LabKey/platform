@@ -17,8 +17,8 @@
 package org.labkey.api.files.view;
 
 import org.apache.commons.beanutils.BeanUtils;
-import org.apache.commons.lang.BooleanUtils;
-import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang3.BooleanUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
 import org.labkey.api.attachments.AttachmentDirectory;
 import org.labkey.api.data.Container;

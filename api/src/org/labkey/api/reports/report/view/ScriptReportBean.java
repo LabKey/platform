@@ -15,8 +15,8 @@
  */
 package org.labkey.api.reports.report.view;
 
-import org.apache.commons.lang.BooleanUtils;
-import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang3.BooleanUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.labkey.api.query.QuerySettings;
 import org.labkey.api.reports.Report;
 import org.labkey.api.reports.report.ReportDescriptor;

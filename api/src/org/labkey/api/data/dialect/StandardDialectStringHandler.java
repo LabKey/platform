@@ -16,7 +16,7 @@
 
 package org.labkey.api.data.dialect;
 
-import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.labkey.api.data.CoreSchema;
 import org.labkey.api.data.Parameter;
 import org.labkey.api.data.SQLFragment;

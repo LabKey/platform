@@ -16,7 +16,7 @@
  */
 --%>
 <%@ page buffer="none" %>
-<%@ page import="org.apache.commons.lang.StringUtils" %>
+<%@ page import="org.apache.commons.lang3.StringUtils" %>
 <%@ page import="org.labkey.api.analytics.AnalyticsService" %>
 <%@ page import="org.labkey.api.data.Container" %>
 <%@ page import="org.labkey.api.settings.LookAndFeelProperties" %>

@@ -18,7 +18,7 @@ package org.labkey.api.reports;
 import org.labkey.api.util.ExceptionUtil;
 import org.labkey.api.util.FileUtil;
 import org.labkey.api.reports.report.r.ParamReplacementSvc;
-import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang3.StringUtils;
 
 import javax.script.*;
 import java.io.*;

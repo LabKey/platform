@@ -17,7 +17,7 @@ package org.labkey.api.view;
 
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.data.RenderContext;
-import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang3.StringUtils;
 
 import java.io.Writer;
 import java.io.IOException;

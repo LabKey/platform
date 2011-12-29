@@ -15,7 +15,7 @@
  */
 package org.labkey.api.pipeline.file;
 
-import org.apache.commons.lang.ArrayUtils;
+import org.apache.commons.lang3.ArrayUtils;
 import org.apache.log4j.Logger;
 import org.labkey.api.pipeline.*;
 import org.labkey.api.util.NetworkDrive;

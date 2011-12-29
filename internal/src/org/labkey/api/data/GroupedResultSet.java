@@ -16,8 +16,7 @@
 
 package org.labkey.api.data;
 
-import org.apache.commons.lang.ObjectUtils;
-import org.labkey.api.util.PageFlowUtil;
+import org.apache.commons.lang3.ObjectUtils;
 
 import java.sql.ResultSet;
 import java.sql.SQLException;

@@ -16,10 +16,10 @@
 
 package org.labkey.api.query;
 
-import org.labkey.api.data.DataColumn;
+import org.apache.commons.lang3.ObjectUtils;
 import org.labkey.api.data.ColumnInfo;
+import org.labkey.api.data.DataColumn;
 import org.labkey.api.data.RenderContext;
-import org.apache.commons.lang.ObjectUtils;
 
 public class UserIdRenderer extends DataColumn
 {

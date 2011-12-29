@@ -17,7 +17,7 @@
 package org.labkey.api.study.query;
 
 import org.apache.commons.beanutils.ConversionException;
-import org.apache.commons.lang.ObjectUtils;
+import org.apache.commons.lang3.ObjectUtils;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.*;
 import org.labkey.api.exp.ExperimentException;

@@ -16,7 +16,7 @@
 
 package org.labkey.api.data.dialect;
 
-import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.Nullable;
 
 import java.sql.ResultSet;

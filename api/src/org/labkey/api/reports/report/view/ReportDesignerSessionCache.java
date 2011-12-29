@@ -17,7 +17,7 @@
 package org.labkey.api.reports.report.view;
 
 import org.apache.commons.beanutils.BeanUtils;
-import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.labkey.api.data.Container;
 import org.labkey.api.reports.Report;
 import org.labkey.api.reports.report.ReportDescriptor;

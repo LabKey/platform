@@ -16,8 +16,9 @@
 package org.labkey.api.module;
 
 import org.apache.commons.beanutils.BeanUtils;
-import org.apache.commons.lang.StringUtils;
-import org.apache.commons.lang.SystemUtils;
+import org.apache.commons.lang3.JavaVersion;
+import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.SystemUtils;
 import org.apache.log4j.Appender;
 import org.apache.log4j.Logger;
 import org.apache.log4j.RollingFileAppender;
@@ -503,7 +504,7 @@ public class ModuleLoader implements Filter
 
     private void verifyJavaVersion() throws ServletException
     {
-        if (!SystemUtils.isJavaVersionAtLeast(160))
+        if (!SystemUtils.isJavaVersionAtLeast(JavaVersion.JAVA_1_6))
             throw new ConfigurationException("Unsupported Java runtime version: " + SystemUtils.JAVA_VERSION + ".  LabKey Server requires Java 1.6 or 1.7.");
     }
 

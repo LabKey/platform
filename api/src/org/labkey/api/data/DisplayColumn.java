@@ -17,7 +17,7 @@
 package org.labkey.api.data;
 
 import org.apache.commons.beanutils.ConvertUtils;
-import org.apache.commons.lang.time.FastDateFormat;
+import org.apache.commons.lang3.time.FastDateFormat;
 import org.jetbrains.annotations.NotNull;
 import org.labkey.api.action.HasViewContext;
 import org.labkey.api.collections.NullPreventingSet;

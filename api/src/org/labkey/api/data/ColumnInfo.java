@@ -18,8 +18,7 @@ package org.labkey.api.data;
 
 import org.apache.commons.beanutils.ConversionException;
 import org.apache.commons.beanutils.ConvertUtils;
-import org.apache.commons.lang.NotImplementedException;
-import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
 import org.labkey.api.collections.CaseInsensitiveHashSet;
 import org.labkey.api.collections.NamedObjectList;
@@ -780,7 +779,7 @@ public class ColumnInfo extends ColumnRenderProperties implements SqlColumn
                 }
                 else
                 {
-                    throw new NotImplementedException("Non-junction multi-value columns NYI");
+                    throw new UnsupportedOperationException("Non-junction multi-value columns NYI");
                 }
             }
         }

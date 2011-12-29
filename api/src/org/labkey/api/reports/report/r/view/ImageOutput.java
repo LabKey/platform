@@ -16,7 +16,7 @@
 
 package org.labkey.api.reports.report.r.view;
 
-import org.apache.commons.lang.BooleanUtils;
+import org.apache.commons.lang3.BooleanUtils;
 import org.labkey.api.reports.Report;
 import org.labkey.api.reports.report.RReport;
 import org.labkey.api.reports.report.ReportDescriptor;

@@ -15,7 +15,7 @@
  */
 package org.labkey.api.reports.report;
 
-import org.apache.commons.lang.math.NumberUtils;
+import org.apache.commons.lang3.math.NumberUtils;
 
 /*
 * User: Dave

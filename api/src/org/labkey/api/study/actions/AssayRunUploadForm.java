@@ -17,7 +17,7 @@
 package org.labkey.api.study.actions;
 
 import org.apache.commons.beanutils.ConversionException;
-import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.NotNull;
 import org.labkey.api.exp.*;
 import org.labkey.api.exp.property.DomainProperty;

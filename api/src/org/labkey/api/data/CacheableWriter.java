@@ -17,7 +17,7 @@
 package org.labkey.api.data;
 
 import org.apache.commons.io.IOUtils;
-import org.apache.commons.lang.time.FastDateFormat;
+import org.apache.commons.lang3.time.FastDateFormat;
 import org.labkey.api.attachments.DocumentWriter;
 
 import javax.servlet.http.HttpServletResponse;

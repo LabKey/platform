@@ -17,7 +17,7 @@
 package org.labkey.api.reports.report;
 
 import org.jetbrains.annotations.Nullable;
-import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.labkey.api.reports.Report;
 import org.labkey.api.reports.ReportService;
 import org.labkey.api.reports.report.r.ParamReplacement;

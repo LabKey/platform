@@ -16,9 +16,9 @@
 
 package org.labkey.api.view;
 
+import org.apache.commons.lang3.StringUtils;
 import org.labkey.api.util.URLHelper;
 import org.springframework.web.servlet.ModelAndView;
-import org.apache.commons.lang.StringUtils;
 
 import java.util.List;
 

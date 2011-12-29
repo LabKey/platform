@@ -15,7 +15,7 @@
  */
 package org.labkey.api.jsp;
 
-import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.jasper.JspC;
 import org.apache.log4j.Logger;
 import org.labkey.api.module.ModuleLoader;

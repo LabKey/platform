@@ -15,21 +15,25 @@
  */
 package org.labkey.api.util;
 
-import org.labkey.api.settings.AppProps;
-import org.json.JSONObject;
+import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.Nullable;
-import org.apache.commons.lang.StringUtils;
+import org.json.JSONObject;
+import org.labkey.api.settings.AppProps;
 
-import javax.servlet.http.HttpSession;
+import javax.servlet.FilterChain;
+import javax.servlet.FilterConfig;
+import javax.servlet.ServletException;
+import javax.servlet.ServletRequest;
+import javax.servlet.ServletResponse;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
-import javax.servlet.*;
+import javax.servlet.http.HttpSession;
 import java.io.IOException;
 import java.io.PrintWriter;
-import java.util.Map;
+import java.lang.ref.WeakReference;
 import java.util.Collections;
 import java.util.LinkedHashMap;
-import java.lang.ref.WeakReference;
+import java.util.Map;
 
 /**
  * Created by IntelliJ IDEA.

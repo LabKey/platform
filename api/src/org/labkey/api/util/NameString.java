@@ -15,9 +15,9 @@
  */
 package org.labkey.api.util;
 
-import org.labkey.api.data.Container;
 import org.apache.commons.beanutils.ConversionException;
-import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang3.StringUtils;
+import org.labkey.api.data.Container;
 
 import java.util.regex.Pattern;
 

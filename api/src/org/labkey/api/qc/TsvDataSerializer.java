@@ -16,14 +16,21 @@
 
 package org.labkey.api.qc;
 
-import org.labkey.api.util.DateUtil;
+import org.apache.commons.lang3.StringUtils;
+import org.labkey.api.exp.api.ExpProtocol;
 import org.labkey.api.reader.DataLoader;
 import org.labkey.api.reader.TabLoader;
-import org.labkey.api.exp.api.ExpProtocol;
-import org.apache.commons.lang.StringUtils;
+import org.labkey.api.util.DateUtil;
 
-import java.util.*;
-import java.io.*;
+import java.io.BufferedWriter;
+import java.io.File;
+import java.io.FileWriter;
+import java.io.PrintWriter;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Date;
+import java.util.List;
+import java.util.Map;
 
 /**
  * Created by IntelliJ IDEA.

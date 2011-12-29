@@ -16,14 +16,13 @@
 
 package org.labkey.api.etl;
 
-import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.junit.Assert;
 import org.junit.Test;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
 import org.labkey.api.exp.MvFieldWrapper;
 import org.labkey.api.exp.PropertyDescriptor;
-import org.labkey.api.exp.property.Domain;
 import org.labkey.api.exp.property.IPropertyValidator;
 import org.labkey.api.exp.property.PropertyService;
 import org.labkey.api.exp.property.ValidatorContext;

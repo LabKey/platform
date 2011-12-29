@@ -17,7 +17,7 @@
 package org.labkey.api.data;
 
 import org.apache.commons.collections15.ArrayStack;
-import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.labkey.api.util.PageFlowUtil;
 
 import java.io.PrintWriter;

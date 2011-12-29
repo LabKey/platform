@@ -16,8 +16,8 @@
 package org.labkey.api.reports.report;
 
 import org.apache.commons.collections15.map.CaseInsensitiveMap;
-import org.apache.commons.lang.BooleanUtils;
-import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang3.BooleanUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
 import org.labkey.api.attachments.DocumentConversionService;
 import org.labkey.api.collections.CaseInsensitiveHashSet;

@@ -19,7 +19,7 @@ package org.labkey.api.data;
 import junit.framework.Assert;
 import org.apache.commons.beanutils.ConversionException;
 import org.apache.commons.beanutils.ConvertUtils;
-import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.Nullable;
 import org.junit.Test;
 import org.labkey.api.data.CompareType.CompareClause;

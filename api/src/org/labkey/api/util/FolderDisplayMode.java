@@ -16,7 +16,7 @@
 
 package org.labkey.api.util;
 
-import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang3.StringUtils;
 
 /**
  * Created by IntelliJ IDEA.

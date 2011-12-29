@@ -16,11 +16,11 @@
 
 package org.labkey.api.action;
 
+import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.PropertyValues;
 import org.springframework.validation.BindException;
 import org.springframework.validation.Errors;
 import org.springframework.web.servlet.ModelAndView;
-import org.apache.commons.lang.StringUtils;
 
 /**
  * User: matthewb

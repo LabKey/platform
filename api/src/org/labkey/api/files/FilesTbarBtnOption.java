@@ -15,16 +15,13 @@
  */
 package org.labkey.api.files;
 
-import org.apache.commons.lang.BooleanUtils;
-import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.json.JSONObject;
 
 /**
- * Created by IntelliJ IDEA.
  * User: klum
  * Date: Apr 16, 2010
  * Time: 11:04:41 AM
- * To change this template use File | Settings | File Templates.
  */
 public class FilesTbarBtnOption
 {

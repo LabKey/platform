@@ -16,8 +16,8 @@
 package org.labkey.api.reports;
 
 import org.apache.commons.beanutils.BeanUtils;
-import org.apache.commons.lang.BooleanUtils;
-import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang3.BooleanUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.labkey.api.data.PropertyManager;
 import org.labkey.api.script.ScriptService;
 import org.labkey.api.services.ServiceRegistry;

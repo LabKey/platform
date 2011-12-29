@@ -17,7 +17,7 @@
 package org.labkey.api.view;
 
 import org.apache.log4j.Logger;
-import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.URLHelper;
 

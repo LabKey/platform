@@ -16,7 +16,7 @@
 package org.labkey.api.query;
 
 
-import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.labkey.api.data.AbstractDataRegion;
 import org.labkey.api.data.ButtonBar;
 import org.labkey.api.data.RenderContext;

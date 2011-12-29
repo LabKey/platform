@@ -16,8 +16,8 @@
 
 package org.labkey.api.reports.report;
 
-import org.apache.commons.lang.ObjectUtils;
-import org.apache.commons.lang.math.NumberUtils;
+import org.apache.commons.lang3.ObjectUtils;
+import org.apache.commons.lang3.math.NumberUtils;
 import org.labkey.api.view.ViewContext;
 import org.labkey.api.util.Pair;
 

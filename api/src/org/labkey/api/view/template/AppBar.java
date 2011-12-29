@@ -15,7 +15,7 @@
  */
 package org.labkey.api.view.template;
 
-import org.apache.commons.lang.ObjectUtils;
+import org.apache.commons.lang3.ObjectUtils;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.NavTree;
 

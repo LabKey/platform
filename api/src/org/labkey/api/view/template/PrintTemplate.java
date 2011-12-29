@@ -16,11 +16,11 @@
 
 package org.labkey.api.view.template;
 
-import org.labkey.api.view.JspView;
-import org.labkey.api.view.ActionURL;
+import org.apache.commons.lang3.StringUtils;
 import org.labkey.api.settings.LookAndFeelProperties;
+import org.labkey.api.view.ActionURL;
+import org.labkey.api.view.JspView;
 import org.springframework.web.servlet.ModelAndView;
-import org.apache.commons.lang.StringUtils;
 
 public class PrintTemplate extends JspView<PageConfig>
 {

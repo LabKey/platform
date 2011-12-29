@@ -18,7 +18,7 @@ package org.labkey.api.reader.jxl;
 import jxl.CellType;
 import jxl.DateCell;
 import jxl.NumberCell;
-import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.poi.ss.formula.FormulaParseException;
 import org.apache.poi.ss.usermodel.Cell;
 import org.apache.poi.ss.usermodel.CellStyle;

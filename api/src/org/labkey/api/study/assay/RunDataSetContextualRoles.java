@@ -15,23 +15,33 @@
  */
 package org.labkey.api.study.assay;
 
-import org.labkey.api.security.roles.HasContextualRoles;
-import org.labkey.api.security.roles.Role;
-import org.labkey.api.security.roles.ReaderRole;
-import org.labkey.api.security.*;
-import org.labkey.api.security.permissions.ReadPermission;
-import org.labkey.api.view.ViewContext;
-import org.labkey.api.data.*;
+import org.apache.commons.lang3.math.NumberUtils;
+import org.jetbrains.annotations.Nullable;
+import org.labkey.api.data.ColumnInfo;
+import org.labkey.api.data.Container;
+import org.labkey.api.data.RuntimeSQLException;
+import org.labkey.api.data.SimpleFilter;
+import org.labkey.api.data.Table;
+import org.labkey.api.data.TableInfo;
+import org.labkey.api.exp.api.ExpProtocol;
 import org.labkey.api.exp.api.ExpRun;
 import org.labkey.api.exp.api.ExperimentService;
-import org.labkey.api.exp.api.ExpProtocol;
+import org.labkey.api.security.SecurityPolicy;
+import org.labkey.api.security.User;
+import org.labkey.api.security.permissions.ReadPermission;
+import org.labkey.api.security.roles.HasContextualRoles;
+import org.labkey.api.security.roles.ReaderRole;
+import org.labkey.api.security.roles.Role;
 import org.labkey.api.study.DataSet;
 import org.labkey.api.study.StudyService;
-import org.jetbrains.annotations.Nullable;
-import org.apache.commons.lang.math.NumberUtils;
+import org.labkey.api.view.ViewContext;
 
-import java.util.*;
 import java.sql.SQLException;
+import java.util.Collections;
+import java.util.LinkedHashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 
 /**
  * User: kevink

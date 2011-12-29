@@ -16,7 +16,7 @@
 
 package org.labkey.api.query;
 
-import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.labkey.api.action.ApiQueryResponse;
 import org.labkey.api.action.ApiUsageException;
 import org.labkey.api.data.*;

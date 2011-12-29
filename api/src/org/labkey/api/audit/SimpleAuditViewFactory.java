@@ -16,7 +16,7 @@
 
 package org.labkey.api.audit;
 
-import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
 import org.labkey.api.data.RuntimeSQLException;
 import org.labkey.api.exp.ChangePropertyDescriptorException;
