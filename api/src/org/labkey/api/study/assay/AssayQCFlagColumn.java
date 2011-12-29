@@ -73,25 +73,32 @@ public class AssayQCFlagColumn extends ExprColumn
                     @Override
                     public void renderGridCellContents(RenderContext ctx, Writer out) throws IOException
                     {
-                        String[] values = ((String)getValue(ctx)).split(",");
-                        Boolean[] enabled = parseBooleans(values, ctx.get(getEnabledFieldKey(), String.class));
-                        Integer runId = ctx.get(getRunRowIdFieldKey(), Integer.class);
-
-                        if (!_qcFlagToggleJSIncluded)
+                        if (null != getValue(ctx))
                         {
-                            // add script block to include the necessary JS file for the QCFlag toggle panel
-                            out.write("<script type='text/javascript'>"
-                                    + "   LABKEY.requiresScript('Experiment/QCFlagToggleWindow.js');"
-                                    + "</script>");
+                            String[] values = ((String)getValue(ctx)).split(",");
+                            Boolean[] enabled = parseBooleans(values, ctx.get(getEnabledFieldKey(), String.class));
+                            Integer runId = ctx.get(getRunRowIdFieldKey(), Integer.class);
 
-                            _qcFlagToggleJSIncluded = true;
+                            if (!_qcFlagToggleJSIncluded)
+                            {
+                                // add script block to include the necessary JS file for the QCFlag toggle panel
+                                out.write("<script type='text/javascript'>"
+                                        + "   LABKEY.requiresScript('Experiment/QCFlagToggleWindow.js');"
+                                        + "</script>");
+
+                                _qcFlagToggleJSIncluded = true;
+                            }
+
+                            // add onclick handler to call the QCFlag toggle window creation function
+                            // users with update perm will be able to change enabled state and edit comment, others will only be able to read flag details
+                            out.write("<a onclick=\"showQCFlagToggleWindow('" + _protocolName + "', " + runId + ");\">");
+                            out.write(getCollapsedQCFlagOutput(values, enabled));
+                            out.write("</a>");
                         }
-
-                        // add onclick handler to call the QCFlag toggle window creation function
-                        // users with update perm will be able to change enabled state and edit comment, others will only be able to read flag details
-                        out.write("<a onclick=\"showQCFlagToggleWindow('" + _protocolName + "', " + runId + ");\">");
-                        out.write(getCollapsedQCFlagOutput(values, enabled));
-                        out.write("</a>");
+                        else
+                        {
+                            out.write("&nbsp;");
+                        }
                     }
 
                     @Override
