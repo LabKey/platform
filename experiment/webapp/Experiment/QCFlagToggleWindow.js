@@ -82,7 +82,7 @@ LABKEY.QCFlagToggleWindow = Ext.extend(Ext.Window, {
                 queryName: this.queryName,
                 filterArray: filters,
                 columns: "RowId, FlagType, Description, Comment, Enabled",
-                sort: "FlagType, Description",
+                sort: "FlagType, RowId",
                 autoLoad: true,
                 listeners: {
                     scope: this,
