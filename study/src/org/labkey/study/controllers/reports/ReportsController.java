@@ -17,8 +17,8 @@
 package org.labkey.study.controllers.reports;
 
 import gwt.client.org.labkey.study.chart.client.StudyChartDesigner;
-import org.apache.commons.lang.StringUtils;
-import org.apache.commons.lang.math.NumberUtils;
+import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.math.NumberUtils;
 import org.json.JSONArray;
 import org.labkey.api.action.ApiAction;
 import org.labkey.api.action.ApiResponse;

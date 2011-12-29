@@ -15,7 +15,7 @@
  */
 package org.labkey.pipeline.analysis;
 
-import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.labkey.api.pipeline.*;
 import org.labkey.api.pipeline.cmd.CommandTask;
 import org.labkey.api.pipeline.cmd.*;

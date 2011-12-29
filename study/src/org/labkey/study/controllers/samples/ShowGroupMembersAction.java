@@ -15,20 +15,23 @@
  */
 package org.labkey.study.controllers.samples;
 
-import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.labkey.api.action.FormViewAction;
-import org.labkey.api.security.*;
+import org.labkey.api.security.AuthenticationManager;
+import org.labkey.api.security.RequiresPermissionClass;
 import org.labkey.api.security.SecurityManager;
-import org.labkey.api.study.Study;
+import org.labkey.api.security.SecurityUrls;
+import org.labkey.api.security.User;
+import org.labkey.api.security.UserManager;
+import org.labkey.api.security.ValidEmail;
+import org.labkey.api.util.PageFlowUtil;
+import org.labkey.api.util.ReturnURLString;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.JspView;
 import org.labkey.api.view.NavTree;
-import org.labkey.api.util.PageFlowUtil;
-import org.labkey.api.util.ReturnURLString;
 import org.labkey.api.view.NotFoundException;
 import org.labkey.study.SampleManager;
 import org.labkey.study.controllers.BaseStudyController;
-import org.labkey.study.controllers.StudyController;
 import org.labkey.study.model.SampleRequestActor;
 import org.labkey.study.model.SiteImpl;
 import org.labkey.study.model.StudyManager;
@@ -38,9 +41,9 @@ import org.springframework.validation.Errors;
 import org.springframework.web.servlet.ModelAndView;
 
 import javax.servlet.ServletException;
+import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
-import java.sql.SQLException;
 
 @RequiresPermissionClass(ManageSpecimenActorsPermission.class)
 public class ShowGroupMembersAction extends FormViewAction<ShowGroupMembersAction.UpdateGroupForm>

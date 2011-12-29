@@ -16,25 +16,59 @@
 
 package org.labkey.query;
 
-import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
-import org.labkey.api.data.*;
-import org.labkey.api.query.*;
+import org.labkey.api.data.Aggregate;
+import org.labkey.api.data.ColumnInfo;
+import org.labkey.api.data.Container;
+import org.labkey.api.data.FilterInfo;
+import org.labkey.api.data.Sort;
+import org.labkey.api.data.TableInfo;
+import org.labkey.api.query.CustomView;
+import org.labkey.api.query.FieldKey;
+import org.labkey.api.query.QueryDefinition;
+import org.labkey.api.query.QueryException;
+import org.labkey.api.query.QueryService;
 import org.labkey.api.security.User;
-import org.labkey.api.util.*;
+import org.labkey.api.util.PageFlowUtil;
+import org.labkey.api.util.Pair;
+import org.labkey.api.util.URLHelper;
+import org.labkey.api.util.UnexpectedException;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.writer.VirtualFile;
 import org.labkey.data.xml.ColumnType;
-import org.labkey.data.xml.queryCustomView.*;
-import org.labkey.query.design.*;
+import org.labkey.data.xml.queryCustomView.AggregateEnumType;
+import org.labkey.data.xml.queryCustomView.AggregateType;
+import org.labkey.data.xml.queryCustomView.AggregatesType;
+import org.labkey.data.xml.queryCustomView.ColumnsType;
+import org.labkey.data.xml.queryCustomView.ContainerFilterType;
+import org.labkey.data.xml.queryCustomView.CustomViewDocument;
+import org.labkey.data.xml.queryCustomView.CustomViewType;
+import org.labkey.data.xml.queryCustomView.FilterType;
+import org.labkey.data.xml.queryCustomView.FiltersType;
+import org.labkey.data.xml.queryCustomView.OperatorType;
+import org.labkey.data.xml.queryCustomView.PropertiesType;
+import org.labkey.data.xml.queryCustomView.PropertyType;
+import org.labkey.data.xml.queryCustomView.SortType;
+import org.labkey.data.xml.queryCustomView.SortsType;
+import org.labkey.query.design.DgColumn;
+import org.labkey.query.design.DgCompare;
+import org.labkey.query.design.DgOrderByString;
+import org.labkey.query.design.DgQuery;
+import org.labkey.query.design.ViewDocument;
 import org.labkey.query.persist.CstmView;
 import org.labkey.query.view.CustomViewSetKey;
 
 import javax.servlet.http.HttpServletRequest;
+import java.io.IOException;
 import java.net.URISyntaxException;
 import java.sql.SQLException;
-import java.util.*;
-import java.io.IOException;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.EnumMap;
+import java.util.List;
+import java.util.Map;
 
 public class CustomViewImpl extends CustomViewInfoImpl implements CustomView
 {

@@ -17,7 +17,7 @@
 package org.labkey.query.sql;
 
 import org.antlr.runtime.tree.CommonTree;
-import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.labkey.api.data.JdbcType;
 import org.labkey.query.sql.antlr.SqlBaseParser;
 

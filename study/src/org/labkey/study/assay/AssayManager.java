@@ -17,7 +17,7 @@
 package org.labkey.study.assay;
 
 import gwt.client.org.labkey.study.StudyApplication;
-import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.ActionButton;
 import org.labkey.api.data.Container;

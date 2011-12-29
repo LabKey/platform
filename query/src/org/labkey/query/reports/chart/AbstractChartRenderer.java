@@ -16,24 +16,34 @@
 
 package org.labkey.query.reports.chart;
 
+import org.apache.commons.lang3.BooleanUtils;
 import org.jfree.chart.axis.Axis;
 import org.jfree.chart.axis.LogarithmicAxis;
 import org.jfree.chart.axis.NumberAxis;
-import org.jfree.chart.urls.XYURLGenerator;
 import org.jfree.chart.labels.XYToolTipGenerator;
+import org.jfree.chart.urls.XYURLGenerator;
 import org.jfree.data.xy.XYDataset;
-import org.labkey.api.data.*;
+import org.labkey.api.collections.CaseInsensitiveHashMap;
+import org.labkey.api.data.ColumnInfo;
+import org.labkey.api.data.DataRegion;
+import org.labkey.api.data.DisplayColumn;
+import org.labkey.api.data.RenderContext;
+import org.labkey.api.data.Table;
 import org.labkey.api.query.QueryView;
-import org.labkey.api.reports.chart.ChartRenderer;
 import org.labkey.api.reports.chart.ChartRenderInfo;
+import org.labkey.api.reports.chart.ChartRenderer;
 import org.labkey.api.reports.report.ChartReportDescriptor;
 import org.labkey.api.reports.report.view.ReportQueryView;
-import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.view.DataView;
-import org.apache.commons.lang.BooleanUtils;
 
 import java.sql.ResultSet;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Comparator;
+import java.util.Date;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
 
 /**
  * Created by IntelliJ IDEA.

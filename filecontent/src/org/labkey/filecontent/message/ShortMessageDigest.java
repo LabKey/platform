@@ -15,7 +15,7 @@
  */
 package org.labkey.filecontent.message;
 
-import org.apache.commons.lang.time.DateUtils;
+import org.apache.commons.lang3.time.DateUtils;
 import org.labkey.api.message.digest.PeriodicMessageDigest;
 
 /**

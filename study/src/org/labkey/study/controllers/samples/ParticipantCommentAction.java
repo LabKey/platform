@@ -16,7 +16,7 @@
 
 package org.labkey.study.controllers.samples;
 
-import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.labkey.api.query.QueryUpdateForm;
 import org.labkey.api.security.RequiresPermissionClass;
 import org.labkey.api.security.permissions.InsertPermission;

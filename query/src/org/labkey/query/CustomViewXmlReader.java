@@ -16,15 +16,31 @@
 
 package org.labkey.query;
 
-import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
 import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.query.CustomView;
 import org.labkey.api.query.CustomViewInfo;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.resource.Resource;
-import org.labkey.api.util.*;
-import org.labkey.data.xml.queryCustomView.*;
+import org.labkey.api.util.PageFlowUtil;
+import org.labkey.api.util.Pair;
+import org.labkey.api.util.UnexpectedException;
+import org.labkey.api.util.XmlBeansUtil;
+import org.labkey.api.util.XmlValidationException;
+import org.labkey.data.xml.queryCustomView.AggregateType;
+import org.labkey.data.xml.queryCustomView.AggregatesType;
+import org.labkey.data.xml.queryCustomView.ColumnType;
+import org.labkey.data.xml.queryCustomView.ColumnsType;
+import org.labkey.data.xml.queryCustomView.ContainerFilterType;
+import org.labkey.data.xml.queryCustomView.CustomViewDocument;
+import org.labkey.data.xml.queryCustomView.CustomViewType;
+import org.labkey.data.xml.queryCustomView.FilterType;
+import org.labkey.data.xml.queryCustomView.FiltersType;
+import org.labkey.data.xml.queryCustomView.PropertiesType;
+import org.labkey.data.xml.queryCustomView.PropertyType;
+import org.labkey.data.xml.queryCustomView.SortType;
+import org.labkey.data.xml.queryCustomView.SortsType;
 
 import java.io.File;
 import java.io.FileInputStream;

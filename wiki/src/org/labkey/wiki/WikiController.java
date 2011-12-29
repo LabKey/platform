@@ -17,7 +17,7 @@
 package org.labkey.wiki;
 
 import org.apache.commons.collections15.MultiMap;
-import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.action.ApiAction;

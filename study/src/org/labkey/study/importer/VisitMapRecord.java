@@ -16,7 +16,7 @@
 
 package org.labkey.study.importer;
 
-import org.apache.commons.lang.ArrayUtils;
+import org.apache.commons.lang3.ArrayUtils;
 import org.labkey.api.data.ObjectFactory;
 import org.labkey.api.study.Visit;
 import org.labkey.study.model.VisitImpl;

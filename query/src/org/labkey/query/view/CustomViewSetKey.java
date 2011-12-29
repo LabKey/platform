@@ -16,7 +16,7 @@
 
 package org.labkey.query.view;
 
-import org.apache.commons.lang.ObjectUtils;
+import org.apache.commons.lang3.ObjectUtils;
 import org.labkey.api.query.QueryDefinition;
 import org.labkey.api.util.MemTracker;
 import org.labkey.query.persist.CstmView;

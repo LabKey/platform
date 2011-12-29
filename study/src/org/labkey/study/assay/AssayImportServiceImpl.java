@@ -16,7 +16,7 @@
 package org.labkey.study.assay;
 
 import gwt.client.org.labkey.assay.designer.client.AssayImporterService;
-import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.labkey.api.exp.ChangePropertyDescriptorException;
 import org.labkey.api.exp.Lsid;
 import org.labkey.api.exp.ObjectProperty;

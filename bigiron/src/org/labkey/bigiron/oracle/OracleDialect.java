@@ -16,7 +16,7 @@
 
 package org.labkey.bigiron.oracle;
 
-import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.labkey.api.data.ConnectionWrapper;
 import org.labkey.api.data.DbSchema;
 import org.labkey.api.data.ResultSetWrapper;

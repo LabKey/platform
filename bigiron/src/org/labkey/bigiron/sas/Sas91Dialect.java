@@ -16,7 +16,7 @@
 
 package org.labkey.bigiron.sas;
 
-import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.labkey.api.data.DbSchema;
 import org.labkey.api.data.dialect.ColumnMetaDataReader;
 import org.labkey.api.data.dialect.PkMetaDataReader;

@@ -15,20 +15,24 @@
  * limitations under the License.
  */
 %>
+<%@ page import="org.apache.commons.beanutils.BeanUtils" %>
+<%@ page import="org.apache.commons.lang3.StringUtils" %>
+<%@ page import="org.json.JSONObject" %>
+<%@ page import="org.labkey.api.collections.CaseInsensitiveHashMap" %>
+<%@ page import="org.labkey.api.query.DefaultSchema" %>
+<%@ page import="org.labkey.api.query.QueryDefinition" %>
+<%@ page extends="org.labkey.api.jsp.JspBase" %>
+<%@ page import="org.labkey.api.query.UserSchema"%>
+<%@ page import="static org.labkey.api.query.QueryService.*" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.api.view.Portal" %>
 <%@ page import="org.labkey.api.view.ViewContext" %>
 <%@ page import="org.labkey.timeline.TimelineSettings" %>
-<%@ page import="org.apache.commons.beanutils.BeanUtils" %>
-<%@ page import="org.labkey.api.query.DefaultSchema" %>
-<%@ page extends="org.labkey.api.jsp.JspBase" %>
-<%@ page import="org.json.JSONObject"%>
-<%@ page import="static org.labkey.api.query.QueryService.*" %>
-<%@ page import="org.labkey.api.query.QueryDefinition" %>
-<%@ page import="org.labkey.api.query.UserSchema" %>
-<%@ page import="org.labkey.api.collections.CaseInsensitiveHashMap" %>
-<%@ page import="java.util.*" %>
-<%@ page import="org.apache.commons.lang.StringUtils" %>
+<%@ page import="java.util.LinkedList" %>
+<%@ page import="java.util.List" %>
+<%@ page import="java.util.Map" %>
+<%@ page import="java.util.TreeMap" %>
+<%@ page import="java.util.TreeSet" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%
     HttpView<Portal.WebPart> me = (HttpView<Portal.WebPart>) HttpView.currentView();

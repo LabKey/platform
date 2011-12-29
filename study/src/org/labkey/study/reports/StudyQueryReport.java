@@ -16,7 +16,7 @@
 
 package org.labkey.study.reports;
 
-import org.apache.commons.lang.math.NumberUtils;
+import org.apache.commons.lang3.math.NumberUtils;
 import org.labkey.api.data.DataRegion;
 import org.labkey.api.query.*;
 import org.labkey.api.reports.ReportService;

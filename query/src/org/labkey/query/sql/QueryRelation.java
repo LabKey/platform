@@ -15,22 +15,26 @@
  */
 package org.labkey.query.sql;
 
-import org.labkey.api.data.dialect.SqlDialect;
-import org.labkey.api.query.QuerySchema;
-import org.labkey.api.query.FieldKey;
-import org.labkey.api.query.QueryException;
-import org.labkey.api.data.*;
-import org.labkey.api.util.MemTracker;
-import org.labkey.data.xml.ColumnType;
+import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-import org.apache.commons.lang.StringUtils;
+import org.labkey.api.data.ColumnInfo;
+import org.labkey.api.data.ContainerFilter;
+import org.labkey.api.data.ForeignKey;
+import org.labkey.api.data.JdbcType;
+import org.labkey.api.data.SQLFragment;
+import org.labkey.api.data.TableInfo;
+import org.labkey.api.data.dialect.SqlDialect;
+import org.labkey.api.query.FieldKey;
+import org.labkey.api.query.QueryException;
+import org.labkey.api.query.QuerySchema;
+import org.labkey.api.util.MemTracker;
+import org.labkey.data.xml.ColumnType;
 
 import java.util.List;
 import java.util.Map;
 
 /**
- * Created by IntelliJ IDEA.
  * User: matthewb
  * Date: Feb 17, 2009
  * Time: 2:18:05 PM

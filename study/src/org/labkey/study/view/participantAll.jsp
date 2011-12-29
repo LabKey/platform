@@ -16,7 +16,7 @@
  */
 %>
 <%@ page import="org.apache.commons.beanutils.ConvertUtils"%>
-<%@ page import="org.apache.commons.lang.StringUtils"%>
+<%@ page import="org.apache.commons.lang3.StringUtils"%>
 <%@ page import="org.labkey.api.collections.CaseInsensitiveHashSet"%>
 <%@ page import="org.labkey.api.collections.MultiValueMap"%>
 <%@ page import="org.labkey.api.data.ColumnInfo"%>

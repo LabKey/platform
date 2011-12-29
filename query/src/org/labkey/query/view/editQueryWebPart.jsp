@@ -15,9 +15,8 @@
  * limitations under the License.
  */
 %>
-<%@ page import="org.apache.commons.lang.StringUtils"%>
+<%@ page import="org.apache.commons.lang3.StringUtils"%>
 <%@ page import="org.json.JSONObject"%>
-<%@ page import="static org.labkey.api.query.QueryService.*" %>
 <%@ page import="org.labkey.api.collections.CaseInsensitiveHashMap" %>
 <%@ page import="org.labkey.api.query.DefaultSchema" %>
 <%@ page import="org.labkey.api.query.QueryDefinition" %>
@@ -29,6 +28,7 @@
 <%@ page import="java.util.Map" %>
 <%@ page import="java.util.TreeMap" %>
 <%@ page import="java.util.TreeSet" %>
+<%@ page import="org.labkey.api.query.QueryService" %>
 <%@ page extends="org.labkey.query.view.EditQueryPage" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%
@@ -45,7 +45,7 @@
     for (String name : defSchema.getUserSchemaNames())
     {
         schemaOptions.put(name, name);
-        UserSchema schema = get().getUserSchema(getUser(), getContainer(), name);
+        UserSchema schema = QueryService.get().getUserSchema(getUser(), getContainer(), name);
         Map<String, List<String>> tableNames = new CaseInsensitiveHashMap<List<String>>();
 
         for (String tableName : new TreeSet<String>(schema.getTableAndQueryNames(true)))

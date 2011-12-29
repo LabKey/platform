@@ -16,8 +16,8 @@
 
 package org.labkey.query.sql;
 
+import org.apache.commons.lang3.StringUtils;
 import org.labkey.api.query.FieldKey;
-import org.apache.commons.lang.StringUtils;
 import org.labkey.query.sql.antlr.SqlBaseParser;
 
 public class QIdentifier extends QFieldKey

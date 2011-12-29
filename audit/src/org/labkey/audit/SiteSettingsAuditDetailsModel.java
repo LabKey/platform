@@ -15,12 +15,11 @@
  */
 package org.labkey.audit;
 
+import org.apache.commons.lang3.time.FastDateFormat;
 import org.labkey.api.audit.AuditLogEvent;
 import org.labkey.api.audit.AuditLogService;
-import org.labkey.api.settings.WriteableAppProps;
 import org.labkey.api.security.User;
-import org.labkey.api.security.UserManager;
-import org.apache.commons.lang.time.FastDateFormat;
+import org.labkey.api.settings.WriteableAppProps;
 
 import java.util.Map;
 

@@ -17,7 +17,7 @@
 package org.labkey.experiment.api;
 
 import org.apache.commons.beanutils.ConvertUtils;
-import org.apache.commons.lang.ObjectUtils;
+import org.apache.commons.lang3.ObjectUtils;
 import org.jetbrains.annotations.NotNull;
 import org.labkey.api.collections.NamedObjectList;
 import org.labkey.api.data.ColumnInfo;

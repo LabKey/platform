@@ -16,8 +16,8 @@
 
 package org.labkey.study.reports;
 
-import org.apache.commons.lang.StringUtils;
-import org.apache.commons.lang.math.NumberUtils;
+import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.math.NumberUtils;
 import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.query.QueryParam;
 import org.labkey.api.reports.report.ReportDescriptor;

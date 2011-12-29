@@ -17,8 +17,8 @@
 package org.labkey.announcements;
 
 import org.apache.commons.beanutils.ConversionException;
-import org.apache.commons.lang.StringUtils;
-import org.apache.commons.lang.time.DateUtils;
+import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.time.DateUtils;
 import org.labkey.announcements.EmailNotificationPage.Reason;
 import org.labkey.announcements.config.AnnouncementEmailConfig;
 import org.labkey.announcements.model.AnnouncementManager;

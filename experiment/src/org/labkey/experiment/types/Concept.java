@@ -16,18 +16,17 @@
 
 package org.labkey.experiment.types;
 
-import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.labkey.api.exp.PropertyDescriptor;
 import org.labkey.api.data.ContainerManager;
 
 import java.util.HashSet;
 
 /**
- * Created by IntelliJ IDEA.
  * User: mbellew
  * Date: Nov 16, 2005
  * Time: 9:37:30 AM
- * <p/>
+ *
  * Bean class used for importing vocabulary
  */
 public class Concept

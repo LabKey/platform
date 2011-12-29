@@ -17,7 +17,7 @@
 package org.labkey.core.user;
 
 import org.apache.commons.collections15.MultiMap;
-import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.action.*;
 import org.labkey.api.audit.AuditLogService;

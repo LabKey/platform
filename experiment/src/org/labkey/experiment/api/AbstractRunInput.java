@@ -15,7 +15,7 @@
  */
 package org.labkey.experiment.api;
 
-import org.apache.commons.lang.ObjectUtils;
+import org.apache.commons.lang3.ObjectUtils;
 
 /**
  * User: jeckels

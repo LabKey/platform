@@ -16,7 +16,7 @@
 
 package org.labkey.core.dialect;
 
-import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.labkey.api.data.dialect.StandardDialectStringHandler;
 
 import java.util.regex.Pattern;

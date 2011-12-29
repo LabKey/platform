@@ -18,7 +18,7 @@ package org.labkey.query.reports.chart;
 
 import com.google.gwt.user.client.rpc.SerializableException;
 import org.apache.commons.beanutils.PropertyUtils;
-import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.labkey.api.gwt.client.model.GWTChart;
 import org.labkey.api.gwt.client.model.GWTChartRenderer;
 import org.labkey.api.gwt.client.model.GWTChartColumn;

@@ -16,7 +16,7 @@
 
 package org.labkey.audit.query;
 
-import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.labkey.api.audit.AuditLogService;
 import org.labkey.api.audit.query.AuditDisplayColumnFactory;
 import org.labkey.api.data.AbstractTableInfo;

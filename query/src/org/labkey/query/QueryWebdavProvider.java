@@ -15,21 +15,32 @@
  */
 package org.labkey.query;
 
-import org.labkey.api.webdav.*;
-import org.labkey.api.util.PageFlowUtil;
-import org.labkey.api.util.FileStream;
+import org.apache.commons.lang3.StringUtils;
+import org.jetbrains.annotations.NotNull;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.RuntimeSQLException;
-import org.labkey.api.query.*;
+import org.labkey.api.query.DefaultSchema;
+import org.labkey.api.query.QueryDefinition;
+import org.labkey.api.query.QuerySchema;
+import org.labkey.api.query.QueryService;
+import org.labkey.api.query.UserSchema;
 import org.labkey.api.security.User;
-import org.jetbrains.annotations.NotNull;
-import org.apache.commons.lang.StringUtils;
+import org.labkey.api.util.FileStream;
+import org.labkey.api.util.PageFlowUtil;
+import org.labkey.api.webdav.AbstractDocumentResource;
+import org.labkey.api.webdav.AbstractWebdavResourceCollection;
+import org.labkey.api.webdav.WebdavResolverImpl;
+import org.labkey.api.webdav.WebdavResource;
+import org.labkey.api.webdav.WebdavService;
 
-import java.util.*;
-import java.io.InputStream;
-import java.io.IOException;
 import java.io.ByteArrayInputStream;
+import java.io.IOException;
+import java.io.InputStream;
 import java.sql.SQLException;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Map;
+import java.util.Set;
 
 /**
  * Created by IntelliJ IDEA.

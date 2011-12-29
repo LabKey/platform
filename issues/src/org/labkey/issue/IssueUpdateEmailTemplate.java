@@ -15,7 +15,6 @@
  */
 package org.labkey.issue;
 
-import org.apache.commons.lang.ObjectUtils;
 import org.labkey.api.attachments.AttachmentFile;
 import org.labkey.api.data.Container;
 import org.labkey.api.security.User;

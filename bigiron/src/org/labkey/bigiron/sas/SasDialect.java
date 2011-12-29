@@ -15,7 +15,7 @@
  */
 package org.labkey.bigiron.sas;
 
-import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.NotNull;
 import org.labkey.api.data.ConnectionWrapper;
 import org.labkey.api.data.SQLFragment;

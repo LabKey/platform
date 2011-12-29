@@ -15,7 +15,7 @@
  */
 package org.labkey.announcements.config;
 
-import org.apache.commons.lang.math.NumberUtils;
+import org.apache.commons.lang3.math.NumberUtils;
 import org.labkey.announcements.model.AnnouncementManager;
 import org.labkey.api.action.ReturnUrlForm;
 import org.labkey.api.action.SpringActionController;

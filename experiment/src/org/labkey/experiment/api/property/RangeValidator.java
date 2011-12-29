@@ -15,14 +15,13 @@
  */
 package org.labkey.experiment.api.property;
 
-import org.apache.commons.lang.StringUtils;
-import org.apache.commons.lang.math.NumberUtils;
+import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.math.NumberUtils;
 import org.labkey.api.exp.PropertyDescriptor;
 import org.labkey.api.exp.property.DefaultPropertyValidator;
 import org.labkey.api.exp.property.IPropertyValidator;
 import org.labkey.api.exp.property.ValidatorContext;
 import org.labkey.api.exp.property.ValidatorKind;
-import org.labkey.api.gwt.client.model.GWTPropertyValidator;
 import org.labkey.api.gwt.client.model.PropertyValidatorType;
 import org.labkey.api.query.ValidationError;
 import org.labkey.api.util.DateUtil;
@@ -91,7 +90,7 @@ public class RangeValidator extends DefaultPropertyValidator implements Validato
             if (constraint != null)
                 constraints.add(constraint);
         }
-        return constraints.toArray(new Pair[0]);
+        return constraints.toArray(new Pair[constraints.size()]);
     }
 
     private Pair<String, String> parsePart(String expression)
@@ -99,7 +98,7 @@ public class RangeValidator extends DefaultPropertyValidator implements Validato
         String[] parts = expression.split("=");
         if (parts.length == 2)
         {
-            return new Pair(parts[0], parts[1]);
+            return new Pair<String, String>(parts[0], parts[1]);
         }
         return null;
     }
@@ -108,7 +107,7 @@ public class RangeValidator extends DefaultPropertyValidator implements Validato
     {
         if (NumberUtils.isNumber(String.valueOf(value)))
         {
-            int comparison = NumberUtils.compare(NumberUtils.toDouble(String.valueOf(value)), NumberUtils.toDouble(constraint.getValue()));
+            int comparison = Double.compare(NumberUtils.toDouble(String.valueOf(value)), NumberUtils.toDouble(constraint.getValue()));
             return comparisonValid(comparison, constraint.getKey());
         }
         else if (value instanceof Date)

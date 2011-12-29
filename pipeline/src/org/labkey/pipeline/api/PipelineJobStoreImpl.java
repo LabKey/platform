@@ -22,7 +22,7 @@ import java.util.List;
 import java.util.Arrays;
 import java.util.ArrayList;
 
-import org.apache.commons.lang.ObjectUtils;
+import org.apache.commons.lang3.ObjectUtils;
 import org.labkey.api.pipeline.*;
 import org.labkey.api.data.DbScope;
 import org.labkey.api.data.Container;

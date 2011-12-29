@@ -16,10 +16,14 @@
 
 package org.labkey.demo.model;
 
-import org.labkey.api.data.*;
+import org.apache.commons.lang3.StringUtils;
+import org.labkey.api.data.Container;
+import org.labkey.api.data.Filter;
+import org.labkey.api.data.SimpleFilter;
+import org.labkey.api.data.Sort;
+import org.labkey.api.data.Table;
 import org.labkey.api.security.User;
 import org.labkey.demo.DemoSchema;
-import org.apache.commons.lang.StringUtils;
 import org.springframework.validation.Errors;
 
 import java.sql.SQLException;

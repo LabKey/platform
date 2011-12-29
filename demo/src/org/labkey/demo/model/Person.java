@@ -16,10 +16,9 @@
 
 package org.labkey.demo.model;
 
-import org.apache.commons.lang.ObjectUtils;
+import org.apache.commons.lang3.ObjectUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.labkey.api.data.Entity;
-import org.labkey.api.util.PageFlowUtil;
-import org.apache.commons.lang.StringUtils;
 
 /**
  * User: brittp

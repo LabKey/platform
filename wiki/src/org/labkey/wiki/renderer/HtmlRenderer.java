@@ -16,8 +16,7 @@
 
 package org.labkey.wiki.renderer;
 
-import org.apache.commons.lang.StringUtils;
-import static org.apache.commons.lang.StringUtils.trimToEmpty;
+import org.apache.commons.lang3.StringUtils;
 
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.attachments.Attachment;
@@ -76,7 +75,7 @@ public class HtmlRenderer implements WikiRenderer
 
         FormattedHtml formattedHtml = handleLabkeySubstitutions(text);
         boolean volatilePage = formattedHtml.isVolatile();
-        Document doc = PageFlowUtil.convertHtmlToDocument("<html><body>" + trimToEmpty(formattedHtml.getHtml()) + "</body></html>", errors);
+        Document doc = PageFlowUtil.convertHtmlToDocument("<html><body>" + StringUtils.trimToEmpty(formattedHtml.getHtml()) + "</body></html>", errors);
 
         // process A and IMG
         NodeList nl = doc.getElementsByTagName("a");

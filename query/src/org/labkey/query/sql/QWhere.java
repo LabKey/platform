@@ -16,7 +16,7 @@
 
 package org.labkey.query.sql;
 
-import org.apache.commons.lang.ObjectUtils;
+import org.apache.commons.lang3.ObjectUtils;
 import org.apache.xmlbeans.QNameSet;
 import org.apache.xmlbeans.XmlObject;
 import org.apache.xmlbeans.XmlString;

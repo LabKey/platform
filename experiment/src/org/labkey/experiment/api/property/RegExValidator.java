@@ -15,21 +15,20 @@
  */
 package org.labkey.experiment.api.property;
 
+import org.apache.commons.lang3.BooleanUtils;
 import org.labkey.api.exp.PropertyDescriptor;
+import org.labkey.api.exp.property.DefaultPropertyValidator;
+import org.labkey.api.exp.property.IPropertyValidator;
 import org.labkey.api.exp.property.ValidatorContext;
 import org.labkey.api.exp.property.ValidatorKind;
-import org.labkey.api.exp.property.IPropertyValidator;
-import org.labkey.api.exp.property.DefaultPropertyValidator;
-import org.labkey.api.gwt.client.model.GWTPropertyValidator;
 import org.labkey.api.gwt.client.model.PropertyValidatorType;
-import org.labkey.api.query.ValidationError;
 import org.labkey.api.query.SimpleValidationError;
-import org.apache.commons.lang.BooleanUtils;
+import org.labkey.api.query.ValidationError;
 
 import java.util.List;
+import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.regex.PatternSyntaxException;
-import java.util.regex.Matcher;
 
 /*
 * User: Karl Lum

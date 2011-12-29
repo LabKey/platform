@@ -16,7 +16,7 @@
 
 package org.labkey.study.pipeline;
 
-import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.exp.PropertyDescriptor;
 import org.labkey.api.util.DateUtil;

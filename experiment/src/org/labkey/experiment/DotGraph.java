@@ -17,7 +17,7 @@ package org.labkey.experiment;
 
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.util.PageFlowUtil;
-import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.labkey.api.exp.api.ExpMaterial;
 import org.labkey.api.exp.api.ExpProtocolApplication;
 import org.labkey.api.exp.api.ExpData;
