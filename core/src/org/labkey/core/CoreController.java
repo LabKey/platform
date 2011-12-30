@@ -722,20 +722,6 @@ public class CoreController extends SpringActionController
         }
     }
 
-    @RequiresPermissionClass(InsertPermission.class)
-    public class ManageWorkbooksAction extends SimpleViewAction
-    {
-        public ModelAndView getView(Object o, BindException errors) throws Exception
-        {
-            return new WorkbookQueryView(getViewContext(), new CoreQuerySchema(getUser(), getContainer()));
-        }
-
-        public NavTree appendNavTrail(NavTree root)
-        {
-            return root.addChild("Manage Workbooks");
-        }
-    }
-
     public static class LookupWorkbookForm
     {
         private String _id;

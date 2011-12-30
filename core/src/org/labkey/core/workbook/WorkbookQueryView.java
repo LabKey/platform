@@ -69,11 +69,6 @@ public class WorkbookQueryView extends QueryView
                 btn.setRequiresSelection(true);
                 btn.setDisplayPermission(AdminPermission.class);
                 bar.add(btn);
-
-                btn = new ActionButton(new ActionURL(CoreController.ManageWorkbooksAction.class, getContainer()), "Manage Workbooks");
-                btn.setActionType(ActionButton.Action.LINK);
-                btn.setDisplayPermission(AdminPermission.class);
-                bar.add(btn);
             }
         }
         return view;
