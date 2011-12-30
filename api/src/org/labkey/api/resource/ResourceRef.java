@@ -16,6 +16,7 @@
 package org.labkey.api.resource;
 
 import org.apache.log4j.Logger;
+import org.jetbrains.annotations.NotNull;
 import org.labkey.api.util.HeartBeat;
 
 import java.util.HashSet;
@@ -36,7 +37,7 @@ public class ResourceRef
 
     HashSet<ResourceRef> _dependencies;
 
-    public ResourceRef(Resource resource)
+    public ResourceRef(@NotNull Resource resource)
     {
         _resource = resource;
         _version = resource.getVersionStamp();

@@ -506,26 +506,35 @@ public class NavTree extends Pair<String, String> implements Collapsible
     }
 
     
-    StringBuilder toJS(StringBuilder sb, boolean asMenu)
+    protected StringBuilder toJS(StringBuilder sb, boolean asMenu)
     {
         String title = getKey();
-        sb.append("{").append("text:").append(PageFlowUtil.jsString(title));
+        sb.append("{").append("text:").append(PageFlowUtil.qh(title));
+        if (isStrong() || isEmphasis())
+        {
+            sb.append(",cls:'");
+            if (isStrong())
+                sb.append("labkey-strong");
+            if (isEmphasis())
+                sb.append(" labkey-emphasis");
+            sb.append("'");
+        }
         if (StringUtils.isNotEmpty(getId()))
-            sb.append(",id:").append(PageFlowUtil.jsString(getId()));
+            sb.append(",id:").append(PageFlowUtil.qh(getId()));
         if (StringUtils.isNotEmpty(getDescription()))
-            sb.append(",description").append(PageFlowUtil.jsString(getDescription()));
+            sb.append(",description:").append(PageFlowUtil.qh(getDescription()));
         if (isSelected())
             sb.append(",checked:true");
         if (null != getImageSrc())
-            sb.append(",icon:").append(PageFlowUtil.jsString(getImageSrc()));
+            sb.append(",icon:").append(PageFlowUtil.qh(getImageSrc()));
         if (isDisabled())
             sb.append(",disabled:true");
-        if (null != getValue())
-            sb.append(",href:").append(PageFlowUtil.jsString(getValue()));
+        sb.append(",href:").append(null != getValue() ? PageFlowUtil.qh(getValue()) : "'javascript: void(0)'");
         if (null != getScript())
             sb.append(",handler:function(){").append(getScript()).append("}");
         if (null != getChildren() && getChildren().length > 0)
         {
+            sb.append(",hideOnClick:false");
             sb.append(",\n").append(asMenu ? "menu:" : "children:");
             toJS(children, sb, asMenu);
         }

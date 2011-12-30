@@ -21,6 +21,7 @@ import org.apache.commons.lang3.StringUtils;
 
 import java.io.Writer;
 import java.io.IOException;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.Map;
 
@@ -138,7 +139,7 @@ public class PopupMenu extends DisplayElement
         out.append("Ext.onReady(function() {\n");
         out.append(renderUnregScript(getId(dataRegionName)));
         out.append("        new Ext.menu.Menu(");
-        out.append(renderMenuModel(_navTree.getChildren(), getId(dataRegionName)));
+        out.append(renderMenuModel(_navTree.getChildList(), getId(dataRegionName)));
         out.append("         );});\n</script>");
     }
 
@@ -156,59 +157,16 @@ public class PopupMenu extends DisplayElement
         return sb.toString();
     }
 
-    // UNDONE: use NavTree.toJS()
-    private String renderMenuModel(NavTree[] trees, String id)
+    private static String renderMenuModel(Collection<NavTree> trees, String id)
     {
         String sep = "";
         StringBuilder sb = new StringBuilder();
 
         sb.append("{cls:'extContainer',");
         sb.append("id:").append(PageFlowUtil.qh(id)).append(",\n");
-        sb.append("items:[");
-        for (NavTree tree : trees)
-        {
-            sb.append(sep);
-            if (tree == NavTree.MENU_SEPARATOR)
-            {
-                sb.append("'-'");
-                sep = ",";
-                continue;
-            }
-
-            sb.append("{").append("text:").append(PageFlowUtil.qh(tree.getKey()));
-            if (tree.isStrong() || tree.isEmphasis())
-            {
-                sb.append(", cls:'");
-                if (tree.isStrong())
-                    sb.append("labkey-strong");
-                if (tree.isEmphasis())
-                    sb.append(" labkey-emphasis");
-                sb.append("'");
-            }
-            if (StringUtils.isNotEmpty(tree.getId()))
-                sb.append(", id:").append(PageFlowUtil.qh(tree.getId()));
-            if (StringUtils.isNotEmpty(tree.getDescription()))
-                sb.append(", tooltip: ").append(PageFlowUtil.qh(tree.getDescription()));
-            if (tree.isSelected())
-                sb.append(", checked:true");
-            if (null != tree.getImageSrc())
-                sb.append(", icon:").append(PageFlowUtil.qh(tree.getImageSrc()));
-            if (tree.isDisabled())
-                sb.append(", disabled:true");
-            // If we don't have a URL, use 'javascript: void(0) or Ext will fill in '#', which causes the browser
-            // to scroll to the top of the page.
-            sb.append(",").append("href:").append(null != tree.getValue() ? PageFlowUtil.qh(tree.getValue()) : "'javascript: void(0)'");
-            if (null != tree.getScript())
-                sb.append(", handler:function(){").append(tree.getScript()).append("}");
-            if (null != tree.getChildren() && tree.getChildren().length > 0)
-            {
-                sb.append(", hideOnClick:false");
-                sb.append(",\n menu:").append(renderMenuModel(tree.getChildren(), null)).append("\n");
-            }
-            sb.append("}\n");
-            sep = ",";
-        }
-        sb.append("]}");
+        sb.append("items:");
+        NavTree.toJS(trees, sb, true);
+        sb.append("}");
 
         return sb.toString();
     }

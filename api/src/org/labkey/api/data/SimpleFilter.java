@@ -557,7 +557,8 @@ public class SimpleFilter implements Filter
                 }
                 catch (ConversionException e)
                 {
-                    throw new ConversionException("Could not convert \"" + param + "\" for column \"" + columnName + "");
+                    // rethrow with better error message.  Date CompareTypes convert the parameter when created.
+                    throw new ConversionException("Could not convert \"" + param + "\" for column \"" + columnName + "\"", e);
                 }
             }
         }
