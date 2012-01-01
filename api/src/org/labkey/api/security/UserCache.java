@@ -128,8 +128,10 @@ public class UserCache
 
                 if (user.isActive())
                 {
-                    activeUsers.add(user);
-                    activeEmails.add(user.getEmail()); // Sorted, since user's are sorted by email address
+                    activeUsers.add(user.cloneUser());  // Clone the user: looks like active users get modified (groups get populated),
+                                                        // which fouls up the users in allUsersMap. TODO: Make these users unmodifiable
+                                                        // and track down who is modifying them.
+                    activeEmails.add(user.getEmail());  // This list will be sorted, since allUsers is sorted by email address
                 }
             }
 
