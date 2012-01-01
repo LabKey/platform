@@ -1591,9 +1591,9 @@ public class SecurityManager
 
     public static List<User> getUsersWithPermissions(Container c, Set<Class<? extends Permission>> perms) throws SQLException
     {
-        // No cache right now, but performance seems fine.  After the user list and acl is cached, no other queries occur.
-        User[] allUsers = UserManager.getActiveUsers();
-        List<User> users = new ArrayList<User>(allUsers.length);
+        // No cache right now, but performance seems fine.  After the user list and policy are cached, no other queries occur.
+        Collection<User> allUsers = UserManager.getActiveUsers();
+        List<User> users = new ArrayList<User>(allUsers.size());
         SecurityPolicy policy = c.getPolicy();
 
         for (User user : allUsers)

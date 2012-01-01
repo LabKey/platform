@@ -15,7 +15,7 @@
  */
 package org.labkey.api.cache;
 
-import org.apache.commons.lang.time.DateUtils;
+import org.apache.commons.lang3.time.DateUtils;
 import org.apache.log4j.Logger;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.cache.ehcache.EhCacheProvider;
@@ -49,20 +49,21 @@ public class CacheManager
 
     public static final long DEFAULT_TIMEOUT = HOUR;
 
-    // Swap providers here to test Ehcache vs. LabKey's TTLCacheMap implementation
-    private static final CacheProvider PROVIDER = EhCacheProvider.getInstance(); // TTLCacheProvider.getInstance();
+    // Swap providers here (if we ever implement another cache provider)
+    private static final CacheProvider PROVIDER = EhCacheProvider.getInstance();
     private static final List<Cache> KNOWN_CACHES = new LinkedList<Cache>();
+    public static final int UNLIMITED = 0;
 
     public static <K, V> Cache<K, V> getCache(int limit, long defaultTimeToLive, String debugName)
     {
-        Cache<K, V> cache = new CacheWrapper<K, V>(PROVIDER.<K, V>getBasicCache(debugName, limit, defaultTimeToLive, false), debugName, null);
+        Cache<K, V> cache = new CacheWrapper<K, V>(PROVIDER.<K, V>getSimpleCache(debugName, limit, defaultTimeToLive, false), debugName, null);
         addToKnownCaches(cache);  // Permanent cache -- hold onto it
         return cache;
     }
 
     public static <V> StringKeyCache<V> getStringKeyCache(int limit, long defaultTimeToLive, String debugName)
     {
-        StringKeyCache<V> cache = new StringKeyCacheWrapper<V>(PROVIDER.<String, V>getBasicCache(debugName, limit, defaultTimeToLive, false), debugName, null);
+        StringKeyCache<V> cache = new StringKeyCacheWrapper<V>(PROVIDER.<String, V>getSimpleCache(debugName, limit, defaultTimeToLive, false), debugName, null);
         addToKnownCaches(cache);  // Permanent cache -- hold onto it
         return cache;
     }
@@ -82,7 +83,7 @@ public class CacheManager
     // Temporary caches must be closed when no longer needed.  Their statistics can accumulate to another cache's stats.
     public static <V> StringKeyCache<V> getTemporaryCache(int limit, long defaultTimeToLive, String debugName, @Nullable Stats stats)
     {
-        return new StringKeyCacheWrapper<V>(PROVIDER.<String, V>getBasicCache(debugName, limit, defaultTimeToLive, true), debugName, stats);
+        return new StringKeyCacheWrapper<V>(PROVIDER.<String, V>getSimpleCache(debugName, limit, defaultTimeToLive, true), debugName, stats);
     }
 
     private static final StringKeyCache<Object> SHARED_CACHE = getStringKeyCache(10000, DEFAULT_TIMEOUT, "sharedCache");

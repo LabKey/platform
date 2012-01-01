@@ -25,10 +25,10 @@ import org.labkey.api.util.Filter;
  * Time: 10:50:02 AM
  */
 
-// Wraps a generic BasicCache to provide a StringKeyCache.  Adds statistics gathering, removeUsingPrefix(), and debug name handling
+// Wraps a SimpleCache to provide a StringKeyCache.  Adds statistics gathering, removeUsingPrefix(), and debug name handling
 public class StringKeyCacheWrapper<V> extends CacheWrapper<String, V> implements StringKeyCache<V>
 {
-    public StringKeyCacheWrapper(@NotNull BasicCache<String, V> basicCache, @NotNull String debugName, @Nullable Stats stats)
+    public StringKeyCacheWrapper(@NotNull SimpleCache<String, V> basicCache, @NotNull String debugName, @Nullable Stats stats)
     {
         super(basicCache, debugName, stats);
     }

@@ -22,8 +22,6 @@ package org.labkey.api.cache;
  */
 public interface CacheProvider
 {
-    public static final int UNLIMITED = 0;
-
     /**
      * Creates a new SimpleCache.
      *
@@ -35,5 +33,5 @@ public interface CacheProvider
      * @param <V>                Value type
      * @return                   A new cache created by the provider
      */
-    <K, V> BasicCache<K, V> getBasicCache(String debugName, int limit, long defaultTimeToLive, boolean temporary);
+    <K, V> SimpleCache<K, V> getSimpleCache(String debugName, int limit, long defaultTimeToLive, boolean temporary);
 }

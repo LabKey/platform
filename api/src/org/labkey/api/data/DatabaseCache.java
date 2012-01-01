@@ -22,6 +22,7 @@ import org.jetbrains.annotations.Nullable;
 import org.junit.Test;
 import org.labkey.api.cache.CacheLoader;
 import org.labkey.api.cache.CacheManager;
+import org.labkey.api.cache.CacheType;
 import org.labkey.api.cache.Stats;
 import org.labkey.api.cache.StringKeyCache;
 import org.labkey.api.util.Filter;

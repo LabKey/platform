@@ -13,6 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package org.labkey.api.cache;
 
 import org.jetbrains.annotations.Nullable;
@@ -24,7 +25,6 @@ import org.labkey.api.util.Filter;
  * Time: 9:32:10 AM
  */
 
-// Cache providers return caches that implement this interface.  BasicCache implementations must be thread-safe.
 public interface BasicCache<K, V>
 {
     void put(K key, V value);
@@ -64,12 +64,6 @@ public interface BasicCache<K, V>
      * caches when we're done with them (e.g., after a transaction is complete) so we don't leak them.
      */
     void close();
-
-    static enum CacheType
-    {
-        DeterministicLRU,
-        NonDeterministicLRU
-    }
 
     // implementations are encouraged to use this singleton if it is useful
     public static final Object NULL_MARKER = new Object() {public String toString(){return "MISSING VALUE MARKER";}};

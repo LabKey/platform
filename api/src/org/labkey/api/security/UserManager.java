@@ -21,16 +21,12 @@ import org.apache.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.audit.AuditLogService;
-import org.labkey.api.cache.CacheManager;
-import org.labkey.api.cache.DbCache;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.CoreSchema;
 import org.labkey.api.data.PropertyManager;
 import org.labkey.api.data.SQLFragment;
-import org.labkey.api.data.Selector;
 import org.labkey.api.data.SimpleFilter;
-import org.labkey.api.data.Sort;
 import org.labkey.api.data.SqlExecutor;
 import org.labkey.api.data.SqlSelector;
 import org.labkey.api.data.Table;
@@ -43,10 +39,8 @@ import org.labkey.api.view.HttpView;
 import org.labkey.api.view.ViewContext;
 
 import java.beans.PropertyChangeListener;
-import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Comparator;
@@ -62,16 +56,12 @@ public class UserManager
     private static final CoreSchema CORE = CoreSchema.getInstance();
 
     // NOTE: This static map will slowly grow, since user IDs & timestamps are added and never removed.  It's a trivial amount of data, though.
-    private static final Map<Integer, Long> ACTIVE_USERS = new HashMap<Integer, Long>(100);
+    private static final Map<Integer, Long> RECENT_USERS = new HashMap<Integer, Long>(100);
 
-    private static final String USER_LIST_LOOKUP = "UserList";
-    private static final String USER_OBJECT_LIST_LOOKUP = "UserObjectList";
     private static final String USER_PREF_MAP = "UserPreferencesMap";
     private static final String USER_REQUIRED_FIELDS = "UserInfoRequiredFields";
 
     public static final String USER_AUDIT_EVENT = "UserAuditEvent";
-
-    private static Long _userCount = null;
 
     //
     // UserListener
@@ -177,28 +167,19 @@ public class UserManager
         return errors;
     }
 
-    public static User getUser(int userId)
+    public static @Nullable User getUser(int userId)
     {
         if (userId == User.guest.getUserId())
             return User.guest;
 
-        User user = (User)DbCache.get(CORE.getTableInfoUsers(), "" + userId);
-
-        if (null == user)
-        {
-            user = Table.selectObject(CORE.getTableInfoUsers(), userId, User.class);
-
-            if (null == user)
-                return null;
-
-            DbCache.put(CORE.getTableInfoUsers(), "" + userId, user, CacheManager.DAY);
-        }
+        User user = UserCache.getUser(userId);
 
         // these should really be readonly
-        return user.cloneUser();
+        return null != user ? user.cloneUser() : null;
     }
 
 
+    // TODO: Cache?
     public static @Nullable User getUser(ValidEmail email)
     {
         // TODO: Index on Principals.Name?
@@ -206,6 +187,7 @@ public class UserManager
     }
 
 
+    // Only used for creating/modifying a user, so no need to cache
     public static @Nullable User getUserByDisplayName(String displayName)
     {
         return new TableSelector(CORE.getTableInfoUsers(), new SimpleFilter("DisplayName", displayName), null).getObject(User.class);
@@ -214,40 +196,40 @@ public class UserManager
 
     public static void updateActiveUser(User user)
     {
-        synchronized(ACTIVE_USERS)
+        synchronized(RECENT_USERS)
         {
-            ACTIVE_USERS.put(user.getUserId(), HeartBeat.currentTimeMillis());
+            RECENT_USERS.put(user.getUserId(), HeartBeat.currentTimeMillis());
         }
     }
 
 
     private static void removeActiveUser(User user)
     {
-        synchronized(ACTIVE_USERS)
+        synchronized(RECENT_USERS)
         {
-            ACTIVE_USERS.remove(user.getUserId());
+            RECENT_USERS.remove(user.getUserId());
         }
     }
 
 
     // Includes users who have logged in during any server session
-    public static int getActiveUserCount(Date since)
+    public static int getRecentUserCount(Date since)
     {
         return new SqlSelector(CORE.getSchema(), new SQLFragment("SELECT COUNT(*) FROM " + CORE.getTableInfoUsersData() + " WHERE LastLogin >= ?", since)).getObject(Integer.class);
     }
 
 
     /** Returns all users who have logged in during this server session since the specified interval */
-    public static List<Pair<String, Long>> getActiveUsers(long since)
+    public static List<Pair<String, Long>> getRecentUsers(long since)
     {
-        synchronized(ACTIVE_USERS)
+        synchronized(RECENT_USERS)
         {
             long now = System.currentTimeMillis();
-            List<Pair<String, Long>> recentUsers = new ArrayList<Pair<String, Long>>(ACTIVE_USERS.size());
+            List<Pair<String, Long>> recentUsers = new ArrayList<Pair<String, Long>>(RECENT_USERS.size());
 
-            for (int id : ACTIVE_USERS.keySet())
+            for (int id : RECENT_USERS.keySet())
             {
-                long lastActivity = ACTIVE_USERS.get(id);
+                long lastActivity = RECENT_USERS.get(id);
 
                 if (lastActivity >= since)
                 {
@@ -327,98 +309,22 @@ public class UserManager
     }
 
 
-    public static User[] getActiveUsers()
+    public static Collection<User> getActiveUsers()
     {
-        User[] userList = (User[]) DbCache.get(CORE.getTableInfoActiveUsers(), USER_OBJECT_LIST_LOOKUP);
-        if (userList != null)
-            return userList;
-        userList = new TableSelector(CORE.getTableInfoActiveUsers(), null, new Sort("Email")).getArray(User.class);
-        DbCache.put(CORE.getTableInfoActiveUsers(), USER_OBJECT_LIST_LOOKUP, userList, CacheManager.HOUR);
-        return userList;
+        return UserCache.getActiveUsers();
     }
 
 
-    private static Map<Integer, UserName> getUserEmailDisplayNameMap()
+    // Returns a modifiable, sorted collection of emails address for the active users
+    public static List<String> getActiveUserEmails()
     {
-        Map<Integer, UserName> userList = (Map<Integer, UserName>) DbCache.get(CORE.getTableInfoActiveUsers(), USER_LIST_LOOKUP);
-
-        if (null == userList)
-        {
-            final Map<Integer, UserName> userList2 = new HashMap<Integer, UserName>((int) (getUserCount() * 1.333));
-
-            Selector selector = new SqlSelector(CORE.getSchema(), new SQLFragment("SELECT UserId, Email, DisplayName FROM " + CORE.getTableInfoActiveUsers()));
-            selector.forEach(new Selector.ForEachBlock<ResultSet>() {
-                @Override
-                public void exec(ResultSet rs) throws SQLException
-                {
-                    UserName userName = new UserName(rs.getString("Email"), rs.getString("DisplayName"));
-                    userList2.put(rs.getInt("UserId"), userName);
-                }
-            });
-
-            DbCache.put(CORE.getTableInfoActiveUsers(), USER_LIST_LOOKUP, userList2, CacheManager.HOUR);
-            userList = userList2;
-        }
-
-        return userList;
-    }
-
-
-    private static class UserName
-    {
-        private String _email;
-        private String _displayName;
-
-        public UserName(String email, String displayName)
-        {
-            _email = email;
-            _displayName = displayName;
-        }
-
-        /**
-         * Returns the display name of this user. Requires a ViewContext
-         * in order to check if the current web browser is logged in.
-         * We then filter the display name for guests, stripping out the @domain.com
-         * if it is an email address.
-         *
-         * @param context
-         * @return The display name, possibly sanitized
-         */
-        public String getDisplayName(ViewContext context)
-        {
-            if (context == null || context.getUser() != null && context.getUser().isGuest())
-            {
-                return sanitizeEmailAddress(_displayName);
-            }
-            return _displayName;
-        }
-
-        public String getEmail()
-        {
-            return _email;
-        }
-    }
-
-
-    public static List<String> getUserEmailList()
-    {
-        Map<Integer, UserName> m = getUserEmailDisplayNameMap();
-        List<String> list = new ArrayList<String>();
-        for (UserName userName : m.values())
-            list.add(userName.getEmail());
-
-        Collections.sort(list);
-        return list;
+        return new ArrayList<String>(UserCache.getActiveUserEmails());
     }
 
 
     static void clearUserList(int userId)
     {
-        DbCache.remove(CORE.getTableInfoActiveUsers(), USER_LIST_LOOKUP);
-        DbCache.remove(CORE.getTableInfoActiveUsers(), USER_OBJECT_LIST_LOOKUP);
-        if (0 != userId)
-            DbCache.remove(CORE.getTableInfoUsers(), "" + userId);
-        _userCount = null;
+        UserCache.remove(userId);
     }
 
 
@@ -444,7 +350,7 @@ public class UserManager
 
     public static void addToUserHistory(User principal, String message)
     {
-        User user = UserManager.getGuestUser();
+        User user = getGuestUser();
         Container c = ContainerManager.getRoot();
 
         try
@@ -459,13 +365,13 @@ public class UserManager
         }
         catch (RuntimeException e){}
 
-        AuditLogService.get().addEvent(user, c, UserManager.USER_AUDIT_EVENT, principal.getUserId(), message);
+        AuditLogService.get().addEvent(user, c, USER_AUDIT_EVENT, principal.getUserId(), message);
     }
 
 
     public static boolean hasNoUsers()
     {
-        return 0 == getUserCount();
+        return 0 == getActiveUserCount();
     }
 
     public static int getUserCount(Date registeredBefore) throws SQLException
@@ -473,14 +379,9 @@ public class UserManager
         return Table.executeSingleton(CORE.getSchema(), "SELECT COUNT(*) FROM " + CORE.getTableInfoUsersData() + " WHERE Created <= ?", new Object[] { registeredBefore }, Integer.class);
     }
 
-    public static int getUserCount()
+    public static int getActiveUserCount()
     {
-        if (null == _userCount)
-        {
-            _userCount = new TableSelector(CORE.getTableInfoActiveUsers()).getRowCount();
-        }
-
-        return _userCount.intValue();
+        return UserCache.getActiveUserCount();
     }
 
 
@@ -538,7 +439,7 @@ public class UserManager
         Table.update(currentUser, CORE.getTableInfoUsers(), typedValues, pkVal);
         clearUserList(currentUser.getUserId());
 
-        User principal = UserManager.getUser((Integer)pkVal);
+        User principal = getUser((Integer)pkVal);
 
         if (principal != null)
         {
@@ -559,7 +460,7 @@ public class UserManager
             if (SecurityManager.loginExists(oldEmail))
             {
                 Table.execute(CORE.getSchema(), "UPDATE " + CORE.getTableInfoLogins() + " SET Email=? WHERE Email=?", newEmail.getEmailAddress(), oldEmail.getEmailAddress());
-                UserManager.addToUserHistory(UserManager.getUser(userId), currentUser + " changed email from " + oldEmail.getEmailAddress() + " to " + newEmail.getEmailAddress() + ".");
+                addToUserHistory(getUser(userId), currentUser + " changed email from " + oldEmail.getEmailAddress() + " to " + newEmail.getEmailAddress() + ".");
                 User userToBeEdited = getUser(userId);
 
                 if (userToBeEdited.getDisplayName(userToBeEdited).equals(oldEmail.getEmailAddress()))
@@ -603,7 +504,7 @@ public class UserManager
         {
             Table.execute(CORE.getSchema(), "DELETE FROM " + CORE.getTableInfoRoleAssignments() + " WHERE UserId=?", userId);
             Table.execute(CORE.getSchema(), "DELETE FROM " + CORE.getTableInfoMembers() + " WHERE UserId=?", userId);
-            UserManager.addToUserHistory(user, user.getEmail() + " was deleted from the system");
+            addToUserHistory(user, user.getEmail() + " was deleted from the system");
 
             Table.execute(CORE.getSchema(), "DELETE FROM " + CORE.getTableInfoUsersData() + " WHERE UserId=?", userId);
             Table.execute(CORE.getSchema(), "DELETE FROM " + CORE.getTableInfoLogins() + " WHERE Email=?", user.getEmail());
@@ -690,12 +591,12 @@ public class UserManager
     // Get completions from list of all site users
     public static List<AjaxCompletion> getAjaxCompletions(String prefix, User currentUser) throws SQLException
     {
-        return UserManager.getAjaxCompletions(prefix, Collections.<Group>emptyList(), Arrays.asList(UserManager.getActiveUsers()), currentUser);
+        return getAjaxCompletions(prefix, Collections.<Group>emptyList(), getActiveUsers(), currentUser);
     }
 
     public static List<AjaxCompletion> getAjaxCompletions(String prefix, Collection<User> users, User currentUser)
     {
-        return UserManager.getAjaxCompletions(prefix, Collections.<Group>emptyList(), users, currentUser);
+        return getAjaxCompletions(prefix, Collections.<Group>emptyList(), users, currentUser);
     }
 
     // Get completions from specified list of groups and users

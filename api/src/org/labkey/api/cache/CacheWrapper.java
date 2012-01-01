@@ -15,7 +15,7 @@
  */
 package org.labkey.api.cache;
 
-import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.util.Filter;
@@ -26,17 +26,18 @@ import org.labkey.api.util.Filter;
  * Time: 9:47:03 AM
  */
 
-// TODO: Track expirations? Track creation stacktrace?
-// Wraps a generic BasicCache to provide a full Cache implementation.  Adds statistics gathering and debug name handling.
+// TODO: Track expirations?
+// Wraps a SimpleCache to provide a full Cache implementation.  Adds null marker handling, statistics gathering and debug name.
 public class CacheWrapper<K, V> implements Cache<K, V>
 {
-    private final BasicCache<K, V> _cache;
+    private final SimpleCache<K, V> _cache;
     private final String _debugName;
     private final Stats _stats;
     private final Stats _transactionStats;
     private final StackTraceElement[] _stackTrace;
+    private final V _nullMarker = (V)BasicCache.NULL_MARKER;
 
-    public CacheWrapper(@NotNull BasicCache<K, V> cache, @NotNull String debugName, @Nullable Stats stats)
+    public CacheWrapper(@NotNull SimpleCache<K, V> cache, @NotNull String debugName, @Nullable Stats stats)
     {
         _cache = cache;
         assert StringUtils.isNotBlank(debugName);
@@ -63,13 +64,25 @@ public class CacheWrapper<K, V> implements Cache<K, V>
     @Override
     public V get(K key)
     {
-        return trackGet(_cache.get(key));
+        return get(key, null, null);
     }
 
     @Override
-    public V get(K key, @Nullable Object arg, CacheLoader<K, V> kvObjectCacheLoader)
+    public V get(K key, @Nullable Object arg, @Nullable CacheLoader<K, V> loader)
     {
-        return trackGet(_cache.get(key, arg, kvObjectCacheLoader));
+        V v = trackGet(_cache.get(key));
+
+        if (null != v)
+        {
+            v = (v == _nullMarker ? null : v);
+        }
+        else if (null != loader)
+        {
+            v = loader.load(key, arg);
+            put(key, null == v ? _nullMarker : v);
+        }
+
+        return v;
     }
 
     @Override

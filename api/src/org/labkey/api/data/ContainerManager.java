@@ -27,7 +27,6 @@ import org.junit.Before;
 import org.junit.Test;
 import org.labkey.api.attachments.AttachmentParent;
 import org.labkey.api.cache.CacheManager;
-import org.labkey.api.cache.CacheProvider;
 import org.labkey.api.cache.StringKeyCache;
 import org.labkey.api.collections.CaseInsensitiveHashSet;
 import org.labkey.api.collections.ConcurrentHashSet;
@@ -109,7 +108,7 @@ public class ContainerManager
     public static final String HOME_PROJECT_PATH = "/home";
     public static final String CONTAINER_AUDIT_EVENT = "ContainerAuditEvent";
 
-    private static final StringKeyCache<Object> CACHE = CacheManager.getStringKeyCache(CacheProvider.UNLIMITED, CacheManager.DAY, "containers");
+    private static final StringKeyCache<Object> CACHE = CacheManager.getStringKeyCache(CacheManager.UNLIMITED, CacheManager.DAY, "containers");
     private static final Object DATABASE_QUERY_LOCK = new Object();
     public static final String FOLDER_TYPE_PROPERTY_SET_NAME = "folderType";
     public static final String FOLDER_TYPE_PROPERTY_NAME = "name";

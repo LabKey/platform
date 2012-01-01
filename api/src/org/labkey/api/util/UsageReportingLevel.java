@@ -100,11 +100,11 @@ public enum UsageReportingLevel
 
     private static void addLowUsageReportingParams(MothershipReport report)
     {
-        report.addParam("userCount", UserManager.getUserCount());
+        report.addParam("userCount", UserManager.getActiveUserCount());
         // Users within the last 30 days
         Calendar cal = new GregorianCalendar();
         cal.add(Calendar.DATE, -30);
-        report.addParam("activeUserCount", UserManager.getActiveUserCount(cal.getTime()));
+        report.addParam("activeUserCount", UserManager.getRecentUserCount(cal.getTime()));
         report.addParam("containerCount", ContainerManager.getContainerCount());
         report.addParam("projectCount", ContainerManager.getRoot().getChildren().size());
     }

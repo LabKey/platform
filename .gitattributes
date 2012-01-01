@@ -113,13 +113,16 @@ api/src/org/labkey/api/cache/CacheLoader.java -text
 api/src/org/labkey/api/cache/CacheManager.java -text
 api/src/org/labkey/api/cache/CacheProvider.java -text
 api/src/org/labkey/api/cache/CacheStats.java -text
+api/src/org/labkey/api/cache/CacheType.java -text
 api/src/org/labkey/api/cache/CacheWrapper.java -text
 api/src/org/labkey/api/cache/DbCache.java -text
+api/src/org/labkey/api/cache/SimpleCache.java -text
 api/src/org/labkey/api/cache/Stats.java -text
 api/src/org/labkey/api/cache/StringKeyCache.java -text
 api/src/org/labkey/api/cache/StringKeyCacheWrapper.java -text
 api/src/org/labkey/api/cache/Tracking.java -text
 api/src/org/labkey/api/cache/ehcache/EhCacheProvider.java -text
+api/src/org/labkey/api/cache/ehcache/EhSimpleCache.java -text
 api/src/org/labkey/api/cache/ehcache/ehcache.xml -text
 api/src/org/labkey/api/collections/BoundMap.java -text
 api/src/org/labkey/api/collections/CaseInsensitiveHashMap.java -text
@@ -828,6 +831,7 @@ api/src/org/labkey/api/security/SecurityPolicy.java -text
 api/src/org/labkey/api/security/SecurityPolicyBean.java -text
 api/src/org/labkey/api/security/SecurityUrls.java -text
 api/src/org/labkey/api/security/TokenAuthentication.java -text
+api/src/org/labkey/api/security/UserCache.java -text
 api/src/org/labkey/api/security/UserManager.java -text
 api/src/org/labkey/api/security/UserPrincipal.java -text
 api/src/org/labkey/api/security/UserUrls.java -text

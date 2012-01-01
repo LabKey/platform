@@ -16,6 +16,8 @@
 
 package org.labkey.api.cache;
 
+import org.jetbrains.annotations.Nullable;
+
 /**
  * User: matthewb
  * Date: Sep 16, 2010
@@ -23,5 +25,5 @@ package org.labkey.api.cache;
  */
 public interface CacheLoader<K, V>
 {
-    V load(K key, Object argument);
+    V load(K key, @Nullable Object argument);
 }
