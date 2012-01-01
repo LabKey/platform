@@ -1639,7 +1639,7 @@ public class UserController extends SpringActionController
             ApiSimpleResponse response = new ApiSimpleResponse();
             response.put("container", container.getPath());
 
-            List<User> users;
+            Collection<User> users;
             List<Map<String,Object>> userResponseList = new ArrayList<Map<String,Object>>();
 
             //if requesting users in a specific group...
@@ -1674,7 +1674,7 @@ public class UserController extends SpringActionController
                 //else, return all users in the current project
                 //we've already checked above that the current user is a system admin
                 if (container.isRoot())
-                    users = Arrays.asList(UserManager.getActiveUsers());
+                    users = UserManager.getActiveUsers();
                 else
                     users = SecurityManager.getProjectUsers(container, true);
             }
@@ -1726,7 +1726,7 @@ public class UserController extends SpringActionController
 
             if (c.isRoot())
             {
-                emails = UserManager.getUserEmailList();
+                emails = UserManager.getActiveUserEmails();
                 // Can't impersonate yourself, so remove current user
                 emails.remove(user.getEmail());
                 message = null;

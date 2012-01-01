@@ -1752,7 +1752,7 @@ public class AnnouncementsController extends SpringActionController
     public static Collection<String> getBroadcastEmailAddresses(Container c)
     {
         // Get all site users' email addresses
-        List<String> emails = UserManager.getUserEmailList();
+        Collection<String> emails = UserManager.getActiveUserEmails();
 
         //FIX: 9742 -- need to exclude users who have set their pref to none
         OptOutEmailPrefsSelector selector = new OptOutEmailPrefsSelector(c);

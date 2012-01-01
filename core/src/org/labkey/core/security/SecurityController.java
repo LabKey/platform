@@ -63,7 +63,6 @@ import org.labkey.api.security.UserPrincipal;
 import org.labkey.api.security.UserUrls;
 import org.labkey.api.security.ValidEmail;
 import org.labkey.api.security.permissions.AdminPermission;
-import org.labkey.api.security.roles.DeveloperRole;
 import org.labkey.api.security.roles.EditorRole;
 import org.labkey.api.security.roles.NoPermissionsRole;
 import org.labkey.api.security.roles.ReaderRole;
@@ -1030,9 +1029,10 @@ public class SecurityController extends SpringActionController
                     groups.add(group);
             }
 
-            User[] allUsers = UserManager.getActiveUsers();
+            Collection<User> allUsers = UserManager.getActiveUsers();
             Collection<User> users = new ArrayList<User>();
-            // dont' suggest users that will results in errors (i.e. already member, etc.)
+
+            // don't suggest users that will results in errors (i.e. already member, etc.)
             for (User user : allUsers)
             {
                 if (null == SecurityManager.getAddMemberError(form.getGroup(), user))
@@ -1751,7 +1751,7 @@ public class SecurityController extends SpringActionController
             view.addView(new JspView<FolderAccessForm>("/org/labkey/core/user/toggleShowAll.jsp", form));
 
             List<UserController.AccessDetailRow> rows = new ArrayList<UserController.AccessDetailRow>();
-            User[] activeUsers = UserManager.getActiveUsers();
+            Collection<User> activeUsers = UserManager.getActiveUsers();
             buildAccessDetailList(activeUsers, rows, form.showAll());
             Collections.sort(rows); // the sort is done using the user display name
             UserController.AccessDetail bean = new UserController.AccessDetail(rows, true, true);
@@ -1761,9 +1761,9 @@ public class SecurityController extends SpringActionController
             return view;
         }
 
-        private void buildAccessDetailList(User[] activeUsers, List<UserController.AccessDetailRow> rows, boolean showAll)
+        private void buildAccessDetailList(Collection<User> activeUsers, List<UserController.AccessDetailRow> rows, boolean showAll)
         {
-            if (activeUsers.length == 0)
+            if (activeUsers.isEmpty())
                 return;
 
             // add an AccessDetailRow for each user that has perm within the project

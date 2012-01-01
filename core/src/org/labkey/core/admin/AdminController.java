@@ -314,7 +314,7 @@ public class AdminController extends SpringActionController
         public String serverGuid = AppProps.getInstance().getServerGUID();
         public String servletContainer = ModuleLoader.getServletContext().getServerInfo();
         public DbScope scope = CoreSchema.getInstance().getSchema().getScope();
-        public List<Pair<String, Long>> active = UserManager.getActiveUsers(System.currentTimeMillis() - DateUtils.MILLIS_PER_HOUR);
+        public List<Pair<String, Long>> active = UserManager.getRecentUsers(System.currentTimeMillis() - DateUtils.MILLIS_PER_HOUR);
         public String userEmail;
 
         private AdminBean(User user)

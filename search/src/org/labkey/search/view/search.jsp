@@ -15,7 +15,7 @@
  * limitations under the License.
  */
 %>
-<%@ page import="org.apache.commons.lang.StringUtils" %>
+<%@ page import="org.apache.commons.lang3.StringUtils" %>
 <%@ page import="org.jetbrains.annotations.Nullable" %>
 <%@ page import="org.json.JSONArray" %>
 <%@ page import="org.json.JSONObject" %>
@@ -72,13 +72,6 @@
     List<String> q = new ArrayList<String>(Arrays.asList(form.getQ()));
 
     SearchController.SearchConfiguration searchConfig = form.getConfig();
-
-    if (form.isAdvanced())
-    {
-%>
-<%=textLink("reindex (full)", new ActionURL(IndexAction.class, c).addParameter("full", "1"))%><br>
-<%=textLink("reindex (incremental)", new ActionURL(IndexAction.class, c))%><br><%
-    }
 
     if (!form.isWebPart() && searchConfig.includeAdvancedUI())
     { %>
@@ -229,18 +222,13 @@
                 {
                     %><%=h(summary, false)%><br><%
                 }
-                if (form.isAdvanced())
+
+                NavTree nav = getDocumentContext(documentContainer, hit);
+                if (null != nav)
                 {
-                    %><span style='color:green;'><%=h(href)%></span><%
+                    %><a style='color:green;' href="<%=h(nav.getValue())%>"><%=h(nav.getKey())%></a><%
                 }
-                else
-                {
-                    NavTree nav = getDocumentContext(documentContainer, hit);
-                    if (null != nav)
-                    {
-                        %><a style='color:green;' href="<%=h(nav.getValue())%>"><%=h(nav.getKey())%></a><%
-                    }
-                }
+
                 if (!StringUtils.isEmpty(hit.navtrail))
                 {
                     %>&nbsp;<%=formatNavTrail(parseNavTrail(hit.navtrail))%><%

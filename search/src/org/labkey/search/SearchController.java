@@ -16,7 +16,7 @@
 
 package org.labkey.search;
 
-import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.pdfbox.pdmodel.PDDocument;
 import org.apache.pdfbox.pdmodel.PDPage;
 import org.apache.pdfbox.util.PDFImageWriter;
@@ -1166,16 +1166,6 @@ public class SearchController extends SpringActionController
         public boolean getIncludeSubfolders()
         {
             return null == _container || _includeSubfolders;
-        }
-
-        public boolean isAdvanced()
-        {
-            return _advanced;
-        }
-
-        public void setAdvanced(boolean advanced)
-        {
-            _advanced = advanced;
         }
 
         public String getCategory()
