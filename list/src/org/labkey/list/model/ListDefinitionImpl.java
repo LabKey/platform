@@ -25,6 +25,7 @@ import org.labkey.api.collections.CaseInsensitiveHashSet;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.MvUtil;
+import org.labkey.api.data.RuntimeSQLException;
 import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.Table;
 import org.labkey.api.data.TableInfo;
@@ -236,20 +237,12 @@ public class ListDefinitionImpl implements ListDefinition
         }
         catch (SQLException e) //issue 12162
         {
-            if(SqlDialect.isConstraintException(e))
-            {
-                //verify this is actually due to a duplicate name
-                for(ListDef l : ListManager.get().getLists(getContainer()))
-                {
-                    if(l.getName().equals(_def.getName()))
-                    {
-                        throw new ListEditorService.ListImportException("The name '" + _def.getName() + "' is already in use.");
-                    }
-                }
-
-                throw Table.OptimisticConflictException.create(Table.ERROR_ROWVERSION);
-            }
-
+            processSqlException(e);
+            throw e;
+        }
+        catch (RuntimeSQLException e)
+        {
+            processSqlException(e.getSQLException());
             throw e;
         }
         finally
@@ -257,6 +250,23 @@ public class ListDefinitionImpl implements ListDefinition
             ExperimentService.get().closeTransaction();
         }
         ListManager.get().enumerateDocuments(null, getContainer(), null);
+    }
+
+    private void processSqlException(SQLException e) throws Exception
+    {
+        if(SqlDialect.isConstraintException(e))
+        {
+            //verify this is actually due to a duplicate name
+            for(ListDef l : ListManager.get().getLists(getContainer()))
+            {
+                if(l.getName().equals(_def.getName()))
+                {
+                    throw new ListEditorService.ListImportException("The name '" + _def.getName() + "' is already in use.");
+                }
+            }
+
+            throw Table.OptimisticConflictException.create(Table.ERROR_ROWVERSION);
+        }
     }
 
     public ListItem createListItem()
