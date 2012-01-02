@@ -71,13 +71,12 @@ public class CacheStats implements Comparable<CacheStats>
         return _maxSize;
     }
 
-    // max int means this cache is unlimited
     public Long getLimit()
     {
-        if (Integer.MAX_VALUE == _limit)
+        if (CacheManager.UNLIMITED == _limit)
             return null;
 
-        return new Long(_limit);
+        return (long) _limit;
     }
 
     public long getGets()

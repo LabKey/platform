@@ -64,7 +64,4 @@ public interface BasicCache<K, V>
      * caches when we're done with them (e.g., after a transaction is complete) so we don't leak them.
      */
     void close();
-
-    // implementations are encouraged to use this singleton if it is useful
-    public static final Object NULL_MARKER = new Object() {public String toString(){return "MISSING VALUE MARKER";}};
 }

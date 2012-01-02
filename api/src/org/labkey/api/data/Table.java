@@ -854,6 +854,7 @@ public class Table
         _updateSpecialFields(user, table, fields, date);
 
         List<ColumnInfo> columns = table.getColumns();
+
         for (ColumnInfo column : columns)
         {
             if (column.isAutoIncrement())
@@ -904,17 +905,22 @@ public class Table
         Connection conn = null;
         PreparedStatement stmt = null;
         ResultSet rs = null;
+
         try
         {
             conn = schema.getScope().getConnection();
-
             stmt = prepareStatement(conn, insertSQL.toString(), parameters.toArray());
-            stmt.execute();
 
-            if (null != autoIncColumn)
-                if (stmt.getMoreResults())
+            if (null == autoIncColumn)
+            {
+                stmt.execute();
+            }
+            else
+            {
+                rs = table.getSqlDialect().executeInsertWithResults(stmt);
+
+                if (null != rs)
                 {
-                    rs = stmt.getResultSet();
                     rs.next();
 
                     // Explicitly retrieve the new rowId based on the autoIncrement type.  We shouldn't use getObject()
@@ -924,6 +930,8 @@ public class Table
                     else
                         _setProperty(returnObject, autoIncColumn.getName(), rs.getInt(1));
                 }
+            }
+
             _copyInsertSpecialFields(returnObject, fields);
             _copyUpdateSpecialFields(table, returnObject, fields);
 
@@ -2068,7 +2076,6 @@ public class Table
     // SQLFragment version for convenience
     private static void appendSelectAutoIncrement(SqlDialect d, SQLFragment sqlf, TableInfo tinfo, String columnName)
     {
-        // TODO why does appendSelectAutoIncrement prepend a semi-colon?
         String t = d.appendSelectAutoIncrement("", tinfo, columnName);
         t = StringUtils.strip(t, ";\n\r");
         sqlf.append(t);

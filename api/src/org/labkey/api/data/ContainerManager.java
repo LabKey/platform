@@ -108,7 +108,7 @@ public class ContainerManager
     public static final String HOME_PROJECT_PATH = "/home";
     public static final String CONTAINER_AUDIT_EVENT = "ContainerAuditEvent";
 
-    private static final StringKeyCache<Object> CACHE = CacheManager.getStringKeyCache(CacheManager.UNLIMITED, CacheManager.DAY, "containers");
+    private static final StringKeyCache<Object> CACHE = CacheManager.getStringKeyCache(CacheManager.UNLIMITED, CacheManager.DAY, "Containers");
     private static final Object DATABASE_QUERY_LOCK = new Object();
     public static final String FOLDER_TYPE_PROPERTY_SET_NAME = "folderType";
     public static final String FOLDER_TYPE_PROPERTY_NAME = "name";

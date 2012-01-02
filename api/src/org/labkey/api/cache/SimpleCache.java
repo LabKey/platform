@@ -9,7 +9,7 @@ import org.labkey.api.util.Filter;
  * Time: 8:11 PM
  */
 
-// Cache providers return caches that implement this interface, which provides for a minimal set of cache operations,
+// Cache providers return caches that implement this interface, which presents a minimal set of cache operations,
 // without support for standard LabKey features such as null markers, cache loaders, statistics, blocking, etc.
 // Implementations must be thread-safe.
 public interface SimpleCache<K, V>

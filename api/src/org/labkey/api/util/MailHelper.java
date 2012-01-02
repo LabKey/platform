@@ -18,6 +18,7 @@ package org.labkey.api.util;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
+import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.view.HttpView;
 import org.labkey.api.view.JspView;
@@ -130,12 +131,12 @@ public class MailHelper
      * @param from Semicolon separated list of senders.
      * @param to   Semicolon separated list of recipients.
      */
-    public static ViewMessage createMultipartViewMessage(String from, String to) throws MessagingException
+    public static ViewMessage createMultipartViewMessage(String from, @Nullable String to) throws MessagingException
     {
         return _createMessage(createMultipartViewMessage(), from, to);
     }
 
-    private static ViewMessage _createMessage(ViewMessage m, String from, String to) throws MessagingException
+    private static ViewMessage _createMessage(ViewMessage m, String from, @Nullable String to) throws MessagingException
     {
         m.addFrom(createAddressArray(from));
         if (null != to)

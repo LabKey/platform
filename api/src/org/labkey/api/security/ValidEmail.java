@@ -100,7 +100,7 @@ public class ValidEmail
             return null;
 
         // If no domain, add the default domain
-        if (trimmed.indexOf("@") == -1)
+        if (!trimmed.contains("@"))
         {
             String domain = getDefaultDomain();
 
@@ -125,6 +125,23 @@ public class ValidEmail
         return AppProps.getInstance().getDefaultDomain();
     }
 
+
+    @Override
+    public boolean equals(Object o)
+    {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+
+        ValidEmail that = (ValidEmail) o;
+
+        return getEmailAddress().equals(that.getEmailAddress());
+    }
+
+    @Override
+    public int hashCode()
+    {
+        return getEmailAddress().hashCode();
+    }
 
     public static class InvalidEmailException extends Exception
     {

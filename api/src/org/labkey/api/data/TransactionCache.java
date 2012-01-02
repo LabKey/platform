@@ -16,7 +16,6 @@
 
 package org.labkey.api.data;
 
-import org.labkey.api.cache.BasicCache;
 import org.labkey.api.cache.CacheLoader;
 import org.labkey.api.cache.CacheManager;
 import org.labkey.api.cache.CacheType;
@@ -31,7 +30,6 @@ import org.labkey.api.util.Filter;
 */
 public class TransactionCache<V> implements StringKeyCache<V>
 {
-    private static final Object _nullMarker = BasicCache.NULL_MARKER;
     private boolean _hasWritten = false;
     private final StringKeyCache<V> _sharedCache;
     private final StringKeyCache<Object> _privateCache;
@@ -54,9 +52,7 @@ public class TransactionCache<V> implements StringKeyCache<V>
         else
             v = _sharedCache.get(key);
 
-        assert v != _nullMarker; // TODO: remove this check
-
-        return v == _nullMarker ? null : (V)v;
+        return (V)v;
     }
 
 
@@ -74,10 +70,10 @@ public class TransactionCache<V> implements StringKeyCache<V>
         {
             v = loader.load(key, arg);
             _hasWritten = true;
-            _privateCache.put(key, v == null ? _nullMarker : (V)v);
+            _privateCache.put(key, v);
         }
 
-        return v == _nullMarker ? null : (V)v;
+        return (V)v;
     }
 
     @Override

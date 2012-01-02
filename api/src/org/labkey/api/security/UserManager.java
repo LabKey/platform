@@ -172,18 +172,13 @@ public class UserManager
         if (userId == User.guest.getUserId())
             return User.guest;
 
-        User user = UserCache.getUser(userId);
-
-        // these should really be readonly
-        return null != user ? user.cloneUser() : null;
+        return UserCache.getUser(userId);
     }
 
 
-    // TODO: Cache?
     public static @Nullable User getUser(ValidEmail email)
     {
-        // TODO: Index on Principals.Name?
-        return new SqlSelector(CORE.getSchema(), new SQLFragment("SELECT * FROM " + CORE.getTableInfoUsers() + " WHERE Email = ?", email.getEmailAddress())).getObject(User.class);
+        return UserCache.getUser(email);
     }
 
 
@@ -315,10 +310,10 @@ public class UserManager
     }
 
 
-    // Returns a modifiable, sorted collection of emails address for the active users
+    // Returns a modifiable, sorted collection of email addresses for the active users
     public static List<String> getActiveUserEmails()
     {
-        return new ArrayList<String>(UserCache.getActiveUserEmails());
+        return UserCache.getActiveUserEmails();
     }
 
 

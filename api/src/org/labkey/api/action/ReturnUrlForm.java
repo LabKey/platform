@@ -100,7 +100,7 @@ public class ReturnUrlForm
         return defaultURL;
     }
 
-    // when we convert code to us ReturnUrlForm we may leave behind bookmarks using "returnURL"
+    // when we convert code to use ReturnUrlForm we may leave behind bookmarks using "returnURL"
     @Deprecated
     public ReturnURLString getReturnURL()
     {

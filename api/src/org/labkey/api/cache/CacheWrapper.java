@@ -27,15 +27,17 @@ import org.labkey.api.util.Filter;
  */
 
 // TODO: Track expirations?
-// Wraps a SimpleCache to provide a full Cache implementation.  Adds null marker handling, statistics gathering and debug name.
+// Wraps a SimpleCache to provide a full Cache implementation.  Adds null markers, loaders, statistics gathering and debug name.
 public class CacheWrapper<K, V> implements Cache<K, V>
 {
+    private static final Object NULL_MARKER = new Object() {public String toString(){return "MISSING VALUE MARKER";}};
+
     private final SimpleCache<K, V> _cache;
     private final String _debugName;
     private final Stats _stats;
     private final Stats _transactionStats;
     private final StackTraceElement[] _stackTrace;
-    private final V _nullMarker = (V)BasicCache.NULL_MARKER;
+    private final V _nullMarker = (V)NULL_MARKER;
 
     public CacheWrapper(@NotNull SimpleCache<K, V> cache, @NotNull String debugName, @Nullable Stats stats)
     {
@@ -50,6 +52,9 @@ public class CacheWrapper<K, V> implements Cache<K, V>
     @Override
     public void put(K key, V value)
     {
+        if (null == value)
+            value = _nullMarker;
+
         _cache.put(key, value);
         trackPut(value);
     }
@@ -57,6 +62,9 @@ public class CacheWrapper<K, V> implements Cache<K, V>
     @Override
     public void put(K key, V value, long timeToLive)
     {
+        if (null == value)
+            value = _nullMarker;
+
         _cache.put(key, value, timeToLive);
         trackPut(value);
     }
@@ -79,7 +87,7 @@ public class CacheWrapper<K, V> implements Cache<K, V>
         else if (null != loader)
         {
             v = loader.load(key, arg);
-            put(key, null == v ? _nullMarker : v);
+            put(key, v);
         }
 
         return v;

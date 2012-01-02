@@ -318,6 +318,8 @@ public abstract class SqlDialect
 
     public abstract void appendSelectAutoIncrement(StringBuilder sql, TableInfo table, String columnName);
 
+    public abstract @Nullable ResultSet executeInsertWithResults(@NotNull PreparedStatement stmt) throws SQLException;
+
     public abstract boolean requiresStatementMaxRows();
 
     /**

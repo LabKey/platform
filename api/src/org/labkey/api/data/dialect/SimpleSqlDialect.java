@@ -26,6 +26,8 @@ import org.labkey.api.data.UpgradeCode;
 import org.labkey.api.module.ModuleContext;
 
 import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.Collection;
 import java.util.List;
@@ -139,6 +141,12 @@ public abstract class SimpleSqlDialect extends SqlDialect
 
     @Override
     public void appendStatement(StringBuilder sql, String statement)
+    {
+        throw new UnsupportedOperationException(getClass().getSimpleName() + " does not implement");
+    }
+
+    @Override
+    public ResultSet executeInsertWithResults(@NotNull PreparedStatement stmt) throws SQLException
     {
         throw new UnsupportedOperationException(getClass().getSimpleName() + " does not implement");
     }
