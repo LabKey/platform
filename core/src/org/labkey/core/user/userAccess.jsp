@@ -28,9 +28,10 @@
 <%@ page import="org.labkey.api.view.ViewContext" %>
 <%@ page import="org.labkey.api.security.User" %>
 <%@ page import="org.labkey.api.security.UserManager" %>
-<%@ page import="org.labkey.api.security.roles.Role" %>
 <%@ page import="java.util.Map" %>
 <%@ page import="java.util.Set" %>
+<%@ page import="org.labkey.api.security.SecurityManager" %>
+<%@ page import="org.labkey.api.security.UserPrincipal" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%
@@ -51,6 +52,17 @@
 
     int cellPadding = 3;
 %>
+
+<script type="text/javascript">
+    Ext.onReady(function(){
+        Ext.QuickTips.init();
+        Ext.apply(Ext.QuickTips.getQuickTip(), {
+            dismissDelay: 15000,
+            trackMouse: true
+        });
+    });
+</script>
+
 <labkey:errors />
 
 <% if (!bean.isActive()) {%>
@@ -149,15 +161,19 @@ However, If this account is re-enabled, it would have the following permissions.
                                     {
                                         Container groupContainer = group.isAdministrators() ? ContainerManager.getRoot() : row.getContainer().getProject();
                                         String displayName = (group.isProjectGroup() ? groupContainer.getName() + "/" : "Site ") + group.getName();
+
+                                        Set<List<UserPrincipal>> membershipPaths = SecurityManager.getMembershipPathways(row.getUser(), group);
+                                        String hoverExpanation = SecurityManager.getMembershipPathwayHTMLDisplay(membershipPaths, userColDisplay, roleName);
+
                                         if (group.isAdministrators() || group.isProjectGroup())
                                         {
                                             String groupName = group.isProjectGroup() ? groupContainer.getPath() + "/" + group.getName() : group.getName();
                                             ActionURL groupURL = urlProvider(SecurityUrls.class).getManageGroupURL(groupContainer, groupName);
-                                            %><%= !first ? ", " : "" %><a href="<%=h(groupURL)%>"><%=h(displayName)%></a><%
+                                            %><%= !first ? ", " : "" %><a href="<%=h(groupURL)%>" ext:qtip="<%=hoverExpanation%>"><%=h(displayName)%></a><%
                                         }
                                         else
                                         {
-                                            %><%= !first ? ", " : "" %><%=h(displayName)%><%
+                                            %><%= !first ? ", " : "" %><span ext:qtip="<%=hoverExpanation%>"><%=h(displayName)%></span><%
                                         }
                                         first = false;
                                     }
