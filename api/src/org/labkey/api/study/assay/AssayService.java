@@ -25,6 +25,7 @@ import org.labkey.api.exp.api.ExpRun;
 import org.labkey.api.exp.query.ExpRunTable;
 import org.labkey.api.search.SearchService;
 import org.labkey.api.security.User;
+import org.labkey.api.util.Pair;
 import org.labkey.api.view.ViewContext;
 import org.labkey.api.view.WebPartView;
 import org.springframework.web.servlet.ModelAndView;
@@ -107,5 +108,11 @@ public class AssayService
          * Creates a run, but does not persist it to the database. Creates the run only, no protocol applications, etc.
          */
         public ExpRun createExperimentRun(@Nullable String name, Container container, ExpProtocol protocol, @Nullable File file);
+
+        /**
+         * Returns the list of valid locations an assay design can be created in.
+         * @return the list of containers as pairs of container objects and corresponding label.
+         */
+        public List<Pair<Container, String>> getLocationOptions(Container container, User user);
     }
 }
