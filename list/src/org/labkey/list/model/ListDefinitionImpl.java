@@ -52,6 +52,7 @@ import org.labkey.api.security.User;
 import org.labkey.api.services.ServiceRegistry;
 import org.labkey.api.util.URLHelper;
 import org.labkey.api.view.ActionURL;
+import org.labkey.list.client.ListEditorService;
 import org.labkey.list.view.ListController;
 import org.labkey.list.view.ListImportHelper;
 import org.springframework.web.servlet.mvc.Controller;
@@ -236,7 +237,19 @@ public class ListDefinitionImpl implements ListDefinition
         catch (SQLException e) //issue 12162
         {
             if(SqlDialect.isConstraintException(e))
+            {
+                //verify this is actually due to a duplicate name
+                for(ListDef l : ListManager.get().getLists(getContainer()))
+                {
+                    if(l.getName().equals(_def.getName()))
+                    {
+                        throw new ListEditorService.ListImportException("The name '" + _def.getName() + "' is already in use.");
+                    }
+                }
+
                 throw Table.OptimisticConflictException.create(Table.ERROR_ROWVERSION);
+            }
+
             throw e;
         }
         finally

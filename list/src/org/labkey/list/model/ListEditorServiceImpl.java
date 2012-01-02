@@ -69,18 +69,20 @@ public class ListEditorServiceImpl extends DomainEditorServiceBase implements Li
             definition.save(getUser());
             return getList(definition.getListId());
         }
+        //NOTE: handling of constraint exceptions / duplicate names should be handled in ListDefinitionImpl, which will throw a ListImportException instead of SQLException
+        //issue 12162
         catch (SQLException x)
         {
-            if (SqlDialect.isConstraintException(x))
-                throw new ListImportException("The name '" + list.getName() + "' is already in use.");
             throw new RuntimeException(x);
         }
         catch (RuntimeSQLException x)
         {
-            //issue: 12162
-            if (SqlDialect.isConstraintException(x.getSQLException()))
-                throw new ListImportException("The name '" + list.getName() + "' is already in use.");
-            throw new RuntimeException(x);
+            throw x;
+        }
+        catch (ListImportException x)
+        {
+            //issue 12162.  known exceptions should throw ListImportException, which will be handled more appropriately downstream
+            throw x;
         }
         catch (RuntimeException x)
         {
