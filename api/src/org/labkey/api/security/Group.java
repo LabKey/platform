@@ -17,6 +17,7 @@ package org.labkey.api.security;
 
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
+import java.util.Arrays;
 
 /**
  * User: arauch
@@ -106,5 +107,12 @@ public class Group extends UserPrincipal
     public int[] getGroups()
     {
         return GroupManager.getAllGroupsForPrincipal(this);
+    }
+
+    @Override
+    public boolean isInGroup(int group)
+    {
+        int i = Arrays.binarySearch(getGroups(), group);
+        return i >= 0;
     }
 }

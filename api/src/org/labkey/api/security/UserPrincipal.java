@@ -82,6 +82,8 @@ public abstract class UserPrincipal implements Principal, Serializable
 
     public abstract int[] getGroups();
 
+    public abstract boolean isInGroup(int group);
+
 
     @Override
     public String toString()

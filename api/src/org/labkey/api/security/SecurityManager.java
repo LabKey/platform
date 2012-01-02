@@ -1474,6 +1474,96 @@ public class SecurityManager
         return redundantMembers;
     }
 
+    /**
+     * With groups-in-groups, a user/group can have multiple pathways of membership to another group
+     * (i.e. a is a member of b which is a member of d, and a is a member of c which is a member of d)
+     * store each memberhip pathway as a list of groups and return the set of memberships
+     * @param principal The user/group to check memberhip
+     * @param group The root group to find membership pathways for the provided principal
+     * @return Set of membership pathways (each as a list of groups)
+     */
+    public static Set<List<UserPrincipal>> getMembershipPathways(UserPrincipal principal, Group group)
+    {
+        Set<List<UserPrincipal>> memberships = new HashSet<List<UserPrincipal>>();
+        if (principal.isInGroup(group.getUserId()))
+        {
+            LinkedList<UserPrincipal> visited = new LinkedList<UserPrincipal>();
+            visited.add(group);
+            checkForMembership(principal, group, visited, memberships);
+        }
+
+        return memberships;
+    }
+
+    /**
+     * Recursive function to check for memberhip pathways between two principals
+     * @param principal User/Group to check if it has a pathway to the given group
+     * @param group Group to check if the user/group is a member
+     * @param visited List of groups/users for the given pathway
+     * @param memberships The set of membership pathways between the original principals 
+     */
+    private static void checkForMembership(UserPrincipal principal, Group group, LinkedList<UserPrincipal> visited, Set<List<UserPrincipal>> memberships)
+    {
+        for (UserPrincipal member : SecurityManager.getGroupMembers(group, GroupMemberType.Both))
+        {
+            if (visited.contains(member))
+                continue;
+
+            if (member.equals(principal))
+            {
+                visited.addLast(member);
+                memberships.add(new LinkedList<UserPrincipal>(visited));
+                visited.removeLast();
+                break;
+            }
+        }
+
+        for (UserPrincipal member : SecurityManager.getGroupMembers(group, GroupMemberType.Groups))
+        {
+            if (visited.contains(member) || member.equals(principal))
+                continue;
+
+            visited.addLast(member);
+            checkForMembership(principal, (Group)member, visited, memberships);
+            visited.removeLast();
+        }
+    }
+
+    /**
+     * Used to get the display HTML for hovering over a group in the Admin reports
+     * Example:
+     * Joe is a member of Group A
+     *   Which is a member of Group B
+     *     Which is a member of Group C
+     *       Which is assigned the Reader role
+     * @param paths The set of membership paths between a user and the given group
+     * @param userDisplay The string to display in the user portion of the display (likely email address or display name)
+     * @param role The name of the role the group has in the container for the admin report
+     * @return String HTML for the hover display
+     */
+    public static String getMembershipPathwayHTMLDisplay(Set<List<UserPrincipal>> paths, String userDisplay, String role)
+    {
+        StringBuilder sb = new StringBuilder();
+        for (List<UserPrincipal> path : paths)
+        {
+            // add an extra line if there are > 1 paths displayed
+            if (sb.length() > 0)
+                sb.append("<BR/>");
+
+            StringBuilder spacer = new StringBuilder();
+            for (int i = path.size()-1; i > 0 ; i--)
+            {
+                String beginTxt = (i == path.size()-1 ? PageFlowUtil.filter(userDisplay) : "Which");
+                sb.append(spacer.toString()).append(beginTxt).append(" is a member of ").append("<strong>").append(PageFlowUtil.filter(path.get(i-1).getName())).append("</strong>");
+                sb.append("<BR/>");
+                spacer.append("&nbsp;&nbsp;&nbsp;");
+            }
+            sb.append(spacer).append("Which is assigned the ").append(role).append(" role");
+            sb.append("<BR/>");
+        }
+        return sb.toString();
+    }    
+
 
     // TODO: Redundant with getProjectUsers() -- this approach should be more efficient for simple cases
     // TODO: Also redundant with getFolderUserids()
