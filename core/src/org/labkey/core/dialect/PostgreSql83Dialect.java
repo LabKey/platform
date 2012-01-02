@@ -52,6 +52,7 @@ import org.labkey.api.util.StringUtilsLabKey;
 import javax.servlet.ServletException;
 import java.io.IOException;
 import java.sql.Connection;
+import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
@@ -247,6 +248,23 @@ class PostgreSql83Dialect extends SqlDialect
             appendStatement(sql, "SELECT CURRVAL('" + table.toString() + "_" + columnName + "_seq')");
         else
             appendStatement(sql, "SELECT CURRVAL('" + table.getSequence() + "')");
+
+        // TODO: Replace above with this cleaner approach... though first, need to remove some assumptions by callers
+        // sql.append("\nRETURNING ").append(columnName);
+    }
+
+    @Override
+    public ResultSet executeInsertWithResults(@NotNull PreparedStatement stmt) throws SQLException
+    {
+        stmt.execute();
+
+        if (stmt.getMoreResults())
+            return stmt.getResultSet();
+        else
+            return null;
+
+        // TODO: Replace above with this when making appendSelectAutoIncrement() change above
+        // return stmt.executeQuery();
     }
 
     public boolean requiresStatementMaxRows()

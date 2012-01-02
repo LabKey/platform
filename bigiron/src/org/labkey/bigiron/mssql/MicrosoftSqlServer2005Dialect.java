@@ -19,6 +19,7 @@ package org.labkey.bigiron.mssql;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import org.labkey.api.collections.CsvSet;
 import org.labkey.api.collections.Sets;
 import org.labkey.api.data.DbSchema;
@@ -40,6 +41,7 @@ import org.labkey.api.util.PageFlowUtil;
 
 import javax.servlet.ServletException;
 import java.sql.Connection;
+import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
@@ -202,6 +204,17 @@ public class MicrosoftSqlServer2005Dialect extends SqlDialect
         appendStatement(sql, "SELECT @@IDENTITY");
     }
 
+
+    @Override
+    public @Nullable ResultSet executeInsertWithResults(@NotNull PreparedStatement stmt) throws SQLException
+    {
+        stmt.execute();
+
+        if (stmt.getMoreResults())
+            return stmt.getResultSet();
+        else
+            return null;
+    }
 
     @Override
     public boolean requiresStatementMaxRows()

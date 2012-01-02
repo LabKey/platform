@@ -644,6 +644,7 @@ public class AnnouncementsController extends SpringActionController
             return _messageId;
         }
 
+        @SuppressWarnings({"UnusedDeclaration"})
         public void setMessageId(int messageId)
         {
             _messageId = messageId;
@@ -654,6 +655,7 @@ public class AnnouncementsController extends SpringActionController
             return _userId;
         }
 
+        @SuppressWarnings({"UnusedDeclaration"})
         public void setUserId(int userId)
         {
             _userId = userId;
