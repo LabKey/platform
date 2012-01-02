@@ -23,11 +23,26 @@
 <%@ page import="org.labkey.api.view.ActionURL" %>
 <%@ page import="org.labkey.study.controllers.assay.AssayController" %>
 <%@ page import="java.util.List" %>
+<%@ page import="org.labkey.api.util.Pair" %>
+<%@ page import="org.labkey.api.study.assay.AssayService" %>
+<%@ page import="org.labkey.api.view.ViewContext" %>
+<%@ page import="java.util.LinkedHashMap" %>
+<%@ page import="java.util.Map" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%
     AssayController.ChooseAssayBean bean = (AssayController.ChooseAssayBean)getModelBean();
+    ViewContext context = getViewContext();
     List<AssayProvider> providers = bean.getProviders();
+    Map<String, String> locations = new LinkedHashMap<String, String>();
+    String defaultLocation = null;
+
+    for (Pair<Container, String> entry : AssayService.get().getLocationOptions(context.getContainer(), context.getUser()))
+    {
+        locations.put(entry.getKey().getId(), entry.getValue());
+        if (defaultLocation == null)
+            defaultLocation = entry.getKey().getId();
+    }
 %>
 <p>
     Each assay is a customized version of a particular assay type. 
@@ -57,21 +72,17 @@
         <% } %>
         <tr><td>&nbsp;</td><td>&nbsp;</td></tr>
         <%
-            Container project = getViewContext().getContainer().getProject();
-            if (project != null && !getViewContext().getContainer().equals(project))
-            {
-                boolean canCreateInProject = project.hasPermission(getViewContext().getUser(), DesignAssayPermission.class);
+            if (!locations.isEmpty()) {
         %>
         <tr>
-            <td><input id="createInProject" name="createInProject" type="checkbox" value="true" <%=canCreateInProject ? "checked" : ""%> <%=canCreateInProject ? "" : "disabled"%>></td>
-            <td><label for="createInProject"><span class="<%=canCreateInProject ? "" : "labkey-disabled"%>">
-                Create assay in <%= h(project.getPath()) %> project so it is visible in subfolders
-                </span></label>
-                <% if (!canCreateInProject) { %>
-                    <br><em>Requires project administrator permission.</em>
-                <% } %>
-            </td>
+            <td></td>
+            <td><span><strong>Assay Location</strong>&nbsp;Create assay in project or shared locations so it is visible in subfolders.</span></td>
         </tr>
+        <tr>
+            <td></td>
+            <td><select name="assayContainer" id="assayContainer"><labkey:options value="<%=defaultLocation%>" map="<%=locations%>"></labkey:options></select></td>
+        </tr>
+        <tr><td>&nbsp;</td><td>&nbsp;</td></tr>
         <%
             }
         %>

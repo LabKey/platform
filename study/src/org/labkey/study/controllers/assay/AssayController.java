@@ -29,6 +29,7 @@ import org.labkey.api.action.SpringActionController;
 import org.labkey.api.data.CompareType;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerFilter;
+import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.defaults.SetDefaultValuesAssayAction;
 import org.labkey.api.exp.ExperimentException;
@@ -409,19 +410,30 @@ public class AssayController extends SpringActionController
 
     public static class CreateAssayForm extends ProtocolIdForm
     {
-        private boolean createInProject;
         private ReturnURLString returnURL;
+        private String _assayContainer;
 
         public CreateAssayForm() { }
 
-        public boolean isCreateInProject()
+        public String getAssayContainer()
         {
-            return createInProject;
+            return _assayContainer;
         }
 
-        public void setCreateInProject(boolean createInProject)
+        public void setAssayContainer(String assayContainer)
         {
-            this.createInProject = createInProject;
+            _assayContainer = assayContainer;
+        }
+
+        public Container getCreateContainer()
+        {
+            if (_assayContainer != null)
+            {
+                Container c = ContainerManager.getForId(_assayContainer);
+                if (c != null)
+                    return c;
+            }
+            return getContainer();
         }
     }
 
@@ -464,14 +476,7 @@ public class AssayController extends SpringActionController
                 errors.addError(new LabkeyError("Please select an assay type."));
                 return false;
             }
-
-            Container createIn = form.isCreateInProject() ? getContainer().getProject() : getContainer();
-            if (!createIn.hasPermission(getUser(), DesignAssayPermission.class))
-            {
-                errors.addError(new LabkeyError("You don't have permission to create assay designs in folder '" + createIn.getName() + "'."));
-                return false;
-            }
-            this.createIn = createIn;
+            this.createIn = form.getCreateContainer();
 
             return true;
         }

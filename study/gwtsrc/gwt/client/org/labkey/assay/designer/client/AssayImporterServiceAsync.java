@@ -23,6 +23,7 @@ import org.labkey.api.gwt.client.ui.domain.ImportException;
 import org.labkey.api.gwt.client.ui.domain.InferencedColumn;
 
 import java.util.List;
+import java.util.Map;
 
 /**
  * Created by IntelliJ IDEA.
@@ -35,9 +36,11 @@ public interface AssayImporterServiceAsync extends DomainImporterServiceAsync
     void getInferenceColumns(String path, String file, AsyncCallback<List<InferencedColumn>> async);
     void validateColumns(List<InferencedColumn> columns, String path, String file, AsyncCallback<Boolean> async);
 
-    void createProtocol(String providerName, String assayName, AsyncCallback<GWTProtocol> async);
+    void createProtocol(String providerName, String assayName, String containerId, AsyncCallback<GWTProtocol> async);
     void getDomainImportURI(GWTProtocol protocol, AsyncCallback<String> async);
     void getImportURL(GWTProtocol protocol, String directoryPath, String file, AsyncCallback<String> async);
     void getDesignerURL(GWTProtocol protocol, String directoryPath, String file, AsyncCallback<String> async);
     void getBaseColumns(String providerName, AsyncCallback<List<GWTPropertyDescriptor>> async);
+
+    void getAssayLocations(AsyncCallback<List<Map<String, String>>> async);
 }

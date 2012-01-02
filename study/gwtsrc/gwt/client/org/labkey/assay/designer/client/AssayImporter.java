@@ -15,6 +15,14 @@
  */
 package gwt.client.org.labkey.assay.designer.client;
 
+import com.extjs.gxt.ui.client.data.BaseModelData;
+import com.extjs.gxt.ui.client.event.EventType;
+import com.extjs.gxt.ui.client.event.Events;
+import com.extjs.gxt.ui.client.event.FieldEvent;
+import com.extjs.gxt.ui.client.event.Listener;
+import com.extjs.gxt.ui.client.store.ListStore;
+import com.extjs.gxt.ui.client.widget.form.ComboBox;
+import com.extjs.gxt.ui.client.widget.form.SimpleComboValue;
 import com.google.gwt.core.client.EntryPoint;
 import com.google.gwt.core.client.GWT;
 import com.google.gwt.event.dom.client.ClickEvent;
@@ -61,7 +69,7 @@ import java.util.Set;
  * Date: Dec 10, 2010
  * Time: 1:28:17 PM
  */
-public class AssayImporter implements EntryPoint
+public class AssayImporter implements EntryPoint, Listener<FieldEvent>
 {
     private AssayDomainImporter _domainImporter;
     private String _path;
@@ -73,6 +81,7 @@ public class AssayImporter implements EntryPoint
     private GWTProtocol _protocol;
     private String _providerName;
     private RootPanel _rootPanel;
+    private String _containerId;
 
     public void onModuleLoad()
     {
@@ -155,33 +164,73 @@ public class AssayImporter implements EntryPoint
         root.add(btnBar);
     }
 
-    private void addAssayWebPart(RootPanel root)
+    private void addAssayWebPart(final RootPanel root)
     {
-        VerticalPanel panel = new VerticalPanel();
+        getService().getAssayLocations(new ErrorDialogAsyncCallback<List<Map<String, String>>>()
+        {
+            public void handleFailure(String message, Throwable caught)
+            {
+                onCancel();
+            }
 
-        int row = 0;
-        FlexTable table = new FlexTable();
-        BoundTextBox name = new BoundTextBox("Assay Name", "AssayDesignerName", _assayName);
-        name.setRequired(true);
-        table.setWidget(row, 0, new InlineHTML("Name&nbsp;(Required)&nbsp;"));
-        table.setWidget(row++, 1, name);
+            public void onSuccess(List<Map<String, String>> locations)
+            {
+                VerticalPanel panel = new VerticalPanel();
 
-        BoundCheckBox showEditor = new BoundCheckBox("ShowAssayDesigner", _showEditor, null);
-        FlowPanel namePanel = new FlowPanel();
-        namePanel.add(new InlineHTML("Show Advanced Assay Designer&nbsp;"));
-        namePanel.add(new HelpPopup("Advanced Assay Designer", "This wizard allows you to quickly design an assay based on the columns in " +
-                "a spreadsheet or text file. If you want to define other custom columns check this box and the advanced " +
-                "assay designer will be displayed after the next button is clicked."));
-/*
-        table.setWidget(row, 0, namePanel);
-        table.setWidget(row++, 1, showEditor);
-*/
+                int row = 0;
+                FlexTable table = new FlexTable();
+                BoundTextBox name = new BoundTextBox("Assay Name", "AssayDesignerName", _assayName);
+                name.setRequired(true);
+                table.setWidget(row, 0, new InlineHTML("Name&nbsp;(Required)&nbsp;"));
+                table.setWidget(row++, 1, name);
 
-        WebPartPanel infoPanel = new WebPartPanel("Assay Properties", panel);
-        infoPanel.setWidth("100%");
-        root.add(infoPanel);
+                BoundCheckBox showEditor = new BoundCheckBox("ShowAssayDesigner", _showEditor, null);
+                FlowPanel namePanel = new FlowPanel();
+                namePanel.add(new InlineHTML("Show Advanced Assay Designer&nbsp;"));
+                namePanel.add(new HelpPopup("Advanced Assay Designer", "This wizard allows you to quickly design an assay based on the columns in " +
+                        "a spreadsheet or text file. If you want to define other custom columns check this box and the advanced " +
+                        "assay designer will be displayed after the next button is clicked."));
 
-        panel.add(table);
+                ListStore<AssayLocation> store = new ListStore<AssayLocation>();
+                AssayLocation defaultLocation = null;
+
+                for (Map<String, String> location : locations)
+                {
+                    AssayLocation aLoc = new AssayLocation(location.get("id"), location.get("label"));
+                    store.add(aLoc);
+                    if (Boolean.parseBoolean(location.get("default")))
+                        defaultLocation = aLoc;
+                }
+
+                ComboBox<AssayLocation> combo = new ComboBox<AssayLocation>();
+
+                combo.setStore(store);
+                combo.setEditable(false);
+                combo.setEmptyText("No location");
+                combo.setDisplayField("label");
+                combo.setValueField("id");
+                combo.setWidth(250);
+                if (defaultLocation != null)
+                {
+                    _containerId = defaultLocation.getId();
+                    combo.setValue(defaultLocation);
+                }
+                combo.setTriggerAction(ComboBox.TriggerAction.ALL);
+                combo.addListener(Events.Change, AssayImporter.this);
+
+                FlowPanel locationPanel = new FlowPanel();
+                locationPanel.add(new InlineHTML("Location&nbsp;"));
+                locationPanel.add(new HelpPopup("Assay Location", "Create the assay in a project or shared folder so it is visible in subfolders."));
+                table.setWidget(row, 0, locationPanel);
+                table.setWidget(row++, 1, combo);
+
+                WebPartPanel infoPanel = new WebPartPanel("Assay Properties", panel);
+                infoPanel.setWidth("100%");
+                root.add(infoPanel);
+
+                panel.add(table);
+            }
+        });
     }
 
     private void addImporterWebPart(RootPanel root, List<GWTPropertyDescriptor> baseColumns)
@@ -251,7 +300,7 @@ public class AssayImporter implements EntryPoint
             public void onSuccess(Boolean result)
             {
                 // on import create the protocol using the assay name specified
-                getService().createProtocol(PropertyUtil.getServerProperty("providerName"), _assayName.getString(), new ErrorDialogAsyncCallback<GWTProtocol>()
+                getService().createProtocol(PropertyUtil.getServerProperty("providerName"), _assayName.getString(), _containerId,  new ErrorDialogAsyncCallback<GWTProtocol>()
                 {
                     public void handleFailure(String message, Throwable caught)
                     {
@@ -330,6 +379,16 @@ public class AssayImporter implements EntryPoint
             navigate(cancelURL);
     }
 
+    public void handleEvent(FieldEvent fieldEvent)
+    {
+        if (fieldEvent != null)
+        {
+            AssayLocation value = (AssayLocation)fieldEvent.getValue();
+            if (value != null)
+                _containerId = value.getId();
+        }
+    }
+
     public static native void navigate(String url) /*-{
         $wnd.location.href = url;
     }-*/;
@@ -338,6 +397,35 @@ public class AssayImporter implements EntryPoint
     public static native void back() /*-{
         $wnd.history.back();
     }-*/;
+
+    public static class AssayLocation extends BaseModelData
+    {
+        public AssayLocation(String id, String label)
+        {
+            setId(id);
+            setLabel(label);
+        }
+
+        public String getLabel()
+        {
+            return get("label");
+        }
+
+        public void setLabel(String label)
+        {
+            set("label", label);
+        }
+
+        public String getId()
+        {
+            return get("id");
+        }
+
+        public void setId(String id)
+        {
+            set("id", id);
+        }
+    }
 
     private class AssayDomainImporter extends DomainImporter
     {

@@ -17,6 +17,8 @@ package org.labkey.study.assay;
 
 import gwt.client.org.labkey.assay.designer.client.AssayImporterService;
 import org.apache.commons.lang3.StringUtils;
+import org.labkey.api.data.Container;
+import org.labkey.api.data.ContainerManager;
 import org.labkey.api.exp.ChangePropertyDescriptorException;
 import org.labkey.api.exp.Lsid;
 import org.labkey.api.exp.ObjectProperty;
@@ -225,11 +227,14 @@ public class AssayImportServiceImpl extends DomainImporterServiceBase implements
     }
 
     @Override
-    public GWTProtocol createProtocol(String providerName, String assayName) throws ImportException
+    public GWTProtocol createProtocol(String providerName, String assayName, String containerID) throws ImportException
     {
-        ViewContext context = getViewContext();
+        ViewContext context = new ViewContext(getViewContext());
 
         try {
+            Container location = ContainerManager.getForId(containerID);
+            if (location != null)
+                context.setContainer(location);
 
             AssayServiceImpl svc = new AssayServiceImpl(context);
 
@@ -403,5 +408,19 @@ public class AssayImportServiceImpl extends DomainImporterServiceBase implements
             }
         }
         return baseColumns;
+    }
+
+    @Override
+    public List<Map<String, String>> getAssayLocations() throws ImportException
+    {
+        List<Map<String, String>> locations = new ArrayList<Map<String, String>>();
+        boolean isDefault = true;
+
+        for (Pair<Container, String> entry : AssayService.get().getLocationOptions(getContainer(), getUser()))
+        {
+            locations.add(PageFlowUtil.map("id", entry.getKey().getId(), "label", entry.getValue(), "default", String.valueOf(isDefault)));
+            isDefault = false;
+        }
+        return locations;
     }
 }

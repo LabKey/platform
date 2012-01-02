@@ -45,9 +45,11 @@ import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.InsertPermission;
 import org.labkey.api.services.ServiceRegistry;
 import org.labkey.api.study.assay.*;
+import org.labkey.api.study.permissions.DesignAssayPermission;
 import org.labkey.api.util.DateUtil;
 import org.labkey.api.util.GUID;
 import org.labkey.api.util.PageFlowUtil;
+import org.labkey.api.util.Pair;
 import org.labkey.api.util.Path;
 import org.labkey.api.view.*;
 import org.labkey.api.webdav.WebdavResource;
@@ -522,5 +524,38 @@ public class AssayManager implements AssayService.Interface
         run.setFilePathRoot(runRoot);
 
         return run;
+    }
+
+    @Override
+    public List<Pair<Container, String>> getLocationOptions(Container container, User user)
+    {
+        List<Pair<Container, String>> containers = new ArrayList<Pair<Container, String>>();
+
+        // project
+        Container project = container.getProject();
+        if (project != null && !container.equals(project))
+        {
+            if (project.hasPermission(user, DesignAssayPermission.class))
+                containers.add(new Pair<Container, String>(project, String.format("%s (%s)", "Project", project.getName())));
+        }
+
+        // for workbooks, use the parent folder as the current folder (unless it happens to be the project)
+        if (container.isWorkbook())
+        {
+            container = container.getParent();
+            if (container != null && container.isProject())
+                container = null;
+        }
+
+        // current folder
+        if (container != null && container.hasPermission(user, DesignAssayPermission.class))
+            containers.add(new Pair<Container, String>(container, String.format("%s (%s)", "Current Folder", container.getName())));
+
+        // shared project
+        Container shared = ContainerManager.getSharedContainer();
+        if (shared.hasPermission(user, DesignAssayPermission.class))
+            containers.add(new Pair<Container, String>(shared, "Shared Folder"));
+
+        return containers;
     }
 }

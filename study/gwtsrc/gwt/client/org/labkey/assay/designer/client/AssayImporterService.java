@@ -22,6 +22,7 @@ import org.labkey.api.gwt.client.ui.domain.ImportException;
 import org.labkey.api.gwt.client.ui.domain.InferencedColumn;
 
 import java.util.List;
+import java.util.Map;
 
 /**
  * Created by IntelliJ IDEA.
@@ -44,7 +45,7 @@ public interface AssayImporterService extends DomainImporterService
      * Create a new assay instance for the specified provider and assay name
      * @throws ImportException
      */
-    public GWTProtocol createProtocol(String providerName, String assayName) throws ImportException;
+    public GWTProtocol createProtocol(String providerName, String assayName, String containerID) throws ImportException;
 
     /**
      * Returns the domain URI to create columns based on the imported file(s)
@@ -66,4 +67,6 @@ public interface AssayImporterService extends DomainImporterService
      * The assay instance does not yet exist when this method is called by the client.
      */
     public List<GWTPropertyDescriptor> getBaseColumns(String providerName) throws ImportException;
+
+    public List<Map<String, String>> getAssayLocations() throws ImportException;
 }
