@@ -71,8 +71,16 @@ public abstract class ErrorDialogAsyncCallback<Type> implements AsyncCallback<Ty
                 case 404:
                     message = "Not found.";
                     break;
+                case 500:
+                    message = "The server encountered an error";
+                    if(statusCodeException.getMessage() != null)
+                        message += ": " + statusCodeException.getMessage();
+                    break;
                 default:
-                    message = "There was an error: Status code " + statusCodeException.getStatusCode();
+                    message = "There was an error";
+                    if(statusCodeException.getMessage() != null)
+                        message += ": " + statusCodeException.getMessage();
+                    message += " (" + statusCodeException.getStatusCode() + ")";
                     break;
             }
         }
