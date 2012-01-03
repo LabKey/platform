@@ -40,6 +40,8 @@ import org.labkey.api.query.ValidationException;
 import org.labkey.api.security.User;
 import org.labkey.api.security.UserPrincipal;
 import org.labkey.api.security.permissions.Permission;
+import org.labkey.api.util.ContainerContext;
+import org.labkey.api.util.Path;
 import org.labkey.api.util.ResultSetUtil;
 import org.labkey.api.util.SimpleNamedObject;
 import org.labkey.api.util.StringExpression;
@@ -68,6 +70,7 @@ public class SchemaTableInfo implements TableInfo, UpdateableTableInfo
     private final SQLFragment _selectName;
     private final String _metaDataName;
     private final DatabaseTableType _tableType;
+    private final Path _notificationKey;
 
     // TODO: Remove -- temp hack for StorageProvisioner, which sets "study" as schema but loads meta data from "studydatasets" schema
     private String _metaDataSchemaName;
@@ -93,6 +96,7 @@ public class SchemaTableInfo implements TableInfo, UpdateableTableInfo
     private String _versionColumnName = null;
     private List<FieldKey> _defaultVisibleColumns = null;
 
+
     public SchemaTableInfo(DbSchema parentSchema, DatabaseTableType tableType, String tableName, String metaDataName, String selectName)
     {
         _parentSchema = parentSchema;
@@ -101,6 +105,7 @@ public class SchemaTableInfo implements TableInfo, UpdateableTableInfo
         _metaDataName = metaDataName;
         _selectName = new SQLFragment(selectName);
         _tableType = tableType;
+        _notificationKey = new Path(parentSchema.getClass().getName(), parentSchema.getName(), getClass().getName(), getName());
     }
 
 
@@ -508,9 +513,11 @@ public class SchemaTableInfo implements TableInfo, UpdateableTableInfo
 
     public StringExpression getDetailsURL(Set<FieldKey> columns, Container container)
     {
+        ContainerContext containerContext = container;
+
         if (_detailsURL != null && _detailsURL.validateFieldKeys(columns))
         {
-            return _detailsURL.copy(container);
+            return _detailsURL.copy(containerContext);
         }
         return null;
     }
@@ -781,5 +788,12 @@ public class SchemaTableInfo implements TableInfo, UpdateableTableInfo
             return true;
         else
             throw new IllegalStateException("Sequence already set for " + getName() + "! " + _sequence + " vs. " + sequence);
+    }
+
+
+    @Override
+    public Path getNotificationKey()
+    {
+        return _notificationKey;
     }
 }

@@ -1013,4 +1013,11 @@ abstract public class AbstractTableInfo implements TableInfo, ContainerContext
             throw errors;
     }
 
+
+    /** TableInfo does not support DbCache by default */
+    @Override
+    public Path getNotificationKey()
+    {
+        return null;
+    }
 }

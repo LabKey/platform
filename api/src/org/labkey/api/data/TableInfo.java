@@ -32,9 +32,9 @@ import org.labkey.api.query.QueryUpdateService;
 import org.labkey.api.query.UserSchema;
 import org.labkey.api.query.ValidationException;
 import org.labkey.api.security.HasPermission;
-import org.labkey.api.security.User;
 import org.labkey.api.security.UserPrincipal;
 import org.labkey.api.security.permissions.Permission;
+import org.labkey.api.util.Path;
 import org.labkey.api.util.StringExpression;
 import org.labkey.api.view.ActionURL;
 import org.labkey.data.xml.TableType;
@@ -353,4 +353,13 @@ public interface TableInfo extends HasPermission
             throws ValidationException;
 
     public boolean hasTriggers(Container c);
+
+
+    /**
+     * TableInfo's that can be associated with a DbCache need a reliable key other than a TableInfo instance.
+     * Return null if DbCache is not supported.
+     *
+     * We should probably kill DbCache, but let's fix this for now (https://www.labkey.org/issues/home/Developer/issues/details.view?issueId=10508)
+     */
+    public Path getNotificationKey();
 }
