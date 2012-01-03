@@ -187,7 +187,7 @@ public class NavTreeMenu extends WebPartView implements Collapsible
                         filter(expandCollapseUrl),
                         "true");
 
-                out.printf("<img src=\"%s/_images/%s\"></a>", context.getContextPath(), image);
+                out.printf("<img src=\"%s/_images/%s\" width=9 height=9></a>", context.getContextPath(), image);
             }
             else if (indentForExpansionGifs)
                 out.printf("<div class=\"labkey-nav-tree-indenter\"></div>");

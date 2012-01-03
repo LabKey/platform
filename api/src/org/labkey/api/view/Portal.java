@@ -624,7 +624,11 @@ public class Portal
                         navTree.addChild("", "", contextPath + "/_images/partdowng.png");
                     
                     if (!part.isPermanent())
-                        navTree.addChild("Remove From Page", getDeleteURL(context, part), contextPath + "/_images/partdelete.png");
+                    {
+                        NavTree delete = new NavTree("Remove From Page", getDeleteURL(context, part));
+                        delete.setImage(contextPath + "/_images/partdelete.png", 24, 24);
+                        navTree.addChild(delete);
+                    }
                 }
 
                 addViewToRegion(template, location, view);
