@@ -26,7 +26,7 @@
          buttons: [{
             text: 'Submit',
             handler: function(btn){
-                btn.up('form').submit({
+                btn.up('panel').submit({
                     success: function(row){
                         console.log('You uploaded file: ' + row.RowId)
                     }
