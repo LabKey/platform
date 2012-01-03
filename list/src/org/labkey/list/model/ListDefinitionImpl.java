@@ -482,7 +482,11 @@ public class ListDefinitionImpl implements ListDefinition
         Set<String> noUpload = new HashSet<String>();
 
 		DomainProperty[] domainProperties = getDomain().getProperties();
-		
+
+        //this is the user-friendly row#, 1-based.
+        // we could potentially start on 2 which would match excel's row# (assuming we have a header), but i dont know if that is a safe assumption
+        int idx = 1;
+
         for (Map<String, Object> row : rows)
         {
             row = new CaseInsensitiveHashMap<Object>(row);
@@ -508,7 +512,7 @@ public class ListDefinitionImpl implements ListDefinition
                         {
                             String columnName = domainProperty.getName() + MvColumn.MV_INDICATOR_SUFFIX;
                             wrongTypes.add(columnName);
-                            errors.add(columnName + " must be a valid MV indicator.");
+                            errors.add("Row " + idx + ": " + columnName + " must be a valid MV indicator.");
                         }
                     }
                 }
@@ -520,17 +524,17 @@ public class ListDefinitionImpl implements ListDefinition
                 if (domainProperty.isRequired() && valueMissing && !missingValues.contains(domainProperty.getName()))
                 {
                     missingValues.add(domainProperty.getName());
-                    errors.add(domainProperty.getName() + " is required.");
+                    errors.add("Row " + idx + ": The field \"" + domainProperty.getName() + "\" is required.");
                 }
                 else if (domainProperty.getPropertyDescriptor().getPropertyType() == PropertyType.ATTACHMENT && null == attachmentDir && !valueMissing && !noUpload.contains(domainProperty.getName()))
                 {
                     noUpload.add(domainProperty.getName());
-                    errors.add("Can't upload to field " + domainProperty.getName() + " with type " + domainProperty.getType().getLabel() + ".");
+                    errors.add("Row " + idx + ": " + "Can't upload to field " + domainProperty.getName() + " with type " + domainProperty.getType().getLabel() + ".");
                 }
                 else if (!valueMissing && o == errorValue && !wrongTypes.contains(domainProperty.getName()))
                 {
                     wrongTypes.add(domainProperty.getName());
-                    errors.add(domainProperty.getName() + " must be of type " + domainProperty.getType().getLabel() + ".");
+                    errors.add("Row " + idx + ": The field \"" + domainProperty.getName() + "\" must be of type " + domainProperty.getType().getLabel() + ".");
                 }
             }
 
@@ -539,22 +543,24 @@ public class ListDefinitionImpl implements ListDefinition
                 Object key = row.get(cdKey.name);
                 if (null == key)
                 {
-                    errors.add("Blank values are not allowed in field " + cdKey.name);
+                    errors.add("Row " + idx + ": " + "Blank values are not allowed in field " + cdKey.name);
                     return errors;
                 }
                 else if (!getKeyType().isValidKey(key))
                 {
                     // Ideally, we'd display the value we failed to convert and/or the row... but key.toString() is currently "~ERROR VALUE~".  See #10475.
                     // TODO: Fix this
-                    errors.add("Could not convert values in key field \"" + cdKey.name + "\" to type " + getKeyType().getLabel());
+                    errors.add("Row " + idx + ": " + "Could not convert values in key field \"" + cdKey.name + "\" to type " + getKeyType().getLabel());
                     return errors;
                 }
                 else if (!keyValues.add(key))
                 {
-                    errors.add("There are multiple rows with key value " + row.get(cdKey.name));
+                    errors.add("Row " + idx + ": " + "The key field \"" + cdKey.name + "\" cannot have duplicate values.  The duplicate is: \"" + row.get(cdKey.name) + "\"");
                     return errors;
                 }
             }
+
+            idx++;
         }
 
         if (!errors.isEmpty())
