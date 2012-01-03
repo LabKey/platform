@@ -44,6 +44,7 @@ public class StatusDataRegion extends DataRegion
     public StatusDataRegion()
     {
         setShowPagination(false);
+        _allowHeaderLock = false; // 13731: disabling header locking due to async rendering issues
     }
 
     public void setApiAction(Class<? extends ApiAction> apiAction)
