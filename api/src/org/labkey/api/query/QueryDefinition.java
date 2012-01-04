@@ -60,6 +60,8 @@ public interface QueryDefinition
     String getSql();
     String getMetadataXml();
     String getDescription();
+    String getModuleName();
+
     void setDescription(String description);
 
     void setSql(String sql);
