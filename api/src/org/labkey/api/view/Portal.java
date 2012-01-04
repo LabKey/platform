@@ -475,13 +475,20 @@ public class Portal
                     Table.delete(getTableInfoPortalWebParts(), oldId);
             }
 
-            for (WebPart part1 : newParts) {
-                Map<String, Object> m = FACTORY.toMap(part1, null);
-
-                if (oldPartIds.contains(part1.getRowId()))
-                    Table.update(null, getTableInfoPortalWebParts(), m, part1.getRowId());
-                else
-                    Table.insert(null, getTableInfoPortalWebParts(), m);
+            for (WebPart part1 : newParts)
+            {
+                try
+                {
+                    Map<String, Object> m = FACTORY.toMap(part1, null);
+                    if (oldPartIds.contains(part1.getRowId()))
+                        Table.update(null, getTableInfoPortalWebParts(), m, part1.getRowId());
+                    else
+                        Table.insert(null, getTableInfoPortalWebParts(), m);
+                }
+                catch (Table.OptimisticConflictException ex)
+                {
+                    // ignore
+                }
             }
             getSchema().getScope().commitTransaction();
         }
