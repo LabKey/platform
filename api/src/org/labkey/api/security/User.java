@@ -16,6 +16,7 @@
 
 package org.labkey.api.security;
 
+import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -100,6 +101,8 @@ public class User extends UserPrincipal implements Serializable, Cloneable
     // and a couple other places where treating an arbitrary user as currentUser is valid (e.g., email notifications)
     public String getDisplayName(User currentUser)
     {
+        if (currentUser == search)
+            return StringUtils.join(new String[] {_displayName, getEmail(), _firstName, _lastName}, " ");
         if (null == currentUser || currentUser.isGuest())
         {
             return UserManager.sanitizeEmailAddress(_displayName);
