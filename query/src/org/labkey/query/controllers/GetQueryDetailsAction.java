@@ -21,11 +21,26 @@ import org.json.JSONObject;
 import org.labkey.api.action.ApiAction;
 import org.labkey.api.action.ApiResponse;
 import org.labkey.api.action.ApiSimpleResponse;
-import org.labkey.api.data.*;
+import org.labkey.api.data.ColumnInfo;
+import org.labkey.api.data.Container;
+import org.labkey.api.data.ContainerFilterable;
+import org.labkey.api.data.ContainerManager;
+import org.labkey.api.data.DisplayColumn;
+import org.labkey.api.data.JsonWriter;
+import org.labkey.api.data.TableInfo;
 import org.labkey.api.exp.property.Domain;
 import org.labkey.api.exp.property.DomainKind;
 import org.labkey.api.exp.property.PropertyService;
-import org.labkey.api.query.*;
+import org.labkey.api.query.DefaultSchema;
+import org.labkey.api.query.FieldKey;
+import org.labkey.api.query.QueryAction;
+import org.labkey.api.query.QueryDefinition;
+import org.labkey.api.query.QueryParseException;
+import org.labkey.api.query.QuerySchema;
+import org.labkey.api.query.QueryService;
+import org.labkey.api.query.QuerySettings;
+import org.labkey.api.query.QueryView;
+import org.labkey.api.query.UserSchema;
 import org.labkey.api.security.RequiresPermissionClass;
 import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.EditSharedViewPermission;
@@ -35,7 +50,12 @@ import org.labkey.api.view.NotFoundException;
 import org.labkey.query.CustomViewUtil;
 import org.springframework.validation.BindException;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
 /**
  * Created by IntelliJ IDEA.
@@ -71,6 +91,8 @@ public class GetQueryDetailsAction extends ApiAction<GetQueryDetailsAction.Form>
         resp.put("isMetadataOverrideable", canEdit); //for now, this is the same as canEdit(), but in the future we can support this for non-editable queries
 
         QueryDefinition querydef = (null == queryDefs ? null : queryDefs.get(form.getQueryName()));
+        if (isUserDefined)
+            resp.put("moduleName", querydef.getModuleName());
         boolean isInherited = (null != querydef && querydef.canInherit() && !container.equals(querydef.getContainer()));
         resp.put("isInherited", isInherited);
         if (isInherited)

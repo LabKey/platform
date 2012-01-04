@@ -210,6 +210,7 @@ LABKEY.ext.QueryDetailsPanel = Ext.extend(Ext.Panel, {
     initComponent : function()
     {
         Ext.QuickTips.init();
+        Ext.GuidedTips.init();
 
         this.bodyStyle = "padding: 5px";
 
@@ -369,26 +370,43 @@ LABKEY.ext.QueryDetailsPanel = Ext.extend(Ext.Panel, {
     formatQueryInfo : function(queryDetails) {
         var _qd = queryDetails;
         var viewDataUrl = LABKEY.ActionURL.buildURL("query", "executeQuery", undefined, {schemaName:_qd.schemaName,"query.queryName":_qd.name});
-        if (queryDetails.exception)
+        if (_qd.exception)
             viewDataUrl = LABKEY.ActionURL.buildURL('query', 'sourceQuery', null, {schemaName : _qd.schemaName, 'query.queryName' : _qd.name});
+
+        var children = [{
+            tag: 'a',
+            href: viewDataUrl,
+            html: Ext.util.Format.htmlEncode(_qd.schemaName) + "." + Ext.util.Format.htmlEncode(_qd.name)
+        }];
+        if (_qd.isUserDefined && _qd.moduleName) {
+            var _tip = '' +
+            '<div>' +
+                '<div class=\'g-tip-header\'>' +
+                    '<span>Module Defined Query</span>' +
+                '</div>' +
+                '<div class=\'g-tip-subheader\'>' +
+                    'This query is defined in an external module. Externally defined queries are for display only.' +
+                '</div>' +
+            '</div>';
+            children.push({
+                tag: 'span',
+                'ext:gtip': _tip,
+                html: 'Defined in ' + Ext.util.Format.htmlEncode(_qd.moduleName) + ' module'
+            });
+        }
+
         return {
             tag: 'div',
             children: [
                 {
                     tag:'div',
-                    cls: 'lk-qd-name',
-                    children: [
-                        {
-                            tag: 'a',
-                            href: viewDataUrl,
-                            html: Ext.util.Format.htmlEncode(queryDetails.schemaName) + "." + Ext.util.Format.htmlEncode(queryDetails.name)
-                        }
-                    ]
+                    cls: 'lk-qd-name g-tip-label',
+                    children: children
                 },
                 {
                     tag: 'div',
                     cls: 'lk-qd-description',
-                    html: Ext.util.Format.htmlEncode(queryDetails.description)
+                    html: Ext.util.Format.htmlEncode(_qd.description)
                 }
             ]
         };

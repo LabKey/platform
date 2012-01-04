@@ -208,6 +208,13 @@ public abstract class QueryDefinitionImpl implements QueryDefinition
         return _queryDef.getName();
     }
 
+    public String getModuleName()
+    {
+        // TODO: In the future this could use the TableInfo if that ever has access to module information
+        // or possibly lookup via ModuleLoader.
+        return "";
+    }
+
     public List<QueryParseException> getParseErrors(QuerySchema schema)
     {
         List<QueryParseException> ret = new ArrayList<QueryParseException>();

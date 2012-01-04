@@ -93,6 +93,11 @@ public class ModuleQueryDef extends ResourceRef
         return _metadataRef == null ? _name : _metadataRef.getName();
     }
 
+    public String getModuleName()
+    {
+        return _metadataRef == null ? "" : _metadataRef.getModuleName();
+    }
+
     public String getSchemaName()
     {
         return _schemaName;

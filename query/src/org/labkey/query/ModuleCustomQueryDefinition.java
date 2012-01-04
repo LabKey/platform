@@ -28,9 +28,12 @@ import java.sql.SQLException;
 */
 public class ModuleCustomQueryDefinition extends CustomQueryDefinitionImpl
 {
+    private final String _moduleName;
+
     public ModuleCustomQueryDefinition(ModuleQueryDef moduleQueryDef, User user, Container container)
     {
         super(user, moduleQueryDef.toQueryDef(container));
+        _moduleName = moduleQueryDef.getModuleName();
     }
 
     @Override
@@ -49,6 +52,12 @@ public class ModuleCustomQueryDefinition extends CustomQueryDefinitionImpl
     public boolean canEdit(User user)
     {
         return false;
+    }
+
+    @Override
+    public String getModuleName()
+    {
+        return _moduleName;
     }
 
     @Override

@@ -3508,14 +3508,14 @@ ul.x-tab-strip-top li {
 
 
 .x-tab-scroller-left {
-	background:#FFFFFF url(./gtheme/img/icons7.png) no-repeat scroll -160px -76px;	border-bottom:1px solid #FFFFFF; }
+	background:#F0F0F0 url(./gtheme/img/icons7.png) no-repeat scroll -160px -76px;}
 .x-tab-scroller-left-over { background-position: -160px -96px; }
 .x-tab-scroller-left-disabled {background:#FFFFFF;opacity:1;}
 
 .x-tab-scroller-right {
-	background:#FFFFFF url(./gtheme/img/icons7.png) no-repeat scroll -139px -76px;	border-bottom:1px solid #FFFFFF;}
+	background:#F0F0F0 url(./gtheme/img/icons7.png) no-repeat scroll -139px -76px;}
 .x-tab-scroller-right-over { background-position: -139px -96px; }
-.x-tab-scroller-right-disabled {background:#FFFFFF;opacity:1;}
+.x-tab-scroller-right-disabled {background:transparent;opacity:1;}
 
 /* fix up spacer since the tabs no longer within a panel with background and border */
 .x-tab-panel-header-plain .x-tab-strip-spacer,
