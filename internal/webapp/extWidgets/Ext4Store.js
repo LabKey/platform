@@ -436,7 +436,11 @@ LABKEY.ext4.Store = Ext4.define('LABKEY.ext4.Store', {
                 record.serverErrors = {};
 
                 Ext4.each(error.errors, function(e){
-                    record.serverErrors[e.field] = e.message;
+                    if(!record.serverErrors[e.field])
+                        record.serverErrors[e.field] = [];
+
+                    if(record.serverErrors[e.field].indexOf(e.message) == -1)
+                        record.serverErrors[e.field].push(e.message);
                 }, this);
             }
         }, this);

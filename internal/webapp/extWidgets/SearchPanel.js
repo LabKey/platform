@@ -213,6 +213,14 @@ Ext4.define('LABKEY.ext4.SearchPanel', {
             style: 'padding-left: 5px;'
         });
 
+       //NOTE: if the field is a lookup, the dataRegion will display/filter this field on the value
+       //therefore on submit, we actually filter on display value, not raw value
+       //Issue: 13723
+       if(meta.lookup){
+            theField.dataIndex = meta.name + '/' + meta.lookup.displayColumn;
+            theField.valueField = theField.displayField;
+       }
+
         //the operator
         if(meta.jsonType=='boolean')
             row.push({});

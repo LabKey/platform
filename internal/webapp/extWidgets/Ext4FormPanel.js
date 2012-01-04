@@ -155,6 +155,7 @@ Ext4.define('LABKEY.ext4.FormPanel', {
         else
             msg = 'There was an error with the submission';
 
+        //NOTE: in the case of trigger script errors, this will display the first error, even if many errors were generated
         if(!this.noAlertOnError)
             Ext4.Msg.alert('Error', msg);
 
@@ -576,7 +577,7 @@ Ext4.define('LABKEY.ext4.DatabindPlugin', {
                 }, this);
 
                 if(record.serverErrors && record.serverErrors[f.name]){
-                    errors.push(record.serverErrors[f.name]);
+                    errors.push(record.serverErrors[f.name].join("<br>"));
                     delete record.serverErrors[f.name]; //only use it once
                 }
             }
