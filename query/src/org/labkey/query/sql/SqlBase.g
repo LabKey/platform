@@ -150,6 +150,7 @@ SELECT : 'select';
 SET : 'set';
 SOME : 'some';
 STDDEV : 'stddev';
+STDERR : 'stderr';
 SUM : 'sum';
 THEN : 'then';
 TRUE : 'true';
@@ -577,7 +578,7 @@ identPrimary
 
 aggregate
     @after {$aggregate.tree.getToken().setType(AGGREGATE);}
-	: (( SUM^ | AVG^ | MAX^ | MIN^ | STDDEV^ ) OPEN! expr=(additiveExpression) CLOSE!)
+	: (( SUM^ | AVG^ | MAX^ | MIN^ | STDDEV^ | STDERR^ ) OPEN! expr=(additiveExpression) CLOSE!)
 	| (COUNT^ OPEN! d=DISTINCT? expr=(additiveExpression | starAtom) CLOSE!)
 	| (GROUP_CONCAT^ OPEN! d=DISTINCT? expr=(additiveExpression) CLOSE!)
 	;

@@ -21,6 +21,7 @@ import org.labkey.api.data.DisplayColumn;
 import org.labkey.api.data.DisplayColumnFactory;
 import org.labkey.api.data.JdbcType;
 import org.labkey.api.data.MultiValuedDisplayColumn;
+import org.labkey.api.data.dialect.SqlDialect;
 
 import java.util.List;
 
@@ -31,7 +32,30 @@ public class QAggregate extends QExpr
 
     public enum Type
     {
-        COUNT, SUM, MIN, MAX, AVG, STDDEV, GROUP_CONCAT
+        COUNT, SUM, MIN, MAX, AVG, GROUP_CONCAT ,
+        STDDEV
+            {
+                @Override
+                String getFunction(SqlDialect d)
+                {
+                    return d.getStdDevFunction();
+                }
+            },
+        STDERR
+            {
+                @Override
+                String getFunction(SqlDialect d)
+                {
+                    return null;
+                }
+            }
+        // CONSIDER STDDEVP, VAR, VARP
+        ;
+
+        String getFunction(SqlDialect d)
+        {
+            return name();
+        }
     }
 
     private Type _type;
@@ -67,12 +91,23 @@ public class QAggregate extends QExpr
             }
             builder.append(builder.getDialect().getGroupConcat(nestedBuilder, _distinct, true));
         }
+        else if (type == Type.STDERR)
+        {
+            assert !_distinct;
+            // verify that NULL/0 is NULL not #DIV0
+            // postgres[ok]
+            // sqlserver[?]
+            builder.append(" (" + Type.STDDEV.getFunction(builder.getDialect()) + "(");
+            for (QNode child : children())
+                ((QExpr)child).appendSql(builder);
+            builder.append(")/SQRT(COUNT(");
+            for (QNode child : children())
+                ((QExpr)child).appendSql(builder);
+            builder.append(")))");
+        }
         else
         {
-            String function = type.name();
-            if (type == Type.STDDEV)
-                function = builder.getDialect().getStdDevFunction();
-
+            String function = type.getFunction(builder.getDialect());
             builder.append(" " + function + "(");
             if (_distinct)
             {
