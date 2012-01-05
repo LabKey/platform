@@ -917,13 +917,14 @@ public class AssayPublishManager implements AssayPublishService.Service
                                 if (ptid != null && visit != null)
                                 {
                                     AssayPublishKey key;
+                                    // 13647: Conversion exception in assay auto copy-to-study
                                     if (study.getTimepointType().isVisitBased())
                                     {
-                                        key = new AssayPublishKey(targetStudyContainer, ptid, ((Number)visit).floatValue(), objectId);
+                                        key = new AssayPublishKey(targetStudyContainer, ptid, Float.parseFloat(visit.toString()), objectId);
                                     }
                                     else
                                     {
-                                        key = new AssayPublishKey(targetStudyContainer, ptid, (Date)visit, objectId);
+                                        key = new AssayPublishKey(targetStudyContainer, ptid, DateUtil.parseDate(visit.toString()), objectId);
                                     }
                                     keys.put(objectId, key);
                                 }

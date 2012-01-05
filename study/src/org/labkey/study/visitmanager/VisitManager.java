@@ -86,19 +86,25 @@ public abstract class VisitManager
         _study = study;
     }
 
+    /**
+     * Updates the participant, visit, and participant visit tables. Also updates automatic cohort assignments.
+     * @param user the current user
+     * @param changedDatasets the datasets that may have one or more rows modified
+     */
     public void updateParticipantVisits(User user, Collection<DataSetDefinition> changedDatasets)
     {
         updateParticipantVisits(user, changedDatasets, null, null, true);
     }
 
     /**
-     * Updates the participant, visit, and participant visit tables. Also updates automatic cohort assignments.
+     * Updates the participant, visit, and (optionally) participant visit tables. Also updates automatic cohort assignments.
      * @param user the current user
      * @param changedDatasets the datasets that may have one or more rows modified
      * @param potentiallyAddedParticipants optionally, the specific participants that may have been added to the study.
      * If null, all of the changedDatasets and specimens will be checked to see if they contain new participants
      * @param potentiallyDeletedParticipants optionally, the specific participants that may have been removed from the
      * study. If null, all participants will be checked to see if they are still in the study.
+     * @param participantVisitResyncRequired If true, will force an update of the ParticipantVisit mapping for this study
      */
     public void updateParticipantVisits(User user, Collection<DataSetDefinition> changedDatasets, @Nullable Set<String> potentiallyAddedParticipants, @Nullable Set<String> potentiallyDeletedParticipants, boolean participantVisitResyncRequired)
     {
