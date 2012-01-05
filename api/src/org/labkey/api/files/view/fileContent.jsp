@@ -24,23 +24,12 @@
 <%@ page import="org.labkey.api.view.ViewContext" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 
-<script type="text/javascript">
-    LABKEY.requiresScript("applet.js");
-    LABKEY.requiresScript("fileBrowser.js");
-    LABKEY.requiresScript("FileUploadField.js");
-    LABKEY.requiresScript("ActionsAdmin.js");
-    LABKEY.requiresScript("PipelineAction.js");
-    LABKEY.requiresScript("FileProperties.js");
-    LABKEY.requiresScript("FileContent.js");
-</script>
-
 <style type="text/css">
     .x-layout-mini
     {
         display: none;
     }
 </style>
-
 
 <%
     ViewContext context = HttpView.currentContext();
@@ -172,21 +161,36 @@ function renderBrowser(rootPath, renderTo, isFolderTreeCollapsed, isPipelineRoot
 }
 
 <%  if (bean.isEnabled() && bean.isRootValid()) { %>
-        Ext.onReady(function(){
+        var scripts =['applet.js','fileBrowser.js','FileUploadField.js',
+            'Reorderer.js',
+            'ToolbarDroppable.js',
+            'ToolbarReorderer.js',
+            'ActionsAdmin.js',
+            'PipelineAction.js',
+            'FileProperties.js',
+            'FileContent.js'];
 
-            /**
-             * activate the Ext state manager (for directory persistence), but by default, make all components
-             * not try to load state.
-             */
-            Ext.state.Manager.setProvider(new Ext.state.CookieProvider());
-            Ext.override(Ext.Component,{
-                stateful:false
-            });
+        LABKEY.requiresScript(scripts,
+                true,
+                function(){
+                    Ext.onReady(function(){
 
-            Ext.BLANK_IMAGE_URL = LABKEY.contextPath + "/_.gif";
-            Ext.QuickTips.init();
+                        /**
+                         * activate the Ext state manager (for directory persistence), but by default, make all components
+                         * not try to load state.
+                         */
+                        Ext.state.Manager.setProvider(new Ext.state.CookieProvider());
+                        Ext.override(Ext.Component,{
+                            stateful:false
+                        });
 
-            renderBrowser(<%=q(bean.getRootPath())%>, <%=q(bean.getContentId())%>, <%=bean.isFolderTreeCollapsed()%>, <%=bean.isPipelineRoot()%>);
-        });
+                        Ext.BLANK_IMAGE_URL = LABKEY.contextPath + "/_.gif";
+                        Ext.QuickTips.init();
+
+                        renderBrowser(<%=q(bean.getRootPath())%>, <%=q(bean.getContentId())%>, <%=bean.isFolderTreeCollapsed()%>, <%=bean.isPipelineRoot()%>);
+                    });
+                },
+                this,
+                true);
 <%  } %>
 </script>
