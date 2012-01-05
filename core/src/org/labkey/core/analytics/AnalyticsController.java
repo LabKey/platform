@@ -16,6 +16,7 @@
 
 package org.labkey.core.analytics;
 
+import org.apache.commons.lang3.StringUtils;
 import org.labkey.api.action.FormViewAction;
 import org.labkey.api.action.SpringActionController;
 import org.labkey.api.admin.AdminUrls;
@@ -26,8 +27,10 @@ import org.labkey.api.settings.AdminConsole;
 import org.labkey.api.settings.AdminConsole.SettingsLinkType;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.view.ActionURL;
+import org.labkey.api.view.JspView;
 import org.labkey.api.view.NavTree;
 import org.labkey.api.view.ViewForm;
+import org.labkey.api.view.template.PageConfig;
 import org.springframework.validation.BindException;
 import org.springframework.validation.Errors;
 import org.springframework.web.servlet.ModelAndView;
@@ -50,6 +53,7 @@ public class AnalyticsController extends SpringActionController
     {
         public AnalyticsServiceImpl.TrackingStatus ff_trackingStatus = AnalyticsServiceImpl.get().getTrackingStatus();
         public String ff_accountId = AnalyticsServiceImpl.get().getAccountId();
+        public String ff_trackingScript = AnalyticsServiceImpl.get().getSavedScript();
 
         public void setFf_accountId(String ff_accountId)
         {
@@ -60,7 +64,13 @@ public class AnalyticsController extends SpringActionController
         {
             this.ff_trackingStatus = AnalyticsServiceImpl.TrackingStatus.valueOf(ff_trackingStatus);
         }
+
+        public void setFf_trackingScript(String ff_trackingScript)
+        {
+            this.ff_trackingScript = StringUtils.trimToNull(ff_trackingScript);
+        }
     }
+
 
     @RequiresSiteAdmin
     public class BeginAction extends FormViewAction<SettingsForm>
@@ -76,12 +86,13 @@ public class AnalyticsController extends SpringActionController
 
         public ModelAndView getView(SettingsForm settingsForm, boolean reshow, BindException errors) throws Exception
         {
-            return FormPage.getView(AnalyticsController.class, settingsForm, "analyticsSettings.jsp");
+            getPageConfig().setAllowTrackingScript(PageConfig.TrueFalse.False);
+            return new JspView<SettingsForm>(AnalyticsController.class, "analyticsSettings.jsp", settingsForm, errors);
         }
 
         public boolean handlePost(SettingsForm settingsForm, BindException errors) throws Exception
         {
-            AnalyticsServiceImpl.get().setSettings(settingsForm.ff_trackingStatus, settingsForm.ff_accountId);
+            AnalyticsServiceImpl.get().setSettings(settingsForm.ff_trackingStatus, settingsForm.ff_accountId, settingsForm.ff_trackingScript);
             return true;
         }
 

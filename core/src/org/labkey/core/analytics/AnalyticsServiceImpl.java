@@ -47,13 +47,15 @@ public class AnalyticsServiceImpl implements AnalyticsService.Interface
     public enum TrackingStatus
     {
         disabled,
-        enabled
+        enabled,    // google analytics 'property  id'
+        script      // tracking script
     }
 
     public enum AnalyticsProperty
     {
         trackingStatus,
         accountId,
+        trackingScript,
     }
 
     private String getProperty(AnalyticsProperty property)
@@ -62,11 +64,12 @@ public class AnalyticsServiceImpl implements AnalyticsService.Interface
         return properties.get(property.toString());
     }
 
-    public void setSettings(TrackingStatus trackingStatus, String accountId)
+    public void setSettings(TrackingStatus trackingStatus, String accountId, String script)
     {
         PropertyManager.PropertyMap properties = PropertyManager.getWritableProperties(PROP_CATEGORY, true);
         properties.put(AnalyticsProperty.trackingStatus.toString(), trackingStatus.toString());
-        properties.put(AnalyticsProperty.accountId.toString(), accountId);
+        properties.put(AnalyticsProperty.accountId.toString(), StringUtils.trimToNull(accountId));
+        properties.put(AnalyticsProperty.trackingScript.toString(), StringUtils.trimToNull(script));
         PropertyManager.saveProperties(properties);
     }
 
@@ -97,6 +100,7 @@ public class AnalyticsServiceImpl implements AnalyticsService.Interface
         return DEFAULT_ACCOUNT_ID;
     }
 
+
     private boolean showTrackingScript(ViewContext context)
     {
         switch (getTrackingStatus())
@@ -104,6 +108,8 @@ public class AnalyticsServiceImpl implements AnalyticsService.Interface
             default:
                 return false;
             case enabled:
+                return true;
+            case script:
                 return true;
         }
     }
@@ -113,7 +119,7 @@ public class AnalyticsServiceImpl implements AnalyticsService.Interface
      * For privacy reasons, we strip off the URL parameters if the container does not allow guest access.
      * We append the serverGUID parameter to the URL.
      */
-    public String getSanitizedUrl(ViewContext context)
+    private String getSanitizedUrl(ViewContext context)
     {
         ActionURL actionUrl = context.cloneActionURL();
         Container container = context.getContainer();
@@ -143,11 +149,34 @@ public class AnalyticsServiceImpl implements AnalyticsService.Interface
     static final private String TRACKING_SCRIPT_TEMPLATE
             = TRACKING_SCRIPT_INTRO +
             "<script type=\"text/javascript\">\n" +
-            "var pageTracker = _gat._getTracker(|ACCOUNT_ID|);\n" +
+            "var pageTracker = _gat._getTracker(${ACCOUNT_ID});\n" +
             "pageTracker._initData();\n" +
             "pageTracker._setDetectTitle(false);\n" +
-            "pageTracker._trackPageview(|PAGE_URL|);\n" +
+            "pageTracker._trackPageview(${PAGE_URL});\n" +
             "</script>";
+
+
+
+    public String getSavedScript()
+    {
+        return getProperty(AnalyticsProperty.trackingScript);
+    }
+
+
+    private String getRawScript()
+    {
+        switch (getTrackingStatus())
+        {
+            case script:
+                return getSavedScript();
+            case enabled:
+                return TRACKING_SCRIPT_TEMPLATE;
+            case disabled:
+            default:
+                return "";
+        }
+    }
+
 
     public String getTrackingScript(ViewContext context)
     {
@@ -155,9 +184,9 @@ public class AnalyticsServiceImpl implements AnalyticsService.Interface
         {
             return "";
         }
-        String trackingScript = TRACKING_SCRIPT_TEMPLATE;
-        trackingScript = StringUtils.replace(trackingScript, "|ACCOUNT_ID|", PageFlowUtil.jsString(getAccountId()));
-        trackingScript = StringUtils.replace(trackingScript, "|PAGE_URL|", PageFlowUtil.jsString(getSanitizedUrl(context)));
+        String trackingScript = getRawScript();
+        trackingScript = StringUtils.replace(trackingScript, "${ACCOUNT_ID}", PageFlowUtil.jsString(getAccountId()));
+        trackingScript = StringUtils.replace(trackingScript, "${PAGE_URL}", PageFlowUtil.jsString(getSanitizedUrl(context)));
         return trackingScript;
     }
 }
