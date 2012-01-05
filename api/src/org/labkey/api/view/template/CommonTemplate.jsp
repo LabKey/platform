@@ -30,6 +30,8 @@
 <%@ page import="org.labkey.api.view.template.PageConfig" %>
 <%@ page import="org.labkey.api.view.template.PrintTemplate" %>
 <%@ page import="java.util.Set" %>
+<%@ page import="org.labkey.api.data.ContainerManager" %>
+<%@ page import="org.labkey.api.security.User" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %><%
     PrintTemplate me = (PrintTemplate) HttpView.currentView();
     PageConfig bean = me.getModelBean();
@@ -40,6 +42,7 @@
     base.deleteParameters();
     Set<String> gwtModules = GWTView.getModulesForRootContext();
     Container c = me.getViewContext().getContainer();
+    User user = me.getViewContext().getUser();
     LookAndFeelProperties laf = LookAndFeelProperties.getInstance(c);
     ThemeFont themeFont = ThemeFont.getThemeFont(c);
 
@@ -72,24 +75,34 @@
     <!-- <base href="<%=h(base.getURIString())%>" /> -->
 <%= bean.getMetaTags() %>
 <%= PageFlowUtil.getStandardIncludes(c,userAgent) %>
-    <%
+<%
 if (null != bean.getStyleSheet())
-    {
+{
     %>
     <link href="<%=bean.getStyleSheet() %>" type="text/css" rel="stylesheet"/><%
-    }
+}
 if (null != bean.getRssUrl())
-    {
+{
     %>
     <link href="<%=bean.getRssUrl().getEncodedLocalURIString()%>" type="application/rss+xml" title="<%=h(bean.getRssTitle())%>" rel="alternate"/><%
-    }
+}
 if (null != bean.getStyles())
-    {
+{
     %>
     <style type="text/css"><!--<%= bean.getStyles() %>--></style><%
-    }
+}
 %>
-<%= null != bean.getScript() && 0 < bean.getScript().length() ? bean.getScript() + "\n": ""
+<%= null != bean.getScript() && 0 < bean.getScript().length() ? bean.getScript() + "\n": "" %>
+<% if (bean.getAllowTrackingScript())
+{
+    String script = AnalyticsService.getTrackingScript();
+    if (StringUtils.isNotEmpty(script))
+    {
+        if (user.isAdministrator())
+            {%><!-- see <%=new ActionURL("analytics","begin",ContainerManager.getRoot()).getURIString()%> --><%}
+        %><%=script%><%
+    }
+}
 %>
 </head>
 
@@ -198,7 +211,6 @@ if (null != me.getView("moduleNav"))
     }
 %>
     <script type="text/javascript">LABKEY.loadScripts(); LABKEY.showNavTrail();</script>
-    <%=AnalyticsService.getTrackingScript()%>
     <script type="text/javascript">
     Ext.onReady(function(){Ext.DomHelper.insertHtml("beforeend",document.body,"<input id=seleniumExtReady name=seleniumExtReady type=hidden>");});
     </script>

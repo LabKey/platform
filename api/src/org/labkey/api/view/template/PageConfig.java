@@ -75,6 +75,7 @@ public class PageConfig
     private AppBar _appBar;
     private MultiMap<String, String> _meta = new MultiHashMap<String, String>();
     private FrameOption _frameOption = FrameOption.ALLOW;
+    private boolean _trackingScript = true;
 
     public PageConfig()
     {
@@ -326,5 +327,15 @@ public class PageConfig
     public FrameOption getFrameOption()
     {
         return null==_frameOption?FrameOption.ALLOW:_frameOption;
+    }
+
+    public void setAllowTrackingScript(TrueFalse opt)
+    {
+        _trackingScript = opt != TrueFalse.False;
+    }
+
+    public boolean getAllowTrackingScript()
+    {
+        return _trackingScript;
     }
 }

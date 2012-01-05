@@ -26,25 +26,29 @@ public class AnalyticsService
 {
     static private Interface instance;
 
-    static public Interface get() {
+    static public Interface get()
+    {
         return instance;
     }
 
-    static public void set(Interface impl) {
+    static public void set(Interface impl)
+    {
         instance = impl;
     }
 
-    static public String getTrackingScript() {
+    static public String getTrackingScript()
+    {
         Interface i = get();
-        if (i == null) {
+        if (i == null)
+        {
             return "";
         }
         return i.getTrackingScript(HttpView.getRootContext());
     }
 
-    public interface Interface {
+    public interface Interface
+    {
         String getTrackingScript(ViewContext viewContext);
-
-        String getSanitizedUrl(ViewContext viewContext);
+//        String getSanitizedUrl(ViewContext viewContext);
     }
 }
