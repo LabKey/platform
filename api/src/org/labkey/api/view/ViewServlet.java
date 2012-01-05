@@ -223,7 +223,7 @@ public class ViewServlet extends HttpServlet
     {
         initializeControllerMaps();
         initializeAllSpringControllers();
-        _serverHeader =  "Labkey/" + AppProps.getInstance().getLabkeyVersionString();
+        _serverHeader =  "Labkey/" + AppProps.getInstance().getLabKeyVersionString();
     }
 
 

@@ -1315,29 +1315,4 @@ public class ModuleLoader implements Filter
 
         return unknownContexts;
     }
-
-
-    // from version.properties
-    static String labkeyVersion = null;
-
-    
-    public static String getLabkeyVersionString()
-    {
-        if (null == labkeyVersion)
-        {
-            try
-            {
-                Properties p = new Properties();
-                p.load(ModuleLoader.class.getClassLoader().getResourceAsStream("version.properties"));
-                Object v = p.get("svn.product.version");
-                labkeyVersion = System.getProperty("teamcity.product.version", v == null ? null : String.valueOf(v));
-            }
-            catch (Exception x)
-            {
-                _log.error("Couldn't load version.properties");
-                return "12.1";
-            }
-        }
-        return labkeyVersion;
-    }
 }

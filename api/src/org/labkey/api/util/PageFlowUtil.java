@@ -42,7 +42,6 @@ import org.labkey.api.security.permissions.AdminPermission;
 import org.labkey.api.security.permissions.DeletePermission;
 import org.labkey.api.security.permissions.InsertPermission;
 import org.labkey.api.security.permissions.UpdatePermission;
-import org.labkey.api.services.ServiceRegistry;
 import org.labkey.api.settings.AppProps;
 import org.labkey.api.settings.ResourceURL;
 import org.labkey.api.settings.TemplateResourceHandler;
@@ -53,7 +52,6 @@ import org.labkey.api.view.NotFoundException;
 import org.labkey.api.view.ViewContext;
 import org.labkey.api.view.WebTheme;
 import org.labkey.api.view.WebThemeManager;
-import org.labkey.api.webdav.WebdavResolver;
 import org.springframework.beans.PropertyValue;
 import org.springframework.beans.PropertyValues;
 import org.springframework.web.servlet.ModelAndView;
@@ -2110,7 +2108,7 @@ public class PageFlowUtil
         }
 
         json.put("serverName", StringUtils.isNotEmpty(props.getServerName()) ? props.getServerName() : "Labkey Server");
-        json.put("versionString", props.getLabkeyVersionString());
+        json.put("versionString", props.getLabKeyVersionString());
         if (request != null)
         {
             if ("post".equalsIgnoreCase(request.getMethod()))

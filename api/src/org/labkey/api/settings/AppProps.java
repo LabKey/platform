@@ -37,6 +37,7 @@ import javax.servlet.http.HttpServletRequest;
 import java.io.File;
 import java.net.URISyntaxException;
 import java.sql.SQLException;
+import java.text.DecimalFormat;
 import java.util.Date;
 
 /**
@@ -514,8 +515,9 @@ public class AppProps extends AbstractWriteableSettingsGroup
         return PropertyManager.getWritableProperties(SITE_CONFIG_USER_ID, ContainerManager.getRoot().getId(), WEB_THEME_CONFIG_NAME, true);
     }
 
-    public String getLabkeyVersionString()
+    public String getLabKeyVersionString()
     {
-        return ModuleLoader.getLabkeyVersionString();
+        DecimalFormat format = new DecimalFormat("0.00");
+        return format.format(ModuleLoader.getInstance().getCoreModule().getVersion());
     }
 }

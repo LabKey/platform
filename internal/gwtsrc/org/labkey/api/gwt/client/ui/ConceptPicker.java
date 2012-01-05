@@ -59,18 +59,12 @@ public class ConceptPicker extends TriggerField<ConceptPicker.ConceptType>
         super.onComponentEvent(ce);
         if (ce.getEventTypeInt() == Event.ONCHANGE)
         {
-            onChange(ce);
+            // TODO avoid double fireChangeEvent() on blur
+            ConceptType v = getValue();
+            value = v;
+            fireChangeEvent(focusValue, v);
         }
     }
-
-    // TODO avoid double fireChangeEvent() on blur
-    protected void onChange(ComponentEvent be)
-    {
-        ConceptType v = getValue();
-        value = v;
-        fireChangeEvent(focusValue, v);
-    }
-   
     
     protected ConceptPicker(LookupServiceAsync lookupService, String name)
     {
@@ -223,8 +217,6 @@ public class ConceptPicker extends TriggerField<ConceptPicker.ConceptType>
             super();
             _service = lookupService;
             setModal(true);
-// TODO : josh changed this to setAutoHide(true), but that breaks the lookup combo boxes, so matt removed it
-//            setAutoHide(true);
             setSize(400, 500);
             setAutoHeight(true);
             setHeading("Choose Field Type");
