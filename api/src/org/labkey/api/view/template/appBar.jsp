@@ -103,17 +103,19 @@
 </div>
 
 <script type="text/javascript">
-    var resizeTask = new Ext.util.DelayedTask(function(){
-        var bodyWidth = Ext.getBody().getWidth();
-        var leftMenuWidth = Ext.getDom("leftmenupanel") ? Ext.getDom("leftmenupanel").offsetWidth : 0;
-        Ext.getDom("labkey-app-bar-table").style.width = (bodyWidth - leftMenuWidth) + "px";
-    });
+    (function(){
+        var resizeTask = new Ext.util.DelayedTask(function(){
+            var bodyWidth = Ext.getBody().getWidth();
+            var leftMenuWidth = Ext.getDom("leftmenupanel") ? Ext.getDom("leftmenupanel").offsetWidth : 0;
+            Ext.getDom("labkey-app-bar-table").style.width = (bodyWidth - leftMenuWidth) + "px";
+        });
 
-    Ext.EventManager.on(window, 'resize', function(){
-        resizeTask.delay(100);
-    });
+        Ext.EventManager.on(window, 'resize', function(){
+            resizeTask.delay(100);
+        });
 
-    Ext.onReady(function(){
-        resizeTask.delay(0);
-    });
+        Ext.onReady(function(){
+            resizeTask.delay(0);
+        });
+    })();
 </script>

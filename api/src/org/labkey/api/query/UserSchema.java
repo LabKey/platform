@@ -82,7 +82,7 @@ abstract public class UserSchema extends AbstractSchema
         return user == User.getSearchUser() || getContainer().hasPermission(user, ReadPermission.class);
     }
 
-
+    @Nullable
     public TableInfo getTable(String name, boolean includeExtraMetadata)
     {
         ArrayList<QueryException> errors = new ArrayList<QueryException>();
@@ -135,6 +135,7 @@ abstract public class UserSchema extends AbstractSchema
         table.overlayMetadata(name, this, errors);
     }
 
+    @Nullable
     public final TableInfo getTable(String name)
     {
         return getTable(name, true);

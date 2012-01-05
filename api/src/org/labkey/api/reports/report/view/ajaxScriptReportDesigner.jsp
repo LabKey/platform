@@ -417,7 +417,7 @@ var f_scope<%=uid%> = new (function() {
 
     function updateScript()
     {
-        if (scriptText && document.getElementById("edit_area_toggle_checkbox_<%=scriptId%>") && document.getElementById("edit_area_toggle_checkbox_<%=scriptId%>").checked)
+        if (scriptText && editAreaLoader && document.getElementById("edit_area_toggle_checkbox_<%=scriptId%>") && document.getElementById("edit_area_toggle_checkbox_<%=scriptId%>").checked)
         {
             scriptText.value = editAreaLoader.getValue("<%=scriptId%>");
         }
