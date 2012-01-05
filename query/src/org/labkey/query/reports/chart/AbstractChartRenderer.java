@@ -64,6 +64,7 @@ public abstract class AbstractChartRenderer implements ChartRenderer
             view.getSettings().setMaxRows(Table.ALL_ROWS);
             DataView dataView = view.createDataView();
             DataRegion rgn = dataView.getDataRegion();
+            rgn.setAllowAsync(false);
             RenderContext ctx = dataView.getRenderContext();
 
             return rgn.getResultSet(ctx);

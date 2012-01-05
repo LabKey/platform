@@ -12,9 +12,6 @@
  * runSelected : run the selected action, the data record is passed as a parameter
  *
  */
-LABKEY.requiresScript("Reorderer.js");
-LABKEY.requiresScript("ToolbarDroppable.js");
-LABKEY.requiresScript("ToolbarReorderer.js");
 
 LABKEY.ActionsCheckColumn = Ext.extend(Ext.grid.CheckColumn,{
 
