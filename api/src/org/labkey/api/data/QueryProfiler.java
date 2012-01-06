@@ -23,8 +23,10 @@ import org.apache.log4j.RollingFileAppender;
 import org.jetbrains.annotations.NotNull;
 import org.labkey.api.util.ContextListener;
 import org.labkey.api.util.DateUtil;
+import org.labkey.api.util.ExceptionUtil;
 import org.labkey.api.util.Formats;
 import org.labkey.api.util.PageFlowUtil;
+import org.labkey.api.util.Pair;
 import org.labkey.api.util.ShutdownListener;
 import org.labkey.api.util.StringUtilsLabKey;
 import org.labkey.api.view.ActionURL;
@@ -38,9 +40,12 @@ import java.io.PrintWriter;
 import java.lang.management.ManagementFactory;
 import java.lang.management.RuntimeMXBean;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.Comparator;
 import java.util.HashMap;
+import java.util.LinkedList;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.TreeSet;
@@ -48,6 +53,7 @@ import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.regex.Pattern;
+import java.util.zip.DataFormatException;
 
 /*
 * User: adam
@@ -370,7 +376,18 @@ public class QueryProfiler
                 String line = _stackTrace[i].toString();
 
                 // Ignore all the servlet container stuff, #11159
-                if (line.startsWith("javax.servlet.http.HttpServlet.service"))
+                // Ignore everything before HttpView.render, standard action classes, etc., #13753
+                if  (
+                        line.startsWith("org.labkey.api.view.HttpView.render") ||
+                        line.startsWith("org.labkey.jsp.compiled.org.labkey.api.view.template.CommonTemplate_jsp._jspService") ||
+                        line.startsWith("org.labkey.api.view.WebPartView.renderInternal") ||
+                        line.startsWith("org.labkey.api.view.JspView.renderView") ||
+                        line.startsWith("org.labkey.api.action.SimpleViewAction.handleRequest") ||
+                        line.startsWith("org.labkey.api.action.FormViewAction.handleRequest") ||
+                        line.startsWith("org.junit.internal.runners.TestMethodRunner.executeMethodBody") ||
+                        line.startsWith("org.apache.catalina.core.ApplicationFilterChain.internalDoFilter") ||
+                        line.startsWith("javax.servlet.http.HttpServlet.service")
+                    )
                     break;
 
                 sb.append(line);
@@ -402,7 +419,7 @@ public class QueryProfiler
     {
         private final String _sql;
         private final long _firstInvocation;
-        private final Map<String, AtomicInteger> _stackTraces = new HashMap<String, AtomicInteger>();
+        private final Map<ByteArray, AtomicInteger> _stackTraces = new HashMap<ByteArray, AtomicInteger>();
 
         private long _count = 0;
         private long _max = 0;
@@ -424,10 +441,11 @@ public class QueryProfiler
             if (elapsed > _max)
                 _max = elapsed;
 
-            AtomicInteger frequency = _stackTraces.get(stackTrace);
+            ByteArray compressed = new ByteArray(StringUtilsLabKey.compress(stackTrace));
+            AtomicInteger frequency = _stackTraces.get(compressed);
 
             if (null == frequency)
-                _stackTraces.put(stackTrace, new AtomicInteger(1));
+                _stackTraces.put(compressed, new AtomicInteger(1));
             else
                 frequency.incrementAndGet();
         }
@@ -469,9 +487,9 @@ public class QueryProfiler
 
         public void appendStackTraces(StringBuilder sb)
         {
-            // Descending order by occurrences (the key)
-            Set<Map.Entry<String, AtomicInteger>> set = new TreeSet<Map.Entry<String, AtomicInteger>>(new Comparator<Map.Entry<String, AtomicInteger>>() {
-                public int compare(Map.Entry<String, AtomicInteger> e1, Map.Entry<String, AtomicInteger> e2)
+            // Descending order by occurrences (the value)
+            Set<Pair<String, AtomicInteger>> set = new TreeSet<Pair<String, AtomicInteger>>(new Comparator<Pair<String, AtomicInteger>>() {
+                public int compare(Pair<String, AtomicInteger> e1, Pair<String, AtomicInteger> e2)
                 {
                     int compare = e2.getValue().intValue() - e1.getValue().intValue();
 
@@ -482,14 +500,29 @@ public class QueryProfiler
                 }
             });
 
-            set.addAll(_stackTraces.entrySet());
+            // Save the stacktraces separately to find common prefix
+            List<String> stackTraces = new LinkedList<String>();
+
+            for (Map.Entry<ByteArray, AtomicInteger> entry : _stackTraces.entrySet())
+            {
+                try
+                {
+                    String decompressed = StringUtilsLabKey.decompress(entry.getKey().getBytes());
+                    set.add(new Pair<String, AtomicInteger>(decompressed, entry.getValue()));
+                    stackTraces.add(decompressed);
+                }
+                catch (DataFormatException e)
+                {
+                    ExceptionUtil.logExceptionToMothership(null, e);
+                }
+            }
 
             int commonLength = 0;
             String formattedCommonPrefix = "";
 
             if (set.size() > 1)
             {
-                String commonPrefix = StringUtilsLabKey.findCommonPrefix(_stackTraces.keySet());
+                String commonPrefix = StringUtilsLabKey.findCommonPrefix(stackTraces);
                 commonLength = commonPrefix.lastIndexOf('\n');
                 formattedCommonPrefix = "<b>" + PageFlowUtil.filter(commonPrefix.substring(0, commonLength), true) + "</b>";
             }
@@ -609,6 +642,39 @@ public class QueryProfiler
 
             row.append(tab).append(getSql().trim().replaceAll("(\\s)+", " ")).append("\n");
             sb.insert(0, row);
+        }
+    }
+
+    // Need this so we can use byte[] as a HashMap key
+    private static class ByteArray
+    {
+        private final byte[] _bytes;
+
+        private ByteArray(byte[] bytes)
+        {
+            _bytes = bytes;
+        }
+
+        @Override
+        public boolean equals(Object o)
+        {
+            if (this == o) return true;
+            if (o == null || getClass() != o.getClass()) return false;
+
+            ByteArray that = (ByteArray) o;
+
+            return Arrays.equals(_bytes, that._bytes);
+        }
+
+        @Override
+        public int hashCode()
+        {
+            return _bytes != null ? Arrays.hashCode(_bytes) : 0;
+        }
+
+        public byte[] getBytes()
+        {
+            return _bytes;
         }
     }
 

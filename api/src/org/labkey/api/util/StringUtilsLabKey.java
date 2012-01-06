@@ -15,16 +15,22 @@
  */
 package org.labkey.api.util;
 
+import org.apache.commons.lang3.ArrayUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.NotNull;
 import org.junit.Assert;
 import org.junit.Test;
 
-import javax.servlet.ServletException;
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+import java.io.UnsupportedEncodingException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
+import java.util.zip.DataFormatException;
+import java.util.zip.Deflater;
+import java.util.zip.Inflater;
 
 /**
  * User: adam
@@ -131,6 +137,82 @@ public class StringUtilsLabKey
     }
 
 
+    // Compresses a single string using ZLIB compression. Best for long strings.
+    public static byte[] compress(String source)
+    {
+        byte[] bytes;
+
+        try
+        {
+            bytes = source.getBytes("UTF-8");
+        }
+        catch (UnsupportedEncodingException e)
+        {
+            throw new IllegalArgumentException("UTF-8 encoding not supported on this machine", e);
+        }
+
+        ByteArrayOutputStream bos = new ByteArrayOutputStream(bytes.length);
+        byte[] buffer = new byte[bytes.length];
+
+        Deflater deflater = new Deflater(Deflater.BEST_COMPRESSION);
+        deflater.setInput(bytes);
+        deflater.finish();
+
+        while (!deflater.finished())
+        {
+            int count = deflater.deflate(buffer);
+            bos.write(buffer, 0, count);
+        }
+
+        try
+        {
+            bos.close();
+        }
+        catch (IOException e)
+        {
+            //
+        }
+
+        return bos.toByteArray();
+    }
+
+
+    // Uncompresses a string that was compressed using Deflater.
+    public static String decompress(byte[] source) throws DataFormatException
+    {
+        Inflater decompressor = new Inflater();
+        decompressor.setInput(source, 0, source.length);
+
+        ByteArrayOutputStream bos = new ByteArrayOutputStream(source.length);
+
+        byte[] buffer = new byte[source.length * 3];
+
+        while (!decompressor.finished())
+        {
+            int count = decompressor.inflate(buffer);
+            bos.write(buffer, 0, count);
+        }
+
+        try
+        {
+            bos.close();
+        }
+        catch (IOException e)
+        {
+            //
+        }
+
+        try
+        {
+            return new String(bos.toByteArray(), "UTF-8");
+        }
+        catch (UnsupportedEncodingException e)
+        {
+            throw new IllegalArgumentException("UTF-8 encoding not supported on this machine", e);
+        }
+    }
+
+
     public static class TestCase extends Assert
     {
         @Test
@@ -146,5 +228,4 @@ public class StringUtilsLabKey
 //            assertFalse(isText("\ufeff"));
         }
     }
-
 }
