@@ -942,7 +942,7 @@ public class SecurityController extends SpringActionController
         Container c = getContainer();
         ensureGroupInContainer(group, c);
         Set<UserPrincipal> members = SecurityManager.getGroupMembers(group, SecurityManager.GroupMemberType.Both);
-        Map<UserPrincipal, String> redundantMembers = SecurityManager.getRedundantGroupMembers(group);
+        Map<UserPrincipal, List<UserPrincipal>> redundantMembers = SecurityManager.getRedundantGroupMembers(group);
         VBox view = new VBox(new GroupView(group, members, redundantMembers, messages, group.isSystemGroup(), errors));
 
         if (getUser().isAdministrator())

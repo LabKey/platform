@@ -33,6 +33,7 @@
     GroupView.GroupBean bean = ((JspView<GroupView.GroupBean>)HttpView.currentView()).getModelBean();
     Container c = getViewContext().getContainer();
 %>
+
 <script type="text/javascript">
     LABKEY.requiresScript('completion.js');
 
@@ -92,6 +93,12 @@
 Ext.onReady(function()
 {
     form = new LABKEY.Form('groupMembersForm');
+
+    Ext.QuickTips.init();
+    Ext.apply(Ext.QuickTips.getQuickTip(), {
+        dismissDelay: 15000,
+        trackMouse: true
+    });
 });
 
 </script>
@@ -161,12 +168,12 @@ else
         }
         else
         {
-            %><%= h(memberName) %><%
+            %><%= h(memberName) %>&nbsp;<%
         }
 
-        if (bean.redundantMembers.keySet().contains(member))
+        if (bean.redundantMembers.containsKey(member))
         {
-            %><%=PageFlowUtil.helpPopup("Redundant Member", bean.redundantMembers.get(member), false, "<span class=\"labkey-help-pop-up\" style=\"font-size:small;\">*</span>", 0)%><%
+            %><a ext:qtitle="Redundant Member" ext:qtip="<%=bean.displayRedundancyReasonHTML(member)%>">*</a><%
         }
         %>
             </td>
