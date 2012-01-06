@@ -358,7 +358,19 @@ public class ExcelFactory
                                     {
                                         // Excel escapes characters like $ in its number formats
                                         formatString = formatString.replace("\"", "");
+                                        boolean excelScientific = "0.00E+00".equals(formatString);
+                                        if (excelScientific)
+                                        {
+                                            // DecimalFormat doesn't understand Excel's scientific notation format syntax
+                                            formatString = "0.00E00";
+                                        }
                                         formattedValue = new DecimalFormat(formatString).format(value);
+
+                                        if (excelScientific && !formattedValue.contains("E-"))
+                                        {
+                                            // Need to insert a plus between the E and exponent to match Excel's formatting
+                                            formattedValue = formattedValue.replace("E", "E+");
+                                        }
                                     }
                                     else
                                     {
@@ -571,7 +583,7 @@ public class ExcelFactory
             JSONObject sheet2 = jsonArray.getJSONObject(1);
             assertEquals("Sheet name", "Other Sheet", sheet2.getString("name"));
             JSONArray sheet2Rows = sheet2.getJSONArray("data");
-            assertEquals("Number of rows", 6, sheet2Rows.length());
+            assertEquals("Number of rows", 8, sheet2Rows.length());
             assertEquals("Number of columns - row 0", sheet2Rows.getJSONArray(0).length(), 1);
 
             assertEquals("NumberColumn", sheet2Rows.getJSONArray(0).getJSONObject(0).getString("value"));
@@ -588,6 +600,10 @@ public class ExcelFactory
             assertEquals("jeckels:\nA comment about the value 61\n", sheet2Rows.getJSONArray(4).getJSONObject(0).getString("comment"));
             assertEquals("#DIV/0!", sheet2Rows.getJSONArray(5).getJSONObject(0).getString("value"));
             assertTrue(sheet2Rows.getJSONArray(5).getJSONObject(0).getBoolean("error"));
+            assertEquals(4.325E-4, sheet2Rows.getJSONArray(6).getJSONObject(0).getDouble("value"));
+            assertEquals("4.32E-04", sheet2Rows.getJSONArray(6).getJSONObject(0).getString("formattedValue"));
+            assertEquals(2550.00064, sheet2Rows.getJSONArray(7).getJSONObject(0).getDouble("value"));
+            assertEquals("2.55E+03", sheet2Rows.getJSONArray(7).getJSONObject(0).getString("formattedValue"));
         }
     }
 }
