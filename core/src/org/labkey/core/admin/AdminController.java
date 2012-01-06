@@ -45,7 +45,7 @@ import org.labkey.api.admin.AdminUrls;
 import org.labkey.api.attachments.Attachment;
 import org.labkey.api.attachments.AttachmentCache;
 import org.labkey.api.attachments.AttachmentService;
-import org.labkey.api.cache.Cache;
+import org.labkey.api.cache.TrackingCache;
 import org.labkey.api.cache.CacheManager;
 import org.labkey.api.cache.CacheStats;
 import org.labkey.api.collections.CaseInsensitiveTreeSet;
@@ -2079,11 +2079,11 @@ public class AdminController extends SpringActionController
         {
             StringBuilder html = new StringBuilder();
 
-            List<Cache> caches = CacheManager.getKnownCaches();
+            List<TrackingCache> caches = CacheManager.getKnownCaches();
             List<CacheStats> cacheStats = new ArrayList<CacheStats>();
             List<CacheStats> transactionStats = new ArrayList<CacheStats>();
 
-            for (Cache cache : caches)
+            for (TrackingCache cache : caches)
             {
                 cacheStats.add(CacheManager.getCacheStats(cache));
                 transactionStats.add(CacheManager.getTransactionCacheStats(cache));

@@ -1018,8 +1018,6 @@ public class LoginController extends SpringActionController
             _unrecoverableError = false;
         }
 
-        
-
         @Override
         protected void verifyBeforeView(SetPasswordForm form, boolean reshow, BindException errors)
         {
