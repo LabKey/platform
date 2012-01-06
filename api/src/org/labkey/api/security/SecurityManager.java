@@ -1456,22 +1456,37 @@ public class SecurityManager
     }
 
     // get the list of group members that do not need to be direct members because they are a member of a member group (i.e. groups-in-groups)
-    public static Map<UserPrincipal, String> getRedundantGroupMembers(Group group)
+    public static Map<UserPrincipal, List<UserPrincipal>> getRedundantGroupMembers(Group group)
     {
-        Map<UserPrincipal, String> redundantMembers = new HashMap<UserPrincipal, String>();
-        Set<UserPrincipal> allMembers = getGroupMembers(group, GroupMemberType.Both);
-        Set<UserPrincipal> memberGroups = getGroupMembers(group, GroupMemberType.Groups);
-        for (UserPrincipal g : memberGroups)
+        Map<UserPrincipal, List<UserPrincipal>> redundantMembers = new HashMap<UserPrincipal, List<UserPrincipal>>();
+        Set<UserPrincipal> origMembers = getGroupMembers(group, GroupMemberType.Both);
+        LinkedList<UserPrincipal> visited = new LinkedList<UserPrincipal>();
+        for (UserPrincipal memberGroup : getGroupMembers(group, GroupMemberType.Groups))
         {
-            for (UserPrincipal member : getGroupMembers((Group)g, GroupMemberType.Both))
-            {
-                if (allMembers.contains(member))
-                {
-                    redundantMembers.put(member, "\"" + member.getName() + "\" can be removed because it already belongs to \"" + g.getName() + "\".");
-                }
-            }
+            visited.addLast(memberGroup);
+            checkForRedundantMembers((Group)memberGroup, origMembers, redundantMembers, visited);
+            visited.removeLast();
         }
         return redundantMembers;
+    }
+
+    private static void checkForRedundantMembers(Group group, Set<UserPrincipal> origMembers, Map<UserPrincipal, List<UserPrincipal>> redundantMembers, LinkedList<UserPrincipal> visited)
+    {
+        Set<UserPrincipal> members = getGroupMembers(group, GroupMemberType.Both);
+        for (UserPrincipal principal : members)
+        {
+            visited.addLast(principal);
+            if (origMembers.contains(principal))
+            {
+                if (!redundantMembers.containsKey(principal))
+                    redundantMembers.put(principal, new LinkedList<UserPrincipal>(visited));
+            }
+            else if (principal instanceof Group)
+            {
+                checkForRedundantMembers((Group)principal, origMembers, redundantMembers, visited);
+            }
+            visited.removeLast();
+        }
     }
 
     /**
