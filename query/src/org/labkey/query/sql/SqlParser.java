@@ -91,8 +91,7 @@ public class SqlParser
     {
         _parseErrors = new ArrayList<Exception>();
         _SqlParser parser = new _SqlParser(str, _parseErrors);
-        ParserRuleReturnScope selectScope = null;
-        selectScope = parser.statement();
+        ParserRuleReturnScope selectScope = parser.statement();
         if (!_parseErrors.isEmpty())
             throw _parseErrors.get(0);
         return (Tree)selectScope.getTree();
@@ -133,7 +132,7 @@ public class SqlParser
                 assert parseRoot.getChildCount()==1 || parseRoot.getChildCount()==2;
 //                assert dump(parseRoot);
 
-                CommonTree parameters = null;
+                CommonTree parameters;
                 if (parseRoot.getChildCount() == 2)
                 {
                     _parameters = new ArrayList<QParameter>();
@@ -892,7 +891,7 @@ public class SqlParser
 	QNode qnode(CommonTree node)
     {
 		int type = node.getType();
-		QNode q = null;
+		QNode q;
 		
         switch (type)
         {
