@@ -131,30 +131,35 @@ public class AnalyticsServiceImpl implements AnalyticsService.Interface
         // Add the server GUID to the URL.  Remove the "-" because they are problematic for Google Analytics regular
         // expressions.
         String guid = AppProps.getInstance().getServerGUID();
-        guid = StringUtils.replace(guid, "-", "");
+        guid = StringUtils.replace(guid, "-", ".");
         actionUrl.addParameter("serverGUID", guid);
         return actionUrl.toString();
     }
 
-    static final private String TRACKING_SCRIPT_INTRO = "<script type=\"text/javascript\">\n" +
-            "var gaJsHost = ((\"https:\" == document.location.protocol) ? \"https://ssl.\" : \"http://www.\");\n" +
-            "document.write(unescape(\"%3Cscript src='\" + gaJsHost + \"google-analytics.com/ga.js' type='text/javascript'%3E%3C/script%3E\"));\n" +
-            "</script>\n";
 
     /**
      * The Google Analytics tracking script.
      * <p>For an explanation of what settings are available on the pageTracker object, see
      * <a href="http://code.google.com/apis/analytics/docs/gaJSApi.html">Google Analytics Tracking API</a>
      */
-    static final private String TRACKING_SCRIPT_TEMPLATE
-            = TRACKING_SCRIPT_INTRO +
-            "<script type=\"text/javascript\">\n" +
-            "var pageTracker = _gat._getTracker(${ACCOUNT_ID});\n" +
-            "pageTracker._initData();\n" +
-            "pageTracker._setDetectTitle(false);\n" +
-            "pageTracker._trackPageview(${PAGE_URL});\n" +
-            "</script>";
+    static final private String TRACKING_SCRIPT_TEMPLATE_OLD =
+        "<script type=\"text/javascript\" src=\"${GA_JS}\"></script>\n" +
+        "<script type=\"text/javascript\">\n" +
+        "var pageTracker = _gat._getTracker(${ACCOUNT_ID});\n" +
+        "pageTracker._initData();\n" +
+        "pageTracker._setDetectTitle(false);\n" +
+        "pageTracker._trackPageview(${PAGE_URL});\n" +
+        "</script>";
 
+    // new style (async)
+    static final private String TRACKING_SCRIPT_TEMPLATE_ASYNC =
+        "<script type=\"text/javascript\">\n"+
+        "var _gaq = _gaq || [];\n" +
+        "_gaq.push(['_setAccount', ${ACCOUNT_ID}]);\n" +
+        "_gaq.push(['_setDetectTitle', false]);\n" +
+        "_gaq.push(['_trackPageview', ${PAGE_URL}]);\n" +
+        "</script>\n"+
+        "<script async=\"async\" type=\"text/javascript\" src=\"${GA_JS}\"></script>\n";
 
 
     public String getSavedScript()
@@ -170,7 +175,7 @@ public class AnalyticsServiceImpl implements AnalyticsService.Interface
             case script:
                 return getSavedScript();
             case enabled:
-                return TRACKING_SCRIPT_TEMPLATE;
+                return TRACKING_SCRIPT_TEMPLATE_ASYNC;
             case disabled:
             default:
                 return "";
@@ -181,12 +186,15 @@ public class AnalyticsServiceImpl implements AnalyticsService.Interface
     public String getTrackingScript(ViewContext context)
     {
         if (!showTrackingScript(context))
-        {
             return "";
-        }
+
+        boolean isSecure = context.getActionURL().getScheme().startsWith("https");
+        String gaJS = (isSecure ? "https://ssl" : "http://www") + ".google-analytics.com/ga.js";
+
         String trackingScript = getRawScript();
         trackingScript = StringUtils.replace(trackingScript, "${ACCOUNT_ID}", PageFlowUtil.jsString(getAccountId()));
         trackingScript = StringUtils.replace(trackingScript, "${PAGE_URL}", PageFlowUtil.jsString(getSanitizedUrl(context)));
+        trackingScript = StringUtils.replace(trackingScript, "${GA_JS}", gaJS);
         return trackingScript;
     }
 }
