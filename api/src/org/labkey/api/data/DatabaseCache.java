@@ -25,6 +25,7 @@ import org.labkey.api.cache.CacheManager;
 import org.labkey.api.cache.CacheType;
 import org.labkey.api.cache.Stats;
 import org.labkey.api.cache.StringKeyCache;
+import org.labkey.api.cache.TransactionCache;
 import org.labkey.api.util.Filter;
 
 import java.sql.Connection;
@@ -44,7 +45,7 @@ import java.sql.SQLException;
  */
 public class DatabaseCache<ValueType> implements StringKeyCache<ValueType>
 {
-    private final StringKeyCache<ValueType> _sharedCache;
+    protected final StringKeyCache<ValueType> _sharedCache;
     private final DbScope _scope;
 
     public DatabaseCache(DbScope scope, int maxSize, long defaultTimeToLive, String debugName)
@@ -63,6 +64,11 @@ public class DatabaseCache<ValueType> implements StringKeyCache<ValueType>
         return CacheManager.getStringKeyCache(maxSize, defaultTimeToLive, debugName);
     }
 
+    protected StringKeyCache<ValueType> createTemporaryCache()
+    {
+        return CacheManager.getTemporaryCache(_sharedCache.getLimit(), _sharedCache.getDefaultExpires(), "transaction cache: ", _sharedCache);
+    }
+
     private StringKeyCache<ValueType> getCache()
     {
         DbScope.Transaction t = _scope.getCurrentTransaction();
@@ -73,7 +79,7 @@ public class DatabaseCache<ValueType> implements StringKeyCache<ValueType>
 
             if (null == transactionCache)
             {
-                transactionCache = new TransactionCache<ValueType>(_sharedCache);
+                transactionCache = new TransactionCache<ValueType>(_sharedCache, createTemporaryCache());
                 t.addCache(this, transactionCache);
             }
 
@@ -179,18 +185,6 @@ public class DatabaseCache<ValueType> implements StringKeyCache<ValueType>
     }
 
     @Override
-    public String getDebugName()
-    {
-        return _sharedCache.getDebugName();
-    }
-
-    @Override
-    public StackTraceElement[] getCreationStackTrace()
-    {
-        return _sharedCache.getCreationStackTrace();
-    }
-
-    @Override
     public int getLimit()
     {
         return _sharedCache.getLimit();
@@ -208,17 +202,6 @@ public class DatabaseCache<ValueType> implements StringKeyCache<ValueType>
         _sharedCache.close();
     }
 
-    @Override
-    public Stats getStats()
-    {
-        return _sharedCache.getStats();
-    }
-
-    @Override
-    public Stats getTransactionStats()
-    {
-        return _sharedCache.getTransactionStats();
-    }
 
     public static class TestCase extends Assert
     {
@@ -233,7 +216,7 @@ public class DatabaseCache<ValueType> implements StringKeyCache<ValueType>
                 @Override
                 protected StringKeyCache<String> createSharedCache(int maxSize, long defaultTimeToLive, String debugName)
                 {
-                    return CacheManager.getTemporaryCache(maxSize, defaultTimeToLive, debugName, null);
+                    return CacheManager.getTemporaryCache(maxSize, defaultTimeToLive, debugName, (Stats)null);
                 }
             };
 
@@ -379,7 +362,7 @@ public class DatabaseCache<ValueType> implements StringKeyCache<ValueType>
             public boolean isTransactionActive()
             {
                 if (null != overrideTransactionActive)
-                    return overrideTransactionActive.booleanValue();
+                    return overrideTransactionActive;
                 return super.isTransactionActive();
             }
 
@@ -394,11 +377,11 @@ public class DatabaseCache<ValueType> implements StringKeyCache<ValueType>
                 return super.getCurrentTransaction();
             }
 
-            private void setOverrideTransactionActive(Boolean override)
+            private void setOverrideTransactionActive(@Nullable Boolean override)
             {
                 overrideTransactionActive = override;
 
-                if (null == overrideTransactionActive || !overrideTransactionActive.booleanValue())
+                if (null == overrideTransactionActive || !overrideTransactionActive)
                 {
                     overrideTransaction = null;
                 }

@@ -33,7 +33,6 @@ import java.util.List;
 /*
     TODO:
 
-    - CacheWrapper -> TrackingCacheWrapper?
     - Track expirations
 
  */
@@ -51,26 +50,29 @@ public class CacheManager
 
     // Swap providers here (if we ever implement another cache provider)
     private static final CacheProvider PROVIDER = EhCacheProvider.getInstance();
-    private static final List<Cache> KNOWN_CACHES = new LinkedList<Cache>();
+    private static final List<TrackingCache> KNOWN_CACHES = new LinkedList<TrackingCache>();
     public static final int UNLIMITED = 0;
 
-    public static <K, V> Cache<K, V> getCache(int limit, long defaultTimeToLive, String debugName)
+    private static <K, V> TrackingCache<K, V> createCache(int limit, long defaultTimeToLive, String debugName)
     {
-        Cache<K, V> cache = new CacheWrapper<K, V>(PROVIDER.<K, V>getSimpleCache(debugName, limit, defaultTimeToLive, false), debugName, null);
+        TrackingCache<K, V> cache = new CacheWrapper<K, V>(PROVIDER.<K, V>getSimpleCache(debugName, limit, defaultTimeToLive, false), debugName, null);
         addToKnownCaches(cache);  // Permanent cache -- hold onto it
         return cache;
+    }
+
+    public static <K, V> TrackingCache<K, V> getCache(int limit, long defaultTimeToLive, String debugName)
+    {
+        return createCache(limit, defaultTimeToLive, debugName);
     }
 
     public static <V> StringKeyCache<V> getStringKeyCache(int limit, long defaultTimeToLive, String debugName)
     {
-        StringKeyCache<V> cache = new StringKeyCacheWrapper<V>(PROVIDER.<String, V>getSimpleCache(debugName, limit, defaultTimeToLive, false), debugName, null);
-        addToKnownCaches(cache);  // Permanent cache -- hold onto it
-        return cache;
+        return new StringKeyCacheWrapper<V>(CacheManager.<String, V>createCache(limit, defaultTimeToLive, debugName));
     }
 
     public static <K, V> BlockingCache<K, V> getBlockingCache(int limit, long defaultTimeToLive, String debugName, @Nullable CacheLoader<K, V> loader)
     {
-        Cache<K, Object> cache = getCache(limit, defaultTimeToLive, debugName);
+        TrackingCache<K, Object> cache = getCache(limit, defaultTimeToLive, debugName);
         return new BlockingCache<K, V>(cache, loader);
     }
 
@@ -83,7 +85,15 @@ public class CacheManager
     // Temporary caches must be closed when no longer needed.  Their statistics can accumulate to another cache's stats.
     public static <V> StringKeyCache<V> getTemporaryCache(int limit, long defaultTimeToLive, String debugName, @Nullable Stats stats)
     {
-        return new StringKeyCacheWrapper<V>(PROVIDER.<String, V>getSimpleCache(debugName, limit, defaultTimeToLive, true), debugName, stats);
+        TrackingCache<String, V> cache = new CacheWrapper<String, V>(PROVIDER.<String, V>getSimpleCache(debugName, limit, defaultTimeToLive, true), debugName, stats);
+        return new StringKeyCacheWrapper<V>(cache);
+    }
+
+    // Temporary caches must be closed when no longer needed.  Their statistics can accumulate to another cache's stats.
+    public static <V> StringKeyCache<V> getTemporaryCache(int limit, long defaultTimeToLive, String prefix, StringKeyCache<V> sharedCache)
+    {
+        Tracking tracking = (Tracking)sharedCache;
+        return getTemporaryCache(limit, defaultTimeToLive, prefix + tracking.getDebugName(), tracking.getStats());
     }
 
     private static final StringKeyCache<Object> SHARED_CACHE = getStringKeyCache(10000, DEFAULT_TIMEOUT, "sharedCache");
@@ -94,7 +104,7 @@ public class CacheManager
     }
 
     // We hold onto "permanent" caches so memtracker can clear them and admin console can report statistics on them
-    private static void addToKnownCaches(Cache cache)
+    private static void addToKnownCaches(TrackingCache cache)
     {
         synchronized (KNOWN_CACHES)
         {
@@ -108,31 +118,31 @@ public class CacheManager
     {
         synchronized (KNOWN_CACHES)
         {
-            for (Cache cache : KNOWN_CACHES)
+            for (TrackingCache cache : KNOWN_CACHES)
                 cache.clear();
         }
     }
 
     // Return a copy of KNOWN_CACHES for reporting statistics
-    public static List<Cache> getKnownCaches()
+    public static List<TrackingCache> getKnownCaches()
     {
-        List<Cache> copy = new ArrayList<Cache>();
+        List<TrackingCache> copy = new ArrayList<TrackingCache>();
 
         synchronized (KNOWN_CACHES)
         {
-            for (Cache cache : KNOWN_CACHES)
+            for (TrackingCache cache : KNOWN_CACHES)
                 copy.add(cache);
         }
 
         return copy;
     }
 
-    public static CacheStats getCacheStats(Cache cache)
+    public static CacheStats getCacheStats(TrackingCache cache)
     {
         return new CacheStats(cache.getDebugName(), cache.getCreationStackTrace(), cache.getStats(), cache.size(), cache.getLimit());
     }
 
-    public static CacheStats getTransactionCacheStats(Cache cache)
+    public static CacheStats getTransactionCacheStats(TrackingCache cache)
     {
         return new CacheStats(cache.getDebugName(), cache.getCreationStackTrace(), cache.getTransactionStats(), cache.size(), cache.getLimit());
     }

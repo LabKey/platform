@@ -28,7 +28,7 @@ import org.labkey.api.util.Filter;
 
 // TODO: Track expirations?
 // Wraps a SimpleCache to provide a full Cache implementation.  Adds null markers, loaders, statistics gathering and debug name.
-public class CacheWrapper<K, V> implements Cache<K, V>
+class CacheWrapper<K, V> implements TrackingCache<K, V>
 {
     private static final Object NULL_MARKER = new Object() {public String toString(){return "MISSING VALUE MARKER";}};
 
@@ -39,7 +39,7 @@ public class CacheWrapper<K, V> implements Cache<K, V>
     private final StackTraceElement[] _stackTrace;
     private final V _nullMarker = (V)NULL_MARKER;
 
-    public CacheWrapper(@NotNull SimpleCache<K, V> cache, @NotNull String debugName, @Nullable Stats stats)
+    CacheWrapper(@NotNull SimpleCache<K, V> cache, @NotNull String debugName, @Nullable Stats stats)
     {
         _cache = cache;
         assert StringUtils.isNotBlank(debugName);
@@ -161,6 +161,7 @@ public class CacheWrapper<K, V> implements Cache<K, V>
         return _transactionStats;
     }
 
+    @Override
     public StackTraceElement[] getCreationStackTrace()
     {
         return _stackTrace;

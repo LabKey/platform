@@ -25,9 +25,9 @@ import org.labkey.api.util.Filter;
  */
 
 // NOTE: Use CacheManager.getBlockingStringKeyCache() to construct one of these -- this handles generics better
-public class BlockingStringKeyCache<V> extends BlockingCache<String, V>
+public class BlockingStringKeyCache<V> extends BlockingCache<String, V> implements StringKeyCache<V>
 {
-    protected BlockingStringKeyCache(Cache<String, Object> cache, @Nullable CacheLoader<String, V> cacheLoader)
+    public BlockingStringKeyCache(Cache<String, Object> cache, @Nullable CacheLoader<String, V> cacheLoader)
     {
         super(cache, cacheLoader);
     }

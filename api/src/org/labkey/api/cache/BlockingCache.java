@@ -26,7 +26,7 @@ import org.labkey.api.util.Filter;
  * This is a decorator for any Cache instance, it will provide for synchronizing object load
  * (readers block while someone is creating an object)
  */
-public class BlockingCache<K, V> implements BasicCache<K, V>
+public class BlockingCache<K, V> implements Cache<K, V>
 {
     protected final Cache<K, Object> _cache;
     protected final CacheLoader<K, V> _loader;

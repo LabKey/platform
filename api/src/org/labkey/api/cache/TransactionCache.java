@@ -14,13 +14,8 @@
  * limitations under the License.
  */
 
-package org.labkey.api.data;
+package org.labkey.api.cache;
 
-import org.labkey.api.cache.CacheLoader;
-import org.labkey.api.cache.CacheManager;
-import org.labkey.api.cache.CacheType;
-import org.labkey.api.cache.Stats;
-import org.labkey.api.cache.StringKeyCache;
 import org.labkey.api.util.Filter;
 
 /*
@@ -32,34 +27,34 @@ public class TransactionCache<V> implements StringKeyCache<V>
 {
     private boolean _hasWritten = false;
     private final StringKeyCache<V> _sharedCache;
-    private final StringKeyCache<Object> _privateCache;
+    private final StringKeyCache<V> _privateCache;
 
     // A read-through transaction cache.  Reads through to the passed-in shared cache until any write occurs, at which
     // point it switches to using a private cache for the remainder of the transaction.
-    public TransactionCache(StringKeyCache<V> sharedCache)
+    public TransactionCache(StringKeyCache<V> sharedCache, StringKeyCache<V> privateCache)
     {
-        _privateCache = CacheManager.getTemporaryCache(sharedCache.getLimit(), sharedCache.getDefaultExpires(), "transaction cache: " + sharedCache.getDebugName(), sharedCache.getTransactionStats());
+        _privateCache = privateCache;
         _sharedCache = sharedCache;
     }
 
     @Override
     public V get(String key)
     {
-        Object v;
+        V v;
 
         if (_hasWritten)
             v = _privateCache.get(key);
         else
             v = _sharedCache.get(key);
 
-        return (V)v;
+        return v;
     }
 
 
     @Override
     public V get(String key, Object arg, CacheLoader<String, V> loader)
     {
-        Object v;
+        V v;
 
         if (_hasWritten)
             v = _privateCache.get(key);
@@ -73,7 +68,7 @@ public class TransactionCache<V> implements StringKeyCache<V>
             _privateCache.put(key, v);
         }
 
-        return (V)v;
+        return v;
     }
 
     @Override
@@ -137,12 +132,6 @@ public class TransactionCache<V> implements StringKeyCache<V>
     }
 
     @Override
-    public Stats getStats()
-    {
-        return _privateCache.getStats();
-    }
-
-    @Override
     public int size()
     {
         return _privateCache.size();
@@ -152,23 +141,5 @@ public class TransactionCache<V> implements StringKeyCache<V>
     public long getDefaultExpires()
     {
         return _privateCache.getDefaultExpires();
-    }
-
-    @Override
-    public String getDebugName()
-    {
-        return _privateCache.getDebugName();
-    }
-
-    @Override
-    public StackTraceElement[] getCreationStackTrace()
-    {
-        return _privateCache.getCreationStackTrace();
-    }
-
-    @Override
-    public Stats getTransactionStats()
-    {
-        return null; // TODO: Check this
     }
 }

@@ -64,8 +64,8 @@ import java.util.regex.Pattern;
 
 public class ScssServlet extends HttpServlet
 {
-    static Logger _log = Logger.getLogger(ScssServlet.class);
-    final Cache<Path,ScssContent> _cache = CacheManager.getCache(CacheManager.UNLIMITED, CacheManager.YEAR, "SCSS cache");
+    private static final Logger _log = Logger.getLogger(ScssServlet.class);
+    private final Cache<Path, ScssContent> _cache = CacheManager.getCache(CacheManager.UNLIMITED, CacheManager.YEAR, "SCSS cache");
 
     public ScssServlet()
     {

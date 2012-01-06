@@ -5,13 +5,15 @@ import org.jetbrains.annotations.Nullable;
 import org.labkey.api.cache.BlockingStringKeyCache;
 import org.labkey.api.cache.CacheLoader;
 import org.labkey.api.cache.CacheManager;
+import org.labkey.api.cache.Stats;
+import org.labkey.api.cache.StringKeyCache;
 import org.labkey.api.data.CoreSchema;
+import org.labkey.api.data.DatabaseCache;
 import org.labkey.api.data.Sort;
 import org.labkey.api.data.TableSelector;
 import org.labkey.api.util.ExceptionUtil;
 import org.labkey.api.view.HttpView;
 
-import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
@@ -33,8 +35,23 @@ import java.util.Map;
 class UserCache
 {
     private static final CoreSchema CORE = CoreSchema.getInstance();
-    private static final BlockingStringKeyCache<UserCollections> CACHE = CacheManager.getBlockingStringKeyCache(1, CacheManager.DAY, "Users", new UserCollectionsLoader());
     private static final String KEY = "USER_COLLECTIONS";
+
+    private static final StringKeyCache<UserCollections> CACHE = new DatabaseCache<UserCollections>(CORE.getSchema().getScope(), 1, CacheManager.DAY, "Users") {
+        @Override
+        protected StringKeyCache<UserCollections> createSharedCache(int maxSize, long defaultTimeToLive, String debugName)
+        {
+            StringKeyCache<Object> shared = CacheManager.getStringKeyCache(maxSize, defaultTimeToLive, debugName);
+            return new BlockingStringKeyCache<UserCollections>(shared, new UserCollectionsLoader());
+        }
+
+        @Override
+        protected StringKeyCache<UserCollections> createTemporaryCache()
+        {
+            StringKeyCache<Object> temp = CacheManager.getTemporaryCache(1, CacheManager.DAY, "Transaction cache: Users", (Stats)null);
+            return new BlockingStringKeyCache<UserCollections>(temp, new UserCollectionsLoader());
+        }
+    };
 
     private UserCache()
     {

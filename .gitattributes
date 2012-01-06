@@ -105,7 +105,6 @@ api/src/org/labkey/api/audit/query/AuditLogQueryView.java -text
 api/src/org/labkey/api/audit/query/DefaultAuditQueryView.java -text
 api/src/org/labkey/api/audit/query/DefaultAuditSchema.java -text
 api/src/org/labkey/api/audit/query/SimpleAuditColumnFactory.java -text
-api/src/org/labkey/api/cache/BasicCache.java -text
 api/src/org/labkey/api/cache/BlockingCache.java -text
 api/src/org/labkey/api/cache/BlockingStringKeyCache.java -text
 api/src/org/labkey/api/cache/Cache.java -text
@@ -121,6 +120,8 @@ api/src/org/labkey/api/cache/Stats.java -text
 api/src/org/labkey/api/cache/StringKeyCache.java -text
 api/src/org/labkey/api/cache/StringKeyCacheWrapper.java -text
 api/src/org/labkey/api/cache/Tracking.java -text
+api/src/org/labkey/api/cache/TrackingCache.java -text
+api/src/org/labkey/api/cache/TransactionCache.java -text
 api/src/org/labkey/api/cache/ehcache/EhCacheProvider.java -text
 api/src/org/labkey/api/cache/ehcache/EhSimpleCache.java -text
 api/src/org/labkey/api/cache/ehcache/ehcache.xml -text
@@ -271,7 +272,6 @@ api/src/org/labkey/api/data/TempTableTracker.java -text
 api/src/org/labkey/api/data/TempTableWriter.java -text
 api/src/org/labkey/api/data/TestSchema.java -text
 api/src/org/labkey/api/data/TextWriter.java -text
-api/src/org/labkey/api/data/TransactionCache.java -text
 api/src/org/labkey/api/data/UnionTableInfo.java -text
 api/src/org/labkey/api/data/UpdateColumn.java -text
 api/src/org/labkey/api/data/UpdateableTableInfo.java -text

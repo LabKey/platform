@@ -18,7 +18,11 @@ package org.labkey.api.module;
 import org.apache.log4j.Logger;
 import org.labkey.api.cache.CacheManager;
 import org.labkey.api.cache.StringKeyCache;
-import org.labkey.api.resource.*;
+import org.labkey.api.resource.AbstractResource;
+import org.labkey.api.resource.ClassResourceCollection;
+import org.labkey.api.resource.MergedDirectoryResource;
+import org.labkey.api.resource.Resolver;
+import org.labkey.api.resource.Resource;
 import org.labkey.api.settings.AppProps;
 import org.labkey.api.util.Path;
 

@@ -25,12 +25,14 @@ import org.labkey.api.util.Filter;
  * Time: 10:50:02 AM
  */
 
-// Wraps a SimpleCache to provide a StringKeyCache.  Adds statistics gathering, removeUsingPrefix(), and debug name handling
-public class StringKeyCacheWrapper<V> extends CacheWrapper<String, V> implements StringKeyCache<V>
+// Convenience class that wraps a Cache to provide a StringKeyCache.
+class StringKeyCacheWrapper<V> implements StringKeyCache<V>, Tracking
 {
-    public StringKeyCacheWrapper(@NotNull SimpleCache<String, V> basicCache, @NotNull String debugName, @Nullable Stats stats)
+    private final TrackingCache<String, V> _cache;
+
+    StringKeyCacheWrapper(@NotNull TrackingCache<String, V> cache)
     {
-        super(basicCache, debugName, stats);
+        _cache = cache;
     }
 
     public int removeUsingPrefix(final String prefix)
@@ -42,5 +44,98 @@ public class StringKeyCacheWrapper<V> extends CacheWrapper<String, V> implements
                 return s.startsWith(prefix);
             }
         });
+    }
+
+    public void put(String key, V value)
+    {
+        _cache.put(key, value);
+    }
+
+    public void put(String key, V value, long timeToLive)
+    {
+        _cache.put(key, value, timeToLive);
+    }
+
+    @Override
+    public V get(String key)
+    {
+        return _cache.get(key);
+    }
+
+    public V get(String key, @Nullable Object arg, CacheLoader<String, V> stringVCacheLoader)
+    {
+        return _cache.get(key, arg, stringVCacheLoader);
+    }
+
+    @Override
+    public void remove(String key)
+    {
+        _cache.remove(key);
+    }
+
+    @Override
+    public int removeUsingFilter(Filter<String> stringFilter)
+    {
+        return _cache.removeUsingFilter(stringFilter);
+    }
+
+    @Override
+    public void clear()
+    {
+        _cache.clear();
+    }
+
+    @Override
+    public int getLimit()
+    {
+        return _cache.getLimit();
+    }
+
+    @Override
+    public int size()
+    {
+        return _cache.size();
+    }
+
+    @Override
+    public long getDefaultExpires()
+    {
+        return _cache.getDefaultExpires();
+    }
+
+    @Override
+    public CacheType getCacheType()
+    {
+        return _cache.getCacheType();
+    }
+
+    @Override
+    public void close()
+    {
+        _cache.close();
+    }
+
+    @Override
+    public String getDebugName()
+    {
+        return _cache.getDebugName();
+    }
+
+    @Override
+    public StackTraceElement[] getCreationStackTrace()
+    {
+        return _cache.getCreationStackTrace();
+    }
+
+    @Override
+    public Stats getStats()
+    {
+        return _cache.getStats();
+    }
+
+    @Override
+    public Stats getTransactionStats()
+    {
+        return _cache.getTransactionStats();
     }
 }
