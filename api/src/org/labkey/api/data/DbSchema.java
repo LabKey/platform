@@ -547,9 +547,10 @@ public class DbSchema
 
             if (testSchema.getSqlDialect().isSqlServer())
             {
-                Table.execute(testSchema, "EXEC sp_addapprole 'testdrop', 'password' ");
-                Table.execute(testSchema, "EXEC sp_addapprole 'testdrop2', 'password' ");
-                Table.execute(testSchema, "EXEC sp_addapprole 'testdrop3', 'password' ");
+                // test the 3 ways to create a schema on SQLServer
+                Table.execute(testSchema, "EXEC sp_addapprole 'testdrop', 'password'");
+                Table.execute(testSchema, "CREATE SCHEMA testdrop2");
+                Table.execute(testSchema, testSchema.getSqlDialect().getCreateSchemaSql("testdrop3"));
             }
             else if (testSchema.getSqlDialect().isPostgreSQL())
             {

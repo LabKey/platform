@@ -74,10 +74,14 @@ public class AuthenticatedRequest extends HttpServletRequestWrapper
 
             if (_user.isGuest())
             {
-                int configuredTimeout = session.getMaxInactiveInterval();
-                configuredTimeout = configuredTimeout < 0 ? Integer.MAX_VALUE : configuredTimeout;
-                int sessionTimeout = isRobot() ? 10 : 60*60;
-                session.setMaxInactiveInterval(Math.min(configuredTimeout, sessionTimeout));
+                boolean isRobot = isRobot();
+                if (isRobot)
+                {
+                    int configuredTimeout = session.getMaxInactiveInterval();
+                    configuredTimeout = configuredTimeout < 0 ? Integer.MAX_VALUE : configuredTimeout;
+                    int sessionTimeout = isRobot ? 10 : 60*60;
+                    session.setMaxInactiveInterval(Math.min(configuredTimeout, sessionTimeout));
+                }
             }
         }
 
