@@ -214,23 +214,53 @@ public class DefaultValueServiceImpl extends DefaultValueService
     {
         Map<DomainProperty, Object> userValues = null;
         Container checkContainer = container;
+        // If we've already checked for default values in the domain's container, we don't need to look elsewhere,
+        // since it won't be referenced from any parent containers 
+        boolean checkedDomainContainer = false;
         if (user != null)
         {
-            while (checkContainer != null && !checkContainer.isRoot() && (userValues == null || userValues.isEmpty()))
+            while (!checkedDomainContainer && checkContainer != null && !checkContainer.isRoot() && (userValues == null || userValues.isEmpty()))
             {
                 String userDefaultLSID = getUserDefaultsLSID(checkContainer, user, domain, scope);
                 userValues = getObjectValues(checkContainer, domain, userDefaultLSID);
+                if (checkContainer.equals(domain.getContainer()))
+                {
+                    // Stop looking if we've gotten to the domain's container. Normal scoping won't have parent
+                    // containers use the domain of a child container
+                    checkedDomainContainer = true;
+                }
                 checkContainer = checkContainer.getParent();
+            }
+            if (!checkedDomainContainer && (userValues == null || userValues.isEmpty()))
+            {
+                // Also check in the domain's home container since it wasn't part of the chain to the root. It's likely
+                // in the /Shared project, but we'll check wherever the domain lives
+                String userDefaultLSID = getUserDefaultsLSID(domain.getContainer(), user, domain, scope);
+                userValues = getObjectValues(domain.getContainer(), domain, userDefaultLSID);
             }
         }
 
         Map<DomainProperty, Object> globalValues = null;
         checkContainer = container;
-        while (checkContainer != null && !checkContainer.isRoot() && (globalValues == null || globalValues.isEmpty()))
+        checkedDomainContainer = false;
+        while (!checkedDomainContainer && checkContainer != null && !checkContainer.isRoot() && (globalValues == null || globalValues.isEmpty()))
         {
             String globalDefaultLSID = getContainerDefaultsLSID(checkContainer, domain);
             globalValues = getObjectValues(checkContainer, domain, globalDefaultLSID);
+            if (checkContainer.equals(domain.getContainer()))
+            {
+                // Stop looking if we've gotten to the domain's container. Normal scoping won't have parent
+                // containers use the domain of a child container
+                checkedDomainContainer = true;
+            }
             checkContainer = checkContainer.getParent();
+        }
+        if (!checkedDomainContainer && (globalValues == null || globalValues.isEmpty()))
+        {
+            // Also check in the domain's home container since it wasn't part of the chain to the root. It's likely
+            // in the /Shared project, but we'll check wherever the domain lives
+            String globalDefaultLSID = getContainerDefaultsLSID(domain.getContainer(), domain);
+            globalValues = getObjectValues(domain.getContainer(), domain, globalDefaultLSID);
         }
         return getMergedValues(domain, userValues, globalValues);
     }
