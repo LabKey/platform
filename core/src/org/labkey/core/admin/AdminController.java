@@ -4126,7 +4126,6 @@ public class AdminController extends SpringActionController
             }
 
             _successURL = getContainer().getStartURL(getUser());
-            _successURL.addParameter("wizard", Boolean.TRUE.toString());
 
             return true;
         }
