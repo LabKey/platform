@@ -808,6 +808,8 @@ public class DataSetDefinition extends AbstractStudyEntity<DataSetDefinition> im
                 // That probably should have been done only in the StudyQuerySchema
                 // CONSIDER: remove this aliased column
                 ColumnInfo ptidCol = getStorageColumn("ParticipantId");
+                if (null == ptidCol) // shouldn't happen! bug mothership says it did
+                    throw new NullPointerException("ParticipantId column not found in dataset: " + (null != _container ? "(" + _container.getPath() + ") " : "") + getName());
                 ColumnInfo wrapped = newDatasetColumnInfo(this, ptidCol, getParticipantIdURI());
                 wrapped.setName("ParticipantId");
                 String subject = StudyService.get().getSubjectColumnName(_container);
