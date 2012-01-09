@@ -583,11 +583,20 @@ public class FileSystemResource extends AbstractWebdavResource
             {
                 String fileURL = getFile().toURI().toURL().toString();
                 List<ExpData> list = new LinkedList<ExpData>();
-                List<ExpData> f = ServiceRegistry.get(FlowService.class).getExpDataByURL(fileURL, getContainer());
-                list.addAll(f);
-                ExpData d = ExperimentService.get().getExpDataByURL(fileURL, null);
-                if (null != d)
-                    list.add(d);
+
+                FlowService fs = ServiceRegistry.get(FlowService.class);
+                if (null != fs)
+                {
+                    List<ExpData> f = fs.getExpDataByURL(fileURL, getContainer());
+                    list.addAll(f);
+                }
+                ExperimentService.Interface es = ExperimentService.get();
+                if (null != es)
+                {
+                    ExpData d = es.getExpDataByURL(fileURL, null);
+                    if (null != d)
+                        list.add(d);
+                }
                 _data = list;
             }
             catch (MalformedURLException e) {}
