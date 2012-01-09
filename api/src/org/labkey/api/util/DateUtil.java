@@ -1127,6 +1127,7 @@ Parse:
             assertEquals(datetimeExpected, DateUtil.parseDateTime("2/3/2001 4:05:06"));
             assertEquals(datetimeExpected, DateUtil.parseDateTime("2/3/2001 4:05:06.000"));
             assertEquals(datetimeExpected, DateUtil.parseDateTime("03-FEB-2001-04:05:06")); // FCS dates
+            assertEquals(datetimeExpected, DateUtil.parseDateTime("2-03-2001 4:05:06"));
             // illegal
             assertIllegalDateTime("2");
             assertIllegalDateTime("2/3");
@@ -1177,6 +1178,8 @@ Parse:
             assertEquals(dateExpected, DateUtil.parseDate("2/3/01"));
             assertEquals(dateExpected, DateUtil.parseDate("2-3-01"));
             assertEquals(dateExpected, DateUtil.parseDate("2-3-2001"));
+            assertEquals(dateExpected, DateUtil.parseDate("2-03-2001"));
+            assertEquals(dateExpected, DateUtil.parseDate("02-3-2001"));
             assertEquals(dateExpected, DateUtil.parseDate("2/3/2001"));
             assertEquals(dateExpected, DateUtil.parseDate("02/03/01"));
             assertEquals(dateExpected, DateUtil.parseDate("02-03-01"));
