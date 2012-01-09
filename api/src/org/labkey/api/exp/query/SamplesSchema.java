@@ -41,7 +41,7 @@ public class SamplesSchema extends AbstractExpSchema
     static private Map<String, ExpSampleSet> getSampleSetMap(Container container, User user)
     {
         Map<String, ExpSampleSet> map = new TreeMap<String, ExpSampleSet>();
-        for (ExpSampleSet ss : ExperimentService.get().getSampleSets(container, user, false))
+        for (ExpSampleSet ss : ExperimentService.get().getSampleSets(container, user, true))
         {
             map.put(ss.getName(), ss);
         }
