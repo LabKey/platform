@@ -135,9 +135,9 @@ public class QueryView extends WebPartView<Object>
     private boolean _showRecordSelectors = false;
     private boolean _initializeButtonBar = true;
 
-    private boolean _shadeAlternatingRows = false;
+    private boolean _shadeAlternatingRows = true;
     private boolean _showFilterDescription = true;
-    private boolean _showBorders = false;
+    private boolean _showBorders = true;
     private boolean _showSurroundingBorder = true;
     private Report _report;
 

@@ -83,8 +83,8 @@ public class DataRegion extends AbstractDataRegion
 
     private String _noRowsMessage = "No data to show.";
 
-    private boolean _shadeAlternatingRows = false;
-    private boolean _showBorders = false;
+    private boolean _shadeAlternatingRows = true;
+    private boolean _showBorders = true;
     private boolean _showSurroundingBorder = true;
     private boolean _showPagination = true;
     private boolean _showPaginationCount = true;
