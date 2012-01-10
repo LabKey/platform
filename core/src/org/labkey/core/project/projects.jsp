@@ -46,7 +46,7 @@ Ext4.onReady(function(){
         containerFilter: 'CurrentAndSiblings',
         containerPath: LABKEY.Security.getHomeContainer(),
         iconSize: 'large',
-        labelPosition: 'size'
+        labelPosition: 'bottom'
     });
 
     function getFilterArray(panel){
