@@ -201,6 +201,16 @@ public class DatasetAuditViewFactory extends SimpleAuditViewFactory
                         {
                             return formatPropertyMapForExport((String)getValue(ctx));
                         }
+                        @Override
+                        public boolean isFilterable()
+                        {
+                            return false;
+                        }
+                        @Override
+                        public boolean isSortable()
+                        {
+                            return false;
+                        }
 
                     };
                 }

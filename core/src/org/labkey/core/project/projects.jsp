@@ -15,13 +15,14 @@
  * limitations under the License.
  */
 %>
-<%@ page import="org.labkey.api.security.User" %>
 <%@ page import="org.labkey.api.view.JspView" %>
 <%@ page import="org.labkey.api.view.Portal" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
+<%@ page import="org.json.JSONObject" %>
 <%
     JspView<Portal.WebPart> me = (JspView) HttpView.currentView();
     int webPartId = me.getModelBean().getRowId();
+    JSONObject jsonProps = new JSONObject(me.getModelBean().getPropertyMap());
     String renderTarget = "project-" + me.getModelBean().getIndex();
 %>
 <div>
@@ -36,18 +37,39 @@
 <script type="text/javascript">
 
 Ext4.onReady(function(){
-    var filterArray = [LABKEY.Filter.create('containerType', 'project', LABKEY.Filter.Types.EQUALS)];
-    if(LABKEY.Security.getHomeContainer())
-        filterArray.push(LABKEY.Filter.create('name', LABKEY.Security.getHomeContainer(), LABKEY.Filter.Types.NEQ_OR_NULL))
-    if(LABKEY.Security.getSharedContainer())
-        filterArray.push(LABKEY.Filter.create('name', LABKEY.Security.getSharedContainer(), LABKEY.Filter.Types.NOT_EQUAL))
+    //assume server-supplied webpart config
+    var config = '<%=jsonProps%>';
+    config = Ext4.decode(config);
 
-    Ext4.create('LABKEY.ext.IconPanel', {
+    Ext4.applyIf(config, {
+        containerTypes: 'project',
+        containerFilter: 'CurrentAndSiblings',
+        containerPath: LABKEY.Security.getHomeContainer(),
+        iconSize: 'large',
+        labelPosition: 'size'
+    });
+
+    function getFilterArray(panel){
+        var filterArray = [];
+        if(panel.containerTypes)
+            filterArray.push(LABKEY.Filter.create('containerType', panel.containerTypes, LABKEY.Filter.Types.EQUALS_ONE_OF));
+
+        //exclude system-generated containers
+        if(LABKEY.Security.getHomeContainer())
+            filterArray.push(LABKEY.Filter.create('name', LABKEY.Security.getHomeContainer(), LABKEY.Filter.Types.NOT_EQUAL));
+        if(LABKEY.Security.getSharedContainer())
+            filterArray.push(LABKEY.Filter.create('name', LABKEY.Security.getSharedContainer(), LABKEY.Filter.Types.NOT_EQUAL));
+
+        return filterArray;
+    }
+
+    var panel = Ext4.create('LABKEY.ext.IconPanel', {
         id: 'projects-panel-<%=webPartId%>',
         iconField: 'iconurl',
         labelField: 'Name',
         urlField: 'url',
-        iconSize: 'large',
+        iconSize: config.iconSize,
+        labelPosition: config.labelPosition,
         showMenu: false,
         width: '100%',
         border: false,
@@ -59,37 +81,42 @@ Ext4.onReady(function(){
             hidden: !LABKEY.Security.currentUser.isAdmin,
             href: LABKEY.ActionURL.buildURL('admin', 'createFolder', '/')
         }],
+        emptyText: 'No folder to display',
+        deferEmptyText: false,
         store: Ext4.create('LABKEY.ext4.Store', {
-            containerPath: LABKEY.Security.getHomeContainer(),
+            containerPath: config.containerPath || LABKEY.Security.getHomeContainer(),
             schemaName: 'core',
             queryName: 'Containers',
-            title: 'Projects',
             sort: 'Name',
-            containerFilter: 'CurrentAndSiblings',
-            columns: 'name',
+            containerFilter: config.containerFilter,
+            columns: 'Name,EntityId,Path,ContainerType',
             autoLoad: true,
-            filterArray: filterArray,
+//            maxRows: 0,
+            filterArray: getFilterArray(config),
             metadata: {
                 iconurl: {
                     createIfDoesNotExist: true,
                     setValueOnLoad: true,
                     getInitialValue: function(val, rec){
-                        return LABKEY.ActionURL.buildURL('project', 'downloadProjectIcon', rec.get('Name'))
+                        return LABKEY.ActionURL.buildURL('project', 'downloadProjectIcon', rec.get('EntityId'))
                     }
                 },
                 url: {
                     createIfDoesNotExist: true,
                     setValueOnLoad: true,
                     getInitialValue: function(val, rec){
-                        return LABKEY.ActionURL.buildURL('project', 'begin', rec.get('Name'))
+                        return LABKEY.ActionURL.buildURL('project', 'begin', rec.get('Path'))
                     }
                 }
             }
         })
     }).render('<%=renderTarget%>');
+
+    Ext4.apply(panel, config);
+    panel.getFilterArray = getFilterArray;
 });
 
-        /**
+    /**
      * Called by Server to handle cusomization actions.
      */
     function customizeProjectWebpart(webpartId, pageId, index) {
@@ -103,21 +130,23 @@ Ext4.onReady(function(){
                     return (btn.iconSize==data.iconSize && btn.labelPosition==data.labelPosition)
                 }
                 Ext4.create('Ext.window.Window', {
-                    title: 'Choose Icon Style',
+                    title: 'Customize Webpart',
                     width: 400,
+                    layout: 'fit',
                     items: [{
                         xtype: 'form',
                         bodyStyle: 'padding: 5px;',
                         items: [{
                             xtype: 'radiogroup',
                             name: 'style',
+                            itemId: 'style',
+                            fieldLabel: 'Icon Style',
                             border: false,
                             columns: 1,
                             defaults: {
                                 xtype: 'radio',
                                 width: 300
                             },
-                            itemId: 'style',
                             items: [{
                                 boxLabel: 'Details',
                                 inputValue: {iconSize: 'small',labelPosition: 'side'},
@@ -134,14 +163,121 @@ Ext4.onReady(function(){
                                 checked: shouldCheck({iconSize: 'large',labelPosition: 'bottom'}),
                                 name: 'style'
                             }]
+                        },{
+                            xtype: 'radiogroup',
+                            name: 'folderTypes',
+                            itemId: 'folderTypes',
+                            fieldLabel: 'Folders To Display',
+                            border: false,
+                            columns: 1,
+                            defaults: {
+                                xtype: 'radio',
+                                width: 300
+                            },
+                            items: [{
+                                boxLabel: 'All Projects',
+                                inputValue: 'project',
+                                checked: panel.containerTypes && panel.containerTypes.match(/project/),
+                                name: 'folderTypes'
+                            },{
+                                boxLabel: 'Specific Folder',
+                                inputValue: 'folder',
+                                checked: panel.containerTypes && !panel.containerTypes.match(/project/),
+                                name: 'folderTypes'
+                            },{
+                                xtype: 'labkey-combo',
+                                itemId: 'containerPath',
+                                width: 200,
+                                disabled: panel.containerTypes && panel.containerTypes.match(/project/),
+                                displayField: 'Path',
+                                valueField: 'EntityId',
+                                initialValue: panel.store.containerPath,
+                                value: panel.store.containerPath,
+                                store: Ext4.create('LABKEY.ext4.Store', {
+                                    //containerPath: '/home',
+                                    schemaName: 'core',
+                                    queryName: 'Containers',
+                                    containerFilter: 'AllFolders',
+                                    columns: 'Name,Path,EntityId',
+                                    autoLoad: true,
+                                    sort: 'Name',
+                                    filterArray: [
+                                        LABKEY.Filter.create('workbook', false, LABKEY.Filter.Types.EQUAL),
+                                        LABKEY.Filter.create('name', LABKEY.Security.getHomeContainer(), LABKEY.Filter.Types.NOT_EQUAL),
+                                        LABKEY.Filter.create('name', LABKEY.Security.getSharedContainer(), LABKEY.Filter.Types.NOT_EQUAL)
+                                    ]
+                                })
+                            },{
+                                xtype: 'checkbox',
+                                boxLabel: 'Include Workbooks',
+                                disabled: panel.containerTypes && panel.containerTypes.match(/project/),
+                                checked: (panel.containerTypes.match(/project/) || panel.containerTypes.match(/workbook/)),
+                                itemId: 'includeWorkbooks'
+                            }],
+                            listeners: {
+                                buffer: 20,
+                                change: function(field, val){
+                                    var window = field.up('form');
+                                    window.down('#containerPath').setDisabled(val.folderTypes != 'folder');
+                                    window.down('#includeWorkbooks').setDisabled(val.folderTypes != 'folder');
+                                    window.doLayout();
+                                    field.up('window').doLayout();
+
+                                }
+                            }
                         }]
                     }],
                     buttons: [{
                         text: 'Submit',
                         handler: function(btn){
-                            var radio = btn.up('window').down('#style').getValue().style;
-                            panel.resizeIcons.call(panel, radio);
+                            var mode = btn.up('window').down('#folderTypes').getValue().folderTypes;
+
+                            if(mode == 'project'){
+                                panel.store.containerFilter = 'CurrentAndSiblings';
+                                panel.containerTypes = 'project';
+                                panel.store.containerPath = LABKEY.Security.getHomeContainer();
+                                panel.store.filterArray = panel.getFilterArray(panel);
+                            }
+                            else {
+                                var container = btn.up('window').down('#containerPath').getValue();
+                                if(!container){
+                                    alert('Must choose a folder');
+                                    return;
+                                }
+                                panel.store.containerPath = container;
+
+                                panel.store.containerFilter = 'Current'; //null;  //use default
+                                panel.containerTypes = ['folder'];
+                                if(btn.up('window').down('#includeWorkbooks').getValue())
+                                    panel.containerTypes.push('workbook');
+                                panel.containerTypes = panel.containerTypes.join(';');
+
+                                panel.store.containerFilter = 'CurrentAndSubfolders'
+                                panel.store.filterArray = panel.getFilterArray(panel);
+                                panel.store.filterArray.push(LABKEY.Filter.create('EntityId', panel.store.containerPath, LABKEY.Filter.Types.NOT_EQUAL));
+                            }
+
+                            panel.store.load();
+
+                            var styleField = btn.up('window').down('#style').getValue().style;
+                            panel.resizeIcons.call(panel, styleField);
                             btn.up('window').hide();
+
+                            var values = {
+                                containerPath: panel.store.containerPath,
+                                containerTypes: panel.containerTypes,
+                                containerFilter: panel.store.containerFilter,
+                                webPartId: <%=webPartId%>,
+                                iconSize: panel.iconSize,
+                                labelPosition: panel.labelPosition
+                            };
+
+                            Ext4.Ajax.request({
+                                url    : LABKEY.ActionURL.buildURL('project', 'customizeWebPartAsync.api', null, values),
+                                method : 'POST',
+                                failure : LABKEY.Utils.onError,
+                                scope : this
+                            });
                         },
                         scope: this
                     },{
