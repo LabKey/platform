@@ -15,6 +15,8 @@
  */
 package org.labkey.api.util;
 
+import org.labkey.api.exp.ExperimentException;
+
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.IOException;
@@ -79,40 +81,65 @@ public class DotRunner
         }
     }
 
-    public static boolean testDotPath(File baseDirectory)
+    public static void testDotPath(File baseDirectory) throws ExperimentException
     {
         try
         {
             File testVersion = new File(baseDirectory, "dottest.txt");
             if (testVersion.exists())
-                return true;
+                return;
 
             ProcessBuilder pb = new ProcessBuilder(dotExePath, "-V", "-o" + testVersion.getName());
             pb = pb.directory(baseDirectory);
+            pb.redirectErrorStream(true);
             Process p = pb.start();
             int err = p.waitFor();
 
-            if (err == 0)
-                return true;
+            if (err != 0)
+            {
+                BufferedReader reader = new BufferedReader(new InputStreamReader(p.getInputStream()));
+                StringBuffer sb = new StringBuffer();
+                String line;
+                while ((line = reader.readLine()) != null)
+                {
+                    sb.append(line + "\n");
+                }
+                sb.append("(Exit code: ");
+                sb.append(err);
+                sb.append(")");
+                throw new ExperimentException(getConfigurationErrorHtml(sb.toString()));
+            }
         }
         catch (IOException e)
         {
-            return false;
+            throw new ExperimentException(getConfigurationErrorHtml(e));
         }
         catch (InterruptedException e)
         {
-            return false;
+            throw new ExperimentException("InterruptedException - web server may be shutting down");
         }
-
-        return false;
     }
 
-    public static String getConfigurationErrorHtml()
+    public static String getConfigurationErrorHtml(IOException e)
+    {
+        if (e.getMessage() != null)
+        {
+            return getConfigurationErrorHtml(e.getMessage());
+        }
+        else
+        {
+            return getConfigurationErrorHtml(e.toString());
+        }
+    }
+
+    public static String getConfigurationErrorHtml(String message)
     {
         StringBuilder sb = new StringBuilder();
         sb.append("Unable to display graph view: cannot run ");
         sb.append(dotExePath);
-        sb.append(" due to system configuration error. \n<BR>");
+        sb.append(" due to an error.\n<BR><pre>");
+        sb.append(PageFlowUtil.filter(message));
+        sb.append("</pre>");
         sb.append("For help on fixing your system configuration, please consult the Graphviz section of the <a href=\"");
         sb.append((new HelpTopic("thirdPartyCode")).getHelpTopicLink());
         sb.append("\" target=\"_new\">LabKey Server documentation on third party components</a>.<br>");
