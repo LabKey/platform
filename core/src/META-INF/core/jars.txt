@@ -32,6 +32,7 @@ junit-4.1.jar|JUnit|4.1|{link:Junit|http://www.junit.org}|{link:CPL 1.0|http://w
 jxl.jar|Java Excel|2.6.8|{link:Java Excel API|http://jexcelapi.sourceforge.net//}|{link:LGPL|http://www.gnu.org/copyleft/lesser.html}|adam|Import/Export Excel files
 kaptcha-2.3.jar|Captcha generator|2.3|{link:kaptcha|http://code.google.com/p/kaptcha/}|{link:Apache 2.0|http://www.apache.org/licenses/LICENSE-2.0}|nicka|User signup forms
 log4j-1.2.16.jar|Log4j|1.2.16|{link:Apache|http://logging.apache.org/log4j/docs/}|{link:Apache 2.0|http://www.apache.org/licenses/LICENSE-2.0}|mbellew|Logging
+patricia-trie-0.6.jar|PATRICIA Trie|0.6|{link:PATRICIA Trie|http://code.google.com/p/patricia-trie/}|{link:Apache 2.0|http://www.apache.org/licenses/LICENSE-2.0}|jeckels|PATRICIA Trie data structure implementation
 poi-3.8-beta4-20110826.jar|POI|3.8b4|{link:Apache|http://poi.apache.org}|{link:Apache 2.0|http://www.apache.org/licenses/LICENSE-2.0}|klum|Java API for Microsoft Documents
 poi-ooxml-3.8-beta4-20110826.jar|POI|3.8b4|{link:Apache|http://poi.apache.org}|{link:Apache 2.0|http://www.apache.org/licenses/LICENSE-2.0}|klum|Java API for Microsoft Documents
 poi-ooxml-schemas-3.8-beta4-20110826.jar|POI|3.8b4|{link:Apache|http://poi.apache.org}|{link:Apache 2.0|http://www.apache.org/licenses/LICENSE-2.0}|klum|Java API for Microsoft Documents
