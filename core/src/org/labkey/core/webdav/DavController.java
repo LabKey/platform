@@ -2116,7 +2116,10 @@ public class DavController extends SpringActionController
                 }
                 catch (NumberFormatException x)
                 {
-                    
+                }
+                if (-1 == size)
+                {
+                    throw new DavException(WebdavStatus.SC_BAD_REQUEST, "Content-Length not provided");
                 }
                 final long _size = size;
                 FileStream fis = new FileStream()
