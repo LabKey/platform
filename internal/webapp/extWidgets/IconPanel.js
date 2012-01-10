@@ -37,7 +37,9 @@ Ext4.define('LABKEY.ext.IconPanel', {
             },
             resizeIcons: function(config){
                 var view = this.down('#dataView');
+                this.iconSize = config.iconSize;
                 view.renderData.iconSize = config.iconSize;
+                this.labelPosition = config.labelPosition;
                 view.renderData.labelPosition = config.labelPosition;
                 view.refresh();
             },

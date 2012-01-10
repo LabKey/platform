@@ -89,6 +89,17 @@ public class ContainerTable extends FilteredTable
         ExprColumn folderTypeColumn = new ExprColumn(this, "FolderType", folderTypeSQL, JdbcType.VARCHAR);
         addColumn(folderTypeColumn);
 
+        final ColumnInfo folderPathCol = this.wrapColumn("Path", getRealTable().getColumn("EntityId"));
+        folderPathCol.setDisplayColumnFactory(new DisplayColumnFactory()
+        {
+            @Override
+            public DisplayColumn createRenderer(final ColumnInfo colInfo)
+            {
+                return new ContainerDisplayColumn(folderPathCol, true);
+            }
+        });
+        addColumn(folderPathCol);
+
         SQLFragment containerTypeSQL = new SQLFragment("CASE WHEN "+ ExprColumn.STR_TABLE_ALIAS +".workbook = ? THEN 'workbook' " +
             "WHEN "+ExprColumn.STR_TABLE_ALIAS+".entityid = ? THEN 'root' " +
             "WHEN "+ExprColumn.STR_TABLE_ALIAS+".parent = ? THEN 'project' " +
