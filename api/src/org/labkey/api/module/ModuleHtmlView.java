@@ -15,12 +15,19 @@
  */
 package org.labkey.api.module;
 
+import org.jetbrains.annotations.Nullable;
+import org.json.JSONObject;
 import org.labkey.api.cache.Cache;
 import org.labkey.api.cache.CacheManager;
+import org.labkey.api.jsp.JspBase;
 import org.labkey.api.resource.Resource;
+import org.labkey.api.util.UniqueID;
 import org.labkey.api.view.HtmlView;
+import org.labkey.api.view.Portal;
 import org.labkey.api.view.ViewContext;
 import org.labkey.api.view.template.PageConfig;
+
+import java.util.Map;
 
 /*
 * User: Dave
@@ -39,27 +46,50 @@ public class ModuleHtmlView extends HtmlView
 
     public ModuleHtmlView(Resource r)
     {
+        this(r, null);
+    }
+
+
+    public ModuleHtmlView(Resource r, Portal.WebPart webpart)
+    {
         super(null);
         _viewdef = getViewDef(r);
         setTitle(_viewdef.getTitle());
-        setHtml(replaceTokens(_viewdef.getHtml()));
+        setHtml(replaceTokens(_viewdef.getHtml(), getViewContext(), webpart));
         if(null != _viewdef.getFrameType())
             setFrame(_viewdef.getFrameType());
     }
 
-    public String replaceTokens(String html)
+
+    public String replaceTokens(String html, ViewContext context, @Nullable Portal.WebPart webpart)
     {
         if (null == html)
             return null;
-        
-        ViewContext context = getViewContext();
+
+        String wrapperDivId = "ModuleHtmlView_" + UniqueID.getRequestScopedUID(context.getRequest());
+        int id = null == webpart ? 0 : webpart.getRowId();
+
+        JSONObject config = new JSONObject();
+        config.put("wrapperDivId", wrapperDivId);
+        config.put("id", id);
+        JSONObject properties = new JSONObject();
+        config.put("properties", properties);
+        if (null != webpart)
+        {
+            for (Map.Entry<String,String> e : webpart.getPropertyMap().entrySet())
+                config.put(e.getKey(), e.getValue());
+        }
+
         String contextPath = null != context.getContextPath() ? context.getContextPath() : "invalid context path";
         String containerPath = null != context.getContainer() ? context.getContainer().getPath() : "invalid container";
+        String webpartContext = config.toString();
 
         String ret = html.replaceAll("<%=\\s*contextPath\\s*%>", contextPath);
         ret = ret.replaceAll("<%=\\s*containerPath\\s*%>", containerPath);
-        return ret;
+        ret = ret.replaceAll("<%=\\s*webpartContext\\s*%>", webpartContext);
+        return "<div id=\"" + wrapperDivId + "\">" + ret + "</div>";
     }
+
 
     public static ModuleHtmlViewDefinition getViewDef(Resource r)
     {

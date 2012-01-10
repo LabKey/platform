@@ -136,35 +136,40 @@ public class SimpleWebPartFactory extends BaseWebPartFactory
         return null != _webPartDef && null != _webPartDef.getTitle() ? _webPartDef.getTitle() : super.getName();
     }
 
+
     public String getViewName()
     {
         return null != _webPartDef && null != _webPartDef.getView() && null != _webPartDef.getView().getName() ?
                 _webPartDef.getView().getName() : null;
     }
 
+
     public Module getModule()
     {
         return _module;
     }
+
 
     public boolean isStale()
     {
         return _webPartFile.lastModified() != _lastModified;
     }
 
+
     public WebPartView getWebPartView(ViewContext portalCtx, Portal.WebPart webPart) throws Exception
     {
-        if(isStale())
+        if (isStale())
             loadDefinition(_webPartFile);
 
-        if(null != _loadException)
+        if (null != _loadException)
             throw new Exception("Error thrown during load", _loadException);
 
-        if(null == getViewName())
+        if (null == getViewName())
             throw new Exception("No view name specified for the module web part defined in " + _webPartFile.getAbsolutePath());
 
-        return SimpleAction.getModuleHtmlView(getModule(), getViewName());
+        return SimpleAction.getModuleHtmlView(getModule(), getViewName(), webPart);
     }
+
 
     @Override
     public boolean isAvailable(Container c, String location)
