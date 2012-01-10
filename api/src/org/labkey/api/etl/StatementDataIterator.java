@@ -18,6 +18,7 @@ package org.labkey.api.etl;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Parameter;
 import org.labkey.api.data.RuntimeSQLException;
+import org.labkey.api.data.dialect.SqlDialect;
 import org.labkey.api.exp.MvFieldWrapper;
 import org.labkey.api.query.BatchValidationException;
 import org.labkey.api.util.ResultSetUtil;
@@ -192,6 +193,10 @@ class StatementDataIterator extends AbstractDataIterator
         }
         catch (SQLException x)
         {
+            if (SqlDialect.isConstraintException(x))
+            {
+                // TODO 13792
+            }
             throw new RuntimeSQLException(x);
         }
         finally

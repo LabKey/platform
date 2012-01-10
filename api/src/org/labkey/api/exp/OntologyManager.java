@@ -2064,24 +2064,38 @@ public class OntologyManager
 	public static PropertyDescriptor insertOrUpdatePropertyDescriptor(PropertyDescriptor pd, DomainDescriptor dd, int sortOrder)
 			throws SQLException
 	{
-        DomainDescriptor dexist = ensureDomainDescriptor(dd);
-
-        if (!dexist.getContainer().equals(pd.getContainer())
-                &&  !pd.getProject().equals(_sharedContainer))
+        DbScope scope = getExpSchema().getScope();
+        scope.ensureTransaction();
+        try
         {
-            // domain is defined in a different container.
-            //ToDO  define property in the domains container?  what security?
-            throw new SQLException("Attempt to define property for a domain definition that exists in a different folder\n" +
-                                    "domain folder = " + dexist.getContainer().getPath() + "\n" +
-                                    "property folder = " + pd.getContainer().getPath());
+            DomainDescriptor dexist = ensureDomainDescriptor(dd);
+
+            if (!dexist.getContainer().equals(pd.getContainer())
+                    &&  !pd.getProject().equals(_sharedContainer))
+            {
+                // domain is defined in a different container.
+                //ToDO  define property in the domains container?  what security?
+                throw new SQLException("Attempt to define property for a domain definition that exists in a different folder\n" +
+                                        "domain folder = " + dexist.getContainer().getPath() + "\n" +
+                                        "property folder = " + pd.getContainer().getPath());
+            }
+
+            PropertyDescriptor pexist = ensurePropertyDescriptor(pd);
+            pexist.setRequired(pd.isRequired());
+
+            ensurePropertyDomain(pexist, dexist, sortOrder);
+
+            scope.commitTransaction();
+            return pexist;
         }
-
-        PropertyDescriptor pexist = ensurePropertyDescriptor(pd);
-        pexist.setRequired(pd.isRequired());
-
-        ensurePropertyDomain(pexist, dexist, sortOrder);
-
-        return pexist;
+        catch (SQLException e)
+        {
+            throw new RuntimeSQLException(e);
+        }
+        finally
+        {
+            getExpSchema().getScope().closeConnection();
+        }
     }
 
 
