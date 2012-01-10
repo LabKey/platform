@@ -165,10 +165,7 @@ public class ExperimentRunGraph
 
         try
         {
-            if (!testDotPath())
-            {
-                throw new ExperimentException(DotRunner.getConfigurationErrorHtml());
-            }
+            testDotPath();
 
             ActionURL url = ctx.getActionURL();
             PrintWriter out = null;
@@ -738,7 +735,7 @@ public class ExperimentRunGraph
         return ctrlProps;
     }
 
-    private static boolean testDotPath()
+    private static void testDotPath() throws ExperimentException
     {
         File dir;
 
@@ -748,10 +745,10 @@ public class ExperimentRunGraph
         }
         catch (IOException e)
         {
-            return false;
+            throw new ExperimentException(DotRunner.getConfigurationErrorHtml(e));
         }
 
-        return DotRunner.testDotPath(dir);
+        DotRunner.testDotPath(dir);
     }
 
 
