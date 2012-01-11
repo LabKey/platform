@@ -178,7 +178,7 @@ public class AssaySchemaImpl extends AssaySchema
                         if (table != null && null != table.getColumn("Properties"))
                             fixupPropertyURLs(table.getColumn("Properties"));
                     }
-                    else if (name.equalsIgnoreCase(getQCFlagTableName(protocol)) || name.equalsIgnoreCase(protocol.getName() + " Data"))
+                    else if (name.equalsIgnoreCase(getQCFlagTableName(protocol)) || name.equalsIgnoreCase(protocol.getName() + " QCFlags"))
                     {
                         table = provider.createQCFlagTable(this, protocol);
                     }

@@ -918,6 +918,8 @@
         <ns:column columnName="ModifiedBy"/>
         <ns:column columnName="IntKey1"/>
         <ns:column columnName="IntKey2"/>
+        <ns:column columnName="Key1"/>
+        <ns:column columnName="Key2"/>
       </ns:columns>
     </ns:table>
 </ns:tables>

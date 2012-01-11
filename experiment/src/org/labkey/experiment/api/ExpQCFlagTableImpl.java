@@ -84,6 +84,12 @@ public class ExpQCFlagTableImpl extends ExpTableImpl<ExpQCFlagTable.Column> impl
             case IntKey2:
                 _columnMapping.put(column.name(), alias);
                 return wrapColumn(alias, _rootTable.getColumn("IntKey2"));
+            case Key1:
+                _columnMapping.put(column.name(), alias);
+                return wrapColumn(alias, _rootTable.getColumn("Key1"));
+            case Key2:
+                _columnMapping.put(column.name(), alias);
+                return wrapColumn(alias, _rootTable.getColumn("Key2"));
         }
         throw new IllegalArgumentException("Unknown column " + column);
     }

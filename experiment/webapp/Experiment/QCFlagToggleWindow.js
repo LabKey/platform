@@ -72,7 +72,7 @@ LABKEY.QCFlagToggleWindow = Ext.extend(Ext.Window, {
         this.flagsGrid = new Ext.grid.EditorGridPanel({
             cls: 'extContainer',
             header: false,
-            autoHeight: true,
+            height: 275,
             stripeRows: true,
             columnLines: true,
             clicksToEdit: 1,
