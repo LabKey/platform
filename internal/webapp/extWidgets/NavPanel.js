@@ -102,7 +102,7 @@ Ext4.define('LABKEY.ext.NavPanel', {
             for (var j=0;j<sectionCfg.items.length;j++)
             {
                 var item = {};
-                var renderer;
+                var renderer = null;
                 if(sectionCfg.items[j].renderer)
                     renderer = sectionCfg.items[j].renderer;
                 else if (sectionCfg.renderer)
