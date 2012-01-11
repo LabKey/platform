@@ -618,7 +618,8 @@ public abstract class BaseViewAction<FORM> extends BaseCommandController impleme
         boolean adminConsoleAction = actionClass.isAnnotationPresent(AdminConsoleAction.class);
         if (adminConsoleAction)
         {
-            assert c.isRoot();  // TODO: HttpView.throwUnauthorized(); -- once we've done some testing with the assert
+            if (!c.isRoot())
+                throw new NotFoundException();
 
             if (isPOST)
             {

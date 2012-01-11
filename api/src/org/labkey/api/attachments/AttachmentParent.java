@@ -16,6 +16,8 @@
 
 package org.labkey.api.attachments;
 
+import org.labkey.api.view.ViewContext;
+
 /**
  * User: adam
  * Date: Jan 18, 2007
@@ -25,6 +27,5 @@ public interface AttachmentParent
 {
     public String getEntityId();
     public String getContainerId();
-
-    // TODO add getDownloadURL(String name), see AttachmentResource constructor
+    public String getDownloadURL(ViewContext context, String name);
 }

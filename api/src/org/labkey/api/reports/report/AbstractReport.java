@@ -155,6 +155,12 @@ public abstract class AbstractReport implements Report
     }
 
     @Override
+    public String getDownloadURL(ViewContext context, String name)
+    {
+        return null;
+    }
+
+    @Override
     public Thumbnail getStaticThumbnail()
     {
         InputStream is = AbstractReport.class.getResourceAsStream("report.jpg");
@@ -166,4 +172,5 @@ public abstract class AbstractReport implements Report
     {
         return "Reports:ReportStatic";
     }
+
 }

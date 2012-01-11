@@ -802,7 +802,14 @@ public class ContainerManager
         {
             return _c;
         }
+
+        @Override
+        public String getDownloadURL(ViewContext context, String name)
+        {
+            return null;
+        }
     }
+
 
     // Used for attaching system resources (favorite icon, logo) to the root container
     public static class RootContainer extends ContainerParent
