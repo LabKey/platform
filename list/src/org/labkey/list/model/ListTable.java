@@ -108,7 +108,7 @@ public class ListTable extends FilteredTable implements UpdateableTableInfo
             safeAddColumn(column);
             if (property.isMvEnabled())
             {
-                MVDisplayColumnFactory.addMvColumns(this, column, property, colObjectId, getContainer(), user);
+                MVDisplayColumnFactory.addMvColumns(this, column, property, colObjectId, listDef.getContainer(), user);
             }
 
             if (property.getPropertyDescriptor().getPropertyType() == PropertyType.MULTI_LINE)
