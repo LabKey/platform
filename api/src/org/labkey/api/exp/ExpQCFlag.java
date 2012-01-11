@@ -28,6 +28,8 @@ public class ExpQCFlag
     private boolean _enabled;
     private int _intKey1;
     private int _intKey2;
+    private String _key1;
+    private String _key2;
 
     public int getRunId()
     {
@@ -97,5 +99,25 @@ public class ExpQCFlag
     public void setIntKey2(int intKey2)
     {
         _intKey2 = intKey2;
+    }
+
+    public String getKey1()
+    {
+        return _key1;
+    }
+
+    public void setKey1(String key1)
+    {
+        _key1 = key1;
+    }
+
+    public String getKey2()
+    {
+        return _key2;
+    }
+
+    public void setKey2(String key2)
+    {
+        _key2 = key2;
     }
 }

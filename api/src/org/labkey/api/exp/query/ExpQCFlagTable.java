@@ -35,7 +35,9 @@ public interface ExpQCFlagTable extends ExpTable<ExpQCFlagTable.Column>
         Modified,
         ModifiedBy,
         IntKey1,
-        IntKey2
+        IntKey2,
+        Key1,
+        Key2
     }
 
     public void setAssayProtocol(ExpProtocol protocol);
