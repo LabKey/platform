@@ -824,6 +824,26 @@ public class StatusController extends SpringActionController
             bb.add(showData);
         }
 
+        if (sf.getFilePath() != null)
+        {
+            File logFile = new File(sf.getFilePath());
+            File dir = logFile.getParentFile();
+            PipeRoot pipeRoot = PipelineService.get().findPipelineRoot(sf.lookupContainer());
+            if (NetworkDrive.exists(dir) && pipeRoot != null && pipeRoot.isUnderRoot(dir))
+            {
+                String relativePath = pipeRoot.relativePath(dir);
+                relativePath = relativePath.replace("\\", "/");
+                if (relativePath.equals("."))
+                {
+                    relativePath = "/";
+                }
+                ActionURL url = PageFlowUtil.urlProvider(PipelineUrls.class).urlBrowse(sf.lookupContainer(), getViewContext().getActionURL().toString(), relativePath);
+                ActionButton showData = new ActionButton(url, "Browse Files");
+                showData.setActionType(ActionButton.Action.LINK);
+                bb.add(showData);
+            }
+        }
+
         // escalate pipeline failure button
         if (!PipelineJob.COMPLETE_STATUS.equals(sf.getStatus()))
         {
