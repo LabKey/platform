@@ -26,18 +26,24 @@ import org.labkey.api.attachments.AttachmentFile;
 import org.labkey.api.attachments.AttachmentParent;
 import org.labkey.api.attachments.AttachmentService;
 import org.labkey.api.attachments.FileAttachmentFile;
+import org.labkey.api.collections.CaseInsensitiveHashSet;
 import org.labkey.api.data.AttachmentParentEntity;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
+import org.labkey.api.data.JdbcType;
 import org.labkey.api.data.MvUtil;
+import org.labkey.api.data.Results;
+import org.labkey.api.data.TableInfo;
 import org.labkey.api.exp.Lsid;
 import org.labkey.api.exp.PropertyDescriptor;
 import org.labkey.api.exp.property.Domain;
 import org.labkey.api.exp.property.PropertyService;
+import org.labkey.api.query.QueryService;
 import org.labkey.api.security.MutableSecurityPolicy;
 import org.labkey.api.security.SecurableResource;
 import org.labkey.api.security.User;
+import org.labkey.api.security.UserManager;
 import org.labkey.api.services.ServiceRegistry;
 import org.labkey.api.settings.AppProps;
 import org.labkey.api.study.Site;
@@ -48,6 +54,7 @@ import org.labkey.api.util.DateUtil;
 import org.labkey.api.util.GUID;
 import org.labkey.api.util.JunitUtil;
 import org.labkey.api.util.PageFlowUtil;
+import org.labkey.api.util.ResultSetUtil;
 import org.labkey.api.util.TestContext;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.wiki.WikiRendererType;
@@ -59,6 +66,8 @@ import org.labkey.study.samples.settings.RepositorySettings;
 
 import java.io.File;
 import java.io.IOException;
+import java.sql.ResultSet;
+import java.sql.ResultSetMetaData;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -671,25 +680,64 @@ public class StudyImpl extends ExtensibleStudyEntity<StudyImpl> implements Study
         return new ProtocolDocumentAttachmentParent(getContainer(), getProtocolDocumentEntityId());
     }
 
+
     @Override
     public String getSearchDisplayTitle()
     {
         return "Study -- " + getLabel();
     }
 
+
+    static CaseInsensitiveHashSet _skipProperties = new CaseInsensitiveHashSet();
+    static
+    {
+        _skipProperties.addAll("lsid","timepointtype","description","descriptionrenderertype","SubjectNounPlural","SubjectColumnName","container");
+    }
+
     @Override
     public String getSearchKeywords()
     {
+        Results rs = null;
         StringBuilder sb = new StringBuilder();
 
-        appendKeyword(sb, getLabel());
-        appendKeyword(sb, getDescription());
-        appendKeyword(sb, getSubjectNounSingular());
+        try
+        {
+            StudyQuerySchema sqs = new StudyQuerySchema(this, User.getSearchUser(), false);
+            TableInfo sp = sqs.getTable("StudyProperties");
+            if (null != sp)
+            {
+                List<ColumnInfo> cols = sp.getColumns();
+                rs = QueryService.get().select(sp, cols, null, null);
+                if (rs.next())
+                {
+                    for (ColumnInfo col : cols)
+                    {
+                        if (_skipProperties.contains(col.getName()))
+                            continue;
+                        if (col.getJdbcType() != JdbcType.VARCHAR)
+                            continue;
+                        appendKeyword(sb, rs.getString(col.getFieldKey()));
+                    }
+                }
+            }
+        }
+        catch (SQLException x)
+        {
+            //
+        }
+        finally
+        {
+            ResultSetUtil.close(rs);
+        }
+
+        // NOTE: we're mixing html and text here... Do we have Html->Text conversion?
+        appendKeyword(sb, getDescriptionHtml());
         appendKeyword(sb, getContainer().getName());
-        appendKeyword(sb, getDescription());
 
         return sb.toString();
     }
+
+
 
     @Override
     public String getSearchBody()
@@ -703,8 +751,8 @@ public class StudyImpl extends ExtensibleStudyEntity<StudyImpl> implements Study
             appendKeyword(sb, "Study Folder " + c.getName() + " in Project " + c.getProject().getName());
 
         appendKeyword(sb, getLabel());
+        appendKeyword(sb, getInvestigator());
         appendKeyword(sb, getDescription());
-        appendKeyword(sb, getSubjectNounSingular());
 
         for (DataSetDefinition dataset : getDataSets())
         {
@@ -726,6 +774,7 @@ public class StudyImpl extends ExtensibleStudyEntity<StudyImpl> implements Study
         return sb.toString();
     }
 
+
     private void appendKeyword(StringBuilder sb, String s)
     {
         if (!StringUtils.isBlank(s))
@@ -734,6 +783,7 @@ public class StudyImpl extends ExtensibleStudyEntity<StudyImpl> implements Study
             sb.append(" ");
         }
     }
+
 
     @Override
     public boolean equals(Object o)
