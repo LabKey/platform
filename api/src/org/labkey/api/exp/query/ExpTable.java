@@ -50,6 +50,9 @@ public interface ExpTable<C extends Enum> extends ContainerFilterable, TableInfo
     public void addLSIDCondition(SQLFragment lsidCondition);
 
     public void setDetailsURL(DetailsURL detailsURL);
+    public void setInsertURL(DetailsURL insertURL);
+    public void setUpdateURL(DetailsURL updateURL);
+    public void setImportURL(DetailsURL importURL);
 
     /** Add the standard set of columns to the table */
     public void populate();
