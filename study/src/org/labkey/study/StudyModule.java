@@ -454,6 +454,7 @@ public class StudyModule extends SpringModule implements SearchService.DocumentP
                 return new HtmlView("Specimens", portalCtx.getUser().isGuest() ? "Please log in to see this data." : "You do not have permission to see this data");
 
             if (null == StudyManager.getInstance().getStudy(portalCtx.getContainer()))
+            if (null == StudyManager.getInstance().getStudy(portalCtx.getContainer()))
                 return new HtmlView("Specimens", "This folder does not contain a study.");
             return new SamplesWebPart(webPart.getLocation().equals(HttpView.BODY));
         }

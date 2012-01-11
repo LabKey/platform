@@ -23,6 +23,7 @@ import org.labkey.api.study.WellGroup;
 import org.labkey.api.study.WellGroupTemplate;
 import org.labkey.api.data.Container;
 import org.labkey.api.util.GUID;
+import org.labkey.api.view.ViewContext;
 
 import java.util.*;
 
@@ -295,5 +296,11 @@ public class PlateTemplateImpl extends PropertySetImpl implements PlateTemplate
     public void setType(String type)
     {
         _type = type;
+    }
+
+    @Override
+    public String getDownloadURL(ViewContext context, String name)
+    {
+        return null;
     }
 }

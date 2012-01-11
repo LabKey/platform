@@ -16,6 +16,7 @@
 package org.labkey.study.writer;
 
 import org.apache.commons.io.IOUtils;
+import org.jetbrains.annotations.NotNull;
 import org.labkey.api.attachments.Attachment;
 import org.labkey.api.attachments.AttachmentParent;
 import org.labkey.api.attachments.AttachmentService;
@@ -46,14 +47,14 @@ public class ProtocolDocumentWriter implements InternalStudyWriter
     }
 
     @Override
-    public void write(StudyImpl study, StudyExportContext ctx, VirtualFile vf) throws Exception
+    public void write(@NotNull StudyImpl study, StudyExportContext ctx, VirtualFile vf) throws Exception
     {
         List<Attachment> documents = study.getProtocolDocuments();
 
         if (!documents.isEmpty())
         {
             VirtualFile folder = vf.getDir(DOCUMENT_FOLDER);
-            AttachmentParent parent = new StudyImpl.ProtocolDocumentAttachmentParent(study.getContainer(), study.getProtocolDocumentEntityId());
+            AttachmentParent parent = new StudyImpl.ProtocolDocumentAttachmentParent(study);
 
             StudyDocument.Study.ProtocolDocs protocolXml = ctx.getStudyXml().addNewProtocolDocs();
             protocolXml.setDir(DOCUMENT_FOLDER);

@@ -18,6 +18,7 @@ package org.labkey.study.model;
 
 import org.labkey.api.attachments.AttachmentParent;
 import org.labkey.api.data.Container;
+import org.labkey.api.view.ViewContext;
 
 import java.util.Date;
 
@@ -145,5 +146,11 @@ public class SampleRequestEvent extends AbstractStudyCachable<SampleRequestEvent
     {
         verifyMutability();
         _requirementId = requirementId;
+    }
+
+    @Override
+    public String getDownloadURL(ViewContext context, String name)
+    {
+        return null;
     }
 }

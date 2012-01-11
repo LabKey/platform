@@ -29,6 +29,7 @@ import org.labkey.api.settings.AppProps;
 import org.labkey.api.util.URLHelper;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.UnauthorizedException;
+import org.labkey.api.view.ViewContext;
 import org.labkey.experiment.DotGraph;
 import org.labkey.experiment.ExperimentRunGraph;
 import org.labkey.experiment.controllers.exp.ExperimentController;
@@ -643,6 +644,14 @@ public class ExpRunImpl extends ExpIdentifiableEntityImpl<ExperimentRun> impleme
     {
         return _object.getContainer().getId();
     }
+
+
+    @Override
+    public String getDownloadURL(ViewContext context, String name)
+    {
+        return null;
+    }
+
 
     public void clearCache()
     {

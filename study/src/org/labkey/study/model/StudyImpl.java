@@ -40,6 +40,7 @@ import org.labkey.api.exp.PropertyDescriptor;
 import org.labkey.api.exp.property.Domain;
 import org.labkey.api.exp.property.PropertyService;
 import org.labkey.api.query.QueryService;
+import org.labkey.api.search.SearchService;
 import org.labkey.api.security.MutableSecurityPolicy;
 import org.labkey.api.security.SecurableResource;
 import org.labkey.api.security.User;
@@ -57,6 +58,8 @@ import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.ResultSetUtil;
 import org.labkey.api.util.TestContext;
 import org.labkey.api.view.ActionURL;
+import org.labkey.api.view.ViewContext;
+import org.labkey.api.webdav.WebdavResource;
 import org.labkey.api.wiki.WikiRendererType;
 import org.labkey.api.wiki.WikiService;
 import org.labkey.study.SampleManager;
@@ -607,6 +610,9 @@ public class StudyImpl extends ExtensibleStudyEntity<StudyImpl> implements Study
     public void attachProtocolDocument(List<AttachmentFile> files , User user)  throws SQLException, IOException
     {
         AttachmentService.get().addAttachments(getProtocolDocumentAttachmentParent(), files, user);
+        SearchService ss = ServiceRegistry.get(SearchService.class);
+        if (null != ss)
+            StudyManager._enumerateProtocolDocuments(ss.defaultTask(), this);
     }
 
     public String getInvestigator()
@@ -664,20 +670,36 @@ public class StudyImpl extends ExtensibleStudyEntity<StudyImpl> implements Study
     public void removeProtocolDocument(String name, User user)
     {
         AttachmentService.get().deleteAttachment(getProtocolDocumentAttachmentParent(), name, user);
+        SearchService ss = ServiceRegistry.get(SearchService.class);
+        if (null != ss)
+            ss.deleteResource("attachment:/" + _protocolDocumentEntityId + "/" + PageFlowUtil.encode(name));
     }
+
 
     public static class ProtocolDocumentAttachmentParent extends AttachmentParentEntity
     {
-        public ProtocolDocumentAttachmentParent(Container c, String entityId)
+        final Study _study;
+
+        public ProtocolDocumentAttachmentParent(@NotNull Study study)
         {
-            setContainer(c.getId());
-            setEntityId(null==entityId?null:entityId);
+            setContainer(study.getContainer().getId());
+            setEntityId(((StudyImpl)study).getProtocolDocumentEntityId());
+            _study = study;
+        }
+
+        @Override
+        public String getDownloadURL(ViewContext context, String name)
+        {
+            ActionURL download = new ActionURL(StudyController.ProtocolDocumentDownloadAction.class, _study.getContainer());
+            download.addParameter("name", name);
+            return download.getLocalURIString(false);
         }
     }
 
+
     public AttachmentParent getProtocolDocumentAttachmentParent()
     {
-        return new ProtocolDocumentAttachmentParent(getContainer(), getProtocolDocumentEntityId());
+        return new ProtocolDocumentAttachmentParent(this);
     }
 
 

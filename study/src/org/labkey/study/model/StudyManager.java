@@ -25,6 +25,9 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.junit.Assert;
 import org.junit.Test;
+import org.labkey.api.attachments.Attachment;
+import org.labkey.api.attachments.AttachmentParent;
+import org.labkey.api.attachments.AttachmentService;
 import org.labkey.api.audit.AuditLogEvent;
 import org.labkey.api.audit.AuditLogService;
 import org.labkey.api.audit.SimpleAuditViewFactory;
@@ -123,8 +126,10 @@ import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.NavTree;
 import org.labkey.api.view.UnauthorizedException;
 import org.labkey.api.view.WebPartView;
+import org.labkey.api.webdav.AbstractDocumentResource;
 import org.labkey.api.webdav.ActionResource;
 import org.labkey.api.webdav.SimpleDocumentResource;
+import org.labkey.api.webdav.WebdavResource;
 import org.labkey.study.QueryHelper;
 import org.labkey.study.SampleManager;
 import org.labkey.study.StudyCache;
@@ -441,7 +446,7 @@ public class StudyManager
         if (study.getLsid() == null)
             study.initLsid();
 
-        if(study.getProtocolDocumentEntityId() == null)
+        if (study.getProtocolDocumentEntityId() == null)
             study.setProtocolDocumentEntityId(GUID.makeGUID());
 
         study = _studyHelper.create(user, study);
@@ -3265,6 +3270,9 @@ public class StudyManager
 
         final SearchService.IndexTask defaultTask = ServiceRegistry.get(SearchService.class).defaultTask();
         final SearchService.IndexTask task = null==t ? defaultTask : t;
+        final Study study = StudyManager.getInstance().getStudy(c);
+        if (null == study)
+            return;
 
         Runnable runEnumerate = new Runnable()
         {
@@ -3296,8 +3304,37 @@ public class StudyManager
         }
         
         task.addRunnable(runEnumerate, SearchService.PRIORITY.crawl);
+
+        // study protocol document
+        _enumerateProtocolDocuments(task, study);
     }
 
+
+    public static void _enumerateProtocolDocuments(SearchService.IndexTask task, @NotNull Study study)
+    {
+        AttachmentParent parent = ((StudyImpl)study).getProtocolDocumentAttachmentParent();
+        if (null == parent)
+            return;
+
+        ActionURL begin = new ActionURL("project", "begin", study.getContainer());
+        String nav = NavTree.toJS(Collections.singleton(new NavTree("study", begin)), null, false).toString();
+        ActionURL download = new ActionURL(StudyController.ProtocolDocumentDownloadAction.class, study.getContainer());
+        AttachmentService.Service serv = AttachmentService.get();
+        Path p = study.getContainer().getParsedPath().append("@study");
+
+        for (Attachment att : serv.getAttachments(parent))
+        {
+            WebdavResource r = serv.getDocumentResource
+            (
+                    p.append(att.getName()),
+                    download.clone().addParameter("name", att.getName()),
+                    "\"" + att.getName() + "\" -- Protocol document attached to study " + study.getLabel(),
+                    parent, att.getName(), SearchService.fileCategory
+            );
+            r.getMutableProperties().put(SearchService.PROPERTY.navtrail.toString(), nav);
+            task.addResource(r, SearchService.PRIORITY.item);
+        }
+    }
 
 
     public StudyImpl[] getAncillaryStudies(Container sourceStudyContainer)

@@ -19,6 +19,7 @@ package org.labkey.list.view;
 import org.labkey.api.attachments.AttachmentParent;
 import org.labkey.api.data.Container;
 import org.labkey.api.exp.list.ListItem;
+import org.labkey.api.view.ViewContext;
 import org.labkey.list.model.ListItm;
 
 /**
@@ -55,5 +56,11 @@ public class ListItemAttachmentParent implements AttachmentParent
     public String getContainerId()
     {
         return _c.getId();
+    }
+
+    @Override
+    public String getDownloadURL(ViewContext context, String name)
+    {
+        return null;
     }
 }

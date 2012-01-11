@@ -1110,7 +1110,11 @@ public class AttachmentServiceImpl implements AttachmentService.Service, Contain
         {
             if (null != _downloadUrl)
                 return _downloadUrl.getLocalURIString();
-            return super.getExecuteHref(context);
+            String download = _parent.getDownloadURL(context, getName());
+            if (null != download)
+                return download;
+            download = super.getExecuteHref(context);
+            return download;
         }
 
         public boolean exists()
