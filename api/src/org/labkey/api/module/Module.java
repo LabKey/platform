@@ -37,6 +37,7 @@ import javax.servlet.http.HttpServletResponse;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
+import java.lang.reflect.Method;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
@@ -272,4 +273,11 @@ public interface Module extends Comparable<Module>
     // Should LabKey should automatically uninstall this module (drop its schemas, delete SqlScripts rows, delete Modules rows)
     // if the module no longer exists?  This setting gets saved to the Modules table.
     public boolean isAutoUninstall();
+
+    /**
+     * Methods used by the module loader to add and execute upgrade tasks that need to be invoked after
+     * a module is initialized. 
+     */
+    public void addDeferredUpgradeTask(Method task);
+    public void runDeferredUpgradeTasks(ModuleContext context);
 }

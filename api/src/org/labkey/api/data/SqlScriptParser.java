@@ -190,7 +190,11 @@ public class SqlScriptParser
 
                 DbScope.invalidateAllIncompleteSchemas();
                 Method method = _upgradeCode.getClass().getMethod(_methodName, ModuleContext.class);
-                method.invoke(_upgradeCode, _moduleContext);
+
+                if (method.isAnnotationPresent(DeferredUpgrade.class))
+                    _moduleContext.addDeferredUpgradeTask(method);
+                else
+                    method.invoke(_upgradeCode, _moduleContext);
             }
             catch (NoSuchMethodException e)
             {

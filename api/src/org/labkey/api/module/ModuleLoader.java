@@ -766,6 +766,7 @@ public class ModuleLoader implements Filter
                 {
                     ModuleContext ctx = getModuleContext(m);
                     m.startup(ctx);
+                    m.runDeferredUpgradeTasks(ctx);
                     ctx.setModuleState(ModuleLoader.ModuleState.Running);
                 }
                 catch (Throwable x)

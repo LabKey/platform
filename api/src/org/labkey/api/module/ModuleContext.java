@@ -20,6 +20,7 @@ import org.jetbrains.annotations.Nullable;
 import org.labkey.api.security.User;
 import org.labkey.api.util.ExceptionUtil;
 
+import java.lang.reflect.Method;
 import java.text.DecimalFormat;
 import java.util.Arrays;
 import java.util.Collections;
@@ -208,5 +209,14 @@ public class ModuleContext implements Cloneable
         int result = _className != null ? _className.hashCode() : 0;
         result = 31 * result + (_name != null ? _name.hashCode() : 0);
         return result;
+    }
+
+    public void addDeferredUpgradeTask(Method task)
+    {
+        Module module = ModuleLoader.getInstance().getModule(_name);
+        if (module != null)
+            module.addDeferredUpgradeTask(task);
+        else
+            ExceptionUtil.logExceptionToMothership(null, new IllegalStateException("Module " + _name + " failed to initialize"));
     }
 }

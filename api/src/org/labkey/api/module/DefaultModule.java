@@ -62,6 +62,7 @@ import java.io.File;
 import java.io.FilenameFilter;
 import java.io.IOException;
 import java.io.InputStream;
+import java.lang.reflect.Method;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -71,8 +72,10 @@ import java.util.Comparator;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.Queue;
 import java.util.Set;
 import java.util.TreeSet;
 
@@ -87,6 +90,7 @@ public abstract class DefaultModule implements Module, ApplicationContextAware
 
     private static final Logger _log = Logger.getLogger(DefaultModule.class);
     private static final Set<Pair<Class, String>> INSTANTIATED_MODULES = new HashSet<Pair<Class, String>>();
+    private Queue<Method> _deferredUpgradeTask = new LinkedList<Method>();
 
     protected static final FilenameFilter rReportFilter = new FilenameFilter(){
         public boolean accept(File dir, String name)
@@ -1064,5 +1068,27 @@ public abstract class DefaultModule implements Module, ApplicationContextAware
     public boolean isAutoUninstall()
     {
         return false;
+    }
+
+    @Override
+    public void addDeferredUpgradeTask(Method task)
+    {
+        _deferredUpgradeTask.add(task);
+    }
+
+    @Override
+    public void runDeferredUpgradeTasks(ModuleContext context)
+    {
+        while (!_deferredUpgradeTask.isEmpty())
+        {
+            try {
+                Method task = _deferredUpgradeTask.remove();
+                task.invoke(getUpgradeCode(), context);
+            }
+            catch (Exception e)
+            {
+                _log.error("Error executing a deferred java upgrade task: ", e);
+            }
+        }
     }
 }
