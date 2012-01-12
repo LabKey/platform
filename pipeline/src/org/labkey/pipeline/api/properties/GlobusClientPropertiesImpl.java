@@ -16,15 +16,16 @@
 
 package org.labkey.pipeline.api.properties;
 
+import org.junit.Assert;
+import org.junit.Test;
 import org.labkey.api.pipeline.GlobusSettings;
 import org.labkey.api.pipeline.PipelineJobService;
 import org.labkey.api.pipeline.GlobusSettingsImpl;
 import org.labkey.api.pipeline.file.PathMapper;
 
 import java.util.ArrayList;
-import java.util.LinkedHashSet;
+import java.util.Arrays;
 import java.util.List;
-import java.util.Set;
 
 /**
  * <code>GlobusClientPropertiesImpl</code> used for Spring configuration.
@@ -37,7 +38,7 @@ public class GlobusClientPropertiesImpl extends GlobusSettingsImpl implements Pi
     private String _globusEndpoint;
     private String _jobFactoryType;
     private PathMapper _pathMapper;
-    private Set<String> _availableQueues = new LinkedHashSet<String>();
+    private List<String> _availableQueues = new ArrayList<String>();
 
     public String getJavaHome()
     {
@@ -110,6 +111,7 @@ public class GlobusClientPropertiesImpl extends GlobusSettingsImpl implements Pi
         return new ArrayList<String>(_availableQueues);
     }
 
+    /** setQueue has priority in determining the default queue if a value is specified for both it and availableQueues */
     public void setAvailableQueues(List<String> availableQueues)
     {
         _availableQueues.addAll(availableQueues);
@@ -121,10 +123,11 @@ public class GlobusClientPropertiesImpl extends GlobusSettingsImpl implements Pi
         return _availableQueues.isEmpty() ? null : _availableQueues.iterator().next();
     }
 
+    /** setQueue has priority in determining the default queue if a value is specified for both it and availableQueues */
     @Override
     public void setQueue(String queue)
     {
-        _availableQueues.add(queue);
+        _availableQueues.add(0, queue);
     }
 
     @Override
@@ -157,5 +160,24 @@ public class GlobusClientPropertiesImpl extends GlobusSettingsImpl implements Pi
     protected GlobusClientPropertiesImpl createMergeResult()
     {
         return new GlobusClientPropertiesImpl();
+    }
+
+    public static class TestCase extends Assert
+    {
+        @Test
+        public void testQueuePriority()
+        {
+            GlobusClientPropertiesImpl settings1 = new GlobusClientPropertiesImpl();
+            settings1.setQueue("default");
+            settings1.setAvailableQueues(Arrays.asList("queue2", "queue3"));
+            assertEquals("defaultQueue", "default", settings1.getQueue());
+            assertEquals("defaultQueue", Arrays.asList("default", "queue2", "queue3"), settings1.getAvailableQueues());
+
+            GlobusClientPropertiesImpl settings2 = new GlobusClientPropertiesImpl();
+            settings2.setAvailableQueues(Arrays.asList("queue2", "queue3"));
+            settings2.setQueue("default");
+            assertEquals("defaultQueue", "default", settings2.getQueue());
+            assertEquals("defaultQueue", Arrays.asList("default", "queue2", "queue3"), settings2.getAvailableQueues());
+        }
     }
 }

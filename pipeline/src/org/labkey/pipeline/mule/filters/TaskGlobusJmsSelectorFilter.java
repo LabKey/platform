@@ -31,7 +31,7 @@ public class TaskGlobusJmsSelectorFilter extends TaskJmsSelectorFilter
 
     public TaskGlobusJmsSelectorFilter()
     {
-        List<PipelineJobService.GlobusClientProperties> allGlobuses = PipelineJobService.get().getGlobusClientPropertiesList();
+        List<? extends PipelineJobService.GlobusClientProperties> allGlobuses = PipelineJobService.get().getGlobusClientPropertiesList();
         _locations.add(DEFALUT_GLOBUS_LOCATION);
 
         boolean foundDefaultGlobusLocation = false;

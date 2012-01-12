@@ -22,6 +22,7 @@ import org.labkey.api.util.NetworkDrive;
 import org.labkey.api.util.URIUtil;
 import org.labkey.pipeline.api.properties.ApplicationPropertiesImpl;
 import org.labkey.pipeline.api.properties.ConfigPropertiesImpl;
+import org.labkey.pipeline.api.properties.GlobusClientPropertiesImpl;
 import org.labkey.pipeline.xstream.PathMapperImpl;
 
 import java.io.File;
@@ -42,7 +43,7 @@ import java.util.Map;
  */
 public class PipelineJobServiceImpl extends PipelineJobService
 {
-    static PipelineJobServiceImpl getInternal()
+    public static PipelineJobServiceImpl get()
     {
         return (PipelineJobServiceImpl) PipelineJobService.get();
     }
@@ -69,7 +70,7 @@ public class PipelineJobServiceImpl extends PipelineJobService
     private ApplicationProperties _appProperties;
     private ConfigProperties _configProperties;
     private RemoteServerProperties _remoteServerProperties;
-    private List<GlobusClientProperties> _globusClientProperties = new ArrayList<GlobusClientProperties>();
+    private List<GlobusClientPropertiesImpl> _globusClientProperties = new ArrayList<GlobusClientPropertiesImpl>();
     private PathMapperImpl _clusterPathMapper = new PathMapperImpl(new LinkedHashMap<String, String>());
 
     private PipelineStatusFile.StatusWriter _statusWriter;
@@ -83,7 +84,7 @@ public class PipelineJobServiceImpl extends PipelineJobService
     {
         // Allow Mule/Spring configuration, but keep any current defaults
         // set by the LabKey server.
-        PipelineJobServiceImpl current = getInternal();
+        PipelineJobServiceImpl current = get();
         if (current != null)
         {
             current._taskPipelineStore.putAll(_taskPipelineStore);
@@ -319,17 +320,17 @@ public class PipelineJobServiceImpl extends PipelineJobService
     }
     
 
-    public List<GlobusClientProperties> getGlobusClientPropertiesList()
+    public List<GlobusClientPropertiesImpl> getGlobusClientPropertiesList()
     {
         return _globusClientProperties;
     }
 
-    public void setGlobusClientProperties(GlobusClientProperties globusClientProperties)
+    public void setGlobusClientProperties(GlobusClientPropertiesImpl globusClientProperties)
     {
         setGlobusClientPropertiesList(Collections.singletonList(globusClientProperties));
     }
 
-    public void setGlobusClientPropertiesList(List<GlobusClientProperties> globusClientProperties)
+    public void setGlobusClientPropertiesList(List<GlobusClientPropertiesImpl> globusClientProperties)
     {
         _globusClientProperties.addAll(globusClientProperties);
         for (GlobusClientProperties globusClientProperty : globusClientProperties)

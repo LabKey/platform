@@ -15,6 +15,7 @@
  */
 package org.labkey.pipeline.mule;
 
+import junit.framework.Assert;
 import org.apache.axis.message.addressing.EndpointReferenceType;
 import org.apache.axis.types.NonNegativeInteger;
 import org.apache.log4j.Logger;
@@ -40,14 +41,19 @@ import org.globus.wsrf.impl.security.authorization.Authorization;
 import org.globus.wsrf.impl.security.descriptor.GSITransportAuthMethod;
 import org.globus.wsrf.impl.security.descriptor.ResourceSecurityDescriptor;
 import org.ietf.jgss.GSSCredential;
+import org.junit.Test;
 import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.pipeline.*;
+import org.labkey.api.pipeline.cmd.CommandTaskFactorySettings;
 import org.labkey.api.settings.AppProps;
 import org.labkey.api.util.NetworkDrive;
 import org.labkey.api.util.HelpTopic;
 import org.labkey.api.util.JobRunner;
 import org.labkey.api.util.DateUtil;
 import org.labkey.api.util.Pair;
+import org.labkey.pipeline.analysis.CommandTaskImpl;
+import org.labkey.pipeline.api.PipelineJobServiceImpl;
+import org.labkey.pipeline.api.properties.GlobusClientPropertiesImpl;
 import org.labkey.pipeline.mule.filters.TaskJmsSelectorFilter;
 import org.labkey.pipeline.api.PipelineStatusFileImpl;
 import org.labkey.pipeline.api.PipelineStatusManager;
@@ -72,6 +78,8 @@ import java.security.cert.X509Certificate;
 import java.security.cert.CertificateNotYetValidException;
 import java.security.cert.CertificateExpiredException;
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Calendar;
@@ -372,50 +380,55 @@ public class PipelineJobRunnerGlobus implements Callable, ResumableDescriptor
         errors.append(name);
     }
 
-    private String getGlobusLocation(PipelineJob job)
+    private String getGlobusLocation(TaskFactory taskFactory, Map<String, String> parameters, List<GlobusClientPropertiesImpl> allGlobusSettings)
     {
-        GlobusSettings factorySettings = job.getActiveTaskFactory().getGlobusSettings();
-        JobGlobusSettings jobSettings = new JobGlobusSettings(job.getActiveTaskFactory().getGroupParameterName(), job.getParameters());
-        if (factorySettings != null)
+        GlobusSettings factorySettings = taskFactory.getGlobusSettings();
+        JobGlobusSettings jobSettings = new JobGlobusSettings(taskFactory.getGroupParameterName(), parameters);
+        PipelineJobService.GlobusClientProperties matchingQueueSettings = null;
+        String jobQueue = jobSettings.getQueue();
+        String jobLocation = jobSettings.getLocation();
+        if (jobQueue != null)
         {
-            return factorySettings.mergeOverrides(jobSettings).getLocation();
+            for (int i = 0; i < allGlobusSettings.size(); i++)
+            {
+                GlobusClientPropertiesImpl globusSettings = allGlobusSettings.get(i);
+                if (globusSettings.getAvailableQueues().contains(jobSettings.getQueue()) && (jobLocation == null || jobLocation.equalsIgnoreCase(globusSettings.getLocation())))
+                {
+                    if (i == 0)
+                    {
+                        // If there's a matching queue on the default Globus server, use it without checking any of the
+                        // other servers
+                        return globusSettings.getLocation();
+                    }
+                    
+                    if (matchingQueueSettings != null)
+                    {
+                        throw new IllegalArgumentException("Multiple Globus locations define queue " + jobSettings.getQueue());
+                    }
+                    matchingQueueSettings = globusSettings;
+                }
+            }
+            if (matchingQueueSettings != null)
+            {
+                return matchingQueueSettings.getLocation();
+            }
+
+            // No matching queue found, use the default Globus location and assume that the user has specified a queue
+            // that exists there
         }
-        return jobSettings.getLocation();
+        return factorySettings.mergeOverrides(jobSettings).getLocation();
     }
 
     private Pair<GramJob, PipelineJobService.GlobusClientProperties> createGramJob(PipelineJob job, File serializedJobFile) throws Exception
     {
-        List<PipelineJobService.GlobusClientProperties> allGlobusSettings = PipelineJobService.get().getGlobusClientPropertiesList();
+        List<GlobusClientPropertiesImpl> allGlobusSettings = PipelineJobServiceImpl.get().getGlobusClientPropertiesList();
 
         if (allGlobusSettings.isEmpty())
         {
             throw new IllegalStateException("No Globus configuration registered");
         }
 
-        String location = getGlobusLocation(job);
-        PipelineJobService.GlobusClientProperties settings = null;
-        if (location == null)
-        {
-            settings = allGlobusSettings.get(0);
-        }
-        else
-        {
-            for (PipelineJobService.GlobusClientProperties possibleSettings : allGlobusSettings)
-            {
-                if (possibleSettings.getLocation().equalsIgnoreCase(location))
-                {
-                    settings = possibleSettings;
-                    break;
-                }
-            }
-        }
-        if (settings == null)
-        {
-            throw new IllegalArgumentException("Could not find Globus settings for location " + location);
-        }
-        
-        settings = settings.mergeOverrides(job.getActiveTaskFactory().getGlobusSettings());
-        settings = settings.mergeOverrides(new JobGlobusSettings(job.getActiveTaskFactory().getGroupParameterName(), job.getParameters()));
+        PipelineJobService.GlobusClientProperties settings = getGlobusSettings(job.getActiveTaskFactory(), job.getParameters(), allGlobusSettings);
 
         JobDescriptionType jobDescription = createJobDescription(job, serializedJobFile, settings);
 
@@ -513,6 +526,36 @@ public class PipelineJobRunnerGlobus implements Callable, ResumableDescriptor
         gramJob.setNotificationConsumerEPR(notificationConsumerEndpoint);
         gramJob.addListener(new GlobusListener(job, notifConsumerManager));
         return new Pair<GramJob, PipelineJobService.GlobusClientProperties>(gramJob, settings);
+    }
+
+    private PipelineJobService.GlobusClientProperties getGlobusSettings(TaskFactory taskFactory, Map<String, String> parameters, List<GlobusClientPropertiesImpl> allGlobusSettings)
+    {
+        String location = getGlobusLocation(taskFactory, parameters, allGlobusSettings);
+        GlobusClientPropertiesImpl settings = null;
+        if (location == null)
+        {
+            settings = allGlobusSettings.get(0);
+        }
+        else
+        {
+            for (GlobusClientPropertiesImpl possibleSettings : allGlobusSettings)
+            {
+                if (possibleSettings.getLocation().equalsIgnoreCase(location))
+                {
+                    settings = possibleSettings;
+                    break;
+                }
+            }
+        }
+        if (settings == null)
+        {
+            throw new IllegalArgumentException("Could not find Globus settings for location " + location);
+        }
+
+        settings = settings.mergeOverrides(taskFactory.getGlobusSettings());
+        settings = settings.mergeOverrides(new JobGlobusSettings(taskFactory.getGroupParameterName(), parameters));
+        settings.setLocation(location);
+        return settings;
     }
 
     private String getClusterPath(String localPath)
@@ -692,5 +735,116 @@ public class PipelineJobRunnerGlobus implements Callable, ResumableDescriptor
             };
         jobDescription.setArgument(jobArgs);
         return jobDescription;
+    }
+
+    public static class TestCase extends Assert
+    {
+        private GlobusClientPropertiesImpl getDefaultGlobusSettings()
+        {
+            GlobusClientPropertiesImpl result = new GlobusClientPropertiesImpl();
+            result.setLocation("location1");
+            result.setAvailableQueues(Arrays.asList("default", "location1-A", "duplicateQueue"));
+            return result;
+        }
+
+        private GlobusClientPropertiesImpl getGlobusSettings2()
+        {
+            GlobusClientPropertiesImpl result = new GlobusClientPropertiesImpl();
+            result.setLocation("location2");
+            result.setAvailableQueues(Arrays.asList("location2-A", "location2-B", "duplicateQueue", "duplicateQueue2"));
+            return result;
+        }
+
+        private GlobusClientPropertiesImpl getGlobusSettings3()
+        {
+            GlobusClientPropertiesImpl result = new GlobusClientPropertiesImpl();
+            result.setLocation("location3");
+            result.setAvailableQueues(Arrays.asList("location3-A", "duplicateQueue2"));
+            return result;
+        }
+
+        @Test
+        public void testLocation() throws Exception
+        {
+            CommandTaskFactorySettings settings = new CommandTaskFactorySettings("UnitTestCommand");
+            settings.setGroupParameterName("UnitTestGroup");
+            settings.setLocation("location1");
+            CommandTaskImpl.Factory factory = new CommandTaskImpl.Factory().cloneAndConfigure(settings);
+
+            List<GlobusClientPropertiesImpl> globusSettings = Collections.singletonList(getGlobusSettings2());
+
+            PipelineJobRunnerGlobus runner = new PipelineJobRunnerGlobus();
+            assertEquals("location", "location1", runner.getGlobusLocation(factory, Collections.<String, String>emptyMap(), globusSettings));
+            assertEquals("location", "otherLocation", runner.getGlobusLocation(factory, Collections.singletonMap("UnitTestGroup, globus location", "otherLocation"), globusSettings));
+        }
+
+        @Test
+        public void testQueue() throws Exception
+        {
+            CommandTaskFactorySettings settings = new CommandTaskFactorySettings("UnitTestCommand");
+            settings.setGroupParameterName("UnitTestGroup");
+            settings.setLocation("location1");
+            CommandTaskImpl.Factory factory = new CommandTaskImpl.Factory().cloneAndConfigure(settings);
+
+            PipelineJobRunnerGlobus runner = new PipelineJobRunnerGlobus();
+            
+            List<GlobusClientPropertiesImpl> singleGlobusSettings = Collections.singletonList(getDefaultGlobusSettings());
+            PipelineJobService.GlobusClientProperties taskSettings = runner.getGlobusSettings(factory, Collections.<String, String>emptyMap(), singleGlobusSettings);
+            assertEquals("location", "location1", taskSettings.getLocation());
+            assertEquals("location", "default", taskSettings.getQueue());
+
+            // Setting nothing should get the default location and queue
+            List<GlobusClientPropertiesImpl> tripleGlobusSettings = Arrays.asList(getDefaultGlobusSettings(), getGlobusSettings2(), getGlobusSettings3());
+            PipelineJobService.GlobusClientProperties taskSettings2 = runner.getGlobusSettings(factory, Collections.<String, String>emptyMap(), tripleGlobusSettings);
+            assertEquals("location", "location1", taskSettings2.getLocation());
+            assertEquals("location", "default", taskSettings2.getQueue());
+
+            // Request a queue that has been configured for the default location
+            PipelineJobService.GlobusClientProperties taskSettings3 = runner.getGlobusSettings(factory, Collections.singletonMap("UnitTestGroup, globus queue", "location1-A"), tripleGlobusSettings);
+            assertEquals("location", "location1", taskSettings3.getLocation());
+            assertEquals("location", "location1-A", taskSettings3.getQueue());
+
+            // Request a queue that has been configured for another location/Globus server
+            PipelineJobService.GlobusClientProperties taskSettings4 = runner.getGlobusSettings(factory, Collections.singletonMap("UnitTestGroup, globus queue", "location2-A"), tripleGlobusSettings);
+            assertEquals("location", "location2", taskSettings4.getLocation());
+            assertEquals("location", "location2-A", taskSettings4.getQueue());
+
+            // A queue that hasn't been configured should be assumed to be on the default location/Globus server
+            PipelineJobService.GlobusClientProperties taskSettings5 = runner.getGlobusSettings(factory, Collections.singletonMap("UnitTestGroup, globus queue", "unknownQueue"), tripleGlobusSettings);
+            assertEquals("location", "location1", taskSettings5.getLocation());
+            assertEquals("location", "unknownQueue", taskSettings5.getQueue());
+
+            // A duplicate queue name assumed to be on the default location/Globus server
+            PipelineJobService.GlobusClientProperties taskSettings6 = runner.getGlobusSettings(factory, Collections.singletonMap("UnitTestGroup, globus queue", "duplicateQueue"), tripleGlobusSettings);
+            assertEquals("location", "location1", taskSettings6.getLocation());
+            assertEquals("location", "duplicateQueue", taskSettings6.getQueue());
+
+            try
+            {
+                runner.getGlobusSettings(factory, Collections.singletonMap("UnitTestGroup, globus queue", "duplicateQueue2"), tripleGlobusSettings);
+                fail("Ambiguous queue name should result in exception");
+            }
+            catch (IllegalArgumentException ignored) {}
+
+            // Requesting a duplicate queue name is fine if you also specify the location
+            Map<String, String> params7 = new HashMap<String, String>();
+            params7.put("UnitTestGroup, globus queue", "duplicateQueue2");
+            params7.put("UnitTestGroup, globus location", "location2");
+            PipelineJobService.GlobusClientProperties taskSettings7 = runner.getGlobusSettings(factory, params7, tripleGlobusSettings);
+            assertEquals("location", "location2", taskSettings7.getLocation());
+            assertEquals("location", "duplicateQueue2", taskSettings7.getQueue());
+
+            Map<String, String> params8 = new HashMap<String, String>();
+            params8.put("UnitTestGroup, globus queue", "duplicateQueue2");
+            params8.put("UnitTestGroup, globus location", "location3");
+            PipelineJobService.GlobusClientProperties taskSettings8 = runner.getGlobusSettings(factory, params8, tripleGlobusSettings);
+            assertEquals("location", "location3", taskSettings8.getLocation());
+            assertEquals("location", "duplicateQueue2", taskSettings8.getQueue());
+
+            // Setting to non-default location should get the default queue for that server
+            PipelineJobService.GlobusClientProperties taskSettings9 = runner.getGlobusSettings(factory, Collections.singletonMap("UnitTestGroup, globus location", "location3"), tripleGlobusSettings);
+            assertEquals("location", "location3", taskSettings9.getLocation());
+            assertEquals("location", "location3-A", taskSettings9.getQueue());
+        }
     }
 }
