@@ -15,6 +15,7 @@
  */
 package org.labkey.api.pipeline;
 
+import org.jetbrains.annotations.NotNull;
 import org.labkey.api.pipeline.file.FileAnalysisJobSupport;
 import org.apache.log4j.Logger;
 
@@ -64,9 +65,16 @@ abstract public class AbstractTaskFactory<SettingsType extends AbstractTaskFacto
         return _groupParameterName;
     }
 
+    @NotNull
     public GlobusSettings getGlobusSettings()
     {
-        return _globusSettings;
+        if (_globusSettings != null)
+        {
+            return _globusSettings;
+        }
+        GlobusSettingsImpl result = new GlobusSettingsImpl();
+        result.setLocation(getLocation());
+        return result;
     }
 
     public void setGlobusSettings(GlobusSettings globusSettings)

@@ -98,7 +98,7 @@ abstract public class PipelineJobService implements TaskPipelineRegistry
 
     abstract public RemoteServerProperties getRemoteServerProperties();
 
-    abstract public List<GlobusClientProperties> getGlobusClientPropertiesList();
+    abstract public List<? extends GlobusClientProperties> getGlobusClientPropertiesList();
 
     abstract public PathMapper getClusterPathMapper();
 
