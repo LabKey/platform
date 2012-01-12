@@ -125,6 +125,9 @@ Ext4.onReady(function(){
             var panel = Ext4.getCmp('projects-panel-' + webpartId);
 
             if (panel) {
+                var config = '<%=jsonProps%>';
+                config = Ext4.decode(config);
+
                 function shouldCheck(btn){
                     var data = panel.down('#dataView').renderData;
                     return (btn.iconSize==data.iconSize && btn.labelPosition==data.labelPosition)
@@ -137,6 +140,12 @@ Ext4.onReady(function(){
                         xtype: 'form',
                         bodyStyle: 'padding: 5px;',
                         items: [{
+                            xtype: 'textfield',
+                            name: 'title',
+                            fieldLabel: 'Title',
+                            itemId: 'title',
+                            value: config.title || 'Projects'
+                        },{
                             xtype: 'radiogroup',
                             name: 'style',
                             itemId: 'style',
@@ -263,11 +272,14 @@ Ext4.onReady(function(){
                             panel.resizeIcons.call(panel, styleField);
                             btn.up('window').hide();
 
+                            var title = btn.up('window').down('#title').getValue();
+                            LABKEY.Utils.setWebpartTitle(title, webpartId);
+
                             var values = {
                                 containerPath: panel.store.containerPath,
+                                title: title,
                                 containerTypes: panel.containerTypes,
                                 containerFilter: panel.store.containerFilter,
-                                webPartId: <%=webPartId%>,
                                 iconSize: panel.iconSize,
                                 labelPosition: panel.labelPosition
                             };
