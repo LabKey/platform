@@ -108,11 +108,10 @@ public class StudyFolderTabs
             ActionURL currentURL = viewContext.getActionURL();
             return super.isSelectedPage(viewContext) ||
                     currentURL.getPageFlow().equalsIgnoreCase("study-reports") ||
+                    currentURL.getPageFlow().equalsIgnoreCase("reports") ||
                     currentURL.getPageFlow().equalsIgnoreCase("dataset") ||
                     currentURL.getPageFlow().equalsIgnoreCase("visualization") ||
-                    currentURL.getAction().equalsIgnoreCase("dataset") ||
-                    currentURL.getAction().equalsIgnoreCase("subjectList") ||
-                    currentURL.getAction().equalsIgnoreCase("participant");
+                    currentURL.getAction().equalsIgnoreCase("dataset");
         }
 
         @Override
@@ -160,6 +159,15 @@ public class StudyFolderTabs
             parts.add(Portal.getPortalPart("Search").createWebPart());
             parts.add(Portal.getPortalPart("Subject List").createWebPart());
             return parts;
+        }
+
+        @Override
+        public boolean isSelectedPage(ViewContext viewContext)
+        {
+            ActionURL currentURL = viewContext.getActionURL();
+            return super.isSelectedPage(viewContext) ||
+                    currentURL.getAction().equalsIgnoreCase("subjectList") ||
+                    currentURL.getAction().equalsIgnoreCase("participant");
         }
 
         @Override
