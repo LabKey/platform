@@ -28,8 +28,12 @@ import java.io.File;
 import java.io.FileNotFoundException;
 import java.lang.reflect.Array;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
 import java.net.URI;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
 
 /**
  * <code>PipelineJobServiceImpl</code>
@@ -38,8 +42,6 @@ import java.net.URI;
  */
 public class PipelineJobServiceImpl extends PipelineJobService
 {
-    private static Logger _log = Logger.getLogger(PipelineJobServiceImpl.class);
-
     static PipelineJobServiceImpl getInternal()
     {
         return (PipelineJobServiceImpl) PipelineJobService.get();
@@ -67,7 +69,8 @@ public class PipelineJobServiceImpl extends PipelineJobService
     private ApplicationProperties _appProperties;
     private ConfigProperties _configProperties;
     private RemoteServerProperties _remoteServerProperties;
-    private GlobusClientProperties _globusClientProperties;
+    private List<GlobusClientProperties> _globusClientProperties = new ArrayList<GlobusClientProperties>();
+    private PathMapperImpl _clusterPathMapper = new PathMapperImpl(new LinkedHashMap<String, String>());
 
     private PipelineStatusFile.StatusWriter _statusWriter;
     private PipelineStatusFile.JobStore _jobStore;
@@ -312,12 +315,34 @@ public class PipelineJobServiceImpl extends PipelineJobService
 
     public GlobusClientProperties getGlobusClientProperties()
     {
+        return _globusClientProperties.get(0);
+    }
+    
+
+    public List<GlobusClientProperties> getGlobusClientPropertiesList()
+    {
         return _globusClientProperties;
     }
 
     public void setGlobusClientProperties(GlobusClientProperties globusClientProperties)
     {
-        _globusClientProperties = globusClientProperties;
+        setGlobusClientPropertiesList(Collections.singletonList(globusClientProperties));
+    }
+
+    public void setGlobusClientPropertiesList(List<GlobusClientProperties> globusClientProperties)
+    {
+        _globusClientProperties.addAll(globusClientProperties);
+        for (GlobusClientProperties globusClientProperty : globusClientProperties)
+        {
+            PathMapper mapper = globusClientProperty.getPathMapper();
+            if (mapper != null)
+            {
+                for (Map.Entry<String, String> entry : mapper.getPathMap().entrySet())
+                {
+                    _clusterPathMapper.getPathMap().put(entry.getKey(), entry.getValue());
+                }
+            }
+        }
     }
 
     private String getVersionedPath(String path, String packageName, String ver)
@@ -443,5 +468,15 @@ public class PipelineJobServiceImpl extends PipelineJobService
                 "Please fix the JAVA_HOME environment variable.");
         }
         return new File(javaBin, "java").toString();
+    }
+
+    public void setClusterPathMapper(PathMapperImpl clusterPathMapper)
+    {
+        _clusterPathMapper = clusterPathMapper;
+    }
+
+    public PathMapperImpl getClusterPathMapper()
+    {
+        return _clusterPathMapper;
     }
 }

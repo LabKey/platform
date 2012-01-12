@@ -170,7 +170,7 @@
         </tr>
         <%
         if (PipelineService.get().isEnterprisePipeline() &&
-                PipelineJobService.get().getGlobusClientProperties() != null)
+                !PipelineJobService.get().getGlobusClientPropertiesList().isEmpty())
         {
             List<String> warnings = PipelineJobRunnerGlobus.checkGlobusConfiguration(bean.getGlobusKeyPair());
             for (String warning : warnings)

@@ -1590,9 +1590,9 @@ pipeline/src/org/labkey/pipeline/mule/config/cluster.log4j.properties -text
 pipeline/src/org/labkey/pipeline/mule/config/remote.log4j.properties -text
 pipeline/src/org/labkey/pipeline/mule/config/remoteMuleConfig.xml -text
 pipeline/src/org/labkey/pipeline/mule/config/webserverMuleConfig.xml -text
-pipeline/src/org/labkey/pipeline/mule/filters/AbstractTaskJmsSelectorFilter.java -text
 pipeline/src/org/labkey/pipeline/mule/filters/JobIncompleteFilter.java -text
 pipeline/src/org/labkey/pipeline/mule/filters/JobRunJmsSelectorFilter.java -text
+pipeline/src/org/labkey/pipeline/mule/filters/TaskGlobusJmsSelectorFilter.java -text
 pipeline/src/org/labkey/pipeline/mule/filters/TaskJmsSelectorFilter.java -text
 pipeline/src/org/labkey/pipeline/mule/filters/TaskRemoteServerJmsSelectorFilter.java -text
 pipeline/src/org/labkey/pipeline/mule/filters/TaskStateChangeJmsSelectorFilter.java -text

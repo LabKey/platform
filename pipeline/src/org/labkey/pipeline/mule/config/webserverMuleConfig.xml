@@ -232,20 +232,12 @@
             <inbound-router>
                 <endpoint type="receiver" address="JobMQ" transformers="JMSMessageToXML"
                         responseTransformers="NoOpTransformer" connector="jmsConnectorGlobus">
-                    <filter className="org.labkey.pipeline.mule.filters.TaskJmsSelectorFilter">
-                        <properties>
-                            <property name="location" value="cluster"/>
-                        </properties>
-                    </filter>
+                    <filter className="org.labkey.pipeline.mule.filters.TaskGlobusJmsSelectorFilter" />
                 </endpoint>
             </inbound-router>
 
             <threading-profile maxThreadsActive="1" maxThreadsIdle="0" threadTTL="100"/>
             <pooling-profile maxActive="1" maxIdle="0" initialisationPolicy="INITIALISE_NONE"/>
-
-            <properties>
-                <property name="location" value="cluster" />
-            </properties>
         </mule-descriptor>
 
         <!-- Define a worker for doing FASTA checks  -->

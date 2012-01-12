@@ -52,7 +52,7 @@ import org.labkey.pipeline.api.properties.ApplicationPropertiesSiteSettings;
 import org.labkey.pipeline.mule.EPipelineContextListener;
 import org.labkey.pipeline.mule.EPipelineQueueImpl;
 import org.labkey.pipeline.mule.RemoteServerStartup;
-import org.labkey.pipeline.mule.filters.AbstractTaskJmsSelectorFilter;
+import org.labkey.pipeline.mule.filters.TaskJmsSelectorFilter;
 import org.labkey.pipeline.status.StatusController;
 import org.labkey.pipeline.xstream.PathMapperImpl;
 import org.mule.MuleManager;
@@ -226,7 +226,7 @@ public class PipelineModule extends SpringModule implements ContainerManager.Con
             else if (!queue.isLocal() && queue instanceof EPipelineQueueImpl)
             {
                 // Restart jobs that have been dropped from the queue and are supposed to run on the web server
-                new RemoteServerStartup().getRequeueRequest(((EPipelineQueueImpl) queue).getJMSFactory(), AbstractTaskJmsSelectorFilter.getAllLocalLocations()).performRequest();
+                new RemoteServerStartup().getRequeueRequest(((EPipelineQueueImpl) queue).getJMSFactory(), TaskJmsSelectorFilter.getAllLocalLocations()).performRequest();
             }
         }
 

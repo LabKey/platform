@@ -19,20 +19,23 @@ import org.labkey.api.pipeline.PipelineJobService;
 
 /**
  * <code>TaskJmsSelectorFilter</code> builds and applies a JMS selector for
- * all registered <code>TaskFactory</code> objects for a specified location.
+ * all registered <code>TaskFactory</code> objects for a remote server's named location.
  *
  * @author brendanx
  */
-public class TaskRemoteServerJmsSelectorFilter extends AbstractTaskJmsSelectorFilter
+public class TaskRemoteServerJmsSelectorFilter extends TaskJmsSelectorFilter
 {
     public TaskRemoteServerJmsSelectorFilter()
     {
+        String location = null;
         PipelineJobService.RemoteServerProperties props =
                 PipelineJobService.get().getRemoteServerProperties();
         if (props != null)
-            _location = props.getLocation();
+            location = props.getLocation();
 
-        if (_location == null || "".equals(_location))
-            throw new IllegalArgumentException("RemoteServerProperties.location must be set to use TaskRemoteServerJmsSelectorFilter.");            
+        if (location == null || "".equals(location))
+            throw new IllegalArgumentException("RemoteServerProperties.location must be set to use TaskRemoteServerJmsSelectorFilter.");
+
+        _locations.add(location);
     }
 }

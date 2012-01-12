@@ -47,6 +47,7 @@ import org.labkey.api.util.NetworkDrive;
 import org.labkey.api.util.HelpTopic;
 import org.labkey.api.util.JobRunner;
 import org.labkey.api.util.DateUtil;
+import org.labkey.api.util.Pair;
 import org.labkey.pipeline.mule.filters.TaskJmsSelectorFilter;
 import org.labkey.pipeline.api.PipelineStatusFileImpl;
 import org.labkey.pipeline.api.PipelineStatusManager;
@@ -71,14 +72,14 @@ import java.security.cert.X509Certificate;
 import java.security.cert.CertificateNotYetValidException;
 import java.security.cert.CertificateExpiredException;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Calendar;
+import java.util.Map;
 
 public class PipelineJobRunnerGlobus implements Callable, ResumableDescriptor
 {
     private static Logger _log = Logger.getLogger(PipelineJobRunnerGlobus.class);
-
-    private String _globusEndpoint;
 
     private static final String GLOBUS_LOCATION = "GLOBUS_LOCATION";
 
@@ -103,17 +104,6 @@ public class PipelineJobRunnerGlobus implements Callable, ResumableDescriptor
         //       server without globus configuration.  The built-in Mule
         //       config runs this constructor with a JMS filter for task
         //       location "cluster".
-        PipelineJobService.GlobusClientProperties props = getProps();
-        if (props != null)
-        {
-            _globusEndpoint = props.getGlobusServer();
-            if (!"http".equalsIgnoreCase(_globusEndpoint.substring(0, 4)))
-                _globusEndpoint = "https://" + _globusEndpoint;
-            if (_globusEndpoint.lastIndexOf('/') < 8)
-            {
-                _globusEndpoint += "/wsrf/services/ManagedJobFactoryService";
-            }
-        }
     }
 
     public void resume(UMODescriptor descriptor)
@@ -123,57 +113,68 @@ public class PipelineJobRunnerGlobus implements Callable, ResumableDescriptor
             if (endpoint.getFilter() instanceof TaskJmsSelectorFilter)
             {
                 TaskJmsSelectorFilter filter = (TaskJmsSelectorFilter) endpoint.getFilter();
-                final String location = filter.getLocation();
-                // Grab the list of jobs to check synchronously, but don't block waiting to ping them all
-                final List<PipelineStatusFileImpl> filesToCheck = PipelineStatusManager.getStatusFilesForLocation(location, false);
+                final Map<String, List<PipelineStatusFileImpl>> allLocations = new HashMap<String, List<PipelineStatusFileImpl>>();
+                for (String location : filter.getLocations())
+                {
+                    // Grab the list of jobs to check synchronously, but don't block waiting to ping them all
+                    allLocations.put(location, PipelineStatusManager.getStatusFilesForLocation(location, false));
+
+                }
                 JobRunner.getDefault().execute(new Runnable()
                 {
                     public void run()
                     {
-                        _log.info("Starting to check status for " + filesToCheck.size() + " jobs on Globus location '" + location + "'");
-                        int count = 0;
-                        for (PipelineStatusFileImpl sf : filesToCheck)
+                        for (Map.Entry<String, List<PipelineStatusFileImpl>> entry : allLocations.entrySet())
                         {
-                            if (sf.getJobStore() != null && sf.isActive())
+                            String location = entry.getKey();
+                            List<PipelineStatusFileImpl> filesToCheck = entry.getValue();
+
+                            _log.info("Starting to check status for " + filesToCheck.size() + " jobs on Globus location '" + location + "'");
+                            int count = 0;
+                            for (PipelineStatusFileImpl sf : filesToCheck)
                             {
-                                PipelineJob job = null;
-                                try
+                                if (sf.getJobStore() != null && sf.isActive())
                                 {
-                                    job = PipelineJobService.get().getJobStore().fromXML(sf.getJobStore());
-
-                                    final File serializedJobFile = PipelineJob.getSerializedFile(job.getLogFile());
-                                    if (!NetworkDrive.exists(serializedJobFile))
+                                    PipelineJob job = null;
+                                    try
                                     {
-                                        // If the file doesn't exist, the web server must have died after it pulled the job from the queue
-                                        // but before it could write the file to disk
-                                        job.writeToFile(serializedJobFile);
+                                        job = PipelineJobService.get().getJobStore().fromXML(sf.getJobStore());
+
+                                        final File serializedJobFile = PipelineJob.getSerializedFile(job.getLogFile());
+                                        if (!NetworkDrive.exists(serializedJobFile))
+                                        {
+                                            // If the file doesn't exist, the web server must have died after it pulled the job from the queue
+                                            // but before it could write the file to disk
+                                            job.writeToFile(serializedJobFile);
+                                        }
+
+                                        // Create the job object and try to submit it. If it was already submitted Globus will remember
+                                        // the previous submission because they'll have the same URI and it won't resubmit
+                                        GramJob gramJob = createGramJob(job, serializedJobFile).getKey();
+                                        gramJob.submit(gramJob.getEndpoint(), false, false, getJobURI(job));
+
+                                        // Refresh to see what state Globus thinks the job is in. If the job is running or is finished,
+                                        // the GlobusListener will be notified just like normal, so it can handle the updates or release
+                                        // the associated resources
+                                        gramJob.refreshStatus();
                                     }
-
-                                    // Create the job object and try to submit it. If it was already submitted Globus will remember
-                                    // the previous submission because they'll have the same URI and it won't resubmit
-                                    GramJob gramJob = createGramJob(job, serializedJobFile);
-                                    gramJob.submit(gramJob.getEndpoint(), false, false, getJobURI(job));
-
-                                    // Refresh to see what state Globus thinks the job is in. If the job is running or is finished,
-                                    // the GlobusListener will be notified just like normal, so it can handle the updates or release
-                                    // the associated resources
-                                    gramJob.refreshStatus();
+                                    catch (Exception e)
+                                    {
+                                        if (job != null)
+                                        {
+                                            job.error("Failed to update status", e);
+                                        }
+                                    }
                                 }
-                                catch (Exception e)
+                                count++;
+                                if (count % 10 == 0)
                                 {
-                                    if (job != null)
-                                    {
-                                        job.error("Failed to update status", e);
-                                    }
+                                    _log.info("Checked status for " + count + " of " + filesToCheck.size() + " jobs on Globus location '" + location + "'");
                                 }
                             }
-                            count++;
-                            if (count % 10 == 0)
-                            {
-                                _log.info("Checked status for " + count + " of " + filesToCheck.size() + " jobs on Globus location '" + location + "'");
-                            }
+                            _log.info("Finished checking status jobs on Globus location '" + location + "'");
                         }
-                        _log.info("Finished checking status jobs on Globus location '" + location + "'");
+                        _log.info("Finished checking status jobs for all Globus locations");
                     }
                 });
             }
@@ -187,9 +188,6 @@ public class PipelineJobRunnerGlobus implements Callable, ResumableDescriptor
 
     public Object onCall(UMOEventContext eventContext) throws Exception
     {
-        if (_globusEndpoint == null || "".equals(_globusEndpoint))
-            throw new IllegalArgumentException("GlobusClientProperties must specify a server to run tasks on a cluster. Check configuration.");
-
         boolean submitted = false;
         String xmlJob = eventContext.getMessageAsString();
         final PipelineJob job = PipelineJobService.get().getJobStore().fromXML(xmlJob);
@@ -201,11 +199,16 @@ public class PipelineJobRunnerGlobus implements Callable, ResumableDescriptor
 
             job.writeToFile(serializedJobFile);
             
-            GramJob gramJob = createGramJob(job, serializedJobFile);
+            Pair<GramJob, PipelineJobService.GlobusClientProperties> p = createGramJob(job, serializedJobFile);
+            GramJob gramJob = p.getKey();
+
+            String globusEndpoint = p.getValue().getGlobusEndpoint();
+            if (globusEndpoint == null || "".equals(globusEndpoint))
+                throw new IllegalArgumentException("GlobusClientProperties must specify a server to run tasks on a cluster. Check configuration.");
 
             StringBuilder sb = new StringBuilder();
             sb.append("Submitting job to Globus ");
-            sb.append(PipelineJobService.get().getGlobusClientProperties().getJobFactoryType());
+            sb.append(p.getValue().getJobFactoryType());
             if (gramJob.getDescription().getQueue() != null)
             {
                 sb.append(" with queue ");
@@ -369,10 +372,44 @@ public class PipelineJobRunnerGlobus implements Callable, ResumableDescriptor
         errors.append(name);
     }
 
-
-    private GramJob createGramJob(PipelineJob job, File serializedJobFile) throws Exception
+    private String getGlobusLocation(PipelineJob job)
     {
-        GlobusSettings settings = PipelineJobService.get().getGlobusClientProperties();
+        GlobusSettings settings = job.getActiveTaskFactory().getGlobusSettings();
+        settings = settings.mergeOverrides(new JobGlobusSettings(job.getActiveTaskFactory().getGroupParameterName(), job.getParameters()));
+        return settings.getLocation();
+    }
+
+    private Pair<GramJob, PipelineJobService.GlobusClientProperties> createGramJob(PipelineJob job, File serializedJobFile) throws Exception
+    {
+        List<PipelineJobService.GlobusClientProperties> allGlobusSettings = PipelineJobService.get().getGlobusClientPropertiesList();
+
+        if (allGlobusSettings.isEmpty())
+        {
+            throw new IllegalStateException("No Globus configuration registered");
+        }
+
+        String location = getGlobusLocation(job);
+        PipelineJobService.GlobusClientProperties settings = null;
+        if (location == null)
+        {
+            settings = allGlobusSettings.get(0);
+        }
+        else
+        {
+            for (PipelineJobService.GlobusClientProperties possibleSettings : allGlobusSettings)
+            {
+                if (possibleSettings.getLocation().equalsIgnoreCase(location))
+                {
+                    settings = possibleSettings;
+                    break;
+                }
+            }
+        }
+        if (settings == null)
+        {
+            throw new IllegalArgumentException("Could not find Globus settings for location " + location);
+        }
+        
         settings = settings.mergeOverrides(job.getActiveTaskFactory().getGlobusSettings());
         settings = settings.mergeOverrides(new JobGlobusSettings(job.getActiveTaskFactory().getGroupParameterName(), job.getParameters()));
 
@@ -431,8 +468,8 @@ public class PipelineJobRunnerGlobus implements Callable, ResumableDescriptor
             gramJob = new GramJob(jobDescription);
         }
         // Tell it where to talk to the Globus server
-        URL factoryUrl = ManagedJobFactoryClientHelper.getServiceURL(_globusEndpoint).getURL();
-        EndpointReferenceType factoryEndpoint = ManagedJobFactoryClientHelper.getFactoryEndpoint(factoryUrl, PipelineJobService.get().getGlobusClientProperties().getJobFactoryType());
+        URL factoryUrl = ManagedJobFactoryClientHelper.getServiceURL(settings.getGlobusEndpoint()).getURL();
+        EndpointReferenceType factoryEndpoint = ManagedJobFactoryClientHelper.getFactoryEndpoint(factoryUrl, settings.getJobFactoryType());
         gramJob.setEndpoint(factoryEndpoint);
 
         EndpointReferenceType notificationConsumerEndpoint = notifConsumerManager.createNotificationConsumer(topicPath, gramJob, resourceSecDesc);
@@ -471,23 +508,13 @@ public class PipelineJobRunnerGlobus implements Callable, ResumableDescriptor
 
         gramJob.setNotificationConsumerEPR(notificationConsumerEndpoint);
         gramJob.addListener(new GlobusListener(job, notifConsumerManager));
-        return gramJob;
-    }
-
-    private static PipelineJobService.GlobusClientProperties getProps()
-    {
-        return PipelineJobService.get().getGlobusClientProperties();
+        return new Pair<GramJob, PipelineJobService.GlobusClientProperties>(gramJob, settings);
     }
 
     private String getClusterPath(String localPath)
     {
-        if (getProps() == null || getProps().getPathMapper() == null)
-        {
-            // Assume that the web server and cluster nodes use the same paths to access the files.
-            return localPath;
-        }
         // This PathMapper considers "local" from a cluster node's point of view.
-        return getProps().getPathMapper().remoteToLocal(localPath);
+        return PipelineJobService.get().getClusterPathMapper().remoteToLocal(localPath);
     }
 
     public static void updateStatus(PipelineJob job, PipelineJob.TaskStatus status) throws UMOException, IOException
@@ -606,7 +633,7 @@ public class PipelineJobRunnerGlobus implements Callable, ResumableDescriptor
         return new File(statusFile.getParentFile(), name + ".cluster." + outputType);
     }
 
-    private JobDescriptionType createJobDescription(PipelineJob job, File serializedJobFile, GlobusSettings settings)
+    private JobDescriptionType createJobDescription(PipelineJob job, File serializedJobFile, PipelineJobService.GlobusClientProperties settings)
         throws Exception
     {
         // Set up the job description
@@ -641,8 +668,8 @@ public class PipelineJobRunnerGlobus implements Callable, ResumableDescriptor
             jobDescription.setMaxWallTime(settings.getMaxWallTime());
         }
 
-        String javaHome = PipelineJobService.get().getGlobusClientProperties().getJavaHome();
-        String labKeyDir = PipelineJobService.get().getGlobusClientProperties().getLabKeyDir();
+        String javaHome = settings.getJavaHome();
+        String labKeyDir = settings.getLabKeyDir();
 
         jobDescription.setEnvironment(new NameValuePairType[] { new NameValuePairType("JAVA_HOME", javaHome) });
 
@@ -656,7 +683,7 @@ public class PipelineJobRunnerGlobus implements Callable, ResumableDescriptor
                 "org.labkey.bootstrap.ClusterBootstrap",
                 "-modulesdir=" + labKeyDir + "/modules",
                 "-webappdir=" + labKeyDir + "/labkeywebapp",
-                "-configdir=" + labKeyDir + "/config",
+                "-configdir=" + labKeyDir + "/config2",
                 getClusterPath(serializedJobFile.getAbsoluteFile().toURI().toString())
             };
         jobDescription.setArgument(jobArgs);

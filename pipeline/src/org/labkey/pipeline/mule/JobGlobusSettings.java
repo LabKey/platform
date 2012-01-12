@@ -56,6 +56,11 @@ public class JobGlobusSettings extends AbstractGlobusSettings
         return getParam("queue");
     }
 
+    public String getLocation()
+    {
+        return getParam("location");
+    }
+
     public Long getMaxTime()
     {
         return getLongParam("max time");

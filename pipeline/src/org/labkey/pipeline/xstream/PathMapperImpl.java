@@ -51,9 +51,14 @@ public class PathMapperImpl implements PathMapper
     {
     }
 
-    public PathMapperImpl(Map<String, String> pathMap, boolean remoteIgnoreCase, boolean localIgnoreCase)
+    public PathMapperImpl(Map<String, String> pathMap)
     {
         _pathMap = pathMap;
+    }
+    
+    public PathMapperImpl(Map<String, String> pathMap, boolean remoteIgnoreCase, boolean localIgnoreCase)
+    {
+        this(pathMap);
         _remoteIgnoreCase = remoteIgnoreCase;
         _localIgnoreCase = localIgnoreCase;
     }
