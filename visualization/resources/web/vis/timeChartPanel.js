@@ -489,12 +489,35 @@ LABKEY.vis.TimeChartPanel = Ext.extend(Ext.Panel, {
 
                         // enable/disable the aggregate combo box accordingly
                         this.displayAggregateComboBox.setDisabled(!checked);
+                        this.displayErrorComboBox.setDisabled(!checked);
                         this.refreshChart.delay(1000);
                     },
                     beforerender: function(){
                         this.displayAggregate = this.chartInfo.displayAggregate;
                     },
                     scope : this
+                }
+            });
+
+            this.displayErrorComboBox = new Ext.form.ComboBox({
+                triggerAction : 'all',
+                mode          : 'local',
+                store         : new Ext.data.ArrayStore({
+                       fields : ['value'],
+                       data   : [['None'], ['SD'], ['SEM']]
+                }),
+                disabled      : this.displayAggregate || true,
+                forceSelection: 'true',
+                editable: false,
+                valueField    : 'value',
+                displayField  : 'value',
+                value         : this.chartInfo.errorBars != undefined ? this.chartInfo.errorBars : "None",
+                width         : 75,
+                listeners     : {
+                    select    : function(cb){
+                        this.refreshChart.delay(1000);
+                    },
+                    scope     : this
                 }
             });
 
@@ -524,11 +547,14 @@ LABKEY.vis.TimeChartPanel = Ext.extend(Ext.Panel, {
 
             this.disableAggregateSelection = function(disable){
                 this.displayAggregateCheckbox.setDisabled(disable);
+                this.displayErrorComboBox.setDisabled(disable);
                 this.displayIndividualCheckbox.setDisabled(disable);
                 if(disable){
                     this.displayAggregateComboBox.setDisabled(true);
+                    this.displayErrorComboBox.setDisabled(true);
                 } else {
                     this.displayAggregateComboBox.setDisabled(!this.displayAggregateCheckbox.getValue());
+                    this.displayErrorComboBox.setDisabled(!this.displayAggregateCheckbox.getValue());
                 }
             }
 
@@ -547,8 +573,8 @@ LABKEY.vis.TimeChartPanel = Ext.extend(Ext.Panel, {
                         this.displayIndividualCheckbox,
                         {xtype: 'tbspacer', width: 10},
                         this.displayAggregateCheckbox,
-                        {xtype: 'tbspacer', width: 5},
-//                        this.displayAggregateComboBox, //this needs to be un-commented when we figure out what to do with count.
+                        {xtype: 'tbspacer', width: 10},
+                        this.displayErrorComboBox,
                         {xtype: 'tbspacer', width: 10}
                 ],
                 items: [],
@@ -900,6 +926,8 @@ LABKEY.vis.TimeChartPanel = Ext.extend(Ext.Panel, {
 
                         Ext.each(seriesList, function(s) {
                             var dataValue = row[this.aggregateData.measureToColumn[s.name]];
+                            var stdDev = row[this.aggregateData.measureToColumn[s.name] + "_STDDEV"];
+                            var stdErr = row[this.aggregateData.measureToColumn[s.name] + "_STDERR"];
                             var measureIntervalKey;
                             
                             if(typeof dataValue != "object") {
@@ -916,7 +944,9 @@ LABKEY.vis.TimeChartPanel = Ext.extend(Ext.Panel, {
 
                             this.aggregateChartSubjectData[rowSubject][s.name].push({
                                 interval: row[measureIntervalKey],
-                                dataValue: dataValue
+                                dataValue: dataValue,
+                                stdDev: stdDev,
+                                stdErr: stdErr
                             });
                         }, this);
                     }, this);
@@ -1318,7 +1348,7 @@ LABKEY.vis.TimeChartPanel = Ext.extend(Ext.Panel, {
                     //Convert intervals from seq num to display order:
                     if ( (this.editorXAxisPanel.getTime() == "visit" && this.displayOrder && subjectData[subject]) && !this.aggregateIntervalsConverted){
                         for(var k = 0; k < subjectData[subject][seriesList[i].name].length; k++){
-                            subjectData[subject][seriesList[i].name][k].interval = this.displayOrder[subjectData[subject][seriesList[i].name][k].interval.value];
+                            subjectData[subject][seriesList[i].name][k].interval = {value: this.displayOrder[subjectData[subject][seriesList[i].name][k].interval.value]};
                         }
                     }
                     //Set caption
@@ -1338,11 +1368,17 @@ LABKEY.vis.TimeChartPanel = Ext.extend(Ext.Panel, {
                     style.shape = {name: "square", lineWidth: 1, markSize: 20, hidden: true};
                 }
 
+                var errorBars = "None";
+                if(subjectData[subject] && subjectData[subject][yAxisSeries][0].stdErr && this.chartInfo.errorBars != "None"){
+                    errorBars = this.chartInfo.errorBars;
+                }
+
                 series.push({
                     subject: subject,
                     yAxisSeries: yAxisSeries,
                     caption: caption,
                     data: subjectData[subject] ? subjectData[subject][yAxisSeries] : [],
+                    errorBars: errorBars,
                     axis: yAxisSide,
                     xProperty:"interval",
                     yProperty: "dataValue",
@@ -1587,7 +1623,7 @@ LABKEY.vis.TimeChartPanel = Ext.extend(Ext.Panel, {
             axis: [],
             chartLayout: 'single',
             chartSubjectSelection: 'subjects',
-            lineWidth: 4,
+            lineWidth: 3,
             hideDataPoints: false,
             subject: {},
             title: '',
@@ -1601,10 +1637,11 @@ LABKEY.vis.TimeChartPanel = Ext.extend(Ext.Panel, {
             title: this.editorChartsPanel.getMainTitle(),
             chartLayout: this.editorChartsPanel.getChartLayout(),
             chartSubjectSelection: this.editorChartsPanel.getChartSubjectSelection(),
-            lineWidth: this.editorChartsPanel.getLineWidth(),
+            lineWidth: this.editorChartsPanel.getLineWidth() || 3, //Default line width of 3.
             hideDataPoints: this.editorChartsPanel.getHideDataPoints(),
             displayIndividual: this.displayIndividualCheckbox.getValue(),
             displayAggregate: this.displayAggregateCheckbox.getValue(),
+            errorBars: this.displayErrorComboBox.getValue(),
             measures: [],
             axis: [this.editorXAxisPanel.getAxis()],
             filterUrl: this.editorMeasurePanel.getDataFilterUrl(),

@@ -15,6 +15,7 @@ LABKEY.vis.Colors = {
     "SET1": ["#E41A1C", "#377EB8", "#4DAF4A", "#984EA3", "#FF7F0", "#FFFF33", "#A65628", "#F781BF", "#999999"],
     "PASTEL2": [ "#B3E2CD", "#FDCDAC", "#CBD5E8", "#F4CAE4", "#E6F5C9", "#FFF2AE", "#F1E2CC", "#CCCCCC"],
     "SET2": [ "#66C2A5", "#FC8D62", "#8DA0CB", "#E78AC3", "#A6D854", "#FFD92F", "#E5C494", "#B3B3B3"],
+    "SET2DARK": ["#378a70", "#f34704", "#4b67a6", "#d53597", "#72a124", "#c8a300", "#d19641", "#808080"],
     "DARK2": ["#1B9E77", "#D95F2", "#7570B3", "#E7298A", "#66A61E", "#E6AB2", "#A6761D", "#666666"]
 };
 
@@ -131,6 +132,7 @@ LABKEY.vis.XYChartComponent = Ext.extend(Ext.BoxComponent, {
       markSize : 4,
       markAlpha : .5,
       seriesColors : pv.colors.apply(pv, LABKEY.vis.Colors.SET2),
+      darkSeriesColors : pv.colors.apply(pv, LABKEY.vis.Colors.SET2DARK),
       strokeColor : "#eee",
       firstStrokeColor : "#000",
       outerMargin: 60,
@@ -177,6 +179,7 @@ LABKEY.vis.XYChartComponent = Ext.extend(Ext.BoxComponent, {
             Ext.applyIf(style, chartComponent.seriesStyle);
             if (!style.markColor)
                 style.markColor = chartComponent.style.seriesColors(series.caption).alpha(style.markAlpha);
+                style.darkMarkColor = chartComponent.style.darkSeriesColors(series.caption);
             if (!style.shape)
                 style.shape = LABKEY.vis.Shapes[seriesIndex % LABKEY.vis.Shapes.length];
             LABKEY.vis.SeriesStyleMap[series.caption] = style; //Stash this away for later
@@ -187,24 +190,57 @@ LABKEY.vis.XYChartComponent = Ext.extend(Ext.BoxComponent, {
                  series.getY = chartComponent.createGetter(series.yProperty, false);
 
              if (!series.getTitle){
+                 var errorBarType = series.errorBars;
                  if(!this.labels){
                      var xInterval = this.xAxisInterval ? this.xAxisInterval : '';
-                     series.getTitle = dateHoverTitle(xInterval, series);
+                     series.getTitle = dateHoverTitle(xInterval, series, errorBarType);
                  } else {
-                     series.getTitle = visitHoverTitle(this.labels, series);
+                     series.getTitle = visitHoverTitle(this.labels, series, errorBarType);
                  }
              }
 
-             function dateHoverTitle(xInterval, series){
+             function dateHoverTitle(xInterval, series, errorBarType){
                  xInterval = xInterval.substr(0, xInterval.length -1);
                  return function (d){
-                     return series.caption + ", " + xInterval + " " + series.getX(d) + ",  " + series.getY(d);
+                     if(errorBarType != "None"){
+                         if(errorBarType == "SD"){
+                             if(d.stdDev.value == null){
+                                 return series.caption + ", " + xInterval + " " + series.getX(d) + ",  " + series.getY(d) + " SD: n/a";
+                             } else {
+                                 return series.caption + ", " + xInterval + " " + series.getX(d) + ",  " + series.getY(d) + " SD: " + d.stdDev.value;
+                             }
+                         } else if(errorBarType == "SEM" && d.stdErr != null){
+                             if(d.stdErr.value == null){
+                                 return series.caption + ", " + xInterval + " " + series.getX(d) + ",  " + series.getY(d) + ", SEM: n/a";
+                             } else {
+                                return series.caption + ", " + xInterval + " " + series.getX(d) + ",  " + series.getY(d) + ", SEM: " + d.stdErr.value;
+                             }
+                         }
+                     } else {
+                         return series.caption + ", " + xInterval + " " + series.getX(d) + ",  " + series.getY(d);
+                     }
                  }
              }
 
-             function visitHoverTitle(labels, series){
+             function visitHoverTitle(labels, series, errorBarType){
                  return function (d){
-                     return series.caption + ", " + labels[d.interval] + ",  " + series.getY(d);
+                     if(errorBarType != "None"){
+                         if(errorBarType == "SD"){
+                             if(d.stdDev.value == null){
+                                 return series.caption + ", " + labels[d.interval.value] + ",  " + series.getY(d) + " SD: n/a";
+                             } else {
+                                 return series.caption + ", " + labels[d.interval.value] + ",  " + series.getY(d) + " SD: " + d.stdDev.value;
+                             }
+                         } else if(errorBarType == "SEM" && d.stdErr != null){
+                             if(d.stdErr.value == null){
+                                 return series.caption + ", " + labels[d.interval.value] + ",  " + series.getY(d) + ", SEM: n/a";
+                             } else {
+                                return series.caption + ", " + labels[d.interval.value] + ",  " + series.getY(d) + ", SEM: " + d.stdErr.value;
+                             }
+                         }
+                     } else {
+                         return series.caption + ", " + labels[d.interval.value] + ",  " + series.getY(d);
+                     }
                  }
              }
             //The graphing doesn't work with missing values, so we strip them out of the series in the first place.
@@ -728,20 +764,66 @@ LABKEY.vis.LineChart = Ext.extend(LABKEY.vis.XYChartComponent, {
        this.series.forEach(function (s) {
            var style = s.style;
            var color = style.markColor;
+           var darkColor = style.darkMarkColor;
            var lines = dataPanel.add(pv.Line)
              .data(s.data)
-            .left(function (d) { return bottom(s.getX(d))})
+            .left(function (d) {return bottom(s.getX(d))})
             .bottom(function (d) { return chartComponent.pinMin(s.axis == "right" ? right : left, s.getY(d))})
             .strokeStyle(color)
             .lineWidth(style.lineWidth);
-            if(!style.shape.hidden){
+
+           if(s.errorBars != "None"){
+               var type = '';
+               if(s.errorBars == "SD"){
+                   type = 'stdDev';
+               } else {
+                   type = 'stdErr';
+               }
+               lines.add(pv.Rule)
+                       .bottom(function(d) {
+                           return left(d.dataValue.value - d[type].value);
+                       })
+                       .height(function(d){
+                           if(left(0) < 0){
+                               return (-1 * left(0)) + left(d[type].value * 2);
+                           } else {
+                               return (left(0) + left(d[type].value * 2));
+                           }
+                       })
+                       .lineWidth(2)
+                       .fillStyle(darkColor)
+                       .strokeStyle(darkColor);
+
+               lines.add(pv.Rule)
+                       .bottom(function(d){return left(d.dataValue.value - d[type].value);})
+                       .left(function(d){
+                               return bottom(d.interval.value) - 4;
+                       })
+                       .width(8)
+                       .lineWidth(2)
+                       .fillStyle(darkColor)
+                       .strokeStyle(darkColor);
+
+               lines.add(pv.Rule)
+                       .bottom(function(d){return left(d.dataValue.value + d[type].value);})
+                       .left(function(d){
+                               return bottom(d.interval.value) - 4
+                       })
+                       .width(8)
+                       .lineWidth(2)
+                       .fillStyle(darkColor)
+                       .strokeStyle(darkColor);
+           }
+
+           if(!style.shape.hidden){
                lines.add(pv.Dot)
-                    .size(style.shape.markSize)
-                    .fillStyle(color)
-                    .title(s.getTitle)
-                    .lineWidth(style.shape.lineWidth)
-                    .shape(style.shape.name);
-            }
+                       .size(style.shape.markSize)
+                       .fillStyle(darkColor)
+                       .strokeStyle(darkColor)
+                       .title(s.getTitle)
+                       .lineWidth(style.shape.lineWidth)
+                       .shape(style.shape.name);
+           }
 
            seriesIndex++;
        }, this);

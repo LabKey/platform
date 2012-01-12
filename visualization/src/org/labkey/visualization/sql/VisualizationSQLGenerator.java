@@ -375,6 +375,8 @@ public class VisualizationSQLGenerator implements CustomApiForm, HasViewContext
             {
                 String alias = entry.getValue().iterator().next();
                 aggregatedSQL.append(", AVG(x.\"" + alias + "\") AS \"" + alias + "\"");
+                aggregatedSQL.append(", STDDEV(x.\"" + alias + "\") AS \"" + alias + "_STDDEV\"");
+                aggregatedSQL.append(", STDERR(x.\"" + alias + "\") AS \"" + alias + "_STDERR\"");
             }
         }
 
