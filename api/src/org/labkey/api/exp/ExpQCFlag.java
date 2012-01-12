@@ -21,6 +21,7 @@ package org.labkey.api.exp;
  */
 public class ExpQCFlag
 {
+    private int _rowId;
     private int _runId;
     private String _flagType;
     private String _description;
@@ -30,6 +31,25 @@ public class ExpQCFlag
     private int _intKey2;
     private String _key1;
     private String _key2;
+
+    public ExpQCFlag() {}
+
+    public ExpQCFlag(int runId, String flagType, String description)
+    {
+        _runId = runId;
+        _flagType = flagType;
+        _description = description;
+    }
+
+    public int getRowId()
+    {
+        return _rowId;
+    }
+
+    public void setRowId(int rowId)
+    {
+        _rowId = rowId;
+    }
 
     public int getRunId()
     {
