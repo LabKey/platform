@@ -19,6 +19,8 @@ package org.labkey.experiment.samples;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
 import org.apache.commons.beanutils.ConversionException;
+import org.labkey.api.audit.AuditLogEvent;
+import org.labkey.api.audit.AuditLogService;
 import org.labkey.api.collections.CaseInsensitiveHashSet;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
@@ -50,6 +52,7 @@ import java.util.*;
 public class UploadSamplesHelper
 {
     private static final Logger _log = Logger.getLogger(UploadSamplesHelper.class);
+    public static final String SAMPLE_EVENT_TYPE = "SampleSetEvent";
 
     UploadMaterialSetForm _form;
 
@@ -561,6 +564,17 @@ public class UploadSamplesHelper
                 }
             }
         }
+
+        AuditLogEvent event = new AuditLogEvent();
+
+        event.setCreatedBy(_form.getUser());
+        event.setContainerId(getContainer().getId());
+        event.setEventType(SAMPLE_EVENT_TYPE);
+        event.setKey1(_form.getName());
+        event.setKey3(_form.getInsertUpdateChoice());
+        event.setComment("Samples inserted or updated in: " + _form.getName());
+
+        AuditLogService.get().addEvent(event);
 
         return helper._materials;
     }
