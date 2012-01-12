@@ -22,7 +22,7 @@ Ext4.define('LABKEY.ext4.DataViewsPanel', {
         Ext4.applyIf(config, {
             layout : 'border',
             frame  : false, border : false,
-            height : 700,
+//            height : 700,
             allowCustomize : true
         });
 
@@ -109,6 +109,7 @@ Ext4.define('LABKEY.ext4.DataViewsPanel', {
 
         this.customMode = false;
         this.searchVal = "";
+        this._height;
 
         this.items = [];
 
@@ -137,7 +138,7 @@ Ext4.define('LABKEY.ext4.DataViewsPanel', {
                 style : 'margin-bottom: 10px',
                 hidden : true,
                 preventHeader : true,
-                flex   : 1.2,
+//                flex   : 1.2,
                 border : false, frame : false
             });
             items.push(this[regions[r]]);
@@ -253,8 +254,8 @@ Ext4.define('LABKEY.ext4.DataViewsPanel', {
         this.centerPanel = Ext4.create('Ext.panel.Panel', {
             border   : false,
             frame    : false,
-            layout   : 'fit',
-            height   : 575
+            layout   : 'fit'
+//            height   : 575
         });
 
         this.centerPanel.on('render', this.configureGrid, this);
@@ -276,6 +277,12 @@ Ext4.define('LABKEY.ext4.DataViewsPanel', {
 
         var handler = function(json){
             this.centerPanel.getEl().unmask();
+
+            if (json.webpart) {
+                this._height = parseInt(json.webpart.height);
+                this.setHeight(this._height);
+            }
+
             this.initGrid(true, json.visibleColumns);
         };
         
@@ -290,6 +297,10 @@ Ext4.define('LABKEY.ext4.DataViewsPanel', {
 
         var handler = function(json){
             this.centerPanel.getEl().unmask();
+            this.gridPanel.on('reconfigure', function() {
+                if (this._height)
+                    this.setHeight(this._height);
+            }, this, {single: true});
             this.gridPanel.reconfigure(this.gridPanel.getStore(), this.initGridColumns(json.visibleColumns));
             this.store.load();
         };
@@ -689,6 +700,7 @@ Ext4.define('LABKEY.ext4.DataViewsPanel', {
 //            disabled : !this.isCustomizable()
         });
 
+        this.north.setHeight(185);
         this.north.add(customPanel);
 
         this.on('enableCustomMode',  this.onEnableCustomMode,  this);
@@ -844,8 +856,15 @@ Ext4.define('LABKEY.ext4.DataViewsPanel', {
             return;
         }
 
-        var cbItems = [];
-        var cbColumns = [];
+        var cbItems = [],
+                cbColumns = [],
+                sizeItems = [];
+
+        var heights = {
+            450 : 'small',
+            700 : 'medium',
+            1000 : 'large'
+        };
 
         if (data.types)
         {
@@ -865,9 +884,22 @@ Ext4.define('LABKEY.ext4.DataViewsPanel', {
             }
         }
 
-        var formPanel = Ext4.create('Ext.form.Panel',{
+        for (var h in heights) {
+            if (heights.hasOwnProperty(h)) {
+                sizeItems.push({boxLabel : heights[h], name : 'webpart.height', inputValue : h, checked : false, handler : function(grp){
+                    // this is called for each 'change' -- only bother with true case
+                    if (grp.getValue()) {
+                        this.updateConfig = true;
+                        this._height = parseInt(grp.inputValue); // WATCH OUT : this MUST be an integer.
+                    }
+                }, scope : this});
+                if (this._height == h)
+                    sizeItems[sizeItems.length-1].checked = true;
+            }
+        }
+
+        var namePanel = Ext4.create('Ext.form.Panel', {
             border : false,
-            layout : 'hbox',
             fieldDefaults  :{
                 labelAlign : 'top',
                 labelWidth : 130,
@@ -881,6 +913,24 @@ Ext4.define('LABKEY.ext4.DataViewsPanel', {
                 width      : 225,
                 value      : data.webpart.title ? data.webpart.title : data.webpart.name
             },{
+                xtype      : 'radiogroup',
+                fieldLabel : 'Display',
+                columns    : 3,
+                items      : sizeItems
+            }]
+        });
+        
+        var formPanel = Ext4.create('Ext.form.Panel',{
+            border : false,
+            flex   : 1,
+            layout : 'hbox',
+            fieldDefaults  :{
+                labelAlign : 'top',
+                labelWidth : 130,
+                labelSeparator : ''
+            },
+            items : [namePanel,
+            {
                 xtype      : 'checkboxgroup',
                 fieldLabel : 'Types (All Users)',
                 colspan    : 1,
@@ -903,7 +953,11 @@ Ext4.define('LABKEY.ext4.DataViewsPanel', {
         });
 
         var panel = Ext4.create('Ext.panel.Panel',{
-            bodyPadding: 10,
+            bodyPadding : 10,
+            layout : {
+                type:'vbox',
+                align:'stretch'
+            },
             items : [formPanel,{
                 xtype   : 'panel',
                 border  : false,
@@ -911,7 +965,6 @@ Ext4.define('LABKEY.ext4.DataViewsPanel', {
                     xtype   : 'button',
                     text    : 'Manage Categories',
                     handler : this.onManageCategories,
-                    colspan : 1,
                     scope   : this
                 }
             ]}],

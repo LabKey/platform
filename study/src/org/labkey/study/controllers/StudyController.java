@@ -6905,6 +6905,10 @@ public class StudyController extends BaseStudyController
                 webPartProps.put("name", webPart.getName());
                 if (props.containsKey("webpart.title"))
                     webPartProps.put("title", props.get("webpart.title"));
+                if (props.containsKey("webpart.height"))
+                    webPartProps.put("height", props.get("webpart.height"));
+                else
+                    webPartProps.put("height", String.valueOf(700));
                 response.put("webpart", new JSONObject(webPartProps));
             }
 
