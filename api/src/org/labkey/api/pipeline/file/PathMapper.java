@@ -15,12 +15,18 @@
  */
 package org.labkey.api.pipeline.file;
 
+import java.util.Map;
+
 /**
+ * Translates paths back and forth between the web server's representation and a remote computer's representation.
+ * Strings are URIs and should begin with "file:/"
  * <code>PathMapper</code>
  */
 public interface PathMapper
 {
-    String remoteToLocal(String path);
+    Map<String, String> getPathMap();
 
-    String localToRemote(String path);
+    String remoteToLocal(String remoteURI);
+
+    String localToRemote(String localURI);
 }

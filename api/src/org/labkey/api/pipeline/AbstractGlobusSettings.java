@@ -21,9 +21,14 @@ package org.labkey.api.pipeline;
 */
 public abstract class AbstractGlobusSettings implements GlobusSettings
 {
-    public GlobusSettings mergeOverrides(GlobusSettings overrides)
+    protected GlobusSettingsImpl createMergeResult()
     {
-        GlobusSettingsImpl result = new GlobusSettingsImpl();
+        return new GlobusSettingsImpl();
+    }
+
+    public GlobusSettingsImpl mergeOverrides(GlobusSettings overrides)
+    {
+        GlobusSettingsImpl result = createMergeResult();
         if (overrides == null)
         {
             overrides = new GlobusSettingsImpl();
@@ -33,6 +38,7 @@ public abstract class AbstractGlobusSettings implements GlobusSettings
         result.setMaxTime(overrides.getMaxTime() == null ? getMaxTime() : overrides.getMaxTime());
         result.setMaxWallTime(overrides.getMaxWallTime() == null ? getMaxWallTime() : overrides.getMaxWallTime());
         result.setQueue(overrides.getQueue() == null ? getQueue() : overrides.getQueue());
+        result.setLocation(overrides.getLocation() == null ? getLocation() : overrides.getLocation());
         result.setTerminationTime(overrides.getTerminationTime() == null ? getTerminationTime() : overrides.getTerminationTime());
         return result;
     }

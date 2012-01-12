@@ -23,10 +23,16 @@ public class GlobusSettingsImpl extends AbstractGlobusSettings
 {
     private Integer _maxMemory;
     private String _queue;
+    private String _location;
     private Long _maxTime;
     private Long _maxCPUTime;
     private Long _maxWallTime;
     private Integer _terminationTime;
+
+    public String getLocation()
+    {
+        return _location;
+    }
 
     public String getQueue()
     {
@@ -86,5 +92,10 @@ public class GlobusSettingsImpl extends AbstractGlobusSettings
     public void setMaxWallTime(Long maxWallTime)
     {
         _maxWallTime = maxWallTime;
+    }
+
+    public void setLocation(String location)
+    {
+        _location = location;
     }
 }

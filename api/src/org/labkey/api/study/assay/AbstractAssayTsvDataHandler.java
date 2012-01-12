@@ -465,7 +465,7 @@ public abstract class AbstractAssayTsvDataHandler extends AbstractExperimentData
                     }
                     else if (studies.size() > 1)
                     {
-                        errorSB.append("Ambigious ").append(pd.getName()).append(" '").append(o.toString()).append("'.");
+                        errorSB.append("Ambiguous ").append(pd.getName()).append(" '").append(o.toString()).append("'.");
                     }
                     if (!studies.isEmpty())
                     {

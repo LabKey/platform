@@ -22,6 +22,9 @@ package org.labkey.api.pipeline;
 */
 public interface GlobusSettings
 {
+    /** @return the name Globus server (location) to which the job should be submitted */
+    public String getLocation();
+
     /** @return the name of the scheduler queue to which the job should be submitted */
     public String getQueue();
 

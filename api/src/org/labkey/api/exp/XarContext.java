@@ -205,25 +205,21 @@ public class XarContext
 
         // Finally, try using the pipeline's path mapper if we have one to
         // translate from a cluster path to a webserver path
-        if (PipelineJobService.get().getGlobusClientProperties() != null &&
-            PipelineJobService.get().getGlobusClientProperties().getPathMapper() != null)
+        // Path mappers deal with URIs, not file paths
+        String uri = "file:" + (path.startsWith("/") ? path : "/" + path);
+        // This PathMapper considers "local" from a cluster node's point of view.
+        String mappedURI = PipelineJobService.get().getClusterPathMapper().localToRemote(uri);
+        // If we have translated Windows paths, they won't be legal URIs, so convert slashes
+        mappedURI = mappedURI.replace('\\', '/');
+        try
         {
-            // Path mappers deal with URIs, not file paths
-            String uri = "file:" + (path.startsWith("/") ? path : "/" + path);
-            // This PathMapper considers "local" from a cluster node's point of view.
-            String mappedURI = PipelineJobService.get().getGlobusClientProperties().getPathMapper().localToRemote(uri);
-            // If we have translated Windows paths, they won't be legal URIs, so convert slashes
-            mappedURI = mappedURI.replace('\\', '/');
-            try
+            f = new File(new URI(mappedURI));
+            if (NetworkDrive.exists(f))
             {
-                f = new File(new URI(mappedURI));
-                if (NetworkDrive.exists(f))
-                {
-                    return f;
-                }
+                return f;
             }
-            catch (URISyntaxException e) {}
         }
+        catch (URISyntaxException e) {}
 
         return null;
     }

@@ -19,6 +19,7 @@ import org.apache.log4j.Logger;
 import org.labkey.api.pipeline.file.PathMapper;
 
 import java.io.FileNotFoundException;
+import java.util.List;
 
 /**
  * <code>PipelineJobService</code> exposes the interface for dealing with
@@ -85,6 +86,10 @@ abstract public class PipelineJobService implements TaskPipelineRegistry
         String getGlobusServer();
         String getJobFactoryType();
         PathMapper getPathMapper();
+
+        GlobusClientProperties mergeOverrides(GlobusSettings overrides);
+
+        String getGlobusEndpoint();
     }
 
     abstract public ApplicationProperties getAppProperties();
@@ -93,7 +98,9 @@ abstract public class PipelineJobService implements TaskPipelineRegistry
 
     abstract public RemoteServerProperties getRemoteServerProperties();
 
-    abstract public GlobusClientProperties getGlobusClientProperties();
+    abstract public List<GlobusClientProperties> getGlobusClientPropertiesList();
+
+    abstract public PathMapper getClusterPathMapper();
 
     abstract public String getExecutablePath(String exeRel, String packageName, String ver, Logger jobLogger) throws FileNotFoundException;
 
