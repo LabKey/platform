@@ -162,6 +162,7 @@ import org.labkey.study.assay.AssayPublishManager;
 import org.labkey.study.assay.query.AssayAuditViewFactory;
 import org.labkey.study.controllers.reports.ReportsController;
 import org.labkey.study.dataset.DatasetSnapshotProvider;
+import org.labkey.study.designer.StudySchedule;
 import org.labkey.study.importer.DatasetImportUtils;
 import org.labkey.study.importer.SchemaReader;
 import org.labkey.study.importer.SchemaTsvReader;
@@ -170,6 +171,7 @@ import org.labkey.study.importer.StudyReload;
 import org.labkey.study.importer.StudyReload.ReloadStatus;
 import org.labkey.study.importer.StudyReload.ReloadTask;
 import org.labkey.study.importer.VisitMapImporter;
+import org.labkey.study.model.CohortImpl;
 import org.labkey.study.model.CohortManager;
 import org.labkey.study.model.CustomParticipantView;
 import org.labkey.study.model.DataSetDefinition;
@@ -7432,5 +7434,60 @@ public class StudyController extends BaseStudyController
                 scope.closeConnection();
             }
         }
+    }
+
+    @RequiresPermissionClass(ReadPermission.class)
+    public class BrowseStudyScheduleAction extends ApiAction<BrowseStudyForm>
+    {
+        @Override
+        public ApiResponse execute(BrowseStudyForm browseDataForm, BindException errors) throws Exception
+        {
+            ApiSimpleResponse response = new ApiSimpleResponse();
+            Study study = StudyManager.getInstance().getStudy(getContainer());
+            StudySchedule schedule = new StudySchedule();
+            CohortImpl cohort = null;
+
+            if (study != null)
+            {
+                schedule.setVisits(StudyManager.getInstance().getVisits(study, null, getUser(), Visit.Order.DISPLAY));
+                schedule.setDatasets(StudyManager.getInstance().getDataSetDefinitions(study, cohort));
+
+                response.put("schedule", schedule.toJSON(getUser()));
+                response.put("success", true);
+
+                return response;
+            }
+            else
+                throw new IllegalStateException("A study does not exist in this folder");
+        }
+    }
+
+    @RequiresPermissionClass(ReadPermission.class)
+    public class GetStudyTimepointsAction extends ApiAction<BrowseStudyForm>
+    {
+        @Override
+        public ApiResponse execute(BrowseStudyForm browseDataForm, BindException errors) throws Exception
+        {
+            ApiSimpleResponse response = new ApiSimpleResponse();
+            Study study = StudyManager.getInstance().getStudy(getContainer());
+            StudySchedule schedule = new StudySchedule();
+            CohortImpl cohort = null;
+
+            if (study != null)
+            {
+                schedule.setVisits(StudyManager.getInstance().getVisits(study, cohort, getUser(), Visit.Order.DISPLAY));
+
+                response.put("schedule", schedule.toJSON(getUser()));
+                response.put("success", true);
+
+                return response;
+            }
+            else
+                throw new IllegalStateException("A study does not exist in this folder");
+        }
+    }
+
+    public static class BrowseStudyForm
+    {
     }
 }
