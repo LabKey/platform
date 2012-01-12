@@ -374,9 +374,13 @@ public class PipelineJobRunnerGlobus implements Callable, ResumableDescriptor
 
     private String getGlobusLocation(PipelineJob job)
     {
-        GlobusSettings settings = job.getActiveTaskFactory().getGlobusSettings();
-        settings = settings.mergeOverrides(new JobGlobusSettings(job.getActiveTaskFactory().getGroupParameterName(), job.getParameters()));
-        return settings.getLocation();
+        GlobusSettings factorySettings = job.getActiveTaskFactory().getGlobusSettings();
+        JobGlobusSettings jobSettings = new JobGlobusSettings(job.getActiveTaskFactory().getGroupParameterName(), job.getParameters());
+        if (factorySettings != null)
+        {
+            return factorySettings.mergeOverrides(jobSettings).getLocation();
+        }
+        return jobSettings.getLocation();
     }
 
     private Pair<GramJob, PipelineJobService.GlobusClientProperties> createGramJob(PipelineJob job, File serializedJobFile) throws Exception
@@ -683,7 +687,7 @@ public class PipelineJobRunnerGlobus implements Callable, ResumableDescriptor
                 "org.labkey.bootstrap.ClusterBootstrap",
                 "-modulesdir=" + labKeyDir + "/modules",
                 "-webappdir=" + labKeyDir + "/labkeywebapp",
-                "-configdir=" + labKeyDir + "/config2",
+                "-configdir=" + labKeyDir + "/config",
                 getClusterPath(serializedJobFile.getAbsoluteFile().toURI().toString())
             };
         jobDescription.setArgument(jobArgs);
