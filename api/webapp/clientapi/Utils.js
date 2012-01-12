@@ -924,6 +924,20 @@ LABKEY.Utils.convertToExcel(
                 return true;
             else
                 return false;
+        },
+
+        /**
+         * Sets the title of the webpart on the page.  This change is not sticky, so it will be reverted on refresh.
+         * @param {string} title The title string
+         * @param {integer} webPartId The ID of the webpart
+         */
+        setWebpartTitle: function(title, webPartId)
+        {
+           var titleEl = Ext.query('th[class=labkey-wp-title-left]:first', 'webpart_' + webPartId);
+           if (titleEl && (titleEl.length >= 1))
+           {
+               titleEl[0].innerHTML = LABKEY.Utils.encodeHtml(title);
+           }
         }
     };
 };
