@@ -704,14 +704,14 @@ public class FileSystemResource extends AbstractWebdavResource
         // translate the actions into a more meaningful message
         if ("created".equalsIgnoreCase(message))
         {
-            message = "file uploaded to folder: " + getContainer().getPath();
+            message = "File uploaded to folder: " + getContainer().getPath();
         }
         else if ("deleted".equalsIgnoreCase(message))
         {
-            message = "file deleted from folder: " + getContainer().getPath();
+            message = "File deleted from folder: " + getContainer().getPath();
         }
         else if ("replaced".equalsIgnoreCase(message))
-            message = "file replaced in folder: " + getContainer().getPath();
+            message = "File replaced in folder: " + getContainer().getPath();
 
         String subject = "File Management Tool notification: " + message;
 
