@@ -20,8 +20,8 @@ import org.jetbrains.annotations.Nullable;
 import org.labkey.api.cache.BlockingStringKeyCache;
 import org.labkey.api.cache.CacheLoader;
 import org.labkey.api.cache.CacheManager;
-import org.labkey.api.cache.Stats;
 import org.labkey.api.cache.StringKeyCache;
+import org.labkey.api.cache.Tracking;
 import org.labkey.api.data.CoreSchema;
 import org.labkey.api.data.DatabaseCache;
 import org.labkey.api.data.Sort;
@@ -61,9 +61,10 @@ class UserCache
         }
 
         @Override
-        protected StringKeyCache<UserCollections> createTemporaryCache()
+        protected StringKeyCache<UserCollections> createTemporaryCache(StringKeyCache<UserCollections> sharedCache)
         {
-            StringKeyCache<Object> temp = CacheManager.getTemporaryCache(1, CacheManager.DAY, "Transaction cache: Users", (Stats)null);
+            Tracking tracking = sharedCache.getTrackingCache();
+            StringKeyCache<Object> temp = CacheManager.getTemporaryCache(tracking.getLimit(), tracking.getDefaultExpires(), "Transaction cache: Users", tracking.getStats());
             return new BlockingStringKeyCache<UserCollections>(temp, new UserCollectionsLoader());
         }
     };

@@ -48,20 +48,11 @@ public interface Cache<K, V>
     void clear();
 
     /**
-     * Maximum number of elements allowed in the cache
-     */
-    int getLimit();
-
-    // Current number of elements in the cache
-    int size();
-
-    long getDefaultExpires();
-
-    CacheType getCacheType();
-
-    /**
      * Some CacheProviders (e.g., Ehcache) hold on to the caches they create.  close() lets us discard temporary
      * caches when we're done with them (e.g., after a transaction is complete) so we don't leak them.
      */
     void close();
+
+    // Get the underlying implementation cache
+    TrackingCache getTrackingCache();
 }

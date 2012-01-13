@@ -23,22 +23,24 @@ import org.labkey.api.util.Filter;
 * Date: Nov 9, 2009
 * Time: 10:49:04 PM
 */
-public class TransactionCache<V> implements StringKeyCache<V>
-{
-    private boolean _hasWritten = false;
-    private final StringKeyCache<V> _sharedCache;
-    private final StringKeyCache<V> _privateCache;
 
-    // A read-through transaction cache.  Reads through to the passed-in shared cache until any write occurs, at which
-    // point it switches to using a private cache for the remainder of the transaction.
-    public TransactionCache(StringKeyCache<V> sharedCache, StringKeyCache<V> privateCache)
+// A read-through transaction cache.  Reads through to the shared cache until any write occurs, at which point it
+// switches to using a private cache for the remainder of the transaction.
+public class TransactionCache<K, V> implements Cache<K, V>
+{
+    private final Cache<K, V> _sharedCache;
+    private final Cache<K, V> _privateCache;
+
+    private boolean _hasWritten = false;
+
+    public TransactionCache(Cache<K, V> sharedCache, Cache<K, V> privateCache)
     {
         _privateCache = privateCache;
         _sharedCache = sharedCache;
     }
 
     @Override
-    public V get(String key)
+    public V get(K key)
     {
         V v;
 
@@ -52,7 +54,7 @@ public class TransactionCache<V> implements StringKeyCache<V>
 
 
     @Override
-    public V get(String key, Object arg, CacheLoader<String, V> loader)
+    public V get(K key, Object arg, CacheLoader<K, V> loader)
     {
         V v;
 
@@ -72,28 +74,28 @@ public class TransactionCache<V> implements StringKeyCache<V>
     }
 
     @Override
-    public void put(String key, V value)
+    public void put(K key, V value)
     {
         _hasWritten = true;
         _privateCache.put(key, value);
     }
 
     @Override
-    public void put(String key, V value, long timeToLive)
+    public void put(K key, V value, long timeToLive)
     {
         _hasWritten = true;
         _privateCache.put(key, value, timeToLive);
     }
 
     @Override
-    public void remove(String key)
+    public void remove(K key)
     {
         _hasWritten = true;
         _privateCache.remove(key);
     }
 
     @Override
-    public int removeUsingFilter(Filter<String> filter)
+    public int removeUsingFilter(Filter<K> filter)
     {
         _hasWritten = true;
         return _privateCache.removeUsingFilter(filter);
@@ -107,39 +109,14 @@ public class TransactionCache<V> implements StringKeyCache<V>
     }
 
     @Override
-    public int removeUsingPrefix(String prefix)
-    {
-        _hasWritten = true;
-        return _privateCache.removeUsingPrefix(prefix);
-    }
-
-    @Override
-    public int getLimit()
-    {
-        return _privateCache.getLimit();
-    }
-
-    @Override
-    public CacheType getCacheType()
-    {
-        return _sharedCache.getCacheType();
-    }
-
-    @Override
     public void close()
     {
         _privateCache.close();
     }
 
     @Override
-    public int size()
+    public TrackingCache getTrackingCache()
     {
-        return _privateCache.size();
-    }
-
-    @Override
-    public long getDefaultExpires()
-    {
-        return _privateCache.getDefaultExpires();
+        return _privateCache.getTrackingCache();
     }
 }

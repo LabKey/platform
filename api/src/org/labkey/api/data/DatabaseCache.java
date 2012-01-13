@@ -22,9 +22,11 @@ import org.jetbrains.annotations.Nullable;
 import org.junit.Test;
 import org.labkey.api.cache.CacheLoader;
 import org.labkey.api.cache.CacheManager;
-import org.labkey.api.cache.CacheType;
 import org.labkey.api.cache.Stats;
 import org.labkey.api.cache.StringKeyCache;
+import org.labkey.api.cache.StringKeyCacheWrapper;
+import org.labkey.api.cache.Tracking;
+import org.labkey.api.cache.TrackingCache;
 import org.labkey.api.cache.TransactionCache;
 import org.labkey.api.util.Filter;
 
@@ -36,10 +38,10 @@ import java.sql.SQLException;
  * Date: Dec 12, 2006
  * Time: 9:54:06 AM
  *
- * Not a map, uses a StringKeyCache to implement a thread-safe, transaction-aware cache
+ * Implements a thread-safe, transaction-aware cache by deferring to a TransactionCache when transactions are in progress.
  *
- * No synchronization is necessary in this class since the underlying shared cache and transaction cache are both
- * thread-safe, and the transaction cache creation is single-threaded since the Transaction is thread local.  
+ * No synchronization is necessary in this class since the underlying caches are thread-safe, and the transaction cache
+ * creation is single-threaded since the Transaction is thread local.
  *
  * @see org.labkey.api.data.DbScope
  */
@@ -64,9 +66,10 @@ public class DatabaseCache<ValueType> implements StringKeyCache<ValueType>
         return CacheManager.getStringKeyCache(maxSize, defaultTimeToLive, debugName);
     }
 
-    protected StringKeyCache<ValueType> createTemporaryCache()
+    protected StringKeyCache<ValueType> createTemporaryCache(StringKeyCache<ValueType> sharedCache)
     {
-        return CacheManager.getTemporaryCache(_sharedCache.getLimit(), _sharedCache.getDefaultExpires(), "transaction cache: ", _sharedCache);
+        Tracking tracking = sharedCache.getTrackingCache();
+        return CacheManager.getTemporaryCache(tracking.getLimit(), tracking.getDefaultExpires(), "transaction cache: " + tracking.getDebugName(), tracking.getStats());
     }
 
     private StringKeyCache<ValueType> getCache()
@@ -79,7 +82,7 @@ public class DatabaseCache<ValueType> implements StringKeyCache<ValueType>
 
             if (null == transactionCache)
             {
-                transactionCache = new TransactionCache<ValueType>(_sharedCache, createTemporaryCache());
+                transactionCache = new StringKeyCacheWrapper<ValueType>(new TransactionCache<String, ValueType>(_sharedCache, createTemporaryCache(_sharedCache)));
                 t.addCache(this, transactionCache);
             }
 
@@ -173,35 +176,16 @@ public class DatabaseCache<ValueType> implements StringKeyCache<ValueType>
     }
 
     @Override
-    public int size()
-    {
-        return _sharedCache.size();
-    }
-
-    @Override
-    public long getDefaultExpires()
-    {
-        return _sharedCache.getDefaultExpires();
-    }
-
-    @Override
-    public int getLimit()
-    {
-        return _sharedCache.getLimit();
-    }
-
-    @Override
-    public CacheType getCacheType()
-    {
-        return _sharedCache.getCacheType();
-    }
-
-    @Override
     public void close()
     {
         _sharedCache.close();
     }
 
+    @Override
+    public TrackingCache getTrackingCache()
+    {
+        return _sharedCache.getTrackingCache();
+    }
 
     public static class TestCase extends Assert
     {
@@ -228,10 +212,12 @@ public class DatabaseCache<ValueType> implements StringKeyCache<ValueType>
             for (int i = 0; i < values.length; i++)
                 values[i] = "value_" + i;
 
+            TrackingCache trackingCache = cache.getCache().getTrackingCache();
+
             for (int i = 1; i <= 20; i++)
             {
                 cache.put("key_" + i, values[i]);
-                assertTrue(cache.getCache().size() <= 10);
+                assertTrue(trackingCache.size() <= 10);
             }
 
             int correctCount = 0;
@@ -250,7 +236,7 @@ public class DatabaseCache<ValueType> implements StringKeyCache<ValueType>
             // is reached. A NonDeterministicLRU cache (e.g., an Ehcache implementation) attempts to kick out the least
             // recently used element, but provides no guarantee since it uses sampling for performance reasons. This test
             // is not very useful for a NonDeterministicLRU cache. Adjust the check below if the test fails.
-            switch (cache.getCacheType())
+            switch (trackingCache.getCacheType())
             {
                 case DeterministicLRU:
                     assertEquals("Count was " + correctCount, correctCount, 20);
@@ -266,7 +252,7 @@ public class DatabaseCache<ValueType> implements StringKeyCache<ValueType>
             for (int i = 21; i <= 25; i++)
                 cache.put("key_" + i, values[i]);
 
-            assertTrue(cache.getCache().size() == 10);
+            assertTrue(trackingCache.size() == 10);
             correctCount = 0;
 
             for (int i = 11; i <= 15; i++)
@@ -279,7 +265,7 @@ public class DatabaseCache<ValueType> implements StringKeyCache<ValueType>
             }
 
             // As above, this test isn't very useful for a NonDeterministicLRU cache.
-            switch (cache.getCacheType())
+            switch (trackingCache.getCacheType())
             {
                 case DeterministicLRU:
                     assertEquals("Count was " + correctCount, correctCount, 10);
@@ -316,7 +302,7 @@ public class DatabaseCache<ValueType> implements StringKeyCache<ValueType>
             assertTrue(null == cache.get("key_11"));
 
             cache.removeUsingPrefix("key");
-            assert cache.getCache().size() == 0;
+            assert trackingCache.size() == 0;
 
             // This should close the (temporary) shared cache
             cache.close();

@@ -155,32 +155,14 @@ public class BlockingCache<K, V> implements Cache<K, V>
     }
 
     @Override
-    public int getLimit()
-    {
-        return _cache.getLimit();
-    }
-
-    @Override
-    public int size()
-    {
-        return _cache.size();
-    }
-
-    @Override
-    public long getDefaultExpires()
-    {
-        return _cache.getDefaultExpires();
-    }
-
-    @Override
-    public CacheType getCacheType()
-    {
-        return _cache.getCacheType();
-    }
-
-    @Override
     public void close()
     {
         _cache.close();
+    }
+
+    @Override
+    public TrackingCache getTrackingCache()
+    {
+        return _cache.getTrackingCache();
     }
 }

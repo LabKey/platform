@@ -25,12 +25,12 @@ import org.labkey.api.util.Filter;
  * Time: 10:50:02 AM
  */
 
-// Convenience class that wraps a Cache to provide a StringKeyCache.
-class StringKeyCacheWrapper<V> implements StringKeyCache<V>, Tracking
+// Convenience class that wraps a Cache<String, V> to provide a StringKeyCache<V>.
+public class StringKeyCacheWrapper<V> implements StringKeyCache<V>
 {
-    private final TrackingCache<String, V> _cache;
+    private final Cache<String, V> _cache;
 
-    StringKeyCacheWrapper(@NotNull TrackingCache<String, V> cache)
+    public StringKeyCacheWrapper(@NotNull Cache<String, V> cache)
     {
         _cache = cache;
     }
@@ -86,56 +86,14 @@ class StringKeyCacheWrapper<V> implements StringKeyCache<V>, Tracking
     }
 
     @Override
-    public int getLimit()
-    {
-        return _cache.getLimit();
-    }
-
-    @Override
-    public int size()
-    {
-        return _cache.size();
-    }
-
-    @Override
-    public long getDefaultExpires()
-    {
-        return _cache.getDefaultExpires();
-    }
-
-    @Override
-    public CacheType getCacheType()
-    {
-        return _cache.getCacheType();
-    }
-
-    @Override
     public void close()
     {
         _cache.close();
     }
 
     @Override
-    public String getDebugName()
+    public TrackingCache getTrackingCache()
     {
-        return _cache.getDebugName();
-    }
-
-    @Override
-    public StackTraceElement[] getCreationStackTrace()
-    {
-        return _cache.getCreationStackTrace();
-    }
-
-    @Override
-    public Stats getStats()
-    {
-        return _cache.getStats();
-    }
-
-    @Override
-    public Stats getTransactionStats()
-    {
-        return _cache.getTransactionStats();
+        return _cache.getTrackingCache();
     }
 }

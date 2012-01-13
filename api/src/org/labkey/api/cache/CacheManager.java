@@ -89,13 +89,6 @@ public class CacheManager
         return new StringKeyCacheWrapper<V>(cache);
     }
 
-    // Temporary caches must be closed when no longer needed.  Their statistics can accumulate to another cache's stats.
-    public static <V> StringKeyCache<V> getTemporaryCache(int limit, long defaultTimeToLive, String prefix, StringKeyCache<V> sharedCache)
-    {
-        Tracking tracking = (Tracking)sharedCache;
-        return getTemporaryCache(limit, defaultTimeToLive, prefix + tracking.getDebugName(), tracking.getStats());
-    }
-
     private static final StringKeyCache<Object> SHARED_CACHE = getStringKeyCache(10000, DEFAULT_TIMEOUT, "sharedCache");
 
     public static <V> StringKeyCache<V> getSharedCache()

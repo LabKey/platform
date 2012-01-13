@@ -29,4 +29,14 @@ public interface Tracking
     Stats getStats();
 
     Stats getTransactionStats();
+
+    CacheType getCacheType();
+
+    // Maximum number of elements allowed in the cache
+    int getLimit();
+
+    // Current number of elements in the cache
+    int size();
+
+    long getDefaultExpires();
 }

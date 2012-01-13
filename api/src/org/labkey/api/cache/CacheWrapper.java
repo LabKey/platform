@@ -132,12 +132,6 @@ class CacheWrapper<K, V> implements TrackingCache<K, V>
     }
 
     @Override
-    public CacheType getCacheType()
-    {
-        return _cache.getCacheType();
-    }
-
-    @Override
     public void close()
     {
         _cache.close();
@@ -165,6 +159,18 @@ class CacheWrapper<K, V> implements TrackingCache<K, V>
     public StackTraceElement[] getCreationStackTrace()
     {
         return _stackTrace;
+    }
+
+    @Override
+    public CacheType getCacheType()
+    {
+        return _cache.getCacheType();
+    }
+
+    @Override
+    public TrackingCache getTrackingCache()
+    {
+        return this;
     }
 
     @Override

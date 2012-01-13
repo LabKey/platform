@@ -37,27 +37,28 @@ import org.labkey.api.util.Filter;
 public class DbSchemaCache
 {
     private final DbScope _scope;
-    private final BlockingStringKeyCache<DbSchema> _blockingCache = new DbSchemaBlockingCache();
+    private final StringKeyCache<DbSchema> _cache;
     private final IncompleteSchemaFilter _incompleteFilter = new IncompleteSchemaFilter();
 
     public DbSchemaCache(DbScope scope)
     {
         _scope = scope;
+        _cache = new DbSchemaBlockingCache(_scope.getDisplayName());
     }
 
     @NotNull DbSchema get(String schemaName)
     {
-        return _blockingCache.get(schemaName);
+        return _cache.get(schemaName);
     }
 
     void remove(String schemaName)
     {
-        _blockingCache.remove(schemaName);
+        _cache.remove(schemaName);
     }
 
     void removeIncomplete()
     {
-        _blockingCache.removeUsingFilter(_incompleteFilter);
+        _cache.removeUsingFilter(_incompleteFilter);
     }
 
     
@@ -104,10 +105,9 @@ public class DbSchemaCache
 
     private class DbSchemaBlockingCache extends BlockingStringKeyCache<DbSchema>
     {
-        public DbSchemaBlockingCache()
+        public DbSchemaBlockingCache(String name)
         {
-            // Add scope name?
-            super(CacheManager.getStringKeyCache(10000, CacheManager.YEAR, "DbSchemas"), new DbSchemaLoader());
+            super(CacheManager.getStringKeyCache(10000, CacheManager.YEAR, "DbSchemas for " + name), new DbSchemaLoader());
         }
 
         @Override
@@ -120,8 +120,8 @@ public class DbSchemaCache
                 DbSchema schema = w.getValue();
 
                 if (AppProps.getInstance().isDevMode() &&
-                        // TODO: Remove isLabKeyScope() hack that works around DbSchema.isStale() assert
-                        schema.getScope().isLabKeyScope() && schema.isStale())
+                    // TODO: Remove isLabKeyScope() hack that works around DbSchema.isStale() assert
+                    schema.getScope().isLabKeyScope() && schema.isStale())
                 {
                     isValid = false;
                 }
