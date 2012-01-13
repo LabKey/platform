@@ -41,6 +41,7 @@ import org.labkey.api.security.User;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.Pair;
 import org.labkey.api.view.ViewBackgroundInfo;
+import org.labkey.experiment.SampleSetAuditViewFactory;
 import org.labkey.experiment.api.*;
 import org.labkey.experiment.samples.UploadMaterialSetForm.InsertUpdateChoice;
 
@@ -52,7 +53,6 @@ import java.util.*;
 public class UploadSamplesHelper
 {
     private static final Logger _log = Logger.getLogger(UploadSamplesHelper.class);
-    public static final String SAMPLE_EVENT_TYPE = "SampleSetEvent";
 
     UploadMaterialSetForm _form;
 
@@ -569,7 +569,7 @@ public class UploadSamplesHelper
 
         event.setCreatedBy(_form.getUser());
         event.setContainerId(getContainer().getId());
-        event.setEventType(SAMPLE_EVENT_TYPE);
+        event.setEventType(SampleSetAuditViewFactory.EVENT_TYPE);
         event.setKey1(_form.getName());
         event.setKey3(_form.getInsertUpdateChoice());
         event.setComment("Samples inserted or updated in: " + _form.getName());

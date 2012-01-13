@@ -16,15 +16,23 @@
 
 package org.labkey.lab;
 
+import org.labkey.api.audit.AuditLogService;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.DbSchema;
 import org.labkey.api.module.DefaultModule;
 import org.labkey.api.module.ModuleContext;
 import org.labkey.api.module.ModuleLoader;
-import org.labkey.api.util.PageFlowUtil;
+import org.labkey.api.view.AlwaysAvailableWebPartFactory;
+import org.labkey.api.view.JspView;
+import org.labkey.api.view.Portal;
+import org.labkey.api.view.ViewContext;
 import org.labkey.api.view.WebPartFactory;
+import org.labkey.api.view.WebPartView;
+import org.labkey.lab.audit.LabEventsAuditViewFactory;
 
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Set;
@@ -48,7 +56,16 @@ public class LabModule extends DefaultModule
 
     protected Collection<WebPartFactory> createWebPartFactories()
     {
-        return Collections.emptyList();
+        return new ArrayList<WebPartFactory>(Arrays.asList(new AlwaysAvailableWebPartFactory("Lab History", WebPartFactory.LOCATION_BODY, false, false)
+            {
+                public WebPartView getWebPartView(final ViewContext portalCtx, Portal.WebPart webPart) throws Exception
+                {
+                    JspView view = new JspView("/org/labkey/lab/history.jsp", webPart);
+                    view.setTitle("Lab History");
+                    return view;
+                }
+            })
+        );
     }
 
     protected void init()
@@ -61,6 +78,8 @@ public class LabModule extends DefaultModule
         // add a container listener so we'll know when our container is deleted:
         ContainerManager.addContainerListener(new LabContainerListener());
         ModuleLoader.getInstance().registerFolderType(this, new LabFolderType(this));
+
+        AuditLogService.get().addAuditViewFactory(LabEventsAuditViewFactory.getInstance());
     }
 
     @Override

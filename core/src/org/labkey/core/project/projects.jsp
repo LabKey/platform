@@ -280,6 +280,7 @@ Ext4.onReady(function(){
                                 title: title,
                                 containerTypes: panel.containerTypes,
                                 containerFilter: panel.store.containerFilter,
+                                webPartId: webpartId,
                                 iconSize: panel.iconSize,
                                 labelPosition: panel.labelPosition
                             };

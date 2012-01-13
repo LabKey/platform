@@ -145,7 +145,16 @@ public class FileContentDigestProvider implements MessageDigest.Provider
                 }
                 // send messages in bulk
                 svc.sendMessage(messages.toArray(new EmailMessage[messages.size()]), null, c);
-             }
+            }
+
+            AuditLogEvent event = new AuditLogEvent();
+
+            //event.setCreatedBy(getUser());
+            event.setContainerId(c.getId());
+            event.setEventType(FileSystemAuditViewFactory.BATCH_EVENT_TYPE);
+            event.setComment(events.size() + " Files modified");
+
+            AuditLogService.get().addEvent(event);
        }
         catch (Exception e)
         {

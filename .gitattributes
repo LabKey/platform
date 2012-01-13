@@ -1010,6 +1010,7 @@ experiment/src/org/labkey/experiment/ProtocolDisplayColumn.java -text
 experiment/src/org/labkey/experiment/ProtocolWebPart.java -text
 experiment/src/org/labkey/experiment/RunGroupWebPart.java -text
 experiment/src/org/labkey/experiment/RunTypeWebPart.java -text
+experiment/src/org/labkey/experiment/SampleSetAuditViewFactory.java -text
 experiment/src/org/labkey/experiment/SampleSetDisplayColumn.java -text
 experiment/src/org/labkey/experiment/SampleSetWebPart.java -text
 experiment/src/org/labkey/experiment/StandardAndCustomPropertiesView.java -text
@@ -1270,6 +1271,8 @@ lab/src/org/labkey/lab/LabFolderType.java -text
 lab/src/org/labkey/lab/LabManager.java -text
 lab/src/org/labkey/lab/LabModule.java -text
 lab/src/org/labkey/lab/LabSchema.java -text
+lab/src/org/labkey/lab/audit/LabEventsAuditViewFactory.java -text
+lab/src/org/labkey/lab/history.jsp -text
 list/List.iml -text
 list/ListGWT.iml -text
 list/build.xml -text
