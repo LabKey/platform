@@ -4520,6 +4520,7 @@ internal/webapp/FileUploadField.js -text
 internal/webapp/GuidedTip.css -text
 internal/webapp/GuidedTip.js -text
 internal/webapp/StatusBar.js -text
+internal/webapp/TemplateHelper.js -text
 internal/webapp/TreeGrid.css -text
 internal/webapp/TreeGrid.js -text
 internal/webapp/_.gif -text
