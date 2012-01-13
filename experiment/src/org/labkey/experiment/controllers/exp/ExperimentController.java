@@ -104,6 +104,7 @@ import org.labkey.api.reader.ExcelFactory;
 import org.labkey.api.reader.MapLoader;
 import org.labkey.api.reader.TabLoader;
 import org.labkey.api.security.ActionNames;
+import org.labkey.api.security.CSRF;
 import org.labkey.api.security.RequiresLogin;
 import org.labkey.api.security.RequiresNoPermission;
 import org.labkey.api.security.RequiresPermissionClass;
@@ -118,6 +119,7 @@ import org.labkey.api.security.roles.RoleManager;
 import org.labkey.api.settings.AppProps;
 import org.labkey.api.study.ParticipantVisit;
 import org.labkey.api.study.actions.UploadWizardAction;
+import org.labkey.api.util.CSRFUtil;
 import org.labkey.api.util.ExceptionUtil;
 import org.labkey.api.util.FileUtil;
 import org.labkey.api.util.HelpTopic;
@@ -1547,6 +1549,7 @@ public class ExperimentController extends SpringActionController
         }
     }
 
+
     @RequiresPermissionClass(ReadPermission.class)
     public class ConvertArraysToExcelAction extends ExportAction<ConvertArraysToExcelForm>
     {
@@ -1583,6 +1586,124 @@ public class ExperimentController extends SpringActionController
             }
         }
     }
+
+
+    public static class ConvertHtmlToExcelForm
+    {
+        private String _baseUrl;
+        private String _htmlFragment;
+        private String _name = "workbook.xls";
+
+
+        public String getName()
+        {
+            return _name;
+        }
+
+        public void setName(String name)
+        {
+            _name = name;
+        }
+
+        public String getBaseUrl()
+        {
+            return _baseUrl;
+        }
+
+        public void setBaseUrl(String baseUrl)
+        {
+            _baseUrl = baseUrl;
+        }
+
+        public String getHtmlFragment()
+        {
+            return _htmlFragment;
+        }
+
+        public void setHtmlFragment(String htmlFragment)
+        {
+            _htmlFragment = htmlFragment;
+        }
+    }
+
+
+    @RequiresPermissionClass(ReadPermission.class) @CSRF
+    public static class ConvertHtmlToExcelAction extends FormViewAction<ConvertHtmlToExcelForm>
+    {
+        String _responseHtml = null;
+
+        @Override
+        public void validateCommand(ConvertHtmlToExcelForm target, Errors errors)
+        {
+        }
+
+        @Override
+        public ModelAndView getView(ConvertHtmlToExcelForm form, boolean reshow, BindException errors) throws Exception
+        {
+            String html =
+                    "<form method=POST><textarea name=\"htmlFragment\" cols=100 rows=40>" +
+                            PageFlowUtil.filter(form.getHtmlFragment()) +
+                    "</textarea><br>" +
+                    "<input type=\"submit\">" +
+                    "<input type=hidden name='X-LABKEY-CSRF' value=\"" + CSRFUtil.getExpectedToken(getViewContext().getRequest()) + "\">" +
+                    "</form>";
+            return new HtmlView(html);
+        }
+
+        @Override
+        public boolean handlePost(ConvertHtmlToExcelForm form, BindException errors) throws Exception
+        {
+            ActionURL url = getViewContext().getActionURL();
+            String base = url.getBaseServerURI();
+            if (!base.endsWith("/")) base += "/";
+
+            String baseTag = "<base href=\"" + PageFlowUtil.filter(base) + "\"/>";
+            String css = PageFlowUtil.getStylesheetIncludes(getViewContext().getContainer(), null);
+            String htmlFragment = StringUtils.trimToEmpty(form.getHtmlFragment());
+            String html = "<html><head>" + baseTag + css + "</head><body>" + htmlFragment + "</body></html>";
+
+            // UNDONE: strip script
+            List<String> tidyErrors = new ArrayList<String>();
+            String tidy = PageFlowUtil.tidy(html, false, tidyErrors);
+
+            if (!tidyErrors.isEmpty())
+            {
+                for (String err : tidyErrors)
+                {
+                    errors.reject(ERROR_MSG, err);
+                }
+                return false;
+            }
+
+            _responseHtml = tidy;
+            return true;
+        }
+
+        @Override
+        public ModelAndView getSuccessView(ConvertHtmlToExcelForm form)
+        {
+            // CONSIDER <base href="form.getBaseURL()" />
+            getViewContext().getResponse().setHeader("Content-Disposition", "attachment; filename=\"" + form.getName() + "\"");
+            getPageConfig().setTemplate(PageConfig.Template.None);
+            HtmlView v = new HtmlView(_responseHtml);
+            v.setContentType("application/vnd.ms-excel");
+            v.setFrame(WebPartView.FrameType.NONE);
+            return v;
+        }
+
+        @Override
+        public URLHelper getSuccessURL(ConvertHtmlToExcelForm convertHtmlToExcelForm)
+        {
+            return null;
+        }
+
+        @Override
+        public NavTree appendNavTrail(NavTree root)
+        {
+            return root;
+        }
+    }
+
 
 
     @RequiresPermissionClass(ReadPermission.class)
