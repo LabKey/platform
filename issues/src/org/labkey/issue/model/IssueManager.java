@@ -227,6 +227,7 @@ public class IssueManager
             return _default;
         }
 
+        @SuppressWarnings({"UnusedDeclaration"})
         public void setDefault(boolean def)
         {
             _default = def;
@@ -237,6 +238,7 @@ public class IssueManager
             return _keyword;
         }
 
+        @SuppressWarnings({"UnusedDeclaration"})
         public void setKeyword(HString keyword)
         {
             _keyword = keyword;
@@ -965,7 +967,7 @@ public class IssueManager
     }
 
 
-    static void indexIssue(SearchService.IndexTask task, Issue issue)
+    static void indexIssue(@Nullable SearchService.IndexTask task, Issue issue)
     {
         if (task == null)
         {

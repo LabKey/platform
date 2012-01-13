@@ -92,6 +92,7 @@ import org.labkey.api.settings.WriteableAppProps;
 import org.labkey.api.study.Study;
 import org.labkey.api.study.StudyService;
 import org.labkey.api.thumbnail.ThumbnailService;
+import org.labkey.api.util.Compress;
 import org.labkey.api.util.ContextListener;
 import org.labkey.api.util.DateUtil;
 import org.labkey.api.util.ExceptionUtil;
@@ -597,7 +598,8 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
                 ViewCategoryManager.TestCase.class,
                 TableSelector.TestCase.class,
                 NestedGroupsTest.class,
-                StringUtilsLabKey.TestCase.class
+                StringUtilsLabKey.TestCase.class,
+                Compress.TestCase.class
                 //,RateLimiter.TestCase.class
         ));
 

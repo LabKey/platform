@@ -49,6 +49,7 @@ import org.labkey.api.security.permissions.*;
 import org.labkey.api.security.roles.RoleManager;
 import org.labkey.api.settings.AppProps;
 import org.labkey.api.settings.LookAndFeelProperties;
+import org.labkey.api.util.Compress;
 import org.labkey.api.util.DateUtil;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.PageFlowUtil.Content;
@@ -548,7 +549,7 @@ public class CoreController extends SpringActionController
         {
             // replaceAll() can blow up
         }
-        return PageFlowUtil.gzip(c.trim());
+        return Compress.compressGzip(c.trim());
     }
 
 
@@ -595,8 +596,8 @@ public class CoreController extends SpringActionController
                     sb.append(t).append('\n');
                 }
                 ret = new Content(sb.toString());
-                ret.content = null; sb = null; concat = null;
-                ret.compressed = PageFlowUtil.gzip(ret.encoded);
+                ret.content = null;
+                ret.compressed = Compress.compressGzip(ret.encoded);
                 _combinedJavascript.set(ret);
             }
             return ret;
