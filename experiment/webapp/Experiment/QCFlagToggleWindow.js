@@ -44,8 +44,9 @@ LABKEY.QCFlagToggleWindow = Ext.extend(Ext.Window, {
         Ext.apply(config, {
             cls: 'extContainer',
             title: 'Run QC Flags',
+            layout: 'fit',
             width: 700,
-            autoHeight: true,
+            height: 300,
             padding: 15,
             modal: true,
             closeAction:'close',
@@ -72,7 +73,7 @@ LABKEY.QCFlagToggleWindow = Ext.extend(Ext.Window, {
         this.flagsGrid = new Ext.grid.EditorGridPanel({
             cls: 'extContainer',
             header: false,
-            height: 275,
+            height: 300,
             stripeRows: true,
             columnLines: true,
             clicksToEdit: 1,
@@ -127,7 +128,7 @@ LABKEY.QCFlagToggleWindow = Ext.extend(Ext.Window, {
         this.items = [
             new Ext.Panel({
                 cls: 'extContainer',
-                autoScroll: true,
+                layout: 'fit',
                 border: false,
                 items: [this.flagsGrid],
                 buttonAlign: 'center',
