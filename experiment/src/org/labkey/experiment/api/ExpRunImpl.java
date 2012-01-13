@@ -170,7 +170,7 @@ public class ExpRunImpl extends ExpIdentifiableEntityImpl<ExperimentRun> impleme
         boolean newRun = getRowId() == 0;
         save(user, ExperimentServiceImpl.get().getTinfoExperimentRun());
         if (newRun)
-            ExperimentServiceImpl.get().auditRunEvent(user, this.getProtocol(), this, "Run loaded");
+            ExperimentServiceImpl.get().auditRunEvent(user, this.getProtocol(), this, this.getProtocol().getName() + " run loaded");
     }
 
     public void delete(User user)
