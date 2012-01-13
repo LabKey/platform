@@ -332,9 +332,19 @@ public class QueryServiceImpl extends QueryService
         Map<Map.Entry<String, String>, QueryDefinition> queryDefs = getAllQueryDefs(user, container, schema, false, true);
         QueryDefinition qd = queryDefs.get(new Pair<String, String>(schema, query));
         if (qd == null)
-            qd = QueryService.get().getUserSchema(user, container, schema).getQueryDefForTable(query);
+        {
+            UserSchema userSchema = QueryService.get().getUserSchema(user, container, schema);
+            if (userSchema != null)
+            {
+                qd = userSchema.getQueryDefForTable(query);
+            }
+        }
 
-        return getCustomViewMap(user, container, qd, false);
+        if (qd != null)
+        {
+            return getCustomViewMap(user, container, qd, false);
+        }
+        return Collections.emptyMap();
     }
 
     protected Map<String, CustomView> getCustomViewMap(User user, Container container, QueryDefinition qd, boolean inheritable) throws SQLException
