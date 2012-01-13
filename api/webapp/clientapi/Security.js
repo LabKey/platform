@@ -814,7 +814,7 @@ LABKEY.Security = new function()
             if(LABKEY.Security.currentUser.isGuest || config.force)
             {
                 if(config.useSiteLoginPage)
-                    window.location = LABKEY.ActionURL.buildURL("login", "login") + "?URI=" + window.location;
+                    window.location = LABKEY.ActionURL.buildURL("login", "login") + "?returnUrl=" + window.location;
                 else
                 {
                     return LABKEY.Ajax.request({
