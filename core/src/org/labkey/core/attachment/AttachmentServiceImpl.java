@@ -501,6 +501,7 @@ public class AttachmentServiceImpl implements AttachmentService.Service, Contain
     }
 
 
+    /** may return fewer AttachmentFile than Attachment, if there have been deletions */
     @Override
     public @NotNull List<AttachmentFile> getAttachmentFiles(AttachmentParent parent, Collection<Attachment> attachments) throws IOException
     {
@@ -515,7 +516,14 @@ public class AttachmentServiceImpl implements AttachmentService.Service, Contain
             }
             else
             {
-                files.add(new DatabaseAttachmentFile(attachment));
+                try
+                {
+                    files.add(new DatabaseAttachmentFile(attachment));
+                }
+                catch (FileNotFoundException x)
+                {
+                    //
+                }
             }
         }
         return files;
@@ -1154,6 +1162,8 @@ public class AttachmentServiceImpl implements AttachmentService.Service, Contain
             if (null == r)
                 return null;
             List<AttachmentFile> files = getAttachmentFiles(_parent, Collections.singletonList(r));
+            if (files.isEmpty())
+                throw new FileNotFoundException(r.getName());
             return files.get(0);
         }
 

@@ -74,6 +74,7 @@ import org.xml.sax.SAXException;
 
 import java.io.BufferedInputStream;
 import java.io.File;
+import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.Collections;
@@ -231,11 +232,19 @@ public class LuceneSearchServiceImpl extends AbstractSearchService
             if (null == c)
                 return null;
 
-            fs = r.getFileStream(User.getSearchUser());
+            try
+            {
+                fs = r.getFileStream(User.getSearchUser());
+            }
+            catch (FileNotFoundException x)
+            {
+                logAsWarning(r, r.getName() + " was not found");
+                return null;
+            }
 
             if (null == fs)
             {
-                logAsWarning(r, "FileStream is null");
+                logAsWarning(r, r.getName() + " fileStream is null");
                 return null;
             }
             
