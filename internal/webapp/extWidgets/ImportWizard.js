@@ -8,6 +8,7 @@
     @param (String) [action] After a workbook is created, it will nagivate to this page
     @param (String) [controller] After a workbook is created, it will navigate to a URL using this controller
     @param (Object) [urlParams] (optional) After a workbook is created, it will navigate to a URL with these params
+    @param {boolean} [canAddToExistingExperiment] If false, the radios to choose an existing experiment are hidden
     @param (String) [workbookFolderType] (optional) The folderType used for newly created workbooks.  If not provided, the default workbook will be used.
  */
 
@@ -26,6 +27,7 @@ Ext4.define('LABKEY.ext.ImportWizard', {
             items: [{
                 xtype: 'radiogroup',
                 style: 'padding:5px;',
+                hidden: this.canAddToExistingExperiment===false,
                 columns: 2,
                 width: 500,
                 itemId: 'inputType',
@@ -198,7 +200,7 @@ Ext4.define('LABKEY.ext.ImportWizardWin', {
     initComponent: function(){
         Ext4.apply(this, {
             closeAction:'hide',
-            title: 'Import Data',
+            title: this.title || 'Import Data',
             modal: true,
             items: [{
                 xtype: 'labkey-importwizard',
@@ -209,6 +211,7 @@ Ext4.define('LABKEY.ext.ImportWizardWin', {
                 action: this.action,
                 urlParams: this.urlParams,
                 controller: this.controller,
+                canAddToExistingExperiment: this.canAddToExistingExperiment,
                 buttons: []
             }],
             buttons: [{

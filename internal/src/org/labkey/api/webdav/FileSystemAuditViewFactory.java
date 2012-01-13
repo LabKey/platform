@@ -49,6 +49,7 @@ import java.io.File;
 public class FileSystemAuditViewFactory extends SimpleAuditViewFactory
 {
     public static final String EVENT_TYPE = "FileSystem";
+    public static final String BATCH_EVENT_TYPE = "FileSystemBatch";
     private static final FileSystemAuditViewFactory _instance = new FileSystemAuditViewFactory();
 
     private FileSystemAuditViewFactory(){}

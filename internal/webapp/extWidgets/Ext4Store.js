@@ -109,7 +109,9 @@ Ext4.namespace('LABKEY.ext4');
 LABKEY.ext4.Store = Ext4.define('LABKEY.ext4.Store', {
     extend: 'Ext.data.Store',
     alias: 'store.labkey-store',
-    pageSize: 10000,
+    config: {
+        pageSize: 10000
+    },
     constructor: function(config) {
         config = config || {};
 
@@ -202,6 +204,9 @@ LABKEY.ext4.Store = Ext4.define('LABKEY.ext4.Store', {
 
         if (config.containerPath)
             baseParams.containerPath = config.containerPath;
+
+        if(config.pageSize)
+            baseParams['limit'] = config.pageSize;
 
         //NOTE: sort() is a method in the store.  it's awkward to support a param, but we do it since selectRows() uses it
         if(this.initialConfig && this.initialConfig.sort)

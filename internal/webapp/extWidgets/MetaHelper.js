@@ -520,7 +520,7 @@ LABKEY.ext.MetaHelper = {
             if(record.json && record.json[meta.name] && record.json[meta.name].displayValue)
                 return record.json[meta.name].displayValue;
 
-            var displayType = meta.type;
+            var displayType = Ext4.isObject(meta.type) ? meta.type.type : meta.type;
 
             //NOTE: this is substantially changed over LABKEY.ext.FormHelper
             if(meta.lookup && meta.lookups!==false){

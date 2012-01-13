@@ -44,10 +44,16 @@ Ext4.define('LABKEY.ext4.GridPanel', {
         if(this.autoSave)
             this.store.autoSync = true;  //could we just obligate users to put this on the store directly?
 
-        if(this.store.hasLoaded())
-            this.setupColumnModel();
-        else
+        if(this.store.hasLoaded()){
+            this.setupColumnModel.defer(10, this);
+        }
+        else {
             this.mon(this.store, 'load', this.setupColumnModel, this, {single: true});
+            this.store.load({ params : {
+                start: 0,
+                limit: this.pageSize
+            }});
+        }
 
         this.mon(this.store, 'syncexception', this.onCommitException, this);
         this.addEvents('beforesubmit', 'fieldconfiguration', 'recordchange', 'fieldvaluechange');
@@ -82,6 +88,8 @@ Ext4.define('LABKEY.ext4.GridPanel', {
         //fire the "columnmodelcustomize" event to allow clients
         //to modify our default configuration of the column model
         this.fireEvent("columnmodelcustomize", this, columns);
+
+        this.columns = columns;
 
         //reset the column model
         this.reconfigure(this.store, columns);
