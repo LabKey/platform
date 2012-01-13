@@ -23,6 +23,7 @@ import org.labkey.api.gwt.client.util.StringUtils;
 import org.labkey.api.resource.Resource;
 import org.labkey.api.security.User;
 import org.labkey.api.settings.AppProps;
+import org.labkey.api.util.Compress;
 import org.labkey.api.util.FileUtil;
 import org.labkey.api.util.HeartBeat;
 import org.labkey.api.util.PageFlowUtil;
@@ -440,7 +441,7 @@ findFile:   {
         ScssContent(String css, Set<Path> dependencies)
         {
             super(css, css.getBytes(), HeartBeat.currentTimeMillis());
-            this.compressed = PageFlowUtil.gzip(this.encoded);
+            this.compressed = Compress.compressGzip(this.encoded);
             this.dependencies = dependencies;
         }
 

@@ -21,6 +21,8 @@ import org.apache.log4j.Appender;
 import org.apache.log4j.Logger;
 import org.apache.log4j.RollingFileAppender;
 import org.jetbrains.annotations.NotNull;
+import org.labkey.api.collections.ByteArrayHashKey;
+import org.labkey.api.util.Compress;
 import org.labkey.api.util.ContextListener;
 import org.labkey.api.util.DateUtil;
 import org.labkey.api.util.ExceptionUtil;
@@ -40,7 +42,6 @@ import java.io.PrintWriter;
 import java.lang.management.ManagementFactory;
 import java.lang.management.RuntimeMXBean;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collection;
 import java.util.Comparator;
 import java.util.HashMap;
@@ -419,7 +420,7 @@ public class QueryProfiler
     {
         private final String _sql;
         private final long _firstInvocation;
-        private final Map<ByteArray, AtomicInteger> _stackTraces = new HashMap<ByteArray, AtomicInteger>();
+        private final Map<ByteArrayHashKey, AtomicInteger> _stackTraces = new HashMap<ByteArrayHashKey, AtomicInteger>();
 
         private long _count = 0;
         private long _max = 0;
@@ -441,7 +442,7 @@ public class QueryProfiler
             if (elapsed > _max)
                 _max = elapsed;
 
-            ByteArray compressed = new ByteArray(StringUtilsLabKey.compress(stackTrace));
+            ByteArrayHashKey compressed = new ByteArrayHashKey(Compress.deflate(stackTrace));
             AtomicInteger frequency = _stackTraces.get(compressed);
 
             if (null == frequency)
@@ -503,11 +504,11 @@ public class QueryProfiler
             // Save the stacktraces separately to find common prefix
             List<String> stackTraces = new LinkedList<String>();
 
-            for (Map.Entry<ByteArray, AtomicInteger> entry : _stackTraces.entrySet())
+            for (Map.Entry<ByteArrayHashKey, AtomicInteger> entry : _stackTraces.entrySet())
             {
                 try
                 {
-                    String decompressed = StringUtilsLabKey.decompress(entry.getKey().getBytes());
+                    String decompressed = Compress.inflate(entry.getKey().getBytes());
                     set.add(new Pair<String, AtomicInteger>(decompressed, entry.getValue()));
                     stackTraces.add(decompressed);
                 }
@@ -642,39 +643,6 @@ public class QueryProfiler
 
             row.append(tab).append(getSql().trim().replaceAll("(\\s)+", " ")).append("\n");
             sb.insert(0, row);
-        }
-    }
-
-    // Need this so we can use byte[] as a HashMap key
-    private static class ByteArray
-    {
-        private final byte[] _bytes;
-
-        private ByteArray(byte[] bytes)
-        {
-            _bytes = bytes;
-        }
-
-        @Override
-        public boolean equals(Object o)
-        {
-            if (this == o) return true;
-            if (o == null || getClass() != o.getClass()) return false;
-
-            ByteArray that = (ByteArray) o;
-
-            return Arrays.equals(_bytes, that._bytes);
-        }
-
-        @Override
-        public int hashCode()
-        {
-            return _bytes != null ? Arrays.hashCode(_bytes) : 0;
-        }
-
-        public byte[] getBytes()
-        {
-            return _bytes;
         }
     }
 

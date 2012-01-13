@@ -70,13 +70,15 @@ public class DataRegionSelection
      */
     public static String getSelectionKey(String schemaName, String queryName, String viewName, String dataRegionName)
     {
-        StringBuffer buf = new StringBuffer();
+        StringBuilder buf = new StringBuilder();
+
         for (String s : new String[]{schemaName, queryName, viewName, dataRegionName})
         {
             buf.append(SEPARATOR);
             if (s != null)
                 buf.append(s);
         }
+
         return buf.toString();
     }
 

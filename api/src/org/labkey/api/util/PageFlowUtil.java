@@ -124,7 +124,6 @@ import java.util.concurrent.TimeUnit;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.zip.DeflaterOutputStream;
-import java.util.zip.GZIPOutputStream;
 import java.util.zip.InflaterInputStream;
 
 
@@ -692,36 +691,6 @@ public class PageFlowUtil
         catch (ClassNotFoundException x)
         {
             throw new IOException(x.getMessage());
-        }
-    }
-
-
-    public static byte[] gzip(String s)
-    {
-        try
-        {
-            return gzip(s.getBytes("UTF-8"));
-        }
-        catch (IOException x)
-        {
-            throw new RuntimeException(x);
-        }
-    }
-
-
-    public static byte[] gzip(byte[] in)
-    {
-        try
-        {
-            ByteArrayOutputStream buf = new ByteArrayOutputStream();
-            GZIPOutputStream zip = new GZIPOutputStream(buf);
-            zip.write(in);
-            zip.close();
-            return buf.toByteArray();
-        }
-        catch (IOException x)
-        {
-            throw new RuntimeException(x);
         }
     }
 

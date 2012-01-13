@@ -617,19 +617,21 @@ public class DataRegion extends AbstractDataRegion
         }
 
         boolean countAggregate = getMaxRows() > 0 && !_complete && _showPagination && _showPaginationCount;
+
         if (countAggregate)
         {
             List<Aggregate> newAggregates = new LinkedList<Aggregate>();
+
             if (ctx.getBaseAggregates() != null)
                 newAggregates.addAll(ctx.getBaseAggregates());
+
             newAggregates.add(Aggregate.createCountStar());
-
             _aggregateResults = ctx.getAggregates(_displayColumns, getTable(), getName(), newAggregates, getQueryParameters(), isAllowAsync());
-
             Aggregate.Result result = _aggregateResults.remove(Aggregate.STAR);
+
             if (result != null)
                 _totalRows = (Long)result.getValue();
-            }
+        }
         else
         {
             _aggregateResults =  ctx.getAggregates(_displayColumns, getTable(), getName(), ctx.getBaseAggregates(), getQueryParameters(), isAllowAsync());

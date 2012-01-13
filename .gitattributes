@@ -126,6 +126,7 @@ api/src/org/labkey/api/cache/ehcache/EhCacheProvider.java -text
 api/src/org/labkey/api/cache/ehcache/EhSimpleCache.java -text
 api/src/org/labkey/api/cache/ehcache/ehcache.xml -text
 api/src/org/labkey/api/collections/BoundMap.java -text
+api/src/org/labkey/api/collections/ByteArrayHashKey.java -text
 api/src/org/labkey/api/collections/CaseInsensitiveHashMap.java -text
 api/src/org/labkey/api/collections/CaseInsensitiveHashSet.java -text
 api/src/org/labkey/api/collections/CaseInsensitiveMapTest.java -text
@@ -1041,6 +1042,7 @@ api/src/org/labkey/api/util/ButtonBarRenderer.java -text
 api/src/org/labkey/api/util/CPUTimer.java -text
 api/src/org/labkey/api/util/CSRFException.java -text
 api/src/org/labkey/api/util/CSRFUtil.java -text
+api/src/org/labkey/api/util/Compress.java -text
 api/src/org/labkey/api/util/ConfigurationException.java -text
 api/src/org/labkey/api/util/ContainerContext.java -text
 api/src/org/labkey/api/util/ContainerUtil.java -text

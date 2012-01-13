@@ -17,6 +17,7 @@
 package org.labkey.api.query;
 
 import org.apache.commons.lang3.StringUtils;
+import org.jetbrains.annotations.Nullable;
 import org.labkey.api.action.ApiQueryResponse;
 import org.labkey.api.action.ApiUsageException;
 import org.labkey.api.data.*;
@@ -27,7 +28,6 @@ import org.labkey.api.reports.Report;
 import org.labkey.api.reports.ReportService;
 import org.labkey.api.reports.report.ChartQueryReport;
 import org.labkey.api.reports.report.JavaScriptReport;
-import org.labkey.api.reports.report.QueryReportDescriptor;
 import org.labkey.api.reports.report.RReport;
 import org.labkey.api.reports.report.ReportUrls;
 import org.labkey.api.reports.report.view.ReportUtil;
@@ -188,7 +188,7 @@ public class QueryView extends WebPartView<Object>
         this(schema, settings, null);
     }
 
-    public QueryView(UserSchema schema, QuerySettings settings, Errors errors)
+    public QueryView(UserSchema schema, QuerySettings settings, @Nullable Errors errors)
     {
         setSchema(schema);
         if (null != settings)
