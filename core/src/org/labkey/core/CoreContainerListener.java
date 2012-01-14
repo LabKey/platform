@@ -40,7 +40,7 @@ public class CoreContainerListener implements ContainerManager.ContainerListener
     public void containerCreated(Container c, User user)
     {
         String message = c.isProject() ? "Project " + c.getName() + " was created" :
-                c.isWorkbook() ? "Workbook " + c.getName() + " was deleted" :
+                c.isWorkbook() ? "Workbook " + c.getTitle() + " was created" :
                 "Folder " + c.getName() + " was created";
         addAuditEvent(user, c, message);
     }
@@ -54,7 +54,7 @@ public class CoreContainerListener implements ContainerManager.ContainerListener
             // Let containerManager delete ACLs, we want that to happen last
 
             String message = c.isProject() ? "Project " + c.getName() + " was deleted" :
-                    c.isWorkbook() ? "Workbook " + c.getName() + " was deleted" :
+                    c.isWorkbook() ? "Workbook " + c.getTitle() + " was deleted" :
                     "Folder " + c.getName() + " was deleted";
             addAuditEvent(user, c, message);
         }
