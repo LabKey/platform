@@ -255,6 +255,17 @@ public class ParticipantGroupManager
 
     private String createNewParticipantGroupScript(ViewContext context, String dataRegionName, boolean fromSelection)
     {
+        StringBuilder sb = new StringBuilder();
+
+        sb.append("LABKEY.requiresScript('study/ParticipantGroup.js', true, function(){");
+        sb.append(createNewParticipantGroupCallback(context, dataRegionName, fromSelection));
+        sb.append("},this);");
+
+        return sb.toString();
+    }
+
+    private String createNewParticipantGroupCallback(ViewContext context, String dataRegionName, boolean fromSelection)
+    {
         Container container = context.getContainer();
         Study study = StudyManager.getInstance().getStudy(container);
 
