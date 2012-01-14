@@ -504,6 +504,10 @@ public class LuceneSearchServiceImpl extends AbstractSearchService
                 // Example: Extending LabKey.thmx
                 logAsWarning(r, "Can't parse this document type", rootMessage);
             }
+            else if (topMessage.startsWith("Unsupported AutoCAD drawing version"))
+            {
+                // Tika mistakenly thinks some files (e.g., .ggl files) are AutoCAD files, #13811. Don't even warn about these.
+            }
             else
             {
                 logAsPreProcessingException(r, e);
