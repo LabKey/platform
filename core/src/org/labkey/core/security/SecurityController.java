@@ -1151,7 +1151,14 @@ public class SecurityController extends SpringActionController
             _requestedGroup = form.getGroupFor(getContainer());
             if (_requestedGroup != null)
             {
-                buildAccessDetailList(Collections.singletonList(getContainer().getProject()), rows, _requestedGroup, 0);
+                if (getContainer().isRoot() && _requestedGroup.isProjectGroup())
+                {
+                    throw new UnauthorizedException("Can not view a project group's permissions from the root container");
+                }
+
+                List<Container> projects = getContainer().isRoot() ? getContainer().getChildren() : Collections.singletonList(getContainer().getProject());
+                Map<Container, Group[]> projectGroupCache = new HashMap<Container, Group[]>();
+                buildAccessDetailList(projects, rows, _requestedGroup, 0, projectGroupCache);
             }
             else
                 throw new NotFoundException("Group not found");
@@ -1160,7 +1167,8 @@ public class SecurityController extends SpringActionController
             return new JspView<UserController.AccessDetail>("/org/labkey/core/user/userAccess.jsp", bean, errors);
         }
 
-        private void buildAccessDetailList(List<Container> children, List<UserController.AccessDetailRow> rows, Group requestedGroup, int depth)
+        private void buildAccessDetailList(List<Container> children, List<UserController.AccessDetailRow> rows,
+                                           Group requestedGroup, int depth, Map<Container, Group[]> projectGroupCache)
         {
             if (children == null || children.isEmpty())
                 return;
@@ -1168,10 +1176,40 @@ public class SecurityController extends SpringActionController
             {
                 if (child != null)
                 {
+                    Map<String, List<Group>> groupAccessGroups = new TreeMap<String, List<Group>>();
                     SecurityPolicy policy = child.getPolicy();
                     Collection<Role> roles = policy.getEffectiveRoles(requestedGroup);
-                    rows.add(new UserController.AccessDetailRow(getViewContext(), child, requestedGroup, new ArrayList<Role>(roles), depth));
-                    buildAccessDetailList(child.getChildren(), rows, requestedGroup, depth + 1);
+                    for (Role role : roles)
+                    {
+                        groupAccessGroups.put(role.getName(), new ArrayList<Group>());
+                    }
+
+                    if (roles.size() > 0)
+                    {
+                        Container project = child.getProject();
+                        Group[] groups = projectGroupCache.get(project);
+                        if (groups == null)
+                        {
+                            groups = SecurityManager.getGroups(project, true);
+                            projectGroupCache.put(project, groups);
+                        }
+
+                        for (Group group : groups)
+                        {
+                            if (requestedGroup.isInGroup(group.getUserId()))
+                            {
+                                Collection<Role> groupRoles = policy.getAssignedRoles(group);
+                                for (Role role : roles)
+                                {
+                                    if (groupRoles.contains(role))
+                                        groupAccessGroups.get(role.getName()).add(group);
+                                }
+                            }
+                        }
+                    }
+
+                    rows.add(new UserController.AccessDetailRow(getViewContext(), child, requestedGroup, groupAccessGroups, depth));
+                    buildAccessDetailList(child.getChildren(), rows, requestedGroup, depth + 1, projectGroupCache);
                 }
             }
         }
@@ -1767,6 +1805,8 @@ public class SecurityController extends SpringActionController
                 return;
 
             // add an AccessDetailRow for each user that has perm within the project
+            Container project = getContainer().getProject();
+            Group[] groups = SecurityManager.getGroups(project, true);
             for (User user : activeUsers)
             {
                 user = UserManager.getUser(user.getUserId()); // the cache from UserManager.getActiveUsers might not have the udpated groups list
@@ -1781,8 +1821,6 @@ public class SecurityController extends SpringActionController
 
                 if (effectiveRoles.size() > 0)
                 {
-                    Container project = getContainer().getProject();
-                    Group[] groups = SecurityManager.getGroups(project, true);
                     for (Group group : groups)
                     {
                         if (user.isInGroup(group.getUserId()))

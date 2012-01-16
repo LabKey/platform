@@ -124,17 +124,10 @@ However, If this account is re-enabled, it would have the following permissions.
             out.print("</td>");
         }
 
-        // the group permissions view doesn't need to show access/group details, so just display the access as a comma separated string
-        if (!bean.showGroups())
+        Map<String, List<Group>> accessGroups = row.getAccessGroups();
+        Set<String> roleNames = accessGroups.keySet();
+        if (roleNames.size() > 0)
         {
-            %><td><%= row.getAccess() %><%= inherited ? "*" : "" %></td><%
-        }
-        else
-        {
-            Map<String, List<Group>> accessGroups = row.getAccessGroups();
-            Set<String> roleNames = accessGroups.keySet();
-            if (roleNames.size() > 0)
-            {
 %>
             <td style="padding-left:<%=cellPadding%>px;">
                 <table class="labkey-nav-tree" style="width: 100%;">
@@ -187,9 +180,10 @@ However, If this account is re-enabled, it would have the following permissions.
                 </table>
             </td>
 <%
-            }
-            else
-                out.print("<td>&nbsp;</td>");  
+        }
+        else
+        {
+            out.print("<td>&nbsp;</td>");
         }
     %>
     </tr>
