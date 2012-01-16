@@ -96,6 +96,7 @@ import org.labkey.api.util.Compress;
 import org.labkey.api.util.ContextListener;
 import org.labkey.api.util.DateUtil;
 import org.labkey.api.util.ExceptionUtil;
+import org.labkey.api.util.ExtUtil;
 import org.labkey.api.util.FileType;
 import org.labkey.api.util.FileUtil;
 import org.labkey.api.util.HString;
@@ -599,7 +600,8 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
                 TableSelector.TestCase.class,
                 NestedGroupsTest.class,
                 StringUtilsLabKey.TestCase.class,
-                Compress.TestCase.class
+                Compress.TestCase.class,
+                ExtUtil.TestCase.class
                 //,RateLimiter.TestCase.class
         ));
 
