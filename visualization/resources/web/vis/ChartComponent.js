@@ -781,13 +781,17 @@ LABKEY.vis.LineChart = Ext.extend(LABKEY.vis.XYChartComponent, {
                }
                lines.add(pv.Rule)
                        .bottom(function(d) {
-                           return left(d.dataValue.value - d[type].value);
+                           if (d.dataValue && d[type])
+                               return left(d.dataValue.value - d[type].value);
                        })
                        .height(function(d){
-                           if(left(0) < 0){
-                               return (-1 * left(0)) + left(d[type].value * 2);
-                           } else {
-                               return (left(0) + left(d[type].value * 2));
+                           if (d[type])
+                           {
+                               if(left(0) < 0){
+                                   return (-1 * left(0)) + left(d[type].value * 2);
+                               } else {
+                                   return (left(0) + left(d[type].value * 2));
+                               }
                            }
                        })
                        .lineWidth(2)
@@ -795,8 +799,12 @@ LABKEY.vis.LineChart = Ext.extend(LABKEY.vis.XYChartComponent, {
                        .strokeStyle(darkColor);
 
                lines.add(pv.Rule)
-                       .bottom(function(d){return left(d.dataValue.value - d[type].value);})
+                       .bottom(function(d){
+                           if (d.dataValue && d[type])
+                               return left(d.dataValue.value - d[type].value);
+                       })
                        .left(function(d){
+                           if (d.interval)
                                return bottom(d.interval.value) - 4;
                        })
                        .width(8)
@@ -805,8 +813,12 @@ LABKEY.vis.LineChart = Ext.extend(LABKEY.vis.XYChartComponent, {
                        .strokeStyle(darkColor);
 
                lines.add(pv.Rule)
-                       .bottom(function(d){return left(d.dataValue.value + d[type].value);})
+                       .bottom(function(d){
+                           if (d.dataValue && d[type])
+                               return left(d.dataValue.value + d[type].value);
+                       })
                        .left(function(d){
+                           if (d.interval)
                                return bottom(d.interval.value) - 4
                        })
                        .width(8)
