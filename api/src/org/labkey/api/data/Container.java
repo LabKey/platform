@@ -1024,4 +1024,20 @@ public class Container implements Serializable, Comparable<Container>, Securable
     {
         _title = title;
     }
+
+    public String getContainerNoun()
+    {
+        return getContainerNoun(false);
+    }
+
+    public String getContainerNoun(boolean titleCase)
+    {
+        String noun = isProject() ? "project" : isWorkbook() ? "workbook" : "folder";
+        if(titleCase)
+        {
+            return noun.substring(0, 1).toUpperCase() + noun.substring(1);
+        }
+
+        return noun;
+    }
 }
