@@ -216,17 +216,17 @@ public class ApiQueryResponse implements ApiResponse, ApiStreamResponse
     public ArrayList<Map<String, Object>> getFieldsMetaData(Collection<DisplayColumn> displayColumns, boolean includeLookupInfo)
     {
         ArrayList<Map<String, Object>> fields = new ArrayList<Map<String,Object>>();
-        for(DisplayColumn dc : displayColumns)
+        for (DisplayColumn dc : displayColumns)
         {
-            if(dc.isQueryColumn())
+            if (dc.isQueryColumn())
             {
                 Map<String,Object> fmdata = JsonWriter.getMetaData(dc, null, false, includeLookupInfo);
                 //if the column type is file, include an extra column for the url
-                if("file".equalsIgnoreCase(dc.getColumnInfo().getInputType()))
+                if ("file".equalsIgnoreCase(dc.getColumnInfo().getInputType()))
                 {
                     fmdata.put("file", true);
                     Map<String,Object> urlmdata = getFileUrlMeta(dc);
-                    if(null != urlmdata)
+                    if (null != urlmdata)
                         fields.add(urlmdata);
                 }
                 fields.add(fmdata);
@@ -247,9 +247,9 @@ public class ApiQueryResponse implements ApiResponse, ApiStreamResponse
     protected DisplayColumn getDisplayCol(ColumnInfo col)
     {
         DisplayColumn ret = null;
-        for(DisplayColumn dc : _displayColumns)
+        for (DisplayColumn dc : _displayColumns)
         {
-            if(null != dc.getColumnInfo() && dc.getColumnInfo().equals(col))
+            if (null != dc.getColumnInfo() && dc.getColumnInfo().equals(col))
                 ret = dc;
         }
         return ret;
@@ -258,16 +258,16 @@ public class ApiQueryResponse implements ApiResponse, ApiStreamResponse
     protected List<Map<String,Object>> getColumnModel() throws Exception
     {
         ArrayList<Map<String,Object>> cols = new ArrayList<Map<String,Object>>();
-        for(DisplayColumn dc : _displayColumns)
+        for (DisplayColumn dc : _displayColumns)
         {
-            if(dc.isQueryColumn())
+            if (dc.isQueryColumn())
             {
                 cols.add(getColModel(dc));
 
-                if("file".equalsIgnoreCase(dc.getColumnInfo().getInputType()))
+                if ("file".equalsIgnoreCase(dc.getColumnInfo().getInputType()))
                 {
                     Map<String,Object> urlmdata = getFileUrlMeta(dc);
-                    if(null != urlmdata)
+                    if (null != urlmdata)
                         cols.add(urlmdata);
                 }
             }
@@ -286,7 +286,7 @@ public class ApiQueryResponse implements ApiResponse, ApiStreamResponse
         extGridColumn.put("sortable", dc.isSortable());
         extGridColumn.put("editable", isEditable(dc));
         extGridColumn.put("hidden", colInfo.isHidden() || colInfo.isAutoIncrement()); //auto-incr list key columns return false for isHidden(), so check isAutoIncrement as well
-        if(dc.getTextAlign() != null)
+        if (dc.getTextAlign() != null)
             extGridColumn.put("align", dc.getTextAlign());
         if (dc.getCaption() != null)
             extGridColumn.put("header", dc.getCaption(_ctx, false));
@@ -308,7 +308,7 @@ public class ApiQueryResponse implements ApiResponse, ApiStreamResponse
 
         /** These are not part of Ext.Grid.Column, don't know why they are hear (MAB) */
         extGridColumn.put("required", !colInfo.isNullable());
-        if(isEditable(dc) && null != colInfo.getDefaultValue())
+        if (isEditable(dc) && null != colInfo.getDefaultValue())
             extGridColumn.put("defaultValue", colInfo.getDefaultValue());
         extGridColumn.put("scale", dc.getColumnInfo().getScale());
         return extGridColumn;
@@ -335,9 +335,9 @@ public class ApiQueryResponse implements ApiResponse, ApiStreamResponse
     protected Map<String,Object> getRow() throws Exception
     {
         Map<String,Object> row = new HashMap<String,Object>();
-        for(DisplayColumn dc : _displayColumns)
+        for (DisplayColumn dc : _displayColumns)
         {
-            if(dc.isQueryColumn())
+            if (dc.isQueryColumn())
                 putValue(row, dc);
         }
         return row;
@@ -353,7 +353,7 @@ public class ApiQueryResponse implements ApiResponse, ApiStreamResponse
         if (null != value)
         {
             String url = dc.renderURL(_ctx);
-            if(null != url)
+            if (null != url)
                 row.put(URL_COL_PREFIX + dc.getColumnInfo().getName(), url);
         }
     }

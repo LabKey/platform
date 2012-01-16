@@ -19,6 +19,7 @@ import org.json.JSONObject;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.QueryService;
 import org.labkey.api.query.RowIdForeignKey;
+import org.labkey.api.util.ExtUtil;
 
 import java.util.*;
 
@@ -64,7 +65,7 @@ public class JsonWriter
         if (cinfo != null && null != cinfo.getFieldKey())
             fieldKey = cinfo.getFieldKey();
         else
-            fieldKey = new FieldKey(null, FieldKey.encodePart(name));
+            fieldKey = new FieldKey(null, name);
 
         props.put("fieldKey", fieldKey.toString());
         props.put("fieldKeyPath", FieldKey.fromParts(fieldKeyPrefix, fieldKey).toString());
@@ -95,8 +96,8 @@ public class JsonWriter
         props.put("isVersionField", versionColumn);
         props.put("versionField", versionColumn);
         boolean selectable = cinfo != null && !cinfo.isUnselectable();
-        props.put("isSelectable", selectable); //avoid double-negative boolean name
-        props.put("selectable", selectable); //avoid double-negative boolean name
+        props.put("isSelectable", selectable);  //avoid double-negative boolean name
+        props.put("selectable", selectable);    //avoid double-negative boolean name
 
         // These fields are new and don't need to have the "is" prefix for backwards compatibility
         props.put("shownInInsertView", cinfo != null && cinfo.isShownInInsertView());
@@ -119,7 +120,14 @@ public class JsonWriter
             }
             if (cinfo.getFormat() != null)
             {
-                props.put("format", cinfo.getTsvFormatString());
+                props.put("format", cinfo.getFormat());
+                String extFormat = null;
+                if (cinfo.getJdbcType().isDateOrTime())
+                    extFormat = ExtUtil.toExtDateFormatFn(cinfo.getFormat());
+                else if (cinfo.getJdbcType().isNumeric())
+                    extFormat = ExtUtil.toExtNumberFormatFn(cinfo.getFormat());
+                if (null != extFormat)
+                    props.put("extFormatFn", extFormat);
             }
             if (cinfo.getExcelFormatString() != null)
             {
