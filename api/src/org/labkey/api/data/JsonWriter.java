@@ -118,6 +118,12 @@ public class JsonWriter
         props.put("dimension", cinfo != null && cinfo.isDimension());
         props.put("measure", cinfo != null && cinfo.isMeasure());
 
+        if (cinfo != null && cinfo.getDisplayField() != null && cinfo.getDisplayField() != cinfo)
+        {
+            props.put("displayField", cinfo.getDisplayField().getFieldKey().toString());
+            props.put("displayFieldSqlType", cinfo.getDisplayField().getSqlTypeName());
+        }
+
         if (cinfo != null)
         {
 

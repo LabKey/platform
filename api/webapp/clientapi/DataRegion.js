@@ -2131,20 +2131,20 @@ LABKEY.DataRegion._filterUI =
     {
         this._fieldCaption = column.caption;
         this._tableName = dataRegionName;
-        this._mappedType = this.getMappedType(column.sqlType);
+        this._mappedType = this.getMappedType(column.displayFieldSqlType ? column.displayFieldSqlType : column.sqlType);
 
         var dataRegion = LABKEY.DataRegions[dataRegionName];
 
         var valuesLabel = new Ext.form.Label({hidden: true, fieldLabel: 'Possible Values' });
 
-        if (column.lookup && dataRegion && dataRegion.schemaName && dataRegion.queryName)
+        this._fieldName = column.name;
+        if (column.lookup && dataRegion && dataRegion.schemaName && dataRegion.queryName )
         {
-            this._fieldName = column.name + "/" + column.lookup.displayColumn;
+            if (column.displayField)
+            {
+                this._fieldName = column.displayField;
+            }
             this.getLookupValues(dataRegion, column, valuesLabel);
-        }
-        else
-        {
-            this._fieldName = column.name;
         }
 
         if (!queryString)
