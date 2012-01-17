@@ -2369,6 +2369,7 @@ public class QueryController extends SpringActionController
         private Integer _offset;
         private String _containerFilter;
         private boolean _saveInSession;
+        private boolean _includeTotalCount = true;
 
         public String getSchemaName()
         {
@@ -2439,6 +2440,16 @@ public class QueryController extends SpringActionController
         {
             _saveInSession = saveInSession;
         }
+
+        public boolean isIncludeTotalCount()
+        {
+            return _includeTotalCount;
+        }
+
+        public void setIncludeTotalCount(boolean includeTotalCount)
+        {
+            _includeTotalCount = includeTotalCount;
+        }
     }
 
     @RequiresPermissionClass(ReadPermission.class)
@@ -2488,8 +2499,12 @@ public class QueryController extends SpringActionController
                 metaDataOnly = (Table.ALL_ROWS == form.getMaxRows().intValue());
             }
 
+            int offset = 0;
             if (null != form.getOffset())
+            {
                 settings.setOffset(form.getOffset().longValue());
+                offset = form.getOffset();
+            }
 
             if (form.getContainerFilter() != null)
             {
@@ -2504,15 +2519,18 @@ public class QueryController extends SpringActionController
             view.setShowRecordSelectors(false);
             view.setShowExportButtons(false);
             view.setButtonBarPosition(DataRegion.ButtonBarPosition.NONE);
+            view.setShowPagination(form.isIncludeTotalCount());
 
             boolean isEditable = isQueryEditable(view.getTable());
 
+
+
             if (getRequestedApiVersion() >= 9.1)
                 return new ExtendedApiQueryResponse(view, getViewContext(), isEditable,
-                        false, schemaName, form.isSaveInSession() ? settings.getQueryName() : "sql", 0, null, metaDataOnly);
+                        false, schemaName, form.isSaveInSession() ? settings.getQueryName() : "sql", offset, null, metaDataOnly);
             else
                 return new ApiQueryResponse(view, getViewContext(), isEditable,
-                        false, schemaName, form.isSaveInSession() ? settings.getQueryName() : "sql", 0, null, metaDataOnly);
+                        false, schemaName, form.isSaveInSession() ? settings.getQueryName() : "sql", offset, null, metaDataOnly);
         }
     }
 

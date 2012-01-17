@@ -105,6 +105,7 @@ public class PipelineQuerySchema extends UserSchema
                 defaultCols.add(FieldKey.fromParts("Description"));
             }
             table.setDefaultVisibleColumns(defaultCols);
+            table.setTitleColumn("Description");
             return table;
         }
         
