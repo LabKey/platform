@@ -1,71 +1,86 @@
-Ext.ns("LABKEY", "LABKEY.TemplateHelper");
-
-
-/* TODO Consolidate LABKEY.FieldKey code here with FieldKey in queryDesigner.js */
-
-/** @constructor */
-LABKEY.FieldKey = function()
+(function()
 {
-    /** @private @type {[string]} */
-    this._parts = [];
-};
 
 
-
-/** @param {string} field key using old $ encoding */
-LABKEY.FieldKey.prototype.parseOldEncoding = function(fk)
-{
-    function decodePart(str)
-    {
-            str = str.replace(/\$C/, ",");
-            str = str.replace(/\$T/, "~");
-            str = str.replace(/\$B/, "}");
-            str = str.replace(/\$A/, "&");
-            str = str.replace(/\$S/, "/");
-            str = str.replace(/\$D/, "$");
-        return str;
-    }
-    var a = fk.split('/');
-    for (var i=0; i<a.length ; i++)
-        a[i] = decodePart(a[i]);
-    this._parts = a;
-};
-
-
-
-/** @returns {string} */
-LABKEY.FieldKey.prototype.getName = function()
-{
-    return _parts.length > 0 ? _parts[_parts.length-1] : null;
-};
-
-
-
-/** @returns {string} */
-LABKEY.FieldKey.prototype.toDottedString = function()
-{
-    // TODO escape names with "
-    return "\"" + _parts.join("\".\"") + "\"";
-};
-
-
-(function() {
-
-	var $h = Ext.util.Format.htmlEncode;
+    var X = Ext4 || Ext;
 
     /** @private */
-    function getCaptionHtml()
+    var $h = X.util.Format.htmlEncode;
+
+    /* TODO Consolidate FieldKey code here with FieldKey in queryDesigner.js */
+
+    /** @constructor @private */
+    var FieldKey = function()
+    {
+        /** @private @type {[string]} */
+        this._parts = [];
+    };
+
+    /** @param {string} fk field key using old $ encoding */
+    FieldKey.prototype.parseOldEncoding = function(fk)
+    {
+        function decodePart(str)
+        {
+                str = str.replace(/\$C/, ",");
+                str = str.replace(/\$T/, "~");
+                str = str.replace(/\$B/, "}");
+                str = str.replace(/\$A/, "&");
+                str = str.replace(/\$S/, "/");
+                str = str.replace(/\$D/, "$");
+            return str;
+        }
+        var a = fk.split('/');
+        for (var i=0; i<a.length ; i++)
+            a[i] = decodePart(a[i]);
+        this._parts = a;
+    };
+
+    /** @returns {string} */
+    FieldKey.prototype.getName = function()
+    {
+        return _parts.length > 0 ? _parts[_parts.length-1] : null;
+    };
+
+    /** @returns {string} */
+    FieldKey.prototype.toDottedString = function()
+    {
+        // TODO escape names with "
+        return "\"" + _parts.join("\".\"") + "\"";
+    };
+
+
+    /** @constructor
+     *
+     * @param {object} field as defined by SelectRowsResult
+     * @param {object} column as defined by SelectRowsResult
+     */
+    var FieldDefinition = function(field, column)
+    {
+        X.apply(this, field||{}, column||{});
+        if (this.fieldKeyPath)
+            this.fieldKey = (new FieldKey()).parseOldEncoding(this.fieldKeyPath);
+        if (this.extFormatFn)
+        {
+            try
+            {
+                this.formatFn = eval(this.extFormatFn);
+            }
+            catch (ex)
+            {
+            }
+        }
+    };
+
+    FieldDefinition.prototype.getCaptionHtml = function()
     {
         if (this.captionHtml)
             return captionHtml;
         if (this.shortCaption)
             return $h(this.shortCaption);
         return this.name;
-    }
+    };
 
-
-    /** @private @returns {string} */
-    function getFormattedDisplayValue(valueObj)
+    FieldDefinition.prototype.getFormattedDisplayValue = function(valueObj)
     {
         // UNDONE: need formatting information (or formatted values) from server
         if ('displayValue' in valueObj)
@@ -93,7 +108,7 @@ LABKEY.FieldKey.prototype.toDottedString = function()
             {
                 try
                 {
-                    formattedValue = Ext.Date.format(new Date(v), this.dateFormat||'Y-m-d');
+                    formattedValue = X.Date.format(new Date(v), this.dateFormat||'Y-m-d');
                     break;
                 }
                 catch (ex)
@@ -106,11 +121,9 @@ LABKEY.FieldKey.prototype.toDottedString = function()
         if ('lookup' in this)
             formattedValue = "<" + formattedValue + ">";
         return formattedValue;
-    }
+    };
 
-
-    /** @private */
-    function getDisplayValueHtml(value, withUrls)
+    FieldDefinition.prototype.getDisplayValueHtml = function(value, withUrls)
     {
         withUrls = withUrls !== false;
         if (value.html)
@@ -119,170 +132,390 @@ LABKEY.FieldKey.prototype.toDottedString = function()
         if (value.url && withUrls)
             html = "<a href=\"" + $h(value.url) + "\">" + html + "</a>";
         return html;
-    }
+    };
 
 
-    function getGridCellHtml(value, withUrls)
+    /**
+     * The most common templates render values in <TD>, this helper generates a <TD> and
+     * handles these fields to customize the layout
+     * ) align
+     * ) rowspan
+     * ) className
+     * ) style
+     * ) width (should this me merged into style?)
+     *
+     * should cell values replace or supplement field settings?
+     * what about style objects {color:'red'}?
+     *
+     * UNDONE: missing values, out-of-range values
+     */
+    FieldDefinition.prototype.getGridCellHtml = function(value, withUrls)
     {
         if (value.rowspan == -1)
             return "";
         var innerHtml = this.getDisplayValueHtml(value, withUrls);
         var td = "<td";
+        // align
+        if (this.align)
+            td += " align=\"" + this.align + "\"";
+        if (this.width)
+            td += " width=\"" + this.width + "\"";
+        // rowspan
         if (value.rowspan > 1)
             td += " rowspan=\"" + value.rowspan + "\"";
+        // className
         var className = value.className || this.className;
         if (className)
             td += " class=\"" + className + "\"";
-        return td + ">" + innerHtml + "</td>";
-    }
+        // style
+        var style = value.style || this.style;
+        if (style)
+            td += " style=\"" + style + "\"";
 
+        return td + ">" + innerHtml + "</td>";
+    };
+
+
+    var defaultField = new FieldDefinition({});
 
 
 /**
- * This method takes a query result set and preprocesses it
+ * TemplateReport  organizes the data tranformation steps and html generation steps
  *
- * ) creates array version of each row (covient for template iteration)
- *      {FirstName:{value:'Matt'}, LastName:{value:'Bellew'}} becomes [{value:'Matt'},{value:'Bellew'}]
- * ) create new parent row object containing object version of row data and array version of row data
- *      {asArray:[], asObject:{}, breakLevel:-1}
- * ) adds reference from each data value object to corresponding field description
- * ) add reference from each data value to parent row object
- * ) optionally computes break level for each row (and rowspan)
+ *      STEP 1 -- call transformSelectRowsResult() then
+ *          1a) NYI call config.afterTransform(result)
+ *          1b) NYI add calculated field using config.calculatedFields
  *
- * ) consider: attach renderCellHtml() function to each value object, and maybe even renderRowHtml() to each row object
- * ) consider: getDomHelper() instead of Html()
+ *      STEP 2 -- paging and grouping transformForReportLayout()
+ *          2a) NYI config.afterReportLayout()
  *
- * NOTE: the structure returned by transformSelectRowsResult() is not compatible with
- * SelectRowsResults (or ExtendedSelectRowsResults).
+ *      STEP 3 -- apply template
  *
- * @param qr
+ *  A config for TemplateReport will work with a SelectRowsResult of an _expected_ shape.
+ *  You can't generally apply an arbitrary result to a report because of binding by field names, etc.
+ *
+ *  config
+ *      config.gridFields, if not specified defaults to all fields in SelectRowsResult
+ *          gridFields : ['id', 'title', 'column3']
+
+ *      config.pageFields, default template may use to auto-generate form layout, template could refer to fields by name
+ *          pageFields : ['name', 'created']
+ *
+ *      config.pageBreakInfo configures when to start a new page
+ *          pageBreakInfo : [{name:'ParticipantId'}]
+ *
+ *      config.gridBreakInfo configures grouping in the grid (template may use different markup to indicate grouping)
+ *          gridBreakInfo : [{name:'VisitMonth', rowspan:true}]
+ *
+ *      config.template (text only for now) template to render (maybe we have some predefined)
+ *          config.template = PAGING_WITH_ROWSPANS
+ *
+ * NYI
+ *      data processing configuration, such as computed columns, etc
+ *
+ * UNDONE: are field names the best identifiers or should we be using field keys?
+ * UNDONE: support for attaching to an ext store
+ *
+ * example
+ *
+ *    var config =
+ *    {
+ *        rowBreakInfo:[{name:'Status', rowspans:false}],
+ *        pageBreakInfo:[{name:'AssignedTo', rowspans:true}],
+ *        pageFields : ['AssignedTo', 'AssignedTo/UserId'],
+ *        template : LABKEY.TemplateReport.templates.PAGING_WITH_ROWSPANS
+ *    };
+ *    var helper = new LABKEY.TemplateReport(config);
+ *
+ *    LABKEY.Query.selectRows({
+ *       requiredVersion: 12.1,
+ *       schemaName: 'issues',
+ *       queryName: 'Issues',
+ *       columns: 'AssignedTo,Status,XY,IssueId,Created,Priority,Title,Type,AssignedTo/DisplayName,AssignedTo/UserId,CreatedBy,Area,Milestone,Triage',
+ *       sort: 'AssignedTo/DisplayName,Status,-IssueId',
+ *       success: function(qr)
+ *		{
+ *            helper.render(el, qr);
+ *		}
+ *   });
  */
-LABKEY.TemplateHelper.transformSelectRowsResult = function(qr, config)
+
+
+X.define('LABKEY.TemplateReport',
 {
-    var fields = qr.metaData.fields;
-    var rows = qr.rows;
-    var arrayrows = [];
-    var i, field;
+    extend: 'Ext.Component',
 
-    // preprocess fields
-    //  add index
-    //  compute nameMap
-    var nameMap = {};
-    for (i=0 ; i < fields.length ; i++)
+
+    /**
+     * This method takes a query result set and preprocesses it
+     *
+     * ) creates array version of each row (covient for template iteration)
+     *      {FirstName:{value:'Matt'}, LastName:{value:'Bellew'}} becomes [{value:'Matt'},{value:'Bellew'}]
+     * ) create new parent row object containing object version of row data and array version of row data
+     *      {asArray:[], asObject:{}, breakLevel:-1}
+     *
+     * not sure we need these back pointers, but
+     * ) adds reference from each data value object to corresponding field description
+     * ) add reference from each data value to parent row object
+     *
+     * NOTE: the structure returned by transformSelectRowsResult() is not compatible with
+     * SelectRowsResults (or ExtendedSelectRowsResults).
+     *
+     * moved break-level computation to transformForGroupedReport
+     *
+     * @param qr
+     */
+
+    transformSelectRowsResult : function(qr, config)
     {
-        field = fields[i];
-        field.index = i;
-        field.fieldKey = (new LABKEY.FieldKey()).parseOldEncoding(field.fieldKeyPath);
-        field.getCaptionHtml = getCaptionHtml;
-        field.getFormattedDisplayValue = getFormattedDisplayValue;
-        field.getDisplayValueHtml = getDisplayValueHtml;
-        field.getGridCellHtml = getGridCellHtml;
-        if (field.extFormatFn)
+        var fields = qr.metaData.fields;
+        var columns = qr.columnModel;
+        var rows = qr.rows;
+        var arrayrows = [];
+        var i, field;
+
+        // turn field descriptions into FieldDefinitionpreprocess fields
+        //  add index
+        for (i=0 ; i < fields.length ; i++)
         {
-            try
-            {
-                field.formatFn = eval(field.extFormatFn);
-            }
-            catch (ex)
-            {
-            }
+            fields[i].index = i;
+            field = fields[i] = new FieldDefinition(fields[i], columns||i<columns.length?columns[i]:{});
         }
-        nameMap[field.name] = field;
-    }
 
-    // compute break levels
-    var breakFields = [];
-    var breakLevel = undefined;
-    var rowAtLastBreak = [];
-    var breakValues = [];
-
-    if (config && config.breakInfo)
-    {
-        for (i=0 ; i < config.breakInfo.length ; i++)
+        for (var r=0 ; r < rows.length ; r++)
         {
-            var breakInfo = config.breakInfo[i];
+            var objectRow = rows[r];
+            var arrayRow = [];
+            var parentRow = {};
+
+            for (var f=0 ; f < fields.length ; f++)
+            {
+                field = fields[f];
+                var value = objectRow[field.name] || {};
+                if (!X.isObject(value))
+                    value = {value: value};
+                value.field = field;
+                value.parentRow = parentRow;
+                arrayRow.push(value);
+            }
+
+            parentRow.asArray = arrayRow;
+            parentRow.asObject = objectRow;
+            arrayrows.push(parentRow);
+        }
+
+        return {fields: fields, rows:arrayrows};
+    },
+
+
+    /**
+     * takes a transformed result (see transformSelectRowsResult) and tranforms the data
+     * into a report ready data-structure
+     *
+     *  ) computes breaklevels and rowspans
+     *  ) generates gridFields array (subset of fields)
+     *  ) generates pageFields array (subset of fields)
+     *
+     * row array is broken into array of arrays by page grouping
+     *  pages[[rows[0..a-1]],[rows[a..b-1],[rows[b..c-1],...]
+     *
+     * config
+     *   {
+     *       pageBreakInfo :  [{name:'AssignedTo'}]
+     *       rowBreakInfo : [{name:'Status', rowspan:true}]
+     *   }
+     */
+
+    transformForReportLayout : function(tr, config)
+    {
+        config = config || {};
+
+        /** @type {[FieldDefinition]} */
+        var fields = tr.fields;
+        var rows = tr.rows;
+        var i, field;
+
+        var nameMap = {};
+        for (i=0 ; i < fields.length ; i++)
+            nameMap[fields[i].name] = fields[i];
+
+
+        // compute break levels
+        var breakFields = [];
+        var breakLevel = undefined;
+        var rowAtLastBreak = [];
+        var breakValues = [];
+
+        var breakInfos = [];
+        var pageBreakLevel = -1;
+        if (X.isArray(config.pageBreakInfo))
+        {
+            breakInfos = breakInfos.concat(config.pageBreakInfo);
+            pageBreakLevel = config.pageBreakInfo.length;
+        }
+        if (X.isArray(config.rowBreakInfo))
+        {
+            breakInfos = breakInfos.concat(config.rowBreakInfo);
+        }
+
+        if (breakInfos.length == 0)
+        {
+            //nothing to do
+            tr.pages = [rows];
+            return tr;
+        }
+
+
+        for (i=0 ; i < breakInfos.length ; i++)
+        {
+            var breakInfo = breakInfos[i];
             var name = breakInfo.name;
             field = nameMap[name];
             if (!field)
-                continue;
-            field.className = "break-" + i;
-            if (breakInfo.className)
-                field.className += " " + breakInfo.className;
+                throw "Field not found: " + name;
             breakFields.push(field);
             breakValues.push(undefined);
         }
-    }
 
-    for (var r=0 ; r < rows.length ; r++)
-    {
-        var objectRow = rows[r];
-        var arrayRow = [];
-        var parentRow = {};
 
-        for (var f=0 ; f < fields.length ; f++)
+        var pages = [];
+        var currentPage = [];
+
+        for (var r=0 ; r < rows.length ; r++)
         {
-            field = fields[f];
-            var value = objectRow[field.name] || {};
-            if (!Ext.isObject(value))
-                value = {value: value};
-            value.field = field;
-            value.parentRow = parentRow;
-            value.rowspan=undefined;
-            arrayRow.push(value);
-        }
+            var parentRow = rows[r];
+            var objectRow = parentRow.asObject;
+            var arrayRow = parentRow.asArray;
 
-        if (breakFields.length == 0)
-            continue;
-
-        // compute breakLevel for this row
-        breakLevel = breakFields.length;
-        for (var b=breakFields.length-1; b >=0 ; b--)
-        {
-            var obj = arrayRow[breakFields[b].index];
-            var v = (obj && Ext.isDefined(obj.value)) ? obj.value : "" ;
-            var prev = breakValues[b];
-            if (v != prev)
-                breakLevel = b;
-            breakValues[b] = v;
-        }
-
-        // update rowspans for previous breaks and rowspan for this row
-        rowspans = new Array(breakFields.length);
-        for (var b=breakFields.length-1 ; b>=0 ; b--)
-        {
-            var breakInfo = config.breakInfo[b];
-            if (!breakInfo.rowspans)
-                continue;
-            if (b < breakLevel)
+            // compute breakLevel for this row
+            breakLevel = breakFields.length;
+            for (var b=breakFields.length-1; b >=0 ; b--)
             {
-                if (rowAtLastBreak[b])
+                var obj = arrayRow[breakFields[b].index];
+                var v = (obj && X.isDefined(obj.value)) ? obj.value : "" ;
+                var prev = breakValues[b];
+                if (v != prev)
+                    breakLevel = b;
+                breakValues[b] = v;
+            }
+
+            // update rowspans for previous breaks and rowspan for this row
+            rowspans = new Array(breakFields.length);
+            for (var b=breakFields.length-1 ; b>=0 ; b--)
+            {
+                var breakInfo = breakInfos[b];
+                if (!breakInfo.rowspans)
+                    continue;
+                if (b < breakLevel)
                 {
-                    rowAtLastBreak[b].rowspans[b]++;
-                    rowAtLastBreak[b].asArray[breakFields[b].index].rowspan++;
+                    if (rowAtLastBreak[b])
+                    {
+                        rowAtLastBreak[b].rowspans[b]++;
+                        rowAtLastBreak[b].asArray[breakFields[b].index].rowspan++;
+                    }
+                    rowspans[b] = -1;
+                    arrayRow[breakFields[b].index].rowspan = -1;
                 }
-                rowspans[b] = -1;
-                arrayRow[breakFields[b].index].rowspan = -1;
+                else
+                {
+                    rowAtLastBreak[b] = parentRow;
+                    rowspans[b] = 1;
+                    arrayRow[breakFields[b].index].rowspan = 1;
+                }
             }
-            else
+
+            if (breakLevel < pageBreakLevel)
             {
-                rowAtLastBreak[b] = parentRow;
-                rowspans[b] = 1;
-                arrayRow[breakFields[b].index].rowspan = 1;
+                if (currentPage.length)
+                    pages.push(currentPage);
+                currentPage = [];
             }
+            currentPage.push(parentRow);
+
+            parentRow.breakLevel = breakLevel == breakFields.length ? -1 : breakLevel;
+            parentRow.rowspans = rowspans;
+        }
+        if (currentPage.length)
+            pages.push(currentPage);
+
+        for (var p=0 ; p<pages.length ; p++)
+        {
+            var rows = pages[p];
+            var first = rows.length>0 ? rows[0] : null;
+            var last = rows.length>0 ? rows[rows.length-1] : null;
+            pages[p] = {first:first, last:last, rows:rows};
         }
 
-        parentRow.asArray = arrayRow;
-        parentRow.asObject = objectRow;
-        parentRow.breakLevel = breakLevel == breakFields.length ? -1 : breakLevel;
-        parentRow.rowspans = rowspans;
-        arrayrows.push(parentRow);
+        tr.breakFields = breakFields;
+        tr.pages = pages;
+        return tr;
+    },
+
+
+    onRender: function(ct, position)
+    {
+        if (!X.isString(this.template))
+            throw "LABKEY.TemplateReport: String template expected";
+        if (!X.isObject(this.data))
+            throw "LABKEY.TemplateReport: Data not provided";
+
+        if (!this.el)
+            this.callParent(arguments);
+
+        // TODO remove second parameter (replace with this)
+        var transformData = this.transformSelectRowsResult(this.data, this);
+        var reportData = this.transformForReportLayout(transformData, this);
+
+        var tpl = new Ext4.XTemplate
+        (
+            this.template,
+            {
+                getCaptionHtml : function(field)
+                {
+                    if (field.getCaptionHtml)
+                        return field.getCaptionHtml();
+                    return field.shortCaption || field.name;
+                },
+                getGridCellHtml : function(d)
+                {
+                    var field = d.field || defaultField;
+                    return field.getGridCellHtml(d, !this.isPrint);
+                },
+                getHtml : function(d,values)    // values is just for debugging
+                {
+                    var field = d.field || defaultField;
+                    return field.getDisplayValueHtml(d, !this.isPrint);
+                },
+                getFormattedValue : function (d)
+                {
+                    var field = d.field || defaultField;
+                    return field.getFormattedDisplayValue(d);
+                },
+
+                resetGrid : function()
+                {
+                    this.gridRow = 0; return "";
+                },
+                getGridRowClass : function()
+                {
+                    // assumes we call this once per row
+                    this.gridRow++;
+                    return this.gridRow%2 ? "labkey-alternate-row" : "labkey-row";
+                },
+                gridRow : 0,
+                isPrint : -1 != window.location.href.indexOf("_print=true") || -1 != window.location.href.indexOf("_print=1"),
+                start : (new Date()).valueOf()
+            }
+        );
+
+        tpl.overwrite(this.el, reportData);
     }
 
-    return {fields: fields, breakFields : breakFields, rows:arrayrows};
-};
+});
 
 
-})();
+
+})(); // file scope function
 
 
 
@@ -305,37 +538,9 @@ LABKEY.TemplateHelper.transformSelectRowsResult = function(qr, config)
 
 
 
-
-
-function testIssues(renderTo)
-{
-    LABKEY.Query.selectRows({
-/*	containerPath : '/home/Developer/issues', */
-        requiredVersion: 12.1,
-        schemaName: 'issues',
-        queryName: 'Issues',
-        columns: 'AssignedTo,Status,XY,IssueId,Created,Priority,Title,Type,AssignedTo/DisplayName,CreatedBy,Area,Milestone,Triage',
-/*        filterArray: [LABKEY.Filter.create('Milestone', '12.', LABKEY.Filter.Types.STARTS_WITH),LABKEY.Filter.create('Status', 'closed', LABKEY.Filter.Types.NOT_EQUAL_OR_MISSING)], */
-        sort: 'AssignedTo/DisplayName,Status,-IssueId',
-        success: function(result)
-		{
-			// result.metaData.sortInfo is TOFU
-			// result.metaData.sortInfo = [{field:"AssignedTo",direction:"ASC"},{field:"Status", direction:"ASC"}];
-		   	var data = LABKEY.TemplateHelper.transformSelectRowsResult(
-				result,
-				{breakInfo:[{name:'AssignedTo', rowspans:false}, {name:'Status', rowspans:true}]}
-			);
-			EXT4_renderTo(renderTo, data);
-		}
-    });
-}
-
-
-
-
 var issueTmpl =
 [
-		'<table class="report"><thead>',
+		'<table class="report" cellspacing=0><thead>',
 		'<tpl for="rows">',
 			'<tpl if="values.breakLevel==0">',
 				'<tr><td class="break-spacer">&nbsp;</td></tr>',
@@ -359,59 +564,7 @@ var issueTmpl =
 				'</tpl>',
 			'</tr>',
 		'</tpl>',
-		'</table>',
-].join("");
-
-
-var rowspanTmpl1 =
-[
-		'<table class="report">',
-		'<thead>',
-				'<tpl for="fields">',
-					'<th class="labkey-column-header">{[this.getCaptionHtml(values)]}</th>',
-				'</tpl>',
-		'</thead>',
-		'<tpl for="rows">',
-				'<tpl for="asArray">',
-				    '<tpl if="xindex &lt;= parent.rowspans.length">',
-    				    '<tpl if="parent.rowspans[xindex-1]&gt;0">',
-        					'<td style="border:solid 1px black;" rowspan={[parent.rowspans[xindex-1]]}>{[this.getHtml(values)]}</td>',
-	    			    '</tpl>',
-				    '</tpl>',
-				    '<tpl if="xindex &gt; parent.rowspans.length">',
-    					'<td>{[this.getHtml(values)]}</td>',
-				    '</tpl>',
-				'</tpl>',
-			'</tr>',
-		'</tpl>',
-		'</table>',
-		'{[((new Date()).valueOf() - this.start)/1000.0]}'
-].join("");
-
-
-var rowspanTmpl2 =
-[
-		'<table class="report">',
-		'<thead>',
-				'<tpl for="fields">',
-					'<th class="labkey-column-header">{[this.getCaptionHtml(values)]}</th>',
-				'</tpl>',
-		'</thead>',
-		'<tpl for="rows">',
-		        '<tr>',
-				'<tpl for="asArray">',
-    				'<tpl if="!rowspan">',
-                        '<td>{[this.getHtml(values)]}</td>',
-	    			'</tpl>',
-				    '<tpl if="rowspan&lt;0"></tpl>',
-    				'<tpl if="rowspan&gt;0">',
-                        '<td style="border:solid 1px black;" rowspan={rowspan}>{[this.getHtml(values)]}</td>',
-	    			'</tpl>',
-				'</tpl>',
-			'</tr>',
-		'</tpl>',
-		'</table>',
-		'{[((new Date()).valueOf() - this.start)/1000.0]}'
+		'</table>'
 ].join("");
 
 var rowspanTmpl3 =
@@ -423,72 +576,72 @@ var rowspanTmpl3 =
 				'</tpl>',
 		'</thead>',
 		'<tpl for="rows">',
-		        '<tr>',
-				'<tpl for="asArray">',
-				    '{[this.getGridCellHtml(values)]}',
-				'</tpl>',
-			'</tr>',
+		        '<tr class="{[this.getGridRowClass()]}">',
+				'<tpl for="asArray">{[this.getGridCellHtml(values)]}</tpl>',
+    			'</tr>',
 		'</tpl>',
 		'</table>',
 		'{[((new Date()).valueOf() - this.start)/1000.0]}'
 ].join("");
 
 
-function EXT4_renderTo(el, data)
-{
-	var $h = Ext.util.Format.htmlEncode;
+var pageTmpl1 =
+[
+		'<table class="report"  cellspacing=0>',
+        '<tpl for="pages">',
+            '{[this.resetGrid()]}',
+// PAGE TEMPLATE
+            '<tr><td class="break-spacer">&nbsp;</td></tr>',
+            '<tr><td colspan="{[parent.fields.length]}" style="background-color:#eeeeee; padding:10px;">',
+                '<tpl for="first">',
+                    '<table>',
+                    '<tr><td colspan=2><b>{[this.getHtml(values.asObject.AssignedTo,values)]}</b></td></tr>',
+                    '<tr><td>userid</td><td>{[this.getHtml(values.asObject["AssignedTo/UserId"],values)]}</td></tr>',
+                    '</table>',
+                '</tpl>',
+            '</td></tr>',
+// GRID TEMPLATE
+            '<tr>',
+                '<tpl for="parent.fields">',
+                    '<th class="labkey-column-header">{[this.getCaptionHtml(values)]}</th>',
+                '</tpl>',
+            '</tr>',
+            '<tpl for="rows">',
+                '<tr class="{[this.getGridRowClass()]}">',
+                '<tpl for="asArray">',
+                    '{[this.getGridCellHtml(values)]}',
+                '</tpl>',
+    			'</tr>',
+            '</tpl>',
+		'</tpl>',
+		'</table>',
+		'{[((new Date()).valueOf() - this.start)/1000.0]}'
+].join("");
 
-	el = Ext.get(el);
-	var tplOneBreak = new Ext.XTemplate
-	(
-	    rowspanTmpl3,
+
+function testIssues(el)
+{
+    var helper = new LABKEY.TemplateReport(
+    {
+        rowBreakInfo:[{name:'Status', rowspans:false}],
+        pageBreakInfo:[{name:'AssignedTo', rowspans:true}],
+        template : pageTmpl1
+    });
+
+    LABKEY.Query.selectRows({
+        requiredVersion: 12.1,
+        schemaName: 'issues',
+        queryName: 'Issues',
+        columns: 'AssignedTo,Status,XY,IssueId,Created,Priority,Title,Type,AssignedTo/DisplayName,AssignedTo/UserId,CreatedBy,Area,Milestone,Triage',
+        sort: 'AssignedTo/DisplayName,Status,-IssueId',
+        success: function(qr)
 		{
-		    getCaptionHtml : function(field)
-		    {
-                if (field.getCaptionHtml)
-                    return field.getCaptionHtml();
-                return field.shortCaption || field.name;
-		    },
-		    getGridCellHtml : function(d)
-		    {
-                if (d.field && d.field.getGridCellHtml)
-                    return d.field.getGridCellHtml(d, !this.isPrint);
-                return "<td>" + getHtml() + "</td>";
-		    },
-			getHtml : function(d)
-			{
-			    if (d.field && d.field.getDisplayValueHtml)
-			        return d.field.getDisplayValueHtml(d, !this.isPrint);
-				if (d.html)
-					return d.html;
-				var html = $h(this.getFormattedValue(d));
-				if (d.url && !this.isPrint)
-					html = "<a href=\"" + $h(d.url) + "\">" + html + "</a>";
-				return html;
-			},
-			resetGrid : function()
-			{
-				this.gridRow = 0; return "";
-			},
-			getGridRowClass : function()
-			{
-				// assumes we call this once per row
-				this.gridRow++;
-				return this.gridRow%2 ? "labkey-alternate-row" : "labkey-row";
-			},
-			getFormattedValue : function (d)
-			{
-			    if (d.field && d.field.getFormattedDisplayValue)
-			        return d.field.getFormattedDisplayValue(d);
-                var v = d.displayValue || d.value;
-                return Ext.isDefined(v) ? v.toString() : "";
-			},
-			dateFormat:null,
-			gridRow : 0,
-			isPrint : -1 != window.location.href.indexOf("_print=true") || -1 != window.location.href.indexOf("_print=1"),
-			start : (new Date()).valueOf()
+            helper.data = qr;
+            helper.render(el);
 		}
-	);
-	tplOneBreak.overwrite(el, data);
+    });
 }
+
+
+
 
