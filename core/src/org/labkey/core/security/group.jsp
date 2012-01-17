@@ -27,6 +27,7 @@
 <%@ page import="org.labkey.api.security.SecurityUrls" %>
 <%@ page import="org.labkey.api.security.Group" %>
 <%@ page import="org.labkey.api.data.ContainerManager" %>
+<%@ page import="org.labkey.api.security.PrincipalType" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%
@@ -140,7 +141,7 @@ else
         {
         Integer userId = member.getUserId();
         String memberName = member.getName();
-        boolean isGroup = member.getType().equals("g");
+        boolean isGroup = member.getPrincipalType() == PrincipalType.GROUP;
         %>
         <tr>
             <td>

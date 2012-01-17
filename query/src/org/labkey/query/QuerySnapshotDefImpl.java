@@ -33,7 +33,6 @@ import org.labkey.query.persist.QueryDef;
 import org.labkey.query.persist.QueryManager;
 import org.labkey.query.persist.QuerySnapshotDef;
 
-import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Date;
@@ -121,15 +120,9 @@ public class QuerySnapshotDefImpl implements QuerySnapshotDefinition
         {
             if (_queryDef == null)
             {
-                try {
-                    QueryDef.Key key = new QueryDef.Key(getContainer(), true);
-                    key.setQueryDefId(_snapshotDef.getQueryDefId());
-                    _queryDef = key.selectObject();
-                }
-                catch (SQLException e)
-                {
-                    throw new RuntimeException(e);
-                }
+                QueryDef.Key key = new QueryDef.Key(getContainer(), true);
+                key.setQueryDefId(_snapshotDef.getQueryDefId());
+                _queryDef = key.selectObject();
             }
             return _queryDef == null ? null : new CustomQueryDefinitionImpl(user, _queryDef);
         }

@@ -50,6 +50,7 @@ import org.labkey.api.security.Group;
 import org.labkey.api.security.GroupManager;
 import org.labkey.api.security.InvalidGroupMembershipException;
 import org.labkey.api.security.MutableSecurityPolicy;
+import org.labkey.api.security.PrincipalType;
 import org.labkey.api.security.RequiresNoPermission;
 import org.labkey.api.security.RequiresPermissionClass;
 import org.labkey.api.security.RequiresSiteAdmin;
@@ -604,7 +605,7 @@ public class SecurityController extends SpringActionController
             }
             else
             {
-                error  = UserManager.validGroupName(name, Group.typeProject);
+                error  = UserManager.validGroupName(name, PrincipalType.GROUP);
             }
 
             if (null == error)

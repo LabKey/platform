@@ -75,6 +75,7 @@ import org.labkey.api.security.Group;
 import org.labkey.api.security.GroupManager;
 import org.labkey.api.security.NestedGroupsTest;
 import org.labkey.api.security.PasswordExpiration;
+import org.labkey.api.security.PrincipalType;
 import org.labkey.api.security.SecurityManager;
 import org.labkey.api.security.SecurityUrls;
 import org.labkey.api.security.User;
@@ -396,7 +397,7 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
         GroupManager.bootstrapGroup(Group.groupAdministrators, "Administrators");
         GroupManager.bootstrapGroup(Group.groupUsers, "Users");
         GroupManager.bootstrapGroup(Group.groupGuests, "Guests");
-        GroupManager.bootstrapGroup(Group.groupDevelopers, "Developers", GroupManager.PrincipalType.ROLE);
+        GroupManager.bootstrapGroup(Group.groupDevelopers, "Developers", PrincipalType.ROLE);
 
         // Other containers inherit permissions from root; admins get all permissions, users & guests none
         Role noPermsRole = RoleManager.getRole(NoPermissionsRole.class);

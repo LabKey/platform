@@ -20,6 +20,7 @@ import org.labkey.api.cache.BlockingCache;
 import org.labkey.api.cache.CacheLoader;
 import org.labkey.api.cache.CacheManager;
 import org.labkey.api.cache.DbCache;
+import org.labkey.api.cache.Wrapper;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.study.StudyCachable;
 
@@ -82,11 +83,11 @@ public class StudyCache
         return DbCache.get(tinfo, getCacheName(containerId, cacheKey));
     }
 
-    public static Object get(TableInfo tinfo, String containerId, Object cacheKey, CacheLoader<String,Object> loader)
+    public static Object get(TableInfo tinfo, String containerId, Object cacheKey, CacheLoader<String, Object> loader)
     {
         if (!ENABLE_CACHING)
             return loader.load(getCacheName(containerId, cacheKey), null);
-        BlockingCache cache = new BlockingCache<String,Object>(DbCache.getCache(tinfo), loader);
+        BlockingCache<String, Object> cache = new BlockingCache<String, Object>(DbCache.<Wrapper<Object>>getCacheGeneric(tinfo), loader);
         return cache.get(getCacheName(containerId, cacheKey), null);
     }
 
@@ -94,7 +95,7 @@ public class StudyCache
     {
         if (!ENABLE_CACHING)
             return;
-        // TODO: this clear call is too heavy-handed.
+        // TODO: this clear call is too heavy-handed. #12912
         //it will clear the cache for all containers, not just the one we care about.
         DbCache.clear(tinfo);
     }

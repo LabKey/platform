@@ -33,7 +33,6 @@ import org.labkey.api.wiki.WikiRendererType;
 import org.labkey.api.wiki.WikiService;
 
 import java.io.Serializable;
-import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Date;

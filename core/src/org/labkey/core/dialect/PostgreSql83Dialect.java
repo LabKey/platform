@@ -244,27 +244,30 @@ class PostgreSql83Dialect extends SqlDialect
     @Override
     public void appendSelectAutoIncrement(StringBuilder sql, TableInfo table, String columnName)
     {
-        if (null == table.getSequence())
-            appendStatement(sql, "SELECT CURRVAL('" + table.toString() + "_" + columnName + "_seq')");
-        else
-            appendStatement(sql, "SELECT CURRVAL('" + table.getSequence() + "')");
-
-        // TODO: Replace above with this cleaner approach... though first, need to remove some assumptions by callers
-        // sql.append("\nRETURNING ").append(columnName);
+        sql.append("\nRETURNING ").append(columnName);
     }
 
     @Override
     public ResultSet executeInsertWithResults(@NotNull PreparedStatement stmt) throws SQLException
     {
-        stmt.execute();
+        return stmt.executeQuery();
+    }
 
-        if (stmt.getMoreResults())
-            return stmt.getResultSet();
+    @Override
+    public String appendSelectAutoIncrement(String sql, TableInfo tinfo, String columnName)
+    {
+        StringBuilder sbSql = new StringBuilder(sql);
+
+        String seq;
+
+        if (null == tinfo.getSequence())
+            seq = "SELECT CURRVAL('" + tinfo.toString() + "_" + columnName + "_seq')";
         else
-            return null;
+            seq = "SELECT CURRVAL('" + tinfo.getSequence() + "')";
 
-        // TODO: Replace above with this when making appendSelectAutoIncrement() change above
-        // return stmt.executeQuery();
+        appendStatement(sbSql, seq);
+
+        return sbSql.toString();
     }
 
     public boolean requiresStatementMaxRows()

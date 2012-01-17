@@ -115,13 +115,13 @@ public abstract class DefaultActor<A extends DefaultActor<A>> implements Require
         {
             groupId = SecurityManager.getGroupId(getContainer(), groupName, site.getEntityId(), false);
             if (groupId == null && createIfMissing)
-                groupId = SecurityManager.createGroup(getContainer(), groupName, Group.typeModule, site.getEntityId()).getUserId();
+                groupId = SecurityManager.createGroup(getContainer(), groupName, PrincipalType.MODULE, site.getEntityId()).getUserId();
         }
         else
         {
             groupId = SecurityManager.getGroupId(getContainer(), groupName, false);
             if (groupId == null && createIfMissing)
-                groupId = SecurityManager.createGroup(getContainer(), groupName, Group.typeModule).getUserId();
+                groupId = SecurityManager.createGroup(getContainer(), groupName, PrincipalType.MODULE).getUserId();
         }
         return groupId;
     }

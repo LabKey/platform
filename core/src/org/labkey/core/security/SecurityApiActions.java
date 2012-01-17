@@ -106,22 +106,22 @@ public class SecurityApiActions
             return containerPerms;
         }
 
-        protected List<Map<String,Object>> getGroupPerms(Container container, SecurityPolicy policy, Group[] groups)
+        protected List<Map<String, Object>> getGroupPerms(Container container, SecurityPolicy policy, Group[] groups)
         {
-            if(null == policy)
+            if (null == policy)
                 policy = container.getPolicy();
 
-            if(null == groups)
+            if (null == groups)
                 return null;
 
             List<Map<String, Object>> groupsPerms = new ArrayList<Map<String,Object>>();
 
-            for(Group group : groups)
+            for (Group group : groups)
             {
                 Map<String, Object> groupPerms = new HashMap<String,Object>();
                 groupPerms.put("id", group.getUserId());
                 groupPerms.put("name", SecurityManager.getDisambiguatedGroupName(group));
-                groupPerms.put("type", group.getType());
+                groupPerms.put("type", group.getPrincipalType().getTypeChar());
                 groupPerms.put("isSystemGroup", group.isSystemGroup());
                 groupPerms.put("isProjectGroup", group.isProjectGroup());
 

@@ -254,12 +254,12 @@ public class ListDefinitionImpl implements ListDefinition
 
     private void processSqlException(SQLException e) throws Exception
     {
-        if(SqlDialect.isConstraintException(e))
+        if (SqlDialect.isConstraintException(e))
         {
             //verify this is actually due to a duplicate name
-            for(ListDef l : ListManager.get().getLists(getContainer()))
+            for (ListDef l : ListManager.get().getLists(getContainer()))
             {
-                if(l.getName().equals(_def.getName()))
+                if (l.getName().equals(_def.getName()))
                 {
                     throw new ListEditorService.ListImportException("The name '" + _def.getName() + "' is already in use.");
                 }

@@ -34,7 +34,6 @@ import org.labkey.api.query.QueryService;
 import org.labkey.api.query.UserSchema;
 import org.labkey.api.security.User;
 import org.labkey.api.util.ResultSetUtil;
-import org.labkey.api.util.UnexpectedException;
 import org.labkey.query.ExternalSchema;
 import org.labkey.query.ExternalSchemaDocumentProvider;
 
@@ -82,14 +81,8 @@ public class QueryManager
         QueryDef.Key key = new QueryDef.Key(container, customQuery);
         key.setSchema(schema);
         key.setQueryName(name);
-        try
-        {
-            return key.selectObject();
-        }
-        catch (SQLException e)
-        {
-            throw UnexpectedException.wrap(e);
-        }
+
+        return key.selectObject();
     }
 
     /**
@@ -98,52 +91,38 @@ public class QueryManager
     public QueryDef[] getQueryDefs(Container container, String schema, boolean inheritableOnly, boolean includeSnapshots, boolean customQuery)
     {
         // Metadata for built-in tables is stored with a NULL value for the SQL
-        try
+        QueryDef.Key key = new QueryDef.Key(container, customQuery);
+        if (schema != null)
         {
-            QueryDef.Key key = new QueryDef.Key(container, customQuery);
-            if (schema != null)
-            {
-                key.setSchema(schema);
-            }
-
-            int mask = 0;
-            int value = 0;
-
-            if (inheritableOnly)
-            {
-                mask |= FLAG_INHERITABLE;
-                value |= FLAG_INHERITABLE;
-            }
-
-            if (!includeSnapshots)
-                mask |= FLAG_SNAPSHOT;
-
-            if (mask != 0 || value != 0)
-                key.setFlagMask(mask, value);
-
-            return key.select();
+            key.setSchema(schema);
         }
-        catch (SQLException e)
+
+        int mask = 0;
+        int value = 0;
+
+        if (inheritableOnly)
         {
-            throw UnexpectedException.wrap(e);
+            mask |= FLAG_INHERITABLE;
+            value |= FLAG_INHERITABLE;
         }
+
+        if (!includeSnapshots)
+            mask |= FLAG_SNAPSHOT;
+
+        if (mask != 0 || value != 0)
+            key.setFlagMask(mask, value);
+
+        return key.select();
     }
 
     public QuerySnapshotDef[] getQuerySnapshots(Container container, String schema)
     {
-        try
+        QuerySnapshotDef.Key key = new QuerySnapshotDef.Key(container);
+        if (schema != null)
         {
-            QuerySnapshotDef.Key key = new QuerySnapshotDef.Key(container);
-            if (schema != null)
-            {
-                key.setSchema(schema);
-            }
-            return key.select();
+            key.setSchema(schema);
         }
-        catch (SQLException e)
-        {
-            throw UnexpectedException.wrap(e);
-        }
+        return key.select();
     }
 
     public QueryDef insert(User user, QueryDef queryDef) throws SQLException
@@ -288,16 +267,8 @@ public class QueryManager
 
     public ExternalSchemaDef[] getExternalSchemaDefs(Container container)
     {
-        try
-        {
-            ExternalSchemaDef.Key key = new ExternalSchemaDef.Key(container);
-            return key.select();
-        }
-        catch (SQLException e)
-        {
-            _log.error("Error", e);
-        }
-        return new ExternalSchemaDef[0];
+        ExternalSchemaDef.Key key = new ExternalSchemaDef.Key(container);
+        return key.select();
     }
 
     public ExternalSchemaDef getExternalSchemaDef(Container container, String userSchemaName)
@@ -305,17 +276,9 @@ public class QueryManager
         if (userSchemaName == null)
             return null;
 
-        try
-        {
-            ExternalSchemaDef.Key key = new ExternalSchemaDef.Key(container);
-            key.setUserSchemaName(userSchemaName);
-            return key.selectObject();
-        }
-        catch (SQLException e)
-        {
-            _log.error("Error", e);
-            return null;
-        }
+        ExternalSchemaDef.Key key = new ExternalSchemaDef.Key(container);
+        key.setUserSchemaName(userSchemaName);
+        return key.selectObject();
     }
 
     public ExternalSchemaDef insert(User user, ExternalSchemaDef def) throws Exception
