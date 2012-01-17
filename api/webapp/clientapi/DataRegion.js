@@ -2081,7 +2081,6 @@ LABKEY.DataRegion._filterUI =
     {
         valuesLabel.setVisible(true);
         valuesLabel.setText("Loading...");
-        var h = Ext.util.Format.htmlEncode;
 
         // Build up a SELECT DISTINCT query to get all of the values that are currently in use
         var sql = 'SELECT DISTINCT ';
@@ -2090,7 +2089,7 @@ LABKEY.DataRegion._filterUI =
             sql += "\"" + column.fieldKeyArray[i].replace("\"", "\"\"") + "\".";
         }
         sql += "\"" + column.lookup.displayColumn.replace("\"", "\"\"") + "\"";
-        sql += ' AS value FROM "' + h(dataRegion.schemaName) + '"."' + h(dataRegion.queryName) + '"';
+        sql += ' AS value FROM "' + dataRegion.schemaName.replace("\"", "\"\"") + '"."' + dataRegion.queryName.replace("\"", "\"\"") + '"';
 
         LABKEY.Query.executeSql({
             schemaName: dataRegion.schemaName,
