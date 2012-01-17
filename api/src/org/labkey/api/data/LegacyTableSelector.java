@@ -28,7 +28,7 @@ import java.util.Set;
 */
 
 // Standard TableSelector that throws checked SQLExceptions instead of RuntimeExceptions.
-public class LegacyTableSelector extends LegacySelector
+public class LegacyTableSelector extends LegacySelector<TableSelector>
 {
     public LegacyTableSelector(TableInfo table, Collection<ColumnInfo> columns, @Nullable Filter filter, @Nullable Sort sort)
     {
@@ -48,6 +48,18 @@ public class LegacyTableSelector extends LegacySelector
     public LegacyTableSelector(TableInfo table)
     {
         super(new TableSelector(table, Table.ALL_COLUMNS, null, null));
+    }
+
+    public LegacyTableSelector setRowCount(int rowCount)
+    {
+        _selector.setRowCount(rowCount);
+        return this;
+    }
+
+    public LegacyTableSelector setOffset(long offset)
+    {
+        _selector.setOffset(offset);
+        return this;
     }
 
     /* TODO: Fix up caching and connection closing, then expose this

@@ -25,18 +25,25 @@ import org.labkey.api.util.PageFlowUtil;
 
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicInteger;
 
-// TODO: offset, limit, cache, SelectForDisplay, SelectObject via PK, async, etc.
+// TODO: cache, for display, SelectObject via PK, async, etc.
 public class TableSelector extends BaseSelector
 {
     private final TableInfo _table;
     private final Collection<ColumnInfo> _columns;
     private final Filter _filter;
     private final Sort _sort;
+
+    private int _rowCount = Table.ALL_ROWS;
+    private long _offset = Table.NO_OFFSET;
+    private long _scrollOffset = 0;
 
     // Select specified columns from a table
     public TableSelector(TableInfo table, Collection<ColumnInfo> columns, @Nullable Filter filter, @Nullable Sort sort)
@@ -77,19 +84,66 @@ public class TableSelector extends BaseSelector
         return _columns;
     }
 
-    @Override
-    SQLFragment getSql()
+    public TableSelector setRowCount(int rowCount)
     {
-        // TODO: Handle offset and limit
-        return QueryService.get().getSelectSQL(_table, _columns, _filter, _sort, Table.ALL_ROWS, Table.NO_OFFSET, false);
+        _rowCount = rowCount;
+        return this;
+    }
+
+    public TableSelector setOffset(long offset)
+    {
+        _offset = offset;
+        return this;
     }
 
     @Override
-    protected SQLFragment getSqlForRowcount()
+    public ResultSet getResultSet() throws SQLException
     {
-        // TODO: Handle offset and limit
+        ResultSet rs = super.getResultSet();
+
+        // Special handling for dialects that don't support offset
+        while (_scrollOffset > 0 && rs.next())
+            _scrollOffset--;
+
+        return rs;
+    }
+
+    @Override
+    SQLFragment getSql()
+    {
+        return getSql(_columns);
+    }
+
+    @Override
+    protected SQLFragment getSqlForRowCount()
+    {
         // Ignore specified columns; only need to select PK column(s)
-        return QueryService.get().getSelectSQL(_table, _table.getPkColumns(), _filter, _sort, Table.ALL_ROWS, Table.NO_OFFSET, false);
+        return getSql(_table.getPkColumns());
+    }
+
+    private SQLFragment getSql(Collection<ColumnInfo> columns)
+    {
+        // NOTE: When ResultSet is supported, we'll need to select one extra row to support isComplete(). Will need
+        // boolean flag that indicates ResultSet is being selected.
+
+        boolean forceSort = (_offset != Table.NO_OFFSET || _rowCount != Table.ALL_ROWS);
+
+        if (_offset != Table.NO_OFFSET || _table.getSqlDialect().supportsOffset())
+        {
+            // Standard case is to simply create SQL using the rowCount and offset
+
+            _scrollOffset = 0;
+            return QueryService.get().getSelectSQL(_table, columns, _filter, _sort, _rowCount, _offset, forceSort);
+        }
+        else
+        {
+            // We've asked for offset but the dialect's SQL doesn't support it, so implement offset manually:
+            // - Select rowCount + offset rows
+            // - Set _scrollOffset so getResultSet() skips over the rows we don't want
+
+            _scrollOffset = _offset;
+            return QueryService.get().getSelectSQL(_table, columns, _filter, _sort, _rowCount + (int)_offset, 0, forceSort);
+        }
     }
 
     public static class TestCase extends Assert
@@ -100,6 +154,51 @@ public class TableSelector extends BaseSelector
             TableSelector userSelector = new TableSelector(CoreSchema.getInstance().getTableInfoActiveUsers(), null, null);
 
             testSelectorMethods(userSelector, User.class);
+
+            int count = (int)userSelector.getRowCount();
+
+            if (count >= 5)
+            {
+                int rowCount = 3;
+                int offset = 2;
+
+                userSelector.setRowCount(Table.ALL_ROWS);
+                assertEquals(count, (int)userSelector.getRowCount());
+                assertEquals(count, userSelector.getArray(User.class).length);
+                assertEquals(count, userSelector.getCollection(User.class).size());
+
+                // First, query all the users into an array and a list; we'll use these to validate that rowCount and
+                // offset are working. Set an explicit row count to force the same sorting that will result below.
+                userSelector.setRowCount(count);
+                User[] sortedArray = userSelector.getArray(User.class);
+                List<User> sortedList = new ArrayList<User>(userSelector.getCollection(User.class));
+
+                // Set a row count, verify the lengths and contents against the expected array & list subsets
+                userSelector.setRowCount(rowCount);
+                assertEquals(rowCount, (int) userSelector.getRowCount());
+                User[] rowCountArray = userSelector.getArray(User.class);
+                assertEquals(rowCount, rowCountArray.length);
+                assertEquals(Arrays.copyOf(sortedArray, rowCount), rowCountArray);
+                List<User> rowCountList = new ArrayList<User>(userSelector.getCollection(User.class));
+                assertEquals(rowCount, rowCountList.size());
+                assertEquals(sortedList.subList(0, rowCount), rowCountList);
+
+                // Set an offset, verify the lengths and contents against the expected array & list subsets
+                userSelector.setOffset(offset);
+                assertEquals(rowCount, (int)userSelector.getRowCount());
+                User[] offsetArray = userSelector.getArray(User.class);
+                assertEquals(rowCount, offsetArray.length);
+                assertEquals(Arrays.copyOfRange(sortedArray, offset, offset + rowCount), offsetArray);
+                List<User> offsetList = new ArrayList<User>(userSelector.getCollection(User.class));
+                assertEquals(rowCount, offsetList.size());
+                assertEquals(sortedList.subList(offset, offset + rowCount), offsetList);
+
+                // Back to all rows and verify
+                userSelector.setRowCount(Table.ALL_ROWS);
+                assertEquals(count, (int)userSelector.getRowCount());
+                assertEquals(count, userSelector.getArray(User.class).length);
+                assertEquals(count, userSelector.getCollection(User.class).size());
+            }
         }
         
         private <K> void testSelectorMethods(TableSelector selector, Class<K> clazz)
@@ -140,7 +239,8 @@ public class TableSelector extends BaseSelector
                 array.length == collection.size() &&
                 array.length == rsCount.intValue() &&
                 array.length == mapCount.intValue() &&
-                array.length == objCount.intValue()
+                array.length == objCount.intValue() &&
+                array.length == selector.getRowCount()
             );
         }
     }

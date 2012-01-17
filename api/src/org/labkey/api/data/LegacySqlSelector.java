@@ -23,7 +23,7 @@ package org.labkey.api.data;
 */
 
 // Standard SqlSelector that throws checked SQLExceptions instead of RuntimeExceptions.
-public class LegacySqlSelector extends LegacySelector
+public class LegacySqlSelector extends LegacySelector<SqlSelector>
 {
     public LegacySqlSelector(DbSchema schema, SQLFragment sql)
     {

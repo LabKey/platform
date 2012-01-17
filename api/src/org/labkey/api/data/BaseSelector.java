@@ -46,7 +46,7 @@ public abstract class BaseSelector extends JdbcCommand implements Selector
         return getResultSet(getSql());
     }
 
-    private ResultSet getResultSet(SQLFragment sql) throws SQLException
+    protected ResultSet getResultSet(SQLFragment sql) throws SQLException
     {
         _conn = getConnection();
         return Table._executeQuery(_conn, sql.getSQL(), sql.getParamsArray());
@@ -106,7 +106,7 @@ public abstract class BaseSelector extends JdbcCommand implements Selector
     public long getRowCount()
     {
         SQLFragment sql = new SQLFragment("SELECT COUNT(*) FROM (");
-        sql.append(getSqlForRowcount());
+        sql.append(getSqlForRowCount());
         sql.append(") x");
 
         return handleResultSet(sql, new ResultSetHandler<Long>()
@@ -120,7 +120,7 @@ public abstract class BaseSelector extends JdbcCommand implements Selector
         });
     }
 
-    protected SQLFragment getSqlForRowcount()
+    protected SQLFragment getSqlForRowCount()
     {
         return getSql();
     }

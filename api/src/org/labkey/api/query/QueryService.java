@@ -128,7 +128,7 @@ abstract public class QueryService
      * be used as a subselect, as some databases don't allow you to do ORDER BY on a subselect if there is no LIMIT/TOP
      * clause 
      */
-    abstract public SQLFragment getSelectSQL(TableInfo table, Collection<ColumnInfo> columns, @Nullable Filter filter, @Nullable Sort sort, int rowCount, long offset, boolean forceSort);
+    abstract public SQLFragment getSelectSQL(TableInfo table, @Nullable Collection<ColumnInfo> columns, @Nullable Filter filter, @Nullable Sort sort, int rowCount, long offset, boolean forceSort);
 
 
     public interface QueryListener

@@ -745,7 +745,7 @@ public class SimpleFilter implements Filter
     */
 
 
-    public SQLFragment getSQLFragment(TableInfo tableInfo, List<ColumnInfo> colInfos)
+    public SQLFragment getSQLFragment(TableInfo tableInfo, @Nullable List<ColumnInfo> colInfos)
     {
         if (null == _clauses || 0 == _clauses.size())
         {

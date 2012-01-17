@@ -1176,39 +1176,26 @@ public class Table
 
     public static Map<String, Object>[] selectMaps(TableInfo table, Set<String> select, @Nullable Filter filter, @Nullable Sort sort) throws SQLException
     {
-        LegacySelector selector = new LegacyTableSelector(table, select, filter, sort);
+        LegacyTableSelector selector = new LegacyTableSelector(table, select, filter, sort);
 
         //noinspection unchecked
         return selector.getArray(Map.class);
     }
 
 
-    public static <K> K selectObject(TableInfo table, Filter filter, Sort sort, Class<K> clss) throws SQLException
+    public static <K> K selectObject(TableInfo table, @Nullable Filter filter, @Nullable Sort sort, Class<K> clss) throws SQLException
     {
         return new LegacyTableSelector(table, filter, sort).getObject(clss);
     }
 
 
-    public static <K> K selectObject(TableInfo table, Set<String> select, Filter filter, Sort sort, Class<K> clss) throws SQLException
+    public static <K> K selectObject(TableInfo table, Set<String> select, @Nullable Filter filter, @Nullable Sort sort, Class<K> clss) throws SQLException
     {
         return new LegacyTableSelector(table, select, filter, sort).getObject(clss);
     }
 
 
-    private static int decideRowCount(int rowcount, @Nullable Class clazz)
-    {
-        if (ALL_ROWS == rowcount || Table.NO_ROWS == rowcount)
-            return rowcount;
-
-        // add 1 to count so we can set isComplete()
-        if (null == clazz || java.sql.ResultSet.class.isAssignableFrom(clazz))
-            return rowcount + 1;
-
-        return rowcount;
-    }
-
-
-    public static SQLFragment getSelectSQL(TableInfo table, Collection<ColumnInfo> columns, @Nullable Filter filter, @Nullable Sort sort)
+    public static SQLFragment getSelectSQL(TableInfo table, @Nullable Collection<ColumnInfo> columns, @Nullable Filter filter, @Nullable Sort sort)
     {
         return QueryService.get().getSelectSQL(table, columns, filter, sort, ALL_ROWS, NO_OFFSET, false);
     }
@@ -1244,27 +1231,7 @@ public class Table
     public static <K> K[] select(TableInfo table, Set<String> select, @Nullable Filter filter, @Nullable Sort sort, Class<K> clss, int rowCount, long offset)
             throws SQLException
     {
-        return select(table, columnInfosList(table, select), filter, sort, clss, rowCount, offset);
-    }
-
-
-    @NotNull
-    public static <K> K[] select(TableInfo table, Collection<ColumnInfo> columns, @Nullable Filter filter, @Nullable Sort sort, Class<K> clss, int rowCount, long offset)
-            throws SQLException
-    {
-        long queryOffset = offset, scrollOffset = 0;
-        int queryRowCount = rowCount;
-
-        if (offset > 0 && !table.getSqlDialect().supportsOffset())
-        {
-            queryOffset = 0;
-            scrollOffset = offset;
-            queryRowCount = rowCount + (int)offset;
-        }
-
-        // TODO: Use decideRowCount() here?
-        SQLFragment sql = QueryService.get().getSelectSQL(table, columns, filter, sort, queryRowCount, queryOffset, true);
-        return internalExecuteQueryArray(table.getSchema(), sql.getSQL(), sql.getParams().toArray(), clss, scrollOffset);
+        return new LegacyTableSelector(table, select, filter, sort).setRowCount(rowCount).setOffset(offset).getArray(clss);
     }
 
 
@@ -1388,6 +1355,19 @@ public class Table
         Table.TableResultSet rs = (Table.TableResultSet)executeQuery(table.getSchema(), sql.getSQL(), sql.getParams().toArray(), rowCount, scrollOffset, cache, scrollable, asyncRequest, log, statementRowCount);
 
         return new ResultsImpl(rs, columns.values());
+    }
+
+
+    private static int decideRowCount(int rowcount, @Nullable Class clazz)
+    {
+        if (ALL_ROWS == rowcount || NO_ROWS == rowcount)
+            return rowcount;
+
+        // add 1 to count so we can set isComplete()
+        if (null == clazz || java.sql.ResultSet.class.isAssignableFrom(clazz))
+            return rowcount + 1;
+
+        return rowcount;
     }
 
 
@@ -2040,7 +2020,7 @@ public class Table
     }
     
 
-    static public Map<String, ColumnInfo> createColumnMap(TableInfo table, Collection<ColumnInfo> columns)
+    static public Map<String, ColumnInfo> createColumnMap(TableInfo table, @Nullable Collection<ColumnInfo> columns)
     {
         CaseInsensitiveHashMap<ColumnInfo> ret = new CaseInsensitiveHashMap<ColumnInfo>();
         if (columns != null)

@@ -306,7 +306,9 @@
           <root url="jar://$MODULE_DIR$/../../external/lib/server/junit-4.1.jar!/" />
         </CLASSES>
         <JAVADOC />
-        <SOURCES />
+        <SOURCES>
+          <root url="jar://$MODULE_DIR$/../../external/lib/server/junit-4.1-src.zip!/" />
+        </SOURCES>
       </library>
     </orderEntry>
     <orderEntry type="module-library" exported="">
