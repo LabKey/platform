@@ -26,6 +26,7 @@ import org.labkey.api.exp.PropertyDescriptor;
 import org.labkey.api.exp.property.IPropertyValidator;
 import org.labkey.api.exp.property.PropertyService;
 import org.labkey.api.gwt.client.DefaultValueType;
+import org.labkey.api.gwt.client.util.StringUtils;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.QueryParseException;
 import org.labkey.api.util.PageFlowUtil;
@@ -34,9 +35,10 @@ import org.labkey.api.util.StringExpressionFactory;
 import org.labkey.api.util.StringUtilsLabKey;
 
 import java.io.IOException;
-import java.io.StringWriter;
 import java.io.Writer;
 import java.util.Date;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.Set;
 
 public class DataColumn extends DisplayColumn
@@ -258,17 +260,12 @@ public class DataColumn extends DisplayColumn
             return;
         out.write("showFilterPanel(");
         out.write(PageFlowUtil.jsString(ctx.getCurrentRegion().getName()));
-        out.write(", ");
-        out.write(PageFlowUtil.jsString(_filterColumn.getName()));
-        out.write(", ");
-        StringWriter strCaption = new StringWriter();
-        _caption.render(strCaption, ctx);
-        out.write(PageFlowUtil.jsString(strCaption.toString()));
-        out.write(", '");
-        out.write(_filterColumn.getSqlTypeName());
-        out.write("', ");
-        out.write(Boolean.toString(_filterColumn.isMvEnabled()));
-        out.write(")");
+        // Grab the column metadata out of the LABKEY.DataRegion object
+        out.write(", LABKEY.DataRegions[");
+        out.write(PageFlowUtil.jsString(ctx.getCurrentRegion().getName()));
+        out.write("].getColumn(");
+        out.write(PageFlowUtil.jsString(_boundColumn.getFieldKey().toString()));
+        out.write("));");
     }
 
     public String getClearFilter(RenderContext ctx)

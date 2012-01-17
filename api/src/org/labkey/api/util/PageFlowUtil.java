@@ -2424,7 +2424,14 @@ public class PageFlowUtil
         // We should already have a session at this point, but check anyway - see bug #7761
         if (session != null)
         {
-            session.setAttribute(url.getPath() + "#" + scope + DataRegion.LAST_FILTER_PARAM, clone);
+            try
+            {
+                session.setAttribute(url.getPath() + "#" + scope + DataRegion.LAST_FILTER_PARAM, clone);
+            }
+            catch (IllegalStateException ignored)
+            {
+                // Session may have been invalidated elsewhere, but there's no way to check
+            }
         }
     }
 

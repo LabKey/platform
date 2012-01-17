@@ -176,6 +176,8 @@ LABKEY.Query = new function()
          * @param {Integer} [config.maxRows] The maximum number of rows to return from the server (defaults to returning all rows).
          * @param {Integer} [config.offset] The index of the first row to return from the server (defaults to 0).
          *        Use this along with the maxRows config property to request pages of data.
+         * @param {Boolean} [config.includeTotalCount] Include the total number of rows available (defaults to true).
+         *       If false totalCount will equal number of rows returned (equal to maxRows unless maxRows == 0).
          * @param {String} [config.sort] A sort specification to apply over the rows returned by the SQL. In general,
          * you should either include an ORDER BY clause in your SQL, or specific a sort specification in this config property,
          * but not both. The value of this property should be a comma-delimited list of column names you want to sort by. Use
@@ -230,6 +232,8 @@ LABKEY.Query = new function()
                 dataObject.maxRows = config.maxRows;
             if (config.offset && config.offset > 0)
                 dataObject.offset = config.offset;
+            if (config.includeTotalCount != undefined)
+                dataObject.includeTotalCount = config.includeTotalCount;
 
             if (config.containerFilter)
                 dataObject.containerFilter = config.containerFilter;

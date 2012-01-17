@@ -18,6 +18,8 @@ package org.labkey.api.data;
 
 import org.apache.commons.beanutils.ConversionException;
 import org.apache.log4j.Logger;
+import org.json.JSONArray;
+import org.json.JSONObject;
 import org.labkey.api.action.ApiJsonWriter;
 import org.labkey.api.action.ApiQueryResponse;
 import org.labkey.api.collections.BoundMap;
@@ -938,65 +940,70 @@ public class DataRegion extends AbstractDataRegion
             _gridButtonBar.render(ctx, out);
     }
 
-    protected void renderHeaderScript(RenderContext ctx, Writer out, Map<String, String> messages, boolean showRecordSelectors) throws IOException
+    /**
+     * In almost all cases this is just the standard list of DisplayColumns, but some special cases
+     * like the MS2 nested grids may have more columns that get rendered by a nested DataRegion
+     */
+    protected List<DisplayColumn> getColumnsForMetadata()
     {
-        StringBuilder sb = new StringBuilder();
+        return getDisplayColumns();
+    }
 
-        getHeaderScriptStart(sb, messages);
+    @Override
+    protected JSONObject getDataRegionJSON(RenderContext ctx, boolean showRecordSelectors)
+    {
+        JSONObject dataRegionJSON = super.getDataRegionJSON(ctx, showRecordSelectors);
 
         if (ctx.getView() != null)
         {
+            JSONObject customViewJSON = new JSONObject();
+            dataRegionJSON.put("view", customViewJSON);
             CustomView view = ctx.getView();
             // UNDONE: use CustomViewUtil.propertyMap()
-            sb.append(",'view' : {\n");
-            sb.append("'name' : " + PageFlowUtil.jsString(view.getName()));
-            sb.append(", 'default' : " + String.valueOf(view.getName() == null));
+            customViewJSON.put("name", view.getName());
+            customViewJSON.put("default", view.getName() == null);
             if (view.getOwner() != null)
-                sb.append(", 'owner' : " + PageFlowUtil.jsString(view.getOwner().getDisplayName(ctx.getViewContext().getUser())));
-            sb.append(", 'shared' : " + view.isShared());
-            sb.append(", 'inherit' : " + view.canInherit());
-            sb.append(", 'session' : " + view.isSession());
-            sb.append(", 'editable' : " + view.isEditable());
-            sb.append(", 'hidden' : " + view.isHidden());
-            sb.append(", 'savable' : " + !view.getQueryDefinition().isTemporary());
+                customViewJSON.put("owner", view.getOwner().getDisplayName(ctx.getViewContext().getUser()));
+            customViewJSON.put("shared", view.isShared());
+            customViewJSON.put("inherit", view.canInherit());
+            customViewJSON.put("session", view.isSession());
+            customViewJSON.put("editable", view.isEditable());
+            customViewJSON.put("hidden", view.isHidden());
+            customViewJSON.put("savable", !view.getQueryDefinition().isTemporary());
             // module custom views have no container
-            sb.append(", 'containerPath' : " + PageFlowUtil.jsString(view.getContainer() != null ? view.getContainer().getPath() : ""));
-            sb.append("}");
+            customViewJSON.put("containerPath", view.getContainer() != null ? view.getContainer().getPath() : "");
         }
-        sb.append(",'complete' : " + _complete + "\n");
-        sb.append(",'offset' : " + getOffset() + "\n");
-        sb.append(",'maxRows' : " + getMaxRows() + "\n");
-        sb.append(",'totalRows' : " + _totalRows + "\n");
-        sb.append(",'rowCount' : " + _rowCount + "\n");
-        sb.append(",'showRows' : '" + getShowRows().toString().toLowerCase() + "'\n");
-        sb.append(",'showRecordSelectors' : " + showRecordSelectors + "\n");
-        sb.append(",'showSelectMessage' : " + _showSelectMessage + "\n");
-        sb.append(",'selectionKey' : " + PageFlowUtil.jsString(getSelectionKey()) + "\n");
-        sb.append(",'requestURL' : " + PageFlowUtil.jsString(ctx.getViewContext().getActionURL().toString()) + "\n");
-        sb.append(",'selectorCols' : " + PageFlowUtil.jsString(_recordSelectorValueColumns == null ? null : _recordSelectorValueColumns.toString()) + "\n");
+        dataRegionJSON.put("complete", _complete);
+        dataRegionJSON.put("offset", getOffset());
+        dataRegionJSON.put("maxRows", getMaxRows());
+        dataRegionJSON.put("totalRows", _totalRows);
+        dataRegionJSON.put("rowCount", _rowCount);
+        dataRegionJSON.put("showRows", getShowRows().toString().toLowerCase());
+        dataRegionJSON.put("showRecordSelectors", showRecordSelectors);
+        dataRegionJSON.put("showSelectMessage", _showSelectMessage);
+        dataRegionJSON.put("selectionKey", getSelectionKey());
+        dataRegionJSON.put("requestURL", ctx.getViewContext().getActionURL().toString());
+        dataRegionJSON.put("selectorCols", _recordSelectorValueColumns == null ? null : _recordSelectorValueColumns.toString());
+        JSONArray columnsJSON = new JSONArray((List)JsonWriter.getNativeColProps(getColumnsForMetadata(), null));
+        // Write out a pretty-printed version in dev mode
+        dataRegionJSON.put("columns", columnsJSON);
 
         // TODO: Don't get available container filters from render context.
         // 11082: Populate customize view with list of allowable container filters from the QueryView
         List<ContainerFilter.Type> allowableContainerFilterTypes = (List<ContainerFilter.Type>)ctx.get("allowableContainerFilterTypes");
         if (allowableContainerFilterTypes != null && allowableContainerFilterTypes.size() > 0)
         {
-            sb.append(", 'allowableContainerFilters' : [");
-            String sep = "";
+            JSONArray containerFiltersJSON = new JSONArray();
+            dataRegionJSON.put("allowableContainerFilters", containerFiltersJSON);
             for (ContainerFilter.Type type : allowableContainerFilterTypes)
             {
-                sb.append(sep);
-                sep = ", ";
-                sb.append("[ ");
-                sb.append(PageFlowUtil.jsString(type.name()));
-                sb.append(" , ");
-                sb.append(PageFlowUtil.jsString(type.toString()));
-                sb.append(" ]");
+                JSONArray containerFilterJSON = new JSONArray();
+                containerFiltersJSON.put(containerFilterJSON);
+                containerFilterJSON.put(type.name());
+                containerFilterJSON.put(type.toString());
             }
-            sb.append("]\n");
         }
-        getHeaderScriptEnd(sb, messages);
-
-        out.write(sb.toString());
+        return dataRegionJSON;
     }
 
     protected void renderFooter(RenderContext ctx, Writer out, boolean renderButtons, int colCount) throws IOException

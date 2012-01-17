@@ -158,7 +158,7 @@ public class ConditionalFormatItem<DomainType extends GWTDomain<FieldType>, Fiel
         {
             handler.@org.labkey.api.gwt.client.ui.property.ConditionalFormatItem::filterDialogCallback(Ljava/lang/Object;)(s3);
         };
-        $wnd.showFilterPanel(dataRegionName, colName, caption, dataType, mvEnabled, filter, "Apply Conditional Format Where " + caption, callback);
+        $wnd.showFilterPanel(dataRegionName, { name: colName, caption: caption, sqlType: dataType, mvEnabled: mvEnabled }, filter, "Apply Conditional Format Where " + caption, callback);
     }-*/;
 
     /** Called from JSNI - do not delete without modifying the callback code immediately above */

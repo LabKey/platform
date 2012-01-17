@@ -160,8 +160,8 @@ public class JSONArray {
 
 
     /**
-     * Construct a JSONArray from an array
-     * @throws JSONException If not an array.
+     * Construct a JSONArray from an array or a Collection
+     * @throws JSONException If not an array or a Collection
      */
     public JSONArray(Object array) throws JSONException {
         this();
@@ -170,6 +170,8 @@ public class JSONArray {
             for (int i = 0; i < length; i += 1) {
                 this.put(Array.get(array, i));
             }
+        } else if (array instanceof Collection) {
+            this.myArrayList = new ArrayList<Object>((Collection<Object>)array);
         } else {
             throw new JSONException("JSONArray initial value should be a string or collection or array.");
         }

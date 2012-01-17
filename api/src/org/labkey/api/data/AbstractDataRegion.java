@@ -17,6 +17,7 @@ package org.labkey.api.data;
 
 import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
+import org.json.JSONObject;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.QuerySettings;
 import org.labkey.api.util.PageFlowUtil;
@@ -99,50 +100,44 @@ public abstract class AbstractDataRegion extends DisplayElement
         return _allowHeaderLock;
     }
 
-    protected final void getHeaderScriptStart(StringBuilder sb, Map<String, String> messages)
+    protected JSONObject getDataRegionJSON(RenderContext ctx, boolean showRecordSelectors)
     {
-        sb.append("<script type=\"text/javascript\">\n");
-        sb.append("Ext.onReady(\n");
-        sb.append("function () {\n");
-        sb.append("new LABKEY.DataRegion({\n");
-        sb.append("'name' : " + PageFlowUtil.jsString(getName()) + "\n");
+        JSONObject dataRegionJSON = new JSONObject();
+        dataRegionJSON.put("name", getName());
 
         if (getSettings() != null)
         {
-            sb.append(",'schemaName' : " + PageFlowUtil.jsString(getSettings().getSchemaName()) + "\n");
-            sb.append(",'queryName' : " + PageFlowUtil.jsString(getSettings().getQueryName()) + "\n");
-            sb.append(",'viewName' : " + PageFlowUtil.jsString(getSettings().getViewName()) + "\n");
+            dataRegionJSON.put("schemaName", getSettings().getSchemaName());
+            dataRegionJSON.put("queryName", getSettings().getQueryName());
+            dataRegionJSON.put("viewName", getSettings().getViewName());
+            dataRegionJSON.put("containerFilter", getSettings().getContainerFilterName());
         }
 
-        sb.append(",'allowHeaderLock' : " + getAllowHeaderLock() + "\n");
+        dataRegionJSON.put("allowHeaderLock", getAllowHeaderLock());
+        return dataRegionJSON;
     }
 
-    protected final void getHeaderScriptEnd(StringBuilder sb, Map<String, String> messages)
+    protected void renderHeaderScript(RenderContext ctx, Writer out, Map<String, String> messages, boolean showRecordSelectors) throws IOException
     {
-        sb.append("});\n");
+        out.write("<script type=\"text/javascript\">\n");
+        out.write("Ext.onReady(\n");
+        out.write("function () {\n");
+        out.write("new LABKEY.DataRegion(\n");
+        out.write(getDataRegionJSON(ctx, true).toString(2));
+        out.write(");\n");
         if (messages != null && !messages.isEmpty())
         {
             for (Map.Entry<String, String> entry : messages.entrySet())
             {
-                sb.append("LABKEY.DataRegions[" + PageFlowUtil.jsString(getName()) + "].addMessage(" +
+                out.write("LABKEY.DataRegions[" + PageFlowUtil.jsString(getName()) + "].addMessage(" +
                         PageFlowUtil.jsString(entry.getValue()) + "," +
                         PageFlowUtil.jsString(entry.getKey())+ ");\n");
             }
-            sb.append("LABKEY.DataRegions[" + PageFlowUtil.jsString(getName()) + "].showMessageArea();\n");
+            out.write("LABKEY.DataRegions[" + PageFlowUtil.jsString(getName()) + "].showMessageArea();\n");
         }
 
-        sb.append("});\n");
-        sb.append("</script>\n");
-    }
-
-    protected void renderHeaderScript(RenderContext ctx, Writer out, Map<String, String> messages) throws IOException
-    {
-        StringBuilder sb = new StringBuilder();
-
-        getHeaderScriptStart(sb, messages);
-        getHeaderScriptEnd(sb, messages);
-
-        out.write(sb.toString());
+        out.write("});\n");
+        out.write("</script>\n");
     }
 
     private SimpleFilter getValidFilter(RenderContext ctx)

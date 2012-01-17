@@ -15,6 +15,7 @@
  */
 package org.labkey.api.data;
 
+import org.json.JSONArray;
 import org.json.JSONObject;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.QueryService;
@@ -31,15 +32,24 @@ public class JsonWriter
 {
     public static List<Map<String,Object>> getNativeColProps(TableInfo tinfo, Collection<FieldKey> fields, FieldKey fieldKeyPrefix)
     {
-        List<Map<String,Object>> colProps = new ArrayList<Map<String,Object>>();
-
         List<ColumnInfo> columns = new ArrayList<ColumnInfo>(tinfo.getColumns());
         LinkedHashMap<FieldKey, ColumnInfo> allColumns = QueryService.get().getColumns(tinfo, fields, columns);
+        List<DisplayColumn> displayColumns = new ArrayList<DisplayColumn>();
         for (ColumnInfo cinfo : allColumns.values())
         {
-            colProps.add(JsonWriter.getMetaData(cinfo.getDisplayColumnFactory().createRenderer(cinfo), fieldKeyPrefix, true, true));
+            displayColumns.add(cinfo.getDisplayColumnFactory().createRenderer(cinfo));
         }
 
+        return getNativeColProps(displayColumns, fieldKeyPrefix);
+    }
+
+    public static List<Map<String,Object>> getNativeColProps(Collection<DisplayColumn> columns, FieldKey fieldKeyPrefix)
+    {
+        List<Map<String,Object>> colProps = new ArrayList<Map<String,Object>>();
+        for (DisplayColumn column : columns)
+        {
+            colProps.add(JsonWriter.getMetaData(column, fieldKeyPrefix, true, true));
+        }
         return colProps;
     }
 
@@ -60,6 +70,7 @@ public class JsonWriter
         props.put("friendlyType", friendlyTypeName);
         props.put("type", useFriendlyAsType ? friendlyTypeName : dc.getJsonTypeName());
         props.put("jsonType", dc.getJsonTypeName());
+        props.put("sqlType", cinfo == null ? null : cinfo.getSqlTypeName());
 
         FieldKey fieldKey;
         if (cinfo != null && null != cinfo.getFieldKey())
@@ -68,6 +79,7 @@ public class JsonWriter
             fieldKey = new FieldKey(null, name);
 
         props.put("fieldKey", fieldKey.toString());
+        props.put("fieldKeyArray", new JSONArray(fieldKey.getParts()));
         props.put("fieldKeyPath", FieldKey.fromParts(fieldKeyPrefix, fieldKey).toString());
 
         // Duplicate booleans with alternate property name for backwards compatibility

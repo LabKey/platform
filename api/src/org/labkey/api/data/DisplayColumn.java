@@ -366,20 +366,6 @@ public abstract class DisplayColumn extends RenderColumn
         out.write(";\"/>");
     }
 
-    public String getGridHeaderCell(RenderContext ctx)
-    {
-        StringWriter writer = new StringWriter();
-        try
-        {
-            renderGridHeaderCell(ctx, writer);
-        }
-        catch (Exception e)
-        {
-            writer.write(e.getMessage());
-        }
-        return writer.toString();
-    }
-
     public String getDefaultHeaderStyle()
     {
         return "text-align:" + (getTextAlign() != null ? getTextAlign() : "left") + ";";
@@ -618,7 +604,6 @@ public abstract class DisplayColumn extends RenderColumn
                 NavTree filterItem = new NavTree("Filter...");
                 filterItem.setId(baseId + ":filter");//PageFlowUtil.filter(baseId + ":filter"));
                 filterItem.setScript(getFilterOnClick(ctx));
-                //filterItem.setImageSrc(ctx.getRequest().getContextPath() + "/_images/filter" + (filtered ? "_on" : "") + ".png");
                 navtree.addChild(filterItem);
                 
                 NavTree clearFilterItem = new NavTree("Clear Filter");

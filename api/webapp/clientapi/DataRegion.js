@@ -252,6 +252,44 @@ LABKEY.DataRegion = Ext.extend(Ext.Component,
     },
 
     /**
+     * Looks for a column based on fieldKey, name, or caption (in that order)
+     */
+    getColumn : function (columnIdentifier)
+    {
+        if (this.columns)
+        {
+            var i;
+            var column;
+            for (i = 0; i < this.columns.length; i++)
+            {
+                column = this.columns[i];
+                if (column.fieldKey && column.fieldKey == columnIdentifier)
+                {
+                    return column;
+                }
+            }
+            for (i = 0; i < this.columns.length; i++)
+            {
+                column = this.columns[i];
+                if (column.name && column.name == columnIdentifier)
+                {
+                    return column;
+                }
+            }
+            for (i = 0; i < this.columns.length; i++)
+            {
+                column = this.columns[i];
+                if (column.caption && column.caption == columnIdentifier)
+                {
+                    return column;
+                }
+            }
+        }
+
+        return null;
+    },
+
+    /**
      * Forces the grid to show all rows, without any paging
      */
     showAll : function ()
@@ -2039,16 +2077,79 @@ LABKEY.DataRegion._filterUI =
             this._filterWin.close();
     },
 
-    showFilterPanel : function(dataRegionName, colName, caption, dataType, mvEnabled, queryString, dialogTitle, confirmCallback)
+    getLookupValues : function(dataRegion, column, valuesLabel)
     {
-        this._fieldName = colName;
-        this._fieldCaption = caption;
+        valuesLabel.setVisible(true);
+        valuesLabel.setText("Loading...");
+        var h = Ext.util.Format.htmlEncode;
+
+        // Build up a SELECT DISTINCT query to get all of the values that are currently in use
+        var sql = 'SELECT DISTINCT ';
+        for (var i = 0; i < column.fieldKeyArray.length; i++)
+        {
+            sql += "\"" + column.fieldKeyArray[i].replace("\"", "\"\"") + "\".";
+        }
+        sql += "\"" + column.lookup.displayColumn.replace("\"", "\"\"") + "\"";
+        sql += ' AS value FROM "' + h(dataRegion.schemaName) + '"."' + h(dataRegion.queryName) + '"';
+
+        LABKEY.Query.executeSql({
+            schemaName: dataRegion.schemaName,
+            sql: sql,
+            sort: "value",
+            containerPath: dataRegion.container || dataRegion.containerPath || LABKEY.container.path,
+            maxRows: 101,              // Limit so that we don't overwhelm the user (or the browser itself) with too many checkboxes
+            includeTotalCount: false,  // Don't bother getting the total row count, which might involve another query to the database
+            containerFilter: dataRegion.containerFilter,
+
+            success: function(results, request, options)
+            {
+                if (results.rows.length >= request.jsonData.maxRows)
+                {
+                    valuesLabel.setText("Too many values to allow filtering by selection");
+                }
+                else
+                {
+                    // TODO - Swap out the filter UI with checkboxes instead of just showing the values
+                    var values = '';
+                    var separator = '';
+                    for (var rowIndex = 0; rowIndex < results.rows.length; rowIndex++)
+                    {
+                        values += separator + results.rows[rowIndex].value;
+                        separator = ', ';
+                    }
+                    valuesLabel.setText(values);
+                }
+            },
+            failure: function(errorInfo)
+            {
+                valuesLabel.setText("Failed to get existing values: " + (errorInfo ? errorInfo.exception : "unknown error"));
+            }
+        });
+    },
+
+    showFilterPanel : function(dataRegionName, column, queryString, dialogTitle, confirmCallback)
+    {
+        this._fieldCaption = column.caption;
         this._tableName = dataRegionName;
-        this._mappedType = this.getMappedType(dataType);
+        this._mappedType = this.getMappedType(column.sqlType);
+
+        var dataRegion = LABKEY.DataRegions[dataRegionName];
+
+        var valuesLabel = new Ext.form.Label({hidden: true, fieldLabel: 'Possible Values' });
+
+        if (column.lookup && dataRegion && dataRegion.schemaName && dataRegion.queryName)
+        {
+            this._fieldName = column.name + "/" + column.lookup.displayColumn;
+            this.getLookupValues(dataRegion, column, valuesLabel);
+        }
+        else
+        {
+            this._fieldName = column.name;
+        }
 
         if (!queryString)
         {
-            queryString = LABKEY.DataRegions[dataRegionName] ? LABKEY.DataRegions[dataRegionName].requestURL : null;
+            queryString = dataRegion ? dataRegion.requestURL : null;
         }
         var paramValPairs = this.getParamValPairs(queryString, null);
         
@@ -2063,8 +2164,17 @@ LABKEY.DataRegion._filterUI =
             this.changeFilterCallback = confirmCallback;
         }
 
-        var comboStore1 = this.fillOptions(mvEnabled, this._mappedType, 0);
-        var comboStore2 = this.fillOptions(mvEnabled, this._mappedType, 1);
+//        this.store = new LABKEY.ext.Store({
+//            schemaName: this.schemaName,
+//            sort: "-" + this.fieldKey,
+//            sql: 'SELECT DISTINCT ' + this.selectColumn + ' FROM "' + h(this.schemaName) + '"."' + h(this.queryName) + '" LIMIT 101',
+//            containerPath: this.container || this.containerPath || LABKEY.container.path,
+//            autoLoad: false,
+//            updatable: false
+//        });
+
+        var comboStore1 = this.fillOptions(column.mvEnabled, this._mappedType, 0);
+        var comboStore2 = this.fillOptions(column.mvEnabled, this._mappedType, 1);
 
         var self = this; //Used so we can get _mappedType within Ext component configs (comboBoxes && validators).
 
@@ -2193,7 +2303,6 @@ LABKEY.DataRegion._filterUI =
 
         var inputField1 = new Ext.form.TextField(inputFieldConfig1);
         var inputField2 = new Ext.form.TextField(inputFieldConfig2);
-
         // create a task to set the input focus that will get started after layout is complete, the task will
         // run for a max of 2000ms but will get stopped when the component receives focus
         this.focusTask = {interval:150, run: function(){inputField1.focus();}, scope: this, duration: 2000};
@@ -2303,7 +2412,7 @@ LABKEY.DataRegion._filterUI =
             defaults:{
                 msgTarget: 'under'
             },
-            items: [filterComboBox1, inputField1, filterComboBox2, inputField2],
+            items: [filterComboBox1, inputField1, filterComboBox2, inputField2, valuesLabel],
             buttons: [
                 {text: 'OK', handler: okHandler},
                 {text: 'CANCEL', handler: cancelHandler},
@@ -2331,7 +2440,7 @@ LABKEY.DataRegion._filterUI =
              items: filterPanel
          });
 
-        this._filterWin.setTitle(dialogTitle ? dialogTitle : "Show Rows Where " + caption + "...");
+        this._filterWin.setTitle(dialogTitle ? dialogTitle : "Show Rows Where " + column.caption + "...");
         this._filterWin.show();
 
         //Fill in existing filters...
@@ -2678,9 +2787,9 @@ LABKEY.DataRegion._filterUI =
 };
 
 
-function showFilterPanel(dataRegionName, colName, caption, dataType, mvEnabled, queryString, dialogTitle, confirmCallback)
+function showFilterPanel(dataRegionName, column, queryString, dialogTitle, confirmCallback)
 {
-    LABKEY.DataRegion._filterUI.showFilterPanel(dataRegionName, colName, caption, dataType, mvEnabled, queryString, dialogTitle, confirmCallback);
+    LABKEY.DataRegion._filterUI.showFilterPanel(dataRegionName, column, queryString, dialogTitle, confirmCallback);
 }
 
 

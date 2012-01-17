@@ -316,9 +316,9 @@ public class DisplayColumnDecorator extends DisplayColumn
     }
 
     @Override
-    public String getGridHeaderCell(RenderContext ctx)
+    protected String getHoverContent(RenderContext ctx)
     {
-        return _column.getGridHeaderCell(ctx);
+        return _column.getHoverContent(ctx);
     }
 
     @Override

@@ -94,7 +94,7 @@ public class ReportDataRegion extends AbstractDataRegion
 
             out.write("</table>");
 
-            renderHeaderScript(ctx, out, messages);
+            renderHeaderScript(ctx, out, messages, false);
         }
         catch (Exception e)
         {
