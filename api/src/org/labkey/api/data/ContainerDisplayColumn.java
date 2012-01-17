@@ -100,7 +100,7 @@ public class ContainerDisplayColumn extends DataColumn
         {
             return "<deleted>";
         }
-        return _showPath ? _c.getPath() : _c.getName();        
+        return _showPath ? _c.getPath() : _c.getTitle();
     }
 
     public void setEntityIdColumn(ColumnInfo entityIdColumn)
@@ -146,6 +146,18 @@ public class ContainerDisplayColumn extends DataColumn
             }
             super.renderGridCellContents(ctx, out);
         }
+    }
+
+    @Override
+    public String renderURL(RenderContext ctx)
+    {
+        String id = (String)ctx.get(FieldKey.fromParts("ContainerId"));
+        Container c = ContainerManager.getForId(id);
+
+        if(c == null)
+            return null;
+
+        return c.getStartURL(ctx.getViewContext().getUser()).toString();
     }
 
     public String getFormattedValue(RenderContext ctx)

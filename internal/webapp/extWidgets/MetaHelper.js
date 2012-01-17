@@ -159,12 +159,14 @@ LABKEY.ext.MetaHelper = {
      * @param {object} [config.lookup.store] advanced! Pass in your own custom store for a lookup field
      * @param {boolean} [config.lazyCreateStore] If false, the store will be created immediately.  If true, the store will be created when the component is created. (default true)
      * @param {boolean} [createIfDoesNotExist] If true, this field will be created in the store, even if it does not otherwise exist on the server. Can be used to force custom fields to appear in a grid or form or to pass additional information to the server at time of import
-     //TODO
-     * @param {function} [qtipRenderer] This function will be used to generate the qTip for the field when it appears in a grid instead of the default function.  It will be passed the following arguments: qtip, data, cellMetaData, record, rowIndex, colIndex, store. It should modify the qtip array
-     //TODO
-     * @param {function} [buildDisplayString] This function will be used to generate the qTip for the field when it appears in a grid instead of the default function.  See example below for usage.
-     //TODO
+     * @param {function} [buildQtip] This function will be used to generate the qTip for the field when it appears in a grid instead of the default function.  It will be passed the following arguments: qtip, data, cellMetaData, record, rowIndex, colIndex, store. It should modify the qtip array.  For example:
+     * buildQtip: function(qtip, data, cellMetaData, record, rowIndex, colIndex, store){
+     *      qtip.push('I have a tooltip!');
+     *      qtip.push('This is my value: ' + data);
+     * }
+     * @param {function} [buildDisplayString] This function will be used to generate the display string for the field when it appears in a grid instead of the default function.  It will be passed the same arguments a buildQtip
      * @param {function} [buildUrl] This function will be used to generate the URL encapsulating the field
+     * @param {string} [urlTarget] If the value is rendered in a LABKEY.ext4.EditorGridPanel (or any other component using this pathway), and it contains a URL, this will be used as the target of <a> tag.  For example, use _blank for a new window.
      * @param (boolean) [setValueOnLoad] If true, the store will attempt to set a value for this field on load.  This is determined by the defaultValue or getInitialValue function, if either is defined
      * @param {function} [getInitialValue] When a new record is added to this store, this function will be called on that field.  If setValueOnLoad is true, this will also occur on load.  It will be passed the record and metadata.  The advantage of using a function over defaultValue is that more complex and dynamic initial values can be created.  For example:
      *  //sets the value to the current date
@@ -176,7 +178,7 @@ LABKEY.ext.MetaHelper = {
      * dataIndex -> name
      * editable -> userEditable && readOnly
      * header -> caption
-     * xtype -> set within getDefaultEditorConfig(), unless otherwise provided
+     * xtype -> set within getDefaultEditorConfig() based on jsonType, unless otherwise provided
 
      *
      */
@@ -461,6 +463,8 @@ LABKEY.ext.MetaHelper = {
             col.hidden = true;
         }
 
+        col.format = meta.format;
+
         switch(meta.jsonType){
             //TODO: Ext has xtypes for these column types.  In Ext3 they did not prove terribly useful, but we should revisit in Ext4;
             // however, the fact that we utilize our own renderer might negate any value
@@ -595,7 +599,7 @@ LABKEY.ext.MetaHelper = {
             if(meta.buildUrl)
                 return meta.buildUrl(displayValue, data, col, meta, record);
             else if(record.raw && record.raw[meta.name] && record.raw[meta.name].url)
-                return "<a target=\"_blank\" href=\"" + record.raw[meta.name].url + "\">" + displayValue + "</a>";
+                return "<a " + (meta.urlTarget ? "target=\""+meta.urlTarget+"\"" : "") + " href=\"" + record.raw[meta.name].url + "\">" + displayValue + "</a>";
             else
                 return displayValue;
         }
@@ -630,8 +634,8 @@ LABKEY.ext.MetaHelper = {
             }, this);
         }
 
-        if(meta.qtipRenderer){
-            meta.qtipRenderer(qtip, data, cellMetaData, record, rowIndex, colIndex, store);
+        if(meta.buildQtip){
+            meta.buildQtip(qtip, data, cellMetaData, record, rowIndex, colIndex, store);
         }
 
         if(qtip.length){

@@ -29,6 +29,10 @@ Ext4.define('LABKEY.ext4.GridPanel', {
 
         this.store = this.store || this.createStore();
 
+        Ext4.QuickTips.init({
+            constrainPosition: true
+        });
+
         Ext4.applyIf(this, {
             columns: []
         });
@@ -80,6 +84,21 @@ Ext4.define('LABKEY.ext4.GridPanel', {
         this.plugins = this.plugins || [];
         if(this.editable)
             this.plugins.push(Ext4.create('Ext.grid.plugin.CellEditing', {pluginId: 'cellediting', clicksToEdit: 2}));
+
+        if(!this.selModel){
+            //NOTE: this is overridden in order to prevent the grid from focusing to itself on mouseclick.  Ext has bugs on this and it may be fixed in versions above 4.0.7
+            this.selModel = {
+                xtype: 'rowmodel',
+                //@Override
+                onRowMouseDown: function(view, record, item, index, e) {
+                    //view.el.focus();
+                    if (!this.allowRightMouseSelection(e)) {
+                        return;
+                    }
+                    this.selectWithEvent(record, e);
+                }
+            }
+        }
     }
 
     ,setupColumnModel : function() {
@@ -105,6 +124,8 @@ Ext4.define('LABKEY.ext4.GridPanel', {
 
         var columns = LABKEY.ext.MetaHelper.getColumnsConfig(this.store, this, config);
 
+        var flexWidth = 0;
+        var fixedWidth = 0;
         Ext4.each(columns, function(col, idx){
             var meta = this.store.findFieldMetadata(col.dataIndex);
 
@@ -118,8 +139,25 @@ Ext4.define('LABKEY.ext4.GridPanel', {
 
             if(this.hideNonEditableColumns && !col.editable)
                 col.hidden = true;
+            else {
+                if(meta.fixedWidthColumn)
+                    fixedWidth += col.width || 0;
+                else
+                    flexWidth += col.width || 0;
+            }
         }, this);
 
+        //the intent is to distribute width proportionally across columns using the Ext4 flex property
+        Ext4.each(columns, function(col, idx){
+            var meta = this.store.findFieldMetadata(col.dataIndex);
+
+            if(!col.hidden && !meta.fixedWidthColumn){
+                col.flex = (col.width / flexWidth);
+                //note: ext treats string values differently.  perhaps this bug will be fixed in the future
+                col.flex = col.flex.toString();
+                delete col.width;
+            }
+        }, this);
         return columns;
     }
     ,getColumnById: function(colName){

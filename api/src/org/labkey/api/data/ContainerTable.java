@@ -66,7 +66,7 @@ public class ContainerTable extends FilteredTable
            {
                 return new ContainerTable();
            }
-               });
+        });
 
         ActionURL projBegin = PageFlowUtil.urlProvider(ProjectUrls.class).getBeginURL(ContainerManager.getRoot());
         String wbURL = AppProps.getInstance().getContextPath() + "/" + projBegin.getPageFlow()
@@ -88,6 +88,10 @@ public class ContainerTable extends FilteredTable
         folderTypeSQL.add(ContainerManager.FOLDER_TYPE_PROPERTY_NAME);
         ExprColumn folderTypeColumn = new ExprColumn(this, "FolderType", folderTypeSQL, JdbcType.VARCHAR);
         addColumn(folderTypeColumn);
+
+        SQLFragment folderDisplaySQL = new SQLFragment("COALESCE("+ ExprColumn.STR_TABLE_ALIAS +".title, "+ ExprColumn.STR_TABLE_ALIAS +".name)");
+        ExprColumn folderDisplayColumn = new ExprColumn(this, "DisplayName", folderDisplaySQL, JdbcType.VARCHAR);
+        addColumn(folderDisplayColumn);
 
         final ColumnInfo folderPathCol = this.wrapColumn("Path", getRealTable().getColumn("EntityId"));
         folderPathCol.setDisplayColumnFactory(new DisplayColumnFactory()
@@ -123,6 +127,9 @@ public class ContainerTable extends FilteredTable
 
         getColumn("Name").setURL(webURLExp);
         getColumn("Title").setURL(webURLExp);
+        getColumn("DisplayName").setURL(webURLExp);
+
+        setTitleColumn("DisplayName");
     }
 
     protected String getContainerFilterColumn()

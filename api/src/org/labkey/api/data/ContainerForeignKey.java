@@ -16,6 +16,7 @@
 
 package org.labkey.api.data;
 
+import org.labkey.api.query.ExprColumn;
 import org.labkey.api.query.FilteredTable;
 import org.labkey.api.query.LookupForeignKey;
 import org.labkey.api.view.ActionURL;
@@ -60,7 +61,7 @@ public class ContainerForeignKey extends LookupForeignKey
 
     public ContainerForeignKey(ActionURL url)
     {
-        super("EntityId", "Name");
+        super("EntityId", "DisplayName");
         _url = url;
         setLookupSchemaName("Core");
         setTableName("Containers");
@@ -95,7 +96,12 @@ public class ContainerForeignKey extends LookupForeignKey
         ret.addWrapColumn(containersTable.getColumn("RowId")).setHidden(true);
         ret.addWrapColumn(containersTable.getColumn("Workbook"));
         ret.addWrapColumn(containersTable.getColumn("Description"));
-        ret.setTitleColumn("Name");
+
+        SQLFragment folderDisplaySQL = new SQLFragment("COALESCE("+ ExprColumn.STR_TABLE_ALIAS +".title, "+ ExprColumn.STR_TABLE_ALIAS +".name)");
+        ExprColumn folderDisplayColumn = new ExprColumn(ret, "DisplayName", folderDisplaySQL, JdbcType.VARCHAR);
+        ret.addColumn(folderDisplayColumn);
+
+        ret.setTitleColumn("DisplayName");
         ret.setPublic(false);
         return ret;
     }

@@ -765,7 +765,22 @@ public abstract class ContainerFilter
                 // Don't bother filtering, the user can see everything
                 return null;
             }
-            return ContainerManager.getIds(_user, _perm);
+            Set<Container> containers = ContainerManager.getAllChildren(ContainerManager.getRoot(), _user, _perm);
+            // To reduce the number of ids that need to be passed around, filter out workbooks. They'll get included
+            // automatically because we always add them via the SQL that we generate
+            Set<String> ids = new HashSet<String>();
+            for (Container container : containers)
+            {
+                if (!container.isWorkbook())
+                {
+                    ids.add(container.getId());
+                }
+            }
+            if (ContainerManager.getRoot().hasPermission(_user, _perm))
+            {
+                ids.add(ContainerManager.getRoot().getId());
+            }
+            return ids;
         }
 
         public Type getType()

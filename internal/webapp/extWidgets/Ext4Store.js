@@ -109,9 +109,7 @@ Ext4.namespace('LABKEY.ext4');
 LABKEY.ext4.Store = Ext4.define('LABKEY.ext4.Store', {
     extend: 'Ext.data.Store',
     alias: 'store.labkey-store',
-    config: {
-        pageSize: 10000
-    },
+    pageSize: 10000,
     constructor: function(config) {
         config = config || {};
 
