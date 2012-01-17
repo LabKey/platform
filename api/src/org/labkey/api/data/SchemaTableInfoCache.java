@@ -19,6 +19,8 @@ package org.labkey.api.data;
 import org.labkey.api.cache.BlockingStringKeyCache;
 import org.labkey.api.cache.CacheLoader;
 import org.labkey.api.cache.CacheManager;
+import org.labkey.api.cache.StringKeyCache;
+import org.labkey.api.cache.Wrapper;
 import org.labkey.api.util.Pair;
 
 /*
@@ -28,8 +30,12 @@ import org.labkey.api.util.Pair;
 */
 public class SchemaTableInfoCache
 {
-    private final BlockingStringKeyCache<SchemaTableInfo> _blockingCache = new SchemaTableInfoBlockingCache();
+    private final BlockingStringKeyCache<SchemaTableInfo> _blockingCache;
 
+    public SchemaTableInfoCache(DbScope scope)
+    {
+        _blockingCache = new SchemaTableInfoBlockingCache(scope);
+    }
 
     SchemaTableInfo get(DbSchema schema, String tableName)
     {
@@ -80,10 +86,14 @@ public class SchemaTableInfoCache
 
     private static class SchemaTableInfoBlockingCache extends BlockingStringKeyCache<SchemaTableInfo>
     {
-        private SchemaTableInfoBlockingCache()
+        private SchemaTableInfoBlockingCache(DbScope scope)
         {
-            // Add scope name?
-            super(CacheManager.getStringKeyCache(10000, CacheManager.YEAR, "SchemaTableInfos"), new SchemaTableLoader());
+            super(createCache(scope), new SchemaTableLoader());
         }
+    }
+
+    private static StringKeyCache<Wrapper<SchemaTableInfo>> createCache(DbScope scope)
+    {
+        return CacheManager.getStringKeyCache(10000, CacheManager.YEAR, "SchemaTableInfos for " + scope.getDisplayName());
     }
 }

@@ -21,6 +21,7 @@ import org.labkey.api.cache.BlockingStringKeyCache;
 import org.labkey.api.cache.CacheLoader;
 import org.labkey.api.cache.CacheManager;
 import org.labkey.api.cache.StringKeyCache;
+import org.labkey.api.cache.Wrapper;
 import org.labkey.api.module.Module;
 import org.labkey.api.module.ModuleContext;
 import org.labkey.api.module.ModuleLoader;
@@ -107,7 +108,7 @@ public class DbSchemaCache
     {
         public DbSchemaBlockingCache(String name)
         {
-            super(CacheManager.getStringKeyCache(10000, CacheManager.YEAR, "DbSchemas for " + name), new DbSchemaLoader());
+            super(CacheManager.<String, Wrapper<DbSchema>>getCache(10000, CacheManager.YEAR, "DbSchemas for " + name), new DbSchemaLoader());
         }
 
         @Override

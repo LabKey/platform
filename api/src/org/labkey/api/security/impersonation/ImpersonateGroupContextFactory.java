@@ -19,6 +19,7 @@ import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.security.Group;
+import org.labkey.api.security.GroupMembershipCache;
 import org.labkey.api.security.SecurityManager;
 import org.labkey.api.security.User;
 import org.labkey.api.security.UserManager;
@@ -27,7 +28,7 @@ import org.labkey.api.util.GUID;
 import org.labkey.api.util.URLHelper;
 import org.labkey.api.view.ViewContext;
 
-import java.util.Arrays;
+import java.util.LinkedList;
 
 /**
  * User: adam
@@ -74,8 +75,6 @@ public class ImpersonateGroupContextFactory implements ImpersonationContextFacto
         // TODO: Audit log?
     }
 
-    // TODO: Call in for groups
-
     public static boolean canImpersonateGroup(Container project, User user, Group group)
     {
         // Site admin can impersonate any group
@@ -107,23 +106,26 @@ public class ImpersonateGroupContextFactory implements ImpersonationContextFacto
             if (!canImpersonateGroup(project, user, group))
                 throw new IllegalStateException("You are not allowed to impersonate this group");
 
-            if (group.isGuests())
-                _groups = groups(Group.groupGuests);
-            else if (group.isUsers())
-                _groups = groups(Group.groupGuests, Group.groupUsers);
-            else
-                _groups = groups(Group.groupGuests, Group.groupUsers, group.getUserId());
+            // Seed the group list with guests, site users, and the passed in group (as appropriate)
+            LinkedList<Integer> seedGroups = new LinkedList<Integer>();
+            // Everyone always gets Guests
+            seedGroups.add(Group.groupGuests);
 
+            // Non-guest group gets site users
+            if (!group.isGuests())
+            {
+                seedGroups.add(Group.groupUsers);
+
+                // Non-site users group gets the requested group
+                if (!group.isUsers())
+                    seedGroups.add(group.getUserId());
+            }
+
+            // Now expand the list of groups to include all groups they belong to (see #13802)
+            _groups = GroupMembershipCache.computeAllGroups(seedGroups);
             _project = project;
             _returnURL = returnURL;
             _group = group;
-        }
-
-        // Ensure they're sorted
-        private int[] groups(int... ids)
-        {
-            Arrays.sort(ids);
-            return ids;
         }
 
         @Override

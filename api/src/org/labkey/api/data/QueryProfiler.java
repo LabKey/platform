@@ -391,6 +391,7 @@ public class QueryProfiler
                     )
                     break;
 
+                sb.append("at ");  // Improves compatibility with IntelliJ "Analyze Stacktrace" feature
                 sb.append(line);
                 sb.append('\n');
             }

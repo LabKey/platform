@@ -72,13 +72,13 @@ public class CacheManager
 
     public static <K, V> BlockingCache<K, V> getBlockingCache(int limit, long defaultTimeToLive, String debugName, @Nullable CacheLoader<K, V> loader)
     {
-        TrackingCache<K, Object> cache = getCache(limit, defaultTimeToLive, debugName);
+        TrackingCache<K, Wrapper<V>> cache = getCache(limit, defaultTimeToLive, debugName);
         return new BlockingCache<K, V>(cache, loader);
     }
 
     public static <V> BlockingStringKeyCache<V> getBlockingStringKeyCache(int limit, long defaultTimeToLive, String debugName, @Nullable CacheLoader<String, V> loader)
     {
-        StringKeyCache<Object> cache = getStringKeyCache(limit, defaultTimeToLive, debugName);
+        StringKeyCache<Wrapper<V>> cache = getStringKeyCache(limit, defaultTimeToLive, debugName);
         return new BlockingStringKeyCache<V>(cache, loader);
     }
 

@@ -19,14 +19,14 @@ package org.labkey.api.data;
 import org.apache.commons.lang3.ObjectUtils;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.cache.BlockingCache;
+import org.labkey.api.cache.Cache;
 import org.labkey.api.cache.CacheLoader;
 import org.labkey.api.cache.DbCache;
+import org.labkey.api.cache.Wrapper;
 import org.labkey.api.util.PageFlowUtil;
 
-import java.sql.SQLException;
 
-
-public class CacheKey<T, C extends Enum<C>> implements Cloneable, CacheLoader<String,Object>
+public class CacheKey<T, C extends Enum<C>> implements Cloneable, CacheLoader<String, T[]>
 {
     private void addBitMaskFilter(ColumnInfo column, int mask, int value)
     {
@@ -82,14 +82,14 @@ public class CacheKey<T, C extends Enum<C>> implements Cloneable, CacheLoader<St
         addConditionToString(column.toString() + "~iequal", value);
     }
 
-    private void addCondition(C column, Object value, CompareType ct)
+    private void addCondition(C column, @Nullable Object value, CompareType ct)
     {
         _filter.addCondition(column.toString(), value, ct);
         addConditionToString(column.toString() + "~" + ct.getPreferredUrlKey(), value);        
     }
 
 
-    private void addConditionToString(String columnName, Object value)
+    private void addConditionToString(String columnName, @Nullable Object value)
     {
         _toString.append("&");
         _toString.append(PageFlowUtil.encode(columnName));
@@ -113,33 +113,27 @@ public class CacheKey<T, C extends Enum<C>> implements Cloneable, CacheLoader<St
     }
 
 
-    public Object load(String stringKey, Object arg)
+    public T[] load(String stringKey, Object arg)
     {
-        try
-        {
-            Object[] ret = Table.select(_table, Table.ALL_COLUMNS, _filter, null, _clazz);
-            return ret;
-        }
-        catch (SQLException x)
-        {
-            throw new RuntimeSQLException(x);
-        }
+        return new TableSelector(_table, Table.ALL_COLUMNS, _filter, null).getArray(_clazz);
     }
 
 
-    private BlockingCache getCache()
+    private BlockingCache<String, T[]> getCache()
     {
-        return new BlockingCache<String, Object>(DbCache.getCache(_table), null);
+        DatabaseCache<Wrapper<T[]>> cache = DbCache.getCacheGeneric(_table);
+        return new BlockingCache<String, T[]>(cache, null);
     }
 
 
-    public T[] select() throws SQLException
+    public T[] select()
     {
-        return (T[])getCache().get(toString(), null, this);
+        Cache<String, T[]> cache = getCache();
+        return cache.get(toString(), null, this);
     }
 
 
-    public T selectObject() throws SQLException
+    public T selectObject()
     {
         T[] arr = select();
         assert null == arr || arr.length == 0 || arr.length == 1;

@@ -57,38 +57,12 @@ public class GroupManager
 
     public static final String GROUP_AUDIT_EVENT = "GroupAuditEvent";
 
-    public enum PrincipalType
-    {
-        USER('u'),
-        GROUP('g'),
-        ROLE('r'),
-        MODULE('m');
-
-        final char typeChar;
-        PrincipalType(char type)
-        {
-            typeChar = type;
-        }
-
-        static PrincipalType forChar(char type)
-        {
-            switch (type)
-            {
-                case 'u': return USER;
-                case 'g': return GROUP;
-                case 'r': return ROLE;
-                case 'm': return MODULE;
-                default : return null;
-            }
-        }
-    }
-
     static
     {
         SecurityManager.addGroupListener(new GroupListener());
     }
 
-    // Returns the FLATTENED group list for this principal
+    // Returns the expanded group list for this principal
     public static int[] getAllGroupsForPrincipal(@Nullable UserPrincipal user)
     {
         if (user == null)
@@ -142,7 +116,7 @@ public class GroupManager
         if (id != null)
             return id;
 
-        Table.execute(_core.getSchema(), _insertGroupSql, userId, name, type.typeChar);
+        Table.execute(_core.getSchema(), _insertGroupSql, userId, name, type.getTypeChar());
 
         return userId;
     }
@@ -219,13 +193,13 @@ public class GroupManager
         public void principalAddedToGroup(Group group, UserPrincipal principal)
         {
             GroupMembershipCache.handleGroupChange(group, principal);
-            addAuditEvent(group, principal, (principal.getType().equals("g") ? "Group: " : "User: ") + principal.getName() + " was added as a member to Group: " + group.getName());
+            addAuditEvent(group, principal, principal.getPrincipalType().getDescription() + ": " + principal.getName() + " was added as a member to Group: " + group.getName());
         }
 
         public void principalDeletedFromGroup(Group group, UserPrincipal principal)
         {
             GroupMembershipCache.handleGroupChange(group, principal);
-            addAuditEvent(group, principal, (principal.getType().equals("g") ? "Group: " : "User: ") + principal.getName() + " was deleted from Group: " + group.getName());
+            addAuditEvent(group, principal, principal.getPrincipalType().getDescription() + ": " + principal.getName() + " was deleted from Group: " + group.getName());
         }
 
         private void addAuditEvent(Group group, UserPrincipal principal, String message)

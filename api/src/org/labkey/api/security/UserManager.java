@@ -380,18 +380,14 @@ public class UserManager
     }
 
 
-    public static String validGroupName(String name, String type)
+    public static String validGroupName(String name, @NotNull PrincipalType type)
     {
         if (null == name || name.length() == 0)
             return "Name cannot be empty";
         if (!name.trim().equals(name))
             return "Name should not start or end with whitespace";
 
-        GroupManager.PrincipalType pt = GroupManager.PrincipalType.forChar(type.charAt(0));
-        if (null == pt)
-            throw new IllegalArgumentException("Unknown principal type: '" + type + "'");
-        
-        switch (pt)
+        switch (type)
         {
             // USER
             case USER:

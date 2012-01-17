@@ -706,7 +706,8 @@ public class SecurityManager
                 // Add row to Principals
                 Map<String, Object> fieldsIn = new HashMap<String, Object>();
                 fieldsIn.put("Name", email.getEmailAddress());
-                fieldsIn.put("Type", GroupManager.PrincipalType.USER.typeChar);
+                fieldsIn.put("Type", PrincipalType.USER.getTypeChar());
+
                 try
                 {
                     Map returnMap = Table.insert(null, core.getTableInfoPrincipals(), fieldsIn);
@@ -945,14 +946,14 @@ public class SecurityManager
 
     public static Group createGroup(Container c, String name)
     {
-        return createGroup(c, name, Group.typeProject);
+        return createGroup(c, name, PrincipalType.GROUP);
     }
 
 
-    public static Group createGroup(Container c, String name, String type)
+    public static Group createGroup(Container c, String name, PrincipalType type)
     {
-        // TODO: UserPrincipal.Type enum and add validation rules there
-        if (!type.equals(Group.typeProject) && !type.equals(Group.typeModule))
+        // Consider: add validation rules to enum
+        if (type != PrincipalType.GROUP && type != PrincipalType.MODULE)
             throw new IllegalStateException("Can't create a group with type \"" + type + "\"");
 
         String ownerId;
@@ -966,7 +967,7 @@ public class SecurityManager
             ownerId = c.getId();
 
             // Module groups can be associated with any folder; security groups must be associated with a project
-            if (!type.equals(Group.typeModule) && !c.isProject())
+            if (type != PrincipalType.MODULE && !c.isProject())
                 throw new IllegalStateException("Security groups can only be associated with a project or the root");
         }
 
@@ -974,19 +975,18 @@ public class SecurityManager
     }
 
 
-    public static Group createGroup(Container c, String name, String type, String ownerId)
+    public static Group createGroup(Container c, String name, PrincipalType type, String ownerId)
     {
         String containerId = (null == c || c.isRoot()) ? null : c.getId();
-        Group group = new Group();
+        Group group = new Group(type);
         group.setName(StringUtils.trimToNull(name));
         group.setOwnerId(ownerId);
         group.setContainer(containerId);
-        group.setType(type);
 
         if (null == group.getName())
             throw new IllegalArgumentException("Group can not have blank name");
 
-        String valid = UserManager.validGroupName(group.getName(), group.getType());
+        String valid = UserManager.validGroupName(group.getName(), group.getPrincipalType());
         if (null != valid)
             throw new IllegalArgumentException(valid);
 
@@ -1020,7 +1020,7 @@ public class SecurityManager
         Container c = null == group.getContainer() ? null : ContainerManager.getForId(group.getContainer());
         if (StringUtils.isEmpty(newName))
             throw new IllegalArgumentException("Name is required (may not be blank)");
-        String valid = UserManager.validGroupName(newName, group.getType());
+        String valid = UserManager.validGroupName(newName, group.getPrincipalType());
         if (null != valid)
             throw new IllegalArgumentException(valid);
         if (null != getGroupId(c, newName, false))
@@ -1073,13 +1073,12 @@ public class SecurityManager
     }
 
 
-    public static void deleteGroups(Container c, @Nullable String type)
+    public static void deleteGroups(Container c, @Nullable PrincipalType type)
     {
-        if (!(null == type || type.equals(Group.typeProject) || type.equals(Group.typeModule) ))
+        if (!(null == type || type == PrincipalType.GROUP || type == PrincipalType.MODULE))
             throw new IllegalArgumentException("Illegal group type: " + type);
 
-        if (null == type)
-            type = "%";
+        String typeString = (null == type ? "%" : String.valueOf(type.getTypeChar()));
 
         try
         {
@@ -1088,12 +1087,12 @@ public class SecurityManager
 
             Table.execute(core.getSchema(), "DELETE FROM " + core.getTableInfoRoleAssignments() + "\n"+
                     "WHERE UserId in (SELECT UserId FROM " + core.getTableInfoPrincipals() +
-                    "\tWHERE Container=? and Type LIKE ?)", c, type);
+                    "\tWHERE Container=? and Type LIKE ?)", c, typeString);
             Table.execute(core.getSchema(), "DELETE FROM " + core.getTableInfoMembers() + "\n"+
                     "WHERE GroupId in (SELECT UserId FROM " + core.getTableInfoPrincipals() +
-                    "\tWHERE Container=? and Type LIKE ?)", c, type);
+                    "\tWHERE Container=? and Type LIKE ?)", c, typeString);
             Table.execute(core.getSchema(), "DELETE FROM " + core.getTableInfoPrincipals() +
-                    "\tWHERE Container=? AND Type LIKE ?", c, type);
+                    "\tWHERE Container=? AND Type LIKE ?", c, typeString);
         }
         catch (SQLException x)
         {
@@ -2639,7 +2638,7 @@ public class SecurityManager
         /* when demoting a project to a regular folder, delete the project groups */
         if (oldProject == c)
         {
-            SecurityManager.deleteGroups(c,Group.typeProject);
+            SecurityManager.deleteGroups(c, PrincipalType.GROUP);
         }
 
         /*

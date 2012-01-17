@@ -25,6 +25,7 @@ import org.labkey.api.data.SqlSelector;
 
 import java.beans.PropertyChangeEvent;
 import java.util.Arrays;
+import java.util.Deque;
 import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.Set;
@@ -128,29 +129,37 @@ public class GroupMembershipCache
     {
         int userId = principal.getUserId();
 
-        HashSet<Integer> groupSet = new HashSet<Integer>();
-        LinkedList<Integer> recurse = new LinkedList<Integer>();
+        LinkedList<Integer> principals = new LinkedList<Integer>();
 
         // All principals are themselves
-        recurse.add(userId);
+        principals.add(userId);
 
         // Every user is a member of the guests group; logged in users are members of Site Users.
-        if ("u".equals(principal.getType()))
+        if (principal.getPrincipalType() == PrincipalType.USER)
         {
-            recurse.add(Group.groupGuests);
+            principals.add(Group.groupGuests);
             if (principal.getUserId() != User.guest.getUserId())
-                recurse.add(Group.groupUsers);
+                principals.add(Group.groupUsers);
         }
 
-        while (!recurse.isEmpty())
+        return computeAllGroups(principals);
+    }
+
+
+    // Return all the principals plus all the groups they belong to (plus all the groups those groups belong to, etc.)
+    public static int[] computeAllGroups(Deque<Integer> principals)
+    {
+        HashSet<Integer> groupSet = new HashSet<Integer>();
+
+        while (!principals.isEmpty())
         {
-            int id = recurse.removeFirst();
+            int id = principals.removeFirst();
             groupSet.add(id);
             int[] groups = getGroupsForPrincipal(id);
 
             for (int g : groups)
                 if (!groupSet.contains(g))
-                    recurse.addLast(g);
+                    principals.addLast(g);
         }
 
         // Site administrators always get developer role as well

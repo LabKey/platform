@@ -28,20 +28,14 @@ public abstract class UserPrincipal implements Principal, Serializable
 {
     private String _name;
     private int _userId = 0;
+    private PrincipalType _principalType;
 
-    // TODO: Create enum
-    public static final String typeProject = "g";
-    public static final String typeModule = "m";
-    public static final String typeUser = "u";
-
-    private String _type;
-
-    protected UserPrincipal(String type)
+    protected UserPrincipal(PrincipalType type)
     {
-        _type = type;
+        _principalType = type;
     }
 
-    protected UserPrincipal(String name, int id, String type)
+    protected UserPrincipal(String name, int id, PrincipalType type)
     {
         this(type);
         _name = name;
@@ -68,16 +62,26 @@ public abstract class UserPrincipal implements Principal, Serializable
         _userId = userId;
     }
 
+    public PrincipalType getPrincipalType()
+    {
+        return _principalType;
+    }
+
+    public void setPrincipalType(PrincipalType principalType)
+    {
+        _principalType = principalType;
+    }
+
     public String getType()
     {
-        return _type;
+        return String.valueOf(_principalType.getTypeChar());
     }
 
     protected void setType(String type)
     {
         if (type.length() != 1 || !"gum".contains(type))
             throw new IllegalArgumentException("Unrecognized type specified.  Must be one of 'u', 'g', or 'm'.");
-        _type = type;
+        _principalType = PrincipalType.forChar(type.charAt(0));
     }
 
     public abstract int[] getGroups();

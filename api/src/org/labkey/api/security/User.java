@@ -49,13 +49,13 @@ public class User extends UserPrincipal implements Serializable, Cloneable
 
     public User()
     {
-        super(typeUser);
+        super(PrincipalType.USER);
     }
 
 
     public User(String email, int id)
     {
-        super(email, id, typeUser);
+        super(email, id, PrincipalType.USER);
     }
 
 

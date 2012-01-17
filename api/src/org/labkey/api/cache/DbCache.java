@@ -46,6 +46,12 @@ public class DbCache
     }
 
 
+    public static <K> DatabaseCache<K> getCacheGeneric(TableInfo tinfo)
+    {
+        return (DatabaseCache<K>)getCache(tinfo, true);
+    }
+
+
     private static DatabaseCache<Object> getCache(TableInfo tinfo, boolean create)
     {
         Path cacheKey = tinfo.getNotificationKey();
@@ -57,7 +63,7 @@ public class DbCache
 
             if (null == cache && create)
             {
-                cache = new DatabaseCache<Object>(tinfo.getSchema().getScope(), tinfo.getCacheSize(), tinfo.getName());
+                cache = new DatabaseCache<Object>(tinfo.getSchema().getScope(), tinfo.getCacheSize(), "DbCache: " + tinfo.getName());
                 CACHES.put(cacheKey, cache);
             }
 

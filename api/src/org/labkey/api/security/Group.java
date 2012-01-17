@@ -31,22 +31,27 @@ public class Group extends UserPrincipal
     public static final int groupGuests = -3;
     public static final int groupDevelopers = -4;
 
-    private String ownerId;
-    private String container;
+    private String _ownerId;
+    private String _container;
 
     public Group()
     {
-        super(typeProject);
+        this(PrincipalType.GROUP);
+    }
+
+    public Group(PrincipalType type)
+    {
+        super(type);
     }
 
     public String getOwnerId()
     {
-        return ownerId;
+        return _ownerId;
     }
 
     public void setOwnerId(String ownerId)
     {
-        this.ownerId = ownerId;
+        _ownerId = ownerId;
     }
 
     public boolean isAdministrators()
@@ -77,12 +82,12 @@ public class Group extends UserPrincipal
 
     public String getContainer()
     {
-        return container;
+        return _container;
     }
 
     public void setContainer(String containerId)
     {
-        this.container = containerId;
+        this._container = containerId;
     }
 
 
@@ -93,11 +98,11 @@ public class Group extends UserPrincipal
     {
         if (null == _path)
         {
-            if (null == container)
+            if (null == _container)
                 return "/" + getName();
-            Container c = ContainerManager.getForId(container);
+            Container c = ContainerManager.getForId(_container);
             if (c == null)
-                return "/" + container + "/" + getName();
+                return "/" + _container + "/" + getName();
             return "/" + c.getName() + "/" + getName();
         }
         return _path;

@@ -318,6 +318,15 @@ public abstract class SqlDialect
 
     public abstract void appendSelectAutoIncrement(StringBuilder sql, TableInfo table, String columnName);
 
+    // String version for convenience
+    @Deprecated  // Most usages assume this is a standalone executable statement, which is a bad assumption (for PostgreSQL)
+    public String appendSelectAutoIncrement(String sql, TableInfo tinfo, String columnName)
+    {
+        StringBuilder sbSql = new StringBuilder(sql);
+        appendSelectAutoIncrement(sbSql, tinfo, columnName);
+        return sbSql.toString();
+    }
+
     public abstract @Nullable ResultSet executeInsertWithResults(@NotNull PreparedStatement stmt) throws SQLException;
 
     public abstract boolean requiresStatementMaxRows();
@@ -604,15 +613,6 @@ public abstract class SqlDialect
         return "SELECT " + candidate + " FROM (SELECT 1 AS " + candidate + ") x ORDER BY " + candidate + ";\n" +
                "CREATE " + keyword + " TABLE " + name + " (" + candidate + " VARCHAR(50));\n" +
                "DROP TABLE " + name + ";";
-    }
-
-
-    // String version for convenience
-    public String appendSelectAutoIncrement(String sql, TableInfo tinfo, String columnName)
-    {
-        StringBuilder sbSql = new StringBuilder(sql);
-        appendSelectAutoIncrement(sbSql, tinfo, columnName);
-        return sbSql.toString();
     }
 
 

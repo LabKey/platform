@@ -72,7 +72,7 @@ public class DbScope
     private final String _driverName;
     private final String _driverVersion;
     private final DbSchemaCache _schemaCache;
-    private final SchemaTableInfoCache _tableCache = new SchemaTableInfoCache();
+    private final SchemaTableInfoCache _tableCache;
 
     private SqlDialect _dialect;
 
@@ -91,6 +91,7 @@ public class DbScope
         _driverName = null;
         _driverVersion = null;
         _schemaCache = null;
+        _tableCache = null;
     }
 
 
@@ -132,6 +133,7 @@ public class DbScope
             _driverName = dbmd.getDriverName();
             _driverVersion = dbmd.getDriverVersion();
             _schemaCache = new DbSchemaCache(this);
+            _tableCache = new SchemaTableInfoCache(this);
         }
         finally
         {

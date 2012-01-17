@@ -28,40 +28,22 @@ import org.labkey.api.util.Filter;
  */
 public class BlockingCache<K, V> implements Cache<K, V>
 {
-    protected final Cache<K, Object> _cache;
+    protected final Cache<K, Wrapper<V>> _cache;
     protected final CacheLoader<K, V> _loader;
 
     public static final Object UNINITIALIZED = new Object() {public String toString() { return "UNINITIALIZED";}};
 
 
-    public BlockingCache(Cache<K, Object> cache)
+    public BlockingCache(Cache<K, Wrapper<V>> cache)
     {
         this(cache, null);
     }
 
 
-    // TODO: Should take Cache<K, Wrapper<V>> instead (need to expose Wrapper)
-    public BlockingCache(Cache<K, Object> cache, @Nullable CacheLoader<K, V> loader)
+    public BlockingCache(Cache<K, Wrapper<V>> cache, @Nullable CacheLoader<K, V> loader)
     {
         _cache = cache;
         _loader = loader;
-    }
-
-
-    protected static class Wrapper<V>
-    {
-        @SuppressWarnings({"unchecked"})
-        protected V value = (V)UNINITIALIZED;
-
-        void setValue(V v)
-        {
-            value = v;
-        }
-
-        public V getValue()
-        {
-            return value == UNINITIALIZED ? null : value;
-        }
     }
 
 
@@ -89,9 +71,10 @@ public class BlockingCache<K, V> implements Cache<K, V>
     public V get(K key, @Nullable Object arg, CacheLoader<K, V> loader)
     {
         Wrapper<V> w;
+
         synchronized(_cache)
         {
-            w = (Wrapper<V>)_cache.get(key);
+            w = _cache.get(key);
             if (null == w)
                 _cache.put(key, w = createWrapper());
         }
@@ -99,7 +82,8 @@ public class BlockingCache<K, V> implements Cache<K, V>
         // there is a chance the wrapper can be removed from the cache
         // we don't guarantee that two objects can't be loaded concurrently for the same key,
         // just that it's unlikely
-        
+
+        //noinspection SynchronizationOnLocalVariableOrMethodParameter
         synchronized (w)
         {
             if (UNINITIALIZED != w.value)
