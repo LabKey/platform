@@ -15,24 +15,22 @@
  */
 package org.labkey.study.importer;
 
-import org.apache.xmlbeans.XmlException;
 import org.apache.xmlbeans.XmlObject;
+import org.labkey.api.study.InvalidFileException;
+import org.labkey.api.study.StudyImportException;
+import org.labkey.api.util.XmlBeansUtil;
+import org.labkey.api.util.XmlValidationException;
 import org.labkey.api.writer.VirtualFile;
 import org.labkey.study.model.CohortImpl;
 import org.labkey.study.model.CohortManager;
 import org.labkey.study.model.StudyImpl;
+import org.labkey.study.xml.CohortMode;
 import org.labkey.study.xml.CohortType;
 import org.labkey.study.xml.CohortsDocument;
 import org.labkey.study.xml.StudyDocument;
-import org.labkey.study.xml.CohortMode;
-import org.labkey.api.study.StudyImportException;
-import org.labkey.api.study.InvalidFileException;
-import org.labkey.api.util.XmlBeansUtil;
-import org.labkey.api.util.XmlValidationException;
 import org.springframework.validation.BindException;
 
 import javax.servlet.ServletException;
-import java.io.File;
 import java.io.IOException;
 import java.sql.SQLException;
 import java.util.HashMap;

@@ -232,7 +232,7 @@ public class StudyManager
                         }
                     }
                 };
-                return (StudyImpl[]) StudyCache.get(getTableInfo(), c.getId(), cacheId, loader);
+                return (StudyImpl[]) StudyCache.get(getTableInfo(), c, cacheId, loader);
             }
 
         };

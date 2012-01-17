@@ -18,6 +18,7 @@ package org.labkey.query.persist;
 
 import org.apache.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
@@ -206,7 +207,7 @@ public class QueryManager
         return views;
     }
 
-    public CstmView[] getCstmViews(Container container, String schemaName, String queryName, String viewName, User user, boolean inheritableOnly) throws SQLException
+    public CstmView[] getCstmViews(Container container, @Nullable String schemaName, @Nullable String queryName, @Nullable String viewName, @Nullable User user, boolean inheritableOnly) throws SQLException
     {
         CstmView.Key key = new CstmView.Key(container);
         if (schemaName != null)
@@ -376,11 +377,6 @@ public class QueryManager
     public TableInfo getTableInfoQueryDef()
     {
         return getDbSchema().getTable("QueryDef");
-    }
-
-    public TableInfo getTableInfoSupplementalMetadata()
-    {
-        return getDbSchema().getTable("SupplementalMetadata");
     }
 
     public TableInfo getTableInfoQuerySnapshotDef()

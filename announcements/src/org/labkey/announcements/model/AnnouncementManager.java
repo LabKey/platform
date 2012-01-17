@@ -134,7 +134,7 @@ public class AnnouncementManager
             Boolean limited = (recent.length > rowLimit);
 
             if (limited)
-                recent = (AnnouncementModel[])ArrayUtils.subarray(recent, 0, rowLimit);
+                recent = ArrayUtils.subarray(recent, 0, rowLimit);
 
             return new Pair<AnnouncementModel[], Boolean>(recent, limited);
         }

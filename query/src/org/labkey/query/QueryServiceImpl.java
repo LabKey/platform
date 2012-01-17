@@ -198,12 +198,12 @@ public class QueryServiceImpl extends QueryService
         return new ArrayList<QueryDefinition>(getAllQueryDefs(user, container, null, true, false).values());
     }
 
-    private Map<Map.Entry<String, String>, QueryDefinition> getAllQueryDefs(User user, Container container, String schemaName, boolean inheritable, boolean includeSnapshots)
+    private Map<Map.Entry<String, String>, QueryDefinition> getAllQueryDefs(User user, Container container, @Nullable String schemaName, boolean inheritable, boolean includeSnapshots)
     {
         return getAllQueryDefs(user, container, schemaName, inheritable, includeSnapshots, false);
     }
 
-    private Map<Map.Entry<String, String>, QueryDefinition> getAllQueryDefs(User user, Container container, String schemaName,
+    private Map<Map.Entry<String, String>, QueryDefinition> getAllQueryDefs(User user, Container container, @Nullable String schemaName,
                                                                             boolean inheritable, boolean includeSnapshots, boolean allModules)
     {
         Map<Map.Entry<String, String>, QueryDefinition> ret = new LinkedHashMap<Map.Entry<String, String>, QueryDefinition>();

@@ -16,6 +16,7 @@
 
 package org.labkey.study;
 
+import org.jetbrains.annotations.Nullable;
 import org.labkey.api.cache.CacheLoader;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.Filter;
@@ -64,7 +65,7 @@ public class QueryHelper<K extends StudyCachable>
         return get(c, filter, null);
     }
 
-    public K[] get(final Container c, final SimpleFilter filterArg, final String sortString) throws SQLException
+    public K[] get(final Container c, @Nullable final SimpleFilter filterArg, @Nullable final String sortString) throws SQLException
     {
         String cacheId = getCacheId(filterArg);
         if (sortString != null)
@@ -75,7 +76,7 @@ public class QueryHelper<K extends StudyCachable>
             @Override
             public Object load(String key, Object argument)
             {
-                SimpleFilter filter = null!=filterArg ? filterArg : new SimpleFilter("Container", c.getId());
+                SimpleFilter filter = null != filterArg ? filterArg : new SimpleFilter("Container", c.getId());
                 if (!filter.hasContainerEqualClause())
                     filter.addCondition("Container", c.getId());
                 Sort sort = null;
@@ -94,7 +95,7 @@ public class QueryHelper<K extends StudyCachable>
                 }
             }
         };
-        return (K[])StudyCache.get(getTableInfo(), c.getId(), cacheId, loader);
+        return (K[])StudyCache.get(getTableInfo(), c, cacheId, loader);
     }
 
     public K get(Container c, double rowId) throws SQLException
@@ -139,7 +140,7 @@ public class QueryHelper<K extends StudyCachable>
                 }
             }
         };
-        Object obj = StudyCache.get(getTableInfo(), c.getId(), rowId, loader);
+        Object obj = StudyCache.get(getTableInfo(), c, rowId, loader);
         return (K)obj;
     }
 
@@ -179,7 +180,7 @@ public class QueryHelper<K extends StudyCachable>
 
     public void clearCache(Container c)
     {
-        StudyCache.clearCache(getTableInfo(), c.getId());
+        StudyCache.clearCache(getTableInfo(), c);
     }
 
     public void clearCache(K obj)
@@ -188,10 +189,10 @@ public class QueryHelper<K extends StudyCachable>
         synchronized (_cachedFilters)
         {
             for (String filter : _cachedFilters)
-                StudyCache.uncache(getTableInfo(), obj.getContainer().getId(), filter);
+                StudyCache.uncache(getTableInfo(), obj.getContainer(), filter);
             _cachedFilters.clear();
         }
-        StudyCache.uncache(getTableInfo(), obj.getContainer().getId(), obj.getPrimaryKey().toString());
+        StudyCache.uncache(getTableInfo(), obj.getContainer(), obj.getPrimaryKey().toString());
     }
 
     protected String getCacheId(Filter filter)

@@ -16,11 +16,13 @@
 
 package org.labkey.study;
 
+import org.jetbrains.annotations.Nullable;
 import org.labkey.api.cache.BlockingCache;
 import org.labkey.api.cache.CacheLoader;
 import org.labkey.api.cache.CacheManager;
 import org.labkey.api.cache.DbCache;
 import org.labkey.api.cache.Wrapper;
+import org.labkey.api.data.Container;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.study.StudyCachable;
 
@@ -33,21 +35,21 @@ public class StudyCache
 {
     private static boolean ENABLE_CACHING = true;
 
-    private static String getCacheName(String containerId, Object cacheKey)
+    private static String getCacheName(Container c, @Nullable Object cacheKey)
     {
-        return containerId + "/" + cacheKey;
+        return c.getId() + "/" + (null != cacheKey ? cacheKey : "");
     }
 
-    public static void cache(TableInfo tinfo, String containerId, String objectId, StudyCachable cachable)
+    public static void cache(TableInfo tinfo, Container c, String objectId, StudyCachable cachable)
     {
         if (cachable != null)
             cachable.lock();
         if (!ENABLE_CACHING)
             return;
-        DbCache.put(tinfo, getCacheName(containerId, objectId), cachable, CacheManager.HOUR);
+        DbCache.put(tinfo, getCacheName(c, objectId), cachable, CacheManager.HOUR);
     }
 
-    public static void cache(TableInfo tinfo, String containerId, String objectId, StudyCachable[] cachables)
+    public static void cache(TableInfo tinfo, Container c, String objectId, StudyCachable[] cachables)
     {
         for (StudyCachable cachable : cachables)
         {
@@ -56,47 +58,45 @@ public class StudyCache
         }
         if (!ENABLE_CACHING)
             return;
-        DbCache.put(tinfo, getCacheName(containerId, objectId), cachables, CacheManager.HOUR);
+        DbCache.put(tinfo, getCacheName(c, objectId), cachables, CacheManager.HOUR);
     }
 
-    public static void cache(TableInfo tinfo, String containerId, Object cacheKey, StudyCachable cachable)
+    public static void cache(TableInfo tinfo, Container c, Object cacheKey, StudyCachable cachable)
     {
         // We allow caching of null values: 
         if (cachable != null)
             cachable.lock();
         if (!ENABLE_CACHING)
             return;
-        DbCache.put(tinfo, getCacheName(containerId, cacheKey), cachable, CacheManager.HOUR);
+        DbCache.put(tinfo, getCacheName(c, cacheKey), cachable, CacheManager.HOUR);
     }
 
-    public static void uncache(TableInfo tinfo, String containerId, Object cacheKey)
+    public static void uncache(TableInfo tinfo, Container c, Object cacheKey)
     {
         if (!ENABLE_CACHING)
             return;
-        DbCache.remove(tinfo, getCacheName(containerId, cacheKey));
+        DbCache.remove(tinfo, getCacheName(c, cacheKey));
     }
 
-    public static Object getCached(TableInfo tinfo, String containerId, Object cacheKey)
+    public static Object getCached(TableInfo tinfo, Container c, Object cacheKey)
     {
         if (!ENABLE_CACHING)
             return null;
-        return DbCache.get(tinfo, getCacheName(containerId, cacheKey));
+        return DbCache.get(tinfo, getCacheName(c, cacheKey));
     }
 
-    public static Object get(TableInfo tinfo, String containerId, Object cacheKey, CacheLoader<String, Object> loader)
+    public static Object get(TableInfo tinfo, Container c, Object cacheKey, CacheLoader<String, Object> loader)
     {
         if (!ENABLE_CACHING)
-            return loader.load(getCacheName(containerId, cacheKey), null);
+            return loader.load(getCacheName(c, cacheKey), null);
         BlockingCache<String, Object> cache = new BlockingCache<String, Object>(DbCache.<Wrapper<Object>>getCacheGeneric(tinfo), loader);
-        return cache.get(getCacheName(containerId, cacheKey), null);
+        return cache.get(getCacheName(c, cacheKey), null);
     }
 
-    public static void clearCache(TableInfo tinfo, String containerId)
+    public static void clearCache(TableInfo tinfo, Container c)
     {
         if (!ENABLE_CACHING)
             return;
-        // TODO: this clear call is too heavy-handed. #12912
-        //it will clear the cache for all containers, not just the one we care about.
-        DbCache.clear(tinfo);
+        DbCache.removeUsingPrefix(tinfo, getCacheName(c, null));
     }
 }

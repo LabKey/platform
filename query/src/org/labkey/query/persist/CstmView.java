@@ -16,6 +16,7 @@
 
 package org.labkey.query.persist;
 
+import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.BeanObjectFactory;
 import org.labkey.api.data.Entity;
 import org.labkey.api.data.Container;
@@ -60,7 +61,7 @@ public final class CstmView extends Entity implements Cloneable, Serializable
                 addCondition(Column.name, name);
         }
         
-        public void setUser(User user)
+        public void setUser(@Nullable User user)
         {
             if (user == null)
                 addIsNull(Column.customviewowner);
@@ -84,6 +85,7 @@ public final class CstmView extends Entity implements Cloneable, Serializable
         return _customViewId;
     }
 
+    @SuppressWarnings({"UnusedDeclaration"})
     public void setCustomViewId(int id)
     {
         _customViewId = id;

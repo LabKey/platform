@@ -1499,7 +1499,7 @@ public class SampleManager
         if (tinfo == null)
             tinfo = isLookup ? col.getFk().getLookupTableInfo() : col.getParentTable();
         TableInfo cachedTinfo = tinfo instanceof FilteredTable ? ((FilteredTable) tinfo).getRealTable() : tinfo;
-        DistinctValueList distinctValues = (DistinctValueList) StudyCache.getCached(cachedTinfo, container.getId(), cacheKey);
+        DistinctValueList distinctValues = (DistinctValueList) StudyCache.getCached(cachedTinfo, container, cacheKey);
         if (distinctValues == null)
         {
             distinctValues = new DistinctValueList(container, cacheKey);
@@ -1551,7 +1551,7 @@ public class SampleManager
                     if (rs != null) try { rs.close(); } catch (SQLException e) {}
                 }
             }
-            StudyCache.cache(cachedTinfo, container.getId(), cacheKey, distinctValues);
+            StudyCache.cache(cachedTinfo, container, cacheKey, distinctValues);
         }
         return distinctValues;
     }
@@ -1829,10 +1829,10 @@ public class SampleManager
         _requestHelper.clearCache(c);
         _requestStatusHelper.clearCache(c);
         DbCache.clear(StudySchema.getInstance().getTableInfoVial());
-        StudyCache.clearCache(StudySchema.getInstance().getTableInfoSpecimenSummary(), c.getId());
-        StudyCache.clearCache(StudySchema.getInstance().getTableInfoSpecimenAdditive(), c.getId());
-        StudyCache.clearCache(StudySchema.getInstance().getTableInfoSpecimenDerivative(), c.getId());
-        StudyCache.clearCache(StudySchema.getInstance().getTableInfoSpecimenPrimaryType(), c.getId());
+        StudyCache.clearCache(StudySchema.getInstance().getTableInfoSpecimenSummary(), c);
+        StudyCache.clearCache(StudySchema.getInstance().getTableInfoSpecimenAdditive(), c);
+        StudyCache.clearCache(StudySchema.getInstance().getTableInfoSpecimenDerivative(), c);
+        StudyCache.clearCache(StudySchema.getInstance().getTableInfoSpecimenPrimaryType(), c);
         for (StudyImpl study : StudyManager.getInstance().getAncillaryStudies(c))
             clearCaches(study.getContainer());
     }
