@@ -2163,15 +2163,6 @@ LABKEY.DataRegion._filterUI =
             this.changeFilterCallback = confirmCallback;
         }
 
-//        this.store = new LABKEY.ext.Store({
-//            schemaName: this.schemaName,
-//            sort: "-" + this.fieldKey,
-//            sql: 'SELECT DISTINCT ' + this.selectColumn + ' FROM "' + h(this.schemaName) + '"."' + h(this.queryName) + '" LIMIT 101',
-//            containerPath: this.container || this.containerPath || LABKEY.container.path,
-//            autoLoad: false,
-//            updatable: false
-//        });
-
         var comboStore1 = this.fillOptions(column.mvEnabled, this._mappedType, 0);
         var comboStore2 = this.fillOptions(column.mvEnabled, this._mappedType, 1);
 
