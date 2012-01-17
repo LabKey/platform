@@ -49,6 +49,7 @@ Ext4.onReady(function(){
     var store = Ext4.create('LABKEY.ext4.Store', {
         schemaName: 'auditLog',
         queryName: 'LabAuditEvents',
+        columns: 'date,createdby,comment,containerId',
         sort: '-Date',
         groupField: 'Date',
         groupDir: 'DESC',
@@ -70,9 +71,10 @@ Ext4.onReady(function(){
             Date: {
                 format: 'h:m A'
             },
-            Type: {
-                columnConfig: {
-                    width: 200
+            CreatedBy: {
+                //NOTE: this is to reformat entries with a null user to be blank, instead of [0]
+                buildDisplayString: function(data){
+                    return data == '[0]' ? "" : data;
                 }
             }
         },
@@ -86,9 +88,11 @@ Ext4.onReady(function(){
     });
 
 function onStoreLoad(store){
+    var renderTarget = Ext4.get('<%=renderTarget%>');
+
     var panel = Ext4.create('Ext.panel.Panel', {
-        //style: 'padding:10px;',
         border: false,
+        //layout: 'fit',
         items: [{
             border: false,
             layout: 'hbox',
@@ -98,27 +102,6 @@ function onStoreLoad(store){
                 xtype: 'labkey-linkbutton',
                 style: 'padding-right: 20px;',
                 linkCls: 'labkey-text-link'
-//                baseCls: 'no-class',  //remove default ext styling
-//                cls: 'tool-icon',
-                //style: 'padding-bottom:20px;',
-                //width: 140,
-//                icon: true,
-//                setIcon: function(){
-//                    return this;
-//                },
-//                renderTpl:
-//                    '<em id="{id}-btnWrap">' +
-//                        '<div id="{id}-btnEl" class="tool-icon" ' +
-//                            '<tpl if="tabIndex"> tabIndex="{tabIndex}"</tpl> role="button" autocomplete="off">' +
-//                            '<tpl if="href"><a href="{href}"></tpl>' +
-//                            '<tpl if="!href"><a href="javascript:void(0)"></tpl>' +
-////                            '<div><img id="{id}-btnIconEl" src="{icon}" style="width:50px;height:50px"/ ></div>' +
-//                            '<span id="{id}-btnInnerEl" >' +
-//                                '{text}' +
-//                            '</span>' +
-//                            '</a>' +
-//                        '</div>' +
-//                    '</em>'
             },
             items: [{
                 text: 'New Experiment',
@@ -160,13 +143,15 @@ function onStoreLoad(store){
         },{
             xtype: 'labkey-gridpanel',
             store: store,
+            disableSelection: true,
+            forceFit: true,
             hideHeaders: true,
+            width: renderTarget.getWidth(),
             bodyStyle: 'border: 0;',
             border: false,
             frame: false,
-            layout: 'fit',
-            scroll   : 'vertical',
-            multiSelect: true,
+//            scroll   : 'vertical',
+            multiSelect: false,
             viewConfig : {
                 stripRows : true,
                 emptyText : 'No Events'
@@ -174,8 +159,13 @@ function onStoreLoad(store){
             features  : [Ext4.create('Ext4.grid.feature.Grouping', {
                 groupHeaderTpl : '&nbsp;{name}' // &nbsp; allows '+/-' to show up
             })]
-        }]
-    }).render('<%=renderTarget%>');
+        }],
+        renderTo: renderTarget.id
+    });
+
+    Ext4.EventManager.onWindowResize(function(){
+        panel.setWidth(renderTarget.getWidth());
+    }, this);
 
     LABKEY.Query.selectRows({
         containerPath: null,
@@ -186,7 +176,7 @@ function onStoreLoad(store){
             var menu = panel.down('#importSamplesMenu');
             menu.removeAll();
 
-            if(data && data.rows){
+            if(data && data.rows && data.rows.length){
                 Ext.each(data.rows, function(row){
                     menu.add({
                         text: row.Name,
@@ -198,6 +188,11 @@ function onStoreLoad(store){
                         }
                     });
                 }, this);
+            }
+            else {
+                menu.add({
+                    text: 'No Sample Sets Defined'
+                })
             }
         },
         failure: LABKEY.Utils.onError
@@ -225,7 +220,7 @@ function onStoreLoad(store){
                         importController: i.importController || 'assay',
                         handler: function(btn){
                             if(LABKEY.container && LABKEY.container.isWorkbook)
-                                window.location = LABKEY.ActionURL.buildURL(btn.importController, btn.importAction, null, {rowId: btn.assayId})
+                                window.location = LABKEY.ActionURL.buildURL(btn.importController, btn.importAction, null, {rowId: btn.assayId});
                             else
                                 Ext4.create('LABKEY.ext.ImportWizardWin', {
                                     controller: btn.importController,
@@ -235,6 +230,11 @@ function onStoreLoad(store){
                         }
                     })
                 }, this);
+            }
+            else {
+                menu.add({
+                    text: 'No Assays Defined'
+                })
             }
         },
         failure: LABKEY.Utils.onError

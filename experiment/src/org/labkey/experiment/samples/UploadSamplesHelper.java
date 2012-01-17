@@ -570,7 +570,8 @@ public class UploadSamplesHelper
         event.setCreatedBy(_form.getUser());
         event.setContainerId(getContainer().getId());
         event.setEventType(SampleSetAuditViewFactory.EVENT_TYPE);
-        event.setKey1(_form.getName());
+        event.setKey1(_form.getSampleSet().getLSID());
+        event.setKey2(_form.getName());
         event.setKey3(_form.getInsertUpdateChoice());
         event.setComment("Samples inserted or updated in: " + _form.getName());
 
