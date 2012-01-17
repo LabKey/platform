@@ -93,7 +93,7 @@ public class ExtUtil
                 x.append("O"); break;
             case '\\':
                 rep(x,"\\\\",count); break;
-            case ' ': case ':': case '.': case ',':
+            case ' ': case ':': case '.': case ',': case '-':
                 rep(x, c, count); break;
             default:
                 rep(x, "\\" + c, count); break;
@@ -105,7 +105,7 @@ public class ExtUtil
 
     private static void rep(StringBuilder x, String s, int count)
     {
-        while (count-- >= 0)
+        while (count-- > 0)
             x.append(s);
     }
 
@@ -183,6 +183,7 @@ public class ExtUtil
         @Test
         public void testDate()
         {
+            assertEquals("Y-m-d", toExtDateFormat("yyyy-MM-dd"));
             assertEquals("Y.m.d \\A\\D \\a\\t H:i:s T", toExtDateFormat("yyyy.MM.dd G 'at' HH:mm:ss z"));     //	2001.07.04 AD at 12:08:56 PDT
             assertEquals("D, M j, 'y", toExtDateFormat("EEE, MMM d, ''yy"));                            //	Wed, Jul 4, '01
             assertEquals("g:i A", toExtDateFormat("h:mm a"));                                           //	12:08 PM
