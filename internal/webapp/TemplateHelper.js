@@ -205,8 +205,13 @@
  *      config.gridBreakInfo configures grouping in the grid (template may use different markup to indicate grouping)
  *          gridBreakInfo : [{name:'VisitMonth', rowspan:true}]
  *
- *      config.template (text only for now) template to render (maybe we have some predefined)
- *          config.template = PAGING_WITH_ROWSPANS
+ *      config.reportTemplate template to create an XTemplate, this object will be used as the last parameter of the XTemplate constructor
+ *           using the template property as the first parameter, and registering any "on" properties
+ *           config.template = {
+                    template:'template string goes here',
+                    userdefined:'Yadda yadda',
+                    on : {dataload:function(report,data){}}
+            }
  *
  * NYI
  *      data processing configuration, such as computed columns, etc
@@ -244,6 +249,38 @@ X.define('LABKEY.TemplateReport',
     extend: 'Ext.Component',
 
 
+    initComponent: function()
+    {
+            this.addEvents
+            (
+
+                /**
+                 * @event onload
+                 * Fires when data is loaded.
+                 * @param {LABKEY.TemplateReport}
+                 * @param {LABKEY.ExtendedSelectRowsResult} or {LABKEY.SelectRowsResult}
+                 */
+                'dataload',
+
+                /**
+                 * @event onpostprocess
+                 * Fires before data is rendered
+                 * @param {LABKEY.TemplateReport}
+                 * @param transformed data see transformForReportLayout
+                 */
+                'afterdatatransform'
+            );
+
+
+            if (Ext.isString(this.reportTemplate))
+                this.reportTemplate = {template:tpl};
+            for (var p in this.reportTemplate.on)
+            {
+                this.on(p, this.reportTemplate.on[p]);
+            }
+    },
+
+
     /**
      * This method takes a query result set and preprocesses it
      *
@@ -272,7 +309,8 @@ X.define('LABKEY.TemplateReport',
         var arrayrows = [];
         var i, field;
 
-        // turn field descriptions into FieldDefinitionpreprocess fields
+        // turn field descriptions into FieldDefinition
+        //  preprocess fields
         //  add index
         var nameMap = {};
         for (i=0 ; i < fields.length ; i++)
@@ -496,21 +534,23 @@ X.define('LABKEY.TemplateReport',
 
     onRender: function(ct, position)
     {
-        if (!X.isString(this.template))
-            throw "LABKEY.TemplateReport: String template expected";
-        if (!X.isObject(this.data))
-            throw "LABKEY.TemplateReport: Data not provided";
-
         if (!this.el)
             this.callParent(arguments);
 
-        var transformData = this.transformSelectRowsResult(this.data);
-        var reportData = this.transformForReportLayout(transformData);
+        if (this.reportData)
+            this.renderReport();
+    },
 
-        var tpl = new Ext4.XTemplate
-        (
-            this.template,
-            {
+
+    renderReport:function()
+    {
+        if (!X.isObject(this.reportTemplate))
+            throw "LABKEY.TemplateReport: No template provided";
+        if (!X.isObject(this.reportData))
+            throw "LABKEY.TemplateReport: Data not provided";
+
+        var tplConfig =
+        {
                 getCaptionHtml : function(field)
                 {
                     if (field.getCaptionHtml)
@@ -540,10 +580,25 @@ X.define('LABKEY.TemplateReport',
                 gridRow : 0,
                 isPrint : -1 != window.location.href.indexOf("_print=true") || -1 != window.location.href.indexOf("_print=1"),
                 start : (new Date()).valueOf()
-            }
-        );
-        tpl.data = reportData;
-        tpl.overwrite(this.el, reportData);
+        };
+        X.apply(tplConfig, this.reportTemplate);
+        this.template = new Ext4.XTemplate(tplConfig.template, tplConfig);
+        this.template.data = this.reportData;
+        this.template.overwrite(this.el, this.reportData);
+    },
+
+
+    loadData : function(data)
+    {
+        this.fireEvent('dataload', this, data);
+        var transformData = this.transformSelectRowsResult(data);
+        var reportData = this.transformForReportLayout(transformData);
+        this.fireEvent('afterdatatransform', this, reportData);
+
+        this.reportData = reportData;
+        // if render has been called already, we should refresh
+        if (this.el)
+            this.renderReport();
     }
 
 });
@@ -556,7 +611,7 @@ X.define('LABKEY.TemplateReport',
 
 
 
-/***************************************************************************/
+/***************************  TEST CODE ************************************************/
 
 
 
@@ -617,7 +672,7 @@ var pageTmpl1 =
             '<tr><td colspan="{[this.data.fields.length]}">',
                 '<div style="border:solid 1px #eeeeee; padding:5px; margin:10px;">',
                 '<table>',
-                    '<tr><td colspan=2 style="padding:5px; font-weight:bold; font-size:1.3em; text-align:center;">{[ this.getHtml(values.first.asArray[this.data.pageFields[0].index]) ]}</td></tr>',
+                    '<tr><td colspan=2 style="padding:5px; font-weight:bold; font-size:1.3em; text-align:center;">{[ this.getHtml(values.headerValue) ]}</td></tr>',
 // note nested <tpl>, this will make values==datavalue and parent==field
                     '<tpl for="this.data.pageFields"><tpl for="parent.first.asArray[values.index]">',
                         '<tr><td align=right>{[this.getCaptionHtml(parent)]}:&nbsp;</td><td align=left style="{parent.style}">{[this.getHtml(values)]}</td></tr>',
@@ -645,6 +700,31 @@ var pageTmpl1 =
 ].join("");
 
 
+
+
+var SIMPLE_PAGE_TEMPLATE =
+{
+    template : pageTmpl1,
+    on :
+    {
+        dataload : function(rpt, data)
+        {
+        },
+        afterdatatransform : function(rpt, data)
+        {
+            // set headerValue field for each page
+            var index = data.pageFields[0].index;
+            for (var p=0 ; p<data.pages.length ; p++)
+            {
+                var page = data.pages[p];
+                page.headerValue = page.first.asArray[index];
+            }
+        }
+    }
+};
+
+
+
 function testIssues(el)
 {
     var helper = new LABKEY.TemplateReport(
@@ -655,7 +735,7 @@ function testIssues(el)
         gridFields:['Status', 'IssueId', 'Created', 'Priority', 'Title', 'Type', 'CreatedBy', 'Area', 'Milestone'],
         rowBreakInfo:[{name:'Status', rowspans:true}],
 
-        template : pageTmpl1
+        reportTemplate : SIMPLE_PAGE_TEMPLATE
     });
 
     LABKEY.Query.selectRows(
@@ -668,7 +748,7 @@ function testIssues(el)
         includeStyle : true,
         success: function(qr)
 		{
-            helper.data = qr;
+            helper.loadData(qr);
             helper.render(el);
 		}
     });
