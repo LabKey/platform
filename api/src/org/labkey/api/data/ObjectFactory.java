@@ -17,6 +17,7 @@
 package org.labkey.api.data;
 
 import org.apache.log4j.Logger;
+import org.jetbrains.annotations.Nullable;
 import org.labkey.api.collections.BoundMap;
 
 import java.sql.ResultSet;
@@ -37,7 +38,7 @@ public interface ObjectFactory<K>
 
     K fromMap(K bean, Map<String, ?> m);
 
-    Map<String, Object> toMap(K bean, Map<String, Object> m);
+    Map<String, Object> toMap(K bean, @Nullable Map<String, Object> m);
 
     K handle(ResultSet rs) throws SQLException;
 

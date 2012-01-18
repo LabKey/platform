@@ -33,12 +33,12 @@ import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicInteger;
 
-// TODO: cache, for display, SelectObject via PK, async, etc.
+// TODO: cache, for display, async, etc.
 public class TableSelector extends BaseSelector
 {
     private final TableInfo _table;
     private final Collection<ColumnInfo> _columns;
-    private final Filter _filter;
+    private final SimpleFilter _filter;
     private final Sort _sort;
 
     private int _rowCount = Table.ALL_ROWS;
@@ -51,7 +51,7 @@ public class TableSelector extends BaseSelector
         super(table.getSchema().getScope());
         _table = table;
         _columns = columns;
-        _filter = filter;
+        _filter = new SimpleFilter(filter);
         _sort = sort;
     }
 
@@ -86,14 +86,46 @@ public class TableSelector extends BaseSelector
 
     public TableSelector setRowCount(int rowCount)
     {
+        assert Table.validMaxRows(rowCount) : rowCount + " is an illegal value for rowCount; should be positive, Table.ALL_ROWS or Table.NO_ROWS";
+
         _rowCount = rowCount;
         return this;
     }
 
     public TableSelector setOffset(long offset)
     {
+        assert Table.validOffset(offset) : offset + " is an illegal value for offset; should be positive or Table.NO_OFFSET";
+
         _offset = offset;
         return this;
+    }
+
+    // pk can be single value or an array of values
+    public <K> K getObject(Object pk, Class<K> clazz)
+    {
+        return getObject(null, pk, clazz);
+    }
+
+    // pk can be single value or an array of values
+    public <K> K getObject(@Nullable Container c, Object pk, Class<K> clazz)   // TODO: Shouldn't mutate the filter... pass filter into getSQL() instead or create a query context
+    {
+        List<ColumnInfo> pkColumns = _table.getPkColumns();
+        Object[] pks;
+
+        if (null != pk && pk.getClass().isArray())
+            pks = (Object[]) pk;
+        else
+            pks = new Object[]{pk};
+
+        assert pks.length == pkColumns.size() : "Wrong number of primary keys specified";
+
+        for (int i = 0; i < pkColumns.size(); i++)
+            _filter.addCondition(pkColumns.get(i), pks[i]);
+
+        if (null != c)
+            _filter.addCondition("container", c);
+
+        return getObject(clazz);
     }
 
     @Override
@@ -130,7 +162,7 @@ public class TableSelector extends BaseSelector
 
         if (_offset != Table.NO_OFFSET || _table.getSqlDialect().supportsOffset())
         {
-            // Standard case is to simply create SQL using the rowCount and offset
+            // Standard case is simply to create SQL using the rowCount and offset
 
             _scrollOffset = 0;
             return QueryService.get().getSelectSQL(_table, columns, _filter, _sort, _rowCount, _offset, forceSort);
@@ -138,11 +170,11 @@ public class TableSelector extends BaseSelector
         else
         {
             // We've asked for offset but the dialect's SQL doesn't support it, so implement offset manually:
-            // - Select rowCount + offset rows
+            // - Select offset + rowCount rows
             // - Set _scrollOffset so getResultSet() skips over the rows we don't want
 
             _scrollOffset = _offset;
-            return QueryService.get().getSelectSQL(_table, columns, _filter, _sort, _rowCount + (int)_offset, 0, forceSort);
+            return QueryService.get().getSelectSQL(_table, columns, _filter, _sort, (int)_offset + _rowCount, 0, forceSort);
         }
     }
 

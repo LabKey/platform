@@ -138,7 +138,7 @@ abstract public class AbstractFileAnalysisProtocolFactory<T extends AbstractFile
         String[] protocolNames = super.getProtocolNames(root, dirData);
 
         // The default parameters file is not really a protocol so remove it from the list.
-        return (String[]) ArrayUtils.removeElement(protocolNames, DEFAULT_PARAMETERS_NAME);
+        return ArrayUtils.removeElement(protocolNames, DEFAULT_PARAMETERS_NAME);
     }
 
     public void initSystemDirectory(File rootDir, File systemDir)

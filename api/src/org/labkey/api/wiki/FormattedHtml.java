@@ -45,7 +45,6 @@ public class FormattedHtml
 
     public FormattedHtml(String html, boolean isVolatile, Set<String> dependencies)
     {
-        assert !html.trim().startsWith("<div class=\"labkey-wiki\">");
         _html = html;
         _volatile = isVolatile;
         _dependencies = dependencies;

@@ -20,6 +20,8 @@ import org.apache.commons.beanutils.BeanUtils;
 import org.apache.commons.beanutils.PropertyUtils;
 import org.apache.commons.beanutils.ConversionException;
 import org.apache.log4j.Logger;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import org.labkey.api.util.ResultSetUtil;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.util.UnexpectedException;
@@ -161,7 +163,7 @@ public class BeanObjectFactory<K> implements ObjectFactory<K> // implements Resu
 
 
     @Override
-    public Map<String, Object> toMap(K bean, Map<String, Object> m)
+    public @NotNull Map<String, Object> toMap(K bean, @Nullable Map<String, Object> m)
     {
         try
         {
@@ -178,7 +180,6 @@ public class BeanObjectFactory<K> implements ObjectFactory<K> // implements Resu
                 catch (NoSuchMethodException e)
                 {
                     assert false : e;
-                    continue;
                 }
             }
         }
@@ -240,7 +241,7 @@ public class BeanObjectFactory<K> implements ObjectFactory<K> // implements Resu
                     {
                         Object value = rs.getObject(i);
                         if (value instanceof Double)
-                            value = Double.valueOf(ResultSetUtil.mapDatabaseDoubleToJavaDouble((Double) value));
+                            value = ResultSetUtil.mapDatabaseDoubleToJavaDouble((Double) value);
                         BeanUtils.copyProperty(bean, prop, value);
                     }
                     catch (ConversionException e)

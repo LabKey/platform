@@ -16,6 +16,7 @@
 
 package org.labkey.api.view.template;
 
+import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.ConnectionWrapper;
 import org.labkey.api.view.JspView;
 import org.labkey.api.security.User;
@@ -45,7 +46,7 @@ public class TemplateHeaderView extends JspView<TemplateHeaderView.TemplateHeade
 
     private List<String> _warningMessages = new ArrayList<String>();
 
-    public TemplateHeaderView(List<String> containerLinks, String upgradeMessage, Map<String, Throwable> moduleErrors, PageConfig page)
+    public TemplateHeaderView(@Nullable List<String> containerLinks, @Nullable String upgradeMessage, @Nullable Map<String, Throwable> moduleErrors, PageConfig page)
     {
         super("/org/labkey/api/view/template/header.jsp", new TemplateHeaderBean(containerLinks, upgradeMessage, moduleErrors, page));
         buildWarningMessageList();
@@ -71,10 +72,10 @@ public class TemplateHeaderView extends JspView<TemplateHeaderView.TemplateHeade
         //admin-only mode--show to admins
         if (null != user && user.isAdministrator() && AppProps.getInstance().isUserRequestedAdminOnlyMode())
         {
-            _warningMessages.add("This site is configured so that only administrators may sign in. To allow other users to sign in, turn off admin-only mode in the <a href=\""
+            _warningMessages.add("This site is configured so that only administrators may sign in. To allow other users to sign in, turn off admin-only mode via the <a href=\""
                     + PageFlowUtil.urlProvider(AdminUrls.class).getCustomizeSiteURL()
                     + "\">"
-                    + "site-settings</a>.");
+                    + "site settings page</a>.");
         }
 
         //module failures during startup--show to admins
@@ -171,14 +172,14 @@ public class TemplateHeaderView extends JspView<TemplateHeaderView.TemplateHeade
 
     public static class TemplateHeaderBean
     {
-        public List<String> containerLinks;
-        public String upgradeMessage;
-        public Map<String, Throwable> moduleFailures;
+        public @Nullable List<String> containerLinks;
+        public @Nullable String upgradeMessage;
+        public @Nullable Map<String, Throwable> moduleFailures;
         public PageConfig pageConfig;
 
-        private TemplateHeaderBean(List<String> containerLinks, String upgradeMessage, Map<String, Throwable> moduleFailures, PageConfig page)
+        private TemplateHeaderBean(@Nullable List<String> containerLinks, @Nullable String upgradeMessage, @Nullable Map<String, Throwable> moduleFailures, PageConfig page)
         {
-            this.containerLinks = containerLinks;
+            this.containerLinks = containerLinks;    // TODO: Remove -- not used!
             this.upgradeMessage = upgradeMessage;
             this.moduleFailures = moduleFailures;
             this.pageConfig = page;

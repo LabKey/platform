@@ -50,6 +50,11 @@ public class LegacyTableSelector extends LegacySelector<TableSelector>
         super(new TableSelector(table, Table.ALL_COLUMNS, null, null));
     }
 
+    public LegacyTableSelector(ColumnInfo column, @Nullable Filter filter, @Nullable Sort sort)
+    {
+        super(new TableSelector(column, filter, sort));
+    }
+
     public LegacyTableSelector setRowCount(int rowCount)
     {
         _selector.setRowCount(rowCount);

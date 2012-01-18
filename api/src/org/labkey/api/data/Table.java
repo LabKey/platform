@@ -27,7 +27,6 @@ import org.junit.Assert;
 import org.junit.Test;
 import org.labkey.api.attachments.AttachmentFile;
 import org.labkey.api.cache.DbCache;
-import org.labkey.api.collections.ArrayListMap;
 import org.labkey.api.collections.BoundMap;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.collections.CaseInsensitiveHashSet;
@@ -60,7 +59,6 @@ import org.labkey.api.util.TestContext;
 import javax.servlet.http.HttpServletResponse;
 import javax.sql.rowset.CachedRowSet;
 import java.io.IOException;
-import java.lang.reflect.Array;
 import java.sql.BatchUpdateException;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
@@ -118,14 +116,13 @@ public class Table
         return NO_ROWS == maxRows | ALL_ROWS == maxRows | maxRows > 0;
     }
 
-    public static boolean validOffset(int offset)
+    public static boolean validOffset(long offset)
     {
         return offset >= 0;
     }
 
     // Careful: caller must track and clean up parameters (e.g., close InputStreams) after execution is complete
-    public static PreparedStatement prepareStatement(Connection conn, String sql, Object[] parameters)
-            throws SQLException
+    public static PreparedStatement prepareStatement(Connection conn, String sql, Object[] parameters) throws SQLException
     {
         PreparedStatement stmt = conn.prepareStatement(sql);
         setParameters(stmt, parameters);
@@ -367,8 +364,10 @@ public class Table
         return new LegacySqlSelector(schema, fragment(sql, parameters)).getArray(clss);
     }
 
+
+/*
     @NotNull
-    private static <K> K[] internalExecuteQueryArray(DbSchema schema, String sql, Object[] parameters, Class<K> clss, long scrollOffset)
+    private static <K> K[] internalExecuteQueryArray(DbSchema schema, String sql, Object[] parameters, Class<K> clss)
             throws SQLException
     {
         Connection conn = null;
@@ -378,9 +377,6 @@ public class Table
         {
             conn = schema.getScope().getConnection();
             rs = _executeQuery(conn, sql, parameters);
-
-            while (scrollOffset > 0 && rs.next())
-                scrollOffset--;
 
             ObjectFactory<K> f = ObjectFactory.Registry.getFactory(clss);
             if (null != f)
@@ -409,7 +405,7 @@ public class Table
             doFinally(rs, null, conn, schema.getScope());
         }
     }
-
+*/
 
     public static int execute(DbSchema schema, SQLFragment f) throws SQLException
     {
@@ -419,6 +415,9 @@ public class Table
 
     public static int execute(DbSchema schema, String sql, @NotNull Object... parameters) throws SQLException
     {
+        return new LegacySqlExecutor(schema, new SQLFragment(sql, parameters)).execute();
+
+/*
         Connection conn = schema.getScope().getConnection();
 
         try
@@ -434,6 +433,7 @@ public class Table
         {
             doFinally(null, null, conn, schema.getScope());
         }
+         */
     }
 
 
@@ -513,17 +513,6 @@ public class Table
             _getterMap.put(c, this);
         }
 
-        public static <K> K getByClass(ResultSet rs, Class<K> c) throws SQLException
-        {
-            Getter getter = forClass(c);
-
-            if (null == getter)
-                throw new IllegalArgumentException("Class " + c.getName() + " is not supported by Getter.getByClass()");
-
-            //noinspection unchecked
-            return (K)getter.getObject(rs);
-        }
-
         public static <K> Getter forClass(Class<K> c)
         {
             return _getterMap.get(c);
@@ -586,17 +575,17 @@ public class Table
 
 
     // return a result from a one column resultset. K should be a string or number type
-    public static <K> K[] executeArray(TableInfo table, String column, @Nullable Filter filter, @Nullable Sort sort, Class<K> c)
-            throws SQLException
+    public static <K> K[] executeArray(TableInfo table, String column, @Nullable Filter filter, @Nullable Sort sort, Class<K> c) throws SQLException
     {
-        ColumnInfo col = table.getColumn(column);
-        return executeArray(table, col, filter, sort, c);
+        return new LegacyTableSelector(table.getColumn(column), filter, sort).getArray(c);
     }
 
     // return a result from a one column resultset. K should be a string or number type
-    public static <K> K[] executeArray(TableInfo table, ColumnInfo col, @Nullable Filter filter, @Nullable Sort sort, Class<K> c)
-            throws SQLException
+    public static <K> K[] executeArray(TableInfo table, ColumnInfo col, @Nullable Filter filter, @Nullable Sort sort, Class<K> c) throws SQLException
     {
+        return new LegacyTableSelector(col, filter, sort).getArray(c);
+
+/*
         Map<String, ColumnInfo> cols = new CaseInsensitiveHashMap<ColumnInfo>();
         cols.put(col.getName(), col);
         if (filter != null || sort != null)
@@ -631,6 +620,7 @@ public class Table
         {
             doFinally(rs, null, conn, schema.getScope());
         }
+*/
     }
     
     // return a result from a one column resultset. K should be a string or number type
@@ -1128,18 +1118,22 @@ public class Table
 
     public static <K> K selectObject(TableInfo table, int pk, Class<K> clss)
     {
-        return selectObject(table, new Object[]{pk}, clss);
+        return new TableSelector(table).getObject(pk, clss);
     }
 
 
     public static <K> K selectObject(TableInfo table, Object pk, Class<K> clss)
     {
-        return selectObject(table, null, pk, clss);
+        return new TableSelector(table).getObject(pk, clss);
     }
 
 
     public static <K> K selectObject(TableInfo table, @Nullable Container c, Object pk, Class<K> clss)
     {
+        return new TableSelector(table).getObject(c, pk, clss);
+
+
+/*
         SimpleFilter filter = new SimpleFilter();
         List<ColumnInfo> pkColumns = table.getPkColumns();
         Object[] pks;
@@ -1171,6 +1165,7 @@ public class Table
         {
             throw new RuntimeSQLException(x);
         }
+        */
     }
 
 
@@ -1227,6 +1222,7 @@ public class Table
     }
 
 
+    @Deprecated // Use TableSelector
     @NotNull
     public static <K> K[] select(TableInfo table, Set<String> select, @Nullable Filter filter, @Nullable Sort sort, Class<K> clss, int rowCount, long offset)
             throws SQLException
@@ -1401,7 +1397,8 @@ public class Table
         Map<String, ColumnInfo> columns = getDisplayColumnsList(select);
         ensureRequiredColumns(table, columns, filter, sort, null);
         SQLFragment sql = QueryService.get().getSelectSQL(table, new ArrayList<ColumnInfo>(columns.values()), filter, sort, ALL_ROWS, NO_OFFSET, true);
-        return internalExecuteQueryArray(table.getSchema(), sql.getSQL(), sql.getParams().toArray(), clss, NO_OFFSET);
+
+        return new LegacySqlSelector(table.getSchema(), sql).getArray(clss);
     }
 
 
@@ -1780,7 +1777,7 @@ public class Table
             inSQL.append(",?");
         inSQL.append(sql.substring(q + 1));
 
-        Map[] right = internalExecuteQueryArray(schema, inSQL.toString(), keys.toArray(), Map.class, NO_OFFSET);
+        Map[] right = new LegacySqlSelector(schema, new SQLFragment(inSQL, keys.toArray())).getArray(Map.class);
         return Join.join(left, Arrays.asList(right), key);
     }
 

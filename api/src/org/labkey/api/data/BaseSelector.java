@@ -139,7 +139,7 @@ public abstract class BaseSelector extends JdbcCommand implements Selector
     }
 
     @Override
-    public <K> K getObject(Class<K> clazz)  // TODO: Or getSingleton?  Or getSingleObject?
+    public <K> K getObject(Class<K> clazz)
     {
         List<K> list = getArrayList(clazz);
 

@@ -15,6 +15,8 @@
  */
 package org.labkey.api.exp;
 
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.*;
 import org.labkey.api.gwt.client.DefaultValueType;
 import org.labkey.api.query.PdLookupForeignKey;
@@ -400,7 +402,7 @@ public class PropertyDescriptor extends ColumnRenderProperties implements Serial
             new BeanObjectFactory<PropertyDescriptor>(PropertyDescriptor.class)
             {
                 @Override
-                public Map<String, Object> toMap(PropertyDescriptor bean, Map<String, Object> m)
+                public @NotNull Map<String, Object> toMap(PropertyDescriptor bean, @Nullable Map<String, Object> m)
                 {
                     m = super.toMap(bean, m);
                     Object o = m.get("URL");

@@ -15,6 +15,7 @@
  */
 package org.labkey.api.webdav;
 
+import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.search.SearchService;
@@ -71,7 +72,7 @@ public class ActionResource extends AbstractDocumentResource
     }
 
 
-    public ActionResource(SearchService.SearchCategory category, String docid, ActionURL url, ActionURL source, Map<String,Object> properties)
+    public ActionResource(SearchService.SearchCategory category, String docid, ActionURL url, ActionURL source, @Nullable Map<String, Object> properties)
     {
         super(new Path("action",url.getLocalURIString()));
         _docid = docid;

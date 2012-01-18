@@ -174,7 +174,6 @@ public abstract class SpringActionController implements Controller, HasViewConte
     }
 
     ApplicationContext _applicationContext = null;
-    ViewResolver _viewResolver = null;
     ActionResolver _actionResolver;
     ViewContext _viewContext;
 
@@ -404,6 +403,10 @@ public abstract class SpringActionController implements Controller, HasViewConte
             if (!actionIsAllowed)
             {
                 User user = (User)request.getUserPrincipal();
+
+                // Don't redirect the indexer... let it get the page content, #12042 and #11345
+                if (user == User.getSearchUser())
+                    return null;
 
                 if (user.isGuest())
                 {

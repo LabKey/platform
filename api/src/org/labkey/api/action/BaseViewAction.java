@@ -499,7 +499,7 @@ public abstract class BaseViewAction<FORM> extends BaseCommandController impleme
 
         public void setWrappedInstance(Object obj)
         {
-            object = (DynaBean)obj;
+            object = obj;
         }
 
         public Object getWrappedInstance()
@@ -586,7 +586,7 @@ public abstract class BaseViewAction<FORM> extends BaseCommandController impleme
         if (null == c)
         {
             String containerPath = context.getActionURL().getExtraPath();
-            if (containerPath != null && containerPath.indexOf("/") != -1)
+            if (containerPath != null && containerPath.contains("/"))
             {
                 throw new NotFoundException("No such folder or workbook: " + containerPath);
             }

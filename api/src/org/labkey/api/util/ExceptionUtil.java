@@ -233,7 +233,7 @@ public class ExceptionUtil
                 if (t instanceof SQLException)
                 {
                     SQLException sqlException = (SQLException) t;
-                    if (sqlException.getMessage() != null && sqlException.getMessage().indexOf("terminating connection due to administrator command") != -1)
+                    if (sqlException.getMessage() != null && sqlException.getMessage().contains("terminating connection due to administrator command"))
                     {
                         // Don't report exceptions from Postgres shutting down
                         return;
@@ -359,14 +359,14 @@ public class ExceptionUtil
     }
 
     // This is called by SpringActionController (to display unhandled exceptions) and called directly by AuthFilter.doFilter() (to display startup errors and bypass normal request handling)
-    public static ActionURL handleException(HttpServletRequest request, HttpServletResponse response, Throwable ex, String message, boolean startupFailure)
+    public static ActionURL handleException(HttpServletRequest request, HttpServletResponse response, Throwable ex, @Nullable String message, boolean startupFailure)
     {
         SearchService ss = ServiceRegistry.get(SearchService.class);
         Logger log = _logStatic;
         return handleException(request, response, ex, message, startupFailure, ss, log);
     }
 
-    static ActionURL handleException(HttpServletRequest request, HttpServletResponse response, Throwable ex, String message, boolean startupFailure,
+    static ActionURL handleException(HttpServletRequest request, HttpServletResponse response, Throwable ex, @Nullable String message, boolean startupFailure,
         SearchService ss, Logger log)
     {
         DbScope.closeAllConnections();

@@ -16,6 +16,7 @@
 
 package org.labkey.api.util;
 
+import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.CoreSchema;
 import org.labkey.api.data.DbSchema;
 import org.labkey.api.data.DbScope;
@@ -70,7 +71,7 @@ public class ErrorRenderer
         out.println("</td></tr></table>");
     }
 
-    public void renderContent(PrintWriter out, HttpServletRequest request, ButtonBarRenderer bbr) throws IOException, ServletException
+    public void renderContent(PrintWriter out, HttpServletRequest request, @Nullable ButtonBarRenderer bbr) throws IOException, ServletException
     {
         ViewContext context = HttpView.currentContext();
         User user = null != context ? context.getUser() : null;
