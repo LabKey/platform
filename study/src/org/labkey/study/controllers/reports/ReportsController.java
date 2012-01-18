@@ -2013,7 +2013,7 @@ public class ReportsController extends BaseStudyController
 
         public NavTree appendNavTrail(NavTree root)
         {
-            return _appendNavTrail(root, "Participant Report");
+            return _appendNavTrail(root, StudyService.get().getSubjectNounSingular(getContainer()) + " Report");
         }
     }
 }

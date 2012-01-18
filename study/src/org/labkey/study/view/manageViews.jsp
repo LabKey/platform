@@ -253,7 +253,7 @@
                 listeners:{click:function(button, event) {window.location = '<%=new ActionURL(ReportsController.EnrollmentReportAction.class, c)%>';}}
             },{
                 id: 'create_participantReport',
-                text:'Participant Report',
+                text: '<%=StudyService.get().getSubjectNounSingular(c)%>' + ' Report',
                 icon: '<%=ReportService.get().getReportIcon(getViewContext(), ParticipantReport.TYPE)%>',
                 listeners:{click:function(button, event) {window.location = '<%=new ActionURL(ReportsController.ParticipantReportAction.class, c)%>';}}
             },{
