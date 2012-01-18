@@ -24,6 +24,7 @@ import org.labkey.api.data.Table;
 import org.labkey.api.util.ResultSetUtil;
 import org.apache.commons.io.IOUtils;
 
+import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.sql.ResultSet;
@@ -56,7 +57,7 @@ public class DatabaseAttachmentFile implements AttachmentFile
             rs = Table.executeQuery(core.getSchema(), _sqlDocumentTypeAndSize, new Object[]{attachment.getParent(), attachment.getName()});
 
             if (!rs.next())
-                throw new IllegalStateException("Attachment could not be retrieved from database");
+                throw new FileNotFoundException("Attachment could not be retrieved from database: " + attachment.getName());
 
             setContentType(rs.getString("DocumentType"));
 
@@ -120,7 +121,7 @@ public class DatabaseAttachmentFile implements AttachmentFile
             _rs = Table.executeQuery(core.getSchema(), _sqlDocument, new Object[]{_attachment.getParent(), _attachment.getName()}, Table.ALL_ROWS, false);
 
             if (!_rs.next())
-                throw new IllegalStateException("Attachment could not be retrieved from database");
+                throw new FileNotFoundException("Attachment could not be retrieved from database: " + _attachment.getName());
 
             _is = _rs.getBinaryStream("document");
             return _is;
