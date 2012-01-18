@@ -2910,6 +2910,7 @@ study/src/org/labkey/study/reports/ChartReportView.java -text
 study/src/org/labkey/study/reports/EnrollmentReport.java -text
 study/src/org/labkey/study/reports/ExportExcelReport.java -text
 study/src/org/labkey/study/reports/ExternalReport.java -text
+study/src/org/labkey/study/reports/ParticipantReport.java -text
 study/src/org/labkey/study/reports/ReportManager.java -text
 study/src/org/labkey/study/reports/ReportQueryViewFactory.java -text
 study/src/org/labkey/study/reports/StudyChartQueryReport.java -text
@@ -3064,6 +3065,7 @@ study/src/org/labkey/study/view/overview.jsp -text
 study/src/org/labkey/study/view/participantAll.jsp -text
 study/src/org/labkey/study/view/participantCharacteristics.jsp -text
 study/src/org/labkey/study/view/participantData.jsp -text
+study/src/org/labkey/study/view/participantReport.jsp -text
 study/src/org/labkey/study/view/pipelineSetup.jsp -text
 study/src/org/labkey/study/view/reportPermission.jsp -text
 study/src/org/labkey/study/view/requirePipeline.jsp -text
@@ -3148,6 +3150,7 @@ study/webapp/sampleRequest.js -text
 study/webapp/study/DataViewsPanel.css -text
 study/webapp/study/DataViewsPanel.js -text
 study/webapp/study/ParticipantGroup.js -text
+study/webapp/study/ParticipantReport.js -text
 study/webapp/study/StudyWizard.js -text
 study/webapp/study/assay/SampleLookupTemplate.xls -text
 study/webapp/study/redesignUtils.js -text

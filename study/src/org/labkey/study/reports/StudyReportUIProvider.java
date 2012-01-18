@@ -135,6 +135,8 @@ public class StudyReportUIProvider extends DefaultReportUIProvider
             return context.getContextPath() + "/reports/chart.gif";
         if (ExportExcelReport.TYPE.equals(reportType))
             return context.getContextPath() + "/reports/xls.gif";
+        if (ParticipantReport.TYPE.equals(reportType))
+            return context.getContextPath() + "/reports/grid.gif";
 
         return super.getReportIcon(context, reportType);
     }

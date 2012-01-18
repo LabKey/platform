@@ -41,6 +41,7 @@
 <%@ page import="org.labkey.api.util.PageFlowUtil" %>
 <%@ page import="org.labkey.api.reports.report.ReportUrls" %>
 <%@ page import="org.labkey.api.data.Container" %>
+<%@ page import="org.labkey.study.reports.ParticipantReport" %>
 <%@ page extends="org.labkey.api.jsp.JspBase"%>
 
 <script type="text/javascript">
@@ -250,6 +251,11 @@
                 text:'<%=hasEnrollmentReport ? "Configure Enrollment View" : "Enrollment View"%>',
                 disabled: <%=!context.hasPermission(AdminPermission.class)%>,
                 listeners:{click:function(button, event) {window.location = '<%=new ActionURL(ReportsController.EnrollmentReportAction.class, c)%>';}}
+            },{
+                id: 'create_participantReport',
+                text:'Participant Report',
+                icon: '<%=ReportService.get().getReportIcon(getViewContext(), ParticipantReport.TYPE)%>',
+                listeners:{click:function(button, event) {window.location = '<%=new ActionURL(ReportsController.ParticipantReportAction.class, c)%>';}}
             },{
                 id: 'create_timeChart',
                 text:'Time Chart',

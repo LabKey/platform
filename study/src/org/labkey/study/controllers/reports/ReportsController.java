@@ -2002,4 +2002,18 @@ public class ReportsController extends BaseStudyController
             }
         }
     }
+
+    @RequiresPermissionClass(AdminPermission.class)
+    public class ParticipantReportAction extends SimpleViewAction<ReportDesignBean>
+    {
+        public ModelAndView getView(ReportDesignBean form, BindException errors) throws Exception
+        {
+            return new JspView<CreateQueryReportBean>("/org/labkey/study/view/participantReport.jsp");
+        }
+
+        public NavTree appendNavTrail(NavTree root)
+        {
+            return _appendNavTrail(root, "Participant Report");
+        }
+    }
 }

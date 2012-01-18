@@ -118,6 +118,7 @@ import org.labkey.study.reports.ChartReportView;
 import org.labkey.study.reports.EnrollmentReport;
 import org.labkey.study.reports.ExportExcelReport;
 import org.labkey.study.reports.ExternalReport;
+import org.labkey.study.reports.ParticipantReport;
 import org.labkey.study.reports.StudyChartQueryReport;
 import org.labkey.study.reports.StudyCrosstabReport;
 import org.labkey.study.reports.StudyQueryReport;
@@ -324,6 +325,7 @@ public class StudyModule extends SpringModule implements SearchService.DocumentP
         ReportService.get().registerReport(new CrosstabReport());
         ReportService.get().registerReport(new StudyCrosstabReport());
         ReportService.get().registerReport(new StudyRReport());
+        ReportService.get().registerReport(new ParticipantReport());
 
         ReportService.get().registerDescriptor(new ChartReportView.ChartReportViewDescriptor());
         ReportService.get().registerDescriptor(new CrosstabReportDescriptor());
