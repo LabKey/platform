@@ -16,7 +16,6 @@
 
 package org.labkey.audit.query;
 
-import org.labkey.api.audit.AuditLogService;
 import org.labkey.api.audit.query.AuditDisplayColumnFactory;
 import org.labkey.api.audit.query.AuditLogQueryView;
 import org.labkey.api.data.DisplayColumn;
@@ -28,7 +27,6 @@ import org.labkey.api.query.UserSchema;
 import org.labkey.api.view.DataView;
 import org.labkey.audit.model.LogManager;
 
-import java.io.PrintWriter;
 import java.util.HashMap;
 import java.util.Map;
 

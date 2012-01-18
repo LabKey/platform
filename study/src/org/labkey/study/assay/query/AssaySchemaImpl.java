@@ -408,7 +408,7 @@ public class AssaySchemaImpl extends AssaySchema
                     FilteredTable table = new FilteredTable(StudyManager.getSchema().getTable("Study"));
                     table.setContainerFilter(new StudyContainerFilter(AssaySchemaImpl.this));
                     ExprColumn col = new ExprColumn(table, "Folder", new SQLFragment("CAST (" + ExprColumn.STR_TABLE_ALIAS + ".Container AS VARCHAR(200))"), JdbcType.VARCHAR);
-                    col.setFk(new ContainerForeignKey());
+                    col.setFk(new ContainerForeignKey(AssaySchemaImpl.this));
                     table.addColumn(col);
                     table.addWrapColumn(table.getRealTable().getColumn("Label"));
                     return table;

@@ -80,7 +80,7 @@ abstract public class ExpTableImpl<C extends Enum> extends FilteredTable impleme
     protected ColumnInfo addContainerColumn(C containerCol, ActionURL url)
     {
         ColumnInfo result = addColumn(containerCol);
-        ContainerForeignKey.initColumn(result, url);
+        ContainerForeignKey.initColumn(result, _schema, url);
         return result;
     }
 

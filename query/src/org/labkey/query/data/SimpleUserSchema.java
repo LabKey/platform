@@ -178,7 +178,7 @@ public class SimpleUserSchema extends UserSchema
                    (_userSchema.getDbSchema().getScope().isLabKeyScope()))
                 {
                     wrap.setLabel("Folder");
-                    ContainerForeignKey.initColumn(wrap);
+                    ContainerForeignKey.initColumn(wrap, _userSchema);
                 }
                 else if (col.getFk() != null)
                 {

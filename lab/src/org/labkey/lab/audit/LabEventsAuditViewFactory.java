@@ -94,9 +94,7 @@ public class LabEventsAuditViewFactory extends SimpleAuditViewFactory
         {
             public DisplayColumn createRenderer(ColumnInfo colInfo)
             {
-                ContainerDisplayColumn cdc = new ContainerDisplayColumn(colInfo, false);
-                cdc.setEntityIdColumn(col);
-                return cdc;
+                return new ContainerDisplayColumn(colInfo, false);
             }
         });
 

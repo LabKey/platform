@@ -72,7 +72,7 @@ public class AnnouncementSchema extends UserSchema
             table.wrapAllColumns(true);
             table.removeColumn(table.getColumn("Container"));
             ColumnInfo folderColumn = table.wrapColumn("Folder", table.getRealTable().getColumn("Container"));
-            folderColumn.setFk(new ContainerForeignKey());
+            folderColumn.setFk(new ContainerForeignKey(this));
             table.addColumn(folderColumn);
             table.setDescription("Contains one row per announcementModel");
 

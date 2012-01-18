@@ -49,7 +49,7 @@ public class VialTable extends BaseStudyTable
         addColumn(specimenCol);
 
         ColumnInfo containerCol = addWrapColumn(getRealTable().getColumn("Container"));
-        containerCol.setFk(new ContainerForeignKey());
+        containerCol.setFk(new ContainerForeignKey(schema));
         containerCol.setHidden(true);
 
         // Must add this after the container column so that we can use the container in the FK join for the comments

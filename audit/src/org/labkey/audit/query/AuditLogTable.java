@@ -40,6 +40,7 @@ import org.labkey.api.query.QuerySchema;
 import org.labkey.api.query.QueryUpdateService;
 import org.labkey.api.query.UserIdForeignKey;
 import org.labkey.api.query.UserIdRenderer;
+import org.labkey.api.query.UserSchema;
 import org.labkey.api.security.User;
 import org.labkey.api.security.UserPrincipal;
 import org.labkey.api.security.permissions.InsertPermission;
@@ -60,9 +61,9 @@ import java.util.TreeMap;
 public class AuditLogTable extends FilteredTable
 {
     private AuditLogService.AuditViewFactory _viewFactory;
-    private QuerySchema _schema;
+    private UserSchema _schema;
 
-    public AuditLogTable(QuerySchema schema, TableInfo tInfo, String viewFactoryName)
+    public AuditLogTable(UserSchema schema, TableInfo tInfo, String viewFactoryName)
     {
         super(tInfo, schema.getContainer());
 
@@ -148,11 +149,11 @@ public class AuditLogTable extends FilteredTable
 
         ColumnInfo projectId = getColumn("ProjectId");
         projectId.setLabel("Project");
-        ContainerForeignKey.initColumn(projectId);
+        ContainerForeignKey.initColumn(projectId, schema);
 
         ColumnInfo containerId = getColumn("ContainerId");
         containerId.setLabel("Container");
-        ContainerForeignKey.initColumn(containerId);
+        ContainerForeignKey.initColumn(containerId, schema);
 
         setDefaultVisibleColumns(visibleColumns);
 

@@ -58,7 +58,7 @@ public class AssayListTable extends FilteredTable
         addWrapColumn(_rootTable.getColumn("Modified"));
         addWrapColumn(_rootTable.getColumn("ModifiedBy"));
         ColumnInfo folderCol = wrapColumn("Folder", _rootTable.getColumn("Container"));
-        addColumn(ContainerForeignKey.initColumn(folderCol));
+        addColumn(ContainerForeignKey.initColumn(folderCol, schema));
         
         ColumnInfo lsidColumn = addWrapColumn(_rootTable.getColumn("LSID"));
         lsidColumn.setHidden(true);

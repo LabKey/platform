@@ -41,7 +41,7 @@ public class SiteTable extends BaseStudyTable
             ColumnInfo column = addWrapColumn(baseColumn);
             if ("Container".equalsIgnoreCase(name))
             {
-                column = ContainerForeignKey.initColumn(column);
+                column = ContainerForeignKey.initColumn(column, schema);
                 column.setHidden(true);
             }
             if ("RowId".equalsIgnoreCase(name))

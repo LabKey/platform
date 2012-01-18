@@ -62,7 +62,7 @@ public class SpecimenCommentTable extends FilteredTable
         }
 
         ColumnInfo folderColumn = wrapColumn("Folder", _rootTable.getColumn("Container"));
-        folderColumn.setFk(new ContainerForeignKey());
+        folderColumn.setFk(new ContainerForeignKey(schema));
         addColumn(folderColumn);
 
         setTitleColumn("Comment");

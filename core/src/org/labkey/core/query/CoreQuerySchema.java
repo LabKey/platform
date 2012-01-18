@@ -21,7 +21,6 @@ import org.labkey.api.data.ContainerForeignKey;
 import org.labkey.api.data.ContainerTable;
 import org.labkey.api.data.CoreSchema;
 import org.labkey.api.data.MultiValuedForeignKey;
-import org.labkey.api.data.RuntimeSQLException;
 import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.query.DetailsURL;
@@ -32,15 +31,12 @@ import org.labkey.api.query.UserSchema;
 import org.labkey.api.security.Group;
 import org.labkey.api.security.SecurityManager;
 import org.labkey.api.security.User;
-import org.labkey.api.security.ValidEmail;
 import org.labkey.api.security.permissions.AdminPermission;
 import org.labkey.api.util.PageFlowUtil;
-import org.labkey.api.util.UnexpectedException;
 import org.labkey.api.view.ActionURL;
 import org.labkey.core.user.UserController;
 import org.labkey.core.workbook.WorkbooksTableInfo;
 
-import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashSet;
@@ -206,7 +202,7 @@ public class CoreQuerySchema extends UserSchema
         defCols.add(FieldKey.fromParts("Container"));
         principals.setDefaultVisibleColumns(defCols);
 
-        principals.getColumn("Container").setFk(new ContainerForeignKey());
+        principals.getColumn("Container").setFk(new ContainerForeignKey(this));
 
         //filter out inactive
         principals.addCondition(new SQLFragment("Active=?", true));

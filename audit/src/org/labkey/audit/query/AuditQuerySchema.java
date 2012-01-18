@@ -26,7 +26,6 @@ import org.labkey.api.security.User;
 import org.labkey.audit.AuditSchema;
 import org.labkey.audit.model.LogManager;
 
-import java.util.Arrays;
 import java.util.HashSet;
 import java.util.Set;
 
