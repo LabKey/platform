@@ -1,9 +1,7 @@
 (function()
 {
-
-
+    /** @private */
     var X = Ext4 || Ext;
-
     /** @private */
     var $h = X.util.Format.htmlEncode;
 
@@ -38,21 +36,21 @@
     /** @returns {string} */
     FieldKey.prototype.getName = function()
     {
-        return _parts.length > 0 ? _parts[_parts.length-1] : null;
+        return this._parts.length > 0 ? this._parts[this._parts.length-1] : null;
     };
 
     /** @returns {string} */
     FieldKey.prototype.toDottedString = function()
     {
         // TODO escape names with "
-        return "\"" + _parts.join("\".\"") + "\"";
+        return "\"" + this._parts.join("\".\"") + "\"";
     };
 
 
     /** @constructor
      *
-     * @param {object} field as defined by SelectRowsResult
-     * @param {object} column as defined by SelectRowsResult
+     * @param {Object} field as defined by SelectRowsResult
+     * @param {Object} column as defined by SelectRowsResult
      */
     var FieldDefinition = function(field, column)
     {
@@ -266,7 +264,7 @@ X.define('LABKEY.TemplateReport',
      * @param qr
      */
 
-    transformSelectRowsResult : function(qr, config)
+    transformSelectRowsResult : function(qr)
     {
         var fields = qr.metaData.fields;
         var columns = qr.columnModel;
@@ -326,10 +324,8 @@ X.define('LABKEY.TemplateReport',
      *   }
      */
 
-    transformForReportLayout : function(tr, config)
+    transformForReportLayout : function(tr)
     {
-        config = config || {};
-
         /** @type {[FieldDefinition]} */
         var fields = tr.fields;
         var rows = tr.rows;
@@ -347,15 +343,16 @@ X.define('LABKEY.TemplateReport',
         var breakValues = [];
 
         var breakInfos = [];
+        var breakInfo;
         var pageBreakLevel = -1;
-        if (X.isArray(config.pageBreakInfo))
+        if (X.isArray(this.pageBreakInfo))
         {
-            breakInfos = breakInfos.concat(config.pageBreakInfo);
-            pageBreakLevel = config.pageBreakInfo.length;
+            breakInfos = breakInfos.concat(this.pageBreakInfo);
+            pageBreakLevel = this.pageBreakInfo.length;
         }
-        if (X.isArray(config.rowBreakInfo))
+        if (X.isArray(this.rowBreakInfo))
         {
-            breakInfos = breakInfos.concat(config.rowBreakInfo);
+            breakInfos = breakInfos.concat(this.rowBreakInfo);
         }
 
         if (breakInfos.length == 0)
@@ -368,7 +365,7 @@ X.define('LABKEY.TemplateReport',
 
         for (i=0 ; i < breakInfos.length ; i++)
         {
-            var breakInfo = breakInfos[i];
+            breakInfo = breakInfos[i];
             var name = breakInfo.name;
             field = nameMap[name];
             if (!field)
@@ -384,7 +381,6 @@ X.define('LABKEY.TemplateReport',
         for (var r=0 ; r < rows.length ; r++)
         {
             var parentRow = rows[r];
-            var objectRow = parentRow.asObject;
             var arrayRow = parentRow.asArray;
 
             // compute breakLevel for this row
@@ -400,10 +396,10 @@ X.define('LABKEY.TemplateReport',
             }
 
             // update rowspans for previous breaks and rowspan for this row
-            rowspans = new Array(breakFields.length);
-            for (var b=breakFields.length-1 ; b>=0 ; b--)
+            var rowspans = new Array(breakFields.length);
+            for (b=breakFields.length-1 ; b>=0 ; b--)
             {
-                var breakInfo = breakInfos[b];
+                breakInfo = breakInfos[b];
                 if (!breakInfo.rowspans)
                     continue;
                 if (b < breakLevel)
@@ -440,10 +436,10 @@ X.define('LABKEY.TemplateReport',
 
         for (var p=0 ; p<pages.length ; p++)
         {
-            var rows = pages[p];
-            var first = rows.length>0 ? rows[0] : null;
-            var last = rows.length>0 ? rows[rows.length-1] : null;
-            pages[p] = {first:first, last:last, rows:rows};
+            var pageRows = pages[p];
+            var first = pageRows.length>0 ? pageRows[0] : null;
+            var last = pageRows.length>0 ? pageRows[pageRows.length-1] : null;
+            pages[p] = {first:first, last:last, rows:pageRows};
         }
 
         tr.breakFields = breakFields;
@@ -462,9 +458,8 @@ X.define('LABKEY.TemplateReport',
         if (!this.el)
             this.callParent(arguments);
 
-        // TODO remove second parameter (replace with this)
-        var transformData = this.transformSelectRowsResult(this.data, this);
-        var reportData = this.transformForReportLayout(transformData, this);
+        var transformData = this.transformSelectRowsResult(this.data);
+        var reportData = this.transformForReportLayout(transformData);
 
         var tpl = new Ext4.XTemplate
         (
@@ -486,12 +481,6 @@ X.define('LABKEY.TemplateReport',
                     var field = d.field || defaultField;
                     return field.getDisplayValueHtml(d, !this.isPrint);
                 },
-                getFormattedValue : function (d)
-                {
-                    var field = d.field || defaultField;
-                    return field.getFormattedDisplayValue(d);
-                },
-
                 resetGrid : function()
                 {
                     this.gridRow = 0; return "";
@@ -610,7 +599,7 @@ var pageTmpl1 =
                 '<tr class="{[this.getGridRowClass()]}">',
                 '<tpl for="asArray">',
                     '{[this.getGridCellHtml(values)]}',
-                '</tpl>',
+         '</tpl>',
     			'</tr>',
             '</tpl>',
 		'</tpl>',
@@ -634,6 +623,7 @@ function testIssues(el)
         queryName: 'Issues',
         columns: 'AssignedTo,Status,XY,IssueId,Created,Priority,Title,Type,AssignedTo/DisplayName,AssignedTo/UserId,CreatedBy,Area,Milestone,Triage',
         sort: 'AssignedTo/DisplayName,Status,-IssueId',
+        includeStyle : true,
         success: function(qr)
 		{
             helper.data = qr;

@@ -400,7 +400,7 @@ public class DataColumn extends DisplayColumn
     }
 
     @Override @NotNull
-    protected String getCssStyle(RenderContext ctx)
+    public String getCssStyle(RenderContext ctx)
     {
         String result = super.getCssStyle(ctx);
         ConditionalFormat format = findApplicableFormat(ctx);

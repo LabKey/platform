@@ -15,6 +15,7 @@
  */
 package org.labkey.api.action;
 
+import org.apache.commons.lang3.StringUtils;
 import org.labkey.api.data.DisplayColumn;
 import org.labkey.api.data.MVDisplayColumn;
 import org.labkey.api.data.RenderContext;
@@ -38,6 +39,8 @@ import java.util.Map;
  */
 public class ExtendedApiQueryResponse extends ApiQueryResponse
 {
+    boolean _doItWithStyle = false;
+
     public enum ColMapEntry
     {
         value,
@@ -54,6 +57,11 @@ public class ExtendedApiQueryResponse extends ApiQueryResponse
             throws Exception
     {
         super(view, viewContext, schemaEditable, includeLookupInfo, schemaName, queryName, offset, fieldKeys, metaDataOnly);
+    }
+
+    public void includeStyle(boolean withStyle)
+    {
+        _doItWithStyle = withStyle;
     }
 
     @Override
@@ -93,6 +101,14 @@ public class ExtendedApiQueryResponse extends ApiQueryResponse
             RenderContext ctx = getRenderContext();
             colMap.put(ColMapEntry.mvValue.name(), mvColumn.getMvIndicator(ctx));
             colMap.put(ColMapEntry.mvRawValue.name(), mvColumn.getRawValue(ctx));
+        }
+
+        if (_doItWithStyle)
+        {
+            RenderContext ctx = getRenderContext();
+            String style = dc.getCssStyle(ctx);
+            if (!StringUtils.isEmpty(style))
+                colMap.put("style", style);
         }
 
         //put the column map into the row map using the column name as the key

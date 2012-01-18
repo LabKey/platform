@@ -471,6 +471,9 @@ LABKEY.Query = new function()
             if (config.includeTotalCount)
                 dataObject.includeTotalCount = config.includeTotalCount;
 
+            if (config.includeStyle)
+                dataObject.includeStyle = config.includeStyle;
+
             return LABKEY.Ajax.request({
                 url : LABKEY.ActionURL.buildURL('query', 'getQuery', config.containerPath),
                 method : 'GET',
