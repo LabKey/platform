@@ -274,6 +274,8 @@ X.define('LABKEY.TemplateReport',
 
             if (Ext.isString(this.reportTemplate))
                 this.reportTemplate = {template:tpl};
+            if (Ext.isArray(this.reportTemplate.template))
+                this.reportTemplate.template = this.reportTemplate.template.join("");
             for (var p in this.reportTemplate.on)
             {
                 this.on(p, this.reportTemplate.on[p]);
@@ -704,7 +706,42 @@ var pageTmpl1 =
 
 var SIMPLE_PAGE_TEMPLATE =
 {
-    template : pageTmpl1,
+    template :
+    [
+		'<table class="report" cellspacing=0>',
+        '<tpl for="pages">',
+            '{[this.resetGrid(),""]}',
+// PAGE TEMPLATE
+            '<tr><td class="break-spacer">&nbsp;<br>&nbsp;</td></tr>',
+            '<tr><td colspan="{[this.data.fields.length]}">',
+                '<div style="border:solid 1px #eeeeee; padding:5px; margin:10px;">',
+                '<table>',
+                    '<tr><td colspan=2 style="padding:5px; font-weight:bold; font-size:1.3em; text-align:center;">{[ this.getHtml(values.headerValue) ]}</td></tr>',
+// note nested <tpl>, this will make values==datavalue and parent==field
+                    '<tpl for="this.data.pageFields"><tpl for="parent.first.asArray[values.index]">',
+                        '<tr><td align=right>{[this.getCaptionHtml(parent)]}:&nbsp;</td><td align=left style="{parent.style}">{[this.getHtml(values)]}</td></tr>',
+                    '</tpl></tpl>',
+                '</table>',
+                '</div>',
+            '</td></tr>',
+// GRID TEMPLATE
+            '<tr>',
+                '<tpl for="this.data.gridFields">',
+                    '<th class="labkey-column-header">{[this.getCaptionHtml(values)]}</th>',
+                '</tpl>',
+            '</tr>',
+            '<tpl for="rows">',
+                '<tr class="{[this.getGridRowClass()]}">',
+// again nested tpl
+                '<tpl for="this.data.gridFields"><tpl for="parent.asArray[values.index]">',
+                    '{[ this.getGridCellHtml(values) ]}',
+                '</tpl></tpl>',
+                '</tr>',
+            '</tpl>',
+		'</tpl>',
+		'</table>',
+		'{[((new Date()).valueOf() - this.start)/1000.0]}'
+    ],
     on :
     {
         dataload : function(rpt, data)
