@@ -533,16 +533,25 @@ X.define('LABKEY.TemplateReport',
         return tr;
     },
 
+    onRender : function(ct, position) {
 
-    onRender: function(ct, position)
-    {
         if (!this.el)
             this.callParent(arguments);
 
         if (this.reportData)
             this.renderReport();
+        else if (this.queryConfig)
+        {
+            if (!this.queryConfig.success)
+            {
+                this.queryConfig.scope = this;
+                this.queryConfig.success = function(rs){
+                    this.loadData(rs);
+                }
+            }
+            LABKEY.Query.selectRows(this.queryConfig);
+        }
     },
-
 
     renderReport:function()
     {
@@ -768,26 +777,18 @@ function testIssues(el)
     {
         pageFields:['AssignedTo', {name:'AssignedTo/UserId', style:"color:purple;"}],
         pageBreakInfo:[{name:'AssignedTo', rowspans:false}],
-
         gridFields:['Status', 'IssueId', 'Created', 'Priority', 'Title', 'Type', 'CreatedBy', 'Area', 'Milestone'],
         rowBreakInfo:[{name:'Status', rowspans:true}],
-
-        reportTemplate : SIMPLE_PAGE_TEMPLATE
-    });
-
-    LABKEY.Query.selectRows(
-    {
-        requiredVersion: 12.1,
-        schemaName: 'issues',
-        queryName: 'Issues',
-        columns: 'AssignedTo,Status,XY,IssueId,Created,Priority,Title,Type,AssignedTo/DisplayName,AssignedTo/UserId,CreatedBy,Area,Milestone,Triage',
-        sort: 'AssignedTo/DisplayName,Status,-IssueId',
-        includeStyle : true,
-        success: function(qr)
-		{
-            helper.loadData(qr);
-            helper.render(el);
-		}
+        reportTemplate : SIMPLE_PAGE_TEMPLATE,
+        renderTo : 'el',
+        queryConfig : {
+            requiredVersion: 12.1,
+            schemaName: 'issues',
+            queryName: 'Issues',
+            columns: 'AssignedTo,Status,XY,IssueId,Created,Priority,Title,Type,AssignedTo/DisplayName,AssignedTo/UserId,CreatedBy,Area,Milestone,Triage',
+            sort: 'AssignedTo/DisplayName,Status,-IssueId',
+            includeStyle : true
+        }
     });
 }
 
