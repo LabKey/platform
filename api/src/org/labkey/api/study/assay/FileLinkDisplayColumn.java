@@ -78,6 +78,10 @@ public class FileLinkDisplayColumn extends AbstractFileDisplayColumn
 
     private boolean isDirectory(Object value)
     {
+        if (value == null)
+        {
+            return false;
+        }
         return new File(value.toString()).isDirectory();
     }
 }
