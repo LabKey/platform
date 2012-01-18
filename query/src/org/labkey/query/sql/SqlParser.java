@@ -645,10 +645,20 @@ public class SqlParser
             case ALIAS:
             case AS:
             {
+                // CONSIDER: check type
                 if (children.size() == 1)
                     return first(children);
                 node.getToken().setType(AS);
                 break;
+            }
+            case ESCAPE:
+            {
+                if (children.size() != 1)
+                {
+                    _parseErrors.add(new QueryParseException("ESCAPE expects simple string specification", null, node.getLine(), node.getCharPositionInLine()));
+                    break;
+                }
+                return first(children);
             }
 			case METHOD_CALL:
             {
@@ -1014,9 +1024,9 @@ public class SqlParser
 			case ALL:
 				_parseErrors.add(new QueryParseException("EXISTS,ANY,ALL, and SOME are not supported", null, node.getLine(), node.getCharPositionInLine()));
 				 return null;
-			case ESCAPE:
-				_parseErrors.add(new QueryParseException("LIKE ESCAPE is not supported", null, node.getLine(), node.getCharPositionInLine()));
-				 return null;
+//			case ESCAPE:
+//				_parseErrors.add(new QueryParseException("LIKE ESCAPE is not supported", null, node.getLine(), node.getCharPositionInLine()));
+//				 return null;
             case DECLARATION:
                 return new QUnknownNode();
 			default:

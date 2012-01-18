@@ -124,8 +124,42 @@ public enum Operator
     },
     and(" AND ", Precedence.and, AND, ResultType.bool),
     or(" OR ", Precedence.like, OR, ResultType.bool),
-    like(" LIKE ", Precedence.like, LIKE, ResultType.bool),
-    notLike(" NOT LIKE ", Precedence.like, NOT_LIKE, ResultType.bool),
+    like(" LIKE ", Precedence.like, LIKE, ResultType.bool)
+    {
+        @Override
+        public void appendSql(SqlBuilder builder, Iterable<QNode> operands)
+        {
+            Iterator<QNode> i = operands.iterator();
+            assert i.hasNext();
+            ((QExpr)i.next()).appendSql(builder);
+            builder.append(" LIKE ");
+            assert i.hasNext();
+            ((QExpr)i.next()).appendSql(builder);
+            if (i.hasNext())
+            {
+                builder.append(" ESCAPE ");
+                ((QExpr)i.next()).appendSql(builder);
+            }
+        }
+    },
+    notLike(" NOT LIKE ", Precedence.like, NOT_LIKE, ResultType.bool)
+    {
+        @Override
+        public void appendSql(SqlBuilder builder, Iterable<QNode> operands)
+        {
+            Iterator<QNode> i = operands.iterator();
+            assert i.hasNext();
+            ((QExpr)i.next()).appendSql(builder);
+            builder.append(" NOT LIKE ");
+            assert i.hasNext();
+            ((QExpr)i.next()).appendSql(builder);
+            if (i.hasNext())
+            {
+                builder.append(" ESCAPE ");
+                ((QExpr)i.next()).appendSql(builder);
+            }
+        }
+    },
     in(" IN ", Precedence.like, IN, ResultType.bool),
     notIn(" NOT IN ", Precedence.like, NOT_IN, ResultType.bool),
     bit_and("&", Precedence.addition, BIT_AND, ResultType.arg),
