@@ -679,7 +679,7 @@ public abstract class DisplayColumn extends RenderColumn
     }
 
     @NotNull /** Always return a non-null string to make it easy to concatenate values */
-    protected String getCssStyle(RenderContext ctx)
+    public String getCssStyle(RenderContext ctx)
     {
         if (_nowrap)
         {

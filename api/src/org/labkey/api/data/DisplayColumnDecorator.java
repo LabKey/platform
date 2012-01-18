@@ -353,7 +353,7 @@ public class DisplayColumnDecorator extends DisplayColumn
 
     @NotNull
     @Override
-    protected String getCssStyle(RenderContext ctx)
+    public String getCssStyle(RenderContext ctx)
     {
         return _column.getCssStyle(ctx);
     }
