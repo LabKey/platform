@@ -72,6 +72,12 @@ api/src/org/labkey/api/action/simpleErrorView.jsp -text
 api/src/org/labkey/api/action/statusReport.jsp -text
 api/src/org/labkey/api/admin/AdminUrls.java -text
 api/src/org/labkey/api/admin/CoreUrls.java -text
+api/src/org/labkey/api/admin/ExternalFolderImporter.java -text
+api/src/org/labkey/api/admin/ExternalFolderImporterFactory.java -text
+api/src/org/labkey/api/admin/ExternalFolderWriter.java -text
+api/src/org/labkey/api/admin/ExternalFolderWriterFactory.java -text
+api/src/org/labkey/api/admin/FolderContext.java -text
+api/src/org/labkey/api/admin/FolderSerializationRegistry.java -text
 api/src/org/labkey/api/analytics/AnalyticsService.java -text
 api/src/org/labkey/api/announcements/api/Announcement.java -text
 api/src/org/labkey/api/announcements/api/AnnouncementService.java -text
