@@ -300,9 +300,11 @@ X.define('LABKEY.TemplateReport',
             pageFields = [];
             for (i=0 ; i<this.pageFields.length ; i++)
             {
-                field = nameMap[this.pageFields[i]];
+                var pf = Ext.isString(this.pageFields[i]) ? {name:this.pageFields[i]} : this.pageFields[i];
+                field = nameMap[pf.name];
                 if (field)
-                    pageFields.push(field);
+                    // create a copy of the field so page fields can have different formatting
+                    pageFields.push(Ext.apply({}, pf, field));
             }
         }
         else if (X.isArray(this.pageBreakInfo))
@@ -614,12 +616,12 @@ var pageTmpl1 =
             '<tr><td class="break-spacer">&nbsp;<br>&nbsp;</td></tr>',
             '<tr><td colspan="{[this.data.fields.length]}">',
                 '<div style="border:solid 1px #eeeeee; padding:5px; margin:10px;">',
-//                '<div style="padding-top:5px; font-weight:bold; font-size:1.3em; text-align:center;">{[ this.getHtml(values.first.asArray[this.data.pageFields[0].index]) ]}</div><br>',
                 '<table>',
                     '<tr><td colspan=2 style="padding:5px; font-weight:bold; font-size:1.3em; text-align:center;">{[ this.getHtml(values.first.asArray[this.data.pageFields[0].index]) ]}</td></tr>',
-                    '<tpl for="this.data.pageFields">',
-                        '<tr><td align=right>{[this.getCaptionHtml(values)]}:&nbsp;</td><td align=left>{[this.getHtml(parent.first.asArray[values.index])]}</td></tr>',
-                    '</tpl>',
+// note nested <tpl>, this will make values==datavalue and parent==field
+                    '<tpl for="this.data.pageFields"><tpl for="parent.first.asArray[values.index]">',
+                        '<tr><td align=right>{[this.getCaptionHtml(parent)]}:&nbsp;</td><td align=left style="{parent.style}">{[this.getHtml(values)]}</td></tr>',
+                    '</tpl></tpl>',
                 '</table>',
                 '</div>',
             '</td></tr>',
@@ -631,9 +633,10 @@ var pageTmpl1 =
             '</tr>',
             '<tpl for="rows">',
                 '<tr class="{[this.getGridRowClass()]}">',
-                '<tpl for="this.data.gridFields">',
-                    '{[this.getGridCellHtml(parent.asArray[values.index])]}',
-                 '</tpl>',
+// again nested tpl
+                '<tpl for="this.data.gridFields"><tpl for="parent.asArray[values.index]">',
+                    '{[ this.getGridCellHtml(values) ]}',
+                '</tpl></tpl>',
                 '</tr>',
             '</tpl>',
 		'</tpl>',
@@ -646,7 +649,7 @@ function testIssues(el)
 {
     var helper = new LABKEY.TemplateReport(
     {
-        pageFields:['AssignedTo', 'AssignedTo/UserId'],
+        pageFields:['AssignedTo', {name:'AssignedTo/UserId', style:"color:purple;"}],
         pageBreakInfo:[{name:'AssignedTo', rowspans:false}],
 
         gridFields:['Status', 'IssueId', 'Created', 'Priority', 'Title', 'Type', 'CreatedBy', 'Area', 'Milestone'],
@@ -655,7 +658,8 @@ function testIssues(el)
         template : pageTmpl1
     });
 
-    LABKEY.Query.selectRows({
+    LABKEY.Query.selectRows(
+    {
         requiredVersion: 12.1,
         schemaName: 'issues',
         queryName: 'Issues',
