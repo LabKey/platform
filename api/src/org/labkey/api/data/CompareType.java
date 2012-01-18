@@ -319,6 +319,131 @@ public enum CompareType
                 {
                     throw new UnsupportedOperationException("Should be handled inside of " + SimpleFilter.InClause.class);
                 }},
+    NOT_IN("Does Not Equal Any Of (e.g. 'a;b;c')", "notin", true, null, "EQUALS_NONE_OF", OperatorType.NOTIN)
+            {
+                // Each compare type uses CompareClause by default
+                FilterClause createFilterClause(String colName, Object value)
+                {
+                    if (value instanceof Collection)
+                    {
+                        return new SimpleFilter.InClause(colName, (Collection)value, false, true);
+                    }
+                    else
+                    {
+                        List<String> values = new ArrayList<String>();
+                        if (value != null && !value.toString().trim().equals(""))
+                        {
+                            StringTokenizer st = new StringTokenizer(value.toString(), ";", false);
+                            while (st.hasMoreTokens())
+                            {
+                                String token = st.nextToken().trim();
+                                values.add(token);
+                            }
+                        }
+                        return new SimpleFilter.InClause(colName, values, true, true);
+                    }
+                }
+
+                @Override
+                public boolean meetsCriteria(Object value, Object[] paramVals)
+                {
+                    throw new UnsupportedOperationException("Should be handled inside of " + SimpleFilter.InClause.class);
+                }
+            },
+    IN_OR_NULL("Equals One Of (e.g. 'a;b;c')", "inornull", true, null, "EQUALS_ONE_OF_OR_MISSING", OperatorType.IN)
+            {
+                // Each compare type uses CompareClause by default
+                FilterClause createFilterClause(String colName, Object value)
+                {
+                    SimpleFilter.OrClause fc = new SimpleFilter.OrClause();
+                    fc.addClause(IN.createFilterClause(colName, value));
+                    fc.addClause(ISBLANK.createFilterClause(colName, null));
+                    return fc;
+                }
+
+                @Override
+                public boolean meetsCriteria(Object value, Object[] paramVals)
+                {
+                    throw new UnsupportedOperationException("Should be handled inside of " + SimpleFilter.InClause.class);
+                }
+            },
+    NOT_IN_OR_NULL("Does Not Equal Any Of (e.g. 'a;b;c')", "notinornull", true, null, "EQUALS_NONE_OF_OR_MISSING", OperatorType.NOTINORNULL)
+            {
+                // Each compare type uses CompareClause by default
+                FilterClause createFilterClause(String colName, Object value)
+                {
+                    SimpleFilter.OrClause fc = new SimpleFilter.OrClause();
+                    fc.addClause(NOT_IN.createFilterClause(colName, value));
+                    fc.addClause(ISBLANK.createFilterClause(colName, null));
+                    return fc;
+                }
+
+                @Override
+                public boolean meetsCriteria(Object value, Object[] paramVals)
+                {
+                    throw new UnsupportedOperationException("Should be handled inside of " + SimpleFilter.InClause.class);
+                }
+            },
+    CONTAINS_ONE_OF("Contains One Of (e.g. 'a;b;c')", "containsoneof", true, null, "CONTAINS_ONE_OF", OperatorType.CONTAINSONEOF)
+            {
+                // Each compare type uses CompareClause by default
+                FilterClause createFilterClause(String colName, Object value)
+                {
+                    if (value instanceof Collection)
+                    {
+                        return new SimpleFilter.ContainsInClause(colName, (Collection)value, false);
+                    }
+                    else
+                    {
+                        List<String> values = new ArrayList<String>();
+                        if (value != null && !value.toString().trim().equals(""))
+                        {
+                            StringTokenizer st = new StringTokenizer(value.toString(), ";", false);
+                            while (st.hasMoreTokens())
+                            {
+                                String token = st.nextToken().trim();
+                                values.add(token);
+                            }
+                        }
+                        return new SimpleFilter.ContainsInClause(colName, values, true, false);
+                    }
+                }
+
+                @Override
+                public boolean meetsCriteria(Object value, Object[] paramVals)
+                {
+                    throw new UnsupportedOperationException("Should be handled inside of " + SimpleFilter.ContainsInClause.class);
+                }},
+    CONTAINS_NONE_OF("Does Not Contain Any Of (e.g. 'a;b;c')", "containsnoneof", true, null, "CONTAINS_NONE_OF", OperatorType.CONTAINSNONEOF)
+            {
+                // Each compare type uses CompareClause by default
+                FilterClause createFilterClause(String colName, Object value)
+                {
+                    if (value instanceof Collection)
+                    {
+                        return new SimpleFilter.ContainsInClause(colName, (Collection)value, false, true);
+                    }
+                    else
+                    {
+                        List<String> values = new ArrayList<String>();
+                        if (value != null && !value.toString().trim().equals(""))
+                        {
+                            StringTokenizer st = new StringTokenizer(value.toString(), ";", false);
+                            while (st.hasMoreTokens())
+                            {
+                                String token = st.nextToken().trim();
+                                values.add(token);
+                            }
+                        }
+                        return new SimpleFilter.ContainsInClause(colName, values, false, true);
+                    }
+                }
+
+                @Override
+                public boolean meetsCriteria(Object value, Object[] paramVals)
+                {
+                    throw new UnsupportedOperationException("Should be handled inside of " + SimpleFilter.ContainsInClause.class);
+                }},
     HAS_QC("Has A QC Value", new String[] { "hasmvvalue", "hasqcvalue" }, false, " has a missing value indicator", "MV_INDICATOR", OperatorType.HASMVVALUE)
     // TODO: Switch to MV_INDICATOR
             {

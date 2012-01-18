@@ -69,39 +69,14 @@ public class ContainerForeignKey extends LookupForeignKey
 
     public TableInfo getLookupTableInfo()
     {
-        TableInfo containersTable = CoreSchema.getInstance().getTableInfoContainers();
-        FilteredTable ret = new FilteredTable(containersTable);
-        ColumnInfo nameColumn = ret.addWrapColumn(containersTable.getColumn("Name"));
-        nameColumn.setDisplayColumnFactory(new DisplayColumnFactory()
-        {
-            public DisplayColumn createRenderer(ColumnInfo colInfo)
-            {
-                return new ContainerDisplayColumn(colInfo, false, _url);
-            }
-        });
+        TableInfo containersTable = new ContainerTable();
 
-        ColumnInfo pathColumn = ret.wrapColumn("Path", containersTable.getColumn("Name"));
-        pathColumn.setDisplayColumnFactory(new DisplayColumnFactory()
-        {
-            public DisplayColumn createRenderer(ColumnInfo colInfo)
-            {
-                return new ContainerDisplayColumn(colInfo, true, _url);
-            }
-        });
-        ret.addColumn(pathColumn);
+        FilteredTable ret = new FilteredTable(containersTable);
+
         ColumnInfo col = ret.addWrapColumn(containersTable.getColumn("EntityId"));
         col.setHidden(true);
         col.setKeyField(true);
 
-        ret.addWrapColumn(containersTable.getColumn("RowId")).setHidden(true);
-        ret.addWrapColumn(containersTable.getColumn("Workbook"));
-        ret.addWrapColumn(containersTable.getColumn("Description"));
-
-        SQLFragment folderDisplaySQL = new SQLFragment("COALESCE("+ ExprColumn.STR_TABLE_ALIAS +".title, "+ ExprColumn.STR_TABLE_ALIAS +".name)");
-        ExprColumn folderDisplayColumn = new ExprColumn(ret, "DisplayName", folderDisplaySQL, JdbcType.VARCHAR);
-        ret.addColumn(folderDisplayColumn);
-
-        ret.setTitleColumn("DisplayName");
         ret.setPublic(false);
         return ret;
     }

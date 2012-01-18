@@ -226,7 +226,8 @@ public class SimpleFilter implements Filter
             List<Object> result = new ArrayList<Object>();
             for (FilterClause clause : _clauses)
             {
-                result.addAll(Arrays.asList(clause.getParamVals()));
+                if(clause.getParamVals() != null)
+                    result.addAll(Arrays.asList(clause.getParamVals()));
             }
             return result.toArray(new Object[result.size()]);
         }
@@ -262,6 +263,18 @@ public class SimpleFilter implements Filter
                 labKeySql.append(")");
             }
             return labKeySql.toString();
+        }
+
+        @Override
+        protected void appendFilterText(StringBuilder sb, ColumnNameFormatter formatter)
+        {
+            String sep = "";
+            for(FilterClause clause : _clauses)
+            {
+                sb.append(sep);
+                clause.appendFilterText(sb, formatter);
+                sep = _operation;
+            }
         }
 
         protected List<FilterClause> getClauses()
@@ -360,6 +373,7 @@ public class SimpleFilter implements Filter
     public static class InClause extends FilterClause
     {
         private String _colName;
+        private boolean _isNegated = false;
 
         public InClause(String colName, Collection params)
         {
@@ -368,9 +382,15 @@ public class SimpleFilter implements Filter
 
         public InClause(String colName, Collection params, boolean urlClause)
         {
+            this(colName, params, urlClause, false);
+        }
+
+        public InClause(String colName, Collection params, boolean urlClause, boolean isNegated)
+        {
             setUrlClause(urlClause);
             setParamVals(params.toArray());
             _colName = colName;
+            _isNegated = isNegated;
         }
 
         public List<String> getColumnNames()
@@ -382,7 +402,11 @@ public class SimpleFilter implements Filter
         protected void appendFilterText(StringBuilder sb, ColumnNameFormatter formatter)
         {
             sb.append(formatter.format(_colName));
-            sb.append(" IS ONE OF (");
+            if(_isNegated)
+                sb.append(" IS NOT ANY OF (");
+            else
+                sb.append(" IS ONE OF (");
+
             String sep = "";
             for (Object val : getParamVals())
             {
@@ -401,7 +425,8 @@ public class SimpleFilter implements Filter
             String selectName = getLabKeySQLColName(_colName);
             ColumnInfo col = columnMap.get(FieldKey.fromString(_colName));
             StringBuilder in =  new StringBuilder(selectName);
-            in.append(" IN (");
+
+            in.append(" " + (_isNegated ? "NOT " : "") + "IN (");
 
             Object[] params = getParamVals();
             if (params.length > 0)
@@ -438,7 +463,7 @@ public class SimpleFilter implements Filter
             }
             SQLFragment in = new SQLFragment(alias);
 
-            in.append(" IN (");
+            in.append(" " + (_isNegated ? "NOT " : "") + "IN (");
 
             if (params.length > 0)
             {
@@ -485,6 +510,154 @@ public class SimpleFilter implements Filter
             {
                 // Loop through all the values and check if any of them are equals
                 FilterClause compareClause = CompareType.EQUAL.createFilterClause(getColumnNames().get(0), params);
+                if (compareClause.meetsCriteria(value))
+                {
+                    return true;
+                }
+            }
+            return false;
+        }
+    }
+
+    public static class ContainsInClause extends FilterClause
+    {
+        private String _colName;
+        private boolean _isNegated = false;
+
+        public ContainsInClause(String colName, Collection params)
+        {
+            this(colName, params, false, false);
+        }
+
+        public ContainsInClause(String colName, Collection params, boolean urlClause)
+        {
+            this(colName, params, urlClause, false);
+        }
+
+        public ContainsInClause(String colName, Collection params, boolean urlClause, boolean isNegated)
+        {
+            setUrlClause(urlClause);
+            setParamVals(params.toArray());
+            _colName = colName;
+            _isNegated = isNegated;
+        }
+
+        public List<String> getColumnNames()
+        {
+            return Arrays.asList(_colName);
+        }
+
+        @Override
+        protected void appendFilterText(StringBuilder sb, ColumnNameFormatter formatter)
+        {
+            sb.append(formatter.format(_colName));
+            sb.append(" " +
+                    (_isNegated ? "DOES NOT CONTAIN ANY OF (" : "CONTAINS ONE OF ("));
+            String sep = "";
+            for (Object val : getParamVals())
+            {
+                if (val != null)
+                {
+                    sb.append(sep).append(val.toString());
+                    sep = ", ";
+                }
+            }
+            sb.append(")");
+        }
+
+        @Override
+        public String getLabKeySQLWhereClause(Map<FieldKey, ? extends ColumnInfo> columnMap)
+        {
+            ColumnInfo col = columnMap.get(FieldKey.fromString(_colName));
+
+            Object[] params = getParamVals();
+            if (params.length > 0)
+            {
+                return getContainsClause(col).toString();
+            }
+
+            //TODO: _isNegated
+            return col.getName() + (_isNegated ? " NOT IN" : " IN ") + " (NULL)";  // Empty list case; "WHERE column IN (NULL)" should always be false
+        }
+
+
+        public SQLFragment toSQLFragment(Map<String, ? extends ColumnInfo> columnMap, SqlDialect dialect)
+        {
+            Object[] params = getParamVals();
+
+            if (0 == params.length)
+                return new SQLFragment("1=0");
+
+            ColumnInfo colInfo = columnMap.get(_colName);
+            String alias = _colName;
+            if (colInfo != null)
+            {
+                alias = dialect.getColumnSelectName(colInfo.getAlias());
+            }
+
+            SQLFragment in = new SQLFragment();
+            OperationClause oc = getContainsClause(colInfo);
+            if(oc.getClauses().size() > 0)
+                return in.append(oc.toSQLFragment(columnMap, dialect));
+
+            return in.append(alias + (_isNegated ? " NOT IN" : " IN ") + "(NULL)");  // Empty list case; "WHERE column IN (NULL)" should always be false
+        }
+
+        private OperationClause getContainsClause(ColumnInfo colInfo)
+        {
+            Object[] params = getParamVals();
+            OperationClause oc;
+            if(_isNegated)
+                oc = new AndClause();
+            else
+                oc = new OrClause();
+
+
+            if (params.length > 0)
+            {
+                for(Object param : params)
+                {
+                    if(_isNegated)
+                    {
+                        oc.addClause(new CompareType.DoesNotContainClause(colInfo.getName(), param));
+                    }
+                    else
+                    {
+                        oc.addClause(new CompareType.ContainsClause(colInfo.getName(), param));
+                    }
+                }
+            }
+
+            //always allow null for NOT IN
+            if(_isNegated)
+            {
+                OrClause clause = new OrClause();
+                clause.addClause(oc);
+                clause.addClause(CompareType.ISBLANK.createFilterClause(colInfo.getName(), null));
+                return clause;
+            }
+
+            return oc;
+        }
+        public void addInValue(Object... values)
+        {
+            addInValues(Arrays.asList(values));
+        }
+
+        public void addInValues(Collection<?> newValues)
+        {
+            Set<Object> values = new HashSet<Object>(Arrays.asList(getParamVals()));
+            values.addAll(newValues);
+            setParamVals(values.toArray());
+        }
+
+        @Override
+        public boolean meetsCriteria(Object value)
+        {
+            for (Object params : getParamVals())
+            {
+                // Loop through all the values and check if any of them are equals
+                FilterClause compareClause = CompareType.CONTAINS.createFilterClause(getColumnNames().get(0), params);
                 if (compareClause.meetsCriteria(value))
                 {
                     return true;

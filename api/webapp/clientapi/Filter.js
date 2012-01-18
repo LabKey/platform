@@ -42,6 +42,11 @@
  * @property {LABKEY.Filter.FilterDefinition} Types.DOES_NOT_START_WITH Finds rows where the column value does not start with the filter value.
  * @property {LABKEY.Filter.FilterDefinition} Types.STARTS_WITH Finds rows where the column value starts with the filter value.
  * @property {LABKEY.Filter.FilterDefinition} Types.EQUALS_ONE_OF Finds rows where the column value equals one of the supplied filter values. The values should be supplied as a semi-colon-delimited list (e.g., 'a;b;c').
+ * @property {LABKEY.Filter.FilterDefinition} Types.EQUALS_ONE_OF_OR_MISSING Finds rows where the column value equals one of the supplied filter values, as well as rows where the value is missing (ie. null). The values should be supplied as a semi-colon-delimited list (e.g., 'a;b;c').
+ * @property {LABKEY.Filter.FilterDefinition} Types.NOT_IN Finds rows where the column value is not in any of the supplied filter values. The values should be supplied as a semi-colon-delimited list (e.g., 'a;b;c').
+ * @property {LABKEY.Filter.FilterDefinition} Types.NOT_IN_OR_MISSING Finds rows where the column value is not in any of the supplied filter values, but will include rows where the value is missing (ie. null). The values should be supplied as a semi-colon-delimited list (e.g., 'a;b;c').
+ * @property {LABKEY.Filter.FilterDefinition} Types.CONTAINS_ONE_OF Finds rows where the column value contains any of the supplied filter values. The values should be supplied as a semi-colon-delimited list (e.g., 'a;b;c').
+ * @property {LABKEY.Filter.FilterDefinition} Types.CONTAINS_NONE_OF Finds rows where the column value does not contain any of the supplied filter values. The values should be supplied as a semi-colon-delimited list (e.g., 'a;b;c').
  *
  */
 LABKEY.Filter = new function()
@@ -140,7 +145,15 @@ LABKEY.Filter = new function()
             DOES_NOT_START_WITH : createFilterType("Does Not Start With", "doesnotstartwith", true),
             STARTS_WITH : createFilterType("Starts With", "startswith", true),
             IN : createFilterType("Equals One Of", "in", true),
+            IN_OR_MISSING : createFilterType("Equals One Of", "inornull", true),
+            //NOTE: for some reason IN is aliased as EQUALS_ONE_OF.  not sure if this is for legacy purposes or it was determined EQUALS_ONE_OF was a better phrase
+            //to follow this pattern I did the same for IN_OR_MISSING
             EQUALS_ONE_OF : createFilterType("Equals One Of", "in", true),
+            EQUALS_ONE_OF_OR_MISSING : createFilterType("Equals One Of", "inornull", true),
+            NOT_IN : createFilterType("Does Not Equal Any Of", "notin", true),
+            NOT_IN_OR_MISSING : createFilterType("Does Not Equal Any Of", "notinornull", true),
+            CONTAINS_ONE_OF : createFilterType("Contains One Of", "containsoneof", true),
+            CONTAINS_NONE_OF : createFilterType("Does Not Contain Any Of", "containsnoneof", true),
             HAS_MISSING_VALUE : createFilterType("Has a missing value indicator", "hasmvvalue", false),
             DOES_NOT_HAVE_MISSING_VALUE : createFilterType("Does not have a missing value indicator", "nomvvalue", false)
         },
@@ -283,11 +296,11 @@ LABKEY.Filter = new function()
 
     var ft = ret.Types;
     var filterTypes = {
-        "int":[ft.HAS_ANY_VALUE, ft.EQUAL, ft.NEQ_OR_NULL, ft.ISBLANK, ft.NONBLANK, ft.GT, ft.LT, ft.GTE, ft.LTE, ft.IN],
-        "string":[ft.HAS_ANY_VALUE, ft.EQUAL, ft.NEQ_OR_NULL, ft.ISBLANK, ft.NONBLANK, ft.GT, ft.LT, ft.GTE, ft.LTE, ft.CONTAINS, ft.DOES_NOT_CONTAIN, ft.DOES_NOT_START_WITH, ft.STARTS_WITH, ft.IN],
+        "int":[ft.HAS_ANY_VALUE, ft.EQUAL, ft.NEQ_OR_NULL, ft.ISBLANK, ft.NONBLANK, ft.GT, ft.LT, ft.GTE, ft.LTE, ft.IN, ft.IN_OR_MISSING, ft.NOT_IN, ft.NOT_IN_OR_MISSING],
+        "string":[ft.HAS_ANY_VALUE, ft.EQUAL, ft.NEQ_OR_NULL, ft.ISBLANK, ft.NONBLANK, ft.GT, ft.LT, ft.GTE, ft.LTE, ft.CONTAINS, ft.DOES_NOT_CONTAIN, ft.DOES_NOT_START_WITH, ft.STARTS_WITH, ft.IN, ft.IN_OR_MISSING, ft.NOT_IN, ft.NOT_IN_OR_MISSING, ft.CONTAINS_ONE_OF, ft.CONTAINS_NONE_OF],
         "boolean":[ft.HAS_ANY_VALUE, ft.EQUAL, ft.NEQ_OR_NULL, ft.ISBLANK, ft.NONBLANK],
-        "float":[ft.HAS_ANY_VALUE, ft.EQUAL, ft.NEQ_OR_NULL, ft.ISBLANK, ft.NONBLANK, ft.GT, ft.LT, ft.GTE, ft.LTE, ft.IN],
-        "date":[ft.HAS_ANY_VALUE, ft.DATE_EQUAL, ft.DATE_NOT_EQUAL, ft.ISBLANK, ft.NONBLANK, ft.DATE_GREATER_THAN, ft.DATE_LESS_THAN, ft.DATE_GREATER_THAN_OR_EQUAL, ft.DATE_LESS_THAN_OR_EQUAL, ft.IN]
+        "float":[ft.HAS_ANY_VALUE, ft.EQUAL, ft.NEQ_OR_NULL, ft.ISBLANK, ft.NONBLANK, ft.GT, ft.LT, ft.GTE, ft.LTE, ft.IN, ft.IN_OR_MISSING, ft.NOT_IN, ft.NOT_IN_OR_MISSING],
+        "date":[ft.HAS_ANY_VALUE, ft.DATE_EQUAL, ft.DATE_NOT_EQUAL, ft.ISBLANK, ft.NONBLANK, ft.DATE_GREATER_THAN, ft.DATE_LESS_THAN, ft.DATE_GREATER_THAN_OR_EQUAL, ft.DATE_LESS_THAN_OR_EQUAL, ft.IN, ft.IN_OR_MISSING, ft.NOT_IN, ft.NOT_IN_OR_MISSING]
     };
 
     var defaultFilter = {

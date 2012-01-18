@@ -2300,7 +2300,7 @@ LABKEY.DataRegion._filterUI =
 
         function inputFieldValidator(input, cb)
         {
-            if(cb.getStore().getAt(cb.getStore().find('text', cb.getValue())).data.value == 'in'){
+            if(cb.getStore().getAt(cb.getStore().find('text', cb.getValue())).data.isMulti){
                 return validateEqOneOf(input, self._mappedType);
             }
             return validateInputField(input, self._mappedType);
@@ -2515,8 +2515,8 @@ LABKEY.DataRegion._filterUI =
 
     fillOptions : function(mvEnabled, mappedType, storeNum)
     {
-        var store       = new Ext.data.ArrayStore({fields: ['text', 'value']});
-        var comboRecord = Ext.data.Record.create(['text', 'value']);
+        var store       = new Ext.data.ArrayStore({fields: ['text', 'value', 'isMulti']});
+        var comboRecord = Ext.data.Record.create(['text', 'value', 'isMulti']);
 
         if(storeNum == 1){
             store.add(new comboRecord({text:'No Other Filter', value: ''}));
@@ -2532,14 +2532,15 @@ LABKEY.DataRegion._filterUI =
                 store.add(new comboRecord({text:'Equals', value: 'eq'}));
             }
 
-            if (mappedType != "BOOL" && mappedType != "DATE"){
-                store.add(new comboRecord({text:"Equals One Of (e.g. \"a;b;c\")", value: 'in'}));
-            }
-
             if(mappedType == "DATE"){
                 store.add(new comboRecord({text:'Does Not Equal', value: 'dateneq'}));
             } else {
                 store.add(new comboRecord({text:'Does Not Equal', value: 'neqornull'}));
+            }
+
+            if (mappedType != "BOOL" && mappedType != "DATE"){
+                store.add(new comboRecord({text:"Equals One Of (e.g. \"a;b;c\")", value: 'in', isMulti: true}));
+                store.add(new comboRecord({text:"Does Not Equal Any Of (e.g. \"a;b;c\")", value: 'notinornull', isMulti: true}));
             }
         }
 
@@ -2564,6 +2565,8 @@ LABKEY.DataRegion._filterUI =
             store.add(new comboRecord({text:'Does Not Start With', value: 'doesnotstartwith'}));
             store.add(new comboRecord({text:'Contains',            value: 'contains'}));
             store.add(new comboRecord({text:'Does Not Contain',    value: 'doesnotcontain'}));
+            store.add(new comboRecord({text:"Contains One Of (e.g. \"a;b;c\")", value: 'containsoneof', isMulti: true}));
+            store.add(new comboRecord({text:"Does Not Contain Any Of (e.g. \"a;b;c\")", value: 'containsnoneof', isMulti: true}));
         }
 
         //All mappedTypes will have these:
