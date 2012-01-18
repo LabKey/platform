@@ -15,6 +15,7 @@
  */
 package org.labkey.api.data;
 
+import org.jetbrains.annotations.Nullable;
 import org.labkey.api.attachments.Attachment;
 import org.labkey.api.util.GUID;
 import org.labkey.api.util.PageFlowUtil;
@@ -46,8 +47,13 @@ public abstract class AbstractFileDisplayColumn extends DataColumn
 
     /** @return the short name of the file (not including full path) */
     protected abstract String getFileName(Object value);
-    
+
     protected void renderIconAndFilename(RenderContext ctx, Writer out, String filename, boolean link) throws IOException
+    {
+       renderIconAndFilename(ctx, out, filename, null, link);
+    }
+    
+    protected void renderIconAndFilename(RenderContext ctx, Writer out, String filename, @Nullable String fileIconUrl, boolean link) throws IOException
     {
         if (null != filename)
         {
@@ -65,7 +71,9 @@ public abstract class AbstractFileDisplayColumn extends DataColumn
                 }
             }
 
-            out.write("<img src=\"" + ctx.getRequest().getContextPath() + Attachment.getFileIcon(filename) + "\" alt=\"icon\"/>&nbsp;" + filename);
+            out.write("<img src=\"" + ctx.getRequest().getContextPath());
+            out.write((null != fileIconUrl) ? fileIconUrl : Attachment.getFileIcon(filename));
+            out.write("\" alt=\"icon\"/>&nbsp;" + filename);
 
             if (link && null != url)
             {

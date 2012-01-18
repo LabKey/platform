@@ -22,16 +22,22 @@ import org.labkey.api.exp.api.DataType;
 import org.labkey.api.exp.api.ExpData;
 import org.labkey.api.exp.api.ExperimentJSONConverter;
 import org.labkey.api.exp.api.ExperimentService;
+import org.labkey.api.gwt.client.util.StringUtils;
 import org.labkey.api.pipeline.PipeRoot;
 import org.labkey.api.pipeline.PipelineService;
 import org.labkey.api.security.User;
+import org.labkey.api.settings.AppProps;
 import org.labkey.api.study.assay.AbstractAssayProvider;
 import org.labkey.api.util.FileUtil;
 import org.labkey.api.util.NetworkDrive;
+import org.labkey.api.util.Path;
 import org.labkey.api.view.NotFoundException;
+import org.labkey.api.webdav.WebdavResource;
+import org.labkey.api.webdav.WebdavService;
 
 import java.io.File;
 import java.net.URI;
+import java.net.URISyntaxException;
 
 /**
  * User: jeckels
@@ -190,6 +196,39 @@ public class ExpDataFileConverter implements Converter
             catch (NumberFormatException ignored)
             {
             }
+
+            // toss in here an additonal check, if starts with HTTP then try to use _webdav to resolve it
+            // MAKE sure that the secuirty is in place - figure out what container it is in
+            String webdav = value.toString();
+            if (null != StringUtils.trimToNull(webdav))
+            {
+                Path path = Path.decode(webdav.replace(AppProps.getInstance().getBaseServerUrl() + AppProps.getInstance().getContextPath(), ""));
+                WebdavResource resource = WebdavService.get().getResolver().lookup(path);
+                if (resource != null && resource.isFile())
+                {
+                    File result = resource.getFile();
+                    if (result != null)
+                    {
+                        return result;
+                    }
+                }
+                else
+                {
+                    if (path.isDirectory())
+                    {
+                        try
+                        {
+                            resource = WebdavService.get().lookupHref(path.toString());
+                            if (null != resource && !resource.isFile())
+                                return resource.getFile();
+                        }
+                        catch(URISyntaxException ignored)
+                        {
+                        }
+                    }
+                }
+            }
+
 
             // Then, see if we can find it as an LSID
             String lsid = value.toString();

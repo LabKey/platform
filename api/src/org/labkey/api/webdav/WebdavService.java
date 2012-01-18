@@ -18,9 +18,12 @@ package org.labkey.api.webdav;
 
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.labkey.api.settings.AppProps;
+import org.labkey.api.util.URLHelper;
 import org.labkey.api.webdav.AbstractWebdavResource;
 import org.labkey.api.util.Path;
 
+import java.net.URISyntaxException;
 import java.util.List;
 import java.util.Set;
 import java.util.concurrent.CopyOnWriteArrayList;
@@ -89,6 +92,16 @@ public class WebdavService
     public static Path getPath()
     {
         return _path;
+    }
+
+    public WebdavResource lookupHref(String href) throws URISyntaxException
+    {
+        URLHelper u = new URLHelper(href);
+        Path p = u.getParsedPath();
+        Path contextPath = AppProps.getInstance().getParsedContextPath();
+        if (p.startsWith(contextPath))
+            p = p.subpath(contextPath.size(), p.size());
+        return lookup(p);
     }
 
     /**

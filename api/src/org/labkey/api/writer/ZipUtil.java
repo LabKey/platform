@@ -15,16 +15,26 @@
  */
 package org.labkey.api.writer;
 
+import org.apache.commons.io.IOUtils;
 import org.apache.log4j.Logger;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.util.FileUtil;
+import org.labkey.api.util.PageFlowUtil;
 
-import java.io.*;
+import javax.servlet.http.HttpServletResponse;
+import java.io.BufferedInputStream;
+import java.io.BufferedOutputStream;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.Enumeration;
 import java.util.List;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipInputStream;
+import java.util.zip.ZipOutputStream;
 
 /**
  * User: adam
@@ -149,6 +159,55 @@ public class ZipUtil
         return files;
     }
 
+    public static void zipToStream(HttpServletResponse response, File file, boolean preZipped) throws IOException
+    {
+        response.setContentType("application/zip");
+        response.setHeader("Content-Disposition", "attachment; filename=\"" + file.getName() + (preZipped ? "" : ".zip") + "\"");
+
+        if (preZipped)
+        {
+            PageFlowUtil.streamFile(response, file, true);
+            return;
+        }
+
+        ZipOutputStream zos = new ZipOutputStream(response.getOutputStream());
+
+        try
+        {
+            addResource(file, zos);
+        }
+        finally
+        {
+            IOUtils.closeQuietly(zos);
+        }
+    }
+
+    private static void addResource(File file, ZipOutputStream out) throws IOException
+    {
+        if (file.listFiles() != null)
+        {
+            for (File f : file.listFiles())
+            {
+                addResource(f, out);
+            }
+        }
+        else
+        {
+            ZipEntry entry = new ZipEntry(file.getName());
+            out.putNextEntry(entry);
+            InputStream in = null;
+
+            try
+            {
+                in = new FileInputStream(file);
+                FileUtil.copyData(in, out);
+            }
+            finally
+            {
+                IOUtils.closeQuietly(in);
+            }
+        }
+    }
 
     private static class ZipStreamEnumeration implements Enumeration<ZipEntry>
     {

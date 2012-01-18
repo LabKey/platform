@@ -17,16 +17,19 @@
 package org.labkey.api.study.assay;
 
 import org.labkey.api.admin.CoreUrls;
+import org.labkey.api.attachments.Attachment;
 import org.labkey.api.data.AbstractFileDisplayColumn;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
-import org.labkey.api.exp.PropertyColumn;
+import org.labkey.api.data.RenderContext;
 import org.labkey.api.exp.PropertyDescriptor;
 import org.labkey.api.query.DetailsURL;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.util.PageFlowUtil;
 
 import java.io.File;
+import java.io.IOException;
+import java.io.Writer;
 import java.util.Set;
 
 /**
@@ -62,5 +65,19 @@ public class FileLinkDisplayColumn extends AbstractFileDisplayColumn
             return new File((String)value).getName();
         }
         return null;
+    }
+
+    @Override
+    protected void renderIconAndFilename(RenderContext ctx, Writer out, String filename, boolean link) throws IOException
+    {
+        if (isDirectory(getValue(ctx)))
+            super.renderIconAndFilename(ctx, out, filename, Attachment.getFileIcon(".folder"), link);
+        else
+            super.renderIconAndFilename(ctx, out, filename, link);
+    }
+
+    private boolean isDirectory(Object value)
+    {
+        return new File(value.toString()).isDirectory();
     }
 }

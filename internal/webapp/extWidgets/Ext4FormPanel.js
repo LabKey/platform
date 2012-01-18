@@ -180,6 +180,8 @@ Ext4.define('LABKEY.ext4.FormPanel', {
 
         var toAdd = this.configureForm(store);
 
+        this.fireEvent('formconfiguration', toAdd);
+
         //create a placeholder for error messages
         if(!this.errorEl){
             toAdd.push({
@@ -287,13 +289,11 @@ Ext4.define('LABKEY.ext4.FormPanel', {
 
             if(toResize.length){
                 var newWidth = availableWidth/toResize.length;
-                for (var j=0;j<toResize.length;j++){
+                for (j=0;j<toResize.length;j++){
                     toResize[j].width = newWidth;
                 }
             }
         }
-
-        this.fireEvent('formconfiguration', toAdd);
 
         return toAdd;
     }

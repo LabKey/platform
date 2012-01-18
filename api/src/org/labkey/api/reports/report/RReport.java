@@ -18,6 +18,7 @@ package org.labkey.api.reports.report;
 
 import org.jetbrains.annotations.Nullable;
 import org.apache.commons.lang3.StringUtils;
+import org.labkey.api.files.FileContentService;
 import org.labkey.api.reports.Report;
 import org.labkey.api.reports.ReportService;
 import org.labkey.api.reports.report.r.ParamReplacement;
@@ -143,6 +144,9 @@ public class RReport extends ExternalScriptEngineReport implements DynamicThumbn
         {
             labkey.append("labkey.url.params <- NULL\n");
         }
+
+        // Root path to resolve system files in reports
+        labkey.append("labkey.file.root <- \"" + ServiceRegistry.get(FileContentService.class).getSiteDefaultRoot().getPath().replaceAll("\\\\", "/") +"\"\n");
 
         // session information
         if (context.getRequest() != null)
