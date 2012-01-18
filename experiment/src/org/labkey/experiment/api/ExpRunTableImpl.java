@@ -527,7 +527,7 @@ public class ExpRunTableImpl extends ExpTableImpl<ExpRunTable.Column> implements
 
         @NotNull
         @Override
-        protected String getCssStyle(RenderContext ctx)
+        public String getCssStyle(RenderContext ctx)
         {
             // Use our custom concatenated string instead of the underlying RowId value
             String value = buildString(ctx, false);
