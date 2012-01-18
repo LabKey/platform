@@ -25,6 +25,7 @@ import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
 import org.apache.xmlbeans.XmlOptions;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import org.json.JSONArray;
 import org.json.JSONObject;
 import org.labkey.api.action.ApiAction;
@@ -226,7 +227,7 @@ public class QueryController extends SpringActionController
             return urlExternalSchemaAdmin(c, null);
         }
 
-        public ActionURL urlExternalSchemaAdmin(Container c, String reloadedSchema)
+        public ActionURL urlExternalSchemaAdmin(Container c, @Nullable String reloadedSchema)
         {
             ActionURL url = new ActionURL(AdminAction.class, c);
 
@@ -630,43 +631,6 @@ public class QueryController extends SpringActionController
         }
     }
 
-
-/*
-    @RequiresPermissionClass(AdminPermission.class)
-    public class RenameQueryAction extends FormViewAction<NewQueryForm>
-    {
-        NewQueryForm _form;
-
-        public void validateCommand(NewQueryForm form, Errors errors)
-        {
-
-        }
-
-        public ModelAndView getView(NewQueryForm form, boolean reshow, BindException errors) throws Exception
-        {
-            _form = form;
-            return null;
-        }
-
-        public boolean handlePost(NewQueryForm form, BindException errors) throws Exception
-        {
-            _form = form;
-            return false;
-        }
-
-        public ActionURL getSuccessURL(NewQueryForm form)
-        {
-            return actionURL(QueryAction.schema, QueryParam.schemaName, form.getSchemaName());
-        }
-
-        public NavTree appendNavTrail(NavTree root)
-        {
-            (new QueryController.SchemaAction(_form)).appendNavTrail(root)
-                    .addChild("Rename Query", actionURL(QueryAction.newQuery));
-            return root;
-        }
-    }
-*/
 
     // CONSIDER : deleting this action after the SQL editor UI changes are finalized, keep in mind that built-in views
     // use this view as welll via the edit metadata page.
@@ -2512,8 +2476,8 @@ public class QueryController extends SpringActionController
             if (null != form.getMaxRows() && form.getMaxRows().intValue() >= 0)
             {
                 settings.setShowRows(ShowRows.PAGINATED);
-                settings.setMaxRows(Table.ALL_ROWS == form.getMaxRows().intValue() ? 1 : form.getMaxRows().intValue());
-                metaDataOnly = (Table.ALL_ROWS == form.getMaxRows().intValue());
+                settings.setMaxRows(Table.ALL_ROWS == form.getMaxRows() ? 1 : form.getMaxRows());
+                metaDataOnly = (Table.ALL_ROWS == form.getMaxRows());
             }
 
             int offset = 0;

@@ -16,6 +16,7 @@
 
 package org.labkey.query.persist;
 
+import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.CacheKey;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.Entity;
@@ -29,7 +30,7 @@ public class ExternalSchemaDef extends Entity
 
     static public class Key extends CacheKey<ExternalSchemaDef, Column>
     {
-        public Key(Container container)
+        public Key(@Nullable Container container)
         {
             super(QueryManager.get().getTableInfoExternalSchema(), ExternalSchemaDef.class, container);
         }

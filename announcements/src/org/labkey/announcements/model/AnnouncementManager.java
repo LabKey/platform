@@ -126,22 +126,14 @@ public class AnnouncementManager
     public static Pair<AnnouncementModel[], Boolean> getAnnouncements(Container c, SimpleFilter filter, Sort sort, int rowLimit)
     {
         filter.addCondition("Container", c.getId());
+        AnnouncementModel[] recent = new TableSelector(_comm.getTableInfoThreads(), filter, sort).setRowCount(rowLimit + 1).getArray(AnnouncementModel.class);
 
-        try
-        {
-            AnnouncementModel[] recent = Table.select(_comm.getTableInfoThreads(), Table.ALL_COLUMNS, filter, sort, AnnouncementModel.class, rowLimit + 1, 0);
+        Boolean limited = (recent.length > rowLimit);
 
-            Boolean limited = (recent.length > rowLimit);
+        if (limited)
+            recent = ArrayUtils.subarray(recent, 0, rowLimit);
 
-            if (limited)
-                recent = ArrayUtils.subarray(recent, 0, rowLimit);
-
-            return new Pair<AnnouncementModel[], Boolean>(recent, limited);
-        }
-        catch (SQLException x)
-        {
-            throw new RuntimeSQLException(x);
-        }
+        return new Pair<AnnouncementModel[], Boolean>(recent, limited);
     }
 
 

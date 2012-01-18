@@ -1005,8 +1005,9 @@ public class SpecimenImporter
         {
             if (logger != null)
                 logger.info("Determining current locations for vials " + (offset + 1) + " through " + (offset + CURRENT_SITE_UPDATE_SIZE) + ".");
-            specimens = Table.select(StudySchema.getInstance().getTableInfoVial(), Table.ALL_COLUMNS,
-                    containerFilter, null, Specimen.class, CURRENT_SITE_UPDATE_SIZE, offset);
+
+            specimens = new TableSelector(StudySchema.getInstance().getTableInfoVial(), containerFilter, null).setRowCount(CURRENT_SITE_UPDATE_SIZE).setOffset(offset).getArray(Specimen.class);
+
             List<List<?>> vialPropertiesParams = new ArrayList<List<?>>();
             List<List<?>> commentParams = new ArrayList<List<?>>();
 

@@ -266,7 +266,7 @@ public class QueryManager
         return Table.selectObject(getTableInfoExternalSchema(), id, ExternalSchemaDef.class);
     }
 
-    public ExternalSchemaDef[] getExternalSchemaDefs(Container container)
+    public ExternalSchemaDef[] getExternalSchemaDefs(@Nullable Container container)
     {
         ExternalSchemaDef.Key key = new ExternalSchemaDef.Key(container);
         return key.select();
