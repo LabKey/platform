@@ -533,8 +533,8 @@ X.define('LABKEY.TemplateReport',
         return tr;
     },
 
-    onRender : function(ct, position) {
-
+    onRender : function(ct, position)
+    {
         if (!this.el)
             this.callParent(arguments);
 
@@ -545,9 +545,7 @@ X.define('LABKEY.TemplateReport',
             if (!this.queryConfig.success)
             {
                 this.queryConfig.scope = this;
-                this.queryConfig.success = function(rs){
-                    this.loadData(rs);
-                }
+                this.queryConfig.success = this.loadData;
             }
             LABKEY.Query.selectRows(this.queryConfig);
         }
@@ -780,7 +778,7 @@ function testIssues(el)
         gridFields:['Status', 'IssueId', 'Created', 'Priority', 'Title', 'Type', 'CreatedBy', 'Area', 'Milestone'],
         rowBreakInfo:[{name:'Status', rowspans:true}],
         reportTemplate : SIMPLE_PAGE_TEMPLATE,
-        renderTo : 'el',
+        renderTo : el,
         queryConfig : {
             requiredVersion: 12.1,
             schemaName: 'issues',
