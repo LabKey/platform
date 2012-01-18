@@ -274,11 +274,48 @@ X.define('LABKEY.TemplateReport',
 
         // turn field descriptions into FieldDefinitionpreprocess fields
         //  add index
+        var nameMap = {};
         for (i=0 ; i < fields.length ; i++)
         {
             fields[i].index = i;
             field = fields[i] = new FieldDefinition(fields[i], columns||i<columns.length?columns[i]:{});
+            nameMap[field.name] = field;
         }
+
+        var gridFields = null;
+        if (X.isArray(this.gridFields))
+        {
+            gridFields = [];
+            for (i=0 ; i<this.gridFields.length ; i++)
+            {
+                field = nameMap[this.gridFields[i]];
+                if (field)
+                    gridFields.push(field);
+            }
+        }
+
+        var pageFields = null;
+        if (X.isArray(this.pageFields))
+        {
+            pageFields = [];
+            for (i=0 ; i<this.pageFields.length ; i++)
+            {
+                field = nameMap[this.pageFields[i]];
+                if (field)
+                    pageFields.push(field);
+            }
+        }
+        else if (X.isArray(this.pageBreakInfo))
+        {
+            pageFields = [];
+            for (i=0 ; i<this.pageBreakInfo.length ; i++)
+            {
+                field = nameMap[this.pageBreakInfo[i].name];
+                if (field)
+                    pageFields.push(field);
+            }
+        }
+
 
         for (var r=0 ; r < rows.length ; r++)
         {
@@ -302,7 +339,14 @@ X.define('LABKEY.TemplateReport',
             arrayrows.push(parentRow);
         }
 
-        return {fields: fields, rows:arrayrows};
+        var transformedResults =
+        {
+            fields: fields,
+            gridFields:(gridFields?gridFields:fields),
+            pageFields:pageFields?pageFields:[],
+            rows:arrayrows
+        };
+        return transformedResults;
     },
 
 
@@ -496,7 +540,7 @@ X.define('LABKEY.TemplateReport',
                 start : (new Date()).valueOf()
             }
         );
-
+        tpl.data = reportData;
         tpl.overwrite(this.el, reportData);
     }
 
@@ -505,19 +549,6 @@ X.define('LABKEY.TemplateReport',
 
 
 })(); // file scope function
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 
@@ -576,31 +607,34 @@ var rowspanTmpl3 =
 
 var pageTmpl1 =
 [
-		'<table class="report"  cellspacing=0>',
+		'<table class="report" cellspacing=0>',
         '<tpl for="pages">',
-            '{[this.resetGrid()]}',
+            '{[this.resetGrid(),""]}',
 // PAGE TEMPLATE
-            '<tr><td class="break-spacer">&nbsp;</td></tr>',
-            '<tr><td colspan="{[parent.fields.length]}" style="background-color:#eeeeee; padding:10px;">',
-                '<tpl for="first">',
-                    '<table>',
-                    '<tr><td colspan=2><b>{[this.getHtml(values.asObject.AssignedTo,values)]}</b></td></tr>',
-                    '<tr><td>userid</td><td>{[this.getHtml(values.asObject["AssignedTo/UserId"],values)]}</td></tr>',
-                    '</table>',
-                '</tpl>',
+            '<tr><td class="break-spacer">&nbsp;<br>&nbsp;</td></tr>',
+            '<tr><td colspan="{[this.data.fields.length]}">',
+                '<div style="border:solid 1px #eeeeee; padding:5px; margin:10px;">',
+//                '<div style="padding-top:5px; font-weight:bold; font-size:1.3em; text-align:center;">{[ this.getHtml(values.first.asArray[this.data.pageFields[0].index]) ]}</div><br>',
+                '<table>',
+                    '<tr><td colspan=2 style="padding:5px; font-weight:bold; font-size:1.3em; text-align:center;">{[ this.getHtml(values.first.asArray[this.data.pageFields[0].index]) ]}</td></tr>',
+                    '<tpl for="this.data.pageFields">',
+                        '<tr><td align=right>{[this.getCaptionHtml(values)]}:&nbsp;</td><td align=left>{[this.getHtml(parent.first.asArray[values.index])]}</td></tr>',
+                    '</tpl>',
+                '</table>',
+                '</div>',
             '</td></tr>',
 // GRID TEMPLATE
             '<tr>',
-                '<tpl for="parent.fields">',
+                '<tpl for="this.data.gridFields">',
                     '<th class="labkey-column-header">{[this.getCaptionHtml(values)]}</th>',
                 '</tpl>',
             '</tr>',
             '<tpl for="rows">',
                 '<tr class="{[this.getGridRowClass()]}">',
-                '<tpl for="asArray">',
-                    '{[this.getGridCellHtml(values)]}',
-         '</tpl>',
-    			'</tr>',
+                '<tpl for="this.data.gridFields">',
+                    '{[this.getGridCellHtml(parent.asArray[values.index])]}',
+                 '</tpl>',
+                '</tr>',
             '</tpl>',
 		'</tpl>',
 		'</table>',
@@ -612,8 +646,12 @@ function testIssues(el)
 {
     var helper = new LABKEY.TemplateReport(
     {
-        rowBreakInfo:[{name:'Status', rowspans:false}],
-        pageBreakInfo:[{name:'AssignedTo', rowspans:true}],
+        pageFields:['AssignedTo', 'AssignedTo/UserId'],
+        pageBreakInfo:[{name:'AssignedTo', rowspans:false}],
+
+        gridFields:['Status', 'IssueId', 'Created', 'Priority', 'Title', 'Type', 'CreatedBy', 'Area', 'Milestone'],
+        rowBreakInfo:[{name:'Status', rowspans:true}],
+
         template : pageTmpl1
     });
 
