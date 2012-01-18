@@ -2217,6 +2217,7 @@ public class QueryController extends SpringActionController
         private String _dir;
         private String _containerFilter;
         private boolean _includeTotalCount = true;
+        private boolean _includeStyle = false;
 
         public Integer getStart()
         {
@@ -2276,6 +2277,16 @@ public class QueryController extends SpringActionController
         public void setIncludeTotalCount(boolean includeTotalCount)
         {
             _includeTotalCount = includeTotalCount;
+        }
+
+        public boolean isIncludeStyle()
+        {
+            return _includeStyle;
+        }
+
+        public void setIncludeStyle(boolean includeStyle)
+        {
+            _includeStyle = includeStyle;
         }
     }
 
@@ -2340,11 +2351,17 @@ public class QueryController extends SpringActionController
 
             //if requested version is >= 9.1, use the extended api query response
             if (getRequestedApiVersion() >= 9.1)
-                return new ExtendedApiQueryResponse(view, getViewContext(), isEditable, true,
+            {
+                ExtendedApiQueryResponse response = new ExtendedApiQueryResponse(view, getViewContext(), isEditable, true,
                         form.getSchemaName().toString(), form.getQueryName(), form.getQuerySettings().getOffset(), null, metaDataOnly);
+                response.includeStyle(form.isIncludeStyle());
+                return response;
+            }
             else
+            {
                 return new ApiQueryResponse(view, getViewContext(), isEditable, true,
                         form.getSchemaName().toString(), form.getQueryName(), form.getQuerySettings().getOffset(), null, metaDataOnly);
+            }
         }
     }
 
