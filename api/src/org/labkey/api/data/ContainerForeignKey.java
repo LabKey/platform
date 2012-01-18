@@ -16,9 +16,9 @@
 
 package org.labkey.api.data;
 
-import org.labkey.api.query.ExprColumn;
 import org.labkey.api.query.FilteredTable;
 import org.labkey.api.query.LookupForeignKey;
+import org.labkey.api.query.UserSchema;
 import org.labkey.api.view.ActionURL;
 
 /**
@@ -29,15 +29,16 @@ import org.labkey.api.view.ActionURL;
 public class ContainerForeignKey extends LookupForeignKey
 {
     private ActionURL _url;
+    private UserSchema _schema;
 
-    static public ColumnInfo initColumn(ColumnInfo column)
+    static public ColumnInfo initColumn(ColumnInfo column, UserSchema schema)
     {
-        return initColumn(column, null);
+        return initColumn(column, schema, null);
     }
 
-    static public ColumnInfo initColumn(ColumnInfo column, final ActionURL url)
+    static public ColumnInfo initColumn(ColumnInfo column, UserSchema schema, final ActionURL url)
     {
-        column.setFk(new ContainerForeignKey(url));
+        column.setFk(new ContainerForeignKey(schema, url));
         column.setUserEditable(false);
         column.setShownInInsertView(false);
         column.setShownInUpdateView(false);
@@ -46,22 +47,21 @@ public class ContainerForeignKey extends LookupForeignKey
         {
             public DisplayColumn createRenderer(ColumnInfo colInfo)
             {
-                ContainerDisplayColumn displayColumn = new ContainerDisplayColumn(colInfo, false, url);
-                displayColumn.setEntityIdColumn(colInfo);
-                return displayColumn;
+                return new ContainerDisplayColumn(colInfo, false, url);
             }
         });
         return column;
     }
 
-    public ContainerForeignKey()
+    public ContainerForeignKey(UserSchema schema)
     {
-        this(null);
+        this(schema, null);
     }
 
-    public ContainerForeignKey(ActionURL url)
+    public ContainerForeignKey(UserSchema schema, ActionURL url)
     {
         super("EntityId", "DisplayName");
+        _schema = schema;
         _url = url;
         setLookupSchemaName("Core");
         setTableName("Containers");
@@ -69,15 +69,6 @@ public class ContainerForeignKey extends LookupForeignKey
 
     public TableInfo getLookupTableInfo()
     {
-        TableInfo containersTable = new ContainerTable();
-
-        FilteredTable ret = new FilteredTable(containersTable);
-
-        ColumnInfo col = ret.addWrapColumn(containersTable.getColumn("EntityId"));
-        col.setHidden(true);
-        col.setKeyField(true);
-
-        ret.setPublic(false);
-        return ret;
+        return new ContainerTable(_schema, _url);
     }
 }

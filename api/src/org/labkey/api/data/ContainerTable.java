@@ -16,6 +16,7 @@
 
 package org.labkey.api.data;
 
+import org.jetbrains.annotations.Nullable;
 import org.labkey.api.portal.ProjectUrls;
 import org.labkey.api.query.ExprColumn;
 import org.labkey.api.query.FilteredTable;
@@ -35,12 +36,7 @@ import org.labkey.api.view.ActionURL;
 public class ContainerTable extends FilteredTable
 {
     protected UserSchema _schema;
-
-    public ContainerTable()
-    {
-        super(CoreSchema.getInstance().getTableInfoContainers());
-        init();
-    }
+    @Nullable private ActionURL _url;
 
     public ContainerTable(UserSchema schema)
     {
@@ -49,12 +45,19 @@ public class ContainerTable extends FilteredTable
         // Call this after having a chance to set _schema's value. It's invoked in the superclass constructor,
         // but that's too early for this scenario
         applyContainerFilter(getContainerFilter());
-        setDescription("Contains one row for every folder, workbook, or project");
         init();
+    }
+
+    public ContainerTable(UserSchema schema, ActionURL url)
+    {
+        this(schema);
+        _url = url;
     }
 
     private void init()
     {
+        setDescription("Contains one row for every folder, workbook, or project");
+        
         wrapAllColumns(true);
         getColumn("_ts").setHidden(true);
         getColumn("EntityId").setHidden(true);
@@ -64,7 +67,7 @@ public class ContainerTable extends FilteredTable
         {
            public TableInfo getLookupTableInfo()
            {
-                return new ContainerTable();
+                return new ContainerTable(_schema);
            }
         });
 
@@ -79,6 +82,14 @@ public class ContainerTable extends FilteredTable
         col.setURL(webURLExp);
         this.addColumn(col);
 
+        getColumn("Name").setDisplayColumnFactory(new DisplayColumnFactory()
+        {
+            public DisplayColumn createRenderer(ColumnInfo colInfo)
+            {
+                return new ContainerDisplayColumn(colInfo, false, _url);
+            }
+        });
+
         PropertyManager.PropertySchema propertySchema = PropertyManager.PropertySchema.getInstance();
         SQLFragment folderTypeSQL = new SQLFragment("(SELECT Value FROM " + propertySchema.getTableInfoProperties() + " p, " +
                 propertySchema.getTableInfoPropertySets() + " ps WHERE ps.ObjectId = " + ExprColumn.STR_TABLE_ALIAS +
@@ -92,14 +103,15 @@ public class ContainerTable extends FilteredTable
         SQLFragment folderDisplaySQL = new SQLFragment("COALESCE("+ ExprColumn.STR_TABLE_ALIAS +".title, "+ ExprColumn.STR_TABLE_ALIAS +".name)");
         ExprColumn folderDisplayColumn = new ExprColumn(this, "DisplayName", folderDisplaySQL, JdbcType.VARCHAR);
         addColumn(folderDisplayColumn);
+        setTitleColumn(folderDisplayColumn.getName());
 
-        final ColumnInfo folderPathCol = this.wrapColumn("Path", getRealTable().getColumn("EntityId"));
+        final ColumnInfo folderPathCol = this.wrapColumn("Path", getRealTable().getColumn("Name"));
         folderPathCol.setDisplayColumnFactory(new DisplayColumnFactory()
         {
             @Override
             public DisplayColumn createRenderer(final ColumnInfo colInfo)
             {
-                return new ContainerDisplayColumn(folderPathCol, true);
+                return new ContainerDisplayColumn(colInfo, true, _url);
             }
         });
         addColumn(folderPathCol);
@@ -115,12 +127,11 @@ public class ContainerTable extends FilteredTable
         addColumn(containerTypeColumn);
 
         col = getColumn("CreatedBy");
-        final boolean isSiteAdmin = _schema != null && _schema.getUser().isAdministrator();
         col.setFk(new LookupForeignKey("UserId", "DisplayName")
         {
             public TableInfo getLookupTableInfo()
             {
-                String tableName = isSiteAdmin ? "SiteUsers" : "Users";
+                String tableName = _schema.getUser().isAdministrator() ? "SiteUsers" : "Users";
                 return QueryService.get().getUserSchema(_schema.getUser(), _schema.getContainer(), "core").getTable(tableName);
             }
         });

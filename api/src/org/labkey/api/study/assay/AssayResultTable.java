@@ -245,7 +245,7 @@ public class AssayResultTable extends FilteredTable implements UpdateableTableIn
             folderCol.setShownInInsertView(false);
             folderCol.setShownInUpdateView(false);
             addColumn(folderCol);
-            ContainerForeignKey.initColumn(folderCol);
+            ContainerForeignKey.initColumn(folderCol, _schema);
         }
 
         setDefaultVisibleColumns(visibleColumns);
