@@ -16,9 +16,11 @@
 package org.labkey.pipeline;
 
 import org.apache.commons.lang3.StringUtils;
+import org.apache.xmlbeans.XmlException;
 import org.jetbrains.annotations.Nullable;
 import org.json.JSONArray;
 import org.labkey.api.action.*;
+import org.labkey.api.admin.ImportException;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.exp.property.DomainUtil;
@@ -29,6 +31,7 @@ import org.labkey.api.gwt.client.model.GWTDomain;
 import org.labkey.api.gwt.client.model.GWTPropertyDescriptor;
 import org.labkey.api.module.Module;
 import org.labkey.api.pipeline.*;
+import org.labkey.api.pipeline.browse.PipelinePathForm;
 import org.labkey.api.pipeline.view.SetupForm;
 import org.labkey.api.portal.ProjectUrls;
 import org.labkey.api.security.*;
@@ -43,22 +46,31 @@ import org.labkey.api.settings.AdminConsole;
 import org.labkey.api.util.*;
 import org.labkey.api.view.*;
 import org.labkey.api.view.template.PageConfig;
+import org.labkey.api.writer.ZipUtil;
 import org.labkey.pipeline.api.GlobusKeyPairImpl;
 import org.labkey.pipeline.api.PipeRootImpl;
 import org.labkey.pipeline.api.PipelineEmailPreferences;
 import org.labkey.pipeline.api.PipelineRoot;
 import org.labkey.pipeline.api.PipelineServiceImpl;
+import org.labkey.pipeline.importer.FolderImportJob;
 import org.labkey.pipeline.status.StatusController;
 import org.springframework.validation.BindException;
 import org.springframework.validation.Errors;
+import org.springframework.validation.ObjectError;
 import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.multipart.MultipartHttpServletRequest;
 import org.springframework.web.servlet.ModelAndView;
+import org.xml.sax.SAXException;
 
+import javax.servlet.ServletException;
+import javax.xml.parsers.ParserConfigurationException;
 import java.io.File;
+import java.io.FileNotFoundException;
+import java.io.InputStream;
 import java.io.IOException;
 import java.net.URI;
 import java.security.GeneralSecurityException;
+import java.sql.SQLException;
 import java.text.ParseException;
 import java.util.*;
 
@@ -1198,6 +1210,170 @@ public class PipelineController extends SpringActionController
             resp.put("webDavURL", null != root ? root.getWebdavURL() : null);
             return resp;
         }
+    }
+
+
+    @RequiresPermissionClass(AdminPermission.class)
+    public class ImportFolderAction extends FormViewAction<Object>
+    {
+        private ActionURL _redirect;
+
+        @Override
+        public void validateCommand(Object target, Errors errors)
+        {}
+
+        @Override
+        public ModelAndView getView(Object o, boolean reshow, BindException errors) throws Exception
+        {
+            return new JspView<Object>("/org/labkey/pipeline/importFolder.jsp", null, errors);
+        }
+
+        @Override
+        public boolean handlePost(Object o, BindException errors) throws Exception
+        {
+            Container c = getContainer();
+
+            if (!PipelineService.get().hasValidPipelineRoot(getContainer()))
+            {
+                return false;   // getView() will show an appropriate message in this case
+            }
+
+            // Assuming success starting the import process, redirect to pipeline status
+            _redirect = PageFlowUtil.urlProvider(PipelineStatusUrls.class).urlBegin(c);
+
+            Map<String, MultipartFile> map = getFileMap();
+
+            if (map.isEmpty())
+            {
+                errors.reject("folderImport", "You must select a .folder.zip file to import.");
+            }
+            else if (map.size() > 1)
+            {
+                errors.reject("folderImport", "Only one file is allowed.");
+            }
+            else
+            {
+                MultipartFile file = map.values().iterator().next();
+
+                if (0 == file.getSize() || StringUtils.isBlank(file.getOriginalFilename()))
+                {
+                    errors.reject("folderImport", "You must select a .folder.zip file to import.");
+                }
+                else
+                {
+                    InputStream is = file.getInputStream();
+
+                    File zipFile = File.createTempFile("folder", ".zip");
+                    FileUtil.copyData(is, zipFile);
+                    importFolder(errors, zipFile, file.getOriginalFilename());
+                }
+            }
+
+            return !errors.hasErrors();
+        }
+
+        @Override
+        public URLHelper getSuccessURL(Object o)
+        {
+            return _redirect;
+        }
+
+        @Override
+        public NavTree appendNavTrail(NavTree root)
+        {
+            return root.addChild("Import Folder");
+        }
+    }
+
+    @RequiresPermissionClass(AdminPermission.class)
+    public class ImportFolderFromPipelineAction extends SimpleRedirectAction<PipelinePathForm>
+    {
+        public ActionURL getRedirectURL(PipelinePathForm form) throws Exception
+        {
+            Container c = getContainer();
+
+            File folderFile = form.getValidatedSingleFile(c);
+
+            @SuppressWarnings({"ThrowableInstanceNeverThrown"})
+            BindException errors = new NullSafeBindException(c, "import");
+
+            boolean success = importFolder(errors, folderFile, folderFile.getName());
+
+            if (success && !errors.hasErrors())
+            {
+                return PageFlowUtil.urlProvider(PipelineStatusUrls.class).urlBegin(c);
+            }
+            else
+            {
+                ObjectError firstError = (ObjectError)errors.getAllErrors().get(0);
+                throw new ImportException(firstError.getDefaultMessage());
+            }
+        }
+
+        @Override
+        protected ModelAndView getErrorView(Exception e, BindException errors) throws Exception
+        {
+            try
+            {
+                throw e;
+            }
+            catch (ImportException sie)
+            {
+                errors.reject("folderImport", e.getMessage());
+                return new SimpleErrorView(errors);
+            }
+        }
+    }
+
+    public boolean importFolder(BindException errors, File folderFile, String originalFilename) throws ServletException, SQLException, IOException, ParserConfigurationException, SAXException, XmlException
+    {
+        Container c = getContainer();
+        if (!PipelineService.get().hasValidPipelineRoot(c))
+        {
+            return false;
+        }
+        PipeRoot pipelineRoot = PipelineService.get().findPipelineRoot(c);
+
+        File folderXml;
+
+        if (folderFile.getName().endsWith(".zip"))
+        {
+            String dirName = "unzip";
+            File importDir = pipelineRoot.resolvePath(dirName);
+
+            if (importDir.exists() && !FileUtil.deleteDir(importDir))
+            {
+                errors.reject("folderImport", "Import failed: Could not delete the directory \"" + dirName + "\"");
+                return false;
+            }
+
+            try
+            {
+                ZipUtil.unzipToDirectory(folderFile, importDir);
+                folderXml = new File(importDir, "folder.xml");
+            }
+            catch (FileNotFoundException e)
+            {
+                errors.reject("folderImport", "File not found.");
+                return false;
+            }
+            catch (IOException e)
+            {
+                errors.reject("folderImport", "This file does not appear to be a valid .zip file.");
+                return false;
+            }
+        }
+        else
+        {
+            folderXml = folderFile;
+        }
+
+        User user = getUser();
+        ActionURL url = getViewContext().getActionURL();
+
+        PipelineService.get().queueJob(new FolderImportJob(c, user, url, folderXml, originalFilename, errors, pipelineRoot));
+
+        return !errors.hasErrors();
     }
 
 /////////////////////////////////////////////////////////////////////////////

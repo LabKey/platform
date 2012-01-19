@@ -33,8 +33,7 @@
     <table>
         <tr><td>Folder objects to export:</td></tr>
         <%
-            Collection<Writer> writers = new LinkedList<Writer>(FolderSerializationRegistryImpl.get().getInternalFolderWriters());
-            writers.addAll(FolderSerializationRegistryImpl.get().getRegisteredFolderWriters());
+            Collection<Writer> writers = new LinkedList<Writer>(FolderSerializationRegistryImpl.get().getRegisteredFolderWriters());
 
             for (Writer writer : writers)
             {

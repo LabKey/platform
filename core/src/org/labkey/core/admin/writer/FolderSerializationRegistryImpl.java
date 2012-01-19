@@ -1,9 +1,11 @@
 package org.labkey.core.admin.writer;
 
 import org.labkey.api.admin.*;
+import org.labkey.api.admin.FolderWriter;
 
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.LinkedList;
 import java.util.concurrent.CopyOnWriteArrayList;
 
@@ -14,8 +16,8 @@ import java.util.concurrent.CopyOnWriteArrayList;
 public class FolderSerializationRegistryImpl implements FolderSerializationRegistry
 {
     private static final FolderSerializationRegistryImpl INSTANCE = new FolderSerializationRegistryImpl();
-    private static final Collection<ExternalFolderWriterFactory> WRITER_FACTORIES = new CopyOnWriteArrayList<ExternalFolderWriterFactory>();
-    private static final Collection<ExternalFolderImporterFactory> IMPORTER_FACTORIES = new CopyOnWriteArrayList<ExternalFolderImporterFactory>();
+    private static final Collection<FolderWriterFactory> WRITER_FACTORIES = new CopyOnWriteArrayList<FolderWriterFactory>();
+    private static final Collection<FolderImporterFactory> IMPORTER_FACTORIES = new CopyOnWriteArrayList<FolderImporterFactory>();
 
     private FolderSerializationRegistryImpl()
     {
@@ -28,12 +30,12 @@ public class FolderSerializationRegistryImpl implements FolderSerializationRegis
 
     // These writers are defined and registered by other modules.  They have no knowledge of folder internals, other
     // than being able to write elements into folder.xml.
-    public Collection<ExternalFolderWriter> getRegisteredFolderWriters()
+    public Collection<FolderWriter> getRegisteredFolderWriters()
     {
         // New up the writers every time since these classes can be stateful
-        Collection<ExternalFolderWriter> writers = new LinkedList<ExternalFolderWriter>();
+        Collection<FolderWriter> writers = new LinkedList<FolderWriter>();
 
-        for (ExternalFolderWriterFactory factory : WRITER_FACTORIES)
+        for (FolderWriterFactory factory : WRITER_FACTORIES)
             writers.add(factory.create());
 
         return writers;
@@ -41,29 +43,20 @@ public class FolderSerializationRegistryImpl implements FolderSerializationRegis
 
     // These importers are defined and registered by other modules.  They have no knowledge of folder internals, other
     // than being able to read elements from folder.xml.
-    public Collection<ExternalFolderImporter> getRegisteredFolderImporters()
+    public Collection<FolderImporter> getRegisteredFolderImporters()
     {
         // New up the writers every time since these classes can be stateful
-        Collection<ExternalFolderImporter> importers = new LinkedList<ExternalFolderImporter>();
+        Collection<FolderImporter> importers = new LinkedList<FolderImporter>();
 
-        for (ExternalFolderImporterFactory factory : IMPORTER_FACTORIES)
+        for (FolderImporterFactory factory : IMPORTER_FACTORIES)
             importers.add(factory.create());
 
         return importers;
     }
 
-    public void addFactories(ExternalFolderWriterFactory writerFactory, ExternalFolderImporterFactory importerFactory)
+    public void addFactories(FolderWriterFactory writerFactory, FolderImporterFactory importerFactory)
     {
         WRITER_FACTORIES.add(writerFactory);
         IMPORTER_FACTORIES.add(importerFactory);
-    }
-
-    public Collection<InternalFolderWriter> getInternalFolderWriters()
-    {
-        // New up the writers every time since these classes can be stateful
-        return Arrays.asList(
-            new PageWriter(),
-            new FolderXmlWriter()  // Note: Must be the last folder writer since it writes out the folder.xml file (to which other writers contribute)
-        );
     }
 }

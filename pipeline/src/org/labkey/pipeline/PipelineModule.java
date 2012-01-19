@@ -17,6 +17,7 @@ package org.labkey.pipeline;
 
 import org.apache.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
+import org.labkey.pipeline.importer.FolderImportProvider;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.DbSchema;
@@ -134,6 +135,7 @@ public class PipelineModule extends SpringModule implements ContainerManager.Con
     {
         PipelineService service = PipelineService.get();
         service.registerPipelineProvider(new FileAnalysisPipelineProvider(this));
+        service.registerPipelineProvider(new FolderImportProvider(this));
 
         ContainerManager.addContainerListener(this);
 

@@ -1,5 +1,6 @@
 package org.labkey.core.admin.writer;
 
+import org.labkey.api.admin.AbstractFolderContext;
 import org.labkey.api.data.Container;
 import org.labkey.api.security.User;
 import org.apache.log4j.Logger;

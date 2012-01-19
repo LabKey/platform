@@ -1,7 +1,7 @@
 package org.labkey.wiki.export;
 
-import org.labkey.api.admin.ExternalFolderImporter;
-import org.labkey.api.admin.ExternalFolderImporterFactory;
+import org.labkey.api.admin.FolderImporter;
+import org.labkey.api.admin.FolderImporterFactory;
 import org.labkey.api.admin.ImportContext;
 import org.labkey.api.admin.ImportException;
 import org.labkey.api.attachments.Attachment;
@@ -37,15 +37,15 @@ import java.util.Set;
  * User: jeckels
  * Date: Jan 18, 2012
  */
-public class WikiImporterFactory implements ExternalFolderImporterFactory
+public class WikiImporterFactory implements FolderImporterFactory
 {
     @Override
-    public ExternalFolderImporter create()
+    public FolderImporter create()
     {
         return new WikiImporter();
     }
 
-    private class WikiImporter implements ExternalFolderImporter
+    private class WikiImporter implements FolderImporter
     {
         @Override
         public String getDescription()

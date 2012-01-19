@@ -62,7 +62,7 @@ import org.labkey.api.view.WebPartView;
 import org.labkey.api.writer.FileSystemFile;
 import org.labkey.api.writer.ZipFile;
 import org.labkey.core.admin.writer.FolderExportContext;
-import org.labkey.core.admin.writer.FolderWriter;
+import org.labkey.core.admin.writer.FolderWriterImpl;
 import org.labkey.core.query.CoreQuerySchema;
 import org.springframework.validation.BindException;
 import org.springframework.validation.Errors;
@@ -223,8 +223,8 @@ public class FolderSettingsAction extends FormViewAction<FolderSettingsAction.Fo
             throw new NotFoundException();
         }
 
-        FolderWriter writer = new FolderWriter();
-        FolderExportContext ctx = new FolderExportContext(getUser(), getContainer(), PageFlowUtil.set(form.getTypes()), Logger.getLogger(FolderWriter.class));
+        FolderWriterImpl writer = new FolderWriterImpl();
+        FolderExportContext ctx = new FolderExportContext(getUser(), getContainer(), PageFlowUtil.set(form.getTypes()), Logger.getLogger(FolderWriterImpl.class));
 
         switch(form.getLocation())
         {

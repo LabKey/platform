@@ -17,5 +17,29 @@
             </list>
         </property>
     </bean>
+
+    <bean id="corePipelineRegistry" class="org.labkey.api.pipeline.TaskPipelineRegistrar">
+        <property name="factoryImpls">
+            <list>
+                <bean class="org.labkey.pipeline.importer.FolderImportTask$Factory"/>
+            </list>
+        </property>
+
+        <property name="pipelines">
+            <list>
+                <!-- Folder import job pipeline -->
+                <bean class="org.labkey.api.pipeline.TaskPipelineSettings">
+                    <constructor-arg type="java.lang.Class" value="org.labkey.pipeline.importer.FolderImportJob"/>
+                    <property name="taskProgressionSpec">
+                        <list>
+                            <bean id="initialTask" class="org.labkey.api.pipeline.TaskId">
+                                <constructor-arg><value type="java.lang.Class">org.labkey.pipeline.importer.FolderImportTask</value></constructor-arg>
+                            </bean>
+                        </list>
+                    </property>
+                </bean>
+            </list>
+        </property>
+    </bean>
 </beans>
 

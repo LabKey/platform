@@ -1,7 +1,7 @@
 package org.labkey.wiki.export;
 
-import org.labkey.api.admin.ExternalFolderWriter;
-import org.labkey.api.admin.ExternalFolderWriterFactory;
+import org.labkey.api.admin.FolderWriter;
+import org.labkey.api.admin.FolderWriterFactory;
 import org.labkey.api.admin.ImportContext;
 import org.labkey.api.data.Container;
 import org.labkey.api.webdav.WebdavResource;
@@ -24,18 +24,18 @@ import java.io.OutputStream;
  * User: jeckels
  * Date: Jan 18, 2012
  */
-public class WikiWriterFactory implements ExternalFolderWriterFactory
+public class WikiWriterFactory implements FolderWriterFactory
 {
     public static final String DIRECTORY_NAME = "wikis";
     public static final String WIKIS_FILENAME = "wikis.xml";
 
     @Override
-    public ExternalFolderWriter create()
+    public FolderWriter create()
     {
         return new WikiFolderWriter();
     }
 
-    private class WikiFolderWriter implements ExternalFolderWriter
+    private class WikiFolderWriter implements FolderWriter
     {
         @Override
         public String getSelectionText()
