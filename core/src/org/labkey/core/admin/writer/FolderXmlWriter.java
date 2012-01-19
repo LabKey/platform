@@ -22,7 +22,7 @@ public class FolderXmlWriter implements InternalFolderWriter
 
     public void write(Container c, FolderExportContext ctx, VirtualFile vf) throws Exception
     {
-        FolderDocument.Folder folderXml = ctx.getFolderXml();
+        FolderDocument.Folder folderXml = ctx.getXml();
 
         // Insert standard comment explaining where the data lives, who exported it, and when
         XmlBeansUtil.addStandardExportComment(folderXml, ctx.getContainer(), ctx.getUser());
@@ -31,9 +31,9 @@ public class FolderXmlWriter implements InternalFolderWriter
         folderXml.setLabel(c.getName()); // TODO: change to setName
 
         // Save the folder.xml file.  This gets called last, after all other writers have populated the other sections.
-        vf.saveXmlBean("folder.xml", ctx.getFolderDocument());
+        vf.saveXmlBean("folder.xml", ctx.getDocument());
 
-        ctx.lockFolderDocument();
+        ctx.lockDocument();
     }
 
     public static FolderDocument getFolderDocument()

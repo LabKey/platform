@@ -15,6 +15,7 @@
  */
 package org.labkey.study.writer;
 
+import org.labkey.api.admin.ImportContext;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.TableInfoWriter;
@@ -22,7 +23,6 @@ import org.labkey.api.exp.PropertyDescriptor;
 import org.labkey.api.exp.property.SystemProperty;
 import org.labkey.api.exp.query.ExpRunTable;
 import org.labkey.api.study.DataSet;
-import org.labkey.api.study.StudyContext;
 import org.labkey.api.study.assay.SpecimenForeignKey;
 import org.labkey.api.writer.VirtualFile;
 import org.labkey.api.writer.Writer;
@@ -33,6 +33,7 @@ import org.labkey.study.model.DataSetDefinition;
 import org.labkey.study.model.StudyManager;
 import org.labkey.study.query.DataSetTableImpl;
 import org.labkey.study.query.StudyQuerySchema;
+import org.labkey.study.xml.StudyDocument;
 
 import java.io.IOException;
 import java.util.HashSet;
@@ -44,7 +45,7 @@ import java.util.Set;
  * Date: May 27, 2009
  * Time: 11:12:33 AM
  */
-public class SchemaXmlWriter implements Writer<List<DataSetDefinition>, StudyContext>
+public class SchemaXmlWriter implements Writer<List<DataSetDefinition>, ImportContext<StudyDocument.Study>>
 {
     public static final String SCHEMA_FILENAME = "datasets_metadata.xml";
 
@@ -69,7 +70,7 @@ public class SchemaXmlWriter implements Writer<List<DataSetDefinition>, StudyCon
         return "Dataset Schema Description";
     }
 
-    public void write(List<DataSetDefinition> definitions, StudyContext ctx, VirtualFile vf) throws IOException
+    public void write(List<DataSetDefinition> definitions, ImportContext<StudyDocument.Study> ctx, VirtualFile vf) throws IOException
     {
         // Create dataset metadata file
         TablesDocument tablesDoc = TablesDocument.Factory.newInstance();

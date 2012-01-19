@@ -19,10 +19,7 @@ import org.labkey.api.writer.VirtualFile;
 import org.labkey.study.controllers.StudyController;
 import org.labkey.study.model.StudyImpl;
 import org.labkey.study.xml.StudyDocument;
-import org.labkey.api.study.StudyImportException;
 import org.springframework.validation.BindException;
-
-import java.sql.SQLException;
 
 /**
  * User: adam
@@ -41,7 +38,7 @@ public class QcStatesImporter implements InternalStudyImporter
     public void process(StudyImpl study, ImportContext ctx, VirtualFile root, BindException errors) throws Exception
     {
         // TODO: Generalize to all qc state properties
-        StudyDocument.Study.QcStates qcStates = ctx.getStudyXml().getQcStates();
+        StudyDocument.Study.QcStates qcStates = ctx.getXml().getQcStates();
 
         if (null != qcStates)
         {

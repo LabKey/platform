@@ -15,12 +15,13 @@
  */
 package org.labkey.study.writer;
 
+import org.labkey.api.admin.ImportContext;
 import org.labkey.api.data.*;
-import org.labkey.api.study.StudyContext;
 import org.labkey.api.writer.VirtualFile;
 import org.labkey.api.writer.Writer;
 import org.labkey.study.StudySchema;
 import org.labkey.study.importer.SpecimenImporter.ImportableColumn;
+import org.labkey.study.xml.StudyDocument;
 
 import java.io.PrintWriter;
 import java.sql.ResultSet;
@@ -33,14 +34,14 @@ import java.util.List;
  * Date: May 7, 2009
  * Time: 9:51:36 AM
  */
-class StandardSpecimenWriter implements Writer<StandardSpecimenWriter.QueryInfo, StudyContext>
+class StandardSpecimenWriter implements Writer<StandardSpecimenWriter.QueryInfo, ImportContext<StudyDocument.Study>>
 {
     public String getSelectionText()
     {
         return null;
     }
 
-    public void write(QueryInfo queryInfo, StudyContext ctx, VirtualFile vf) throws Exception
+    public void write(QueryInfo queryInfo, ImportContext<StudyDocument.Study> ctx, VirtualFile vf) throws Exception
     {
         TableInfo tinfo = queryInfo.getTableInfo();
         Collection<ImportableColumn> columns = queryInfo.getColumns();

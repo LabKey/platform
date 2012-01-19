@@ -16,8 +16,8 @@
 package org.labkey.study.importer;
 
 import org.apache.xmlbeans.XmlObject;
-import org.labkey.api.study.InvalidFileException;
-import org.labkey.api.study.StudyImportException;
+import org.labkey.api.admin.ImportException;
+import org.labkey.api.admin.InvalidFileException;
 import org.labkey.api.util.XmlBeansUtil;
 import org.labkey.api.util.XmlValidationException;
 import org.labkey.api.writer.VirtualFile;
@@ -48,9 +48,9 @@ public class CohortImporter implements InternalStudyImporter
         return "cohort settings";
     }
 
-    public void process(StudyImpl study, ImportContext ctx, VirtualFile root, BindException errors) throws IOException, SQLException, ServletException, StudyImportException
+    public void process(StudyImpl study, ImportContext ctx, VirtualFile root, BindException errors) throws IOException, SQLException, ServletException, ImportException
     {
-        StudyDocument.Study.Cohorts cohortsXml = ctx.getStudyXml().getCohorts();
+        StudyDocument.Study.Cohorts cohortsXml = ctx.getXml().getCohorts();
 
         if (null != cohortsXml)
         {
@@ -80,7 +80,7 @@ public class CohortImporter implements InternalStudyImporter
                         XmlBeansUtil.validateXmlDocument(cohortAssignmentXml);
                     }
                     else
-                        throw new StudyImportException("Unable to get an instance of CohortsDocument");
+                        throw new ImportException("Unable to get an instance of CohortsDocument");
                 }
                 catch (XmlValidationException e)
                 {

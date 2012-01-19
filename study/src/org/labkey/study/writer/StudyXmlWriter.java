@@ -47,7 +47,7 @@ class StudyXmlWriter implements InternalStudyWriter
 
     public void write(StudyImpl study, StudyExportContext ctx, VirtualFile vf) throws Exception
     {
-        StudyDocument.Study studyXml = ctx.getStudyXml();
+        StudyDocument.Study studyXml = ctx.getXml();
 
         // Insert standard comment explaining where the data lives, who exported it, and when
         XmlBeansUtil.addStandardExportComment(studyXml, ctx.getContainer(), ctx.getUser());
@@ -87,9 +87,9 @@ class StudyXmlWriter implements InternalStudyWriter
         }
 
         // Save the study.xml file.  This gets called last, after all other writers have populated the other sections.
-        vf.saveXmlBean("study.xml", ctx.getStudyDocument());
+        vf.saveXmlBean("study.xml", ctx.getDocument());
 
-        ctx.lockStudyDocument();
+        ctx.lockDocument();
     }
 
     public static StudyDocument getStudyDocument()

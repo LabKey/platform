@@ -17,6 +17,7 @@ package org.labkey.wiki;
 
 import org.apache.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
+import org.labkey.api.admin.FolderSerializationRegistry;
 import org.labkey.api.announcements.CommSchema;
 import org.labkey.api.attachments.AttachmentService;
 import org.labkey.api.data.Container;
@@ -39,6 +40,8 @@ import org.labkey.api.view.WebPartFactory;
 import org.labkey.api.webdav.WebdavService;
 import org.labkey.api.wiki.WikiRendererType;
 import org.labkey.api.wiki.WikiService;
+import org.labkey.wiki.export.WikiFolderImporterFactory;
+import org.labkey.wiki.export.WikiFolderWriterFactory;
 import org.labkey.wiki.model.CollaborationFolderType;
 import org.labkey.wiki.model.Wiki;
 import org.labkey.wiki.model.WikiVersion;
@@ -119,6 +122,8 @@ public class WikiModule extends DefaultModule implements SearchService.DocumentP
             ss.addSearchCategory(WikiManager.searchCategory);
             ss.addDocumentProvider(this);
         }
+
+        ServiceRegistry.get().getService(FolderSerializationRegistry.class).addFactories(new WikiFolderWriterFactory(), new WikiFolderImporterFactory());
     }
 
     private void bootstrap(ModuleContext moduleContext)

@@ -70,7 +70,7 @@ import java.util.Set;
  * Time: 9:52:40 AM
  */
 
-class WikiWebdavProvider implements WebdavService.Provider
+public class WikiWebdavProvider implements WebdavService.Provider
 {
     final static String WIKI_NAME = "@wiki";
     
@@ -284,24 +284,12 @@ class WikiWebdavProvider implements WebdavService.Provider
 
     static String getResourcePath(Container c, String name, WikiRendererType type)
     {
-        String docname = getDocumentName(name, type);
+        String docname = type.getDocumentName(name);
         return AbstractWebdavResource.c(c.getPath(),WIKI_NAME,name,docname);
     }
 
 
-    static String getDocumentName(String name, WikiRendererType type)
-    {
-        switch (type)
-        {
-            default:
-            case HTML: return name + ".html";
-            case RADEOX: return name +  ".wiki";
-            case TEXT_WITH_LINKS: return name + ".txt";
-        }
-    }
-
-
-    static String getDocumentName(Wiki wiki)
+    public static String getDocumentName(Wiki wiki)
     {
         WikiVersion v = wiki.getLatestVersion();
         WikiRendererType r = WikiRendererType.HTML;
@@ -312,7 +300,7 @@ class WikiWebdavProvider implements WebdavService.Provider
         catch (IllegalArgumentException x)
         {
         }
-        return getDocumentName(wiki.getName().getSource(), r);
+        return r.getDocumentName(wiki.getName().getSource());
     }
 
 

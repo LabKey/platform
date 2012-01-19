@@ -15,9 +15,8 @@
  */
 package org.labkey.study.importer;
 
-import org.labkey.api.action.SpringActionController;
 import org.labkey.api.query.ValidationException;
-import org.labkey.api.study.StudyImportException;
+import org.labkey.api.admin.ImportException;
 import org.labkey.api.study.TimepointType;
 import org.labkey.api.writer.VirtualFile;
 import org.labkey.study.model.StudyImpl;
@@ -54,10 +53,10 @@ public class VisitImporter implements InternalStudyImporter
         _ensureDataSets = ensureDataSets;
     }
 
-    public void process(StudyImpl study, ImportContext ctx, VirtualFile vf, BindException errors) throws IOException, SQLException, StudyImportException, ValidationException
+    public void process(StudyImpl study, ImportContext ctx, VirtualFile vf, BindException errors) throws IOException, SQLException, ImportException, ValidationException
     {
         // Visit map
-        StudyDocument.Study.Visits visitsXml = ctx.getStudyXml().getVisits();
+        StudyDocument.Study.Visits visitsXml = ctx.getXml().getVisits();
 
         if (null != visitsXml)
         {

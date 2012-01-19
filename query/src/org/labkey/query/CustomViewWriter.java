@@ -15,6 +15,8 @@
  */
 package org.labkey.query;
 
+import org.labkey.api.admin.ImportContext;
+import org.labkey.api.admin.ImportException;
 import org.labkey.api.data.Container;
 import org.labkey.api.query.CustomView;
 import org.labkey.api.query.DefaultSchema;
@@ -23,6 +25,7 @@ import org.labkey.api.query.UserSchema;
 import org.labkey.api.security.User;
 import org.labkey.api.study.*;
 import org.labkey.api.writer.VirtualFile;
+import org.labkey.study.xml.StudyDocument;
 
 import java.util.List;
 import java.util.Set;
@@ -42,7 +45,7 @@ public class CustomViewWriter implements ExternalStudyWriter
         return "Custom Views";
     }
 
-    public void write(Study study, StudyContext ctx, VirtualFile root) throws Exception
+    public void write(Study study, ImportContext<StudyDocument.Study> ctx, VirtualFile root) throws Exception
     {
         Container c = ctx.getContainer();
         User user = ctx.getUser();
@@ -68,8 +71,8 @@ public class CustomViewWriter implements ExternalStudyWriter
                     if (customView.serialize(customViewDir))
                     {
                         // Create the <view> element only if we have a custom view to write
-                        if (!ctx.getStudyXml().isSetViews())
-                            ctx.getStudyXml().addNewViews().setDir(DEFAULT_DIRECTORY);
+                        if (!ctx.getXml().isSetViews())
+                            ctx.getXml().addNewViews().setDir(DEFAULT_DIRECTORY);
                     }
                 }
             }
@@ -77,7 +80,7 @@ public class CustomViewWriter implements ExternalStudyWriter
     }
 
     // Create the <views> element
-    private VirtualFile ensureViewDirectory(StudyContext ctx, VirtualFile root) throws StudyImportException
+    private VirtualFile ensureViewDirectory(ImportContext<StudyDocument.Study> ctx, VirtualFile root) throws ImportException
     {
         if (null == _viewDir)
         {

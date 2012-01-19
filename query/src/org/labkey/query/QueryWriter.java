@@ -16,16 +16,17 @@
 package org.labkey.query;
 
 import org.apache.xmlbeans.XmlObject;
+import org.labkey.api.admin.ImportContext;
 import org.labkey.api.data.Container;
 import org.labkey.api.query.QueryDefinition;
 import org.labkey.api.query.QueryService;
 import org.labkey.api.study.ExternalStudyWriter;
 import org.labkey.api.study.ExternalStudyWriterFactory;
 import org.labkey.api.study.Study;
-import org.labkey.api.study.StudyContext;
 import org.labkey.api.writer.VirtualFile;
 import org.labkey.data.xml.query.QueryDocument;
 import org.labkey.data.xml.query.QueryType;
+import org.labkey.study.xml.StudyDocument;
 
 import java.io.PrintWriter;
 import java.util.List;
@@ -47,14 +48,14 @@ public class QueryWriter implements ExternalStudyWriter
         return "Queries";
     }
 
-    public void write(Study study, StudyContext ctx, VirtualFile root) throws Exception
+    public void write(Study study, ImportContext<StudyDocument.Study> ctx, VirtualFile root) throws Exception
     {
         Container c = ctx.getContainer();
         List<QueryDefinition> queries = QueryService.get().getQueryDefs(ctx.getUser(), c);
 
         if (queries.size() > 0)
         {
-            ctx.getStudyXml().addNewQueries().setDir(DEFAULT_DIRECTORY);
+            ctx.getXml().addNewQueries().setDir(DEFAULT_DIRECTORY);
             VirtualFile queriesDir = root.getDir(DEFAULT_DIRECTORY);
 
             for (QueryDefinition query : queries)

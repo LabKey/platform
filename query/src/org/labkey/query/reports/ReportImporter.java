@@ -15,6 +15,9 @@
  */
 package org.labkey.query.reports;
 
+import org.labkey.api.admin.ImportContext;
+import org.labkey.api.admin.ImportException;
+import org.labkey.api.admin.InvalidFileException;
 import org.labkey.api.reports.ReportService;
 import org.labkey.api.study.*;
 import org.labkey.api.pipeline.PipelineJobWarning;
@@ -39,13 +42,13 @@ public class ReportImporter implements ExternalStudyImporter
         return "reports";
     }
 
-    public void process(StudyContext ctx, File root) throws IOException, SQLException, StudyImportException
+    public void process(ImportContext<StudyDocument.Study> ctx, File root) throws IOException, SQLException, ImportException
     {
-        StudyDocument.Study.Reports reportsXml = ctx.getStudyXml().getReports();
+        StudyDocument.Study.Reports reportsXml = ctx.getXml().getReports();
 
         if (null != reportsXml)
         {
-            File reportsDir = ctx.getStudyDir(root, reportsXml.getDir());
+            File reportsDir = ctx.getDir(root, reportsXml.getDir());
 
             File[] reportsFiles = reportsDir.listFiles(new FilenameFilter() {
                 public boolean accept(File dir, String name)
@@ -70,7 +73,7 @@ public class ReportImporter implements ExternalStudyImporter
         }
     }
 
-    public Collection<PipelineJobWarning> postProcess(StudyContext ctx, File root) throws Exception
+    public Collection<PipelineJobWarning> postProcess(ImportContext<StudyDocument.Study> ctx, File root) throws Exception
     {
         //nothing for now
         return null;

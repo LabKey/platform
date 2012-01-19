@@ -17,12 +17,12 @@ package org.labkey.study.importer;
 
 import org.apache.xmlbeans.XmlException;
 import org.apache.xmlbeans.XmlObject;
+import org.labkey.api.admin.ImportException;
 import org.labkey.api.collections.RowMapFactory;
 import org.labkey.api.data.ColumnRenderProperties;
 import org.labkey.api.data.ConditionalFormat;
 import org.labkey.api.exp.property.Type;
 import org.labkey.api.study.DataSet;
-import org.labkey.api.study.StudyImportException;
 import org.labkey.api.util.XmlBeansUtil;
 import org.labkey.api.util.XmlValidationException;
 import org.labkey.api.writer.VirtualFile;
@@ -55,7 +55,7 @@ public class SchemaXmlReader implements SchemaReader
     private final List<List<ConditionalFormat>> _formats = new LinkedList<List<ConditionalFormat>>();
     private final Map<Integer, DataSetImportInfo> _datasetInfoMap;
 
-    public SchemaXmlReader(StudyImpl study, VirtualFile root, String metaDataFile, Map<String, DatasetImportProperties> extraImportProps) throws IOException, XmlException, StudyImportException
+    public SchemaXmlReader(StudyImpl study, VirtualFile root, String metaDataFile, Map<String, DatasetImportProperties> extraImportProps) throws IOException, XmlException, ImportException
     {
         TablesDocument tablesDoc;
 
@@ -73,7 +73,7 @@ public class SchemaXmlReader implements SchemaReader
         catch (XmlValidationException xve)
         {
             // Note: different constructor than the one below
-            throw new StudyImportException("Invalid TablesDocument ", xve);
+            throw new ImportException("Invalid TablesDocument ", xve);
         }
 
         TablesDocument.Tables tablesXml = tablesDoc.getTables();
@@ -88,7 +88,7 @@ public class SchemaXmlReader implements SchemaReader
             DatasetImportProperties tableProps = extraImportProps.get(datasetName);
 
             if (null == tableProps)
-                throw new StudyImportException("Dataset \"" + datasetName + "\" was specified in " + metaDataFile + " but not in the dataset manifest file.");
+                throw new ImportException("Dataset \"" + datasetName + "\" was specified in " + metaDataFile + " but not in the dataset manifest file.");
 
             info.category = tableProps.getCategory();
             info.name = datasetName;

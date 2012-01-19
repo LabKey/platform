@@ -17,10 +17,10 @@
 package org.labkey.list.model;
 
 import org.apache.log4j.Logger;
+import org.labkey.api.admin.ImportContext;
 import org.labkey.api.pipeline.PipelineJobWarning;
 import org.labkey.api.study.ExternalStudyImporter;
 import org.labkey.api.study.ExternalStudyImporterFactory;
-import org.labkey.api.study.StudyContext;
 import org.labkey.study.xml.StudyDocument;
 
 import java.io.File;
@@ -40,13 +40,13 @@ public class StudyListImporter implements ExternalStudyImporter
         return "lists";
     }
 
-    public void process(StudyContext ctx, File root) throws Exception
+    public void process(ImportContext<StudyDocument.Study> ctx, File root) throws Exception
     {
-        StudyDocument.Study.Lists listsXml = ctx.getStudyXml().getLists();
+        StudyDocument.Study.Lists listsXml = ctx.getXml().getLists();
 
         if (null != listsXml)
         {
-            File listsDir = ctx.getStudyDir(root, listsXml.getDir());
+            File listsDir = ctx.getDir(root, listsXml.getDir());
             ListImporter importer = new ListImporter();
             Logger log = ctx.getLogger();
             List<String> errors = new LinkedList<String>();
@@ -57,7 +57,7 @@ public class StudyListImporter implements ExternalStudyImporter
         }
     }
 
-    public Collection<PipelineJobWarning> postProcess(StudyContext ctx, File root) throws Exception
+    public Collection<PipelineJobWarning> postProcess(ImportContext<StudyDocument.Study> ctx, File root) throws Exception
     {
         //nothing for now
         return null;

@@ -44,7 +44,7 @@ class SpecimenArchiveWriter implements InternalStudyWriter
 
         String archiveName = vf.makeLegalName(study.getLabel().replaceAll("\\s", "") + ".specimens");
 
-        StudyDocument.Study studyXml = ctx.getStudyXml();
+        StudyDocument.Study studyXml = ctx.getXml();
         StudyDocument.Study.Specimens specimens = studyXml.addNewSpecimens();
         specimens.setRepositoryType(study.getRepositorySettings().isSimple() ? RepositoryType.STANDARD : RepositoryType.ADVANCED);
         specimens.setDir(DEFAULT_DIRECTORY);

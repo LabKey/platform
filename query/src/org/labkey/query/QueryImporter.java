@@ -16,6 +16,9 @@
 package org.labkey.query;
 
 import org.apache.xmlbeans.XmlException;
+import org.labkey.api.admin.ImportContext;
+import org.labkey.api.admin.ImportException;
+import org.labkey.api.admin.InvalidFileException;
 import org.labkey.api.data.Container;
 import org.labkey.api.pipeline.PipelineJobWarning;
 import org.labkey.api.query.*;
@@ -48,13 +51,13 @@ public class QueryImporter implements ExternalStudyImporter
         return "queries";
     }
 
-    public void process(StudyContext ctx, File root) throws ServletException, XmlException, IOException, SQLException, StudyImportException
+    public void process(ImportContext<StudyDocument.Study> ctx, File root) throws ServletException, XmlException, IOException, SQLException, ImportException
     {
-        StudyDocument.Study.Queries queriesXml = ctx.getStudyXml().getQueries();
+        StudyDocument.Study.Queries queriesXml = ctx.getXml().getQueries();
 
         if (null != queriesXml)
         {
-            File queriesDir = ctx.getStudyDir(root, queriesXml.getDir());
+            File queriesDir = ctx.getDir(root, queriesXml.getDir());
 
             File[] sqlFiles = queriesDir.listFiles(new FilenameFilter() {
                 public boolean accept(File dir, String name)
@@ -126,7 +129,7 @@ public class QueryImporter implements ExternalStudyImporter
         }
     }
 
-    public Collection<PipelineJobWarning> postProcess(StudyContext ctx, File root) throws Exception
+    public Collection<PipelineJobWarning> postProcess(ImportContext<StudyDocument.Study> ctx, File root) throws Exception
     {
         List<PipelineJobWarning> warnings = new ArrayList<PipelineJobWarning>();
 

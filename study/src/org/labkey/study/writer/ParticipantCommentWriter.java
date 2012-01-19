@@ -34,7 +34,7 @@ public class ParticipantCommentWriter implements InternalStudyWriter
 
     public void write(StudyImpl study, StudyExportContext ctx, VirtualFile vf) throws Exception
     {
-        StudyDocument.Study studyXml = ctx.getStudyXml();
+        StudyDocument.Study studyXml = ctx.getXml();
         StudyDocument.Study.Comments comment = studyXml.addNewComments();
 
         if (study.getParticipantCommentDataSetId() != null && study.getParticipantCommentDataSetId() != -1)

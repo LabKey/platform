@@ -19,8 +19,8 @@ import org.apache.log4j.Logger;
 import org.apache.xmlbeans.XmlException;
 import org.labkey.api.data.Container;
 import org.labkey.api.security.User;
-import org.labkey.api.study.InvalidFileException;
-import org.labkey.api.study.StudyImportException;
+import org.labkey.api.admin.ImportException;
+import org.labkey.api.admin.InvalidFileException;
 import org.labkey.api.util.XmlBeansUtil;
 import org.labkey.api.util.XmlValidationException;
 import org.labkey.study.writer.AbstractContext;
@@ -50,9 +50,9 @@ public class ImportContext extends AbstractContext
     }
 
     @Override
-    protected synchronized StudyDocument getStudyDocument() throws StudyImportException
+    public synchronized StudyDocument getDocument() throws ImportException
     {
-        StudyDocument studyDoc = super.getStudyDocument();
+        StudyDocument studyDoc = super.getDocument();
 
         // XStream can't seem to serialize the StudyDocument XMLBean, so we initially set to null and parse the file on demand
         if (null == studyDoc)
@@ -63,51 +63,51 @@ public class ImportContext extends AbstractContext
             }
             catch (IOException e)
             {
-                throw new StudyImportException("Exception loading study.xml file", e);
+                throw new ImportException("Exception loading study.xml file", e);
             }
 
-            setStudyDocument(studyDoc);
+            setDocument(studyDoc);
         }
 
         return studyDoc;
     }
 
     // Assume file was referenced in study.xml file   // TODO: Context should hold onto the root -- shouldn't have to pass it in
-    public File getStudyFile(File root, File dir, String name) throws StudyImportException
+    public File getStudyFile(File root, File dir, String name) throws ImportException
     {
         return getStudyFile(root, dir, name, _studyXml.getName());
     }
 
-    public File getStudyFile(File root, File dir, String name, String source) throws StudyImportException
+    public File getStudyFile(File root, File dir, String name, String source) throws ImportException
     {
         File file = new File(dir, name);
 
         if (!file.exists())
-            throw new StudyImportException(source + " refers to a file that does not exist: " + StudyImportException.getRelativePath(root, file));
+            throw new ImportException(source + " refers to a file that does not exist: " + ImportException.getRelativePath(root, file));
 
         if (!file.isFile())
-            throw new StudyImportException(source + " refers to " + StudyImportException.getRelativePath(root, file) + ": expected a file but found a directory");
+            throw new ImportException(source + " refers to " + ImportException.getRelativePath(root, file) + ": expected a file but found a directory");
 
         return file;
     }
 
-    public File getStudyDir(File root, String dirName) throws StudyImportException
+    public File getDir(File root, String dirName) throws ImportException
     {
         File dir = null != dirName ? new File(root, dirName) : root;
 
         if (!dir.exists())
-            throw new StudyImportException(_studyXml.getName() + " refers to a directory that does not exist: " + StudyImportException.getRelativePath(root, dir));
+            throw new ImportException(_studyXml.getName() + " refers to a directory that does not exist: " + ImportException.getRelativePath(root, dir));
 
         if (!dir.isDirectory())
-            throw new StudyImportException(_studyXml.getName() + " refers to " + StudyImportException.getRelativePath(root, dir) + ": expected a directory but found a file");
+            throw new ImportException(_studyXml.getName() + " refers to " + ImportException.getRelativePath(root, dir) + ": expected a directory but found a file");
 
         return dir;
     }
 
-    private StudyDocument readStudyDocument(File studyXml) throws StudyImportException, IOException
+    private StudyDocument readStudyDocument(File studyXml) throws ImportException, IOException
     {
         if (!studyXml.exists())
-            throw new StudyImportException(studyXml.getName() + " file does not exist.");
+            throw new ImportException(studyXml.getName() + " file does not exist.");
 
         StudyDocument studyDoc;
 

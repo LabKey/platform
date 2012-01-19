@@ -21,6 +21,7 @@ import org.apache.log4j.Logger;
 import org.apache.log4j.RollingFileAppender;
 import org.jetbrains.annotations.NotNull;
 import org.labkey.api.admin.AdminUrls;
+import org.labkey.api.admin.FolderSerializationRegistry;
 import org.labkey.api.attachments.AttachmentService;
 import org.labkey.api.audit.AuditLogService;
 import org.labkey.api.audit.ClientAPIAuditViewFactory;
@@ -134,6 +135,7 @@ import org.labkey.api.webdav.WebdavService;
 import org.labkey.core.admin.ActionsTsvWriter;
 import org.labkey.core.admin.AdminController;
 import org.labkey.core.admin.sql.SqlScriptController;
+import org.labkey.core.admin.writer.FolderSerializationRegistryImpl;
 import org.labkey.core.analytics.AnalyticsController;
 import org.labkey.core.analytics.AnalyticsServiceImpl;
 import org.labkey.core.attachment.AttachmentServiceImpl;
@@ -209,6 +211,7 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
     protected void init()
     {
         ServiceRegistry.get().registerService(ContainerService.class, ContainerManager.getContainerService());
+        ServiceRegistry.get().registerService(FolderSerializationRegistry.class, FolderSerializationRegistryImpl.get());
         SqlDialectManager.register(new PostgreSqlDialectFactory());
 
         addController("admin", AdminController.class);

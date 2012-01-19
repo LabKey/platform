@@ -16,12 +16,13 @@
 
 package org.labkey.list.model;
 
+import org.labkey.api.admin.ImportContext;
 import org.labkey.api.data.Container;
 import org.labkey.api.study.ExternalStudyWriter;
 import org.labkey.api.study.ExternalStudyWriterFactory;
 import org.labkey.api.study.Study;
-import org.labkey.api.study.StudyContext;
 import org.labkey.api.writer.VirtualFile;
+import org.labkey.study.xml.StudyDocument;
 
 /*
 * User: adam
@@ -37,7 +38,7 @@ public class StudyListWriter implements ExternalStudyWriter
         return "Lists";
     }
 
-    public void write(Study study, StudyContext ctx, VirtualFile root) throws Exception
+    public void write(Study study, ImportContext<StudyDocument.Study> ctx, VirtualFile root) throws Exception
     {
         Container c = ctx.getContainer();
 
@@ -46,7 +47,7 @@ public class StudyListWriter implements ExternalStudyWriter
         ListWriter listWriter = new ListWriter();
 
         if (listWriter.write(c, ctx.getUser(), listsDir))
-            ctx.getStudyXml().addNewLists().setDir(DEFAULT_DIRECTORY);
+            ctx.getXml().addNewLists().setDir(DEFAULT_DIRECTORY);
     }
 
     public static class Factory implements ExternalStudyWriterFactory

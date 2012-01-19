@@ -30,6 +30,7 @@ import org.apache.xmlbeans.XmlException;
 import org.json.JSONArray;
 import org.json.JSONObject;
 import org.labkey.api.action.*;
+import org.labkey.api.admin.ImportException;
 import org.labkey.api.attachments.AttachmentFile;
 import org.labkey.api.attachments.AttachmentForm;
 import org.labkey.api.attachments.AttachmentService;
@@ -111,7 +112,6 @@ import org.labkey.api.security.roles.RoleManager;
 import org.labkey.api.services.ServiceRegistry;
 import org.labkey.api.study.DataSet;
 import org.labkey.api.study.Study;
-import org.labkey.api.study.StudyImportException;
 import org.labkey.api.study.StudyService;
 import org.labkey.api.study.StudyUrls;
 import org.labkey.api.study.TimepointType;
@@ -4169,7 +4169,7 @@ public class StudyController extends BaseStudyController
             else
             {
                 ObjectError firstError = (ObjectError)errors.getAllErrors().get(0);
-                throw new StudyImportException(firstError.getDefaultMessage());
+                throw new ImportException(firstError.getDefaultMessage());
             }
         }
 
@@ -4180,7 +4180,7 @@ public class StudyController extends BaseStudyController
             {
                 throw e;
             }
-            catch (StudyImportException sie)
+            catch (ImportException sie)
             {
                 errors.reject("studyImport", e.getMessage());
                 return new SimpleErrorView(errors);
@@ -6570,7 +6570,7 @@ public class StudyController extends BaseStudyController
 
                 message = status.getMessage();
             }
-            catch (StudyImportException e)
+            catch (ImportException e)
             {
                 message = "Error: " + e.getMessage();
             }

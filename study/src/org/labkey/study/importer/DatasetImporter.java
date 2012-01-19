@@ -21,8 +21,8 @@ import org.apache.xmlbeans.XmlException;
 import org.apache.xmlbeans.XmlObject;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.labkey.api.admin.ImportException;
 import org.labkey.api.data.Container;
-import org.labkey.api.study.StudyImportException;
 import org.labkey.api.util.XmlBeansUtil;
 import org.labkey.api.util.XmlValidationException;
 import org.labkey.api.writer.VirtualFile;
@@ -54,9 +54,9 @@ public class DatasetImporter implements InternalStudyImporter
         return "Dataset Definition Importer";
     }
 
-    public void process(StudyImpl study, ImportContext ctx, VirtualFile vf, BindException errors) throws IOException, SQLException, DatasetImportUtils.DatasetLockExistsException, XmlException, StudyImportException
+    public void process(StudyImpl study, ImportContext ctx, VirtualFile vf, BindException errors) throws IOException, SQLException, DatasetImportUtils.DatasetLockExistsException, XmlException, ImportException
     {
-        StudyDocument.Study.Datasets datasetsXml = ctx.getStudyXml().getDatasets();
+        StudyDocument.Study.Datasets datasetsXml = ctx.getXml().getDatasets();
 
         if (null != datasetsXml)
         {
@@ -125,24 +125,24 @@ public class DatasetImporter implements InternalStudyImporter
         }
     }
 
-    public static File getDatasetDirectory(ImportContext ctx, File root) throws StudyImportException
+    public static File getDatasetDirectory(ImportContext ctx, File root) throws ImportException
     {
-        StudyDocument.Study.Datasets datasetsXml = ctx.getStudyXml().getDatasets();
+        StudyDocument.Study.Datasets datasetsXml = ctx.getXml().getDatasets();
 
         if (null != datasetsXml)
         {
             if (null == datasetsXml.getDir())
                 return root;
 
-            return ctx.getStudyDir(root, datasetsXml.getDir());
+            return ctx.getDir(root, datasetsXml.getDir());
         }
 
         return null;
     }
 
-    public static VirtualFile getDatasetDirectory(ImportContext ctx, VirtualFile root) throws StudyImportException
+    public static VirtualFile getDatasetDirectory(ImportContext ctx, VirtualFile root) throws ImportException
     {
-        StudyDocument.Study.Datasets datasetsXml = ctx.getStudyXml().getDatasets();
+        StudyDocument.Study.Datasets datasetsXml = ctx.getXml().getDatasets();
 
         if (null != datasetsXml)
         {
@@ -156,13 +156,13 @@ public class DatasetImporter implements InternalStudyImporter
     }
 
     @Nullable
-    public static DatasetsDocument.Datasets getDatasetsManifest(ImportContext ctx, VirtualFile root, boolean log) throws XmlException, IOException, StudyImportException
+    public static DatasetsDocument.Datasets getDatasetsManifest(ImportContext ctx, VirtualFile root, boolean log) throws XmlException, IOException, ImportException
     {
         VirtualFile datasetDir = getDatasetDirectory(ctx, root);
 
         if (null != datasetDir)
         {
-            String datasetsXmlFilename = ctx.getStudyXml().getDatasets().getFile();
+            String datasetsXmlFilename = ctx.getXml().getDatasets().getFile();
 
             if (null != datasetsXmlFilename)
             {
@@ -181,7 +181,7 @@ public class DatasetImporter implements InternalStudyImporter
                 }
                 catch (XmlValidationException e)
                 {
-                    throw new StudyImportException("Invalid DatasetsDocument ", e);
+                    throw new ImportException("Invalid DatasetsDocument ", e);
                 }
             }
         }

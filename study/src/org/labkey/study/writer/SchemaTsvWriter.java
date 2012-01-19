@@ -16,17 +16,18 @@
 package org.labkey.study.writer;
 
 import org.apache.commons.lang3.StringUtils;
+import org.labkey.api.admin.ImportContext;
+import org.labkey.api.admin.ImportException;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.exp.property.Type;
-import org.labkey.api.study.StudyContext;
-import org.labkey.api.study.StudyImportException;
 import org.labkey.api.writer.VirtualFile;
 import org.labkey.api.writer.Writer;
 import org.labkey.study.model.DataSetDefinition;
 import org.labkey.study.model.StudyManager;
 import org.labkey.study.query.DataSetTableImpl;
 import org.labkey.study.query.StudyQuerySchema;
+import org.labkey.study.xml.StudyDocument;
 import org.labkey.study.xml.StudyDocument.Study.Datasets;
 
 import java.io.IOException;
@@ -38,7 +39,7 @@ import java.util.List;
  * Date: Apr 23, 2009
  * Time: 2:39:33 PM
  */
-public class SchemaTsvWriter implements Writer<List<DataSetDefinition>, StudyContext>
+public class SchemaTsvWriter implements Writer<List<DataSetDefinition>, ImportContext<StudyDocument.Study>>
 {
     public static final String FILENAME = "schema.tsv";
 
@@ -51,9 +52,9 @@ public class SchemaTsvWriter implements Writer<List<DataSetDefinition>, StudyCon
         return "Dataset Schema Description";
     }
 
-    public void write(List<DataSetDefinition> definitions, StudyContext ctx, VirtualFile vf) throws IOException, StudyImportException
+    public void write(List<DataSetDefinition> definitions, ImportContext<StudyDocument.Study> ctx, VirtualFile vf) throws IOException, ImportException
     {
-        Datasets datasetsXml = ctx.getStudyXml().getDatasets();
+        Datasets datasetsXml = ctx.getXml().getDatasets();
         Datasets.Schema schemaXml = datasetsXml.addNewSchema();
         String schemaFilename = vf.makeLegalName(FILENAME);
         schemaXml.setFile(schemaFilename);
@@ -66,7 +67,7 @@ public class SchemaTsvWriter implements Writer<List<DataSetDefinition>, StudyCon
         writer.close();
     }
 
-    public void writeDatasetSchema(StudyContext ctx, List<DataSetDefinition> definitions, PrintWriter writer)
+    public void writeDatasetSchema(ImportContext<StudyDocument.Study> ctx, List<DataSetDefinition> definitions, PrintWriter writer)
     {
         writer.println(TYPE_NAME_COLUMN + "\t" + LABEL_COLUMN + "\t" + TYPE_ID_COLUMN + "\thidden\tproperty\tlabel\trangeuri\trequired\tformat\tconcepturi\tmvenabled\tkey\tautokey");
 

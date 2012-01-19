@@ -18,7 +18,7 @@ package org.labkey.study.importer;
 import org.apache.xmlbeans.XmlException;
 import org.apache.xmlbeans.XmlObject;
 import org.labkey.api.data.DbScope;
-import org.labkey.api.study.InvalidFileException;
+import org.labkey.api.admin.InvalidFileException;
 import org.labkey.api.util.XmlBeansUtil;
 import org.labkey.api.writer.VirtualFile;
 import org.labkey.study.StudySchema;

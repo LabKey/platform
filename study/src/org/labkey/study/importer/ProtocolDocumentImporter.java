@@ -43,7 +43,7 @@ public class ProtocolDocumentImporter implements InternalStudyImporter
     @Override
     public void process(StudyImpl study, ImportContext ctx, VirtualFile root, BindException errors) throws Exception
     {
-        StudyDocument.Study.ProtocolDocs protocolXml = ctx.getStudyXml().getProtocolDocs();
+        StudyDocument.Study.ProtocolDocs protocolXml = ctx.getXml().getProtocolDocs();
 
         if (null != protocolXml)
         {

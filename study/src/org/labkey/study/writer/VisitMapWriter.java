@@ -15,7 +15,7 @@
  */
 package org.labkey.study.writer;
 
-import org.labkey.api.study.StudyImportException;
+import org.labkey.api.admin.ImportException;
 import org.labkey.api.study.TimepointType;
 import org.labkey.api.writer.VirtualFile;
 import org.labkey.study.model.StudyImpl;
@@ -37,7 +37,7 @@ public class VisitMapWriter implements InternalStudyWriter
         return DATA_TYPE;
     }
 
-    public void write(StudyImpl study, StudyExportContext ctx, VirtualFile vf) throws IOException, StudyImportException, SQLException
+    public void write(StudyImpl study, StudyExportContext ctx, VirtualFile vf) throws IOException, ImportException, SQLException
     {
         if (study.getTimepointType() == TimepointType.CONTINUOUS)
             return;

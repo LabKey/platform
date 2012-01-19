@@ -32,7 +32,7 @@ import org.labkey.api.exp.property.Type;
 import org.labkey.api.gwt.client.ui.domain.ImportException;
 import org.labkey.api.reader.DataLoader;
 import org.labkey.api.security.User;
-import org.labkey.api.study.InvalidFileException;
+import org.labkey.api.admin.InvalidFileException;
 import org.labkey.api.util.FileUtil;
 import org.labkey.api.util.XmlBeansUtil;
 import org.labkey.api.util.XmlValidationException;

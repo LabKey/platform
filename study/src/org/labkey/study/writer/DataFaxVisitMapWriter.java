@@ -15,7 +15,7 @@
  */
 package org.labkey.study.writer;
 
-import org.labkey.api.study.StudyImportException;
+import org.labkey.api.admin.ImportException;
 import org.labkey.api.study.Visit;
 import org.labkey.api.writer.VirtualFile;
 import org.labkey.api.writer.Writer;
@@ -44,10 +44,10 @@ public class DataFaxVisitMapWriter implements Writer<StudyImpl, StudyExportConte
         return null;
     }
 
-    public void write(StudyImpl study, StudyExportContext ctx, VirtualFile vf) throws IOException, StudyImportException
+    public void write(StudyImpl study, StudyExportContext ctx, VirtualFile vf) throws IOException, ImportException
     {
         VisitImpl[] visits = study.getVisits(Visit.Order.DISPLAY);
-        StudyDocument.Study studyXml = ctx.getStudyXml();
+        StudyDocument.Study studyXml = ctx.getXml();
         StudyDocument.Study.Visits visitsXml = studyXml.addNewVisits();
         visitsXml.setFile(FILENAME);
 

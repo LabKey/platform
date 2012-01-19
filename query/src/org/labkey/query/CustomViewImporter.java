@@ -15,10 +15,10 @@
  */
 package org.labkey.query;
 
+import org.labkey.api.admin.ImportContext;
+import org.labkey.api.admin.ImportException;
 import org.labkey.api.query.QueryService;
-import org.labkey.api.study.StudyImportException;
 import org.labkey.api.study.ExternalStudyImporter;
-import org.labkey.api.study.StudyContext;
 import org.labkey.api.study.ExternalStudyImporterFactory;
 import org.labkey.api.pipeline.PipelineJobWarning;
 import org.labkey.api.util.XmlValidationException;
@@ -41,13 +41,13 @@ public class CustomViewImporter implements ExternalStudyImporter
         return "custom views";
     }
 
-    public void process(StudyContext ctx, File root) throws IOException, SQLException, StudyImportException, XmlValidationException
+    public void process(ImportContext<StudyDocument.Study> ctx, File root) throws IOException, SQLException, ImportException, XmlValidationException
     {
-        StudyDocument.Study.Views viewsXml = ctx.getStudyXml().getViews();
+        StudyDocument.Study.Views viewsXml = ctx.getXml().getViews();
 
         if (null != viewsXml)
         {
-            File viewDir = ctx.getStudyDir(root, viewsXml.getDir());
+            File viewDir = ctx.getDir(root, viewsXml.getDir());
 
             int count = QueryService.get().importCustomViews(ctx.getUser(), ctx.getContainer(), viewDir);
 
@@ -55,7 +55,7 @@ public class CustomViewImporter implements ExternalStudyImporter
         }
     }
 
-    public Collection<PipelineJobWarning> postProcess(StudyContext ctx, File root) throws Exception
+    public Collection<PipelineJobWarning> postProcess(ImportContext<StudyDocument.Study> ctx, File root) throws Exception
     {
         //nothing for now
         return null;        

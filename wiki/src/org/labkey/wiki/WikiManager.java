@@ -148,7 +148,7 @@ public class WikiManager implements WikiService
     }
 
 
-    public boolean insertWiki(User user, Container c, Wiki wikiInsert, WikiVersion wikiversion, List<AttachmentFile> files)
+    public void insertWiki(User user, Container c, Wiki wikiInsert, WikiVersion wikiversion, List<AttachmentFile> files)
             throws SQLException, IOException
     {
         DbScope scope = comm.getSchema().getScope();
@@ -193,8 +193,6 @@ public class WikiManager implements WikiService
             LOG.debug("indexWiki() for " + wikiInsert.getName());
             indexWiki(wikiInsert);
         }
-
-        return true;
     }
 
 

@@ -36,7 +36,7 @@ public class QcStateWriter implements InternalStudyWriter
     public void write(StudyImpl study, StudyExportContext ctx, VirtualFile vf) throws Exception
     {
         // TODO: Write out the action QC states
-        StudyDocument.Study.QcStates qcStatesXml = ctx.getStudyXml().addNewQcStates();
+        StudyDocument.Study.QcStates qcStatesXml = ctx.getXml().addNewQcStates();
         qcStatesXml.setShowPrivateDataByDefault(study.isShowPrivateDataByDefault());
     }
 }

@@ -16,9 +16,9 @@
 
 package org.labkey.study.pipeline;
 
+import org.labkey.api.admin.ImportException;
 import org.labkey.api.data.Container;
 import org.labkey.api.pipeline.PipelineJob;
-import org.labkey.api.study.StudyImportException;
 import org.labkey.study.controllers.StudyController;
 import org.labkey.study.importer.ImportContext;
 import org.labkey.study.importer.StudyJobSupport;
@@ -42,12 +42,12 @@ public class StudyImportSpecimenTask extends AbstractSpecimenTask<StudyImportSpe
         super(factory, job);
     }
 
-    protected File getSpecimenArchive() throws StudyImportException, SQLException
+    protected File getSpecimenArchive() throws ImportException, SQLException
     {
         StudyJobSupport support = getJob().getJobSupport(StudyJobSupport.class);
         ImportContext ctx = support.getImportContext();
         File root = support.getRoot();
-        StudyDocument.Study.Specimens specimens = ctx.getStudyXml().getSpecimens();
+        StudyDocument.Study.Specimens specimens = ctx.getXml().getSpecimens();
 
         if (null != specimens)
         {
@@ -59,7 +59,7 @@ public class StudyImportSpecimenTask extends AbstractSpecimenTask<StudyImportSpe
 
             if (null != specimens.getDir())
             {
-                File specimenDir = ctx.getStudyDir(root, specimens.getDir());
+                File specimenDir = ctx.getDir(root, specimens.getDir());
 
                 if (null != specimens.getFile())
                     return ctx.getStudyFile(root, specimenDir, specimens.getFile());

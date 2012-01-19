@@ -16,8 +16,8 @@
 
 package org.labkey.study.pipeline;
 
+import org.labkey.api.admin.ImportException;
 import org.labkey.api.pipeline.PipelineJob;
-import org.labkey.api.study.StudyImportException;
 import org.labkey.study.model.StudyImpl;
 import org.labkey.study.importer.*;
 import org.labkey.study.xml.StudyDocument;
@@ -38,13 +38,13 @@ public class StudyImportDatasetTask extends AbstractDatasetImportTask<StudyImpor
         super(factory, job);
     }
 
-    public File getDatasetsFile() throws StudyImportException
+    public File getDatasetsFile() throws ImportException
     {
         StudyJobSupport support = getJob().getJobSupport(StudyJobSupport.class);
         ImportContext ctx = support.getImportContext();
         File root = support.getRoot();
 
-        StudyDocument.Study.Datasets datasetsXml = ctx.getStudyXml().getDatasets();
+        StudyDocument.Study.Datasets datasetsXml = ctx.getXml().getDatasets();
 
         if (null != datasetsXml)
         {

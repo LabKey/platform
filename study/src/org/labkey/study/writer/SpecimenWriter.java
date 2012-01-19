@@ -15,37 +15,35 @@
  */
 package org.labkey.study.writer;
 
+import org.labkey.api.admin.ImportContext;
 import org.labkey.api.data.*;
-import org.labkey.api.query.FieldKey;
-import org.labkey.api.study.StudyContext;
 import org.labkey.api.writer.VirtualFile;
 import org.labkey.api.writer.Writer;
 import org.labkey.study.StudySchema;
 import org.labkey.study.importer.SpecimenImporter;
 import org.labkey.study.importer.SpecimenImporter.SpecimenColumn;
 import org.labkey.study.model.StudyImpl;
+import org.labkey.study.xml.StudyDocument;
 
 import java.io.PrintWriter;
 import java.sql.ResultSet;
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 
 /**
  * User: adam
  * Date: May 7, 2009
  * Time: 3:49:32 PM
  */
-class SpecimenWriter implements Writer<StudyImpl, StudyContext>
+class SpecimenWriter implements Writer<StudyImpl, ImportContext<StudyDocument.Study>>
 {
     public String getSelectionText()
     {
         return null;
     }
 
-    public void write(StudyImpl study, StudyContext ctx, VirtualFile vf) throws Exception
+    public void write(StudyImpl study, ImportContext<StudyDocument.Study> ctx, VirtualFile vf) throws Exception
     {
         Collection<SpecimenColumn> columns = SpecimenImporter.SPECIMEN_COLUMNS;
         StudySchema schema = StudySchema.getInstance();

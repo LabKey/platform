@@ -114,6 +114,7 @@ public class StudyImportFinalTask extends PipelineJob.Task<StudyImportFinalTask.
         return new RecordedActionSet();
     }
 
+    
     public static class Factory extends AbstractTaskFactory<AbstractTaskFactorySettings, Factory>
     {
         public Factory()

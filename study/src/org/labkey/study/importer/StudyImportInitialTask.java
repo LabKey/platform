@@ -17,7 +17,7 @@
 package org.labkey.study.importer;
 
 import org.labkey.api.pipeline.*;
-import org.labkey.api.study.StudyImportException;
+import org.labkey.api.admin.ImportException;
 import org.labkey.api.study.TimepointType;
 import org.labkey.api.util.FileType;
 import org.labkey.api.writer.FileSystemFile;
@@ -52,7 +52,7 @@ public class StudyImportInitialTask extends PipelineJob.Task<StudyImportInitialT
             PipelineJob job = getJob();
             StudyJobSupport support = job.getJobSupport(StudyJobSupport.class);
             ImportContext ctx = support.getImportContext();
-            StudyDocument.Study studyXml = ctx.getStudyXml();
+            StudyDocument.Study studyXml = ctx.getXml();
             StudyImpl study = support.getStudy(true);
 
             // Create the study if it doesn't exist... otherwise, modify the existing properties
@@ -113,7 +113,7 @@ public class StudyImportInitialTask extends PipelineJob.Task<StudyImportInitialT
                     timepointType = studyXml.getDateBased() ? TimepointType.DATE : TimepointType.VISIT;
 
                 if (study.getTimepointType() != timepointType)
-                    throw new StudyImportException("Can't change timepoint style from '" + study.getTimepointType() + "' to '" + timepointType + "' when reloading an existing study.");
+                    throw new ImportException("Can't change timepoint style from '" + study.getTimepointType() + "' to '" + timepointType + "' when reloading an existing study.");
 
                 // TODO: Change these props and save only if values have changed
                 study = study.createMutable();

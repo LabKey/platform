@@ -21,8 +21,6 @@ import org.labkey.study.model.StudyImpl;
 import org.labkey.study.xml.StudyDocument;
 import org.springframework.validation.BindException;
 
-import java.io.File;
-
 /**
  * Created by IntelliJ IDEA.
  * User: klum
@@ -37,7 +35,7 @@ public class ParticipantCommentImporter implements InternalStudyImporter
 
     public void process(StudyImpl study, ImportContext ctx, VirtualFile root, BindException errors) throws Exception
     {
-        StudyDocument.Study.Comments commentsXml = ctx.getStudyXml().getComments();
+        StudyDocument.Study.Comments commentsXml = ctx.getXml().getComments();
 
         if (commentsXml != null)
         {

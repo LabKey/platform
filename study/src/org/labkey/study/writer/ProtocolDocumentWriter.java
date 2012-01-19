@@ -56,7 +56,7 @@ public class ProtocolDocumentWriter implements InternalStudyWriter
             VirtualFile folder = vf.getDir(DOCUMENT_FOLDER);
             AttachmentParent parent = new StudyImpl.ProtocolDocumentAttachmentParent(study);
 
-            StudyDocument.Study.ProtocolDocs protocolXml = ctx.getStudyXml().addNewProtocolDocs();
+            StudyDocument.Study.ProtocolDocs protocolXml = ctx.getXml().addNewProtocolDocs();
             protocolXml.setDir(DOCUMENT_FOLDER);
 
             for (Attachment doc : documents)

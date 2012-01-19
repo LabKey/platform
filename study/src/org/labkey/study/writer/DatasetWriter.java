@@ -26,7 +26,7 @@ import org.labkey.api.query.AliasedColumn;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.QueryService;
 import org.labkey.api.study.Cohort;
-import org.labkey.api.study.StudyImportException;
+import org.labkey.api.admin.ImportException;
 import org.labkey.api.study.StudyService;
 import org.labkey.api.writer.VirtualFile;
 import org.labkey.study.model.DataSetDefinition;
@@ -68,9 +68,9 @@ public class DatasetWriter implements InternalStudyWriter
         return SELECTION_TEXT;
     }
 
-    public void write(StudyImpl study, StudyExportContext ctx, VirtualFile root) throws SQLException, IOException, ServletException, StudyImportException
+    public void write(StudyImpl study, StudyExportContext ctx, VirtualFile root) throws SQLException, IOException, ServletException, ImportException
     {
-        StudyDocument.Study studyXml = ctx.getStudyXml();
+        StudyDocument.Study studyXml = ctx.getXml();
         Datasets datasetsXml = studyXml.addNewDatasets();
         datasetsXml.setDir(DEFAULT_DIRECTORY);
         datasetsXml.setFile(MANIFEST_FILENAME);

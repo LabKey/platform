@@ -17,13 +17,10 @@ package org.labkey.study.writer;
 
 import org.labkey.api.data.Container;
 import org.labkey.api.security.User;
-import org.labkey.api.study.StudyImportException;
 import org.labkey.study.model.DataSetDefinition;
 import org.labkey.study.model.StudyImpl;
-import org.labkey.study.xml.StudyDocument;
 import org.apache.log4j.Logger;
 
-import java.io.File;
 import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
@@ -41,34 +38,12 @@ public class StudyExportContext extends AbstractContext
     private final List<DataSetDefinition> _datasets = new LinkedList<DataSetDefinition>();
     private final Set<Integer> _datasetIds = new HashSet<Integer>();
 
-    private boolean _locked = false;
-
     public StudyExportContext(StudyImpl study, User user, Container c, boolean oldFormats, Set<String> dataTypes, Logger logger)
     {
         super(user, c, StudyXmlWriter.getStudyDocument(), logger);
         _oldFormats = oldFormats;
         _dataTypes = dataTypes;
         initializeDatasets(study);
-    }
-
-    public File getStudyDir(File root, String dirName) throws StudyImportException
-    {
-        throw new IllegalStateException("Not supported during export");
-    }
-
-    public void lockStudyDocument()
-    {
-        _locked = true;
-    }
-
-    @Override
-    // Full study doc -- only interesting to StudyXmlWriter
-    public StudyDocument getStudyDocument() throws StudyImportException
-    {
-        if (_locked)
-            throw new IllegalStateException("Can't access StudyDocument after study.xml has been written");
-
-        return super.getStudyDocument();
     }
 
     public boolean useOldFormats()

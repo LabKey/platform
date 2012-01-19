@@ -26,7 +26,7 @@ public class PageWriter implements InternalFolderWriter
 
     public void write(Container c, FolderExportContext ctx, VirtualFile root) throws Exception
     {
-        FolderDocument.Folder folderXml = ctx.getFolderXml();
+        FolderDocument.Folder folderXml = ctx.getXml();
         FolderDocument.Folder.Pages folderPagesXML = folderXml.addNewPages();
         folderPagesXML.setFile(FILENAME);
 

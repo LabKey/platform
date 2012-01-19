@@ -46,7 +46,7 @@ public class CohortWriter implements InternalStudyWriter
 
     public void write(StudyImpl study, StudyExportContext ctx, VirtualFile vf) throws Exception
     {
-        StudyDocument.Study studyXml = ctx.getStudyXml();
+        StudyDocument.Study studyXml = ctx.getXml();
         StudyDocument.Study.Cohorts cohortsXml = studyXml.addNewCohorts();
 
         if (study.isManualCohortAssignment())

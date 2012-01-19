@@ -15,10 +15,10 @@
  */
 package org.labkey.study.writer;
 
+import org.labkey.api.admin.AbstractImportContext;
 import org.labkey.api.data.Container;
 import org.labkey.api.security.User;
-import org.labkey.api.study.StudyImportException;
-import org.labkey.api.study.StudyContext;
+import org.labkey.api.admin.ImportException;
 import org.labkey.study.xml.StudyDocument;
 import org.apache.log4j.Logger;
 
@@ -27,49 +27,16 @@ import org.apache.log4j.Logger;
  * Date: Apr 23, 2009
  * Time: 10:00:46 AM
  */
-public abstract class AbstractContext implements StudyContext
+public abstract class AbstractContext extends AbstractImportContext<StudyDocument.Study, StudyDocument>
 {
-    private final User _user;
-    private final Container _c;
-    private final Logger _logger;
-    private transient StudyDocument _studyDoc;   // XStream can't seem to serialize this XMLBean... so we load it on demand
-
     protected AbstractContext(User user, Container c, StudyDocument studyDoc, Logger logger)
     {
-        _user = user;
-        _c = c;
-        _logger = logger;
-        setStudyDocument(studyDoc);
-    }
-
-    public User getUser()
-    {
-        return _user;
-    }
-
-    public Container getContainer()
-    {
-        return _c;
+        super(user, c, studyDoc, logger);
     }
 
     // Study node -- interesting to any top-level writer that needs to set info into study.xml
-    public StudyDocument.Study getStudyXml() throws StudyImportException
+    public StudyDocument.Study getXml() throws ImportException
     {
-        return getStudyDocument().getStudy();
-    }
-
-    public Logger getLogger()
-    {
-        return _logger;
-    }
-
-    protected synchronized StudyDocument getStudyDocument() throws StudyImportException
-    {
-        return _studyDoc;
-    }
-
-    protected final synchronized void setStudyDocument(StudyDocument studyDoc)
-    {
-        _studyDoc = studyDoc;
+        return getDocument().getStudy();
     }
 }

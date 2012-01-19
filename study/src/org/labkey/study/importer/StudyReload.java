@@ -20,6 +20,7 @@ import org.apache.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.action.NullSafeBindException;
+import org.labkey.api.admin.ImportException;
 import org.labkey.api.data.*;
 import org.labkey.api.pipeline.PipeRoot;
 import org.labkey.api.pipeline.PipelineService;
@@ -27,7 +28,6 @@ import org.labkey.api.security.User;
 import org.labkey.api.security.UserManager;
 import org.labkey.api.settings.AppProps;
 import org.labkey.api.study.Study;
-import org.labkey.api.study.StudyImportException;
 import org.labkey.api.util.ContextListener;
 import org.labkey.api.util.ResultSetUtil;
 import org.labkey.api.util.ShutdownListener;
@@ -240,13 +240,13 @@ public class StudyReload
             {
                 LOG.error("SQLException saving study reload state", e);
             }
-            catch (StudyImportException e)
+            catch (ImportException e)
             {
                 LOG.error("Error reloading study: " + e.getMessage());
             }
         }
 
-        public ReloadStatus attemptReload() throws SQLException, StudyImportException
+        public ReloadStatus attemptReload() throws SQLException, ImportException
         {
             Container c = ContainerManager.getForId(_studyContainerId);
 
@@ -254,7 +254,7 @@ public class StudyReload
             {
                 // Container must have been deleted
                 cancelTimer(_studyContainerId);
-                throw new StudyImportException("Container " + _studyContainerId + " does not exist");
+                throw new ImportException("Container " + _studyContainerId + " does not exist");
             }
             else
             {
@@ -264,7 +264,7 @@ public class StudyReload
                 {
                     // Study must have been deleted
                     cancelTimer(_studyContainerId);
-                    throw new StudyImportException("Study does not exist in folder " + c.getPath());
+                    throw new ImportException("Study does not exist in folder " + c.getPath());
                 }
                 else
                 {
@@ -273,10 +273,10 @@ public class StudyReload
                     PipeRoot root = PipelineService.get().findPipelineRoot(c);
 
                     if (null == root)
-                        throw new StudyImportException("Pipeline root is not set in folder " + c.getPath());
+                        throw new ImportException("Pipeline root is not set in folder " + c.getPath());
 
                     if (!root.isValid())
-                        throw new StudyImportException("Pipeline root does not exist in folder " + c.getPath());
+                        throw new ImportException("Pipeline root does not exist in folder " + c.getPath());
 
                     File studyload = root.resolvePath(STUDY_LOAD_FILENAME);
 
@@ -312,7 +312,7 @@ public class StudyReload
                                 // Restore last reload so we'll try this again later
                                 study.setLastReload(lastReload);
                                 StudyManager.getInstance().updateStudy(null, study);
-                                throw new StudyImportException("Skipping reload of " + getDescription(study) + ": reload queue is full");
+                                throw new ImportException("Skipping reload of " + getDescription(study) + ": reload queue is full");
                             }
                         }
                         else
@@ -322,7 +322,7 @@ public class StudyReload
                     }
                     else
                     {
-                        throw new StudyImportException("Could not find file " + STUDY_LOAD_FILENAME + " in the pipeline root for " + getDescription(study));
+                        throw new ImportException("Could not find file " + STUDY_LOAD_FILENAME + " in the pipeline root for " + getDescription(study));
                     }
                 }
             }
@@ -396,7 +396,7 @@ public class StudyReload
                         reloadUser = UserManager.getUser(reloadUserId.intValue());
 
                     if (null == reloadUser)
-                        throw new StudyImportException("Reload user is not set to a valid user. Update the reload settings on this study to ensure a valid reload user.");
+                        throw new ImportException("Reload user is not set to a valid user. Update the reload settings on this study to ensure a valid reload user.");
 
                     LOG.info("Handling " + c.getPath());
 

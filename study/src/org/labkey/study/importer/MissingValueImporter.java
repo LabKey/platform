@@ -17,14 +17,11 @@ package org.labkey.study.importer;
 
 import org.labkey.api.data.Container;
 import org.labkey.api.data.MvUtil;
-import org.labkey.api.study.StudyImportException;
 import org.labkey.api.writer.VirtualFile;
 import org.labkey.study.model.StudyImpl;
 import org.labkey.study.xml.StudyDocument;
 import org.springframework.validation.BindException;
 
-import java.io.IOException;
-import java.sql.SQLException;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -45,7 +42,7 @@ public class MissingValueImporter implements InternalStudyImporter
     public void process(StudyImpl study, ImportContext ctx, VirtualFile root, BindException errors) throws Exception
     {
         Container c = ctx.getContainer();
-        StudyDocument.Study.MissingValueIndicators mvXml = ctx.getStudyXml().getMissingValueIndicators();
+        StudyDocument.Study.MissingValueIndicators mvXml = ctx.getXml().getMissingValueIndicators();
 
         if (null != mvXml)
         {
