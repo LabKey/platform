@@ -12,7 +12,7 @@ import java.util.Collection;
  * User: cnathe
  * Date: Jan 18, 2012
  */
-public interface ExternalFolderImporter
+public interface FolderImporter
 {
     // Brief description of the types of objects this class imports
     String getDescription();

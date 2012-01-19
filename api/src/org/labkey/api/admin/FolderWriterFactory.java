@@ -8,7 +8,7 @@ import org.labkey.folder.xml.FolderDocument;
  * User: cnathe
  * Date: Jan 18, 2012
  */
-public interface ExternalFolderWriterFactory extends WriterFactory<Container, ImportContext<FolderDocument.Folder>>
+public interface FolderWriterFactory extends WriterFactory<Container, ImportContext<FolderDocument.Folder>>
 {
-    ExternalFolderWriter create();
+    FolderWriter create();
 }

@@ -4,7 +4,7 @@ package org.labkey.api.admin;
  * User: cnathe
  * Date: Jan 18, 2012
  */
-public interface ExternalFolderImporterFactory
+public interface FolderImporterFactory
 {
-    ExternalFolderImporter create();
+    FolderImporter create();
 }
