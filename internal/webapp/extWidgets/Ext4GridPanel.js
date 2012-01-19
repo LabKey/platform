@@ -153,8 +153,6 @@ Ext4.define('LABKEY.ext4.GridPanel', {
 
             if(!col.hidden && !meta.fixedWidthColumn){
                 col.flex = (col.width / flexWidth);
-                //note: ext treats string values differently.  perhaps this bug will be fixed in the future
-                col.flex = col.flex.toString();
                 delete col.width;
             }
         }, this);
