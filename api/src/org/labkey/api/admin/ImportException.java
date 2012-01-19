@@ -14,18 +14,18 @@
  * limitations under the License.
  */
 
-package org.labkey.api.study;
+package org.labkey.api.admin;
 
 import java.io.File;
 
-public class StudyImportException extends Exception
+public class ImportException extends Exception
 {
-    public StudyImportException(String message)
+    public ImportException(String message)
     {
         super(message);
     }
 
-    public StudyImportException(String message, Throwable t)
+    public ImportException(String message, Throwable t)
     {
         super(message, t);
     }

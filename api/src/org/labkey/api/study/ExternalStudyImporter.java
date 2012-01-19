@@ -16,8 +16,10 @@
 
 package org.labkey.api.study;
 
+import org.labkey.api.admin.ImportContext;
 import org.labkey.api.pipeline.PipelineJobWarning;
 import org.jetbrains.annotations.Nullable;
+import org.labkey.study.xml.StudyDocument;
 
 import java.io.File;
 import java.util.Collection;
@@ -31,7 +33,7 @@ public interface ExternalStudyImporter
 {
     // Brief description of the types of objects this class imports
     String getDescription();
-    void process(StudyContext ctx, File root) throws Exception;
+    void process(ImportContext<StudyDocument.Study> ctx, File root) throws Exception;
     @Nullable
-    Collection<PipelineJobWarning> postProcess(StudyContext ctx, File root) throws Exception;
+    Collection<PipelineJobWarning> postProcess(ImportContext<StudyDocument.Study> ctx, File root) throws Exception;
 }

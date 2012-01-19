@@ -70,14 +70,17 @@ api/src/org/labkey/api/action/UrlProvider.java -text
 api/src/org/labkey/api/action/confirmWrapper.jsp -text
 api/src/org/labkey/api/action/simpleErrorView.jsp -text
 api/src/org/labkey/api/action/statusReport.jsp -text
+api/src/org/labkey/api/admin/AbstractImportContext.java -text
 api/src/org/labkey/api/admin/AdminUrls.java -text
 api/src/org/labkey/api/admin/CoreUrls.java -text
 api/src/org/labkey/api/admin/ExternalFolderImporter.java -text
 api/src/org/labkey/api/admin/ExternalFolderImporterFactory.java -text
 api/src/org/labkey/api/admin/ExternalFolderWriter.java -text
 api/src/org/labkey/api/admin/ExternalFolderWriterFactory.java -text
-api/src/org/labkey/api/admin/FolderContext.java -text
 api/src/org/labkey/api/admin/FolderSerializationRegistry.java -text
+api/src/org/labkey/api/admin/ImportContext.java -text
+api/src/org/labkey/api/admin/ImportException.java -text
+api/src/org/labkey/api/admin/InvalidFileException.java -text
 api/src/org/labkey/api/analytics/AnalyticsService.java -text
 api/src/org/labkey/api/announcements/api/Announcement.java -text
 api/src/org/labkey/api/announcements/api/AnnouncementService.java -text
@@ -900,7 +903,6 @@ api/src/org/labkey/api/study/ExternalStudyImporter.java -text
 api/src/org/labkey/api/study/ExternalStudyImporterFactory.java -text
 api/src/org/labkey/api/study/ExternalStudyWriter.java -text
 api/src/org/labkey/api/study/ExternalStudyWriterFactory.java -text
-api/src/org/labkey/api/study/InvalidFileException.java -text
 api/src/org/labkey/api/study/ParticipantVisit.java -text
 api/src/org/labkey/api/study/Plate.java -text
 api/src/org/labkey/api/study/PlateQueryView.java -text
@@ -915,10 +917,8 @@ api/src/org/labkey/api/study/Site.java -text
 api/src/org/labkey/api/study/SpecimenService.java -text
 api/src/org/labkey/api/study/Study.java -text
 api/src/org/labkey/api/study/StudyCachable.java -text
-api/src/org/labkey/api/study/StudyContext.java -text
 api/src/org/labkey/api/study/StudyEntity.java -text
 api/src/org/labkey/api/study/StudyFolderTabs.java -text
-api/src/org/labkey/api/study/StudyImportException.java -text
 api/src/org/labkey/api/study/StudySerializationRegistry.java -text
 api/src/org/labkey/api/study/StudyService.java -text
 api/src/org/labkey/api/study/StudyUrls.java -text

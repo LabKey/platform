@@ -30,6 +30,7 @@ public enum WikiRendererType
     RADEOX
         {
             public String getDisplayName() {return "Wiki Page";}
+            public String getFileExtension() {return ".wiki"; }
 
             @Override
             public HttpView getSyntaxHelpView()
@@ -40,6 +41,7 @@ public enum WikiRendererType
     HTML
         {
             public String getDisplayName() {return "HTML";}
+            public String getFileExtension() {return ".html"; }
 
             @Override
             public HttpView getSyntaxHelpView()
@@ -55,6 +57,7 @@ public enum WikiRendererType
         },
     TEXT_WITH_LINKS
         {
+            public String getFileExtension() {return ".txt"; }
             public String getDisplayName() {return "Plain Text";}
         };
 
@@ -68,5 +71,25 @@ public enum WikiRendererType
     public HttpView getSyntaxHelpView()
     {
         return new HtmlView("");  // No syntax help by default
+    }
+
+    public static WikiRendererType getType(String filename)
+    {
+        for (WikiRendererType wikiRendererType : WikiRendererType.values())
+        {
+            if (filename.toLowerCase().endsWith(wikiRendererType.getFileExtension().toLowerCase()))
+            {
+                return wikiRendererType;
+            }
+        }
+        // Default to HTML
+        return WikiRendererType.HTML;
+    }
+
+    public abstract String getFileExtension();
+
+    public String getDocumentName(String wikiName)
+    {
+        return wikiName + getFileExtension();
     }
 }

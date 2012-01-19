@@ -14,15 +14,16 @@
  * limitations under the License.
  */
 
-package org.labkey.api.study;
+package org.labkey.api.admin;
 
 import org.apache.xmlbeans.XmlError;
 import org.apache.xmlbeans.XmlException;
+import org.labkey.api.admin.ImportException;
 import org.labkey.api.util.XmlValidationException;
 
 import java.io.File;
 
-public class InvalidFileException extends StudyImportException
+public class InvalidFileException extends ImportException
 {
     public InvalidFileException(File root, File file, Throwable t)
     {

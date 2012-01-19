@@ -16,14 +16,16 @@
 
 package org.labkey.api.study;
 
+import org.labkey.api.admin.ImportContext;
 import org.labkey.api.writer.WriterFactory;
+import org.labkey.study.xml.StudyDocument;
 
 /*
 * User: adam
 * Date: Aug 26, 2009
 * Time: 1:33:20 PM
 */
-public interface ExternalStudyWriterFactory extends WriterFactory<Study, StudyContext>
+public interface ExternalStudyWriterFactory extends WriterFactory<Study, ImportContext<StudyDocument.Study>>
 {
     ExternalStudyWriter create();
 }

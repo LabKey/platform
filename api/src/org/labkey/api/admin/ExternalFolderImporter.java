@@ -2,6 +2,7 @@ package org.labkey.api.admin;
 
 import org.labkey.api.pipeline.PipelineJobWarning;
 import org.jetbrains.annotations.Nullable;
+import org.labkey.folder.xml.FolderDocument;
 
 import java.io.File;
 import java.util.Collection;
@@ -15,7 +16,7 @@ public interface ExternalFolderImporter
 {
     // Brief description of the types of objects this class imports
     String getDescription();
-    void process(FolderContext ctx, File root) throws Exception;
+    void process(ImportContext<FolderDocument.Folder> ctx, File root) throws Exception;
     @Nullable
-    Collection<PipelineJobWarning> postProcess(FolderContext ctx, File root) throws Exception;
+    Collection<PipelineJobWarning> postProcess(ImportContext<FolderDocument.Folder> ctx, File root) throws Exception;
 }

@@ -18,7 +18,7 @@ package org.labkey.api.writer;
 import org.apache.xmlbeans.XmlException;
 import org.apache.xmlbeans.XmlObject;
 import org.apache.xmlbeans.XmlOptions;
-import org.labkey.api.study.StudyImportException;
+import org.labkey.api.admin.ImportException;
 import org.labkey.api.util.FileUtil;
 import org.labkey.api.util.XmlBeansUtil;
 import org.labkey.api.util.XmlValidationException;
@@ -147,7 +147,7 @@ public class FileSystemFile implements VirtualFile
     public String getRelativePath(String filename)
     {
         File file = new File(_root, makeLegalName(filename));
-        return StudyImportException.getRelativePath(_root, file);
+        return ImportException.getRelativePath(_root, file);
     }
 
     @Override
