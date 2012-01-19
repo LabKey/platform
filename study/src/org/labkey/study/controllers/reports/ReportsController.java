@@ -20,9 +20,12 @@ import gwt.client.org.labkey.study.chart.client.StudyChartDesigner;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.math.NumberUtils;
 import org.json.JSONArray;
+import org.json.JSONException;
+import org.json.JSONObject;
 import org.labkey.api.action.ApiAction;
 import org.labkey.api.action.ApiResponse;
 import org.labkey.api.action.ApiSimpleResponse;
+import org.labkey.api.action.CustomApiForm;
 import org.labkey.api.action.FormViewAction;
 import org.labkey.api.action.GWTServiceAction;
 import org.labkey.api.action.SimpleViewAction;
@@ -58,6 +61,7 @@ import org.labkey.api.reports.report.view.ScriptReportBean;
 import org.labkey.api.security.RequiresPermissionClass;
 import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.AdminPermission;
+import org.labkey.api.security.permissions.InsertPermission;
 import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.security.permissions.UpdatePermission;
 import org.labkey.api.study.DataSet;
@@ -93,6 +97,7 @@ import org.labkey.study.query.StudyQuerySchema;
 import org.labkey.study.reports.EnrollmentReport;
 import org.labkey.study.reports.ExportExcelReport;
 import org.labkey.study.reports.ExternalReport;
+import org.labkey.study.reports.ParticipantReport;
 import org.labkey.study.reports.ReportManager;
 import org.labkey.study.reports.StudyQueryReport;
 import org.labkey.study.view.StudyGWTView;
@@ -2008,12 +2013,144 @@ public class ReportsController extends BaseStudyController
     {
         public ModelAndView getView(ReportDesignBean form, BindException errors) throws Exception
         {
-            return new JspView<CreateQueryReportBean>("/org/labkey/study/view/participantReport.jsp");
+            return new JspView<Report>("/org/labkey/study/view/participantReport.jsp");
         }
 
         public NavTree appendNavTrail(NavTree root)
         {
             return _appendNavTrail(root, StudyService.get().getSubjectNounSingular(getContainer()) + " Report");
+        }
+    }
+
+    @RequiresPermissionClass(InsertPermission.class)
+    public class SaveParticipantReportAction extends ApiAction<ParticipantReportForm>
+    {
+        @Override
+        public void validateForm(ParticipantReportForm form, Errors errors)
+        {
+            if (form.getName() == null)
+                errors.reject(ERROR_MSG, "A report name is required");
+
+            if (form.getJson() == null)
+                errors.reject(ERROR_MSG, "Report configuration information cannot be blank");
+            else
+            {
+                try {
+                    JSONObject config = new JSONObject(form.getJson());
+                }
+                catch (JSONException e)
+                {
+                    errors.reject(ERROR_MSG, e.getMessage());
+                }
+            }
+
+            try {
+                String key = ReportUtil.getReportKey(form.getSchemaName(), form.getQueryName());
+                for (Report report : ReportService.get().getReports(getUser(), getContainer(), key))
+                {
+                    if (form.getName().equalsIgnoreCase(report.getDescriptor().getReportName()))
+                        errors.reject(ERROR_MSG, "Another report with the same name already exists.");
+                }
+            }
+            catch (SQLException e)
+            {
+                errors.reject(ERROR_MSG, e.getMessage());
+            }
+        }
+
+        private Report getReport(ParticipantReportForm form) throws Exception
+        {
+            Report report;
+
+            if (form.getReportId() != null)
+                report = form.getReportId().getReport();
+            else
+                report = ReportService.get().createReportInstance(ParticipantReport.TYPE);
+
+            ReportDescriptor descriptor = report.getDescriptor();
+
+            descriptor.setReportName(form.getName());
+            descriptor.setReportDescription(form.getDescription());
+            descriptor.setProperty(ReportDescriptor.Prop.schemaName, form.getSchemaName());
+            descriptor.setProperty(ReportDescriptor.Prop.queryName, form.getQueryName());
+            descriptor.setProperty(ReportDescriptor.Prop.json, form.getJson());
+
+            return report;
+        }
+
+        @Override
+        public ApiResponse execute(ParticipantReportForm form, BindException errors) throws Exception
+        {
+            ApiSimpleResponse response = new ApiSimpleResponse();
+            String key = ReportUtil.getReportKey(form.getSchemaName(), form.getQueryName());
+            Report report = getReport(form);
+
+            int rowId = ReportService.get().saveReport(getViewContext(), key, report);
+            ReportIdentifier reportId = ReportService.get().getReportIdentifier(String.valueOf(rowId));
+
+            response.put("success", true);
+            response.put("reportId", reportId);
+
+            return response;
+        }
+    }
+
+    public static class ParticipantReportForm implements CustomApiForm
+    {
+        private String _name;
+        private String _description;
+        private String _json;
+        private String _queryName;
+        private String _schemaName;
+        private ReportIdentifier _reportId;
+
+        public String getName()
+        {
+            return _name;
+        }
+
+        public String getDescription()
+        {
+            return _description;
+        }
+
+        public String getJson()
+        {
+            return _json;
+        }
+
+        public String getQueryName()
+        {
+            return _queryName;
+        }
+
+        public String getSchemaName()
+        {
+            return _schemaName;
+        }
+
+        public ReportIdentifier getReportId()
+        {
+            return _reportId;
+        }
+
+        @Override
+        public void bindProperties(Map<String, Object> props)
+        {
+            _name = (String)props.get("name");
+            _description = (String)props.get("description");
+            _schemaName = (String)props.get("schemaName");
+            _queryName = (String)props.get("queryName");
+
+            Object reportId = props.get("reportId");
+            if (reportId != null)
+                _reportId = ReportService.get().getReportIdentifier((String)reportId);
+
+            Object json = props.get("json");
+            if (json instanceof JSONObject)
+            {
+                _json = ((JSONObject)json).toString();
+            }
         }
     }
 }
