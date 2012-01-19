@@ -60,7 +60,9 @@ public class ContainerTable extends FilteredTable
         
         wrapAllColumns(true);
         getColumn("_ts").setHidden(true);
-        getColumn("EntityId").setHidden(true);
+        ColumnInfo entityIdColumn = getColumn("EntityId");
+        entityIdColumn.setHidden(true);
+        entityIdColumn.setKeyField(true);
         getColumn("RowId").setHidden(true);
 
         getColumn("Parent").setFk(new LookupForeignKey("EntityId", "Name")
@@ -77,7 +79,6 @@ public class ContainerTable extends FilteredTable
         StringExpression webURLExp = StringExpressionFactory.create(wbURL, true);
 
         ColumnInfo col = this.wrapColumn("ID", getRealTable().getColumn("RowId"));
-        col.setKeyField(true);
         col.setReadOnly(true);
         col.setURL(webURLExp);
         this.addColumn(col);
