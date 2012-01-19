@@ -23,15 +23,13 @@ import org.labkey.api.reports.report.ReportDescriptor;
  */
 public class VisualizationReportDescriptor extends ReportDescriptor
 {
-    public static final String JSON_PROPERTY = "json";
-
     public String getJSON()
     {
-        return getProperty(JSON_PROPERTY);
+        return getProperty(Prop.json);
     }
 
     public void setJSON(String json)
     {
-        setProperty(JSON_PROPERTY, json);
+        setProperty(Prop.json, json);
     }
 }

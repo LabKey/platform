@@ -86,7 +86,8 @@ public class ReportDescriptor extends Entity implements SecurableResource
         cached,
         version,
         author,         // author is treated as metadata instead of a first-class field
-        status
+        status,
+        json,
     }
 
     public ReportDescriptor()
