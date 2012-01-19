@@ -18,6 +18,7 @@ package org.labkey.query.sql;
 
 import org.antlr.runtime.tree.CommonTree;
 import org.apache.commons.lang3.StringUtils;
+import org.jetbrains.annotations.Nullable;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.data.*;
 import org.labkey.api.data.dialect.SqlDialect;
@@ -97,6 +98,14 @@ public abstract class Method
         labkeyMethod.put("repeat", new JdbcMethod("repeat", JdbcType.VARCHAR, 2, 2));
         labkeyMethod.put("rtrim", new JdbcMethod("rtrim", JdbcType.VARCHAR, 1, 1));
         labkeyMethod.put("substring", new JdbcMethod("substring", JdbcType.VARCHAR, 2, 3));
+        labkeyMethod.put("startswith", new Method("startswith", JdbcType.BOOLEAN, 2, 2)
+            {
+            @Override
+            public MethodInfo getMethodInfo()
+            {
+                return new StartsWithInfo();
+            }
+        });
         labkeyMethod.put("ucase", new JdbcMethod("ucase", JdbcType.VARCHAR, 1, 1));
         labkeyMethod.put("upper", new JdbcMethod("ucase", JdbcType.VARCHAR, 1, 1));
 
@@ -605,6 +614,44 @@ public abstract class Method
     }
 
 
+    class StartsWithInfo extends AbstractMethodInfo
+    {
+        StartsWithInfo()
+        {
+            super(JdbcType.BOOLEAN);
+        }
+
+        public SQLFragment getSQL(DbSchema schema, SQLFragment[] arguments)
+        {
+            // try to turn second argument into pattern
+            SQLFragment pattern = escapeLikePattern(arguments[1], '!', null, "%");
+            if (null != pattern)
+            {
+                String like = schema.getSqlDialect().getCaseInsensitiveLikeOperator();
+                SQLFragment ret = new SQLFragment();
+                ret.append("((").append(arguments[0]).append(") ").append(like).append(" ").append(pattern).append(" ESCAPE '!')");
+                return ret;
+            }
+            else if (schema.getSqlDialect().isCaseSensitive())
+            {
+                SQLFragment ret = new SQLFragment();
+                ret.append("{fn lcase({fn left(").append(arguments[0]).append(",").append("{fn length(").append(arguments[1]).append(")})})}");
+                ret.append("={fn lcase(").append(arguments[1]).append(")}");
+                return ret;
+            }
+            else
+            {
+                SQLFragment ret = new SQLFragment();
+                ret.append("{fn left(").append(arguments[0]).append(",").append("{fn length(").append(arguments[1]).append(")})}");
+                ret.append("=(").append(arguments[1]).append(")");
+                return ret;
+            }
+        }
+    }
+
+
+
+
     class IsEqualInfo extends AbstractMethodInfo
     {
         IsEqualInfo()
@@ -768,6 +815,44 @@ public abstract class Method
     }
 
 
+    public static SQLFragment escapeLikePattern(SQLFragment f, char escapeChar, @Nullable String prepend, @Nullable String append)
+    {
+        if (!isSimpleString(f))
+            return null;
+
+        String escapeChars = "_%[" + escapeChar;
+        SQLFragment esc = new SQLFragment();
+
+        esc.append("'");
+        if (null != prepend)
+            esc.append(prepend);
+
+        for (char c : f.getSQL().substring(1,f.length()-1).toCharArray())
+        {
+            if (-1 != escapeChars.indexOf(c))
+                esc.append(escapeChar);
+            esc.append(c);
+        }
+
+        if (null != append)
+            esc.append(append);
+        esc.append('\'');
+
+        return esc;
+    }
+
+
+    public static boolean isSimpleString(SQLFragment f)
+    {
+        if (f.getParams().size() > 0)
+            return false;
+        String s = f.getSQL();
+        if (s.length() < 2 || !s.startsWith("'"))
+            return false;
+        return s.length()-1 == s.indexOf('\'',1);
+    }
+
+
     static CaseInsensitiveHashMap<Method> postgresMethods = new CaseInsensitiveHashMap<Method>();
     static
     {
@@ -835,7 +920,6 @@ public abstract class Method
 
     // Numeric Functions - Haven't put advanced mathematical functions in. Can add in later if the demand is there.
 
-    oracleMethods.put("round", new PassthroughMethod("round", JdbcType.DECIMAL, 1,2));
     oracleMethods.put("to_number", new PassthroughMethod("to_number", JdbcType.DECIMAL, 1,3));
 
     // Character Functions returning Character Values
@@ -846,9 +930,6 @@ public abstract class Method
     oracleMethods.put("instr", new PassthroughMethod("instr", JdbcType.VARCHAR, 2,4));
     oracleMethods.put("replace", new PassthroughMethod("replace", JdbcType.VARCHAR, 2,3));
     oracleMethods.put("translate", new PassthroughMethod("translate", JdbcType.VARCHAR, 3,3));
-    oracleMethods.put("length", new PassthroughMethod("length", JdbcType.INTEGER, 1,1));
-    oracleMethods.put("upper", new PassthroughMethod("upper", JdbcType.VARCHAR, 1,1));
-    oracleMethods.put("lower", new PassthroughMethod("lower", JdbcType.VARCHAR, 1,1));
     oracleMethods.put("rpad", new PassthroughMethod("rpad", JdbcType.VARCHAR, 2,3));
     oracleMethods.put("lpad", new PassthroughMethod("lpad", JdbcType.VARCHAR, 2,3));
     oracleMethods.put("ascii", new PassthroughMethod("ascii", JdbcType.INTEGER, 1,1));
