@@ -32,47 +32,31 @@
     String customizeId = "participant-report-div-" + UniqueID.getRequestScopedUID(HttpView.currentRequest());
 %>
 
+<style type="text/css">
+    .x4-reset .x4-border-layout-ct {
+        background-color: white;
+    }
+</style>
 <script type="text/javascript">
     LABKEY.requiresExt4Sandbox(true);
+    LABKEY.requiresScript("TemplateHelper.js");
     LABKEY.requiresScript("study/ParticipantReport.js");
 </script>
 
 <script type="text/javascript">
 
-    Ext.onReady(function(){
-        var participantReport = Ext4.create('LABKEY.ext4.ParticipantReport', {
-            height   : 500,
-            renderTo : '<%= elementId %>',
-            customizeViewId : '<%= customizeId %>'
+    Ext4.onReady(function(){
+        var panel = Ext4.create('LABKEY.ext4.ParticipantReport', {
+            height     : 1000, // TODO: figure out dynamic height
+            renderTo   : '<%= elementId %>',
+            <%--previewEl  : '<%= customizeId %>',--%>
+//            reportId   : 'fake-report-id',
+            allowCustomize : true,
+            openCustomize : true
         });
-
-/*
-        function createParticipantReport() {
-
-            var helper = new LABKEY.TemplateReport(
-            {
-                rowBreakInfo:[{name:'Status', rowspans:false}],
-                pageBreakInfo:[{name:'AssignedTo', rowspans:true}],
-                template : pageTmpl1
-            });
-
-            LABKEY.Query.selectRows({
-                requiredVersion: 12.1,
-                schemaName: 'issues',
-                queryName: 'Issues',
-                columns: 'AssignedTo,Status,XY,IssueId,Created,Priority,Title,Type,AssignedTo/DisplayName,AssignedTo/UserId,CreatedBy,Area,Milestone,Triage',
-                sort: 'AssignedTo/DisplayName,Status,-IssueId',
-                success: function(qr)
-                {
-                    helper.data = qr;
-                    helper.render('<%=elementId%>');
-                }
-            });
-        }
-*/
     });
 
 </script>
 
-<div id="<%= customizeId %>" class="extContainer" style="width:100%"></div>
-<div id="<%=elementId%>" class="extContainer" style="width:100%"/>
+<div id="<%= elementId%>" class="extContainer" style="width:100%;"></div>
+<div id="<%= customizeId %>" class="extContainer" style="width:100%;"></div>
