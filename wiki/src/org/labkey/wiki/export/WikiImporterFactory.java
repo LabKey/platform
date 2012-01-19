@@ -4,6 +4,7 @@ import org.labkey.api.admin.ExternalFolderImporter;
 import org.labkey.api.admin.ExternalFolderImporterFactory;
 import org.labkey.api.admin.ImportContext;
 import org.labkey.api.admin.ImportException;
+import org.labkey.api.attachments.Attachment;
 import org.labkey.api.attachments.AttachmentFile;
 import org.labkey.api.attachments.FileAttachmentFile;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
@@ -36,15 +37,15 @@ import java.util.Set;
  * User: jeckels
  * Date: Jan 18, 2012
  */
-public class WikiFolderImporterFactory implements ExternalFolderImporterFactory
+public class WikiImporterFactory implements ExternalFolderImporterFactory
 {
     @Override
     public ExternalFolderImporter create()
     {
-        return new WikiFolderImporter();
+        return new WikiImporter();
     }
 
-    private class WikiFolderImporter implements ExternalFolderImporter
+    private class WikiImporter implements ExternalFolderImporter
     {
         @Override
         public String getDescription()
@@ -59,7 +60,7 @@ public class WikiFolderImporterFactory implements ExternalFolderImporterFactory
             if (wikisXml != null)
             {
                 File wikisDir = ctx.getDir(root, wikisXml.getDir());
-                File wikisXmlFile = new File(wikisDir, WikiFolderWriterFactory.WIKIS_FILENAME);
+                File wikisXmlFile = new File(wikisDir, WikiWriterFactory.WIKIS_FILENAME);
 
                 if (!wikisXmlFile.exists())
                 {
@@ -121,7 +122,23 @@ public class WikiFolderImporterFactory implements ExternalFolderImporterFactory
 
         private Wiki importWiki(String name, String title, boolean showAttachments, File wikiSubDir, ImportContext ctx) throws IOException, SQLException, ImportException
         {
-            Wiki wiki = new Wiki(ctx.getContainer(), new HString(name));
+            Wiki existingWiki = WikiSelectManager.getWiki(ctx.getContainer(), new HString(name));
+            List<String> existingAttachmentNames = new ArrayList<String>();
+
+            Wiki wiki;
+
+            if (existingWiki == null)
+            {
+                wiki = new Wiki(ctx.getContainer(), new HString(name));
+            }
+            else
+            {
+                wiki = existingWiki;
+                for (Attachment attachment : wiki.getAttachments())
+                {
+                    existingAttachmentNames.add(attachment.getName());
+                }
+            }
             wiki.setShowAttachments(showAttachments);
 
             File contentFile = findContentFile(wikiSubDir, name);
@@ -140,7 +157,15 @@ public class WikiFolderImporterFactory implements ExternalFolderImporterFactory
             }
 
             wikiversion.setTitle(title == null ? wiki.getName() : new HString(title));
-            WikiManager.get().insertWiki(ctx.getUser(), ctx.getContainer(), wiki, wikiversion, attachments);
+            if (existingWiki == null)
+            {
+                WikiManager.get().insertWiki(ctx.getUser(), ctx.getContainer(), wiki, wikiversion, attachments);
+            }
+            else
+            {
+                WikiManager.get().updateWiki(ctx.getUser(), wiki, wikiversion);
+                WikiManager.get().updateAttachments(ctx.getUser(), wiki, existingAttachmentNames, attachments);
+            }
             return wiki;
         }
 

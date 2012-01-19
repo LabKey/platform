@@ -43,6 +43,7 @@ import org.labkey.api.study.Visit;
 import org.labkey.api.util.FileUtil;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.XmlBeansUtil;
+import org.labkey.api.writer.AbstractVirtualFile;
 import org.labkey.api.writer.Archive;
 import org.labkey.api.writer.VirtualFile;
 import org.labkey.study.StudyFolderType;
@@ -465,7 +466,7 @@ public class CreateAncillaryStudyAction extends MutatingApiAction<EmphasisStudyD
         return study;
     }
 
-    private static class MemoryVirtualFile implements VirtualFile
+    private static class MemoryVirtualFile extends AbstractVirtualFile
     {
         private String _root;
         private Map<String, XmlObject> _docMap = new HashMap<String, XmlObject>();

@@ -3735,8 +3735,9 @@ wiki/src/org/labkey/wiki/WikiTOCFactory.java -text
 wiki/src/org/labkey/wiki/WikiVersionCache.java -text
 wiki/src/org/labkey/wiki/WikiWebPartFactory.java -text
 wiki/src/org/labkey/wiki/WikiWebdavProvider.java -text
-wiki/src/org/labkey/wiki/export/WikiFolderImporterFactory.java -text
-wiki/src/org/labkey/wiki/export/WikiFolderWriterFactory.java -text
+wiki/src/org/labkey/wiki/export/DummyWebdavResource.java -text
+wiki/src/org/labkey/wiki/export/WikiImporterFactory.java -text
+wiki/src/org/labkey/wiki/export/WikiWriterFactory.java -text
 wiki/src/org/labkey/wiki/model/BaseWikiView.java -text
 wiki/src/org/labkey/wiki/model/CollaborationFolderType.java -text
 wiki/src/org/labkey/wiki/model/RadeoxMacroProxy.java -text

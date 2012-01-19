@@ -16,6 +16,7 @@
 
 package org.labkey.wiki;
 
+import org.apache.xmlbeans.XmlOptions;
 import org.jetbrains.annotations.NotNull;
 import org.labkey.api.attachments.AttachmentService;
 import org.labkey.api.data.Container;
@@ -44,7 +45,12 @@ import org.labkey.api.webdav.WebdavResolverImpl;
 import org.labkey.api.webdav.WebdavResource;
 import org.labkey.api.webdav.WebdavService;
 import org.labkey.api.wiki.WikiRendererType;
+import org.labkey.data.xml.wiki.WikiType;
+import org.labkey.data.xml.wiki.WikisDocument;
+import org.labkey.data.xml.wiki.WikisType;
+import org.labkey.wiki.export.WikiWriterFactory;
 import org.labkey.wiki.model.Wiki;
+import org.labkey.wiki.model.WikiTree;
 import org.labkey.wiki.model.WikiVersion;
 
 import java.io.ByteArrayInputStream;
@@ -53,6 +59,7 @@ import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.UnsupportedEncodingException;
+import java.lang.ref.WeakReference;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -106,11 +113,11 @@ public class WikiWebdavProvider implements WebdavService.Provider
     }
 
 
-    class WikiProviderResource extends AbstractWebdavResourceCollection
+    public static class WikiProviderResource extends AbstractWebdavResourceCollection
     {
         Container _c;
         
-        WikiProviderResource(WebdavResource parent, Container c)
+        public WikiProviderResource(WebdavResource parent, Container c)
         {
             super(parent.getPath(), WIKI_NAME);
             _c = c;
@@ -125,6 +132,10 @@ public class WikiWebdavProvider implements WebdavService.Provider
 
         public WebdavResource find(String name)
         {
+            if (name.equals(WikiWriterFactory.WIKIS_FILENAME))
+            {
+                return new WikiMetadata(this);
+            }
             return new WikiFolder(this, name);
         }
 
@@ -133,6 +144,7 @@ public class WikiWebdavProvider implements WebdavService.Provider
         {
             List<HString> names = WikiSelectManager.getPageNames(_c);
             ArrayList<String> strs = new ArrayList<String>();
+            strs.add(WikiWriterFactory.WIKIS_FILENAME);
 
             if (names != null)
             {
@@ -187,6 +199,104 @@ public class WikiWebdavProvider implements WebdavService.Provider
         public String getExecuteHref(ViewContext context)
         {
             return getHref(context);
+        }
+    }
+
+    /** An XML file with metadata about all wikis in current container,
+     * including parenting, title, whether or not to show attachments, etc */
+    public static class WikiMetadata extends AbstractDocumentResource
+    {
+        private final WikiProviderResource _parent;
+        private WeakReference<byte[]> _content;
+
+        protected WikiMetadata(WikiProviderResource parent)
+        {
+            super(parent.getPath(), WikiWriterFactory.WIKIS_FILENAME);
+            _parent = parent;
+            setPolicy(parent._c.getPolicy());
+        }
+
+        @Override
+        public boolean canDelete(User user)
+        {
+            return false;
+        }
+
+        @Override
+        public boolean exists()
+        {
+            return true;
+        }
+
+        @Override
+        public boolean canWrite(User user)
+        {
+            return false;
+        }
+
+        @Override
+        public String getContentType()
+        {
+            return "text/xml";
+        }
+
+        @Override
+        public InputStream getInputStream(User user) throws IOException
+        {
+            return new ByteArrayInputStream(getContent());
+        }
+
+        private byte[] getContent() throws IOException
+        {
+            byte[] result = _content == null ? null : _content.get();
+            if (result == null)
+            {
+                WikisDocument document = WikisDocument.Factory.newInstance();
+                WikisType wikis = document.addNewWikis();
+
+                for (WikiTree wikiTree : WikiSelectManager.getWikiTrees(_parent._c))
+                {
+                    WikiType wikiXml = wikis.addNewWiki();
+                    Wiki wiki = WikiSelectManager.getWiki(_parent._c, wikiTree.getName());
+                    wikiXml.setName(wiki.getName().getSource());
+                    Wiki parentWiki = wiki.getParentWiki();
+                    if (parentWiki != null)
+                    {
+                        wikiXml.setParent(parentWiki.getName().getSource());
+                    }
+
+                    WikiVersion wikiVersion = wiki.getLatestVersion();
+                    wikiXml.setTitle(wikiVersion.getTitle().getSource());
+                    wikiXml.setShowAttachments(wiki.isShowAttachments());
+                }
+
+                XmlOptions options = new XmlOptions();
+                options.setSavePrettyPrint();
+                InputStream in = document.newInputStream(options);
+                ByteArrayOutputStream out = new ByteArrayOutputStream();
+                byte[] buffer = new byte[4096];
+                int length;
+                while ((length = in.read(buffer)) != -1)
+                {
+                    out.write(buffer, 0, length);
+                }
+                result = out.toByteArray();
+                _content = new WeakReference<byte[]>(result);
+            }
+
+            return result;
+        }
+
+        @Override
+        public long copyFrom(User user, FileStream in) throws IOException
+        {
+            throw new UnsupportedOperationException();
+        }
+
+        @Override
+        public long getContentLength() throws IOException
+        {
+            return getContent().length;
         }
     }
     

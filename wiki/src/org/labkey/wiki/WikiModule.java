@@ -40,8 +40,8 @@ import org.labkey.api.view.WebPartFactory;
 import org.labkey.api.webdav.WebdavService;
 import org.labkey.api.wiki.WikiRendererType;
 import org.labkey.api.wiki.WikiService;
-import org.labkey.wiki.export.WikiFolderImporterFactory;
-import org.labkey.wiki.export.WikiFolderWriterFactory;
+import org.labkey.wiki.export.WikiImporterFactory;
+import org.labkey.wiki.export.WikiWriterFactory;
 import org.labkey.wiki.model.CollaborationFolderType;
 import org.labkey.wiki.model.Wiki;
 import org.labkey.wiki.model.WikiVersion;
@@ -123,7 +123,7 @@ public class WikiModule extends DefaultModule implements SearchService.DocumentP
             ss.addDocumentProvider(this);
         }
 
-        ServiceRegistry.get().getService(FolderSerializationRegistry.class).addFactories(new WikiFolderWriterFactory(), new WikiFolderImporterFactory());
+        ServiceRegistry.get().getService(FolderSerializationRegistry.class).addFactories(new WikiWriterFactory(), new WikiImporterFactory());
     }
 
     private void bootstrap(ModuleContext moduleContext)
