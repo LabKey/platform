@@ -217,12 +217,14 @@ function showCompletionDiv(elem)
         }
     }
 
-    while (offsetElem.tagName != "BODY")
+    while (offsetElem && offsetElem.tagName != "BODY")
     {
         posLeft += offsetElem.offsetLeft;
         posTop += offsetElem.offsetTop;
         offsetElem = offsetElem.offsetParent;
     }
+    if (!offsetElem)
+        return false;
 
     posTop += elem.offsetHeight;
     div.style.top = posTop + 'px';
