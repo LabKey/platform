@@ -1212,6 +1212,7 @@ api/src/org/labkey/api/wiki/MacroProvider.java -text
 api/src/org/labkey/api/wiki/WikiRendererDisplayColumn.java -text
 api/src/org/labkey/api/wiki/WikiRendererType.java -text
 api/src/org/labkey/api/wiki/WikiService.java -text
+api/src/org/labkey/api/writer/AbstractVirtualFile.java -text
 api/src/org/labkey/api/writer/Archive.java -text
 api/src/org/labkey/api/writer/ContainerUser.java -text
 api/src/org/labkey/api/writer/FastaEntry.java -text

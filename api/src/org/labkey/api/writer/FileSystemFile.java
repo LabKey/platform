@@ -30,7 +30,7 @@ import java.io.*;
  * Date: Apr 16, 2009
  * Time: 3:30:23 PM
  */
-public class FileSystemFile implements VirtualFile
+public class FileSystemFile extends AbstractVirtualFile
 {
     private final File _root;
 

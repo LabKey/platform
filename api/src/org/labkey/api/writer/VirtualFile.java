@@ -16,6 +16,7 @@
 package org.labkey.api.writer;
 
 import org.apache.xmlbeans.XmlObject;
+import org.labkey.api.webdav.WebdavResource;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -32,6 +33,8 @@ public interface VirtualFile
     public PrintWriter getPrintWriter(String path) throws IOException;
     public OutputStream getOutputStream(String filename) throws IOException;
     public void saveXmlBean(String filename, XmlObject doc) throws IOException;
+    /** Recursively exports the contents of the resource to this directory */
+    public void saveWebdavTree(WebdavResource resource) throws IOException;
     public XmlObject getXmlBean(String filename) throws IOException;
     public InputStream getInputStream(String filename) throws IOException;
     public String getRelativePath(String filename);
