@@ -2,6 +2,7 @@ package org.labkey.study.designer;
 
 import org.json.JSONArray;
 import org.json.JSONObject;
+import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.security.User;
 import org.labkey.study.model.DataSetDefinition;
 import org.labkey.study.model.VisitDataSet;
@@ -63,6 +64,7 @@ public class StudySchedule
     {
         JSONObject o = new JSONObject();
 
+        o.put("name", ColumnInfo.legalNameFromName(visit.getLabel()));
         o.put("label", visit.getLabel());
         o.put("sequenceMin", visit.getSequenceNumMin());
         o.put("sequenceMax", visit.getSequenceNumMax());
@@ -106,7 +108,7 @@ public class StudySchedule
             {
                 VisitImpl visit = visitMap.get(vds.getVisitRowId());
                 if (visit != null)
-                    o.put(visit.getLabel(), serializeVisit(user, visit, vds.isRequired()));
+                    o.put(ColumnInfo.legalNameFromName(visit.getLabel()), serializeVisit(user, visit, vds.isRequired()));
             }
             d.put(o);
         }
