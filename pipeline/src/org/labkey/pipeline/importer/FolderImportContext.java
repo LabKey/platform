@@ -75,7 +75,8 @@ public class FolderImportContext extends AbstractFolderContext
         return file;
     }
 
-    public File getFolderDir(File root, String dirName) throws ImportException
+    @Override
+    public File getDir(File root, String dirName) throws ImportException
     {
         File dir = null != dirName ? new File(root, dirName) : root;
 
