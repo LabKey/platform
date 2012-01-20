@@ -43,7 +43,7 @@ class ScriptReorderer
         else
         {
             TABLE_NAME_REGEX = "((?:(?:\\w+)\\.)?(?:\\w+))";
-            STATEMENT_ENDING_REGEX = ";$(\\s*)";
+            STATEMENT_ENDING_REGEX = ";(\\s*?)((--)[^\\n]*)?$(\\s*)";
         }
     }
 

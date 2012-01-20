@@ -43,7 +43,6 @@ import org.labkey.api.security.RequiresPermissionClass;
 import org.labkey.api.security.RequiresSiteAdmin;
 import org.labkey.api.security.permissions.AdminPermission;
 import org.labkey.api.settings.AppProps;
-import org.labkey.api.util.Formats;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.HtmlView;
@@ -941,7 +940,7 @@ public class SqlScriptController extends SpringActionController
                 }
             });
 
-            double[] fromVersions = new double[]{0.00, 2.00, 2.10, 2.20, 2.30, 8.10, 8.20, 8.30, 9.10, 9.20, 9.30, 10.1};
+            double[] fromVersions = new double[]{0.00, 9.30, 10.1, 10.2, 10.3, 11.1, 11.2, 11.3};
             double toVersion = form.getToVersion();
 
             for (Module module : modules)

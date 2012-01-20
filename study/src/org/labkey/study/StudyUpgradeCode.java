@@ -56,7 +56,7 @@ public class StudyUpgradeCode implements UpgradeCode
 {
     private static final Logger _log = Logger.getLogger(StudyUpgradeCode.class);
 
-    /* called at 11.21-11.22, adds studyProtocolEntityId's to each study. */
+    /* called at 11.21-11.22, adds studyProtocolEntityIds to each study. */
     @SuppressWarnings({"UnusedDeclaration"})
     public void assignProtocolDocumentEntityId(ModuleContext moduleContext)
     {
