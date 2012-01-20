@@ -71,6 +71,7 @@ public class WikiImporterFactory implements FolderImporterFactory
 
                 WikisDocument document = WikisDocument.Factory.parse(wikisXmlFile);
                 WikisType rootNode = document.getWikis();
+                int displayOrder = 0;
                 for (WikiType wikiXml : rootNode.getWikiArray())
                 {
                     File wikiSubDir = new File(wikisDir, wikiXml.getName());
@@ -78,7 +79,7 @@ public class WikiImporterFactory implements FolderImporterFactory
                     {
                         ctx.getLogger().error("Could not find content subdirectory for wiki with name \"" + wikiXml.getName() + "\"");
                     }
-                    Wiki wiki = importWiki(wikiXml.getName(), wikiXml.getTitle(), wikiXml.getShowAttachments(), wikiSubDir, ctx);
+                    Wiki wiki = importWiki(wikiXml.getName(), wikiXml.getTitle(), wikiXml.getShowAttachments(), wikiSubDir, ctx, displayOrder++);
                     if (wikiXml.getParent() != null)
                     {
                         parentsToBeSet.put(wiki, wikiXml.getParent());
@@ -91,7 +92,7 @@ public class WikiImporterFactory implements FolderImporterFactory
                 {
                     if (wikiSubDir.isDirectory() && !importedWikiNames.contains(wikiSubDir.getName()))
                     {
-                        importWiki(wikiSubDir.getName(), null, true, wikiSubDir, ctx);
+                        importWiki(wikiSubDir.getName(), null, true, wikiSubDir, ctx, displayOrder++);
                         importedWikiNames.add(wikiSubDir.getName());
                     }
                 }
@@ -105,6 +106,8 @@ public class WikiImporterFactory implements FolderImporterFactory
         {
             for (Map.Entry<Wiki, String> entry : parentsToBeSet.entrySet())
             {
+                // Look up the parent in the database because it's possible that it wasn't included in the archive
+                // that we imported, but was already present
                 Wiki parentWiki = WikiSelectManager.getWiki(ctx.getContainer(), new HString(entry.getValue()));
                 if (parentWiki == null)
                 {
@@ -119,7 +122,7 @@ public class WikiImporterFactory implements FolderImporterFactory
             }
         }
 
-        private Wiki importWiki(String name, String title, boolean showAttachments, File wikiSubDir, ImportContext ctx) throws IOException, SQLException, ImportException
+        private Wiki importWiki(String name, String title, boolean showAttachments, File wikiSubDir, ImportContext ctx, int displayOrder) throws IOException, SQLException, ImportException
         {
             Wiki existingWiki = WikiSelectManager.getWiki(ctx.getContainer(), new HString(name));
             List<String> existingAttachmentNames = new ArrayList<String>();
@@ -139,6 +142,7 @@ public class WikiImporterFactory implements FolderImporterFactory
                 }
             }
             wiki.setShowAttachments(showAttachments);
+            wiki.setDisplayOrder(displayOrder);
 
             File contentFile = findContentFile(wikiSubDir, name);
 
