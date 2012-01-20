@@ -49,7 +49,7 @@ import java.util.Set;
 public abstract class OracleDialect extends SimpleSqlDialect
 {
     @Override
-    protected String getProductName()
+    public String getProductName()
     {
         return "Oracle";
     }

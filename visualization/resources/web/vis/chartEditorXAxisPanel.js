@@ -168,7 +168,16 @@ LABKEY.vis.ChartEditorXAxisPanel = Ext.extend(Ext.FormPanel, {
                 'select': function(cmp, record, index) {
                     // change the axis label if it has not been customized by the user
                     // note: assume unchanged if contains part of the original label, i.e. " Since <Zero Date Label>"
-                    var zeroDateLabel = this.zeroDateCombo.getStore().getAt(this.zeroDateCombo.getStore().find('longlabel', this.zeroDateCombo.getValue())).data.label;
+                    var zeroDateLabel = '';
+
+                    if(this.zeroDateCombo.getValue() != ""){
+                        zeroDateLabel = this.zeroDateCombo.getStore().getAt(this.zeroDateCombo.getStore().find('longlabel', this.zeroDateCombo.getValue())).data.label;
+                    } else {
+                        //If the zeroDateCombo is blank then we try the zeroDateCol, this prevents errors if a
+                        //dataset has been hidden after a chart has been made (Issue 13809: Saved timecharts don't refresh after changing x-axis duration).
+                        zeroDateLabel = this.zeroDateCol.label;
+                    }
+
                     var ending = " Since " + zeroDateLabel;
                     if(this.labelTextField.getValue().indexOf(ending) > -1) {
                         var newLabel = record.data.value + " Since " + zeroDateLabel;

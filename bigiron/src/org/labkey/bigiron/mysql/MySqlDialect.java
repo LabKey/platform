@@ -103,7 +103,7 @@ public class MySqlDialect extends SimpleSqlDialect
     }
 
     @Override
-    protected String getProductName()
+    public String getProductName()
     {
         return "MySQL";
     }

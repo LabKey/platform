@@ -198,7 +198,7 @@ class PostgreSql83Dialect extends SqlDialect
     }
 
     @Override
-    protected String getProductName()
+    public String getProductName()
     {
         return "PostgreSQL";
     }

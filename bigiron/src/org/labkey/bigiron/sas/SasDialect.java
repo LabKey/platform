@@ -52,7 +52,7 @@ public abstract class SasDialect extends SimpleSqlDialect
     }
 
     @Override
-    protected String getProductName()
+    public String getProductName()
     {
         return "SAS";
     }

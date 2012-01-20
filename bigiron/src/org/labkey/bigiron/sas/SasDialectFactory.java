@@ -55,6 +55,9 @@ public class SasDialectFactory extends SqlDialectFactory
         if (jdbcDriverVersion.startsWith("9.2"))
             return new Sas92Dialect();
 
+        if (jdbcDriverVersion.startsWith("9.3"))
+            return new Sas93Dialect();
+
         throw new DatabaseNotSupportedException(getProductName() + " version " + databaseProductVersion + " is not supported.");
     }
 
