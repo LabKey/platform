@@ -99,7 +99,7 @@ public abstract class TSVColumnWriter extends TSVWriter
 
             default:
             case caption:
-                return dc.getCaption();
+                return dc.getCaption(null, false);
         }
     }
 

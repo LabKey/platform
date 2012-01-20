@@ -272,12 +272,14 @@ function showHelpDiv(elem, titleText, bodyText, width)
     if (_hideTimer)
         clearTimeout(_hideTimer);
 
-    while (offsetElem.tagName != "BODY")
+    while (offsetElem && offsetElem.tagName != "BODY")
     {
         posLeft += offsetElem.offsetLeft  - offsetElem.scrollLeft;
         posTop += offsetElem.offsetTop - offsetElem.scrollTop;
         offsetElem = offsetElem.offsetParent;
     }
+    if (!offsetElem)
+        return;
 
     posTop += elem.offsetHeight;
     //alert("posTop, posLeft: " +posTop + "," + posLeft);

@@ -310,7 +310,7 @@ public abstract class SqlDialect
         return keywordSet;
     }
 
-    protected abstract String getProductName();
+    public abstract String getProductName();
 
     public abstract String getSQLScriptPath();
 

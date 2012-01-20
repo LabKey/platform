@@ -1684,7 +1684,9 @@ public class QueryView extends WebPartView<Object>
         getSettings().setOffset(Table.NO_OFFSET);
         rgn.setAllowAsync(false);
         RenderContext rc = view.getRenderContext();
-        rc.setCache(false);
+        // Cache resultset only for SAS/SHARE data sources. See #12966 (which removed caching) and #13638 (which added it back for SAS)
+        boolean sas = "SAS".equals(rgn.getTable().getSqlDialect().getProductName());
+        rc.setCache(sas);
         ResultSet rs = rgn.getResultSet(rc);
         Map<FieldKey,ColumnInfo> map = rc.getFieldMap();
         ExcelWriter ew = new ExcelWriter(rs, map, getExportColumns(rgn.getDisplayColumns()), docType);

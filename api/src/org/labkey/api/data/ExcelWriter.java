@@ -646,7 +646,7 @@ public class ExcelWriter
         }
         catch (SQLException e)
         {
-            throw new RuntimeSQLException(e);
+            ExceptionUtil.logExceptionToMothership(null, e);
         }
     }
 
