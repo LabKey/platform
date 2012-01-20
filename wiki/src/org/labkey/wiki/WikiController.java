@@ -1289,6 +1289,8 @@ public class WikiController extends SpringActionController
 
             VersionBean bean = new VersionBean(_wiki, _wikiversion, getPermissions());
 
+            getPageConfig().setNoIndex();
+            getPageConfig().setNoFollow();
             return new JspView<VersionBean>("/org/labkey/wiki/view/wikiVersion.jsp", bean);
         }
 
@@ -1393,6 +1395,8 @@ public class WikiController extends SpringActionController
             HtmlView textView = new HtmlView(textDiffs);
             textView.setTitle("Text Differences");
 
+            getPageConfig().setNoIndex();
+            getPageConfig().setNoFollow();
             return new VBox(htmlView, textView);
         }
 
@@ -1568,6 +1572,8 @@ public class WikiController extends SpringActionController
             Wiki wiki = WikiSelectManager.getWiki(getContainer(), form.getName());
             if (wiki != null)
                 view.addView(AttachmentService.get().getHistoryView(getViewContext(), wiki));
+            getPageConfig().setNoIndex();
+            getPageConfig().setNoFollow();
             return view;
         }
 
