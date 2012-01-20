@@ -16,6 +16,8 @@
 
 package org.labkey.api.study;
 
+import org.labkey.api.admin.FolderImporterFactory;
+
 /*
 * User: adam
 * Date: Aug 25, 2009
@@ -23,5 +25,5 @@ package org.labkey.api.study;
 */
 public interface StudySerializationRegistry
 {
-    public void addFactories(ExternalStudyWriterFactory writerFactory, ExternalStudyImporterFactory importerFactory);
+    public void addFactories(ExternalStudyWriterFactory writerFactory, FolderImporterFactory importerFactory);
 }

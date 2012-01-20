@@ -17,9 +17,12 @@ package org.labkey.api.admin;
 
 import org.apache.log4j.Logger;
 import org.apache.xmlbeans.XmlObject;
+import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.Container;
 import org.labkey.api.security.User;
-import org.labkey.folder.xml.FolderDocument;
+import org.w3c.dom.Element;
+import org.w3c.dom.Node;
+import org.w3c.dom.NodeList;
 
 import java.io.File;
 
@@ -32,17 +35,19 @@ public abstract class AbstractImportContext<XmlRoot extends XmlObject, XmlDocume
     private final User _user;
     private final Container _c;
     private final Logger _logger;
+    @Nullable private final File _root;
 
     private transient XmlDocument _xmlDocument;
 
     private boolean _locked = false;
 
-    protected AbstractImportContext(User user, Container c, XmlDocument document, Logger logger)
+    protected AbstractImportContext(User user, Container c, XmlDocument document, Logger logger, @Nullable File root)
     {
         _user = user;
         _c = c;
         _logger = logger;
         _xmlDocument = document;
+        _root = root;
     }
 
     public User getUser()
@@ -55,9 +60,32 @@ public abstract class AbstractImportContext<XmlRoot extends XmlObject, XmlDocume
         return _c;
     }
 
-    public File getDir(File root, String dirName) throws ImportException
+    public File getDir(String xmlNodeName) throws ImportException
     {
-        throw new IllegalStateException("Not supported during export");
+        if (_root == null)
+            throw new IllegalStateException("Not supported during export");
+
+        NodeList childNodes = getXml().getDomNode().getChildNodes();
+        for (int i = 0; i < childNodes.getLength(); i++)
+        {
+            Node childNode = childNodes.item(i);
+            if (childNode.getNodeType() == Node.ELEMENT_NODE && childNode.getLocalName().equalsIgnoreCase(xmlNodeName))
+            {
+                String dirName = ((Element)childNode).getAttribute("dir");
+
+                File dir = null != dirName ? new File(_root, dirName) : _root;
+
+                if (!dir.exists())
+                    throw new ImportException("Main import file refers to a directory that does not exist: " + ImportException.getRelativePath(_root, dir));
+
+                if (!dir.isDirectory())
+                    throw new ImportException("Main import file refers to " + ImportException.getRelativePath(_root, dir) + ": expected a directory but found a file");
+
+                return dir;
+            }
+        }
+
+        return null;
     }
 
     public Logger getLogger()

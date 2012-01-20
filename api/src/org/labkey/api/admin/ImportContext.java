@@ -13,6 +13,6 @@ import java.io.File;
 public interface ImportContext<XmlType extends XmlObject> extends ContainerUser
 {
     public XmlType getXml() throws ImportException;
-    public File getDir(File root, String dirName) throws ImportException;
+    public File getDir(String xmlNodeName) throws ImportException;
     public Logger getLogger();
 }
