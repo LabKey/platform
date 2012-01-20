@@ -89,9 +89,19 @@ public class WorkbooksTableInfo extends ContainerTable
         @Override
         protected Map<String, Object> getRow(User user, Container container, Map<String, Object> keys) throws InvalidKeyException, QueryUpdateServiceException, SQLException
         {
+            // Support ID, RowId, or EntityId to identify a row
             String id = keys.get("ID") == null ? null : keys.get("ID").toString();
             if (id == null)
             {
+                id = keys.get("RowId") == null ? null : keys.get("RowId").toString();
+            }
+            if (id == null)
+            {
+                String entityId = keys.get("EntityId") == null ? null : keys.get("EntityId").toString();
+                if (entityId != null)
+                {
+                    return Table.selectObject(getQueryTable(), Table.ALL_COLUMNS, new SimpleFilter("EntityId", entityId), null, Map.class);
+                }
                 return null;
             }
             try
