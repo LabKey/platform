@@ -17,6 +17,7 @@
 package org.labkey.api.data;
 
 import org.apache.log4j.Logger;
+import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.SqlScriptRunner.SqlScript;
 import org.labkey.api.data.SqlScriptRunner.SqlScriptException;
 import org.labkey.api.data.SqlScriptRunner.SqlScriptProvider;
@@ -61,7 +62,7 @@ public class FileSqlScriptProvider implements SqlScriptProvider
 
     // Returns a sorted list of all valid scripts in the specified schema
     // schemaName = null returns all scripts
-    public List<SqlScript> getScripts(String schemaName) throws SqlScriptException
+    public List<SqlScript> getScripts(@Nullable String schemaName) throws SqlScriptException
     {
         Set<String> filenames = getScriptFilenames(schemaName);
 
@@ -96,7 +97,7 @@ public class FileSqlScriptProvider implements SqlScriptProvider
             schemaName == null          *.sql
             schemaName == <schema>      <schema>*.sql
     */
-    private Set<String> getScriptFilenames(String schemaName) throws SqlScriptException
+    private Set<String> getScriptFilenames(@Nullable String schemaName) throws SqlScriptException
     {
         Set<String> filenames = _module.getSqlScripts(schemaName, CoreSchema.getInstance().getSqlDialect());
 

@@ -365,48 +365,6 @@ public class Table
     }
 
 
-/*
-    @NotNull
-    private static <K> K[] internalExecuteQueryArray(DbSchema schema, String sql, Object[] parameters, Class<K> clss)
-            throws SQLException
-    {
-        Connection conn = null;
-        ResultSet rs = null;
-
-        try
-        {
-            conn = schema.getScope().getConnection();
-            rs = _executeQuery(conn, sql, parameters);
-
-            ObjectFactory<K> f = ObjectFactory.Registry.getFactory(clss);
-            if (null != f)
-            {
-                return f.handleArray(rs);
-            }
-
-            if (clss == java.util.Map.class)
-            {
-                CachedResultSet copy = (CachedResultSet)cacheResultSet(schema.getSqlDialect(), rs, ALL_ROWS, null);
-                //noinspection unchecked
-                K[] arrayListMaps = (K[])(copy._arrayListMaps == null ? new ArrayListMap[0] : copy._arrayListMaps);
-                copy.close();
-                return arrayListMaps;
-            }
-
-            throw new java.lang.IllegalArgumentException("could not create requested class");
-        }
-        catch(SQLException e)
-        {
-            doCatch(sql, parameters, conn, e);
-            throw(e);
-        }
-        finally
-        {
-            doFinally(rs, null, conn, schema.getScope());
-        }
-    }
-*/
-
     public static int execute(DbSchema schema, SQLFragment f) throws SQLException
     {
         return new LegacySqlExecutor(schema, f).execute();
@@ -416,24 +374,6 @@ public class Table
     public static int execute(DbSchema schema, String sql, @NotNull Object... parameters) throws SQLException
     {
         return new LegacySqlExecutor(schema, new SQLFragment(sql, parameters)).execute();
-
-/*
-        Connection conn = schema.getScope().getConnection();
-
-        try
-        {
-            return execute(conn, sql, parameters);
-        }
-        catch(SQLException e)
-        {
-            doCatch(sql, parameters, conn, e);
-            throw(e);
-        }
-        finally
-        {
-            doFinally(null, null, conn, schema.getScope());
-        }
-         */
     }
 
 
@@ -584,43 +524,6 @@ public class Table
     public static <K> K[] executeArray(TableInfo table, ColumnInfo col, @Nullable Filter filter, @Nullable Sort sort, Class<K> c) throws SQLException
     {
         return new LegacyTableSelector(col, filter, sort).getArray(c);
-
-/*
-        Map<String, ColumnInfo> cols = new CaseInsensitiveHashMap<ColumnInfo>();
-        cols.put(col.getName(), col);
-        if (filter != null || sort != null)
-            ensureRequiredColumns(table, cols, filter, sort, null);
-        SQLFragment sqlf = getSelectSQL(table, cols.values(), filter, sort);
-
-        DbSchema schema = table.getSchema();
-        String sql = sqlf.getSQL();
-        Object[] parameters = sqlf.getParams().toArray();
-
-        Connection conn = null;
-        ResultSet rs = null;
-
-        try
-        {
-            Getter getter = Getter.forClass(c);
-            if (null == getter) getter = Getter.OBJECT;
-            conn = schema.getScope().getConnection();
-            rs = _executeQuery(conn, sql, parameters);
-            ArrayList<Object> list = new ArrayList<Object>();
-            int i = rs.findColumn(col.getAlias());
-            while (rs.next())
-                list.add(getter.getObject(rs, i));
-            return list.toArray((K[]) Array.newInstance(c, list.size()));
-        }
-        catch(SQLException e)
-        {
-            doCatch(sql, parameters, conn, e);
-            throw(e);
-        }
-        finally
-        {
-            doFinally(rs, null, conn, schema.getScope());
-        }
-*/
     }
     
     // return a result from a one column resultset. K should be a string or number type
@@ -1131,41 +1034,6 @@ public class Table
     public static <K> K selectObject(TableInfo table, @Nullable Container c, Object pk, Class<K> clss)
     {
         return new TableSelector(table).getObject(c, pk, clss);
-
-
-/*
-        SimpleFilter filter = new SimpleFilter();
-        List<ColumnInfo> pkColumns = table.getPkColumns();
-        Object[] pks;
-
-        if (null != pk && pk.getClass().isArray())
-            pks = (Object[]) pk;
-        else
-            pks = new Object[]{pk};
-
-        assert pks.length == pkColumns.size() : "Wrong number of primary keys specified";
-
-        for (int i = 0; i < pkColumns.size(); i++)
-            filter.addCondition(pkColumns.get(i), pks[i]);
-
-        if (null != c)
-            filter.addCondition("container", c);
-
-        try
-        {
-            K[] values = select(table, ALL_COLUMNS, filter, null, clss);
-            assert (values.length == 0 || values.length == 1) : "Expected a zero or one row but got " + values.length;
-
-            if (values.length == 0)
-                return null;
-
-            return values[0];
-        }
-        catch (SQLException x)
-        {
-            throw new RuntimeSQLException(x);
-        }
-        */
     }
 
 

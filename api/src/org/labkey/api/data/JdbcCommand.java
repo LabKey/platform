@@ -28,8 +28,6 @@ public abstract class JdbcCommand
     private final DbScope _scope;
     private ExceptionFramework _exceptionFramework = ExceptionFramework.Spring;
 
-    abstract SQLFragment getSql();
-
     protected JdbcCommand(DbScope scope)
     {
         _scope = scope;

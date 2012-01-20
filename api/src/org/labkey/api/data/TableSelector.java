@@ -34,16 +34,16 @@ import java.util.Set;
 import java.util.concurrent.atomic.AtomicInteger;
 
 // TODO: cache, for display, async, etc.
-public class TableSelector extends BaseSelector
+public class TableSelector extends BaseSelector<TableSelector.Context>
 {
     private final TableInfo _table;
     private final Collection<ColumnInfo> _columns;
-    private final SimpleFilter _filter;
-    private final Sort _sort;
+    private final @Nullable Filter _filter;
+    private final @Nullable Sort _sort;
 
     private int _rowCount = Table.ALL_ROWS;
     private long _offset = Table.NO_OFFSET;
-    private long _scrollOffset = 0;
+    private long _scrollOffset = 0;           // TODO: move to Context
 
     // Select specified columns from a table
     public TableSelector(TableInfo table, Collection<ColumnInfo> columns, @Nullable Filter filter, @Nullable Sort sort)
@@ -51,7 +51,7 @@ public class TableSelector extends BaseSelector
         super(table.getSchema().getScope());
         _table = table;
         _columns = columns;
-        _filter = new SimpleFilter(filter);
+        _filter = filter;
         _sort = sort;
     }
 
@@ -79,11 +79,6 @@ public class TableSelector extends BaseSelector
         this(column.getParentTable(), PageFlowUtil.set(column), filter, sort);
     }
 
-    public Collection<ColumnInfo> getColumns()
-    {
-        return _columns;
-    }
-
     public TableSelector setRowCount(int rowCount)
     {
         assert Table.validMaxRows(rowCount) : rowCount + " is an illegal value for rowCount; should be positive, Table.ALL_ROWS or Table.NO_ROWS";
@@ -107,7 +102,7 @@ public class TableSelector extends BaseSelector
     }
 
     // pk can be single value or an array of values
-    public <K> K getObject(@Nullable Container c, Object pk, Class<K> clazz)   // TODO: Shouldn't mutate the filter... pass filter into getSQL() instead or create a query context
+    public <K> K getObject(@Nullable Container c, Object pk, Class<K> clazz)
     {
         List<ColumnInfo> pkColumns = _table.getPkColumns();
         Object[] pks;
@@ -119,13 +114,18 @@ public class TableSelector extends BaseSelector
 
         assert pks.length == pkColumns.size() : "Wrong number of primary keys specified";
 
+        SimpleFilter filter = new SimpleFilter(_filter);
+
         for (int i = 0; i < pkColumns.size(); i++)
-            _filter.addCondition(pkColumns.get(i), pks[i]);
+            filter.addCondition(pkColumns.get(i), pks[i]);
 
         if (null != c)
-            _filter.addCondition("container", c);
+            filter.addCondition("container", c);
 
-        return getObject(clazz);
+        // Ignore the sort -- we're just getting one object
+        Context context = new PreventSortContext(filter, _columns);
+
+        return getObject(clazz, context);
     }
 
     @Override
@@ -134,38 +134,42 @@ public class TableSelector extends BaseSelector
         ResultSet rs = super.getResultSet();
 
         // Special handling for dialects that don't support offset
-        while (_scrollOffset > 0 && rs.next())
+        while (_scrollOffset > 0 && rs.next())          // TODO: Add to context
             _scrollOffset--;
 
         return rs;
     }
 
     @Override
-    SQLFragment getSql()
+    public long getRowCount()
     {
-        return getSql(_columns);
+        // Ignore specified columns; only need to select PK column(s)
+        // Ignore sort -- a waste of time (at best) or a SQLException (on SQL Server)
+        Context context = new PreventSortContext(_filter, _table.getPkColumns());
+        return super.getRowCount(context);
     }
 
     @Override
-    protected SQLFragment getSqlForRowCount()
+    Context getContext()
     {
-        // Ignore specified columns; only need to select PK column(s)
-        return getSql(_table.getPkColumns());
+        // Return the standard context; exposed methods can create custom contexts to optimize specific requests (see
+        // getRowCount() and getObject()).
+        return new Context(_filter, _sort, _columns, true);
     }
 
-    private SQLFragment getSql(Collection<ColumnInfo> columns)
+    protected SQLFragment getSql(Context ctx)
     {
-        // NOTE: When ResultSet is supported, we'll need to select one extra row to support isComplete(). Will need
-        // boolean flag that indicates ResultSet is being selected.
+        // NOTE: When ResultSet is supported, we'll need to select one extra row to support isComplete(). Context will
+        // need to indicate that a ResultSet is being selected.
 
-        boolean forceSort = (_offset != Table.NO_OFFSET || _rowCount != Table.ALL_ROWS);
+        boolean forceSort = ctx.allowSort() && (_offset != Table.NO_OFFSET || _rowCount != Table.ALL_ROWS);
 
         if (_offset != Table.NO_OFFSET || _table.getSqlDialect().supportsOffset())
         {
             // Standard case is simply to create SQL using the rowCount and offset
 
             _scrollOffset = 0;
-            return QueryService.get().getSelectSQL(_table, columns, _filter, _sort, _rowCount, _offset, forceSort);
+            return QueryService.get().getSelectSQL(_table, ctx.getColumns(), ctx.getFilter(), ctx.getSort(), _rowCount, _offset, forceSort);
         }
         else
         {
@@ -174,7 +178,7 @@ public class TableSelector extends BaseSelector
             // - Set _scrollOffset so getResultSet() skips over the rows we don't want
 
             _scrollOffset = _offset;
-            return QueryService.get().getSelectSQL(_table, columns, _filter, _sort, (int)_offset + _rowCount, 0, forceSort);
+            return QueryService.get().getSelectSQL(_table, ctx.getColumns(), ctx.getFilter(), ctx.getSort(), (int)_offset + _rowCount, 0, forceSort);
         }
     }
 
@@ -227,7 +231,8 @@ public class TableSelector extends BaseSelector
 
                 // Back to all rows and verify
                 userSelector.setRowCount(Table.ALL_ROWS);
-                assertEquals(count, (int)userSelector.getRowCount());
+                userSelector.setOffset(Table.NO_OFFSET);
+                assertEquals(count, (int) userSelector.getRowCount());
                 assertEquals(count, userSelector.getArray(User.class).length);
                 assertEquals(count, userSelector.getCollection(User.class).size());
             }
@@ -274,6 +279,51 @@ public class TableSelector extends BaseSelector
                 array.length == objCount.intValue() &&
                 array.length == selector.getRowCount()
             );
+        }
+    }
+
+    protected static class Context
+    {
+        private final @Nullable Filter _filter;
+        private final @Nullable Sort _sort;
+        private final Collection<ColumnInfo> _columns;
+        private final boolean _allowSort;
+
+        public Context(@Nullable Filter filter, @Nullable Sort sort, Collection<ColumnInfo> columns, boolean allowSort)
+        {
+            _filter = filter;
+            _sort = allowSort ? sort : null;    // Ensure consistency
+            _columns = columns;
+            _allowSort = allowSort;
+        }
+
+        public @Nullable Filter getFilter()
+        {
+            return _filter;
+        }
+
+        public @Nullable Sort getSort()
+        {
+            return _sort;
+        }
+
+        public Collection<ColumnInfo> getColumns()
+        {
+            return _columns;
+        }
+
+        public boolean allowSort()
+        {
+            return _allowSort;
+        }
+    }
+
+    protected static class PreventSortContext extends Context
+    {
+        public PreventSortContext(Filter filter, Collection<ColumnInfo> columns)
+        {
+            // Really don't include a sort for this query
+            super(filter, null, columns, false);
         }
     }
 }

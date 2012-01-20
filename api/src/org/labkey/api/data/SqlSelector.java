@@ -16,7 +16,7 @@
 
 package org.labkey.api.data;
 
-public class SqlSelector extends BaseSelector
+public class SqlSelector extends BaseSelector<SqlSelector.EmptyContext>
 {
     private final SQLFragment _sql;
 
@@ -46,8 +46,19 @@ public class SqlSelector extends BaseSelector
     }
 
     @Override
-    public SQLFragment getSql()
+    public SQLFragment getSql(EmptyContext context)
     {
         return _sql;
+    }
+
+    @Override
+    EmptyContext getContext()
+    {
+        return null;  // No interesting context for a SqlSelector... we just execute the SQL
+    }
+
+    public static class EmptyContext
+    {
+
     }
 }

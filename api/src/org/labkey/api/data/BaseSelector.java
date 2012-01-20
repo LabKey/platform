@@ -29,11 +29,13 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-public abstract class BaseSelector extends JdbcCommand implements Selector
+public abstract class BaseSelector<CONTEXT> extends JdbcCommand implements Selector
 {
     private Connection _conn = null;
 
-    abstract SQLFragment getSql();
+    abstract SQLFragment getSql(CONTEXT context);
+    abstract CONTEXT getContext();  // A single query's context; this allows better Selector reuse, since query-specific
+                                    // optimizations would mutate the externally set state.
 
     protected BaseSelector(DbScope scope)
     {
@@ -43,7 +45,7 @@ public abstract class BaseSelector extends JdbcCommand implements Selector
     @Override      // TODO: Not valid to call directly at the moment since connection never gets closed
     public ResultSet getResultSet() throws SQLException
     {
-        return getResultSet(getSql());
+        return getResultSet(getSql(getContext()));
     }
 
     protected ResultSet getResultSet(SQLFragment sql) throws SQLException
@@ -52,7 +54,7 @@ public abstract class BaseSelector extends JdbcCommand implements Selector
         return Table._executeQuery(_conn, sql.getSQL(), sql.getParamsArray());
     }
 
-    private <K> ArrayList<K> getArrayList(final Class<K> clazz)
+    private <K> ArrayList<K> getArrayList(final Class<K> clazz, CONTEXT context)
     {
         final ArrayList<K> list;
         final Table.Getter getter = Table.Getter.forClass(clazz);
@@ -68,11 +70,11 @@ public abstract class BaseSelector extends JdbcCommand implements Selector
                     //noinspection unchecked
                     list.add((K)getter.getObject(rs));
                 }
-            });
+            }, context);
         }
         else
         {
-            list = handleResultSet(getSql(), new ResultSetHandler<ArrayList<K>>() {
+            list = handleResultSet(getSql(context), new ResultSetHandler<ArrayList<K>>() {
                 @Override
                 public ArrayList<K> handle(ResultSet rs) throws SQLException
                 {
@@ -105,8 +107,13 @@ public abstract class BaseSelector extends JdbcCommand implements Selector
     @Override
     public long getRowCount()
     {
+        return getRowCount(getContext());
+    }
+
+    protected long getRowCount(CONTEXT context)
+    {
         SQLFragment sql = new SQLFragment("SELECT COUNT(*) FROM (");
-        sql.append(getSqlForRowCount());
+        sql.append(getSql(context));
         sql.append(") x");
 
         return handleResultSet(sql, new ResultSetHandler<Long>()
@@ -120,28 +127,28 @@ public abstract class BaseSelector extends JdbcCommand implements Selector
         });
     }
 
-    protected SQLFragment getSqlForRowCount()
-    {
-        return getSql();
-    }
-
     @Override
     public <K> K[] getArray(Class<K> clazz)
     {
-        ArrayList<K> list = getArrayList(clazz);
+        ArrayList<K> list = getArrayList(clazz, getContext());
         return list.toArray((K[]) Array.newInstance(clazz, list.size()));
     }
 
     @Override
     public <K> Collection<K> getCollection(Class<K> clazz)
     {
-        return getArrayList(clazz);
+        return getArrayList(clazz, getContext());
     }
 
     @Override
     public <K> K getObject(Class<K> clazz)
     {
-        List<K> list = getArrayList(clazz);
+        return getObject(clazz, getContext());
+    }
+
+    protected <K> K getObject(Class<K> clazz, CONTEXT context)
+    {
+        List<K> list = getArrayList(clazz, context);
 
         if (list.size() == 1)
             return list.get(0);
@@ -154,7 +161,12 @@ public abstract class BaseSelector extends JdbcCommand implements Selector
     @Override
     public void forEach(final ForEachBlock<ResultSet> block)
     {
-        handleResultSet(getSql(), (new ResultSetHandler<Object>() {
+        forEach(block, getContext());
+    }
+
+    protected void forEach(final ForEachBlock<ResultSet> block, CONTEXT context)
+    {
+        handleResultSet(getSql(context), (new ResultSetHandler<Object>() {
             @Override
             public Object handle(ResultSet rs) throws SQLException
             {
@@ -169,7 +181,12 @@ public abstract class BaseSelector extends JdbcCommand implements Selector
     @Override
     public void forEachMap(final ForEachBlock<Map<String, Object>> block)
     {
-        handleResultSet(getSql(), new ResultSetHandler<Object>() {
+        forEachMap(block, getContext());
+    }
+
+    protected void forEachMap(final ForEachBlock<Map<String, Object>> block, CONTEXT context)
+    {
+        handleResultSet(getSql(context), new ResultSetHandler<Object>() {
             @Override
             public Object handle(ResultSet rs) throws SQLException
             {

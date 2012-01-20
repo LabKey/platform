@@ -271,7 +271,7 @@ public class SqlScriptRunner
     public interface SqlScriptProvider
     {
         public Set<String> getSchemaNames() throws SqlScriptException;
-        public List<SqlScript> getScripts(String schemaName) throws SqlScriptException;
+        public List<SqlScript> getScripts(@Nullable String schemaName) throws SqlScriptException;
         public SqlScript getScript(String description);
         public String getProviderName();
         public List<SqlScript> getDropScripts() throws SqlScriptException;

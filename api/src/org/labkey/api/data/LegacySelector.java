@@ -30,7 +30,7 @@ import java.util.Map;
 // Our new Selector API throws RuntimeExceptions, but the Table layer methods (and its callers) expect
 // checked SQLExceptions. This class helps migrate to the new API by wrapping a Selector and translating
 // its RuntimeSQLExceptions to checked SQLExceptions.
-public class LegacySelector<S extends BaseSelector>
+public class LegacySelector<S extends BaseSelector<?>>
 {
     protected final S _selector;
 
