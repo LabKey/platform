@@ -54,8 +54,9 @@ public class DatasetImporter implements InternalStudyImporter
         return "Dataset Definition Importer";
     }
 
-    public void process(StudyImpl study, ImportContext ctx, VirtualFile vf, BindException errors) throws IOException, SQLException, DatasetImportUtils.DatasetLockExistsException, XmlException, ImportException
+    public void process(ImportContext ctx, VirtualFile vf, BindException errors) throws IOException, SQLException, DatasetImportUtils.DatasetLockExistsException, XmlException, ImportException
     {
+        StudyImpl study = StudyManager.getInstance().getStudy(ctx.getContainer());
         StudyDocument.Study.Datasets datasetsXml = ctx.getXml().getDatasets();
 
         if (null != datasetsXml)
@@ -134,7 +135,7 @@ public class DatasetImporter implements InternalStudyImporter
             if (null == datasetsXml.getDir())
                 return root;
 
-            return ctx.getDir(root, datasetsXml.getDir());
+            return ctx.getDir(datasetsXml.getDir());
         }
 
         return null;

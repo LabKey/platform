@@ -15,12 +15,15 @@
  */
 package org.labkey.study.writer;
 
+import org.jetbrains.annotations.Nullable;
 import org.labkey.api.admin.AbstractImportContext;
 import org.labkey.api.data.Container;
 import org.labkey.api.security.User;
 import org.labkey.api.admin.ImportException;
 import org.labkey.study.xml.StudyDocument;
 import org.apache.log4j.Logger;
+
+import java.io.File;
 
 /**
  * User: adam
@@ -29,9 +32,9 @@ import org.apache.log4j.Logger;
  */
 public abstract class AbstractContext extends AbstractImportContext<StudyDocument.Study, StudyDocument>
 {
-    protected AbstractContext(User user, Container c, StudyDocument studyDoc, Logger logger)
+    protected AbstractContext(User user, Container c, StudyDocument studyDoc, Logger logger, @Nullable File root)
     {
-        super(user, c, studyDoc, logger);
+        super(user, c, studyDoc, logger, root);
     }
 
     // Study node -- interesting to any top-level writer that needs to set info into study.xml

@@ -25,6 +25,7 @@ import org.labkey.api.util.XmlBeansUtil;
 import org.labkey.api.writer.VirtualFile;
 import org.labkey.study.StudySchema;
 import org.labkey.study.model.StudyImpl;
+import org.labkey.study.model.StudyManager;
 import org.labkey.study.writer.ViewCategoryWriter;
 import org.labkey.study.xml.viewCategory.CategoriesDocument;
 import org.labkey.study.xml.viewCategory.CategoryType;
@@ -45,8 +46,9 @@ public class ViewCategoryImporter implements InternalStudyImporter
     }
 
     @Override
-    public void process(StudyImpl study, ImportContext ctx, VirtualFile root, BindException errors) throws Exception
+    public void process(ImportContext ctx, VirtualFile root, BindException errors) throws Exception
     {
+        StudyImpl study = StudyManager.getInstance().getStudy(ctx.getContainer());
         try
         {
             XmlObject xml = root.getXmlBean(ViewCategoryWriter.FILE_NAME);

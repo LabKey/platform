@@ -17,7 +17,7 @@ public class FolderExportContext extends AbstractFolderContext
 
     public FolderExportContext(User user, Container c, Set<String> dataTypes, Logger logger)
     {
-        super(user, c, FolderXmlWriter.getFolderDocument(), logger);
+        super(user, c, FolderXmlWriter.getFolderDocument(), logger, null);
         _dataTypes = dataTypes;
     }
 

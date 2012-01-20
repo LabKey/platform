@@ -16,11 +16,11 @@
 
 package org.labkey.study.importer;
 
+import org.labkey.api.admin.FolderImporter;
 import org.labkey.api.pipeline.*;
 import org.labkey.api.query.QueryService;
 import org.labkey.api.security.User;
 import org.labkey.api.util.FileType;
-import org.labkey.api.study.ExternalStudyImporter;
 import org.labkey.api.writer.FileSystemFile;
 import org.labkey.api.writer.VirtualFile;
 import org.labkey.study.writer.StudySerializationRegistryImpl;
@@ -68,12 +68,12 @@ public class StudyImportFinalTask extends PipelineJob.Task<StudyImportFinalTask.
             {
                 job.info("Importing " + importer.getDescription());
                 job.setStatus("IMPORT " + importer.getDescription());
-                importer.process(support.getStudy(), support.getImportContext(), vf, support.getSpringErrors());
+                importer.process(support.getImportContext(), vf, support.getSpringErrors());
                 job.info("Done importing " + importer.getDescription());
             }
 
-            Collection<ExternalStudyImporter> externalStudyImporters = StudySerializationRegistryImpl.get().getRegisteredStudyImporters();
-            for (ExternalStudyImporter importer : externalStudyImporters)
+            Collection<FolderImporter> externalStudyImporters = StudySerializationRegistryImpl.get().getRegisteredStudyImporters();
+            for (FolderImporter importer : externalStudyImporters)
             {
                 job.info("Importing " + importer.getDescription());
                 job.setStatus("IMPORT " + importer.getDescription());
@@ -86,7 +86,7 @@ public class StudyImportFinalTask extends PipelineJob.Task<StudyImportFinalTask.
                 QueryService.get().setEnvironment(QueryService.Environment.USERID, null==job.getUser() ? User.guest.getUserId() : job.getUser().getUserId());
 
                 List<PipelineJobWarning> warnings = new ArrayList<PipelineJobWarning>();
-                for (ExternalStudyImporter importer : externalStudyImporters)
+                for (FolderImporter importer : externalStudyImporters)
                 {
                     job.info("Post-processing " + importer.getDescription());
                     job.setStatus("POST-PROCESS " + importer.getDescription());

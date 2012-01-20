@@ -228,19 +228,19 @@ public class CreateAncillaryStudyAction extends MutatingApiAction<EmphasisStudyD
             ImportContext importContext = new ImportContext(user, newStudy.getContainer(), studyDoc, Logger.getLogger(StudyWriter.class));
 
             // missing values and qc states
-            new MissingValueImporter().process(newStudy, importContext, vf, errors);
-            new QcStatesImporter().process(newStudy, importContext, vf, errors);
+            new MissingValueImporter().process(importContext, vf, errors);
+            new QcStatesImporter().process(importContext, vf, errors);
 
             // dataset definitions
             DatasetImporter datasetImporter = new DatasetImporter();
-            datasetImporter.process(newStudy, importContext, vf, errors);
+            datasetImporter.process(importContext, vf, errors);
 
             // import visits
             VisitImporter visitImporter = new VisitImporter();
 
             // don't create dataset definitions for datasets we don't import
             visitImporter.setEnsureDataSets(false);
-            visitImporter.process(newStudy, importContext, vf, errors);
+            visitImporter.process(importContext, vf, errors);
 
             if (errors.hasErrors())
                 throw new RuntimeException("Error importing study objects : " + errors.getMessage());
@@ -337,7 +337,7 @@ public class CreateAncillaryStudyAction extends MutatingApiAction<EmphasisStudyD
                 ImportContext importContext = new ImportContext(user, newStudy.getContainer(), studyDoc, Logger.getLogger(StudyWriter.class));
 
                 ParticipantGroupImporter groupImporter = new ParticipantGroupImporter();
-                groupImporter.process(newStudy, importContext, vf, errors);
+                groupImporter.process(importContext, vf, errors);
             }
         }
 

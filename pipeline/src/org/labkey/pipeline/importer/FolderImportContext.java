@@ -22,15 +22,10 @@ public class FolderImportContext extends AbstractFolderContext
 {
     private File _folderXml;
 
-    public FolderImportContext(User user, Container c, File folderXml, Logger logger)
+    public FolderImportContext(User user, Container c, File folderXml, Logger logger, File root)
     {
-        super(user, c, null, logger);
+        super(user, c, null, logger, root);
         _folderXml = folderXml;
-    }
-
-    public FolderImportContext(User user, Container c, FolderDocument folderDoc, Logger logger)
-    {
-        super(user, c, folderDoc, logger);
     }
 
     @Override
@@ -73,20 +68,6 @@ public class FolderImportContext extends AbstractFolderContext
             throw new ImportException(source + " refers to " + ImportException.getRelativePath(root, file) + ": expected a file but found a directory");
 
         return file;
-    }
-
-    @Override
-    public File getDir(File root, String dirName) throws ImportException
-    {
-        File dir = null != dirName ? new File(root, dirName) : root;
-
-        if (!dir.exists())
-            throw new ImportException(_folderXml.getName() + " refers to a directory that does not exist: " + ImportException.getRelativePath(root, dir));
-
-        if (!dir.isDirectory())
-            throw new ImportException(_folderXml.getName() + " refers to " + ImportException.getRelativePath(root, dir) + ": expected a directory but found a file");
-
-        return dir;
     }
 
     private FolderDocument readFolderDocument(File folderXml) throws ImportException, IOException, InvalidFileException

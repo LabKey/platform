@@ -15,11 +15,11 @@
  */
 package org.labkey.query;
 
+import org.labkey.api.admin.FolderImporter;
+import org.labkey.api.admin.FolderImporterFactory;
 import org.labkey.api.admin.ImportContext;
 import org.labkey.api.admin.ImportException;
 import org.labkey.api.query.QueryService;
-import org.labkey.api.study.ExternalStudyImporter;
-import org.labkey.api.study.ExternalStudyImporterFactory;
 import org.labkey.api.pipeline.PipelineJobWarning;
 import org.labkey.api.util.XmlValidationException;
 import org.labkey.study.xml.StudyDocument;
@@ -34,7 +34,7 @@ import java.util.Collection;
  * Date: May 16, 2009
  * Time: 2:33:52 PM
  */
-public class CustomViewImporter implements ExternalStudyImporter
+public class CustomViewImporter implements FolderImporter<StudyDocument.Study>
 {
     public String getDescription()
     {
@@ -43,12 +43,10 @@ public class CustomViewImporter implements ExternalStudyImporter
 
     public void process(ImportContext<StudyDocument.Study> ctx, File root) throws IOException, SQLException, ImportException, XmlValidationException
     {
-        StudyDocument.Study.Views viewsXml = ctx.getXml().getViews();
+        File viewDir = ctx.getDir("views");
 
-        if (null != viewsXml)
+        if (null != viewDir)
         {
-            File viewDir = ctx.getDir(root, viewsXml.getDir());
-
             int count = QueryService.get().importCustomViews(ctx.getUser(), ctx.getContainer(), viewDir);
 
             ctx.getLogger().info(count + " custom view" + (1 == count ? "" : "s") + " imported");
@@ -61,9 +59,9 @@ public class CustomViewImporter implements ExternalStudyImporter
         return null;        
     }
 
-    public static class Factory implements ExternalStudyImporterFactory
+    public static class Factory implements FolderImporterFactory
     {
-        public ExternalStudyImporter create()
+        public FolderImporter create()
         {
             return new CustomViewImporter();
         }

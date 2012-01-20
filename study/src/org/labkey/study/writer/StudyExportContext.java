@@ -40,7 +40,7 @@ public class StudyExportContext extends AbstractContext
 
     public StudyExportContext(StudyImpl study, User user, Container c, boolean oldFormats, Set<String> dataTypes, Logger logger)
     {
-        super(user, c, StudyXmlWriter.getStudyDocument(), logger);
+        super(user, c, StudyXmlWriter.getStudyDocument(), logger, null);
         _oldFormats = oldFormats;
         _dataTypes = dataTypes;
         initializeDatasets(study);

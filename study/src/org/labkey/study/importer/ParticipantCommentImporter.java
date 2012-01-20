@@ -18,6 +18,7 @@ package org.labkey.study.importer;
 
 import org.labkey.api.writer.VirtualFile;
 import org.labkey.study.model.StudyImpl;
+import org.labkey.study.model.StudyManager;
 import org.labkey.study.xml.StudyDocument;
 import org.springframework.validation.BindException;
 
@@ -33,8 +34,9 @@ public class ParticipantCommentImporter implements InternalStudyImporter
         return "Participant Comment Settings";
     }
 
-    public void process(StudyImpl study, ImportContext ctx, VirtualFile root, BindException errors) throws Exception
+    public void process(ImportContext ctx, VirtualFile root, BindException errors) throws Exception
     {
+        StudyImpl study = StudyManager.getInstance().getStudy(ctx.getContainer());
         StudyDocument.Study.Comments commentsXml = ctx.getXml().getComments();
 
         if (commentsXml != null)

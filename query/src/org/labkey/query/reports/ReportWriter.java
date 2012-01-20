@@ -20,6 +20,7 @@ import org.labkey.api.reports.Report;
 import org.labkey.api.reports.ReportService;
 import org.labkey.api.study.*;
 import org.labkey.api.writer.VirtualFile;
+import org.labkey.study.xml.ExportDirType;
 import org.labkey.study.xml.StudyDocument;
 
 /**
@@ -42,7 +43,7 @@ public class ReportWriter implements ExternalStudyWriter
 
         if (reports.length > 0)
         {
-            StudyDocument.Study.Reports reportsXml = ctx.getXml().addNewReports();
+            ExportDirType reportsXml = ctx.getXml().addNewReports();
             reportsXml.setDir(DEFAULT_DIRECTORY);
             VirtualFile reportsDir = vf.getDir(DEFAULT_DIRECTORY);
 

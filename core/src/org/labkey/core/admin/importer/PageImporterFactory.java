@@ -1,24 +1,13 @@
 package org.labkey.core.admin.importer;
 
-import org.apache.xmlbeans.XmlObject;
 import org.labkey.api.admin.FolderImporter;
 import org.labkey.api.admin.FolderImporterFactory;
 import org.labkey.api.admin.ImportContext;
-import org.labkey.api.admin.ImportException;
-import org.labkey.api.admin.InvalidFileException;
 import org.labkey.api.pipeline.PipelineJobWarning;
-import org.labkey.api.util.XmlBeansUtil;
-import org.labkey.api.util.XmlValidationException;
-import org.labkey.api.view.FolderTab;
-import org.labkey.api.view.Portal;
-import org.labkey.api.writer.VirtualFile;
 import org.labkey.folder.xml.FolderDocument;
-import org.labkey.folder.xml.PagesDocument;
 
 import java.io.File;
-import java.util.ArrayList;
 import java.util.Collection;
-import java.util.List;
 
 /**
  * User: cnathe
@@ -32,7 +21,7 @@ public class PageImporterFactory implements FolderImporterFactory
         return new PageImporter();
     }
 
-    public class PageImporter implements FolderImporter
+    public class PageImporter implements FolderImporter<FolderDocument.Folder>
     {
         @Override
         public String getDescription()

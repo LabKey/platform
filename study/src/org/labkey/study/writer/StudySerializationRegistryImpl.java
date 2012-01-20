@@ -15,6 +15,8 @@
  */
 package org.labkey.study.writer;
 
+import org.labkey.api.admin.FolderImporter;
+import org.labkey.api.admin.FolderImporterFactory;
 import org.labkey.api.study.*;
 
 import java.util.Arrays;
@@ -26,7 +28,7 @@ public class StudySerializationRegistryImpl implements StudySerializationRegistr
 {
     private static final StudySerializationRegistryImpl INSTANCE = new StudySerializationRegistryImpl();
     private static final Collection<ExternalStudyWriterFactory> WRITER_FACTORIES = new CopyOnWriteArrayList<ExternalStudyWriterFactory>();
-    private static final Collection<ExternalStudyImporterFactory> IMPORTER_FACTORIES = new CopyOnWriteArrayList<ExternalStudyImporterFactory>();
+    private static final Collection<FolderImporterFactory> IMPORTER_FACTORIES = new CopyOnWriteArrayList<FolderImporterFactory>();
 
     private StudySerializationRegistryImpl()
     {
@@ -52,18 +54,18 @@ public class StudySerializationRegistryImpl implements StudySerializationRegistr
 
     // These importers are defined and registered by other modules.  They have no knowledge of study internals, other
     // than being able to read elements from study.xml.
-    public Collection<ExternalStudyImporter> getRegisteredStudyImporters()
+    public Collection<FolderImporter> getRegisteredStudyImporters()
     {
         // New up the writers every time since these classes can be stateful
-        Collection<ExternalStudyImporter> importers = new LinkedList<ExternalStudyImporter>();
+        Collection<FolderImporter> importers = new LinkedList<FolderImporter>();
 
-        for (ExternalStudyImporterFactory factory : IMPORTER_FACTORIES)
+        for (FolderImporterFactory factory : IMPORTER_FACTORIES)
             importers.add(factory.create());
 
         return importers;
     }
 
-    public void addFactories(ExternalStudyWriterFactory writerFactory, ExternalStudyImporterFactory importerFactory)
+    public void addFactories(ExternalStudyWriterFactory writerFactory, FolderImporterFactory importerFactory)
     {
         WRITER_FACTORIES.add(writerFactory);
         IMPORTER_FACTORIES.add(importerFactory);

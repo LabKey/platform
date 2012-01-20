@@ -25,6 +25,7 @@ import org.labkey.study.StudySchema;
 import org.labkey.study.model.ParticipantCategory;
 import org.labkey.study.model.ParticipantGroupManager;
 import org.labkey.study.model.StudyImpl;
+import org.labkey.study.model.StudyManager;
 import org.labkey.study.writer.ParticipantGroupWriter;
 import org.labkey.study.xml.participantGroups.CategoryType;
 import org.labkey.study.xml.participantGroups.GroupType;
@@ -52,8 +53,9 @@ public class ParticipantGroupImporter implements InternalStudyImporter
     }
 
     @Override
-    public void process(StudyImpl study, ImportContext ctx, VirtualFile root, BindException errors) throws Exception
+    public void process(ImportContext ctx, VirtualFile root, BindException errors) throws Exception
     {
+        StudyImpl study = StudyManager.getInstance().getStudy(ctx.getContainer());
         try
         {
             XmlObject xml = root.getXmlBean(ParticipantGroupWriter.FILE_NAME);

@@ -20,7 +20,8 @@ import org.labkey.api.attachments.AttachmentFile;
 import org.labkey.api.attachments.InputStreamAttachmentFile;
 import org.labkey.api.writer.VirtualFile;
 import org.labkey.study.model.StudyImpl;
-import org.labkey.study.xml.StudyDocument;
+import org.labkey.study.model.StudyManager;
+import org.labkey.study.xml.ExportDirType;
 import org.springframework.validation.BindException;
 
 import java.util.ArrayList;
@@ -41,9 +42,10 @@ public class ProtocolDocumentImporter implements InternalStudyImporter
     }
 
     @Override
-    public void process(StudyImpl study, ImportContext ctx, VirtualFile root, BindException errors) throws Exception
+    public void process(ImportContext ctx, VirtualFile root, BindException errors) throws Exception
     {
-        StudyDocument.Study.ProtocolDocs protocolXml = ctx.getXml().getProtocolDocs();
+        StudyImpl study = StudyManager.getInstance().getStudy(ctx.getContainer());
+        ExportDirType protocolXml = ctx.getXml().getProtocolDocs();
 
         if (null != protocolXml)
         {

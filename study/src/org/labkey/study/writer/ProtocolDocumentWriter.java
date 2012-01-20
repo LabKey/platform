@@ -23,7 +23,7 @@ import org.labkey.api.attachments.AttachmentService;
 import org.labkey.api.util.FileUtil;
 import org.labkey.api.writer.VirtualFile;
 import org.labkey.study.model.StudyImpl;
-import org.labkey.study.xml.StudyDocument;
+import org.labkey.study.xml.ExportDirType;
 
 import java.io.InputStream;
 import java.io.OutputStream;
@@ -56,7 +56,7 @@ public class ProtocolDocumentWriter implements InternalStudyWriter
             VirtualFile folder = vf.getDir(DOCUMENT_FOLDER);
             AttachmentParent parent = new StudyImpl.ProtocolDocumentAttachmentParent(study);
 
-            StudyDocument.Study.ProtocolDocs protocolXml = ctx.getXml().addNewProtocolDocs();
+            ExportDirType protocolXml = ctx.getXml().addNewProtocolDocs();
             protocolXml.setDir(DOCUMENT_FOLDER);
 
             for (Attachment doc : documents)

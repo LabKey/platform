@@ -38,15 +38,15 @@ public class ImportContext extends AbstractContext
 {
     private File _studyXml;
 
-    public ImportContext(User user, Container c, File studyXml, Logger logger)
+    public ImportContext(User user, Container c, File studyXml, Logger logger, File root)
     {
-        super(user, c, null, logger);  // XStream can't seem to serialize the StudyDocument XMLBean, so we always read the file on demand
+        super(user, c, null, logger, root);  // XStream can't seem to serialize the StudyDocument XMLBean, so we always read the file on demand
         _studyXml = studyXml;
     }
 
     public ImportContext(User user, Container c, StudyDocument studyDoc, Logger logger)
     {
-        super(user, c, studyDoc, logger); 
+        super(user, c, studyDoc, logger, null); 
     }
 
     @Override
@@ -89,19 +89,6 @@ public class ImportContext extends AbstractContext
             throw new ImportException(source + " refers to " + ImportException.getRelativePath(root, file) + ": expected a file but found a directory");
 
         return file;
-    }
-
-    public File getDir(File root, String dirName) throws ImportException
-    {
-        File dir = null != dirName ? new File(root, dirName) : root;
-
-        if (!dir.exists())
-            throw new ImportException(_studyXml.getName() + " refers to a directory that does not exist: " + ImportException.getRelativePath(root, dir));
-
-        if (!dir.isDirectory())
-            throw new ImportException(_studyXml.getName() + " refers to " + ImportException.getRelativePath(root, dir) + ": expected a directory but found a file");
-
-        return dir;
     }
 
     private StudyDocument readStudyDocument(File studyXml) throws ImportException, IOException

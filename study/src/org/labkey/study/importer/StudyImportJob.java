@@ -56,7 +56,7 @@ public class StudyImportJob extends PipelineJob implements StudyJobSupport
         _originalFilename = originalFilename;
         setLogFile(StudyPipeline.logForInputFile(new File(_root, "study_load")));
         _errors = errors;
-        _ctx = new ImportContext(user, c, studyXml, getLogger());
+        _ctx = new ImportContext(user, c, studyXml, getLogger(), _root);
 
         StudyImpl study = getStudy(true);
         _reload = (null != study);

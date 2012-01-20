@@ -17,10 +17,10 @@
 package org.labkey.list.model;
 
 import org.apache.log4j.Logger;
+import org.labkey.api.admin.FolderImporter;
+import org.labkey.api.admin.FolderImporterFactory;
 import org.labkey.api.admin.ImportContext;
 import org.labkey.api.pipeline.PipelineJobWarning;
-import org.labkey.api.study.ExternalStudyImporter;
-import org.labkey.api.study.ExternalStudyImporterFactory;
 import org.labkey.study.xml.StudyDocument;
 
 import java.io.File;
@@ -33,7 +33,7 @@ import java.util.List;
 * Date: Aug 27, 2009
 * Time: 2:12:01 PM
 */
-public class StudyListImporter implements ExternalStudyImporter
+public class StudyListImporter implements FolderImporter<StudyDocument.Study>
 {
     public String getDescription()
     {
@@ -42,11 +42,10 @@ public class StudyListImporter implements ExternalStudyImporter
 
     public void process(ImportContext<StudyDocument.Study> ctx, File root) throws Exception
     {
-        StudyDocument.Study.Lists listsXml = ctx.getXml().getLists();
+        File listsDir = ctx.getDir("lists");
 
-        if (null != listsXml)
+        if (null != listsDir)
         {
-            File listsDir = ctx.getDir(root, listsXml.getDir());
             ListImporter importer = new ListImporter();
             Logger log = ctx.getLogger();
             List<String> errors = new LinkedList<String>();
@@ -63,9 +62,9 @@ public class StudyListImporter implements ExternalStudyImporter
         return null;
     }
 
-    public static class Factory implements ExternalStudyImporterFactory
+    public static class Factory implements FolderImporterFactory
     {
-        public ExternalStudyImporter create()
+        public FolderImporter create()
         {
             return new StudyListImporter();
         }

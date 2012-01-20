@@ -30,5 +30,5 @@ import java.io.File;
 public interface InternalStudyImporter
 {
     public String getDescription();
-    public void process(StudyImpl study, ImportContext ctx, VirtualFile root, BindException errors) throws Exception;
+    public void process(ImportContext ctx, VirtualFile root, BindException errors) throws Exception;
 }

@@ -24,6 +24,7 @@ import org.labkey.api.writer.VirtualFile;
 import org.labkey.study.model.CohortImpl;
 import org.labkey.study.model.CohortManager;
 import org.labkey.study.model.StudyImpl;
+import org.labkey.study.model.StudyManager;
 import org.labkey.study.xml.CohortMode;
 import org.labkey.study.xml.CohortType;
 import org.labkey.study.xml.CohortsDocument;
@@ -48,8 +49,9 @@ public class CohortImporter implements InternalStudyImporter
         return "cohort settings";
     }
 
-    public void process(StudyImpl study, ImportContext ctx, VirtualFile root, BindException errors) throws IOException, SQLException, ServletException, ImportException
+    public void process(ImportContext ctx, VirtualFile root, BindException errors) throws IOException, SQLException, ServletException, ImportException
     {
+        StudyImpl study = StudyManager.getInstance().getStudy(ctx.getContainer());
         StudyDocument.Study.Cohorts cohortsXml = ctx.getXml().getCohorts();
 
         if (null != cohortsXml)

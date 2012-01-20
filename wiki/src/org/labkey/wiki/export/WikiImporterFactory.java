@@ -45,7 +45,7 @@ public class WikiImporterFactory implements FolderImporterFactory
         return new WikiImporter();
     }
 
-    private class WikiImporter implements FolderImporter
+    private class WikiImporter implements FolderImporter<FolderDocument.Folder>
     {
         @Override
         public String getDescription()
@@ -56,10 +56,9 @@ public class WikiImporterFactory implements FolderImporterFactory
         @Override
         public void process(ImportContext<FolderDocument.Folder> ctx, File root) throws Exception
         {
-            FolderDocument.Folder.Wikis wikisXml = ctx.getXml().getWikis();
-            if (wikisXml != null)
+            File wikisDir = ctx.getDir("wikis");
+            if (wikisDir != null)
             {
-                File wikisDir = ctx.getDir(root, wikisXml.getDir());
                 File wikisXmlFile = new File(wikisDir, WikiWriterFactory.WIKIS_FILENAME);
 
                 if (!wikisXmlFile.exists())

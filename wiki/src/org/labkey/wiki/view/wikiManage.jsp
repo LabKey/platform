@@ -25,6 +25,8 @@
 <%@ page import="org.springframework.validation.Errors" %>
 <%@ page import="org.springframework.validation.FieldError" %>
 <%@ page import="org.labkey.wiki.model.WikiTree" %>
+<%@ page import="org.labkey.api.view.ActionURL" %>
+<%@ page import="org.labkey.wiki.WikiController" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
     ManageBean bean = ((HttpView<ManageBean>)HttpView.currentView()).getModelBean();
@@ -198,6 +200,7 @@
 <input type="hidden" name="rowId" value="<%= wiki.getRowId() %>">
 <input type="hidden" name="nextAction" value="">
 <%=PageFlowUtil.generateSubmitButton("Save", "document.manage.nextAction.value = 'page'; return true;", "title=\"Save Changes\"")%>
+<%=PageFlowUtil.generateButton("Delete", new org.labkey.api.view.ActionURL(org.labkey.wiki.WikiController.DeleteAction.class, c).addParameter("name", wiki.getName()))%>
 <%=PageFlowUtil.generateSubmitButton("Edit Content", "document.manage.nextAction.value = 'editWiki'; return true;", "title=\"Edit Content and Attachments\"")%>
 
 <script type="text/javascript">

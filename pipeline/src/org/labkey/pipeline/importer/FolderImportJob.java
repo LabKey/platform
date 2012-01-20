@@ -35,7 +35,7 @@ public class FolderImportJob extends PipelineJob implements FolderJobSupport
         _originalFilename = originalFilename;
         _errors = errors;
         setLogFile(FolderImportProvider.logForInputFile(new File(_root, "folder_load")));
-        _ctx = new FolderImportContext(user, c, folderXml, getLogger());
+        _ctx = new FolderImportContext(user, c, folderXml, getLogger(), _root);
 
         LOG.info("Pipeline job initialized for importing folder properties to folder " + c.getPath());
     }

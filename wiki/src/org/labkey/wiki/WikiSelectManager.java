@@ -98,6 +98,10 @@ public class WikiSelectManager
     // Get a single wiki by name
     public static Wiki getWiki(Container c, final HString name)
     {
+        if (name == null)
+        {
+            return null;
+        }
         return WikiCache.getWiki(c, name.getSource(), new WikiCacheLoader<Wiki>()
         {
             @Override
