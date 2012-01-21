@@ -61,6 +61,7 @@ public class NavTree extends Pair<String, String> implements Collapsible
     private boolean _disabled;
     private String _display;
     private String _description;
+    private boolean _nofollow = false;
 
     private ArrayList<NavTree> children = null;
 
@@ -450,6 +451,16 @@ public class NavTree extends Pair<String, String> implements Collapsible
     public void setDescription(String description)
     {
         _description = description;
+    }
+
+    public void setNoFollow(boolean b)
+    {
+        _nofollow = b;
+    }
+
+    public boolean isNoFollow()
+    {
+        return _nofollow;
     }
 
     public String childrenToJS()

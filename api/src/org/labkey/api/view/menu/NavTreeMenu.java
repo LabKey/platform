@@ -206,6 +206,9 @@ public class NavTreeMenu extends WebPartView implements Collapsible
                 else
                     out.printf("<a href=\"%s\"", filter(link));
 
+                if (nav.isNoFollow())
+                    out.print(" rel=\"nofollow\"");
+
                 // open links to external sites in a new window or tab
                 if ((link.indexOf("http://") == 0) || (link.indexOf("https://") == 0))
                     out.print(" target=\"_new\"");

@@ -20,9 +20,11 @@ import org.apache.commons.collections15.MultiMap;
 import org.apache.commons.collections15.multimap.MultiHashMap;
 import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.NotNull;
+import org.labkey.api.data.DataRegion;
 import org.labkey.api.module.Module;
 import org.labkey.api.util.HelpTopic;
 import org.labkey.api.util.PageFlowUtil;
+import org.labkey.api.util.URLHelper;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.NavTree;
 
@@ -76,6 +78,7 @@ public class PageConfig
     private MultiMap<String, String> _meta = new MultiHashMap<String, String>();
     private FrameOption _frameOption = FrameOption.ALLOW;
     private boolean _trackingScript = true;
+    private String _canonicalLink = null;
 
     public PageConfig()
     {
@@ -284,32 +287,64 @@ public class PageConfig
 
     public void setNoIndex()
     {
-        _meta.remove("ROBOTS", "INDEX");
-        addMetaTag("ROBOTS", "NOINDEX");
+        _meta.remove("robots", "index");
+        addMetaTag("robots", "noindex");
     }
 
 
     public void setNoFollow()
     {
-        _meta.remove("ROBOTS", "FOLLOW");
-        addMetaTag("ROBOTS", "NOFOLLOW");
+        _meta.remove("robots", "follow");
+        addMetaTag("robots", "nofollow");
     }
 
 
-    public String getMetaTags()
+    public void setCanonicalLink(String link)
+    {
+        _canonicalLink = link;
+    }
+
+
+    String[] ignoreParameters = new String[] {"_dc", "_template", "_print", DataRegion.LAST_FILTER_PARAM};
+
+    private String getCanonicalLink(URLHelper current)
+    {
+        if (null != _canonicalLink)
+            return _canonicalLink;
+        if (null == current)
+            return null;
+        URLHelper u = null;
+        for (String p : ignoreParameters)
+        {
+            if (null != current.getParameter(p))
+                u = (null==u ? current.clone() : u).deleteParameter(p);
+        }
+        return null == u ? null : u.getURIString();
+    }
+
+
+    public String getMetaTags(URLHelper url)
     {
         // We want search engines to index our regular pages (with navigation) not the print versions
         if (_template == Template.Print)
             setNoIndex();
 
-        if (_meta.isEmpty())
-            return "";
         StringBuilder sb = new StringBuilder();
-        for (Map.Entry<String, Collection<String>>  e : _meta.entrySet())
+
+        String canonical = getCanonicalLink(url);
+        if (null != canonical)
         {
-            sb.append("<META NAME=\"").append(PageFlowUtil.filter(e.getKey())).append("\" CONTENT=\"");
-            sb.append(PageFlowUtil.filter(StringUtils.join(e.getValue(), ", ")));
-            sb.append("\">\n");
+            sb.append("<link rel=\"canonical\" href=\"").append(PageFlowUtil.filter(canonical)).append("\">\n");
+        }
+
+        if (!_meta.isEmpty())
+        {
+            for (Map.Entry<String, Collection<String>>  e : _meta.entrySet())
+            {
+                sb.append("<meta name=\"").append(PageFlowUtil.filter(e.getKey())).append("\" content=\"");
+                sb.append(PageFlowUtil.filter(StringUtils.join(e.getValue(), ", ")));
+                sb.append("\">\n");
+            }
         }
         return sb.toString();
     }

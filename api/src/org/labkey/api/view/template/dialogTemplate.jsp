@@ -36,7 +36,7 @@
 <head>
     <%if (pageConfig.getFrameOption() == PageConfig.FrameOption.DENY) {%> <script type="text/javascript">if (top != self) top.location.replace(self.location.href);</script><%}%>
     <title><%=h(pageConfig.getTitle())%></title>
-    <%= pageConfig.getMetaTags() %>
+    <%= pageConfig.getMetaTags(me.getViewContext().getActionURL()) %>
     <%= PageFlowUtil.getStandardIncludes(c,request.getHeader("User-Agent")) %>
 </head>
 

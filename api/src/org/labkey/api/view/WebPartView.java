@@ -549,7 +549,10 @@ public abstract class WebPartView<ModelBean> extends HttpView<ModelBean>
 
                                 if (null != linkHref && 0 < linkHref.length())
                                 {
-                                    out.print("<a href=\"" + linkHref + "\">" + linkText + "</a>");                                
+                                    out.print("<a href=\"" + linkHref + "\"");
+                                    if (link.isNoFollow())
+                                        out.print(" rel=\"nofollow\"");
+                                    out.print(">" + linkText + "</a>");
                                 }
                                 else if (link.getScript() != null)
                                 {
@@ -582,7 +585,10 @@ public abstract class WebPartView<ModelBean> extends HttpView<ModelBean>
                                     if (null != linkHref && 0 < linkHref.length())
                                     {
                                         out.print("<span class=\"labkey-wp-icon-button-active\">");
-                                        out.print("<a href=\"" + PageFlowUtil.filter(linkHref) + "\">");
+                                        out.print("<a href=\"" + PageFlowUtil.filter(linkHref) + "\"");
+                                        if (current.isNoFollow())
+                                            out.print(" rel=\"nofollow\"");
+                                        out.print(">");
                                     }
                                     else
                                         out.print("<span class=\"labkey-wp-icon-button-inactive\">");

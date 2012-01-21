@@ -64,6 +64,7 @@ public class FooterMenu extends NavTreeMenu
             permaLink.setExtraPath("__r" + Integer.toString(c.getRowId()));
             NavTree ntPermalink = new NavTree("Permanent Link", permaLink);
             ntPermalink.setId("permalink");
+            ntPermalink.setNoFollow(true);
             menu.add(ntPermalink);
         }
         
