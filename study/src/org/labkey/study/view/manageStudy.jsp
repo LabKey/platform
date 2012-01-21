@@ -77,9 +77,9 @@
     </tr>
     <tr><td colspan="3" class="labkey-title-area-line"></td></tr>
     <tr>
-        <th align="left">Label and Description</th>
-        <td><%= h(study.getLabel()) %></td>
-        <td><%= textLink("Change Label or Description", ManageStudyPropertiesAction.class) %></td>
+        <th align="left">Study Properties</th>
+        <td>Study label, investigator, grant, description, etc.</td>
+        <td><%= textLink("Change Study Properties", ManageStudyPropertiesAction.class) %></td>
     </tr>
     <tr>
         <th align="left">Additional Properties</th>
@@ -104,18 +104,27 @@
         <td><%= h(intervalLabel) %></td>
         <td><%= textLink("Manage Reloading", ManageReloadAction.class) %></td>
     </tr>
-    <tr>
-        <th align="left">Datasets</th>
-        <td>This study defines <%= getDataSets().size() %> Datasets</td>
-        <td><%= textLink("Manage Datasets", ManageTypesAction.class) %></td>
+    <%--<tr>--%>
+        <%--<th align="left">Datasets</th>--%>
+        <%--<td>This study defines <%= getDataSets().size() %> Datasets</td>--%>
+        <%--<td><%= textLink("Manage Datasets", ManageTypesAction.class) %></td>--%>
+    <%--</tr>--%>
+    <%--<% if (study.getTimepointType() != TimepointType.CONTINUOUS) { %>--%>
+    <%--<tr>--%>
+        <%--<th align="left"><%= visitLabel %></th>--%>
+        <%--<td>This study defines <%= getVisits(Visit.Order.DISPLAY).length %> <%=visitLabel%></td>--%>
+        <%--<td><%= textLink("Manage " + visitLabel, ManageVisitsAction.class) %></td>--%>
+    <%--</tr>--%>
+    <%--<% } %>--%>
+     <tr>
+        <th align="left">Study Schedule</th>
+         <td>This study defines <%= getDataSets().size() %> Datasets
+             <% if (study.getTimepointType() != TimepointType.CONTINUOUS) { %>
+             and <%= getVisits(Visit.Order.DISPLAY).length %> <%=visitLabel%>
+             <% } %>
+         </td>
+        <td><%= textLink("Study Schedule", StudyController.StudyScheduleAction.class) %></td>
     </tr>
-    <% if (study.getTimepointType() != TimepointType.CONTINUOUS) { %>
-    <tr>
-        <th align="left"><%= visitLabel %></th>
-        <td>This study defines <%= getVisits(Visit.Order.DISPLAY).length %> <%=visitLabel%></td>
-        <td><%= textLink("Manage " + visitLabel, ManageVisitsAction.class) %></td>
-    </tr>
-    <% } %>
     <tr>
         <th align="left">Locations</th>
         <td>This study references <%= getSites().length %> labs/sites/repositories</td>

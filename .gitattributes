@@ -3120,6 +3120,7 @@ study/src/org/labkey/study/view/saveReportView.jsp -text
 study/src/org/labkey/study/view/securityTabHeader.jsp -text
 study/src/org/labkey/study/view/studyList.jsp -text
 study/src/org/labkey/study/view/studyListWide.jsp -text
+study/src/org/labkey/study/view/studySchedule.jsp -text
 study/src/org/labkey/study/view/studySummary.jsp -text
 study/src/org/labkey/study/view/subjects.jsp -text
 study/src/org/labkey/study/view/toolsWebPart.jsp -text
@@ -3166,6 +3167,8 @@ study/webapp/study/DataViewsPanel.css -text
 study/webapp/study/DataViewsPanel.js -text
 study/webapp/study/ParticipantGroup.js -text
 study/webapp/study/ParticipantReport.js -text
+study/webapp/study/StudySchedule.css -text
+study/webapp/study/StudyScheduleGrid.js -text
 study/webapp/study/StudyWizard.js -text
 study/webapp/study/assay/SampleLookupTemplate.xls -text
 study/webapp/study/redesignUtils.js -text

@@ -1925,6 +1925,20 @@ public class StudyController extends BaseStudyController
         }
     }
 
+    @RequiresPermissionClass(ManageStudyPermission.class)
+    public class StudyScheduleAction extends SimpleViewAction
+    {
+        public ModelAndView getView(Object o, BindException errors) throws Exception
+        {
+            return StudyModule.studyScheduleWebPartFactory.getWebPartView(getViewContext(), null);
+        }
+
+        public NavTree appendNavTrail(NavTree root)
+        {
+            return root.addChild("");
+        }
+    }
+
     @RequiresPermissionClass(AdminPermission.class)
     public class DeleteVisitAction extends FormHandlerAction<IdForm>
     {

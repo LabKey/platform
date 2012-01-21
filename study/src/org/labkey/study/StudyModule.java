@@ -170,6 +170,7 @@ public class StudyModule extends SpringModule implements SearchService.DocumentP
     public static final WebPartFactory studyListWebPartFactory = new StudyListWebPartFactory();
     public static final WebPartFactory dataToolsWideWebPartFactory = new StudyToolsWebPartFactory.Data(HttpView.BODY);
     public static final WebPartFactory dataViewsWebPartFactory = new DataViewsWebPartFactory();
+    public static final WebPartFactory studyScheduleWebPartFactory = new StudyScheduleWebPartFactory();
     public static final WebPartFactory dataToolsWebPartFactory = new StudyToolsWebPartFactory.Data(WebPartFactory.LOCATION_RIGHT);
     public static final WebPartFactory specimenToolsWideWebPartFactory = new StudyToolsWebPartFactory.Specimens(HttpView.BODY);
     public static final WebPartFactory specimenToolsWebPartFactory = new StudyToolsWebPartFactory.Specimens(WebPartFactory.LOCATION_RIGHT);
@@ -249,7 +250,7 @@ public class StudyModule extends SpringModule implements SearchService.DocumentP
                 subjectDetailsWebPartFactory, assayList2WebPartFactory, studyListWebPartFactory, sampleSearchPartFactory,
                 subjectsWebPartFactory, subjectsWideWebPartFactory, dataViewsWebPartFactory, dataToolsWebPartFactory,
                 dataToolsWideWebPartFactory, specimenToolsWebPartFactory, specimenToolsWideWebPartFactory,
-                specimenReportWebPartFactory));
+                specimenReportWebPartFactory, studyScheduleWebPartFactory));
     }
 
     public Collection<String> getSummary(Container c)
@@ -437,6 +438,23 @@ public class StudyModule extends SpringModule implements SearchService.DocumentP
                 view.setNavMenu(menu);
             }
 
+            return view;
+        }
+    }
+
+    private static class StudyScheduleWebPartFactory extends BaseWebPartFactory
+    {
+        public StudyScheduleWebPartFactory()
+        {
+            super("Study Schedule", WebPartFactory.LOCATION_BODY, true, false); // is editable
+        }
+
+        @Override
+        public WebPartView getWebPartView(ViewContext portalCtx, Portal.WebPart webPart) throws Exception
+        {
+            JspView<Portal.WebPart> view = new JspView<Portal.WebPart>("/org/labkey/study/view/studySchedule.jsp", webPart);
+            view.setTitle("Study Schedule");
+            view.setFrame(WebPartView.FrameType.PORTAL);
             return view;
         }
     }
