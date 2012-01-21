@@ -699,7 +699,7 @@ public class WikiController extends SpringActionController
             v.setFrame(WebPartView.FrameType.NONE);
 
             getPageConfig().setTemplate(PageConfig.Template.Print);
-
+            getPageConfig().setNoIndex();
             return v;
         }
         

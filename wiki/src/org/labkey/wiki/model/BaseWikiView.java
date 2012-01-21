@@ -225,10 +225,16 @@ public abstract class BaseWikiView extends JspView<Object>
             if (null != manageURL)
                 menu.addChild("Manage", manageURL);
             if (null != versionsURL)
-                menu.addChild("History", versionsURL);
+            {
+                NavTree history = new NavTree("History", versionsURL);
+                history.setNoFollow(true);
+                menu.addChild(history);
+            }
             if (null != printURL)
             {
-                menu.addChild("Print", printURL);
+                NavTree print = new NavTree("Print", printURL);
+                print.setNoFollow(true);
+                menu.addChild(print);
                 if (wiki.hasChildren())
                     menu.addChild("Print Branch", new ActionURL(WikiController.PrintBranchAction.class,
                             getContextContainer()).addParameter("name", wiki.getName()));

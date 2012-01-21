@@ -740,7 +740,7 @@ public class SearchController extends SpringActionController
             response.setHeader("Cache-Control", "private");
             response.setHeader("Pragma", "cache");
             response.addHeader("Vary", "Cookie");
-            getPageConfig().setMetaTag("robots", "noindex");
+            getPageConfig().setNoIndex();
             getPageConfig().setHelpTopic(new HelpTopic("luceneSearch"));
 
             return new JspView<SearchForm>("/org/labkey/search/view/search.jsp", form);
