@@ -163,12 +163,7 @@ public class Container implements Serializable, Comparable<Container>, Securable
      */
     public String getPath()
     {
-        if (_path.size() == 0)
-            return "/";
-        String path = _path.toString();
-        if (path.length() > 1 && path.endsWith("/"))
-            path = path.substring(0, path.length()-1);
-        return path;
+        return _path.toString("/","");
     }
 
 
@@ -184,12 +179,7 @@ public class Container implements Serializable, Comparable<Container>, Securable
      */
     public String getEncodedPath()
     {
-        String enc = _path.encode();
-        if (!enc.startsWith("/"))
-            enc = "/" + enc;
-        if (!enc.endsWith("/"))
-            enc = enc + "/";
-        return enc;
+        return _path.encode("/","/");
     }
 
 

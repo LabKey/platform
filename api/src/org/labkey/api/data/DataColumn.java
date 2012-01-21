@@ -432,7 +432,7 @@ public class DataColumn extends DisplayColumn
             String formatted;
             if (null != _format)
                 formatted = _format.format(value);
-            else if (_htmlFiltered)
+            else if (isHtmlFiltered())
                 formatted = PageFlowUtil.filter(ConvertUtils.convert(value));
             else
                 formatted = ConvertUtils.convert(value);
