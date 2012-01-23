@@ -18,6 +18,8 @@ package org.labkey.api.reports.report.view;
 
 import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
+import org.json.JSONArray;
+import org.json.JSONObject;
 import org.labkey.api.admin.CoreUrls;
 import org.labkey.api.attachments.Attachment;
 import org.labkey.api.attachments.AttachmentService;
@@ -64,6 +66,8 @@ import java.io.OutputStream;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
+import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
 import java.util.regex.Pattern;
@@ -630,5 +634,36 @@ public class ReportUtil
                 return true;
         }
         return false;
+    }
+
+    public static JSONArray getCreateReportButtons(ViewContext context)
+    {
+        List<ReportService.DesignerInfo> designers = new ArrayList<ReportService.DesignerInfo>();
+        for (ReportService.UIProvider provider : ReportService.get().getUIProviders())
+            designers.addAll(provider.getDesignerInfo(context));
+
+        Collections.sort(designers, new Comparator<ReportService.DesignerInfo>(){
+            @Override
+            public int compare(ReportService.DesignerInfo o1, ReportService.DesignerInfo o2)
+            {
+                return o1.getLabel().compareTo(o2.getLabel());
+            }
+        });
+
+        JSONArray json = new JSONArray();
+
+        for (ReportService.DesignerInfo info : designers)
+        {
+            JSONObject o = new JSONObject();
+
+            o.put("text", info.getLabel());
+            o.put("id", info.getId());
+            o.put("disabled", info.isDisabled());
+            o.put("icon", ReportService.get().getReportIcon(context, info.getReportType()));
+            o.put("redirectUrl", info.getDesignerURL().getLocalURIString());
+
+            json.put(o);
+        }
+        return json;
     }
 }

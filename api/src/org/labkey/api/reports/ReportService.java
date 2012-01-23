@@ -132,12 +132,23 @@ public class ReportService
         public String getLabel();
 
         public String getDescription();
+
+        public boolean isDisabled();
+
+        /** returns an id for automated testing purposes */
+        public String getId();
     }
 
     public interface UIProvider
     {
         /**
-         * Allows providers to add to the UI for creating reports (eg: the create view button).
+         * Allows providers to add UI for creating reports not associated with a query
+         */
+        public List<DesignerInfo> getDesignerInfo(ViewContext context);
+
+        /**
+         * Allows providers to add UI for creating reports that may be associated with a query
+         * (eg: the view/create button on a queryView).
          */
         public List<DesignerInfo> getDesignerInfo(ViewContext context, QuerySettings settings);
 

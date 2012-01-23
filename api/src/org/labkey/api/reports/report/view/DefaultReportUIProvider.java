@@ -31,6 +31,11 @@ import java.util.List;
  */
 public class DefaultReportUIProvider implements ReportService.UIProvider
 {
+    public List<ReportService.DesignerInfo> getDesignerInfo(ViewContext context)
+    {
+        return Collections.emptyList();
+    }
+
     public List<ReportService.DesignerInfo> getDesignerInfo(ViewContext context, QuerySettings settings)
     {
         return Collections.emptyList();
@@ -72,6 +77,8 @@ public class DefaultReportUIProvider implements ReportService.UIProvider
         private String _label;
         private ActionURL _designerURL;
         private String _description;
+        private boolean _disabled;
+        private String _id;
 
         public DesignerInfoImpl(String reportType, String label, ActionURL designerURL)
         {
@@ -80,10 +87,38 @@ public class DefaultReportUIProvider implements ReportService.UIProvider
 
         public DesignerInfoImpl(String reportType, String label, String description, ActionURL designerURL)
         {
+            if (reportType == null)
+                throw new IllegalArgumentException("The reportType param is required");
+            
             _reportType = reportType;
             _label = label;
             _description = description;
             _designerURL = designerURL;
+        }
+
+        public void setLabel(String label)
+        {
+            _label = label;
+        }
+
+        public void setDesignerURL(ActionURL designerURL)
+        {
+            _designerURL = designerURL;
+        }
+
+        public void setDescription(String description)
+        {
+            _description = description;
+        }
+
+        public void setDisabled(boolean disabled)
+        {
+            _disabled = disabled;
+        }
+
+        public void setId(String id)
+        {
+            _id = id;
         }
 
         public String getReportType()
@@ -104,6 +139,16 @@ public class DefaultReportUIProvider implements ReportService.UIProvider
         public String getDescription()
         {
             return _description;
+        }
+
+        public boolean isDisabled()
+        {
+            return _disabled;
+        }
+
+        public String getId()
+        {
+            return _id;
         }
     }
 }
