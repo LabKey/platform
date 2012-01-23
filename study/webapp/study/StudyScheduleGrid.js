@@ -112,9 +112,9 @@ function renderStudySchedule(id){
 
         function visitRenderer(val){
             if (val.required != null){
-                return '<input type="checkbox" checked="true" disabled="true">';
+                return '<div data-qtip="required" class="checked"></div>';
             } else {
-                return '<input type="checkbox" disabled="true">';
+                return '<div data-qtip="not required" class="unchecked"></div>';
             }
         }
 

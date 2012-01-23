@@ -1,3 +1,20 @@
-.data-views-container td.type-column div {
+.study-schedule-container td.type-column div {
     text-align: center !important;
+}
+
+.unchecked, .checked {
+    width: 32px;
+    height: 32px;
+    margin-left: auto !important;
+    margin-right: auto !important;
+    padding: 5px 0 4px 24px;
+    /*cursor: pointer;*/
+}
+
+.unchecked {
+    background: url("../_images/milestone_no.png") center no-repeat;
+}
+
+.checked {
+    background: url("../_images/milestone_yes.png") center no-repeat;
 }

@@ -18,8 +18,13 @@
 <%@ page import="org.labkey.study.model.VisitImpl"%>
 <%@ page import="org.labkey.api.study.Visit" %>
 <%@ page import="org.labkey.study.controllers.StudyController.*" %>
+<%@ page import="org.labkey.study.controllers.StudyController" %>
 <%@ page extends="org.labkey.study.view.BaseStudyPage" %>
 <table>
+    <tr>
+        <td>View study schedule.</td>
+        <td><%= textLink("Study Schedule", StudyController.StudyScheduleAction.class) %></td>
+    </tr>
 <%
     if (getVisits(Visit.Order.DISPLAY).length > 0)
     {

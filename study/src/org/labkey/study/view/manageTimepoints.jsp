@@ -38,6 +38,10 @@
 
 <table>
     <tr>
+        <td>View study schedule.</td>
+        <td><%= textLink("Study Schedule", StudyController.StudyScheduleAction.class) %></td>
+    </tr>
+    <tr>
         <td>New visits can be defined for this study at any time.</td>
         <td><%= textLink("Create New Timepoint", CreateVisitAction.class)%></td>
     </tr>
