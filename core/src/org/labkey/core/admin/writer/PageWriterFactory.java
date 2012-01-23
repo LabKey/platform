@@ -12,6 +12,7 @@ import org.labkey.folder.xml.FolderDocument;
 import org.labkey.folder.xml.PagesDocument;
 
 import java.util.List;
+import java.util.Map;
 
 
 /**
@@ -78,9 +79,17 @@ public class PageWriterFactory implements FolderWriterFactory
                 webpartXml.setIndex(webPart.getIndex());
                 webpartXml.setLocation(webPart.getLocation());
                 webpartXml.setPermanent(webPart.isPermanent());
-                if (null != webPart.getProperties())
+
+                Map<String, String> props = webPart.getPropertyMap();
+                if (props.size() > 0)
                 {
-                    webpartXml.setProperties(webPart.getProperties());
+                    PagesDocument.Pages.Page.Webpart.Properties propertiesXml = webpartXml.addNewProperties();
+                    for (Map.Entry<String, String> prop : props.entrySet())
+                    {
+                        PagesDocument.Pages.Page.Webpart.Properties.Property propertyXml = propertiesXml.addNewProperty();
+                        propertyXml.setKey(prop.getKey());
+                        propertyXml.setValue(prop.getValue());
+                    }
                 }
             }
         }

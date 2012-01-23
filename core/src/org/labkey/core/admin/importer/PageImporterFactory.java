@@ -91,7 +91,11 @@ public class PageImporterFactory implements FolderImporterFactory
                         webpart.setPermanent(webpartXml.getPermanent());
                         if (null != webpartXml.getProperties())
                         {
-                            webpart.setProperties(webpartXml.getProperties());
+                            PagesDocument.Pages.Page.Webpart.Properties.Property[] properyXmls = webpartXml.getProperties().getPropertyArray();
+                            for (PagesDocument.Pages.Page.Webpart.Properties.Property properyXml : properyXmls)
+                            {
+                                webpart.setProperty(properyXml.getKey(), properyXml.getValue());
+                            }
                         }
                         webparts.add(webpart);
                     }
