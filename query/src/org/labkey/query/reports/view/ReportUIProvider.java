@@ -35,6 +35,8 @@ import org.labkey.api.security.permissions.AdminPermission;
 import org.labkey.api.services.ServiceRegistry;
 import org.labkey.api.util.URLHelper;
 import org.labkey.api.view.ViewContext;
+import org.labkey.query.reports.AttachmentReport;
+import org.labkey.query.reports.ReportsController;
 
 import javax.script.ScriptEngineFactory;
 import javax.script.ScriptEngineManager;
@@ -48,6 +50,36 @@ import java.util.List;
  */
 public class ReportUIProvider extends DefaultReportUIProvider
 {
+    /**
+     * Add report creation to UI's that aren't associated with a query (manage views, data views)
+     */
+    @Override
+    public List<ReportService.DesignerInfo> getDesignerInfo(ViewContext context)
+    {
+        List<ReportService.DesignerInfo> designers = new ArrayList<ReportService.DesignerInfo>();
+
+        if (RReport.isEnabled())
+        {
+            RReportBean bean = new RReportBean();
+            bean.setReportType(RReport.TYPE);
+            bean.setRedirectUrl(context.getActionURL().getLocalURIString());
+
+            DesignerInfoImpl di = new DesignerInfoImpl(RReport.TYPE, "R View", ReportUtil.getScriptReportDesignerURL(context, bean));
+            di.setId("create_rView");
+            di.setDisabled(!ReportUtil.canCreateScript(context));
+
+            designers.add(di);
+        }
+
+        DesignerInfoImpl di = new DesignerInfoImpl(AttachmentReport.TYPE, "Attachment Report", ReportsController.getAttachmentReportURL(context.getContainer(), context.getActionURL()));
+        di.setId("create_attachment_report");
+        di.setDisabled(!context.hasPermission(AdminPermission.class));
+        designers.add(di);
+
+        return designers;
+    }
+
+    @Override
     public List<ReportService.DesignerInfo> getDesignerInfo(ViewContext context, QuerySettings settings)
     {
         List<ReportService.DesignerInfo> designers = new ArrayList<ReportService.DesignerInfo>();

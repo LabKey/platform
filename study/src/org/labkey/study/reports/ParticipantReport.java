@@ -1,12 +1,15 @@
 package org.labkey.study.reports;
 
-import org.labkey.api.reports.Report;
 import org.labkey.api.reports.report.AbstractReport;
-import org.labkey.api.view.HBox;
+import org.labkey.api.reports.report.ReportUrls;
+import org.labkey.api.util.PageFlowUtil;
+import org.labkey.api.util.UniqueID;
 import org.labkey.api.view.HttpView;
 import org.labkey.api.view.JspView;
+import org.labkey.api.view.NavTree;
 import org.labkey.api.view.ViewContext;
 import org.labkey.api.view.WebPartView;
+import org.labkey.study.controllers.reports.ReportsController;
 
 /**
  * Created by IntelliJ IDEA.
@@ -32,9 +35,27 @@ public class ParticipantReport extends AbstractReport
     @Override
     public HttpView renderReport(ViewContext context) throws Exception
     {
-        JspView participantReport = new JspView<Report>("/org/labkey/study/view/participantReport.jsp", this);
+        ReportsController.ParticipantReportForm form = new ReportsController.ParticipantReportForm();
+        
+        form.setReportId(getReportId());
+        form.setComponentId("participant-report-panel-" + UniqueID.getRequestScopedUID(context.getRequest()));
 
-        participantReport.setFrame(WebPartView.FrameType.NONE);
-        return new HBox(participantReport);
+        JspView<ReportsController.ParticipantReportForm> view = new JspView<ReportsController.ParticipantReportForm>("/org/labkey/study/view/participantReport.jsp", form);
+
+        view.setTitle(getDescriptor().getReportName());
+        view.setFrame(WebPartView.FrameType.PORTAL);
+
+        if (getDescriptor().canEdit(context.getUser(), context.getContainer()))
+        {
+            NavTree customize = new NavTree("");
+            customize.setScript("customizeParticipantReport('" + form.getComponentId() + "');");
+            view.setCustomize(customize);
+
+            NavTree menu = new NavTree();
+            menu.addChild("Manage Views", PageFlowUtil.urlProvider(ReportUrls.class).urlManageViews(context.getContainer()));
+            view.setNavMenu(menu);
+        }
+
+        return view;
     }
 }

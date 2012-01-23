@@ -27,6 +27,9 @@ import org.labkey.api.reports.report.view.ChartDesignerBean;
 import org.labkey.api.reports.report.view.DefaultReportUIProvider;
 import org.labkey.api.reports.report.view.RReportBean;
 import org.labkey.api.reports.report.view.ReportUtil;
+import org.labkey.api.security.permissions.AdminPermission;
+import org.labkey.api.study.Study;
+import org.labkey.api.study.StudyService;
 import org.labkey.api.study.reports.CrosstabReport;
 import org.labkey.api.util.URLHelper;
 import org.labkey.api.view.ActionURL;
@@ -58,9 +61,59 @@ public class StudyReportUIProvider extends DefaultReportUIProvider
                 if (StudyQueryReport.TYPE.equals(reportType)) return true;
                 if (TimeChartReport.TYPE.equals(reportType)) return true;
                 if (JavaScriptReport.TYPE.equals(reportType)) return true;
+                if (ParticipantReport.TYPE.equals(reportType)) return true;
                 return false;
             }
         };
+
+    /**
+     * Add report creation to UI's that aren't associated with a query (manage views, data views)
+     */
+    @Override
+    public List<ReportService.DesignerInfo> getDesignerInfo(ViewContext context)
+    {
+        List<ReportService.DesignerInfo> designers = new ArrayList<ReportService.DesignerInfo>();
+
+        Study study = StudyManager.getInstance().getStudy(context.getContainer());
+
+        if (study != null)
+        {
+            try {
+                DesignerInfoImpl gridInfo = new DesignerInfoImpl(StudyQueryReport.TYPE, "Grid View", new ActionURL(ReportsController.CreateQueryReportAction.class, context.getContainer()));
+                gridInfo.setId("create_gridView");
+                gridInfo.setDisabled(!context.hasPermission(AdminPermission.class));
+                designers.add(gridInfo);
+
+                DesignerInfoImpl crosstabInfo = new DesignerInfoImpl(StudyCrosstabReport.TYPE, "Crosstab View", new ActionURL(ReportsController.CreateCrosstabReportAction.class, context.getContainer()));
+                crosstabInfo.setId("create_crosstabView");
+                crosstabInfo.setDisabled(!context.hasPermission(AdminPermission.class));
+                designers.add(crosstabInfo);
+
+                DesignerInfoImpl xlsInfo = new DesignerInfoImpl(ExportExcelReport.TYPE, "Workbook (.xls)", new ActionURL(ReportsController.ExportExcelConfigureAction.class, context.getContainer()));
+                xlsInfo.setId("create_exportXlsView");
+                designers.add(xlsInfo);
+
+                DesignerInfoImpl enrollmentInfo = new DesignerInfoImpl(EnrollmentReport.TYPE, "Enrollment View", new ActionURL(ReportsController.EnrollmentReportAction.class, context.getContainer()));
+                enrollmentInfo.setId("create_enrollmentView");
+                enrollmentInfo.setDisabled(!context.hasPermission(AdminPermission.class));
+                if (EnrollmentReport.getEnrollmentReport(context.getUser(), study, false) != null)
+                    enrollmentInfo.setLabel("Configure Enrollment View");
+
+                DesignerInfoImpl prInfo = new DesignerInfoImpl(ParticipantReport.TYPE,
+                        study.getSubjectNounSingular() + " Report",
+                        new ActionURL(ReportsController.ParticipantReportAction.class, context.getContainer()));
+                prInfo.setId("create_participantReport");
+                designers.add(prInfo);
+
+                designers.add(enrollmentInfo);
+            }
+            catch (Exception e)
+            {
+                throw new RuntimeException(e);
+            }
+        }
+        return designers;
+    }
 
     @Override
     public List<ReportService.DesignerInfo> getDesignerInfo(ViewContext context, QuerySettings settings)

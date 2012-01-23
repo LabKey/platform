@@ -45,6 +45,7 @@ import org.labkey.api.query.QueryDefinition;
 import org.labkey.api.query.QueryParam;
 import org.labkey.api.query.QueryService;
 import org.labkey.api.query.QuerySettings;
+import org.labkey.api.query.QueryUrls;
 import org.labkey.api.query.QueryView;
 import org.labkey.api.query.UserSchema;
 import org.labkey.api.reports.Report;
@@ -53,6 +54,7 @@ import org.labkey.api.reports.model.ViewInfo;
 import org.labkey.api.reports.report.RReport;
 import org.labkey.api.reports.report.ReportDescriptor;
 import org.labkey.api.reports.report.ReportIdentifier;
+import org.labkey.api.reports.report.ReportUrls;
 import org.labkey.api.reports.report.view.ChartDesignerBean;
 import org.labkey.api.reports.report.view.RReportBean;
 import org.labkey.api.reports.report.view.ReportDesignBean;
@@ -73,6 +75,7 @@ import org.labkey.api.study.reports.CrosstabReportDescriptor;
 import org.labkey.api.util.HelpTopic;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.Pair;
+import org.labkey.api.util.UniqueID;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.HtmlView;
 import org.labkey.api.view.HttpView;
@@ -2008,12 +2011,30 @@ public class ReportsController extends BaseStudyController
         }
     }
 
-    @RequiresPermissionClass(AdminPermission.class)
-    public class ParticipantReportAction extends SimpleViewAction<ReportDesignBean>
+    @RequiresPermissionClass(ReadPermission.class)
+    public class ParticipantReportAction extends SimpleViewAction<ParticipantReportForm>
     {
-        public ModelAndView getView(ReportDesignBean form, BindException errors) throws Exception
+        public ModelAndView getView(ParticipantReportForm form, BindException errors) throws Exception
         {
-            return new JspView<Report>("/org/labkey/study/view/participantReport.jsp");
+            form.setComponentId("participant-report-panel-" + UniqueID.getRequestScopedUID(getRequest()));
+
+            JspView<ParticipantReportForm> view = new JspView<ParticipantReportForm>("/org/labkey/study/view/participantReport.jsp", form);
+
+            view.setTitle(StudyService.get().getSubjectNounSingular(getContainer()) + " Report");
+            view.setFrame(WebPartView.FrameType.PORTAL);
+
+            if (getViewContext().hasPermission(InsertPermission.class))
+            {
+                NavTree customize = new NavTree("");
+                customize.setScript("customizeParticipantReport('" + form.getComponentId() + "');");
+                view.setCustomize(customize);
+
+                NavTree menu = new NavTree();
+                menu.addChild("Manage Views", PageFlowUtil.urlProvider(ReportUrls.class).urlManageViews(getContainer()));
+                view.setNavMenu(menu);
+            }
+
+            return view;
         }
 
         public NavTree appendNavTrail(NavTree root)
@@ -2058,38 +2079,66 @@ public class ReportsController extends BaseStudyController
             }
         }
 
-        private Report getReport(ParticipantReportForm form) throws Exception
-        {
-            Report report;
-
-            if (form.getReportId() != null)
-                report = form.getReportId().getReport();
-            else
-                report = ReportService.get().createReportInstance(ParticipantReport.TYPE);
-
-            ReportDescriptor descriptor = report.getDescriptor();
-
-            descriptor.setReportName(form.getName());
-            descriptor.setReportDescription(form.getDescription());
-            descriptor.setProperty(ReportDescriptor.Prop.schemaName, form.getSchemaName());
-            descriptor.setProperty(ReportDescriptor.Prop.queryName, form.getQueryName());
-            descriptor.setProperty(ReportDescriptor.Prop.json, form.getJson());
-
-            return report;
-        }
-
         @Override
         public ApiResponse execute(ParticipantReportForm form, BindException errors) throws Exception
         {
             ApiSimpleResponse response = new ApiSimpleResponse();
             String key = ReportUtil.getReportKey(form.getSchemaName(), form.getQueryName());
-            Report report = getReport(form);
+            Report report = getParticipantReport(form);
 
             int rowId = ReportService.get().saveReport(getViewContext(), key, report);
             ReportIdentifier reportId = ReportService.get().getReportIdentifier(String.valueOf(rowId));
 
             response.put("success", true);
             response.put("reportId", reportId);
+
+            return response;
+        }
+    }
+
+    private Report getParticipantReport(ParticipantReportForm form) throws Exception
+    {
+        Report report;
+
+        if (form.getReportId() != null)
+            report = form.getReportId().getReport();
+        else
+            report = ReportService.get().createReportInstance(ParticipantReport.TYPE);
+
+        if (report != null)
+        {
+            ReportDescriptor descriptor = report.getDescriptor();
+
+            if (form.getName() != null)
+                descriptor.setReportName(form.getName());
+            if (form.getDescription() != null)
+                descriptor.setReportDescription(form.getDescription());
+            if (form.getSchemaName() != null)
+                descriptor.setProperty(ReportDescriptor.Prop.schemaName, form.getSchemaName());
+            if (form.getQueryName() != null)
+                descriptor.setProperty(ReportDescriptor.Prop.queryName, form.getQueryName());
+            if (form.getJson() != null)
+                descriptor.setProperty(ReportDescriptor.Prop.json, form.getJson());
+        }
+        return report;
+    }
+
+    @RequiresPermissionClass(ReadPermission.class)
+    public class GetParticipantReportAction extends ApiAction<ParticipantReportForm>
+    {
+        @Override
+        public ApiResponse execute(ParticipantReportForm form, BindException errors) throws Exception
+        {
+            ApiSimpleResponse response = new ApiSimpleResponse();
+            Report report = getParticipantReport(form);
+
+            if (report != null)
+            {
+                response.put("reportConfig", ParticipantReportForm.toJSON(report));
+                response.put("success", true);
+            }
+            else
+                throw new IllegalStateException("Unable to find specified report");
 
             return response;
         }
@@ -2103,6 +2152,42 @@ public class ReportsController extends BaseStudyController
         private String _queryName;
         private String _schemaName;
         private ReportIdentifier _reportId;
+        private String _componentId;
+
+        public String getComponentId()
+        {
+            return _componentId;
+        }
+
+        public void setComponentId(String componentId)
+        {
+            _componentId = componentId;
+        }
+
+        public void setName(String name)
+        {
+            _name = name;
+        }
+
+        public void setDescription(String description)
+        {
+            _description = description;
+        }
+
+        public void setQueryName(String queryName)
+        {
+            _queryName = queryName;
+        }
+
+        public void setSchemaName(String schemaName)
+        {
+            _schemaName = schemaName;
+        }
+
+        public void setReportId(ReportIdentifier reportId)
+        {
+            _reportId = reportId;
+        }
 
         public String getName()
         {
@@ -2151,6 +2236,24 @@ public class ReportsController extends BaseStudyController
             {
                 _json = ((JSONObject)json).toString();
             }
+        }
+
+        public static JSONObject toJSON(Report report)
+        {
+            JSONObject json = new JSONObject();
+            ReportDescriptor descriptor = report.getDescriptor();
+
+            json.put("name", descriptor.getReportName());
+            json.put("decription", descriptor.getReportDescription());
+            json.put("schemaName", descriptor.getProperty(ReportDescriptor.Prop.schemaName));
+            json.put("queryName", descriptor.getProperty(ReportDescriptor.Prop.queryName));
+
+            String jsonConfig = descriptor.getProperty(ReportDescriptor.Prop.json);
+            if (jsonConfig != null)
+            {
+                json.put("json", new JSONObject(jsonConfig));
+            }
+            return json;
         }
     }
 }

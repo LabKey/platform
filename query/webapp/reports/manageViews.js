@@ -167,8 +167,19 @@ LABKEY.ViewsPanel.prototype = {
             {text:'Rename', id: 'btn_editView', tooltip: {text:'Rename or edit the description of an existing view', title:'Rename View'}, listeners:{click:function(button, event) {this.editSelected(button);}, scope:this}}
         ];
 
-        if (this.createMenu != undefined)
+        // populate the create menu with provider-based designer info
+        if (this.createMenu != undefined && this.createMenu.length > 0)
         {
+            for (var i=0; i < this.createMenu.length; i++)
+            {
+                var item = this.createMenu[i];
+
+                if (item.redirectUrl)
+                {
+                    item.scope = this;
+                    item.handler = this.redirectToUrl;
+                }
+            }
             var item = new Ext.Button({
                 text:'Create',
                 id: 'btn_createView',
@@ -224,6 +235,11 @@ LABKEY.ViewsPanel.prototype = {
         }
 
         return buttons;
+    },
+
+    redirectToUrl : function(cmp, evt) {
+        if (cmp.initialConfig)
+            window.location = cmp.initialConfig.redirectUrl;
     },
 
     /**

@@ -15,33 +15,27 @@
  * limitations under the License.
  */
 %>
+<%@ page import="org.labkey.api.data.Container" %>
 <%@ page import="org.labkey.api.query.QueryParam" %>
-<%@ page import="org.labkey.api.reports.ReportService" %>
 <%@ page import="org.labkey.api.reports.report.RReport" %>
 <%@ page import="org.labkey.api.reports.report.view.RReportBean" %>
 <%@ page import="org.labkey.api.reports.report.view.ReportUtil" %>
 <%@ page import="org.labkey.api.security.permissions.AdminPermission" %>
 <%@ page import="org.labkey.api.study.Study" %>
 <%@ page import="org.labkey.api.study.StudyService" %>
+<%@ page import="org.labkey.api.util.PageFlowUtil" %>
 <%@ page import="org.labkey.api.view.ActionURL" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.api.view.JspView" %>
 <%@ page import="org.labkey.api.view.ViewContext" %>
+<%@ page import="org.labkey.api.visualization.VisualizationUrls" %>
 <%@ page import="org.labkey.study.controllers.StudyController" %>
-<%@ page import="org.labkey.study.controllers.reports.ReportsController" %>
 <%@ page import="org.labkey.study.controllers.reports.StudyManageReportsBean" %>
 <%@ page import="org.labkey.study.controllers.security.SecurityController" %>
 <%@ page import="org.labkey.study.model.StudyManager" %>
 <%@ page import="org.labkey.study.query.DataSetQueryView" %>
 <%@ page import="org.labkey.study.reports.EnrollmentReport" %>
-<%@ page import="org.labkey.study.reports.ExportExcelReport" %>
 <%@ page import="org.labkey.study.reports.StudyQueryReport" %>
-<%@ page import="org.labkey.api.visualization.TimeChartReport" %>
-<%@ page import="org.labkey.api.visualization.VisualizationUrls" %>
-<%@ page import="org.labkey.api.util.PageFlowUtil" %>
-<%@ page import="org.labkey.api.reports.report.ReportUrls" %>
-<%@ page import="org.labkey.api.data.Container" %>
-<%@ page import="org.labkey.study.reports.ParticipantReport" %>
 <%@ page extends="org.labkey.api.jsp.JspBase"%>
 
 <script type="text/javascript">
@@ -80,6 +74,8 @@
     String[] participantIds = StudyManager.getInstance().getParticipantIds(study, 1);
     if (participantIds != null && participantIds.length > 0)
         customizeParticipantURL.addParameter("participantId", participantIds[0]);
+
+    org.json.JSONArray reportButtons = ReportUtil.getCreateReportButtons(context);
 %>
 
 <script type="text/javascript">
@@ -218,50 +214,7 @@
                                 '<tpl if="queryView && !inherited">&nbsp;<a class="labkey-text-link" href=\'#\' onclick=\'panel.convertQuery("{schema}","{query}","{name}");return false;\'>make top-level view</a></tpl></td></tr>',
                         '</table>')
                 }),
-            createMenu :[{
-                id: 'create_rView',
-                text:'R View',
-                hidden: <%=!RReport.isEnabled()%>,
-                disabled: <%=!ReportUtil.canCreateScript(context)%>,
-                icon: '<%=ReportService.get().getReportIcon(getViewContext(), RReport.TYPE)%>',
-                listeners:{click:function(button, event) {window.location = '<%=newRView.getLocalURIString()%>';}}
-            },{
-                id: 'create_gridView',
-                text:'Grid View',
-                disabled: <%=!context.hasPermission(AdminPermission.class)%>,
-                icon: '<%=ReportService.get().getReportIcon(getViewContext(), StudyQueryReport.TYPE)%>',
-                listeners:{click:function(button, event) {window.location = '<%=new ActionURL(ReportsController.CreateQueryReportAction.class, c)%>';}}
-            },{
-                id: 'create_crosstabView',
-                text:'Crosstab View',
-                disabled: <%=!context.hasPermission(AdminPermission.class)%>,
-                listeners:{click:function(button, event) {window.location = '<%=new ActionURL(ReportsController.CreateCrosstabReportAction.class, c)%>';}}
-            },{
-                id: 'create_exportXlsView',
-                text:'Workbook (.xls)',
-                icon: '<%=ReportService.get().getReportIcon(getViewContext(), ExportExcelReport.TYPE)%>',
-                listeners:{click:function(button, event) {window.location = '<%=new ActionURL(ReportsController.ExportExcelConfigureAction.class, c)%>';}}
-            },{
-                id: 'create_staticView',
-                text:'Attachment Report',
-                disabled: <%=!context.hasPermission(AdminPermission.class)%>,
-                listeners:{click:function(button, event) {window.location = '<%=urlProvider(ReportUrls.class).urlAttachmentReport(c, context.getActionURL())%>';}}
-            },{
-                id: 'create_enrollmentView',
-                text:'<%=hasEnrollmentReport ? "Configure Enrollment View" : "Enrollment View"%>',
-                disabled: <%=!context.hasPermission(AdminPermission.class)%>,
-                listeners:{click:function(button, event) {window.location = '<%=new ActionURL(ReportsController.EnrollmentReportAction.class, c)%>';}}
-            },{
-                id: 'create_participantReport',
-                text: '<%=StudyService.get().getSubjectNounSingular(c)%>' + ' Report',
-                icon: '<%=ReportService.get().getReportIcon(getViewContext(), ParticipantReport.TYPE)%>',
-                listeners:{click:function(button, event) {window.location = '<%=new ActionURL(ReportsController.ParticipantReportAction.class, c)%>';}}
-            },{
-                id: 'create_timeChart',
-                text:'Time Chart',
-                icon: '<%=ReportService.get().getReportIcon(getViewContext(), TimeChartReport.TYPE)%>',
-                listeners:{click:function(button, event) {window.location = '<%= newTimeChart %>';}}
-            }],
+            createMenu : <%=reportButtons%>,
 
             /**
              * Creates the grid row context menu

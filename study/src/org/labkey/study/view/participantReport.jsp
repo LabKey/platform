@@ -19,17 +19,17 @@
 <%@ page import="org.labkey.api.util.UniqueID" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.api.view.JspView" %>
+<%@ page import="org.labkey.study.controllers.reports.ReportsController" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
-    JspView<Report> me = (JspView<Report>) HttpView.currentView();
-    Report bean = me.getModelBean();
-    String reportId = "";
+    JspView<org.labkey.study.controllers.reports.ReportsController.ParticipantReportForm> me = (JspView<org.labkey.study.controllers.reports.ReportsController.ParticipantReportForm>) HttpView.currentView();
+    org.labkey.study.controllers.reports.ReportsController.ParticipantReportForm bean = me.getModelBean();
+    String reportId = null;
 
-    if (bean != null)
-        reportId = bean.getDescriptor().getReportId().toString();
+    if (bean.getReportId() != null)
+        reportId = bean.getReportId().toString();
 
-    String elementId = "participant-report-div-" + UniqueID.getRequestScopedUID(HttpView.currentRequest());
-    String customizeId = "participant-report-div-" + UniqueID.getRequestScopedUID(HttpView.currentRequest());
+    String renderId = "participant-report-div-" + UniqueID.getRequestScopedUID(HttpView.currentRequest());
 %>
 
 <style type="text/css">
@@ -47,16 +47,25 @@
 
     Ext4.onReady(function(){
         var panel = Ext4.create('LABKEY.ext4.ParticipantReport', {
-            height     : 1000, // TODO: figure out dynamic height
-            renderTo   : '<%= elementId %>',
-            <%--previewEl  : '<%= customizeId %>',--%>
-//            reportId   : 'fake-report-id',
+            height     : 600, // TODO: figure out dynamic height
+            renderTo   : '<%= renderId %>',
+            id         : '<%= bean.getComponentId() %>',
+            reportId   : <%=q(reportId)%>,
             allowCustomize : true,
             openCustomize : true
         });
     });
 
+    function customizeParticipantReport(elementId) {
+
+        function initPanel() {
+            var panel = Ext4.getCmp(elementId);
+
+            if (panel) { panel.customize(); }
+        }
+        Ext4.onReady(initPanel);
+    }
+
 </script>
 
-<div id="<%= elementId%>" class="extContainer" style="width:100%;"></div>
-<div id="<%= customizeId %>" class="extContainer" style="width:100%;"></div>
+<div id="<%= renderId%>" class="extContainer" style="width:100%;"></div>

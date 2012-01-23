@@ -18,6 +18,9 @@ package org.labkey.visualization.report;
 import org.labkey.api.query.QuerySettings;
 import org.labkey.api.reports.ReportService;
 import org.labkey.api.reports.report.view.DefaultReportUIProvider;
+import org.labkey.api.security.permissions.AdminPermission;
+import org.labkey.api.study.Study;
+import org.labkey.api.study.StudyService;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.ViewContext;
@@ -45,6 +48,27 @@ public class VisualizationUIProvider extends DefaultReportUIProvider
             info.add(new DesignerInfoImpl(TimeChartReport.TYPE, "Time Chart", designerURL));
         }
         return info;
+    }
+
+    /**
+     * Add report creation to UI's that aren't associated with a query (manage views, data views)
+     */
+    @Override
+    public List<ReportService.DesignerInfo> getDesignerInfo(ViewContext context)
+    {
+        List<ReportService.DesignerInfo> designers = new ArrayList<ReportService.DesignerInfo>();
+        Study study = StudyService.get().getStudy(context.getContainer());
+
+        if (study != null)
+        {
+            VisualizationUrls urlProvider = PageFlowUtil.urlProvider(VisualizationUrls.class);
+            ActionURL designerURL = urlProvider.getTimeChartDesignerURL(context.getContainer());
+
+            DesignerInfoImpl info = new DesignerInfoImpl(TimeChartReport.TYPE, "Time Chart", designerURL);
+            info.setId("create_timeChart");
+            designers.add(info);
+        }
+        return designers;
     }
 
     @Override

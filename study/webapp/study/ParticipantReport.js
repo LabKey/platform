@@ -27,11 +27,13 @@ Ext4.define('LABKEY.ext4.ParticipantReport', {
     initComponent : function() {
 
         this.customMode = false;
+        this.reportConfig = {};
 
         this.items = [];
 
         this.previewPanel = Ext4.create('Ext.panel.Panel', {
             bodyPadding : 20,
+            autoScroll  : true,
             border : false, frame : false,
             html   : '<span style="width: 400px; display: block; margin-left: auto; margin-right: auto">' +
                     ((!this.reportId && !this.allowCustomize) ? 'Unable to initialize report. Please provide a Report Identifier.' : 'Preview Area') +
@@ -58,15 +60,15 @@ Ext4.define('LABKEY.ext4.ParticipantReport', {
                     text    : 'Cancel',
                     handler : function() {
                         this.customize();
+                        // revert back to the last config (if any)
                         if (this.storedTemplateConfig)
-                            this.loadReport(this.storedTemplateConfig);
+                            this.onLoadReport(this.storedTemplateConfig);
                     },
                     scope   : this
                 },{
                     text    : 'Save',
                     handler : function() {
-                        console.log('Saving Report Configuration...not really.');
-                        this.customize();
+                        this.saveReport();
                     },
                     scope   : this
                 }]
@@ -120,7 +122,7 @@ Ext4.define('LABKEY.ext4.ParticipantReport', {
         }, this);
 
         if (this.reportId) {
-            this.loadReport();
+            this.loadReport(this.reportId);
         }
         else if (this.allowCustomize) {
             this.customize();
@@ -148,7 +150,10 @@ Ext4.define('LABKEY.ext4.ParticipantReport', {
 
             formItems.push({
                 xtype      : 'textfield',
-                fieldLabel : 'Name'
+                fieldLabel : 'Name',
+                allowBlank : false,
+                value      : this.reportConfig.name,
+                listeners  : {change : function(cmp, value) {this.reportConfig.name = value;}, scope : this}
             },{
                 xtype       : 'combo',
                 fieldLabel  : 'Dataset',
@@ -156,11 +161,20 @@ Ext4.define('LABKEY.ext4.ParticipantReport', {
                 store       : store,
                 editable    : false,
                 queryMode      : 'local',
+                value          : this.reportConfig.queryName,
                 displayField   : 'Name',
                 valueField     : 'Name',
                 triggerAction  : 'all',
                 emptyText      : 'Unknown',
-                listeners      : {change : this.onChangeQuery, scope : this}
+                listeners      : {
+                    change : {fn: this.onChangeQuery, scope : this},
+                    render : {fn: function(cmp){
+                        if (this.reportConfig.queryName)
+                            this.onChangeQuery(cmp, this.reportConfig.queryName, null);
+                        },
+                        scope : this
+                    }
+                }
             });
 
             var panel = Ext4.create('Ext.form.Panel', {
@@ -205,54 +219,46 @@ Ext4.define('LABKEY.ext4.ParticipantReport', {
         return this.northPanel;
     },
 
-    loadReport : function() {
+    loadReport : function(reportId) {
 
-        // TODO : This selectRows is just a stub call to simulate ajax. This needs to be replaced by a call to the getReport API using the this.reportId
-        LABKEY.Query.selectRows({
-            schemaName : 'core',
-            queryName  : 'users',
-            success    : this.onLoadReport,
-            scope      : this
-        });
-
-    },
-
-    onLoadReport : function(reportConfig) {
-
-        // TODO : Remove this once the call in loadReport is not a stub
-        reportConfig = {
-            pageFields     : ['AssignedTo', {name:'AssignedTo/UserId', style:"color:purple;"}],
-            pageBreakInfo  : [{name:'AssignedTo', rowspans:false}],
-            gridFields     : ['Status', 'IssueId', 'Created', 'Priority', 'Title', 'Type', 'CreatedBy', 'Area', 'Milestone'],
-            rowBreakInfo   : [{name:'Status', rowspans:true}],
-            reportTemplate : SIMPLE_PAGE_TEMPLATE,
-            queryConfig    : {
-                requiredVersion : 12.1,
-                schemaName      : 'issues',
-                queryName       : 'Issues',
-                columns         : 'AssignedTo,Status,XY,IssueId,Created,Priority,Title,Type,AssignedTo/DisplayName,AssignedTo/UserId,CreatedBy,Area,Milestone,Triage',
-                sort            : 'AssignedTo/DisplayName,Status,-IssueId',
-                maxRows         : 20,
-                includeStyle    : true
+        Ext4.Ajax.request({
+            url     : LABKEY.ActionURL.buildURL('study-reports', 'getParticipantReport.api'),
+            method  : 'GET',
+            params  : {reportId : reportId},
+            success : function(response){
+                this.onLoadReport(Ext4.decode(response.responseText));
+            },
+            failure : function(response){
+                Ext4.Msg.alert('Failure', Ext4.decode(response.responseText).exception);
             },
             scope : this
-        };
+        });
+    },
 
-        this.templateConfig = reportConfig;
+    onLoadReport : function(report) {
+
+        this.templateConfig = report.reportConfig.json;
+        this.templateConfig.reportTemplate = SIMPLE_PAGE_TEMPLATE;
+
+        this.reportConfig = report.reportConfig;
+        this.reportConfig.json = undefined;
 
         this.renderReport();
+/*
         if (this.openCustomize) {
             this.openCustomize = false; // just do this initially
             this.customize();
         }
+*/
     },
 
     renderReport : function() {
 
-        this.templateConfig.renderTo = this.previewEl || this.previewPanel.getEl().id + '-body';
+        var template = Ext4.clone(this.templateConfig);
+        template.renderTo = this.previewEl || this.previewPanel.getEl().id + '-body';
 
-        Ext.get(this.templateConfig.renderTo).update('');
-        this.templateReport = Ext4.create('LABKEY.TemplateReport', this.templateConfig);
+        Ext.get(template.renderTo).update('');
+        this.templateReport = Ext4.create('LABKEY.TemplateReport', template);
     },
 
     isCustomizable : function() {
@@ -274,22 +280,36 @@ Ext4.define('LABKEY.ext4.ParticipantReport', {
 
     onEnableCustomMode : function() {
 
-        if (this.templateConfig)
-            this.storedTemplateConfig = this.templateConfig;
+        // stash away the current config
+        if (this.templateConfig && this.reportConfig)
+        {
+            var report = {
+                reportConfig : this.reportConfig
+            };
+            report.reportConfig.json = this.templateConfig;
+            this.storedTemplateConfig = report;
+        }
 
-        // offer a choice of non-demographic datasets without an external key field
-        LABKEY.Query.selectRows({
-            requiredVersion : 12.1,
-            schemaName      : 'study',
-            queryName       : 'Datasets',
-            scope           : this,
-            filterArray : [
-                LABKEY.Filter.create('DemographicData', false),
-                LABKEY.Filter.create('KeyPropertyName', false, LABKEY.Filter.Types.ISBLANK)
-            ],
-            success : this.initNorthPanel
-        });
-
+        // if the north panel hasn't been fully populated, initialize the dataset store, else
+        // just show the panel
+        if (!this.designerPanel)
+        {
+            // offer a choice of non-demographic datasets without an external key field
+            LABKEY.Query.selectRows({
+                requiredVersion : 12.1,
+                schemaName      : 'study',
+                queryName       : 'Datasets',
+                scope           : this,
+                filterArray : [
+                    LABKEY.Filter.create('DemographicData', false),
+                    LABKEY.Filter.create('KeyPropertyName', false, LABKEY.Filter.Types.ISBLANK)
+                ],
+                success : this.initNorthPanel
+            });
+        }
+        else
+            this.northPanel.show();
+        
         this.customMode = true;
     },
 
@@ -300,7 +320,7 @@ Ext4.define('LABKEY.ext4.ParticipantReport', {
         if (this.northPanel)
             this.northPanel.hide();
 
-        this.setHeight(this.templateReport.getHeight());
+//        this.setHeight(this.templateReport.getHeight());
 //        this.setWidth(this.templateReport.getWidth());  This screws up the north panel if opened again
     },
 
@@ -309,6 +329,9 @@ Ext4.define('LABKEY.ext4.ParticipantReport', {
     },
 
     onChangeQuery : function(cmp, newVal, oldVal) {
+
+        this.reportConfig.schemaName = 'study';
+        this.reportConfig.queryName = newVal;
 
         LABKEY.Query.getQueryDetails({
             schemaName: 'study',
@@ -459,6 +482,50 @@ Ext4.define('LABKEY.ext4.ParticipantReport', {
                 this.queryStore.loadRawData(selectRowsResult);
             }
         }, this);
+
+    },
+
+    saveReport : function() {
+
+        console.log('Saving Report Configuration.');
+        var form = this.northPanel.getComponent('selectionForm').getForm();
+        
+        if (form.isValid())
+        {
+            var data = this.reportConfig;
+            data.json = this.templateConfig;
+            //data = Ext4.copyTo(data, this.templateConfig, 'gridFields,pageBreakInfo,pageFields,rowBreakInfo');
+
+            Ext4.Ajax.request({
+                url     : LABKEY.ActionURL.buildURL('study-reports', 'saveParticipantReport.api'),
+                method  : 'POST',
+                jsonData: data,
+                success : function(resp){
+                    Ext4.Msg.alert('Success', 'Report : ' + this.reportConfig.name + ' saved successfully', function(){
+                        var o = Ext4.decode(resp.responseText);
+
+                        // Modify Title (hack: hardcode the webpart id since this is really not a webpart, just
+                        // using a webpart frame, will need to start passing in the real id if this ever
+                        // becomes a true webpart
+                        var titleEl = Ext.query('th[class=labkey-wp-title-left]:first', 'webpart_-1');
+                        if (titleEl && (titleEl.length >= 1))
+                        {
+                            titleEl[0].innerHTML = LABKEY.Utils.encodeHtml(this.reportConfig.name);
+                        }
+
+                        this.reportId = o.reportId;
+                        this.customize();
+                        
+                    }, this);
+                },
+                failure : function(resp){
+                    Ext4.Msg.alert('Failure', Ext4.decode(resp.responseText).exception);
+                },
+                scope : this
+            });
+        }
+        else
+            Ext4.Msg.alert('Save failed', 'Please enter all required information.');
 
     }
 });
