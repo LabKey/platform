@@ -16,6 +16,7 @@
 
 package org.labkey.api.exp.api;
 
+import org.jetbrains.annotations.Nullable;
 import org.labkey.api.security.User;
 import org.labkey.api.exp.PropertyDescriptor;
 import org.jetbrains.annotations.NotNull;
@@ -49,7 +50,7 @@ public interface ExpProtocolApplication extends ExpObject
      */
     public void addDataInput(User user, ExpData input, String inputRole);
     public void removeDataInput(User user, ExpData data);
-    public void addMaterialInput(User user, ExpMaterial material, String inputRole);
+    public void addMaterialInput(User user, ExpMaterial material, @Nullable String inputRole);
     public void removeMaterialInput(User user, ExpMaterial material);
 
     public ExpRun getRun();

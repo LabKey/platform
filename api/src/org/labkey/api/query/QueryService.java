@@ -121,7 +121,7 @@ abstract public class QueryService
     {
         return select(table, columns, filter, sort, Collections.<String, Object>emptyMap());
     }
-	abstract public Results select(TableInfo table, Collection<ColumnInfo> columns, @Nullable Filter filter, @Nullable Sort sort, Map<String,Object> parameters) throws SQLException;
+	abstract public Results select(TableInfo table, Collection<ColumnInfo> columns, @Nullable Filter filter, @Nullable Sort sort, Map<String, Object> parameters) throws SQLException;
 
     /**
      * @param forceSort always add a sort, even if the Sort parameter is null or empty. Do not pass true if the SQL will

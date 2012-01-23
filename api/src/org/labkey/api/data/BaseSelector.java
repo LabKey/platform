@@ -19,42 +19,32 @@ package org.labkey.api.data;
 import org.labkey.api.collections.ArrayListMap;
 
 import java.lang.reflect.Array;
-import java.sql.Connection;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-public abstract class BaseSelector<CONTEXT> extends JdbcCommand implements Selector
+public abstract class BaseSelector<FACTORY extends SqlFactory> extends JdbcCommand implements Selector
 {
-    private Connection _conn = null;
-
-    abstract SQLFragment getSql(CONTEXT context);
-    abstract CONTEXT getContext();  // A single query's context; this allows better Selector reuse, since query-specific
-                                    // optimizations would mutate the externally set state.
+    abstract FACTORY getSqlFactory();  // A single query's SQL factory; this allows better Selector reuse, since query-specific
+                                       // optimizations won't mutate the Selector's externally set state.
 
     protected BaseSelector(DbScope scope)
     {
         super(scope);
     }
 
-    @Override      // TODO: Not valid to call directly at the moment since connection never gets closed
+    //@Override      // TODO: Not valid to call at the moment since connection never gets closed
     public ResultSet getResultSet() throws SQLException
     {
-        return getResultSet(getSql(getContext()));
+        return getSqlFactory().handleResultSet(null);  // NYI
     }
 
-    protected ResultSet getResultSet(SQLFragment sql) throws SQLException
-    {
-        _conn = getConnection();
-        return Table._executeQuery(_conn, sql.getSQL(), sql.getParamsArray());
-    }
-
-    private <K> ArrayList<K> getArrayList(final Class<K> clazz, CONTEXT context)
+    private <K> ArrayList<K> getArrayList(final Class<K> clazz, FACTORY factory)
     {
         final ArrayList<K> list;
         final Table.Getter getter = Table.Getter.forClass(clazz);
@@ -70,11 +60,12 @@ public abstract class BaseSelector<CONTEXT> extends JdbcCommand implements Selec
                     //noinspection unchecked
                     list.add((K)getter.getObject(rs));
                 }
-            }, context);
+            }, factory);
         }
         else
         {
-            list = handleResultSet(getSql(context), new ResultSetHandler<ArrayList<K>>() {
+            list = factory.handleResultSet(new ResultSetHandler<ArrayList<K>>()
+            {
                 @Override
                 public ArrayList<K> handle(ResultSet rs) throws SQLException
                 {
@@ -82,11 +73,13 @@ public abstract class BaseSelector<CONTEXT> extends JdbcCommand implements Selec
                     {
                         CachedResultSet copy = (CachedResultSet) Table.cacheResultSet(getScope().getSqlDialect(), rs, Table.ALL_ROWS, null);
                         //noinspection unchecked
-                        K[] arrayListMaps = (K[])(copy._arrayListMaps == null ? new ArrayListMap[0] : copy._arrayListMaps);
+                        K[] arrayListMaps = (K[]) (copy._arrayListMaps == null ? new ArrayListMap[0] : copy._arrayListMaps);
                         copy.close();
 
                         // TODO: Not very efficient...
-                        return new ArrayList<K>(Arrays.asList(arrayListMaps));
+                        ArrayList<K> list = new ArrayList<K>(arrayListMaps.length);
+                        Collections.addAll(list, arrayListMaps);
+                        return list;
                     }
                     else
                     {
@@ -107,16 +100,14 @@ public abstract class BaseSelector<CONTEXT> extends JdbcCommand implements Selec
     @Override
     public long getRowCount()
     {
-        return getRowCount(getContext());
+        return getRowCount(getSqlFactory());
     }
 
-    protected long getRowCount(CONTEXT context)
+    protected long getRowCount(FACTORY factory)
     {
-        SQLFragment sql = new SQLFragment("SELECT COUNT(*) FROM (");
-        sql.append(getSql(context));
-        sql.append(") x");
+        SqlFactory rowCountFactory = new RowCountSqlFactory(factory);
 
-        return handleResultSet(sql, new ResultSetHandler<Long>()
+        return rowCountFactory.handleResultSet(new ResultSetHandler<Long>()
         {
             @Override
             public Long handle(ResultSet rs) throws SQLException
@@ -130,25 +121,25 @@ public abstract class BaseSelector<CONTEXT> extends JdbcCommand implements Selec
     @Override
     public <K> K[] getArray(Class<K> clazz)
     {
-        ArrayList<K> list = getArrayList(clazz, getContext());
+        ArrayList<K> list = getArrayList(clazz, getSqlFactory());
         return list.toArray((K[]) Array.newInstance(clazz, list.size()));
     }
 
     @Override
     public <K> Collection<K> getCollection(Class<K> clazz)
     {
-        return getArrayList(clazz, getContext());
+        return getArrayList(clazz, getSqlFactory());
     }
 
     @Override
     public <K> K getObject(Class<K> clazz)
     {
-        return getObject(clazz, getContext());
+        return getObject(clazz, getSqlFactory());
     }
 
-    protected <K> K getObject(Class<K> clazz, CONTEXT context)
+    protected <K> K getObject(Class<K> clazz, FACTORY factory)
     {
-        List<K> list = getArrayList(clazz, context);
+        List<K> list = getArrayList(clazz, factory);
 
         if (list.size() == 1)
             return list.get(0);
@@ -161,12 +152,12 @@ public abstract class BaseSelector<CONTEXT> extends JdbcCommand implements Selec
     @Override
     public void forEach(final ForEachBlock<ResultSet> block)
     {
-        forEach(block, getContext());
+        forEach(block, getSqlFactory());
     }
 
-    protected void forEach(final ForEachBlock<ResultSet> block, CONTEXT context)
+    protected void forEach(final ForEachBlock<ResultSet> block, FACTORY factory)
     {
-        handleResultSet(getSql(context), (new ResultSetHandler<Object>() {
+        factory.handleResultSet((new ResultSetHandler<Object>() {
             @Override
             public Object handle(ResultSet rs) throws SQLException
             {
@@ -181,12 +172,13 @@ public abstract class BaseSelector<CONTEXT> extends JdbcCommand implements Selec
     @Override
     public void forEachMap(final ForEachBlock<Map<String, Object>> block)
     {
-        forEachMap(block, getContext());
+        forEachMap(block, getSqlFactory());
     }
 
-    protected void forEachMap(final ForEachBlock<Map<String, Object>> block, CONTEXT context)
+    protected void forEachMap(final ForEachBlock<Map<String, Object>> block, FACTORY factory)
     {
-        handleResultSet(getSql(context), new ResultSetHandler<Object>() {
+        factory.handleResultSet(new ResultSetHandler<Object>()
+        {
             @Override
             public Object handle(ResultSet rs) throws SQLException
             {
@@ -237,29 +229,31 @@ public abstract class BaseSelector<CONTEXT> extends JdbcCommand implements Selec
         return fillValueMap(new HashMap<Object, Object>());
     }
 
-    private <K> K handleResultSet(SQLFragment sql, ResultSetHandler<K> handler)
-    {
-        ResultSet rs = null;
-
-        try
-        {
-            rs = getResultSet(sql);
-            return handler.handle(rs);
-        }
-        catch(SQLException e)
-        {
-            // TODO: Substitute SQL parameter placeholders with values?
-            Table.doCatch(sql.getSQL(), sql.getParamsArray(), _conn, e);
-            throw getExceptionFramework().translate(getScope(), "Message", sql.getSQL(), e);  // TODO: Change message
-        }
-        finally
-        {
-            Table.doFinally(rs, null, _conn, getScope());
-        }
-    }
-
-    interface ResultSetHandler<K>
+    public interface ResultSetHandler<K>
     {
         K handle(ResultSet rs) throws SQLException;
+    }
+
+
+    // Wraps another SqlFactory, wrapping the SQL it produces with a SELECT COUNT(*) query.
+    private class RowCountSqlFactory extends BaseSqlFactory
+    {
+        private final SqlFactory _factory;
+
+        private RowCountSqlFactory(SqlFactory factory)
+        {
+            super(BaseSelector.this);
+            _factory = factory;
+        }
+
+        @Override
+        public SQLFragment getSql()
+        {
+            SQLFragment sql = new SQLFragment("SELECT COUNT(*) FROM (");
+            sql.append(_factory.getSql());
+            sql.append(") x");
+
+            return sql;
+        }
     }
 }

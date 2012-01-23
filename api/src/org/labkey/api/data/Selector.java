@@ -28,7 +28,7 @@ import java.util.Map;
 */
 public interface Selector
 {
-    ResultSet getResultSet() throws SQLException;      // TODO: Don't throw SQLException?
+//    ResultSet getResultSet() throws SQLException;      // TODO: Don't throw SQLException?
 
     long getRowCount();
 

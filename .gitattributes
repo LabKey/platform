@@ -168,6 +168,7 @@ api/src/org/labkey/api/data/AsyncQueryRequest.java -text
 api/src/org/labkey/api/data/AtomicDatabaseInteger.java -text
 api/src/org/labkey/api/data/AttachmentParentEntity.java -text
 api/src/org/labkey/api/data/BaseSelector.java -text
+api/src/org/labkey/api/data/BaseSqlFactory.java -text
 api/src/org/labkey/api/data/BooleanFormat.java -text
 api/src/org/labkey/api/data/BuiltInButtonConfig.java -text
 api/src/org/labkey/api/data/ButtonBarConfig.java -text
@@ -265,6 +266,7 @@ api/src/org/labkey/api/data/ShowRowsConverter.java -text
 api/src/org/labkey/api/data/SimpleFilter.java -text
 api/src/org/labkey/api/data/SqlColumn.java -text
 api/src/org/labkey/api/data/SqlExecutor.java -text
+api/src/org/labkey/api/data/SqlFactory.java -text
 api/src/org/labkey/api/data/SqlScriptManager.java -text
 api/src/org/labkey/api/data/SqlScriptParser.java -text
 api/src/org/labkey/api/data/SqlScriptRunner.java -text
@@ -279,6 +281,7 @@ api/src/org/labkey/api/data/TableInfo.java -text
 api/src/org/labkey/api/data/TableInfoGetter.java -text
 api/src/org/labkey/api/data/TableInfoWriter.java -text
 api/src/org/labkey/api/data/TableSelector.java -text
+api/src/org/labkey/api/data/TableSelectorTestCase.java -text
 api/src/org/labkey/api/data/TableXmlUtils.java -text
 api/src/org/labkey/api/data/TempTableInfo.java -text
 api/src/org/labkey/api/data/TempTableTracker.java -text

@@ -16,6 +16,7 @@
 
 package org.labkey.api.exp.api;
 
+import org.jetbrains.annotations.Nullable;
 import org.labkey.api.security.User;
 
 import java.util.List;
@@ -23,7 +24,7 @@ import java.util.List;
 public interface ExpExperiment extends ExpObject
 {
     ExpRun[] getRuns();
-    ExpRun[] getRuns(ExpProtocol parentProtocol, ExpProtocol childProtocol);
+    ExpRun[] getRuns(@Nullable ExpProtocol parentProtocol, ExpProtocol childProtocol);
 
     /**
      * If this experiment is a batch, it only allows runs that are of the same parent protocol.

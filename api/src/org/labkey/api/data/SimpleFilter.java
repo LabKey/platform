@@ -702,7 +702,7 @@ public class SimpleFilter implements Filter
         addUrlFilters(urlHelp, regionName);
     }
 
-    public void addUrlFilters(URLHelper urlHelp, String regionName)
+    public void addUrlFilters(URLHelper urlHelp, @Nullable String regionName)
     {
         String prefix = regionName == null ? "" : regionName + ".";
         String[] filterKeys = urlHelp.getKeysByPrefix(prefix);

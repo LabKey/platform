@@ -422,7 +422,7 @@ public class Table
 
     // return a result from a one row one column resultset
     // does not distinguish between not found, and set NULL
-    public static <K> K executeSingleton(DbSchema schema, String sql, Object[] parameters, Class<K> c) throws SQLException
+    public static <K> K executeSingleton(DbSchema schema, String sql, @Nullable Object[] parameters, Class<K> c) throws SQLException
     {
         return new LegacySqlSelector(schema, fragment(sql, parameters)).getObject(c);
     }
@@ -1402,7 +1402,6 @@ public class Table
     }
 
 
-
     public static class ResultSetImpl extends ResultSetWrapper implements TableResultSet
     {
         private final DbSchema schema;
@@ -1507,12 +1506,6 @@ public class Table
         {
             return "Displaying only the first " + maxRows + " rows.";
         }
-
-//        @Override
-//        public boolean supportsGetRowMap()
-//        {
-//            return false;
-//        }
 
         public Map<String, Object> getRowMap()
         {
@@ -1919,13 +1912,13 @@ public class Table
     //
 
     // SQLFragment version for convenience
+    @Deprecated
     private static void appendSelectAutoIncrement(SqlDialect d, SQLFragment sqlf, TableInfo tinfo, String columnName)
     {
         String t = d.appendSelectAutoIncrement("", tinfo, columnName);
         t = StringUtils.strip(t, ";\n\r");
         sqlf.append(t);
     }
-
 
 
     private static SQLFragment appendParameterOrVariable(SQLFragment f, SqlDialect d, boolean useVariable, Parameter p, Map<Parameter,String> names)
@@ -2188,22 +2181,26 @@ public class Table
         Integer selectRowIdIndex = null;
         Integer selectObjectIdIndex = null;
         int countReturnIds = 0;
+
         if (selectIds && (null != autoIncrementColumn || null != objectIdVar))
         {
             sqlfSelectIds = new SQLFragment("");
             String prefix = "SELECT ";
+
             if (null != autoIncrementColumn)
             {
                 appendSelectAutoIncrement(d, sqlfSelectIds, table, autoIncrementColumn.getName());
                 selectRowIdIndex = ++countReturnIds;
                 prefix = ", ";
             }
+
             if (null != objectIdVar)
             {
                 sqlfSelectIds.append(prefix);
                 sqlfSelectIds.append(objectIdVar);
                 selectObjectIdIndex = ++countReturnIds;
             }
+
             sqlfSelectIds.append(";\n");
         }
 
@@ -2214,7 +2211,7 @@ public class Table
         if (insert)
         {
             // Create a standard INSERT INTO table (col1, col2) VALUES (val1, val2) statement
-            sqlfInsertInto.append("INSERT INTO ").append(String.valueOf(table)).append(" (");
+            sqlfInsertInto.append("INSERT INTO ").append(table).append(" (");
             comma = "";
             for (SQLFragment colSQL : cols)
             {
@@ -2235,7 +2232,7 @@ public class Table
         else
         {
             // Create a standard UPDATE table SET col1 = val1, col2 = val2 statement
-            sqlfInsertInto.append("UPDATE ").append(String.valueOf(table)).append(" SET ");
+            sqlfInsertInto.append("UPDATE ").append(table).append(" SET ");
             comma = "";
             for (int i = 0; i < cols.size(); i++)
             {
