@@ -29,6 +29,7 @@ import org.labkey.api.files.FilesAdminOptions;
 import org.labkey.api.files.view.FilesWebPart;
 import org.labkey.api.gwt.client.model.GWTDomain;
 import org.labkey.api.gwt.client.model.GWTPropertyDescriptor;
+import org.labkey.api.gwt.server.BaseRemoteService;
 import org.labkey.api.module.Module;
 import org.labkey.api.pipeline.*;
 import org.labkey.api.pipeline.browse.PipelinePathForm;
@@ -1434,5 +1435,15 @@ public class PipelineController extends SpringActionController
     public static ActionURL urlBegin(Container container)
     {
         return new ActionURL(BeginAction.class, container); 
+    }
+
+
+    @RequiresPermissionClass(ReadPermission.class)
+    public class PipelineConfigurationAction extends GWTServiceAction
+    {
+        protected BaseRemoteService createService()
+        {
+            return new PipelineGWTServiceImpl(getViewContext());
+        }
     }
 }

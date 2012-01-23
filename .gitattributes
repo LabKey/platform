@@ -1541,6 +1541,7 @@ pipeline/src/META-INF/pipeline/jars.txt -text
 pipeline/src/org/labkey/pipeline/AbstractPipelineStartup.java -text
 pipeline/src/org/labkey/pipeline/PipelineController.java -text
 pipeline/src/org/labkey/pipeline/PipelineDirectoryImpl.java -text
+pipeline/src/org/labkey/pipeline/PipelineGWTServiceImpl.java -text
 pipeline/src/org/labkey/pipeline/PipelineModule.java -text
 pipeline/src/org/labkey/pipeline/PipelineWebPart.java -text
 pipeline/src/org/labkey/pipeline/PipelineWebdavProvider.java -text
