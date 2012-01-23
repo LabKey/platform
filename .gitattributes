@@ -4656,6 +4656,8 @@ internal/webapp/_images/labkey.png -text
 internal/webapp/_images/leaf.gif -text
 internal/webapp/_images/lockoverlay.png -text
 internal/webapp/_images/message.png -text
+internal/webapp/_images/milestone_no.png -text
+internal/webapp/_images/milestone_yes.png -text
 internal/webapp/_images/minus.gif -text
 internal/webapp/_images/mv_indicator.gif -text
 internal/webapp/_images/one.gif -text
