@@ -53,6 +53,7 @@ import org.labkey.api.data.Sort;
 import org.labkey.api.data.Table;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.TableInfoGetter;
+import org.labkey.api.data.TableSelector;
 import org.labkey.api.data.UpdateableTableInfo;
 import org.labkey.api.data.dialect.SqlDialect;
 import org.labkey.api.etl.BeanDataIterator;
@@ -126,7 +127,6 @@ import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.NavTree;
 import org.labkey.api.view.UnauthorizedException;
 import org.labkey.api.view.WebPartView;
-import org.labkey.api.webdav.AbstractDocumentResource;
 import org.labkey.api.webdav.ActionResource;
 import org.labkey.api.webdav.SimpleDocumentResource;
 import org.labkey.api.webdav.WebdavResource;
@@ -207,7 +207,7 @@ public class StudyManager
                 }
             }, StudyImpl.class)
         {
-            public StudyImpl[] get(final Container c, final SimpleFilter filterArg, final String sortString) throws SQLException
+            public StudyImpl[] get(final Container c, final SimpleFilter filterArg, final String sortString)
             {
                 assert filterArg == null & sortString == null;
                 String cacheId = getCacheId(filterArg);
@@ -292,7 +292,7 @@ public class StudyManager
 
         private final Map<Container, PropertyDescriptor[]> sharedProperties = new HashMap<Container, PropertyDescriptor[]>();
 
-        public PropertyDescriptor[] getSharedProperties(Container c) throws SQLException
+        public PropertyDescriptor[] getSharedProperties(Container c)
         {
             PropertyDescriptor[] pds = sharedProperties.get(c);
             if (pds == null)
@@ -408,14 +408,7 @@ public class StudyManager
     @NotNull
     public StudyImpl[] getAllStudies()
     {
-        try
-        {
-            return Table.select(StudySchema.getInstance().getTableInfoStudy(), Table.ALL_COLUMNS, null, new Sort("Label"), StudyImpl.class);
-        }
-        catch (SQLException e)
-        {
-            throw new RuntimeSQLException(e);
-        }
+        return new TableSelector(StudySchema.getInstance().getTableInfoStudy(), Table.ALL_COLUMNS, null, new Sort("Label")).getArray(StudyImpl.class);
     }
 
     @NotNull
@@ -727,7 +720,7 @@ public class StudyManager
     }
 
 
-    public Map<String, Double> getVisitImportMap(Study study, boolean includeStandardMapping) throws SQLException
+    public Map<String, Double> getVisitImportMap(Study study, boolean includeStandardMapping)
     {
         Collection<VisitAlias> customMapping = getCustomVisitImportMapping(study);
         Visit[] visits = includeStandardMapping ? StudyManager.getInstance().getVisits(study, Visit.Order.SEQUENCE_NUM) : new Visit[0];
@@ -753,19 +746,19 @@ public class StudyManager
 
 
     // Return the custom import mapping (optinally provided by the admin), ordered by sequence num then row id (which
-    // maintains import order in case where multiple names map to the same sequence number).
-    public Collection<VisitAlias> getCustomVisitImportMapping(Study study) throws SQLException
+    // maintains import order in the case where multiple names map to the same sequence number).
+    public Collection<VisitAlias> getCustomVisitImportMapping(Study study)
     {
         SimpleFilter containerFilter = new SimpleFilter("Container", study.getContainer());
         TableInfo tinfo = StudySchema.getInstance().getTableInfoVisitAliases();
 
-        return Arrays.asList(Table.select(tinfo, tinfo.getColumns("Name, SequenceNum"), containerFilter, new Sort("SequenceNum,RowId"), VisitAlias.class));
+        return new TableSelector(tinfo, tinfo.getColumns("Name, SequenceNum"), containerFilter, new Sort("SequenceNum,RowId")).getCollection(VisitAlias.class);
     }
 
 
     // Return the standard import mapping (generated from Visit.Label -> Visit.SequenceNumMin), ordered by sequence
     // num for display purposes.  Include VisitAliases that won't be used, but mark them as overridden.
-    public Collection<VisitAlias> getStandardVisitImportMapping(Study study) throws SQLException
+    public Collection<VisitAlias> getStandardVisitImportMapping(Study study)
     {
         List<VisitAlias> list = new LinkedList<VisitAlias>();
         Set<String> labels = new CaseInsensitiveHashSet();
@@ -891,7 +884,7 @@ public class StudyManager
                     continue;
 
                 SQLFragment sqlf = new SQLFragment();
-                sqlf.append("DELETE FROM " + t.getSelectName() + " WHERE SequenceNum BETWEEN ? AND ?");
+                sqlf.append("DELETE FROM ").append(t.getSelectName()).append(" WHERE SequenceNum BETWEEN ? AND ?");
                 sqlf.add(visit.getSequenceNumMin());
                 sqlf.add(visit.getSequenceNumMax());
                 int count = Table.execute(schema.getSchema(), sqlf);
@@ -951,14 +944,7 @@ public class StudyManager
 
     public SiteImpl[] getSites(Container container)
     {
-        try
-        {
-            return _siteHelper.get(container, "Label");
-        }
-        catch (SQLException x)
-        {
-            throw new RuntimeSQLException(x);
-        }
+        return _siteHelper.get(container, "Label");
     }
 
 
@@ -1016,21 +1002,16 @@ public class StudyManager
         if (study.getTimepointType() == TimepointType.CONTINUOUS)
             return EMPTY_VISIT_ARRAY;
 
-        try
+        SimpleFilter filter = null;
+
+        if (cohort != null)
         {
-            SimpleFilter filter = null;
-            if (cohort != null)
-            {
-                filter = new SimpleFilter("Container", study.getContainer().getId());
-                if (showCohorts(study.getContainer(), user))
-                    filter.addWhereClause("(CohortId IS NULL OR CohortId = ?)", new Object[] { cohort.getRowId() });
-            }
-            return _visitHelper.get(study.getContainer(), filter, order.getSortColumns());
+            filter = new SimpleFilter("Container", study.getContainer().getId());
+            if (showCohorts(study.getContainer(), user))
+                filter.addWhereClause("(CohortId IS NULL OR CohortId = ?)", new Object[] { cohort.getRowId() });
         }
-        catch (SQLException x)
-        {
-            throw new RuntimeSQLException(x);
-        }
+
+        return _visitHelper.get(study.getContainer(), filter, order.getSortColumns());
     }
 
     public void clearParticipantVisitCaches(Study study)
@@ -1044,14 +1025,7 @@ public class StudyManager
 
     public VisitImpl getVisitForRowId(Study study, int rowId)
     {
-        try
-        {
-            return _visitHelper.get(study.getContainer(), rowId, "RowId");
-        }
-        catch (SQLException x)
-        {
-            throw new RuntimeSQLException(x);
-        }
+        return _visitHelper.get(study.getContainer(), rowId, "RowId");
     }
 
     private String getQCStateCacheName(Container container)
@@ -1405,14 +1379,7 @@ public class StudyManager
     public CohortImpl[] getCohorts(Container container, User user)
     {
         assertCohortsViewable(container, user);
-        try
-        {
-            return _cohortHelper.get(container,"Label");
-        }
-        catch (SQLException se)
-        {
-            throw new RuntimeSQLException(se);
-        }
+        return _cohortHelper.get(container,"Label");
     }
 
     public CohortImpl getCurrentCohortForParticipant(Container container, User user, String participantId) throws SQLException
@@ -1427,14 +1394,7 @@ public class StudyManager
     public CohortImpl getCohortForRowId(Container container, User user, int rowId)
     {
         assertCohortsViewable(container, user);
-        try
-        {
-            return _cohortHelper.get(container, rowId);
-        }
-        catch (SQLException se)
-        {
-            throw new RuntimeSQLException(se);
-        }
+        return _cohortHelper.get(container, rowId);
     }
 
     public CohortImpl getCohortByLabel(Container container, User user, String label)
@@ -1443,16 +1403,10 @@ public class StudyManager
         SimpleFilter filter = new SimpleFilter("Container", container.getId());
         filter.addCondition("Label", label);
 
-        try
-        {
-            CohortImpl[] cohorts = _cohortHelper.get(container, filter);
-            if (cohorts != null && cohorts.length == 1)
-                return cohorts[0];
-        }
-        catch (SQLException se)
-        {
-            UnexpectedException.rethrow(se);
-        }
+        CohortImpl[] cohorts = _cohortHelper.get(container, filter);
+        if (cohorts != null && cohorts.length == 1)
+            return cohorts[0];
+
         return null;
     }
 
@@ -1476,7 +1430,7 @@ public class StudyManager
             Integer count = Table.executeSingleton(StudySchema.getInstance().getSchema(), "SELECT COUNT(*) FROM " +
                     table + " WHERE Container = ? AND " + cols.toString(),
                     params.toArray(new Object[params.size()]), Integer.class);
-            return count != null && count.intValue() > 0;
+            return count != null && count > 0;
         }
         catch (SQLException e)
         {
@@ -1525,56 +1479,42 @@ public class StudyManager
 
     public DataSetDefinition[] getDataSetDefinitions(Study study, CohortImpl cohort)
     {
-        try
+        SimpleFilter filter = null;
+        if (cohort != null)
         {
-            SimpleFilter filter = null;
-            if (cohort != null)
+            filter = new SimpleFilter("Container", study.getContainer().getId());
+            filter.addWhereClause("(CohortId IS NULL OR CohortId = ?)", new Object[] { cohort.getRowId() });
+        }
+        List<DataSetDefinition> datasets = Arrays.asList(_dataSetHelper.get(study.getContainer(), filter, null));
+
+        // sort by display order, category, and dataset ID
+        Collections.sort(datasets, new Comparator<DataSetDefinition>(){
+            @Override
+            public int compare(DataSetDefinition o1, DataSetDefinition o2)
             {
-                filter = new SimpleFilter("Container", study.getContainer().getId());
-                filter.addWhereClause("(CohortId IS NULL OR CohortId = ?)", new Object[] { cohort.getRowId() });
-            }
-            List<DataSetDefinition> datasets = Arrays.asList(_dataSetHelper.get(study.getContainer(), filter, null));
+                if (o1.getDisplayOrder() != 0 || o2.getDisplayOrder() != 0)
+                    return o1.getDisplayOrder() - o2.getDisplayOrder();
 
-            // sort by display order, category, and dataset ID
-            Collections.sort(datasets, new Comparator<DataSetDefinition>(){
-                @Override
-                public int compare(DataSetDefinition o1, DataSetDefinition o2)
-                {
-                    if (o1.getDisplayOrder() != 0 || o2.getDisplayOrder() != 0)
-                        return o1.getDisplayOrder() - o2.getDisplayOrder();
-
-                    if (StringUtils.equals(o1.getCategory(), o2.getCategory()))
-                        return o1.getDataSetId() - o2.getDataSetId();
-
-                    if (o1.getCategory() != null && o2.getCategory() == null)
-                        return -1;
-                    if (o1.getCategory() == null && o2.getCategory() != null)
-                        return 1;
-                    if (o1.getCategory() != null && o2.getCategory() != null)
-                        return o1.getCategory().compareTo(o2.getCategory());
-
+                if (StringUtils.equals(o1.getCategory(), o2.getCategory()))
                     return o1.getDataSetId() - o2.getDataSetId();
-                }
-            });
 
-            return datasets.toArray(new DataSetDefinition[datasets.size()]);
-        }
-        catch (SQLException x)
-        {
-            throw new RuntimeSQLException(x);
-        }
+                if (o1.getCategory() != null && o2.getCategory() == null)
+                    return -1;
+                if (o1.getCategory() == null && o2.getCategory() != null)
+                    return 1;
+                if (o1.getCategory() != null && o2.getCategory() != null)
+                    return o1.getCategory().compareTo(o2.getCategory());
+
+                return o1.getDataSetId() - o2.getDataSetId();
+            }
+        });
+
+        return datasets.toArray(new DataSetDefinition[datasets.size()]);
     }
 
     public PropertyDescriptor[] getSharedProperties(Study study)
     {
-        try
-        {
-            return _dataSetHelper.getSharedProperties(study.getContainer());
-        }
-        catch (SQLException x)
-        {
-            throw new RuntimeSQLException(x);
-        }
+        return _dataSetHelper.getSharedProperties(study.getContainer());
     }
 
     @Nullable
@@ -1609,63 +1549,42 @@ public class StudyManager
             return null;
         }
         
-        try
-        {
-            SimpleFilter filter = new SimpleFilter("Container", s.getContainer().getId());
-            filter.addWhereClause("LOWER(Label) = ?", new Object[]{label.toLowerCase()}, "Label");
+        SimpleFilter filter = new SimpleFilter("Container", s.getContainer().getId());
+        filter.addWhereClause("LOWER(Label) = ?", new Object[]{label.toLowerCase()}, "Label");
 
-            DataSetDefinition[] defs = _dataSetHelper.get(s.getContainer(), filter);
-            if (defs != null && defs.length == 1)
-                return defs[0];
+        DataSetDefinition[] defs = _dataSetHelper.get(s.getContainer(), filter);
+        if (defs != null && defs.length == 1)
+            return defs[0];
 
-            return null;
-        }
-        catch (SQLException x)
-        {
-            throw new RuntimeSQLException(x);
-        }
+        return null;
     }
 
 
     @Nullable
     public DataSetDefinition getDataSetDefinitionByEntityId(Study s, String entityId)
     {
-        try
-        {
-            SimpleFilter filter = new SimpleFilter("Container", s.getContainer().getId());
-            filter.addCondition("EntityId", entityId);
+        SimpleFilter filter = new SimpleFilter("Container", s.getContainer().getId());
+        filter.addCondition("EntityId", entityId);
 
-            DataSetDefinition[] defs = _dataSetHelper.get(s.getContainer(), filter);
-            if (defs != null && defs.length == 1)
-                return defs[0];
+        DataSetDefinition[] defs = _dataSetHelper.get(s.getContainer(), filter);
+        if (defs != null && defs.length == 1)
+            return defs[0];
 
-            return null;
-        }
-        catch (SQLException x)
-        {
-            throw new RuntimeSQLException(x);
-        }
+        return null;
     }
     
 
     @Nullable
     public DataSet getDataSetDefinitionByName(Study s, String name)
     {
-        try
-        {
-            SimpleFilter filter = new SimpleFilter("Container", s.getContainer().getId());
-            filter.addWhereClause("LOWER(Name) = ?", new Object[]{name.toLowerCase()}, "Name");
+        SimpleFilter filter = new SimpleFilter("Container", s.getContainer().getId());
+        filter.addWhereClause("LOWER(Name) = ?", new Object[]{name.toLowerCase()}, "Name");
 
-            DataSet[] defs = _dataSetHelper.get(s.getContainer(), filter);
-            if (defs != null && defs.length == 1)
-                return defs[0];
+        DataSet[] defs = _dataSetHelper.get(s.getContainer(), filter);
+        if (defs != null && defs.length == 1)
+            return defs[0];
 
-            return null;
-        }
-        catch (SQLException x)
-        {
-            throw new RuntimeSQLException(x);
-        }
+        return null;
     }
 
 
@@ -3394,24 +3313,18 @@ public class StudyManager
 
         private DataSetDefinition[] getDatasetsForCategory(ViewCategory category)
         {
-            try
+            if (category != null)
             {
-                if (category != null)
+                Study study = _instance.getStudy(ContainerManager.getForId(category.getContainerId()));
+                if (study != null)
                 {
-                    Study study = _instance.getStudy(ContainerManager.getForId(category.getContainerId()));
-                    if (study != null)
-                    {
-                        SimpleFilter filter = new SimpleFilter("Container", study.getContainer().getId());
-                        filter.addCondition("CategoryId", category.getRowId());
-                        return _instance._dataSetHelper.get(study.getContainer(), filter);
-                    }
+                    SimpleFilter filter = new SimpleFilter("Container", study.getContainer().getId());
+                    filter.addCondition("CategoryId", category.getRowId());
+                    return _instance._dataSetHelper.get(study.getContainer(), filter);
                 }
-                return new DataSetDefinition[0];
             }
-            catch (SQLException x)
-            {
-                throw new RuntimeSQLException(x);
-            }
+
+            return new DataSetDefinition[0];
         }
     }
 

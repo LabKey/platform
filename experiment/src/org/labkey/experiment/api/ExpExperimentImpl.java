@@ -16,6 +16,7 @@
 
 package org.labkey.experiment.api;
 
+import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.RuntimeSQLException;
 import org.labkey.api.data.SQLFragment;
@@ -74,7 +75,7 @@ public class ExpExperimentImpl extends ExpIdentifiableEntityImpl<Experiment> imp
         }
     }
 
-    public ExpRun[] getRuns(ExpProtocol parentProtocol, ExpProtocol childProtocol)
+    public ExpRun[] getRuns(@Nullable ExpProtocol parentProtocol, ExpProtocol childProtocol)
     {
         try
         {

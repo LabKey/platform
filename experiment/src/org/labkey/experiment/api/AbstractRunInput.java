@@ -16,6 +16,7 @@
 package org.labkey.experiment.api;
 
 import org.apache.commons.lang3.ObjectUtils;
+import org.jetbrains.annotations.Nullable;
 
 /**
  * User: jeckels
@@ -48,7 +49,7 @@ public abstract class AbstractRunInput
         return _role;
     }
 
-    public void setRole(String role)
+    public void setRole(@Nullable String role)
     {
         if (role == null)
         {

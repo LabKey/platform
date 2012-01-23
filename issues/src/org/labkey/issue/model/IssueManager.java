@@ -35,6 +35,7 @@ import org.labkey.api.data.RuntimeSQLException;
 import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.Sort;
+import org.labkey.api.data.SqlSelector;
 import org.labkey.api.data.Table;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.issues.IssuesSchema;
@@ -219,8 +220,8 @@ public class IssueManager
 
     public static class Keyword
     {
-        HString _keyword;
-        boolean _default = false;
+        private HString _keyword;
+        private boolean _default = false;
 
         public boolean isDefault()
         {
@@ -497,13 +498,16 @@ public class IssueManager
 
     public static Map[] getSummary(Container c) throws SQLException
     {
-        return Table.executeQuery(_issuesSchema.getSchema(),
-                "SELECT DisplayName, SUM(CASE WHEN Status='open' THEN 1 ELSE 0 END) AS " + _issuesSchema.getSqlDialect().makeLegalIdentifier("Open") + ", SUM(CASE WHEN Status='resolved' THEN 1 ELSE 0 END) AS " + _issuesSchema.getSqlDialect().makeLegalIdentifier("Resolved") + "\n" +
-                        "FROM " + _issuesSchema.getTableInfoIssues() + " LEFT OUTER JOIN " + CoreSchema.getInstance().getTableInfoUsers() + " ON AssignedTo = UserId\n" +
-                        "WHERE Status in ('open', 'resolved') AND Container = ?\n" +
-                        "GROUP BY DisplayName",
-                new Object[]{c.getId()},
-                Map.class);
+        SQLFragment sql = new SQLFragment("SELECT DisplayName, SUM(CASE WHEN Status='open' THEN 1 ELSE 0 END) AS " +
+            _issuesSchema.getSqlDialect().makeLegalIdentifier("Open") + ", SUM(CASE WHEN Status='resolved' THEN 1 ELSE 0 END) AS " +
+            _issuesSchema.getSqlDialect().makeLegalIdentifier("Resolved") + "\n" +
+            "FROM " + _issuesSchema.getTableInfoIssues() + " LEFT OUTER JOIN " + CoreSchema.getInstance().getTableInfoUsers() +
+            " ON AssignedTo = UserId\n" +
+                "WHERE Status in ('open', 'resolved') AND Container = ?\n" +
+                "GROUP BY DisplayName",
+                c.getId());
+
+        return new SqlSelector(_issuesSchema.getSchema(), sql).getArray(Map.class);
     }
 
 

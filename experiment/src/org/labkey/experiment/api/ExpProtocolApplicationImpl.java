@@ -16,6 +16,7 @@
 
 package org.labkey.experiment.api;
 
+import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.Table;
 import org.labkey.api.data.RuntimeSQLException;
@@ -249,7 +250,7 @@ public class ExpProtocolApplicationImpl extends ExpIdentifiableBaseImpl<Protocol
         }
     }
 
-    public void addMaterialInput(User user, ExpMaterial material, String roleName)
+    public void addMaterialInput(User user, ExpMaterial material, @Nullable String roleName)
     {
         try
         {

@@ -50,22 +50,22 @@ public class QueryHelper<K extends StudyCachable>
         _objectClass = objectClass;
     }
 
-    public K[] get(Container c) throws SQLException
+    public K[] get(Container c)
     {
         return get(c, null, null);
     }
 
-    public K[] get(Container c, String sortString) throws SQLException
+    public K[] get(Container c, String sortString)
     {
         return get(c, null, sortString);
     }
 
-    public K[] get(Container c, SimpleFilter filter) throws SQLException
+    public K[] get(Container c, SimpleFilter filter)
     {
         return get(c, filter, null);
     }
 
-    public K[] get(final Container c, @Nullable final SimpleFilter filterArg, @Nullable final String sortString) throws SQLException
+    public K[] get(final Container c, @Nullable final SimpleFilter filterArg, @Nullable final String sortString)
     {
         String cacheId = getCacheId(filterArg);
         if (sortString != null)
@@ -103,22 +103,22 @@ public class QueryHelper<K extends StudyCachable>
         return get(c, (Object)rowId, "RowId");
     }
 
-    public K get(Container c, int rowId) throws SQLException
+    public K get(Container c, int rowId)
     {
         return get(c, (Object)rowId, "RowId");
     }
 
-    public K get(Container c, double rowId, String rowIdColumnName) throws SQLException
+    public K get(Container c, double rowId, String rowIdColumnName)
     {
         return get(c, (Object)rowId, rowIdColumnName);
     }
 
-    public K get(Container c, int rowId, String rowIdColumnName) throws SQLException
+    public K get(Container c, int rowId, String rowIdColumnName)
     {
         return get(c, (Object)rowId, rowIdColumnName);
     }
 
-    private K get(final Container c, final Object rowId, final String rowIdColumnName) throws SQLException
+    private K get(final Container c, final Object rowId, final String rowIdColumnName)
     {
         CacheLoader<String, Object> loader = new CacheLoader<String,Object>()
         {

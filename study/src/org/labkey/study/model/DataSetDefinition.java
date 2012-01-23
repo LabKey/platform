@@ -1597,22 +1597,14 @@ public class DataSetDefinition extends AbstractStudyEntity<DataSetDefinition> im
             }
             else
             {
-                try
-                {
-                    Map<String, Double> map = StudyManager.getInstance().getVisitImportMap(getStudy(), true);
-                    Map<String, String> translateMap = new HashMap<String, String>(map.size() * 2);
+                Map<String, Double> map = StudyManager.getInstance().getVisitImportMap(getStudy(), true);
+                Map<String, String> translateMap = new HashMap<String, String>(map.size() * 2);
 
-                    for (Map.Entry<String, Double> entry : map.entrySet())
-                        translateMap.put(entry.getKey(), String.valueOf(entry.getValue()));
+                for (Map.Entry<String, Double> entry : map.entrySet())
+                    translateMap.put(entry.getKey(), String.valueOf(entry.getValue()));
 
-                    it.indexSequenceNumOutput = it.translateColumn(indexSequenceNum, translateMap, false);
-                }
-                catch (SQLException e)
-                {
-                    throw new RuntimeSQLException(e);
-                }
+                it.indexSequenceNumOutput = it.translateColumn(indexSequenceNum, translateMap, false);
             }
-
 
             if (null == indexKeyProperty)
             {

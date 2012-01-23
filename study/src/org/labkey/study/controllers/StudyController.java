@@ -6721,7 +6721,7 @@ public class StudyController extends BaseStudyController
         private final Collection<StudyManager.VisitAlias> _customMapping;
         private final Collection<StudyManager.VisitAlias> _standardMapping;
 
-        public ImportMappingBean(Study study) throws SQLException
+        public ImportMappingBean(Study study)
         {
             _customMapping = StudyManager.getInstance().getCustomVisitImportMapping(study);
             _standardMapping = StudyManager.getInstance().getStandardVisitImportMapping(study);

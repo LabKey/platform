@@ -39,7 +39,7 @@ import org.labkey.api.data.RuntimeSQLException;
 import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.TSVWriter;
 import org.labkey.api.data.Table;
-import org.labkey.api.data.TableSelector;
+import org.labkey.api.data.TableSelectorTestCase;
 import org.labkey.api.data.TableViewFormTestCase;
 import org.labkey.api.data.TempTableTracker;
 import org.labkey.api.data.TestSchema;
@@ -609,7 +609,7 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
                 ResultSetDataIterator.TestCase.class,
                 ExceptionUtil.TestCase.class,
                 ViewCategoryManager.TestCase.class,
-                TableSelector.TestCase.class,
+                TableSelectorTestCase.class,
                 NestedGroupsTest.class,
                 StringUtilsLabKey.TestCase.class,
                 Compress.TestCase.class,
