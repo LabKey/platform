@@ -153,10 +153,6 @@ public abstract class AbstractAssayTsvDataHandler extends AbstractExperimentData
             Domain dataDomain = provider.getResultsDomain(protocol);
 
             Set<ExpMaterial> inputMaterials = checkData(dataDomain, rawData, resolver);
-            if (inputMaterials.isEmpty())
-            {
-                throw new ExperimentException("Could not find any input samples in the data");
-            }
 
             Map<String, DomainProperty> propertyNameToDescriptor = dataDomain.createImportMap(true);
             List<Map<String, Object>> fileData = convertPropertyNamesToURIs(rawData, propertyNameToDescriptor);
@@ -408,6 +404,8 @@ public abstract class AbstractAssayTsvDataHandler extends AbstractExperimentData
             }
         }
 
+        boolean resolveMaterials = specimenPD != null || visitPD != null || datePD != null || targetStudyPD != null;
+
         Set<String> missingValues = new HashSet<String>();
         Set<String> wrongTypes = new HashSet<String>();
 
@@ -536,7 +534,10 @@ public abstract class AbstractAssayTsvDataHandler extends AbstractExperimentData
                 iter.set(map);
             }
 
-            materialInputs.add(participantVisit.getMaterial());
+            if (resolveMaterials)
+            {
+                materialInputs.add(participantVisit.getMaterial());
+            }
         }
 
         if (errorSB.length() != 0)
