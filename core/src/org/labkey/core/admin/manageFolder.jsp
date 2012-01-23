@@ -28,7 +28,7 @@
     <tr>
         <th align="left">Aliases</th>
         <td>Manage aliases for the current folder</td>
-        <td><%= textLink("Manage Folder Aliases", FolderAliasesAction.class) %></td>
+        <td><%= textLink("Manage Aliases", FolderAliasesAction.class) %></td>
     </tr>
     <tr>
         <th align="left">Create Subfolder</th>
@@ -43,7 +43,7 @@
     <tr>
         <th align="left">Folder Settings</th>
         <td>Manage folder settings (folder type, missing value indicators, etc.)</td>
-        <td><%= textLink("Manage Folder Settings", FolderSettingsAction.class) %></td>
+        <td><%= textLink("Folder Settings", FolderSettingsAction.class) %></td>
     </tr>
     <tr>
         <th align="left">Groups/Permissions</th>
@@ -57,7 +57,7 @@
     <tr>
         <th align="left">Project Settings</th>
         <td>Manage project settings (properties, resources, menu bar, files)</td>
-        <td><%= textLink("Manage Project Settings", ProjectSettingsAction.class) %></td>
+        <td><%= textLink("Project Settings", ProjectSettingsAction.class) %></td>
     </tr>
     <%
     }
