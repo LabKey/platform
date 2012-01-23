@@ -87,8 +87,7 @@ public class PopupAdminView extends PopupMenuView
 
         if (hasAdminReadInRoot)
         {
-            NavTree siteAdmin = new NavTree("Manage Site");
-
+            NavTree siteAdmin = new NavTree("Site");
             siteAdmin.addChildren(SiteAdminMenu.getNavTree(context));
             navTree.addChild(siteAdmin);
         }
@@ -100,12 +99,10 @@ public class PopupAdminView extends PopupMenuView
 
             if (isAdminInThisFolder && !c.isWorkbook())
             {
-                NavTree projectAdmin = new NavTree("Manage Project");
+                NavTree projectAdmin = new NavTree(c.isProject() ? "Project" : "Folder");
                 projectAdmin.addChildren(ProjectAdminMenu.getNavTree(context));
                 navTree.addChild(projectAdmin);
             }
-
-            c.getFolderType().addManageLinks(navTree, c);
 
             // Don't allow folder admins to impersonate
             if (project.hasPermission(user, AdminPermission.class) && !user.isImpersonated())
@@ -198,6 +195,12 @@ public class PopupAdminView extends PopupMenuView
             NavTree devMenu = new NavTree("Developer Links");
             devMenu.addChildren(PopupDeveloperView.getNavTree(context));
             navTree.addChild(devMenu);
+        }
+
+        if (!c.isRoot())
+        {
+            navTree.addSeparator();
+            c.getFolderType().addManageLinks(navTree, c);
         }
 
         navTree.setId("adminMenu");

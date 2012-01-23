@@ -26,6 +26,9 @@ import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.view.NavTree;
 import org.labkey.api.view.ViewContext;
 
+import java.util.ArrayList;
+import java.util.List;
+
 /**
  * User: brittp
  * Date: Apr 9, 2007
@@ -35,20 +38,19 @@ public class ProjectAdminMenu extends NavTreeMenu
 {
     public ProjectAdminMenu(ViewContext context)
     {
-        super(context, "projectAdmin", "Manage Project", true, getNavTree(context));
+        super(context, "projectAdmin", context.getContainer().isProject() ? "Manage Project" : "Manage Folder", true, getNavTree(context));
     }
 
     public static NavTree[] getNavTree(ViewContext context)
     {
         Container c = context.getContainer();
 
-        NavTree[] admin = new NavTree[5];
-        admin[0] = new NavTree("Permissions", PageFlowUtil.urlProvider(SecurityUrls.class).getBeginURL(c));
-        admin[1] = new NavTree("Project Users", PageFlowUtil.urlProvider(UserUrls.class).getProjectUsersURL(c));
-        admin[2] = new NavTree("Folders", PageFlowUtil.urlProvider(AdminUrls.class).getManageFoldersURL(c));
-        admin[3] = new NavTree("Project Settings", PageFlowUtil.urlProvider(AdminUrls.class).getProjectSettingsURL(c));
-        admin[4] = new NavTree("Folder Settings", PageFlowUtil.urlProvider(AdminUrls.class).getFolderSettingsURL(c));
-        return admin;
+        List<NavTree> admin = new ArrayList<NavTree>();
+        admin.add(new NavTree("Permissions", PageFlowUtil.urlProvider(SecurityUrls.class).getBeginURL(c)));
+        admin.add(new NavTree("Users", PageFlowUtil.urlProvider(UserUrls.class).getProjectUsersURL(c)));
+        admin.add(new NavTree("Management", PageFlowUtil.urlProvider(AdminUrls.class).getManageFolderURL(c)));
+        NavTree[] adminArr = new NavTree[admin.size()];
+        return admin.toArray(adminArr);
     }
 
     @Override
