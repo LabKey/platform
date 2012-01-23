@@ -112,6 +112,7 @@ import org.labkey.api.util.BreakpointThread;
 import org.labkey.api.util.ConfigurationException;
 import org.labkey.api.util.DateUtil;
 import org.labkey.api.util.ExceptionReportingLevel;
+import org.labkey.api.util.FileUtil;
 import org.labkey.api.util.Formats;
 import org.labkey.api.util.GUID;
 import org.labkey.api.util.HelpTopic;
@@ -147,7 +148,11 @@ import org.labkey.api.view.WebThemeManager;
 import org.labkey.api.view.template.PageConfig.Template;
 import org.labkey.api.wiki.WikiRendererType;
 import org.labkey.api.wiki.WikiService;
+import org.labkey.api.writer.FileSystemFile;
+import org.labkey.api.writer.ZipFile;
 import org.labkey.core.admin.sql.SqlScriptController;
+import org.labkey.core.admin.writer.FolderExportContext;
+import org.labkey.core.admin.writer.FolderWriterImpl;
 import org.labkey.data.xml.TablesDocument;
 import org.springframework.validation.BindException;
 import org.springframework.validation.Errors;
@@ -434,6 +439,11 @@ public class AdminController extends SpringActionController
         public ActionURL getMaintenanceURL()
         {
             return new ActionURL(MaintenanceAction.class, ContainerManager.getRoot());
+        }
+
+        public ActionURL getManageFolderURL(Container c)
+        {
+            return new ActionURL(ManageFolderAction.class, c);
         }
 
         public ActionURL getManageFoldersURL(Container c)
@@ -4368,6 +4378,133 @@ public class AdminController extends SpringActionController
         {
             LookAndFeelProperties props = LookAndFeelProperties.getInstance(c);
             return props.getSystemEmailAddress();
+        }
+    }
+
+    @RequiresPermissionClass(AdminPermission.class)
+    public class ManageFolderAction extends SimpleViewAction<Object>
+    {
+        public ModelAndView getView(Object form, BindException errors) throws Exception
+        {
+            if (getContainer().isRoot())
+            {
+                throw new NotFoundException();
+            }
+
+            return new JspView<Object>("/org/labkey/core/admin/manageFolder.jsp", form);
+        }
+
+        public NavTree appendNavTrail(NavTree root)
+        {
+            root.addChild(getTitle("Manage"));
+            return root;
+        }
+    }
+
+    @RequiresPermissionClass(AdminPermission.class)
+    public class ExportFolderAction extends FormViewAction<ExportForm>
+    {
+        private ActionURL _successURL = null;
+
+        public ModelAndView getView(ExportForm form, boolean reshow, BindException errors) throws Exception
+        {
+            // In export-to-browser case, base action will attempt to reshow the view since we returned null as the success
+            // URL; returning null here causes the base action to stop pestering the action.
+            if (reshow)
+                return null;
+
+            return new JspView<ExportForm>("/org/labkey/core/admin/exportFolder.jsp", form, errors);
+        }
+
+        public NavTree appendNavTrail(NavTree root)
+        {
+            return root.addChild("Export Folder");
+        }
+
+        public void validateCommand(ExportForm form, Errors errors)
+        {}
+
+        public boolean handlePost(ExportForm form, BindException errors) throws Exception
+        {
+            Container c = getContainer();
+            if (c.isRoot())
+            {
+                throw new NotFoundException();
+            }
+
+            FolderWriterImpl writer = new FolderWriterImpl();
+            FolderExportContext ctx = new FolderExportContext(getUser(), getContainer(), PageFlowUtil.set(form.getTypes()), Logger.getLogger(FolderWriterImpl.class));
+
+            switch(form.getLocation())
+            {
+                case 0:
+                {
+                    PipeRoot root = PipelineService.get().findPipelineRoot(getContainer());
+                    if (root == null || !root.isValid())
+                    {
+                        throw new NotFoundException("No valid pipeline root found");
+                    }
+                    File exportDir = root.resolvePath("export");
+                    writer.write(c, ctx, new FileSystemFile(exportDir));
+                    _successURL = new ActionURL(ManageFolderAction.class, getContainer());
+                    break;
+                }
+                case 1:
+                {
+                    PipeRoot root = PipelineService.get().findPipelineRoot(getContainer());
+                    if (root == null || !root.isValid())
+                    {
+                        throw new NotFoundException("No valid pipeline root found");
+                    }
+                    File exportDir = root.resolvePath("export");
+                    exportDir.mkdir();
+                    ZipFile zip = new ZipFile(exportDir, FileUtil.makeFileNameWithTimestamp(c.getName(), "folder.zip"));
+                    writer.write(c, ctx, zip);
+                    zip.close();
+                    _successURL = new ActionURL(ManageFolderAction.class, getContainer());
+                    break;
+                }
+                case 2:
+                {
+                    ZipFile zip = new ZipFile(getViewContext().getResponse(), FileUtil.makeFileNameWithTimestamp(c.getName(), "folder.zip"));
+                    writer.write(c, ctx, zip);
+                    zip.close();
+                    break;
+                }
+            }
+
+            return true;
+        }
+
+        public ActionURL getSuccessURL(ExportForm form)
+        {
+            return _successURL;
+        }
+    }
+
+    public static class ExportForm
+    {
+        private String[] _types;
+        private int _location;
+
+        public String[] getTypes()
+        {
+            return _types;
+        }
+
+        public void setTypes(String[] types)
+        {
+            _types = types;
+        }
+
+        public int getLocation()
+        {
+            return _location;
+        }
+
+        public void setLocation(int location)
+        {
+            _location = location;
         }
     }
 

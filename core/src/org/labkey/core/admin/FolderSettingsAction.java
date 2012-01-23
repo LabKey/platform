@@ -117,11 +117,6 @@ public class FolderSettingsAction extends FormViewAction<FolderSettingsAction.Fo
 
     public ModelAndView getView(FolderSettingsForm form, boolean reshow, BindException errors) throws Exception
     {
-        // In export-to-browser case, base action will attempt to reshow the view since we returned null as the success
-        // URL; returning null here causes the base action to stop pestering the action.
-        if (reshow)
-            return null;
-
         return new FolderSettingsTabStrip(getContainer(), form, errors);
     }
 
@@ -133,8 +128,6 @@ public class FolderSettingsAction extends FormViewAction<FolderSettingsAction.Fo
             return handleFolderTypePost(form, errors);
         else if (form.isFullTextSearchTab())
             return handleFullTextSearchPost(form, errors);
-        else if (form.isExportTab())
-            return handleExportPost(form, errors);
         else
             return handleMessagesPost(form, errors);
     }
@@ -215,58 +208,6 @@ public class FolderSettingsAction extends FormViewAction<FolderSettingsAction.Fo
         return true;
     }
 
-    private boolean handleExportPost(FolderSettingsForm form, BindException errors) throws Exception
-    {
-        Container c = getContainer();
-        if (c.isRoot())
-        {
-            throw new NotFoundException();
-        }
-
-        FolderWriterImpl writer = new FolderWriterImpl();
-        FolderExportContext ctx = new FolderExportContext(getUser(), getContainer(), PageFlowUtil.set(form.getTypes()), Logger.getLogger(FolderWriterImpl.class));
-
-        switch(form.getLocation())
-        {
-            case 0:
-            {
-                PipeRoot root = PipelineService.get().findPipelineRoot(getContainer());
-                if (root == null || !root.isValid())
-                {
-                    throw new NotFoundException("No valid pipeline root found");
-                }
-                File exportDir = root.resolvePath("export");
-                writer.write(c, ctx, new FileSystemFile(exportDir));
-                _successURL = getViewContext().getActionURL(); // TODO: where should this redirect to?
-                break;
-            }
-            case 1:
-            {
-                PipeRoot root = PipelineService.get().findPipelineRoot(getContainer());
-                if (root == null || !root.isValid())
-                {
-                    throw new NotFoundException("No valid pipeline root found");
-                }
-                File exportDir = root.resolvePath("export");
-                exportDir.mkdir();
-                ZipFile zip = new ZipFile(exportDir, FileUtil.makeFileNameWithTimestamp(c.getName(), "folder.zip"));
-                writer.write(c, ctx, zip);
-                zip.close();
-                _successURL = getViewContext().getActionURL(); // TODO: where should this redirect to?
-                break;
-            }
-            case 2:
-            {
-                ZipFile zip = new ZipFile(getViewContext().getResponse(), FileUtil.makeFileNameWithTimestamp(c.getName(), "folder.zip"));
-                writer.write(c, ctx, zip);
-                zip.close();
-                break;
-            }
-        }
-
-        return true;
-    }
-
     private boolean handleMessagesPost(FolderSettingsForm form, BindException errors) throws Exception
     {
         MessageConfigService.ConfigTypeProvider provider = MessageConfigService.getInstance().getConfigType(form.getProvider());
@@ -323,10 +264,6 @@ public class FolderSettingsAction extends FormViewAction<FolderSettingsAction.Fo
         // full-text search settings
         private boolean searchable;
         private String _provider;
-
-        // export folder settings
-        private String[] _types;
-        private int _location;
 
         public String[] getActiveModules()
         {
@@ -398,11 +335,6 @@ public class FolderSettingsAction extends FormViewAction<FolderSettingsAction.Fo
             return "messages".equals(getTabId());
         }
 
-        public boolean isExportTab()
-        {
-            return "export".equals(getTabId());
-        }
-
         public boolean isInheritMvIndicators()
         {
             return inheritMvIndicators;
@@ -452,26 +384,6 @@ public class FolderSettingsAction extends FormViewAction<FolderSettingsAction.Fo
         {
             _provider = provider;
         }
-
-        public String[] getTypes()
-        {
-            return _types;
-        }
-
-        public void setTypes(String[] types)
-        {
-            _types = types;
-        }
-
-        public int getLocation()
-        {
-            return _location;
-        }
-
-        public void setLocation(int location)
-        {
-            _location = location;
-        }
     }
 
 
@@ -500,7 +412,6 @@ public class FolderSettingsAction extends FormViewAction<FolderSettingsAction.Fo
             {
                 tabs.add(new TabInfo("Full-Text Search", "fullTextSearch", url));
                 tabs.add(new TabInfo("Email Notifications", "messages", url));
-                tabs.add(new TabInfo("Export Folder", "export", url));
             }
             return tabs;
         }
@@ -523,10 +434,6 @@ public class FolderSettingsAction extends FormViewAction<FolderSettingsAction.Fo
             else if ("messages".equals(tabId))
             {
                 return getMessageTabView();
-            }
-            else if ("export".equals(tabId))
-            {
-                return new JspView<FolderSettingsForm>("/org/labkey/core/admin/exportFolder.jsp", _form, _errors);
             }
             else
             {
