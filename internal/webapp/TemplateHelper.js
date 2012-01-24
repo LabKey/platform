@@ -596,6 +596,12 @@ X.define('LABKEY.TemplateReport',
         this.template.overwrite(this.el, this.reportData);
     },
 
+    // returns data applied to the template in markup form without rendering it to the dom
+    getMarkup : function() {
+
+        if (this.template && this.template.data)
+            return this.template.apply(this.template.data);
+    },
 
     loadData : function(data)
     {
