@@ -1406,7 +1406,7 @@ public class DataRegion extends AbstractDataRegion
     {
         if (mode == MODE_GRID)
             out.write("<input type=\"hidden\" name=\"" + DataRegionSelection.DATA_REGION_SELECTION_KEY + "\" value=\"" + PageFlowUtil.filter(getSelectionKey()) + "\">");
-        out.write("<input type=\"hidden\" name=\"" + CSRFUtil.csrfName + "\" value=\"" + CSRFUtil.getExpectedToken(ctx.getRequest()) + "\">");
+        out.write("<input type=\"hidden\" name=\"" + CSRFUtil.csrfName + "\" value=\"" + CSRFUtil.getExpectedToken(ctx.getViewContext()) + "\">");
         for (Pair<String, Object> field : _hiddenFormFields)
         {
             if (field.second instanceof HString)
