@@ -21,6 +21,7 @@ import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.module.SafeFlushResponseWrapper;
 import org.labkey.api.query.QueryService;
 import org.labkey.api.settings.AppProps;
+import org.labkey.api.util.CSRFUtil;
 import org.labkey.api.util.ConfigurationException;
 import org.labkey.api.util.ExceptionUtil;
 import org.labkey.api.util.HttpsUtil;
@@ -70,6 +71,9 @@ public class AuthFilter implements Filter
             ExceptionUtil.handleException(req, resp, t, null, true);
             return;
         }
+
+        // allow CSRFUtil early access to req/resp if it wants to write cookies
+        CSRFUtil.getExpectedToken(req, resp);
 
         // No startup failure, so check for SSL redirection
         if (!req.getScheme().equalsIgnoreCase("https") && AppProps.getInstance().isSSLRequired())

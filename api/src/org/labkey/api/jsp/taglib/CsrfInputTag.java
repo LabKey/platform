@@ -26,6 +26,7 @@ public class CsrfInputTag extends SimpleTagBase
 {
     public void doTag() throws JspException, IOException
     {
-        getOut().write("<input type=hidden name='" + CSRFUtil.csrfName + "' value='" + h(this.getJspContext().getAttribute(CSRFUtil.csrfName, PageContext.SESSION_SCOPE )) + "'>");
+        String csrf = CSRFUtil.getExpectedToken(this.getJspContext());
+        getOut().write("<input type=hidden name='" + CSRFUtil.csrfName + "' value='" + h(csrf) + "'>");
     }
 }

@@ -628,7 +628,7 @@ public class PageFlowUtil
     }
 
     // Cookie helper function -- loops through Cookie array and returns matching value (or defaultValue if not found)
-    public static String getCookieValue(Cookie[] cookies, String cookieName, String defaultValue)
+    public static String getCookieValue(Cookie[] cookies, String cookieName, @Nullable String defaultValue)
     {
         if (null != cookies)
             for (Cookie cookie : cookies)
@@ -2082,7 +2082,9 @@ public class PageFlowUtil
         {
             if ("post".equalsIgnoreCase(request.getMethod()))
                 json.put("postParameters", request.getParameterMap());
-            json.put("CSRF", CSRFUtil.getExpectedToken(request));
+            String tok = CSRFUtil.getExpectedToken(request, null);
+            if (null != tok)
+                json.put("CSRF", tok);
         }
 
         // Include a few server-generated GUIDs/UUIDs

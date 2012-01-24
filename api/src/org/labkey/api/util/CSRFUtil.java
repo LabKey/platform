@@ -15,10 +15,15 @@
  */
 package org.labkey.api.util;
 
+import org.apache.commons.lang3.StringUtils;
 import org.labkey.api.view.UnauthorizedException;
+import org.labkey.api.view.ViewContext;
 
+import javax.servlet.http.Cookie;
 import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpSession;
+import javax.servlet.http.HttpServletResponse;
+import javax.servlet.jsp.JspContext;
+import javax.servlet.jsp.PageContext;
 
 /**
  * Anti-cross-site request forgery utility methods
@@ -28,31 +33,76 @@ import javax.servlet.http.HttpSession;
  */
 public class CSRFUtil
 {
-    public static final String csrfName = "X-LABKEY-CSRF";
-    public static final String csrfHeader = "X-LABKEY-CSRF";
-    private static final boolean useSessionId = true;
-    
-    public static String getExpectedToken(HttpServletRequest request)
+    public  static final String csrfName =    "X-LABKEY-CSRF";
+    public  static final String csrfHeader =  "X-LABKEY-CSRF";
+    private static final String csrfCookie =  "X-LABKEY-CSRF";
+    private static final String sessionCookie = "JSESSIONID";
+
+    public static String getExpectedToken(HttpServletRequest request, HttpServletResponse response)
     {
-        HttpSession s = request.getSession(true);
-        String ret = (String)s.getAttribute(csrfName);
-        if (null == ret)
+        String csrf = (String)request.getAttribute(csrfName);
+        if (null != csrf)
+            return csrf;
+        csrf = PageFlowUtil.getCookieValue(request.getCookies(), csrfCookie, null);
+        if (null == csrf)
         {
-            // we call setAttribute() to make value available to jspContext.getAttribute();
-            String t = useSessionId ? s.getId() : GUID.makeHash(s.getId());
-            s.setAttribute(csrfName, t);
-            ret = (String)s.getAttribute(csrfName);
+            csrf = GUID.makeHash();
+            if (response != null)
+            {
+                try
+                {
+                    Cookie c = new Cookie(csrfName, csrf);
+                    c.setPath(request.getContextPath());
+                    response.addCookie(c);
+                }
+                catch (Exception x)
+                {
+                    // response already commited or something I suppose
+                    ExceptionUtil.logExceptionToMothership(request, x);
+                }
+            }
         }
-        return ret;
+        request.setAttribute(csrfName, csrf);
+
+        return csrf;
     }
 
-    public static void validate(HttpServletRequest request) throws UnauthorizedException
+
+    public static String  getExpectedToken(ViewContext c)
     {
-        String expected = getExpectedToken(request);
+        return getExpectedToken(c.getRequest(), c.getResponse());
+    }
+
+
+    public static String getExpectedToken(JspContext jspc)
+    {
+        return (String)jspc.getAttribute(csrfName, PageContext.REQUEST_SCOPE);
+    }
+
+
+    public static void validate(HttpServletRequest request, HttpServletResponse response) throws UnauthorizedException
+    {
         String provided = request.getParameter(csrfName);
-        if (null == provided || provided.length() == 0)
+        if (StringUtils.isEmpty(provided))
             provided = request.getHeader(csrfHeader);
-        if (!expected.equals(provided))
+        if (StringUtils.isEmpty(provided))
             throw new CSRFException();
+
+        String expected = getExpectedToken(request, response);
+        if (provided.equals(expected))
+            return;
+
+        // try JESSIONID also for backward compatibility
+        String session = PageFlowUtil.getCookieValue(request.getCookies(),sessionCookie,null);
+        if (provided.equals(session))
+            return;
+
+        throw new CSRFException();
+    }
+
+
+    public static void validate(ViewContext context) throws UnauthorizedException
+    {
+        validate(context.getRequest(), context.getResponse());
     }
 }

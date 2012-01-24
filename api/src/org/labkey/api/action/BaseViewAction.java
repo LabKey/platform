@@ -655,7 +655,7 @@ public abstract class BaseViewAction<FORM> extends BaseCommandController impleme
 
         CSRF csrfCheck = actionClass.getAnnotation(CSRF.class);
         if (null != csrfCheck && isPOST)
-            CSRFUtil.validate(context.getRequest());
+            CSRFUtil.validate(context);
 
         boolean requiresNoPermission = actionClass.isAnnotationPresent(RequiresNoPermission.class);
 

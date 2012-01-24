@@ -115,8 +115,8 @@ public class JspView<ModelClass> extends WebPartView<ModelClass>
             ((HasViewContext)_page).setViewContext(getViewContext());
 
         if (null != _errors && _errors instanceof BindException)
-            exposeModelAsRequestAttributes(((BindException)_errors).getModel(), request);
-        exposeModelAsRequestAttributes(_renderMap, request);
+            exposeModelAsRequestAttributes(((BindException)_errors).getModel(), request, response);
+        exposeModelAsRequestAttributes(_renderMap, request, response);
         
         _page._jspService(request, response);
     }
@@ -133,12 +133,12 @@ public class JspView<ModelClass> extends WebPartView<ModelClass>
     // CONSIDER: extends AbstractView
     //
 
-    protected void exposeModelAsRequestAttributes(Map model, HttpServletRequest request) throws Exception
+    protected void exposeModelAsRequestAttributes(Map model, HttpServletRequest request, HttpServletResponse response) throws Exception
     {
         try
         {
             // init CSRF attribute as side-effect
-            CSRFUtil.getExpectedToken(request);
+            CSRFUtil.getExpectedToken(request, response);
         }
         catch (IllegalStateException x)
         {
