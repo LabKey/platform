@@ -447,6 +447,8 @@ public class SecurityManager
     public static void setAuthenticatedUser(HttpServletRequest request, User user)
     {
         invalidateSession(request);      // Clear out terms-of-use and other session info that guest / previous user may have
+        if (!user.isGuest() && request instanceof AuthenticatedRequest)
+            ((AuthenticatedRequest)request).convertToLoggedInSession();
 
         HttpSession newSession = request.getSession(true);
         newSession.setAttribute(USER_ID_KEY, user.getUserId());

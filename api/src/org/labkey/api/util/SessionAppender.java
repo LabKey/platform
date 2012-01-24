@@ -97,11 +97,13 @@ public class SessionAppender extends org.apache.log4j.AppenderSkeleton
     }
     
 
+    private static final Object SESSION_APPENDER_LOCK = new Object();
+
     private static AppenderInfo _getLoggingForSession(HttpServletRequest request)
     {
         HttpSession session = request.getSession(true);
         AppenderInfo info;
-        synchronized (session)
+        synchronized (SESSION_APPENDER_LOCK)
         {
             info = (AppenderInfo)session.getAttribute("SessionAppender#info");
             if (null == info)
