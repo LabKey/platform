@@ -40,11 +40,27 @@ Ext4.define('LABKEY.ext4.ParticipantReport', {
                     '</span>'
         });
 
+        this.exportForm = Ext4.create('Ext.form.Panel', {
+            border : false, frame : false,
+            standardSubmit  : true,
+            items           : [
+                {xtype : 'hidden', name : 'htmlFragment'},
+                {xtype : 'hidden', name : 'X-LABKEY-CSRF'}
+            ]
+        });
+
         this.centerPanel = Ext4.create('Ext.panel.Panel', {
             border   : false, frame : false,
             layout   : 'fit',
             region   : 'center',
-            items    : [this.previewPanel]
+            tbar     :  [{
+                text    : 'Export',
+                menu    : [{
+                    text    : 'To Excel',
+                    handler : function(){this.exportToXls();},
+                    scope   : this}]
+            }],
+            items    : [this.previewPanel, this.exportForm]
         });
         this.items.push(this.centerPanel);
 
@@ -151,6 +167,7 @@ Ext4.define('LABKEY.ext4.ParticipantReport', {
             formItems.push({
                 xtype      : 'textfield',
                 fieldLabel : 'Name',
+                width      : 300,
                 allowBlank : false,
                 value      : this.reportConfig.name,
                 listeners  : {change : function(cmp, value) {this.reportConfig.name = value;}, scope : this}
@@ -159,6 +176,7 @@ Ext4.define('LABKEY.ext4.ParticipantReport', {
                 fieldLabel  : 'Dataset',
                 name        : 'dataset',
                 store       : store,
+                width       : 300,
                 editable    : false,
                 queryMode      : 'local',
                 value          : this.reportConfig.queryName,
@@ -185,7 +203,7 @@ Ext4.define('LABKEY.ext4.ParticipantReport', {
                     labelSeparator : ''
                 },
                 items  : formItems,
-                width  : 300
+                width  : 320
             });
 
             this.designerPanel = Ext4.create('Ext.panel.Panel', {
@@ -357,7 +375,7 @@ Ext4.define('LABKEY.ext4.ParticipantReport', {
                             type : 'memory',
                             reader : {
                                 type : 'json',
-                                root : 'columns'
+                                root : 'defaultView.columns'
                             }
                         }
                     });
@@ -369,21 +387,42 @@ Ext4.define('LABKEY.ext4.ParticipantReport', {
                     // TODO: figure out infos
 
                     this.columnSelectionGrid = Ext4.create('Ext.grid.Panel', {
-                        title   : 'Complete Dataset',
+                        //title   : 'Complete Dataset',
                         store   : this.queryStore,
+                        flex    : 1.4,
                         columns : [
                             { header : 'Columns', dataIndex : 'name',         flex : 1}
                         ],
+                        tbar     :  [{
+                            text    : 'Select Columns For',
+                            menu    : [{
+                                text    : 'Grid Fields',
+                                handler : function(){
+                                    var recs = this.columnSelectionGrid.getSelectionModel().getSelection();
+                                    this.gridFieldStore.loadData(recs);
+                                    this.generateTemplateConfig();
+                                },
+                                scope   : this
+                            },{
+                                text    : 'Page Fields',
+                                handler : function(){
+                                    var recs = this.columnSelectionGrid.getSelectionModel().getSelection();
+                                    this.pageFieldStore.loadData(recs);
+                                    this.generateTemplateConfig();
+                                },
+                                scope   : this
+                            }]
+                        }],
                         multiSelect : true,
                         selType     : 'checkboxmodel',
                         style       : 'padding-left: 0px',
-                        width       : 350,
                         height      : 200
                     });
 
                     var pageGrid = Ext4.create('Ext.grid.Panel', {
                         title   : 'Page Fields',
                         store   : this.pageFieldStore,
+                        flex    : 1.2,
                         columns : [
                             { header : 'Columns', dataIndex : 'name', flex : 1},
                             {
@@ -405,7 +444,6 @@ Ext4.define('LABKEY.ext4.ParticipantReport', {
                                 scope : this
                             }
                         ],
-                        width       : 250,
                         height      : 200,
                         viewConfig  : {
                             emptyText : 'Defaults to ParticipantId',
@@ -427,6 +465,7 @@ Ext4.define('LABKEY.ext4.ParticipantReport', {
                     var fieldGrid = Ext4.create('Ext.grid.Panel', {
                         title   : 'Grid Fields',
                         store   : this.gridFieldStore,
+                        flex    : 1.2,
                         columns : [
                             { header : 'Columns', dataIndex : 'name', flex : 1},
                             {
@@ -470,13 +509,15 @@ Ext4.define('LABKEY.ext4.ParticipantReport', {
                         }
                     });
 
+/*
                     this.columnSelectionGrid.on('selectionchange', function(model, recs) {
                         this.gridFieldStore.loadData(recs);
                         this.generateTemplateConfig();
                     }, this);
+*/
 
                     this.designerPanel.removeAll();
-                    this.designerPanel.add(this.columnSelectionGrid, pageGrid, fieldGrid);
+                    this.designerPanel.add(this.columnSelectionGrid, fieldGrid, pageGrid);
                 }
 
                 this.queryStore.loadRawData(selectRowsResult);
@@ -527,5 +568,21 @@ Ext4.define('LABKEY.ext4.ParticipantReport', {
         else
             Ext4.Msg.alert('Save failed', 'Please enter all required information.');
 
+    },
+
+    exportToXls : function() {
+
+        var markup = this.templateReport.getMarkup();
+        if (markup)
+        {
+            this.exportForm.getForm().setValues({htmlFragment : markup, 'X-LABKEY-CSRF' : LABKEY.CSRF});
+            this.exportForm.submit({
+                scope: this,
+                url    : LABKEY.ActionURL.buildURL('experiment', 'convertHtmlToExcel'),
+                failure: function(response, opts){
+                    Ext4.Msg.alert('Failure', Ext4.decode(response.responseText).exception);
+                }
+            });
+        }
     }
 });
