@@ -329,6 +329,8 @@ abstract public class PipelineProvider
             return;
         ActionURL actionURL = directory.cloneHref();
         actionURL.setAction(action);
+//        Uncomment to debug GWT app - can't just edit the URL and reload because it's a POST
+//        actionURL.addParameter("gwt.codesvr", "127.0.0.1:9997");
         directory.addAction(new PipelineAction(actionId, description, actionURL, files, allowMultiSelect, allowEmptySelect));
       }
 
