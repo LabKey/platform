@@ -15,10 +15,12 @@
  */
 package org.labkey.api.view;
 
+import org.labkey.api.admin.ImportContext;
 import org.labkey.api.module.Module;
 import org.labkey.api.data.Container;
 
 import java.util.List;
+import java.util.Map;
 
 /**
  * User: matthewb
@@ -64,4 +66,8 @@ public interface WebPartFactory
     List<String> getLegacyNames();
 
     boolean isAvailable(Container c, String location);
+
+    Map<String, String> serializePropertyMap(ImportContext ctx, Map<String, String> propertyMap);
+
+    Map<String, String> deserializePropertyMap(ImportContext ctx, Map<String, String> propertyMap);
 }

@@ -20,6 +20,7 @@ import org.apache.commons.beanutils.BeanUtils;
 import org.apache.commons.beanutils.PropertyUtils;
 import org.apache.log4j.Logger;
 import org.jetbrains.annotations.Nullable;
+import org.labkey.api.admin.ImportContext;
 import org.labkey.api.data.Container;
 import org.labkey.api.module.FolderType;
 import org.labkey.api.module.Module;
@@ -185,5 +186,17 @@ public abstract class BaseWebPartFactory implements WebPartFactory
             }
         }
         return FolderType.NONE.equals(c.getFolderType()) || c.getActiveModules().contains(getModule());
+    }
+
+    @Override
+    public Map<String, String> serializePropertyMap(ImportContext ctx, Map<String, String> propertyMap)
+    {
+        return propertyMap;
+    }
+
+    @Override
+    public Map<String, String> deserializePropertyMap(ImportContext ctx, Map<String, String> propertyMap)
+    {
+        return propertyMap;
     }
 }
