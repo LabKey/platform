@@ -1645,7 +1645,7 @@ public class ExperimentController extends SpringActionController
                             PageFlowUtil.filter(form.getHtmlFragment()) +
                     "</textarea><br>" +
                     "<input type=\"submit\">" +
-                    "<input type=hidden name='X-LABKEY-CSRF' value=\"" + CSRFUtil.getExpectedToken(getViewContext().getRequest()) + "\">" +
+                    "<input type=hidden name='X-LABKEY-CSRF' value=\"" + CSRFUtil.getExpectedToken(getViewContext()) + "\">" +
                     "</form>";
             return new HtmlView(html);
         }

@@ -156,7 +156,7 @@ public class PermissionsDetailsView extends WebPartView
         //out.println("Go back to <a href=\"" + ActionURL.toPathString("Project", "begin", _c.getPath()) + "\">" + _c.getPath() + "</a>");
 
         out.println("<form name=\"updatePermissions\" action=\"updatePermissions.post\" method=\"POST\">");
-        out.write("<input type=\"hidden\" name=\"" + CSRFUtil.csrfName + "\" value=\"" + CSRFUtil.getExpectedToken(getViewContext().getRequest()) + "\">");
+        out.write("<input type=\"hidden\" name=\"" + CSRFUtil.csrfName + "\" value=\"" + CSRFUtil.getExpectedToken(getViewContext()) + "\">");
         
         if (_c.isProject())
         {

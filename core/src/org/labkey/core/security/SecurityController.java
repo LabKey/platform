@@ -1949,12 +1949,13 @@ public class SecurityController extends SpringActionController
 
         private ViewContext makeContext(User u)
         {
-            HttpServletRequest w = new HttpServletRequestWrapper(TestContext.get().getRequest()){
+            HttpServletRequest w = new HttpServletRequestWrapper(TestContext.get().getRequest())
+            {
                 @Override
                 public String getParameter(String name)
                 {
                     if (CSRFUtil.csrfName.equals(name))
-                        return CSRFUtil.getExpectedToken(TestContext.get().getRequest());
+                        return CSRFUtil.getExpectedToken(TestContext.get().getRequest(), null);
                     return super.getParameter(name);
                 }
             };
