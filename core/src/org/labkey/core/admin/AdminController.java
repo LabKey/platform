@@ -45,9 +45,9 @@ import org.labkey.api.admin.AdminUrls;
 import org.labkey.api.attachments.Attachment;
 import org.labkey.api.attachments.AttachmentCache;
 import org.labkey.api.attachments.AttachmentService;
-import org.labkey.api.cache.TrackingCache;
 import org.labkey.api.cache.CacheManager;
 import org.labkey.api.cache.CacheStats;
+import org.labkey.api.cache.TrackingCache;
 import org.labkey.api.collections.CaseInsensitiveTreeSet;
 import org.labkey.api.collections.CsvSet;
 import org.labkey.api.data.ConnectionWrapper;
@@ -4773,8 +4773,13 @@ public class AdminController extends SpringActionController
             Collection<ModuleContext> knownModules = ml.getAllModuleContexts();
             knownModules.removeAll(unknownModules);
 
-            HttpView known = new ModulesView(knownModules, "Known");
-            HttpView unknown = new ModulesView(unknownModules, "Unknown");
+            HttpView known = new ModulesView(knownModules, "Known", "Each of these modules is installed and has a valid module file.", "This message should never appear");
+            HttpView unknown = new ModulesView(unknownModules, "Unknown",
+                (1 == unknownModules.size() ? "This module" : "Each of these modules") + " has been installed on this server " +
+                "in the past but the corresponding module file is currently missing or invalid. Possible explanations: the " +
+                "module is no longer being distributed, the module has been renamed, the server location where the module " +
+                "is stored is not accessible, or the module file is corrupted.", "A module is considered \"unknown\" if it was installed on this server " +
+                "in the past but the corresponding module file is currently missing or invalid. This server has no unknown modules.");
 
             return new VBox(known, unknown);
         }
@@ -4783,11 +4788,15 @@ public class AdminController extends SpringActionController
         {
             private final Collection<ModuleContext> _contexts;
             private final String _type;
+            private final String _description;
+            private final String _noModulesDescription;
 
-            private ModulesView(Collection<ModuleContext> contexts, String type)
+            private ModulesView(Collection<ModuleContext> contexts, String type, String description, String noModulesDescription)
             {
                 _contexts = contexts;
                 _type = type;
+                _description = description;
+                _noModulesDescription = noModulesDescription;
                 setTitle(_type + " Modules");
             }
 
@@ -4796,12 +4805,14 @@ public class AdminController extends SpringActionController
             {
                 if (_contexts.isEmpty())
                 {
-                    out.println("No " + _type.toLowerCase() + " modules");
+                    out.println(_noModulesDescription);
                 }
                 else
                 {
-                    out.println("<table>\n");
-                    out.println("<tr><th>Name</th><th>Version</th><th>Class</th><th>Schemas</th></tr>\n");
+                    out.println("\n<table>");
+                    out.println("<tr><td colspan=\"5\">" + PageFlowUtil.filter(_description) + "</td></tr>");
+                    out.println("<tr><td colspan=\"5\">&nbsp;</td></tr>");
+                    out.println("<tr><th>Name</th><th>Version</th><th>Class</th><th>Schemas</th><th></th></tr>");
 
                     for (ModuleContext moduleContext : _contexts)
                     {
