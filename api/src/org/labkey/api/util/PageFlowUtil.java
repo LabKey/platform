@@ -2152,7 +2152,7 @@ public class PageFlowUtil
                 }
                 if ("href".equals(a))
                 {
-                    if (value.indexOf("script") != -1 && value.indexOf("script") < value.indexOf(":") && !_reported.contains("href"))
+                    if (value.contains("script") && value.indexOf("script") < value.indexOf(":") && !_reported.contains("href"))
                     {
                         _reported.add("href");
                         _errors.add("Script is not allowed in 'href' attribute on element <" + qName + ">.");
@@ -2160,7 +2160,7 @@ public class PageFlowUtil
                 }
                 if ("style".equals(a))
                 {
-                    if ((value.indexOf("behavior") != -1 || value.indexOf("url") != -1 || value.indexOf("expression") != -1) && !_reported.contains("style"))
+                    if ((value.contains("behavior") || value.contains("url") || value.contains("expression")) && !_reported.contains("style"))
                     {
                         _reported.add("style");
                         _errors.add("Style attribute cannot contain behaviors, expresssions, or urls. Error on element <" + qName + ">.");
