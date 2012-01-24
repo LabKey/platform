@@ -6,17 +6,21 @@ import org.labkey.api.admin.ImportContext;
 import org.labkey.api.admin.ImportException;
 import org.labkey.api.admin.InvalidFileException;
 import org.labkey.api.pipeline.PipelineJobWarning;
+import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.XmlBeansUtil;
 import org.labkey.api.util.XmlValidationException;
 import org.labkey.api.view.FolderTab;
 import org.labkey.api.view.Portal;
+import org.labkey.api.view.WebPartFactory;
 import org.labkey.folder.xml.FolderDocument;
 import org.labkey.folder.xml.PagesDocument;
 
 import java.io.File;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 /**
  * User: cnathe
@@ -84,20 +88,28 @@ public class PageImporterFactory implements FolderImporterFactory
                     List<Portal.WebPart> webparts = new ArrayList<Portal.WebPart>();
                     for (PagesDocument.Pages.Page.Webpart webpartXml : webpartXmls)
                     {
-                        Portal.WebPart webpart = new Portal.WebPart();
-                        webpart.setName(webpartXml.getName());
-                        webpart.setIndex(webpartXml.getIndex());
-                        webpart.setLocation(webpartXml.getLocation());
-                        webpart.setPermanent(webpartXml.getPermanent());
+                        Portal.WebPart webPart = new Portal.WebPart();
+                        webPart.setName(webpartXml.getName());
+                        webPart.setIndex(webpartXml.getIndex());
+                        webPart.setLocation(webpartXml.getLocation());
+                        webPart.setPermanent(webpartXml.getPermanent());
                         if (null != webpartXml.getProperties())
                         {
                             PagesDocument.Pages.Page.Webpart.Properties.Property[] properyXmls = webpartXml.getProperties().getPropertyArray();
+                            Map<String, String> propertyMap = new HashMap<String, String>();
                             for (PagesDocument.Pages.Page.Webpart.Properties.Property properyXml : properyXmls)
                             {
-                                webpart.setProperty(properyXml.getKey(), properyXml.getValue());
+                                propertyMap.put(properyXml.getKey(), properyXml.getValue());
+                            }
+
+                            WebPartFactory factory = Portal.getPortalPart(webPart.getName());
+                            Map<String, String> newPropertyMap = factory.deserializePropertyMap(ctx, propertyMap);
+                            for (Map.Entry<String, String> newProperty : newPropertyMap.entrySet())
+                            {
+                                webPart.setProperty(newProperty.getKey(), newProperty.getValue());
                             }
                         }
-                        webparts.add(webpart);
+                        webparts.add(webPart);
                     }
                     Portal.saveParts(ctx.getContainer(), pageId, webparts);
                 }

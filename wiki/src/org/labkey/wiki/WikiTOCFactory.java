@@ -15,9 +15,14 @@
  */
 package org.labkey.wiki;
 
+import org.labkey.api.admin.ImportContext;
+import org.labkey.api.data.Container;
+import org.labkey.api.data.ContainerManager;
 import org.labkey.api.view.*;
 
 import java.lang.reflect.InvocationTargetException;
+import java.util.HashMap;
+import java.util.Map;
 
 /**
  * User: adam
@@ -44,5 +49,46 @@ public class WikiTOCFactory extends BaseWebPartFactory
     public HttpView getEditView(Portal.WebPart webPart, ViewContext context)
     {
         return new JspView<Portal.WebPart>("/org/labkey/wiki/view/customizeWikiToc.jsp", webPart);
+    }
+
+    @Override
+    public Map<String, String> serializePropertyMap(ImportContext ctx, Map<String, String> propertyMap)
+    {
+        Map<String, String> serializedPropertyMap = new HashMap<String, String>(propertyMap);
+
+        // for webPartContainer property, use the container path instead of container id
+        if (serializedPropertyMap.containsKey("webPartContainer"))
+        {
+            Container webPartContainer = ContainerManager.getForId(serializedPropertyMap.get("webPartContainer"));
+            if (null != webPartContainer)
+            {
+                serializedPropertyMap.put("webPartContainer", webPartContainer.getPath());
+            }
+        }
+
+        return serializedPropertyMap;
+    }
+
+    @Override
+    public Map<String, String> deserializePropertyMap(ImportContext ctx, Map<String, String> propertyMap)
+    {
+        Map<String, String> deserializedPropertyMap = new HashMap<String, String>(propertyMap);
+
+        // for the webPartContainer property, try to get the container ID from the specified path
+        // if a container does not exist for the given path, use the container parameter (i.e. the current container)
+        if (deserializedPropertyMap.containsKey("webPartContainer"))
+        {
+            Container webPartContainer = ContainerManager.getForPath(deserializedPropertyMap.get("webPartContainer"));
+            if (null != webPartContainer)
+            {
+                deserializedPropertyMap.put("webPartContainer", webPartContainer.getId());
+            }
+            else
+            {
+                deserializedPropertyMap.put("webPartContainer", ctx.getContainer().getId());
+            }
+        }
+
+        return deserializedPropertyMap;
     }
 }

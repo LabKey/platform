@@ -16,9 +16,19 @@
 
 package org.labkey.query.reports;
 
+import org.labkey.api.admin.ImportContext;
+import org.labkey.api.data.Container;
+import org.labkey.api.reports.Report;
+import org.labkey.api.reports.ReportService;
+import org.labkey.api.reports.report.ReportIdentifier;
 import org.labkey.api.view.*;
+import org.labkey.folder.xml.FolderDocument;
 import org.labkey.query.reports.view.ReportsWebPart;
 import org.labkey.query.reports.view.ReportsWebPartConfig;
+
+import java.sql.SQLException;
+import java.util.HashMap;
+import java.util.Map;
 
 /**
  * Created by IntelliJ IDEA.
@@ -43,5 +53,66 @@ public class ReportsWebPartFactory extends AlwaysAvailableWebPartFactory
     public HttpView getEditView(Portal.WebPart webPart, ViewContext context)
     {
         return new ReportsWebPartConfig(webPart);
+    }
+
+    @Override
+    public Map<String, String> serializePropertyMap(ImportContext ctx, Map<String, String> propertyMap)
+    {
+        Map<String, String> serializedPropertyMap = new HashMap<String, String>(propertyMap);
+
+        // replace the reportId with the reportName and the reportKey (i.e. schemaName/queryName/viewName)
+        if (serializedPropertyMap.containsKey("reportId"))
+        {
+            try
+            {
+                ReportIdentifier reportId = ReportService.get().getReportIdentifier(serializedPropertyMap.get("reportId"));
+                if (reportId != null && reportId.getReport() != null)
+                {
+                    serializedPropertyMap.remove("reportId");
+                    serializedPropertyMap.put("reportName", reportId.getReport().getDescriptor().getReportName());
+                    serializedPropertyMap.put("reportKey", reportId.getReport().getDescriptor().getReportKey());
+                }
+            }
+            catch(Exception e)
+            {
+                // do nothing
+            }
+        }
+        return serializedPropertyMap;
+    }
+
+    @Override
+    public Map<String, String> deserializePropertyMap(ImportContext ctx, Map<String, String> propertyMap)
+    {
+        Map<String, String> deserializedPropertyMap = new HashMap<String, String>(propertyMap);
+
+        // try to resolve the reportId from the reportName and reportKey
+        if (deserializedPropertyMap.containsKey("reportName"))
+        {
+            try
+            {
+                String reportName = deserializedPropertyMap.get("reportName");
+                if (deserializedPropertyMap.containsKey("reportKey"))
+                {
+                    String reportKey = deserializedPropertyMap.get("reportKey");
+                    for (Report rpt : ReportService.get().getReports(ctx.getUser(), ctx.getContainer(), reportKey))
+                    {
+                        if (reportName.equals(rpt.getDescriptor().getReportName()))
+                        {
+                            deserializedPropertyMap.put("reportId", rpt.getDescriptor().getReportId().toString());
+                        }
+                    }
+
+                    deserializedPropertyMap.remove("reportKey");
+                }
+                deserializedPropertyMap.remove("reportName");
+            }
+            catch(Exception e)
+            {
+                // do nothing
+            }
+        }
+
+        return deserializedPropertyMap;
     }
 }

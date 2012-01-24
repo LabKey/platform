@@ -7,6 +7,7 @@ import org.labkey.api.data.Container;
 import org.labkey.api.view.FolderTab;
 import org.labkey.api.view.Portal;
 import org.labkey.api.view.Portal.WebPart;
+import org.labkey.api.view.WebPartFactory;
 import org.labkey.api.writer.VirtualFile;
 import org.labkey.folder.xml.FolderDocument;
 import org.labkey.folder.xml.PagesDocument;
@@ -51,7 +52,7 @@ public class PageWriterFactory implements FolderWriterFactory
                 // if there are no tabs, try getting webparts for the default page ID
                 PagesDocument.Pages.Page pageXml = pagesXML.addNewPage();
                 pageXml.setName(Portal.DEFAULT_PORTAL_PAGE_ID);
-                addWebPartsToPage(pageXml, Portal.getParts(ctx.getContainer(), Portal.DEFAULT_PORTAL_PAGE_ID));
+                addWebPartsToPage(ctx, pageXml, Portal.getParts(ctx.getContainer(), Portal.DEFAULT_PORTAL_PAGE_ID));
             }
             else
             {
@@ -63,14 +64,14 @@ public class PageWriterFactory implements FolderWriterFactory
 
                     // for the study folder type(s), the Overview tab has a pageId of portal.default
                     String pageId = tab.getName().equals("Overview") ? Portal.DEFAULT_PORTAL_PAGE_ID : tab.getName();
-                    addWebPartsToPage(pageXml, Portal.getParts(ctx.getContainer(), pageId));
+                    addWebPartsToPage(ctx, pageXml, Portal.getParts(ctx.getContainer(), pageId));
                 }
             }
 
             root.saveXmlBean(FILENAME, pagesDocXML);
         }
 
-        public void addWebPartsToPage(PagesDocument.Pages.Page pageXml, List<WebPart> webpartsInPage)
+        public void addWebPartsToPage(ImportContext ctx, PagesDocument.Pages.Page pageXml, List<WebPart> webpartsInPage)
         {
             for (WebPart webPart : webpartsInPage)
             {
@@ -80,9 +81,11 @@ public class PageWriterFactory implements FolderWriterFactory
                 webpartXml.setLocation(webPart.getLocation());
                 webpartXml.setPermanent(webPart.isPermanent());
 
-                Map<String, String> props = webPart.getPropertyMap();
-                if (props.size() > 0)
+                if (webPart.getPropertyMap().size() > 0)
                 {
+                    WebPartFactory factory = Portal.getPortalPart(webPart.getName());
+                    Map<String, String> props = factory.serializePropertyMap(ctx, webPart.getPropertyMap());
+
                     PagesDocument.Pages.Page.Webpart.Properties propertiesXml = webpartXml.addNewProperties();
                     for (Map.Entry<String, String> prop : props.entrySet())
                     {
