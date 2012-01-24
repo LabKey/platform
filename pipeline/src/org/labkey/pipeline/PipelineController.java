@@ -1226,7 +1226,14 @@ public class PipelineController extends SpringActionController
         @Override
         public ModelAndView getView(Object o, boolean reshow, BindException errors) throws Exception
         {
-            return new JspView<Object>("/org/labkey/pipeline/importFolder.jsp", null, errors);
+            if (getContainer().isRoot())
+            {
+                throw new NotFoundException();
+            }
+            else
+            {
+                return new JspView<Object>("/org/labkey/pipeline/importFolder.jsp", null, errors);
+            }
         }
 
         @Override

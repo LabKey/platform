@@ -4413,7 +4413,14 @@ public class AdminController extends SpringActionController
             if (reshow)
                 return null;
 
-            return new JspView<ExportForm>("/org/labkey/core/admin/exportFolder.jsp", form, errors);
+            if (getContainer().isRoot())
+            {
+                throw new NotFoundException();
+            }
+            else
+            {
+                return new JspView<ExportForm>("/org/labkey/core/admin/exportFolder.jsp", form, errors);
+            }
         }
 
         public NavTree appendNavTrail(NavTree root)

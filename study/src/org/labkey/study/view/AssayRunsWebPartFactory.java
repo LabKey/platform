@@ -16,11 +16,18 @@
 
 package org.labkey.study.view;
 
+import org.labkey.api.admin.ImportContext;
 import org.labkey.api.exp.api.ExpProtocol;
+import org.labkey.api.exp.api.ExperimentService;
 import org.labkey.api.study.assay.AssayRunsView;
+import org.labkey.api.study.assay.AssayService;
 import org.labkey.api.study.assay.AssayUrls;
 import org.labkey.api.view.*;
 import org.labkey.api.util.PageFlowUtil;
+
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
 /**
  * User: jeckels
@@ -52,4 +59,41 @@ public class AssayRunsWebPartFactory extends AssayBaseWebPartFactory
         return runsView;
     }
 
+    @Override
+    public Map<String, String> serializePropertyMap(ImportContext ctx, Map<String, String> propertyMap)
+    {
+        Map<String, String> serializedPropertyMap = new HashMap<String, String>(propertyMap);
+
+        // serialize the assay name instead of Id, we'll try to resolve the protocolId on import based on the name
+        if (serializedPropertyMap.containsKey("viewProtocolId"))
+        {
+            ExpProtocol protocol = ExperimentService.get().getExpProtocol(Integer.parseInt(serializedPropertyMap.get("viewProtocolId")));
+            if (null != protocol)
+            {
+                serializedPropertyMap.put("assayName", protocol.getName());
+            }
+            serializedPropertyMap.remove("viewProtocolId");
+        }
+
+        return serializedPropertyMap;
+    }
+
+    @Override
+    public Map<String, String> deserializePropertyMap(ImportContext ctx, Map<String, String> propertyMap)
+    {
+        Map<String, String> deserializedPropertyMap = new HashMap<String, String>(propertyMap);
+
+        // try to resolve the protocolId from the assayName that was exported
+        if (deserializedPropertyMap.containsKey("assayName"))
+        {
+            List<ExpProtocol> protocols = AssayService.get().getAssayProtocols(ctx.getContainer()); 
+            if (protocols.size() == 1)
+            {
+                deserializedPropertyMap.put("viewProtocolId", String.valueOf(protocols.get(0).getRowId()));
+            }
+            deserializedPropertyMap.remove("assayName");
+        }
+
+        return deserializedPropertyMap;
+    }
 }

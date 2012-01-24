@@ -16,10 +16,13 @@
 
 package org.labkey.list.view;
 
+import org.labkey.api.admin.ImportContext;
 import org.labkey.api.exp.list.ListDefinition;
+import org.labkey.api.exp.list.ListService;
 import org.labkey.api.query.QuerySettings;
 import org.labkey.api.view.*;
 
+import java.util.HashMap;
 import java.util.Map;
 
 /**
@@ -87,5 +90,43 @@ public class SingleListWebPartFactory extends AlwaysAvailableWebPartFactory
             settings.setAllowChooseView(false);
             settings.setDataRegionName("list" + webPart.getIndex());
         }
+    }
+
+    @Override
+    public Map<String, String> serializePropertyMap(ImportContext ctx, Map<String, String> propertyMap)
+    {
+        Map<String, String> serializedPropertyMap = new HashMap<String, String>(propertyMap);
+
+        // serialize the listName instead of listId, we'll try to resolve the listId on import based on the listName
+        if (serializedPropertyMap.containsKey("listId"))
+        {
+            ListDefinition list = ListService.get().getList(ctx.getContainer(), Integer.parseInt(serializedPropertyMap.get("listId")));
+            if (null != list)
+            {
+                serializedPropertyMap.put("listName", list.getName());
+            }
+            serializedPropertyMap.remove("listId");
+        }
+
+        return serializedPropertyMap;
+    }
+
+    @Override
+    public Map<String, String> deserializePropertyMap(ImportContext ctx, Map<String, String> propertyMap)
+    {
+        Map<String, String> deserializedPropertyMap = new HashMap<String, String>(propertyMap);
+
+        // try to resolve the listId from the listName that was exported
+        if (deserializedPropertyMap.containsKey("listName"))
+        {
+            ListDefinition list = ListService.get().getList(ctx.getContainer(), deserializedPropertyMap.get("listName"));
+            if (null != list)
+            {
+                deserializedPropertyMap.put("listId", String.valueOf(list.getListId()));
+            }
+            deserializedPropertyMap.remove("listName");
+        }
+
+        return deserializedPropertyMap;
     }
 }
