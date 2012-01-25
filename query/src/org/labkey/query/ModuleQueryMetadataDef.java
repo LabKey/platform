@@ -23,6 +23,7 @@ import org.labkey.api.util.PageFlowUtil;
 import org.labkey.query.persist.QueryDef;
 import org.labkey.query.persist.QueryManager;
 import org.w3c.dom.Document;
+import org.w3c.dom.Element;
 import org.w3c.dom.Node;
 import org.xml.sax.SAXException;
 
@@ -67,24 +68,41 @@ public class ModuleQueryMetadataDef extends ResourceRef
                 Document doc = parseFile(resource);
                 Node docElem = doc.getDocumentElement();
 
-                if (!docElem.getNodeName().equalsIgnoreCase("query"))
-                    return;
-
-                _name = DOMUtil.getAttributeValue(docElem, "name", _name);
-                _hidden = Boolean.parseBoolean(DOMUtil.getAttributeValue(docElem, "hidden", "false"));
-                _schemaVersion = Double.parseDouble(DOMUtil.getAttributeValue(docElem, "schemaVersion", "0"));
-
-                //description
-                Node node = DOMUtil.getFirstChildNodeWithName(docElem, "description");
-                if (null != node)
-                    _description = DOMUtil.getNodeText(node);
-
-                node = DOMUtil.getFirstChildNodeWithName(docElem, "metadata");
-                if (null != node)
+                // Figure out the root element name, stripping off any namespace prefix
+                String rootElementName = docElem.getNodeName();
+                if (rootElementName.indexOf(":") != -1)
                 {
-                    Node root = DOMUtil.getFirstChildElement(node);
-                    if (null != root)
-                        _queryMetaData = PageFlowUtil.convertNodeToXml(root);
+                    rootElementName = rootElementName.substring(rootElementName.indexOf(":") + 1);
+                }
+
+                // We really expect it to a query.xsd document, but check if it's a tableInfo.xsd document instead.
+                if (rootElementName.equalsIgnoreCase("tables"))
+                {
+                    // Just apply the tableInfo metadata directly
+                    _queryMetaData = PageFlowUtil.convertNodeToXml(docElem);
+                }
+                else if (rootElementName.equalsIgnoreCase("query"))
+                {
+                    _name = DOMUtil.getAttributeValue(docElem, "name", _name);
+                    _hidden = Boolean.parseBoolean(DOMUtil.getAttributeValue(docElem, "hidden", "false"));
+                    _schemaVersion = Double.parseDouble(DOMUtil.getAttributeValue(docElem, "schemaVersion", "0"));
+
+                    //description
+                    Node node = DOMUtil.getFirstChildNodeWithName(docElem, "description");
+                    if (null != node)
+                        _description = DOMUtil.getNodeText(node);
+
+                    node = DOMUtil.getFirstChildNodeWithName(docElem, "metadata");
+                    if (null != node)
+                    {
+                        Node root = DOMUtil.getFirstChildElement(node);
+                        if (null != root)
+                            _queryMetaData = PageFlowUtil.convertNodeToXml(root);
+                    }
+                }
+                else
+                {
+                    _log.warn("Query metadata XML does not have <query> or <tables> as its root element, its contents will be ignored: " + resource);
                 }
             }
             else
