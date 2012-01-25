@@ -3,20 +3,17 @@
  *
  * Licensed under the Apache License, Version 2.0: http://www.apache.org/licenses/LICENSE-2.0
  */
-
-LABKEY.requiresExt4Sandbox(true);
-
 function renderStudySchedule(id){
     Ext4.QuickTips.init();
 
     this.id = id;
 
     this.getData = function(id){
-        Ext.Ajax.request({
+        Ext4.Ajax.request({
             url: LABKEY.ActionURL.buildURL('study', 'browseStudySchedule.api'),
             success: function(response){
-                var response = Ext.decode(response.responseText);
-                this.renderGrid(response.schedule, id);
+                var study = Ext4.decode(response.responseText);
+                this.renderGrid(study.schedule, id);
             },
             failure: function(e){
             },
@@ -30,7 +27,7 @@ function renderStudySchedule(id){
             {
                 text: "Dataset",
                 dataIndex: "dataset",
-                width: 200,
+                width: 275,
                 renderer: datasetRenderer
             },
             {
@@ -41,24 +38,6 @@ function renderStudySchedule(id){
                 renderer: urlRenderer
             }
         ];
-
-        for(var i = 0; i < schedule.timepoints.length; i++){
-            var newCol = {
-                text: schedule.timepoints[i].label != null ? '<div data-qtip="' + schedule.timepoints[i].label + '">' + schedule.timepoints[i].label +'</div>' : '',
-                dataIndex: schedule.timepoints[i].name,
-                tdCls: 'type-column',
-                renderer: visitRenderer
-            };
-            columnItems.push(newCol);
-        }
-
-        var columns = {
-            defaults: {
-                menuDisabled: true,
-                sortable: false
-            },
-            items: columnItems
-        };
 
         var fields = [
             {
@@ -74,11 +53,27 @@ function renderStudySchedule(id){
         ];
 
         for(var i = 0; i < schedule.timepoints.length; i++){
+            var newCol = {
+                text: schedule.timepoints[i].label != null ? '<div data-qtip="' + schedule.timepoints[i].label + '">' + schedule.timepoints[i].label +'</div>' : schedule.timepoints[i].sequenceMin,
+                dataIndex: schedule.timepoints[i].name,
+                tdCls: 'type-column',
+                renderer: visitRenderer
+            };
+            columnItems.push(newCol);
+
             fields.push({
                 name: schedule.timepoints[i].name,
                 mapping: schedule.timepoints[i].name
             });
         }
+
+        var columns = {
+            defaults: {
+                menuDisabled: true,
+                sortable: false
+            },
+            items: columnItems
+        };
 
         Ext4.define('Schedule.View', {
             extend : 'Ext.data.Model',
@@ -103,7 +98,9 @@ function renderStudySchedule(id){
             border: false,
             autoScroll: true,
             columnLines: false,
-            columns: columns
+            columns: columns,
+            enableColumnMove: false,
+            selType: 'rowmodelfixed'
         });
 
         function urlRenderer(val){
