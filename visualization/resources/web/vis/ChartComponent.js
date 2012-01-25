@@ -467,8 +467,8 @@ LABKEY.vis.XYChartComponent = Ext.extend(Ext.BoxComponent, {
 
         legend.add(pv.Dot)
                 .data(this.series) //One dot for each series
-                .fillStyle(function (d) {return d.style.markColor})
-                .strokeStyle(function (d) {return d.style.markColor})
+                .fillStyle(function (d) {return d.style.darkMarkColor})
+                .strokeStyle(function (d) {return d.style.darkMarkColor})
                 .top(function() {return this.index * 25;})
                 .left(5)
                 .size(function (d) {return d.style.shape.markSize})
@@ -477,7 +477,6 @@ LABKEY.vis.XYChartComponent = Ext.extend(Ext.BoxComponent, {
                 .anchor("right")
                 .add(pv.Label)
                 .text(function(d) {return d.caption});
-
     },
 
     addChartPanel : function () {
@@ -765,6 +764,12 @@ LABKEY.vis.LineChart = Ext.extend(LABKEY.vis.XYChartComponent, {
            var style = s.style;
            var color = style.markColor;
            var darkColor = style.darkMarkColor;
+           var scale;
+           if(s.axis == "left"){
+               scale = left;
+           } else {
+               scale = right;
+           }
            var lines = dataPanel.add(pv.Line)
              .data(s.data)
             .left(function (d) {return bottom(s.getX(d))})
@@ -782,44 +787,42 @@ LABKEY.vis.LineChart = Ext.extend(LABKEY.vis.XYChartComponent, {
                lines.add(pv.Rule)
                        .bottom(function(d) {
                            if (d.dataValue && d[type])
-                               return left(d.dataValue.value - d[type].value);
+                               return scale(d.dataValue.value - d[type].value);
                        })
                        .height(function(d){
                            if (d[type])
                            {
-                               if(left(0) < 0){
-                                   return (-1 * left(0)) + left(d[type].value * 2);
-                               } else {
-                                   return (left(0) + left(d[type].value * 2));
-                               }
+                                   return (-1 * scale(0)) + scale(d[type].value * 2);
                            }
                        })
                        .lineWidth(2)
                        .fillStyle(darkColor)
                        .strokeStyle(darkColor);
 
+               //Top Bar
                lines.add(pv.Rule)
                        .bottom(function(d){
                            if (d.dataValue && d[type])
-                               return left(d.dataValue.value - d[type].value);
+                               return scale(d.dataValue.value + d[type].value);
                        })
                        .left(function(d){
                            if (d.interval)
-                               return bottom(d.interval.value) - 4;
+                               return bottom(d.interval.value) - 4
                        })
                        .width(8)
                        .lineWidth(2)
                        .fillStyle(darkColor)
                        .strokeStyle(darkColor);
 
+               //Bottom Bar
                lines.add(pv.Rule)
                        .bottom(function(d){
                            if (d.dataValue && d[type])
-                               return left(d.dataValue.value + d[type].value);
+                               return scale(d.dataValue.value - d[type].value);
                        })
                        .left(function(d){
                            if (d.interval)
-                               return bottom(d.interval.value) - 4
+                               return bottom(d.interval.value) - 4;
                        })
                        .width(8)
                        .lineWidth(2)

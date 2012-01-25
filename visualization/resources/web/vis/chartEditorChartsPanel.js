@@ -63,7 +63,7 @@ LABKEY.vis.ChartEditorChartsPanel = Ext.extend(Ext.FormPanel, {
         this.groupsRadio =  new Ext.form.Radio({
             name: 'subject_selection',
             inputValue: 'groups',
-            boxLabel: 'Participant Groups',
+            boxLabel: this.subjectNounPlural + ' Groups',
             checked: this.chartSubjectSelection == 'groups',
             listeners: {
                 scope: this,
