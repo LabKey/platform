@@ -11,7 +11,6 @@ commons-discovery-0.2.jar|Commons Discovery|0.2|{link:Apache|http://jakarta.apac
 commons-fileupload-1.2.1.jar|Commons File Upload|1.2.1|{link:Apache|http://jakarta.apache.org/commons/fileupload/}|{link:Apache 2.0|http://www.apache.org/licenses/LICENSE-2.0}|jeckels|Parses HTTP multipart/form-data POSTs
 commons-httpclient-3.1.jar|Commons HTTP Client|3.1|{link:Apache|http://jakarta.apache.org/commons/httpclient/}|{link:Apache 2.0|http://www.apache.org/licenses/LICENSE-2.0}|jeckels|HTTP client for requests of remote servers (old version)
 commons-io-2.0.1.jar|Commons I/O|1.4|{link:Apache|http://jakarta.apache.org/commons/io/}|{link:Apache 2.0|http://www.apache.org/licenses/LICENSE-2.0}|jeckels|I/O utility classes
-commons-lang-2.6.jar|Commons Lang|2.6|{link:Apache|http://jakarta.apache.org/commons/lang/}|{link:Apache 2.0|http://www.apache.org/licenses/LICENSE-2.0}|jeckels|Language helpers
 commons-lang3-3.1.jar|Commons Lang|3.1|{link:Apache|http://jakarta.apache.org/commons/lang/}|{link:Apache 2.0|http://www.apache.org/licenses/LICENSE-2.0}|jeckels|Language helpers
 commons-logging-1.1.1.jar|Commons Logging|1.1.1|{link:Apache|http://jakarta.apache.org/commons/logging/}|{link:Apache 2.0|http://www.apache.org/licenses/LICENSE-2.0}|jeckels|Bridge API to different logging implementations
 commons-net-2.2.jar|Commons Net|2.2|{link:Apache|http://jakarta.apache.org/commons/net/}|{link:Apache 2.0|http://www.apache.org/licenses/LICENSE-2.0}|adam|FTPClient used to retrieve resources from other servers (e.g., GO annotations)
@@ -41,6 +40,7 @@ spring-mock-2.5.5.jar|Spring Framework|2.5.5|{link:Spring|http://www.springframe
 spring-webmvc-2.5.5.jar|Spring Web MVC Framework|2.5.5|{link:Spring|http://www.springframework.org/}|{link:Apache 2.0|http://www.apache.org/licenses/LICENSE-2.0}|mbellew|Basis of web framework
 tar.jar|Java Tar|2.5|{link:Ice Engineering|http://www.trustice.com/java/tar/}|{link:Public Domain|http://creativecommons.org/licenses/publicdomain/}|adam|Reading SEQUEST/Comet tar.gz files
 jtidy-r918.jar|Java Tidy|r918|{link:SourceForge|http://jtidy.sourceforge.net/}|{link:Custom|http://www.labkey.org/download/jtidy-LICENSE.txt}|mbellew|Validating HTML content
+validation-api-1.0.0.GA.jar|Bean Validation API (JSR 303)|1.0|{link:JCP|http://jcp.org/en/jsr/detail?id=303}|{link:Apache 2.0|http://www.apache.org/licenses/LICENSE-2.0}|jeckels|Validation of objects, requirement of GWT
 xbean.jar|XMLBeans|2.5.0|{link:Apache|http://xmlbeans.apache.org/}|{link:Apache 2.0|http://www.apache.org/licenses/LICENSE-2.0}|peter|Reading/writing XML
 xercesImpl.jar|Xerces|2.6.2|{link:Apache|http://xerces.apache.org/xerces2-j/}|{link:Apache 2.0|http://www.apache.org/licenses/LICENSE-2.0}|kevink|dependents: flow module, batik library
 {table}
