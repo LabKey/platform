@@ -30,3 +30,8 @@ div.pagebreak
 {
     page-break-before: always;
 }
+
+body
+{
+    color:#ffffff;
+}
