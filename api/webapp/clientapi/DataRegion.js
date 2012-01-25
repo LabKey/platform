@@ -25,6 +25,8 @@ if (!LABKEY.DataRegions)
     LABKEY.DataRegions = {};
 }
 
+Ext.ns('LABKEY.ext');
+
 /**
  * The DataRegion constructor is private - to get a LABKEY.DataRegion object,
  * use <code>Ext.ComponentMgr.get(<em>&lt;dataregionname&gt;</em>)</code> or <code>Ext.ComponentMgr.onAvailable(<em>&lt;dataregionname&gt;</em>, callback)</code>.
@@ -594,7 +596,7 @@ LABKEY.DataRegion = Ext.extend(Ext.Component,
         if (false === this.fireEvent("beforesortchange", this, columnName, sortDirection))
             return;
 
-        var newSortString = this.alterSortString(LABKEY.DataRegion._filterUI.getParameter(this.name + ".sort"), columnName, sortDirection);
+        var newSortString = this.alterSortString(this.getParameter(this.name + ".sort"), columnName, sortDirection);
         this._setParam(".sort", newSortString, [".sort", ".offset"]);
     },
 
@@ -610,7 +612,7 @@ LABKEY.DataRegion = Ext.extend(Ext.Component,
         if (false === this.fireEvent("beforeclearsort", this, columnName))
             return;
 
-        var newSortString = this.alterSortString(LABKEY.DataRegion._filterUI.getParameter(this.name + ".sort"), columnName, null);
+        var newSortString = this.alterSortString(this.getParameter(this.name + ".sort"), columnName, null);
         if (newSortString.length > 0)
             this._setParam(".sort", newSortString, [".sort", ".offset"]);
         else
@@ -623,7 +625,7 @@ LABKEY.DataRegion = Ext.extend(Ext.Component,
         if (false === this.fireEvent("beforefilterchange", this, newParamValPairs))
             return;
 
-        LABKEY.DataRegion._filterUI.setSearchString(this.name, newQueryString);
+        this.setSearchString(this.name, newQueryString);
     },
 
     /**
@@ -657,7 +659,7 @@ LABKEY.DataRegion = Ext.extend(Ext.Component,
     getUserFilter : function ()
     {
         var userFilter = [];
-        var paramValPairs = LABKEY.DataRegion._filterUI.getParamValPairs(this.requestURL, null);
+        var paramValPairs = this.getParamValPairs(this.requestURL, null);
         for (var i = 0; i < paramValPairs.length; i++)
         {
             var pair = paramValPairs[i];
@@ -681,7 +683,7 @@ LABKEY.DataRegion = Ext.extend(Ext.Component,
      */
     getUserContainerFilter : function ()
     {
-        return LABKEY.DataRegion._filterUI.getParameter(this.name + ".containerFilterName");
+        return this.getParameter(this.name + ".containerFilterName");
     },
 
     /**
@@ -695,7 +697,7 @@ LABKEY.DataRegion = Ext.extend(Ext.Component,
     getUserSort : function ()
     {
         var userSort = [];
-        var sortParam = LABKEY.DataRegion._filterUI.getParameter(this.name + ".sort");
+        var sortParam = this.getParameter(this.name + ".sort");
         if (sortParam)
         {
             var sortArray = sortParam.split(",");
@@ -1178,7 +1180,7 @@ LABKEY.DataRegion = Ext.extend(Ext.Component,
         for (var i in skipPrefixes)
             skipPrefixes[i] = this.name + skipPrefixes[i];
 
-        var paramValPairs = LABKEY.DataRegion._filterUI.getParamValPairs(this.requestURL, skipPrefixes);
+        var paramValPairs = this.getParamValPairs(this.requestURL, skipPrefixes);
         if (newParamValPairs)
         {
             for (var i = 0; i < newParamValPairs.length; i++)
@@ -1194,7 +1196,7 @@ LABKEY.DataRegion = Ext.extend(Ext.Component,
                 }
             }
         }
-        LABKEY.DataRegion._filterUI.setSearchString(this.name, LABKEY.DataRegion._filterUI.buildQueryString(paramValPairs));
+        this.setSearchString(this.name, LABKEY.DataRegion.buildQueryString(paramValPairs));
     },
 
     // private
@@ -1726,6 +1728,43 @@ LABKEY.DataRegion = Ext.extend(Ext.Component,
                 type: 'view',
                 viewName:savedViewsInfo.views[0].name}, urlParameters);
         }
+    },
+
+    getParamValPairs : function(queryString, skipPrefixes)
+    {
+        if (!queryString)
+        {
+            queryString = this.getSearchString();
+        }
+        return LABKEY.DataRegion.getParamValPairsFromString(queryString, skipPrefixes);
+    },
+
+    getParameter : function(paramName)
+    {
+        var paramValPairs = this.getParamValPairs(null, null);
+        for (var i = 0; i < paramValPairs.length; i++)
+            if (paramValPairs[i][0] == paramName)
+                if (paramValPairs[i].length > 1)
+                    return paramValPairs[i][1];
+                else
+                    return "";
+
+        return null;
+    },
+
+    getSearchString : function()
+    {
+        if (null == this.savedSearchString)
+            this.savedSearchString = document.location.search.substring(1) || "";
+        return this.savedSearchString;
+    },
+
+    setSearchString : function(tableName, search)
+    {
+        this.savedSearchString = search || "";
+        // If the search string doesn't change and there is a hash on the url, the page won't reload.
+        // Remove the hash by setting the full path plus search string.
+        window.location.assign(window.location.pathname + "?" + this.savedSearchString);
     }
 
 });
@@ -2058,733 +2097,92 @@ LABKEY.DataRegion.saveCustomizeViewPrompt = function (config)
         win.show();
     };
 
-// FILTER UI
 
-// TODO convert completely to Ext
-// NOTE filter UI is shared, but I still don't like all these global/single instance variables
 
 // private
-LABKEY.DataRegion._filterUI =
+LABKEY.DataRegion.getParamValPairsFromString = function(queryString, skipPrefixes)
 {
-    _tableName : "",
-    _fieldName : "",
-    _fieldCaption : "",
-    _filterWin : null,
-
-    hideFilterPanel : function ()
+    if (queryString && queryString.indexOf("?") > -1)
     {
-        if (this._filterWin)
-            this._filterWin.close();
-    },
+        queryString = queryString.substring(queryString.indexOf("?") + 1);
+    }
 
-    getLookupValues : function(dataRegion, column, valuesLabel)
+    var iNew = 0;
+    var newParamValPairs = new Array(0);
+    if (queryString != null && queryString.length > 0)
     {
-        valuesLabel.setVisible(true);
-        valuesLabel.setText("Loading...");
-
-        // Build up a SELECT DISTINCT query to get all of the values that are currently in use
-        var sql = 'SELECT DISTINCT ';
-        for (var i = 0; i < column.fieldKeyArray.length; i++)
+        var paramValPairs = queryString.split("&");
+        PARAM_LOOP: for (var i = 0; i < paramValPairs.length; i++)
         {
-            sql += "\"" + column.fieldKeyArray[i].replace("\"", "\"\"") + "\".";
-        }
-        sql += "\"" + column.lookup.displayColumn.replace("\"", "\"\"") + "\"";
-        sql += ' AS value FROM "' + dataRegion.schemaName.replace("\"", "\"\"") + '"."' + dataRegion.queryName.replace("\"", "\"\"") + '"';
+            var paramPair = paramValPairs[i].split("=", 2);
+            paramPair[0] = decodeURIComponent(paramPair[0]);
 
-        LABKEY.Query.executeSql({
-            schemaName: dataRegion.schemaName,
-            sql: sql,
-            sort: "value",
-            containerPath: dataRegion.container || dataRegion.containerPath || LABKEY.container.path,
-            maxRows: 101,              // Limit so that we don't overwhelm the user (or the browser itself) with too many checkboxes
-            includeTotalCount: false,  // Don't bother getting the total row count, which might involve another query to the database
-            containerFilter: dataRegion.containerFilter,
-
-            success: function(results, request, options)
-            {
-                if (results.rows.length >= request.jsonData.maxRows)
-                {
-                    valuesLabel.setText("Too many values to allow filtering by selection");
-                }
-                else
-                {
-                    // TODO - Swap out the filter UI with checkboxes instead of just showing the values
-                    var values = '';
-                    var separator = '';
-                    for (var rowIndex = 0; rowIndex < results.rows.length; rowIndex++)
-                    {
-                        values += separator + results.rows[rowIndex].value;
-                        separator = ', ';
-                    }
-                    valuesLabel.setText(values);
-                }
-            },
-            failure: function(errorInfo)
-            {
-                valuesLabel.setText("Failed to get existing values: " + (errorInfo ? errorInfo.exception : "unknown error"));
-            }
-        });
-    },
-
-    showFilterPanel : function(dataRegionName, column, queryString, dialogTitle, confirmCallback)
-    {
-        this._fieldCaption = column.caption;
-        this._tableName = dataRegionName;
-        this._mappedType = this.getMappedType(column.displayFieldSqlType ? column.displayFieldSqlType : column.sqlType);
-
-        var dataRegion = LABKEY.DataRegions[dataRegionName];
-
-        var valuesLabel = new Ext.form.Label({hidden: true, fieldLabel: 'Possible Values' });
-
-        this._fieldName = column.name;
-        if (column.lookup && dataRegion && dataRegion.schemaName && dataRegion.queryName )
-        {
-            if (column.displayField)
-            {
-                this._fieldName = column.displayField;
-            }
-            this.getLookupValues(dataRegion, column, valuesLabel);
-        }
-
-        if (!queryString)
-        {
-            queryString = dataRegion ? dataRegion.requestURL : null;
-        }
-        var paramValPairs = this.getParamValPairs(queryString, null);
-        
-        if (!confirmCallback)
-        {
-            // Invoked as part of a regular filter dialog on a grid
-            this.changeFilterCallback = this.changeFilter;
-        }
-        else
-        {
-            // Invoked from GWT, which will handle the commit itself
-            this.changeFilterCallback = confirmCallback;
-        }
-
-        var comboStore1 = this.fillOptions(column.mvEnabled, this._mappedType, 0);
-        var comboStore2 = this.fillOptions(column.mvEnabled, this._mappedType, 1);
-
-        var self = this; //Used so we can get _mappedType within Ext component configs (comboBoxes && validators).
-
-        var filterComboBox1 = new Ext.form.ComboBox({
-            emptyText: 'Choose a filter:',
-            autoSelect: false,
-            width: 250,
-            allowBlank: 'false',
-            triggerAction: 'all',
-            fieldLabel: 'Filter Type',
-            store: comboStore1,
-            displayField: 'text',
-            typeAhead: 'false',
-            forceSelection: true,
-            mode: 'local',
-            clearFilterOnReset: false,
-            editable: false,
-            listeners:{
-                scope: this,
-                select:setField1,
-                afterRender: function(combo){
-                    //afterRender of combobox we set the default value.
-                    if(this._mappedType == 'LONGTEXT' || this._mappedType == 'TEXT'){
-                        //Starts With
-                        combo.setValue(combo.getStore().getAt(8).data.text);
-                    } else{
-                        //Equals
-                        combo.setValue(combo.getStore().getAt(1).data.text);
-                    }
-                }
-            },
-            scope: this
-        });
-
-        var filterComboBox2 = new Ext.form.ComboBox({
-            emptyText: 'Choose a filter:',
-            width: 250,
-            allowBlank: 'false',
-            triggerAction: 'all',
-            fieldLabel: 'and',
-            store: comboStore2,
-            displayField: 'text',
-            typeAhead: 'false',
-            forceSelection: true,
-            mode: 'local',
-            clearFilterOnReset: false,
-            editable: false,
-            listeners:{
-                scope: this,
-                disable: function(combo){
-                    inputField2.disable(); //If this combobox is disabled then so is the input field.
-                },
-                enable: setField2, //When this combobox gets re-enabled we want to re-enable the input box as well, but only if we're supposed to.
-                select:setField2,
-                afterRender: function(combo){
-                    //Set the default field to "No Other Filter"
-                    combo.setValue(combo.getStore().getAt(0).data.text);
-                    inputField2.disable();
-                }
-            },
-            scope: this
-        });
-
-        function setField1(combo){
-            var selectedValue = combo.getStore().getAt(combo.getStore().find('text', combo.getValue())).data.value;
-            if(selectedValue == 'isblank' || selectedValue == 'isnonblank'|| selectedValue == 'hasmvvalue'|| selectedValue == 'nomvvalue' || selectedValue == ''){
-                //Disable filterComboBox2.
-                filterComboBox2.disable();
-                //Disable the field and allow it to be blank for values 'isblank' and 'isnonblank'.
-                inputField1.disable();
-            } else{
-                //enable filterComboBox2.
-                filterComboBox2.enable();
-                inputField1.enable();
-                inputField1.focus('', 50);
-            }
-        }
-        function setField2(combo){
-            //Get the 'value' field of the selected item in the combo box.
-            var selectedValue = combo.getStore().getAt(combo.getStore().find('text', combo.getValue())).data.value;
-            if(selectedValue == 'isblank' || selectedValue == 'isnonblank'|| selectedValue == 'hasmvvalue'|| selectedValue == 'nomvvalue'|| selectedValue == ''){
-                //Disable the field and allow it to be blank for values 'isblank' and 'isnonblank'.
-                inputField2.disable();
-            } else{
-                inputField2.enable();
-                inputField2.focus('', 50);
-            }
-        }
-
-        var inputFieldConfig1 = {
-            name          : 'value_1',
-            id            : 'value_1',
-            allowBlank    : false,
-            width         : 250,
-            blankText     : 'You must enter a value.',
-            validateOnBlur: false,
-            validator     : inputFieldValidator1,
-            listeners     : {
-                disable   : function(field){
-                    //Call validate after disable so any pre-existing validation errors go away.
-                    this.validate();
-                }
-            }
-        };
-
-        var inputFieldConfig2 = {
-            name          : 'value_2',
-            id            : 'value_2',
-            allowBlank    : false,
-            width         : 250,
-            blankText     : 'You must enter a value.',
-            validateOnBlur: false,
-            validator     : inputFieldValidator2,
-            listeners     : {
-                disable   : function(field){
-                    //Call validate after disable so any pre-existing validation errors go away.
-                    this.validate();
-                }
-            }
-        };
-
-        if(this._mappedType == "DATE"){
-            inputFieldConfig1.altFormats = LABKEY.Utils.getDateAltFormats();
-            inputFieldConfig2.altFormats = LABKEY.Utils.getDateAltFormats();
-        }
-
-        var inputField1 = new Ext.form.TextField(inputFieldConfig1);
-        var inputField2 = new Ext.form.TextField(inputFieldConfig2);
-        // create a task to set the input focus that will get started after layout is complete, the task will
-        // run for a max of 2000ms but will get stopped when the component receives focus
-        this.focusTask = {interval:150, run: function(){inputField1.focus();}, scope: this, duration: 2000};
-        inputField1.on('focus', function(){Ext.TaskMgr.stop(this.focusTask)}, this);
-
-        function inputFieldValidator(input, cb)
-        {
-            if(cb.getStore().getAt(cb.getStore().find('text', cb.getValue())).data.isMulti){
-                return validateEqOneOf(input, self._mappedType);
-            }
-            return validateInputField(input, self._mappedType);
-        }
-
-        function inputFieldValidator1(input){
-            return inputFieldValidator(input, filterComboBox1);
-        }
-
-        function inputFieldValidator2(input){
-            return inputFieldValidator(input, filterComboBox2);
-        }
-
-        function validateInputField(input, mappedType){
-            if(input){
-                    if(mappedType == "INT" && !isFinite(input)){
-                        return input + " is not a valid integer.";
-                    } else if(mappedType == "DECIMAL" && !isFinite(input)){
-                        return input + " is not a valid decimal.";
-                    } else if(mappedType == "DATE"){
-                        //Javascript does not parse ISO dates, but if date matches we're done
-                        if (input.match(/^\s*(\d\d\d\d)-(\d\d)-(\d\d)\s*$/) ||
-                                input.match(/^\s*(\d\d\d\d)-(\d\d)-(\d\d)\s*(\d\d):(\d\d)\s*$/))
-                        {
-                            return true;
-                        } else{
-                            var dateVal = new Date(input);
-                            if (isNaN(dateVal))
-                            {
-                                //If the user entered something other than numbers.
-                                return input + " is not a valid date - it must be in the format m/d/Y";
-                            } else {
-                                //If the user entered part of a date we'll try to filter by it.
-                                return true;
-                            }
-                        }
-                    } else if(mappedType == "BOOL"){
-                        var upperVal = input.toUpperCase();
-                        if (upperVal == "TRUE" || value == "1" || upperVal == "Y" || upperVal == "YES" || upperVal == "ON" || upperVal == "T"
-                                || upperVal == "FALSE" || value == "0" || upperVal == "N" || upperVal == "NO" || upperVal == "OFF" || upperVal == "F"){
-                            return true;
-                        } else {
-                            return input + " is not a valid boolean. Try true,false; yes,no; on,off; or 1,0.";
-                        }
-                    } else {
-                        //If it's not a DECIMAL, INT, DATE, or BOOL, then it's a string, and in that case the characters
-                        //do not matter, so return true.
-                        return true;
-                    }
-                } else{
-                //If for some reason the input or mappedType are null then return false.
-                //Generally happens when doing Equals One Of
-                return "You must enter a value.";
-            }
-        }
-
-        function validateEqOneOf(input, mappedType){
-            // Used when "Equals One Of.." is selected. Calls validateInputField on each value entered.
-            var values = input.split(';');
-            var isValid = "";
-            for(var i = 0; i < values.length; i++){
-                isValid = validateInputField(values[i], mappedType);
-                if(isValid === false){
-                    return isValid;
-                }
-            }
-            //If we make it out of the for loop we had no errors.
-            return true;
-        }
-        
-        var okHandler = function(){
-            //Step 1: validate
-            if(inputField1.isValid() && inputField2.isValid()){
-                var filterType1 = filterComboBox1.getStore().getAt(filterComboBox1.getStore().find('text', filterComboBox1.getValue())).data.value;
-                var filterType2 = filterComboBox2.getStore().getAt(filterComboBox2.getStore().find('text', filterComboBox2.getValue())).data.value;
-                self.setFilter(inputField1.getValue(), inputField2.getValue(), filterType1, filterType2);
-                self._filterWin.close();
-            }
-        };
-
-        var cancelHandler = function(){
-            self._filterWin.close();
-        };
-
-        var clearFilterHandler = function(){
-            LABKEY.DataRegion._filterUI.clearFilter();
-        };
-
-        var clearAllFiltersHandler = function(){
-            LABKEY.DataRegion._filterUI.clearAllFilters();
-        };
-
-        var filterPanel = new Ext.form.FormPanel({
-            //Here we set up the Form Panel for the filter window.
-            autoWidth: true,
-            autoHeight: true,
-            resizable: false,
-            bodyStyle: 'padding: 6px',
-            defaults:{
-                msgTarget: 'under'
-            },
-            items: [filterComboBox1, inputField1, filterComboBox2, inputField2, valuesLabel],
-            buttons: [
-                {text: 'OK', handler: okHandler},
-                {text: 'CANCEL', handler: cancelHandler},
-                {text: 'CLEAR FILTER', handler: clearFilterHandler},
-                {text: 'CLEAR ALL FILTERS', handler: clearAllFiltersHandler}
-            ]
-        });
-        filterPanel.on('afterlayout', function(cmp){Ext.TaskMgr.start(this.focusTask)}, this);
-
-         this._filterWin = new Ext.Window({
-             width: 410,
-             autoHeight: true,
-             modal: true,
-             resizable: false,
-             closeAction: 'close',
-             keys:[{
-                 key:Ext.EventObject.ENTER,
-                 scope: this,
-                 handler: okHandler
-             },{
-                 key:Ext.EventObject.ESC,
-                 scope: this,
-                 handler: cancelHandler
-             }],
-             items: filterPanel
-         });
-
-        this._filterWin.setTitle(dialogTitle ? dialogTitle : "Show Rows Where " + column.caption + "...");
-        this._filterWin.show();
-
-        //Fill in existing filters...
-        var setCombo1 = true; //true if we have not filled in the existing filter for filterComboBox1
-        for (var i = 0; i < paramValPairs.length; i++)
-        {
-            var pair = paramValPairs[i]; // Filter 1 or 2.
-            var key = pair[0]; // Something like: "Issues.Title~startswith"
-            var comparison = (key.split("~"))[1]; // combobox value (eq, neqornull, gte, etc.)
-            var value = pair.length > 1 ? pair[1] : ""; //The user input.
-            //If no filter is set then we will skip.
-            if (key.indexOf(this._tableName + "." + this._fieldName + "~") != 0)
+            if (paramPair[0] == ".lastFilter")
                 continue;
 
-            if(setCombo1){
-                //Find the text of the comparison (ex: in = "Equals One Of") && set the text of the combobox.
-                filterComboBox1.setValue(comboStore1.getAt(comboStore1.find('value', comparison)).get('text'));
-                //set the value of the input field.
-                inputField1.setValue(value);
-                //Call setField so the textfield/datefield is properly disabled/enabled.
-                setField1(filterComboBox1);
-                setCombo1 = false;
-            } else {
-                //Find the text of the comparison (ex: in = "Equals One Of") && set the text of the combobox.
-                filterComboBox2.setValue(comboStore2.getAt(comboStore2.find('value', comparison)).get('text'));
-                //set the value of the input field.
-                inputField2.setValue(value);
-                //Call setField so the textfield/datefield is properly disabled/enabled.
-                setField2(filterComboBox2);
-            }
-        }
-    },
-
-    _typeMap : {
-        "BIGINT":"INT",
-        "BIGSERIAL":"INT",
-        "BIT":"BOOL",
-        "BOOL":"BOOL",
-        "BOOLEAN":"BOOL",
-        "CHAR":"TEXT",
-        "CLOB":"LONGTEXT",
-        "DATE":"DATE",
-        "DECIMAL":"DECIMAL",
-        "DOUBLE":"DECIMAL",
-        "DOUBLE PRECISION":"DECIMAL",
-        "FLOAT":"DECIMAL",
-        "INTEGER":"INT",
-        "LONGVARCHAR":"LONGTEXT",
-        "NTEXT":"LONGTEXT",
-        "NUMERIC":"DECIMAL",
-        "REAL":"DECIMAL",
-        "SMALLINT":"INT",
-        "TIME":"TEXT",
-        "TIMESTAMP":"DATE",
-        "TINYINT":"INT",
-        "VARCHAR":"TEXT",
-        "INT":"INT",
-        "INT IDENTITY":"INT",
-        "DATETIME":"DATE",
-        "TEXT":"TEXT",
-        "NVARCHAR":"TEXT",
-        "INT2":"INT",
-        "INT4":"INT",
-        "INT8":"INT",
-        "FLOAT4":"DECIMAL",
-        "FLOAT8":"DECIMAL",
-        "SERIAL":"INT",
-        "USERID":"INT",
-        "VARCHAR2":"TEXT" // Oracle
-    },
-
-    _mappedType : "TEXT",
-
-
-    getMappedType : function(dataType)
-    {
-        var mappedType = this._typeMap[dataType.toUpperCase()];
-        if (mappedType == undefined)
-            mappedType = dataType.toUpperCase();
-        return mappedType;
-    },
-
-    fillOptions : function(mvEnabled, mappedType, storeNum)
-    {
-        var store       = new Ext.data.ArrayStore({fields: ['text', 'value', 'isMulti']});
-        var comboRecord = Ext.data.Record.create(['text', 'value', 'isMulti']);
-
-        if(storeNum == 1){
-            store.add(new comboRecord({text:'No Other Filter', value: ''}));
-        } else{
-            store.add(new comboRecord({text:'Has Any Value', value: ''}));
-        }
-
-        if (mappedType != "LONGTEXT")
-        {
-            if(mappedType == "DATE"){
-                store.add(new comboRecord({text:'Equals', value: 'dateeq'}))
-            } else {
-                store.add(new comboRecord({text:'Equals', value: 'eq'}));
-            }
-
-            if(mappedType == "DATE"){
-                store.add(new comboRecord({text:'Does Not Equal', value: 'dateneq'}));
-            } else {
-                store.add(new comboRecord({text:'Does Not Equal', value: 'neqornull'}));
-            }
-
-            if (mappedType != "BOOL" && mappedType != "DATE"){
-                store.add(new comboRecord({text:"Equals One Of (e.g. \"a;b;c\")", value: 'in', isMulti: true}));
-                store.add(new comboRecord({text:"Does Not Equal Any Of (e.g. \"a;b;c\")", value: 'notinornull', isMulti: true}));
-            }
-        }
-
-        if (mappedType != "LONGTEXT" && mappedType != "BOOL")
-        {
-            if(mappedType == "DATE"){
-                store.add(new comboRecord({text:'Is Greater Than',             value: 'dategt'}));
-                store.add(new comboRecord({text:'Is Less Than',                value: 'datelt'}));
-                store.add(new comboRecord({text:'Is Greater Than Or Equal To', value: 'dategte'}));
-                store.add(new comboRecord({text:'Is Less Than Or Equal To',    value: 'datelte'}));
-            } else {
-                store.add(new comboRecord({text:'Is Greater Than',             value: 'gt'}));
-                store.add(new comboRecord({text:'Is Less Than',                value: 'lt'}));
-                store.add(new comboRecord({text:'Is Greater Than Or Equal To', value: 'gte'}));
-                store.add(new comboRecord({text:'Is Less Than Or Equal To',    value: 'lte'}));
-            }
-        }
-
-        if (mappedType == "TEXT" || mappedType == "LONGTEXT")
-        {
-            store.add(new comboRecord({text:'Starts With',         value: 'startswith'}));
-            store.add(new comboRecord({text:'Does Not Start With', value: 'doesnotstartwith'}));
-            store.add(new comboRecord({text:'Contains',            value: 'contains'}));
-            store.add(new comboRecord({text:'Does Not Contain',    value: 'doesnotcontain'}));
-            store.add(new comboRecord({text:"Contains One Of (e.g. \"a;b;c\")", value: 'containsoneof', isMulti: true}));
-            store.add(new comboRecord({text:"Does Not Contain Any Of (e.g. \"a;b;c\")", value: 'containsnoneof', isMulti: true}));
-        }
-
-        //All mappedTypes will have these:
-        store.add(new comboRecord({text:'Is Blank',     value: 'isblank'}));
-        store.add(new comboRecord({text:'Is Not Blank', value: 'isnonblank'}));
-
-        if (mvEnabled)
-        {
-            store.add(new comboRecord({text:'Has A Missing Value Indicator',           value: 'hasmvvalue'}));
-            store.add(new comboRecord({text:'Does Not Have A Missing Value Indicator', value: 'nomvvalue'}));
-        }
-
-        return store;
-    },
-
-    savedSearchString : null,
-
-    getSearchString : function()
-    {
-        if (null == this.savedSearchString)
-            this.savedSearchString = document.location.search.substring(1) || "";
-        return this.savedSearchString;
-    },
-
-    setSearchString : function(tableName, search)
-    {
-        this.savedSearchString = search || "";
-        // If the search string doesn't change and there is a hash on the url, the page won't reload.
-        // Remove the hash by setting the full path plus search string.
-        window.location.assign(window.location.pathname + "?" + this.savedSearchString);
-    },
-
-
-    getParamValPairs : function(queryString, skipPrefixes)
-    {
-        if (!queryString)
-        {
-            queryString = this.getSearchString();
-        }
-        else
-        {
-            if (queryString.indexOf("?") > -1)
+            if (skipPrefixes)
             {
-                queryString = queryString.substring(queryString.indexOf("?") + 1);
-            }
-        }
-        var iNew = 0;
-        var newParamValPairs = new Array(0);
-        if (queryString != null && queryString.length > 0)
-        {
-            var paramValPairs = queryString.split("&");
-            PARAM_LOOP: for (var i = 0; i < paramValPairs.length; i++)
-            {
-                var paramPair = paramValPairs[i].split("=", 2);
-                paramPair[0] = decodeURIComponent(paramPair[0]);
-
-                if (paramPair[0] == ".lastFilter")
-                    continue;
-
-                if (skipPrefixes)
+                for (var j = 0; j < skipPrefixes.length; j++)
                 {
-                    for (var j = 0; j < skipPrefixes.length; j++)
+                    var skipPrefix = skipPrefixes[j];
+                    if (skipPrefix && paramPair[0].indexOf(skipPrefix) == 0)
                     {
-                        var skipPrefix = skipPrefixes[j];
-                        if (skipPrefix && paramPair[0].indexOf(skipPrefix) == 0)
-                        {
-                            // only skip filter params and sort.
-                            if (paramPair[0] == skipPrefix)
-                                continue PARAM_LOOP;
-                            if (paramPair[0].indexOf("~") > 0)
-                                continue PARAM_LOOP;
-                            if (paramPair[0] == skipPrefix + "sort")
-                                continue PARAM_LOOP;
-                        }
+                        // only skip filter params and sort.
+                        if (paramPair[0] == skipPrefix)
+                            continue PARAM_LOOP;
+                        if (paramPair[0].indexOf("~") > 0)
+                            continue PARAM_LOOP;
+                        if (paramPair[0] == skipPrefix + "sort")
+                            continue PARAM_LOOP;
                     }
                 }
-                if (paramPair.length > 1)
-                    paramPair[1] = decodeURIComponent(paramPair[1]);
-                newParamValPairs[iNew] = paramPair;
-                iNew++;
             }
+            if (paramPair.length > 1)
+                paramPair[1] = decodeURIComponent(paramPair[1]);
+            newParamValPairs[iNew] = paramPair;
+            iNew++;
         }
-        return newParamValPairs;
-    },
-
-
-    getParameter : function(paramName)
-    {
-        var paramValPairs = this.getParamValPairs(null, null);
-        for (var i = 0; i < paramValPairs.length; i++)
-            if (paramValPairs[i][0] == paramName)
-                if (paramValPairs[i].length > 1)
-                    return paramValPairs[i][1];
-                else
-                    return "";
-
-        return null;
-    },
-
-
-    buildQueryString : function(pairs)
-    {
-        if (pairs == null || pairs.length == 0)
-            return "";
-
-        var queryString = [];
-        for (var i = 0; i < pairs.length; i++)
-        {
-            var key = pairs[i][0];
-            var value = pairs[i].length > 1 ? pairs[i][1] : undefined;
-
-            queryString.push(encodeURIComponent(key));
-            if (undefined != value)
-            {
-                if (Ext.isDate(value))
-                {
-                    value = value.toISOString();
-                    if (-1 != key.indexOf("~date"))
-                        value = value.substring(0,10);
-                    if (LABKEY.Utils.endsWith(value,"Z"))
-                        value = value.substring(0,value.length-1);
-                }
-                queryString.push("=");
-                queryString.push(encodeURIComponent(value));
-            }
-            queryString.push("&");
-        }
-
-        if (queryString.length > 0)
-            queryString.pop();
-
-        return queryString.join("");
-    },
-
-    clearFilter : function()
-    {
-        var dr = LABKEY.DataRegions[this._tableName];
-        if (!dr)
-            return;
-        dr.clearFilter(this._fieldName);
-    },
-
-    clearAllFilters : function()
-    {
-        var dr = LABKEY.DataRegions[this._tableName];
-        if (!dr)
-            return;
-        dr.clearAllFilters();
-    },
-
-    changeFilter : function(newParamValPairs, newQueryString)
-    {
-        var dr = LABKEY.DataRegions[this._tableName];
-        if (!dr)
-            return;
-        dr.changeFilter(newParamValPairs, newQueryString);
-    },
-
-    setFilter: function(input1, input2, comparison1, comparison2){
-        //This is a replacement for doFilter. Will probably be renamed to doFilter.
-        //input1 and input2 have already been validated, no need to do that here.
-        //We do however need to modify the date if it's not in the proper format, and parse ints/floats.
-        
-        var queryString = LABKEY.DataRegions[this._tableName] ? LABKEY.DataRegions[this._tableName].requestURL : null;
-        var newParamValPairs = this.getParamValPairs(queryString, [this._tableName + "." + this._fieldName + "~", this._tableName + ".offset"]);
-        var iNew = newParamValPairs.length;
-        var comparisons = new Array(0);
-
-        if(comparison1 !=''){
-            comparisons[comparisons.length] = this.getCompares(input1, comparison1);
-        }
-        if(comparison2 != ''){
-            comparisons[comparisons.length] = this.getCompares(input2, comparison2);
-        }
-        for (var i = 0; i < comparisons.length; i++)
-        {
-            newParamValPairs[iNew] = comparisons[i];
-            iNew ++;
-        }
-
-        var newQueryString = this.buildQueryString(newParamValPairs);
-        var filterParamsString = this.buildQueryString(comparisons);
-
-        this.changeFilterCallback.call(this, newParamValPairs, newQueryString, filterParamsString);
-    },
-
-    getCompares: function(input,comparison){
-        //Used to be getValidComparesFromForm, but since we validate before setting a filter we got rid of the validation here.
-        var pair;
-        if (comparison == "isblank" || comparison == "isnonblank" || comparison == "nomvvalue" || comparison == "hasmvvalue")
-        {
-            pair = [this._tableName + "." + this._fieldName + "~" + comparison];
-        } else{
-            pair = [this._tableName + "." + this._fieldName + "~" + comparison, input];
-        }
-        return pair;
-    },
-
-    changeFilterCallback : null,
-
-    clearSort : function(tableName, columnName)
-    {
-        if(!tableName || !columnName)
-            return;
-
-        var dr = LABKEY.DataRegions[tableName];
-        if (!dr)
-            return;
-        dr.clearSort(columnName);
     }
+    return newParamValPairs;
+},
+
+// private
+LABKEY.DataRegion.buildQueryString = function(pairs)
+{
+    if (pairs == null || pairs.length == 0)
+        return "";
+
+    var queryString = [];
+    for (var i = 0; i < pairs.length; i++)
+    {
+        var key = pairs[i][0];
+        var value = pairs[i].length > 1 ? pairs[i][1] : undefined;
+
+        queryString.push(encodeURIComponent(key));
+        if (undefined != value)
+        {
+            if (Ext.isDate(value))
+            {
+                value = value.toISOString();
+                if (-1 != key.indexOf("~date"))
+                    value = value.substring(0,10);
+                if (LABKEY.Utils.endsWith(value,"Z"))
+                    value = value.substring(0,value.length-1);
+            }
+            queryString.push("=");
+            queryString.push(encodeURIComponent(value));
+        }
+        queryString.push("&");
+    }
+
+    if (queryString.length > 0)
+        queryString.pop();
+
+    return queryString.join("");
 };
 
 
-function showFilterPanel(dataRegionName, column, queryString, dialogTitle, confirmCallback)
-{
-    LABKEY.DataRegion._filterUI.showFilterPanel(dataRegionName, column, queryString, dialogTitle, confirmCallback);
-}
-
+// NOTE filter UI is shared, but I still don't like all these global/single instance variables
 
 // If at least one checkbox on the form is selected then GET/POST url.  Otherwise, display an error.
 function verifySelected(form, url, method, pluralNoun, pluralConfirmText, singularConfirmText)
@@ -2941,3 +2339,1324 @@ LABKEY.MessageArea = Ext.extend(Ext.util.Observable, {
         }
     }
 });
+
+// NOTE: a lot of this was copied direct from LABKEY._FilterUI.  I did some reworking to make it more ext-like,
+// but there probably could be more done.
+LABKEY.FilterDialog = Ext.extend(Ext.Window, {
+    initComponent: function(){
+        this._fieldCaption = this.boundColumn.caption;
+        this._fieldName = this.boundColumn.name;
+        this._tableName = this.dataRegionName;
+        this._mappedType = this.getMappedType(this.boundColumn.displayFieldSqlType ? this.boundColumn.displayFieldSqlType : this.boundColumn.sqlType);
+        this.MAX_FILTER_CHOICES = 100;
+
+        //determine the type of filter UI to show
+        var dataRegion = LABKEY.DataRegions[this.dataRegionName];
+        this.filterType = this.getInitialFilterType();
+
+        if (this.boundColumn.lookup && dataRegion && dataRegion.schemaName && dataRegion.queryName){
+            if (this.boundColumn.displayField){
+                //TODO: perhaps we could be smarter about resolving alternate fieldnames, like the value field, into the displayField?
+                this._fieldName = this.boundColumn.displayField;
+            }
+        }
+
+        Ext.apply(this, {
+            width: 410,
+            //autoHeight: true,
+            title: this.title || "Show Rows Where " + this.boundColumn.caption + "...",
+            modal: true,
+            resizable: false,
+            closeAction: 'destroy',
+            itemId: 'filterWindow',
+            bodyStyle: 'padding: 5px;',
+            defaults: this.itemDefaults,
+            keys:[{
+                 key:Ext.EventObject.ENTER,
+                 scope: this,
+                 handler: this.okHandler
+            },{
+                 key:Ext.EventObject.ESC,
+                 scope: this,
+                 handler: function(btn){
+                     this.close();
+                 }
+            }],
+            listeners: {
+                scope: this,
+                destroy: function(){
+                    if(this.focusTask){
+                        Ext.TaskMgr.stop(this.focusTask);
+                    }
+                }
+            },
+            buttons: [
+                {text: 'OK', handler: this.okHandler, scope: this},
+                {text: 'CANCEL', handler: this.cancelHandler, scope: this},
+                {text: 'CLEAR FILTER', handler: this.clearFilter, scope: this},
+                {text: 'CLEAR ALL FILTERS', handler: this.clearAllFilters, scope: this}
+            ],
+            items: [{
+                xtype: 'radiogroup',
+                itemId: 'filterType',
+                columns: 1,
+                hidden: this.filterType == 'default',
+                items: [{
+                    xtype: 'radio',
+                    name: 'filterType',
+                    inputValue: 'include',
+                    checked: this.filterType == 'include',
+                    boxLabel: 'Choose Values To Include'
+                },{
+                    xtype: 'radio',
+                    name: 'filterType',
+                    inputValue: 'exclude',
+                    checked: this.filterType == 'exclude',
+                    boxLabel: 'Choose Values To Exclude'
+                },{
+                    xtype: 'radio',
+                    name: 'filterType',
+                    inputValue: 'default',
+                    checked: this.filterType == 'default',
+                    boxLabel: 'Advanced'
+                }],
+                listeners: {
+                    scope: this,
+                    change: function(bc, val){
+                        if(val.inputValue != 'default' && !this.shouldShowLookupUI(val.inputValue)){
+                            Ext.Msg.confirm('Confirm', 'This will cause one or more filters to be lost.  Are you sure you want to do this?', function(v){
+                                if(v == 'yes'){
+                                    this.filterType = val.inputValue;
+                                    this.configurePanel();
+                                }
+                            }, this);
+                        }
+                        else {
+                            this.filterType = val.inputValue;
+                            this.configurePanel();
+                        }
+                        this.syncShadow();
+                    }
+                }
+            },{
+                xtype: 'panel',
+                defaults: this.itemDefaults,
+                style: 'padding: 5px;',
+                itemId: 'filterArea'
+                //autoScroll: true,
+                //boxMaxHeight: 200
+            }]
+        });
+
+        LABKEY.FilterDialog.superclass.initComponent.call(this);
+
+        //NOTE: we should just change the name of one of these
+        if (!this.confirmCallback)
+        {
+            // Invoked as part of a regular filter dialog on a grid
+            this.changeFilterCallback = this.changeFilter;
+        }
+        else
+        {
+            // Invoked from GWT, which will handle the commit itself
+            this.changeFilterCallback = this.confirmCallback;
+        }
+
+        this.configurePanel();
+    },
+
+    itemDefaults: {
+        border: false,
+        msgTarget: 'under'
+    },
+
+    configurePanel: function(){
+        var panel = this.find('itemId', 'filterArea')[0];
+        panel.removeAll();
+
+        var dataRegion = LABKEY.DataRegions[this.dataRegionName];
+
+        if (!this.queryString){
+            this.queryString = dataRegion ? dataRegion.requestURL : null;
+        }
+
+        var items = [];
+
+        //identify and render the correct UI
+        if(this.shouldShowLookupUI())
+            items.push(this.getLookupFilterPanel());
+        else
+            items.push(this.getDefaultFilterPanel());
+
+        panel.add(items);
+        panel.doLayout();
+        this.setValuesFromParams();
+    },
+
+    getInitialFilterType: function(){
+        var filterType = 'default';
+        var dataRegion = LABKEY.DataRegions[this.dataRegionName];
+        if (this.boundColumn.lookup && dataRegion && dataRegion.schemaName && dataRegion.queryName )
+        {
+            if(!this.shouldShowLookupUI()){
+                filterType = 'default';
+            }
+            else {
+                var paramValPairs = this.getParamsForField(this._fieldName);
+
+                if(!paramValPairs.length){
+                    filterType = 'include';
+                }
+                else {
+                    switch(paramValPairs[0].operator){
+                        case 'notin':
+                        case 'notinornull':
+                            filterType = 'exclude';
+                            break;
+                        default:
+                            filterType = 'include';
+                    }
+                }
+            }
+        }
+        return filterType;
+    },
+
+    shouldShowLookupUI: function(filterType){
+        filterType = filterType || this.filterType;
+
+        var paramValPairs = this.getParamsForField(this._fieldName);
+        if (filterType == 'default')
+            return false;
+
+        if(paramValPairs.length > 1)
+            return false;
+
+        var shouldShow = true;
+        Ext.each(paramValPairs, function(pair, idx){
+            var filter = LABKEY.Filter.getFilterTypeForURLSuffix(pair.operator);
+
+            if(!filter.isMultiValued()){
+                shouldShow = false;
+            }
+        }, this);
+
+        return shouldShow;
+    },
+
+    getDefaultFilterPanel: function(){
+        // create a task to set the input focus that will get started after layout is complete, the task will
+        // run for a max of 2000ms but will get stopped when the component receives focus
+        this.focusTask = this.focusTask || {interval:150, run: function(){
+            var field = this.find('itemId', 'inputField0')[0];
+            field.focus(null,50);
+
+            Ext.TaskMgr.stop(this.focusTask);
+        }, scope: this, duration: 2000};
+
+        var form = {
+            xtype: 'form',
+            itemId: 'formPanel',
+            autoWidth: true,
+            //autoHeight: true,
+            defaults: {
+                border: false
+            },
+            items: []
+        };
+
+        //NOTE: currently we always render 2 inputs, but in theory we could allow any number
+        //it would be easy to give an 'Add Filter' button, which adds a new input pair
+        form.items.push(this.getFilterInputPairConfig(2));
+
+        return form;
+    },
+
+    getLookupFilterPanel: function(){
+        var panel = {
+            border: false,
+            defaults: {
+                border: false
+            },
+            //autoHeight: true,
+            items: [{
+                layout: 'hbox',
+                style: 'padding-bottom: 5px;',
+                defaults: {
+                    border: false
+                },
+                items: [{
+                    html: 'Choose Items:',
+                    style: 'padding-right: 15px;'
+                },{
+                    xtype: 'button',
+                    //boxLabel: '(All)',
+                    html: '<a class="labkey-text-link" href="javascript:void(0);">Select All</a>',
+                    handler: function(btn){
+                        var window = btn.findParentBy(function(item){
+                            return item.itemId == 'filterWindow';
+                        });
+                        var field = window.findByType('labkey-remotecheckboxgroup')[0];
+                        var values = [];
+                        for(var i=0;i<field.getStore().getCount();i++){
+                            values.push(true);
+                        }
+                        field.setValue(values);
+
+                        field = window.find('itemId', 'nullCheckbox')[0];
+                        field.setValue(true);
+
+                    },
+                    scope: this
+                },{
+                    xtype: 'button',
+                    html: '<a class="labkey-text-link" href="javascript:void(0);">Select None</a>',
+                    handler: function(btn){
+                        var window = btn.findParentBy(function(item){
+                            return item.itemId == 'filterWindow';
+                        });
+                        var field = window.findByType('labkey-remotecheckboxgroup')[0];
+                        field.reset();
+
+                        field = window.find('itemId', 'nullCheckbox')[0];
+                        field.setValue(false);
+
+                    },
+                    scope: this
+                }]
+            }]
+        };
+
+        var filterConfig = this.getComboConfig(0);
+        filterConfig.hidden = true;
+        if(this.filterType == 'include'){
+            filterConfig.value = 'in';
+        }
+        else{
+            filterConfig.value = 'notinornull';
+        }
+
+        var includesNull = filterConfig.value.match(/ornull/);
+        if(this.filterType == 'exclude')
+            includesNull = !includesNull;
+
+        panel.items.push(filterConfig);
+        panel.items.push({
+            xtype: 'panel',
+            autoScroll: true,
+            height: 200,
+            //autoHeight: true,
+            bodyStyle: 'padding-left: 5px;',
+            items: [
+                this.getCheckboxGroupConfig(0)
+            ,{
+                xtype: 'checkbox',
+                name: 'nullCheckbox',
+                itemId: 'nullCheckbox',
+                boxLabel: '[blank]',
+                checked: includesNull,
+                listeners: {
+                    scope: this,
+                    check: function(field, val){
+                        var combos = this.getFilterCombos();
+                        if(!combos[0])
+                            return;
+
+                        var filter = combos[0].getValue();
+                        filter = filter.replace(/ornull/, '');
+
+                        if((filter == 'in' && val) || (filter == 'notin' && !val))
+                            filter += 'ornull';
+
+                        combos[0].setValue(filter);
+                    }
+                }
+            }]
+    });
+
+        return panel;
+    },
+
+    getFilterCombos: function()
+    {
+        var re = /^filterComboBox/;
+        return this.findBy(function(item){
+            return item.itemId && re.test(item.itemId);
+        });
+    },
+
+    getInputFields: function()
+    {
+        var re = /^inputField/;
+        return this.findBy(function(item){
+            return item.itemId && re.test(item.itemId);
+        });
+    },
+
+    setValuesFromParams: function(){
+        var paramValPairs = this.getParamsForField(this._fieldName);
+        var combos = this.getFilterCombos();
+        var inputFields = this.getInputFields();
+
+        var filterIndex = 0;
+        Ext.each(paramValPairs, function(pair, idx){
+            var combo = combos[filterIndex];
+            if(!combo)
+                return;
+
+            var input = inputFields[filterIndex];
+
+            if(pair.operator){
+                var filter = LABKEY.Filter.getFilterTypeForURLSuffix(pair.operator);
+
+                if(this.filterType == 'include'){
+                    if(['notin', 'notinornull'].indexOf(pair.operator) > -1 ){
+                        filter = filter.getOpposite();
+                        pair.value = this.getInverse(this.getLookupStore(), pair.value);
+                    }
+                    if(['neq', 'neqornull'].indexOf(pair.operator) > -1 ){
+                        //in theory we could convert this filter
+                    }
+
+                }
+                else if(this.filterType == 'exclude'){
+                    if(['in', 'inornull'].indexOf(pair.operator) > -1 ){
+                        filter = filter.getOpposite();
+                        pair.value = this.getInverse(this.getLookupStore(), pair.value);
+                    }
+                    if(['eq'].indexOf(pair.operator) > -1 ){
+                        //in theory we could convert this filter
+                    }
+                }
+
+                if(this.filterType != 'default' && !filter.isMultiValued()){
+                    console.log('skipping filter: ' + pair.operator);
+                    return;
+                }
+                combo.setValue(filter.getURLSuffix());
+                var includesNull = filter.getURLSuffix().match(/ornull/) !== null;
+                if(this.filterType == 'exclude')
+                    includesNull = !includesNull;
+
+                if(filter.isDataValueRequired())
+                    input.enable();
+
+                if(Ext.isDefined(pair.value)){
+                    if(this.filterType == 'default'){
+                        input.setValue(pair.value);
+                    }
+                    else {
+                        var values = pair.value.split(';');
+                        input.setValue(values.join(','));
+
+                        var nullCheckbox = this.find('itemId', 'nullCheckbox')[0];
+                        nullCheckbox.setValue(includesNull);
+                    }
+                }
+            }
+            else if(idx > 0) {
+                combo.setValue("");
+            }
+
+            filterIndex++;
+        }, this);
+    },
+
+    getInverse: function(store, values){
+        var newValues = [];
+        if(!Ext.isArray(values))
+            values = values.split(';');
+
+        var val;
+        store.each(function(rec){
+            val = rec.get('value');
+            if(values.indexOf(val) == -1){
+                newValues.push(val);
+            }
+        }, this);
+
+        return newValues.join(';');
+    },
+
+    _typeMap : {
+        "BIGINT":"INT",
+        "BIGSERIAL":"INT",
+        "BIT":"BOOL",
+        "BOOL":"BOOL",
+        "BOOLEAN":"BOOL",
+        "CHAR":"TEXT",
+        "CLOB":"LONGTEXT",
+        "DATE":"DATE",
+        "DECIMAL":"DECIMAL",
+        "DOUBLE":"DECIMAL",
+        "DOUBLE PRECISION":"DECIMAL",
+        "FLOAT":"DECIMAL",
+        "INTEGER":"INT",
+        "LONGVARCHAR":"LONGTEXT",
+        "NTEXT":"LONGTEXT",
+        "NUMERIC":"DECIMAL",
+        "REAL":"DECIMAL",
+        "SMALLINT":"INT",
+        "TIME":"TEXT",
+        "TIMESTAMP":"DATE",
+        "TINYINT":"INT",
+        "VARCHAR":"TEXT",
+        "INT":"INT",
+        "INT IDENTITY":"INT",
+        "DATETIME":"DATE",
+        "TEXT":"TEXT",
+        "NVARCHAR":"TEXT",
+        "INT2":"INT",
+        "INT4":"INT",
+        "INT8":"INT",
+        "FLOAT4":"DECIMAL",
+        "FLOAT8":"DECIMAL",
+        "SERIAL":"INT",
+        "USERID":"INT",
+        "VARCHAR2":"TEXT" // Oracle
+    },
+
+    //NOTE: i think we really should be able ot just change the values in TypeMap to match ext
+    _extTypeMap: {
+        'LONGTEXT': 'STRING',
+        'TEXT': 'STRING',
+        'INT': 'INT',
+        'DECIMAL': 'FLOAT',
+        'DATE': 'DATE',
+        'BOOL': 'BOOL'
+    },
+
+    _mappedType : "TEXT",
+
+    savedSearchString : null,
+
+    changeFilterCallback : null,
+
+    getSkipPrefixes: function()
+    {
+        return this._tableName + ".offset";
+    },
+
+    getXtype: function()
+    {
+        switch(this._mappedType){
+            case "DATE":
+                return "datefield";
+            case "INT":
+            case "DECIMAL":
+                return "numberfield";
+            case "BOOL":
+                return 'labkey-booleantextfield';
+            default:
+                return "textfield";
+        }
+    },
+
+    getFieldXtype: function(){
+        var xtype = this.getXtype();
+        if(xtype == 'numberfield')
+            xtype = 'textfield';
+
+        return xtype;
+    },
+
+    getCheckboxGroupConfig: function(idx)
+    {
+        var dataRegion = LABKEY.DataRegions[this.dataRegionName];
+
+        return {
+            xtype: 'labkey-remotecheckboxgroup',
+            itemId: 'inputField' + (idx || 0),
+            filterIndex: idx,
+            msgTarget: 'title',
+            lookupNullCaption: '[blank]',
+            autoSelect: false,
+            store: this.getLookupStore(),
+            displayField: 'value',
+            valueField: 'value',
+            clearFilterOnReset: false
+        }
+
+    },
+
+    getComboConfig: function(idx)
+    {
+        return {
+            xtype: 'combo',
+            itemId: 'filterComboBox' + idx,
+            filterIndex: idx,
+            listWidth: (this._mappedType == 'DATE' || this._mappedType == 'BOOL') ? null : 380,
+            emptyText: idx === 0 ? 'Choose a filter:' : 'No other filter',
+            autoSelect: false,
+            width: 250,
+            //allowBlank: 'false',
+            triggerAction: 'all',
+            fieldLabel: (idx === 0 ?'Filter Type' : 'and'),
+            store: this.getComboStore(this.boundColumn.mvEnabled, this._mappedType, idx),
+            displayField: 'text',
+            valueField: 'value',
+            typeAhead: 'false',
+            forceSelection: true,
+            mode: 'local',
+            clearFilterOnReset: false,
+            editable: false,
+            value: idx === 0 ? this.getComboDefaultValue() : '',
+            listeners:{
+                scope: this,
+                select: function(combo){
+                    var idx = combo.filterIndex;
+                    var inputField = this.find('itemId', 'inputField'+idx)[0];
+
+                    //var rec = combo.getStore().getAt(combo.getStore().find('value', combo.getValue()));
+                    var filter = LABKEY.Filter.getFilterTypeForURLSuffix(combo.getValue());
+                    var selectedValue = filter ? filter.getURLSuffix() : '';
+
+                    var re = /^filterComboBox/;
+                    var combos = this.getFilterCombos();
+                    var inputFields = this.getInputFields();
+
+                    if(filter && !filter.isDataValueRequired()){
+                        //Disable the field and allow it to be blank for values 'isblank' and 'isnonblank'.
+                        inputField.disable();
+                        inputField.setValue();
+                    }
+                    else {
+                        inputField.enable();
+                        inputFields[idx].validate();
+                        inputField.focus('', 50)
+                    }
+
+                    //if the value is null, this indicates no filter chosen.  if it lacks an operator (ie. isBlank)
+                    //in either case, this means we should disable all other filters
+                    if(selectedValue == '' || !filter.isDataValueRequired()){
+                        //Disable all subsequent combos
+                        Ext.each(combos, function(combo, idx){
+                            //we enable the next combo in the series
+                            if(combo.filterIndex == this.filterIndex + 1){
+                                combo.setValue();
+                                inputFields[idx].setValue();
+                                inputFields[idx].enable();
+                                inputFields[idx].validate();
+                            }
+                            else if (combo.filterIndex > this.filterIndex){
+                                combo.setValue();
+                                inputFields[idx].disable();
+                            }
+
+                        }, this);
+                    }
+                    else{
+                        //enable the other filterComboBoxes.
+                        combos = this.findBy(function(item){
+                            return item.itemId && item.itemId.match(/filterComboBox/) && item.filterIndex > (combo.filterIndex + 1);
+                        }, this);
+                        Ext.each(combos, function(combo, idx){
+                            combo.enable();
+                            combo.enable();
+                        }, this);
+
+                        if(combos.length){
+                            combos[0].focus('', 50);
+                        }
+                    }
+                },
+                //enable/disable the input based on the
+                disable: function(combo)
+                {
+                    var input = combo.findParentByType('panel').find('itemId', 'inputField'+combo.filterIndex)[0];
+                    input.disable();
+                },
+                enable: function(combo)
+                {
+                    var input = combo.findParentByType('panel').find('itemId', 'inputField'+combo.filterIndex)[0];
+                    //var rec = combo.getStore().getAt(combo.getStore().find('value', combo.getValue()));
+                    var filter = LABKEY.Filter.getFilterTypeForURLSuffix(combo.getValue());
+
+                    if(filter && filter.isDataValueRequired())
+                        input.enable();
+                }
+            },
+            scope: this
+        }
+    },
+
+    getComboDefaultValue: function()
+    {
+        //afterRender of combobox we set the default value.
+        if(this._mappedType == 'LONGTEXT' || this._mappedType == 'TEXT'){
+            return 'startswith';
+        }
+        else if(this._mappedType == 'DATE'){
+            return 'dateeq';
+        }
+        else{
+            return 'eq';
+        }
+    },
+
+    getInputFieldConfig: function(idx)
+    {
+        idx = idx || 0;
+        var config = {
+            xtype         : this.getFieldXtype(),
+            itemId        : 'inputField' + idx,
+            //msgTarget     : 'under',
+            filterIndex   : idx,
+            id            : 'value_'+(idx + 1),   //for compatibility with tests...
+            //allowBlank    : false,
+            width         : 250,
+            blankText     : 'You must enter a value.',
+            validateOnBlur: false,
+            disabled      : idx !== 0,
+            value         : null,
+            listeners     : {
+                scope     : this,
+                disable   : function(field){
+                    //Call validate after disable so any pre-existing validation errors go away.
+                    if(field.rendered)
+                        field.validate();
+                },
+                focus: function(){
+                    Ext.TaskMgr.stop(this.focusTask);
+                }
+            },
+            validator: function(value){
+                var window = this.findParentBy(function(item){
+                    return item.itemId == 'filterWindow';
+                });
+
+                var idx = this.filterIndex;
+                var combo = window.find('itemId', 'filterComboBox'+idx)[0];
+
+                return window.inputFieldValidator(this, combo)
+            }
+        };
+
+        if(this._mappedType == "DATE")
+            config.altFormats = LABKEY.Utils.getDateAltFormats();
+
+        var baseChars;
+        if(this._mappedType == "INT")
+            baseChars = "0123456789;-";
+
+        if(this._mappedType == "DECIMAL")
+            baseChars = "0123456789;-.";
+
+        if(baseChars){
+//            config.maskRe = new RegExp('[^' + config.baseChars+ ']', 'gi');
+        }
+
+        if(idx === 0){
+            config.listeners.afterrender = function(cmp){
+                if(this.focusTask)
+                    Ext.TaskMgr.start(this.focusTask);
+            }
+        }
+        return config;
+
+    },
+
+    getNextFilterIdx: function(){
+        return this.getFilterCombos().length;
+    },
+
+    getFilterInputPairConfig: function(quantity)
+    {
+        var idx = this.getNextFilterIdx();
+        var items = [];
+
+        for(var i=0;i<quantity;i++){
+            var combo = this.getComboConfig(idx);
+            var input = this.getInputFieldConfig(idx);
+            items.push({
+                xtype: 'panel',
+                layout: 'form',
+                itemId: 'filterPair' + idx,
+                border: false,
+                defaults: {
+                    border: false,
+                    msgTarget: 'under'
+                },
+                items: [combo, input]
+            });
+            idx++;
+        }
+        return items;
+    },
+
+    okHandler: function(btn)
+    {
+        var inputFields = this.getInputFields();
+        var combos = this.getFilterCombos();
+
+        //Step 1: validate
+        var isValid = true;
+        var filters = [];
+        Ext.each(combos, function(c, idx){
+            if(!c.isValid()){
+                isValid = false;
+                return false;
+            }
+            else {
+                var value;
+                var input = inputFields[idx];
+                if(input instanceof LABKEY.ext.RemoteCheckboxGroup)
+                    value = input.getStringValue();
+                else
+                    value = input.getValue();
+
+                //var rec = c.getStore().getAt(c.getStore().find('value', c.getValue()));
+                var filter = LABKEY.Filter.getFilterTypeForURLSuffix(c.getValue());
+
+                if(!filter){
+                    alert('filter not found: ' + c.getValue())
+                    return;  //'No Other Filter'
+                }
+
+                if(Ext.isEmpty(input.getValue()) && filter.isDataValueRequired()){
+                    input.markInvalid('Must enter a value');
+                    isValid = false;
+                    return false;
+                }
+
+                filters.push([c.getValue(), value]);
+            }
+        }, this);
+
+        if(isValid){
+            this.setFilter(filters);
+            this.close();
+        }
+    },
+
+    cancelHandler: function()
+    {
+        this.close();
+    },
+
+    getMappedType : function(dataType)
+    {
+        var mappedType = this._typeMap[dataType.toUpperCase()];
+        if (mappedType == undefined)
+            mappedType = dataType.toUpperCase();
+        return mappedType;
+    },
+
+    getComboStore : function(mvEnabled, mappedType, storeNum)
+    {
+        var fields      = ['text', 'value', {name: 'isMulti', type: Ext.data.Types.BOOL}, 'mappedType', {name: 'isOperatorOnly', type: Ext.data.Types.BOOL}];
+        var store       = new Ext.data.ArrayStore({
+            fields: fields,
+            idIndex: 1
+        });
+        var comboRecord = Ext.data.Record.create(fields);
+
+        if(storeNum == 0){
+            store.add(new comboRecord({text:'Has Any Value', value: ''}));
+        } else{
+            store.add(new comboRecord({text:'No Other Filter', value: ''}));
+        }
+
+        if (mappedType != "LONGTEXT")
+        {
+            if(mappedType == "DATE"){
+                store.add(new comboRecord({text:'Equals', value: 'dateeq'}))
+            } else {
+                store.add(new comboRecord({text:'Equals', value: 'eq'}));
+            }
+
+            if(mappedType == "DATE"){
+                store.add(new comboRecord({text:'Does Not Equal', value: 'dateneq'}));
+            } else {
+                store.add(new comboRecord({text:'Does Not Equal', value: 'neqornull'}));
+            }
+
+            if (mappedType != "BOOL" && mappedType != "DATE"){
+                store.add(new comboRecord({text:"Equals One Of (e.g. \"a;b;c\")", value: 'in', isMulti: true}));
+                store.add(new comboRecord({text:"Equals One Of (e.g. \"a;b;c\") or is blank", value: 'inornull', isMulti: true}));
+                store.add(new comboRecord({text:"Does Not Equal Any Of (e.g. \"a;b;c\")", value: 'notinornull', isMulti: true}));
+                store.add(new comboRecord({text:"Does Not Equal Any Of (e.g. \"a;b;c\") and is not blank", value: 'notin', isMulti: true}));
+
+            }
+        }
+
+        if (mappedType != "LONGTEXT" && mappedType != "BOOL")
+        {
+            if(mappedType == "DATE"){
+                store.add(new comboRecord({text:'Is Greater Than',             value: 'dategt'}));
+                store.add(new comboRecord({text:'Is Less Than',                value: 'datelt'}));
+                store.add(new comboRecord({text:'Is Greater Than Or Equal To', value: 'dategte'}));
+                store.add(new comboRecord({text:'Is Less Than Or Equal To',    value: 'datelte'}));
+            } else {
+                store.add(new comboRecord({text:'Is Greater Than',             value: 'gt'}));
+                store.add(new comboRecord({text:'Is Less Than',                value: 'lt'}));
+                store.add(new comboRecord({text:'Is Greater Than Or Equal To', value: 'gte'}));
+                store.add(new comboRecord({text:'Is Less Than Or Equal To',    value: 'lte'}));
+            }
+        }
+
+        if (mappedType == "TEXT" || mappedType == "LONGTEXT")
+        {
+            store.add(new comboRecord({text:'Starts With',         value: 'startswith'}));
+            store.add(new comboRecord({text:'Does Not Start With', value: 'doesnotstartwith'}));
+            store.add(new comboRecord({text:'Contains',            value: 'contains'}));
+            store.add(new comboRecord({text:'Does Not Contain',    value: 'doesnotcontain'}));
+            store.add(new comboRecord({text:"Contains One Of (e.g. \"a;b;c\")", value: 'containsoneof', isMulti: true}));
+            store.add(new comboRecord({text:"Does Not Contain Any Of (e.g. \"a;b;c\")", value: 'containsnoneof', isMulti: true}));
+        }
+
+        //All mappedTypes will have these:
+        store.add(new comboRecord({text:'Is Blank',     value: 'isblank', isOperatorOnly: true}));
+        store.add(new comboRecord({text:'Is Not Blank', value: 'isnonblank', isOperatorOnly: true}));
+
+        if (mvEnabled)
+        {
+            store.add(new comboRecord({text:'Has A Missing Value Indicator',           value: 'hasmvvalue', isOperatorOnly: true}));
+            store.add(new comboRecord({text:'Does Not Have A Missing Value Indicator', value: 'nomvvalue', isOperatorOnly: true}));
+        }
+
+        store.each(function(rec){
+            rec.set('mappedType', mappedType);
+        }, this);
+
+        return store;
+    },
+
+    getSearchString : function()
+    {
+        if (null == this.savedSearchString)
+            this.savedSearchString = document.location.search.substring(1) || "";
+        return this.savedSearchString;
+    },
+
+    setSearchString : function(tableName, search)
+    {
+        this.savedSearchString = search || "";
+        // If the search string doesn't change and there is a hash on the url, the page won't reload.
+        // Remove the hash by setting the full path plus search string.
+        window.location.assign(window.location.pathname + "?" + this.savedSearchString);
+    },
+
+    clearFilter : function()
+    {
+        var dr = LABKEY.DataRegions[this._tableName];
+        if (!dr)
+            return;
+        dr.clearFilter(this._fieldName);
+        this.close();
+    },
+
+    clearAllFilters : function()
+    {
+        var dr = LABKEY.DataRegions[this._tableName];
+        if (!dr)
+            return;
+        dr.clearAllFilters();
+        this.close();
+    },
+
+    changeFilter : function(newParamValPairs, newQueryString)
+    {
+        var dr = LABKEY.DataRegions[this._tableName];
+        if (!dr)
+            return;
+        dr.changeFilter(newParamValPairs, newQueryString);
+        this.close();
+    },
+
+    setFilter: function(filters)
+    {
+        //This is a replacement for doFilter. Will probably be renamed to doFilter.
+        //input1 and input2 have already been validated, no need to do that here.
+        //We do however need to modify the date if it's not in the proper format, and parse ints/floats.
+
+        var queryString = LABKEY.DataRegions[this._tableName] ? LABKEY.DataRegions[this._tableName].requestURL : null;
+        var newParamValPairs = this.getParamValPairs(queryString, [this._tableName + "." + this._fieldName + "~", this.getSkipPrefixes()]);
+        var comparisons = new Array(0);
+
+        Ext.each(filters, function(filter){
+            if(filter[0] !=''){
+                comparisons.push(this.getCompares(filter[1], filter[0]));
+                newParamValPairs.push(this.getCompares(filter[1], filter[0]));
+            }
+        }, this);
+
+        var newQueryString = LABKEY.DataRegion.buildQueryString(newParamValPairs);
+        var filterParamsString = LABKEY.DataRegion.buildQueryString(comparisons);
+
+        this.changeFilterCallback.call(this, newParamValPairs, newQueryString, filterParamsString);
+    },
+
+    getCompares: function(input, comparison)
+    {
+        //Used to be getValidComparesFromForm, but since we validate before setting a filter we got rid of the validation here.
+        var pair;
+        if (comparison == "isblank" || comparison == "isnonblank" || comparison == "nomvvalue" || comparison == "hasmvvalue")
+        {
+            pair = [this._tableName + "." + this._fieldName + "~" + comparison];
+        } else{
+            pair = [this._tableName + "." + this._fieldName + "~" + comparison, input];
+        }
+        return pair;
+    },
+
+    clearSort : function(tableName, columnName)
+    {
+        if(!tableName || !columnName)
+            return;
+
+        var dr = LABKEY.DataRegions[tableName];
+        if (!dr)
+            return;
+        dr.clearSort(columnName);
+    },
+
+    hideFilterPanel : function ()
+    {
+        this.close();
+    },
+
+    getLookupStore : function()
+    {
+        var dataRegion = LABKEY.DataRegions[this.dataRegionName];
+        var storeId = [dataRegion.schemaName, dataRegion.queryName, this._fieldName].join('||');
+        var column = this.boundColumn;
+
+        if(Ext.StoreMgr.get(storeId)){
+            return Ext.StoreMgr.get(storeId);
+        }
+
+        return new LABKEY.ext.Store({
+            schemaName: dataRegion.schemaName,
+            sql: this.getLookupValueSql(dataRegion, column),
+            storeId: storeId,
+            sort: "value",
+            containerPath: dataRegion.container || dataRegion.containerPath || LABKEY.container.path,
+            maxRows: this.MAX_FILTER_CHOICES, // Limit so that we don't overwhelm the user (or the browser itself) with too many checkboxes
+            includeTotalCount: false,  // Don't bother getting the total row count, which might involve another query to the database
+            containerFilter: dataRegion.containerFilter,
+            autoLoad: true,
+            listeners: {
+                scope: this,
+                load: function(store){
+                    if(store.getCount() >= this.MAX_FILTER_CHOICES){
+                        console.log('exceeding max values');
+                    }
+                }
+            }
+        });
+    },
+
+    getLookupValueSql: function(dataRegion, column)
+    {
+        // Build up a SELECT DISTINCT query to get all of the values that are currently in use
+        var sql = 'SELECT DISTINCT ';
+        for (var i = 0; i < column.fieldKeyArray.length; i++)
+        {
+            sql += "\"" + column.fieldKeyArray[i].replace("\"", "\"\"") + "\".";
+        }
+        sql += "\"" + column.lookup.displayColumn.replace("\"", "\"\"") + "\"";
+        sql += ' AS value FROM "' + dataRegion.schemaName.replace("\"", "\"\"") + '"."' + dataRegion.queryName.replace("\"", "\"\"") + '"';
+        sql += ' WHERE ';
+        for (var i = 0; i < column.fieldKeyArray.length; i++)
+        {
+            sql += "\"" + column.fieldKeyArray[i].replace("\"", "\"\"") + "\".";
+        }
+        sql += "\"" + column.lookup.displayColumn.replace("\"", "\"\"") + "\"";
+
+        sql += ' is not null';
+        //NOTE: null is actually handled using the operator, and it's difficult to set null checkboxes, so we handle nulls as a separate checkbox
+
+        return sql;
+    },
+
+    getParamValPairs : function(queryString, skipPrefixes)
+    {
+        if (!queryString)
+        {
+            queryString = this.getSearchString();
+        }
+        return LABKEY.DataRegion.getParamValPairsFromString(queryString, skipPrefixes);
+    },
+
+    getParamsForField: function(fieldName)
+    {
+        var dataRegion = LABKEY.DataRegions[this._tableName];
+//        if(!dataRegion)
+//            return;
+
+        if (!this.queryString)
+        {
+            this.queryString = dataRegion ? dataRegion.requestURL : null;
+        }
+
+        var paramValPairs = LABKEY.DataRegion.getParamValPairsFromString(this.queryString, [this.getSkipPrefixes()]); //this._tableName + "." + this._fieldName + "~",
+
+        var results = [];
+        var re = new RegExp('^' + this._tableName + '\.' + fieldName, 'i');
+        Ext.each(paramValPairs, function(pair){
+            if(pair[0].match(re)){
+                var operator = pair[0].split('~')[1];
+                if(LABKEY.Filter.getFilterTypeForURLSuffix(operator))
+                    results.push({
+                        operator: operator,
+                        value: pair[1]
+                    });
+                else
+                    console.log('Unrecognized filter: ' + operator)
+            }
+        }, this);
+
+        return results;
+    },
+
+    inputFieldValidator: function(input, cb)
+    {
+        var rec = cb.getStore().getAt(cb.getStore().find('value', cb.getValue()));
+        var filter = LABKEY.Filter.getFilterTypeForURLSuffix(cb.getValue());
+
+        if(rec){
+            if(filter.isMultiValued()){
+                return this.validateEqOneOf(input.getValue(), rec.get('mappedType'));
+            }
+
+            return this.validateInputField(input.getValue(), rec.get('mappedType'));
+        }
+        return true;
+    },
+
+    validateEqOneOf: function(input, mappedType)
+    {
+        // Used when "Equals One Of.." is selected. Calls validateInputField on each value entered.
+        var values = input.split(';');
+        var isValid = "";
+        for(var i = 0; i < values.length; i++){
+            isValid = this.validateInputField(values[i], mappedType);
+            if(isValid !== true){
+                return isValid;
+            }
+        }
+        //If we make it out of the for loop we had no errors.
+        return true;
+    },
+
+    //The fact that Ext3 ties validation to the editor is a little funny, but using this shifts the work to Ext
+    validateInputField: function(value, mappedType){
+        //the reason for this change is to try to shift more of the burden from our code into Ext
+        var type = this._extTypeMap[this._mappedType];
+        if(type){
+            var field = new Ext.data.Field({
+                type: Ext.data.Types[type],
+                allowDecimals :  this._mappedType != "INT",  //will be ignored by anything besides numberfield
+                useNull: true
+            });
+
+            var convertedVal = field.convert(value);
+            if(!Ext.isEmpty(value) && value != convertedVal){
+                return "Invalid value: " + value;
+            }
+        }
+        else {
+            console.log('Unrecognized type: ' + this._mappedType);
+        }
+
+        return true;
+    }
+
+});
+
+
+/**
+ * Contructs a CheckboxGroup where each radio is populated from a LabKey store.
+ * This is an alternative to a combobox.
+ * @class
+ * @augments Ext.form.CheckboxGroup
+ * @param {object} config The configuation object.  Will accept all config options from Ext.form.CheckboxGroup along with those listed here.
+ * @param {object} [config.store] A LABKEY.ext.Store.  Each record will be used to
+ * @param {string} [config.valueField] The name of the field to use as the inputValue
+ * @param {string} [config.displayField] The name of the field to use as the label
+ */
+LABKEY.ext.RemoteCheckboxGroup = Ext.extend(Ext.form.CheckboxGroup,
+{
+    separator: ';',
+    initComponent: function()
+    {
+        Ext.QuickTips.init();
+
+        Ext.apply(this, {
+            name: this.name || Ext.id(),
+            storeLoaded: false,
+            items: [
+                {name: 'placeholder', fieldLabel: 'Loading..'}
+            ],
+            buffered: true,
+//            data: {
+//                other: 't'
+//            },
+            tpl : new Ext.XTemplate('<tpl for=".">' +
+                '<span '+'{[values["qtip"] ? "ext:qtip=\'" + values["qtip"] + "\'" : ""]}>' +
+//                    '<span>' +
+                '{[values["' + this.valueField + '"] ? values["' + this.displayField + '"] : "'+ (this.lookupNullCaption ? this.lookupNullCaption : '[none]') +'"]}' +
+                //allow a flag to display both display and value fields
+                '<tpl if="'+this.showValueInList+'">{[values["' + this.valueField + '"] ? " ("+values["' + this.valueField + '"]+")" : ""]}</tpl>'+
+                '</span>' +
+                '</tpl>').compile()
+        });
+
+        if(this.value){
+            this.value = [this.value];
+        }
+
+        LABKEY.ext.RemoteCheckboxGroup.superclass.initComponent.call(this, arguments);
+
+        //we need to test whether the store has been created
+        if(!this.store){
+            console.log('LABKEY.ext.RemoteCheckboxGroup requires a store');
+            return;
+        }
+
+        if(this.store && !this.store.events){
+            this.store = Ext.create(this.store, 'labkey-store');
+        }
+
+        if(!this.store.getCount()) {
+            this.store.on('load', this.onStoreLoad, this, {single: true});
+        }
+        else {
+            //NOTE: if this is called too quickly, the layout can be screwed up. this isnt a great fix, but we will convert to Ext4 shortly, so it'll change anyway
+            this.onStoreLoad.defer(200, this);
+        }
+    }
+
+    ,onStoreLoad : function() {
+        var item;
+        this.store.each(function(record, idx){
+            item = this.newItem(record);
+
+            if(this.rendered){
+                this.items.add(item);
+                var col = (idx+this.columns.length) % this.columns.length;
+                var chk = this.panel.getComponent(col).add(item);
+                this.fireEvent('add', this, chk);
+            }
+            else {
+                this.items.push(item)
+            }
+        }, this);
+
+        //remove the placeholder checkbox
+        if(this.rendered) {
+            var item = this.items.first();
+            this.items.remove(item);
+            this.panel.getComponent(0).remove(item, true);
+            this.ownerCt.doLayout();
+        }
+        else
+            this.items.remove(this.items[0]);
+
+        this.storeLoaded = true;
+        this.buffered = false;
+
+        if(this.bufferedValue){
+            this.setValue(this.bufferedValue);
+        }
+    }
+    ,newItem: function(record){
+        return new Ext.form.Checkbox({
+            xtype: 'checkbox',
+            boxLabel: (this.tpl ? this.tpl.apply(record.data) : record.get(this.displayField)),
+            inputValue: record.get(this.valueField),
+            name: record.get(this.valueField),
+            disabled: this.disabled,
+            readOnly: this.readOnly || false,
+            itemId: record.get(this.valueField),
+            listeners: {
+                scope: this,
+                change: function(self, val){
+                    this.fireEvent('change', this, this.getValue());
+                },
+                check: function(self, val){
+                    this.fireEvent('change', this, this.getValue());
+                },
+                afterrender: function(field){
+                    //TODO: use boxLabel element
+                    var id = field.wrap.id;
+                    //console.log(id)
+                    new Ext.ToolTip({
+                        xtype: 'tooltip',
+                        target: id,
+                        items: [{
+                            //NOTE: this will break in Ext4.  See labkey-linkbutton in ExtComponents.js
+                            xtype: 'button',
+                            //TODO: bigger font
+                            //cls: 'x-form-cb-label',
+                            html: 'Click to select only: ' + field.inputValue,
+                            scope: this,
+                            handler: function(btn){
+                                var window = this.findParentBy(function(item){
+                                    return item.itemId == 'filterWindow';
+                                });
+                                var cbg = window.findByType('labkey-remotecheckboxgroup')[0];
+                                cbg.reset();
+                                cbg.setValue(field.inputValue);
+
+                                window.find('itemId', 'nullCheckbox')[0].setValue(false);
+                            }
+                        }],
+                        hideDelay: 800,
+                        trackMouse: false,
+                        dismissDelay: 2000,
+                        mouseOffset: [1,1]
+                    }) ;
+                }
+            }
+        });
+
+    }
+    ,setValue: function(v)
+    {
+        //NOTE: we need to account for an initial value if store not loaded.
+        if(!this.storeLoaded){
+            //this.mon(this.store, 'load', this.setValue.createDelegate(this, arguments), null, {single: true, delay: 50});
+            this.buffered = true;
+            this.bufferedValue = v;
+        }
+        else {
+            LABKEY.ext.RemoteCheckboxGroup.superclass.setValue.apply(this, arguments);
+        }
+    }
+    ,setReadOnly : function(readOnly){
+        LABKEY.ext.RemoteCheckboxGroup.superclass.setReadOnly.apply(this, arguments);
+        this.setDisabled(readOnly);
+    }
+    ,getStore: function(){
+        return this.store;
+    }
+    ,getStringValue: function(){
+        var value = [];
+        Ext.each(this.getValue(), function(item){
+            value.push(item.inputValue);
+        }, this);
+        return value.join(this.separator);
+    }
+});
+Ext.reg('labkey-remotecheckboxgroup', LABKEY.ext.RemoteCheckboxGroup);
+
+
+
+LABKEY.ext.BooleanTextField = Ext.extend(Ext.form.TextField,
+{
+    initComponent: function()
+    {
+        Ext.apply(this, {
+            validator: function(val){
+                if(!val)
+                    return true;
+
+                return LABKEY.Utils.isBoolean(val) ? true : val + " is not a valid boolean. Try true/false; yes/no; on/off; or 1/0.";
+            }
+        });
+        LABKEY.ext.BooleanTextField.superclass.initComponent.call(this);
+    }
+});
+Ext.reg('labkey-booleantextfield', LABKEY.ext.BooleanTextField);

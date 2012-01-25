@@ -67,7 +67,7 @@ public class ContainerDisplayColumn extends DataColumn
     @Override
     public Object getJsonValue(RenderContext ctx)
     {
-        Object result = ctx.get(getDisplayColumn().getFieldKey());
+        Object result = ctx.get(getBoundColumn().getFieldKey());
         if (result == null)
         {
             // If we couldn't find it by FieldKey, check by alias as well

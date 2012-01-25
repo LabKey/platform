@@ -69,12 +69,45 @@ LABKEY.Filter = new function()
     }
 
     var urlMap = {};
-    function createFilterType(displayText, urlSuffix, dataValueRequired)
+    var oppositeMap = {
+        //HAS_ANY_VALUE: null,
+        eq: 'neqornull',
+        dateeq : 'dateneq',
+        dateneq : 'dateeq',
+        neqornull : 'eq',
+        neq : 'eq',
+        isblank : 'isnonblank',
+        isnonblank : 'isblank',
+        gt : 'lte',
+        dategt : 'datelte',
+        lt : 'gte',
+        datelt : 'dategte',
+        gte : 'lt',
+        dategte : 'datelt',
+        lte : 'gt',
+        datelte : 'dategt',
+        contains : 'doesnotcontain',
+        doesnotcontain : 'contains',
+        doesnotstartwith : 'startswith',
+        startswith : 'doesnotstartwith',
+        'in' : 'notinornull',
+        inornull : 'notin',
+        notin : 'inornull',
+        notinornull : 'in',
+        containsoneof : 'containsnoneof',
+        containsnoneof : 'containsoneof',
+        hasmvvalue : 'nomvvalue',
+        nomvvalue : 'hasmvvalue'
+    };
+
+    function createFilterType(displayText, urlSuffix, dataValueRequired, isMultiValued)
     {
         var result = {
             getDisplayText : function() { return displayText },
             getURLSuffix : function() { return urlSuffix },
             isDataValueRequired : function() { return dataValueRequired },
+            isMultiValued : function() { return isMultiValued },
+            getOpposite : function() {return oppositeMap[urlSuffix] ? urlMap[oppositeMap[urlSuffix]] : null},
             validate : function (value, type, colName) {
                 if (!dataValueRequired)
                     return true;
@@ -144,20 +177,19 @@ LABKEY.Filter = new function()
             DOES_NOT_CONTAIN : createFilterType("Does Not Contain", "doesnotcontain", true),
             DOES_NOT_START_WITH : createFilterType("Does Not Start With", "doesnotstartwith", true),
             STARTS_WITH : createFilterType("Starts With", "startswith", true),
-            IN : createFilterType("Equals One Of", "in", true),
-            IN_OR_MISSING : createFilterType("Equals One Of", "inornull", true),
+            IN : createFilterType("Equals One Of", "in", true, true),
+            IN_OR_MISSING : createFilterType("Equals One Of", "inornull", true, true),
             //NOTE: for some reason IN is aliased as EQUALS_ONE_OF.  not sure if this is for legacy purposes or it was determined EQUALS_ONE_OF was a better phrase
             //to follow this pattern I did the same for IN_OR_MISSING
-            EQUALS_ONE_OF : createFilterType("Equals One Of", "in", true),
-            EQUALS_ONE_OF_OR_MISSING : createFilterType("Equals One Of", "inornull", true),
-            NOT_IN : createFilterType("Does Not Equal Any Of", "notin", true),
-            NOT_IN_OR_MISSING : createFilterType("Does Not Equal Any Of", "notinornull", true),
-            CONTAINS_ONE_OF : createFilterType("Contains One Of", "containsoneof", true),
-            CONTAINS_NONE_OF : createFilterType("Does Not Contain Any Of", "containsnoneof", true),
+            EQUALS_ONE_OF : createFilterType("Equals One Of", "in", true, true),
+            EQUALS_ONE_OF_OR_MISSING : createFilterType("Equals One Of", "inornull", true, true),
+            NOT_IN : createFilterType("Does Not Equal Any Of", "notin", true, true),
+            NOT_IN_OR_MISSING : createFilterType("Does Not Equal Any Of", "notinornull", true, true),
+            CONTAINS_ONE_OF : createFilterType("Contains One Of", "containsoneof", true, true),
+            CONTAINS_NONE_OF : createFilterType("Does Not Contain Any Of", "containsnoneof", true, true),
             HAS_MISSING_VALUE : createFilterType("Has a missing value indicator", "hasmvvalue", false),
             DOES_NOT_HAVE_MISSING_VALUE : createFilterType("Does not have a missing value indicator", "nomvvalue", false)
         },
-
 
         /** @private create a js object suitable for Query.selectRows, etc */
         appendFilterParams : function (params, filterArray, dataRegionName)
@@ -377,6 +409,18 @@ LABKEY.Filter = new function()
 * Get the Boolean that indicates whether a data value is required.
 * @name isDataValueRequired
 * @type Boolean
+*/
+
+/**
+* Get the Boolean that indicates whether the filter supports a string with multiple filter values (ie. contains one of, not in, etc).
+* @name isMultiValued
+* @type Boolean
+*/
+
+/**
+* Get the LABKEY.Filter.FilterDefinition the represents the opposite of this filter type.
+* @name getOpposite
+* @type LABKEY.Filter.FilterDefinition
 */
 
 /**#@-*/

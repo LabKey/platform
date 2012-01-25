@@ -20,7 +20,7 @@ Ext4.define('LABKEY.ext4.RemoteGroup', {
                 fieldLabel: 'Loading...'
             }],
            fieldRendererTpl : new Ext4.XTemplate('<tpl for=".">' +
-              '{[values["' + this.valueField + '"] ? values["' + this.displayField + '"] : "'+ (this.lookupNullCaption ? this.lookupNullCaption : '[none]') +'"]}' +
+                '{[values["' + this.valueField + '"] ? values["' + this.displayField + '"] : "'+ (this.lookupNullCaption ? this.lookupNullCaption : '[none]') +'"]}' +
                 //allow a flag to display both display and value fields
                 '<tpl if="'+this.showValueInList+'">{[(values["' + this.valueField + '"] ? " ("+values["' + this.valueField + '"]+")" : "")]}</tpl>'+
                 '</tpl>'

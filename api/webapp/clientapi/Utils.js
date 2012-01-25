@@ -938,6 +938,19 @@ LABKEY.Utils.convertToExcel(
            {
                titleEl[0].innerHTML = LABKEY.Utils.encodeHtml(title);
            }
+        },
+
+        /**
+         * Tests whether the passed value can be used as boolean, using a loose definition.  Acceptable values for true are: 'true', 'yes', 1, 'on' or 't'.  Acceptable values for false are: 'false', 'no', 0, 'off' or 'f'.  Values are case-insensitive.
+         * @param value The value to test
+         */
+        isBoolean: function(value){
+            var upperVal = value.toString().toUpperCase();
+            if (upperVal == "TRUE" || value == "1" || upperVal == "Y" || upperVal == "YES" || upperVal == "ON" || upperVal == "T"
+                    || upperVal == "FALSE" || value == "0" || upperVal == "N" || upperVal == "NO" || upperVal == "OFF" || upperVal == "F"){
+                return true;
+            }
         }
+
     };
 };
