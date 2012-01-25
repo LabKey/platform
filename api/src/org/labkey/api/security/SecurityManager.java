@@ -62,6 +62,7 @@ import org.labkey.api.util.MailHelper;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.Pair;
 import org.labkey.api.util.ResultSetUtil;
+import org.labkey.api.util.SessionHelper;
 import org.labkey.api.util.TestContext;
 import org.labkey.api.util.URLHelper;
 import org.labkey.api.util.emailTemplate.EmailTemplate;
@@ -1928,16 +1929,18 @@ public class SecurityManager
 
 
     private static final String TERMS_APPROVED_KEY = "TERMS_APPROVED_KEY";
-    private static final Object TERMS_APPROVED_LOCK = new Object();
 
     public static boolean isTermsOfUseApproved(ViewContext ctx, Project project)
     {
         if (null == project)
             return true;
 
-        synchronized (TERMS_APPROVED_LOCK)
+        HttpSession session = ctx.getRequest().getSession(false);
+        if (null == session)
+            return false;
+
+        synchronized (SessionHelper.getSessionLock(session))
         {
-            HttpSession session = ctx.getRequest().getSession(true);
             Set<Project> termsApproved = (Set<Project>) session.getAttribute(TERMS_APPROVED_KEY);
             return null != termsApproved && termsApproved.contains(project);
         }
@@ -1949,9 +1952,13 @@ public class SecurityManager
         if (null == project)
             return;
 
-        synchronized (TERMS_APPROVED_LOCK)
+        HttpSession session = ctx.getRequest().getSession(false);
+        if (null == session && !approved)
+            return;
+        session = ctx.getRequest().getSession(true);
+
+        synchronized (SessionHelper.getSessionLock(session))
         {
-            HttpSession session = ctx.getRequest().getSession(true);
             Set<Project> termsApproved = (Set<Project>) session.getAttribute(TERMS_APPROVED_KEY);
             if (null == termsApproved)
             {

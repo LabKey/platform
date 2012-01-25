@@ -22,6 +22,7 @@ import javax.servlet.http.HttpSession;
 import java.io.Serializable;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.concurrent.Callable;
 
 /**
  * User: matthewb
@@ -75,7 +76,7 @@ public class SessionAppender extends org.apache.log4j.AppenderSkeleton
 
     public static LoggingEvent[] getLoggingEvents(HttpServletRequest request)
     {
-        AppenderInfo info = _getLoggingForSession(request);
+        AppenderInfo info = _getLoggingForSession(request, true);
         if (null == info)
             return new LoggingEvent[0];
         synchronized (info.list)
@@ -87,38 +88,40 @@ public class SessionAppender extends org.apache.log4j.AppenderSkeleton
 
     public static void setLoggingForSession(HttpServletRequest request, boolean on)
     {
-        _getLoggingForSession(request).on = on;
+        AppenderInfo info = _getLoggingForSession(request, on);
+        if (null != info)
+            info.on = on;
     }
 
 
     public static boolean isLogging(HttpServletRequest request)
     {
-        return _getLoggingForSession(request).on;
+        AppenderInfo info = _getLoggingForSession(request, false);
+        return null != info && info.on;
     }
     
 
-    private static final Object SESSION_APPENDER_LOCK = new Object();
-
-    private static AppenderInfo _getLoggingForSession(HttpServletRequest request)
+    private static AppenderInfo _getLoggingForSession(HttpServletRequest request, boolean create)
     {
         HttpSession session = request.getSession(true);
-        AppenderInfo info;
-        synchronized (SESSION_APPENDER_LOCK)
+        if (null == session)
+            return null;
+        synchronized (SessionHelper.getSessionLock(session))
         {
-            info = (AppenderInfo)session.getAttribute("SessionAppender#info");
+            AppenderInfo info = (AppenderInfo)session.getAttribute("SessionAppender#info");
             if (null == info)
             {
                 info = new AppenderInfo(session.getId(), false);
                 session.setAttribute("SessionAppender#info",info);
             }
+            return info;
         }
-        return info;
     }
 
     
     // set up logging for this thread, based on session settings
     public static void initThread(HttpServletRequest request)
     {
-        localInfo.set(_getLoggingForSession(request));
+        localInfo.set(_getLoggingForSession(request, false));
     }
 }

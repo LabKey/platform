@@ -19,10 +19,7 @@ package org.labkey.api.security;
 import org.apache.log4j.Category;
 import org.apache.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
-import org.labkey.api.cache.CacheManager;
-import org.labkey.api.cache.TrackingCache;
 import org.labkey.api.settings.AppProps;
-import org.labkey.api.util.CSRFUtil;
 import org.labkey.api.util.ExceptionUtil;
 import org.labkey.api.util.GUID;
 import org.labkey.api.util.HString;
@@ -32,14 +29,19 @@ import org.labkey.api.util.PageFlowUtil;
 import javax.servlet.ServletContext;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletRequestWrapper;
+import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpSession;
+import javax.servlet.http.HttpSessionBindingEvent;
+import javax.servlet.http.HttpSessionBindingListener;
 import javax.servlet.http.HttpSessionContext;
 import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.security.Principal;
+import java.util.Collections;
 import java.util.Enumeration;
 import java.util.Hashtable;
+import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
 
@@ -52,14 +54,16 @@ public class AuthenticatedRequest extends HttpServletRequestWrapper
 {
     private static Category _log = Logger.getInstance(AuthenticatedRequest.class);
     private final User _user;
+    boolean _loggedIn = false;
     private boolean _forceRealSession = false;
     private HttpSession _session = null;
 
 
-    public AuthenticatedRequest(@NotNull HttpServletRequest request, @NotNull User user)
+    public AuthenticatedRequest(@NotNull HttpServletRequest request, @NotNull HttpServletResponse response, @NotNull User user)
     {
         super(request instanceof AuthenticatedRequest ? (HttpServletRequest)((AuthenticatedRequest)request).getRequest() : request);
         _user = null == user ? User.guest : user;
+        _loggedIn = !_user.isGuest();
     }
 
 
@@ -79,8 +83,9 @@ public class AuthenticatedRequest extends HttpServletRequestWrapper
      */
     public void convertToLoggedInSession()
     {
-        _session = null;
-        super.getSession(true);
+        removeAttribute(GuestSession.class.getName());
+        // don't treat like guest on next getSession call
+        _loggedIn = true;
     }
 
 
@@ -89,11 +94,6 @@ public class AuthenticatedRequest extends HttpServletRequestWrapper
     {
         return this.getSession(true);
     }
-
-
-    final static String myStackTraceAttribute = "sessionCreatedAt.marker";
-    final static String myMarkerAttribute = "sessionCreatedBy.marker";
-    final static Object myMarker = "AuthenticatedRequest.getSession";
 
 
     /**
@@ -106,20 +106,37 @@ public class AuthenticatedRequest extends HttpServletRequestWrapper
     @Override
     public HttpSession getSession(boolean create)
     {
-        if (null != _session)
+        if (null != _session && isValid(_session))
             return _session;
 
-        HttpSession servletContainerSession = super.getSession(false);
-        if (null != servletContainerSession)
-        {
-            _session = new SessionWrapper(servletContainerSession);
-            return _session;
-        }
         if (!create)
-            return null;
+        {
+            HttpSession servletContainerSession = super.getSession(false);
+            if (null == servletContainerSession)
+                return null;
+        }
 
-        _session = (isGuest() && isRobot()) ? robotSession() : makeRealSession();
+        HttpSession s = !isGuest() ? makeRealSession() : isRobot() ? robotSession() : guestSession();
+        if (_log.isDebugEnabled() && !(s instanceof SessionWrapper))
+            s = new SessionWrapper(s);
+        _session = s;
         return _session;
+    }
+
+
+    public static boolean isValid(HttpSession s)
+    {
+        try
+        {
+            if (s instanceof SessionWrapper && !((SessionWrapper) s).isValid())
+                return false;
+            s.getCreationTime();
+            return true;
+        }
+        catch (IllegalStateException x)
+        {
+            return false;
+        }
     }
 
 
@@ -127,14 +144,14 @@ public class AuthenticatedRequest extends HttpServletRequestWrapper
     {
         try
         {
-            HttpSession s = AuthenticatedRequest.super.getSession();
+            HttpSession s = AuthenticatedRequest.super.getSession(true);
             if (null == s)
                 return null;
-            _log.debug("Created HttpSession: " + s.getId() + " " + _user.getEmail());
-            s.setAttribute(myMarkerAttribute, myMarker);
-            if (AppProps.getInstance().isDevMode())
-                s.setAttribute(myStackTraceAttribute, new Throwable().getStackTrace());
-            return new SessionWrapper(s);
+            if (s.isNew())
+            {
+                _log.debug("Created HttpSession: " + s.getId() + " " + _user.getEmail());
+            }
+            return s;
         }
         catch (Exception x)
         {
@@ -143,9 +160,10 @@ public class AuthenticatedRequest extends HttpServletRequestWrapper
         }
     }
 
+
     private boolean isGuest()
     {
-        return _user.isGuest();
+        return _user.isGuest() && !_loggedIn;
     }
 
     private boolean isRobot()
@@ -205,11 +223,12 @@ public class AuthenticatedRequest extends HttpServletRequestWrapper
 
 
 
-    private class SessionWrapper implements HttpSession
+    private static class SessionWrapper implements HttpSession
     {
         HttpSession _real = null;
         final long _creationTime = HeartBeat.currentTimeMillis();
-        final long _accessedTime[] = new long[] {_creationTime,0,0,0,0};
+        long _accessedTime = _creationTime;
+        boolean _valid = true;
         final String id = GUID.makeHash();
         final Hashtable<String,Object> _attributes = new Hashtable<String,Object>();
 
@@ -233,15 +252,17 @@ public class AuthenticatedRequest extends HttpServletRequestWrapper
         @Override
         public long getLastAccessedTime()
         {
-            return null==_real ? _accessedTime[0] : _real.getLastAccessedTime();
+            return null==_real ? _accessedTime : _real.getLastAccessedTime();
         }
 
-        private void access()
+        void access()
         {
-            long t = HeartBeat.currentTimeMillis();
-            if (t != _accessedTime[0])
-                System.arraycopy(_accessedTime,1,_accessedTime,0,_accessedTime.length-1);
-            _accessedTime[0] = t;
+            _accessedTime = HeartBeat.currentTimeMillis();
+        }
+
+        boolean isValid()
+        {
+            return _valid;
         }
 
         @Override
@@ -278,6 +299,8 @@ public class AuthenticatedRequest extends HttpServletRequestWrapper
         @Override
         public void setAttribute(String s, Object o)
         {
+            if (_log.isDebugEnabled())
+                _log.debug("Session.setAttribute(" + s + ", " + String.valueOf(o) + ")");
             if (null==_real)
                 _attributes.put(s, o);
             else
@@ -325,7 +348,7 @@ public class AuthenticatedRequest extends HttpServletRequestWrapper
         @Override
         public void invalidate()
         {
-            AuthenticatedRequest.this._session = null;
+            _valid = false;
             _attributes.clear();
             if (null != _real)
             {
@@ -353,68 +376,117 @@ public class AuthenticatedRequest extends HttpServletRequestWrapper
     /*
      * GUEST sessions are highly suspect
      *
-     * start off with wrapper sessions and promote
-     *
-     * Consider using EhCache idle feature
-    static TrackingCache<String,GuestSession> _guestNurserySessions = CacheManager.getCache(1000, TimeUnit.MINUTES.toMillis(30), "Guest session nursery");
+     * Keep new references to new guest sessions in a 'nursery'.  When the nursery is full
+     * start expiring sessions that appear inactive.  Active sessions get handled by tomcat.
+     */
+    static final int NURSERY_SIZE = AppProps.getInstance().isDevMode() ? 100 : 1000;
+    static final Map<String,GuestSession> _nursery = Collections.synchronizedMap(new LinkedHashMap<String, GuestSession>(2000, 0.5f, true)
+    {
+        @Override
+        protected boolean removeEldestEntry(Map.Entry<String, GuestSession> e)
+        {
+            try
+            {
+                GuestSession s = e.getValue();
+                if (s.isActive() || null == s._session || !isValid(s._session))
+                    return true;
+                boolean remove = size() > NURSERY_SIZE;
+                if (remove)
+                    s.expire();
+                return remove;
+            }
+            catch (IllegalStateException x)
+            {
+                return true;    // inactive session
+            }
+            catch (Exception x)
+            {
+                ExceptionUtil.logExceptionToMothership(null, x);
+                return true;
+            }
+        }
+    });
+
 
     HttpSession guestSession()
     {
-        HttpServletRequest request = (HttpServletRequest)getRequest();
-        String sessionId = CSRFUtil.getExpectedToken(request, _response);
-        synchronized (_guestNurserySessions)
+        HttpSession containerSession = makeRealSession();
+        if (null == containerSession)
+            return null;
+
+        GuestSession guestSession;
+        synchronized (_nursery)
         {
-            GuestSession session = sessionId == null ? null : _guestNurserySessions.get(sessionId);
-            if (null == session)
+            guestSession = _nursery.get(containerSession.getId());
+            if (null == guestSession  && containerSession.isNew())
             {
-                session = new GuestSession(sessionId);
-                _guestNurserySessions.put(session.getId(), session);
+                guestSession = new GuestSession(getRemoteAddr());
+                containerSession.setAttribute(GuestSession.class.getName(), guestSession);
+                _nursery.put(containerSession.getId(), guestSession);
             }
-            if (session.hit.incrementAndGet() > 4)
-            {
-                HttpSession real = makeRealSession();
-                for (Map.Entry<String,Object> e : session._attributes.entrySet())
-                    real.setAttribute(e.getKey(), e.getValue());
-                session.invalidate();
-                return real;
-            }
-            return session;
         }
+        if (null != guestSession)
+            guestSession.access();
+        return containerSession;
     }
 
 
-    private class GuestSession extends SessionWrapper
+    private static class GuestSession implements HttpSessionBindingListener
     {
-        final String id;
-        AtomicInteger hit = new AtomicInteger();
+        HttpSession _session = null;
+        final String _ip;
+        final long[] _accessedTime = new long[5];
 
-        GuestSession(String id)
+        GuestSession(String ip)
         {
-            super(null);
-            this.id = id;
+            _ip = ip;   // for debugging
         }
 
         @Override
-        public String getId()
+        public void valueBound(HttpSessionBindingEvent e)
         {
-            return id;
-        }
-
-
-        @Override
-        public synchronized void setAttribute(String s, Object o)
-        {
-            _attributes.put(s, o);
+            _session = e.getSession();
         }
 
         @Override
-        public void invalidate()
+        public void valueUnbound(HttpSessionBindingEvent e)
         {
-            _attributes.clear();
-            _guestNurserySessions.remove(getId());
-            super.invalidate();
+            if (null != _session)
+                _nursery.remove(_session.getId());
+            _session = null;
+        }
+
+        void expire()
+        {
+            HttpSession s = _session;
+            if (null == s)
+                return;
+            _session = null;
+
+            try
+            {
+                long age = HeartBeat.currentTimeMillis() - s.getCreationTime();
+                if (age < TimeUnit.HOURS.toMillis(1))
+                    _log.warn("Due to server load, guest session was forced to expire, remoteAddr=" + _ip);
+                s.setMaxInactiveInterval(0);
+            }
+            catch (IllegalStateException x)
+            {
+                ;
+            }
+        }
+
+        synchronized void access()
+        {
+            long t = HeartBeat.currentTimeMillis();
+            if (t != _accessedTime[_accessedTime.length-1])
+                System.arraycopy(_accessedTime,1,_accessedTime,0,_accessedTime.length-1);
+            _accessedTime[_accessedTime.length-1] = t;
+        }
+
+        synchronized boolean isActive()
+        {
+            return _accessedTime[0] != 0;
         }
     }
- */
-
 }

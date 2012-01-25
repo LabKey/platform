@@ -21,13 +21,15 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.cache.CacheManager;
 import org.labkey.api.cache.StringKeyCache;
-import org.labkey.api.collections.ConcurrentHashSet;
 import org.labkey.api.security.User;
+import org.labkey.api.util.SessionHelper;
 
-import javax.servlet.http.HttpSession;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
-import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.Callable;
 
 /**
  * User: Mark Igra
@@ -74,35 +76,33 @@ public class NavTreeManager
         }
     }
 
+
+    static final Callable allocTreeMap = new Callable()
+    {
+        @Override
+        public Object call() throws Exception
+        {
+            return Collections.synchronizedMap(new HashMap<String,Set<String>>());
+        }
+    };
+
+
     public static Set<String> getExpandedPaths(ViewContext viewContext, String navTreeId)
     {
         //Each navtreeid has a set of expanded paths...
-        HttpSession session = viewContext.getRequest().getSession(true);
-        Map<String, Set<String>> treeMap = (Map<String, Set<String>>) session.getAttribute(EXPAND_CONTAINERS_KEY);
-
-        if (null == treeMap)
-        {
-            //FIX: 5389
-            //It's possible to get two requests on two different threads under
-            //the same session (e.g., nav tree embedded in a wiki web part). So these
-            //collections must be concurrent.
-            treeMap = new ConcurrentHashMap<String, Set<String>>();
-            // Don't track. These stick around in session, so are new?
-            // assert MemTracker.put(treeMap);
-            session.setAttribute(EXPAND_CONTAINERS_KEY, treeMap);
-        }
+        Map<String, Set<String>> treeMap = (Map<String, Set<String>>)
+                SessionHelper.getAttribute(viewContext.getRequest(), EXPAND_CONTAINERS_KEY, allocTreeMap);
 
         Set<String> expandedPaths = treeMap.get(navTreeId);
-
         if (null == expandedPaths)
         {
-            expandedPaths = new ConcurrentHashSet<String>();
-            //assert MemTracker.put(expandedPaths);
+            expandedPaths = Collections.synchronizedSet(new HashSet<String>());
             treeMap.put(navTreeId, expandedPaths);
         }
 
         return expandedPaths;
     }
+
 
     private static void _expandCollapseSubtree(Collapsible tree, @NotNull String path, boolean collapse)
     {

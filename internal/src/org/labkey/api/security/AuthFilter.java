@@ -137,7 +137,7 @@ public class AuthFilter implements Filter
             if (null != user)
                 UserManager.updateActiveUser(user);
 
-            req = new AuthenticatedRequest(req, user);
+            req = new AuthenticatedRequest(req, resp, user);
         }
 
         QueryService.get().setEnvironment(QueryService.Environment.USERID, null==user ? User.guest.getUserId() : user.getUserId());
