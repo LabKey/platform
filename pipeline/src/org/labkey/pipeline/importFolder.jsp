@@ -48,7 +48,7 @@ be created using a standard template.
 <tr><td class="labkey-title-area-line"></td></tr>
     <tr><td>
         To import a folder from a server-accessible archive, click the "Import Folder Using Pipeline"
-        button below, navigate to a .folder.zip archive or a folder.xml file, and click the "Import Folder" button.
+        button below, navigate to a .folder.zip archive or a folder.xml file, and click the "Import Data" button.
     </td></tr>
 <tr>
     <td><%=generateButton("Import Folder Using Pipeline", urlProvider(PipelineUrls.class).urlBrowse(c, "pipeline"))%></td>

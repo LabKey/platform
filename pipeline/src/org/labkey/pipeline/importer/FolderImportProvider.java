@@ -21,6 +21,7 @@ public class FolderImportProvider extends PipelineProvider
     public FolderImportProvider(Module owningModule)
     {
         super("FolderImport", owningModule);
+        setShowActionsIfModuleInactive(true);
     }
 
     @Override
