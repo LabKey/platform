@@ -69,12 +69,23 @@ Ext4.onReady(function(){
         ],
         metadata: {
             Date: {
-                format: 'h:m A'
+                format: 'h:m A',
+                columnConfig: {
+                    width: 75
+                }
             },
             CreatedBy: {
                 //NOTE: this is to reformat entries with a null user to be blank, instead of [0]
                 buildDisplayString: function(data){
                     return data == '[0]' ? "" : data;
+                },
+                columnConfig: {
+                    width: 100
+                }
+            },
+            ContainerId: {
+                columnConfig: {
+                    width: 200
                 }
             }
         },
