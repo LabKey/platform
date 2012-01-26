@@ -786,16 +786,44 @@ LABKEY.vis.LineChart = Ext.extend(LABKEY.vis.XYChartComponent, {
                }
                lines.add(pv.Rule)
                        .bottom(function(d) {
-                           if (d.dataValue && d[type])
-                               return scale(d.dataValue.value - d[type].value);
+                           if (d.dataValue && d[type]){
+                                if((d.dataValue.value - d[type].value) < scale.domain()[0]){
+                                    return scale(scale.domain()[0]);
+                                } else {
+                                    return scale(d.dataValue.value - d[type].value);
+                                }
+                           }
                        })
                        .height(function(d){
                            if (d[type])
                            {
-                                   return (-1 * scale(0)) + scale(d[type].value * 2);
+                               var topHalf = d.dataValue.value + d[type].value;
+                               var bottomHalf = d.dataValue.value - d[type].value;
+
+                               if((topHalf > scale.domain()[1] && bottomHalf > scale.domain()[1]) || (topHalf < scale.domain()[0] && bottomHalf < scale.domain()[0])){
+                                   return 0;
+                               }
+
+                               if((d.dataValue.value - d[type].value) < scale.domain()[0]){
+                                   bottomHalf = scale.domain()[0];
+                               }
+
+                               if((d.dataValue.value + d[type].value) > scale.domain()[1]){
+                                   topHalf = scale.domain()[1];
+                               }
+
+                               return (scale(topHalf) - scale(bottomHalf));
+                           } else {
+                               return 0;
                            }
                        })
-                       .lineWidth(2)
+                       .lineWidth(function(d){
+                           if(d[type]){
+                               return 2;
+                           } else {
+                               return 0;
+                           }
+                       })
                        .fillStyle(darkColor)
                        .strokeStyle(darkColor);
 
@@ -810,7 +838,17 @@ LABKEY.vis.LineChart = Ext.extend(LABKEY.vis.XYChartComponent, {
                                return bottom(d.interval.value) - 4
                        })
                        .width(8)
-                       .lineWidth(2)
+                       .lineWidth(function(d){
+                           if(d[type]){
+                               if(((d.dataValue.value + d[type].value) > scale.domain()[1]) || ((d.dataValue.value + d[type].value) < scale.domain()[0])){
+                                   return 0;
+                               } else {
+                                   return 2;
+                               }
+                           } else {
+                               return 2;
+                           }
+                       })
                        .fillStyle(darkColor)
                        .strokeStyle(darkColor);
 
@@ -825,7 +863,17 @@ LABKEY.vis.LineChart = Ext.extend(LABKEY.vis.XYChartComponent, {
                                return bottom(d.interval.value) - 4;
                        })
                        .width(8)
-                       .lineWidth(2)
+                       .lineWidth(function(d){
+                           if(d[type]){
+                               if((d.dataValue.value - d[type].value) < scale.domain()[0]){
+                                   return 0;
+                               } else {
+                                   return 2;
+                               }
+                           } else {
+                               return 2;
+                           }
+                       })
                        .fillStyle(darkColor)
                        .strokeStyle(darkColor);
            }
