@@ -28,6 +28,9 @@
 <%@ page import="org.labkey.api.view.ViewContext" %>
 <%@ page import="java.util.HashSet" %>
 <%@ page import="java.util.Set" %>
+<%@ page import="org.labkey.announcements.AnnouncementsController" %>
+<%@ page import="org.labkey.api.view.ActionURL" %>
+<%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
     DiscussionServiceImpl.PickerView me = (DiscussionServiceImpl.PickerView) HttpView.currentView();
     ViewContext context = me.getViewContext();
@@ -46,15 +49,56 @@
         for (AnnouncementModel a : announcementModels)
             longFormat |= !menuItems.add(a.getCreatedByName(user) + "|" + DateUtil.formatDate(a.getCreated()));
     }
+
+    String discussionAreaToggleId = "discussionAreaToggle" + getRequestScopedUID();
 %>
 
 <script type="text/javascript">
-if (discussionMenu)
-    discussionMenu.menu.destroy();
-
-var discussionMenu = {};
 (function(){
-    discussionMenu.pageUrl = <%=PageFlowUtil.jsString(pageURL.clone().deleteScopeParameters("discussion").getLocalURIString())%>;
+
+    var discussionAreaId = <%=q(me.discussionAreaId)%>;
+    var discussionAreaToggleId = <%=q(discussionAreaToggleId)%>;
+
+    if (discussionMenu)
+        discussionMenu.menu.destroy();
+
+    var discussionMenu = {};
+
+    function _hideMenu()
+    {
+        if (discussionMenu.menu)
+            discussionMenu.menu.setVisible(false);
+    }
+
+    function _loadDiscussionArea(menu)
+    {
+        var e = Ext.get(discussionAreaId);
+        if (!e)
+            return true;
+        e.load({url:menu.hrefAjax, text:"Loading..."});
+        e.removeClass("x-hidden");
+        if (menu.hashBang)
+            window.location = "#!" + menu.hashBang;
+        return false;
+    }
+
+    function _showDiscussion(menu,event)
+    {
+        _hideMenu();
+        if (!menu.hrefAjax)
+            return true;
+        return _loadDiscussionArea(menu);
+    }
+
+    function _startDiscussion(menu,event)
+    {
+        _hideMenu();
+        if (!menu.hrefAjax)
+            return true;
+        return _loadDiscussionArea(menu);
+    }
+
+    discussionMenu.pageUrl = <%=PageFlowUtil.jsString(pageURL.getLocalURIString())%>;
     discussionMenu.emailPreferencesUrl = <%=PageFlowUtil.jsString(me.emailPreferencesURL.getLocalURIString())%>;
     discussionMenu.adminEmailUrl = <%=PageFlowUtil.jsString(me.adminEmailURL.getLocalURIString())%>;
     discussionMenu.customizeUrl = <%=PageFlowUtil.jsString(me.customizeURL.getLocalURIString())%>;
@@ -65,36 +109,47 @@ var discussionMenu = {};
         cls:'extContainer',
         items:[<%
 
+        String comma = "\n";
         if (me.allowMultipleDiscussions)
         {
             for (AnnouncementModel a : announcementModels)
             {
                 String title = a.getTitle();
                 String help = a.getCreatedByName(user) + ' ' + (longFormat ? DateUtil.formatDateTime(a.getCreated()) : DateUtil.formatDate(a.getCreated()));
-                %>{text:<%=PageFlowUtil.jsString(title)%>,helptext:<%=PageFlowUtil.jsString(help)%>,href:discussionMenu.pageUrl+'&discussion.id=<%=a.getRowId()%>#discussionArea'},<%
+                String href = pageURL.getLocalURIString() + "&discussion.id=" + a.getRowId() + "#discussionArea";
+                String hrefAjax = new ActionURL(AnnouncementsController.ThreadBareAction.class, c).addParameter("rowId", a.getRowId()).getLocalURIString();
+                String hashBang = "discussion.id=" + a.getRowId();
+                %><%=comma%>{text:<%=q(title)%>,helptext:<%=q(help)%>,href:<%=q(href)%>,hrefAjax:<%=q(hrefAjax)%>,hashBang:<%=q(hashBang)%>,listeners:{click:_showDiscussion}}<%
+                comma = "\n,";
             }
         }
         else if (announcementModels.length > 0)
         {
             if (me.isDiscussionVisible)
             {
-                %>{text:'Hide discussion',href:discussionMenu.hideUrl},<%
+                %><%=comma%>{text:'Hide discussion',href:discussionMenu.hideUrl}<%
+                comma = "\n,";
             }
             else
             {
                 AnnouncementModel a = announcementModels[0];
-                %>{text:'Show discussion',href:discussionMenu.pageUrl+'&discussion.id=<%=a.getRowId()%>#discussionArea'},<%
+                %><%=comma%>{text:'Show discussion',href:discussionMenu.pageUrl+'&discussion.id=<%=a.getRowId()%>#discussionArea'},<%
+                comma = "\n,";
             }
         }
         if ((me.allowMultipleDiscussions || announcementModels.length == 0) && c.hasPermission(context.getUser(), InsertPermission.class))
         {
-            %>{text:'Start <%=me.allowMultipleDiscussions ? "new " : ""%>discussion',href:discussionMenu.pageUrl+'&discussion.start=true#discussionArea'},<%
+            %><%=comma%>{text:'Start <%=me.allowMultipleDiscussions ? "new " : ""%>discussion',href:discussionMenu.pageUrl+'&discussion.start=true#discussionArea'},<%
+            comma = "\n,";
         }
-        %>'-',{text:'Email preferences',href:discussionMenu.emailPreferencesUrl}<%
+        %>'-'<%=comma%>{text:'Email preferences',href:discussionMenu.emailPreferencesUrl}<%
+        comma = "\n,";
         if (c.hasPermission(context.getUser(), AdminPermission.class))
         {
-            %>,{text:'Email admin',href:discussionMenu.adminEmailUrl},
+            %>
+            <%=comma%>{text:'Email admin',href:discussionMenu.adminEmailUrl},
             {text:'Customize',href:discussionMenu.customizeUrl}<%
+            comma = "\n,";
         }
         %>]
     };
@@ -103,13 +158,14 @@ var discussionMenu = {};
     {
         if (!discussionMenu.menu)
             discussionMenu.menu = new Ext.menu.Menu(discussionMenu.config);
-        discussionMenu.menu.show('discussionMenuToggle');
+        discussionMenu.menu.show(discussionAreaToggleId);
     }
 
-    Ext.onReady(function(){Ext.get("discussionMenuToggle").on("click", onShow)});
+    Ext.onReady(function(){Ext.get(discussionAreaToggleId).on("click", onShow)});
+
 })();
 </script>
-<span id=discussionMenuToggle><%
+<span id="<%=discussionAreaToggleId%>"><%
     if (announcementModels.length > 0)
     {
         if (me.allowMultipleDiscussions)

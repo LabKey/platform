@@ -1386,6 +1386,27 @@ public class AnnouncementsController extends SpringActionController
 
 
     @RequiresPermissionClass(ReadPermission.class)
+    public class ThreadBareAction extends ThreadAction
+    {
+        @Override
+        public ModelAndView getView(AnnouncementForm form, BindException errors) throws Exception
+        {
+            getPageConfig().setTemplate(PageConfig.Template.None);
+            ThreadView tv = (ThreadView)super.getView(form, errors);
+            tv.setFrame(WebPartView.FrameType.NONE);
+            tv.getModelBean().embedded = true;
+            return tv;
+        }
+
+        @Override
+        public NavTree appendNavTrail(NavTree root)
+        {
+            return root;
+        }
+    }
+
+
+    @RequiresPermissionClass(ReadPermission.class)
     public class RssAction extends SimpleViewAction
     {
         // Support basic auth challenge #8520

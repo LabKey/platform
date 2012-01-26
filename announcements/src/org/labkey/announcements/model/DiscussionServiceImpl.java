@@ -24,6 +24,7 @@ import org.labkey.api.data.*;
 import org.labkey.api.security.User;
 import org.labkey.api.settings.AppProps;
 import org.labkey.api.util.URLHelper;
+import org.labkey.api.util.UniqueID;
 import org.labkey.api.view.*;
 import org.springframework.web.servlet.ModelAndView;
 
@@ -208,7 +209,11 @@ public class DiscussionServiceImpl implements DiscussionService.Service
                 discussionBox = new ThreadWrapper(adjustedCurrentURL, "Discussion", discussionView, respondView);
         }
 
-        ModelAndView pickerView = new PickerView(c, adjustedCurrentURL, announcementModels, null != discussionBox, allowMultipleDiscussions);
+        if (discussionBox == null)
+            discussionBox = new ThreadWrapper(currentURL, "Discussion");
+        String discussionAreaId = ((ThreadWrapper)discussionBox).getId();
+
+        ModelAndView pickerView = new PickerView(c, discussionAreaId, adjustedCurrentURL, announcementModels, null != discussionBox, allowMultipleDiscussions);
         DiscussionService.DiscussionView view = new DiscussionService.DiscussionView(pickerView);
 
         if (null != discussionBox)
@@ -301,19 +306,28 @@ public class DiscussionServiceImpl implements DiscussionService.Service
 
     public static class ThreadWrapper extends WebPartView
     {
+        String _id;
+        String _class = "x-hidden";
         VBox _vbox;
 
         ThreadWrapper(URLHelper currentURL, String caption, HttpView... views)
         {
             _vbox = new VBox();
             for (HttpView v : views)
+            {
                 if (v != null)
+                {
                     _vbox.addView(v);
+                    _class = "";
+                }
+            }
             _vbox.addView(new AnchorView());
             _vbox.setTitle(caption);
             _vbox.setFrame(WebPartView.FrameType.DIALOG);
             URLHelper closeURL = getCloseURL(currentURL);
             _vbox.addObject("closeURL", closeURL);
+
+            _id = "discussionBox" + UniqueID.getRequestScopedUID(HttpView.currentRequest());
         }
 
         public ThreadWrapper()
@@ -321,9 +335,14 @@ public class DiscussionServiceImpl implements DiscussionService.Service
             super();
         }
 
+        String getId()
+        {
+            return _id;
+        }
+
         public void doStartTag(Map context, PrintWriter out)
         {
-            out.write("<table><tr><th valign=top width=50px><img src='" + getViewContext().getContextPath() + "/_.gif' width=50 height=1></th><td>");
+            out.write("<div id=\"" + _id + "\" class=\"" + _class + "\"><table><tr><th valign=top width=50px><img src='" + getViewContext().getContextPath() + "/_.gif' width=50 height=1></th><td>");
         }
 
         protected void renderView(Object model, HttpServletRequest request, HttpServletResponse response) throws Exception
@@ -333,25 +352,27 @@ public class DiscussionServiceImpl implements DiscussionService.Service
 
         public void doEndTag(Map context, PrintWriter out)
         {
-            out.write("</td></tr></table>");
+            out.write("</td></tr></table></div>");
         }
     }
 
 
     public static class PickerView extends JspView
     {
-        public URLHelper pageURL;
-        public ActionURL emailPreferencesURL;
-        public ActionURL adminEmailURL;
-        public ActionURL customizeURL;
-        public AnnouncementModel[] announcementModels;
-        public boolean isDiscussionVisible;
-        public boolean allowMultipleDiscussions;
+        final public String discussionAreaId;
+        final public URLHelper pageURL;
+        final public ActionURL emailPreferencesURL;
+        final public ActionURL adminEmailURL;
+        final public ActionURL customizeURL;
+        final public AnnouncementModel[] announcementModels;
+        final public boolean isDiscussionVisible;
+        final public boolean allowMultipleDiscussions;
 
-        PickerView(Container c, URLHelper pageURL, AnnouncementModel[] announcementModels, boolean isDiscussionVisible, boolean allowMultipleDiscussions)
+        PickerView(Container c, String discussionAreaId, URLHelper pageURL, AnnouncementModel[] announcementModels, boolean isDiscussionVisible, boolean allowMultipleDiscussions)
         {
             super("/org/labkey/announcements/discussionMenu.jsp");
             setFrame(FrameType.NONE);
+            this.discussionAreaId = discussionAreaId;
             this.pageURL = pageURL.clone();
             this.emailPreferencesURL = AnnouncementsController.getEmailPreferencesURL(c, pageURL);
             this.adminEmailURL = AnnouncementsController.getAdminEmailURL(c, pageURL);
