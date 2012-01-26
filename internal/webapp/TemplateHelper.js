@@ -745,7 +745,7 @@ var SIMPLE_PAGE_TEMPLATE =
 // GRID TEMPLATE
             '<tr>',
                 '<tpl for="this.data.gridFields">',
-                    '<th class="labkey-column-header">{[this.getCaptionHtml(values)]}</th>',
+                    '<th style="padding-right: 10px;" class="labkey-column-header">{[this.getCaptionHtml(values)]}</th>',
                 '</tpl>',
             '</tr>',
             '<tpl for="rows">',
