@@ -24,8 +24,6 @@ public interface TaskFactorySettings
 
     TaskId getId();
 
-    TaskId getImplId();
-
     public interface Provider
     {
         TaskFactorySettings[] getSettings();

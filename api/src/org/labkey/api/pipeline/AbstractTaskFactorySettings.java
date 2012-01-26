@@ -66,11 +66,6 @@ abstract public class AbstractTaskFactorySettings implements TaskFactorySettings
         return _id;
     }
 
-    public TaskId getImplId()
-    {
-        return new TaskId(TaskPipeline.class);
-    }
-
     public TaskId getDependencyId()
     {
         return _dependencyId;

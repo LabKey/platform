@@ -16,6 +16,7 @@
 package org.labkey.api.pipeline;
 
 import org.apache.log4j.Logger;
+import org.jetbrains.annotations.NotNull;
 import org.labkey.api.pipeline.file.PathMapper;
 
 import java.io.FileNotFoundException;
@@ -98,6 +99,9 @@ abstract public class PipelineJobService implements TaskPipelineRegistry
 
     abstract public RemoteServerProperties getRemoteServerProperties();
 
+    @NotNull
+    abstract public LocationType getLocationType();
+
     abstract public List<? extends GlobusClientProperties> getGlobusClientPropertiesList();
 
     abstract public PathMapper getClusterPathMapper();
@@ -124,4 +128,6 @@ abstract public class PipelineJobService implements TaskPipelineRegistry
     {
         return (path == null ? null : path.replace('\\', '/'));
     }
+
+    public enum LocationType { WebServer, RemoteServer, Cluster }
 }

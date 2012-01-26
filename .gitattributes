@@ -4473,6 +4473,7 @@ internal/src/org/labkey/api/exp/property/DomainEditorServiceBase.java -text
 internal/src/org/labkey/api/exp/property/DomainImporterServiceBase.java -text
 internal/src/org/labkey/api/exp/property/DomainUtil.java -text
 internal/src/org/labkey/api/exp/property/ExperimentProperty.java -text
+internal/src/org/labkey/api/exp/property/PlateBasedAssaySampleSetDomainKind.java -text
 internal/src/org/labkey/api/exp/property/SystemProperty.java -text
 internal/src/org/labkey/api/gwt/server/BaseRemoteService.java -text
 internal/src/org/labkey/api/issues/IssuesSchema.java -text
