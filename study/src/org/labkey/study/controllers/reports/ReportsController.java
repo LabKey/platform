@@ -2052,12 +2052,12 @@ public class ReportsController extends BaseStudyController
             if (form.getName() == null)
                 errors.reject(ERROR_MSG, "A report name is required");
 
-            if (form.getJson() == null)
-                errors.reject(ERROR_MSG, "Report configuration information cannot be blank");
+            if (form.getMeasures() == null)
+                errors.reject(ERROR_MSG, "Report measures information cannot be blank");
             else
             {
                 try {
-                    JSONObject config = new JSONObject(form.getJson());
+                    JSONArray config = new JSONArray(form.getMeasures());
                 }
                 catch (JSONException e)
                 {
@@ -2117,8 +2117,8 @@ public class ReportsController extends BaseStudyController
                 descriptor.setProperty(ReportDescriptor.Prop.schemaName, form.getSchemaName());
             if (form.getQueryName() != null)
                 descriptor.setProperty(ReportDescriptor.Prop.queryName, form.getQueryName());
-            if (form.getJson() != null)
-                descriptor.setProperty(ReportDescriptor.Prop.json, form.getJson());
+            if (form.getMeasures() != null)
+                descriptor.setProperty("measures", form.getMeasures());
         }
         return report;
     }
@@ -2148,7 +2148,7 @@ public class ReportsController extends BaseStudyController
     {
         private String _name;
         private String _description;
-        private String _json;
+        private String _measures;
         private String _queryName;
         private String _schemaName;
         private ReportIdentifier _reportId;
@@ -2199,11 +2199,6 @@ public class ReportsController extends BaseStudyController
             return _description;
         }
 
-        public String getJson()
-        {
-            return _json;
-        }
-
         public String getQueryName()
         {
             return _queryName;
@@ -2219,6 +2214,16 @@ public class ReportsController extends BaseStudyController
             return _reportId;
         }
 
+        public String getMeasures()
+        {
+            return _measures;
+        }
+
+        public void setMeasures(String measures)
+        {
+            _measures = measures;
+        }
+
         @Override
         public void bindProperties(Map<String, Object> props)
         {
@@ -2231,10 +2236,10 @@ public class ReportsController extends BaseStudyController
             if (reportId != null)
                 _reportId = ReportService.get().getReportIdentifier((String)reportId);
 
-            Object json = props.get("json");
-            if (json instanceof JSONObject)
+            Object measures = props.get(ParticipantReport.MEASURES_PROP);
+            if (measures instanceof JSONArray)
             {
-                _json = ((JSONObject)json).toString();
+                _measures = ((JSONArray)measures).toString();
             }
         }
 
@@ -2248,10 +2253,10 @@ public class ReportsController extends BaseStudyController
             json.put("schemaName", descriptor.getProperty(ReportDescriptor.Prop.schemaName));
             json.put("queryName", descriptor.getProperty(ReportDescriptor.Prop.queryName));
 
-            String jsonConfig = descriptor.getProperty(ReportDescriptor.Prop.json);
-            if (jsonConfig != null)
+            String measuresConfig = descriptor.getProperty(ParticipantReport.MEASURES_PROP);
+            if (measuresConfig != null)
             {
-                json.put("json", new JSONObject(jsonConfig));
+                json.put("measures", new JSONArray(measuresConfig));
             }
             return json;
         }

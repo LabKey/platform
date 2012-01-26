@@ -38,9 +38,11 @@
     }
 </style>
 <script type="text/javascript">
+    LABKEY.requiresClientAPI();
     LABKEY.requiresExt4Sandbox(true);
     LABKEY.requiresScript("TemplateHelper.js");
     LABKEY.requiresScript("study/ParticipantReport.js");
+    LABKEY.requiresScript("vis/measuresPanel.js");
 </script>
 
 <script type="text/javascript">

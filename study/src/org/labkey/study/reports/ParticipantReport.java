@@ -34,6 +34,7 @@ import org.labkey.study.controllers.reports.ReportsController;
 public class ParticipantReport extends AbstractReport
 {
     public static final String TYPE = "ReportService.ParticipantReport";
+    public static final String MEASURES_PROP = "measures";
 
     @Override
     public String getType()

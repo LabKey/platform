@@ -27,8 +27,6 @@ Ext4.define('LABKEY.ext4.ParticipantReport', {
     initComponent : function() {
 
         this.customMode = false;
-        this.reportConfig = {};
-
         this.items = [];
 
         this.previewPanel = Ext4.create('Ext.panel.Panel', {
@@ -78,7 +76,7 @@ Ext4.define('LABKEY.ext4.ParticipantReport', {
                         this.customize();
                         // revert back to the last config (if any)
                         if (this.storedTemplateConfig)
-                            this.onLoadReport(this.storedTemplateConfig);
+                            this.loadSavedConfig(this.storedTemplateConfig);
                     },
                     scope   : this
                 },{
@@ -91,6 +89,7 @@ Ext4.define('LABKEY.ext4.ParticipantReport', {
             });
             this.items.push(this.northPanel);
         }
+        this.initNorthPanel();
 
         // customization
         this.on('enableCustomMode',  this.onEnableCustomMode,  this);
@@ -99,45 +98,32 @@ Ext4.define('LABKEY.ext4.ParticipantReport', {
         // call generateTemplateConfig() to use this task
         this.generateTask = new Ext4.util.DelayedTask(function(){
 
-            // TODO: Get rid of all the hard codes, might consider just not rendering until a pageField is specified
-            // TODO: Make pageBreakInfo and rowBreakInfo work (not sure about a proper UI for this) -- might not be necessary for sprint 2
-            var config = {
-                pageFields : !this.pageFieldStore.getCount() ? ['ParticipantId'] : [],
-                pageBreakInfo : !this.pageFieldStore.getCount() ? [{name: 'ParticipantId', rowspans: false}] : [],
-                gridFields : [],
-                rowBreakInfo : [],
-                reportTemplate : SIMPLE_PAGE_TEMPLATE,
-                queryConfig : {
-                    requiredVersion : 12.1,
-                    schemaName : 'Study',
-                    queryName  : this.northPanel.getComponent('selectionForm').getValues().dataset,
-                    columns    : '',
-                    sort       : 'ParticipantId,',
-                    includeStyle : true
-                }
-            };
+            var measures = this.getMeasures();
 
-            for (var i=0; i < this.pageFieldStore.getCount(); i++) {
-                if (i==0)
-                    config.pageBreakInfo.push({name : this.pageFieldStore.getAt(i).data.name, rowspan: false});
-                config.pageFields.push(this.pageFieldStore.getAt(i).data.name);
+            if (measures.length > 0) {
+                this.previewPanel.getEl().mask('loading data...');
+                Ext4.Ajax.request({
+                    url     : LABKEY.ActionURL.buildURL('visualization', 'getData.api'),
+                    method  : 'POST',
+                    jsonData: {measures : measures},
+                    success : function(response){
+                        this.previewPanel.getEl().unmask();
+                        this.renderData(Ext4.decode(response.responseText));
+                    },
+                    failure : function(response){
+                        Ext4.Msg.alert('Failure', Ext4.decode(response.responseText).exception);
+                    },
+                    scope : this
+                });
+            }
+            else {
+                this.previewPanel.update('');
             }
 
-            for (i=0; i < this.gridFieldStore.getCount(); i++) {
-                config.gridFields.push(this.gridFieldStore.getAt(i).data.name);
-            }
-
-            var sep = '';
-            for (i=0; i < this.queryStore.getCount(); i++) {
-                config.queryConfig.columns += sep + this.queryStore.getAt(i).data.name;
-                sep = ','
-            }
-
-            this.templateConfig = config;
-            this.renderReport();
         }, this);
 
         if (this.reportId) {
+            this.onDisableCustomMode();            
             this.loadReport(this.reportId);
         }
         else if (this.allowCustomize) {
@@ -147,53 +133,19 @@ Ext4.define('LABKEY.ext4.ParticipantReport', {
         this.callParent([arguments]);
     },
 
-    initNorthPanel : function(queryResults) {
+    initNorthPanel : function() {
 
         if (this.allowCustomize) {
             var formItems = [];
 
-            var config = {
-                autoLoad: true,
-                data: queryResults.rows,
-                fields : [
-                    {name : 'DataSetId',       type : 'int', mapping : 'DataSetId.value'},
-                    {name : 'Name',                          mapping : 'Name.value'},
-                    {name : 'DemographicData', type : 'boolean'},
-                    {name : 'KeyPropertyName'}
-                ]
-            };
-            var store = Ext4.create('Ext.data.Store', config);
+            this.reportName = Ext4.create('Ext.form.field.Text', {
 
-            formItems.push({
-                xtype      : 'textfield',
                 fieldLabel : 'Name',
                 width      : 300,
-                allowBlank : false,
-                value      : this.reportConfig.name,
-                listeners  : {change : function(cmp, value) {this.reportConfig.name = value;}, scope : this}
-            },{
-                xtype       : 'combo',
-                fieldLabel  : 'Dataset',
-                name        : 'dataset',
-                store       : store,
-                width       : 300,
-                editable    : false,
-                queryMode      : 'local',
-                value          : this.reportConfig.queryName,
-                displayField   : 'Name',
-                valueField     : 'Name',
-                triggerAction  : 'all',
-                emptyText      : 'Unknown',
-                listeners      : {
-                    change : {fn: this.onChangeQuery, scope : this},
-                    render : {fn: function(cmp){
-                        if (this.reportConfig.queryName)
-                            this.onChangeQuery(cmp, this.reportConfig.queryName, null);
-                        },
-                        scope : this
-                    }
-                }
+                allowBlank : false
             });
+
+            formItems.push(this.reportName);
 
             var panel = Ext4.create('Ext.form.Panel', {
                 itemId : 'selectionForm',
@@ -206,27 +158,176 @@ Ext4.define('LABKEY.ext4.ParticipantReport', {
                 width  : 320
             });
 
+            var model = Ext4.define('LABKEY.query.Measures', {
+                extend : 'Ext.data.Model',
+                fields : [
+                    {name : 'id'},
+                    {name : 'name'},
+                    {name : 'label'},
+                    {name : 'description'},
+                    {name : 'isUserDefined',    type : 'boolean'},
+                    {name : 'queryName'},
+                    {name : 'schemaName'},
+                    {name : 'type'}
+                ],
+                proxy : {
+                    type : 'memory',
+                    reader : {
+                        type : 'json',
+                        root : 'measures'
+                    }
+                }
+            });
+
+            this.pageFieldStore = Ext4.create('Ext.data.Store', { model : 'LABKEY.query.Measures' });
+            this.gridFieldStore = Ext4.create('Ext.data.Store', { model : 'LABKEY.query.Measures' });
+
+            // TODO: figure out infos
+
+            var pageGrid = Ext4.create('Ext.grid.Panel', {
+                title   : 'Page Fields',
+                store   : this.pageFieldStore,
+                //flex    : 1.2,
+                columns : [
+                    { header : 'Columns', dataIndex : 'name', flex : 1},
+                    {
+                        xtype : 'actioncolumn',
+                        width : 40,
+                        align : 'center',
+                        sortable : false,
+                        items : [{
+                            icon    : LABKEY.contextPath + '/' + LABKEY.extJsRoot_40 + '/resources/themes/images/access/qtip/close.gif',
+                            tooltip : 'Delete'
+                        }],
+                        listeners : {
+                            click : function(col, grid, idx) {
+                                this.pageFieldStore.removeAt(idx);
+                                this.generateTemplateConfig();
+                            },
+                            scope : this
+                        },
+                        scope : this
+                    }
+                ],
+                //height      : 200,
+                viewConfig  : {
+                    emptyText : 'Defaults to ParticipantId',
+                    plugins   : [{
+                        ddGroup : 'ColumnSelection',
+                        ptype   : 'gridviewdragdrop',
+                        dragText: 'Drag and drop to reorder'
+                    }],
+                    listeners : {
+                        drop : function(node, data, model, pos) {
+                            this.generateTemplateConfig();
+                        },
+                        scope: this
+                    },
+                    scope : this
+                }
+            });
+
+            var pageFieldsPanel = Ext4.create('Ext.panel.Panel', {
+                height      : 200,
+                layout      : 'fit',
+                border      : false, frame : false,
+                flex        : 1.2,
+                items       : [pageGrid],
+                fbar        : [{
+                    type: 'button',
+                    text:'Add Field',
+                    handler: function() {
+                        var callback = function(recs){
+                            var rawData = []
+                            for (var i=0; i < recs.length; i++) {
+                                rawData.push(Ext4.clone(recs[i].data));
+                            }
+                            this.pageFieldStore.loadRawData({measures : rawData}, true);
+                            this.generateTemplateConfig();
+                        };
+                        this.selectMeasures(callback, this);
+                    }, scope: this}]
+
+            });
+
+            var fieldGrid = Ext4.create('Ext.grid.Panel', {
+                //title   : 'Grid Fields',
+                store   : this.gridFieldStore,
+                columns : [
+                    { header : 'Report Fields', dataIndex : 'label', flex : 1},
+                    {
+                        xtype : 'actioncolumn',
+                        width : 40,
+                        align : 'center',
+                        sortable : false,
+                        items : [{
+                            icon    : LABKEY.contextPath + '/' + LABKEY.extJsRoot_40 + '/resources/themes/images/access/qtip/close.gif',
+                            tooltip : 'Delete'
+                        }],
+                        listeners : {
+                            click : function(col, grid, idx) {
+                                this.gridFieldStore.removeAt(idx);
+                                this.generateTemplateConfig();
+                            },
+                            scope : this
+                        },
+                        scope : this
+                    }
+                ],
+                viewConfig  : {
+                    plugins   : [{
+                        ddGroup  : 'ColumnSelection',
+                        ptype    : 'gridviewdragdrop',
+                        dragText : 'Drag and drop to reorder',
+                        copy : true
+                    }],
+                    listeners : {
+                        drop : function() {
+                            this.generateTemplateConfig();
+                        },
+                        drag : function() {
+                            console.log('dragging');
+                        },
+                        scope: this
+                    },
+                    scope : this
+                }
+            });
+
+            var gridFieldsPanel = Ext4.create('Ext.panel.Panel', {
+                height      : 200,
+                width       : 400,
+                layout      : 'fit',
+                border      : false, frame : false,
+                //flex        : 1.2,
+                items       : [fieldGrid],
+                fbar        : [{
+                    type: 'button',
+                    text:'Add Field',
+                    handler: function() {
+                        var callback = function(recs){
+                            var rawData = []
+                            for (var i=0; i < recs.length; i++) {
+                                rawData.push(Ext4.clone(recs[i].data));
+                            }
+                            this.gridFieldStore.loadRawData({measures : rawData}, true);
+                            this.generateTemplateConfig();
+                        };
+                        this.selectMeasures(callback, this);
+                    }, scope: this}]
+
+            });
+
             this.designerPanel = Ext4.create('Ext.panel.Panel', {
-                height : 225,
+                height : 250,
                 border : false, frame : false,
                 region : 'center',
-                layout : 'hbox',
+                layout : 'vbox',
                 defaults : {
                     style : 'padding-left: 20px'
                 },
                 flex   : 4,
-                items  : [{
-                    border : false, frame: false,
-                    html : 'Choose a Dataset to get Started'
-                }],
-                listeners : {
-                    render : function() {
-                        if (this.templateConfig) {
-                            console.log('here is where we can load a stored config');
-                        }
-                    },
-                    scope : this
-                },
+                items  : [gridFieldsPanel],
                 scope : this
             });
 
@@ -244,7 +345,8 @@ Ext4.define('LABKEY.ext4.ParticipantReport', {
             method  : 'GET',
             params  : {reportId : reportId},
             success : function(response){
-                this.onLoadReport(Ext4.decode(response.responseText));
+                var o = Ext4.decode(response.responseText);
+                this.loadSavedConfig(o.reportConfig);
             },
             failure : function(response){
                 Ext4.Msg.alert('Failure', Ext4.decode(response.responseText).exception);
@@ -253,30 +355,89 @@ Ext4.define('LABKEY.ext4.ParticipantReport', {
         });
     },
 
-    onLoadReport : function(report) {
+    loadSavedConfig : function(config) {
 
-        this.templateConfig = report.reportConfig.json;
-        this.templateConfig.reportTemplate = SIMPLE_PAGE_TEMPLATE;
+        if (this.reportName)
+            this.reportName.setValue(config.name);
 
-        this.reportConfig = report.reportConfig;
-        this.reportConfig.json = undefined;
+        if (this.gridFieldStore) {
 
-        this.renderReport();
-/*
-        if (this.openCustomize) {
-            this.openCustomize = false; // just do this initially
-            this.customize();
+            var rawData = []
+            for (var i=0; i < config.measures.length; i++) {
+                rawData.push(Ext4.clone(config.measures[i].measure));
+            }
+            this.gridFieldStore.loadRawData({measures : rawData});
+            this.generateTemplateConfig();
         }
-*/
     },
 
-    renderReport : function() {
+    renderData : function(qr) {
 
-        var template = Ext4.clone(this.templateConfig);
-        template.renderTo = this.previewEl || this.previewPanel.getEl().id + '-body';
+        var config = {
+            pageFields : [],
+            pageBreakInfo : [],
+            gridFields : [],
+            rowBreakInfo : [],
+            reportTemplate : SIMPLE_PAGE_TEMPLATE
+        };
 
-        Ext.get(template.renderTo).update('');
-        this.templateReport = Ext4.create('LABKEY.TemplateReport', template);
+        if (this.pageFieldStore.getCount() > 0) {
+
+            for (var i=0; i < this.pageFieldStore.getCount(); i++) {
+                var mappedColName = qr.measureToColumn[this.pageFieldStore.getAt(i).data.name];
+                if (mappedColName) {
+                    if (i==0)
+                        config.pageBreakInfo.push({name : mappedColName, rowspan: false});
+                    config.pageFields.push(mappedColName);
+                }
+            }
+        }
+        else {
+            // try to look for a participant ID measure to use automatically
+            if (qr.measureToColumn['ParticipantId']) {
+                config.pageBreakInfo.push({name : qr.measureToColumn['ParticipantId'], rowspan: false});
+                config.pageFields.push(qr.measureToColumn['ParticipantId']);
+            }
+        }
+
+        // as long as there is page break info then we can render the report
+        if (config.pageBreakInfo.length > 0) {
+
+            if (qr.measureToColumn['ParticipantVisit/Visit/Label'])
+                config.gridFields.push(qr.measureToColumn['ParticipantVisit/Visit/Label']);
+            
+            for (i=0; i < this.gridFieldStore.getCount(); i++) {
+                var mappedColName = qr.measureToColumn[this.gridFieldStore.getAt(i).data.name];
+                if (mappedColName)
+                    config.gridFields.push(mappedColName);
+            }
+
+            // finally fix up the column names so that they don't display the long made-up names, the label
+            // for the corresponding measure is probably the friendliest
+            var columnToMeasure = {};
+
+            for (var m in qr.measureToColumn) {
+                if (qr.measureToColumn.hasOwnProperty(m)) {
+                    columnToMeasure[qr.measureToColumn[m]] = m;
+                }
+            }
+
+            for (i=0; i < qr.metaData.fields.length; i++) {
+                var field = qr.metaData.fields[i];
+
+                var rec = this.gridFieldStore.findRecord('name', columnToMeasure[field.name]);
+                if (rec)
+                    field.shortCaption = rec.data.label;
+                else if (columnToMeasure[field.name])
+                    field.shortCaption = columnToMeasure[field.name];
+            }
+
+            config.renderTo = this.previewEl || this.previewPanel.getEl().id + '-body';
+
+            Ext.get(config.renderTo).update('');
+            this.templateReport = Ext4.create('LABKEY.TemplateReport', config);
+            this.templateReport.loadData(qr);
+        }
     },
 
     isCustomizable : function() {
@@ -299,35 +460,13 @@ Ext4.define('LABKEY.ext4.ParticipantReport', {
     onEnableCustomMode : function() {
 
         // stash away the current config
-        if (this.templateConfig && this.reportConfig)
-        {
-            var report = {
-                reportConfig : this.reportConfig
-            };
-            report.reportConfig.json = this.templateConfig;
-            this.storedTemplateConfig = report;
+        if (this.reportId) {
+            this.storedTemplateConfig = this.getCurrentReportConfig();
         }
 
         // if the north panel hasn't been fully populated, initialize the dataset store, else
         // just show the panel
-        if (!this.designerPanel)
-        {
-            // offer a choice of non-demographic datasets without an external key field
-            LABKEY.Query.selectRows({
-                requiredVersion : 12.1,
-                schemaName      : 'study',
-                queryName       : 'Datasets',
-                scope           : this,
-                filterArray : [
-                    LABKEY.Filter.create('DemographicData', false),
-                    LABKEY.Filter.create('KeyPropertyName', false, LABKEY.Filter.Types.ISBLANK)
-                ],
-                success : this.initNorthPanel
-            });
-        }
-        else
-            this.northPanel.show();
-        
+        this.northPanel.show();
         this.customMode = true;
     },
 
@@ -346,184 +485,24 @@ Ext4.define('LABKEY.ext4.ParticipantReport', {
         this.generateTask.delay(500);
     },
 
-    onChangeQuery : function(cmp, newVal, oldVal) {
+    // get the grid fields in a form that the visualization getData api can understand
+    //
+    getMeasures : function() {
 
-        this.reportConfig.schemaName = 'study';
-        this.reportConfig.queryName = newVal;
+        var measures = [];
+        for (var i=0; i < this.gridFieldStore.getCount(); i++) {
+            measures.push({measure : this.gridFieldStore.getAt(i).data, time : 'visit'});
+        }
+        return measures;
+    },
 
-        LABKEY.Query.getQueryDetails({
-            schemaName: 'study',
-            queryName: newVal,
-            scope: this,
-            success: function(selectRowsResult) {
+    getCurrentReportConfig : function() {
 
-                if (!this.queryStore) {
-
-                    // This model is 'modelled' after a column object found in LABKEY.Query.SelectRowsResults
-                    var model = Ext4.define('LABKEY.query.Column', {
-                        extend : 'Ext.data.Model',
-                        fields : [
-                            {name : 'fieldKey'},
-                            {name : 'name'},
-                            {name : 'caption'},
-                            {name : 'description'},
-                            {name : 'displayField'},
-                            {name : 'measure',   type : 'boolean'},
-                            {name : 'dimension', type : 'boolean'}
-                        ],
-                        proxy : {
-                            type : 'memory',
-                            reader : {
-                                type : 'json',
-                                root : 'defaultView.columns'
-                            }
-                        }
-                    });
-
-                    this.queryStore     = Ext4.create('Ext.data.Store', { model : 'LABKEY.query.Column' });
-                    this.pageFieldStore = Ext4.create('Ext.data.Store', { model : 'LABKEY.query.Column' });
-                    this.gridFieldStore = Ext4.create('Ext.data.Store', { model : 'LABKEY.query.Column' });
-
-                    // TODO: figure out infos
-
-                    this.columnSelectionGrid = Ext4.create('Ext.grid.Panel', {
-                        //title   : 'Complete Dataset',
-                        store   : this.queryStore,
-                        flex    : 1.4,
-                        columns : [
-                            { header : 'Columns', dataIndex : 'name',         flex : 1}
-                        ],
-                        tbar     :  [{
-                            text    : 'Select Columns For',
-                            menu    : [{
-                                text    : 'Grid Fields',
-                                handler : function(){
-                                    var recs = this.columnSelectionGrid.getSelectionModel().getSelection();
-                                    this.gridFieldStore.loadData(recs);
-                                    this.generateTemplateConfig();
-                                },
-                                scope   : this
-                            },{
-                                text    : 'Page Fields',
-                                handler : function(){
-                                    var recs = this.columnSelectionGrid.getSelectionModel().getSelection();
-                                    this.pageFieldStore.loadData(recs);
-                                    this.generateTemplateConfig();
-                                },
-                                scope   : this
-                            }]
-                        }],
-                        multiSelect : true,
-                        selType     : 'checkboxmodel',
-                        style       : 'padding-left: 0px',
-                        height      : 200
-                    });
-
-                    var pageGrid = Ext4.create('Ext.grid.Panel', {
-                        title   : 'Page Fields',
-                        store   : this.pageFieldStore,
-                        flex    : 1.2,
-                        columns : [
-                            { header : 'Columns', dataIndex : 'name', flex : 1},
-                            {
-                                xtype : 'actioncolumn',
-                                width : 40,
-                                align : 'center',
-                                sortable : false,
-                                items : [{
-                                    icon    : LABKEY.contextPath + '/' + LABKEY.extJsRoot_40 + '/resources/themes/images/access/qtip/close.gif',
-                                    tooltip : 'Delete'
-                                }],
-                                listeners : {
-                                    click : function(col, grid, idx) {
-                                        this.pageFieldStore.removeAt(idx);
-                                        this.generateTemplateConfig();
-                                    },
-                                    scope : this
-                                },
-                                scope : this
-                            }
-                        ],
-                        height      : 200,
-                        viewConfig  : {
-                            emptyText : 'Defaults to ParticipantId',
-                            plugins   : [{
-                                ddGroup : 'ColumnSelection',
-                                ptype   : 'gridviewdragdrop',
-                                dragText: 'Drag and drop to reorder'
-                            }],
-                            listeners : {
-                                drop : function(node, data, model, pos) {
-                                    this.generateTemplateConfig();
-                                },
-                                scope: this
-                            },
-                            scope : this
-                        }
-                    });
-
-                    var fieldGrid = Ext4.create('Ext.grid.Panel', {
-                        title   : 'Grid Fields',
-                        store   : this.gridFieldStore,
-                        flex    : 1.2,
-                        columns : [
-                            { header : 'Columns', dataIndex : 'name', flex : 1},
-                            {
-                                xtype : 'actioncolumn',
-                                width : 40,
-                                align : 'center',
-                                sortable : false,
-                                items : [{
-                                    icon    : LABKEY.contextPath + '/' + LABKEY.extJsRoot_40 + '/resources/themes/images/access/qtip/close.gif',
-                                    tooltip : 'Delete'
-                                }],
-                                listeners : {
-                                    click : function(col, grid, idx) {
-                                        this.gridFieldStore.removeAt(idx);
-                                        this.generateTemplateConfig();
-                                    },
-                                    scope : this
-                                },
-                                scope : this
-                            }
-                        ],
-                        width       : 250,
-                        height      : 200,
-                        viewConfig  : {
-                            plugins   : [{
-                                ddGroup  : 'ColumnSelection',
-                                ptype    : 'gridviewdragdrop',
-                                dragText : 'Drag and drop to reorder',
-                                copy : true
-                            }],
-                            listeners : {
-                                drop : function() {
-                                    this.generateTemplateConfig();
-                                },
-                                drag : function() {
-                                    console.log('dragging');
-                                },
-                                scope: this
-                            },
-                            scope : this
-                        }
-                    });
-
-/*
-                    this.columnSelectionGrid.on('selectionchange', function(model, recs) {
-                        this.gridFieldStore.loadData(recs);
-                        this.generateTemplateConfig();
-                    }, this);
-*/
-
-                    this.designerPanel.removeAll();
-                    this.designerPanel.add(this.columnSelectionGrid, fieldGrid, pageGrid);
-                }
-
-                this.queryStore.loadRawData(selectRowsResult);
-            }
-        }, this);
-
+        return {
+            name        : this.reportName.getValue(),
+            schemaName  : 'study',
+            measures    : this.getMeasures()
+        };
     },
 
     saveReport : function() {
@@ -533,16 +512,15 @@ Ext4.define('LABKEY.ext4.ParticipantReport', {
         
         if (form.isValid())
         {
-            var data = this.reportConfig;
-            data.json = this.templateConfig;
-            //data = Ext4.copyTo(data, this.templateConfig, 'gridFields,pageBreakInfo,pageFields,rowBreakInfo');
+            var reportName = this.reportName.getValue();
+            var data = this.getCurrentReportConfig();
 
             Ext4.Ajax.request({
                 url     : LABKEY.ActionURL.buildURL('study-reports', 'saveParticipantReport.api'),
                 method  : 'POST',
                 jsonData: data,
                 success : function(resp){
-                    Ext4.Msg.alert('Success', 'Report : ' + this.reportConfig.name + ' saved successfully', function(){
+                    Ext4.Msg.alert('Success', 'Report : ' + reportName + ' saved successfully', function(){
                         var o = Ext4.decode(resp.responseText);
 
                         // Modify Title (hack: hardcode the webpart id since this is really not a webpart, just
@@ -551,12 +529,12 @@ Ext4.define('LABKEY.ext4.ParticipantReport', {
                         var titleEl = Ext.query('th[class=labkey-wp-title-left]:first', 'webpart_-1');
                         if (titleEl && (titleEl.length >= 1))
                         {
-                            titleEl[0].innerHTML = LABKEY.Utils.encodeHtml(this.reportConfig.name);
+                            titleEl[0].innerHTML = LABKEY.Utils.encodeHtml(reportName);
                         }
 
                         this.reportId = o.reportId;
                         this.customize();
-                        
+
                     }, this);
                 },
                 failure : function(resp){
@@ -584,5 +562,17 @@ Ext4.define('LABKEY.ext4.ParticipantReport', {
                 }
             });
         }
+    },
+
+    // show the select measures dialog
+    selectMeasures : function(handler, scope) {
+        if (!this.measuresDialog) {
+            this.measuresDialog = new LABKEY.vis.MeasuresDialog({
+                multiSelect : true,
+                closeAction :'hide'
+            });
+        }
+        this.measuresDialog.addListener('measuresSelected', function(recs){handler.call(scope || this, recs);}, this, {single : true});
+        this.measuresDialog.show();
     }
 });

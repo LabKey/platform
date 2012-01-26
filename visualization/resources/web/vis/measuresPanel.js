@@ -7,6 +7,70 @@ Ext.namespace("LABKEY.vis");
 
 Ext.QuickTips.init();
 
+LABKEY.vis.MeasuresDialog = Ext.extend(Ext.Window, {
+
+    constructor : function(config){
+
+        this.addEvents(
+            'measuresSelected'
+        );
+
+        Ext.apply(this, config, {
+            cls: 'extContainer',
+            title: 'Add Measure...',
+            layout:'fit',
+            width:800,
+            height:550,
+            modal: true,
+            multiSelect : false
+        });
+
+        LABKEY.vis.MeasuresDialog.superclass.constructor.call(this, config);
+    },
+
+    initComponent : function() {
+
+        this.buttons = [];
+        this.items = [];
+        this.measureSelectionBtnId = Ext.id();
+
+        this.measurePanel = new LABKEY.vis.MeasuresPanel({
+            axis: [{
+                multiSelect: false,
+                name: "y-axis",
+                label: "Choose a data measure"
+            }],
+            multiSelect : this.multiSelect,
+            listeners: {
+                scope: this,
+                'measureChanged': function (axisId, data) {
+                    Ext.getCmp(this.measureSelectionBtnId).setDisabled(false);
+                }
+            }
+        });
+        this.items.push(this.measurePanel);
+
+        this.buttons.push({
+            id: this.measureSelectionBtnId,
+            text:'Select',
+            disabled:true,
+            handler: function(){
+                var recs = this.measurePanel.getSelectedRecords();
+                if (recs && recs.length > 0)
+                {
+                    this.fireEvent('measuresSelected', recs, true);
+                }
+                this.closeAction == 'hide' ? this.hide() : this.close();
+            },
+            scope: this
+        });
+
+        this.buttons.push({text : 'Cancel', handler : function(){this.closeAction == 'hide' ? this.hide() : this.close();}, scope : this});
+
+        LABKEY.vis.MeasuresDialog.superclass.initComponent.call(this);
+    }
+});
+
 LABKEY.vis.MeasuresPanel = Ext.extend(Ext.Panel, {
 
     constructor : function(config){
@@ -120,6 +184,7 @@ LABKEY.vis.MeasuresPanel = Ext.extend(Ext.Panel, {
             store: this.measuresStore,
             flex: 1,
             singleSelect: true,
+            multiSelect : this.multiSelect,
             columns: [
                 {header:'Dataset', dataIndex:'queryName', width: .4},
                 {header:'Measure', dataIndex:'label', width:.25},
@@ -276,6 +341,10 @@ LABKEY.vis.MeasuresPanel = Ext.extend(Ext.Panel, {
         });
 
         return panel;
+    },
+
+    getSelectedRecords : function() {
+        return this.listView.getSelectedRecords();
     }
 });
 
