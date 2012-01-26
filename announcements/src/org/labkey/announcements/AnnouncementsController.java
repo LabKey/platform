@@ -1367,6 +1367,16 @@ public class AnnouncementsController extends SpringActionController
             return threadView;
         }
 
+        @Override
+        public ModelAndView getPrintView(AnnouncementForm form, BindException errors) throws Exception
+        {
+            ThreadView tv = (ThreadView)getView(form, errors);
+            // title is already in the thread view don't need to repeat it
+            tv.setFrame(WebPartView.FrameType.NONE);
+            tv.getModelBean().print = true;
+            return tv;
+        }
+
         public NavTree appendNavTrail(NavTree root)
         {
             new BeginAction().appendNavTrail(root).addChild(_title, getActionURL());
