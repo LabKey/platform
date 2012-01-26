@@ -31,14 +31,7 @@
     StudyImpl study = StudyManager.getInstance().getStudy(c);
     String visitLabel = StudyManager.getInstance().getVisitManager(study).getPluralLabel();
     Portal.WebPart webpart = me.getModelBean();
-    int webPartIndex;
-    if (webpart == null)
-    {
-        webPartIndex = 0;
-    } else {
-        webPartIndex = me.getModelBean().getIndex();
-    }
-
+    int webPartIndex = (webpart == null ? 0 : webpart.getIndex());
 %>
 
 <div>
@@ -58,8 +51,12 @@
 </script>
 
 <script type="text/javascript">
-    function callRender(){
-        renderStudySchedule("study-schedule-"+ <%=webPartIndex%>)
+    function callRender() {
+
+        var studySchedulePanel = Ext4.create('LABKEY.ext4.StudyScheduleGrid', {
+            renderTo : "study-schedule-"+ <%=webPartIndex%>
+        });
+
     }
     Ext4.onReady(callRender);
 </script>

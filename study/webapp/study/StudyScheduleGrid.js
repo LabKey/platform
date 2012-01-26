@@ -3,54 +3,100 @@
  *
  * Licensed under the Apache License, Version 2.0: http://www.apache.org/licenses/LICENSE-2.0
  */
-function renderStudySchedule(id){
-    Ext4.QuickTips.init();
+Ext4.define('LABKEY.ext4.StudyScheduleGrid', {
 
-    this.id = id;
+    extend : 'Ext.panel.Panel',
 
-    this.getData = function(id){
-        Ext4.Ajax.request({
-            url: LABKEY.ActionURL.buildURL('study', 'browseStudySchedule.api'),
-            success: function(response){
-                var study = Ext4.decode(response.responseText);
-                this.renderGrid(study.schedule, id);
-            },
-            failure: function(e){
-            },
-            scope: this
+    constructor : function(config) {
+
+        Ext4.QuickTips.init();
+
+        Ext4.applyIf(config, {
+            layout : 'border',
+            frame  : false, border : false
         });
-    }
 
-    this.renderGrid = function(schedule, id){
+        this.callParent([config]);
+    },
 
-        var columnItems = [
-            {
-                text: "Dataset",
-                dataIndex: "dataset",
-                width: 275,
-                renderer: datasetRenderer
-            },
-            {
-                text: "Data",
-                dataIndex: 'id',
-                width: 50, tdCls: 'type-column',
-                style: "text-align: center",
-                renderer: urlRenderer
+    initComponent : function() {
+
+        this.items = [];
+        this.items.push(this.initCenterPanel());
+
+        this.callParent([arguments]);
+    },
+
+    initCenterPanel : function() {
+
+        this.centerPanel = Ext4.create('Ext.panel.Panel', {
+            layout : 'fit',
+            border : false, frame : false
+        });
+
+        this.centerPanel.on('render', this.configureGrid, this);
+
+        return Ext4.create('Ext.panel.Panel', {
+            border : false, frame : false,
+            layout : 'fit',
+            region : 'center',
+            items  : [this.centerPanel]
+        });
+    },
+
+    configureGrid : function() {
+
+        var handler = function(json) {
+            this.centerPanel.getEl().unmask();
+            this.initGrid(json.schedule);
+        };
+
+        this.centerPanel.getEl().mask('Initializing...');
+        this.getData(handler, this);
+    },
+
+    initGrid : function(schedule) {
+
+        function urlRenderer(val){
+            return '<a href="' + LABKEY.ActionURL.buildURL('study', 'dataset.view', null, {datasetId: val}) + '">' +
+                        '<img height="16px" width="16px" src="' + LABKEY.ActionURL.getContextPath() + '/reports/grid.gif" alt="dataset">' +
+                   '</a>';
+        }
+
+        function visitRenderer(val){
+            if (val.required){
+                return '<div data-qtip="required" class="checked"></div>';
+            } else {
+                return '<div data-qtip="not required" class="unchecked"></div>';
             }
-        ];
+        }
 
-        var fields = [
-            {
-                name: 'dataset',
-                type: 'string',
-                mapping: 'dataset.label'
-            },
-            {
-                name: 'id',
-                type: 'string',
-                mapping: 'dataset.id'
-            }
-        ];
+        var columnItems = [{
+            xtype     : 'templatecolumn',
+//            locked    : true,
+            text      : "Datasets",
+            dataIndex : "dataset",
+            width     : 275,
+            tpl       : '<div data-qtip="{dataset}">{dataset}</div>'
+        },{
+            text      : "Data",
+//            locked    : true,
+            dataIndex : 'id',
+            width     : 50,
+            tdCls     : 'type-column',
+            style     : "text-align: center",
+            renderer  : urlRenderer
+        }];
+
+        var fields = [{
+            name    : 'dataset',
+            type    : 'string',
+            mapping : 'dataset.label'
+        },{
+            name    : 'id',
+            type    : 'string',
+            mapping : 'dataset.id'
+        }];
 
         for(var i = 0; i < schedule.timepoints.length; i++){
             var newCol = {
@@ -75,12 +121,32 @@ function renderStudySchedule(id){
             items: columnItems
         };
 
+        this.gridPanel = Ext4.create('Ext.grid.Panel', {
+            store       : this.initScheduleStore(schedule, fields),
+            border      : false,
+            autoScroll  : true,
+            columnLines : false,
+            columns     : columns,
+            selType     : 'rowmodelfixed',
+            enableColumnMove: false
+        });
+
+        this.centerPanel.add(this.gridPanel);
+
+        // This is not approved -- just points out how horrendous layout is
+        var calcWidth = 325 + (columnItems.length * 95);
+        this.setWidth(calcWidth);
+        this.centerPanel.setWidth(calcWidth);
+    },
+
+    initScheduleStore : function(schedule, fields) {
+
         Ext4.define('Schedule.View', {
             extend : 'Ext.data.Model',
             fields : fields
         });
 
-        var store = Ext4.create('Ext.data.Store', {
+        var config = {
             model: 'Schedule.View',
             proxy: {
                 type: 'memory',
@@ -89,37 +155,28 @@ function renderStudySchedule(id){
                     root: 'data'
                 }
             },
-            data: schedule
+            data : schedule
+        };
+
+        this.scheduleStore = Ext4.create('Ext.data.Store', config);
+        return this.scheduleStore;
+    },
+
+    getData : function(handler, scope) {
+        Ext4.Ajax.request({
+            url     : LABKEY.ActionURL.buildURL('study', 'browseStudySchedule.api'),
+            method  : 'GET',
+            success : function(response){
+                if (handler)
+                {
+                    var json = Ext4.decode(response.responseText);
+                    handler.call(scope || this, json);
+                }
+            },
+            failure : function(e){
+                Ext4.Msg.alert('Failure');
+            },
+            scope   : this
         });
-
-        var scheduleGrid = Ext4.create('Ext.grid.Panel', {
-            renderTo: id,
-            store: store,
-            border: false,
-            autoScroll: true,
-            columnLines: false,
-            columns: columns,
-            enableColumnMove: false,
-            selType: 'rowmodelfixed'
-        });
-
-        function urlRenderer(val){
-            return '<a href="' + LABKEY.ActionURL.buildURL('study', 'dataset.view', null, {datasetId: val}) + '"><img height="16px" width="16px" src="' + LABKEY.ActionURL.getContextPath() + '/reports/grid.gif" alt="dataset"></a>'
-        }
-
-        function visitRenderer(val){
-            if (val.required != null){
-                return '<div data-qtip="required" class="checked"></div>';
-            } else {
-                return '<div data-qtip="not required" class="unchecked"></div>';
-            }
-        }
-
-        function datasetRenderer(val){
-            return '<div data-qtip="' + val + '">' + val + '</div>';
-        }
-
-    };
-
-    this.getData(this.id);
-}
+    }
+});

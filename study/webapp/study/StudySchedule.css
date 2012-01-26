@@ -3,8 +3,8 @@
 }
 
 .unchecked, .checked {
-    width: 32px;
-    height: 32px;
+    /*width: 32px;*/
+    height: 20px;
     margin-left: auto !important;
     margin-right: auto !important;
     padding: 5px 0 4px 24px;
