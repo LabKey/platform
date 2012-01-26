@@ -17,6 +17,7 @@ package org.labkey.pipeline;
 
 import org.apache.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
+import org.labkey.api.pipeline.PipelineJobService;
 import org.labkey.pipeline.importer.FolderImportProvider;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
@@ -94,9 +95,8 @@ public class PipelineModule extends SpringModule implements ContainerManager.Con
         PipelineService.setInstance(ps);
 
         // Set up default PipelineJobServiceImpl, which may be overriden by Spring config.
-        PipelineJobServiceImpl pjs = PipelineJobServiceImpl.initDefaults();
+        PipelineJobServiceImpl pjs = PipelineJobServiceImpl.initDefaults(PipelineJobService.LocationType.WebServer);
         pjs.setAppProperties(new ApplicationPropertiesSiteSettings());
-        pjs.setStatusWriter(ps);
 
         addController("pipeline", PipelineController.class);
         addController("pipeline-status", StatusController.class);

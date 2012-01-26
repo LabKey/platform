@@ -222,6 +222,18 @@ public class ExpSampleSetImpl extends ExpIdentifiableEntityImpl<MaterialSource> 
         if (_domain == null)
         {
             _domain = PropertyService.get().getDomain(getContainer(), getLSID());
+            if (_domain == null)
+            {
+                _domain = PropertyService.get().createDomain(getContainer(), getLSID(), getName());
+                try
+                {
+                    _domain.save(null);
+                }
+                catch (ChangePropertyDescriptorException e)
+                {
+                    throw new UnexpectedException(e);
+                }
+            }
         }
         return _domain;
     }

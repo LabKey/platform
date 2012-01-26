@@ -16,6 +16,7 @@
 package org.labkey.pipeline.api;
 
 import org.apache.log4j.Logger;
+import org.jetbrains.annotations.NotNull;
 import org.labkey.api.pipeline.*;
 import org.labkey.api.pipeline.file.PathMapper;
 import org.labkey.api.util.NetworkDrive;
@@ -23,6 +24,8 @@ import org.labkey.api.util.URIUtil;
 import org.labkey.pipeline.api.properties.ApplicationPropertiesImpl;
 import org.labkey.pipeline.api.properties.ConfigPropertiesImpl;
 import org.labkey.pipeline.api.properties.GlobusClientPropertiesImpl;
+import org.labkey.pipeline.cluster.NoOpPipelineStatusWriter;
+import org.labkey.pipeline.mule.JMSStatusWriter;
 import org.labkey.pipeline.xstream.PathMapperImpl;
 
 import java.io.File;
@@ -48,13 +51,36 @@ public class PipelineJobServiceImpl extends PipelineJobService
         return (PipelineJobServiceImpl) PipelineJobService.get();
     }
 
-    public static PipelineJobServiceImpl initDefaults()
+    @NotNull
+    private LocationType _locationType;
+
+    public static PipelineJobServiceImpl initDefaults(@NotNull LocationType locationType)
     {
-        PipelineJobServiceImpl pjs = new PipelineJobServiceImpl();
+        PipelineJobServiceImpl pjs = new PipelineJobServiceImpl(locationType);
         pjs.setAppProperties(new ApplicationPropertiesImpl());
         pjs.setConfigProperties(new ConfigPropertiesImpl());
-        pjs.setJobStore(new PipelineJobStoreImpl());
         pjs.setWorkDirFactory(new WorkDirectoryLocal.Factory());
+        PipelineStatusFile.JobStore jobStore;
+        PipelineStatusFile.StatusWriter statusWriter;
+        switch (locationType)
+        {
+            case WebServer:
+                jobStore = new PipelineJobStoreImpl();
+                statusWriter = PipelineServiceImpl.get();
+                break;
+            case RemoteServer:
+                jobStore = new PipelineJobMarshaller();
+                statusWriter = new JMSStatusWriter();
+                break;
+            case Cluster:
+                jobStore = new PipelineJobMarshaller();
+                statusWriter = new NoOpPipelineStatusWriter();
+                break;
+            default:
+                throw new IllegalStateException("Unexpected LocationType: " + locationType);
+        }
+        pjs.setJobStore(jobStore);
+        pjs.setStatusWriter(statusWriter);
         PipelineJobService.setInstance(pjs);
         return pjs;
     }
@@ -82,6 +108,12 @@ public class PipelineJobServiceImpl extends PipelineJobService
 
     public PipelineJobServiceImpl()
     {
+        this(null);
+    }
+
+    public PipelineJobServiceImpl(LocationType locationType)
+    {
+        _locationType = locationType;
         // Allow Mule/Spring configuration, but keep any current defaults
         // set by the LabKey server.
         PipelineJobServiceImpl current = get();
@@ -99,6 +131,8 @@ public class PipelineJobServiceImpl extends PipelineJobService
             _statusWriter = current._statusWriter;
             _workDirFactory = current._workDirFactory;
             _jobStore = current._jobStore;
+            _locationType = current._locationType;
+            _clusterPathMapper = current._clusterPathMapper;
         }
 
         setInstance(this);
@@ -479,5 +513,11 @@ public class PipelineJobServiceImpl extends PipelineJobService
     public PathMapperImpl getClusterPathMapper()
     {
         return _clusterPathMapper;
+    }
+
+    @NotNull @Override
+    public LocationType getLocationType()
+    {
+        return _locationType;
     }
 }

@@ -47,7 +47,7 @@ public class RemoteServerStartup extends AbstractPipelineStartup
      */
     public void run(List<File> moduleFiles, List<File> moduleConfigFiles, List<File> customConfigFiles, String[] args) throws Exception
     {
-        Map<String, BeanFactory> factories = initContext("org/labkey/pipeline/mule/config/remote.log4j.properties", moduleFiles, moduleConfigFiles, customConfigFiles);
+        Map<String, BeanFactory> factories = initContext("org/labkey/pipeline/mule/config/remote.log4j.properties", moduleFiles, moduleConfigFiles, customConfigFiles, PipelineJobService.LocationType.RemoteServer);
 
         _log.info("Starting up LabKey Remote Server");
 

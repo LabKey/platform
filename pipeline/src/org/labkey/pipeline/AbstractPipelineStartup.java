@@ -21,6 +21,7 @@ import org.labkey.api.module.ModuleDependencySorter;
 import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.module.ModuleResourceLoader;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
+import org.labkey.api.pipeline.PipelineJobService;
 import org.labkey.pipeline.api.PipelineJobServiceImpl;
 import org.labkey.pipeline.mule.LoggerUtil;
 import org.springframework.beans.factory.BeanFactory;
@@ -41,12 +42,12 @@ public abstract class AbstractPipelineStartup
     /**
      * @return map from module name to BeanFactory
      */
-    protected Map<String, BeanFactory> initContext(String log4JConfigPath, List<File> moduleFiles, List<File> moduleConfigFiles, List<File> customConfigFiles) throws IOException
+    protected Map<String, BeanFactory> initContext(String log4JConfigPath, List<File> moduleFiles, List<File> moduleConfigFiles, List<File> customConfigFiles, PipelineJobService.LocationType locationType) throws IOException
     {
         LoggerUtil.initLogging(log4JConfigPath);
 
         // Set up the PipelineJobService so that Spring can configure it
-        PipelineJobServiceImpl.initDefaults();
+        PipelineJobServiceImpl.initDefaults(locationType);
 
         //load the modules and sort them by dependencies
         List<Module> modules = ModuleLoader.loadModules(moduleFiles);

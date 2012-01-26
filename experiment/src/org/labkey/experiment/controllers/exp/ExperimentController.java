@@ -499,7 +499,8 @@ public class ExperimentController extends SpringActionController
             detailsView.setTitle("Sample Set Properties");
             detailsView.getDataRegion().getButtonBar(DataRegion.MODE_DETAILS).setStyle(ButtonBar.Style.separateButtons);
 
-            if (!ExperimentService.get().ensureDefaultSampleSet().equals(_source))
+            // Not all sample sets can be edited
+            if (!ExperimentService.get().ensureDefaultSampleSet().equals(_source) && _source.getType().getDomainKind().canEditDefinition(getUser(), _source.getType()))
             {
                 ActionButton updateButton = new ActionButton(ShowUpdateMaterialSourceAction.class, "Edit Set", DataRegion.MODE_DETAILS, ActionButton.Action.GET);
                 updateButton.setDisplayPermission(UpdatePermission.class);
