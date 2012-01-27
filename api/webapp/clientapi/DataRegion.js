@@ -3035,17 +3035,6 @@ LABKEY.FilterDialog = Ext.extend(Ext.Window, {
         if(this._mappedType == "DATE")
             config.altFormats = LABKEY.Utils.getDateAltFormats();
 
-        var baseChars;
-        if(this._mappedType == "INT")
-            baseChars = "0123456789;-";
-
-        if(this._mappedType == "DECIMAL")
-            baseChars = "0123456789;-.";
-
-        if(baseChars){
-//            config.maskRe = new RegExp('[^' + config.baseChars+ ']', 'gi');
-        }
-
         if(idx === 0){
             config.listeners.afterrender = function(cmp){
                 if(this.focusTask)
@@ -3393,7 +3382,7 @@ LABKEY.FilterDialog = Ext.extend(Ext.Window, {
         var paramValPairs = LABKEY.DataRegion.getParamValPairsFromString(this.queryString, [this.getSkipPrefixes()]); //this._tableName + "." + this._fieldName + "~",
 
         var results = [];
-        var re = new RegExp('^' + this._tableName + '\.' + fieldName, 'i');
+        var re = new RegExp('^' + Ext.escapeRe(this._tableName) + '\.' + fieldName, 'i');
         Ext.each(paramValPairs, function(pair){
             if(pair[0].match(re)){
                 var operator = pair[0].split('~')[1];
