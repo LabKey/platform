@@ -2439,10 +2439,18 @@ LABKEY.FilterDialog = Ext.extend(Ext.Window, {
                     }
                 }
             },{
-                xtype: 'panel',
+                xtype: 'form',
                 defaults: this.itemDefaults,
                 style: 'padding: 5px;',
-                itemId: 'filterArea'
+                itemId: 'filterArea',
+                monitorValid: true,
+                listeners: {
+                    scope: this,
+                    clientvalidation: function(form, val){
+                        var btn = this.buttons[0];  //kinda fragile...
+                        btn.setDisabled(!val);
+                    }
+                }
                 //autoScroll: true,
                 //boxMaxHeight: 200
             }]
@@ -2555,7 +2563,7 @@ LABKEY.FilterDialog = Ext.extend(Ext.Window, {
         }, scope: this, duration: 2000};
 
         var form = {
-            xtype: 'form',
+            //xtype: 'form',
             itemId: 'formPanel',
             autoWidth: true,
             //autoHeight: true,
