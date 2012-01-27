@@ -20,6 +20,7 @@
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.api.view.JspView" %>
 <%@ page import="org.labkey.study.controllers.reports.ReportsController" %>
+<%@ page import="org.labkey.api.study.StudyService" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
     JspView<org.labkey.study.controllers.reports.ReportsController.ParticipantReportForm> me = (JspView<org.labkey.study.controllers.reports.ReportsController.ParticipantReportForm>) HttpView.currentView();
@@ -49,12 +50,14 @@
 
     Ext4.onReady(function(){
         var panel = Ext4.create('LABKEY.ext4.ParticipantReport', {
-            height     : 600, // TODO: figure out dynamic height
-            renderTo   : '<%= renderId %>',
-            id         : '<%= bean.getComponentId() %>',
-            reportId   : <%=q(reportId)%>,
-            allowCustomize : true,
-            openCustomize : true
+            height          : 600, // TODO: figure out dynamic height
+            subjectColumn   : <%=q(org.labkey.api.study.StudyService.get().getSubjectColumnName(me.getViewContext().getContainer()))%>,
+            subjectVisitColumn: <%=q(org.labkey.api.study.StudyService.get().getSubjectVisitColumnName(me.getViewContext().getContainer()))%>,
+            renderTo        : '<%= renderId %>',
+            id              : '<%= bean.getComponentId() %>',
+            reportId        : <%=q(reportId)%>,
+            allowCustomize  : true,
+            openCustomize   : true
         });
     });
 

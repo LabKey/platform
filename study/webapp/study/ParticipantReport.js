@@ -99,13 +99,17 @@ Ext4.define('LABKEY.ext4.ParticipantReport', {
         this.generateTask = new Ext4.util.DelayedTask(function(){
 
             var measures = this.getMeasures();
+            var sorts = this.getSorts();
 
             if (measures.length > 0) {
                 this.previewPanel.getEl().mask('loading data...');
                 Ext4.Ajax.request({
                     url     : LABKEY.ActionURL.buildURL('visualization', 'getData.api'),
                     method  : 'POST',
-                    jsonData: {measures : measures},
+                    jsonData: {
+                        measures : measures,
+                        sorts : sorts
+                    },
                     success : function(response){
                         this.previewPanel.getEl().unmask();
                         this.renderData(Ext4.decode(response.responseText));
@@ -211,7 +215,7 @@ Ext4.define('LABKEY.ext4.ParticipantReport', {
                 ],
                 //height      : 200,
                 viewConfig  : {
-                    emptyText : 'Defaults to ParticipantId',
+                    emptyText : 'Defaults to ' + this.subjectColumn,
                     plugins   : [{
                         ddGroup : 'ColumnSelection',
                         ptype   : 'gridviewdragdrop',
@@ -394,17 +398,17 @@ Ext4.define('LABKEY.ext4.ParticipantReport', {
         }
         else {
             // try to look for a participant ID measure to use automatically
-            if (qr.measureToColumn['ParticipantId']) {
-                config.pageBreakInfo.push({name : qr.measureToColumn['ParticipantId'], rowspan: false});
-                config.pageFields.push(qr.measureToColumn['ParticipantId']);
+            if (qr.measureToColumn[this.subjectColumn]) {
+                config.pageBreakInfo.push({name : qr.measureToColumn[this.subjectColumn], rowspan: false});
+                config.pageFields.push(qr.measureToColumn[this.subjectColumn]);
             }
         }
 
         // as long as there is page break info then we can render the report
         if (config.pageBreakInfo.length > 0) {
 
-            if (qr.measureToColumn['ParticipantVisit/Visit/Label'])
-                config.gridFields.push(qr.measureToColumn['ParticipantVisit/Visit/Label']);
+            if (qr.measureToColumn[this.subjectVisitColumn + '/Visit/Label'])
+                config.gridFields.push(qr.measureToColumn[this.subjectVisitColumn + '/Visit/Label']);
             
             for (i=0; i < this.gridFieldStore.getCount(); i++) {
                 var mappedColName = qr.measureToColumn[this.gridFieldStore.getAt(i).data.name];
@@ -494,6 +498,16 @@ Ext4.define('LABKEY.ext4.ParticipantReport', {
             measures.push({measure : this.gridFieldStore.getAt(i).data, time : 'visit'});
         }
         return measures;
+    },
+
+    getSorts : function() {
+        var sorts = [];
+        var firstMeasure = this.gridFieldStore.getAt(0).data;
+
+        sorts.push({name : this.subjectColumn, queryName : firstMeasure.queryName,  schemaName : firstMeasure.schemaName});
+        sorts.push({name : this.subjectVisitColumn + '/VisitDate', queryName : firstMeasure.queryName,  schemaName : firstMeasure.schemaName});
+
+        return sorts;
     },
 
     getCurrentReportConfig : function() {
