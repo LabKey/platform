@@ -287,7 +287,6 @@ public class MothershipManager
                 existingSession.setUserCount(getBestInteger(existingSession.getUserCount(), session.getUserCount()));
                 existingSession.setAdministratorEmail(getBestString(existingSession.getAdministratorEmail(), session.getAdministratorEmail()));
                 existingSession.setEnterprisePipelineEnabled(getBestBoolean(existingSession.isEnterprisePipelineEnabled(), session.isEnterprisePipelineEnabled()));
-                existingSession.setLdapEnabled(getBestBoolean(existingSession.isLdapEnabled(), session.isLdapEnabled()));
 
                 session = Table.update(null, getTableInfoServerSession(), existingSession, existingSession.getServerSessionId());
             }

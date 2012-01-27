@@ -147,7 +147,6 @@
             </ns:column>
             <ns:column columnName="RuntimeOS"/>
             <ns:column columnName="JavaVersion"/>
-            <ns:column columnName="LDAPEnabled"/>
             <ns:column columnName="EnterprisePipelineEnabled"/>
             <ns:column columnName="UserCount"/>
             <ns:column columnName="ActiveUserCount"/>

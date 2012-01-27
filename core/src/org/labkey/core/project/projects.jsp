@@ -105,7 +105,7 @@ Ext4.onReady(function(){
                     createIfDoesNotExist: true,
                     setValueOnLoad: true,
                     getInitialValue: function(val, rec){
-                        return LABKEY.ActionURL.buildURL('project', 'begin', rec.get('Path'))
+                        return LABKEY.ActionURL.buildURL('project', 'start', rec.get('Path'))
                     }
                 }
             }

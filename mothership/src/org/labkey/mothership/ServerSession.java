@@ -39,7 +39,6 @@ public class ServerSession
     private String _runtimeOS;
     private String _javaVersion;
 
-    private Boolean _ldapEnabled;
     private Boolean _enterprisePipelineEnabled;
 
     private Integer _userCount;
@@ -229,16 +228,6 @@ public class ServerSession
     public void setAdministratorEmail(String administratorEmail)
     {
         _administratorEmail = administratorEmail;
-    }
-
-    public Boolean isLdapEnabled()
-    {
-        return _ldapEnabled;
-    }
-
-    public void setLdapEnabled(Boolean ldapEnabled)
-    {
-        _ldapEnabled = ldapEnabled;
     }
 
     public Boolean isEnterprisePipelineEnabled()
