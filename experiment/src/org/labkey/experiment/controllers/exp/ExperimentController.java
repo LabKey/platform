@@ -160,6 +160,7 @@ import org.labkey.experiment.api.Experiment;
 import org.labkey.experiment.api.ExperimentServiceImpl;
 import org.labkey.experiment.api.MaterialSource;
 import org.labkey.experiment.api.ProtocolActionStepDetail;
+import org.labkey.experiment.api.SampleSetDomainType;
 import org.labkey.experiment.controllers.property.PropertyController;
 import org.labkey.experiment.pipeline.ExperimentPipelineJob;
 import org.labkey.experiment.samples.UploadMaterialSetForm;
@@ -502,26 +503,30 @@ public class ExperimentController extends SpringActionController
             // Not all sample sets can be edited
             if (!ExperimentService.get().ensureDefaultSampleSet().equals(_source) && _source.getType().getDomainKind().canEditDefinition(getUser(), _source.getType()))
             {
-                ActionButton updateButton = new ActionButton(ShowUpdateMaterialSourceAction.class, "Edit Set", DataRegion.MODE_DETAILS, ActionButton.Action.GET);
-                updateButton.setDisplayPermission(UpdatePermission.class);
-                detailsView.getDataRegion().getButtonBar(DataRegion.MODE_DETAILS).add(updateButton);
+                ActionURL editURL = _source.getType().getDomainKind().urlEditDefinition(_source.getType());
+                if (editURL != null)
+                {
+                    ActionButton editTypeButton = new ActionButton(editURL, "Edit Fields", DataRegion.MODE_DETAILS);
+                    editTypeButton.setDisplayPermission(UpdatePermission.class);
+                    detailsView.getDataRegion().getButtonBar(DataRegion.MODE_DETAILS).add(editTypeButton);
+                }
 
-                ActionURL editTypeURL = getViewContext().cloneActionURL();
-                editTypeURL.setAction(ExperimentController.EditSampleSetTypeAction.class);
-                ActionButton editTypeButton = new ActionButton(editTypeURL, "Edit Fields", DataRegion.MODE_DETAILS);
-                editTypeButton.setDisplayPermission(UpdatePermission.class);
-                detailsView.getDataRegion().getButtonBar(DataRegion.MODE_DETAILS).add(editTypeButton);
+                if (_source.getType().getDomainKind() instanceof SampleSetDomainType)
+                {
+                    ActionButton updateButton = new ActionButton(ShowUpdateMaterialSourceAction.class, "Edit Set", DataRegion.MODE_DETAILS, ActionButton.Action.GET);
+                    updateButton.setDisplayPermission(UpdatePermission.class);
+                    detailsView.getDataRegion().getButtonBar(DataRegion.MODE_DETAILS).add(updateButton);
 
-                ActionButton deleteButton = new ActionButton(ExperimentController.DeleteMaterialSourceAction.class, "Delete Set", DataRegion.MODE_DETAILS, ActionButton.Action.POST);
-                deleteButton.setDisplayPermission(DeletePermission.class);
-                ActionURL deleteURL = new ActionURL(ExperimentController.DeleteMaterialSourceAction.class, getViewContext().getContainer());
-                deleteURL.addParameter("singleObjectRowId", _source.getRowId());
-                deleteURL.addParameter(ActionURL.Param.returnUrl, ExperimentUrlsImpl.get().getShowSampleSetListURL(getViewContext().getContainer()).toString());
+                    ActionButton deleteButton = new ActionButton(ExperimentController.DeleteMaterialSourceAction.class, "Delete Set", DataRegion.MODE_DETAILS, ActionButton.Action.POST);
+                    deleteButton.setDisplayPermission(DeletePermission.class);
+                    ActionURL deleteURL = new ActionURL(ExperimentController.DeleteMaterialSourceAction.class, getViewContext().getContainer());
+                    deleteURL.addParameter("singleObjectRowId", _source.getRowId());
+                    deleteURL.addParameter(ActionURL.Param.returnUrl, ExperimentUrlsImpl.get().getShowSampleSetListURL(getViewContext().getContainer()).toString());
 
-                deleteButton.setURL(deleteURL);
-                deleteButton.setActionType(ActionButton.Action.LINK);
-                detailsView.getDataRegion().getButtonBar(DataRegion.MODE_DETAILS).add(deleteButton);
-
+                    deleteButton.setURL(deleteURL);
+                    deleteButton.setActionType(ActionButton.Action.LINK);
+                    detailsView.getDataRegion().getButtonBar(DataRegion.MODE_DETAILS).add(deleteButton);
+                }
             }
 
             if (_source.canImportMoreSamples())
@@ -2583,35 +2588,6 @@ public class ExperimentController extends SpringActionController
             setHelpTopic("sampleSets");
             return ExperimentUrlsImpl.get().getShowSampleSetURL(ExperimentService.get().getSampleSet(_source.getRowId()));
         }
-    }
-
-    @RequiresPermissionClass(ReadPermission.class)
-    public class EditSampleSetTypeAction extends RedirectAction<MaterialSourceForm>
-    {
-        @Override
-        public URLHelper getSuccessURL(MaterialSourceForm form)
-        {
-            ExpSampleSet ss = ExperimentService.get().getSampleSet(form.getBean().getRowId());
-            if (ss == null)
-            {
-                ss = ExperimentService.get().getSampleSet(form.getBean().getLSID());
-            }
-            if (ExperimentService.get().ensureDefaultSampleSet().equals(ss))
-            {
-                throw new UnauthorizedException("Cannot edit default sample set");
-            }
-            if (ss == null)
-            {
-                throw new NotFoundException("Could not find sample set with rowId " + form.getBean().getRowId());
-            }
-            return ss.getType().getDomainKind().urlEditDefinition(ss.getType());
-        }
-
-        @Override
-        public boolean doAction(MaterialSourceForm materialSourceForm, BindException errors) { return true; }
-
-        @Override
-        public void validateCommand(MaterialSourceForm target, Errors errors) {}
     }
 
     public static class MaterialSourceForm extends BeanViewForm<MaterialSource>
