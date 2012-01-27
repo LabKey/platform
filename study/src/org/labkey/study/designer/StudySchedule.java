@@ -19,6 +19,8 @@ import org.json.JSONArray;
 import org.json.JSONObject;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.security.User;
+import org.labkey.api.study.Cohort;
+import org.labkey.study.model.CohortImpl;
 import org.labkey.study.model.DataSetDefinition;
 import org.labkey.study.model.VisitDataSet;
 import org.labkey.study.model.VisitImpl;
@@ -85,9 +87,21 @@ public class StudySchedule
         o.put("sequenceMax", visit.getSequenceNumMax());
         o.put("id", visit.getRowId());
         o.put("showByDefault", visit.isShowByDefault());
+        if (visit.getCohort() != null)
+            o.put("cohort", serializeCohort(user, (CohortImpl)visit.getCohort()));
 
         if (required)
             o.put("required", true);
+
+        return o;
+    }
+
+    private JSONObject serializeCohort(User user, CohortImpl cohort)
+    {
+        JSONObject o = new JSONObject();
+
+        o.put("label", cohort.getLabel());
+        o.put("id", cohort.getRowId());
 
         return o;
     }
