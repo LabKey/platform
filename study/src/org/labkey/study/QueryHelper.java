@@ -26,6 +26,7 @@ import org.labkey.api.data.Sort;
 import org.labkey.api.data.Table;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.TableInfoGetter;
+import org.labkey.api.data.TableSelector;
 import org.labkey.api.security.User;
 import org.labkey.api.study.StudyCachable;
 
@@ -127,17 +128,10 @@ public class QueryHelper<K extends StudyCachable>
             {
                 SimpleFilter filter = new SimpleFilter("Container", c.getId());
                 filter.addCondition(rowIdColumnName, rowId);
-                try
-                {
-                    StudyCachable obj = Table.selectObject(getTableInfo(), Table.ALL_COLUMNS, filter, null, _objectClass);
-                    if (obj != null)
-                        obj.lock();
-                    return obj;
-                }
-                catch (SQLException x)
-                {
-                    throw new RuntimeSQLException(x);
-                }
+                StudyCachable obj = new TableSelector(getTableInfo(), filter, null).getObject(_objectClass);
+                if (obj != null)
+                    obj.lock();
+                return obj;
             }
         };
         Object obj = StudyCache.get(getTableInfo(), c, rowId, loader);

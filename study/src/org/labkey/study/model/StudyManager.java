@@ -408,7 +408,7 @@ public class StudyManager
     @NotNull
     public StudyImpl[] getAllStudies()
     {
-        return new TableSelector(StudySchema.getInstance().getTableInfoStudy(), Table.ALL_COLUMNS, null, new Sort("Label")).getArray(StudyImpl.class);
+        return new TableSelector(StudySchema.getInstance().getTableInfoStudy(), null, new Sort("Label")).getArray(StudyImpl.class);
     }
 
     @NotNull
@@ -2788,8 +2788,7 @@ public class StudyManager
         }
 
         SimpleFilter containerFilter = new SimpleFilter("Container", study.getContainer().getId());
-        return Table.selectObject(StudySchema.getInstance().getTableInfoParticipantView(), Table.ALL_COLUMNS,
-                containerFilter, null, CustomParticipantView.class);
+        return new TableSelector(StudySchema.getInstance().getTableInfoParticipantView(), containerFilter, null).getObject(CustomParticipantView.class);
     }
 
     public CustomParticipantView saveCustomParticipantView(Study study, User user, CustomParticipantView view) throws SQLException

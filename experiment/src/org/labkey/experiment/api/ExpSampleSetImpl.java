@@ -199,22 +199,15 @@ public class ExpSampleSetImpl extends ExpIdentifiableEntityImpl<MaterialSource> 
 
     public ExpMaterialImpl getSample(String name)
     {
-        try
-        {
-            SimpleFilter filter = new SimpleFilter();
-            filter.addCondition("Container", getContainer().getId());
-            filter.addCondition("CpasType", getLSID());
-            filter.addCondition("Name", name);
+        SimpleFilter filter = new SimpleFilter();
+        filter.addCondition("Container", getContainer().getId());
+        filter.addCondition("CpasType", getLSID());
+        filter.addCondition("Name", name);
 
-            Material material = Table.selectObject(ExperimentServiceImpl.get().getTinfoMaterial(), Table.ALL_COLUMNS, filter, null, Material.class);
-            if (material == null)
-                return null;
-            return new ExpMaterialImpl(material);
-        }
-        catch (SQLException e)
-        {
-            throw new RuntimeSQLException(e);
-        }
+        Material material = new TableSelector(ExperimentServiceImpl.get().getTinfoMaterial(), filter, null).getObject(Material.class);
+        if (material == null)
+            return null;
+        return new ExpMaterialImpl(material);
     }
 
     public Domain getType()

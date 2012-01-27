@@ -20,7 +20,7 @@ import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.DbSchema;
 import org.labkey.api.data.SQLFragment;
-import org.labkey.api.data.Table;
+import org.labkey.api.data.SqlExecutor;
 import org.labkey.api.data.UpgradeCode;
 import org.labkey.api.issues.IssuesSchema;
 import org.labkey.api.module.DefaultModule;
@@ -183,8 +183,7 @@ public class IssuesModule extends DefaultModule implements SearchService.Documen
 
     public void indexDeleted() throws SQLException
     {
-        Table.execute(IssuesSchema.getInstance().getSchema(), new SQLFragment(
-            "UPDATE issues.issues SET lastIndexed=NULL"
-        ));
+        new SqlExecutor(IssuesSchema.getInstance().getSchema(), new SQLFragment(
+            "UPDATE issues.issues SET lastIndexed=NULL")).execute();
     }
 }

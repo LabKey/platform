@@ -35,6 +35,7 @@ import org.labkey.api.data.RuntimeSQLException;
 import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.Sort;
+import org.labkey.api.data.SqlExecutor;
 import org.labkey.api.data.SqlSelector;
 import org.labkey.api.data.Table;
 import org.labkey.api.data.TableInfo;
@@ -1261,14 +1262,15 @@ public class IssueManager
 
 
         @After
-        public void tearDown() throws Exception
+        public void tearDown()
         {
             Container c = JunitUtil.getTestContainer();
 
-            String deleteComments = "DELETE FROM " + _issuesSchema.getTableInfoComments() + " WHERE IssueId IN (SELECT IssueId FROM " + _issuesSchema.getTableInfoIssues() + " WHERE Container = ?)";
-            Table.execute(_issuesSchema.getSchema(), deleteComments, c.getId());
-            String deleteIssues = "DELETE FROM " + _issuesSchema.getTableInfoIssues() + " WHERE Container = ?";
-            Table.execute(_issuesSchema.getSchema(), deleteIssues, c.getId());
+            SQLFragment deleteComments = new SQLFragment("DELETE FROM " + _issuesSchema.getTableInfoComments() +
+                " WHERE IssueId IN (SELECT IssueId FROM " + _issuesSchema.getTableInfoIssues() + " WHERE Container = ?)", c.getId());
+            new SqlExecutor(_issuesSchema.getSchema(), deleteComments);
+            SQLFragment deleteIssues = new SQLFragment("DELETE FROM " + _issuesSchema.getTableInfoIssues() + " WHERE Container = ?", c.getId());
+            new SqlExecutor(_issuesSchema.getSchema(), deleteIssues);
         }
     }
 }

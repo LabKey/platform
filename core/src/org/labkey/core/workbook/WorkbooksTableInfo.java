@@ -100,13 +100,13 @@ public class WorkbooksTableInfo extends ContainerTable
                 String entityId = keys.get("EntityId") == null ? null : keys.get("EntityId").toString();
                 if (entityId != null)
                 {
-                    return Table.selectObject(getQueryTable(), Table.ALL_COLUMNS, new SimpleFilter("EntityId", entityId), null, Map.class);
+                    return new TableSelector(getQueryTable(), new SimpleFilter("EntityId", entityId), null).getObject(Map.class);
                 }
                 return null;
             }
             try
             {
-                return Table.selectObject(getQueryTable(), Table.ALL_COLUMNS, new SimpleFilter("ID", new Integer(id)), null, Map.class);
+                return new TableSelector(getQueryTable(), new SimpleFilter("ID", new Integer(id)), null).getObject(Map.class);
             }
             catch (NumberFormatException e)
             {

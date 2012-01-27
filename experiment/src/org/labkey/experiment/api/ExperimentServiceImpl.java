@@ -41,6 +41,7 @@ import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.Sort;
 import org.labkey.api.data.Table;
 import org.labkey.api.data.TableInfo;
+import org.labkey.api.data.TableSelector;
 import org.labkey.api.defaults.DefaultValueService;
 import org.labkey.api.exp.AbstractParameter;
 import org.labkey.api.exp.DomainNotFoundException;
@@ -170,15 +171,8 @@ public class ExperimentServiceImpl implements ExperimentService.Interface
     public ExpRunImpl getExpRun(int rowid)
     {
         SimpleFilter filter = new SimpleFilter("RowId", rowid);
-        try
-        {
-            ExperimentRun run = Table.selectObject(getTinfoExperimentRun(), Table.ALL_COLUMNS, filter, null, ExperimentRun.class);
-            return run == null ? null : new ExpRunImpl(run);
-        }
-        catch (SQLException x)
-        {
-            throw new RuntimeSQLException(x);
-        }
+        ExperimentRun run = new TableSelector(getTinfoExperimentRun(), filter, null).getObject(ExperimentRun.class);
+        return run == null ? null : new ExpRunImpl(run);
     }
 
     public Object getImportLock()
@@ -296,32 +290,18 @@ public class ExperimentServiceImpl implements ExperimentService.Interface
 
     public ExpDataImpl getExpData(int rowid)
     {
-        try
-        {
-            Data data = Table.selectObject(getTinfoData(), Table.ALL_COLUMNS, new SimpleFilter("RowId", rowid), null, Data.class);
-            if (data == null)
-                return null;
-            return new ExpDataImpl(data);
-        }
-        catch (SQLException e)
-        {
-            throw new RuntimeSQLException(e);
-        }
+        Data data = new TableSelector(getTinfoData(), new SimpleFilter("RowId", rowid), null).getObject(Data.class);
+        if (data == null)
+            return null;
+        return new ExpDataImpl(data);
     }
 
     public ExpDataImpl getExpData(String lsid)
     {
-        try
-        {
-            Data data = Table.selectObject(getTinfoData(), Table.ALL_COLUMNS, new SimpleFilter("LSID", lsid), null, Data.class);
-            if (data == null)
-                return null;
-            return new ExpDataImpl(data);
-        }
-        catch (SQLException e)
-        {
-            throw new RuntimeSQLException(e);
-        }
+        Data data = new TableSelector(getTinfoData(), new SimpleFilter("LSID", lsid), null).getObject(Data.class);
+        if (data == null)
+            return null;
+        return new ExpDataImpl(data);
     }
 
     public ExpData[] getExpDatas(Container container, DataType type)
@@ -449,15 +429,8 @@ public class ExperimentServiceImpl implements ExperimentService.Interface
 
     public ExpMaterialImpl getExpMaterial(String lsid)
     {
-        try
-        {
-            Material result = Table.selectObject(getTinfoMaterial(), Table.ALL_COLUMNS, new SimpleFilter("LSID", lsid), null, Material.class);
-            return result == null ? null : new ExpMaterialImpl(result);
-        }
-        catch (SQLException x)
-        {
-            throw new RuntimeSQLException(x);
-        }
+        Material result = new TableSelector(getTinfoMaterial(), new SimpleFilter("LSID", lsid), null).getObject(Material.class);
+        return result == null ? null : new ExpMaterialImpl(result);
     }
 
     public ExpMaterialImpl[] getIndexableMaterials(Container container, @Nullable Date modifiedSince)
@@ -640,28 +613,14 @@ public class ExperimentServiceImpl implements ExperimentService.Interface
 
     public ExpProtocolImpl getExpProtocol(int rowid)
     {
-        try
-        {
-            Protocol p = Table.selectObject(getTinfoProtocol(), Table.ALL_COLUMNS, new SimpleFilter("RowId", rowid), null, Protocol.class);
-            return p == null ? null : new ExpProtocolImpl(p);
-        }
-        catch (SQLException x)
-        {
-            throw new RuntimeSQLException(x);
-        }
+        Protocol p = new TableSelector(getTinfoProtocol(), new SimpleFilter("RowId", rowid), null).getObject(Protocol.class);
+        return p == null ? null : new ExpProtocolImpl(p);
     }
 
     public ExpProtocolImpl getExpProtocol(String lsid)
     {
-        try
-        {
-            Protocol result = Table.selectObject(getTinfoProtocol(), Table.ALL_COLUMNS, new SimpleFilter("LSID", lsid), null, Protocol.class);
-            return result == null ? null : new ExpProtocolImpl(result);
-        }
-        catch (SQLException x)
-        {
-            throw new RuntimeSQLException(x);
-        }
+        Protocol result = new TableSelector(getTinfoProtocol(), new SimpleFilter("LSID", lsid), null).getObject(Protocol.class);
+        return result == null ? null : new ExpProtocolImpl(result);
     }
 
     public ExpProtocolImpl getExpProtocol(Container container, String name)
@@ -1277,17 +1236,10 @@ public class ExperimentServiceImpl implements ExperimentService.Interface
             return run;
 
         SimpleFilter filter = new SimpleFilter("LSID", LSID);
-        try
-        {
-            run = Table.selectObject(getTinfoExperimentRun(), Table.ALL_COLUMNS, filter, null, ExperimentRun.class);
-            if (null != run)
-                DbCache.put(getTinfoExperimentRun(), cacheKey, run);
-            return run;
-        }
-        catch (SQLException x)
-        {
-            throw new RuntimeSQLException(x);
-        }
+        run = new TableSelector(getTinfoExperimentRun(), filter, null).getObject(ExperimentRun.class);
+        if (null != run)
+            DbCache.put(getTinfoExperimentRun(), cacheKey, run);
+        return run;
     }
 
     public void clearCaches()
@@ -1303,14 +1255,7 @@ public class ExperimentServiceImpl implements ExperimentService.Interface
 
     public ProtocolApplication getProtocolApplication(String lsid)
     {
-        try
-        {
-            return Table.selectObject(getTinfoProtocolApplication(), Table.ALL_COLUMNS, new SimpleFilter("LSID", lsid), null, ProtocolApplication.class);
-        }
-        catch (SQLException x)
-        {
-            throw new RuntimeSQLException(x);
-        }
+        return new TableSelector(getTinfoProtocolApplication(), new SimpleFilter("LSID", lsid), null).getObject(ProtocolApplication.class);
     }
 
     public ProtocolAction[] getProtocolActions(int parentProtocolRowId)
@@ -2021,14 +1966,7 @@ public class ExperimentServiceImpl implements ExperimentService.Interface
     public MaterialSource getMaterialSource(String lsid)
     {
         SimpleFilter filter = new SimpleFilter("LSID", lsid);
-        try
-        {
-            return Table.selectObject(getTinfoMaterialSource(), Table.ALL_COLUMNS, filter, null, MaterialSource.class);
-        }
-        catch (SQLException x)
-        {
-            throw new RuntimeSQLException(x);
-        }
+        return new TableSelector(getTinfoMaterialSource(), filter, null).getObject(MaterialSource.class);
     }
 
     public String getDefaultSampleSetLsid()

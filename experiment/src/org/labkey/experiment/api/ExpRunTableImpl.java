@@ -37,6 +37,7 @@ import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.Table;
 import org.labkey.api.data.TableInfo;
+import org.labkey.api.data.TableSelector;
 import org.labkey.api.data.VirtualTable;
 import org.labkey.api.data.dialect.SqlDialect;
 import org.labkey.api.exp.PropertyColumn;
@@ -711,7 +712,7 @@ public class ExpRunTableImpl extends ExpTableImpl<ExpRunTable.Column> implements
             if (rowIdRaw != null)
             {
                 Integer rowId = (Integer) ConvertUtils.convert(rowIdRaw.toString(), Integer.class);
-                return Table.selectObject(getQueryTable(), Table.ALL_COLUMNS, new SimpleFilter(Column.RowId.toString(), rowId), null, Map.class);
+                return new TableSelector(getQueryTable(), new SimpleFilter(Column.RowId.toString(), rowId), null).getObject(Map.class);
             }
             return null;
         }

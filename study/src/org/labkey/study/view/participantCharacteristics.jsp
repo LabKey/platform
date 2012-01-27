@@ -20,8 +20,8 @@
 <%@ page import="org.labkey.api.collections.CsvSet"%>
 <%@ page import="org.labkey.api.data.SimpleFilter"%>
 <%@ page import="org.labkey.api.data.Sort"%>
-<%@ page import="org.labkey.api.data.Table"%>
 <%@ page import="org.labkey.api.data.TableInfo"%>
+<%@ page import="org.labkey.api.data.TableSelector"%>
 <%@ page import="org.labkey.api.exp.PropertyDescriptor"%>
 <%@ page import="org.labkey.api.query.QueryService" %>
 <%@ page import="org.labkey.api.query.UserSchema" %>
@@ -35,6 +35,7 @@
 <%@ page import="org.labkey.api.study.DataSet" %>
 <%@ page import="org.labkey.api.study.Study" %>
 <%@ page import="org.labkey.api.study.StudyService" %>
+<%@ page import="org.labkey.api.study.TimepointType" %>
 <%@ page import="org.labkey.api.util.PageFlowUtil" %>
 <%@ page import="org.labkey.api.view.ActionURL" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
@@ -47,7 +48,6 @@
 <%@ page import="org.labkey.study.model.StudyManager" %>
 <%@ page import="org.labkey.study.reports.StudyChartQueryReport" %>
 <%@ page import="java.util.Map" %>
-<%@ page import="org.labkey.api.study.TimepointType" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 
 <%
@@ -158,7 +158,7 @@
             }
 
 
-            Map<String,Object> result = Table.selectObject(datasetTable, new CsvSet("lsid," + StudyService.get().getSubjectColumnName(dataSet.getContainer()) + ",Date,SequenceNum"), filter, sort, Map.class);
+            Map<String, Object> result = new TableSelector(datasetTable, new CsvSet("lsid," + StudyService.get().getSubjectColumnName(dataSet.getContainer()) + ",Date,SequenceNum"), filter, sort).getObject(Map.class);
             String lsid = result != null ? (String)result.get("lsid") : null;
             Map<String,Object> datasetRow = null;
 

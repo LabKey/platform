@@ -21,12 +21,17 @@ import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.Filter;
 import org.labkey.api.data.SimpleFilter;
-import org.labkey.api.data.Table;
+import org.labkey.api.data.TableSelector;
 import org.labkey.api.exp.ExperimentException;
 import org.labkey.api.exp.api.ExpMaterial;
 import org.labkey.api.exp.api.ExpSampleSet;
 import org.labkey.api.exp.query.ExpMaterialTable;
-import org.labkey.api.query.*;
+import org.labkey.api.query.AbstractQueryUpdateService;
+import org.labkey.api.query.BatchValidationException;
+import org.labkey.api.query.DuplicateKeyException;
+import org.labkey.api.query.InvalidKeyException;
+import org.labkey.api.query.QueryUpdateServiceException;
+import org.labkey.api.query.ValidationException;
 import org.labkey.api.reader.MapLoader;
 import org.labkey.api.security.User;
 import org.labkey.api.study.assay.AssayFileWriter;
@@ -43,7 +48,7 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 
-import static org.labkey.experiment.samples.UploadMaterialSetForm.*;
+import static org.labkey.experiment.samples.UploadMaterialSetForm.InsertUpdateChoice;
 
 /**
  * User: kevink
@@ -170,7 +175,7 @@ class SampleSetUpdateService extends AbstractQueryUpdateService
             throw new QueryUpdateServiceException("Either RowId or LSID is required to get Sample Set Material.");
 
 
-        return Table.selectObject(getQueryTable(), Table.ALL_COLUMNS, filter, null, Map.class);
+        return new TableSelector(getQueryTable(), filter, null).getObject(Map.class);
     }
 
     @Override

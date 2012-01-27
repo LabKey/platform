@@ -20,14 +20,11 @@ import org.labkey.api.announcements.CommSchema;
 import org.labkey.api.cache.CacheManager;
 import org.labkey.api.cache.StringKeyCache;
 import org.labkey.api.data.Container;
-import org.labkey.api.data.RuntimeSQLException;
 import org.labkey.api.data.SimpleFilter;
-import org.labkey.api.data.Table;
+import org.labkey.api.data.TableSelector;
 import org.labkey.api.view.NotFoundException;
 import org.labkey.wiki.WikiCache.WikiCacheLoader;
 import org.labkey.wiki.model.WikiVersion;
-
-import java.sql.SQLException;
 
 /*
 * User: adam
@@ -56,23 +53,12 @@ public class WikiVersionCache
     // Exposed outside this class only for junit tests
     static WikiVersion loadVersionFromDatabase(int version)
     {
-        try
-        {
-            WikiVersion wikiversion = Table.selectObject(CommSchema.getInstance().getTableInfoPageVersions(),
-                        Table.ALL_COLUMNS,
-                        new SimpleFilter("RowId", version),
-                        null,
-                        WikiVersion.class);
+        WikiVersion wikiversion = new TableSelector(CommSchema.getInstance().getTableInfoPageVersions(), new SimpleFilter("RowId", version), null).getObject(WikiVersion.class);
 
-            if (wikiversion == null)
-                throw new NotFoundException("Wiki version " + version + " not found");
+        if (wikiversion == null)
+            throw new NotFoundException("Wiki version " + version + " not found");
 
-            return wikiversion;
-        }
-        catch (SQLException x)
-        {
-            throw new RuntimeSQLException(x);
-        }
+        return wikiversion;
     }
 
     private static String getCacheKey(Container c, int version)

@@ -29,6 +29,7 @@ import org.labkey.api.data.RuntimeSQLException;
 import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.Table;
 import org.labkey.api.data.TableInfo;
+import org.labkey.api.data.TableSelector;
 import org.labkey.api.data.dialect.SqlDialect;
 import org.labkey.api.exp.DomainNotFoundException;
 import org.labkey.api.exp.Lsid;
@@ -289,20 +290,15 @@ public class ListDefinitionImpl implements ListDefinition
 
     private ListItem getListItem(SimpleFilter filter)
     {
-        try
-        {
-            filter.addCondition("ListId", getListId());
-            ListItm itm = Table.selectObject(getIndexTable(), Table.ALL_COLUMNS, filter, null, ListItm.class);
-            if (itm == null)
-            {
-                return null;
-            }
-            return new ListItemImpl(this, itm);
-        }
-        catch (SQLException e)
+        filter.addCondition("ListId", getListId());
+        ListItm itm = new TableSelector(getIndexTable(), filter, null).getObject(ListItm.class);
+
+        if (itm == null)
         {
             return null;
         }
+
+        return new ListItemImpl(this, itm);
     }
 
     public void deleteListItems(User user, Collection keys) throws SQLException
