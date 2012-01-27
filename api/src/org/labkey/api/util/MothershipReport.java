@@ -246,10 +246,8 @@ public class MothershipReport implements Runnable
         }
         addParam("runtimeOS", System.getProperty("os.name"));
         addParam("javaVersion", System.getProperty("java.version"));
-        addParam("enterprisePipelineEnabled", PipelineService.get().isEnterprisePipeline());
+        addParam("enterprisePipelineEnabled", PipelineService.get() != null && PipelineService.get().isEnterprisePipeline());
 
-        boolean ldapEnabled = AuthenticationManager.isActive("LDAP");  // TODO: Send back all active auth providers (OpenSSO, LDAP, etc.)
-        addParam("ldapEnabled", ldapEnabled);
         addParam("heapSize", ManagementFactory.getMemoryMXBean().getHeapMemoryUsage().getMax() / 1024 / 1024);
 
         DbSchema schema = CoreSchema.getInstance().getSchema();
