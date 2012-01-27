@@ -62,7 +62,7 @@ public class DefaultFolderType implements FolderType
         this.description = description;
     }
 
-    public DefaultFolderType(String name, String description, List<Portal.WebPart> requiredParts, List<Portal.WebPart> preferredParts, Set<Module> activeModules, Module defaultModule)
+    public DefaultFolderType(String name, String description, @Nullable List<Portal.WebPart> requiredParts, @Nullable List<Portal.WebPart> preferredParts, Set<Module> activeModules, Module defaultModule)
     {
         this.name = name;
         this.description = description;

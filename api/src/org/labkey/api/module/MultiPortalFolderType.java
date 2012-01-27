@@ -16,6 +16,7 @@
 package org.labkey.api.module;
 
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import org.labkey.api.view.FolderTab;
 import org.labkey.api.view.NavTree;
 import org.labkey.api.view.Portal;
@@ -34,7 +35,7 @@ import java.util.Set;
  */
 public abstract class MultiPortalFolderType extends DefaultFolderType
 {
-    public MultiPortalFolderType(String name, String description, List<Portal.WebPart> requiredParts, List<Portal.WebPart> preferredParts, Set<Module> activeModules, Module defaultModule)
+    public MultiPortalFolderType(String name, String description, @Nullable List<Portal.WebPart> requiredParts, @Nullable List<Portal.WebPart> preferredParts, Set<Module> activeModules, Module defaultModule)
     {
         super(name, description, requiredParts, preferredParts, activeModules, defaultModule);
     }

@@ -1052,6 +1052,7 @@ public class Table
     }
 
 
+    @Deprecated
     public static <K> K selectObject(TableInfo table, Set<String> select, @Nullable Filter filter, @Nullable Sort sort, Class<K> clss) throws SQLException
     {
         return new LegacyTableSelector(table, select, filter, sort).getObject(clss);

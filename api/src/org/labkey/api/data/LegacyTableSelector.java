@@ -42,12 +42,12 @@ public class LegacyTableSelector extends LegacySelector<TableSelector>
 
     public LegacyTableSelector(TableInfo table, @Nullable Filter filter, @Nullable Sort sort)
     {
-        super(new TableSelector(table, Table.ALL_COLUMNS, filter, sort));
+        super(new TableSelector(table, filter, sort));
     }
 
     public LegacyTableSelector(TableInfo table)
     {
-        super(new TableSelector(table, Table.ALL_COLUMNS, null, null));
+        super(new TableSelector(table, null, null));
     }
 
     public LegacyTableSelector(ColumnInfo column, @Nullable Filter filter, @Nullable Sort sort)

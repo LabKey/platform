@@ -23,7 +23,6 @@ import org.labkey.api.cache.CacheManager;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.Sort;
-import org.labkey.api.data.Table;
 import org.labkey.api.data.TableSelector;
 import org.labkey.api.util.Pair;
 import org.labkey.api.view.Portal.WebPart;
@@ -73,7 +72,7 @@ public class WebPartCache
                 filter.addCondition("Container", c.getId());
                 Map<Integer, WebPart> map = new LinkedHashMap<Integer, WebPart>();
 
-                ArrayList<WebPart> list = new ArrayList<WebPart>(new TableSelector(Portal.getTableInfoPortalWebParts(), Table.ALL_COLUMNS, filter, new Sort("Index")).getCollection(WebPart.class));
+                ArrayList<WebPart> list = new ArrayList<WebPart>(new TableSelector(Portal.getTableInfoPortalWebParts(), filter, new Sort("Index")).getCollection(WebPart.class));
 
                 // List order should match index, but use a map to be safe.  TODO: In 12.1, just index the list and switch map to RowId->WebPart
                 for (WebPart webPart : list)

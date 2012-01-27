@@ -115,7 +115,7 @@ public class CacheKey<T, C extends Enum<C>> implements Cloneable, CacheLoader<St
 
     public T[] load(String stringKey, Object arg)
     {
-        return new TableSelector(_table, Table.ALL_COLUMNS, _filter, null).getArray(_clazz);
+        return new TableSelector(_table, _filter, null).getArray(_clazz);
     }
 
 
