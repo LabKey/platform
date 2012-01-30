@@ -48,32 +48,21 @@ import java.util.HashSet;
 public class ConvertHelper implements PropertyEditorRegistrar
 {
     private static final Logger _log = Logger.getLogger(ConvertHelper.class);
-    private static ConvertHelper _myInstance = null;
+    private static ConvertHelper _myInstance = new ConvertHelper();
 
     // just a list of converters we know about
     HashSet<Class> _converters = new HashSet<Class>();
 
 
-    public static void registerHelpers()
-    {
-        // Should register only once
-        assert null == _myInstance;
-
-        _myInstance = new ConvertHelper();
-        _myInstance.register();
-    }
-
-
     public static PropertyEditorRegistrar getPropertyEditorRegistrar()
     {
-        if (null == _myInstance)
-            registerHelpers();
         return _myInstance;
     }
 
 
     private ConvertHelper()
     {
+        register();
     }
 
 

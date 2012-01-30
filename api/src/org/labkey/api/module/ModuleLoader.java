@@ -242,8 +242,8 @@ public class ModuleLoader implements Filter
 
         rollErrorLogFile(_log);
 
-        // Register BeanUtils converters
-        ConvertHelper.registerHelpers();
+        // make sure ConvertHelper is initialized
+        ConvertHelper.getPropertyEditorRegistrar();
 
         _webappDir = FileUtil.getAbsoluteCaseSensitiveFile(new File(servletCtx.getRealPath(".")));
 

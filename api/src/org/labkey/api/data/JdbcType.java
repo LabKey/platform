@@ -196,6 +196,9 @@ public enum JdbcType
 
     JdbcType(int type, Class cls, String xtype)
     {
+        // make sure ConvertHelper is initialized
+        ConvertHelper.getPropertyEditorRegistrar();
+
         this.sqlType = type;
         this.cls = cls;
         this.xtype = xtype;
