@@ -107,8 +107,6 @@ public interface AssayProvider extends Handler<ExpProtocol>
 
     List<Pair<Domain, Map<DomainProperty, Object>>> getDomains(ExpProtocol protocol);
 
-    Set<String> getReservedPropertyNames(ExpProtocol protocol, Domain domain);
-
     Pair<ExpProtocol, List<Pair<Domain, Map<DomainProperty, Object>>>> getAssayTemplate(User user, Container targetContainer);
 
     Pair<ExpProtocol, List<Pair<Domain, Map<DomainProperty, Object>>>> getAssayTemplate(User user, Container targetContainer, ExpProtocol toCopy);

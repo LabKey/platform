@@ -19,6 +19,7 @@ import org.apache.commons.beanutils.BeanUtils;
 import org.apache.commons.beanutils.ConvertUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.time.FastDateFormat;
+import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.*;
 import org.labkey.api.defaults.DefaultValueService;
@@ -114,18 +115,24 @@ public class DomainUtil
     }
 
     @Nullable
-    public static GWTDomain getDomainDescriptor(User user, String typeURI, Container domainContainer)
+    public static GWTDomain<GWTPropertyDescriptor> getDomainDescriptor(User user, String typeURI, Container domainContainer)
     {
         DomainDescriptor dd = OntologyManager.getDomainDescriptor(typeURI, domainContainer);
         if (null == dd)
             return null;
         Domain domain = PropertyService.get().getDomain(dd.getDomainId());
-        GWTDomain<GWTPropertyDescriptor> d = getDomain(dd);
+        return getDomainDescriptor(user, domain);
+    }
+
+    @NotNull
+    public static GWTDomain<GWTPropertyDescriptor> getDomainDescriptor(User user, @NotNull Domain domain)
+    {
+        GWTDomain<GWTPropertyDescriptor> d = getDomain(domain);
 
         ArrayList<GWTPropertyDescriptor> list = new ArrayList<GWTPropertyDescriptor>();
 
         DomainProperty[] properties = domain.getProperties();
-        Map<DomainProperty, Object> defaultValues = DefaultValueService.get().getDefaultValues(domainContainer, domain);
+        Map<DomainProperty, Object> defaultValues = DefaultValueService.get().getDefaultValues(domain.getContainer(), domain);
 
         for (DomainProperty prop : properties)
         {
@@ -151,12 +158,12 @@ public class DomainUtil
         return d;
     }
 
-    private static GWTDomain<GWTPropertyDescriptor> getDomain(DomainDescriptor dd)
+    private static GWTDomain<GWTPropertyDescriptor> getDomain(Domain dd)
     {
         GWTDomain<GWTPropertyDescriptor> gwtDomain = new GWTDomain<GWTPropertyDescriptor>();
 
-        gwtDomain.setDomainId(dd.getDomainId());
-        gwtDomain.setDomainURI(dd.getDomainURI());
+        gwtDomain.setDomainId(dd.getTypeId());
+        gwtDomain.setDomainURI(dd.getTypeURI());
         gwtDomain.setName(dd.getName());
         gwtDomain.setDescription(dd.getDescription());
         gwtDomain.setContainer(dd.getContainer().getId());

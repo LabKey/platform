@@ -29,7 +29,7 @@ import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.Pair;
 import org.labkey.api.view.ActionURL;
 
-import java.util.Collections;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -40,11 +40,20 @@ import java.util.Set;
  * Date: June 25, 2007
  * Time: 1:01:43 PM
  */
-public class AssayDomainKind extends AbstractDomainKind
+public abstract class AssayDomainKind extends AbstractDomainKind
 {
-    public String getKindName()
+    private final String _namespacePrefix;
+    private final Priority _priority;
+
+    protected AssayDomainKind(String namespacePrefix)
     {
-        return "Assay";
+        this(namespacePrefix, Priority.MEDIUM);
+    }
+
+    protected AssayDomainKind(String namespacePrefix, Priority priority)
+    {
+        _namespacePrefix = namespacePrefix;
+        _priority = priority;
     }
 
     public String getTypeLabel(Domain domain)
@@ -56,9 +65,8 @@ public class AssayDomainKind extends AbstractDomainKind
     public Priority getPriority(String domainURI)
     {
         Lsid lsid = new Lsid(domainURI);
-        return lsid.getNamespacePrefix() != null && lsid.getNamespacePrefix().startsWith(ExpProtocol.ASSAY_DOMAIN_PREFIX) ? Priority.MEDIUM : null;
+        return lsid.getNamespacePrefix() != null && lsid.getNamespacePrefix().startsWith(_namespacePrefix) ? _priority: null;
     }
-
 
     public SQLFragment sqlObjectIdsInDomain(Domain domain)
     {
@@ -120,8 +128,13 @@ public class AssayDomainKind extends AbstractDomainKind
         return domain.getContainer().hasPermission(user, DesignAssayPermission.class);
     }
 
-    public Set<String> getReservedPropertyNames(Domain domain)
+    protected Set<String> getAssayReservedPropertyNames()
     {
-        return Collections.emptySet();
+        Set<String> result = new HashSet<String>();
+        result.add("RowId");
+        result.add("Row Id");
+        result.add("Container");
+        result.add("LSID");
+        return result;
     }
 }

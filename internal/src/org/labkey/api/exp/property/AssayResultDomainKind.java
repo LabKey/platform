@@ -35,16 +35,14 @@ import java.util.Set;
  */
 public class AssayResultDomainKind extends AssayDomainKind
 {
+    public AssayResultDomainKind()
+    {
+        super(ExpProtocol.ASSAY_DOMAIN_DATA);
+    }
+
     public String getKindName()
     {
         return "Assay Results";
-    }
-
-    @Override
-    public Priority getPriority(String domainURI)
-    {
-        Lsid lsid = new Lsid(domainURI);
-        return lsid.getNamespacePrefix() != null && lsid.getNamespacePrefix().startsWith(ExpProtocol.ASSAY_DOMAIN_DATA) ? Priority.HIGH : null;
     }
 
     @Override
@@ -83,4 +81,12 @@ public class AssayResultDomainKind extends AssayDomainKind
         return DbSchema.get(AbstractTsvAssayProvider.ASSAY_SCHEMA_NAME);
     }
 
+    @Override
+    public Set<String> getReservedPropertyNames(Domain domain)
+    {
+        Set<String> result = getAssayReservedPropertyNames();
+        result.add("Run");
+        result.add("DataId");
+        return result;
+    }
 }

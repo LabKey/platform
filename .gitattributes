@@ -4467,8 +4467,11 @@ internal/src/org/labkey/api/exp/AbstractFileXarSource.java -text
 internal/src/org/labkey/api/exp/CompressedXarSource.java -text
 internal/src/org/labkey/api/exp/FileXarSource.java -text
 internal/src/org/labkey/api/exp/property/AbstractDomainKind.java -text
+internal/src/org/labkey/api/exp/property/AssayBatchDomainKind.java -text
 internal/src/org/labkey/api/exp/property/AssayDomainKind.java -text
 internal/src/org/labkey/api/exp/property/AssayResultDomainKind.java -text
+internal/src/org/labkey/api/exp/property/AssayRunDomainKind.java -text
+internal/src/org/labkey/api/exp/property/DefaultAssayDomainKind.java -text
 internal/src/org/labkey/api/exp/property/DomainEditorServiceBase.java -text
 internal/src/org/labkey/api/exp/property/DomainImporterServiceBase.java -text
 internal/src/org/labkey/api/exp/property/DomainUtil.java -text

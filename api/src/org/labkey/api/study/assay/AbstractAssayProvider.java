@@ -693,38 +693,6 @@ public abstract class AbstractAssayProvider implements AssayProvider
         return domains;
     }
 
-    public Set<String> getReservedPropertyNames(ExpProtocol protocol, Domain domain)
-    {
-        Set<String> reservedNames = new HashSet<String>();
-        boolean runDomain = isDomainType(domain, protocol, ExpProtocol.ASSAY_DOMAIN_RUN);
-        boolean batchDomain = isDomainType(domain, protocol, ExpProtocol.ASSAY_DOMAIN_BATCH);
-
-        if (runDomain)
-        {
-            for (ExpRunTable.Column column : ExpRunTable.Column.values())
-            {
-                reservedNames.add(column.toString());
-            }
-        }
-        if (batchDomain)
-        {
-            for (ExpExperimentTable.Column column : ExpExperimentTable.Column.values())
-            {
-                reservedNames.add(column.toString());
-            }
-        }
-        if (batchDomain || runDomain)
-        {
-            reservedNames.add("AssayId");
-            reservedNames.add("Assay Id");
-        }
-        reservedNames.add("RowId");
-        reservedNames.add("Row Id");
-        reservedNames.add("Container");
-        reservedNames.add("LSID");
-        return reservedNames;
-    }
-
     public Pair<ExpProtocol, List<Pair<Domain, Map<DomainProperty, Object>>>> getAssayTemplate(User user, Container targetContainer)
     {
         ExpProtocol copy = ExperimentService.get().createExpProtocol(targetContainer, ExpProtocol.ApplicationType.ExperimentRun, "Unknown");
