@@ -53,6 +53,7 @@ Collections.sort(allModules, new Comparator<Module>()
     }
 });
 Set<Module> activeModules = c.getActiveModules();
+Set<Module> requiredModules = c.getRequiredModules();
 Module defaultModule = c.getDefaultModule();
 FolderType folderType = c.getFolderType();
 
@@ -243,7 +244,7 @@ function validate()
         <labkey:errors/>
 <%
     int i = 0;
-Set<Module> requiredModules = folderType.getActiveModules() != null ? folderType.getActiveModules() : new HashSet<Module>();
+
 for (Module module : allModules)
     {
     boolean active = activeModules.contains(module) || requiredModules.contains(module);

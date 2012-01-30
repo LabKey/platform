@@ -554,7 +554,9 @@ public class AdminController extends SpringActionController
                 }
             });
 
-            Set<Module> requiredModules = folderType.getActiveModules() != null ? folderType.getActiveModules() : new HashSet<Module>();
+            //note: this has been altered to use Container.getRequiredModules() instead of FolderType
+            //this is b/c a parent container must consider child workbooks when determining the set of requiredModules
+            Set<Module> requiredModules = c.getRequiredModules(); //folderType.getActiveModules() != null ? folderType.getActiveModules() : new HashSet<Module>();
             Set<Module> activeModules = c.getActiveModules();
 
             for (Module m : allModules)
