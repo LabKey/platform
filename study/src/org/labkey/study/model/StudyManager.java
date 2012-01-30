@@ -81,6 +81,7 @@ import org.labkey.api.gwt.client.model.PropertyValidatorType;
 import org.labkey.api.module.Module;
 import org.labkey.api.portal.ProjectUrls;
 import org.labkey.api.query.BatchValidationException;
+import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.QueryService;
 import org.labkey.api.query.QueryUpdateService;
 import org.labkey.api.query.ValidationError;
@@ -2953,20 +2954,18 @@ public class StudyManager
 
         body.append(searchTitle).append("\n");
 
+        StudyQuerySchema schema = new StudyQuerySchema(dsd.getStudy(), User.getSearchUser(), false);
+        TableInfo tableInfo = schema.getDataSetTable(dsd);
+        Map<FieldKey, ColumnInfo> columns = QueryService.get().getColumns(tableInfo, tableInfo.getDefaultVisibleColumns());
         String sep = "";
-
-        Domain domain = dsd.getDomain();
-        if (null != domain)
+        for (ColumnInfo column : columns.values())
         {
-            for (DomainProperty property : domain.getProperties())
-            {
-                String n = StringUtils.trimToEmpty(property.getName());
-                String l = StringUtils.trimToEmpty(property.getLabel());
-                if (n.equals(l))
-                    l = "";
-                body.append(sep).append(StringUtilsLabKey.joinNonBlank(" ", n, l));
-                sep = ",\n";
-            }
+            String n = StringUtils.trimToEmpty(column.getName());
+            String l = StringUtils.trimToEmpty(column.getLabel());
+            if (n.equals(l))
+                l = "";
+            body.append(sep).append(StringUtilsLabKey.joinNonBlank(" ", n, l));
+            sep = ",\n";
         }
 
         ActionURL view = new ActionURL(StudyController.DatasetAction.class, null);
@@ -2978,7 +2977,6 @@ public class StudyManager
                 view, props);
         task.addResource(r, SearchService.PRIORITY.item);
     }
-
 
     public static void indexParticipantView(final SearchService.IndexTask task)
     {

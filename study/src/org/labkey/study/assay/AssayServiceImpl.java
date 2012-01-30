@@ -126,18 +126,14 @@ public class AssayServiceImpl extends DomainEditorServiceBase implements AssaySe
         for (Pair<Domain, Map<DomainProperty, Object>> domainInfo : template.getValue())
         {
             Domain domain = domainInfo.getKey();
-            GWTDomain<GWTPropertyDescriptor> gwtDomain = new GWTDomain<GWTPropertyDescriptor>();
+            GWTDomain<GWTPropertyDescriptor> gwtDomain = DomainUtil.getDomainDescriptor(getUser(), domain);
             if (provider.allowDefaultValues(domain))
                 gwtDomain.setDefaultValueOptions(provider.getDefaultValueOptions(domain), provider.getDefaultValueDefault(domain));
             Set<String> mandatoryPropertyDescriptors = new HashSet<String>();
-            if (!copy)
+            if (copy)
             {
-                gwtDomain.setDomainId(domain.getTypeId());
+                gwtDomain.setDomainId(0);
             }
-            gwtDomain.setDomainURI(domain.getTypeURI());
-            gwtDomain.setDescription(domain.getDescription());
-            gwtDomain.setName(domain.getName());
-            gwtDomain.setContainer(domain.getContainer().getId());
             gwtDomain.setAllowFileLinkProperties(provider.isFileLinkPropertyAllowed(template.getKey(), domain));
             ActionURL setDefaultValuesAction = new ActionURL(SetDefaultValuesAssayAction.class, getContainer());
             setDefaultValuesAction.addParameter("providerName", provider.getName());
@@ -182,7 +178,6 @@ public class AssayServiceImpl extends DomainEditorServiceBase implements AssaySe
             }
             gwtDomain.setFields(gwtProps);
             gwtDomain.setMandatoryFieldNames(mandatoryPropertyDescriptors);
-            gwtDomain.setReservedFieldNames(provider.getReservedPropertyNames(protocol, domain));
         }
 
         GWTProtocol result = new GWTProtocol();

@@ -861,7 +861,13 @@ public class DataSetDefinition extends AbstractStudyEntity<DataSetDefinition> im
 
             if (study.getTimepointType() != TimepointType.VISIT)
             {
-                ColumnInfo visitDateCol = newDatasetColumnInfo(this, getStorageColumn("Date"), getVisitDateURI());
+                ColumnInfo column = getStorageColumn("Date");
+                if (column == null)
+                {
+                    // Template table calls the column VisitDate instead
+                    column = getStorageColumn("VisitDate");
+                }
+                ColumnInfo visitDateCol = newDatasetColumnInfo(this, column, getVisitDateURI());
                 visitDateCol.setNullable(false);
                 addColumn(visitDateCol);
             }

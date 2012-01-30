@@ -36,7 +36,6 @@ import org.labkey.api.action.GWTServiceAction;
 import org.labkey.api.action.HasViewContext;
 import org.labkey.api.action.LabkeyError;
 import org.labkey.api.action.MutatingApiAction;
-import org.labkey.api.action.RedirectAction;
 import org.labkey.api.action.SimpleApiJsonForm;
 import org.labkey.api.action.SimpleViewAction;
 import org.labkey.api.action.SpringActionController;
