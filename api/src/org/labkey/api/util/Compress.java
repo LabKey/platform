@@ -17,7 +17,6 @@ package org.labkey.api.util;
 
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.log4j.Logger;
 import org.junit.Assert;
 import org.junit.Test;
 import org.labkey.api.data.dialect.KeywordCandidates;
@@ -154,7 +153,126 @@ public class Compress
             //
         }
 
-        return getString(bos.toByteArray());
+        return getString(bos);
+    }
+
+
+    // Compress a byte[] using simple run-length encoding... single byte count (0-255) followed by character to repeat.
+    // Best for strings that include repeated sequences of characters.
+    public static byte[] compressRle(String source, Algorithm algorithm)
+    {
+        return compressRle(getBytes(source), algorithm);
+    }
+
+
+    public enum Algorithm
+    {
+        // Compress using simple run-length encoding.  Bytes are read in pairs, with first byte the count (0-255) and
+        // second byte the character to repeat.  This is appropriate for strings that include special characters (> 127).
+        SimpleRle() {
+            @Override
+            void encode(ByteArrayOutputStream buf, byte b, int count)
+            {
+                buf.write(count);
+                buf.write(b);
+            }
+
+            @Override
+            void decode(ByteArrayOutputStream buf, byte[] bytes)
+            {
+                for (int i = 0; i < bytes.length; i += 2)
+                {
+                    int count = bytes[i] & 255;
+                    byte b = bytes[i+1];
+
+                    for (int j = 0; j < count; j++)
+                        buf.write(b);
+                }
+            }
+        },
+
+        // Compress using run-length encoding optimized for strings comprised entirely of ASCII <= 127.  Compressed
+        // strings are never larger than their input, even in perverse cases, since non-repeating characters are
+        // represented in a single byte.  While reading:
+        // - If current byte is >= 128, output the low 7 bits as a single character
+        // - Otherwise, that byte plus the high bit of the following byte comprise the repeat count (0-255) of the low 7 bits of the following byte
+        AsciiRle() {
+            @Override
+            void encode(ByteArrayOutputStream buf, byte b, int count)
+            {
+                if (b < 0)
+                    throw new IllegalStateException("This compression algorithm does not support extended ASCII charcters (> 127)");
+
+                if (1 == count)
+                {
+                    buf.write(b | 128);             // Single-character case; set the high bit
+                }
+                else
+                {
+                    buf.write(count & 127);         // First 7 bits of count
+                    buf.write((count & 128) | b);   // High bit of count plus the character
+                }
+            }
+
+            @Override
+            void decode(ByteArrayOutputStream buf, byte[] bytes)
+            {
+                for (int i = 0; i < bytes.length; )
+                {
+                    byte first = bytes[i];
+
+                    if (first < 0)
+                    {
+                        byte chr = (byte)(first & 127);
+                        buf.write(chr);
+                        i++;
+                    }
+                    else
+                    {
+                        byte chr = (byte)(bytes[i+1] & ((byte)127));
+                        int count = first | (bytes[i+1] & 128);
+
+                        for (int j = 0; j < count; j++)
+                            buf.write(chr);
+
+                        i += 2;
+                    }
+                }
+            }
+        };
+
+        abstract void encode(ByteArrayOutputStream buf, byte b, int count);
+        abstract void decode(ByteArrayOutputStream buf, byte[] bytes);
+    }
+
+    // Compress a byte[] using simple run-length encoding... see above.
+    public static byte[] compressRle(byte[] bytes, Algorithm algorithm)
+    {
+        ByteArrayOutputStream buf = new ByteArrayOutputStream();
+
+        for (int i = 0; i < bytes.length; )
+        {
+            byte b = bytes[i];
+            int count = 1;
+
+            while (++i < bytes.length && b == bytes[i] && count < 255)
+                count++;
+
+            algorithm.encode(buf, b, count);
+        }
+
+        return buf.toByteArray();
+    }
+
+
+    // Decompress a byte[] that was compressed using simple run-length encoding.
+    public static String decompressRle(byte[] bytes, Algorithm algorithm)
+    {
+        ByteArrayOutputStream buf = new ByteArrayOutputStream();
+
+        algorithm.decode(buf, bytes);
+
+        return getString(buf);
     }
 
 
@@ -171,11 +289,11 @@ public class Compress
     }
 
 
-    private static String getString(byte[] source)
+    private static String getString(ByteArrayOutputStream bos)
     {
         try
         {
-            return new String(source, "UTF-8");
+            return new String(bos.toByteArray(), "UTF-8");
         }
         catch (UnsupportedEncodingException e)
         {
@@ -192,23 +310,51 @@ public class Compress
             String shortString = "this is a test";
             String longString = StringUtils.join(KeywordCandidates.get().getCandidates(), " ");
             String reallyLongString = StringUtils.repeat(longString, " ", 4);
+            String stringWithSequences = "wwwwwwaaaaabbabcdezzzzzzz1234555555555";
+            String stringWithLongSequences = StringUtils.repeat('a', 200) + "abcdefg" + StringUtils.repeat('z', 255);
+            String dnaSequence = "IIIIE@EIIIHIIFFF<<EIB;;1116//-;;>>???;8<GIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIICCCCIIIIIIIIIIIIIIIIIIHHHHHHHIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIDDDFIFFHHIIHFFHHHIIIIIIIIIIIIIIIIIIIIIIIIIIIH??DDDDDDD;;>ADDDDDD;;;77//6:DDDDDDIIID=:99=40,,,,,,0069444489::<788999<77777<9::<<977777???777;>@";
+            String specialCharacters = "this \u017D string \u0080 has \u0234 funny \u0837 characters";
 
-            test(shortString, 1.2, 0.75);       // Not so efficient with a short string
-            test(longString, 0.25, 0.25);       // Better with a longer string
-            test(reallyLongString, 0.1, 0.1);   // Even better with repeated text
+            test(shortString, 1.14, 0.71, 1, 0.5);
+            test(longString, 0.23, 0.23, 0.98, 0.5);
+            test(reallyLongString, 0.062, 0.061, 0.98, 0.5);
+            test(stringWithSequences, 0.55, 0.395, 0.368, 0.25);
+            test(stringWithLongSequences, 0.0357, 0.0227, 0.0173, 0.0108);
+            test(dnaSequence, 0.129, 0.118, 0.159, 0.122);
+            test(specialCharacters, 0.825, 0.675, 1.1, -1);   // -1 indicates that AsciiRle compress should throw because of the special characters
         }
 
-        private void test(String s, double maxGzipRatio, double maxZlibRatio) throws DataFormatException
+        private void test(String s, double gzipRatio, double deflateRatio, double rleSimpleRatio, double rleAsciiRatio) throws DataFormatException
         {
             byte[] gzip = compressGzip(s);
-            assertEquals(s, decompressGzip(gzip));
-            double gzipRatio = (double)gzip.length / (s.length() * 2);
-            assertTrue(gzipRatio < maxGzipRatio);
+            test("gzip", s, gzip, decompressGzip(gzip), gzipRatio);
 
             byte[] deflate = deflate(s);
-            assertEquals(s, inflate(deflate));
-            double zlibRatio = (double)deflate.length / (s.length() * 2);
-            assertTrue(zlibRatio < maxZlibRatio);
+            test("deflate", s, deflate, inflate(deflate), deflateRatio);
+
+            byte[] rleSimple = compressRle(s, Algorithm.SimpleRle);
+            test("rle simple", s, rleSimple, decompressRle(rleSimple, Algorithm.SimpleRle), rleSimpleRatio);
+
+            try
+            {
+                byte[] rleAscii = compressRle(s, Algorithm.AsciiRle);
+                test("rle ascii", s, rleAscii, decompressRle(rleAscii, Algorithm.AsciiRle), rleAsciiRatio);
+            }
+            catch (IllegalStateException e)
+            {
+                assertTrue("Did not expect exception with positive target ratio", rleAsciiRatio < 0);
+                assertEquals("This compression algorithm does not support extended ASCII charcters (> 127)", e.getMessage());
+            }
+        }
+
+        private void test(String algorithm, String source, byte[] compressed, String decompressed, double targetRatio)
+        {
+            assertEquals(algorithm + " didn't roundtrip.", source, decompressed);
+            double ratio = (double)compressed.length / (source.length() * 2);
+
+            // Need to be within 1% of target ratio
+            double diff = targetRatio - ratio;
+            assertTrue(algorithm + " " + (diff > 0 ? "exceeded maximum" : "failed to meet minimum") + " compression ratio: expected " + targetRatio + " but was " + ratio, Math.abs(diff)/targetRatio < 0.01);
         }
     }
 }
