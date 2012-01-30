@@ -133,7 +133,5 @@ public class ListDefinitionForm extends ViewForm
     public void setName(String name)
     {
         _name = name;
-        _listDef = ListService.get().getList(getContainer(), name);
-        _listId = _listDef.getListId();
     }
 }
