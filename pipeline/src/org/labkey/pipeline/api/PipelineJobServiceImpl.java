@@ -348,7 +348,7 @@ public class PipelineJobServiceImpl extends PipelineJobService
         _remoteServerProperties = remoteServerProperties;
     }
 
-    public GlobusClientProperties getGlobusClientProperties()
+    public GlobusClientPropertiesImpl getGlobusClientProperties()
     {
         return _globusClientProperties.get(0);
     }
