@@ -1180,6 +1180,7 @@ public class SecurityController extends SpringActionController
                     Map<String, List<Group>> groupAccessGroups = new TreeMap<String, List<Group>>();
                     SecurityPolicy policy = child.getPolicy();
                     Collection<Role> roles = policy.getEffectiveRoles(requestedGroup);
+                    roles.remove(RoleManager.getRole(NoPermissionsRole.class)); //ignore no perms
                     for (Role role : roles)
                     {
                         groupAccessGroups.put(role.getName(), new ArrayList<Group>());
