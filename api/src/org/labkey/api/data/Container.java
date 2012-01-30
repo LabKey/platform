@@ -656,6 +656,22 @@ public class Container implements Serializable, Comparable<Container>, Securable
         ContainerManager.setFolderType(this, folderType);
     }
 
+    public Set<Module> getRequiredModules()
+    {
+        Set<Module> requiredModules = new HashSet<Module>();
+        requiredModules.addAll(getFolderType().getActiveModules());
+
+        for(Container child: getChildren())
+        {
+            if(child.isWorkbook())
+            {
+                requiredModules.addAll(child.getFolderType().getActiveModules());
+            }
+        }
+
+        return requiredModules;
+    }
+
     @NotNull
     public FolderType getFolderType()
     {
@@ -682,7 +698,11 @@ public class Container implements Serializable, Comparable<Container>, Securable
     public void setActiveModules(Set<Module> modules) throws SQLException
     {
         if(isWorkbook())
+        {
+            //append any new active modules to parent
+            getParent().setActiveModules(modules);
             return;
+        }
 
         PropertyManager.PropertyMap props = PropertyManager.getWritableProperties(getId(), "activeModules", true);
         props.clear();
@@ -691,6 +711,13 @@ public class Container implements Serializable, Comparable<Container>, Securable
             if (null != module)
                 props.put(module.getName(), Boolean.TRUE.toString());
         }
+
+        for (Module module : getRequiredModules())
+        {
+            if (null != module)
+                props.put(module.getName(), Boolean.TRUE.toString());
+        }
+
         PropertyManager.saveProperties(props);
         ContainerManager.notifyContainerChange(getId());
         _activeModules = null;

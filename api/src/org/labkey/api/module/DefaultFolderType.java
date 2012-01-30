@@ -164,7 +164,7 @@ public class DefaultFolderType implements FolderType
             }
 
             Set<Module> active = c.getActiveModules(false);
-            Set<Module> requiredActive = getActiveModules();
+            Set<Module> requiredActive = c.getRequiredModules();
 
             if (null == active)
                 active = new HashSet<Module>();
