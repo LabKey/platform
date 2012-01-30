@@ -3083,6 +3083,9 @@ LABKEY.FilterDialog = Ext.extend(Ext.Window, {
 
     okHandler: function(btn)
     {
+        if(!this.findByType('form')[0].getForm().isValid())
+            return;
+
         var inputFields = this.getInputFields();
         var combos = this.getFilterCombos();
 
@@ -3106,12 +3109,12 @@ LABKEY.FilterDialog = Ext.extend(Ext.Window, {
                 var filter = LABKEY.Filter.getFilterTypeForURLSuffix(c.getValue());
 
                 if(!filter){
-                    alert('filter not found: ' + c.getValue())
+                    alert('filter not found: ' + c.getValue());
                     return;  //'No Other Filter'
                 }
 
                 if(Ext.isEmpty(input.getValue()) && filter.isDataValueRequired()){
-                    input.markInvalid('Must enter a value');
+                    input.markInvalid('You must enter a value');
                     isValid = false;
                     return false;
                 }
