@@ -1128,8 +1128,21 @@ public class QueryController extends SpringActionController
             ensureQueryExists(form);
             QueryView view = QueryView.create(form, errors);
             getPageConfig().setTemplate(PageConfig.Template.None);
-            _export(form, view);
-            return null;
+            try
+            {
+                _export(form, view);
+                return null;
+            }
+            catch (QueryService.NamedParameterNotProvided x)
+            {
+                ExceptionUtil.decorateException(x, ExceptionUtil.ExceptionInfo.SkipMothershipLogging, "true", true);
+                throw x;
+            }
+            catch (QueryParseException x)
+            {
+                ExceptionUtil.decorateException(x, ExceptionUtil.ExceptionInfo.SkipMothershipLogging, "true", true);
+                throw x;
+            }
         }
 
         abstract void _export(K form, QueryView view) throws Exception;
