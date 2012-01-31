@@ -50,6 +50,7 @@ Ext4.define('LABKEY.ext4.ParticipantReport', {
         this.centerPanel = Ext4.create('Ext.panel.Panel', {
             border   : false, frame : false,
             layout   : 'fit',
+            disabled : this.isNew(),
             region   : 'center',
             tbar     :  [{
                 text    : 'Export',
@@ -63,6 +64,42 @@ Ext4.define('LABKEY.ext4.ParticipantReport', {
         this.items.push(this.centerPanel);
 
         if (this.allowCustomize) {
+            this.saveButton = Ext4.create('Ext.button.Button', {
+                text    : 'Save',
+                disabled: this.isNew(),
+                handler : function() {
+                    var form = this.northPanel.getComponent('selectionForm').getForm();
+
+                    if (form.isValid()) {
+                        var data = this.getCurrentReportConfig();
+                        this.saveReport(data);
+                    }
+                    else {
+                        var msg = 'Please enter all the required information.';
+
+                        if (!this.reportName.getValue()) {
+                            msg = 'Report name must be specified.';
+                        }
+                        Ext4.Msg.show({
+                             title: "Error",
+                             msg: msg,
+                             buttons: Ext4.MessageBox.OK,
+                             icon: Ext4.MessageBox.ERROR
+                        });
+                    }
+                },
+                scope   : this
+            });
+
+            this.saveAsButton = Ext4.create('Ext.button.Button', {
+                text    : 'Save As',
+                hidden  : this.isNew(),
+                handler : function() {
+                    this.onSaveAs();
+                },
+                scope   : this
+            });
+
             this.northPanel = Ext4.create('Ext.panel.Panel', {
                 bodyPadding : 20,
                 hidden   : true,
@@ -79,13 +116,8 @@ Ext4.define('LABKEY.ext4.ParticipantReport', {
                             this.loadSavedConfig(this.storedTemplateConfig);
                     },
                     scope   : this
-                },{
-                    text    : 'Save',
-                    handler : function() {
-                        this.saveReport();
-                    },
-                    scope   : this
-                }]
+                }, this.saveButton, this.saveAsButton
+                ]
             });
             this.items.push(this.northPanel);
         }
@@ -134,6 +166,9 @@ Ext4.define('LABKEY.ext4.ParticipantReport', {
             this.customize();
         }
 
+        this.markDirty(false);
+        window.onbeforeunload = LABKEY.beforeunload(this.beforeUnload, this);
+
         this.callParent([arguments]);
     },
 
@@ -143,23 +178,45 @@ Ext4.define('LABKEY.ext4.ParticipantReport', {
             var formItems = [];
 
             this.reportName = Ext4.create('Ext.form.field.Text', {
-
-                fieldLabel : 'Name',
-                width      : 300,
-                allowBlank : false
+                fieldLabel : 'Report Name',
+                allowBlank : false,
+                readOnly   : !this.isNew(),
+                listeners : {
+                    change : function() {this.markDirty(true);},
+                    scope : this
+                }
             });
 
-            formItems.push(this.reportName);
+            this.reportDescription = Ext4.create('Ext.form.field.TextArea', {
+                fieldLabel : 'Report Description',
+                listeners : {
+                    change : function() {this.markDirty(true);},
+                    scope : this
+                }
+            });
 
-            var panel = Ext4.create('Ext.form.Panel', {
-                itemId : 'selectionForm',
-                region : 'west',
-                border : false, frame : false,
-                defaults : {
+            this.reportPermission = Ext4.create('Ext.form.RadioGroup', {
+                xtype      : 'radiogroup',
+                width      : 300,
+                fieldLabel : 'Viewable By',
+                items      : [
+                    {boxLabel : 'All readers',  width : 100, name : 'public', checked : true, inputValue : true},
+                    {boxLabel : 'Only me',   width : 100, name : 'public', inputValue : false}]
+            });
+            formItems.push(this.reportName, this.reportDescription, this.reportPermission);
+
+            this.formPanel = Ext4.create('Ext.form.Panel', {
+                bodyPadding : 20,
+                itemId      : 'selectionForm',
+                flex        : 1,
+                items       : formItems,
+                border      : false, frame : false,
+                fieldDefaults : {
+                    anchor  : '100%',
+                    maxWidth : 650,
+                    labelWidth : 150,
                     labelSeparator : ''
-                },
-                items  : formItems,
-                width  : 320
+                }
             });
 
             var model = Ext4.define('LABKEY.query.Measures', {
@@ -188,6 +245,7 @@ Ext4.define('LABKEY.ext4.ParticipantReport', {
 
             // TODO: figure out infos
 
+/*
             var pageGrid = Ext4.create('Ext.grid.Panel', {
                 title   : 'Page Fields',
                 store   : this.pageFieldStore,
@@ -253,12 +311,12 @@ Ext4.define('LABKEY.ext4.ParticipantReport', {
                     }, scope: this}]
 
             });
+*/
 
             var fieldGrid = Ext4.create('Ext.grid.Panel', {
-                //title   : 'Grid Fields',
                 store   : this.gridFieldStore,
                 columns : [
-                    { header : 'Report Fields', dataIndex : 'label', flex : 1},
+                    { header : 'Report Measures', dataIndex : 'label', flex : 1},
                     {
                         xtype : 'actioncolumn',
                         width : 40,
@@ -298,48 +356,79 @@ Ext4.define('LABKEY.ext4.ParticipantReport', {
                 }
             });
 
-            var gridFieldsPanel = Ext4.create('Ext.panel.Panel', {
-                height      : 200,
-                width       : 400,
-                layout      : 'fit',
-                border      : false, frame : false,
-                //flex        : 1.2,
-                items       : [fieldGrid],
-                fbar        : [{
-                    type: 'button',
-                    text:'Add Field',
-                    handler: function() {
-                        var callback = function(recs){
-                            var rawData = []
-                            for (var i=0; i < recs.length; i++) {
-                                rawData.push(Ext4.clone(recs[i].data));
-                            }
-                            this.gridFieldStore.loadRawData({measures : rawData}, true);
-                            this.generateTemplateConfig();
-                        };
-                        this.selectMeasures(callback, this);
-                    }, scope: this}]
-
-            });
+            this.measuresHandler = function() {
+                var callback = function(recs){
+                    var rawData = []
+                    for (var i=0; i < recs.length; i++) {
+                        rawData.push(Ext4.clone(recs[i].data));
+                    }
+                    this.enableUI(true);    // enable the UI if it is currently disabled
+                    this.gridFieldStore.loadRawData({measures : rawData}, true);
+                    this.generateTemplateConfig();
+                };
+                this.selectMeasures(callback, this);
+            };
 
             this.designerPanel = Ext4.create('Ext.panel.Panel', {
-                height : 250,
+                height      : 200,
+                layout      : 'fit',
+                border      : false, frame : false,
+                flex        : 0.8,
+                minButtonWidth : 150,
+                buttonAlign : 'left',
+                items       : [fieldGrid],
+                fbar        : [{
+                    xtype: 'button',
+                    text:'Choose Measures',
+                    handler: this.measuresHandler,
+                    scope: this
+                }]
+            });
+
+/*
+            this.designerPanel = Ext4.create('Ext.panel.Panel', {
+                //height : 250,
+                width  : 500,
+                layout: 'fit',
                 border : false, frame : false,
-                region : 'center',
-                layout : 'vbox',
+                //region : 'center',
+                //layout : 'vbox',
                 defaults : {
-                    style : 'padding-left: 20px'
+                    style : 'padding-right: 20px'
                 },
-                flex   : 4,
+                //flex   : 4,
                 items  : [gridFieldsPanel],
                 scope : this
             });
+*/
 
-            this.northPanel.add(panel, this.designerPanel);
+            if (this.isNew())
+                this.northPanel.add({
+                    xtype   : 'panel',
+                    flex    : 1,
+                    layout  : {
+                        type : 'vbox',
+                        align: 'center',
+                        pack : 'center'
+                    },
+                    height  : 200,
+                    border  : false, frame : false,
+                    items   : [
+                        {
+                            xtype : 'displayfield', width: 300, value : 'To get started, choose some Measures:'
+                        },{
+                            xtype   : 'button',
+                            text    :'Choose Measures',
+                            handler : this.measuresHandler,
+                            scope   : this
+                        }
+                    ]
+                });
+            else
+                this.northPanel.add(this.formPanel, this.designerPanel);
+
             this.northPanel.show(); // might be hidden
         }
-
-        return this.northPanel;
     },
 
     loadReport : function(reportId) {
@@ -350,6 +439,9 @@ Ext4.define('LABKEY.ext4.ParticipantReport', {
             params  : {reportId : reportId},
             success : function(response){
                 var o = Ext4.decode(response.responseText);
+
+                this.reportName.setReadOnly(true);
+                this.saveAsButton.setVisible(true);
                 this.loadSavedConfig(o.reportConfig);
             },
             failure : function(response){
@@ -361,8 +453,16 @@ Ext4.define('LABKEY.ext4.ParticipantReport', {
 
     loadSavedConfig : function(config) {
 
+        this.allowCustomize = config.editable;
+        
         if (this.reportName)
             this.reportName.setValue(config.name);
+
+        if (this.reportDescription && config.description != null)
+            this.reportDescription.setValue(config.description);
+
+        if (this.reportPermission)
+            this.reportPermission.setValue({public : config.public});
 
         if (this.gridFieldStore) {
 
@@ -373,6 +473,7 @@ Ext4.define('LABKEY.ext4.ParticipantReport', {
             this.gridFieldStore.loadRawData({measures : rawData});
             this.generateTemplateConfig();
         }
+        this.markDirty(false);
     },
 
     renderData : function(qr) {
@@ -486,6 +587,7 @@ Ext4.define('LABKEY.ext4.ParticipantReport', {
     },
 
     generateTemplateConfig : function() {
+        this.markDirty(true);
         this.generateTask.delay(500);
     },
 
@@ -514,52 +616,48 @@ Ext4.define('LABKEY.ext4.ParticipantReport', {
 
         return {
             name        : this.reportName.getValue(),
+            reportId    : this.reportId,
+            description : this.reportDescription.getValue(),
+            public      : this.reportPermission.getValue().public,
             schemaName  : 'study',
             measures    : this.getMeasures()
         };
     },
 
-    saveReport : function() {
+    saveReport : function(data) {
 
         console.log('Saving Report Configuration.');
-        var form = this.northPanel.getComponent('selectionForm').getForm();
-        
-        if (form.isValid())
-        {
-            var reportName = this.reportName.getValue();
-            var data = this.getCurrentReportConfig();
 
-            Ext4.Ajax.request({
-                url     : LABKEY.ActionURL.buildURL('study-reports', 'saveParticipantReport.api'),
-                method  : 'POST',
-                jsonData: data,
-                success : function(resp){
-                    Ext4.Msg.alert('Success', 'Report : ' + reportName + ' saved successfully', function(){
-                        var o = Ext4.decode(resp.responseText);
+        Ext4.Ajax.request({
+            url     : LABKEY.ActionURL.buildURL('study-reports', 'saveParticipantReport.api'),
+            method  : 'POST',
+            jsonData: data,
+            success : function(resp){
+                Ext4.Msg.alert('Success', 'Report : ' + data.name + ' saved successfully', function(){
+                    var o = Ext4.decode(resp.responseText);
 
-                        // Modify Title (hack: hardcode the webpart id since this is really not a webpart, just
-                        // using a webpart frame, will need to start passing in the real id if this ever
-                        // becomes a true webpart
-                        var titleEl = Ext.query('th[class=labkey-wp-title-left]:first', 'webpart_-1');
-                        if (titleEl && (titleEl.length >= 1))
-                        {
-                            titleEl[0].innerHTML = LABKEY.Utils.encodeHtml(reportName);
-                        }
+                    // Modify Title (hack: hardcode the webpart id since this is really not a webpart, just
+                    // using a webpart frame, will need to start passing in the real id if this ever
+                    // becomes a true webpart
+                    var titleEl = Ext.query('th[class=labkey-wp-title-left]:first', 'webpart_-1');
+                    if (titleEl && (titleEl.length >= 1))
+                    {
+                        titleEl[0].innerHTML = LABKEY.Utils.encodeHtml(data.name);
+                    }
 
-                        this.reportId = o.reportId;
-                        this.customize();
+                    this.reportId = o.reportId;
+                    this.loadReport(this.reportId);
+                    //this.reportName.setReadOnly(true);
+                    //this.saveAsButton.setVisible(true);
+                    this.customize();
 
-                    }, this);
-                },
-                failure : function(resp){
-                    Ext4.Msg.alert('Failure', Ext4.decode(resp.responseText).exception);
-                },
-                scope : this
-            });
-        }
-        else
-            Ext4.Msg.alert('Save failed', 'Please enter all required information.');
-
+                }, this);
+            },
+            failure : function(resp){
+                Ext4.Msg.alert('Failure', Ext4.decode(resp.responseText).exception);
+            },
+            scope : this
+        });
     },
 
     exportToXls : function() {
@@ -588,5 +686,102 @@ Ext4.define('LABKEY.ext4.ParticipantReport', {
         }
         this.measuresDialog.addListener('measuresSelected', function(recs){handler.call(scope || this, recs);}, this, {single : true});
         this.measuresDialog.show();
+    },
+
+    isNew : function() {
+        return !this.reportId;
+    },
+
+    enableUI : function(enable) {
+
+        if (enable && !this.formPanel.rendered) {
+
+            this.northPanel.removeAll();
+            this.northPanel.add(this.formPanel, this.designerPanel);
+            this.centerPanel.enable();
+            this.saveButton.enable();
+        }
+    },
+
+    onSaveAs : function() {
+        var formItems = [];
+
+        formItems.push(Ext4.create('Ext.form.field.Text', {name : 'name', fieldLabel : 'Report Name', allowBlank : false}));
+        formItems.push(Ext4.create('Ext.form.field.TextArea', {name : 'description', fieldLabel : 'Report Description'}));
+
+        var permissions = Ext4.create('Ext.form.RadioGroup', {
+            xtype      : 'radiogroup',
+            width      : 300,
+            fieldLabel : 'Viewable By',
+            items      : [
+                {boxLabel : 'All readers',  width : 100, name : 'public', checked : true, inputValue : true},
+                {boxLabel : 'Only me',   width : 100, name : 'public', inputValue : false}]
+        });
+        formItems.push(permissions);
+
+        var saveAsWindow = Ext4.create('Ext.window.Window', {
+            width  : 500,
+            height : 300,
+            layout : 'fit',
+            draggable : false,
+            modal  : true,
+            title  : 'Save As',
+            defaults: {
+                border: false, frame: false
+            },
+            bodyPadding : 20,
+            items  : [{
+                xtype : 'form',
+                fieldDefaults : {
+                    anchor  : '100%',
+                    maxWidth : 650,
+                    labelWidth : 150,
+                    labelSeparator : ''
+                },
+                items       : formItems,
+                buttonAlign : 'left',
+                buttons     : [{
+                    text : 'Save',
+                    formBind: true,
+                    handler : function(btn) {
+                        var form = btn.up('form').getForm();
+
+                        if (form.isValid()) {
+                            var data = this.getCurrentReportConfig();
+                            var values = form.getValues();
+
+                            data.name = values.name;
+                            data.description = values.description;
+                            data.public = values.public;
+
+                            this.saveReport(data);
+                        }
+                        else {
+                            Ext4.Msg.show({
+                                 title: "Error",
+                                 msg: 'Report name must be specified.',
+                                 buttons: Ext4.MessageBox.OK,
+                                 icon: Ext4.MessageBox.ERROR
+                            });
+                        }
+                        saveAsWindow.close();
+                    },
+                    scope   : this
+                }]
+            }],
+            scope : this
+        });
+
+        saveAsWindow.show();
+    },
+
+    markDirty : function(dirty) {
+        this.dirty = dirty;
+    },
+
+    beforeUnload : function() {
+        if (this.dirty) {
+            return 'please save your changes';
+        }
     }
 });

@@ -17,6 +17,7 @@
 package org.labkey.study.controllers.reports;
 
 import gwt.client.org.labkey.study.chart.client.StudyChartDesigner;
+import org.apache.commons.lang3.BooleanUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.math.NumberUtils;
 import org.json.JSONArray;
@@ -62,6 +63,7 @@ import org.labkey.api.reports.report.view.ReportUtil;
 import org.labkey.api.reports.report.view.ScriptReportBean;
 import org.labkey.api.security.RequiresPermissionClass;
 import org.labkey.api.security.User;
+import org.labkey.api.security.UserManager;
 import org.labkey.api.security.permissions.AdminPermission;
 import org.labkey.api.security.permissions.InsertPermission;
 import org.labkey.api.security.permissions.ReadPermission;
@@ -2066,14 +2068,25 @@ public class ReportsController extends BaseStudyController
             }
 
             try {
-                String key = ReportUtil.getReportKey(form.getSchemaName(), form.getQueryName());
-                for (Report report : ReportService.get().getReports(getUser(), getContainer(), key))
+                // check for duplicates on new reports
+                if (form.getReportId() == null)
                 {
-                    if (form.getName().equalsIgnoreCase(report.getDescriptor().getReportName()))
-                        errors.reject(ERROR_MSG, "Another report with the same name already exists.");
+                    String key = ReportUtil.getReportKey(form.getSchemaName(), form.getQueryName());
+                    for (Report report : ReportService.get().getReports(getUser(), getContainer(), key))
+                    {
+                        if (form.getName().equalsIgnoreCase(report.getDescriptor().getReportName()))
+                            errors.reject(ERROR_MSG, "Another report with the same name already exists.");
+                    }
+                }
+                else
+                {
+                    Report report = form.getReportId().getReport();
+
+                    if (report != null && !report.getDescriptor().canEdit(getUser(), getContainer()))
+                        errors.reject(ERROR_MSG, "You are not allowed to edit the specified report.");
                 }
             }
-            catch (SQLException e)
+            catch (Exception e)
             {
                 errors.reject(ERROR_MSG, e.getMessage());
             }
@@ -2094,33 +2107,38 @@ public class ReportsController extends BaseStudyController
 
             return response;
         }
-    }
 
-    private Report getParticipantReport(ParticipantReportForm form) throws Exception
-    {
-        Report report;
-
-        if (form.getReportId() != null)
-            report = form.getReportId().getReport();
-        else
-            report = ReportService.get().createReportInstance(ParticipantReport.TYPE);
-
-        if (report != null)
+        private Report getParticipantReport(ParticipantReportForm form) throws Exception
         {
-            ReportDescriptor descriptor = report.getDescriptor();
+            Report report;
 
-            if (form.getName() != null)
-                descriptor.setReportName(form.getName());
-            if (form.getDescription() != null)
-                descriptor.setReportDescription(form.getDescription());
-            if (form.getSchemaName() != null)
-                descriptor.setProperty(ReportDescriptor.Prop.schemaName, form.getSchemaName());
-            if (form.getQueryName() != null)
-                descriptor.setProperty(ReportDescriptor.Prop.queryName, form.getQueryName());
-            if (form.getMeasures() != null)
-                descriptor.setProperty("measures", form.getMeasures());
+            if (form.getReportId() != null)
+                report = form.getReportId().getReport();
+            else
+                report = ReportService.get().createReportInstance(ParticipantReport.TYPE);
+
+            if (report != null)
+            {
+                ReportDescriptor descriptor = report.getDescriptor();
+
+                if (form.getName() != null)
+                    descriptor.setReportName(form.getName());
+                if (form.getDescription() != null)
+                    descriptor.setReportDescription(form.getDescription());
+                if (form.getSchemaName() != null)
+                    descriptor.setProperty(ReportDescriptor.Prop.schemaName, form.getSchemaName());
+                if (form.getQueryName() != null)
+                    descriptor.setProperty(ReportDescriptor.Prop.queryName, form.getQueryName());
+                if (form.getMeasures() != null)
+                    descriptor.setProperty("measures", form.getMeasures());
+                if (!form.isPublic())
+                    descriptor.setOwner(getUser().getUserId());
+                else
+                    descriptor.setOwner(null);
+            }
+            return report;
         }
-        return report;
+
     }
 
     @RequiresPermissionClass(ReadPermission.class)
@@ -2130,11 +2148,13 @@ public class ReportsController extends BaseStudyController
         public ApiResponse execute(ParticipantReportForm form, BindException errors) throws Exception
         {
             ApiSimpleResponse response = new ApiSimpleResponse();
-            Report report = getParticipantReport(form);
+            Report report = null;
+            if (form.getReportId() != null)
+                report = form.getReportId().getReport();
 
             if (report != null)
             {
-                response.put("reportConfig", ParticipantReportForm.toJSON(report));
+                response.put("reportConfig", ParticipantReportForm.toJSON(getUser(), getContainer(), report));
                 response.put("success", true);
             }
             else
@@ -2153,6 +2173,7 @@ public class ReportsController extends BaseStudyController
         private String _schemaName;
         private ReportIdentifier _reportId;
         private String _componentId;
+        private boolean _public;
 
         public String getComponentId()
         {
@@ -2224,6 +2245,16 @@ public class ReportsController extends BaseStudyController
             _measures = measures;
         }
 
+        public boolean isPublic()
+        {
+            return _public;
+        }
+
+        public void setPublic(boolean isPublic)
+        {
+            _public = isPublic;
+        }
+
         @Override
         public void bindProperties(Map<String, Object> props)
         {
@@ -2231,6 +2262,7 @@ public class ReportsController extends BaseStudyController
             _description = (String)props.get("description");
             _schemaName = (String)props.get("schemaName");
             _queryName = (String)props.get("queryName");
+            _public = BooleanUtils.toBooleanDefaultIfNull((Boolean)props.get("public"), true);
 
             Object reportId = props.get("reportId");
             if (reportId != null)
@@ -2243,15 +2275,18 @@ public class ReportsController extends BaseStudyController
             }
         }
 
-        public static JSONObject toJSON(Report report)
+        public static JSONObject toJSON(User user, Container container, Report report)
         {
             JSONObject json = new JSONObject();
             ReportDescriptor descriptor = report.getDescriptor();
 
             json.put("name", descriptor.getReportName());
-            json.put("decription", descriptor.getReportDescription());
+            json.put("description", descriptor.getReportDescription());
             json.put("schemaName", descriptor.getProperty(ReportDescriptor.Prop.schemaName));
             json.put("queryName", descriptor.getProperty(ReportDescriptor.Prop.queryName));
+
+            json.put("editable", descriptor.canEdit(user, container));
+            json.put("public", descriptor.getOwner() == null);
 
             String measuresConfig = descriptor.getProperty(ParticipantReport.MEASURES_PROP);
             if (measuresConfig != null)

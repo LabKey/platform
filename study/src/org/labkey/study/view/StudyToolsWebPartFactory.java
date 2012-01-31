@@ -28,6 +28,7 @@ import org.labkey.api.view.WebPartView;
 import org.labkey.api.visualization.VisualizationUrls;
 import org.labkey.study.SampleManager;
 import org.labkey.study.controllers.StudyController;
+import org.labkey.study.controllers.reports.ReportsController;
 import org.labkey.study.controllers.samples.ShowSearchAction;
 import org.labkey.study.controllers.samples.SpecimenController;
 import org.labkey.study.security.permissions.ManageStudyPermission;
@@ -101,6 +102,8 @@ public abstract class StudyToolsWebPartFactory extends BaseWebPartFactory
             items.add(new StudyToolsWebPart.Item("New Time Chart", iconBase + "timeline_chart.png", timeChartURL));
 
             String noun = StudyService.get().getSubjectNounSingular(portalCtx.getContainer());
+
+            items.add(new StudyToolsWebPart.Item(noun + " Report", iconBase + "participant_report.png", new ActionURL(ReportsController.ParticipantReportAction.class, portalCtx.getContainer())));
             items.add(new StudyToolsWebPart.Item(noun + " List", iconBase + "participant_list.png", new ActionURL(StudyController.SubjectListAction.class, portalCtx.getContainer())));
 
             items.add(new StudyToolsWebPart.Item("Study Navigator", iconBase + "study_overview.png", new ActionURL(StudyController.OverviewAction.class, portalCtx.getContainer())));
