@@ -1356,9 +1356,11 @@ public class SecurityManager
      * @param u The user
      * @return The list of groups that u belong to in container c
      */
-    public static List<Group> getGroups(Container c, User u)
+    public static List<Group> getGroups(@NotNull Container c, User u)
     {
-        Container proj = null != c.getProject() ? c.getProject() : c;
+        Container proj = c.getProject();
+        if (null == proj)
+            proj = c;
         int[] groupIds = u.getGroups();
         List<Group> groupList = new ArrayList<Group>();
 
@@ -1370,7 +1372,7 @@ public class SecurityManager
                 Group g = SecurityManager.getGroup(groupId);
 
                 // Only global groups or groups in this project
-                if (null == g.getContainer() || g.getContainer().equals(proj.getId()))
+                if (null != g && (null == g.getContainer() || g.getContainer().equals(proj.getId())))
                     groupList.add(g);
             }
         }
