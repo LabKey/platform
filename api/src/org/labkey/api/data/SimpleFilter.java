@@ -43,7 +43,8 @@ public class SimpleFilter implements Filter
     {
         private boolean _urlClause = false;
         private Object[] _paramVals = new Object[0];
-
+        private boolean _includeNull = false;
+        private boolean _isNegated = false;
 
         boolean isUrlClause()
         {
@@ -56,6 +57,25 @@ public class SimpleFilter implements Filter
             _urlClause = urlClause;
         }
 
+        public void setIncludeNull(boolean value)
+        {
+            _includeNull = value;
+        }
+
+        public boolean isIncludeNull()
+        {
+            return _includeNull;
+        }
+
+        public boolean isNegated()
+        {
+            return _isNegated;
+        }
+
+        public void setIsNegated(boolean value)
+        {
+            _isNegated = value;
+        }
 
         public Object[] getParamVals()
         {
@@ -370,11 +390,34 @@ public class SimpleFilter implements Filter
         }
     }
 
-    public static class InClause extends FilterClause
+    public static abstract class MultiValuedFilterClause extends FilterClause
     {
         private String _colName;
-        private boolean _isNegated = false;
 
+        public MultiValuedFilterClause(String colName, Collection params)
+        {
+            if(params.size() == 0 || params.contains(""))
+            {
+                setIncludeNull(true);
+                params.remove("");
+            }
+            setColName(colName);
+            setParamVals(params.toArray());
+        }
+
+        public String getColName()
+        {
+            return _colName;
+        }
+
+        public void setColName(String colName)
+        {
+            _colName = colName;
+        }
+    }
+
+    public static class InClause extends MultiValuedFilterClause
+    {
         public InClause(String colName, Collection params)
         {
             this(colName, params, false);
@@ -387,22 +430,25 @@ public class SimpleFilter implements Filter
 
         public InClause(String colName, Collection params, boolean urlClause, boolean isNegated)
         {
+            super(colName, params);
+
             setUrlClause(urlClause);
             setParamVals(params.toArray());
-            _colName = colName;
-            _isNegated = isNegated;
+            setColName(colName);
+            setIsNegated(isNegated);
         }
 
         public List<String> getColumnNames()
         {
-            return Arrays.asList(_colName);
+            return Arrays.asList(getColName());
         }
 
         @Override
         protected void appendFilterText(StringBuilder sb, ColumnNameFormatter formatter)
         {
-            sb.append(formatter.format(_colName));
-            if(_isNegated)
+            //TODO: if number of values > 10, dont show each one
+            sb.append(formatter.format(getColName()));
+            if(isNegated())
                 sb.append(" IS NOT ANY OF (");
             else
                 sb.append(" IS ONE OF (");
@@ -416,34 +462,57 @@ public class SimpleFilter implements Filter
                     sep = ", ";
                 }
             }
+
+            if("".equals(sep) || isIncludeNull())
+            {
+                sb.append(sep + "BLANK");
+            }
+
             sb.append(")");
         }
 
         @Override
         public String getLabKeySQLWhereClause(Map<FieldKey, ? extends ColumnInfo> columnMap)
         {
-            String selectName = getLabKeySQLColName(_colName);
-            ColumnInfo col = columnMap.get(FieldKey.fromString(_colName));
-            StringBuilder in =  new StringBuilder(selectName);
-
-            in.append(" " + (_isNegated ? "NOT " : "") + "IN (");
-
+            String alias = getLabKeySQLColName(getColName());
+            ColumnInfo col = columnMap.get(FieldKey.fromString(getColName()));
             Object[] params = getParamVals();
-            if (params.length > 0)
+            StringBuilder in =  new StringBuilder();
+
+            if (params.length == 0)
             {
-                String sep = "";
-                for (Object param : params)
-                {
-                    in.append(sep).append(escapeLabKeySqlValue(param, col.getJdbcType()));
-                    sep = ", ";
-                }
+                if(isIncludeNull())
+                    in.append(alias + " IS " + (isNegated() ? " NOT " : "") + "NULL");
+                else if (!isNegated())
+                    in.append(alias + "IN (NULL)");  // Empty list case; "WHERE column IN (NULL)" should always be false
+
+                return in.toString();
+            }
+
+            in.append("((" + alias);
+            in.append(" " + (isNegated() ? "NOT " : "") + "IN (");
+            String sep = "";
+            for (Object param : params)
+            {
+                in.append(sep).append(escapeLabKeySqlValue(param, col.getJdbcType()));
+                sep = ", ";
+            }
+
+            if(isIncludeNull())
+            {
+                if(isNegated())
+                    in.append(") AND " + alias + " IS NOT NULL)");
+                else
+                    in.append(") OR " + alias + " IS NULL)");
             }
             else
             {
-                in.append("NULL");  // Empty list case; "WHERE column IN (NULL)" should always be false
+                if(isNegated())
+                    in.append(") OR " + alias + " IS NULL)");
+                else
+                    in.append("))");
             }
 
-            in.append(")");
             return in.toString();
         }
 
@@ -452,28 +521,29 @@ public class SimpleFilter implements Filter
         {
             Object[] params = getParamVals();
 
-            if (0 == params.length)
-                return new SQLFragment("1=0");
-
-            ColumnInfo colInfo = columnMap.get(_colName);
-            String alias = _colName;
+            ColumnInfo colInfo = columnMap.get(getColName());
+            String alias = getColName();
             if (colInfo != null)
             {
                 alias = dialect.getColumnSelectName(colInfo.getAlias());
             }
-            SQLFragment in = new SQLFragment(alias);
+            SQLFragment in = new SQLFragment();
 
-            in.append(" " + (_isNegated ? "NOT " : "") + "IN (");
+            if (params.length == 0)
+            {
+                if(isIncludeNull())
+                    in.append(alias + " IS " + (isNegated() ? " NOT " : "") + "NULL");
+                else if (!isNegated())
+                    in.append(alias + "IN (NULL)");  // Empty list case; "WHERE column IN (NULL)" should always be false
 
-            if (params.length > 0)
-            {
-                String questionMarks = StringUtils.repeat("?, ", params.length);
-                in.append(questionMarks.substring(0, questionMarks.length() - 2));
+                return in;
             }
-            else
-            {
-                in.append("NULL");  // Empty list case; "WHERE column IN (NULL)" should always be false
-            }
+
+            in.append("((" + alias);
+            in.append(" " + (isNegated() ? "NOT " : "") + "IN (");
+
+            String questionMarks = StringUtils.repeat("?, ", params.length);
+            in.append(questionMarks.substring(0, questionMarks.length() - 2));
 
             in.append(")");
 
@@ -488,6 +558,22 @@ public class SimpleFilter implements Filter
                     in.add(CompareType.convertParamValue(colInfo, paramVal));
                 }
             }
+
+            if(isIncludeNull())
+            {
+                if(isNegated())
+                    in.append(") AND " + alias + " IS NOT NULL)");
+                else
+                    in.append(") OR " + alias + " IS NULL)");
+            }
+            else
+            {
+                if(isNegated())
+                    in.append(") OR " + alias + " IS NULL)");
+                else
+                    in.append("))");
+            }
+
             return in;
         }
 
@@ -519,40 +605,34 @@ public class SimpleFilter implements Filter
         }
     }
 
-    public static class ContainsInClause extends FilterClause
+    public static class ContainsOneOfClause extends MultiValuedFilterClause
     {
-        private String _colName;
-        private boolean _isNegated = false;
-
-        public ContainsInClause(String colName, Collection params)
-        {
-            this(colName, params, false, false);
-        }
-
-        public ContainsInClause(String colName, Collection params, boolean urlClause)
+        public ContainsOneOfClause(String colName, Collection params, boolean urlClause)
         {
             this(colName, params, urlClause, false);
         }
 
-        public ContainsInClause(String colName, Collection params, boolean urlClause, boolean isNegated)
-        {
-            setUrlClause(urlClause);
-            setParamVals(params.toArray());
-            _colName = colName;
-            _isNegated = isNegated;
-        }
-
         public List<String> getColumnNames()
         {
-            return Arrays.asList(_colName);
+            return Arrays.asList(getColName());
+        }
+
+        public ContainsOneOfClause(String colName, Collection params, boolean urlClause, boolean isNegated)
+        {
+            super(colName, params);
+
+            setUrlClause(urlClause);
+            setColName(colName);
+            setIsNegated(isNegated);
         }
 
         @Override
         protected void appendFilterText(StringBuilder sb, ColumnNameFormatter formatter)
         {
-            sb.append(formatter.format(_colName));
+            //TODO: if nmber of values > 10, dont show each one
+            sb.append(formatter.format(getColName()));
             sb.append(" " +
-                    (_isNegated ? "DOES NOT CONTAIN ANY OF (" : "CONTAINS ONE OF ("));
+                    (isNegated() ? "DOES NOT CONTAIN ANY OF (" : "CONTAINS ONE OF ("));
             String sep = "";
             for (Object val : getParamVals())
             {
@@ -562,13 +642,17 @@ public class SimpleFilter implements Filter
                     sep = ", ";
                 }
             }
+
+            if(isIncludeNull())
+                sb.append(sep + "BLANK");
+
             sb.append(")");
         }
 
         @Override
         public String getLabKeySQLWhereClause(Map<FieldKey, ? extends ColumnInfo> columnMap)
         {
-            ColumnInfo col = columnMap.get(FieldKey.fromString(_colName));
+            ColumnInfo col = columnMap.get(FieldKey.fromString(getColName()));
 
             Object[] params = getParamVals();
             if (params.length > 0)
@@ -576,8 +660,7 @@ public class SimpleFilter implements Filter
                 return getContainsClause(col).toString();
             }
 
-            //TODO: _isNegated
-            return col.getName() + (_isNegated ? " NOT IN" : " IN ") + " (NULL)";  // Empty list case; "WHERE column IN (NULL)" should always be false
+            return col.getName() + (isNegated() ? " NOT IN" : " IN ") + " (NULL)";  // Empty list case; "WHERE column IN (NULL)" should always be false
         }
 
 
@@ -585,11 +668,8 @@ public class SimpleFilter implements Filter
         {
             Object[] params = getParamVals();
 
-            if (0 == params.length)
-                return new SQLFragment("1=0");
-
-            ColumnInfo colInfo = columnMap.get(_colName);
-            String alias = _colName;
+            ColumnInfo colInfo = columnMap.get(getColName());
+            String alias = getColName();
             if (colInfo != null)
             {
                 alias = dialect.getColumnSelectName(colInfo.getAlias());
@@ -600,14 +680,14 @@ public class SimpleFilter implements Filter
             if(oc.getClauses().size() > 0)
                 return in.append(oc.toSQLFragment(columnMap, dialect));
 
-            return in.append(alias + (_isNegated ? " NOT IN" : " IN ") + "(NULL)");  // Empty list case; "WHERE column IN (NULL)" should always be false
+            return in.append(alias + (isNegated() ? " NOT IN " : " IN ") + "(NULL)");  // Empty list case; "WHERE column IN (NULL)" should always be false
         }
 
         private OperationClause getContainsClause(ColumnInfo colInfo)
         {
             Object[] params = getParamVals();
             OperationClause oc;
-            if(_isNegated)
+            if(isNegated())
                 oc = new AndClause();
             else
                 oc = new OrClause();
@@ -617,7 +697,7 @@ public class SimpleFilter implements Filter
             {
                 for(Object param : params)
                 {
-                    if(_isNegated)
+                    if(isNegated())
                     {
                         oc.addClause(new CompareType.DoesNotContainClause(colInfo.getName(), param));
                     }
@@ -628,12 +708,17 @@ public class SimpleFilter implements Filter
                 }
             }
 
-            //always allow null for NOT IN
-            if(_isNegated)
+            //account for null
+            if(isIncludeNull())
             {
                 OrClause clause = new OrClause();
-                clause.addClause(oc);
-                clause.addClause(CompareType.ISBLANK.createFilterClause(colInfo.getName(), null));
+                if(oc._clauses.size() > 0)
+                    clause.addClause(oc);
+
+                if(isNegated())
+                    clause.addClause(CompareType.NONBLANK.createFilterClause(colInfo.getName(), null));
+                else
+                    clause.addClause(CompareType.ISBLANK.createFilterClause(colInfo.getName(), null));
                 return clause;
             }
 

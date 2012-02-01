@@ -2348,7 +2348,7 @@ LABKEY.FilterDialog = Ext.extend(Ext.Window, {
         this._fieldName = this.boundColumn.name;
         this._tableName = this.dataRegionName;
         this._mappedType = this.getMappedType(this.boundColumn.displayFieldSqlType ? this.boundColumn.displayFieldSqlType : this.boundColumn.sqlType);
-        this.MAX_FILTER_CHOICES = 100;
+        this.MAX_FILTER_CHOICES = 75;
 
         //determine the type of filter UI to show
         var dataRegion = LABKEY.DataRegions[this.dataRegionName];
@@ -2398,6 +2398,7 @@ LABKEY.FilterDialog = Ext.extend(Ext.Window, {
             ],
             items: [{
                 xtype: 'radiogroup',
+                style: 'padding-left: 5px;',
                 itemId: 'filterType',
                 columns: 1,
                 hidden: this.filterType == 'default',
@@ -2480,7 +2481,13 @@ LABKEY.FilterDialog = Ext.extend(Ext.Window, {
 
     configurePanel: function(){
         var panel = this.find('itemId', 'filterArea')[0];
-        panel.removeAll();
+
+        //this seems to be an Ext3 bug.  ignoring since Ext4 will replace this soon enough
+        //panel.removeAll();
+        panel.items.each(function(item){
+            item.destroy();
+            panel.remove(item);
+        }, this);
 
         var dataRegion = LABKEY.DataRegions[this.dataRegionName];
 
@@ -2491,8 +2498,20 @@ LABKEY.FilterDialog = Ext.extend(Ext.Window, {
         var items = [];
 
         //identify and render the correct UI
-        if(this.shouldShowLookupUI())
-            items.push(this.getLookupFilterPanel());
+        if(this.shouldShowLookupUI()){
+            //start loading the store
+            var store = this.getLookupStore();
+
+            if(store.fields && store.fields.length){
+                items.push(this.getLookupFilterPanel());
+            }
+            else {
+                store.on('load', this.configurePanel, this);
+                items.push({
+                    html: 'Loading...'
+                });
+            }
+        }
         else
             items.push(this.getDefaultFilterPanel());
 
@@ -2518,7 +2537,6 @@ LABKEY.FilterDialog = Ext.extend(Ext.Window, {
                 else {
                     switch(paramValPairs[0].operator){
                         case 'notin':
-                        case 'notinornull':
                             filterType = 'exclude';
                             break;
                         default:
@@ -2549,6 +2567,16 @@ LABKEY.FilterDialog = Ext.extend(Ext.Window, {
             }
         }, this);
 
+        if(shouldShow){
+            var store = this.getLookupStore();
+            if(!store || store.getCount() >= this.MAX_FILTER_CHOICES){
+                var field = this.findByType('radiogroup')[0];
+                field.hide();
+                shouldShow = false;
+                console.log('store not loaded or too many filter options');
+            }
+        }
+
         return shouldShow;
     },
 
@@ -2563,10 +2591,7 @@ LABKEY.FilterDialog = Ext.extend(Ext.Window, {
         }, scope: this, duration: 2000};
 
         var form = {
-            //xtype: 'form',
-            itemId: 'formPanel',
             autoWidth: true,
-            //autoHeight: true,
             defaults: {
                 border: false
             },
@@ -2641,12 +2666,8 @@ LABKEY.FilterDialog = Ext.extend(Ext.Window, {
             filterConfig.value = 'in';
         }
         else{
-            filterConfig.value = 'notinornull';
+            filterConfig.value = 'notin';
         }
-
-        var includesNull = filterConfig.value.match(/ornull/);
-        if(this.filterType == 'exclude')
-            includesNull = !includesNull;
 
         panel.items.push(filterConfig);
         panel.items.push({
@@ -2662,23 +2683,7 @@ LABKEY.FilterDialog = Ext.extend(Ext.Window, {
                 name: 'nullCheckbox',
                 itemId: 'nullCheckbox',
                 boxLabel: '[blank]',
-                checked: includesNull,
-                listeners: {
-                    scope: this,
-                    check: function(field, val){
-                        var combos = this.getFilterCombos();
-                        if(!combos[0])
-                            return;
-
-                        var filter = combos[0].getValue();
-                        filter = filter.replace(/ornull/, '');
-
-                        if((filter == 'in' && val) || (filter == 'notin' && !val))
-                            filter += 'ornull';
-
-                        combos[0].setValue(filter);
-                    }
-                }
+                checked: false
             }]
     });
 
@@ -2742,9 +2747,6 @@ LABKEY.FilterDialog = Ext.extend(Ext.Window, {
                     return;
                 }
                 combo.setValue(filter.getURLSuffix());
-                var includesNull = filter.getURLSuffix().match(/ornull/) !== null;
-                if(this.filterType == 'exclude')
-                    includesNull = !includesNull;
 
                 if(filter.isDataValueRequired())
                     input.enable();
@@ -2757,6 +2759,7 @@ LABKEY.FilterDialog = Ext.extend(Ext.Window, {
                         var values = pair.value.split(';');
                         input.setValue(values.join(','));
 
+                        var includesNull = values.indexOf('') > 0;
                         var nullCheckbox = this.find('itemId', 'nullCheckbox')[0];
                         nullCheckbox.setValue(includesNull);
                     }
@@ -2915,7 +2918,6 @@ LABKEY.FilterDialog = Ext.extend(Ext.Window, {
                     var idx = combo.filterIndex;
                     var inputField = this.find('itemId', 'inputField'+idx)[0];
 
-                    //var rec = combo.getStore().getAt(combo.getStore().find('value', combo.getValue()));
                     var filter = LABKEY.Filter.getFilterTypeForURLSuffix(combo.getValue());
                     var selectedValue = filter ? filter.getURLSuffix() : '';
 
@@ -2977,7 +2979,6 @@ LABKEY.FilterDialog = Ext.extend(Ext.Window, {
                 enable: function(combo)
                 {
                     var input = combo.findParentByType('panel').find('itemId', 'inputField'+combo.filterIndex)[0];
-                    //var rec = combo.getStore().getAt(combo.getStore().find('value', combo.getValue()));
                     var filter = LABKEY.Filter.getFilterTypeForURLSuffix(combo.getValue());
 
                     if(filter && filter.isDataValueRequired())
@@ -3105,7 +3106,6 @@ LABKEY.FilterDialog = Ext.extend(Ext.Window, {
                 else
                     value = input.getValue();
 
-                //var rec = c.getStore().getAt(c.getStore().find('value', c.getValue()));
                 var filter = LABKEY.Filter.getFilterTypeForURLSuffix(c.getValue());
 
                 if(!filter){
@@ -3113,13 +3113,25 @@ LABKEY.FilterDialog = Ext.extend(Ext.Window, {
                     return;  //'No Other Filter'
                 }
 
-                if(Ext.isEmpty(input.getValue()) && filter.isDataValueRequired()){
-                    input.markInvalid('You must enter a value');
-                    isValid = false;
-                    return false;
+                var nullField = this.find('itemId', 'nullCheckbox')[0];
+                if(nullField && nullField.getValue())
+                    value += ';';
+
+                if(Ext.isEmpty(value) && filter.isDataValueRequired()){
+                    if(this.filterType == 'default'){
+                        input.markInvalid('You must enter a value');
+                        isValid = false;
+                        return false;
+                    }
+                    else {
+                        return;
+                    }
                 }
 
-                filters.push([c.getValue(), value]);
+                var optimized = this.optimizeFilter(filter, value);
+
+                if(optimized)
+                    filters.push(optimized);
             }
         }, this);
 
@@ -3127,6 +3139,16 @@ LABKEY.FilterDialog = Ext.extend(Ext.Window, {
             this.setFilter(filters);
             this.close();
         }
+    },
+
+    optimizeFilter: function(filter, value){
+        var operator = filter.getURLSuffix();
+
+        if(filter.isMultiValued()){
+
+        }
+
+        return [operator, value]
     },
 
     cancelHandler: function()
@@ -3173,10 +3195,7 @@ LABKEY.FilterDialog = Ext.extend(Ext.Window, {
 
             if (mappedType != "BOOL" && mappedType != "DATE"){
                 store.add(new comboRecord({text:"Equals One Of (e.g. \"a;b;c\")", value: 'in', isMulti: true}));
-                store.add(new comboRecord({text:"Equals One Of (e.g. \"a;b;c\") or is blank", value: 'inornull', isMulti: true}));
-                store.add(new comboRecord({text:"Does Not Equal Any Of (e.g. \"a;b;c\")", value: 'notinornull', isMulti: true}));
-                store.add(new comboRecord({text:"Does Not Equal Any Of (e.g. \"a;b;c\") and is not blank", value: 'notin', isMulti: true}));
-
+                store.add(new comboRecord({text:"Does Not Equal Any Of (e.g. \"a;b;c\")", value: 'notin', isMulti: true}));
             }
         }
 
@@ -3227,14 +3246,6 @@ LABKEY.FilterDialog = Ext.extend(Ext.Window, {
         if (null == this.savedSearchString)
             this.savedSearchString = document.location.search.substring(1) || "";
         return this.savedSearchString;
-    },
-
-    setSearchString : function(tableName, search)
-    {
-        this.savedSearchString = search || "";
-        // If the search string doesn't change and there is a hash on the url, the page won't reload.
-        // Remove the hash by setting the full path plus search string.
-        window.location.assign(window.location.pathname + "?" + this.savedSearchString);
     },
 
     clearFilter : function()
@@ -3326,10 +3337,11 @@ LABKEY.FilterDialog = Ext.extend(Ext.Window, {
             return Ext.StoreMgr.get(storeId);
         }
 
-        return new LABKEY.ext.Store({
+        var store = Ext.StoreMgr.add(new LABKEY.ext.Store({
             schemaName: dataRegion.schemaName,
             sql: this.getLookupValueSql(dataRegion, column),
             storeId: storeId,
+            //TODO: add sort on client??
             sort: "value",
             containerPath: dataRegion.container || dataRegion.containerPath || LABKEY.container.path,
             maxRows: this.MAX_FILTER_CHOICES, // Limit so that we don't overwhelm the user (or the browser itself) with too many checkboxes
@@ -3339,12 +3351,12 @@ LABKEY.FilterDialog = Ext.extend(Ext.Window, {
             listeners: {
                 scope: this,
                 load: function(store){
-                    if(store.getCount() >= this.MAX_FILTER_CHOICES){
-                        console.log('exceeding max values');
-                    }
+                    console.log('store loaded: '+store.storeId);
                 }
             }
-        });
+        }));
+
+        return store;
     },
 
     getLookupValueSql: function(dataRegion, column)
@@ -3524,7 +3536,7 @@ LABKEY.ext.RemoteCheckboxGroup = Ext.extend(Ext.form.CheckboxGroup,
         }
         else {
             //NOTE: if this is called too quickly, the layout can be screwed up. this isnt a great fix, but we will convert to Ext4 shortly, so it'll change anyway
-            this.onStoreLoad.defer(200, this);
+            this.onStoreLoad.defer(10, this);
         }
     }
 
@@ -3579,17 +3591,14 @@ LABKEY.ext.RemoteCheckboxGroup = Ext.extend(Ext.form.CheckboxGroup,
                     this.fireEvent('change', this, this.getValue());
                 },
                 afterrender: function(field){
-                    //TODO: use boxLabel element
-                    var id = field.wrap.id;
-                    //console.log(id)
+                    var id = field.wrap.query('label.x-form-cb-label')[0];
+
                     new Ext.ToolTip({
                         xtype: 'tooltip',
                         target: id,
                         items: [{
                             //NOTE: this will break in Ext4.  See labkey-linkbutton in ExtComponents.js
                             xtype: 'button',
-                            //TODO: bigger font
-                            //cls: 'x-form-cb-label',
                             html: 'Click to select only: ' + field.inputValue,
                             scope: this,
                             handler: function(btn){

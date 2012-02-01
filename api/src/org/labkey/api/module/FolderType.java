@@ -124,7 +124,9 @@ public interface FolderType
     Module getDefaultModule();
 
     /**
-     * Return all modules required by this foldertype, INCLUDING the default module if any.
+     * Return all modules required by this foldertype, INCLUDING the default module if any.  Note: in order to find the
+     * requiredModules for a given container, you should call getRequiredModules() on that container rather than rely
+     * on the folderType.
      * @return set
      */
     public Set<Module> getActiveModules();

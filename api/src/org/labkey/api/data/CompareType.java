@@ -38,10 +38,10 @@ import java.util.Arrays;
 import java.util.Calendar;
 import java.util.Collection;
 import java.util.Date;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.StringTokenizer;
 
 /**
  * User: brittp
@@ -303,12 +303,7 @@ public enum CompareType
                         List<String> values = new ArrayList<String>();
                         if (value != null && !value.toString().trim().equals(""))
                         {
-                            StringTokenizer st = new StringTokenizer(value.toString(), ";", false);
-                            while (st.hasMoreTokens())
-                            {
-                                String token = st.nextToken().trim();
-                                values.add(token);
-                            }
+                            values.addAll(parseParams(value, this));
                         }
                         return new SimpleFilter.InClause(colName, values, true);
                     }
@@ -333,49 +328,10 @@ public enum CompareType
                         List<String> values = new ArrayList<String>();
                         if (value != null && !value.toString().trim().equals(""))
                         {
-                            StringTokenizer st = new StringTokenizer(value.toString(), ";", false);
-                            while (st.hasMoreTokens())
-                            {
-                                String token = st.nextToken().trim();
-                                values.add(token);
-                            }
+                            values.addAll(parseParams(value, this));
                         }
                         return new SimpleFilter.InClause(colName, values, true, true);
                     }
-                }
-
-                @Override
-                public boolean meetsCriteria(Object value, Object[] paramVals)
-                {
-                    throw new UnsupportedOperationException("Should be handled inside of " + SimpleFilter.InClause.class);
-                }
-            },
-    IN_OR_NULL("Equals One Of (e.g. 'a;b;c')", "inornull", true, null, "EQUALS_ONE_OF_OR_MISSING", OperatorType.IN)
-            {
-                // Each compare type uses CompareClause by default
-                FilterClause createFilterClause(String colName, Object value)
-                {
-                    SimpleFilter.OrClause fc = new SimpleFilter.OrClause();
-                    fc.addClause(IN.createFilterClause(colName, value));
-                    fc.addClause(ISBLANK.createFilterClause(colName, null));
-                    return fc;
-                }
-
-                @Override
-                public boolean meetsCriteria(Object value, Object[] paramVals)
-                {
-                    throw new UnsupportedOperationException("Should be handled inside of " + SimpleFilter.InClause.class);
-                }
-            },
-    NOT_IN_OR_NULL("Does Not Equal Any Of (e.g. 'a;b;c')", "notinornull", true, null, "EQUALS_NONE_OF_OR_MISSING", OperatorType.NOTINORNULL)
-            {
-                // Each compare type uses CompareClause by default
-                FilterClause createFilterClause(String colName, Object value)
-                {
-                    SimpleFilter.OrClause fc = new SimpleFilter.OrClause();
-                    fc.addClause(NOT_IN.createFilterClause(colName, value));
-                    fc.addClause(ISBLANK.createFilterClause(colName, null));
-                    return fc;
                 }
 
                 @Override
@@ -391,28 +347,23 @@ public enum CompareType
                 {
                     if (value instanceof Collection)
                     {
-                        return new SimpleFilter.ContainsInClause(colName, (Collection)value, false);
+                        return new SimpleFilter.ContainsOneOfClause(colName, (Collection)value, false);
                     }
                     else
                     {
                         List<String> values = new ArrayList<String>();
                         if (value != null && !value.toString().trim().equals(""))
                         {
-                            StringTokenizer st = new StringTokenizer(value.toString(), ";", false);
-                            while (st.hasMoreTokens())
-                            {
-                                String token = st.nextToken().trim();
-                                values.add(token);
-                            }
+                            values.addAll(parseParams(value, this));
                         }
-                        return new SimpleFilter.ContainsInClause(colName, values, true, false);
+                        return new SimpleFilter.ContainsOneOfClause(colName, values, true, false);
                     }
                 }
 
                 @Override
                 public boolean meetsCriteria(Object value, Object[] paramVals)
                 {
-                    throw new UnsupportedOperationException("Should be handled inside of " + SimpleFilter.ContainsInClause.class);
+                    throw new UnsupportedOperationException("Should be handled inside of " + SimpleFilter.ContainsOneOfClause.class);
                 }},
     CONTAINS_NONE_OF("Does Not Contain Any Of (e.g. 'a;b;c')", "containsnoneof", true, null, "CONTAINS_NONE_OF", OperatorType.CONTAINSNONEOF)
             {
@@ -421,28 +372,20 @@ public enum CompareType
                 {
                     if (value instanceof Collection)
                     {
-                        return new SimpleFilter.ContainsInClause(colName, (Collection)value, false, true);
+                        return new SimpleFilter.ContainsOneOfClause(colName, (Collection)value, false, true);
                     }
                     else
                     {
-                        List<String> values = new ArrayList<String>();
-                        if (value != null && !value.toString().trim().equals(""))
-                        {
-                            StringTokenizer st = new StringTokenizer(value.toString(), ";", false);
-                            while (st.hasMoreTokens())
-                            {
-                                String token = st.nextToken().trim();
-                                values.add(token);
-                            }
-                        }
-                        return new SimpleFilter.ContainsInClause(colName, values, false, true);
+                        Set<String> values = parseParams(value, this);
+
+                        return new SimpleFilter.ContainsOneOfClause(colName, values, false, true);
                     }
                 }
 
                 @Override
                 public boolean meetsCriteria(Object value, Object[] paramVals)
                 {
-                    throw new UnsupportedOperationException("Should be handled inside of " + SimpleFilter.ContainsInClause.class);
+                    throw new UnsupportedOperationException("Should be handled inside of " + SimpleFilter.ContainsOneOfClause.class);
                 }},
     HAS_QC("Has A QC Value", new String[] { "hasmvvalue", "hasqcvalue" }, false, " has a missing value indicator", "MV_INDICATOR", OperatorType.HASMVVALUE)
     // TODO: Switch to MV_INDICATOR
@@ -547,6 +490,19 @@ public enum CompareType
         return types;
     }
 
+    private static Set<String> parseParams(Object value, CompareType clause)
+    {
+        Set<String> values = new HashSet<String>();
+        if (value != null && !value.toString().trim().equals(""))
+        {
+            String[] st = value.toString().split(";", -1);
+            for(String token : st)
+            {
+                values.add(token);
+            }
+        }
+        return values;
+    }
 
     private static <T> T convert(Object value, Class<T> targetClass)
     {
