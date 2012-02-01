@@ -759,16 +759,14 @@ public class SecurityController extends SpringActionController
                 //check for users to delete
                 if (removeNames != null)
                 {
+                    //get list of group members to determine how many there are
+                    Set<UserPrincipal> userMembers = SecurityManager.getGroupMembers(_group, SecurityManager.GroupMemberType.Users);
+
                     //if this is the site admins group and user is attempting to remove all site admins, display error.
-                    if (_group.getUserId() == Group.groupAdministrators)
+                    if (_group.getUserId() == Group.groupAdministrators && removeNames.length == userMembers.size())
                     {
-                        //get list of group members to determine how many there are
-                        Set<UserPrincipal> userMembers = SecurityManager.getGroupMembers(_group, SecurityManager.GroupMemberType.Users);
-
-                        if (removeNames.length == userMembers.size())
-                            errors.addError(new LabkeyError("The Site Administrators group must always contain at least one member. You cannot remove all members of this group."));
+                        errors.addError(new LabkeyError("The Site Administrators group must always contain at least one member. You cannot remove all members of this group."));
                     }
-
                     //if this is site or project admins group and user is removing themselves, display warning.
                     else if (_group.getName().compareToIgnoreCase("Administrators") == 0
                             && Arrays.asList(removeNames).contains(getUser().getEmail())
