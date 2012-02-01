@@ -931,7 +931,7 @@ public class PropertiesEditor<DomainType extends GWTDomain<FieldType>, FieldType
         formatter.setHeight(tableRow, col, "23");
     }
 
-    static PushButton getImageButton(String action, Object idSuffix, ClickHandler h)
+    public static PushButton getImageButton(String action, Object idSuffix, ClickHandler h)
     {
         String src = PropertyUtil.getContextPath() + "/_images/" + action + ".gif";
         PushButton result = new PushButton(new Image(src));
@@ -958,7 +958,7 @@ public class PropertiesEditor<DomainType extends GWTDomain<FieldType>, FieldType
         return getImageButton("partdown", idSuffix, handler);
     }
 
-    PushButton getDeleteButton(Object idSuffix, ClickHandler l)
+    public static PushButton getDeleteButton(Object idSuffix, ClickHandler l)
     {
         return getImageButton("partdelete", idSuffix, l);
     }
