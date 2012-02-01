@@ -42,9 +42,7 @@
  * @property {LABKEY.Filter.FilterDefinition} Types.DOES_NOT_START_WITH Finds rows where the column value does not start with the filter value.
  * @property {LABKEY.Filter.FilterDefinition} Types.STARTS_WITH Finds rows where the column value starts with the filter value.
  * @property {LABKEY.Filter.FilterDefinition} Types.EQUALS_ONE_OF Finds rows where the column value equals one of the supplied filter values. The values should be supplied as a semi-colon-delimited list (e.g., 'a;b;c').
- * @property {LABKEY.Filter.FilterDefinition} Types.EQUALS_ONE_OF_OR_MISSING Finds rows where the column value equals one of the supplied filter values, as well as rows where the value is missing (ie. null). The values should be supplied as a semi-colon-delimited list (e.g., 'a;b;c').
  * @property {LABKEY.Filter.FilterDefinition} Types.NOT_IN Finds rows where the column value is not in any of the supplied filter values. The values should be supplied as a semi-colon-delimited list (e.g., 'a;b;c').
- * @property {LABKEY.Filter.FilterDefinition} Types.NOT_IN_OR_MISSING Finds rows where the column value is not in any of the supplied filter values, but will include rows where the value is missing (ie. null). The values should be supplied as a semi-colon-delimited list (e.g., 'a;b;c').
  * @property {LABKEY.Filter.FilterDefinition} Types.CONTAINS_ONE_OF Finds rows where the column value contains any of the supplied filter values. The values should be supplied as a semi-colon-delimited list (e.g., 'a;b;c').
  * @property {LABKEY.Filter.FilterDefinition} Types.CONTAINS_NONE_OF Finds rows where the column value does not contain any of the supplied filter values. The values should be supplied as a semi-colon-delimited list (e.g., 'a;b;c').
  *
@@ -323,11 +321,11 @@ LABKEY.Filter = new function()
 
     var ft = ret.Types;
     var filterTypes = {
-        "int":[ft.HAS_ANY_VALUE, ft.EQUAL, ft.NEQ_OR_NULL, ft.ISBLANK, ft.NONBLANK, ft.GT, ft.LT, ft.GTE, ft.LTE, ft.IN, ft.IN_OR_MISSING, ft.NOT_IN, ft.NOT_IN_OR_MISSING],
-        "string":[ft.HAS_ANY_VALUE, ft.EQUAL, ft.NEQ_OR_NULL, ft.ISBLANK, ft.NONBLANK, ft.GT, ft.LT, ft.GTE, ft.LTE, ft.CONTAINS, ft.DOES_NOT_CONTAIN, ft.DOES_NOT_START_WITH, ft.STARTS_WITH, ft.IN, ft.IN_OR_MISSING, ft.NOT_IN, ft.NOT_IN_OR_MISSING, ft.CONTAINS_ONE_OF, ft.CONTAINS_NONE_OF],
+        "int":[ft.HAS_ANY_VALUE, ft.EQUAL, ft.NEQ_OR_NULL, ft.ISBLANK, ft.NONBLANK, ft.GT, ft.LT, ft.GTE, ft.LTE, ft.IN, ft.NOT_IN],
+        "string":[ft.HAS_ANY_VALUE, ft.EQUAL, ft.NEQ_OR_NULL, ft.ISBLANK, ft.NONBLANK, ft.GT, ft.LT, ft.GTE, ft.LTE, ft.CONTAINS, ft.DOES_NOT_CONTAIN, ft.DOES_NOT_START_WITH, ft.STARTS_WITH, ft.IN, ft.NOT_IN, ft.CONTAINS_ONE_OF, ft.CONTAINS_NONE_OF],
         "boolean":[ft.HAS_ANY_VALUE, ft.EQUAL, ft.NEQ_OR_NULL, ft.ISBLANK, ft.NONBLANK],
-        "float":[ft.HAS_ANY_VALUE, ft.EQUAL, ft.NEQ_OR_NULL, ft.ISBLANK, ft.NONBLANK, ft.GT, ft.LT, ft.GTE, ft.LTE, ft.IN, ft.IN_OR_MISSING, ft.NOT_IN, ft.NOT_IN_OR_MISSING],
-        "date":[ft.HAS_ANY_VALUE, ft.DATE_EQUAL, ft.DATE_NOT_EQUAL, ft.ISBLANK, ft.NONBLANK, ft.DATE_GREATER_THAN, ft.DATE_LESS_THAN, ft.DATE_GREATER_THAN_OR_EQUAL, ft.DATE_LESS_THAN_OR_EQUAL, ft.IN, ft.IN_OR_MISSING, ft.NOT_IN, ft.NOT_IN_OR_MISSING]
+        "float":[ft.HAS_ANY_VALUE, ft.EQUAL, ft.NEQ_OR_NULL, ft.ISBLANK, ft.NONBLANK, ft.GT, ft.LT, ft.GTE, ft.LTE, ft.IN, ft.NOT_IN],
+        "date":[ft.HAS_ANY_VALUE, ft.DATE_EQUAL, ft.DATE_NOT_EQUAL, ft.ISBLANK, ft.NONBLANK, ft.DATE_GREATER_THAN, ft.DATE_LESS_THAN, ft.DATE_GREATER_THAN_OR_EQUAL, ft.DATE_LESS_THAN_OR_EQUAL, ft.IN, ft.NOT_IN]
     };
 
     var defaultFilter = {
