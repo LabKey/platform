@@ -659,11 +659,6 @@ li.labkey-tab-inactive a
     background-color: #<%= grid %>;
 }
 
-.tool-icon {
-	margin-bottom: 20px;
-	text-align: center;
-}
-
 .tool-icon:hover img {
 	cursor: pointer;
     background: rgb(<%= toolIconBackgroundColor.getRed() %>, <%= toolIconBackgroundColor.getGreen()%>, <%= toolIconBackgroundColor.getBlue() %>); /* no RGBa */
@@ -682,15 +677,10 @@ li.labkey-tab-inactive a
     -ms-filter: "progid:DXImageTransform.Microsoft.gradient(startColorstr=#b2<%= toolIconBackgroundHex %>, endColorstr=#b2<%= toolIconBackgroundHex %>)"; /* IE 8 */
 }
 
-.tool-icon a {
-	text-transform: uppercase;
-	text-decoration: none;
-	font-family: Verdana, Arial, Helvetica, sans serif;
-	color: #999;
-	font-size: 10px;
-	font-weight: bold;
-}
-
 .tool-icon:hover a {
 	color: #<%= toolIconBackgroundHex %>;
+}
+
+.study-schedule-container .x4-reset .x4-grid-header-ct {
+    background-color: #<%=grid%>;
 }

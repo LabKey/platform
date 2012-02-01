@@ -54,7 +54,8 @@
     function callRender() {
 
         var studySchedulePanel = Ext4.create('LABKEY.ext4.StudyScheduleGrid', {
-            renderTo : "study-schedule-"+ <%=webPartIndex%>
+            renderTo : "study-schedule-"+ <%=webPartIndex%>,
+            timepointType: "<%=study.getTimepointType()%>"
         });
 
     }

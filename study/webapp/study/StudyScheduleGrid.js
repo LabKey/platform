@@ -99,10 +99,38 @@ Ext4.define('LABKEY.ext4.StudyScheduleGrid', {
         }];
 
         for(var i = 0; i < schedule.timepoints.length; i++){
+
+            var header;
+            if(this.timepointType == "DATE"){
+                if(schedule.timepoints[i].label != null){
+
+                    header = '<div data-qtip="' + schedule.timepoints[i].label + '<br>Start Day: ' + schedule.timepoints[i].sequenceMin + ' <br>End Day: ' + schedule.timepoints[i].sequenceMax;
+                    if(schedule.timepoints[i].cohort){
+                        header = header + '<br> Cohort: ' + schedule.timepoints[i].cohort.label;
+                    }
+                    header = header + '">' + schedule.timepoints[i].label +'</div>';
+                } else {
+                    header = schedule.timepoints[i].sequenceMin;
+                }
+            } else {
+                if(schedule.timepoints[i].label != null){
+                    if(schedule.timepoints[i].sequenceMin == schedule.timepoints[i].sequenceMax){
+                        header = '<div data-qtip="' + schedule.timepoints[i].label + '<br>Sequence: ' + schedule.timepoints[i].sequenceMin;
+                    } else {
+                        header = '<div data-qtip="' + schedule.timepoints[i].label + '<br>Sequence: ' + schedule.timepoints[i].sequenceMin + ' - ' + schedule.timepoints[i].sequenceMax;
+                    }
+                    if(schedule.timepoints[i].cohort){
+                        header = header + '<br> Cohort: ' + schedule.timepoints[i].cohort.label;
+                    }
+                    header = header + '">' + schedule.timepoints[i].sequenceMin + '<br>' + schedule.timepoints[i].label +'</div>';
+                } else {
+                    header = '<div>' + schedule.timepoints[i].sequenceMin;
+                }
+            }
+
             var newCol = {
-                text: schedule.timepoints[i].label != null ? '<div data-qtip="' + schedule.timepoints[i].label + '">' + schedule.timepoints[i].label +'</div>' : schedule.timepoints[i].sequenceMin,
+                text: header,
                 dataIndex: schedule.timepoints[i].name,
-                tdCls: 'type-column',
                 renderer: visitRenderer
             };
             columnItems.push(newCol);
@@ -127,7 +155,7 @@ Ext4.define('LABKEY.ext4.StudyScheduleGrid', {
             autoScroll  : true,
             columnLines : false,
             columns     : columns,
-            selType     : 'rowmodelfixed',
+            selType     : 'cellmodel',
             enableColumnMove: false
         });
 

@@ -90,7 +90,12 @@
 
 %>
 <table>
+    <tr>
+        <td>View study schedule.</td>
+        <td><%= textLink("Study Schedule", StudyController.StudyScheduleAction.class) %></td>
+    </tr>
 <%
+
     if (countUndefined > 0)
     {
         %><tr>

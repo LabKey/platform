@@ -1,3 +1,29 @@
+.x4-reset .x4-tip {
+    background-color: white;
+    border-width: 2px;
+}
+
+.study-schedule-container .x4-reset .x4-toolbar-default,
+.x4-reset .x4-column-header {
+    background-image: none;
+    background-color: transparent;
+}
+
+.study-schedule-container .x4-reset .x4-column-header-inner .x4-column-header-text {
+    font-weight: bold;
+    font-size: 14px;
+    text-align: center;
+}
+
+/* column hover */
+.study-schedule-container .x4-reset .x4-column-header-over,
+.study-schedule-container .x4-reset .x4-column-header-sort-ASC,
+.study-schedule-container .x4-reset .x4-column-header-sort-DESC {
+    background-image: none;
+    background-color: transparent;
+    border:  0 none;
+}
+
 .study-schedule-container td.type-column div {
     text-align: center !important;
 }

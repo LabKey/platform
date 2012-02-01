@@ -9,13 +9,13 @@
 }
 
 /* Grid */
-.x4-reset .x4-grid-header-ct {
+.data-views-container .x4-reset .x4-grid-header-ct {
     background-image: none;
     background-color: transparent;
     border: 0 none;
 }
-.x4-reset .x4-toolbar-default,
-.x4-reset .x4-column-header {
+.data-views-container .x4-reset .x4-toolbar-default,
+.data-views-container .x4-reset .x4-column-header {
     background-image: none;
     background-color: transparent;
     border: 0 none;
@@ -57,16 +57,16 @@
 }
 
 /* column hover */
-.x4-reset .x4-column-header-over,
-.x4-reset .x4-column-header-sort-ASC,
-.x4-reset .x4-column-header-sort-DESC {
+.data-views-container .x4-reset .x4-column-header-over,
+.data-views-container .x4-reset .x4-column-header-sort-ASC,
+.data-views-container .x4-reset .x4-column-header-sort-DESC {
     background-image: none;
     background-color: transparent;
     border:  0 none;
 }
 
 /* Grid column title */
-.x4-reset .x4-column-header-inner .x4-column-header-text {
+.data-views-container .x4-reset .x4-column-header-inner .x4-column-header-text {
     font-weight: bold;
 }
 
@@ -141,9 +141,9 @@
 }
 
 /* Ext4 Windows */
-.x4-reset .x4-window-default,
-.x4-reset .x4-window-header-default-top,
-.x4-reset .x4-window-body-default
+.data-views-container .x4-reset .x4-window-default,
+.data-views-container.x4-reset .x4-window-header-default-top,
+.data-views-container .x4-reset .x4-window-body-default
 {
     border-color: transparent !important;
     background-color: white;
