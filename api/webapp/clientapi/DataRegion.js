@@ -2352,7 +2352,6 @@ LABKEY.FilterDialog = Ext.extend(Ext.Window, {
 
         //determine the type of filter UI to show
         var dataRegion = LABKEY.DataRegions[this.dataRegionName];
-        this.filterType = this.getInitialFilterType();
 
         if (this.boundColumn.lookup && dataRegion && dataRegion.schemaName && dataRegion.queryName){
             if (this.boundColumn.displayField){
@@ -2360,6 +2359,8 @@ LABKEY.FilterDialog = Ext.extend(Ext.Window, {
                 this._fieldName = this.boundColumn.displayField;
             }
         }
+
+        this.filterType = this.getInitialFilterType();
 
         Ext.apply(this, {
             width: 410,
@@ -2562,7 +2563,7 @@ LABKEY.FilterDialog = Ext.extend(Ext.Window, {
         Ext.each(paramValPairs, function(pair, idx){
             var filter = LABKEY.Filter.getFilterTypeForURLSuffix(pair.operator);
 
-            if(!filter.isMultiValued()){
+            if(!filter.isMultiValued() && !filter.getMultiValueFilter()){
                 shouldShow = false;
             }
         }, this);
@@ -2571,7 +2572,8 @@ LABKEY.FilterDialog = Ext.extend(Ext.Window, {
             var store = this.getLookupStore();
             if(!store || store.getCount() >= this.MAX_FILTER_CHOICES){
                 var field = this.findByType('radiogroup')[0];
-                field.hide();
+                if(field)
+                    field.hide();
                 shouldShow = false;
                 console.log('store not loaded or too many filter options');
             }
@@ -2630,15 +2632,7 @@ LABKEY.FilterDialog = Ext.extend(Ext.Window, {
                             return item.itemId == 'filterWindow';
                         });
                         var field = window.findByType('labkey-remotecheckboxgroup')[0];
-                        var values = [];
-                        for(var i=0;i<field.getStore().getCount();i++){
-                            values.push(true);
-                        }
-                        field.setValue(values);
-
-                        field = window.find('itemId', 'nullCheckbox')[0];
-                        field.setValue(true);
-
+                        field.selectAll();
                     },
                     scope: this
                 },{
@@ -2649,11 +2643,7 @@ LABKEY.FilterDialog = Ext.extend(Ext.Window, {
                             return item.itemId == 'filterWindow';
                         });
                         var field = window.findByType('labkey-remotecheckboxgroup')[0];
-                        field.reset();
-
-                        field = window.find('itemId', 'nullCheckbox')[0];
-                        field.setValue(false);
-
+                        field.selectNone();
                     },
                     scope: this
                 }]
@@ -2678,13 +2668,14 @@ LABKEY.FilterDialog = Ext.extend(Ext.Window, {
             bodyStyle: 'padding-left: 5px;',
             items: [
                 this.getCheckboxGroupConfig(0)
-            ,{
-                xtype: 'checkbox',
-                name: 'nullCheckbox',
-                itemId: 'nullCheckbox',
-                boxLabel: '[blank]',
-                checked: false
-            }]
+//            ,{
+//                xtype: 'checkbox',
+//                name: 'nullCheckbox',
+//                itemId: 'nullCheckbox',
+//                boxLabel: '[blank]',
+//                checked: false
+//            }
+            ]
     });
 
         return panel;
@@ -2722,23 +2713,21 @@ LABKEY.FilterDialog = Ext.extend(Ext.Window, {
             if(pair.operator){
                 var filter = LABKEY.Filter.getFilterTypeForURLSuffix(pair.operator);
 
+                //attempt to convert single-value filters into multi-value for faceting
+                if(this.filterType != 'default' && !filter.isMultiValued() && filter.getMultiValueFilter()){
+                    filter = filter.getMultiValueFilter();
+                }
+
                 if(this.filterType == 'include'){
-                    if(['notin', 'notinornull'].indexOf(pair.operator) > -1 ){
+                    if('notin' == pair.operator){
                         filter = filter.getOpposite();
                         pair.value = this.getInverse(this.getLookupStore(), pair.value);
                     }
-                    if(['neq', 'neqornull'].indexOf(pair.operator) > -1 ){
-                        //in theory we could convert this filter
-                    }
-
                 }
                 else if(this.filterType == 'exclude'){
-                    if(['in', 'inornull'].indexOf(pair.operator) > -1 ){
+                    if('in' == pair.operator){
                         filter = filter.getOpposite();
                         pair.value = this.getInverse(this.getLookupStore(), pair.value);
-                    }
-                    if(['eq'].indexOf(pair.operator) > -1 ){
-                        //in theory we could convert this filter
                     }
                 }
 
@@ -2756,12 +2745,15 @@ LABKEY.FilterDialog = Ext.extend(Ext.Window, {
                         input.setValue(pair.value);
                     }
                     else {
-                        var values = pair.value.split(';');
-                        input.setValue(values.join(','));
-
-                        var includesNull = values.indexOf('') > 0;
-                        var nullCheckbox = this.find('itemId', 'nullCheckbox')[0];
-                        nullCheckbox.setValue(includesNull);
+console.log('setting values')
+                        if(filter.getURLSuffix() == 'in' && pair.value === ''){
+                            input.defaultValue = true;
+                            input.selectAll();  //select all by default
+                        }
+                        else {
+                            var values = pair.value.split(';');
+                            input.setValue(values.join(','));
+                        }
                     }
                 }
             }
@@ -2785,6 +2777,9 @@ LABKEY.FilterDialog = Ext.extend(Ext.Window, {
                 newValues.push(val);
             }
         }, this);
+
+        if(values.indexOf('') == -1 && newValues.indexOf('') == -1)
+            newValues.push('');
 
         return newValues.join(';');
     },
@@ -2885,6 +2880,7 @@ LABKEY.FilterDialog = Ext.extend(Ext.Window, {
             store: this.getLookupStore(),
             displayField: 'value',
             valueField: 'value',
+            defaultValue: this.filterType == 'include',
             clearFilterOnReset: false
         }
 
@@ -3101,8 +3097,18 @@ LABKEY.FilterDialog = Ext.extend(Ext.Window, {
             else {
                 var value;
                 var input = inputFields[idx];
-                if(input instanceof LABKEY.ext.RemoteCheckboxGroup)
-                    value = input.getStringValue();
+                if(input instanceof LABKEY.ext.RemoteCheckboxGroup){
+                    var cbks = input.getValue();
+                    var values = [];
+                    Ext.each(cbks, function(cb){
+                        values.push(cb.inputValue);
+                    }, this)
+
+                    if(values.indexOf('') != -1 && values.length == 1)
+                        values.push(''); //account for null-only filtering
+
+                    value = values.join(';');
+                }
                 else
                     value = input.getValue();
 
@@ -3112,10 +3118,6 @@ LABKEY.FilterDialog = Ext.extend(Ext.Window, {
                     alert('filter not found: ' + c.getValue());
                     return;  //'No Other Filter'
                 }
-
-                var nullField = this.find('itemId', 'nullCheckbox')[0];
-                if(nullField && nullField.getValue())
-                    value += ';';
 
                 if(Ext.isEmpty(value) && filter.isDataValueRequired()){
                     if(this.filterType == 'default'){
@@ -3128,10 +3130,17 @@ LABKEY.FilterDialog = Ext.extend(Ext.Window, {
                     }
                 }
 
-                var optimized = this.optimizeFilter(filter, value);
+                var filterArray = [filter.getURLSuffix(), value];
+                if(this.filterType != 'default'){
+                    var allowable = [];
+                    this.getLookupStore().each(function(rec){
+                        allowable.push(rec.get('value'))
+                    });
+                    filterArray = this.optimizeFilter(filter, value, allowable);
+                }
 
-                if(optimized)
-                    filters.push(optimized);
+                if(filterArray)
+                    filters.push(filterArray);
             }
         }, this);
 
@@ -3141,14 +3150,31 @@ LABKEY.FilterDialog = Ext.extend(Ext.Window, {
         }
     },
 
-    optimizeFilter: function(filter, value){
-        var operator = filter.getURLSuffix();
+    optimizeFilter: function(filter, value, allowableValues){
+        value = value.split(';');
+        if(filter.isMultiValued() && allowableValues){
+            //determine if we should invert filter
+            if(value.length > (allowableValues.length / 2)){
+                console.log('inverting filter to optimize');
+                var newValues = [];
+                filter = filter.getOpposite();
+                Ext.each(allowableValues, function(item){
+                    if(value.indexOf(item) == -1){
+                        newValues.push(item);
+                    }
+                }, this);
+                value = newValues;
+            }
 
-        if(filter.isMultiValued()){
-
+            //NOTE: removed b/c null makes this tricky
+            //switch to single filter option
+//            if(value.length == 1){
+//                filter = filter.getSingleValueFilter();
+//            }
         }
 
-        return [operator, value]
+        var operator = filter.getURLSuffix();
+        return [operator, value.join(';')]
     },
 
     cancelHandler: function()
@@ -3377,6 +3403,8 @@ LABKEY.FilterDialog = Ext.extend(Ext.Window, {
         sql += "\"" + column.lookup.displayColumn.replace("\"", "\"\"") + "\"";
 
         sql += ' is not null';
+        //NOTE: empty string will be treated as NULL.  technically we could be smart and only include this is a null is really present
+        sql += " UNION ALL select ''";
         //NOTE: null is actually handled using the operator, and it's difficult to set null checkboxes, so we handle nulls as a separate checkbox
 
         return sql;
@@ -3491,6 +3519,7 @@ LABKEY.FilterDialog = Ext.extend(Ext.Window, {
 LABKEY.ext.RemoteCheckboxGroup = Ext.extend(Ext.form.CheckboxGroup,
 {
     separator: ';',
+    defaultValue: false,
     initComponent: function()
     {
         Ext.QuickTips.init();
@@ -3582,6 +3611,7 @@ LABKEY.ext.RemoteCheckboxGroup = Ext.extend(Ext.form.CheckboxGroup,
             disabled: this.disabled,
             readOnly: this.readOnly || false,
             itemId: record.get(this.valueField),
+            checked: this.defaultValue,
             listeners: {
                 scope: this,
                 change: function(self, val){
@@ -3599,17 +3629,15 @@ LABKEY.ext.RemoteCheckboxGroup = Ext.extend(Ext.form.CheckboxGroup,
                         items: [{
                             //NOTE: this will break in Ext4.  See labkey-linkbutton in ExtComponents.js
                             xtype: 'button',
-                            html: 'Click to select only: ' + field.inputValue,
+                            html: 'Click to select only: ' + field.boxLabel,
                             scope: this,
                             handler: function(btn){
                                 var window = this.findParentBy(function(item){
                                     return item.itemId == 'filterWindow';
                                 });
                                 var cbg = window.findByType('labkey-remotecheckboxgroup')[0];
-                                cbg.reset();
+                                cbg.selectNone();
                                 cbg.setValue(field.inputValue);
-
-                                window.find('itemId', 'nullCheckbox')[0].setValue(false);
                             }
                         }],
                         hideDelay: 800,
@@ -3647,6 +3675,16 @@ LABKEY.ext.RemoteCheckboxGroup = Ext.extend(Ext.form.CheckboxGroup,
             value.push(item.inputValue);
         }, this);
         return value.join(this.separator);
+    }
+    ,selectAll: function(){
+        this.items.each(function(item){
+            item.setValue(true);
+        });
+    }
+    ,selectNone: function(){
+        this.items.each(function(item){
+            item.setValue(false);
+        });
     }
 });
 Ext.reg('labkey-remotecheckboxgroup', LABKEY.ext.RemoteCheckboxGroup);

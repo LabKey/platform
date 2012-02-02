@@ -393,10 +393,11 @@ public class SimpleFilter implements Filter
     public static abstract class MultiValuedFilterClause extends FilterClause
     {
         private String _colName;
+        public static final int MAX_FILTER_VALUES_TO_DISPLAY = 10;
 
         public MultiValuedFilterClause(String colName, Collection params)
         {
-            if(params.size() == 0 || params.contains(""))
+            if(params.contains("")) //params.size() == 0 ||
             {
                 setIncludeNull(true);
                 params.remove("");
@@ -446,12 +447,25 @@ public class SimpleFilter implements Filter
         @Override
         protected void appendFilterText(StringBuilder sb, ColumnNameFormatter formatter)
         {
-            //TODO: if number of values > 10, dont show each one
             sb.append(formatter.format(getColName()));
+
+            if(getParamVals().length == 0 && !isIncludeNull())
+            {
+                sb.append(" has any value");
+                return;
+            }
+
             if(isNegated())
                 sb.append(" IS NOT ANY OF (");
             else
                 sb.append(" IS ONE OF (");
+
+            //TODO: if number of values > 10, dont show each one
+            if(getParamVals().length > MAX_FILTER_VALUES_TO_DISPLAY)
+            {
+                sb.append("too many values to display)");
+                return;
+            }
 
             String sep = "";
             for (Object val : getParamVals())
@@ -535,6 +549,8 @@ public class SimpleFilter implements Filter
                     in.append(alias + " IS " + (isNegated() ? " NOT " : "") + "NULL");
                 else if (!isNegated())
                     in.append(alias + "IN (NULL)");  // Empty list case; "WHERE column IN (NULL)" should always be false
+                else
+                    in.append("1=1");
 
                 return in;
             }
@@ -633,6 +649,14 @@ public class SimpleFilter implements Filter
             sb.append(formatter.format(getColName()));
             sb.append(" " +
                     (isNegated() ? "DOES NOT CONTAIN ANY OF (" : "CONTAINS ONE OF ("));
+
+            //TODO: if number of values > 10, dont show each one
+            if(getParamVals().length > MAX_FILTER_VALUES_TO_DISPLAY)
+            {
+                sb.append("too many values to display)");
+                return;
+            }
+
             String sep = "";
             for (Object val : getParamVals())
             {

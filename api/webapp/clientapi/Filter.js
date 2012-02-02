@@ -96,6 +96,20 @@ LABKEY.Filter = new function()
         nomvvalue : 'hasmvvalue'
     };
 
+    //NOTE: these maps contains the unambiguous pairings of single- and multi-valued filters
+    //due to NULLs, one cannot easily convert neq to notin
+    var multiValueToSingleMap = {
+        'in' : 'eq',
+        containsoneof : 'contains',
+        containsnoneof : 'doesnotcontain'
+    };
+
+    var singleValueToMultiMap = {
+        eq : 'in',
+        doesnotcontain : 'containsnoneof',
+        contains : 'containsoneof'
+    };
+
     function createFilterType(displayText, urlSuffix, dataValueRequired, isMultiValued)
     {
         var result = {
@@ -104,6 +118,8 @@ LABKEY.Filter = new function()
             isDataValueRequired : function() { return dataValueRequired },
             isMultiValued : function() { return isMultiValued },
             getOpposite : function() {return oppositeMap[urlSuffix] ? urlMap[oppositeMap[urlSuffix]] : null},
+            getSingleValueFilter : function() {return this.isMultiValued() ? urlMap[multiValueToSingleMap[urlSuffix]] : this},
+            getMultiValueFilter : function() {return this.isMultiValued() ? null : urlMap[singleValueToMultiMap[urlSuffix]]},
             validate : function (value, type, colName) {
                 if (!dataValueRequired)
                     return true;
