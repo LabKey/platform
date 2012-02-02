@@ -169,6 +169,11 @@ public class QueryWebPart extends WebPartView
     @Override
     public void render(HttpServletRequest request, HttpServletResponse response) throws Exception
     {
+        if (_schema == null || _settings == null)
+        {
+            throw new ValidationException("Invalid Schema provided: " + (_schemaName != null ? _schemaName : "<empty>"));
+        }
+
         QueryDefinition queryDef = _settings.getQueryDef(_schema);
 
         if (_metadata != null)

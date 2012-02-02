@@ -26,18 +26,17 @@
 <%@ page import="org.labkey.api.settings.AppProps" %>
 <%@ page import="org.labkey.api.settings.LookAndFeelProperties" %>
 <%@ page import="org.labkey.api.settings.TemplateResourceHandler" %>
-<%@ page import="org.labkey.api.util.HelpTopic" %>
 <%@ page import="org.labkey.api.util.PageFlowUtil" %>
 <%@ page import="org.labkey.api.view.ActionURL" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.api.view.PopupAdminView" %>
 <%@ page import="org.labkey.api.view.PopupDeveloperView" %>
+<%@ page import="org.labkey.api.view.PopupHelpView" %>
 <%@ page import="org.labkey.api.view.PopupUserView" %>
 <%@ page import="org.labkey.api.view.ThemeFont" %>
 <%@ page import="org.labkey.api.view.ViewContext" %>
 <%@ page import="org.labkey.api.view.template.PageConfig" %>
 <%@ page import="org.labkey.api.view.template.TemplateHeaderView" %>
-<%@ page import="org.labkey.api.view.PopupHelpView" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
     TemplateHeaderView me = ((TemplateHeaderView) HttpView.currentView());
@@ -71,7 +70,6 @@ if ("true".equals(request.getParameter("testFont"))) {
         var body = Ext.getBody();
         changeFontEl(Ext.getBody(),className);
         changeFontEl('bodyTableElement',className);
-//        document.cookie="themeFontName=" + themeFontName + ";path=/";
     }
 </script><%}%>
 <div id="headerDiv"><table id="headerNav" cellpadding="0" cellspacing="0" border=0 width="auto">
@@ -161,40 +159,42 @@ function labkeyShowWarningMessages(show)
     if (elem)
         elem.setDisplayed(!show, true);
     Ext.Ajax.request({
-        url: '<%=getViewContext().getContextPath()%>/user/setShowWarningMessages.api',
-        method: 'GET',
-        params: {showMessages: show}
+        url    : LABKEY.ActionURL.buildURL('user', 'setShowWarningMessages.api'),
+        method : 'GET',
+        params : {showMessages: show}
     });
 }
 <% } %>
-var serverDescription = <%=PageFlowUtil.jsString(LookAndFeelProperties.getInstance(c).getShortName())%> || LABKEY.serverName;
-var headerSearchField=null;
+var hdrSearch; // Ext.form.TextField
 function submit_onClick()
 {
-    if (headerSearchField && headerSearchField.el.hasClass(headerSearchField.emptyClass) && headerSearchField.el.dom.value == headerSearchField.emptyText)
-        headerSearchField.setRawValue('');
+    if (hdrSearch && hdrSearch.el.hasClass(hdrSearch.emptyClass) && hdrSearch.el.dom.value == hdrSearch.emptyText)
+        hdrSearch.setRawValue('');
     document.forms["headerSearchForm"].submit();
     return true;
 }
 Ext.onReady(function()
 {
-    if (Ext.isSafari || ("isWebKit" in Ext && Ext.isWebKit))
+    if (Ext.isSafari || Ext.isWebKit)
         Ext.get("headerNav").applyStyles({height:Ext.get("header").getSize().height});
+
+    var serverDescription = <%=PageFlowUtil.jsString(LookAndFeelProperties.getInstance(c).getShortName())%> || LABKEY.serverName;
     var inputEl = Ext.get('headerSearchInput');
     var parentEl = inputEl.parent();
     inputEl.remove();
-    headerSearchField = new Ext.form.TextField({id:'headerSearchInput',name:'q',emptyText:'Search',cls:'labkey-main-search', focusClass:'labkey-main-search'});
-    headerSearchField.render(parentEl);
+    hdrSearch = new Ext.form.TextField({id:'headerSearchInput',name:'q',emptyText:'Search',cls:'labkey-main-search', focusClass:'labkey-main-search'});
+    hdrSearch.render(parentEl);
     var handler = function(item)
     {
-        Ext.get('headerSearchForm').dom.action = item.action;
-        Ext.get('headerSearchForm').dom.target = item.target || '_self';
+        var form = Ext.get('headerSearchForm');
+        form.dom.action = item.action;
+        form.dom.target = item.target || '_self';
         Ext.get('headerSearchContainer').dom.value = item.containerId;
-        if (headerSearchField.el.hasClass(headerSearchField.emptyClass) && headerSearchField.el.dom.value == headerSearchField.emptyText)
-            headerSearchField.setRawValue(item.emptyText);
+        if (hdrSearch.el.hasClass(hdrSearch.emptyClass) && hdrSearch.el.dom.value == hdrSearch.emptyText)
+            hdrSearch.setRawValue(item.emptyText);
         else
-            Ext.get('headerSearchForm').dom.submit();
-        headerSearchField.emptyText = item.emptyText;
+            form.dom.submit();
+        hdrSearch.emptyText = item.emptyText;
     };
     var items = [];
     items.push({text:serverDescription, emptyText:'Search ' + serverDescription, containerId:'', action:LABKEY.ActionURL.buildURL("search", "search"), target:'', handler:handler});
