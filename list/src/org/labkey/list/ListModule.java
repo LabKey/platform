@@ -95,7 +95,13 @@ public class ListModule extends DefaultModule
     @Override
     public Collection<String> getSummary(Container c)
     {
-        return Collections.emptyList();
+        Collection<String> results = new ArrayList<String>();
+        ListDef[] lists = ListManager.get().getLists(c);
+        if(lists.length > 0)
+        {
+            results.add(lists.length + " lists");
+        }
+        return results;
     }
 
     @Override
