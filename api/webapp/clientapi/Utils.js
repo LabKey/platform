@@ -279,6 +279,7 @@ LABKEY.Utils = new function()
          * resizes it so the Container fits inside the viewable region of the window. This is generally used in the case
          * where the Container is not rendered to a webpart but rather displayed on the page itself (e.g. SchemaBrowser,
          * manageFolders, etc).
+         * NOTE: This method is safe to use for both Ext 3 and Ext 4 containers.
          * @param extContainer - (Required) outer container which is the target to be resized
          * @param width - (Required) width of the viewport. In many cases, the window width.
          * @param height - (Required) height of the viewport. In many cases, the window height.
