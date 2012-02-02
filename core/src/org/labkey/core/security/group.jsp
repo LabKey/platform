@@ -104,8 +104,6 @@ Ext.onReady(function()
 
 </script>
 
-<%if (bean.group.getUserId() > 0){%><%=generateButton("Rename Group", "renameGroup.view?id=" + bean.group.getUserId())%><%}%>
-
 <form id="groupMembersForm" action="updateMembers.post" method="POST">
 <labkey:csrf />
 <%
@@ -120,6 +118,16 @@ if (bean.messages.size() > 0)
     %></div><br><%
 }
 %><labkey:errors /><%
+
+if (!bean.group.isDevelopers())
+{
+%>
+    <br/>
+    <%if (!bean.group.isSystemGroup()){%><%=generateButton("Rename Group", "renameGroup.view?id=" + bean.group.getUserId())%><%}%>
+    <%=generateButton("View Permissions", urlProvider(SecurityUrls.class).getGroupPermissionURL(c, bean.group.getUserId()))%>
+<%
+}
+
 WebPartView.startTitleFrame(out, "Group members", null, "100%", null);
 if (bean.members.size() <= 0)
 {

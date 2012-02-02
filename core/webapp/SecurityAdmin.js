@@ -408,7 +408,23 @@ var SecurityCache = Ext.extend(Ext.util.Observable,{
                 callback.call(scope || this);
             };
             // find the container for the group
-            S.removeGroupMembers({groupId:groupid, principalIds:[userid], containerPath:(group.Container||'/'), successCallback:success, scope:this});
+            var config = {groupId:groupid, principalIds:[userid], containerPath:(group.Container||'/'), successCallback:success, scope:this};
+
+            //if this is site or project admins group and user is removing themselves, display confirmation dialog.
+            if (group.Name.toLowerCase().indexOf("administrators") > -1 && userid == LABKEY.user.id)
+            {
+                var msg = "If you delete your own user account from the Administrators group, you will no longer have administrative privileges. Are you sure that you want to continue?";
+                Ext.Msg.confirm("Confirm", msg, function (btnId) {
+                    if (btnId == "yes")
+                    {
+                        S.removeGroupMembers(config);
+                    }
+                }, this);
+            }
+            else
+            {
+                S.removeGroupMembers(config);
+            }
         }
     },
 
