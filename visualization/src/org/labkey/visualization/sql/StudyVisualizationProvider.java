@@ -250,10 +250,13 @@ public class StudyVisualizationProvider extends VisualizationProvider
             {
                 for (DataSet ds : study.getDataSets())
                 {
-                    Pair<QueryDefinition, TableInfo> entry = getTableAndQueryDef(context, schema, ds.getName(), ColumnMatchType.All_VISIBLE, false);
-                    if (entry != null)
+                    if (ds.isShowByDefault())
                     {
-                        queries.put(entry.getKey(), entry.getValue());
+                        Pair<QueryDefinition, TableInfo> entry = getTableAndQueryDef(context, schema, ds.getName(), ColumnMatchType.All_VISIBLE, false);
+                        if (entry != null)
+                        {
+                            queries.put(entry.getKey(), entry.getValue());
+                        }
                     }
                 }
             }

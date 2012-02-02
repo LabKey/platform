@@ -736,7 +736,10 @@ public class ReportsController extends SpringActionController
     {
         public ModelAndView getView(ReportDesignBean form, BindException errors) throws Exception
         {
-            return new JspView<ReportDesignBean>("/org/labkey/query/reports/view/reportDetails.jsp", form);
+            if (form.getReport() != null)
+                return new JspView<ReportDesignBean>("/org/labkey/query/reports/view/reportDetails.jsp", form);
+            else
+                return new HtmlView("Specified report not found");
         }
 
         public NavTree appendNavTrail(NavTree root)
