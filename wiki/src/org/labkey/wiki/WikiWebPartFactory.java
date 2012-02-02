@@ -69,6 +69,10 @@ public class WikiWebPartFactory extends AlwaysAvailableWebPartFactory
             {
                 serializedPropertyMap.put("webPartContainer", webPartContainer.getPath());
             }
+            else
+            {
+                serializedPropertyMap.remove("webPartContainer");
+            }
         }
 
         return serializedPropertyMap;
@@ -80,18 +84,19 @@ public class WikiWebPartFactory extends AlwaysAvailableWebPartFactory
         Map<String, String> deserializedPropertyMap = new HashMap<String, String>(propertyMap);
 
         // for the webPartContainer property, try to get the container ID from the specified path
-        // if a container does not exist for the given path, use the container parameter (i.e. the current container)
-        if (deserializedPropertyMap.containsKey("webPartContainer"))
+        // if a container does not exist for the given path, use the current container ID
+        if (deserializedPropertyMap.size() > 0)
         {
-            Container webPartContainer = ContainerManager.getForPath(deserializedPropertyMap.get("webPartContainer"));
-            if (null != webPartContainer)
+            String containerId = ctx.getContainer().getId();
+            if (deserializedPropertyMap.containsKey("webPartContainer"))
             {
-                deserializedPropertyMap.put("webPartContainer", webPartContainer.getId());
+                Container webPartContainer = ContainerManager.getForPath(deserializedPropertyMap.get("webPartContainer"));
+                if (null != webPartContainer)
+                {
+                    containerId = webPartContainer.getId();
+                }
             }
-            else
-            {
-                deserializedPropertyMap.put("webPartContainer", ctx.getContainer().getId());
-            }
+            deserializedPropertyMap.put("webPartContainer", containerId);
         }
 
         return deserializedPropertyMap;
