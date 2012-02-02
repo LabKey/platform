@@ -578,7 +578,7 @@ public class ProjectController extends SpringActionController
             if (webPart != null && handleDeleteWebPart(getViewContext().getContainer(), webPart.getPageId(), webPart.getIndex()))
                 return getWebPartLayoutApiResponse(customizePortletForm.getPageId());
             else
-                throw new RuntimeException("Unable to delete the specified web part.  Please refresh the page and try again.");
+                throw new NotFoundException("Unable to delete the specified web part.  Please refresh the page and try again.");
         }
     }
 
@@ -593,7 +593,7 @@ public class ProjectController extends SpringActionController
             if (webPart != null && handleMoveWebPart(webPart.getPageId(), webPart.getIndex(), movePortletForm.getDirection()))
                 return getWebPartLayoutApiResponse(webPart.getPageId());
             else
-                throw new RuntimeException("Unable to move the specified web part.  Please refresh the page and try again.");
+                throw new NotFoundException("Unable to move the specified web part.  Please refresh the page and try again.");
         }
     }
 

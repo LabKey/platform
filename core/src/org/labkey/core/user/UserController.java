@@ -1910,7 +1910,7 @@ public class UserController extends SpringActionController
     {
         public ApiResponse execute(ShowWarningMessagesForm form, BindException errors) throws Exception
         {
-            if (form.getAction() != null || !form.getAction().equals(""))
+            if (form.getAction() != null && !form.getAction().equals("")) // Fix for 13926
                 getViewContext().getSession().setAttribute(form.getAction(), form.isShowMessages());
             else
                 getViewContext().getSession().setAttribute(TemplateHeaderView.SHOW_WARNING_MESSAGES_SESSION_PROP, form.isShowMessages());
