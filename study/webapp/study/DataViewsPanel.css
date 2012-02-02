@@ -141,9 +141,9 @@
 }
 
 /* Ext4 Windows */
-.data-views-container .x4-reset .x4-window-default,
-.data-views-container.x4-reset .x4-window-header-default-top,
-.data-views-container .x4-reset .x4-window-body-default
+.x4-reset .x4-window-default,
+.x4-reset .x4-window-header-default-top,
+.x4-reset .x4-window-body-default
 {
     border-color: transparent !important;
     background-color: white;
