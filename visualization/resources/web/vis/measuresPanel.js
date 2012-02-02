@@ -40,6 +40,8 @@ LABKEY.vis.MeasuresDialog = Ext.extend(Ext.Window, {
                 name: "y-axis",
                 label: "Choose a data measure"
             }],
+            filter      : this.filter,
+            allColumns  : this.allColumns,
             multiSelect : this.multiSelect,
             listeners: {
                 scope: this,
@@ -82,7 +84,7 @@ LABKEY.vis.MeasuresPanel = Ext.extend(Ext.Panel, {
             'measuresStoreLoaded',
             'measureChanged'
         );
-        Ext.apply(this, config, {isDateAxis : false});
+        Ext.apply(this, config, {isDateAxis : false, allColumns : false});
 
         LABKEY.vis.MeasuresPanel.superclass.constructor.call(this, config);
 
@@ -117,12 +119,12 @@ LABKEY.vis.MeasuresPanel = Ext.extend(Ext.Panel, {
 
         // load the store the first time after this component has rendered
         this.on('afterrender', function(cmp){
-            var filter = [LABKEY.Visualization.Filter.create({schemaName: 'study'})];
+            var filter = this.filter || LABKEY.Visualization.Filter.create({schemaName: 'study'});
 
             if (this.selectedMeasure)
             {
-                filter = [LABKEY.Visualization.Filter.create({schemaName: this.selectedMeasure.schemaName,
-                        queryName: this.selectedMeasure.queryName})];
+                filter = LABKEY.Visualization.Filter.create({schemaName: this.selectedMeasure.schemaName,
+                        queryName: this.selectedMeasure.queryName});
             }
 
             // if the measure store data is not already loaded, get it. otherwise, use the cached data object
@@ -130,7 +132,7 @@ LABKEY.vis.MeasuresPanel = Ext.extend(Ext.Panel, {
             {
                 Ext.Ajax.request({
                     url : LABKEY.ActionURL.buildURL('visualization', 'getMeasures', LABKEY.ActionURL.getContainer(),
-                            {filters: filter, dateMeasures: this.isDateAxis}),
+                            {filters: [filter], dateMeasures: this.isDateAxis, allColumns : this.allColumns}),
                     method:'GET',
                     success : function(response){
                         this.measuresStoreData = Ext.util.JSON.decode(response.responseText);
@@ -179,21 +181,41 @@ LABKEY.vis.MeasuresPanel = Ext.extend(Ext.Panel, {
             LABKEY.Utils.displayAjaxErrorResponse(resp, options);
             this.getEl().unmask();
         }, this);
-        
-        this.listView = new Ext.list.ListView({
-            store: this.measuresStore,
-            flex: 1,
-            singleSelect: true,
-            multiSelect : this.multiSelect,
-            columns: [
-                {header:'Dataset', dataIndex:'queryName', width: .4},
-                {header:'Measure', dataIndex:'label', width:.25},
-                {header:'Description', dataIndex:'description', cls : 'normal-wrap'}
-            ]
-        });
+
+        if (this.multiSelect) {
+
+            this.selModel = new Ext.grid.CheckboxSelectionModel();
+            this.view = new Ext.grid.GridPanel({
+                store: this.measuresStore,
+                flex: 1,
+                stripeRows : true,
+                selModel : this.selModel,
+                viewConfig : {forceFit: true},
+                columns: [
+                    this.selModel,
+                    {header:'Dataset', dataIndex:'queryName'},
+                    {header:'Measure', dataIndex:'label'},
+                    {header:'Description', dataIndex:'description', cls : 'normal-wrap'}
+                ]
+            });
+        }
+        else {
+
+            this.view = new Ext.list.ListView({
+                store: this.measuresStore,
+                flex: 1,
+                singleSelect: true,
+                columns: [
+                    {header:'Dataset', dataIndex:'queryName', width: .4},
+                    {header:'Measure', dataIndex:'label', width:.25},
+                    {header:'Description', dataIndex:'description', cls : 'normal-wrap'}
+                ]
+            });
+            this.selModel = this.view;
+        }
 
         // enable disable toolbar actions on selection change
-        this.listView.on('selectionchange', this.onListViewSelectionChanged, this);
+        this.selModel.on('selectionchange', this.onListViewSelectionChanged, this);
 
         this.searchBox = new Ext.form.TextField({
             fieldLabel: 'Search data types',
@@ -235,7 +257,7 @@ LABKEY.vis.MeasuresPanel = Ext.extend(Ext.Panel, {
             style : 'padding: 5px 2px',
             items: tbarItems
         }));
-        items.push(this.listView);
+        items.push(this.view);
 
         var panel = new Ext.Panel({
             region: 'center',
@@ -277,13 +299,13 @@ LABKEY.vis.MeasuresPanel = Ext.extend(Ext.Panel, {
 
     onListViewBtnClicked : function(btn, e) {
 
-        if (this.listView)
+        if (this.view)
             this.setTextFieldSelection(btn.initialConfig.axisId);
     },
 
     setTextFieldSelection : function(axisId) {
 
-        var selection = this.listView.getSelectedRecords();
+        var selection = this.getSelectedRecords();
         if (selection.length == 1)
         {
             var rec = selection[0];
@@ -344,7 +366,10 @@ LABKEY.vis.MeasuresPanel = Ext.extend(Ext.Panel, {
     },
 
     getSelectedRecords : function() {
-        return this.listView.getSelectedRecords();
+        if (this.multiSelect)
+            return this.selModel.getSelections();
+        else
+            return this.selModel.getSelectedRecords();
     }
 });
 

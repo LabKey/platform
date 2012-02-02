@@ -64,7 +64,16 @@ public abstract class VisualizationProvider
                     public boolean match(ColumnInfo col)
                     {
                         return !col.isHidden() && col.isDimension();
-                    }};
+                    }
+                },
+        All_VISIBLE()
+                {
+                    @Override
+                    public boolean match(ColumnInfo col)
+                    {
+                        return !col.isHidden();
+                    }
+                };
 
         public abstract boolean match(ColumnInfo col);
     }
@@ -241,5 +250,15 @@ public abstract class VisualizationProvider
     public Map<ColumnInfo, QueryDefinition> getDimensions(ViewContext context, String queryName)
     {
         return getMatchingColumns(context, ColumnMatchType.CONFIGURED_DIMENSIONS, queryName);
+    }
+
+    public Map<ColumnInfo, QueryDefinition> getAllColumns(ViewContext context, String queryName)
+    {
+        return getMatchingColumns(context, ColumnMatchType.All_VISIBLE, queryName);
+    }
+
+    public Map<ColumnInfo, QueryDefinition> getAllColumns(ViewContext context, VisualizationController.QueryType queryType)
+    {
+        return getMatchingColumns(context, queryType, ColumnMatchType.All_VISIBLE);
     }
 }

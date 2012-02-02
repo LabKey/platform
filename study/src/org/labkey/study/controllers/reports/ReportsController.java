@@ -2027,9 +2027,9 @@ public class ReportsController extends BaseStudyController
 
             if (getViewContext().hasPermission(InsertPermission.class))
             {
-                NavTree customize = new NavTree("");
-                customize.setScript("customizeParticipantReport('" + form.getComponentId() + "');");
-                view.setCustomize(customize);
+                String script = String.format("javascript:customizeParticipantReport('%s');", form.getComponentId());
+                NavTree edit = new NavTree("Edit", script, getViewContext().getContextPath() + "/_images/partedit.png");
+                view.addCustomMenu(edit);
 
                 NavTree menu = new NavTree();
                 menu.addChild("Manage Views", PageFlowUtil.urlProvider(ReportUrls.class).urlManageViews(getContainer()));

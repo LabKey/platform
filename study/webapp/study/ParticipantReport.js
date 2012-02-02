@@ -681,7 +681,9 @@ Ext4.define('LABKEY.ext4.ParticipantReport', {
         if (!this.measuresDialog) {
             this.measuresDialog = new LABKEY.vis.MeasuresDialog({
                 multiSelect : true,
-                closeAction :'hide'
+                closeAction :'hide',
+                filter : LABKEY.Visualization.Filter.create({schemaName: 'study', queryType: LABKEY.Visualization.Filter.QueryType.BUILT_IN}),
+                allColumns : true
             });
         }
         this.measuresDialog.addListener('measuresSelected', function(recs){handler.call(scope || this, recs);}, this, {single : true});

@@ -17,6 +17,7 @@ package org.labkey.study.reports;
 
 import org.labkey.api.reports.report.AbstractReport;
 import org.labkey.api.reports.report.ReportUrls;
+import org.labkey.api.settings.AppProps;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.UniqueID;
 import org.labkey.api.view.HttpView;
@@ -63,9 +64,9 @@ public class ParticipantReport extends AbstractReport
 
         if (getDescriptor().canEdit(context.getUser(), context.getContainer()))
         {
-            NavTree customize = new NavTree("");
-            customize.setScript("customizeParticipantReport('" + form.getComponentId() + "');");
-            view.setCustomize(customize);
+            String script = String.format("javascript:customizeParticipantReport('%s');", form.getComponentId());
+            NavTree edit = new NavTree("Edit", script, AppProps.getInstance().getContextPath() + "/_images/partedit.png");
+            view.addCustomMenu(edit);
 
             NavTree menu = new NavTree();
             menu.addChild("Manage Views", PageFlowUtil.urlProvider(ReportUrls.class).urlManageViews(context.getContainer()));

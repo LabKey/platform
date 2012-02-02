@@ -234,4 +234,32 @@ public class StudyVisualizationProvider extends VisualizationProvider
         }
         return dimensions;
     }
+
+    @Override
+    /**
+     * All columns for a study if builtIn types were requested would be constrained to datasets only
+     */
+    public Map<ColumnInfo, QueryDefinition> getAllColumns(ViewContext context, VisualizationController.QueryType queryType)
+    {
+        if (queryType == VisualizationController.QueryType.builtIn)
+        {
+            Map<QueryDefinition, TableInfo> queries = new HashMap<QueryDefinition, TableInfo>();
+            Study study = StudyService.get().getStudy(context.getContainer());
+            UserSchema schema = getUserSchema(context.getContainer(), context.getUser());
+            if (study != null)
+            {
+                for (DataSet ds : study.getDataSets())
+                {
+                    Pair<QueryDefinition, TableInfo> entry = getTableAndQueryDef(context, schema, ds.getName(), ColumnMatchType.All_VISIBLE, false);
+                    if (entry != null)
+                    {
+                        queries.put(entry.getKey(), entry.getValue());
+                    }
+                }
+            }
+            return getMatchingColumns(context.getContainer(), queries, ColumnMatchType.All_VISIBLE);
+        }
+        else
+            return super.getAllColumns(context, queryType);
+    }
 }

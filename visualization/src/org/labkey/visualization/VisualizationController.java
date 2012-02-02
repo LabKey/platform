@@ -229,6 +229,7 @@ public class VisualizationController extends SpringActionController
         private String _queryName;
         private String _name;
         private boolean _dateMeasures;
+        private boolean _allColumns;
 
         public String getName()
         {
@@ -278,6 +279,16 @@ public class VisualizationController extends SpringActionController
         public void setDateMeasures(boolean dateMeasures)
         {
             _dateMeasures = dateMeasures;
+        }
+
+        public boolean isAllColumns()
+        {
+            return _allColumns;
+        }
+
+        public void setAllColumns(boolean allColumns)
+        {
+            _allColumns = allColumns;
         }
     }
 
@@ -388,6 +399,13 @@ public class VisualizationController extends SpringActionController
                         else
                             measures.putAll(provider.getDateMeasures(getViewContext(), mf.getQueryType()));
 
+                    }
+                    else if (form.isAllColumns())
+                    {
+                        if (mf.getQuery() != null)
+                            measures.putAll(provider.getAllColumns(getViewContext(), mf.getQuery()));
+                        else
+                            measures.putAll(provider.getAllColumns(getViewContext(), mf.getQueryType()));
                     }
                     else
                     {
