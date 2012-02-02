@@ -69,6 +69,11 @@ public class Group extends UserPrincipal
         return getUserId() == groupUsers;
     }
 
+    public boolean isDevelopers()
+    {
+        return getUserId() == groupDevelopers;
+    }
+
     public boolean isProjectGroup()
     {
         return getContainer() != null;
