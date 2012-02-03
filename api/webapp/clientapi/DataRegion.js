@@ -2565,17 +2565,26 @@ LABKEY.FilterDialog = Ext.extend(Ext.Window, {
 
             if(!filter.isMultiValued() && !filter.getMultiValueFilter()){
                 shouldShow = false;
+                return;
             }
+
+            if(filter.isMultiValued() && ['in', 'notin'].indexOf(filter.getURLSuffix()) == -1 ){
+                shouldShow = false;
+            }
+
         }, this);
 
         if(shouldShow){
             var store = this.getLookupStore();
-            if(!store || store.getCount() >= this.MAX_FILTER_CHOICES){
+            if(
+                (!store || store.getCount() >= this.MAX_FILTER_CHOICES) ||
+                (store && store.fields && store.getCount() === 0) //Issue 13946: faceted filtering: loading mask doesn't go away if the lookup returns zero rows
+            ){
                 var field = this.findByType('radiogroup')[0];
                 if(field)
                     field.hide();
                 shouldShow = false;
-                console.log('store not loaded or too many filter options');
+                console.log('either too many for zero filter options, switching to default UI');
             }
         }
 
@@ -2745,7 +2754,6 @@ LABKEY.FilterDialog = Ext.extend(Ext.Window, {
                         input.setValue(pair.value);
                     }
                     else {
-console.log('setting values')
                         if(filter.getURLSuffix() == 'in' && pair.value === ''){
                             input.defaultValue = true;
                             input.selectAll();  //select all by default
@@ -3154,8 +3162,7 @@ console.log('setting values')
         value = value.split(';');
         if(filter.isMultiValued() && allowableValues){
             //determine if we should invert filter
-            if(value.length > (allowableValues.length / 2)){
-                console.log('inverting filter to optimize');
+            if(Ext.unique(value).length > (allowableValues.length / 2)){
                 var newValues = [];
                 filter = filter.getOpposite();
                 Ext.each(allowableValues, function(item){
@@ -3373,13 +3380,7 @@ console.log('setting values')
             maxRows: this.MAX_FILTER_CHOICES, // Limit so that we don't overwhelm the user (or the browser itself) with too many checkboxes
             includeTotalCount: false,  // Don't bother getting the total row count, which might involve another query to the database
             containerFilter: dataRegion.containerFilter,
-            autoLoad: true,
-            listeners: {
-                scope: this,
-                load: function(store){
-                    console.log('store loaded: '+store.storeId);
-                }
-            }
+            autoLoad: true
         }));
 
         return store;
@@ -3388,24 +3389,16 @@ console.log('setting values')
     getLookupValueSql: function(dataRegion, column)
     {
         // Build up a SELECT DISTINCT query to get all of the values that are currently in use
-        var sql = 'SELECT DISTINCT ';
+        //NOTE: empty string will be treated as NULL, which is b/c Ext checkboxes can be set to empty string, but not null
+        var sql = 'SELECT CASE WHEN value IS NULL then \'\' ELSE cast(value as varchar) END as value FROM (';
+        sql += 'SELECT DISTINCT ';
         for (var i = 0; i < column.fieldKeyArray.length; i++)
         {
             sql += "\"" + column.fieldKeyArray[i].replace("\"", "\"\"") + "\".";
         }
         sql += "\"" + column.lookup.displayColumn.replace("\"", "\"\"") + "\"";
         sql += ' AS value FROM "' + dataRegion.schemaName.replace("\"", "\"\"") + '"."' + dataRegion.queryName.replace("\"", "\"\"") + '"';
-        sql += ' WHERE ';
-        for (var i = 0; i < column.fieldKeyArray.length; i++)
-        {
-            sql += "\"" + column.fieldKeyArray[i].replace("\"", "\"\"") + "\".";
-        }
-        sql += "\"" + column.lookup.displayColumn.replace("\"", "\"\"") + "\"";
-
-        sql += ' is not null';
-        //NOTE: empty string will be treated as NULL.  technically we could be smart and only include this is a null is really present
-        sql += " UNION ALL select ''";
-        //NOTE: null is actually handled using the operator, and it's difficult to set null checkboxes, so we handle nulls as a separate checkbox
+        sql += ') s';
 
         return sql;
     },
@@ -3623,23 +3616,23 @@ LABKEY.ext.RemoteCheckboxGroup = Ext.extend(Ext.form.CheckboxGroup,
                 afterrender: function(field){
                     var id = field.wrap.query('label.x-form-cb-label')[0];
 
-                    new Ext.ToolTip({
+                    var tooltip = new Ext.ToolTip({
                         xtype: 'tooltip',
                         target: id,
                         items: [{
-                            //NOTE: this will break in Ext4.  See labkey-linkbutton in ExtComponents.js
-                            xtype: 'button',
-                            html: 'Click to select only: ' + field.boxLabel,
-                            scope: this,
-                            handler: function(btn){
-                                var window = this.findParentBy(function(item){
-                                    return item.itemId == 'filterWindow';
-                                });
-                                var cbg = window.findByType('labkey-remotecheckboxgroup')[0];
-                                cbg.selectNone();
-                                cbg.setValue(field.inputValue);
-                            }
+                            html: '<a>Click to select only: ' + field.boxLabel + '</a>',
+                            itemId: 'link',
+                            border: false
                         }],
+                        listeners: {
+                            scope: this,
+                            render: function(panel){
+                                panel.getEl().on('click', function(){
+                                    this.selectNone();
+                                    this.setValue(field.inputValue);
+                                }, this);
+                            }
+                        },
                         hideDelay: 800,
                         trackMouse: false,
                         dismissDelay: 2000,
