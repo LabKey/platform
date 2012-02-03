@@ -115,8 +115,10 @@ public abstract class ExportScriptModel
             //two kinds of clauses can be used on URLs: CompareClause and InClause
             if (clause instanceof CompareType.CompareClause)
                 operator = ((CompareType.CompareClause)clause).getComparison();
+            else if (clause instanceof SimpleFilter.ContainsOneOfClause)
+                operator = clause.isNegated() ? CompareType.CONTAINS_NONE_OF : CompareType.CONTAINS_ONE_OF;
             else if (clause instanceof SimpleFilter.InClause)
-                operator = CompareType.IN;
+                operator = clause.isNegated() ? CompareType.NOT_IN : CompareType.IN;
             else
                 operator = CompareType.EQUAL;
 
