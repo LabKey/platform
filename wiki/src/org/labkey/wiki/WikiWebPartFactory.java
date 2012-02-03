@@ -62,10 +62,11 @@ public class WikiWebPartFactory extends AlwaysAvailableWebPartFactory
         Map<String, String> serializedPropertyMap = new HashMap<String, String>(propertyMap);
 
         // for the webPartContainer property, use the container path instead of container id
+        // omit the container path in the common case where a wiki webpart is pointed at a wiki in its own container
         if (serializedPropertyMap.containsKey("webPartContainer"))
         {
             Container webPartContainer = ContainerManager.getForId(serializedPropertyMap.get("webPartContainer"));
-            if (null != webPartContainer)
+            if (null != webPartContainer && !webPartContainer.equals(ctx.getContainer()))
             {
                 serializedPropertyMap.put("webPartContainer", webPartContainer.getPath());
             }
