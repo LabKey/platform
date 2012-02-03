@@ -69,7 +69,7 @@ public class AssayResultUpdateService extends DefaultQueryUpdateService
 
         Map<String, Object> updatedValues = getRow(user, container, oldRow);
 
-        StringBuilder sb = new StringBuilder("Data row, id " + oldRow.get("RowId") + ", edited.");
+        StringBuilder sb = new StringBuilder("Data row, id " + oldRow.get("RowId") + ", edited in " + run.getProtocol().getName() + ".");
         for (Map.Entry<String, Object> entry : updatedValues.entrySet())
         {
             // Also check for properties
