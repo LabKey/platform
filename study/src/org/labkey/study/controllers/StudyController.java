@@ -7501,6 +7501,47 @@ public class StudyController extends BaseStudyController
         }
     }
 
+    @RequiresPermissionClass(AdminPermission.class)
+    public class UpdateStudyScheduleAction extends ApiAction<StudySchedule>
+    {
+        @Override
+        public void validateForm(StudySchedule form, Errors errors)
+        {
+            if (form.getSchedule().size() <= 0)
+                errors.reject(ERROR_MSG, "No study schedule records have been specified");
+        }
+
+        @Override
+        public ApiResponse execute(StudySchedule form, BindException errors) throws Exception
+        {
+            ApiSimpleResponse response = new ApiSimpleResponse();
+            Study study = StudyManager.getInstance().getStudy(getContainer());
+
+            if (study != null)
+            {
+                for (Map.Entry<Integer, List<VisitDataSet>> entry : form.getSchedule().entrySet())
+                {
+                    DataSet ds = StudyService.get().getDataSet(getContainer(), entry.getKey());
+                    if (ds != null)
+                    {
+                        for (VisitDataSet visit : entry.getValue())
+                        {
+                            VisitDataSetType type = visit.isRequired() ? VisitDataSetType.REQUIRED : VisitDataSetType.NOT_ASSOCIATED;
+
+                            StudyManager.getInstance().updateVisitDataSetMapping(getUser(), getContainer(),
+                                    visit.getVisitRowId(), ds.getDataSetId(), type);
+                        }
+                    }
+                }
+                response.put("success", true);
+
+                return response;
+            }
+            else
+                throw new IllegalStateException("A study does not exist in this folder");
+        }
+    }
+
     public static class BrowseStudyForm
     {
     }

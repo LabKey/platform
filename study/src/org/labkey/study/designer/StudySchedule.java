@@ -15,17 +15,25 @@
  */
 package org.labkey.study.designer;
 
+import org.apache.commons.lang3.BooleanUtils;
+import org.apache.commons.lang3.math.NumberUtils;
 import org.json.JSONArray;
 import org.json.JSONObject;
+import org.labkey.api.action.CustomApiForm;
 import org.labkey.api.data.ColumnInfo;
+import org.labkey.api.data.Container;
 import org.labkey.api.security.User;
 import org.labkey.api.study.Cohort;
+import org.labkey.api.view.HttpView;
 import org.labkey.study.model.CohortImpl;
 import org.labkey.study.model.DataSetDefinition;
 import org.labkey.study.model.VisitDataSet;
 import org.labkey.study.model.VisitImpl;
 
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Map;
 
 /**
@@ -39,10 +47,11 @@ import java.util.Map;
  * Represents a study's datasets and corresponding timepoints. Used to serialize JSON to the study schedule
  * UI.
  */
-public class StudySchedule
+public class StudySchedule implements CustomApiForm
 {
     VisitImpl[] _visits;
     DataSetDefinition[] _datasets;
+    Map<Integer, List<VisitDataSet>> _schedule;
 
     public void setDatasets(DataSetDefinition[] datasets)
     {
@@ -142,5 +151,49 @@ public class StudySchedule
             d.put(o);
         }
         return d;
+    }
+
+    @Override
+    public void bindProperties(Map<String, Object> props)
+    {
+        Object schedule = props.get("schedule");
+        _schedule = new LinkedHashMap<Integer, List<VisitDataSet>>();
+        Container container = HttpView.currentContext().getContainer();
+
+        if (schedule instanceof JSONArray)
+        {
+            JSONArray schedules = (JSONArray)schedule;
+            for (int i=0; i < schedules.length(); i++)
+            {
+                JSONObject rec = schedules.getJSONObject(i);
+                List<VisitDataSet> timepoints = new ArrayList<VisitDataSet>();
+                Integer datasetId = null;
+
+                for (Map.Entry<String, Object> entry : rec.entrySet())
+                {
+                    if ("id".equals(entry.getKey()))
+                    {
+                        datasetId = NumberUtils.toInt((String)entry.getValue());
+                    }
+                    else if (entry.getValue() instanceof JSONObject)
+                    {
+                        JSONObject timepoint = (JSONObject)entry.getValue();
+
+                        Integer id = (Integer)timepoint.get("id");
+                        Boolean required = (Boolean)timepoint.get("required");
+
+                        timepoints.add(new VisitDataSet(container, -1, id, required != null ? required : false));
+                    }
+                }
+                
+                if (datasetId != null)
+                    _schedule.put(datasetId, timepoints);
+            }
+        }
+    }
+
+    public Map<Integer, List<VisitDataSet>> getSchedule()
+    {
+        return _schedule;
     }
 }
