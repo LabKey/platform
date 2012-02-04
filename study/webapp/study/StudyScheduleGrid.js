@@ -24,6 +24,8 @@ Ext4.define('LABKEY.ext4.StudyScheduleGrid', {
         this.items = [];
         this.items.push(this.initCenterPanel());
 
+        window.onbeforeunload = LABKEY.beforeunload(this.beforeUnload, this);
+
         this.callParent([arguments]);
     },
 
@@ -86,14 +88,20 @@ Ext4.define('LABKEY.ext4.StudyScheduleGrid', {
         this.centerPanel = Ext4.create('Ext.panel.Panel', {
             layout : 'fit',
             border : false, frame : false,
-            tbar: [
+            tbar   : [
+                this.cohortsCombo,
                 this.enablePagingCheckbox,
                 this.prevButton,
                 this.nextButton,
                 this.pageDisplay
             ],
-            bbar: [
-                this.cohortsCombo
+            bbar   : [
+                {
+                    xtype: 'button',
+                    text: 'Save Changes',
+                    handler: this.saveChanges,
+                    scope: this
+                }
             ]
         });
 
@@ -135,7 +143,36 @@ Ext4.define('LABKEY.ext4.StudyScheduleGrid', {
             columnLines : false,
             columns     : columns,
             selType     : 'cellmodel',
-            enableColumnMove: false
+            enableColumnMove: false,
+            listeners: {
+                scope: this,
+                itemclick: function(view, record, html, idx){
+                    var columns;
+                    if(this.enablePagingCheckbox.getValue()){
+                        columns = this.pagedColumns;
+                    } else if(this.filterColumns){
+                        columns = this.filteredColumns;
+                    } else {
+                        columns = this.schedule.timepoints;
+                    }
+
+                    var timepointName = columns[view.getSelectionModel().getCurrentPosition().column -2].name;
+                    var timepoint = columns[view.getSelectionModel().getCurrentPosition().column -2];
+
+                    // Make a copy of the object so when we set the value of required the dirty bit gets set.
+                    var timepointValue = Ext4.apply({}, record.data[timepointName]);
+                    if(record.data[timepointName] == undefined || record.data[timepointName] == ""){
+                        timepointValue = Ext4.apply({}, columns[view.getSelectionModel().getCurrentPosition().column -2]);
+                    }
+
+                    if(!timepointValue.required){
+                        timepointValue.required = true;
+                    } else {
+                        delete timepointValue.required;
+                    }
+                    record.set(timepointName, timepointValue);
+                }
+            }
         });
 
         this.centerPanel.removeAll();
@@ -144,6 +181,9 @@ Ext4.define('LABKEY.ext4.StudyScheduleGrid', {
         // This is not approved -- just points out how horrendous layout is
         // 275 (datasets) + 50 (data) + (100 x # of timepoints)
         var calcWidth = 325 + ((columnItems.length - 2) * 100);
+        if(calcWidth < 530){
+            calcWidth = 565;
+        }
         this.setWidth(calcWidth);
         this.centerPanel.setWidth(calcWidth);
         this.cohortsCombo.setVisible(true);
@@ -262,17 +302,28 @@ Ext4.define('LABKEY.ext4.StudyScheduleGrid', {
 
         var config = {
             model: 'Schedule.View',
+            autoLoad : false,
             proxy: {
-                type: 'memory',
+                api: {
+                    update  : LABKEY.ActionURL.buildURL('study', 'updateStudySchedule.api')
+                },
+                type   : 'ajax',
+
                 reader: {
                     type: 'json',
                     root: 'data'
+                },
+                writer: {
+                    type : 'json',
+                    root : 'schedule',
+                    allowSingle : false
                 }
-            },
-            data : schedule
+
+            }
         };
 
         this.scheduleStore = Ext4.create('Ext.data.Store', config);
+        this.scheduleStore.loadRawData(schedule);
         return this.scheduleStore;
     },
 
@@ -292,6 +343,10 @@ Ext4.define('LABKEY.ext4.StudyScheduleGrid', {
             },
             scope   : this
         });
+    },
+    
+    saveChanges : function(){
+        this.gridPanel.getStore().sync();
     },
 
     filterCohort : function(combo, newValue){
@@ -411,5 +466,13 @@ Ext4.define('LABKEY.ext4.StudyScheduleGrid', {
             this.pagedColumns.push(columns[i]);
         }
         this.initGrid(this.initColumns(this.pagedColumns), this.scheduleStore);
+    },
+
+    beforeUnload : function(){
+        if(this.scheduleStore.getUpdatedRecords().length > 0 || this.scheduleStore.getNewRecords().length > 0 || this.scheduleStore.getRemovedRecords.length > 0){
+            return "Please save your changes."
+        }
     }
+
+
 });
