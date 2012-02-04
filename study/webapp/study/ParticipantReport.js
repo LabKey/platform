@@ -315,6 +315,7 @@ Ext4.define('LABKEY.ext4.ParticipantReport', {
 
             var fieldGrid = Ext4.create('Ext.grid.Panel', {
                 store   : this.gridFieldStore,
+                cls    : 'selectedMeasures',
                 columns : [
                     { header : 'Report Measures', dataIndex : 'label', flex : 1},
                     {
