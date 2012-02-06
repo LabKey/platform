@@ -681,7 +681,7 @@ public class SimpleFilter implements Filter
             Object[] params = getParamVals();
             if (params.length > 0)
             {
-                return getContainsClause(col).toString();
+                return getContainsClause(col).getLabKeySQLWhereClause(columnMap);
             }
 
             return col.getName() + (isNegated() ? " NOT IN" : " IN ") + " (NULL)";  // Empty list case; "WHERE column IN (NULL)" should always be false
