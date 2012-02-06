@@ -184,8 +184,6 @@ public class ExcelWriter
     public ExcelWriter(Results rs, List<DisplayColumn> displayColumns)
     {
         this(rs, displayColumns, ExcelDocumentType.xls);
-        setResults(rs);
-        addDisplayColumns(displayColumns);
     }
 
 
