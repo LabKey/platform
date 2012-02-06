@@ -161,7 +161,7 @@ function renderBrowser(rootPath, renderTo, isFolderTreeCollapsed, isPipelineRoot
 }
 
 <%  if (bean.isEnabled() && bean.isRootValid()) { %>
-        var scripts =['applet.js','fileBrowser.js','FileUploadField.js',
+        var scripts =['applet.js','FileUploadField.js', 'StatusBar.js','fileBrowser.js',
             'Reorderer.js',
             'ToolbarDroppable.js',
             'ToolbarReorderer.js',
