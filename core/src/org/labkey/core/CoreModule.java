@@ -344,11 +344,13 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
                         String title = webPart.getPropertyMap().containsKey("title") ? webPart.getPropertyMap().get("title") : "Projects";
                         view.setTitle(title);
 
-                        NavTree customize = new NavTree("");
-                        customize.setScript("customizeProjectWebpart(" + webPart.getRowId() + ", \'" + webPart.getPageId() + "\', " + webPart.getIndex() + ");");
-                        customize.setDisplay("Large Icons");
-                        view.setCustomize(customize);
-
+                        if (portalCtx.hasPermission(AdminPermission.class))
+                        {
+                            NavTree customize = new NavTree("");
+                            customize.setScript("customizeProjectWebpart(" + webPart.getRowId() + ", \'" + webPart.getPageId() + "\', " + webPart.getIndex() + ");");
+                            customize.setDisplay("Large Icons");
+                            view.setCustomize(customize);
+                        }
                         return view;
                     }
                 }));

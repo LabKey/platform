@@ -40,13 +40,16 @@ Ext4.onReady(function(){
     //assume server-supplied webpart config
     var config = '<%=jsonProps%>';
     config = Ext4.decode(config);
+    config.hideCreateButton = config.hideCreateButton === 'true';
 
     Ext4.applyIf(config, {
         containerTypes: 'project',
         containerFilter: 'CurrentAndSiblings',
         containerPath: LABKEY.Security.getHomeContainer(),
+        hideCreateButton: false,
         iconSize: 'large',
-        labelPosition: 'bottom'
+        labelPosition: 'bottom',
+        noun: 'Project'
     });
 
     function getFilterArray(panel){
@@ -70,15 +73,17 @@ Ext4.onReady(function(){
         urlField: 'url',
         iconSize: config.iconSize,
         labelPosition: config.labelPosition,
+        hideCreateButton: config.hideCreateButton,
+        noun: config.noun,
         showMenu: false,
         width: '100%',
         border: false,
         frame: false,
         buttonAlign: 'left',
         buttons: [{
-            text: 'Create New Project',
+            text: 'Create New ' + config.noun,
+            hidden: !LABKEY.Security.currentUser.isAdmin || config.hideCreateButton,
             target: '_self',
-            hidden: !LABKEY.Security.currentUser.isAdmin,
             href: LABKEY.ActionURL.buildURL('admin', 'createFolder', '/')
         }],
         emptyText: 'No folder to display',
@@ -125,9 +130,6 @@ Ext4.onReady(function(){
             var panel = Ext4.getCmp('projects-panel-' + webpartId);
 
             if (panel) {
-                var config = '<%=jsonProps%>';
-                config = Ext4.decode(config);
-
                 function shouldCheck(btn){
                     var data = panel.down('#dataView').renderData;
                     return (btn.iconSize==data.iconSize && btn.labelPosition==data.labelPosition)
@@ -144,7 +146,7 @@ Ext4.onReady(function(){
                             name: 'title',
                             fieldLabel: 'Title',
                             itemId: 'title',
-                            value: config.title || 'Projects'
+                            value: panel.title || 'Projects'
                         },{
                             xtype: 'radiogroup',
                             name: 'style',
@@ -222,6 +224,11 @@ Ext4.onReady(function(){
                                 disabled: panel.containerTypes && panel.containerTypes.match(/project/),
                                 checked: (panel.containerTypes.match(/project/) || panel.containerTypes.match(/workbook/)),
                                 itemId: 'includeWorkbooks'
+                            },{
+                                xtype: 'checkbox',
+                                boxLabel: 'Hide Create Button',
+                                checked: panel.hideCreateButton,
+                                itemId: 'hideCreateButton'
                             }],
                             listeners: {
                                 buffer: 20,
@@ -261,18 +268,25 @@ Ext4.onReady(function(){
                                     panel.containerTypes.push('workbook');
                                 panel.containerTypes = panel.containerTypes.join(';');
 
-                                panel.store.containerFilter = 'CurrentAndSubfolders'
+                                panel.store.containerFilter = 'CurrentAndSubfolders';
                                 panel.store.filterArray = panel.getFilterArray(panel);
                                 panel.store.filterArray.push(LABKEY.Filter.create('EntityId', panel.store.containerPath, LABKEY.Filter.Types.NOT_EQUAL));
                             }
 
                             panel.store.load();
 
+                            var hideCreateButton = btn.up('window').down('#hideCreateButton').getValue();
+                            panel.hideCreateButton = hideCreateButton;
+
+                            panel.getDockedItems()[0].down('button').setVisible(!hideCreateButton);
+                            //panel.getDockedItems()[0].setVisible(!hideCreateButton);
+
                             var styleField = btn.up('window').down('#style').getValue().style;
                             panel.resizeIcons.call(panel, styleField);
                             btn.up('window').hide();
 
                             var title = btn.up('window').down('#title').getValue();
+                            panel.title = title;
                             LABKEY.Utils.setWebpartTitle(title, webpartId);
 
                             var values = {
@@ -281,6 +295,7 @@ Ext4.onReady(function(){
                                 containerTypes: panel.containerTypes,
                                 containerFilter: panel.store.containerFilter,
                                 webPartId: webpartId,
+                                hideCreateButton: panel.hideCreateButton,
                                 iconSize: panel.iconSize,
                                 labelPosition: panel.labelPosition
                             };
