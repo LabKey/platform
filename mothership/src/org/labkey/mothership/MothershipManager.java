@@ -233,6 +233,7 @@ public class MothershipManager
         Table.execute(getSchema(), "DELETE FROM " + getTableInfoExceptionStackTrace() + " WHERE Container = ?", params);
         Table.execute(getSchema(), "DELETE FROM " + getTableInfoServerSession() + " WHERE Container = ?", params);
         Table.execute(getSchema(), "DELETE FROM " + getTableInfoServerInstallation() + " WHERE Container = ?", params);
+        Table.execute(getSchema(), "DELETE FROM " + getTableInfoSoftwareRelease() + " WHERE Container = ?", params);
     }
 
     public synchronized ServerSession updateServerSession(ServerSession session, ServerInstallation installation, Container container) throws SQLException
