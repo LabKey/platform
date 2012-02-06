@@ -2342,7 +2342,12 @@ LABKEY.MessageArea = Ext.extend(Ext.util.Observable, {
 
 // NOTE: a lot of this was copied direct from LABKEY._FilterUI.  I did some reworking to make it more ext-like,
 // but there probably could be more done.
+
+//ALSO: this is currently written by extending Ext.Window.  If we shift to left-hand filtering next to dataregions (like kayak), this could be
+//refacted to a LABKEY.FilterPanel class, which does most of the work, and a FilterDialog class, which is a simple Ext.Window contianing a FilterPanel
+//this would allow us to either render a dialog like now, or render a bunch of panels (one per field)
 LABKEY.FilterDialog = Ext.extend(Ext.Window, {
+    forceAdvancedFilters: false,  //provides a mechanism to hide the faceting UI
     initComponent: function(){
         this._fieldCaption = this.boundColumn.caption;
         this._fieldName = this.boundColumn.name;
@@ -2502,6 +2507,10 @@ LABKEY.FilterDialog = Ext.extend(Ext.Window, {
             }
             else {
                 store.on('load', this.configurePanel, this);
+                store.on('exception', function(){
+                    this.forceAdvancedFilters = true;
+                    this.configurePanel();
+                }, this);
                 items.push({
                     html: 'Loading...'
                 });
@@ -2572,7 +2581,8 @@ LABKEY.FilterDialog = Ext.extend(Ext.Window, {
             var store = this.getLookupStore();
             if(
                 (!store || store.getCount() >= this.MAX_FILTER_CHOICES) ||
-                (store && store.fields && store.getCount() === 0) //Issue 13946: faceted filtering: loading mask doesn't go away if the lookup returns zero rows
+                (store && store.fields && store.getCount() === 0) || //Issue 13946: faceted filtering: loading mask doesn't go away if the lookup returns zero rows
+                this.forceAdvancedFilters
             ){
                 var field = this.findByType('radiogroup')[0];
                 if(field)
@@ -2581,6 +2591,9 @@ LABKEY.FilterDialog = Ext.extend(Ext.Window, {
                 console.log('either too many for zero filter options, switching to default UI');
             }
         }
+
+        if(this.forceAdvancedFilters)
+            shouldShow = false;
 
         return shouldShow;
     },
@@ -3408,13 +3421,13 @@ LABKEY.FilterDialog = Ext.extend(Ext.Window, {
         // Build up a SELECT DISTINCT query to get all of the values that are currently in use
         //NOTE: empty string will be treated as NULL, which is b/c Ext checkboxes can be set to empty string, but not null
         var sql = 'SELECT CASE WHEN value IS NULL then \'\' ELSE cast(value as varchar) END as value FROM (';
-        sql += 'SELECT DISTINCT ';
+        sql += 'SELECT DISTINCT t.';
         for (var i = 0; i < column.fieldKeyArray.length; i++)
         {
             sql += "\"" + column.fieldKeyArray[i].replace("\"", "\"\"") + "\".";
         }
         sql += "\"" + column.lookup.displayColumn.replace("\"", "\"\"") + "\"";
-        sql += ' AS value FROM "' + dataRegion.schemaName.replace("\"", "\"\"") + '"."' + dataRegion.queryName.replace("\"", "\"\"") + '"';
+        sql += ' AS value FROM "' + dataRegion.schemaName.replace("\"", "\"\"") + '"."' + dataRegion.queryName.replace("\"", "\"\"") + '" t';
         sql += ') s';
 
         return sql;
@@ -3572,11 +3585,24 @@ LABKEY.ext.RemoteCheckboxGroup = Ext.extend(Ext.form.CheckboxGroup,
 
         if(!this.store.getCount()) {
             this.store.on('load', this.onStoreLoad, this, {single: true});
+            this.store.on('exception', this.onStoreException, this, {single: true});
         }
         else {
             //NOTE: if this is called too quickly, the layout can be screwed up. this isnt a great fix, but we will convert to Ext4 shortly, so it'll change anyway
             this.onStoreLoad.defer(10, this);
         }
+    }
+
+    ,onStoreException : function() {
+        //remove the placeholder checkbox
+        if(this.rendered) {
+            var item = this.items.first();
+            this.items.remove(item);
+            this.panel.getComponent(0).remove(item, true);
+            this.ownerCt.doLayout();
+        }
+        else
+            this.items.remove(this.items[0]);
     }
 
     ,onStoreLoad : function() {
