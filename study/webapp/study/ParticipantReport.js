@@ -524,7 +524,12 @@ Ext4.define('LABKEY.ext4.ParticipantReport', {
 
             for (var m in qr.measureToColumn) {
                 if (qr.measureToColumn.hasOwnProperty(m)) {
-                    columnToMeasure[qr.measureToColumn[m]] = m;
+
+                    // special case visit label
+                    if (this.subjectVisitColumn + '/Visit/Label' == m)
+                        columnToMeasure[qr.measureToColumn[m]] = 'Visit'
+                    else
+                        columnToMeasure[qr.measureToColumn[m]] = m;
                 }
             }
 
@@ -568,6 +573,7 @@ Ext4.define('LABKEY.ext4.ParticipantReport', {
         // stash away the current config
         if (this.reportId) {
             this.storedTemplateConfig = this.getCurrentReportConfig();
+            this.storedTemplateConfig.editable = this.allowCustomize;
         }
 
         // if the north panel hasn't been fully populated, initialize the dataset store, else
@@ -666,6 +672,10 @@ Ext4.define('LABKEY.ext4.ParticipantReport', {
         var markup = this.templateReport.getMarkup();
         if (markup)
         {
+            var dirty = this.dirty;
+            this.dirty = false;
+
+            this.exportForm.on('actioncomplete', function(){this.dirty = dirty;}, this, {single : true});
             this.exportForm.getForm().setValues({htmlFragment : markup, 'X-LABKEY-CSRF' : LABKEY.CSRF});
             this.exportForm.submit({
                 scope: this,
@@ -674,6 +684,9 @@ Ext4.define('LABKEY.ext4.ParticipantReport', {
                     Ext4.Msg.alert('Failure', Ext4.decode(response.responseText).exception);
                 }
             });
+
+            var task = new Ext4.util.DelayedTask(function(){this.dirty = dirty;}, this);
+            task.delay(1500);
         }
     },
 
@@ -756,6 +769,7 @@ Ext4.define('LABKEY.ext4.ParticipantReport', {
                             data.name = values.name;
                             data.description = values.description;
                             data.public = values.public;
+                            data.reportId = null;
 
                             this.saveReport(data);
                         }
