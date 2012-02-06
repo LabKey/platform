@@ -2429,12 +2429,20 @@ LABKEY.FilterDialog = Ext.extend(Ext.Window, {
                                 if(v == 'yes'){
                                     this.filterType = val.inputValue;
                                     this.configurePanel();
+                                    // Marker classes for tests
+                                    this.removeClass('filterTestMarker-' + this.prevValue);
+                                    this.addClass('filterTestMarker-' + val.inputValue);
+                                    this.prevValue = val.inputValue;
                                 }
                             }, this);
                         }
                         else {
                             this.filterType = val.inputValue;
                             this.configurePanel();
+                            // Marker classes for tests
+                            this.removeClass('filterTestMarker-' +  this.prevValue);
+                            this.addClass('filterTestMarker-' + val.inputValue);
+                            this.prevValue = val.inputValue;
                         }
                         this.syncShadow();
                     }
