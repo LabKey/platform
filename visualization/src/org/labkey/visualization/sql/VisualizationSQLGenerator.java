@@ -23,6 +23,7 @@ import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.query.UserSchema;
+import org.labkey.api.util.ExceptionUtil;
 import org.labkey.api.util.Pair;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.ViewContext;
@@ -105,6 +106,19 @@ public class VisualizationSQLGenerator implements CustomApiForm, HasViewContext
     @Override
     public void bindProperties(Map<String, Object> properties)
     {
+        try
+        {
+            _bindProperties(properties);
+        }
+        catch (IllegalArgumentException x)
+        {
+            ExceptionUtil.decorateException(x, ExceptionUtil.ExceptionInfo.SkipMothershipLogging, "true", true);
+            throw x;
+        }
+    }
+
+    private void _bindProperties(Map<String, Object> properties)
+    {
         Object measuresProp = properties.get("measures");
         if (measuresProp != null)
         {
@@ -144,7 +158,7 @@ public class VisualizationSQLGenerator implements CustomApiForm, HasViewContext
                         throw new IllegalArgumentException("Unknown time value: " + timeAxis);
                 }
                 else
-                    throw new IllegalStateException("Only time charts are currently supported: expected 'time' property on each measure.");
+                    throw new IllegalArgumentException("Only time charts are currently supported: expected 'time' property on each measure.");
 
                 switch (type)
                 {
