@@ -516,6 +516,8 @@ public class ColumnInfo extends ColumnRenderProperties implements SqlColumn
     {
         // NOTE: most non-string types don't have spaces after conversion except dates
         // let's make sure they don't wrap (bug 392)
+        if (null == getJdbcType())
+            return false;
         return java.util.Date.class.isAssignableFrom(getJdbcType().cls) ||
                 isNumericType();
     }
