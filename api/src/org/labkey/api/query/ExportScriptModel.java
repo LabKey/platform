@@ -112,7 +112,7 @@ public abstract class ExportScriptModel
             name = clause.getColumnNames().get(0);
             value = getFilterValue(clause, clause.getParamVals());
 
-            //two kinds of clauses can be used on URLs: CompareClause and InClause
+            //two kinds of clauses can be used on URLs: CompareClause and MultiValuedFilterClause
             if (clause instanceof CompareType.CompareClause)
                 operator = ((CompareType.CompareClause)clause).getComparison();
             else if (clause instanceof SimpleFilter.ContainsOneOfClause)
@@ -134,7 +134,7 @@ public abstract class ExportScriptModel
             return "";
 
         //in clause has multiple values, which are in semi-colon-delimited list on the URL
-        if (clause instanceof SimpleFilter.InClause)
+        if (clause instanceof SimpleFilter.MultiValuedFilterClause)
         {
             StringBuilder sb = new StringBuilder();
             String sep = "";

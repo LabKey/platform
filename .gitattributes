@@ -634,6 +634,7 @@ api/src/org/labkey/api/query/AliasedColumn.java -text
 api/src/org/labkey/api/query/BatchValidationException.java -text
 api/src/org/labkey/api/query/ChooseQueryView.java -text
 api/src/org/labkey/api/query/CreateJavaScriptModel.java -text
+api/src/org/labkey/api/query/CreatePerlScriptModel.java -text
 api/src/org/labkey/api/query/CrosstabExcelWriter.java -text
 api/src/org/labkey/api/query/CrosstabView.java -text
 api/src/org/labkey/api/query/CustomView.java -text
@@ -653,6 +654,7 @@ api/src/org/labkey/api/query/JavaScriptExportScriptFactory.java -text
 api/src/org/labkey/api/query/LookupForeignKey.java -text
 api/src/org/labkey/api/query/MetadataException.java -text
 api/src/org/labkey/api/query/PdLookupForeignKey.java -text
+api/src/org/labkey/api/query/PerlExportScriptFactory.java -text
 api/src/org/labkey/api/query/PropertyColumnDecorator.java -text
 api/src/org/labkey/api/query/PropertyForeignKey.java -text
 api/src/org/labkey/api/query/PropertyValidationError.java -text
@@ -691,6 +693,7 @@ api/src/org/labkey/api/query/ValidationError.java -text
 api/src/org/labkey/api/query/ValidationException.java -text
 api/src/org/labkey/api/query/ViewOptions.java -text
 api/src/org/labkey/api/query/createJavaScript.jsp -text
+api/src/org/labkey/api/query/createPerlScript.jsp -text
 api/src/org/labkey/api/query/excelExportOptions.jsp -text
 api/src/org/labkey/api/query/exportRScript.jsp -text
 api/src/org/labkey/api/query/import.jsp -text
