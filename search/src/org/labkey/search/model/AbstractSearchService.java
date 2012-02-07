@@ -25,10 +25,12 @@ import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.DbSchema;
 import org.labkey.api.data.DbScope;
+import org.labkey.api.data.RuntimeSQLException;
 import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.Table;
 import org.labkey.api.data.TempTableInfo;
 import org.labkey.api.data.TempTableWriter;
+import org.labkey.api.data.dialect.SqlDialect;
 import org.labkey.api.iterator.CloseableIterator;
 import org.labkey.api.reader.ColumnDescriptor;
 import org.labkey.api.reader.Loader;
@@ -258,6 +260,8 @@ public abstract class AbstractSearchService implements SearchService, ShutdownLi
         WebdavResource _res;
         Runnable _run;
         PRIORITY _pri;
+
+        int _preprocessAttempts = 0;
 
         long _modified = 0; // used by setLastIndexed
         long _start = 0;    // used by setLastIndexed
@@ -906,14 +910,27 @@ public abstract class AbstractSearchService implements SearchService, ShutdownLi
                 try
                 {
                     i = _itemQueue.take();
-                    if (!preprocess(i))
-                        continue;
+                        if (!preprocess(i))
+                            continue;
                     _log.debug("_indexQueue.put(" + i._id + ")");
                     _indexQueue.put(i);
                     success = true;
                 }
+                catch (RuntimeSQLException x)
+                {
+                    if (SqlDialect.isTransactionException(x))
+                    {
+                        if (null != i && ++i._preprocessAttempts <= 3)
+                        {
+                            _itemQueue.put(i);
+                            continue;
+                        }
+                    }
+                    _log.error("Error processing " + (null != i ? i._id : ""), x);
+                }
                 catch (InterruptedException x)
                 {
+                    // check _shuttingDown
                 }
                 catch (Throwable x)
                 {
@@ -933,17 +950,37 @@ public abstract class AbstractSearchService implements SearchService, ShutdownLi
 
     Item getPreprocessedItem() throws InterruptedException
     {
-        Item i;
+        Item i = null;
 
-        // if there's an indexQueue, other threads may be preprocessing
-        // first look for a preprocessed item on the _indexQueue
-        if (null != _indexQueue)
+        try
         {
-            i = _indexQueue.poll();
-            if (null != i)
-                return i;
-            // help out on preprocessing?
+            // if there's an indexQueue, other threads may be preprocessing
+            // first look for a preprocessed item on the _indexQueue
+            if (null != _indexQueue)
+            {
+                i = _indexQueue.poll();
+                if (null != i)
+                    return i;
+                // help out on preprocessing?
+                i = _itemQueue.poll();
+                if (null != i)
+                {
+                    if (preprocess(i))
+                        return i;
+                    else
+                        i.complete(false);
+                }
+                checkIdle();
+                return _indexQueue.poll(2, TimeUnit.SECONDS);
+            }
+
+            // otherwise just wait on the preprocess queue
             i = _itemQueue.poll();
+            if (null == i || i == _commitItem)
+                checkIdle();
+            if (null == i)
+                i = _itemQueue.poll(2, TimeUnit.SECONDS);
+
             if (null != i)
             {
                 if (preprocess(i))
@@ -951,25 +988,18 @@ public abstract class AbstractSearchService implements SearchService, ShutdownLi
                 else
                     i.complete(false);
             }
-            checkIdle();
-            return _indexQueue.poll(2, TimeUnit.SECONDS);
+            return null;
         }
-
-        // otherwise just wait on the preprocess queue
-        i = _itemQueue.poll();
-        if (null == i || i == _commitItem)
-            checkIdle();
-        if (null == i)
-            i = _itemQueue.poll(2, TimeUnit.SECONDS);
-
-        if (null != i)
+        catch (RuntimeSQLException x)
         {
-            if (preprocess(i))
-                return i;
-            else
-                i.complete(false);
+            if (SqlDialect.isTransactionException(x))
+            {
+                if (null != i && ++i._preprocessAttempts <= 3)
+                    _itemQueue.put(i);
+                return null;
+            }
+            throw x;
         }
-        return null;
     }
     
 

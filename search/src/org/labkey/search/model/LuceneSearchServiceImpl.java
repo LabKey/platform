@@ -48,6 +48,8 @@ import org.apache.tika.sax.BodyContentHandler;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
+import org.labkey.api.data.RuntimeSQLException;
+import org.labkey.api.data.dialect.SqlDialect;
 import org.labkey.api.search.SearchService;
 import org.labkey.api.search.SearchUtils;
 import org.labkey.api.search.SearchUtils.*;
@@ -522,6 +524,12 @@ public class LuceneSearchServiceImpl extends AbstractSearchService
         {
             // Malformed XML/HTML
             logAsWarning(r, e);
+        }
+        catch (RuntimeSQLException x)
+        {
+            if (SqlDialect.isTransactionException(x))
+                throw x;
+            logAsPreProcessingException(r, x);
         }
         catch (Throwable e)
         {
