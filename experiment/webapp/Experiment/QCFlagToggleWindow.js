@@ -97,7 +97,7 @@ LABKEY.QCFlagToggleWindow = Ext.extend(Ext.Window, {
                 columns: [
                     // the check column for the enabled dataIndex will be added on store load
                     {header: 'RowId', dataIndex: 'RowId', hidden: true},
-                    {header: 'Flag', sortable: true, dataIndex: 'FlagType', width: 65, editable: false, renderer: this.encodingRenderer},
+                    {header: 'Flag', sortable: true, dataIndex: 'FlagType', width: 80, editable: false, renderer: this.encodingRenderer},
                     {header: 'Description', sortable: true, dataIndex: 'Description', width: 320, editable: false, renderer: this.encodingRenderer},
                     {header: 'Comment', sortable: false, dataIndex: 'Comment', width: 250, editable: this.userCanUpdate,
                         renderer: this.encodingRenderer, editor: new LABKEY.ext.LongTextField({columnName: 'Comment'})}
