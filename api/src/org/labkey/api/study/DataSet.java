@@ -45,6 +45,8 @@ public interface DataSet<T extends DataSet> extends StudyEntity, StudyCachable<T
 
     String getCategory();
 
+    String getType();
+
     String getDescription();
 
     int getDataSetId();
@@ -90,6 +92,10 @@ public interface DataSet<T extends DataSet> extends StudyEntity, StudyCachable<T
     public Set<Class<? extends Permission>> getPermissions(UserPrincipal user);
 
     KeyType getKeyType();
+    
+    // constants for dataset types
+    public static final String TYPE_STANDARD = "Standard";
+    public static final String TYPE_PLACEHOLDER = "Placeholder";
 
     enum KeyType
     {
