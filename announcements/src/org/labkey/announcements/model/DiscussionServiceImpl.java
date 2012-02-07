@@ -370,7 +370,7 @@ public class DiscussionServiceImpl implements DiscussionService.Service
 
         PickerView(Container c, String discussionAreaId, URLHelper pageURL, AnnouncementModel[] announcementModels, boolean isDiscussionVisible, boolean allowMultipleDiscussions)
         {
-            super("/org/labkey/announcements/discussionMenu.jsp");
+            super("/org/labkey/announcements/discussionMenuAjax.jsp");
             setFrame(FrameType.NONE);
             this.discussionAreaId = discussionAreaId;
             this.pageURL = pageURL.clone();

@@ -32,6 +32,7 @@ import org.labkey.api.action.ReturnUrlForm;
 import org.labkey.api.action.SimpleViewAction;
 import org.labkey.api.action.SpringActionController;
 import org.labkey.api.admin.AdminUrls;
+import org.labkey.api.announcements.DiscussionService;
 import org.labkey.api.attachments.AttachmentForm;
 import org.labkey.api.attachments.AttachmentService;
 import org.labkey.api.data.Container;
@@ -703,7 +704,6 @@ public class ReportsController extends SpringActionController
         }
     }
 
-
     @RequiresPermissionClass(ReadPermission.class)
     public class RunReportAction extends SimpleViewAction<ReportDesignBean>
     {
@@ -717,7 +717,15 @@ public class ReportsController extends SpringActionController
                 _report = form.getReportId().getReport();
 
             if (_report != null)
-                return _report.getRunReportView(getViewContext());
+            {
+                VBox box = new VBox(_report.getRunReportView(getViewContext()));
+
+                DiscussionService.Service service = DiscussionService.get();
+                String title = "Discuss report - " + _report.getDescriptor().getReportName();
+                box.addView(service.getDisussionArea(getViewContext(), _report.getEntityId(), new ActionURL(CreateScriptReportAction.class, getContainer()), title, true, false));
+
+                return box;
+            }
             
             return null;
         }
@@ -737,7 +745,16 @@ public class ReportsController extends SpringActionController
         public ModelAndView getView(ReportDesignBean form, BindException errors) throws Exception
         {
             if (form.getReport() != null)
-                return new JspView<ReportDesignBean>("/org/labkey/query/reports/view/reportDetails.jsp", form);
+            {
+                VBox box = new VBox(new JspView<ReportDesignBean>("/org/labkey/query/reports/view/reportDetails.jsp", form));
+
+                Report report = form.getReport();
+                DiscussionService.Service service = DiscussionService.get();
+                String title = "Discuss report - " + report.getDescriptor().getReportName();
+                box.addView(service.getDisussionArea(getViewContext(), report.getEntityId(), new ActionURL(CreateScriptReportAction.class, getContainer()), title, true, false));
+
+                return box;
+            }
             else
                 return new HtmlView("Specified report not found");
         }

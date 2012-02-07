@@ -31,6 +31,7 @@ import org.json.JSONArray;
 import org.json.JSONObject;
 import org.labkey.api.action.*;
 import org.labkey.api.admin.ImportException;
+import org.labkey.api.announcements.DiscussionService;
 import org.labkey.api.attachments.AttachmentFile;
 import org.labkey.api.attachments.AttachmentForm;
 import org.labkey.api.attachments.AttachmentService;
@@ -962,6 +963,26 @@ public class StudyController extends BaseStudyController
             else if (report == null && !def.canRead(getUser()))
             {
                 return new HtmlView("User does not have read permission on this dataset.");
+            }
+            else
+            {
+                // add discussions
+                DiscussionService.Service service = DiscussionService.get();
+
+                if (report != null)
+                {
+                    // discuss the report
+                    String title = "Discuss report - " + report.getDescriptor().getReportName();
+                    HttpView discussion = service.getDisussionArea(getViewContext(), report.getEntityId(), (ActionURL) getViewContext().get("actionURL"), title, true, false);
+                    view.addView(discussion);
+                }
+                else
+                {
+                    // discuss the dataset
+                    String title = "Discuss dataset - " + def.getName();
+                    HttpView discussion = service.getDisussionArea(getViewContext(), def.getEntityId(), (ActionURL) getViewContext().get("actionURL"), title, true, false);
+                    view.addView(discussion);
+                }
             }
             return view;
         }

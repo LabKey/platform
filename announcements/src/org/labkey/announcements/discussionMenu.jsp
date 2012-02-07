@@ -110,19 +110,12 @@ var discussionMenu = {};
 })();
 </script>
 <span id=discussionMenuToggle><%
-    if (announcementModels.length > 0)
+    if (announcementModels.length > 0 && me.allowMultipleDiscussions)
     {
-        if (me.allowMultipleDiscussions)
-        {
-            %><%=PageFlowUtil.textLink("see discussions (" + announcementModels.length + ")", "#", "return false;", "")%><%         
-        }
-        else
-        {
-            %><%=PageFlowUtil.textLink("discussion", "#", "return false;", "")%><%
-        }
+        %><%=PageFlowUtil.textLink("see discussions (" + announcementModels.length + ")", "#", "return false;", "")%><%
     }
     else
     {
-        %><%=PageFlowUtil.textLink("discuss this", "#", "return false;", "")%><%
+        %><%=PageFlowUtil.textLink("discussion", "#", "return false;", "")%><%
     }
 %></span>

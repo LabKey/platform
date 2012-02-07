@@ -31,6 +31,7 @@ import org.labkey.api.action.ExtendedApiQueryResponse;
 import org.labkey.api.action.RedirectAction;
 import org.labkey.api.action.SimpleViewAction;
 import org.labkey.api.action.SpringActionController;
+import org.labkey.api.announcements.DiscussionService;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.DataRegion;
@@ -71,9 +72,11 @@ import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.ResultSetUtil;
 import org.labkey.api.util.URLHelper;
 import org.labkey.api.view.ActionURL;
+import org.labkey.api.view.HttpView;
 import org.labkey.api.view.JspView;
 import org.labkey.api.view.NavTree;
 import org.labkey.api.view.NotFoundException;
+import org.labkey.api.view.VBox;
 import org.labkey.api.view.ViewContext;
 import org.labkey.api.view.WebPartView;
 import org.labkey.api.visualization.VisualizationReportDescriptor;
@@ -115,6 +118,7 @@ public class VisualizationController extends SpringActionController
         private static final String VISUALIZATION_FILTER_URL = "filterUrl";
         private static final String VISUALIZATION_QUERY_PARAM = "queryName";
         private static final String VISUALIZATION_EDIT_PARAM = "edit";
+        private static final String VISUALIZATION_ID_PARAM = "reportId";
 
         @Override
         public ActionURL getTimeChartDesignerURL(Container container)
@@ -159,6 +163,7 @@ public class VisualizationController extends SpringActionController
             String schemaName = report.getDescriptor().getProperty(ReportDescriptor.Prop.schemaName);
             if (schemaName != null)
                 url.addParameter(VISUALIZATION_SCHEMA_PARAM, schemaName);
+            url.addParameter(VISUALIZATION_ID_PARAM, report.getDescriptor().getReportId().toString());
             url.addParameter(VISUALIZATION_NAME_PARAM, report.getDescriptor().getReportName());
             return url;
         }
@@ -173,6 +178,7 @@ public class VisualizationController extends SpringActionController
             String schemaName = report.getDescriptor().getProperty(ReportDescriptor.Prop.schemaName);
             if (schemaName != null)
                 url.addParameter(VISUALIZATION_SCHEMA_PARAM, schemaName);
+            url.addParameter(VISUALIZATION_ID_PARAM, report.getDescriptor().getReportId().toString());
             url.addParameter(VISUALIZATION_NAME_PARAM, report.getDescriptor().getReportName());
             return url;
         }
@@ -1205,17 +1211,29 @@ public class VisualizationController extends SpringActionController
     public static final String TITLE = "Time Chart Wizard";
 
     @RequiresPermissionClass(ReadPermission.class)
-    public class TimeChartWizardAction extends SimpleViewAction<Object>
+    public class TimeChartWizardAction extends SimpleViewAction<GetVisualizationForm>
     {
         @Override
-        public ModelAndView getView(Object o, BindException errors) throws Exception
+        public ModelAndView getView(GetVisualizationForm form, BindException errors) throws Exception
         {
-            JspView timeChartWizard = new JspView("/org/labkey/visualization/views/timeChartWizard.jsp");
+            JspView timeChartWizard = new JspView<GetVisualizationForm>("/org/labkey/visualization/views/timeChartWizard.jsp");
 
             timeChartWizard.setTitle(TITLE);
             timeChartWizard.setFrame(WebPartView.FrameType.PORTAL);
 
-            return timeChartWizard;
+            VBox boxView = new VBox(timeChartWizard);
+
+            Report report = getReport(form);
+
+            if (report != null)
+            {
+                String title = "Discuss report - " + report.getDescriptor().getReportName();
+                DiscussionService.Service service = DiscussionService.get();
+                HttpView discussion = service.getDisussionArea(getViewContext(), report.getEntityId(), (ActionURL) getViewContext().get("actionURL"), title, true, false);
+                boxView.addView(discussion);
+            }
+
+            return boxView;
         }
 
         @Override
