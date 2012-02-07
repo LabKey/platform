@@ -61,5 +61,6 @@ public interface SchemaReader
         public DataSetDefinition.KeyManagementType keyManagementType = DataSet.KeyManagementType.None;
         public String category;
         public boolean demographicData;
+        public String type = DataSet.TYPE_STANDARD;
     }
 }

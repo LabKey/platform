@@ -47,7 +47,7 @@
 <%
     Study study = StudyManager.getInstance().getStudy(HttpView.currentContext().getContainer());
 
-    List<? extends DataSet> datasets = study.getDataSets();
+    List<? extends DataSet> datasets = study.getDataSetsByType(new String[]{DataSet.TYPE_STANDARD, DataSet.TYPE_PLACEHOLDER});
     int countUndefined = 0;
     for (DataSet def : datasets) {
         if (def.getTypeURI() == null)
@@ -169,6 +169,7 @@
         <th align="left">Name</th>
         <th align="left">Label</th>
         <th align="left">Category</th>
+        <th align="left">Type</th>
         <th align="left">Cohort</th>
         <th align="left">Show By Default</th>
         <th>&nbsp;</th>
@@ -182,6 +183,7 @@
         <td><a href="<%="datasetDetails.view?id=" + def.getDataSetId()%>"><%= h(def.getName()) %></a></td>
         <td><% if (!def.getName().equals(def.getLabel())) {%><a href="<%="datasetDetails.view?id=" + def.getDataSetId()%>"><%= h(def.getLabel()) %></a><%}%>&nbsp;</td>
         <td><%= def.getCategory() != null ? h(def.getCategory()) : "&nbsp;" %>&nbsp;</td>
+        <td><%= def.getType()%>&nbsp;</td>
         <td><%= def.getCohort() != null ? h(def.getCohort().getLabel()) : "All" %></td>
         <td><%= def.isShowByDefault() %></td>
     </tr><%

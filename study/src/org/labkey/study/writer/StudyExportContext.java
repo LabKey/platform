@@ -17,6 +17,7 @@ package org.labkey.study.writer;
 
 import org.labkey.api.data.Container;
 import org.labkey.api.security.User;
+import org.labkey.api.study.DataSet;
 import org.labkey.study.model.DataSetDefinition;
 import org.labkey.study.model.StudyImpl;
 import org.apache.log4j.Logger;
@@ -61,7 +62,7 @@ public class StudyExportContext extends AbstractContext
         boolean includeCRF = _dataTypes.contains(DatasetWriter.SELECTION_TEXT);
         boolean includeAssay = _dataTypes.contains(AssayDatasetWriter.SELECTION_TEXT);
 
-        for (DataSetDefinition dataset : study.getDataSets())
+        for (DataSetDefinition dataset : study.getDataSetsByType(new String[]{DataSet.TYPE_STANDARD, DataSet.TYPE_PLACEHOLDER}))
         {
             if ((!dataset.isAssayData() && includeCRF) || (dataset.isAssayData() && includeAssay))
             {

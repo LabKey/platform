@@ -124,6 +124,7 @@ public class StudySchedule implements CustomApiForm
         o.put("description", ds.getDescription());
         o.put("displayOrder", ds.getDisplayOrder());
         o.put("id", ds.getDataSetId());
+        o.put("type", ds.getType());
 
         return o;
     }

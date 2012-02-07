@@ -47,6 +47,7 @@ import org.labkey.api.security.User;
 import org.labkey.api.security.UserManager;
 import org.labkey.api.services.ServiceRegistry;
 import org.labkey.api.settings.AppProps;
+import org.labkey.api.study.DataSet;
 import org.labkey.api.study.Site;
 import org.labkey.api.study.Study;
 import org.labkey.api.study.TimepointType;
@@ -196,6 +197,12 @@ public class StudyImpl extends ExtensibleStudyEntity<StudyImpl> implements Study
     public List<DataSetDefinition> getDataSets()
     {
         return Arrays.asList(StudyManager.getInstance().getDataSetDefinitions(this));
+    }
+    
+    @Override
+    public List<DataSetDefinition> getDataSetsByType(String[] types)
+    {
+        return Arrays.asList(StudyManager.getInstance().getDataSetDefinitions(this, null, types));
     }
 
     public PropertyDescriptor[] getSharedProperties()

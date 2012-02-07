@@ -572,6 +572,11 @@ public class AssayPublishManager implements AssayPublishService.Service
 
     public DataSetDefinition createAssayDataset(User user, StudyImpl study, String name, String keyPropertyName, Integer datasetId, boolean isDemographicData, ExpProtocol protocol) throws SQLException
     {
+        return createAssayDataset(user, study, name, keyPropertyName, datasetId, isDemographicData, DataSet.TYPE_STANDARD, null, protocol);
+    }
+
+    public DataSetDefinition createAssayDataset(User user, StudyImpl study, String name, String keyPropertyName, Integer datasetId, boolean isDemographicData, String type, Integer categoryId, ExpProtocol protocol) throws SQLException
+    {
         DbSchema schema = StudySchema.getInstance().getSchema();
         try
         {
@@ -581,6 +586,10 @@ public class AssayPublishManager implements AssayPublishService.Service
                 datasetId = Table.executeSingleton(schema, "SELECT MAX(n) + 1 AS id FROM (SELECT Max(datasetid) AS n FROM study.dataset WHERE container=? UNION SELECT ? As n) x", new Object[] {study.getContainer().getId(), MIN_ASSAY_ID}, Integer.class);
             DataSetDefinition newDataSet = new DataSetDefinition(study, datasetId.intValue(), name, name, null, getDomainURIString(study, name));
             newDataSet.setShowByDefault(true);
+            newDataSet.setType(type);
+
+            if (categoryId != null)
+                newDataSet.setCategoryId(categoryId);
             if (keyPropertyName != null)
                 newDataSet.setKeyPropertyName(keyPropertyName);
             newDataSet.setDemographicData(isDemographicData);

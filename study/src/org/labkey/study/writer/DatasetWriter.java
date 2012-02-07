@@ -118,6 +118,8 @@ public class DatasetWriter implements InternalStudyWriter
 
             if (def.isDemographicData())
                 datasetXml.setDemographicData(true);
+
+            datasetXml.setType(def.getType());
         }
 
         if (categories.isEmpty())

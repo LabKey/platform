@@ -7485,7 +7485,7 @@ public class StudyController extends BaseStudyController
             if (study != null)
             {
                 schedule.setVisits(StudyManager.getInstance().getVisits(study, null, getUser(), Visit.Order.DISPLAY));
-                schedule.setDatasets(StudyManager.getInstance().getDataSetDefinitions(study, cohort));
+                schedule.setDatasets(StudyManager.getInstance().getDataSetDefinitions(study, cohort, new String[]{DataSet.TYPE_STANDARD, DataSet.TYPE_PLACEHOLDER}));
 
                 response.put("schedule", schedule.toJSON(getUser()));
                 response.put("success", true);
@@ -7565,5 +7565,124 @@ public class StudyController extends BaseStudyController
 
     public static class BrowseStudyForm
     {
+    }
+
+    @RequiresPermissionClass(AdminPermission.class)
+    public class DefineDatasetAction extends ApiAction<DefineDatasetForm>
+    {
+        private StudyImpl _study;
+
+        @Override
+        public void validateForm(DefineDatasetForm form, Errors errors)
+        {
+            _study = StudyManager.getInstance().getStudy(getContainer());
+
+            if (_study != null)
+            {
+                if (StudyManager.getInstance().getDataSetDefinition(_study, form.getName()) != null)
+                    errors.reject(ERROR_MSG, "A Dataset named: " + form.getName() + " already exists in this folder.");
+
+            }
+            else
+                errors.reject(ERROR_MSG, "A study does not exist in this folder");
+        }
+
+        @Override
+        public ApiResponse execute(DefineDatasetForm form, BindException errors) throws Exception
+        {
+            ApiSimpleResponse response = new ApiSimpleResponse();
+            DataSetDefinition def = null;
+
+            DbScope scope =  StudySchema.getInstance().getSchema().getScope();
+            scope.ensureTransaction();
+
+            try {
+                Integer categoryId = null;
+
+                if (form.getCategory() != null)
+                {
+                    ViewCategory category = ViewCategoryManager.getInstance().ensureViewCategory(getContainer(), getUser(), form.getCategory().getLabel());
+                    categoryId = category.getRowId();
+                }
+
+                switch (form.getType())
+                {
+                    case importFromFile:
+                    case defineManually:
+                        def = AssayPublishManager.getInstance().createAssayDataset(getUser(), _study, form.getName(),
+                                null, null, false, DataSet.TYPE_STANDARD, categoryId, null);
+
+                        if (def != null)
+                        {
+                            String domainURI = def.getTypeURI();
+                            OntologyManager.ensureDomainDescriptor(domainURI, form.getName(), getContainer());
+                            def.provisionTable();
+                        }
+
+                        ActionURL redirect;
+                        if (form.getType() == DefineDatasetForm.Type.defineManually)
+                            redirect = new ActionURL(EditTypeAction.class, getContainer()). addParameter(DataSetDefinition.DATASETKEY, def.getDataSetId());
+                        else
+                            redirect = new ActionURL(DatasetController.DefineAndImportDatasetAction.class, getContainer()).addParameter(DataSetDefinition.DATASETKEY, def.getDataSetId());
+
+                        response.put("redirectUrl", redirect.getLocalURIString());
+                        break;
+                    case placeHolder:
+                        def = AssayPublishManager.getInstance().createAssayDataset(getUser(), _study, form.getName(),
+                                null, null, false, DataSet.TYPE_PLACEHOLDER, categoryId, null);
+                        response.put("datasetId", def.getDataSetId());
+                        break;
+                }
+                response.put("success", true);
+                scope.commitTransaction();
+            }
+            finally
+            {
+                scope.closeConnection();
+            }
+
+            return response;
+        }
+    }
+
+    public static class DefineDatasetForm implements CustomApiForm
+    {
+        enum Type {
+            importFromFile,
+            defineManually,
+            placeHolder,
+        }
+
+        private DefineDatasetForm.Type _type;
+        private String _name;
+        private ViewCategory _category;
+
+        public Type getType()
+        {
+            return _type;
+        }
+
+        public String getName()
+        {
+            return _name;
+        }
+
+        public ViewCategory getCategory()
+        {
+            return _category;
+        }
+
+        @Override
+        public void bindProperties(Map<String, Object> props)
+        {
+            Object categoryProp = props.get("category");
+            if (categoryProp instanceof JSONObject)
+            {
+                _category = ViewCategory.fromJSON((JSONObject)categoryProp);
+            }
+
+            _name = (String)props.get("name");
+            _type = Type.valueOf((String)props.get("type"));
+        }
     }
 }

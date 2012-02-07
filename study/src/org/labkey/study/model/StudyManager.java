@@ -1480,11 +1480,23 @@ public class StudyManager
 
     public DataSetDefinition[] getDataSetDefinitions(Study study, CohortImpl cohort)
     {
+        return getDataSetDefinitions(study, cohort, new String[]{DataSet.TYPE_STANDARD});
+    }
+
+    public DataSetDefinition[] getDataSetDefinitions(Study study, CohortImpl cohort, String[] types)
+    {
         SimpleFilter filter = null;
         if (cohort != null)
         {
             filter = new SimpleFilter("Container", study.getContainer().getId());
             filter.addWhereClause("(CohortId IS NULL OR CohortId = ?)", new Object[] { cohort.getRowId() });
+        }
+
+        if (types != null)
+        {
+            if (filter == null)
+                filter = new SimpleFilter("Container", study.getContainer().getId());
+            filter.addInClause("Type", Arrays.asList(types));
         }
         List<DataSetDefinition> datasets = Arrays.asList(_dataSetHelper.get(study.getContainer(), filter, null));
 
@@ -2491,6 +2503,7 @@ public class StudyManager
                         def.setEntityId(GUID.makeGUID());
                         def.setKeyManagementType(info.keyManagementType);
                         def.setDemographicData(info.demographicData);
+                        def.setType(info.type);
                         manager.createDataSetDefinition(user, def);
                     }
                     else

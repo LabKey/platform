@@ -197,7 +197,8 @@ public class DatasetImporter implements InternalStudyImporter
 
         for (DatasetsDocument.Datasets.Datasets2.Dataset dataset : datasets)
         {
-            DatasetImportProperties props = new DatasetImportProperties(dataset.getId(), dataset.getCategory(), dataset.getCohort(), dataset.getShowByDefault(), dataset.getDemographicData());
+            DatasetImportProperties props = new DatasetImportProperties(dataset.getId(), dataset.getCategory(), dataset.getCohort(),
+                    dataset.getShowByDefault(), dataset.getDemographicData(), dataset.getType());
             extraProps.put(dataset.getName(), props);
         }
 
@@ -213,14 +214,16 @@ public class DatasetImporter implements InternalStudyImporter
         private final String _cohort;
         private final boolean _showByDefault;
         private final boolean _demographicData;
+        private final String _type;
 
-        private DatasetImportProperties(int id, String category, String cohort, boolean showByDefault, boolean demographicData)
+        private DatasetImportProperties(int id, String category, String cohort, boolean showByDefault, boolean demographicData, String type)
         {
             _id = id;
             _category = category;
             _cohort = cohort;
             _showByDefault = showByDefault;
             _demographicData = demographicData;
+            _type = type;
         }
 
         public int getId()
@@ -246,6 +249,11 @@ public class DatasetImporter implements InternalStudyImporter
         public boolean isDemographicData()
         {
             return _demographicData;
+        }
+
+        public String getType()
+        {
+            return _type;
         }
     }
 }

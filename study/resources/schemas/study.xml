@@ -229,6 +229,9 @@
       <ns:column columnName="CategoryId">
         <ns:description>The category of each dataset.</ns:description>
       </ns:column>
+      <ns:column columnName="Type">
+        <ns:description>Describes the type of the dataset, defaults to 'standard'.</ns:description>
+      </ns:column>
       <ns:column columnName="DisplayOrder">
         <ns:description>The display order of each dataset.</ns:description>
       </ns:column>

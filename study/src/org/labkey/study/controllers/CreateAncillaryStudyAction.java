@@ -38,6 +38,7 @@ import org.labkey.api.query.snapshot.QuerySnapshotService;
 import org.labkey.api.security.RequiresPermissionClass;
 import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.AdminPermission;
+import org.labkey.api.study.DataSet;
 import org.labkey.api.study.Study;
 import org.labkey.api.study.Visit;
 import org.labkey.api.util.FileUtil;
@@ -270,7 +271,7 @@ public class CreateAncillaryStudyAction extends MutatingApiAction<EmphasisStudyD
             TableInfo table = def.getTableInfo(user);
             QueryDefinition queryDef = QueryService.get().createQueryDefForTable(schema, table.getName());
 
-            if (queryDef != null)
+            if (queryDef != null && def.getType().equals(DataSet.TYPE_STANDARD))
             {
                 queryDef.setContainer(getSourceStudy().getContainer());
 
