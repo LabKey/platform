@@ -274,7 +274,7 @@
     <orderEntry type="module-library" exported="">
       <library>
         <CLASSES>
-          <root url="jar://$MODULE_DIR$/../../external/lib/server/jcommon-1.0.0.jar!/" />
+          <root url="jar://$MODULE_DIR$/../../external/lib/server/jcommon-1.0.17.jar!/" />
         </CLASSES>
         <JAVADOC />
         <SOURCES />
@@ -283,11 +283,11 @@
     <orderEntry type="module-library" exported="">
       <library>
         <CLASSES>
-          <root url="jar://$MODULE_DIR$/../../external/lib/server/jfreechart-1.0.0.jar!/" />
+          <root url="jar://$MODULE_DIR$/../../external/lib/server/jfreechart-1.0.14.jar!/" />
         </CLASSES>
         <JAVADOC />
         <SOURCES>
-          <root url="jar://$MODULE_DIR$/../../external/lib/server/jfreechart-1.0.0.zip!/jfreechart-1.0.0/source" />
+          <root url="jar://$MODULE_DIR$/../../external/lib/server/jfreechart-1.0.14.zip!/jfreechart-1.0.14/source" />
         </SOURCES>
       </library>
     </orderEntry>
