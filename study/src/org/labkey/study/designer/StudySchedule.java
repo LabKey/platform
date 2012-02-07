@@ -90,8 +90,8 @@ public class StudySchedule implements CustomApiForm
     {
         JSONObject o = new JSONObject();
 
-        o.put("name", ColumnInfo.legalNameFromName(visit.getLabel()));
-        o.put("label", visit.getLabel());
+        o.put("name", getLegalVisitName(visit));
+        o.put("label", visit.getDisplayString());
         o.put("sequenceMin", visit.getSequenceNumMin());
         o.put("sequenceMax", visit.getSequenceNumMax());
         o.put("id", visit.getRowId());
@@ -146,11 +146,21 @@ public class StudySchedule implements CustomApiForm
             {
                 VisitImpl visit = visitMap.get(vds.getVisitRowId());
                 if (visit != null)
-                    o.put(ColumnInfo.legalNameFromName(visit.getLabel()), serializeVisit(user, visit, vds.isRequired()));
+                    o.put(getLegalVisitName(visit), serializeVisit(user, visit, vds.isRequired()));
             }
             d.put(o);
         }
         return d;
+    }
+
+    private String getLegalVisitName(VisitImpl visit)
+    {
+        String name = visit.getLabel();
+
+        if (name == null)
+            name = String.valueOf(visit.getRowId());
+
+        return ColumnInfo.legalNameFromName(name);
     }
 
     @Override

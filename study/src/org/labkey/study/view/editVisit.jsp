@@ -29,6 +29,7 @@
 <%@ page import="org.labkey.api.study.Visit" %>
 <%@ page import="org.labkey.study.CohortFilter" %>
 <%@ page extends="org.labkey.study.view.BaseStudyPage" %>
+<%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%
     JspView<StudyController.VisitSummaryBean> me = (JspView<StudyController.VisitSummaryBean>) HttpView.currentView();
     StudyController.VisitSummaryBean visitBean = me.getModelBean();
