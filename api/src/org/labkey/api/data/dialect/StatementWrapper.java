@@ -65,6 +65,9 @@ public class StatementWrapper implements Statement, PreparedStatement, CallableS
     // NOTE: CallableStatement supports getObject(), but PreparedStatement doesn't
     private ArrayList<Object> _parameters = null;
 
+    String _sqlStateTestException = null;
+
+
     protected StatementWrapper(ConnectionWrapper conn, Statement stmt)
     {
         _conn = conn;
@@ -561,6 +564,9 @@ public class StatementWrapper implements Statement, PreparedStatement, CallableS
         Exception ex = null;
         try
         {
+            if (null != _sqlStateTestException)
+                throw new SQLException("Test sql exception", _sqlStateTestException);
+
             ResultSet rs = ((PreparedStatement)_stmt).executeQuery();
             assert MemTracker.put(rs);
             return rs;

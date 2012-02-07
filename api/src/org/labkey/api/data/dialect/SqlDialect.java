@@ -29,6 +29,7 @@ import org.labkey.api.data.CoreSchema;
 import org.labkey.api.data.DbSchema;
 import org.labkey.api.data.DbScope;
 import org.labkey.api.data.PropertyStorageSpec;
+import org.labkey.api.data.RuntimeSQLException;
 import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.Table;
 import org.labkey.api.data.TableChange;
@@ -273,6 +274,12 @@ public abstract class SqlDialect
         String msg = StringUtils.defaultString(x.getMessage(), "");
         String state = StringUtils.defaultString(x.getSQLState(), "");
         return msg.toLowerCase().contains("deadlock") || state.startsWith("25") || state.startsWith("40");
+    }
+
+
+    public static boolean isTransactionException(RuntimeSQLException x)
+    {
+        return isTransactionException(x.getSQLException());
     }
 
 
