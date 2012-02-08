@@ -119,7 +119,7 @@ This folder does not contain a study.
                         continue;
                     String className="";
                     String style=col<width-1 ? "background:#FFFFFF" : "";
-                    %><td class="<%=className%>" style="<%=style%>" rowspan="<%=rowspan%>">
+                    %><td class="<%=className%>" style="<%=style%>" rowspan="<%=rowspan%>" nowrap>
                         <%= h(title) %>
                     </td><%
                 }
