@@ -31,15 +31,20 @@ import org.labkey.api.query.QueryView;
 import org.labkey.api.query.UserSchema;
 import org.labkey.api.security.RequiresPermissionClass;
 import org.labkey.api.security.permissions.ReadPermission;
+import org.labkey.study.model.CohortImpl;
 import org.labkey.study.model.ParticipantCategory;
 import org.labkey.study.model.ParticipantGroup;
 import org.labkey.study.model.ParticipantGroupManager;
+import org.labkey.study.model.StudyManager;
 import org.springframework.validation.BindException;
 
 import java.sql.SQLException;
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
 /**
@@ -350,6 +355,71 @@ public class ParticipantGroupController extends BaseStudyController
         public void setSelectAll(boolean selectAll)
         {
             _selectAll = selectAll;
+        }
+    }
+
+    @RequiresPermissionClass(ReadPermission.class)
+    public class BrowseParticipantGroups extends ApiAction<BrowseGroupsForm>
+    {
+        @Override
+        public ApiResponse execute(BrowseGroupsForm form, BindException errors) throws Exception
+        {
+            ApiSimpleResponse resp = new ApiSimpleResponse();
+            List<Map<String, Object>> groups = new ArrayList<Map<String, Object>>();
+
+            for (BrowseGroupsForm.Type type : form.getTypes())
+            {
+                switch(type)
+                {
+                    case participantGroup:
+                        for (ParticipantCategory category : ParticipantGroupManager.getInstance().getParticipantCategories(getContainer(), getUser()))
+                        {
+                            groups.add(createGroup(category.getRowId(), category.getLabel(), type));
+                        }
+                        break;
+                    case cohort:
+                        for (CohortImpl cohort : StudyManager.getInstance().getCohorts(getContainer(), getUser()))
+                        {
+                            groups.add(createGroup(cohort.getRowId(), cohort.getLabel(), type));
+                        }
+                        break;
+                }
+            }
+            resp.put("success", true);
+            resp.put("groups", groups);
+
+            return resp;
+        }
+
+        private Map<String, Object> createGroup(int id, String label, BrowseGroupsForm.Type type)
+        {
+            Map<String, Object> group = new HashMap<String, Object>();
+
+            group.put("id", id);
+            group.put("label", label);
+            group.put("type", type);
+
+            return group;
+        }
+    }
+
+    public static class BrowseGroupsForm
+    {
+        enum Type {
+            participantGroup,
+            cohort,
+        }
+
+        private Type[] _types = new Type[]{Type.participantGroup, Type.cohort};
+
+        public Type[] getTypes()
+        {
+            return _types;
+        }
+
+        public void setTypes(Type[] types)
+        {
+            _types = types;
         }
     }
 }
