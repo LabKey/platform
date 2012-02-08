@@ -20,6 +20,7 @@ import org.json.JSONObject;
 import org.labkey.api.action.ApiAction;
 import org.labkey.api.action.ApiResponse;
 import org.labkey.api.action.ApiSimpleResponse;
+import org.labkey.api.action.CustomApiForm;
 import org.labkey.api.action.MutatingApiAction;
 import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.Table;
@@ -403,23 +404,36 @@ public class ParticipantGroupController extends BaseStudyController
         }
     }
 
-    public static class BrowseGroupsForm
+    public static class BrowseGroupsForm implements CustomApiForm
     {
         enum Type {
             participantGroup,
             cohort,
         }
 
-        private Type[] _types = new Type[]{Type.participantGroup, Type.cohort};
+        private List<Type> _types = new ArrayList<Type>();
 
-        public Type[] getTypes()
+        public List<Type> getTypes()
         {
             return _types;
         }
 
-        public void setTypes(Type[] types)
+        @Override
+        public void bindProperties(Map<String, Object> props)
         {
-            _types = types;
+            Object type = props.get("type");
+
+            if (type instanceof JSONArray)
+            {
+                JSONArray types = (JSONArray)type;
+
+                for (int i=0; i < types.length(); i++)
+                    _types.add(Type.valueOf(types.getString(i)));
+            }
+            else if (type instanceof String)
+            {
+                _types.add(Type.valueOf((String)type));
+            }
         }
     }
 }
