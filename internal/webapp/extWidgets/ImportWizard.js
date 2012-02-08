@@ -104,7 +104,7 @@ Ext4.define('LABKEY.ext.ImportWizard', {
                 return;
             }
 
-            this.doLoad('/' + LABKEY.ActionURL.getContainerName() + '/' + rec.get('Name'));
+            this.doLoad('/__r' + rec.get('RowId'));
         }
     },
 

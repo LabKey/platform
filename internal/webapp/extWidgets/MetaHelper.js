@@ -266,7 +266,8 @@ LABKEY.ext.MetaHelper = {
                 //TODO: account for datetime vs date?
                 case "date":
                     field.xtype = meta.xtype || 'datefield';
-                    field.format = meta.format || Date.patterns.ISO8601Long;
+                    //NOTE: java formats not consistent w/ Ext
+                    //field.format = meta.format || Date.patterns.ISO8601Long;
                     field.altFormats = LABKEY.Utils.getDateAltFormats();
                     break;
                 case "string":
