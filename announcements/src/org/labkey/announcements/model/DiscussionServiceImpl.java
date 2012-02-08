@@ -213,7 +213,7 @@ public class DiscussionServiceImpl implements DiscussionService.Service
             discussionBox = new ThreadWrapper(currentURL, "Discussion");
         String discussionAreaId = ((ThreadWrapper)discussionBox).getId();
 
-        ModelAndView pickerView = new PickerView(c, discussionAreaId, adjustedCurrentURL, announcementModels, null != discussionBox, allowMultipleDiscussions);
+        ModelAndView pickerView = new PickerView(c, discussionAreaId, adjustedCurrentURL, newDiscussionTitle, announcementModels, null != discussionBox, allowMultipleDiscussions);
         DiscussionService.DiscussionView view = new DiscussionService.DiscussionView(pickerView);
 
         if (null != discussionBox)
@@ -367,13 +367,15 @@ public class DiscussionServiceImpl implements DiscussionService.Service
         final public AnnouncementModel[] announcementModels;
         final public boolean isDiscussionVisible;
         final public boolean allowMultipleDiscussions;
+        final public String title;
 
-        PickerView(Container c, String discussionAreaId, URLHelper pageURL, AnnouncementModel[] announcementModels, boolean isDiscussionVisible, boolean allowMultipleDiscussions)
+        PickerView(Container c, String discussionAreaId, URLHelper pageURL, String title, AnnouncementModel[] announcementModels, boolean isDiscussionVisible, boolean allowMultipleDiscussions)
         {
             super("/org/labkey/announcements/discussionMenu.jsp");
             setFrame(FrameType.NONE);
             this.discussionAreaId = discussionAreaId;
             this.pageURL = pageURL.clone();
+            this.title = title;
             this.emailPreferencesURL = AnnouncementsController.getEmailPreferencesURL(c, pageURL);
             this.adminEmailURL = AnnouncementsController.getAdminEmailURL(c, pageURL);
             this.customizeURL = AnnouncementsController.getCustomizeURL(c, pageURL);

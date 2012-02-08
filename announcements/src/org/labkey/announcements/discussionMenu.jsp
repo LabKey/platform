@@ -31,8 +31,14 @@
 <%
     DiscussionServiceImpl.PickerView me = (DiscussionServiceImpl.PickerView) HttpView.currentView();
     ViewContext context = me.getViewContext();
+    String contextPath = request.getContextPath();
     Container c = context.getContainer();
     User user = context.getUser();
+
+    boolean isGuest = user.isGuest();
+    boolean isAdmin = !isGuest && c.hasPermission(user, AdminPermission.class);
+    boolean canInsert = !isGuest && c.hasPermission(user, InsertPermission.class);
+
     AnnouncementModel[] announcementModels = me.announcementModels;
     if (null == announcementModels)
         announcementModels = new AnnouncementModel[0];
@@ -47,7 +53,17 @@
             longFormat |= !menuItems.add(a.getCreatedByName(user) + "|" + DateUtil.formatDate(a.getCreated()));
     }
 %>
+<style><!--
+.discuss-discuss-icon
+{
+    background-image:url(<%=contextPath%>/_images/message.png);
+}
+.discuss-email-icon
+{
+    background-image:url(<%=contextPath%>/_images/email.png);
+}
 
+--></style>
 <script type="text/javascript">
 if (discussionMenu)
     discussionMenu.menu.destroy();
@@ -55,6 +71,7 @@ if (discussionMenu)
 var discussionMenu = {};
 (function(){
     discussionMenu.pageUrl = <%=PageFlowUtil.jsString(pageURL.clone().deleteScopeParameters("discussion").getLocalURIString())%>;
+    discussionMenu.emailUrl = 'mailto:?subject=<%=PageFlowUtil.encode(me.title)%>&body=<%=PageFlowUtil.encode(me.pageURL.getURIString())%>';
     discussionMenu.emailPreferencesUrl = <%=PageFlowUtil.jsString(me.emailPreferencesURL.getLocalURIString())%>;
     discussionMenu.adminEmailUrl = <%=PageFlowUtil.jsString(me.adminEmailURL.getLocalURIString())%>;
     discussionMenu.customizeUrl = <%=PageFlowUtil.jsString(me.customizeURL.getLocalURIString())%>;
@@ -65,36 +82,50 @@ var discussionMenu = {};
         cls:'extContainer',
         items:[<%
 
+        String comma = "";
         if (me.allowMultipleDiscussions)
         {
             for (AnnouncementModel a : announcementModels)
             {
                 String title = a.getTitle();
                 String help = a.getCreatedByName(user) + ' ' + (longFormat ? DateUtil.formatDateTime(a.getCreated()) : DateUtil.formatDate(a.getCreated()));
-                %>{text:<%=PageFlowUtil.jsString(title)%>,helptext:<%=PageFlowUtil.jsString(help)%>,href:discussionMenu.pageUrl+'&discussion.id=<%=a.getRowId()%>#discussionArea'},<%
+                %><%=comma%>{text:<%=PageFlowUtil.jsString(title)%>,helptext:<%=PageFlowUtil.jsString(help)%>,href:discussionMenu.pageUrl+'&discussion.id=<%=a.getRowId()%>#discussionArea'}<%
+                comma = ",";
             }
         }
         else if (announcementModels.length > 0)
         {
             if (me.isDiscussionVisible)
             {
-                %>{text:'Hide discussion',href:discussionMenu.hideUrl},<%
+                %><%=comma%>{text:'Hide discussion',href:discussionMenu.hideUrl},<%
             }
             else
             {
                 AnnouncementModel a = announcementModels[0];
-                %>{text:'Show discussion',href:discussionMenu.pageUrl+'&discussion.id=<%=a.getRowId()%>#discussionArea'},<%
+                %><%=comma%>{text:'Show discussion',href:discussionMenu.pageUrl+'&discussion.id=<%=a.getRowId()%>#discussionArea'},<%
             }
+            comma = ",";
         }
-        if ((me.allowMultipleDiscussions || announcementModels.length == 0) && c.hasPermission(context.getUser(), InsertPermission.class))
+        if ((me.allowMultipleDiscussions || announcementModels.length == 0) && canInsert)
         {
-            %>{text:'Start <%=me.allowMultipleDiscussions ? "new " : ""%>discussion',href:discussionMenu.pageUrl+'&discussion.start=true#discussionArea'},<%
+            %><%=comma%>{text:'Start <%=me.allowMultipleDiscussions ? "new " : ""%>discussion',href:discussionMenu.pageUrl+'&discussion.start=true#discussionArea', iconCls:'discuss-discuss-icon'}<%
+            comma = ",";
         }
-        %>'-',{text:'Email preferences',href:discussionMenu.emailPreferencesUrl}<%
-        if (c.hasPermission(context.getUser(), AdminPermission.class))
+        // if (true)
         {
-            %>,{text:'Email admin',href:discussionMenu.adminEmailUrl},
-            {text:'Customize',href:discussionMenu.customizeUrl}<%
+            %><%=comma%>{text:'Start email discussion', href:discussionMenu.emailUrl, iconCls:'discuss-email-icon'}<%
+            comma = ",'-',";
+        }
+        if (!isGuest)
+        {
+            %><%=comma%>{text:'Email preferences',href:discussionMenu.emailPreferencesUrl}<%
+            comma = ",";
+        }
+        if (isAdmin)
+        {
+            %><%=comma%>{text:'Email admin',href:discussionMenu.adminEmailUrl}
+            ,{text:'Customize',href:discussionMenu.customizeUrl}<%
+            comma = ",";
         }
         %>]
     };
