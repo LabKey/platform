@@ -91,38 +91,31 @@ public class MothershipModule extends DefaultModule
 
     private void bootstrap(ModuleContext moduleContext)
     {
+        Container c = ContainerManager.ensureContainer(MothershipReport.CONTAINER_PATH);
+        Group mothershipGroup = SecurityManager.createGroup(c, NAME);
+        MutableSecurityPolicy policy = new MutableSecurityPolicy(c, SecurityManager.getPolicy(c));
+        Role noPermsRole = RoleManager.getRole(NoPermissionsRole.class);
+        Role projAdminRole = RoleManager.getRole(ProjectAdminRole.class);
+        policy.addRoleAssignment(SecurityManager.getGroup(Group.groupGuests), noPermsRole);
+        policy.addRoleAssignment(SecurityManager.getGroup(Group.groupUsers), noPermsRole);
+        policy.addRoleAssignment(SecurityManager.getGroup(Group.groupAdministrators), projAdminRole);
+        policy.addRoleAssignment(mothershipGroup, projAdminRole);
+        SecurityManager.savePolicy(policy);
+
         try
         {
-            Container c = ContainerManager.ensureContainer(MothershipReport.CONTAINER_PATH);
-            Group mothershipGroup = SecurityManager.createGroup(c, NAME);
-            MutableSecurityPolicy policy = new MutableSecurityPolicy(c, SecurityManager.getPolicy(c));
-            Role noPermsRole = RoleManager.getRole(NoPermissionsRole.class);
-            Role projAdminRole = RoleManager.getRole(ProjectAdminRole.class);
-            policy.addRoleAssignment(SecurityManager.getGroup(Group.groupGuests), noPermsRole);
-            policy.addRoleAssignment(SecurityManager.getGroup(Group.groupUsers), noPermsRole);
-            policy.addRoleAssignment(SecurityManager.getGroup(Group.groupAdministrators), projAdminRole);
-            policy.addRoleAssignment(mothershipGroup, projAdminRole);
-            SecurityManager.savePolicy(policy);
-
-            try
-            {
-                SecurityManager.addMember(mothershipGroup, moduleContext.getUpgradeUser());
-            }
-            catch (InvalidGroupMembershipException e)
-            {
-                // Not really possible, but just in case
-                ExceptionUtil.logExceptionToMothership(null, e);
-            }
-
-            Set<Module> modules = new HashSet<Module>(c.getActiveModules());
-            modules.add(this);
-            c.setActiveModules(modules);
-            c.setDefaultModule(this);
+            SecurityManager.addMember(mothershipGroup, moduleContext.getUpgradeUser());
         }
-        catch (SQLException e)
+        catch (InvalidGroupMembershipException e)
         {
-            throw new RuntimeSQLException(e);
+            // Not really possible, but just in case
+            ExceptionUtil.logExceptionToMothership(null, e);
         }
+
+        Set<Module> modules = new HashSet<Module>(c.getActiveModules());
+        modules.add(this);
+        c.setActiveModules(modules);
+        c.setDefaultModule(this);
     }
 
     @Override
