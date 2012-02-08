@@ -116,69 +116,62 @@ public class DefaultFolderType implements FolderType
 
         ArrayList<Portal.WebPart> all = new ArrayList<Portal.WebPart>();
 
-        try
+        Portal.WebPart[] existingParts = Portal.getPartsOld(c);
+        if (null == existingParts || existingParts.length == 0)
         {
-            Portal.WebPart[] existingParts = Portal.getPartsOld(c);
-            if (null == existingParts || existingParts.length == 0)
-            {
-                if (null != required)
-                    all.addAll(required);
-                if (null != defaultParts)
-                    all.addAll(defaultParts);
-            }
-            else
-            {
-                //Order will be required,preferred,optional
-                all.addAll(Arrays.asList(existingParts));
-                for (WebPart p : all)
-                    p.setIndex(2);
-
-                if (null != required)
-                    for (Portal.WebPart part: required)
-                    {
-                        Portal.WebPart foundPart = findPart(all, part);
-                        if (null != foundPart)
-                        {
-                            foundPart.setPermanent(true);
-                            foundPart.setIndex(0);
-                        }
-                        else
-                        {
-                            part.setIndex(0);
-                            all.add(part);
-                        }
-                    }
-
-                if (null != defaultParts)
-                    for (Portal.WebPart part: defaultParts)
-                    {
-                        Portal.WebPart foundPart = findPart(all, part);
-                        if (null == foundPart)
-                        {
-                            part.setIndex(1); //Should put these right after required parts
-                            all.add(part);
-                        }
-                        else
-                            foundPart.setIndex(1);
-                    }
-            }
-
-            Set<Module> active = c.getActiveModules(false);
-            Set<Module> requiredActive = c.getRequiredModules();
-
-            if (null == active)
-                active = new HashSet<Module>();
-            else
-                active = new HashSet<Module>(active); //Need to copy since returned set is unmodifiable.
-
-            active.addAll(requiredActive);
-            c.setActiveModules(active);
-            Portal.saveParts(c, all);
+            if (null != required)
+                all.addAll(required);
+            if (null != defaultParts)
+                all.addAll(defaultParts);
         }
-        catch (SQLException e)
+        else
         {
-            throw new RuntimeSQLException(e);
+            //Order will be required,preferred,optional
+            all.addAll(Arrays.asList(existingParts));
+            for (WebPart p : all)
+                p.setIndex(2);
+
+            if (null != required)
+                for (Portal.WebPart part: required)
+                {
+                    Portal.WebPart foundPart = findPart(all, part);
+                    if (null != foundPart)
+                    {
+                        foundPart.setPermanent(true);
+                        foundPart.setIndex(0);
+                    }
+                    else
+                    {
+                        part.setIndex(0);
+                        all.add(part);
+                    }
+                }
+
+            if (null != defaultParts)
+                for (Portal.WebPart part: defaultParts)
+                {
+                    Portal.WebPart foundPart = findPart(all, part);
+                    if (null == foundPart)
+                    {
+                        part.setIndex(1); //Should put these right after required parts
+                        all.add(part);
+                    }
+                    else
+                        foundPart.setIndex(1);
+                }
         }
+
+        Set<Module> active = c.getActiveModules(false);
+        Set<Module> requiredActive = c.getRequiredModules();
+
+        if (null == active)
+            active = new HashSet<Module>();
+        else
+            active = new HashSet<Module>(active); //Need to copy since returned set is unmodifiable.
+
+        active.addAll(requiredActive);
+        c.setActiveModules(active);
+        Portal.saveParts(c, all);
 
         if (hasConfigurableTabs())
         {
