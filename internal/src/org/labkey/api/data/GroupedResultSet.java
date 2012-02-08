@@ -134,6 +134,20 @@ public class GroupedResultSet extends Table.ResultSetImpl
         rs.beforeFirst();
     }
 
+    public GroupedResultSet(ResultSet rs, String columnName)
+    {
+        super(rs);
+
+        try
+        {
+            _columnIndex = rs.findColumn(columnName);  // Cache the index
+        }
+        catch (SQLException e)
+        {
+           throw new RuntimeSQLException(e);
+        }
+    }
+
     @Override
     public int getSize()
     {
@@ -188,20 +202,6 @@ public class GroupedResultSet extends Table.ResultSetImpl
         return true;
     }
 
-    public GroupedResultSet(ResultSet rs, String columnName)
-    {
-        super(rs);
-
-        try
-        {
-            _columnIndex = rs.findColumn(columnName);  // Cache the index
-        }
-        catch (SQLException e)
-        {
-           throw new RuntimeSQLException(e);
-        }
-    }
-
     public ResultSet getNextResultSet() throws SQLException
     {
         return new NestedResultSet(this);
@@ -222,7 +222,7 @@ public class GroupedResultSet extends Table.ResultSetImpl
         public void close() throws SQLException
         {
             // Rely on the outer result set for closing
-            wasClosed = true;
+            _wasClosed = true;
         }
 
         // Treat a change of value in the grouping column as the "end" of the ResultSet

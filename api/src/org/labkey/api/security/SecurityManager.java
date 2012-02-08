@@ -894,10 +894,18 @@ public class SecurityManager
     {
         Selector selector = new SqlSelector(core.getSchema(), new SQLFragment("SELECT PreviousCrypts FROM " + core.getTableInfoLogins() + " WHERE Email=?", email));
         String cryptHistory = selector.getObject(String.class);
-        List<String> fixedList = Arrays.asList(cryptHistory.split(","));
-        assert fixedList.size() <= MAX_HISTORY;
 
-        return fixedList;
+        if (null == cryptHistory)
+        {
+            return Collections.emptyList();
+        }
+        else
+        {
+            List<String> cryptList = Arrays.asList(cryptHistory.split(","));
+            assert cryptList.size() <= MAX_HISTORY;
+
+            return cryptList;
+        }
     }
 
 

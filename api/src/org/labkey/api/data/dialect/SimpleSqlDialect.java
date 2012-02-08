@@ -140,7 +140,7 @@ public abstract class SimpleSqlDialect extends SqlDialect
     }
 
     @Override
-    public void appendStatement(StringBuilder sql, String statement)
+    public void appendStatement(Appendable sql, String statement)
     {
         throw new UnsupportedOperationException(getClass().getSimpleName() + " does not implement");
     }
@@ -152,7 +152,7 @@ public abstract class SimpleSqlDialect extends SqlDialect
     }
 
     @Override
-    public void appendSelectAutoIncrement(StringBuilder sql, TableInfo table, String columnName)
+    public void appendSelectAutoIncrement(Appendable sql, TableInfo table, String columnName)
     {
         throw new UnsupportedOperationException(getClass().getSimpleName() + " does not implement");
     }

@@ -321,9 +321,11 @@ public abstract class SqlDialect
 
     public abstract String getSQLScriptPath();
 
-    public abstract void appendStatement(StringBuilder sql, String statement);
+    // Note: SQLFragment and StringBuilder both implement Appendable
+    public abstract void appendStatement(Appendable sql, String statement);
 
-    public abstract void appendSelectAutoIncrement(StringBuilder sql, TableInfo table, String columnName);
+    // Note: SQLFragment and StringBuilder both implement Appendable
+    public abstract void appendSelectAutoIncrement(Appendable sql, TableInfo table, String columnName);
 
     // String version for convenience
     @Deprecated  // Most usages assume this is a standalone executable statement, which is a bad assumption (for PostgreSQL)

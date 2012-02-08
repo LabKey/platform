@@ -1405,19 +1405,26 @@ public class Table
 
     public static class ResultSetImpl extends ResultSetWrapper implements TableResultSet
     {
-        private final DbSchema schema;
-        private final Connection connection;
-        private boolean isComplete = true;
-        private int maxRows = ALL_ROWS;
+        private final @Nullable DbSchema _schema;
+        private final @Nullable Connection _connection;
+        private int _maxRows = ALL_ROWS;
+
+        private boolean _isComplete = true;
 
         // for resource tracking
-        private Throwable debugCreated = null;
-        protected boolean wasClosed = false;
+        private Throwable _debugCreated = null;
+        protected boolean _wasClosed = false;
 
 
         public ResultSetImpl(ResultSet rs)
         {
-            this(null, null, rs, ALL_ROWS);
+            this(rs, ALL_ROWS);
+        }
+
+
+        public ResultSetImpl(ResultSet rs, int maxRows)
+        {
+            this(null, null, rs, maxRows);
         }
 
 
@@ -1426,33 +1433,33 @@ public class Table
             this(connection, schema, rs, ALL_ROWS);
         }
 
-        public ResultSetImpl(Connection connection, DbSchema schema, ResultSet rs, int maxRows)
+        public ResultSetImpl(@Nullable Connection connection, @Nullable DbSchema schema, ResultSet rs, int maxRows)
         {
             super(rs);
             assert MemTracker.put(this);
             //noinspection ConstantConditions
-            assert null != (debugCreated = new Throwable("created ResultSetImpl"));
-            this.maxRows = maxRows;
-            this.connection = connection;
-            this.schema = schema;
+            assert null != (_debugCreated = new Throwable("created ResultSetImpl"));
+            _maxRows = maxRows;
+            _connection = connection;
+            _schema = schema;
         }
 
 
         public void setMaxRows(int i)
         {
-            maxRows = i;
+            _maxRows = i;
         }
 
 
         public boolean isComplete()
         {
-            return isComplete;
+            return _isComplete;
         }
 
 
         void setComplete(boolean isComplete)
         {
-            this.isComplete = isComplete;
+            _isComplete = isComplete;
         }
 
         @Override
@@ -1464,16 +1471,16 @@ public class Table
         public boolean next() throws SQLException
         {
             boolean success = super.next();
-            if (!success || ALL_ROWS == maxRows)
+            if (!success || ALL_ROWS == _maxRows)
                 return success;
-            return this.getRow() <= maxRows;
+            return getRow() <= _maxRows;
         }
 
 
         public void close() throws SQLException
         {
             // Uncached case... close everything down
-            if (null != schema)
+            if (null != _schema)
             {
                 Statement stmt = getStatement();
                 super.close();
@@ -1481,12 +1488,12 @@ public class Table
                 {
                     stmt.close();
                 }
-                schema.getScope().releaseConnection(connection);
+                _schema.getScope().releaseConnection(_connection);
             }
             else
                 super.close();
 
-            wasClosed = true;
+            _wasClosed = true;
         }
 
 
@@ -1516,11 +1523,11 @@ public class Table
 
         protected void finalize() throws Throwable
         {
-            if (!wasClosed)
+            if (!_wasClosed)
             {
                 close();
-                if (null != debugCreated)
-                    _log.error("ResultSet was not closed", debugCreated);
+                if (null != _debugCreated)
+                    _log.error("ResultSet was not closed", _debugCreated);
             }
             super.finalize();
         }
@@ -1646,61 +1653,61 @@ public class Table
 
     public static class TestCase extends Assert
     {
-        static private CoreSchema _core = CoreSchema.getInstance();
+        private static final CoreSchema _core = CoreSchema.getInstance();
 
-        static public class Principal
+        public static class Principal
         {
-            int userId;
-            String ownerId;
-            String type;
-            String name;
+            private int _userId;
+            private String _ownerId;
+            private String _type;
+            private String _name;
 
 
             public int getUserId()
             {
-                return userId;
+                return _userId;
             }
 
 
             public void setUserId(int userId)
             {
-                this.userId = userId;
+                _userId = userId;
             }
 
 
             public String getOwnerId()
             {
-                return ownerId;
+                return _ownerId;
             }
 
 
             public void setOwnerId(String ownerId)
             {
-                this.ownerId = ownerId;
+                _ownerId = ownerId;
             }
 
 
             public String getType()
             {
-                return type;
+                return _type;
             }
 
 
             public void setType(String type)
             {
-                this.type = type;
+                _type = type;
             }
 
 
             public String getName()
             {
-                return name;
+                return _name;
             }
 
 
             public void setName(String name)
             {
-                this.name = name;
+                _name = name;
             }
         }
 
@@ -1719,8 +1726,8 @@ public class Table
             Principal[] principals = select(tinfo, ALL_COLUMNS, null, null, Principal.class);
             assertNotNull(principals);
             assertTrue(principals.length > 0);
-            assertTrue(principals[0].userId != 0);
-            assertNotNull(principals[0].name);
+            assertTrue(principals[0]._userId != 0);
+            assertNotNull(principals[0]._name);
         }
 
 
