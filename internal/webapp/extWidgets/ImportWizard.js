@@ -72,6 +72,10 @@ Ext4.define('LABKEY.ext.ImportWizard', {
         });
 
         this.callParent(arguments);
+
+        if((LABKEY.container && LABKEY.container.isWorkbook)){
+            this.doLoad(LABKEY.ActionURL.getContainer());
+        }
     },
 
     formSubmit: function(btn){
@@ -236,5 +240,11 @@ Ext4.define('LABKEY.ext.ImportWizardWin', {
         this.callParent();
 
         this.addEvents('uploadexception', 'uploadcomplete');
+
+        if((LABKEY.container && LABKEY.container.isWorkbook)){
+            this.on('beforeshow', function(){return false});
+            var form = this.down('#theForm');
+            form.doLoad.call(form, LABKEY.ActionURL.getContainer());
+        }
     }
 });
