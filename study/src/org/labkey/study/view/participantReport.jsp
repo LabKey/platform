@@ -15,12 +15,9 @@
  * limitations under the License.
  */
 %>
-<%@ page import="org.labkey.api.reports.Report" %>
 <%@ page import="org.labkey.api.util.UniqueID" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.api.view.JspView" %>
-<%@ page import="org.labkey.study.controllers.reports.ReportsController" %>
-<%@ page import="org.labkey.api.study.StudyService" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
     JspView<org.labkey.study.controllers.reports.ReportsController.ParticipantReportForm> me = (JspView<org.labkey.study.controllers.reports.ReportsController.ParticipantReportForm>) HttpView.currentView();
@@ -39,11 +36,12 @@
     }
 </style>
 <script type="text/javascript">
-    LABKEY.requiresClientAPI();
+    LABKEY.requiresClientAPI(); // required for LABKEY.Visualization
     LABKEY.requiresExt4Sandbox(true);
     LABKEY.requiresCss("study/DataViewsPanel.css");
     LABKEY.requiresScript("TemplateHelper.js");
     LABKEY.requiresScript("study/ParticipantReport.js");
+    LABKEY.requiresScript("study/ReportFilterPanel.js");
     LABKEY.requiresScript("vis/measuresPanel.js");
 </script>
 

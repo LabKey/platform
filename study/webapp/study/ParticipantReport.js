@@ -58,7 +58,7 @@ Ext4.define('LABKEY.ext4.ParticipantReport', {
                     text    : 'To Excel',
                     handler : function(){this.exportToXls();},
                     scope   : this}]
-            }],
+            },'->'],
             items    : [this.previewPanel, this.exportForm]
         });
         this.items.push(this.centerPanel);
@@ -140,7 +140,7 @@ Ext4.define('LABKEY.ext4.ParticipantReport', {
                     method  : 'POST',
                     jsonData: {
                         measures : measures,
-                        sorts : sorts
+                        sorts    : sorts
                     },
                     success : function(response){
                         this.previewPanel.getEl().unmask();
@@ -219,7 +219,7 @@ Ext4.define('LABKEY.ext4.ParticipantReport', {
                 }
             });
 
-            var model = Ext4.define('LABKEY.query.Measures', {
+            Ext4.define('LABKEY.query.Measures', {
                 extend : 'Ext.data.Model',
                 fields : [
                     {name : 'id'},
@@ -238,6 +238,17 @@ Ext4.define('LABKEY.ext4.ParticipantReport', {
                         root : 'measures'
                     }
                 }
+            });
+
+            // models Participant Groups and Cohorts mixed
+            Ext4.define('LABKEY.study.GroupCohort', {
+                extend : 'Ext.data.Model',
+                fields : [
+                    {name : 'rowid', mapping : 'id'},
+                    {name : 'label'},
+                    {name : 'description'},
+                    {name : 'type'}
+                ]
             });
 
             this.pageFieldStore = Ext4.create('Ext.data.Store', { model : 'LABKEY.query.Measures' });
@@ -315,7 +326,8 @@ Ext4.define('LABKEY.ext4.ParticipantReport', {
 
             var fieldGrid = Ext4.create('Ext.grid.Panel', {
                 store   : this.gridFieldStore,
-                cls    : 'selectedMeasures',
+                cls     : 'selectedMeasures',
+                border  : false, frame : false,
                 columns : [
                     { header : 'Report Measures', dataIndex : 'label', flex : 1},
                     {
@@ -359,7 +371,7 @@ Ext4.define('LABKEY.ext4.ParticipantReport', {
 
             this.measuresHandler = function() {
                 var callback = function(recs){
-                    var rawData = []
+                    var rawData = [];
                     for (var i=0; i < recs.length; i++) {
                         rawData.push(Ext4.clone(recs[i].data));
                     }
@@ -439,11 +451,9 @@ Ext4.define('LABKEY.ext4.ParticipantReport', {
             method  : 'GET',
             params  : {reportId : reportId},
             success : function(response){
-                var o = Ext4.decode(response.responseText);
-
                 this.reportName.setReadOnly(true);
                 this.saveAsButton.setVisible(true);
-                this.loadSavedConfig(o.reportConfig);
+                this.loadSavedConfig(Ext4.decode(response.responseText).reportConfig);
             },
             failure : function(response){
                 Ext4.Msg.alert('Failure', Ext4.decode(response.responseText).exception);
@@ -548,6 +558,10 @@ Ext4.define('LABKEY.ext4.ParticipantReport', {
             Ext.get(config.renderTo).update('');
             this.templateReport = Ext4.create('LABKEY.TemplateReport', config);
             this.templateReport.loadData(qr);
+
+            this.on('resize', this.showFilter, this);
+
+            this.showFilter();
         }
     },
 
@@ -596,6 +610,72 @@ Ext4.define('LABKEY.ext4.ParticipantReport', {
     generateTemplateConfig : function() {
         this.markDirty(true);
         this.generateTask.delay(500);
+    },
+
+    showFilter : function() {
+
+        var me = this;
+
+        var storeConfig = {
+            pageSize : 100,
+            model    : 'LABKEY.study.GroupCohort',
+            autoLoad : true,
+            proxy    : {
+                type   : 'ajax',
+                url    : LABKEY.ActionURL.buildURL('participant-group', 'browseParticipantGroups.api'),
+                reader : {
+                    type : 'json',
+                    root : 'groups'
+                }
+            }
+        };
+
+        var cohortConfig = Ext4.clone(storeConfig);
+        Ext4.apply(cohortConfig.proxy, {
+            extraParams : { type : 'cohort'}
+        });
+        var groupConfig = Ext4.clone(storeConfig);
+        Ext4.apply(groupConfig.proxy, {
+            extraParams : { type : 'participantGroup'}
+        });
+
+        this.filterPanel = Ext4.create('LABKEY.ext4.ReportFilterPanel', {
+            layout   : 'fit',
+            border   : false, frame : false,
+            filters  : [{
+                store : Ext4.create('Ext.data.Store', cohortConfig),
+                description : '<i>Show participants that are in any of the selected cohorts...</i>'
+            },{
+                store : Ext4.create('Ext.data.Store', groupConfig),
+                description : '<i><b>AND</b> in any of the selected groups...</i>'
+            }]
+        });
+
+//        this.centerPanel.getDockedItems('toolbar')[0].add(
+//                Ext4.create('Ext.Button', {
+//                    text : 'Filter Report',
+//                    style: 'margin-right: 200px',
+//                    menu : Ext4.create('Ext.menu.Menu', {
+//                        height : 400,
+//                        plain  : true,
+//                        items  : [this.filterPanel]
+//                    })
+//                })
+//        );
+
+        me.filterWindow = Ext4.create('LABKEY.ext4.ReportFilterWindow', {
+            title    : 'Filter Report (Not Operational)',
+            items    : [this.filterPanel],
+            autoShow : true,
+            relative : this,
+            collapsed: true,
+            expandOnShow : false,
+            scope    : this
+        });
+    },
+
+    getFilters : function(collapse) {
+        return this.filterPanel.getSelection(collapse);
     },
 
     // get the grid fields in a form that the visualization getData api can understand
@@ -750,7 +830,7 @@ Ext4.define('LABKEY.ext4.ParticipantReport', {
                 xtype : 'form',
                 fieldDefaults : {
                     anchor  : '100%',
-                    maxWidth : 650,
+                    maxWidth : 450,
                     labelWidth : 150,
                     labelSeparator : ''
                 },

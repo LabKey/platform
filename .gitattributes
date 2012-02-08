@@ -3175,6 +3175,7 @@ study/webapp/study/DataViewsPanel.css -text
 study/webapp/study/DataViewsPanel.js -text
 study/webapp/study/ParticipantGroup.js -text
 study/webapp/study/ParticipantReport.js -text
+study/webapp/study/ReportFilterPanel.js -text
 study/webapp/study/StudySchedule.css -text
 study/webapp/study/StudyScheduleGrid.js -text
 study/webapp/study/StudyWizard.js -text
