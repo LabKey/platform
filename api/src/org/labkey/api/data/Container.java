@@ -602,45 +602,38 @@ public class Container implements Serializable, Comparable<Container>, Securable
         if (isRoot())
             return null;
 
-        try
+        if (_defaultModule == null)
         {
-            if (_defaultModule == null)
+            Map props = PropertyManager.getProperties(getId(), "defaultModules");
+            String defaultModuleName = (String) props.get("name");
+
+            boolean initRequired = false;
+            if (null == defaultModuleName || null == ModuleLoader.getInstance().getModule(defaultModuleName))
             {
-                Map props = PropertyManager.getProperties(getId(), "defaultModules");
-                String defaultModuleName = (String) props.get("name");
-
-                boolean initRequired = false;
-                if (null == defaultModuleName || null == ModuleLoader.getInstance().getModule(defaultModuleName))
-                {
-                    defaultModuleName = "Portal";
-                    initRequired = true;
-                }
-                Module defaultModule = ModuleLoader.getInstance().getModule(defaultModuleName);
-
-                //set default module
-                if (initRequired)
-                    setDefaultModule(defaultModule);
-
-                //ensure that default module is included in active module set
-                //should be there already if it's not portal, but if it is portal, we have to add it for upgrade
-                if (defaultModuleName.compareToIgnoreCase("Portal") == 0)
-                {
-                    Set<Module> modules = new HashSet<Module>(getActiveModules());
-                    if (!modules.contains(defaultModule))
-                    {
-                        modules.add(defaultModule);
-                        setActiveModules(modules);
-                    }
-                }
-
-                _defaultModule = defaultModule;
+                defaultModuleName = "Portal";
+                initRequired = true;
             }
-            return _defaultModule;
+            Module defaultModule = ModuleLoader.getInstance().getModule(defaultModuleName);
+
+            //set default module
+            if (initRequired)
+                setDefaultModule(defaultModule);
+
+            //ensure that default module is included in active module set
+            //should be there already if it's not portal, but if it is portal, we have to add it for upgrade
+            if (defaultModuleName.compareToIgnoreCase("Portal") == 0)
+            {
+                Set<Module> modules = new HashSet<Module>(getActiveModules());
+                if (!modules.contains(defaultModule))
+                {
+                    modules.add(defaultModule);
+                    setActiveModules(modules);
+                }
+            }
+
+            _defaultModule = defaultModule;
         }
-        catch (SQLException e)
-        {
-            throw new RuntimeSQLException(e);
-        }
+        return _defaultModule;
     }
 
     public void setFolderType(FolderType folderType, Set<Module> ensureModules) throws SQLException
@@ -654,6 +647,9 @@ public class Container implements Serializable, Comparable<Container>, Securable
     public void setFolderType(FolderType folderType) throws SQLException
     {
         ContainerManager.setFolderType(this, folderType);
+
+        if(isWorkbook())
+            appendWorkbookModulesToParent();
     }
 
     public Set<Module> getRequiredModules()
@@ -695,12 +691,11 @@ public class Container implements Serializable, Comparable<Container>, Securable
     }
 
 
-    public void setActiveModules(Set<Module> modules) throws SQLException
+    public void setActiveModules(Set<Module> modules)
     {
         if(isWorkbook())
         {
-            //append any new active modules to parent
-            getParent().setActiveModules(modules);
+            appendWorkbookModulesToParent(modules);
             return;
         }
 
@@ -732,10 +727,46 @@ public class Container implements Serializable, Comparable<Container>, Securable
         return getActiveModules(false);
     }
 
+    public void appendWorkbookModulesToParent()
+    {
+        appendWorkbookModulesToParent(new HashSet<Module>());
+    }
+
+    public void appendWorkbookModulesToParent(Set<Module> newModules)
+    {
+        if(!isWorkbook())
+            return;
+
+        boolean isChanged = false;
+        Set<Module> existingModules = new HashSet<Module>();
+        existingModules.addAll(getParent().getActiveModules());
+
+        newModules.addAll(getFolderType().getActiveModules());
+
+        for(Module m : newModules)
+        {
+            if(!existingModules.contains(m))
+            {
+                isChanged = true;
+                existingModules.add(m);
+            }
+        }
+
+        if(isChanged)
+        {
+            getParent().setActiveModules(existingModules);
+        }
+    }
+
     public Set<Module> getActiveModules(boolean init)
     {
         if(isWorkbook())
+        {
+            if(init)
+                appendWorkbookModulesToParent();
+
             return getParent().getActiveModules();
+        }
 
         if (_activeModules == null)
         {
