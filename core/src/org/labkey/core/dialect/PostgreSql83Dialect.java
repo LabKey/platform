@@ -234,17 +234,31 @@ class PostgreSql83Dialect extends SqlDialect
     }
 
     @Override
-    public void appendStatement(StringBuilder sql, String statement)
+    public void appendStatement(Appendable sql, String statement)
     {
-        sql.append(";\n");
-        sql.append(statement);
+        try
+        {
+            sql.append(";\n");
+            sql.append(statement);
+        }
+        catch (IOException e)
+        {
+            throw new RuntimeException(e);
+        }
     }
 
 
     @Override
-    public void appendSelectAutoIncrement(StringBuilder sql, TableInfo table, String columnName)
+    public void appendSelectAutoIncrement(Appendable sql, TableInfo table, String columnName)
     {
-        sql.append("\nRETURNING ").append(columnName);
+        try
+        {
+            sql.append("\nRETURNING ").append(columnName);
+        }
+        catch (IOException e)
+        {
+            throw new RuntimeException(e);
+        }
     }
 
     @Override

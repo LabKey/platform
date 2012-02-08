@@ -943,6 +943,12 @@ public class LoginController extends SpringActionController
                 if (SecurityManager.verify(email, verification))
                 {
                     _email = email;
+
+                    if (UserManager.getUser(_email) == null)
+                    {
+                        errors.reject("setPassword", "This user doesn't exist.  Make sure you've copied the entire link into your browser's address bar.");
+                        _unrecoverableError = true;
+                    }
                 }
                 else
                 {
@@ -1321,6 +1327,7 @@ public class LoginController extends SpringActionController
     public class ResetPasswordAction extends FormViewAction<LoginForm>
     {
         private ValidEmail _email = null;
+        private User _user = null;
         private HttpView _finishView = null;
 
         public void validateCommand(LoginForm form, Errors errors)
@@ -1344,8 +1351,12 @@ public class LoginController extends SpringActionController
                     errors.reject("reset", "Reset Password failed: " + _email + " does not have a password.");
                 else
                 {
-                    User user = UserManager.getUser(_email);
-                    if (null != user && !user.isActive())
+                    _user = UserManager.getUser(_email);
+
+                    // We've validated that a login exists, so the user better not be null... but crashweb #8379 indicates this can happen.
+                    if (null == _user)
+                        errors.reject("reset", "This account does not exist.");
+                    else if (!_user.isActive())
                         errors.reject("reset", "The password for this account may not be reset because this account has been deactivated. Please contact your administrator to re-activate this account.");
                 }
             }
@@ -1375,7 +1386,6 @@ public class LoginController extends SpringActionController
         public boolean handlePost(LoginForm form, BindException errors) throws Exception
         {
             StringBuilder sbReset = new StringBuilder();
-            final User user = UserManager.getUser(_email);
 
             try
             {
@@ -1396,11 +1406,11 @@ public class LoginController extends SpringActionController
                     system.setFirstName(laf.getCompanyName());
                     SecurityManager.sendEmail(c, system, message, _email.getEmailAddress(), verificationURL);
 
-                    if (!user.getEmail().equals(_email.getEmailAddress()))
+                    if (!_user.getEmail().equals(_email.getEmailAddress()))
                     {
                         final SecurityMessage adminMessage = SecurityManager.getResetMessage(true);
                         message.setTo(_email.getEmailAddress());
-                        SecurityManager.sendEmail(c, user, adminMessage, user.getEmail(), verificationURL);
+                        SecurityManager.sendEmail(c, _user, adminMessage, _user.getEmail(), verificationURL);
                     }
                     sbReset.append("An email has been sent to you with instructions for how to reset your password. ");
                     UserManager.addToUserHistory(UserManager.getUser(_email), _email + " reset the password.");

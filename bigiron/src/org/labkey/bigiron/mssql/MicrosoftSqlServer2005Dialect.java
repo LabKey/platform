@@ -17,7 +17,6 @@
 package org.labkey.bigiron.mssql;
 
 import org.apache.commons.lang3.StringUtils;
-import org.apache.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.collections.CsvSet;
@@ -40,6 +39,7 @@ import org.labkey.api.query.AliasManager;
 import org.labkey.api.util.PageFlowUtil;
 
 import javax.servlet.ServletException;
+import java.io.IOException;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -63,8 +63,6 @@ import java.util.regex.Pattern;
 // Dialect specifics for Microsoft SQL Server
 public class MicrosoftSqlServer2005Dialect extends SqlDialect
 {
-    private static final Logger _log = Logger.getLogger(MicrosoftSqlServer2005Dialect.class);
-
     @Override
     protected @NotNull Set<String> getReservedWords()
     {
@@ -185,10 +183,17 @@ public class MicrosoftSqlServer2005Dialect extends SqlDialect
     }
 
     @Override
-    public void appendStatement(StringBuilder sql, String statement)
+    public void appendStatement(Appendable sql, String statement)
     {
-        sql.append('\n');
-        sql.append(statement);
+        try
+        {
+            sql.append('\n');
+            sql.append(statement);
+        }
+        catch (IOException e)
+        {
+            throw new RuntimeException(e);
+        }
     }
 
 
@@ -199,7 +204,7 @@ public class MicrosoftSqlServer2005Dialect extends SqlDialect
 
 
     @Override
-    public void appendSelectAutoIncrement(StringBuilder sql, TableInfo tableName, String columnName)
+    public void appendSelectAutoIncrement(Appendable sql, TableInfo tableName, String columnName)
     {
         appendStatement(sql, "SELECT @@IDENTITY");
     }
