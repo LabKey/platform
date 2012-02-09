@@ -3304,6 +3304,51 @@ public class StudyManager
     }
 */
 
+    /**
+     * Convert a placeholder or 'ghost' dataset to an actual dataset by renaming the target dataset to the placeholder's name,
+     * transferring all timepoint requirements from the placeholder to the target and deleting the placeholder dataset.
+     */
+    public DataSetDefinition linkPlaceHolderDataSet(StudyImpl study, User user, DataSetDefinition expectationDataset, DataSetDefinition targetDataset) throws SQLException
+    {
+        if (expectationDataset == null || targetDataset == null)
+            throw new IllegalArgumentException("Both expectation DataSet and target DataSet must exist");
+
+        if (!expectationDataset.getType().equals(DataSet.TYPE_PLACEHOLDER))
+            throw new IllegalArgumentException("Only a DataSet of type : placeholder can be linked");
+
+        if (!targetDataset.getType().equals(DataSet.TYPE_STANDARD))
+            throw new IllegalArgumentException("Only a DataSet of type : standard can be linked to");
+
+        DbScope scope = StudySchema.getInstance().getSchema().getScope();
+        scope.ensureTransaction();
+
+        try {
+            // transfer any timepoint requirements from the ghost to target
+            for (VisitDataSet vds : expectationDataset.getVisitDataSets())
+            {
+                VisitDataSetType type = vds.isRequired() ? VisitDataSetType.REQUIRED : VisitDataSetType.NOT_ASSOCIATED;
+                StudyManager.getInstance().updateVisitDataSetMapping(user, study.getContainer(), vds.getVisitRowId(), targetDataset.getDataSetId(), type);
+            }
+
+            String name = expectationDataset.getName();
+
+            // no need to resync the study, as there should be no data in the expectation dataset
+            deleteDataset(study, user, expectationDataset, false);
+
+            targetDataset = targetDataset.createMutable();
+            targetDataset.setName(name);
+            targetDataset.save(user);
+
+            scope.commitTransaction();
+        }
+        finally
+        {
+            scope.closeConnection();
+        }
+
+        return targetDataset;
+    }
+    
     public static class CategoryListener implements ViewCategoryListener
     {
         private StudyManager _instance;

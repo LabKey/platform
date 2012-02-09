@@ -39,6 +39,7 @@
 <%@ page import="java.util.HashMap" %>
 <%@ page import="java.util.List" %>
 <%@ page import="java.util.Set" %>
+<%@ page import="org.labkey.api.study.DataSet" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
     JspView<DataSetDefinition> me = (JspView<DataSetDefinition>) HttpView.currentView();
@@ -63,13 +64,16 @@
     ActionURL deleteDatasetURL = new ActionURL(StudyController.DeleteDatasetAction.class, context.getContainer());
     deleteDatasetURL.addParameter("id", dataset.getDataSetId());
 
-    %><br><%=generateButton("View Data", viewDatasetURL)%><%
-    if (study.getTimepointType() != TimepointType.CONTINUOUS)
-    {
-    %>&nbsp;<%=generateButton("Edit Associated " + visitManager.getPluralLabel(), updateDatasetURL)%><%
-    }
-    %>&nbsp;<%=generateButton("Manage Datasets", manageTypesURL)%><%
-    %>&nbsp;<%=generateButton("Delete Dataset", deleteDatasetURL,
+    %>
+    <br>
+<%  if (dataset.getType().equals(org.labkey.api.study.DataSet.TYPE_STANDARD)) { %>
+        <%=generateButton("View Data", viewDatasetURL)%>
+<%  }
+    if (study.getTimepointType() != TimepointType.CONTINUOUS) { %>
+        &nbsp;<%=generateButton("Edit Associated " + visitManager.getPluralLabel(), updateDatasetURL)%>
+<%  } %>
+    &nbsp;<%=generateButton("Manage Datasets", manageTypesURL)%>
+    &nbsp;<%=generateButton("Delete Dataset", deleteDatasetURL,
         "return confirm('Are you sure you want to delete this dataset?  All related data and visitmap entries will also be deleted.')")%><%
 }
 if (permissions.contains(UpdatePermission.class))
@@ -80,8 +84,10 @@ if (permissions.contains(UpdatePermission.class))
     ActionURL editTypeURL = new ActionURL(StudyController.EditTypeAction.class, context.getContainer());
     editTypeURL.addParameter("datasetId", dataset.getDataSetId());
 
-    %>&nbsp;<%=generateButton("Show Import History", showHistoryURL)%><%
-    %>&nbsp;<%=generateButton("Edit Definition", editTypeURL)%><%
+    %>&nbsp;<%=generateButton("Show Import History", showHistoryURL)%>
+<%  if (dataset.getType().equals(org.labkey.api.study.DataSet.TYPE_STANDARD)) { %>
+        &nbsp;<%=generateButton("Edit Definition", editTypeURL)%>
+<%  }
 }
 if (!pipelineSet)
 {

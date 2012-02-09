@@ -7579,9 +7579,27 @@ public class StudyController extends BaseStudyController
 
             if (_study != null)
             {
-                if (StudyManager.getInstance().getDataSetDefinition(_study, form.getName()) != null)
-                    errors.reject(ERROR_MSG, "A Dataset named: " + form.getName() + " already exists in this folder.");
+                switch (form.getType())
+                {
+                    case defineManually:
+                    case placeHolder:
+                    case importFromFile:
+                        if (StringUtils.isEmpty(form.getName()))
+                            errors.reject(ERROR_MSG, "A Dataset name must be specified.");
+                        else if (StudyManager.getInstance().getDataSetDefinition(_study, form.getName()) != null)
+                            errors.reject(ERROR_MSG, "A Dataset named: " + form.getName() + " already exists in this folder.");
+                        break;
 
+                    case linkToTarget:
+                        if (form.getExpectationDataset() == null || form.getTargetDataset() == null)
+                            errors.reject(ERROR_MSG, "An expectation Dataset and target Dataset must be specified.");
+                        break;
+
+                    case linkManually:
+                        if (form.getExpectationDataset() == null)
+                            errors.reject(ERROR_MSG, "An expectation Dataset must be specified.");
+                        break;
+                }
             }
             else
                 errors.reject(ERROR_MSG, "A study does not exist in this folder");
@@ -7630,7 +7648,36 @@ public class StudyController extends BaseStudyController
                     case placeHolder:
                         def = AssayPublishManager.getInstance().createAssayDataset(getUser(), _study, form.getName(),
                                 null, null, false, DataSet.TYPE_PLACEHOLDER, categoryId, null);
+                        if (def != null)
+                        {
+                            String domainURI = def.getTypeURI();
+                            OntologyManager.ensureDomainDescriptor(domainURI, form.getName(), getContainer());
+                            def.provisionTable();
+                        }
                         response.put("datasetId", def.getDataSetId());
+                        break;
+
+                    case linkManually:
+                        def = StudyManager.getInstance().getDataSetDefinition(_study, form.getExpectationDataset());
+                        if (def != null)
+                        {
+                            def = def.createMutable();
+
+                            def.setType(DataSet.TYPE_STANDARD);
+                            def.save(getUser());
+                            
+                            redirect = new ActionURL(EditTypeAction.class, getContainer()). addParameter(DataSetDefinition.DATASETKEY, form.getExpectationDataset());
+                            response.put("redirectUrl", redirect.getLocalURIString());
+                        }
+                        else
+                            throw new IllegalArgumentException("The expectation Dataset did not exist");
+                        break;
+
+                    case linkToTarget:
+                        DataSetDefinition expectationDataset = StudyManager.getInstance().getDataSetDefinition(_study, form.getExpectationDataset());
+                        DataSetDefinition targetDataset = StudyManager.getInstance().getDataSetDefinition(_study, form.getTargetDataset());
+
+                        StudyManager.getInstance().linkPlaceHolderDataSet(_study, getUser(), expectationDataset, targetDataset);
                         break;
                 }
                 response.put("success", true);
@@ -7651,11 +7698,15 @@ public class StudyController extends BaseStudyController
             importFromFile,
             defineManually,
             placeHolder,
+            linkToTarget,
+            linkManually,
         }
 
         private DefineDatasetForm.Type _type;
         private String _name;
         private ViewCategory _category;
+        private Integer _expectationDataset;
+        private Integer _targetDataset;
 
         public Type getType()
         {
@@ -7672,6 +7723,16 @@ public class StudyController extends BaseStudyController
             return _category;
         }
 
+        public Integer getExpectationDataset()
+        {
+            return _expectationDataset;
+        }
+
+        public Integer getTargetDataset()
+        {
+            return _targetDataset;
+        }
+
         @Override
         public void bindProperties(Map<String, Object> props)
         {
@@ -7682,7 +7743,13 @@ public class StudyController extends BaseStudyController
             }
 
             _name = (String)props.get("name");
-            _type = Type.valueOf((String)props.get("type"));
+
+            Object type = props.get("type");
+            if (type instanceof String)
+                _type = Type.valueOf((String)type);
+
+            _expectationDataset = (Integer)props.get("expectationDataset");
+            _targetDataset = (Integer)props.get("targetDataset");
         }
     }
 }
