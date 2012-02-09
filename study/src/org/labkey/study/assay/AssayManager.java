@@ -391,6 +391,10 @@ public class AssayManager implements AssayService.Interface
         return null;
     }
 
+    /**
+     * Creates a single document per assay design/folder combo, with some simple assay info (name, description), plus
+     * the names and comments from all of the runs. 
+     */
     public void indexAssays(SearchService.IndexTask task, Container c)
     {
         SearchService ss = ServiceRegistry.get().getService(SearchService.class);
