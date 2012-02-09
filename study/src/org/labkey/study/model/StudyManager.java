@@ -2297,6 +2297,22 @@ public class StudyManager
         }
     }
 
+    public String[] getParticipantIdsForCohort(Study study, int currentCohortId, int rowLimit)
+    {
+        try
+        {
+            DbSchema schema = StudySchema.getInstance().getSchema();
+            SQLFragment sql = new SQLFragment("SELECT ParticipantId FROM " + _tableInfoParticipant + " WHERE Container = ? AND CurrentCohortId = ? ORDER BY ParticipantId", study.getContainer().getId(), currentCohortId);
+
+            if (rowLimit > 0)
+                sql = schema.getSqlDialect().limitRows(sql, rowLimit);
+            return Table.executeArray(schema, sql, String.class);
+        }
+        catch (SQLException x)
+        {
+            throw new RuntimeSQLException(x);
+        }
+    }
 
     private void parseData(User user,
                DataSetDefinition def,

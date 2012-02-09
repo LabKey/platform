@@ -36,13 +36,17 @@ import org.labkey.study.model.CohortImpl;
 import org.labkey.study.model.ParticipantCategory;
 import org.labkey.study.model.ParticipantGroup;
 import org.labkey.study.model.ParticipantGroupManager;
+import org.labkey.study.model.StudyImpl;
 import org.labkey.study.model.StudyManager;
 import org.springframework.validation.BindException;
+import org.springframework.validation.Errors;
 
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
@@ -56,6 +60,11 @@ import java.util.Set;
  */
 public class ParticipantGroupController extends BaseStudyController
 {
+    enum GroupType {
+        participantGroup,
+        cohort,
+    }
+
     private static final ActionResolver ACTION_RESOLVER = new DefaultActionResolver(ParticipantGroupController.class);
 
     public ParticipantGroupController()
@@ -368,20 +377,21 @@ public class ParticipantGroupController extends BaseStudyController
             ApiSimpleResponse resp = new ApiSimpleResponse();
             List<Map<String, Object>> groups = new ArrayList<Map<String, Object>>();
 
-            for (BrowseGroupsForm.Type type : form.getTypes())
+            for (String type : form.getType())
             {
-                switch(type)
+                GroupType groupType = GroupType.valueOf(type);
+                switch(groupType)
                 {
                     case participantGroup:
                         for (ParticipantCategory category : ParticipantGroupManager.getInstance().getParticipantCategories(getContainer(), getUser()))
                         {
-                            groups.add(createGroup(category.getRowId(), category.getLabel(), type));
+                            groups.add(createGroup(category.getRowId(), category.getLabel(), groupType));
                         }
                         break;
                     case cohort:
                         for (CohortImpl cohort : StudyManager.getInstance().getCohorts(getContainer(), getUser()))
                         {
-                            groups.add(createGroup(cohort.getRowId(), cohort.getLabel(), type));
+                            groups.add(createGroup(cohort.getRowId(), cohort.getLabel(), groupType));
                         }
                         break;
                 }
@@ -392,7 +402,7 @@ public class ParticipantGroupController extends BaseStudyController
             return resp;
         }
 
-        private Map<String, Object> createGroup(int id, String label, BrowseGroupsForm.Type type)
+        private Map<String, Object> createGroup(int id, String label, GroupType type)
         {
             Map<String, Object> group = new HashMap<String, Object>();
 
@@ -404,36 +414,115 @@ public class ParticipantGroupController extends BaseStudyController
         }
     }
 
-    public static class BrowseGroupsForm implements CustomApiForm
+    public static class BrowseGroupsForm
     {
-        enum Type {
-            participantGroup,
-            cohort,
+        private String[] _type;
+
+        public String[] getType()
+        {
+            return _type;
         }
 
-        private List<Type> _types = new ArrayList<Type>();
-
-        public List<Type> getTypes()
+        public void setType(String[] type)
         {
-            return _types;
+            _type = type;
+        }
+    }
+
+    public static class GroupsForm implements CustomApiForm
+    {
+        private Map<GroupType, List<Integer>> _groupMap = new HashMap<GroupType, List<Integer>>();
+
+        public Map<GroupType, List<Integer>> getGroupMap()
+        {
+            return _groupMap;
         }
 
         @Override
         public void bindProperties(Map<String, Object> props)
         {
-            Object type = props.get("type");
+            Object groups = props.get("groups");
 
-            if (type instanceof JSONArray)
+            if (groups instanceof JSONArray)
             {
-                JSONArray types = (JSONArray)type;
+                JSONArray groupArr = (JSONArray)groups;
 
-                for (int i=0; i < types.length(); i++)
-                    _types.add(Type.valueOf(types.getString(i)));
+                for (int i=0; i < groupArr.length(); i++)
+                {
+                    JSONObject group = groupArr.getJSONObject(i);
+
+                    GroupType type = GroupType.valueOf(group.getString("type"));
+                    if (!_groupMap.containsKey(type))
+                        _groupMap.put(type, new ArrayList<Integer>());
+
+                    _groupMap.get(type).add(group.getInt("id"));
+                }
             }
-            else if (type instanceof String)
+        }
+    }
+
+    @RequiresPermissionClass(ReadPermission.class)
+    public class GetSubjectsFromGroups extends ApiAction<GroupsForm>
+    {
+        private StudyImpl _study;
+
+        @Override
+        public void validateForm(GroupsForm groupsForm, Errors errors)
+        {
+            _study = StudyManager.getInstance().getStudy(getContainer());
+
+            if (_study == null)
+                errors.reject(ERROR_MSG, "A study does not exist in this folder");
+        }
+
+        @Override
+        public ApiResponse execute(GroupsForm form, BindException errors) throws Exception
+        {
+            ApiSimpleResponse resp = new ApiSimpleResponse();
+            Set<String> cohortSubjects = new HashSet<String>();
+            Set<String> groupSubjects = new HashSet<String>();
+            List<String> subjects = new ArrayList<String>();
+
+            for (Map.Entry<GroupType, List<Integer>> entry : form.getGroupMap().entrySet())
             {
-                _types.add(Type.valueOf((String)type));
+                switch (entry.getKey())
+                {
+                    case participantGroup:
+                        for (int groupId : entry.getValue())
+                        {
+                            ParticipantCategory category = ParticipantGroupManager.getInstance().getParticipantCategory(getContainer(), getUser(), groupId);
+                            for (ParticipantGroup group : category.getGroups())
+                                groupSubjects.addAll(group.getParticipantSet());
+                        }
+                        break;
+
+                    case cohort:
+                        for (int groupId : entry.getValue())
+                            cohortSubjects.addAll(Arrays.asList(StudyManager.getInstance().getParticipantIdsForCohort(_study, groupId, -1)));
+                        break;
+                }
             }
+
+            // find the intersection of the two facets if both are not empty
+            if (groupSubjects.size() > 0 && cohortSubjects.size() > 0)
+            {
+                for (String ptid : groupSubjects)
+                {
+                    if (cohortSubjects.contains(ptid))
+                        subjects.add(ptid);
+                }
+            }
+            else
+            {
+                subjects.addAll(cohortSubjects);
+                subjects.addAll(groupSubjects);
+            }
+            Collections.sort(subjects);
+
+            resp.put("success", true);
+            resp.put("subjects", subjects);
+
+            return resp;
         }
     }
 }
