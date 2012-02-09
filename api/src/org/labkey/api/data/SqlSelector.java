@@ -45,6 +45,13 @@ public class SqlSelector extends BaseSelector<SqlSelector.SimpleSqlFactory>
         this(schema.getScope(), sql);
     }
 
+    // Execute select SQL against a schema; simple query with no parameters
+    public SqlSelector(DbSchema schema, String sql, Object... params)
+    {
+        this(schema.getScope(), new SQLFragment(sql, params));
+    }
+
+
     @Override
     SimpleSqlFactory getSqlFactory()
     {
