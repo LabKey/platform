@@ -127,6 +127,8 @@ Ext4.define('LABKEY.ext4.ParticipantReport', {
         this.on('enableCustomMode',  this.onEnableCustomMode,  this);
         this.on('disableCustomMode', this.onDisableCustomMode, this);
 
+        this.filterTask = new Ext4.util.DelayedTask(this.runFilters, this);
+
         // call generateTemplateConfig() to use this task
         this.generateTask = new Ext4.util.DelayedTask(function(){
 
@@ -244,7 +246,7 @@ Ext4.define('LABKEY.ext4.ParticipantReport', {
             Ext4.define('LABKEY.study.GroupCohort', {
                 extend : 'Ext.data.Model',
                 fields : [
-                    {name : 'rowid', mapping : 'id'},
+                    {name : 'id'},
                     {name : 'label'},
                     {name : 'description'},
                     {name : 'type'}
@@ -359,9 +361,6 @@ Ext4.define('LABKEY.ext4.ParticipantReport', {
                     listeners : {
                         drop : function() {
                             this.generateTemplateConfig();
-                        },
-                        drag : function() {
-                            console.log('dragging');
                         },
                         scope: this
                     },
@@ -555,7 +554,7 @@ Ext4.define('LABKEY.ext4.ParticipantReport', {
 
             config.renderTo = this.previewEl || this.previewPanel.getEl().id + '-body';
 
-            Ext.get(config.renderTo).update('');
+            Ext4.get(config.renderTo).update('');
             this.templateReport = Ext4.create('LABKEY.TemplateReport', config);
             this.templateReport.loadData(qr);
 
@@ -588,6 +587,10 @@ Ext4.define('LABKEY.ext4.ParticipantReport', {
         if (this.reportId) {
             this.storedTemplateConfig = this.getCurrentReportConfig();
             this.storedTemplateConfig.editable = this.allowCustomize;
+        }
+
+        if (this.filterWindow && this.filterWindow.isVisible()) {
+            this.filterWindow.collapse();
         }
 
         // if the north panel hasn't been fully populated, initialize the dataset store, else
@@ -638,19 +641,47 @@ Ext4.define('LABKEY.ext4.ParticipantReport', {
         Ext4.apply(groupConfig.proxy, {
             extraParams : { type : 'participantGroup'}
         });
+//
+//        var syntheticConfig = Ext4.clone(storeConfig);
+//        Ext4.apply(syntheticConfig, {
+//            data : [{
+//                id   : 1,
+//                type : 'synthetic',
+//                label: 'Not in a group'
+//            }]
+//        });
 
-        this.filterPanel = Ext4.create('LABKEY.ext4.ReportFilterPanel', {
-            layout   : 'fit',
-            border   : false, frame : false,
-            filters  : [{
-                store : Ext4.create('Ext.data.Store', cohortConfig),
-                description : '<i>Show participants that are in any of the selected cohorts...</i>'
-            },{
-                store : Ext4.create('Ext.data.Store', groupConfig),
-                description : '<i><b>AND</b> in any of the selected groups...</i>'
-            }]
-        });
+        // TODO: Retrieve this list from the persisted report
+        var groupSelection = [{id : 25, type: 'participantGroup'}]; // an example of the selection API -- records should work too
 
+        if (!this.filterPanel) {
+            this.filterPanel = Ext4.create('LABKEY.ext4.ReportFilterPanel', {
+                layout   : 'fit',
+                border   : false, frame : false,
+                filters  : [{
+                    store       : Ext4.create('Ext.data.Store', cohortConfig),
+//                    selection   : [{id : 77, type: 'cohort'}],
+                    description : '<i>Show participants that are in any of the selected cohorts...</i>'
+                },{
+                    store       : Ext4.create('Ext.data.Store', groupConfig),
+//                    selections  : groupSelection,
+                    description : '<i><b>AND</b> in any of the selected groups...</i>'
+                }],
+//                ,{
+//                    store       : Ext4.create('Ext.data.Store', syntheticConfig),
+//                    description : '<i>including those...</i>'
+//                }
+                selection : [{id : 25, type: 'participantGroup'}],
+                listeners : {
+                    selectionchange : function(){
+                        this.filterTask.delay(500);
+                    },
+                    scope : this
+                }
+            });
+        }
+
+        // This is an example of using it in the toolbar
 //        this.centerPanel.getDockedItems('toolbar')[0].add(
 //                Ext4.create('Ext.Button', {
 //                    text : 'Filter Report',
@@ -663,19 +694,59 @@ Ext4.define('LABKEY.ext4.ParticipantReport', {
 //                })
 //        );
 
-        me.filterWindow = Ext4.create('LABKEY.ext4.ReportFilterWindow', {
-            title    : 'Filter Report (Not Operational)',
-            items    : [this.filterPanel],
-            autoShow : true,
-            relative : this,
-            collapsed: true,
-            expandOnShow : false,
-            scope    : this
-        });
+        if (this.filterWindow)
+            this.filterWindow.calculatePosition();
+        else {
+            this.filterWindow = Ext4.create('LABKEY.ext4.ReportFilterWindow', {
+                title    : 'Filter Report',
+                items    : [this.filterPanel],
+                autoShow : true,
+                relative : this.centerPanel,
+                collapsed: true,
+                expandOnShow : false,
+                scope    : this
+            });
+        }
     },
 
-    getFilters : function(collapse) {
-        return this.filterPanel.getSelection(collapse);
+    runFilters : function(collapse) {
+        var all = this.filterPanel.allSelected();
+        if (all) {
+            if (this.filteredSubjects)
+                this.filteredSubjects = undefined;
+            this.loadReport(this.reportId);
+        }
+        else {
+            var filters = this.filterPanel.getSelection(true);
+
+            var json = [];
+            for (var f=0; f < filters.length; f++) {
+                json.push(filters[f].data);
+            }
+
+            Ext4.Ajax.request({
+                url      : LABKEY.ActionURL.buildURL('participant-group', 'getSubjectsFromGroups.api'),
+                method   : 'POST',
+                jsonData : Ext4.encode({
+                    groups : json
+                }),
+                success  : function(response){
+
+                    var json = Ext4.decode(response.responseText);
+
+                    if (json.subjects) {
+                        this.filteredSubjects = json.subjects;
+                        this.loadReport(this.reportId);
+                    }
+                    else
+                        console.warn('Did not receive any subjects back from getSubjectsFromGroups');
+                },
+                failure  : function(response){
+                    Ext4.Msg.alert('Failure', Ext4.decode(response.responseText));
+                },
+                scope : this
+            });
+        }
     },
 
     // get the grid fields in a form that the visualization getData api can understand
@@ -693,7 +764,11 @@ Ext4.define('LABKEY.ext4.ParticipantReport', {
         var sorts = [];
         var firstMeasure = this.gridFieldStore.getAt(0).data;
 
-        sorts.push({name : this.subjectColumn, queryName : firstMeasure.queryName,  schemaName : firstMeasure.schemaName});
+        var sort = {name : this.subjectColumn, queryName : firstMeasure.queryName,  schemaName : firstMeasure.schemaName};
+        if (this.filteredSubjects) {
+            sort.values = this.filteredSubjects;
+        }
+        sorts.push(sort);
         sorts.push({name : this.subjectVisitColumn + '/VisitDate', queryName : firstMeasure.queryName,  schemaName : firstMeasure.schemaName});
 
         return sorts;
@@ -726,7 +801,7 @@ Ext4.define('LABKEY.ext4.ParticipantReport', {
                     // Modify Title (hack: hardcode the webpart id since this is really not a webpart, just
                     // using a webpart frame, will need to start passing in the real id if this ever
                     // becomes a true webpart
-                    var titleEl = Ext.query('th[class=labkey-wp-title-left]:first', 'webpart_-1');
+                    var titleEl = Ext4.query('th[class=labkey-wp-title-left]:first', 'webpart_-1');
                     if (titleEl && (titleEl.length >= 1))
                     {
                         titleEl[0].innerHTML = LABKEY.Utils.encodeHtml(data.name);
@@ -755,7 +830,7 @@ Ext4.define('LABKEY.ext4.ParticipantReport', {
             var dirty = this.dirty;
             this.dirty = false;
 
-            this.exportForm.on('actioncomplete', function(){this.dirty = dirty;}, this, {single : true});
+            this.exportForm.mon('actioncomplete', function(){this.dirty = dirty;}, this, {single : true});
             this.exportForm.getForm().setValues({htmlFragment : markup, 'X-LABKEY-CSRF' : LABKEY.CSRF});
             this.exportForm.submit({
                 scope: this,
@@ -781,6 +856,13 @@ Ext4.define('LABKEY.ext4.ParticipantReport', {
             });
         }
         this.measuresDialog.addListener('measuresSelected', function(recs){handler.call(scope || this, recs);}, this, {single : true});
+
+        // competing windows
+        if (this.filterWindow) {
+            this.filterWindow.hide();
+            this.measuresDialog.on('hide', function() { this.filterWindow.show(); }, this, {single: true});
+        }
+
         this.measuresDialog.show();
     },
 

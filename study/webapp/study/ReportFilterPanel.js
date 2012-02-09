@@ -12,6 +12,7 @@ Ext4.define('LABKEY.ext4.FilterPanel', {
     layout : 'fit',
     border : false,
     frame  : false,
+    bubbleEvents : ['select', 'selectionchange'],
 
     initComponent : function() {
 
@@ -30,38 +31,130 @@ Ext4.define('LABKEY.ext4.FilterPanel', {
             this.items.push(this.initGrid());
         }
 
-//        this.addEvents('select');
-
         this.callParent([arguments]);
     },
 
+//    initTree : function() {
+//        if (this.target)
+//            return this.target;
+//
+//        if (this.fn)
+//            this.store.filterBy(this.fn);
+//
+//        function toTreeStore(dataStore) {
+//            var treeStore = Ext4.create('Ext.data.TreeStore', {
+//                model : dataStore.model.modelName,
+//                proxy : dataStore.proxy,
+//                listeners : {
+//                    beforeappend : function(node, appnode, eOpts) {
+//                        console.log('beforeappend');
+//                        if (!appnode.data.root) {
+//                            appnode.data.leaf    = true;
+//                            appnode.data.checked = true;
+//                        }
+//                        console.log([node, appnode, eOpts]);
+//                    }
+//                }
+//            });
+//            console.log('tree store ready');
+//            return treeStore;
+//        }
+//
+//        this.target = Ext4.create('Ext.tree.Panel', {
+//            layout       : 'fit',
+//            border       : false, frame : false,
+//            hideHeaders  : true,
+//
+//            // tree panel configs
+//            rootVisible  : false,
+//            multiSelect  : true,
+//            displayField : 'label',
+//            forceFit     : true,
+//            store        : toTreeStore(this.store),
+//            columns      : this.initTargetColumns(),
+//            bubbleEvents : ['select', 'selectionchange'],
+//
+//            listeners   : {
+//                viewready : function(tree) {
+//
+//                    this.target.suspendEvents();
+//
+//                    if (!this.selection) {
+//                        console.log('selecting all');
+//                        this.target.getSelectionModel().selectAll();
+//                    }
+//                    else {
+//                        for (var s=0; s < this.selection.length; s++) {
+//                            var rec = this.target.getStore().findRecord('id', this.selection[s].id);
+//                            if (rec)
+//                                this.target.getSelectionModel().select(rec);
+//                            else
+//                                console.warn('Unable to find ' + this.selection[s].id);
+//                        }
+//                    }
+//
+//                    this.target.resumeEvents();
+//                },
+//                scope     : this
+//            },
+//
+//            scope        : this
+//        });
+//
+//        return this.target;
+//    },
+
     initGrid : function() {
-        if (this.grid)
-            return this.grid;
+        if (this.target)
+            return this.target;
 
         if (this.fn)
             this.store.filterBy(this.fn);
 
-        this.grid = Ext4.create('Ext.grid.Panel', {
+        this.target = Ext4.create('Ext.grid.Panel', {
             store       : this.store,
             border      : false, frame : false,
+            bodyStyle   : 'border: none;',
             layout      : 'fit',
             hideHeaders : true,
             multiSelect : true,
-            columns     : this.initGridColumns(),
+            columns     : this.initTargetColumns(),
             viewConfig : {
-                stripRows : false,
-                emptyText : 'No Cohorts Available'
+                stripeRows : false,
+                emptyText  : 'No Cohorts Available'
             },
             selType     : 'checkboxmodel',
             bubbleEvents: ['select', 'selectionchange'],
+            listeners   : {
+                viewready : function(grid) {
+
+                    this.target.suspendEvents();
+
+                    if (!this.selection) {
+                        console.log('selecting all');
+                        this.target.getSelectionModel().selectAll();
+                    }
+                    else {
+                        for (var s=0; s < this.selection.length; s++) {
+                            var rec = this.target.getStore().findRecord('id', this.selection[s].id);
+                            if (rec)
+                                this.target.getSelectionModel().select(rec);
+                            else
+                                console.warn('Unable to find ' + this.selection[s].id);
+                        }
+                    }
+
+                    this.target.resumeEvents();
+                },
+                scope     : this
+            },
             scope       : this
         });
 
-        return this.grid;
+        return this.target;
     },
 
-    initGridColumns : function() {
+    initTargetColumns : function() {
         if (this.columns)
             return this.columns;
 
@@ -81,8 +174,8 @@ Ext4.define('LABKEY.ext4.FilterPanel', {
     },
 
     getSelection : function() {
-        if (this.grid)
-            return this.grid.getSelectionModel().getSelection();
+        if (this.target)
+            return this.target.getSelectionModel().getSelection();
         // return undefined -- same as getSelection()
     },
 
@@ -94,6 +187,16 @@ Ext4.define('LABKEY.ext4.FilterPanel', {
 Ext4.define('LABKEY.ext4.ReportFilterPanel', {
 
     extend : 'Ext.panel.Panel',
+
+    bubbleEvents : ['select', 'selectionchange'],
+
+    constructor : function(config) {
+        Ext4.applyIf(config, {
+            border : false, frame : false
+        });
+
+        this.callParent([config]);
+    },
 
     initComponent : function() {
         this.items = [this.initSelectionPanel()];
@@ -107,7 +210,9 @@ Ext4.define('LABKEY.ext4.ReportFilterPanel', {
 
         this.filterPanels = [];
         for (var f=0; f < this.filters.length; f++) {
-            this.filterPanels.push(Ext4.create('LABKEY.ext4.FilterPanel',this.filters[f]));
+            this.filterPanels.push(Ext4.create('LABKEY.ext4.FilterPanel',Ext4.apply(this.filters[f],{
+                border : false, frame : false
+            })));
         }
 
         this.selectionPanel = Ext4.create('Ext.panel.Panel', {
@@ -147,6 +252,18 @@ Ext4.define('LABKEY.ext4.ReportFilterPanel', {
             }
         }
         return selections;
+    },
+
+    allSelected : function() {
+
+        if (this.filterPanels) {
+             for (var i=0; i < this.filterPanels.length; i++) {
+                 if (this.filterPanels[i].target.getSelectionModel().getCount() != this.filterPanels[i].target.getStore().getCount())
+                    return false;
+             }
+        }
+
+        return true;
     }
 });
 
@@ -164,6 +281,7 @@ Ext4.define('LABKEY.ext4.ReportFilterWindow', {
             titleCollapse : true,
             draggable     : false,
             closable      : false,
+            cls           : 'report-filter-window',
             title         : 'Filter Report'
         });
 
