@@ -16,7 +16,6 @@
 
 package org.labkey.bigiron.mssql;
 
-import org.apache.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.junit.Assert;
@@ -43,8 +42,6 @@ import java.util.Set;
 */
 public class MicrosoftSqlServerDialectFactory extends SqlDialectFactory
 {
-    private static final Logger _log = Logger.getLogger(MicrosoftSqlServerDialectFactory.class);
-
     private String getProductName()
     {
         return "Microsoft SQL Server";
@@ -67,6 +64,11 @@ public class MicrosoftSqlServerDialectFactory extends SqlDialectFactory
 
         VersionNumber versionNumber = new VersionNumber(databaseProductVersion);
         int version = versionNumber.getVersionInt();
+
+        // Good resource for past & current SQL Server version numbers: http://www.sqlteam.com/article/sql-server-versions
+
+        if (version >= 110)
+            return new MicrosoftSqlServer2012Dialect();
 
         if (version >= 105)
             return new MicrosoftSqlServer2008R2Dialect();
@@ -110,8 +112,11 @@ public class MicrosoftSqlServerDialectFactory extends SqlDialectFactory
             // >= 10.0 and < 10.5 should result in MicrosoftSqlServer2008Dialect
             good("Microsoft SQL Server", 10.0, 10.4, "", MicrosoftSqlServer2008Dialect.class);
 
-            // >= 10.5 should result in MicrosoftSqlServer2008R2Dialect
-            good("Microsoft SQL Server", 10.5, 12.0, "", MicrosoftSqlServer2008R2Dialect.class);
+            // >= 10.5 and < 11.0 should result in MicrosoftSqlServer2008R2Dialect
+            good("Microsoft SQL Server", 10.5, 10.9, "", MicrosoftSqlServer2008R2Dialect.class);
+
+            // >= 11.0 should result in MicrosoftSqlServer2012Dialect
+            good("Microsoft SQL Server", 11.0, 12.0, "", MicrosoftSqlServer2012Dialect.class);
         }
     }
 
