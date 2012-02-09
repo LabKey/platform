@@ -22,156 +22,499 @@
 <%@ page import="org.labkey.api.view.JspView" %>
 <%@ page import="org.labkey.study.controllers.StudyController" %>
 <%@ page import="org.labkey.study.view.SubjectsWebPart" %>
+<%@ page import="org.labkey.study.StudySchema" %>
+<%@ page import="org.labkey.api.data.DbSchema" %>
+<%@ page import="org.labkey.api.data.SqlSelector" %>
+<%@ page import="org.labkey.api.data.Selector" %>
+<%@ page import="java.sql.SQLException" %>
+<%@ page import="java.io.IOException" %>
+<%@ page import="java.sql.ResultSet" %>
+<%@ page import="java.util.HashMap" %>
+<%@ page import="java.util.BitSet" %>
+<%@ page import="org.labkey.study.model.ParticipantCategory" %>
+<%@ page import="org.labkey.study.model.ParticipantGroupManager" %>
+<%@ page import="org.labkey.api.security.User" %>
+<%@ page import="org.labkey.study.model.ParticipantGroup" %>
+<%@ page import="org.labkey.api.study.Cohort" %>
+<%@ page import="org.labkey.study.model.CohortImpl" %>
+<%@ page import="org.labkey.study.model.StudyManager" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
     JspView<SubjectsWebPart.SubjectsBean> me = (JspView<SubjectsWebPart.SubjectsBean>) HttpView.currentView();
     SubjectsWebPart.SubjectsBean bean = me.getModelBean();
     Container container = bean.getViewContext().getContainer();
+    User user = bean.getViewContext().getUser();
     String singularNoun = StudyService.get().getSubjectNounSingular(container);
     String pluralNoun = StudyService.get().getSubjectNounPlural(container);
     String colName = StudyService.get().getSubjectColumnName(container);
     ActionURL subjectUrl = new ActionURL(StudyController.ParticipantAction.class, container);
     subjectUrl.addParameter("participantId", "");
     String urlTemplate = subjectUrl.getEncodedLocalURIString();
-    int cols = bean.getCols();
     int rows = bean.getRows();
-    int maxSubjects = cols * rows;
-    String divId = "subjectList-" + bean.getIndex();
+    DbSchema dbschema = StudySchema.getInstance().getSchema();
+    final JspWriter _out = out;
+
+    String divId = "participantsDiv" + getRequestScopedUID();
+    String listDivId = "listDiv" + getRequestScopedUID();
+    String groupsDivId = "groupsDiv" + getRequestScopedUID();
+
     String viewObject = "subjectHandler" + bean.getIndex();
 %>
 <style type="text/css">
-ul.subjectlist li {
+ul.subjectlist li
+{
     margin: 0;
     padding: 0;
-    text-indent: 3px;    
+    text-indent: 3px;
     list-style-type: none;
 }
 
-ul.subjectlist {
+ul.subjectlist
+{
     padding-left: 1em;
 }
 
-</style>
-
-<script type="text/javascript">
-var <%= viewObject %> = new function()
+li.ptid.highlight a
 {
-    var _subjects = [];
+    color:black; background-color: pink;
+}
+li.ptid.unhighlight a
+{
+}
+
+div.group.highlight
+{
+    background-color:pink;
+}
+div.group.unhighlight
+{
+}
+</style>
+<script>
+    LABKEY.requiresExt4Sandbox(true);
+</script>
+<script type="text/javascript">
+<%=viewObject%> = (function()
+{
+    var X = Ext4;
+
     var _urlTemplate = '<%= urlTemplate %>';
-    var _maxSubjects = <%= maxSubjects %>;
     var _subjectColName = '<%= colName %>';
     var _singularNoun = '<%= singularNoun %>';
     var _pluralNoun = '<%= pluralNoun %>';
-    var _cols = <%= cols %>;
     var _divId = '<%= divId %>';
+
+    // filters
+    var _filterSubstring = null;
+    var _filterSubstringMap = null;
+    var _filterGroup = -1;
+    var _filterGroupMap = null;
+
+
     var _initialRenderComplete = false;
-
-    return {
-
-        onFailure: function(errorInfo, options, responseObj)
+    var _ptids = [<%
+        final String[] commas = new String[]{""};
+        final HashMap<String,Integer> ptidMap = new HashMap<String,Integer>();
+        (new SqlSelector(dbschema, "SELECT participantId FROM study.participant WHERE container=? ORDER BY 1", container)).forEach(new Selector.ForEachBlock<ResultSet>()
         {
-            var html;
-            if (errorInfo && errorInfo.exception)
-                html = "Failure: " + errorInfo.exception;
-            else
-                html = "Failure: " + responseObj.statusText;
-            document.getElementById(_divId).innerHTML = LABKEY.Utils.encodeHtml(html);
-        },
+            public void exec(ResultSet rs) throws SQLException
+            {
+                String ptid = rs.getString(1);
+                ptidMap.put(ptid,ptidMap.size());
+                try { _out.write(commas[0]); _out.write(q(ptid)); commas[0]=",\n"; } catch (IOException x) {}
+            }
+        });
+        %>];
+    var _groups = [<%
+        commas[0] = "";
+        int index = 0;
 
-        onSuccess: function(data)
+        // cohorts
+        final HashMap<Integer,Integer> cohortMap = new HashMap<Integer,Integer>();
+        CohortImpl[] cohorts = new CohortImpl[0];
+        if (StudyManager.getInstance().showCohorts(container, user))
+            cohorts = StudyManager.getInstance().getCohorts(container, user);
+        for (Cohort co : cohorts)
         {
-            _subjects = [];
-            for (var rowIndex = 0; rowIndex < data.rows.length; rowIndex++)
-            {
-                var dataRow = data.rows[rowIndex];
-                _subjects[_subjects.length] = dataRow[_subjectColName];
-            }
-            this.renderSubjects(_maxSubjects, _cols, undefined);
-        },
+            cohortMap.put(((CohortImpl)co).getRowId(), index);
+            %><%=commas[0]%>{index:<%=index%>, cohort:true, label:<%=q(co.getLabel())%>}<%
+            commas[0]=",\n";
+            index++;
+        }
 
-        renderSubjects: function(maxCount, cols, substr)
+        // groups/categories
+        final HashMap<Integer,Integer> groupMap = new HashMap<Integer,Integer>();
+        ParticipantGroupManager m = ParticipantGroupManager.getInstance();
+        ParticipantCategory[] categories = m.getParticipantCategories(container, user);
+        for (ParticipantCategory cat : categories)
         {
-            if (_subjects.length == 0)
+            if (cat.isShared())
             {
-                document.getElementById(_divId + 'wrapper').innerHTML = 'No ' + _pluralNoun.toLowerCase() + " were found in this study.  " +
-                        _singularNoun + " IDs will appear here after specimens or datasets are imported.";
-                return;
-            }
-
-            // Lock the initial div size on first render, but allow it to change if we're filtering:
-            if (_initialRenderComplete)
-            {
-                var outerDiv = document.getElementById(_divId + 'wrapper');
-                outerDiv.removeAttribute('style');
-            }
-            _initialRenderComplete = true;
-
-            var maxPerCol = Math.ceil(maxCount / cols);
-            var html = '<table><tr><td valign="top"><ul class="subjectlist">';
-            var count = 0;
-            for (var subjectIndex = 0; subjectIndex < _subjects.length; subjectIndex++)
-            {
-                var subjectId = _subjects[subjectIndex];
-                if (!substr || subjectId.indexOf(substr) >= 0)
+                for (ParticipantGroup g : m.getParticipantGroups(container, user, cat))
                 {
-                    if (++count > 1 && count % maxPerCol == 1 && count <= maxCount)
-                        html += '</ul></td><td  valign="top"><ul class="subjectlist">';
-
-                    if (count <= maxCount)
-                        html += '<li><a href="' + _urlTemplate + subjectId + '">' + LABKEY.id(subjectId) + '</a></li>';
+                    groupMap.put(g.getRowId(), index);
+                    %><%=commas[0]%>{index:<%=index%>, shared:true, cohort:false, label:<%=q(g.getLabel())%>}<%
+                    commas[0]=",\n";
+                    index++;
                 }
             }
-
-            html += '</ul></td></tr></table>';
-            if (count > maxCount)
-            {
-                if (substr)
-                    html += 'Showing ' + maxCount + ' of ' + count + ' matching ' + _pluralNoun.toLowerCase() + '.';
-                else
-                    html += 'Showing first ' + maxCount + ' of ' + count + ' ' + _pluralNoun.toLowerCase() + '.';
-                var substrParam = substr ? '\'' + substr + '\'' : 'undefined';
-                html += ' <a href="#" onClick="<%= viewObject %>.renderSubjects(' + count + ', ' + cols + ', ' + substrParam + '); return false;">Show all</a>';
-            }
-            else if (count > 0)
-            {
-                if (substr)
-                    html += 'Found ' + count + ' ' + (count > 1 ? _pluralNoun.toLowerCase() : _singularNoun.toLowerCase()) + '.';
-                else
-                    html += 'Showing all ' + count + ' ' + _pluralNoun.toLowerCase() + '.';
-            }
-            else
-                html += 'No ' + _singularNoun.toLowerCase() + ' IDs contain \"' + substr + '\".';
-            document.getElementById(_divId).innerHTML = html;
-        },
-
-        updateSubjects: function(substring)
-        {
-            // Use a timer to coalesce keystrokes
-            clearTimeout();
-            var refreshScript = '<%= viewObject %>.renderSubjects(' + _maxSubjects + ', ' + _cols + ', "' + substring + '");';
-            setTimeout(refreshScript, 100);
-        },
-
-        loadParticipants: function()
-        {
-            LABKEY.Query.selectRows({
-                    schemaName: 'study',
-                    queryName: _singularNoun,
-                    columns: _subjectColName,
-                    sort: _subjectColName,
-                    success: this.onSuccess,
-                    failure: this.onFailure,
-                    scope: this
-                });
         }
-    };
-};
+        for (ParticipantCategory cat : categories)
+        {
+            if (!cat.isShared())
+            {
+                for (ParticipantGroup g : m.getParticipantGroups(container, user, cat))
+                {
+                    groupMap.put(g.getRowId(), index);
+                    %><%=commas[0]%>{index:<%=index%>, shared:false, cohort:false, label:<%=q(g.getLabel())%>}<%
+                    commas[0]=",\n";
+                    index++;
+                }
+            }
+        }
+        %>];
+<%
+        final BitSet[] memberSets = new BitSet[index];
+        for (int i=0 ; i<memberSets.length ; i++)
+            memberSets[i] = new BitSet();
+        (new SqlSelector(dbschema, "SELECT currentcohortid, participantid FROM study.participant WHERE container=?", container)).forEach(new Selector.ForEachBlock<ResultSet>()
+        {
+            public void exec(ResultSet rs) throws SQLException
+            {
+                Integer icohortid = cohortMap.get(rs.getInt(1));
+                Integer iptid = ptidMap.get(rs.getString(2));
+                if (null!=icohortid && null!=iptid)
+                    memberSets[icohortid].set(iptid);
+            }
+        });
+        (new SqlSelector(dbschema, "SELECT groupid, participantid FROM study.participantgroupmap WHERE container=?", container)).forEach(new Selector.ForEachBlock<ResultSet>()
+        {
+            public void exec(ResultSet rs) throws SQLException
+            {
+                Integer igroup = groupMap.get(rs.getInt(1));
+                Integer iptid = ptidMap.get(rs.getString(2));
+                if (null!=igroup && null!=iptid)
+                    memberSets[igroup].set(iptid);
+            }
+        });
+%>
+    var _ptidGroupMap = [<%
+        String comma = "\n";
+        for (BitSet bs : memberSets)
+        {
+            %><%=comma%>"<%
+            int s = bs.length();
+            for (int i=0 ; i<s; i+=16)
+            {
+                int u = 0;
+                for (int b=0 ; b<16 ; b++)
+                    u |= (bs.get(i+b)?1:0) << b;
+                writeUnicodeChar(_out,u);
+            }
+            %>"<%
+            comma = ",\n";
+        }
+    %>];
+    <% int ptidsPerCol = Math.min(Math.max(20,groupMap.size()), Math.max(6, ptidMap .size()/6));%>
+    var _ptidPerCol = <%=ptidsPerCol%>;
 
-Ext.onReady(function() {
-    <%= viewObject %>.loadParticipants();
-});
+    var i;
+    for (i=0 ; i<_ptids.length ; i++)
+        _ptids[i] = {index:i, ptid:_ptids[i]};
+
+    var $h = Ext.util.Format.htmlEncode;
+
+    function test(s, p)
+    {
+        if (p<0 || p/16 >= s.length)
+            return false;
+        var i = (typeof s == "string") ? s.charCodeAt(p/16) : s[p/16];
+        return i >> (p%16) & 1;
+    }
+
+    function testGroupPtid(g,p)
+    {
+        if (g<0||g>=_ptidGroupMap.length||p<0)
+            return false;
+        var s=_ptidGroupMap[g];
+        return test(s,p);
+    }
+
+    var _highlightGroup = -1;
+    var _highlightGroupTask = null;
+
+    function highlightPtidsInGroup(index)
+    {
+        if (index == _highlightGroup) return;
+        _highlightGroup = index;
+        if (null == _highlightGroupTask)
+            _highlightGroupTask = new Ext.util.DelayedTask(_highlightPtidsInGroup);
+        _highlightGroupTask.delay(50);
+    }
+
+    function _highlightPtidsInGroup()
+    {
+        var list = Ext.DomQuery.select("LI.ptid",_divId);
+        for (var i=0 ; i<list.length ; i++)
+        {
+            var li = Ext.get(list[i]);
+            li.removeClass('highlight');
+            li.removeClass('unhighlight');
+            if (_highlightGroup == -1) continue;
+            p = parseInt(li.dom.attributes.index.value);
+            var inGroup = testGroupPtid(_highlightGroup,p);
+            if (inGroup)
+                li.addClass('highlight');
+            else
+                li.addClass('unhighlight');
+        }
+    }
+
+    var _highlightPtid = -1;
+    var _highlightPtidTask = null;
+
+    function highlightGroupsForPart(index)
+    {
+        if (index == _highlightPtid) return;
+        _highlightPtid = index;
+        if (null == _highlightPtidTask)
+            _highlightPtidTask = new Ext.util.DelayedTask(_highlightGroupsForPart);
+        _highlightPtidTask.delay(50);
+    }
+
+    function _highlightGroupsForPart()
+    {
+        var p = _highlightPtid;
+        var list = Ext.DomQuery.select("DIV.group",'<%=groupsDivId%>');
+        for (var i=0 ; i<list.length ; i++)
+        {
+            var div = Ext.get(list[i]);
+            div.removeClass('highlight');
+            div.removeClass('unhighlight');
+            if (p == -1) continue;
+            g = parseInt(div.dom.attributes.index.value);
+            var inGroup = testGroupPtid(g,p);
+            if (inGroup)
+                div.addClass('highlight');
+            else
+                div.addClass('unhighlight');
+        }
+    }
+
+    function renderGroups()
+    {
+        var el = Ext.get('<%=groupsDivId%>');
+        var html = [];
+        html.push('<div class="group" index="-1" style="white-space:nowrap;">show all</div>&nbsp;');
+
+        var g, group;
+        var countCohort = 0;
+        for (g=0 ; g<_groups.length ; g++)
+        {
+            group = _groups[g];
+            if (group.cohort)
+            {
+                if (countCohort == 0)
+                    html.push('<fieldset><legend>cohorts</legend>');
+                html.push('<div class="group" index=' + g + ' rowid="' + group.rowid + '" style="white-space:nowrap;">');
+                html.push($h(group.label));
+                html.push("</div>");
+                countCohort++;
+            }
+        }
+        if (countCohort)
+            html.push('</fieldset>&nbsp;');
+
+        var countGroup = 0;
+        for (g=0 ; g<_groups.length ; g++)
+        {
+            group = _groups[g];
+            if (!group.cohort)
+            {
+                if (countGroup == 0)
+                    html.push('<fieldset><legend>groups</legend>');
+                html.push('<div class="group" index=' + g + ' rowid="' + group.rowid + '" style="white-space:nowrap;">');
+                html.push($h(group.label));
+                html.push("</div>");
+                countGroup++;
+            }
+        }
+        if (countGroup)
+            html.push('</fieldset>');
+
+        el.update(html.join(''));
+    }
+
+
+    function renderSubjects()
+    {
+        if (_ptids.length == 0)
+        {
+            document.getElementById(_divId).innerHTML = 'No ' + _pluralNoun.toLowerCase() + " were found in this study.  " +
+                    _singularNoun + " IDs will appear here after specimens or datasets are imported.";
+            return;
+        }
+
+        var html = [];
+        html.push('<table><tr><td valign="top"><ul class="subjectlist">');
+        var count = 0;
+        for (var subjectIndex = 0; subjectIndex < _ptids.length; subjectIndex++)
+        {
+            var ptid = _ptids[subjectIndex].ptid;
+            if ((!_filterSubstringMap || test(_filterSubstringMap,subjectIndex)) && (!_filterGroupMap || test(_filterGroupMap,subjectIndex)))
+            {
+                if (++count > 1 && count % _ptidPerCol == 1)
+                    html.push('</ul></td><td  valign="top"><ul class="subjectlist">');
+                html.push('<li class="ptid" index=' + subjectIndex + ' ptid="' + $h(ptid) + '" ><a href="' + _urlTemplate + $h(ptid) + '">' + $h(LABKEY.id(ptid)) + '</a></li>\n');
+            }
+        }
+
+        html.push('</ul></td></tr></table>');
+        html.push('<div style="clear:both;">');
+        var message = "";
+        if (count > 0)
+        {
+            if (_filterSubstringMap || _filterGroupMap)
+                message = 'Found ' + count + ' ' + (count > 1 ? _pluralNoun.toLowerCase() : _singularNoun.toLowerCase()) + ' of ' + _ptids.length + '.';
+            else
+                message = 'Showing all ' + count + ' ' + (count > 1 ? _pluralNoun.toLowerCase() : _singularNoun.toLowerCase()) + '.';
+        }
+        else
+            message = 'No ' + _singularNoun.toLowerCase() + ' IDs contain \"' + _filterSubstring + '\".';
+        html.push('</div>');
+
+        Ext.get(<%=listDivId%>).update(html.join(''));
+        Ext.get(<%=q(divId + ".status")%>).update(message);
+    }
+
+
+    function filterPtidContains(substring)
+    {
+        _filterSubstring = substring;
+        if (!substring)
+        {
+            _filterSubstringMap = null;
+        }
+        else
+        {
+            var a = new Array(Math.floor((_ptids.length+15)/16));
+            for (var i=0 ; i<_ptids.length ; i++)
+            {
+                var ptid = _ptids[i].ptid;
+                if (ptid.indexOf(_filterSubstring) >= 0)
+                    a[i/16] |= 1 << (i%16);
+            }
+            _filterSubstringMap = a;
+        }
+        renderSubjects();
+    }
+
+
+    function filterGroup(g)
+    {
+        _filterGroup = g;
+        _filterGroupMap = g<0 ? null : _ptidGroupMap[g];;
+        renderSubjects();
+    }
+
+
+    function render()
+    {
+        var inp = Ext.get('<%=divId%>.filter');
+        inp.on('keyup', function(a){filterPtidContains(a.target.value);}, null, {buffer:200});
+         <%--onKeyUp="<%= viewObject %>.updateSubjects(this.value); return false;"--%>
+        doAdjustSize();
+        renderGroups();
+        renderSubjects();
+
+        var ptidDiv = Ext.get(<%=q(listDivId)%>);
+        ptidDiv.on('mouseover', function(e,dom)
+        {
+            var indexAttr = dom.attributes.index || dom.parentNode.attributes.index;
+            if (Ext.isDefined(indexAttr))
+                highlightGroupsForPart(parseInt(indexAttr.value));
+        });
+        ptidDiv.on('mouseout', function(e,dom)
+        {
+            highlightGroupsForPart(-1);
+        });
+        var groupsDiv = Ext.get(<%=q(groupsDivId)%>);
+        groupsDiv.on('mouseover', function(e,dom)
+        {
+            var indexAttr = dom.attributes.index || dom.parentNode.attributes.index;
+            if (Ext.isDefined(indexAttr))
+                highlightPtidsInGroup(parseInt(indexAttr.value));
+        });
+        groupsDiv.on('mouseout', function(e,dom)
+        {
+            highlightPtidsInGroup(-1);
+        });
+        groupsDiv.on('click', function(e,dom)
+        {
+            var indexAttr = dom.attributes.index || dom.parentNode.attributes.index;
+            if (Ext.isDefined(indexAttr))
+                filterGroup(parseInt(indexAttr.value));
+        });
+
+        // we don't want ptidDiv to change height as it filters, so set height explicitly after first layout
+        ptidDiv.setHeight(ptidDiv.getHeight());
+    }
+
+
+    function doAdjustSize()
+    {
+        // CONSIDER: register for window resize
+        var listDiv = Ext.get(<%=q(listDivId)%>);
+        var rightAreaWidth = 0;
+        try {rightAreaWidth = Ext.fly(Ext.select(".labkey-side-panel").elements[0]).getWidth();} catch (x){}
+        var padding = 35;
+        var viewWidth = Ext.getBody().getViewSize().width;
+        var right = viewWidth - padding - rightAreaWidth;
+        var x = listDiv.getXY()[0];
+        var width = Math.max(400, right-x);
+        listDiv.setWidth(width);
+    }
+
+
+    var ret =
+    {
+        render : render
+    };
+    return ret;
+})();
+
+
+Ext.onReady(<%=viewObject%>.render, <%=viewObject%>);
+
 </script>
-<div id="<%= divId %>wrapper" style="height:<%= 1.5 * rows + 4 %>em">
-    Filter: <input type="text" size="15" onKeyUp="<%= viewObject %>.updateSubjects(this.value); return false;">
-    <div id="<%= divId %>">Loading...</div>
+
+
+<div style="">
+ <table id="<%= divId %>" width="100%">
+    <tr><td style="padding:5px; margin:5px; border:solid 1px #eeeeee;" width=200 valign=top>
+    <div style="min-width:200px;"  id="<%=groupsDivId%>">&nbsp;</div>
+    </td>
+    <td style="padding:5px; margin:5px; border:solid 1px #eeeeee;" valign=top>
+     <div style="" >Filter <input id="<%=divId%>.filter" type="text" size="15">&nbsp;&nbsp;<span id="<%=divId%>.status">Loading...</span></div>
+     <div style="overflow-x:auto; min-height:<%=Math.round(1.2*(ptidsPerCol+3))%>em"  id="<%= listDivId %>"></div>
+    </td></tr>
+</table>
 </div>
+
+
+<%!
+void writeUnicodeChar(JspWriter out, int i) throws IOException
+{
+    if (i==0)
+        out.write("\\");
+    else if (i<16)
+        out.write("\\x0");
+    else if (i<256)
+        out.write("\\x");
+    else if (i<4096)
+        out.write("\\u0");
+    else
+        out.write("\\u");
+    out.write(Integer.toHexString(i));
+}
+%>
