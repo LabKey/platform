@@ -3331,12 +3331,14 @@ public class StudyManager
             }
 
             String name = expectationDataset.getName();
+            String label = expectationDataset.getLabel();
 
             // no need to resync the study, as there should be no data in the expectation dataset
             deleteDataset(study, user, expectationDataset, false);
 
             targetDataset = targetDataset.createMutable();
             targetDataset.setName(name);
+            targetDataset.setLabel(label);
             targetDataset.save(user);
 
             scope.commitTransaction();

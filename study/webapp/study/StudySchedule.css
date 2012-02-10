@@ -11,7 +11,6 @@
 
 .study-schedule-container .x4-reset .x4-column-header-inner .x4-column-header-text {
     font-weight: bold;
-    font-size: 14px;
     text-align: center;
 }
 
@@ -29,12 +28,11 @@
 }
 
 .unchecked, .checked {
-    /*width: 32px;*/
     height: 20px;
     margin-left: auto !important;
     margin-right: auto !important;
     padding: 5px 0 4px 24px;
-    /*cursor: pointer;*/
+    cursor: pointer;
 }
 
 .unchecked {
