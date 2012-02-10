@@ -74,12 +74,13 @@ ul.subjectlist
     padding-left: 1em;
 }
 
-li.ptid.highlight a
+li.ptid a.highlight
 {
-    color:black; background-color: pink;
+/*    color:black; background-color: pink; */
 }
-li.ptid.unhighlight a
+li.ptid a.unhighlight
 {
+    color:#dddddd;
 }
 
 div.group.highlight
@@ -96,7 +97,9 @@ div.group.unhighlight
 <script type="text/javascript">
 <%=viewObject%> = (function()
 {
-    var X = Ext4;
+    var X = Ext4 || Ext;
+    var $h = X.util.Format.htmlEncode;
+
 
     var _urlTemplate = '<%= urlTemplate %>';
     var _subjectColName = '<%= colName %>';
@@ -218,11 +221,13 @@ div.group.unhighlight
     <% int ptidsPerCol = Math.min(Math.max(20,groupMap.size()), Math.max(6, ptidMap .size()/6));%>
     var _ptidPerCol = <%=ptidsPerCol%>;
 
-    var i;
+    var h, i, ptid;
     for (i=0 ; i<_ptids.length ; i++)
-        _ptids[i] = {index:i, ptid:_ptids[i]};
-
-    var $h = Ext.util.Format.htmlEncode;
+    {
+        ptid = _ptids[i];
+        h = $h(ptid);
+        _ptids[i] = {index:i, ptid:ptid, html:(h==ptid?ptid:h)};
+    }
 
     function test(s, p)
     {
@@ -255,19 +260,16 @@ div.group.unhighlight
     function _highlightPtidsInGroup()
     {
         var list = Ext.DomQuery.select("LI.ptid",_divId);
-        for (var i=0 ; i<list.length ; i++)
-        {
-            var li = Ext.get(list[i]);
-            li.removeClass('highlight');
-            li.removeClass('unhighlight');
-            if (_highlightGroup == -1) continue;
-            p = parseInt(li.dom.attributes.index.value);
-            var inGroup = testGroupPtid(_highlightGroup,p);
-            if (inGroup)
-                li.addClass('highlight');
+        <%-- note removeClass() and addClass() are pretty expensive when used on a lot of elements --%>
+        Ext4.Array.each(list, function(li){
+            var a = li.firstChild;
+            if (_highlightGroup == -1)
+                a.className = '';
+            else if (testGroupPtid(_highlightGroup,parseInt(li.attributes.index.value)))
+                a.className = 'highlight';
             else
-                li.addClass('unhighlight');
-        }
+                a.className = 'unhighlight';
+        });
     }
 
     var _highlightPtid = -1;
@@ -289,8 +291,7 @@ div.group.unhighlight
         for (var i=0 ; i<list.length ; i++)
         {
             var div = Ext.get(list[i]);
-            div.removeClass('highlight');
-            div.removeClass('unhighlight');
+            div.removeClass(['highlight', 'unhighlight']);
             if (p == -1) continue;
             g = parseInt(div.dom.attributes.index.value);
             var inGroup = testGroupPtid(g,p);
@@ -360,12 +361,12 @@ div.group.unhighlight
         var count = 0;
         for (var subjectIndex = 0; subjectIndex < _ptids.length; subjectIndex++)
         {
-            var ptid = _ptids[subjectIndex].ptid;
+            var p = _ptids[subjectIndex];
             if ((!_filterSubstringMap || test(_filterSubstringMap,subjectIndex)) && (!_filterGroupMap || test(_filterGroupMap,subjectIndex)))
             {
                 if (++count > 1 && count % _ptidPerCol == 1)
                     html.push('</ul></td><td  valign="top"><ul class="subjectlist">');
-                html.push('<li class="ptid" index=' + subjectIndex + ' ptid="' + $h(ptid) + '" ><a href="' + _urlTemplate + $h(ptid) + '">' + $h(LABKEY.id(ptid)) + '</a></li>\n');
+                html.push('<li class="ptid" index=' + subjectIndex + ' ptid="' + p.html + '" ><a href="' + _urlTemplate + p.html + '">' + (LABKEY.demoMode?LABKEY.id(p.ptid):p.html) + '</a></li>\n');
             }
         }
 
@@ -413,7 +414,7 @@ div.group.unhighlight
     function filterGroup(g)
     {
         _filterGroup = g;
-        _filterGroupMap = g<0 ? null : _ptidGroupMap[g];;
+        _filterGroupMap = g<0 ? null : _ptidGroupMap[g];
         renderSubjects();
     }
 
