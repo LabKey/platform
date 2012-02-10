@@ -387,12 +387,14 @@ public class ParticipantGroupController extends BaseStudyController
                         {
                             groups.add(createGroup(category.getRowId(), category.getLabel(), groupType));
                         }
+                        groups.add(createGroup(-1, "Not in any group", groupType));
                         break;
                     case cohort:
                         for (CohortImpl cohort : StudyManager.getInstance().getCohorts(getContainer(), getUser()))
                         {
                             groups.add(createGroup(cohort.getRowId(), cohort.getLabel(), groupType));
                         }
+                        groups.add(createGroup(-1, "Not in any group", groupType));
                         break;
                 }
             }
@@ -481,6 +483,7 @@ public class ParticipantGroupController extends BaseStudyController
             ApiSimpleResponse resp = new ApiSimpleResponse();
             Set<String> cohortSubjects = new HashSet<String>();
             Set<String> groupSubjects = new HashSet<String>();
+            Set<String> noGroupSubjects = new HashSet<String>();
             List<String> subjects = new ArrayList<String>();
 
             for (Map.Entry<GroupType, List<Integer>> entry : form.getGroupMap().entrySet())
@@ -490,15 +493,27 @@ public class ParticipantGroupController extends BaseStudyController
                     case participantGroup:
                         for (int groupId : entry.getValue())
                         {
-                            ParticipantCategory category = ParticipantGroupManager.getInstance().getParticipantCategory(getContainer(), getUser(), groupId);
-                            for (ParticipantGroup group : category.getGroups())
-                                groupSubjects.addAll(group.getParticipantSet());
+                            if (groupId == -1)
+                            {
+                                groupSubjects.addAll(Arrays.asList(StudyManager.getInstance().getParticipantIdsNotInGroups(_study, getUser())));
+                            }
+                            else
+                            {
+                                ParticipantCategory category = ParticipantGroupManager.getInstance().getParticipantCategory(getContainer(), getUser(), groupId);
+                                for (ParticipantGroup group : category.getGroups())
+                                    groupSubjects.addAll(group.getParticipantSet());
+                            }
                         }
                         break;
 
                     case cohort:
                         for (int groupId : entry.getValue())
-                            cohortSubjects.addAll(Arrays.asList(StudyManager.getInstance().getParticipantIdsForCohort(_study, groupId, -1)));
+                        {
+                            if (groupId == -1)
+                                cohortSubjects.addAll(Arrays.asList(StudyManager.getInstance().getParticipantIdsNotInCohorts(_study, getUser())));
+                            else
+                                cohortSubjects.addAll(Arrays.asList(StudyManager.getInstance().getParticipantIdsForCohort(_study, groupId, -1)));
+                        }
                         break;
                 }
             }
@@ -517,6 +532,8 @@ public class ParticipantGroupController extends BaseStudyController
                 subjects.addAll(cohortSubjects);
                 subjects.addAll(groupSubjects);
             }
+            subjects.addAll(noGroupSubjects);
+
             Collections.sort(subjects);
 
             resp.put("success", true);

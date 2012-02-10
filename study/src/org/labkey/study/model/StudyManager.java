@@ -2314,6 +2314,41 @@ public class StudyManager
         }
     }
 
+    public String[] getParticipantIdsNotInCohorts(Study study, User user)
+    {
+        try
+        {
+            TableInfo groupMapTable = StudySchema.getInstance().getTableInfoParticipantGroupMap();
+            DbSchema schema = StudySchema.getInstance().getSchema();
+            SQLFragment sql = new SQLFragment("SELECT ParticipantId FROM " + _tableInfoParticipant + " WHERE Container = ? AND CurrentCohortId IS NULL",
+                    study.getContainer().getId());
+
+            return Table.executeArray(schema, sql, String.class);
+        }
+        catch (SQLException x)
+        {
+            throw new RuntimeSQLException(x);
+        }
+    }
+
+    public String[] getParticipantIdsNotInGroups(Study study, User user)
+    {
+        try
+        {
+            TableInfo groupMapTable = StudySchema.getInstance().getTableInfoParticipantGroupMap();
+            DbSchema schema = StudySchema.getInstance().getSchema();
+            SQLFragment sql = new SQLFragment("SELECT ParticipantId FROM " + _tableInfoParticipant + " WHERE Container = ? " +
+                    "AND ParticipantId NOT IN (SELECT DISTINCT ParticipantId FROM " + groupMapTable + " WHERE Container = ?)",
+                    study.getContainer().getId(), study.getContainer().getId());
+
+            return Table.executeArray(schema, sql, String.class);
+        }
+        catch (SQLException x)
+        {
+            throw new RuntimeSQLException(x);
+        }
+    }
+
     private void parseData(User user,
                DataSetDefinition def,
                DataLoader loader,

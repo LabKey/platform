@@ -36,6 +36,7 @@ public class ParticipantReport extends AbstractReport
 {
     public static final String TYPE = "ReportService.ParticipantReport";
     public static final String MEASURES_PROP = "measures";
+    public static final String GROUPS_PROP = "groups";
 
     @Override
     public String getType()

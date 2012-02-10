@@ -2130,7 +2130,9 @@ public class ReportsController extends BaseStudyController
                 if (form.getQueryName() != null)
                     descriptor.setProperty(ReportDescriptor.Prop.queryName, form.getQueryName());
                 if (form.getMeasures() != null)
-                    descriptor.setProperty("measures", form.getMeasures());
+                    descriptor.setProperty(ParticipantReport.MEASURES_PROP, form.getMeasures());
+                if (form.getGroups() != null)
+                    descriptor.setProperty(ParticipantReport.GROUPS_PROP, form.getGroups());
                 if (!form.isPublic())
                     descriptor.setOwner(getUser().getUserId());
                 else
@@ -2174,6 +2176,7 @@ public class ReportsController extends BaseStudyController
         private ReportIdentifier _reportId;
         private String _componentId;
         private boolean _public;
+        private String _groups;
 
         public String getComponentId()
         {
@@ -2255,6 +2258,16 @@ public class ReportsController extends BaseStudyController
             _public = isPublic;
         }
 
+        public String getGroups()
+        {
+            return _groups;
+        }
+
+        public void setGroups(String groups)
+        {
+            _groups = groups;
+        }
+
         @Override
         public void bindProperties(Map<String, Object> props)
         {
@@ -2272,6 +2285,11 @@ public class ReportsController extends BaseStudyController
             if (measures instanceof JSONArray)
             {
                 _measures = ((JSONArray)measures).toString();
+            }
+            Object groups = props.get(ParticipantReport.GROUPS_PROP);
+            if (groups instanceof JSONArray)
+            {
+                _groups = ((JSONArray)groups).toString();
             }
         }
 
@@ -2292,6 +2310,11 @@ public class ReportsController extends BaseStudyController
             if (measuresConfig != null)
             {
                 json.put("measures", new JSONArray(measuresConfig));
+            }
+            String groupsConfig = descriptor.getProperty(ParticipantReport.GROUPS_PROP);
+            if (groupsConfig != null)
+            {
+                json.put("groups", new JSONArray(groupsConfig));
             }
             return json;
         }
