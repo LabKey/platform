@@ -49,23 +49,6 @@ public class SqlScriptRunner
     private static final Object SCRIPT_LOCK = new Object();
 
 
-    // Wait for a single script to finish or timeout, whichever comes first
-    // Specify 0 to wait indefinitely until current script finishes
-    public static boolean waitForScriptToFinish(String moduleName, int timeout) throws InterruptedException
-    {
-        synchronized (SCRIPT_LOCK)
-        {
-            if (!moduleName.equals(_currentModuleName) || _remainingScripts.isEmpty())
-            {
-                return true;
-            }
-            SCRIPT_LOCK.wait(timeout);
-
-            return _remainingScripts.isEmpty();
-        }
-    }
-
-
     public static List<SqlScript> getRunningScripts(@Nullable String moduleName)
     {
         synchronized (SCRIPT_LOCK)

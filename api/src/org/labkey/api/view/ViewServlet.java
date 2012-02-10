@@ -17,6 +17,7 @@ package org.labkey.api.view;
 
 import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
+import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
@@ -351,7 +352,7 @@ public class ViewServlet extends HttpServlet
     }
 
 
-    public static HttpServletRequest mockRequest(String method, ActionURL url, User user, Map<String, Object> headers, String postData)
+    public static HttpServletRequest mockRequest(String method, ActionURL url, @Nullable User user, @Nullable Map<String, Object> headers, @Nullable String postData)
     {
         MockRequest request = new MockRequest(getViewServletContext(), method, url);
 
@@ -454,7 +455,7 @@ public class ViewServlet extends HttpServlet
     }
 
 
-    public static MockHttpServletResponse mockDispatch(HttpServletRequest request, final String requiredContentType)
+    public static MockHttpServletResponse mockDispatch(HttpServletRequest request, @Nullable final String requiredContentType)
             throws Exception
     {
         if (!("GET".equals(request.getMethod()) || "POST".equals(request.getMethod())))
