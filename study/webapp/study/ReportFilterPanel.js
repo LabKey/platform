@@ -58,10 +58,9 @@ Ext4.define('LABKEY.ext4.FilterPanel', {
             listeners   : {
                 viewready : function(grid) {
 
-                    this.target.suspendEvents();
+                    this.target.suspendEvents(true);
 
                     if (!this.selection) {
-                        console.log('selecting all');
                         this.target.getSelectionModel().selectAll();
                     }
                     else {
@@ -69,8 +68,6 @@ Ext4.define('LABKEY.ext4.FilterPanel', {
                             var rec = this.target.getStore().findRecord('id', this.selection[s].id);
                             if (rec)
                                 this.target.getSelectionModel().select(rec);
-                            else
-                                console.warn('Unable to find ' + this.selection[s].id);
                         }
                     }
 

@@ -18,7 +18,8 @@ Ext4.define('LABKEY.ext4.ParticipantReport', {
             frame  : false,
             border : false,
             editable : false,
-            allowCustomize : false
+            allowCustomize : false,
+            subjectNoun : {singular : 'Subject', plural : 'Subjects'}
         });
 
         this.callParent([config]);
@@ -485,8 +486,13 @@ Ext4.define('LABKEY.ext4.ParticipantReport', {
                 rawData.push(Ext4.clone(config.measures[i].measure));
             }
             this.gridFieldStore.loadRawData({measures : rawData});
-            this.generateTemplateConfig();
+
+            if (!this.reportGroups && config.groups)
+                this.reportGroups = config.groups;
+
+            this.generateTemplateConfig(config);
         }
+
         this.markDirty(false);
     },
 
@@ -566,7 +572,7 @@ Ext4.define('LABKEY.ext4.ParticipantReport', {
 
             this.on('resize', this.showFilter, this);
 
-            this.showFilter();
+            this.showFilter(this.reportGroups ? this.reportGroups : []);
         }
     },
 
@@ -611,9 +617,6 @@ Ext4.define('LABKEY.ext4.ParticipantReport', {
 
         if (this.northPanel)
             this.northPanel.hide();
-
-//        this.setHeight(this.templateReport.getHeight());
-//        this.setWidth(this.templateReport.getWidth());  This screws up the north panel if opened again
     },
 
     generateTemplateConfig : function() {
@@ -621,7 +624,7 @@ Ext4.define('LABKEY.ext4.ParticipantReport', {
         this.generateTask.delay(500);
     },
 
-    showFilter : function() {
+    showFilter : function(selection) {
 
         var me = this;
 
@@ -657,9 +660,6 @@ Ext4.define('LABKEY.ext4.ParticipantReport', {
 //            }]
 //        });
 
-        // TODO: Retrieve this list from the persisted report
-        var groupSelection = [{id : 25, type: 'participantGroup'}]; // an example of the selection API -- records should work too
-
         if (!this.filterPanel) {
             this.filterPanel = Ext4.create('LABKEY.ext4.ReportFilterPanel', {
                 layout   : 'fit',
@@ -667,17 +667,17 @@ Ext4.define('LABKEY.ext4.ParticipantReport', {
                 allowAll : true,
                 filters  : [{
                     store       : Ext4.create('Ext.data.Store', cohortConfig),
-//                    selection   : [{id : 77, type: 'cohort'}],
+                    selection   : selection,
                     description : 'In these Cohorts:'
                 },{
                     store       : Ext4.create('Ext.data.Store', groupConfig),
-//                    selections  : groupSelection,
-                    description : '<b>AND</b> In these Participant Groups:'
+                    selection   : selection,
+                    description : '<b>AND</b> In these ' + this.subjectNoun.singular + ' Groups:'
                 }],
                 selection : [{id : 25, type: 'participantGroup'}],
                 listeners : {
                     selectionchange : function(){
-                        this.filterTask.delay(500);
+                        this.filterTask.delay(400);
                     },
                     scope : this
                 }
@@ -712,21 +712,23 @@ Ext4.define('LABKEY.ext4.ParticipantReport', {
         }
     },
 
-    runFilters : function(collapse) {
+    empty : function() {
+        this.templateReport.update('<i>No matching results</i>');
+        this.lengthReportField.setValue('Showing 0 Results');
+    },
+
+    runFilters : function() {
         var all = this.filterPanel.allSelected();
         if (all) {
             if (this.filteredSubjects)
                 this.filteredSubjects = undefined;
-            this.loadReport(this.reportId);
+            this.generateTask.delay(0);
         }
         else {
             var filters = this.filterPanel.getSelection(true);
 
-            if (filters.length == 0) {
-                this.templateReport.update('<i>Nothing to Report.</i>');
-                this.lengthReportField.setValue('Showing 0 Results');
-                return;
-            }
+            if (filters.length == 0)
+                return this.empty();
 
             var json = [];
             for (var f=0; f < filters.length; f++) {
@@ -745,7 +747,12 @@ Ext4.define('LABKEY.ext4.ParticipantReport', {
 
                     if (json.subjects) {
                         this.filteredSubjects = json.subjects;
-                        this.loadReport(this.reportId);
+
+                        // in this case the query resulted in no matching subjects
+                        if (this.filteredSubjects.length > 0)
+                            this.generateTask.delay(0);
+                        else
+                            this.empty();
                     }
                     else
                         console.warn('Did not receive any subjects back from getSubjectsFromGroups');
@@ -785,7 +792,7 @@ Ext4.define('LABKEY.ext4.ParticipantReport', {
 
     getCurrentReportConfig : function() {
 
-        return {
+        var config = {
             name        : this.reportName.getValue(),
             reportId    : this.reportId,
             description : this.reportDescription.getValue(),
@@ -793,11 +800,23 @@ Ext4.define('LABKEY.ext4.ParticipantReport', {
             schemaName  : 'study',
             measures    : this.getMeasures()
         };
+
+        // persist filters
+        if (this.filterPanel) {
+            var groups = [];
+            var filters = this.filterPanel.getSelection(true);
+            for (var f=0; f < filters.length; f++) {
+                groups.push(filters[f].data);
+            }
+            if (groups.length > 0)  {
+                config.groups = groups;
+            }
+        }
+
+        return config;
     },
 
     saveReport : function(data) {
-
-        console.log('Saving Report Configuration.');
 
         Ext4.Ajax.request({
             url     : LABKEY.ActionURL.buildURL('study-reports', 'saveParticipantReport.api'),

@@ -16,16 +16,24 @@
  */
 %>
 <%@ page import="org.labkey.api.util.UniqueID" %>
+<%@ page import="org.labkey.study.controllers.reports.ReportsController.ParticipantReportForm" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.api.view.JspView" %>
+<%@ page import="org.labkey.api.data.Container" %>
+<%@ page import="org.labkey.api.study.Study" %>
+<%@ page import="org.labkey.study.model.StudyManager" %>
+<%@ page import="org.labkey.api.util.PageFlowUtil" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
-    JspView<org.labkey.study.controllers.reports.ReportsController.ParticipantReportForm> me = (JspView<org.labkey.study.controllers.reports.ReportsController.ParticipantReportForm>) HttpView.currentView();
-    org.labkey.study.controllers.reports.ReportsController.ParticipantReportForm bean = me.getModelBean();
+    JspView<org.labkey.study.controllers.reports.ReportsController.ParticipantReportForm> me = (JspView<ParticipantReportForm>) HttpView.currentView();
+    ParticipantReportForm bean = me.getModelBean();
     String reportId = null;
 
     if (bean.getReportId() != null)
         reportId = bean.getReportId().toString();
+
+    Container c = me.getViewContext().getContainer();
+    Study s = StudyManager.getInstance().getStudy(c);
 
     String renderId = "participant-report-div-" + UniqueID.getRequestScopedUID(HttpView.currentRequest());
 %>
@@ -46,6 +54,7 @@
             height          : 600, // TODO: figure out dynamic height
             subjectColumn   : <%=q(org.labkey.api.study.StudyService.get().getSubjectColumnName(me.getViewContext().getContainer()))%>,
             subjectVisitColumn: <%=q(org.labkey.api.study.StudyService.get().getSubjectVisitColumnName(me.getViewContext().getContainer()))%>,
+            subjectNoun     : {singular : <%=PageFlowUtil.jsString(s.getSubjectNounSingular())%>, plural : <%=PageFlowUtil.jsString(s.getSubjectNounPlural())%>},
             renderTo        : '<%= renderId %>',
             id              : '<%= bean.getComponentId() %>',
             reportId        : <%=q(reportId)%>,
