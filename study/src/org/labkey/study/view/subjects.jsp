@@ -383,7 +383,7 @@ div.group.unhighlight
             message = 'No ' + _singularNoun.toLowerCase() + ' IDs contain \"' + _filterSubstring + '\".';
         html.push('</div>');
 
-        Ext.get(<%=listDivId%>).update(html.join(''));
+        Ext.get(<%=q(listDivId)%>).update(html.join(''));
         Ext.get(<%=q(divId + ".status")%>).update(message);
     }
 
