@@ -184,7 +184,8 @@ public class StudySchedule implements CustomApiForm
                 {
                     if ("id".equals(entry.getKey()))
                     {
-                        datasetId = NumberUtils.toInt((String)entry.getValue());
+                        JSONObject id = (JSONObject)entry.getValue();
+                        datasetId = id.getInt("id");
                     }
                     else if (entry.getValue() instanceof JSONObject)
                     {

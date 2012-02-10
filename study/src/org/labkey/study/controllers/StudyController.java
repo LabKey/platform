@@ -7658,6 +7658,7 @@ public class StudyController extends BaseStudyController
                         break;
 
                     case linkManually:
+                    case linkImport:
                         def = StudyManager.getInstance().getDataSetDefinition(_study, form.getExpectationDataset());
                         if (def != null)
                         {
@@ -7665,8 +7666,12 @@ public class StudyController extends BaseStudyController
 
                             def.setType(DataSet.TYPE_STANDARD);
                             def.save(getUser());
-                            
-                            redirect = new ActionURL(EditTypeAction.class, getContainer()). addParameter(DataSetDefinition.DATASETKEY, form.getExpectationDataset());
+
+                            if (form.getType() == DefineDatasetForm.Type.linkManually)
+                                redirect = new ActionURL(EditTypeAction.class, getContainer()). addParameter(DataSetDefinition.DATASETKEY, form.getExpectationDataset());
+                            else
+                                redirect = new ActionURL(DatasetController.DefineAndImportDatasetAction.class, getContainer()).addParameter(DataSetDefinition.DATASETKEY, form.getExpectationDataset());
+
                             response.put("redirectUrl", redirect.getLocalURIString());
                         }
                         else
@@ -7700,6 +7705,7 @@ public class StudyController extends BaseStudyController
             placeHolder,
             linkToTarget,
             linkManually,
+            linkImport,
         }
 
         private DefineDatasetForm.Type _type;
