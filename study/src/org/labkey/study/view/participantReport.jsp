@@ -29,12 +29,6 @@
 
     String renderId = "participant-report-div-" + UniqueID.getRequestScopedUID(HttpView.currentRequest());
 %>
-
-<style type="text/css">
-    .x4-reset .x4-border-layout-ct {
-        background-color: white;
-    }
-</style>
 <script type="text/javascript">
     LABKEY.requiresClientAPI(); // required for LABKEY.Visualization
     LABKEY.requiresExt4Sandbox(true);

@@ -47,6 +47,10 @@ Ext4.define('LABKEY.ext4.ParticipantReport', {
             ]
         });
 
+        this.lengthReportField = Ext4.create('Ext.form.field.Display', {
+            value : '<i>Showing 1000 Results</i>'
+        });
+
         this.centerPanel = Ext4.create('Ext.panel.Panel', {
             border   : false, frame : false,
             layout   : 'fit',
@@ -58,7 +62,7 @@ Ext4.define('LABKEY.ext4.ParticipantReport', {
                     text    : 'To Excel',
                     handler : function(){this.exportToXls();},
                     scope   : this}]
-            },'->'],
+            },'->',this.lengthReportField],
             items    : [this.previewPanel, this.exportForm]
         });
         this.items.push(this.centerPanel);
@@ -136,7 +140,7 @@ Ext4.define('LABKEY.ext4.ParticipantReport', {
             var sorts = this.getSorts();
 
             if (measures.length > 0) {
-                this.previewPanel.getEl().mask('loading data...');
+                this.mask();
                 Ext4.Ajax.request({
                     url     : LABKEY.ActionURL.buildURL('visualization', 'getData.api'),
                     method  : 'POST',
@@ -145,7 +149,7 @@ Ext4.define('LABKEY.ext4.ParticipantReport', {
                         sorts    : sorts
                     },
                     success : function(response){
-                        this.previewPanel.getEl().unmask();
+                        this.unmask();
                         this.renderData(Ext4.decode(response.responseText));
                     },
                     failure : function(response){
@@ -496,6 +500,8 @@ Ext4.define('LABKEY.ext4.ParticipantReport', {
             reportTemplate : SIMPLE_PAGE_TEMPLATE
         };
 
+        this.lengthReportField.setValue('<i>Showing ' + qr.rows.length + ' Results</i>');
+
         if (this.pageFieldStore.getCount() > 0) {
 
             for (var i=0; i < this.pageFieldStore.getCount(); i++) {
@@ -641,13 +647,13 @@ Ext4.define('LABKEY.ext4.ParticipantReport', {
         Ext4.apply(groupConfig.proxy, {
             extraParams : { type : 'participantGroup'}
         });
-//
+
 //        var syntheticConfig = Ext4.clone(storeConfig);
 //        Ext4.apply(syntheticConfig, {
 //            data : [{
 //                id   : 1,
 //                type : 'synthetic',
-//                label: 'Not in a group'
+//                label: 'All'
 //            }]
 //        });
 
@@ -658,19 +664,16 @@ Ext4.define('LABKEY.ext4.ParticipantReport', {
             this.filterPanel = Ext4.create('LABKEY.ext4.ReportFilterPanel', {
                 layout   : 'fit',
                 border   : false, frame : false,
+                allowAll : true,
                 filters  : [{
                     store       : Ext4.create('Ext.data.Store', cohortConfig),
 //                    selection   : [{id : 77, type: 'cohort'}],
-                    description : '<i>Show participants that are in any of the selected cohorts...</i>'
+                    description : 'In these Cohorts:'
                 },{
                     store       : Ext4.create('Ext.data.Store', groupConfig),
 //                    selections  : groupSelection,
-                    description : '<i><b>AND</b> in any of the selected groups...</i>'
+                    description : '<b>AND</b> In these Participant Groups:'
                 }],
-//                ,{
-//                    store       : Ext4.create('Ext.data.Store', syntheticConfig),
-//                    description : '<i>including those...</i>'
-//                }
                 selection : [{id : 25, type: 'participantGroup'}],
                 listeners : {
                     selectionchange : function(){
@@ -718,6 +721,12 @@ Ext4.define('LABKEY.ext4.ParticipantReport', {
         }
         else {
             var filters = this.filterPanel.getSelection(true);
+
+            if (filters.length == 0) {
+                this.templateReport.update('<i>Nothing to Report.</i>');
+                this.lengthReportField.setValue('Showing 0 Results');
+                return;
+            }
 
             var json = [];
             for (var f=0; f < filters.length; f++) {
@@ -961,6 +970,22 @@ Ext4.define('LABKEY.ext4.ParticipantReport', {
     beforeUnload : function() {
         if (this.dirty) {
             return 'please save your changes';
+        }
+    },
+
+    mask : function(msg) {
+        if (!this.filterWindow || false)//this.filterWindow.isCollapsed())
+            this.previewPanel.getEl().mask(msg || 'loading data...');
+        else if (this.filterWindow) {
+            this.filterWindow.getEl().mask(msg || 'Filtering...');
+        }
+    },
+
+    unmask : function() {
+        if (!this.filterWindow || false)//this.filterWindow.isCollapsed())
+            this.previewPanel.getEl().unmask();
+        else if (this.filterWindow) {
+            this.filterWindow.getEl().unmask();
         }
     }
 });

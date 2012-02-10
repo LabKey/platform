@@ -34,76 +34,6 @@ Ext4.define('LABKEY.ext4.FilterPanel', {
         this.callParent([arguments]);
     },
 
-//    initTree : function() {
-//        if (this.target)
-//            return this.target;
-//
-//        if (this.fn)
-//            this.store.filterBy(this.fn);
-//
-//        function toTreeStore(dataStore) {
-//            var treeStore = Ext4.create('Ext.data.TreeStore', {
-//                model : dataStore.model.modelName,
-//                proxy : dataStore.proxy,
-//                listeners : {
-//                    beforeappend : function(node, appnode, eOpts) {
-//                        console.log('beforeappend');
-//                        if (!appnode.data.root) {
-//                            appnode.data.leaf    = true;
-//                            appnode.data.checked = true;
-//                        }
-//                        console.log([node, appnode, eOpts]);
-//                    }
-//                }
-//            });
-//            console.log('tree store ready');
-//            return treeStore;
-//        }
-//
-//        this.target = Ext4.create('Ext.tree.Panel', {
-//            layout       : 'fit',
-//            border       : false, frame : false,
-//            hideHeaders  : true,
-//
-//            // tree panel configs
-//            rootVisible  : false,
-//            multiSelect  : true,
-//            displayField : 'label',
-//            forceFit     : true,
-//            store        : toTreeStore(this.store),
-//            columns      : this.initTargetColumns(),
-//            bubbleEvents : ['select', 'selectionchange'],
-//
-//            listeners   : {
-//                viewready : function(tree) {
-//
-//                    this.target.suspendEvents();
-//
-//                    if (!this.selection) {
-//                        console.log('selecting all');
-//                        this.target.getSelectionModel().selectAll();
-//                    }
-//                    else {
-//                        for (var s=0; s < this.selection.length; s++) {
-//                            var rec = this.target.getStore().findRecord('id', this.selection[s].id);
-//                            if (rec)
-//                                this.target.getSelectionModel().select(rec);
-//                            else
-//                                console.warn('Unable to find ' + this.selection[s].id);
-//                        }
-//                    }
-//
-//                    this.target.resumeEvents();
-//                },
-//                scope     : this
-//            },
-//
-//            scope        : this
-//        });
-//
-//        return this.target;
-//    },
-
     initGrid : function() {
         if (this.target)
             return this.target;
@@ -179,6 +109,31 @@ Ext4.define('LABKEY.ext4.FilterPanel', {
         // return undefined -- same as getSelection()
     },
 
+    select : function(id, stopEvents) {
+        if (stopEvents)
+            this.suspendEvents();
+
+        var rec = this.target.getStore().findRecord('id', id);
+        if (rec)
+            this.target.getSelectionModel().select(rec);
+
+        if (stopEvents)
+            this.resumeEvents();
+    },
+
+    deselect : function(id, stopEvents) {
+
+        if (stopEvents)
+            this.suspendEvents();
+
+        var rec = this.target.getStore().findRecord('id', id);
+        if (rec)
+            this.target.getSelectionModel().deselect(rec);
+
+        if (stopEvents)
+            this.resumeEvents();
+    },
+
     getDescription : function() {
         return this.description;
     }
@@ -200,6 +155,14 @@ Ext4.define('LABKEY.ext4.ReportFilterPanel', {
 
     initComponent : function() {
         this.items = [this.initSelectionPanel()];
+
+        if (this.allowAll) {
+            this.on('selectionchange', function(){
+                this.allSelected();
+                return true;
+            }, this, {stopPropogation: false});
+        }
+
         this.callParent([arguments]);
     },
 
@@ -209,6 +172,20 @@ Ext4.define('LABKEY.ext4.ReportFilterPanel', {
             return this.selectionPanel;
 
         this.filterPanels = [];
+        if (this.allowAll) {
+            this.filterPanels.push(Ext4.create('LABKEY.ext4.FilterPanel', {
+                border : false, frame : false,
+                store  : Ext4.create('Ext.data.Store',{
+                    fields : ['id', 'label'],
+                    data   : [{id: -1, label : 'All'}]
+                })
+            }));
+
+            // this will only fire on selectionchange fired when clicking the All
+            this.filterPanels[0].on('selectionchange', function(model, selected) {
+                !selected.length ? this.deselectAll() : this.selectAll();
+            }, this);
+        }
         for (var f=0; f < this.filters.length; f++) {
             this.filterPanels.push(Ext4.create('LABKEY.ext4.FilterPanel',Ext4.apply(this.filters[f],{
                 border : false, frame : false
@@ -231,8 +208,9 @@ Ext4.define('LABKEY.ext4.ReportFilterPanel', {
      */
     getSelection : function(collapsed) {
         var selections = [], select;
+        var i= this.allowAll ? 1 : 0;
         if (this.filterPanels) {
-            for (var i=0; i < this.filterPanels.length; i++) {
+            for (i; i < this.filterPanels.length; i++) {
                 select = this.filterPanels[i].getSelection();
 
                 if (!collapsed) {
@@ -256,14 +234,37 @@ Ext4.define('LABKEY.ext4.ReportFilterPanel', {
 
     allSelected : function() {
 
+        var i= this.allowAll ? 1 : 0;
         if (this.filterPanels) {
-             for (var i=0; i < this.filterPanels.length; i++) {
-                 if (this.filterPanels[i].target.getSelectionModel().getCount() != this.filterPanels[i].target.getStore().getCount())
+            for (i; i < this.filterPanels.length; i++) {
+                if (this.filterPanels[i].target.getSelectionModel().getCount() != this.filterPanels[i].target.getStore().getCount()) {
+
+                    if (this.allowAll) {
+                        this.filterPanels[0].deselect(-1, true);
+                    }
+
                     return false;
-             }
+                }
+            }
+        }
+
+        if (this.allowAll) {
+            this.filterPanels[0].select(-1, true);
         }
 
         return true;
+    },
+
+    deselectAll : function() {
+        for (var i=0; i < this.filterPanels.length; i++) {
+            this.filterPanels[i].target.getSelectionModel().deselectAll();
+        }
+    },
+
+    selectAll : function() {
+        for (var i=0; i < this.filterPanels.length; i++) {
+            this.filterPanels[i].target.getSelectionModel().selectAll();
+        }
     }
 });
 
