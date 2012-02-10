@@ -212,18 +212,18 @@ div.thumbnail img
 }
 
 /* Report Filter Panel */
-.x4-reset .report-filter-window .x4-grid-row .x4-grid-cell {
+.x4-reset .report-filter-panel .x4-grid-row .x4-grid-cell {
     border-color: transparent;
 }
-.x4-reset .report-filter-window .x4-grid-row.x4-grid-row-over {
+.x4-reset .report-filter-panel .x4-grid-row.x4-grid-row-over {
     background-color: #F6F6F6;
 }
 
-.x4-reset .report-filter-window .x4-grid-row .x4-grid-cell-special {
+.x4-reset .report-filter-panel .x4-grid-row .x4-grid-cell-special {
     background: transparent;
 }
 
-.x4-reset .report-filter-window .x4-grid-row-selected .x4-grid-cell,
-.x4-reset .report-filter-window .x4-grid-row-selected .x4-grid-rowwrap-div {
+.x4-reset .report-filter-panel .x4-grid-row-selected .x4-grid-cell,
+.x4-reset .report-filter-panel .x4-grid-row-selected .x4-grid-rowwrap-div {
     background-color: transparent !important;
 }

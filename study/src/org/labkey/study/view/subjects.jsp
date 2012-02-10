@@ -60,6 +60,7 @@
 
     String viewObject = "subjectHandler" + bean.getIndex();
 %>
+<link href="<%=bean.getViewContext().getContextPath()%>/study/DataViewsPanel.css" rel="stylesheet">
 <style type="text/css">
 ul.subjectlist li
 {
@@ -93,12 +94,15 @@ div.group.unhighlight
 </style>
 <script>
     LABKEY.requiresExt4Sandbox(true);
+//    LABKEY.requiresCss("study/DataViewsPanel.css");
+    LABKEY.requiresScript("study/ReportFilterPanel.js");
 </script>
 <script type="text/javascript">
 <%=viewObject%> = (function()
 {
     var X = Ext4 || Ext;
     var $h = X.util.Format.htmlEncode;
+    var first = true;
 
 
     var _urlTemplate = '<%= urlTemplate %>';
@@ -140,7 +144,7 @@ div.group.unhighlight
         for (Cohort co : cohorts)
         {
             cohortMap.put(((CohortImpl)co).getRowId(), index);
-            %><%=commas[0]%>{index:<%=index%>, cohort:true, label:<%=q(co.getLabel())%>}<%
+            %><%=commas[0]%>{id:<%=((CohortImpl)co).getRowId()%>, index:<%=index%>, type:'cohort', label:<%=q(co.getLabel())%>}<%
             commas[0]=",\n";
             index++;
         }
@@ -156,7 +160,7 @@ div.group.unhighlight
                 for (ParticipantGroup g : m.getParticipantGroups(container, user, cat))
                 {
                     groupMap.put(g.getRowId(), index);
-                    %><%=commas[0]%>{index:<%=index%>, shared:true, cohort:false, label:<%=q(g.getLabel())%>}<%
+                    %><%=commas[0]%>{id:<%=g.getRowId()%>, index:<%=index%>, shared:true, type:'participantGroup', label:<%=q(g.getLabel())%>}<%
                     commas[0]=",\n";
                     index++;
                 }
@@ -169,7 +173,7 @@ div.group.unhighlight
                 for (ParticipantGroup g : m.getParticipantGroups(container, user, cat))
                 {
                     groupMap.put(g.getRowId(), index);
-                    %><%=commas[0]%>{index:<%=index%>, shared:false, cohort:false, label:<%=q(g.getLabel())%>}<%
+                    %><%=commas[0]%>{id:<%=g.getRowId()%>, index:<%=index%>, shared:false, type:'participantGroup', label:<%=q(g.getLabel())%>}<%
                     commas[0]=",\n";
                     index++;
                 }
@@ -302,59 +306,116 @@ div.group.unhighlight
         }
     }
 
+    function filter(selected)
+    {
+        Ext4.Ajax.request({
+            url      : LABKEY.ActionURL.buildURL('participant-group', 'getSubjectsFromGroups.api'),
+            method   : 'POST',
+            jsonData : Ext4.encode({
+                groups : selected
+            }),
+            success  : function(response){
+                var json = Ext4.decode(response.responseText);
+                var ptids = [];
+                for (var i=0; i < json.subjects.length; i++) {
+                    ptids.push({
+                        html : json.subjects[i],
+                        index: i,
+                        ptid : json.subjects[i]
+                    });
+                }
+                _ptids = ptids;
+                renderSubjects();
+            },
+            failure  : function(response){
+                Ext4.Msg.alert('Failure', Ext4.decode(response.responseText));
+            },
+            scope : this
+        });
+    }
+
     function renderGroups()
     {
-        var el = Ext.get('<%=groupsDivId%>');
-        var html = [];
-        html.push('<div class="group" index="-1" style="white-space:nowrap;">show all</div>&nbsp;');
+        Ext4.onReady(function(){
 
-        var g, group;
-        var countCohort = 0;
-        for (g=0 ; g<_groups.length ; g++)
-        {
-            group = _groups[g];
-            if (group.cohort)
-            {
-                if (countCohort == 0)
-                    html.push('<fieldset><legend>cohorts</legend>');
-                html.push('<div class="group" index=' + g + ' rowid="' + group.rowid + '" style="white-space:nowrap;">');
-                html.push($h(group.label));
-                html.push("</div>");
-                countCohort++;
+            // models Participant Groups and Cohorts mixed
+            Ext4.define('LABKEY.study.GroupCohort', {
+                extend : 'Ext.data.Model',
+                fields : [
+                    {name : 'id'},
+                    {name : 'label'},
+                    {name : 'description'},
+                    {name : 'type'}
+                ]
+            });
+
+            var storeConfig = {
+                pageSize : 100,
+                model    : 'LABKEY.study.GroupCohort',
+                autoLoad : true,
+                proxy    : {
+                    type   : 'ajax',
+                    url    : LABKEY.ActionURL.buildURL('participant-group', 'browseParticipantGroups.api'),
+                    reader : {
+                        type : 'json',
+                        root : 'groups'
+                    }
+                }
+            };
+
+            var filterSet = [];
+            var types     = ['cohort', 'participantGroup'];
+            for (var t=0; t < types.length; t++) {
+                var filterConfig = Ext4.clone(storeConfig);
+                Ext4.apply(filterConfig.proxy, {
+                    extraParams : { type : types[t]}
+                });
+                var desc = types[t] == 'cohort' ? '<i>In these Cohorts</i>' : '<i>In these Groups</i>';
+                filterSet.push({
+                    store       : Ext4.create('Ext.data.Store', filterConfig),
+                    description : desc
+                });
             }
-        }
-        if (countCohort)
-            html.push('</fieldset>&nbsp;');
 
-        var countGroup = 0;
-        for (g=0 ; g<_groups.length ; g++)
-        {
-            group = _groups[g];
-            if (!group.cohort)
-            {
-                if (countGroup == 0)
-                    html.push('<fieldset><legend>groups</legend>');
-                html.push('<div class="group" index=' + g + ' rowid="' + group.rowid + '" style="white-space:nowrap;">');
-                html.push($h(group.label));
-                html.push("</div>");
-                countGroup++;
-            }
-        }
-        if (countGroup)
-            html.push('</fieldset>');
+            var filterTask = new Ext4.util.DelayedTask(filter);
 
-        el.update(html.join(''));
+            var filterPanel = Ext4.create('LABKEY.ext4.ReportFilterPanel',{
+                renderTo : Ext4.get('<%=groupsDivId%>'),
+                layout   : 'fit',
+
+                allowAll : true,
+                filters  : filterSet,
+                listeners: {
+                    // TODO : Enable this for proper highlighing. Problem is that the idx being returned is relative to that store, highlightPtidsInGroup
+                    // TODO : expects it to be absolute (0-n).
+//                    itemmouseenter : function(v,r,item,idx) { console.log([v,r,item,idx]);
+//                         highlightPtidsInGroup(idx);
+//                    },
+//                    itemmouseleave : function() { highlightPtidsInGroup(-1); },
+                    selectionchange : function(model, selected) {
+                        var json = [], filters = filterPanel.getSelection(true);
+                        for (var f=0; f < filters.length; f++) {
+                            json.push(filters[f].data);
+                        }
+                        filterTask.delay(400, null, null, [json]);
+                    }
+                }
+            });
+
+        });
     }
 
 
     function renderSubjects()
     {
-        if (_ptids.length == 0)
+        if (_ptids.length == 0 && first)
         {
             document.getElementById(_divId).innerHTML = 'No ' + _pluralNoun.toLowerCase() + " were found in this study.  " +
                     _singularNoun + " IDs will appear here after specimens or datasets are imported.";
+            first = false;
             return;
         }
+        first = false;
 
         var html = [];
         html.push('<table><tr><td valign="top"><ul class="subjectlist">');
@@ -380,8 +441,12 @@ div.group.unhighlight
             else
                 message = 'Showing all ' + count + ' ' + (count > 1 ? _pluralNoun.toLowerCase() : _singularNoun.toLowerCase()) + '.';
         }
-        else
-            message = 'No ' + _singularNoun.toLowerCase() + ' IDs contain \"' + _filterSubstring + '\".';
+        else {
+            if (_filterSubstring != null)
+                message = 'No ' + _singularNoun.toLowerCase() + ' IDs contain \"' + _filterSubstring + '\".';
+            else
+                message = 'No matching ' + _pluralNoun + '.';
+        }
         html.push('</div>');
 
         Ext.get(<%=q(listDivId)%>).update(html.join(''));
@@ -391,6 +456,7 @@ div.group.unhighlight
 
     function filterPtidContains(substring)
     {
+        console.log(substring);
         _filterSubstring = substring;
         if (!substring)
         {

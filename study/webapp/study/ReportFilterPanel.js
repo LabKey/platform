@@ -12,7 +12,7 @@ Ext4.define('LABKEY.ext4.FilterPanel', {
     layout : 'fit',
     border : false,
     frame  : false,
-    bubbleEvents : ['select', 'selectionchange'],
+    bubbleEvents : ['select', 'selectionchange', 'itemmouseenter', 'itemmouseleave'],
 
     initComponent : function() {
 
@@ -54,7 +54,7 @@ Ext4.define('LABKEY.ext4.FilterPanel', {
                 emptyText  : 'No Cohorts Available'
             },
             selType     : 'checkboxmodel',
-            bubbleEvents: ['select', 'selectionchange'],
+            bubbleEvents: ['select', 'selectionchange', 'itemmouseenter', 'itemmouseleave'],
             listeners   : {
                 viewready : function(grid) {
 
@@ -140,11 +140,12 @@ Ext4.define('LABKEY.ext4.ReportFilterPanel', {
 
     extend : 'Ext.panel.Panel',
 
-    bubbleEvents : ['select', 'selectionchange'],
+    bubbleEvents : ['select', 'selectionchange', 'itemmouseenter', 'itemmouseleave'],
 
     constructor : function(config) {
         Ext4.applyIf(config, {
-            border : false, frame : false
+            border : false, frame : false,
+            cls    : 'report-filter-panel'
         });
 
         this.callParent([config]);

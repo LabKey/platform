@@ -674,7 +674,6 @@ Ext4.define('LABKEY.ext4.ParticipantReport', {
                     selection   : selection,
                     description : '<b>AND</b> In these ' + this.subjectNoun.singular + ' Groups:'
                 }],
-                selection : [{id : 25, type: 'participantGroup'}],
                 listeners : {
                     selectionchange : function(){
                         this.filterTask.delay(400);

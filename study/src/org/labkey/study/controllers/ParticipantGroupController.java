@@ -394,7 +394,7 @@ public class ParticipantGroupController extends BaseStudyController
                         {
                             groups.add(createGroup(cohort.getRowId(), cohort.getLabel(), groupType));
                         }
-                        groups.add(createGroup(-1, "Not in any group", groupType));
+                        groups.add(createGroup(-1, "Not in any cohort", groupType));
                         break;
                 }
             }
