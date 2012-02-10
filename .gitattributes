@@ -2175,6 +2175,7 @@ query/webapp/reports/icon_draft.png -text
 query/webapp/reports/icon_final.png -text
 query/webapp/reports/icon_query_view.png -text
 query/webapp/reports/js.png -text
+query/webapp/reports/link_data.png -text
 query/webapp/reports/manageViews.js -text
 query/webapp/reports/output_chart.jpg -text
 query/webapp/reports/output_excel.jpg -text
