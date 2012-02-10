@@ -469,6 +469,7 @@ public class AnnouncementManager
     public static void saveMessageBoardSettings(Container c, DiscussionService.Settings settings) throws SQLException, IllegalAccessException, InvocationTargetException
     {
         Map<String, String> props = PropertyManager.getWritableProperties(c.getId(), MESSAGE_BOARD_SETTINGS, true);
+        props.clear();  // Get rid of old props (e.g., userList, see #13882)
         props.put("boardName", settings.getBoardName());
         props.put("conversationName", settings.getConversationName());
         props.put("secure", String.valueOf(settings.isSecure()));
