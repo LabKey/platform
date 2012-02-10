@@ -462,23 +462,32 @@ public class DefaultQueryUpdateService extends AbstractQueryUpdateService
         return pkVals;
     }
 
-    protected void convertTypes(Map<String,Object> row)
+
+    protected void convertTypes(Map<String,Object> row) throws QueryUpdateServiceException
     {
-        for(ColumnInfo col : getDbTable().getColumns())
+        for (ColumnInfo col : getDbTable().getColumns())
         {
             Object value = row.get(col.getName());
-            if(null != value)
+            if (null != value)
             {
-                switch(col.getSqlTypeInt())
+                try
                 {
-                    case java.sql.Types.DATE:
-                    case java.sql.Types.TIME:
-                    case java.sql.Types.TIMESTAMP:
-                        row.put(col.getName(), value instanceof Date ? value : ConvertUtils.convert(value.toString(), Date.class));
+                    switch (col.getSqlTypeInt())
+                    {
+                        case java.sql.Types.DATE:
+                        case java.sql.Types.TIME:
+                        case java.sql.Types.TIMESTAMP:
+                            row.put(col.getName(), value instanceof Date ? value : ConvertUtils.convert(value.toString(), Date.class));
+                    }
+                }
+                catch (ConversionException x)
+                {
+                    throw new QueryUpdateServiceException(x);
                 }
             }
         }
     }
+
 
     /**
      * Override this method to alter the row before insert or update.
