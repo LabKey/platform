@@ -63,6 +63,7 @@ import org.springframework.web.multipart.MultipartHttpServletRequest;
 import org.springframework.web.servlet.ModelAndView;
 import org.xml.sax.SAXException;
 
+import javax.crypto.BadPaddingException;
 import javax.servlet.ServletException;
 import javax.xml.parsers.ParserConfigurationException;
 import java.io.File;
@@ -268,6 +269,11 @@ public class PipelineController extends SpringActionController
             try
             {
                 keyPair.validateMatch();
+            }
+            catch (BadPaddingException e)
+            {
+                errors.addError(new LabkeyError("Invalid Globus SSL configuration: This is most likely caused by an incorrect password for the private key file, but could also be a corrupt private key file (" + e.getMessage() + ")"));
+                return false;
             }
             catch (GeneralSecurityException e)
             {
