@@ -35,7 +35,7 @@ LABKEY.pipeline.StatusUpdate = function(controller, action)
     var _dt = null;
     var _lastUpdate = "";
     var _iDelay = 0;
-    var _delays = new Array(15, 30, 60, 120);
+    var _delays = new Array(30, 60, 120, 240);
 
     var isSelectionModified = function()
     {
@@ -105,10 +105,10 @@ LABKEY.pipeline.StatusUpdate = function(controller, action)
             }
             else
             {
-                var newText = response.responseText;
+                var newText = Ext.util.Format.stripTags(Ext.util.Format.stripScripts(response.responseText));
                 if (_lastUpdate != newText)
                 {
-                    el.update(newText, true);
+                    el.update(response.responseText, true);
                     _lastUpdate = newText;
                     LABKEY.DataRegions["StatusFiles"]._initElements();
                 }

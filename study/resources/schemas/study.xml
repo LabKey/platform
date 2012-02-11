@@ -228,6 +228,11 @@
       </ns:column>
       <ns:column columnName="CategoryId">
         <ns:description>The category of each dataset.</ns:description>
+        <ns:fk>
+          <ns:fkColumnName>RowId</ns:fkColumnName>
+          <ns:fkTable>ViewCategory</ns:fkTable>
+          <ns:fkDbSchema>core</ns:fkDbSchema>
+        </ns:fk>
       </ns:column>
       <ns:column columnName="Type">
         <ns:description>Describes the type of the dataset, defaults to 'standard'.</ns:description>
