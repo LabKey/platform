@@ -112,8 +112,9 @@ div.group.unhighlight
     // filters
     var _filterSubstring = null;
     var _filterSubstringMap = null;
-    var _filterGroup = -1;
+//    var _filterGroup = -1;
     var _filterGroupMap = null;
+
 
 
     var _initialRenderComplete = false;
@@ -312,17 +313,12 @@ div.group.unhighlight
             jsonData : Ext4.encode({
                 groups : selected
             }),
-            success  : function(response){
+            success  : function(response)
+            {
                 var json = Ext4.decode(response.responseText);
-                var ptids = [];
-                for (var i=0; i < json.subjects.length; i++) {
-                    ptids.push({
-                        html : json.subjects[i],
-                        index: i,
-                        ptid : json.subjects[i]
-                    });
-                }
-                _ptids = ptids;
+                _filterGroupMap = {}
+                for (var i=0; i < json.subjects.length; i++)
+                    _filterGroupMap[json.subjects[i]] = true;
                 renderSubjects();
             },
             failure  : function(response){
@@ -379,7 +375,7 @@ div.group.unhighlight
         for (var subjectIndex = 0; subjectIndex < _ptids.length; subjectIndex++)
         {
             var p = _ptids[subjectIndex];
-            if ((!_filterSubstringMap || test(_filterSubstringMap,subjectIndex)) && (!_filterGroupMap || test(_filterGroupMap,subjectIndex)))
+            if ((!_filterSubstringMap || test(_filterSubstringMap,subjectIndex)) && (!_filterGroupMap || _filterGroupMap[p.ptid]))
             {
                 if (++count > 1 && count % _ptidPerCol == 1)
                     html.push('</ul></td><td  valign="top"><ul class="subjectlist">');
@@ -433,12 +429,12 @@ div.group.unhighlight
     }
 
 
-    function filterGroup(g)
-    {
-        _filterGroup = g;
-        _filterGroupMap = g<0 ? null : _ptidGroupMap[g];
-        renderSubjects();
-    }
+//    function filterGroup(g)
+//    {
+//        _filterGroup = g;
+//        _filterGroupMap = g<0 ? null : _ptidGroupMap[g];
+//        renderSubjects();
+//    }
 
 
     function generateToolTip(p)
