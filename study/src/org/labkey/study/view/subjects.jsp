@@ -38,6 +38,8 @@
 <%@ page import="org.labkey.api.study.Cohort" %>
 <%@ page import="org.labkey.study.model.CohortImpl" %>
 <%@ page import="org.labkey.study.model.StudyManager" %>
+<%@ page import="org.labkey.api.view.WebThemeManager" %>
+<%@ page import="org.labkey.api.view.WebTheme" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
     JspView<SubjectsWebPart.SubjectsBean> me = (JspView<SubjectsWebPart.SubjectsBean>) HttpView.currentView();
@@ -59,19 +61,18 @@
     String groupsDivId = "groupsDiv" + getRequestScopedUID();
 
     String viewObject = "subjectHandler" + bean.getIndex();
+    WebTheme theme = WebThemeManager.getTheme(container);
 %>
 <style type="text/css">
 ul.subjectlist li
 {
-    margin: 0;
-    padding: 0;
-    text-indent: 3px;
     list-style-type: none;
 }
 
 ul.subjectlist
 {
-    padding-left: 1em;
+    padding-left: 0em;
+    padding-right: 1em;
 }
 
 li.ptid a.highlight
@@ -378,7 +379,7 @@ div.group.unhighlight
             if ((!_filterSubstringMap || test(_filterSubstringMap,subjectIndex)) && (!_filterGroupMap || _filterGroupMap[p.ptid]))
             {
                 if (++count > 1 && count % _ptidPerCol == 1)
-                    html.push('</ul></td><td  valign="top"><ul class="subjectlist">');
+                    html.push('</ul></td><td valign="top"><ul class="subjectlist">');
                 html.push('<li class="ptid" index=' + subjectIndex + ' ptid="' + p.html + '" ><a href="' + _urlTemplate + p.html + '">' + (LABKEY.demoMode?LABKEY.id(p.ptid):p.html) + '</a></li>\n');
             }
         }
@@ -548,12 +549,14 @@ div.group.unhighlight
 
 <div style="">
  <table id="<%= divId %>" width="100%">
-    <tr><td style="padding:5px; margin:5px; border:solid 1px #eeeeee;" width=200 valign=top>
+    <tr><td style="padding:5px; margin:5px; border:solid 0px #eeeeee;" width=200 valign=top>
     <div style="min-width:200px;"  id="<%=groupsDivId%>">&nbsp;</div>
     </td>
-    <td style="padding:5px; margin:5px; border:solid 1px #eeeeee;" valign=top>
-     <div style="" >Filter <input id="<%=divId%>.filter" type="text" size="15">&nbsp;&nbsp;<span id="<%=divId%>.status">Loading...</span></div>
-     <div style="overflow-x:auto; min-height:<%=Math.round(1.2*(ptidsPerCol+3))%>em"  id="<%= listDivId %>"></div>
+    <td style="padding:5px; margin:5px; border:solid 0px #eeeeee;" valign=top>
+     <div style="" >Filter&nbsp;<input id="<%=divId%>.filter" type="text" size="15" style="border:solid 1px #<%=theme.getWebPartColor()%>"></div>
+        <hr style="height:1px; border:0; background-color:#<%=theme.getWebPartColor()%>; color:#<%=theme.getWebPartColor()%>;">
+        <div><span id="<%=divId%>.status">Loading...</span></div>
+        <div style="overflow-x:auto; min-height:<%=Math.round(1.2*(ptidsPerCol+3))%>em"  id="<%= listDivId %>"></div>
     </td></tr>
 </table>
 </div>
