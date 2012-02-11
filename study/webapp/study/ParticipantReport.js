@@ -4,6 +4,7 @@
  * Licensed under the Apache License, Version 2.0: http://www.apache.org/licenses/LICENSE-2.0
  */
 LABKEY.requiresExt4Sandbox(true);
+LABKEY.requiresScript("study/ParticipantFilterPanel.js");
 
 Ext4.define('LABKEY.ext4.ParticipantReport', {
 
@@ -626,54 +627,12 @@ Ext4.define('LABKEY.ext4.ParticipantReport', {
 
     showFilter : function(selection) {
 
-        var me = this;
-
-        var storeConfig = {
-            pageSize : 100,
-            model    : 'LABKEY.study.GroupCohort',
-            autoLoad : true,
-            proxy    : {
-                type   : 'ajax',
-                url    : LABKEY.ActionURL.buildURL('participant-group', 'browseParticipantGroups.api'),
-                reader : {
-                    type : 'json',
-                    root : 'groups'
-                }
-            }
-        };
-
-        var cohortConfig = Ext4.clone(storeConfig);
-        Ext4.apply(cohortConfig.proxy, {
-            extraParams : { type : 'cohort'}
-        });
-        var groupConfig = Ext4.clone(storeConfig);
-        Ext4.apply(groupConfig.proxy, {
-            extraParams : { type : 'participantGroup'}
-        });
-
-//        var syntheticConfig = Ext4.clone(storeConfig);
-//        Ext4.apply(syntheticConfig, {
-//            data : [{
-//                id   : 1,
-//                type : 'synthetic',
-//                label: 'All'
-//            }]
-//        });
+        var me = this, panel;
 
         if (!this.filterPanel) {
-            this.filterPanel = Ext4.create('LABKEY.ext4.ReportFilterPanel', {
-                layout   : 'fit',
-                border   : false, frame : false,
-                allowAll : true,
-                filters  : [{
-                    store       : Ext4.create('Ext.data.Store', cohortConfig),
-                    selection   : selection,
-                    description : 'In these Cohorts:'
-                },{
-                    store       : Ext4.create('Ext.data.Store', groupConfig),
-                    selection   : selection,
-                    description : '<b>AND</b> In these ' + this.subjectNoun.singular + ' Groups:'
-                }],
+
+            panel = Ext4.create('LABKEY.study.ParticipantFilterPanel', {
+                selection : selection,
                 listeners : {
                     selectionchange : function(){
                         this.filterTask.delay(400);
@@ -681,6 +640,8 @@ Ext4.define('LABKEY.ext4.ParticipantReport', {
                     scope : this
                 }
             });
+            this.filterPanel = panel.getFilterPanel();
+
         }
 
         // This is an example of using it in the toolbar
@@ -701,7 +662,7 @@ Ext4.define('LABKEY.ext4.ParticipantReport', {
         else {
             this.filterWindow = Ext4.create('LABKEY.ext4.ReportFilterWindow', {
                 title    : 'Filter Report',
-                items    : [this.filterPanel],
+                items    : [panel],
                 autoShow : true,
                 relative : this.centerPanel,
                 collapsed: true,

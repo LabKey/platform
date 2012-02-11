@@ -3179,6 +3179,7 @@ study/webapp/WEB-INF/study/studyContext.xml -text
 study/webapp/sampleRequest.js -text
 study/webapp/study/DataViewsPanel.css -text
 study/webapp/study/DataViewsPanel.js -text
+study/webapp/study/ParticipantFilterPanel.js -text
 study/webapp/study/ParticipantGroup.js -text
 study/webapp/study/ParticipantReport.js -text
 study/webapp/study/ReportFilterPanel.js -text

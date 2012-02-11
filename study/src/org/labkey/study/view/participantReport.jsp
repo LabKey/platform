@@ -40,10 +40,8 @@
 <script type="text/javascript">
     LABKEY.requiresClientAPI(); // required for LABKEY.Visualization
     LABKEY.requiresExt4Sandbox(true);
-    LABKEY.requiresCss("study/DataViewsPanel.css");
     LABKEY.requiresScript("TemplateHelper.js");
     LABKEY.requiresScript("study/ParticipantReport.js");
-    LABKEY.requiresScript("study/ReportFilterPanel.js");
     LABKEY.requiresScript("vis/measuresPanel.js");
 </script>
 

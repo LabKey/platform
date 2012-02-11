@@ -60,7 +60,6 @@
 
     String viewObject = "subjectHandler" + bean.getIndex();
 %>
-<link href="<%=bean.getViewContext().getContextPath()%>/study/DataViewsPanel.css" rel="stylesheet">
 <style type="text/css">
 ul.subjectlist li
 {
@@ -94,8 +93,7 @@ div.group.unhighlight
 </style>
 <script>
     LABKEY.requiresExt4Sandbox(true);
-//    LABKEY.requiresCss("study/DataViewsPanel.css");
-    LABKEY.requiresScript("study/ReportFilterPanel.js");
+    LABKEY.requiresScript("study/ParticipantFilterPanel.js");
 </script>
 <script type="text/javascript">
 <%=viewObject%> = (function()
@@ -338,54 +336,11 @@ div.group.unhighlight
     {
         Ext4.onReady(function(){
 
-            // models Participant Groups and Cohorts mixed
-            Ext4.define('LABKEY.study.GroupCohort', {
-                extend : 'Ext.data.Model',
-                fields : [
-                    {name : 'id'},
-                    {name : 'label'},
-                    {name : 'description'},
-                    {name : 'type'}
-                ]
-            });
-
-            var storeConfig = {
-                pageSize : 100,
-                model    : 'LABKEY.study.GroupCohort',
-                autoLoad : true,
-                proxy    : {
-                    type   : 'ajax',
-                    url    : LABKEY.ActionURL.buildURL('participant-group', 'browseParticipantGroups.api'),
-                    reader : {
-                        type : 'json',
-                        root : 'groups'
-                    }
-                }
-            };
-
-            var filterSet = [];
-            var types     = ['cohort', 'participantGroup'];
-            for (var t=0; t < types.length; t++) {
-                var filterConfig = Ext4.clone(storeConfig);
-                Ext4.apply(filterConfig.proxy, {
-                    extraParams : { type : types[t]}
-                });
-                var desc = types[t] == 'cohort' ? '<i>In these Cohorts</i>' : '<i>In these Groups</i>';
-                filterSet.push({
-                    store       : Ext4.create('Ext.data.Store', filterConfig),
-                    description : desc
-                });
-            }
-
             var filterTask = new Ext4.util.DelayedTask(filter);
 
-            var filterPanel = Ext4.create('LABKEY.ext4.ReportFilterPanel',{
-                renderTo : Ext4.get('<%=groupsDivId%>'),
-                layout   : 'fit',
-
-                allowAll : true,
-                filters  : filterSet,
-                listeners: {
+            var ptidPanel = Ext4.create('LABKEY.study.ParticipantFilterPanel',{
+                renderTo  : Ext4.get('<%=groupsDivId%>'),
+                listeners : {
                     // TODO : Enable this for proper highlighing. Problem is that the idx being returned is relative to that store, highlightPtidsInGroup
                     // TODO : expects it to be absolute (0-n).
 //                    itemmouseenter : function(v,r,item,idx) { console.log([v,r,item,idx]);
@@ -393,7 +348,7 @@ div.group.unhighlight
 //                    },
 //                    itemmouseleave : function() { highlightPtidsInGroup(-1); },
                     selectionchange : function(model, selected) {
-                        var json = [], filters = filterPanel.getSelection(true);
+                        var json = [], filters = ptidPanel.getFilterPanel().getSelection(true);
                         for (var f=0; f < filters.length; f++) {
                             json.push(filters[f].data);
                         }
