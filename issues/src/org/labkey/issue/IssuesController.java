@@ -49,9 +49,9 @@ import org.labkey.api.data.DbScope;
 import org.labkey.api.data.ObjectFactory;
 import org.labkey.api.data.RenderContext;
 import org.labkey.api.data.Sort;
-import org.labkey.api.data.dialect.SqlDialect;
 import org.labkey.api.data.TSVGridWriter;
 import org.labkey.api.data.TableInfo;
+import org.labkey.api.data.dialect.SqlDialect;
 import org.labkey.api.issues.IssuesSchema;
 import org.labkey.api.issues.IssuesUrls;
 import org.labkey.api.query.QueryForm;
@@ -112,7 +112,6 @@ import org.springframework.validation.MapBindingResult;
 import org.springframework.validation.ObjectError;
 import org.springframework.web.servlet.ModelAndView;
 import org.springframework.web.servlet.mvc.Controller;
-import sun.java2d.pipe.SpanShapeRenderer;
 
 import javax.mail.Address;
 import javax.servlet.ServletException;
@@ -1565,7 +1564,7 @@ public class IssuesController extends SpringActionController
         {
             checkPickLists(form, errors);
             
-            IssueManager.CustomColumnConfiguration ccc = new IssueManager.CustomColumnConfiguration(getViewContext());
+            IssueManager.CustomColumnConfiguration ccc = new IssueManager.CustomColumnConfiguration(getViewContext().getExtendedProperties());
             String defaultCols[] = {"Milestone", "Area", "Type", "Priority", "Resolution"};
             Map<String, String> captions = ccc.getColumnCaptions(); //All of the custom captions
             for (String column : defaultCols)
@@ -1632,7 +1631,7 @@ public class IssuesController extends SpringActionController
             {
                 newRequiredFields.add(required.toLowerCase());
             }
-            Set<String> newPickLists = new IssueManager.CustomColumnConfiguration(getViewContext()).getPickListColumns();
+            Set<String> newPickLists = new IssueManager.CustomColumnConfiguration(getViewContext().getExtendedProperties()).getPickListColumns();
             Set<String> oldPickLists = IssueManager.getCustomColumnConfiguration(getContainer()).getPickListColumns();
 
             for (HString required : form.getRequiredFields())
@@ -1678,7 +1677,7 @@ public class IssuesController extends SpringActionController
             IssueManager.saveAssignedToGroup(getContainer(), _group);
             IssueManager.saveCommentSortDirection(getContainer(), _direction);
 
-            IssueManager.CustomColumnConfiguration ccc = new IssueManager.CustomColumnConfiguration(getViewContext());
+            IssueManager.CustomColumnConfiguration ccc = new IssueManager.CustomColumnConfiguration(getViewContext().getExtendedProperties());
             IssueManager.saveCustomColumnConfiguration(getContainer(), ccc);
 
             IssueManager.setRequiredIssueFields(getContainer(), form.getRequiredFields());

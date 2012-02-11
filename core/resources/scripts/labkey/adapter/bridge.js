@@ -54,7 +54,7 @@ function mockRequest(method, uri, headers, callback, postData)
     var actionUrl = new ActionURL(uri);
 
     var context = HttpView.currentContext(); 
-    var request = ViewServlet.mockRequest(method, actionUrl, context.user, headers, postData);
+    var request = ViewServlet.mockRequest(method, actionUrl, context.getUser(), headers, postData);
     var response = ViewServlet.mockDispatch(request, null);
 
     return handleTransactionResponse(response, callback);

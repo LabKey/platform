@@ -145,7 +145,7 @@ public class FileAnalysisTaskPipelineImpl extends TaskPipelineImpl<FileAnalysisT
         {
             try
             {
-                URLHelper result = new URLHelper(_analyzeURL.eval(HttpView.currentContext()));
+                URLHelper result = new URLHelper(_analyzeURL.eval(HttpView.currentContext().getExtendedProperties()));
                 if (result.getParameter("path") == null)
                 {
                     result.addParameter("path", path);
