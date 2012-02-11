@@ -120,7 +120,7 @@ div.group.unhighlight
 
     var _initialRenderComplete = false;
     var _ptids = [<%
-        final String[] commas = new String[]{""};
+        final String[] commas = new String[]{"\n"};
         final HashMap<String,Integer> ptidMap = new HashMap<String,Integer>();
         (new SqlSelector(dbschema, "SELECT participantId FROM study.participant WHERE container=? ORDER BY 1", container)).forEach(new Selector.ForEachBlock<ResultSet>()
         {
@@ -133,7 +133,7 @@ div.group.unhighlight
         });
         %>];
     var _groups = [<%
-        commas[0] = "";
+        commas[0] = "\n";
         int index = 0;
 
         // cohorts
@@ -254,6 +254,8 @@ div.group.unhighlight
 
     function highlightPtidsInGroup(index)
     {
+        console.log("highlightPtidsInGroup(" + index + ") _highlightGroup==" + _highlightGroup);
+        console.trace();
         if (index == _highlightGroup) return;
         _highlightGroup = index;
         if (null == _highlightGroupTask)
@@ -338,14 +340,23 @@ div.group.unhighlight
             var ptidPanel = Ext4.create('LABKEY.study.ParticipantFilterPanel',
             {
                 renderTo  : Ext4.get('<%=groupsDivId%>'),
-                listeners : {
-                    // TODO : Enable this for proper highlighing. Problem is that the idx being returned is relative to that store, highlightPtidsInGroup
-                    // TODO : expects it to be absolute (0-n).
-//                    itemmouseenter : function(v,r,item,idx) { console.log([v,r,item,idx]);
-//                         highlightPtidsInGroup(idx);
-//                    },
-//                    itemmouseleave : function() { highlightPtidsInGroup(-1); },
-                    selectionchange : function(model, selected) {
+                listeners :
+                {
+                    itemmouseenter : function(v,r,item,idx)
+                    {
+                        var g=-1;
+                        for (var i=0 ; i<_groups.length ; i++)
+                            if (_groups[i].id==r.data.id && _groups[i].type==r.data.type)
+                                g = i;
+                        console.log("itemmouseenter: label=" + r.data.label + " id=" + r.data.id + " type=" + r.data.type + " g=" + g);
+                        highlightPtidsInGroup(g);
+                    },
+                    itemmouseleave : function()
+                    {
+                        highlightPtidsInGroup(-1);
+                    },
+                    selectionchange : function(model, selected)
+                    {
                         var json = [], filters = ptidPanel.getFilterPanel().getSelection(true);
                         for (var f=0; f < filters.length; f++) {
                             json.push(filters[f].data);
@@ -494,7 +505,7 @@ div.group.unhighlight
             highlightGroupsForPart(-1);
         });
 
-        /* groups events */
+        /* groups events * /
 
         var groupsDiv = X.get(<%=q(groupsDivId)%>);
         groupsDiv.on('mouseover', function(e,dom)
@@ -512,7 +523,7 @@ div.group.unhighlight
             var indexAttr = dom.attributes.index || dom.parentNode.attributes.index;
             if (X.isDefined(indexAttr))
                 filterGroup(parseInt(indexAttr.value));
-        });
+        }); */
 
         // we don't want ptidDiv to change height as it filters, so set height explicitly after first layout
         ptidDiv.setHeight(ptidDiv.getHeight());
