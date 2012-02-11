@@ -22,12 +22,15 @@ import org.labkey.api.data.DisplayColumn;
 import org.labkey.api.data.DisplayColumnFactory;
 import org.labkey.api.data.JdbcType;
 import org.labkey.api.data.SQLFragment;
+import org.labkey.api.data.TableInfo;
 import org.labkey.api.exp.property.Domain;
 import org.labkey.api.exp.property.PropertyService;
 import org.labkey.api.portal.ProjectUrls;
 import org.labkey.api.query.DetailsURL;
 import org.labkey.api.query.ExprColumn;
 import org.labkey.api.query.FieldKey;
+import org.labkey.api.query.LookupForeignKey;
+import org.labkey.api.query.QueryService;
 import org.labkey.api.query.QueryUpdateService;
 import org.labkey.api.security.User;
 import org.labkey.api.security.UserPrincipal;
@@ -39,6 +42,7 @@ import org.labkey.api.util.ContainerContext;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.wiki.WikiRendererDisplayColumn;
 import org.labkey.api.wiki.WikiRendererType;
+import org.labkey.api.wiki.WikiService;
 import org.labkey.study.StudySchema;
 import org.labkey.study.model.StudyImpl;
 
@@ -85,12 +89,20 @@ public class StudyPropertiesTable extends BaseStudyTable
         addRootColumn("investigator", true, true);
         ColumnInfo descriptionColumn = addRootColumn("description", true, true);
         final ColumnInfo descriptionRendererTypeColumn = addRootColumn("descriptionRendererType", false, true);
+        descriptionRendererTypeColumn.setFk(new LookupForeignKey("Value")
+        {
+            @Override
+            public TableInfo getLookupTableInfo()
+            {
+                return QueryService.get().getUserSchema(_schema.getUser(), _schema.getContainer(), WikiService.SCHEMA_NAME).getTable(WikiService.RENDERER_TYPE_TABLE_NAME);
+            }
+        });
         descriptionColumn.setDisplayColumnFactory(new DisplayColumnFactory()
         {
             @Override
             public DisplayColumn createRenderer(ColumnInfo colInfo)
             {
-                return new WikiRendererDisplayColumn(colInfo, descriptionRendererTypeColumn, WikiRendererType.TEXT_WITH_LINKS);
+                return new WikiRendererDisplayColumn(colInfo, descriptionRendererTypeColumn.getName(), WikiRendererType.TEXT_WITH_LINKS);
             }
         });
 

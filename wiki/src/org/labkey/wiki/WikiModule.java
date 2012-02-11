@@ -46,6 +46,7 @@ import org.labkey.wiki.model.CollaborationFolderType;
 import org.labkey.wiki.model.Wiki;
 import org.labkey.wiki.model.WikiVersion;
 import org.labkey.wiki.permissions.IncludeScriptPermission;
+import org.labkey.wiki.query.WikiSchema;
 import org.labkey.wiki.renderer.RadeoxRenderer;
 
 import java.io.IOException;
@@ -124,6 +125,8 @@ public class WikiModule extends DefaultModule implements SearchService.DocumentP
         }
 
         ServiceRegistry.get().getService(FolderSerializationRegistry.class).addFactories(new WikiWriterFactory(), new WikiImporterFactory());
+
+        WikiSchema.register();
     }
 
     private void bootstrap(ModuleContext moduleContext)

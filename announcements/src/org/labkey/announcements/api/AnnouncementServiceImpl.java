@@ -30,6 +30,7 @@ import org.labkey.api.security.User;
 import org.labkey.api.view.HttpView;
 import org.labkey.api.view.UnauthorizedException;
 
+import javax.mail.MessagingException;
 import java.io.IOException;
 import java.sql.SQLException;
 import java.util.ArrayList;
@@ -70,6 +71,10 @@ public class AnnouncementServiceImpl implements AnnouncementService.Interface
             throw new RuntimeException(e);
         }
         catch (IOException e)
+        {
+            throw new RuntimeException(e);
+        }
+        catch (MessagingException e)
         {
             throw new RuntimeException(e);
         }

@@ -20,9 +20,11 @@ import org.apache.commons.lang3.ArrayUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import org.junit.Assert;
 import org.junit.Test;
 import org.labkey.announcements.AnnouncementsController;
+import org.labkey.announcements.EmailNotificationPage;
 import org.labkey.announcements.config.AnnouncementEmailConfig;
 import org.labkey.api.announcements.CommSchema;
 import org.labkey.api.announcements.DiscussionService;
@@ -42,25 +44,36 @@ import org.labkey.api.data.Sort;
 import org.labkey.api.data.SqlSelector;
 import org.labkey.api.data.Table;
 import org.labkey.api.data.TableSelector;
+import org.labkey.api.jsp.JspLoader;
 import org.labkey.api.message.settings.MessageConfigService;
 import org.labkey.api.search.SearchService;
 import org.labkey.api.security.User;
 import org.labkey.api.security.UserManager;
+import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.services.ServiceRegistry;
+import org.labkey.api.settings.AppProps;
+import org.labkey.api.settings.LookAndFeelProperties;
 import org.labkey.api.util.ContainerUtil;
 import org.labkey.api.util.JunitUtil;
+import org.labkey.api.util.MailHelper;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.Pair;
 import org.labkey.api.util.Path;
 import org.labkey.api.util.ResultSetUtil;
 import org.labkey.api.util.TestContext;
 import org.labkey.api.view.ActionURL;
+import org.labkey.api.view.JspView;
 import org.labkey.api.view.NavTree;
 import org.labkey.api.view.NotFoundException;
+import org.labkey.api.view.UnauthorizedException;
+import org.labkey.api.view.WebPartView;
 import org.labkey.api.webdav.ActionResource;
 import org.labkey.api.webdav.WebdavResource;
+import org.labkey.api.wiki.WikiRendererType;
+import org.labkey.api.wiki.WikiService;
 
-import javax.servlet.ServletException;
+import javax.mail.MessagingException;
+import javax.servlet.http.HttpServletRequest;
 import java.io.IOException;
 import java.lang.reflect.InvocationTargetException;
 import java.sql.ResultSet;
@@ -75,6 +88,7 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 /**
  * User: mbellew
@@ -136,6 +150,21 @@ public class AnnouncementManager
         return new Pair<AnnouncementModel[], Boolean>(recent, limited);
     }
 
+    public static Collection<String> getBroadcastEmailAddresses(Container c)
+    {
+        // Get all site users' email addresses
+        Collection<String> emails = UserManager.getActiveUserEmails();
+
+        //FIX: 9742 -- need to exclude users who have set their pref to none
+        OptOutEmailPrefsSelector selector = new OptOutEmailPrefsSelector(c);
+        Collection<User> optOutUsers = selector.getUsers();
+
+        for (User user : optOutUsers)
+            emails.remove(user.getEmail());
+
+        return emails;
+    }
+
 
     // marker for non fully loaded announcementModel
     public static class BareAnnouncementModel extends AnnouncementModel
@@ -153,8 +182,6 @@ public class AnnouncementManager
 
     /**
      * Return a list of announcementModels from a set of containers sorted by date created (newest first).
-     * @param containers
-     * @return
      */
     public static AnnouncementModel[] getAnnouncements(Container... containers)
     {
@@ -247,9 +274,14 @@ public class AnnouncementManager
     public static final int INCLUDE_RESPONSES = 2;
     public static final int INCLUDE_MEMBERLIST = 4;
 
-    public static AnnouncementModel getAnnouncement(Container c, int rowId, int mask)
+    public static AnnouncementModel getAnnouncement(@Nullable Container c, int rowId, int mask)
     {
-        Selector selector = new TableSelector(_comm.getTableInfoAnnouncements(), new SimpleFilter("Container", c.getId()).addCondition("RowId", rowId), null);
+        SimpleFilter filter = new SimpleFilter("RowId", rowId);
+        if (c != null)
+        {
+            filter.addCondition("Container", c.getId());
+        }
+        Selector selector = new TableSelector(_comm.getTableInfoAnnouncements(), filter, null);
         AnnouncementModel ann = selector.getObject(AnnouncementModel.class);
 
         if (null == ann)
@@ -282,7 +314,7 @@ public class AnnouncementManager
     }
 
 
-    public static void insertAnnouncement(Container c, User user, AnnouncementModel insert, List<AttachmentFile> files) throws SQLException, IOException
+    public static AnnouncementModel insertAnnouncement(Container c, User user, AnnouncementModel insert, List<AttachmentFile> files) throws SQLException, IOException, MessagingException
     {
         insert.beforeInsert(user, c.getId());
         AnnouncementModel ann = Table.insert(user, _comm.getTableInfoAnnouncements(), insert);
@@ -298,6 +330,156 @@ public class AnnouncementManager
 
         AttachmentService.get().addAttachments(insert, files, user);
         indexThread(insert);
+
+        // Send email if there's body text or an attachment.
+        if (null != insert.getBody() || !insert.getAttachments().isEmpty())
+        {
+            String rendererTypeName = ann.getRendererType();
+            WikiRendererType currentRendererType = (null == rendererTypeName ? null : WikiRendererType.valueOf(rendererTypeName));
+            if (null == currentRendererType)
+            {
+                WikiService wikiService = ServiceRegistry.get().getService(WikiService.class);
+                if (null != wikiService)
+                    currentRendererType = wikiService.getDefaultMessageRendererType();
+            }
+            sendNotificationEmails(insert, currentRendererType, c, user);
+        }
+        
+        return ann;
+    }
+
+    private static void sendNotificationEmails(AnnouncementModel a, WikiRendererType currentRendererType, Container c, User user) throws MessagingException
+    {
+        DiscussionService.Settings settings = DiscussionService.get().getSettings(c);
+
+        boolean isResponse = null != a.getParent();
+        AnnouncementModel parent = a;
+        if (isResponse)
+            parent = AnnouncementManager.getAnnouncement(c, a.getParent());
+
+        //  See bug #6585 -- thread might have been deleted already
+        if (null == parent)
+            return;
+
+        String messageId = "<" + a.getEntityId() + "@" + AppProps.getInstance().getDefaultDomain() + ">";
+        String references = messageId + " <" + parent.getEntityId() + "@" + AppProps.getInstance().getDefaultDomain() + ">";
+
+        // Email all copies of this message in a background thread
+        MailHelper.BulkEmailer emailer = new MailHelper.BulkEmailer();
+        emailer.setUser(user);
+
+        if (a.isBroadcast())
+        {
+            // Allow broadcast only if message board is not secure and user is site administrator
+            if (settings.isSecure() || !user.isAdministrator())
+            {
+                throw new UnauthorizedException();
+            }
+
+            Collection<String> emails = getBroadcastEmailAddresses(c);
+            MailHelper.ViewMessage m = getMessage(c, settings, null, parent, a, isResponse, null, currentRendererType, EmailNotificationPage.Reason.broadcast);
+            m.setHeader("References", references);
+            emailer.addMessage(emails, m);
+        }
+        else
+        {
+            // Send a notification email to everyone on the member list.  This email will include a link that removes the user from the member list.
+            IndividualEmailPrefsSelector sel = new IndividualEmailPrefsSelector(c);
+
+            Set<User> users = sel.getNotificationUsers(a);
+
+            if (!users.isEmpty())
+            {
+                List<User> memberList = getMemberList(a);
+
+                for (User userToEmail : users)
+                {
+                    // Make sure the user hasn't lost their permission to read in this container since they were
+                    // subscribed
+                    if (c.hasPermission(userToEmail, ReadPermission.class))
+                    {
+                        MailHelper.ViewMessage m;
+                        Permissions perm = AnnouncementsController.getPermissions(c, userToEmail, settings);
+
+                        if (memberList.contains(userToEmail))
+                        {
+                            ActionURL removeMeURL = new ActionURL(AnnouncementsController.RemoveFromMemberListAction.class, c);
+                            removeMeURL.addParameter("userId", String.valueOf(userToEmail.getUserId()));
+                            removeMeURL.addParameter("messageId", String.valueOf(parent.getRowId()));
+                            m = getMessage(c, settings, perm, parent, a, isResponse, removeMeURL.getURIString(), currentRendererType, EmailNotificationPage.Reason.memberList);
+                        }
+                        else
+                        {
+                            ActionURL changeEmailURL = AnnouncementsController.getEmailPreferencesURL(c, AnnouncementsController.getBeginURL(c));
+                            m = getMessage(c, settings, perm, parent, a, isResponse, changeEmailURL.getURIString(), currentRendererType, EmailNotificationPage.Reason.signedUp);
+                        }
+
+                        m.setHeader("References", references);
+                        m.setHeader("Message-ID", messageId);
+                        emailer.addMessage(userToEmail.getEmail(), m);
+                    }
+                }
+            }
+        }
+
+        emailer.start();
+    }
+
+    private static MailHelper.ViewMessage getMessage(Container c, DiscussionService.Settings settings, Permissions perm, AnnouncementModel parent, AnnouncementModel a, boolean isResponse, String removeUrl, WikiRendererType currentRendererType, EmailNotificationPage.Reason reason) throws MessagingException
+    {
+        MailHelper.ViewMessage m = MailHelper.createMultipartViewMessage(LookAndFeelProperties.getInstance(c).getSystemEmailAddress(), null);
+        m.setSubject(StringUtils.trimToEmpty(isResponse ? "RE: " + parent.getTitle() : a.getTitle()));
+        HttpServletRequest request = AppProps.getInstance().createMockRequest();
+
+        try
+        {
+            EmailNotificationPage page = createEmailNotificationTemplate("emailNotificationPlain.jsp", false, c, settings, perm, parent, a, removeUrl, currentRendererType, reason);
+            JspView view = new JspView(page);
+            view.setFrame(WebPartView.FrameType.NONE);
+            m.setTemplateContent(request, view, "text/plain");
+
+            page = createEmailNotificationTemplate("emailNotification.jsp", true, c, settings, perm, parent, a, removeUrl, currentRendererType, reason);
+            view = new JspView(page);
+            view.setFrame(WebPartView.FrameType.NONE);
+            m.setTemplateContent(request, view, "text/html");
+
+            return m;
+        }
+        catch (Exception e)
+        {
+            throw new MessagingException(e.getMessage(), e);
+        }
+    }
+
+    private static EmailNotificationPage createEmailNotificationTemplate(String templateName, boolean includeBody, Container c, DiscussionService.Settings settings, Permissions perm, AnnouncementModel parent,
+            AnnouncementModel a, String removeUrl, WikiRendererType currentRendererType, EmailNotificationPage.Reason reason)
+    {
+        EmailNotificationPage page = (EmailNotificationPage) JspLoader.createPage(AnnouncementsController.class, templateName);
+
+        page.settings = settings;
+        page.threadURL = AnnouncementsController.getThreadURL(c, parent.getEntityId(), a.getRowId()).getURIString();
+        page.boardPath = c.getPath();
+        ActionURL boardURL = AnnouncementsController.getBeginURL(c);
+        page.boardURL = boardURL.getURIString();
+        page.removeUrl = removeUrl;
+        page.siteURL = ActionURL.getBaseServerURL();
+        page.announcementModel = a;
+        page.reason = reason;
+        page.includeGroups = (null != perm && perm.includeGroups());  // perm will be null for broadcast since we send a single message to everyone
+
+        // for plain text email messages, we don't ever want to include the body since we can't translate HTML into
+        // plain text
+        if (includeBody && !settings.isSecure())
+        {
+            //format email using same renderer chosen for message
+            //note that we still send all messages, including plain text, as html-formatted messages; only the inserted body text differs between renderers.
+            WikiService wikiService = ServiceRegistry.get().getService(WikiService.class);
+            if (null != wikiService)
+            {
+                page.body = wikiService.getFormattedHtml(currentRendererType, a.getBody());
+            }
+        }
+        return page;
     }
 
 
@@ -339,12 +521,13 @@ public class AnnouncementManager
     }
 
 
-    public static void updateAnnouncement(User user, AnnouncementModel update, List<AttachmentFile> files) throws SQLException, IOException
+    public static AnnouncementModel updateAnnouncement(User user, AnnouncementModel update, List<AttachmentFile> files) throws SQLException, IOException
     {
         update.beforeUpdate(user);
-        Table.update(user, _comm.getTableInfoAnnouncements(), update, update.getRowId());
+        AnnouncementModel result = Table.update(user, _comm.getTableInfoAnnouncements(), update, update.getRowId());
         AttachmentService.get().addAttachments(update, files, user);
         indexThread(update);
+        return result;
     }
 
 
@@ -526,8 +709,6 @@ public class AnnouncementManager
         if (null == c || isSecure(c))
             return;
         
-        SearchService ss = ServiceRegistry.get().getService(SearchService.class);
-
         ResultSet rs = null;
         ResultSet rs2 = null;
 
@@ -734,8 +915,7 @@ public class AnnouncementManager
 
 
         @Test
-        public void testAnnouncements()
-                throws SQLException, ServletException, IOException, AttachmentService.DuplicateFilenameException
+        public void testAnnouncements() throws Exception
         {
             TestContext context = TestContext.get();
 

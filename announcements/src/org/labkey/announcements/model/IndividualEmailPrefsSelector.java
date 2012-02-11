@@ -20,8 +20,8 @@ import org.labkey.api.data.Container;
 import org.labkey.api.message.settings.MessageConfigService;
 import org.labkey.api.security.User;
 
-import java.util.ArrayList;
-import java.util.List;
+import java.util.HashSet;
+import java.util.Set;
 
 /**
  * User: adam
@@ -43,13 +43,15 @@ public class IndividualEmailPrefsSelector extends EmailPrefsSelector
     }
 
 
-    public List<User> getNotificationUsers(AnnouncementModel ann)
+    public Set<User> getNotificationUsers(AnnouncementModel ann)
     {
-        List<User> authorized = new ArrayList<User>(_emailPrefs.size());
+        Set<User> authorized = new HashSet<User>(_emailPrefs.size());
 
         for (MessageConfigService.UserPreference ep : _emailPrefs)
             if (shouldSend(ann, ep))
                 authorized.add(ep.getUser());
+
+        authorized.addAll(AnnouncementManager.getAnnouncement(ann.lookupContainer(), ann.getEntityId(), true).getMemberList());
 
         return authorized;
     }

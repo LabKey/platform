@@ -98,7 +98,7 @@ if (settings.hasExpires())
   <tr>
     <td class='labkey-form-label'>Body</td>
     <td width="100%" colspan="2">
-        <textarea cols="120" rows ="15" name='body' style="width: 100%;"><%=h(ann.getBody())%></textarea>
+        <textarea cols="120" rows ="15" id='body' name='body' style="width: 100%;"><%=h(ann.getBody())%></textarea>
     </td>
   </tr>
 <%

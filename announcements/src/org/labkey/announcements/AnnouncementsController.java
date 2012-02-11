@@ -19,14 +19,11 @@ package org.labkey.announcements;
 import org.apache.commons.beanutils.ConversionException;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.time.DateUtils;
-import org.labkey.announcements.EmailNotificationPage.Reason;
 import org.labkey.announcements.config.AnnouncementEmailConfig;
 import org.labkey.announcements.model.AnnouncementManager;
 import org.labkey.announcements.model.AnnouncementModel;
 import org.labkey.announcements.model.DiscussionServiceImpl;
-import org.labkey.announcements.model.IndividualEmailPrefsSelector;
 import org.labkey.announcements.model.NormalMessageBoardPermissions;
-import org.labkey.announcements.model.OptOutEmailPrefsSelector;
 import org.labkey.announcements.model.Permissions;
 import org.labkey.announcements.model.SecureMessageBoardPermissions;
 import org.labkey.api.action.AjaxCompletionAction;
@@ -62,7 +59,6 @@ import org.labkey.api.data.RenderContext;
 import org.labkey.api.data.RuntimeSQLException;
 import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.TableInfo;
-import org.labkey.api.jsp.JspLoader;
 import org.labkey.api.message.settings.MessageConfigService;
 import org.labkey.api.query.QuerySettings;
 import org.labkey.api.query.UserIdRenderer;
@@ -86,13 +82,9 @@ import org.labkey.api.security.roles.ReaderRole;
 import org.labkey.api.security.roles.Role;
 import org.labkey.api.security.roles.RoleManager;
 import org.labkey.api.services.ServiceRegistry;
-import org.labkey.api.settings.AppProps;
-import org.labkey.api.settings.LookAndFeelProperties;
 import org.labkey.api.util.ContainerUtil;
 import org.labkey.api.util.DateUtil;
 import org.labkey.api.util.GuidString;
-import org.labkey.api.util.MailHelper;
-import org.labkey.api.util.MailHelper.ViewMessage;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.Pair;
 import org.labkey.api.util.ReturnURLString;
@@ -217,7 +209,7 @@ public class AnnouncementsController extends SpringActionController
         public ModelAndView getView(Object o, BindException errors) throws Exception
         {
             Settings settings = getSettings();
-            boolean displayAll = getActionURL().getPageFlow().equalsIgnoreCase("announcements");
+            boolean displayAll = getActionURL().getController().equalsIgnoreCase("announcements");
             AnnouncementWebPart v = new AnnouncementWebPart(getContainer(), getActionURL(), getUser(), settings, displayAll, false);
             v.getModelBean().isPrint = isPrint();
             if (isPrint())
@@ -774,7 +766,7 @@ public class AnnouncementsController extends SpringActionController
             if (null == insert.getParent() || 0 == insert.getParent().length())
                 insert.setParent(form.getParentId());
 
-            if (!isNote() && getSettings().hasMemberList() && null == form.getMemberList())
+            if (getSettings().hasMemberList() && null == form.getMemberList())
                 insert.setMemberList(Collections.<User>emptyList());  // Force member list to get deleted, bug #2484
             else
                 insert.setMemberList(form.getMemberList());  // TODO: Do this in validate()?
@@ -787,20 +779,6 @@ public class AnnouncementsController extends SpringActionController
             {
                 errors.reject(ERROR_MSG, "Your changes have been saved, though some file attachments were not:");
                 errors.reject(ERROR_MSG, e.getMessage() == null ? e.toString() : e.getMessage());
-            }
-
-            // Don't send email for notes.  For messages, send email if there's body text or an attachment.
-            if (!isNote() && (null != insert.getBody() || !insert.getAttachments().isEmpty()))
-            {
-                String rendererTypeName = (String) form.get("rendererType");
-                WikiRendererType currentRendererType = (null == rendererTypeName ? null : WikiRendererType.valueOf(rendererTypeName));
-                if (null == currentRendererType)
-                {
-                    WikiService wikiService = ServiceRegistry.get().getService(WikiService.class);
-                    if (null != wikiService)
-                        currentRendererType = wikiService.getDefaultMessageRendererType();
-                }
-                sendNotificationEmails(insert, currentRendererType);
             }
 
             URLHelper returnURL = form.getReturnURLHelper();
@@ -840,12 +818,6 @@ public class AnnouncementsController extends SpringActionController
         public ActionURL getSuccessURL(AnnouncementForm announcementForm)
         {
             throw new IllegalStateException("Shouldn't get here; post handler should have redirected.");
-        }
-
-
-        protected boolean isNote()
-        {
-            return false;
         }
     }
 
@@ -946,30 +918,6 @@ public class AnnouncementsController extends SpringActionController
                              .addChild(_parent.getTitle(), "thread.view?rowId=" + _parent.getRowId())
                              .addChild("Respond to " + getSettings().getConversationName());
             return root;
-        }
-    }
-
-
-    // Different action to prevent validation and add a different NavTrail
-    @RequiresPermissionClass(InsertPermission.class)
-    public class InsertNoteAction extends InsertAction
-    {
-        @Override
-        public void validateCommand(AnnouncementForm target, Errors errors)
-        {
-            // Do no validation
-        }
-
-        public NavTree appendNavTrail(NavTree root)
-        {
-            root.addChild("New Note");
-            return root;
-        }
-
-        @Override
-        protected boolean isNote()
-        {
-            return true;
         }
     }
 
@@ -1702,153 +1650,6 @@ public class AnnouncementsController extends SpringActionController
             return resp;
         }
     }
-
-    private void sendNotificationEmails(AnnouncementModel a, WikiRendererType currentRendererType) throws Exception
-    {
-        Container c = getContainer();
-        DiscussionService.Settings settings = getSettings();
-
-        boolean isResponse = null != a.getParent();
-        AnnouncementModel parent = a;
-        if (isResponse)
-            parent = AnnouncementManager.getAnnouncement(c, a.getParent());
-
-        //  See bug #6585 -- thread might have been deleted already
-        if (null == parent)
-            return;
-
-        String messageId = "<" + a.getEntityId() + "@" + AppProps.getInstance().getDefaultDomain() + ">";
-        String references = messageId + " <" + parent.getEntityId() + "@" + AppProps.getInstance().getDefaultDomain() + ">";
-
-        // Email all copies of this message in a background thread
-        MailHelper.BulkEmailer emailer = new MailHelper.BulkEmailer();
-        emailer.setUser(getUser());
-
-        if (a.isBroadcast())
-        {
-            // Allow broadcast only if message board is not secure and user is site administrator
-            if (settings.isSecure() || !getUser().isAdministrator())
-            {
-                throw new UnauthorizedException();
-            }
-
-            Collection<String> emails = getBroadcastEmailAddresses(c);
-            ViewMessage m = getMessage(c, settings, null, parent, a, isResponse, null, currentRendererType, Reason.broadcast);
-            m.setHeader("References", references);
-            emailer.addMessage(emails, m);
-        }
-        else
-        {
-            // Send a notification email to everyone on the member list.  This email will include a link that removes the user from the member list.
-            IndividualEmailPrefsSelector sel = new IndividualEmailPrefsSelector(c);
-
-            List<User> users = sel.getNotificationUsers(a);
-
-            if (!users.isEmpty())
-            {
-                List<User> memberList;
-
-                if (settings.hasMemberList() && null != a.getMemberList())
-                    memberList = a.getMemberList();
-                else
-                    memberList = Collections.emptyList();
-
-                for (User user : users)
-                {
-                    ViewMessage m;
-                    Permissions perm = getPermissions(c, user, settings);
-
-                    if (memberList.contains(user))
-                    {
-                        ActionURL removeMeURL = new ActionURL(RemoveFromMemberListAction.class, c);
-                        removeMeURL.addParameter("userId", String.valueOf(user.getUserId()));
-                        removeMeURL.addParameter("messageId", String.valueOf(parent.getRowId()));
-                        m = getMessage(c, settings, perm, parent, a, isResponse, removeMeURL.getURIString(), currentRendererType, Reason.memberList);
-                    }
-                    else
-                    {
-                        ActionURL changeEmailURL = getEmailPreferencesURL(c, getBeginURL(c));
-                        m = getMessage(c, settings, perm, parent, a, isResponse, changeEmailURL.getURIString(), currentRendererType, Reason.signedUp);
-                    }
-
-                    m.setHeader("References", references);
-                    m.setHeader("Message-ID", messageId);
-                    emailer.addMessage(user.getEmail(), m);
-                }
-            }
-        }
-
-        emailer.start();
-    }
-
-
-    public static Collection<String> getBroadcastEmailAddresses(Container c)
-    {
-        // Get all site users' email addresses
-        Collection<String> emails = UserManager.getActiveUserEmails();
-
-        //FIX: 9742 -- need to exclude users who have set their pref to none
-        OptOutEmailPrefsSelector selector = new OptOutEmailPrefsSelector(c);
-        Collection<User> optOutUsers = selector.getUsers();
-
-        for (User user : optOutUsers)
-            emails.remove(user.getEmail());
-
-        return emails;
-    }
-
-
-    private ViewMessage getMessage(Container c, DiscussionService.Settings settings, Permissions perm, AnnouncementModel parent, AnnouncementModel a, boolean isResponse, String removeUrl, WikiRendererType currentRendererType, Reason reason) throws Exception
-    {
-        ViewMessage m = MailHelper.createMultipartViewMessage(LookAndFeelProperties.getInstance(c).getSystemEmailAddress(), null);
-        m.setSubject(StringUtils.trimToEmpty(isResponse ? "RE: " + parent.getTitle() : a.getTitle()));
-        HttpServletRequest request = AppProps.getInstance().createMockRequest();
-
-        EmailNotificationPage page = createEmailNotificationTemplate("emailNotificationPlain.jsp", false, c, settings, perm, parent, a, removeUrl, currentRendererType, reason);
-        JspView view = new JspView(page);
-        view.setFrame(WebPartView.FrameType.NONE);
-        m.setTemplateContent(request, view, "text/plain");
-
-        page = createEmailNotificationTemplate("emailNotification.jsp", true, c, settings, perm, parent, a, removeUrl, currentRendererType, reason);
-        view = new JspView(page);
-        view.setFrame(WebPartView.FrameType.NONE);
-        m.setTemplateContent(request, view, "text/html");
-
-        return m;
-    }
-
-
-    private EmailNotificationPage createEmailNotificationTemplate(String templateName, boolean includeBody, Container c, Settings settings, Permissions perm, AnnouncementModel parent,
-            AnnouncementModel a, String removeUrl, WikiRendererType currentRendererType, Reason reason)
-    {
-        EmailNotificationPage page = (EmailNotificationPage) JspLoader.createPage(AnnouncementsController.class, templateName);
-
-        page.settings = settings;
-        page.threadURL = getThreadURL(c, parent.getEntityId(), a.getRowId()).getURIString();
-        page.boardPath = c.getPath();
-        ActionURL boardURL = getBeginURL(c);
-        page.boardURL = boardURL.getURIString();
-        page.removeUrl = removeUrl;
-        page.siteURL = ActionURL.getBaseServerURL();
-        page.announcementModel = a;
-        page.reason = reason;
-        page.includeGroups = (null != perm && perm.includeGroups());  // perm will be null for broadcast since we send a single message to everyone
-
-        // for plain text email messages, we don't ever want to include the body since we can't translate HTML into
-        // plain text
-        if (includeBody && !settings.isSecure())
-        {
-            //format email using same renderer chosen for message
-            //note that we still send all messages, including plain text, as html-formatted messages; only the inserted body text differs between renderers.
-            WikiService wikiService = ServiceRegistry.get().getService(WikiService.class);
-            if (null != wikiService)
-            {
-                page.body = wikiService.getFormattedHtml(currentRendererType, a.getBody());
-            }
-        }
-        return page;
-    }
-
 
     private static NotFoundException createThreadNotFoundException(Container c)
     {
@@ -2590,7 +2391,7 @@ public class AnnouncementsController extends SpringActionController
             bean.printURL = null == currentURL ? null : currentURL.clone().replaceParameter("_print", "1");
             bean.print = print;
             bean.includeGroups = perm.includeGroups();
-            bean.embedded = (ann != null && null != ann.getDiscussionSrcURL() && !getViewContext().getActionURL().getPageFlow().equalsIgnoreCase("announcements"));  // TODO: Should have explicit flag for discussion case
+            bean.embedded = (ann != null && null != ann.getDiscussionSrcURL() && !getViewContext().getActionURL().getController().equalsIgnoreCase("announcements"));  // TODO: Should have explicit flag for discussion case
 
             if (!bean.print && !bean.embedded)
             {

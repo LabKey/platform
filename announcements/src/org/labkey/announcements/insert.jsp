@@ -24,6 +24,7 @@
 <%@ page import="org.labkey.api.util.URLHelper" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.api.wiki.WikiRendererType" %>
+<%@ page import="org.labkey.announcements.model.AnnouncementManager" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
     HttpView<InsertBean> me = (HttpView<InsertBean>) HttpView.currentView();
@@ -107,7 +108,7 @@ Ext.onReady(function(){
         <td><input type="checkbox" name="broadcast"></td>
         <td>
             Email this message to all site users who have not explicitly opted-out (site admins only).
-            If checked, this email will be sent to <%=Formats.commaf0.format(AnnouncementsController.getBroadcastEmailAddresses(c).size())%> users.
+            If checked, this email will be sent to <%=Formats.commaf0.format(AnnouncementManager.getBroadcastEmailAddresses(c).size())%> users.
         </td>
     </tr>
   <%

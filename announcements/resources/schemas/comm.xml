@@ -26,8 +26,12 @@
         <ns:nullable>false</ns:nullable>
         <ns:isReadOnly>true</ns:isReadOnly>
         <ns:isKeyField>true</ns:isKeyField>
+        <ns:isHidden>true</ns:isHidden>
       </ns:column>
-      <ns:column columnName="EntityId"/>
+      <ns:column columnName="EntityId">
+          <ns:isHidden>true</ns:isHidden>
+          <ns:description>GUID that uniquely identifies this row</ns:description>
+      </ns:column>
       <ns:column columnName="CreatedBy">
         <ns:datatype>int</ns:datatype>
         <ns:columnTitle>Created By</ns:columnTitle>
@@ -62,6 +66,7 @@
       <ns:column columnName="Modified">
         <ns:columnTitle>Modified</ns:columnTitle>
         <ns:inputType>text</ns:inputType>
+        <ns:formatString>DateTime</ns:formatString>
         <ns:inputLength>23</ns:inputLength>
         <ns:isReadOnly>true</ns:isReadOnly>
       </ns:column>
@@ -77,7 +82,9 @@
         </ns:fk>
       </ns:column>
       <ns:column columnName="Container"/>
-      <ns:column columnName="Parent"/>
+      <ns:column columnName="Parent">
+          <ns:description>EntityId of top-level announcement to which this is a reply, or null if this is a top-level posting</ns:description>
+      </ns:column>
       <ns:column columnName="Title">
         <ns:columnTitle>Title</ns:columnTitle>
         <ns:inputType>text</ns:inputType>
@@ -107,10 +114,16 @@
         <ns:displayWidth>20</ns:displayWidth>
       </ns:column>
       <ns:column columnName="EmailList"/>
-      <ns:column columnName="discussionsrcidentifier"/>
-      <ns:column columnName="discussionsrcurl"/>
+      <ns:column columnName="DiscussionSrcIdentifier">
+          <ns:description>EntityId of the object to which this announcement is attached. Null for rows that are part of the default forum for the container</ns:description>
+      </ns:column>
+      <ns:column columnName="DiscussionSrcURL">
+          <ns:description>URL to the display the object to which this message is attached. Always null for rows that are part of the default forum for the container</ns:description>
+      </ns:column>
       <ns:column columnName="LastIndexed">
           <ns:isReadOnly>true</ns:isReadOnly>
+          <ns:isUserEditable>false</ns:isUserEditable>
+          <ns:description>When this row was last indexed by the full-text search service</ns:description>
       </ns:column>
     </ns:columns>
     <ns:tableTitle>Announcements</ns:tableTitle>
