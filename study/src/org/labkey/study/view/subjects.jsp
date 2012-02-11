@@ -255,13 +255,13 @@ div.group.unhighlight
         if (index == _highlightGroup) return;
         _highlightGroup = index;
         if (null == _highlightGroupTask)
-            _highlightGroupTask = new Ext.util.DelayedTask(_highlightPtidsInGroup);
+            _highlightGroupTask = new X.util.DelayedTask(_highlightPtidsInGroup);
         _highlightGroupTask.delay(50);
     }
 
     function _highlightPtidsInGroup()
     {
-        var list = Ext.DomQuery.select("LI.ptid",_divId);
+        var list = X.DomQuery.select("LI.ptid",_divId);
         <%-- note removeClass() and addClass() are pretty expensive when used on a lot of elements --%>
         Ext4.Array.each(list, function(li){
             var a = li.firstChild;
@@ -282,25 +282,25 @@ div.group.unhighlight
         if (index == _highlightPtid) return;
         _highlightPtid = index;
         if (null == _highlightPtidTask)
-            _highlightPtidTask = new Ext.util.DelayedTask(_highlightGroupsForPart);
+            _highlightPtidTask = new X.util.DelayedTask(_highlightGroupsForPart);
         _highlightPtidTask.delay(50);
     }
 
     function _highlightGroupsForPart()
     {
         var p = _highlightPtid;
-        var list = Ext.DomQuery.select("DIV.group",'<%=groupsDivId%>');
+        var list = X.DomQuery.select("DIV.group",'<%=groupsDivId%>');
         for (var i=0 ; i<list.length ; i++)
         {
-            var div = Ext.get(list[i]);
-            div.removeClass(['highlight', 'unhighlight']);
+            var div = X.get(list[i]);
+            div.removeCls(['highlight', 'unhighlight']);
             if (p == -1) continue;
             g = parseInt(div.dom.attributes.index.value);
             var inGroup = testGroupPtid(g,p);
             if (inGroup)
-                div.addClass('highlight');
+                div.addCls('highlight');
             else
-                div.addClass('unhighlight');
+                div.addCls('unhighlight');
         }
     }
 
@@ -334,11 +334,12 @@ div.group.unhighlight
 
     function renderGroups()
     {
-        Ext4.onReady(function(){
-
+        Ext4.onReady(function()
+        {
             var filterTask = new Ext4.util.DelayedTask(filter);
 
-            var ptidPanel = Ext4.create('LABKEY.study.ParticipantFilterPanel',{
+            var ptidPanel = Ext4.create('LABKEY.study.ParticipantFilterPanel',
+            {
                 renderTo  : Ext4.get('<%=groupsDivId%>'),
                 listeners : {
                     // TODO : Enable this for proper highlighing. Problem is that the idx being returned is relative to that store, highlightPtidsInGroup
@@ -404,8 +405,8 @@ div.group.unhighlight
         }
         html.push('</div>');
 
-        Ext.get(<%=q(listDivId)%>).update(html.join(''));
-        Ext.get(<%=q(divId + ".status")%>).update(message);
+        X.get(<%=q(listDivId)%>).update(html.join(''));
+        X.get(<%=q(divId + ".status")%>).update(message);
     }
 
 
@@ -440,31 +441,69 @@ div.group.unhighlight
     }
 
 
+    function generateToolTip(p)
+    {
+        var part = _ptids[p];
+        var html = ["<div align=center>" + part.html + "</div>"];
+        for (var g=0 ; g<_groups.length ; g++)
+            if (testGroupPtid(g,p))
+                html.push('<div style="white-space:nowrap;">' + $h(_groups[g].label) + '</div>');
+        return html.join("");
+    }
+
+
     function render()
     {
-        var inp = Ext.get('<%=divId%>.filter');
-        inp.on('keyup', function(a){filterPtidContains(a.target.value);}, null, {buffer:200});
-         <%--onKeyUp="<%= viewObject %>.updateSubjects(this.value); return false;"--%>
         doAdjustSize();
         renderGroups();
         renderSubjects();
 
-        var ptidDiv = Ext.get(<%=q(listDivId)%>);
+        X.create('Ext.tip.ToolTip',
+        {
+            target: <%=q(listDivId)%>,
+            delegate: "LI.ptid",
+            trackMouse: true,
+//            renderTo: Ext.getBody(),
+            listeners:
+            {
+                beforeshow: function(tip)
+                {
+                    var dom = tip.triggerElement || tip.target;
+                    var indexAttr = dom.attributes.index || dom.parentNode.attributes.index;
+                    if (!X.isDefined(indexAttr))
+                        return false;
+                    var html = generateToolTip(parseInt(indexAttr.value));
+                    tip.update(html);
+                }
+            }
+        });
+
+        /* filter events */
+
+        var inp = X.get('<%=divId%>.filter');
+        inp.on('keyup', function(a){filterPtidContains(a.target.value);}, null, {buffer:200});
+
+        /* ptids events */
+
+        var ptidDiv = X.get(<%=q(listDivId)%>);
         ptidDiv.on('mouseover', function(e,dom)
         {
             var indexAttr = dom.attributes.index || dom.parentNode.attributes.index;
-            if (Ext.isDefined(indexAttr))
+            if (X.isDefined(indexAttr))
                 highlightGroupsForPart(parseInt(indexAttr.value));
         });
         ptidDiv.on('mouseout', function(e,dom)
         {
             highlightGroupsForPart(-1);
         });
-        var groupsDiv = Ext.get(<%=q(groupsDivId)%>);
+
+        /* groups events */
+
+        var groupsDiv = X.get(<%=q(groupsDivId)%>);
         groupsDiv.on('mouseover', function(e,dom)
         {
             var indexAttr = dom.attributes.index || dom.parentNode.attributes.index;
-            if (Ext.isDefined(indexAttr))
+            if (X.isDefined(indexAttr))
                 highlightPtidsInGroup(parseInt(indexAttr.value));
         });
         groupsDiv.on('mouseout', function(e,dom)
@@ -474,7 +513,7 @@ div.group.unhighlight
         groupsDiv.on('click', function(e,dom)
         {
             var indexAttr = dom.attributes.index || dom.parentNode.attributes.index;
-            if (Ext.isDefined(indexAttr))
+            if (X.isDefined(indexAttr))
                 filterGroup(parseInt(indexAttr.value));
         });
 
@@ -486,11 +525,11 @@ div.group.unhighlight
     function doAdjustSize()
     {
         // CONSIDER: register for window resize
-        var listDiv = Ext.get(<%=q(listDivId)%>);
+        var listDiv = X.get(<%=q(listDivId)%>);
         var rightAreaWidth = 0;
-        try {rightAreaWidth = Ext.fly(Ext.select(".labkey-side-panel").elements[0]).getWidth();} catch (x){}
+        try {rightAreaWidth = X.fly(X.select(".labkey-side-panel").elements[0]).getWidth();} catch (x){}
         var padding = 35;
-        var viewWidth = Ext.getBody().getViewSize().width;
+        var viewWidth = X.getBody().getViewSize().width;
         var right = viewWidth - padding - rightAreaWidth;
         var x = listDiv.getXY()[0];
         var width = Math.max(400, right-x);
@@ -506,7 +545,7 @@ div.group.unhighlight
 })();
 
 
-Ext.onReady(<%=viewObject%>.render, <%=viewObject%>);
+(Ext4||Ext).onReady(<%=viewObject%>.render, <%=viewObject%>);
 
 </script>
 
