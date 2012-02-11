@@ -238,9 +238,14 @@ public abstract class WellGroupCurveImpl implements DilutionCurve
 
     public DoublePoint[] getCurve() throws FitFailedException
     {
-        if (_curve == null)
-            _curve = renderCurve();
-        return _curve;
+        // NAb caches the assay's data in the HTTP session, so multiple threads may be requesting its data at the
+        // same time
+        synchronized (this)
+        {
+            if (_curve == null)
+                _curve = renderCurve();
+            return _curve;
+        }
     }
 
     protected abstract DoublePoint[] renderCurve() throws FitFailedException;

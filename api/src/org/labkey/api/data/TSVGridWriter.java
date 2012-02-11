@@ -108,6 +108,10 @@ public class TSVGridWriter extends TSVColumnWriter
     {
         _rs = rs;
         _displayColumns = displayColumns;
+        for (DisplayColumn displayColumn : _displayColumns)
+        {
+            displayColumn.setHtmlFiltered(false);
+        }
     }
 
 

@@ -148,6 +148,17 @@ LABKEY.WebPart = function(config)
 
     var renderPart = function(response, partConfig)
     {
+        // beforeRender callback to allow for editing of the response
+        // if 'false' is returned then rendering will be stopped.
+        if(partConfig.params.beforeRender)
+        {
+            var r = partConfig.params.beforeRender.call(_scope, response);
+            if (r === false)
+                return;
+            else if (r)
+                response = r;
+        }
+
         // render the part inside the target element
         if(_renderTo)
         {

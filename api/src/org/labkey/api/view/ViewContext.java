@@ -99,7 +99,7 @@ public class ViewContext extends BoundMap implements MessageSource, ContainerCon
         _c = copyFrom._c;
         _applicationContext = copyFrom._applicationContext;
         _pvsBind = copyFrom.getBindPropertyValues();
-        putAll(copyFrom.getExtendedProperties());
+        _map.putAll(copyFrom.getExtendedProperties());
     }
 
 
@@ -128,11 +128,11 @@ public class ViewContext extends BoundMap implements MessageSource, ContainerCon
                 continue;
 
             if (value.length == 1)
-                put(key, value[0]);
+                _map.put(key, value[0]);
             else
             {
                 List list = new ArrayList<String>(Arrays.asList(value));
-                put(key, list);
+                _map.put(key, list);
             }
         }
     }
