@@ -280,7 +280,7 @@ public abstract class WebPartView<ModelBean> extends HttpView<ModelBean>
         Throwable exceptionToRender = _prepareException;
         String errorMessage = null;
 
-        this.doStartTag(getViewContext(), response.getWriter());
+        doStartTag(getViewContext().getExtendedProperties(), response.getWriter());
 
         if (exceptionToRender == null)
         {
@@ -327,7 +327,7 @@ public abstract class WebPartView<ModelBean> extends HttpView<ModelBean>
             }
         }
 
-        this.doEndTag(getViewContext(), response.getWriter());
+        doEndTag(getViewContext().getExtendedProperties(), response.getWriter());
     }
 
     /**

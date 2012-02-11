@@ -18,7 +18,6 @@ package org.labkey.api.view;
 import org.apache.commons.beanutils.ConvertUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.NotNull;
-import org.labkey.api.collections.BoundMap;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.security.HasPermission;
@@ -48,6 +47,7 @@ import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpSession;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Locale;
@@ -58,10 +58,8 @@ import java.util.Set;
  * User: matthewb
  * Date: Mar 20, 2005
  * Time: 12:26:38 PM
- *
- * UNDONE: kill BoundMap functionality of ViewContext
  */
-public class ViewContext extends BoundMap implements MessageSource, ContainerContext, ContainerUser, ApplicationContextAware, HasPermission
+public class ViewContext implements MessageSource, ContainerContext, ContainerUser, ApplicationContextAware, HasPermission
 {
     private ApplicationContext _applicationContext;
     private HttpServletRequest _request;
@@ -73,11 +71,11 @@ public class ViewContext extends BoundMap implements MessageSource, ContainerCon
     private Container _c = null;
     private Set<Role> _contextualRoles = new HashSet<Role>();
 
+    transient protected HashMap<String, Object> _map = new HashMap<String, Object>();
     PropertyValues _pvsBind = null;              // may be set by SpringActionController, representing values used to bind command object
 
     public ViewContext()
     {
-        setBean(this);
         assert MemTracker.put(this);
     }
 
@@ -124,9 +122,6 @@ public class ViewContext extends BoundMap implements MessageSource, ContainerCon
             String key = entry.getKey();
             String[] value = (String[]) entry.getValue();
 
-            if (_properties.containsKey(key))
-                continue;
-
             if (value.length == 1)
                 _map.put(key, value[0]);
             else
@@ -161,6 +156,31 @@ public class ViewContext extends BoundMap implements MessageSource, ContainerCon
         return context;
     }
 
+
+    // ===========================================
+    // Last vestiges of ViewContext implementing BoundMap/Map below.  TODO: Remove these methods
+
+    public Map getExtendedProperties()
+    {
+        return _map;
+    }
+
+    public Object get(Object key)
+    {
+        return _map.get(key);
+    }
+
+    public Object put(String key, Object value)
+    {
+        return _map.put(key, value);
+    }
+
+    public Set<Map.Entry<String, Object>> entrySet()
+    {
+        return _map.entrySet();
+    }
+
+    // ===========================================
 
     public HttpServletRequest getRequest()
     {
@@ -307,7 +327,7 @@ public class ViewContext extends BoundMap implements MessageSource, ContainerCon
     // TODO: Return empty list instead of null
     public List<String> getList(Object key)
     {
-        Object values = get(key);
+        Object values = _map.get(key);
 
         if (values == null || List.class.isAssignableFrom(values.getClass()))
             return (List<String>) values;

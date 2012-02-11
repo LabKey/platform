@@ -605,8 +605,9 @@ public abstract class HttpView<ModelBean> extends DefaultModelAndView<ModelBean>
     {
         StringBuffer sb = new StringBuffer();
         sb.append(this.getClass().getName()).append(" {");
-        Map map = getViewContext();
-        for (Object o : map.entrySet())
+        ViewContext ctx = getViewContext();
+
+        for (Object o : ctx.entrySet())
         {
             Map.Entry entry = (Map.Entry) o;
             sb.append(entry.getKey()).append("=");
@@ -638,6 +639,7 @@ public abstract class HttpView<ModelBean> extends DefaultModelAndView<ModelBean>
             sb.append(value.substring(0, Math.min(100, value.length())));
             sb.append("; ");
         }
+
         sb.append("} ");
         sb.append(String.valueOf(getModelBean()));
         return sb.toString();
