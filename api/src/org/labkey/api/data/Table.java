@@ -420,8 +420,7 @@ public class Table
     }
 
 
-    // return a result from a one row one column resultset
-    // does not distinguish between not found, and set NULL
+    /** return a result from a one row one column resultset. does not distinguish between not found, and NULL value */
     public static <K> K executeSingleton(DbSchema schema, String sql, @Nullable Object[] parameters, Class<K> c) throws SQLException
     {
         return new LegacySqlSelector(schema, fragment(sql, parameters)).getObject(c);

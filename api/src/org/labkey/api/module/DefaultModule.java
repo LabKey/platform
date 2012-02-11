@@ -852,11 +852,11 @@ public abstract class DefaultModule implements Module, ApplicationContextAware
             return;
         }
 
+        ViewContext rootContext = new ViewContext(request, response, url);
+
         try
         {
             stackSize = HttpView.getStackSize();
-
-            ViewContext rootContext = new ViewContext(request, response, url);
 
             response.setContentType("text/html;charset=UTF-8");
             response.setHeader("Expires", "Sun, 01 Jan 2000 00:00:00 GMT");

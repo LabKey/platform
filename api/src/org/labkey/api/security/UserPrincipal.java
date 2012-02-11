@@ -62,6 +62,11 @@ public abstract class UserPrincipal implements Principal, Serializable
         _userId = userId;
     }
 
+    public boolean isGuest()
+    {
+        return false;
+    }
+
     public PrincipalType getPrincipalType()
     {
         return _principalType;

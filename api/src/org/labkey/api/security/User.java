@@ -168,13 +168,6 @@ public class User extends UserPrincipal implements Serializable, Cloneable
         return i >= 0;
     }
 
-
-    public boolean isGuest()
-    {
-        return false;
-    }
-
-
     @Override
     public Object clone() throws CloneNotSupportedException
     {

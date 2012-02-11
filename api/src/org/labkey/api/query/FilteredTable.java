@@ -39,6 +39,7 @@ public class FilteredTable extends AbstractTableInfo implements ContainerFiltera
     private String _innerAlias = null;
     protected TableInfo _rootTable;
     AliasManager _aliasManager = null;
+    private String _publicSchemaName = null;
 
     private Container _container;
 
@@ -463,5 +464,16 @@ public class FilteredTable extends AbstractTableInfo implements ContainerFiltera
     public Collection<QueryService.ParameterDecl> getNamedParameters()
     {
         return _rootTable.getNamedParameters();
+    }
+
+    public void setPublicSchemaName(String schemaName)
+    {
+        _publicSchemaName = schemaName;
+    }
+
+    @Override
+    public String getPublicSchemaName()
+    {
+        return _publicSchemaName == null ? super.getPublicSchemaName() : _publicSchemaName;
     }
 }

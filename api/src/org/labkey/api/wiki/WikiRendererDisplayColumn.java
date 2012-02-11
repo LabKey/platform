@@ -16,16 +16,13 @@
 package org.labkey.api.wiki;
 
 import org.apache.log4j.Logger;
+import org.jetbrains.annotations.NotNull;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.DataColumn;
-import org.labkey.api.data.DisplayColumn;
-import org.labkey.api.data.DisplayColumnFactory;
 import org.labkey.api.data.RenderContext;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.services.ServiceRegistry;
 
-import java.io.IOException;
-import java.io.Writer;
 import java.util.Set;
 
 /**
@@ -36,14 +33,15 @@ import java.util.Set;
  */
 public class WikiRendererDisplayColumn extends DataColumn
 {
-    private ColumnInfo _renderTypeColumn;
+    @NotNull
+    private String _renderTypeColumnName;
     private WikiRendererType _defaultRenderer = WikiRendererType.TEXT_WITH_LINKS;
     private static final Logger _log = Logger.getLogger(WikiRendererDisplayColumn.class);
 
-    public WikiRendererDisplayColumn(ColumnInfo contentColumn, ColumnInfo renderTypeColumn, WikiRendererType defaultRenderer)
+    public WikiRendererDisplayColumn(ColumnInfo contentColumn, @NotNull String renderTypeColumnName, WikiRendererType defaultRenderer)
     {
         super(contentColumn);
-        _renderTypeColumn = renderTypeColumn;
+        _renderTypeColumnName = renderTypeColumnName;
         if (null != defaultRenderer)
             _defaultRenderer = defaultRenderer;
     }
@@ -57,25 +55,26 @@ public class WikiRendererDisplayColumn extends DataColumn
             return "&nbsp";
 
 
-        WikiRendererType rendererType = null;
-        if (null != _renderTypeColumn)
+        WikiRendererType rendererType = _defaultRenderer;
+        Object rendererTypeName = ctx.get(getRenderTypeFieldKey());
+        if (null != rendererTypeName)
         {
-            String rendererTypeName = (String) ctx.get(_renderTypeColumn.getFieldKey());
-            if (null != rendererTypeName)
-                try
-                {
-                    rendererType = WikiRendererType.valueOf(rendererTypeName);
-                }
-                catch(IllegalArgumentException err)
-                {
-                    _log.error("Bad wiki renderer type: " + rendererTypeName, err);
-                }
-
+            try
+            {
+                rendererType = WikiRendererType.valueOf(rendererTypeName.toString());
+            }
+            catch(IllegalArgumentException err)
+            {
+                _log.error("Bad wiki renderer type: " + rendererTypeName, err);
+            }
         }
-        if (null == rendererType)
-            rendererType = _defaultRenderer;
 
         return wikiService.getFormattedHtml(rendererType, content);
+    }
+
+    private FieldKey getRenderTypeFieldKey()
+    {
+        return new FieldKey(getColumnInfo().getFieldKey().getParent(), _renderTypeColumnName);
     }
 
 
@@ -83,7 +82,6 @@ public class WikiRendererDisplayColumn extends DataColumn
     public void addQueryFieldKeys(Set<FieldKey> fieldKeys)
     {
         super.addQueryFieldKeys(fieldKeys);
-        if (null != _renderTypeColumn)
-            fieldKeys.add(_renderTypeColumn.getFieldKey());
+        fieldKeys.add(getRenderTypeFieldKey());
     }
 }

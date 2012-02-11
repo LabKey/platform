@@ -426,9 +426,9 @@ public abstract class WebPartView<ModelBean> extends HttpView<ModelBean>
                 {
                     Object o = getViewContext().get("closeURL");
                     Object closeUrl = o instanceof ActionURL ? ((ActionURL)o).getLocalURIString() : String.valueOf(o);
-                    out.print("<th>");
+                    out.print("<th valign=\"top\" align=\"right\">");
                     out.print("<a href=\"" + PageFlowUtil.filter(closeUrl) + "\">");
-                    out.print("<img src=\"" + contextPath + "/_images/delete.gif\"></a>");
+                    out.print("<img src=\"" + contextPath + "/_images/partdelete.gif\"></a>");
                     out.print("</th>");
                 }
 

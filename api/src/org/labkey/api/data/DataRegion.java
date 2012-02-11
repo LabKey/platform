@@ -2157,10 +2157,10 @@ public class DataRegion extends AbstractDataRegion
             {
                 if (!renderedColumns.contains(pkColName)) {
                     Object pkVal = null;
-                    //UNDONE: Should we require a viewForm whenver someone
+                    //UNDONE: Should we require a viewForm whenever someone
                     //posts? I tend to think so.
                     if (null != viewForm)
-                        pkVal = viewForm.getPkVal();        //TODO: Support multiple PKs?
+                        pkVal = viewForm.get(pkColName);
 
                     if (pkVal == null && valueMap != null)
                         pkVal = valueMap.get(pkColName);

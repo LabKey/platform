@@ -16,6 +16,7 @@
 package org.labkey.api.data;
 
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import org.labkey.api.query.ExprColumn;
 
 import java.util.EnumSet;
@@ -30,6 +31,7 @@ public class EnumTableInfo<EnumType extends Enum<EnumType>> extends VirtualTable
 {
     private final Class<EnumType> _enum;
     private final EnumValueGetter<EnumType> _getter;
+    @Nullable private String _schemaName;
 
     /**
      * Turns an enum value into a string to expose in the virtual table
@@ -91,5 +93,21 @@ public class EnumTableInfo<EnumType extends Enum<EnumType>> extends VirtualTable
             sql.add(_getter.getValue(e));
         }
         return sql;
+    }
+
+    public String getPublicSchemaName()
+    {
+        return _schemaName == null ? super.getPublicSchemaName() : _schemaName;
+    }
+
+    public void setPublicSchemaName(@Nullable String schemaName)
+    {
+        _schemaName = schemaName;
+    }
+
+    @Override
+    public boolean isPublic()
+    {
+        return true;
     }
 }

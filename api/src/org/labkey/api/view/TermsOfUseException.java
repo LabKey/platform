@@ -23,4 +23,8 @@ package org.labkey.api.view;
  */
 public class TermsOfUseException extends UnauthorizedException
 {
+    public TermsOfUseException()
+    {
+        super("You must accept the terms of use before you can access this data");
+    }
 }

@@ -458,7 +458,11 @@ public abstract class AbstractAssayProvider implements AssayProvider
         Domain domain = PropertyService.get().createDomain(c, getPresubstitutionLsid(ExpProtocol.ASSAY_DOMAIN_BATCH), "Batch Fields");
         List<ParticipantVisitResolverType> resolverTypes = getParticipantVisitResolverTypes();
         if (resolverTypes != null && resolverTypes.size() > 0)
-            addProperty(domain, PARTICIPANT_VISIT_RESOLVER_PROPERTY_NAME, PARTICIPANT_VISIT_RESOLVER_PROPERTY_CAPTION, PropertyType.STRING).setRequired(true);
+        {
+            DomainProperty resolverProperty = addProperty(domain, PARTICIPANT_VISIT_RESOLVER_PROPERTY_NAME, PARTICIPANT_VISIT_RESOLVER_PROPERTY_CAPTION, PropertyType.STRING);
+            resolverProperty.setRequired(true);
+            resolverProperty.setHidden(true);
+        }
 
         DomainProperty studyProp = addProperty(domain, TARGET_STUDY_PROPERTY_NAME, TARGET_STUDY_PROPERTY_CAPTION, PropertyType.STRING);
         studyProp.setShownInInsertView(true);

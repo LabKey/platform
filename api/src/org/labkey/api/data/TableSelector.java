@@ -99,17 +99,23 @@ public class TableSelector extends BaseSelector<TableSelector.TableSqlFactory>
         List<ColumnInfo> pkColumns = _table.getPkColumns();
         Object[] pks;
 
-        if (null != pk && pk.getClass().isArray())
-            pks = (Object[]) pk;
-        else
-            pks = new Object[]{pk};
-
-        assert pks.length == pkColumns.size() : "Wrong number of primary keys specified";
-
         SimpleFilter filter = new SimpleFilter(_filter);
+        if (pk instanceof SimpleFilter)
+        {
+            filter.addAllClauses((SimpleFilter)pk);
+        }
+        else
+        {
+            if (null != pk && pk.getClass().isArray())
+                pks = (Object[]) pk;
+            else
+                pks = new Object[]{pk};
 
-        for (int i = 0; i < pkColumns.size(); i++)
-            filter.addCondition(pkColumns.get(i), pks[i]);
+            assert pks.length == pkColumns.size() : "Wrong number of primary keys specified";
+
+            for (int i = 0; i < pkColumns.size(); i++)
+                filter.addCondition(pkColumns.get(i), pks[i]);
+        }
 
         if (null != c)
             filter.addCondition("container", c);
