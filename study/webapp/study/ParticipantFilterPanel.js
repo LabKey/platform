@@ -17,7 +17,7 @@ Ext4.define('LABKEY.study.ParticipantFilterPanel', {
             layout    : 'fit',
             allowAll  : true,
             border    : false, frame : false,
-            subjectNoun : {singular : 'Subject', plural : 'Subjects'}
+            subjectNoun : {singular : 'Participant', plural : 'Participants'}
         });
 
         // models Participant Groups and Cohorts mixed
@@ -67,7 +67,7 @@ Ext4.define('LABKEY.study.ParticipantFilterPanel', {
             },{
                 store       : Ext4.create('Ext.data.Store', groupConfig),
                 selection   : this.selection,
-                description : '<b>AND</b> In these ' + this.subjectNoun.singular + ' Groups:'
+                description : 'In these Groups:'
             }];
         }
 
