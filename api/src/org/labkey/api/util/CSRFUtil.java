@@ -16,6 +16,7 @@
 package org.labkey.api.util;
 
 import org.apache.commons.lang3.StringUtils;
+import org.jetbrains.annotations.Nullable;
 import org.labkey.api.view.UnauthorizedException;
 import org.labkey.api.view.ViewContext;
 
@@ -38,7 +39,7 @@ public class CSRFUtil
     private static final String csrfCookie =  "X-LABKEY-CSRF";
     private static final String sessionCookie = "JSESSIONID";
 
-    public static String getExpectedToken(HttpServletRequest request, HttpServletResponse response)
+    public static String getExpectedToken(HttpServletRequest request, @Nullable HttpServletResponse response)
     {
         String csrf = (String)request.getAttribute(csrfName);
         if (null != csrf)

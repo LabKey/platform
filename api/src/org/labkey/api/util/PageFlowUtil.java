@@ -20,6 +20,7 @@ import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.ObjectUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
+import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.jfree.chart.encoders.EncoderUtil;
 import org.jfree.chart.encoders.ImageFormat;
@@ -182,7 +183,7 @@ public class PageFlowUtil
         StringBuilder sb = new StringBuilder(2 * len);
         boolean newline = false;
 
-        for (int i=0 ; i < len; ++i)
+        for (int i = 0; i < len; ++i)
         {
             char c = s.charAt(i);
 
@@ -726,7 +727,7 @@ public class PageFlowUtil
 
     private static void prepareResponseForFile(HttpServletResponse response, Map<String, String> responseHeaders, String filename, boolean asAttachment)
     {
-        String contentType = null==responseHeaders ? null : responseHeaders.get("Content-Type");
+        String contentType = responseHeaders.get("Content-Type");
         if (null == contentType && null != filename)
             contentType = getContentTypeFor(filename);
         response.reset();
@@ -755,7 +756,7 @@ public class PageFlowUtil
 
 
     // Read the file and stream it to the browser
-    public static void streamFile(HttpServletResponse response, Map<String, String> responseHeaders, File file, boolean asAttachment) throws IOException
+    public static void streamFile(HttpServletResponse response, @NotNull Map<String, String> responseHeaders, File file, boolean asAttachment) throws IOException
     {
         try
         {
@@ -769,7 +770,7 @@ public class PageFlowUtil
 
 
     // Read the file and stream it to the browser
-    public static void streamFile(HttpServletResponse response, Map<String, String> responseHeaders, String name, InputStream is, boolean asAttachment) throws IOException
+    public static void streamFile(HttpServletResponse response, @NotNull Map<String, String> responseHeaders, String name, InputStream is, boolean asAttachment) throws IOException
     {
         try
         {
@@ -843,7 +844,7 @@ public class PageFlowUtil
 
         public Content copy()
         {
-            Content ret = new Content(content,encoded,modified);
+            Content ret = new Content(content, encoded, modified);
             ret.dependencies = dependencies;
             ret.compressed = compressed;
             return ret;
@@ -1323,7 +1324,7 @@ public class PageFlowUtil
     }
 
     @Deprecated
-    public static String textLink(String text, String href, String onClickScript, String id, Map<String, String> properties)
+    public static String textLink(String text, String href, @Nullable String onClickScript, @Nullable String id, Map<String, String> properties)
     {
         String additions = "";
 
@@ -1656,6 +1657,11 @@ public class PageFlowUtil
     {
         StringBuilder sb = getFaviconIncludes(c);
         sb.append(getStylesheetIncludes(c, userAgent));
+
+        // TODO: Add an actual setting for this... or better yet, a way for individual sites to add custom <head> HTML, similar to custom stylesheets
+        if (AppProps.getInstance().isDevMode())
+            sb.append(getSearchIncludes());
+
         sb.append(getLabkeyJS());
         sb.append(getJavaScriptIncludes());
         return sb.toString();
@@ -1670,11 +1676,11 @@ public class PageFlowUtil
 
         sb.append("    <link rel=\"shortcut icon\" href=\"");
         sb.append(PageFlowUtil.filter(faviconURL));
-        sb.append("\" >\n");
+        sb.append("\">\n");
 
         sb.append("    <link rel=\"icon\" href=\"");
         sb.append(PageFlowUtil.filter(faviconURL));
-        sb.append("\" >\n");
+        sb.append("\">\n");
 
         return sb;
     }
@@ -1696,7 +1702,7 @@ public class PageFlowUtil
         StringBuilder sb = new StringBuilder();
 
         Formatter F = new Formatter(sb);
-        String link = useLESS ? "<link href=\"%s\" type=\"text/x-less\" rel=\"stylesheet\">\n" : "<link href=\"%s\" type=\"text/css\" rel=\"stylesheet\">\n";
+        String link = useLESS ? "    <link href=\"%s\" type=\"text/x-less\" rel=\"stylesheet\">\n" : "    <link href=\"%s\" type=\"text/css\" rel=\"stylesheet\">\n";
 
         F.format(link, AppProps.getInstance().getContextPath() + "/" + extJsRoot + "/resources/css/ext-all.css");
         F.format(link, Path.parse(AppProps.getInstance().getContextPath() + resolveExtThemePath(c)));
@@ -1738,9 +1744,9 @@ public class PageFlowUtil
         }
 
         ResourceURL printStyleURL = new ResourceURL("printStyle.css", ContainerManager.getRoot());
-        sb.append("<link href=\"");
+        sb.append("    <link href=\"");
         sb.append(filter(printStyleURL));
-        sb.append("\" type=\"text/css\" rel=\"stylesheet\" media=\"print\" >\n");
+        sb.append("\" type=\"text/css\" rel=\"stylesheet\" media=\"print\">\n");
 
         return sb.toString();
     }
@@ -1891,10 +1897,10 @@ public class PageFlowUtil
         String serverHash = getServerSessionHash();
 
         StringBuilder sb = new StringBuilder();
-        sb.append("<script src=\"").append(contextPath).append("/labkey.js?").append(serverHash).append("\" type=\"text/javascript\"></script>\n");
-        sb.append("<script type=\"text/javascript\">\n");
-        sb.append("LABKEY.init(").append(jsInitObject()).append(");\n");
-        sb.append("</script>\n");
+        sb.append("    <script src=\"").append(contextPath).append("/labkey.js?").append(serverHash).append("\" type=\"text/javascript\"></script>\n");
+        sb.append("    <script type=\"text/javascript\">\n");
+        sb.append("        LABKEY.init(").append(jsInitObject()).append(");\n");
+        sb.append("    </script>\n");
         return sb.toString();
     }
 
@@ -1914,14 +1920,14 @@ public class PageFlowUtil
 
         if (combinedJS && !AppProps.getInstance().isDevMode())
         {
-            sb.append("<script src=\"").append(contextPath).append("/core/combinedJavascript.view?").append(serverHash).append("\" type=\"text/javascript\"></script>\n");
+            sb.append("    <script src=\"").append(contextPath).append("/core/combinedJavascript.view?").append(serverHash).append("\" type=\"text/javascript\"></script>\n");
         }
         else
         {
             for (String s : scripts)
-                sb.append("<script src=\"").append(contextPath).append("/").append(filter(s)).append("?").append(serverHash).append("\" type=\"text/javascript\"></script>\n");
+                sb.append("    <script src=\"").append(contextPath).append("/").append(filter(s)).append("?").append(serverHash).append("\" type=\"text/javascript\"></script>\n");
         }
-        sb.append("<script type=\"text/javascript\">\nLABKEY.loadedScripts(");
+        sb.append("    <script type=\"text/javascript\">\n        LABKEY.loadedScripts(");
         String comma = "";
         for (String s : includes)
         {
@@ -1929,9 +1935,18 @@ public class PageFlowUtil
             comma = ",";
         }
         sb.append(");\n");
-        sb.append("Ext.Ajax.timeout = 5 * 60 * 1000; // Default to 5 minute timeout\n");
-        sb.append("</script>\n");
+        sb.append("        Ext.Ajax.timeout = 5 * 60 * 1000; // Default to 5 minute timeout\n");
+        sb.append("    </script>\n");
         return sb.toString();
+    }
+
+
+    public static String getSearchIncludes()
+    {
+        String contextPath = AppProps.getInstance().getContextPath();
+
+        return "    <link rel=\"search\" type=\"application/opensearchdescription+xml\" href=\"" + contextPath + "/plugins/labkey_documentation.xml\" title=\"LabKey Documentation\">\n" +
+               "    <link rel=\"search\" type=\"application/opensearchdescription+xml\" href=\"" + contextPath + "/plugins/labkey_issues.xml\" title=\"LabKey Issues\">\n";
     }
 
 
