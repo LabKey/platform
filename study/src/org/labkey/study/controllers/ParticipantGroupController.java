@@ -385,7 +385,8 @@ public class ParticipantGroupController extends BaseStudyController
                     case participantGroup:
                         for (ParticipantCategory category : ParticipantGroupManager.getInstance().getParticipantCategories(getContainer(), getUser()))
                         {
-                            groups.add(createGroup(category.getRowId(), category.getLabel(), groupType));
+                            for (ParticipantGroup group : category.getGroups())
+                                groups.add(createGroup(group.getRowId(), category.getLabel(), groupType, category.getRowId()));
                         }
                         groups.add(createGroup(-1, "Not in any group", groupType));
                         break;
@@ -406,11 +407,17 @@ public class ParticipantGroupController extends BaseStudyController
 
         private Map<String, Object> createGroup(int id, String label, GroupType type)
         {
+            return createGroup(id, label, type, 0);
+        }
+
+        private Map<String, Object> createGroup(int id, String label, GroupType type, int categoryId)
+        {
             Map<String, Object> group = new HashMap<String, Object>();
 
             group.put("id", id);
             group.put("label", label);
             group.put("type", type);
+            group.put("categoryId", categoryId);
 
             return group;
         }
@@ -499,8 +506,8 @@ public class ParticipantGroupController extends BaseStudyController
                             }
                             else
                             {
-                                ParticipantCategory category = ParticipantGroupManager.getInstance().getParticipantCategory(getContainer(), getUser(), groupId);
-                                for (ParticipantGroup group : category.getGroups())
+                                ParticipantGroup group = ParticipantGroupManager.getInstance().getParticipantGroup(getContainer(), getUser(), groupId);
+                                if (group != null)
                                     groupSubjects.addAll(group.getParticipantSet());
                             }
                         }
