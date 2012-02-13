@@ -143,10 +143,17 @@ div.group.unhighlight
         if (StudyManager.getInstance().showCohorts(container, user))
             cohorts = StudyManager.getInstance().getCohorts(container, user);
         boolean hasCohorts = cohorts.length > 0;
-        for (Cohort co : cohorts)
+        if (hasCohorts)
         {
-            cohortMap.put(((CohortImpl)co).getRowId(), index);
-            %><%=commas[0]%>{id:<%=((CohortImpl)co).getRowId()%>, index:<%=index%>, type:'cohort', label:<%=q(co.getLabel())%>}<%
+            for (Cohort co : cohorts)
+            {
+                cohortMap.put(((CohortImpl)co).getRowId(), index);
+                %><%=commas[0]%>{id:<%=((CohortImpl)co).getRowId()%>, index:<%=index%>, type:'cohort', label:<%=q(co.getLabel())%>}<%
+                commas[0]=",\n";
+                index++;
+            }
+            cohortMap.put(-1, index); // 'no cohort place holder
+            %><%=commas[0]%>{id:-1, index:<%=index%>, type:'cohort', label:'{no cohort}'}<%
             commas[0]=",\n";
             index++;
         }
@@ -155,22 +162,31 @@ div.group.unhighlight
         final HashMap<Integer,Integer> groupMap = new HashMap<Integer,Integer>();
         ParticipantGroupManager m = ParticipantGroupManager.getInstance();
         ParticipantCategory[] categories = m.getParticipantCategories(container, user);
-        for (int isShared=1 ; isShared>=0 ; isShared--)
+        boolean hasGroups = categories.length > 0;
+        if (hasGroups)
         {
-            for (ParticipantCategory cat : categories)
+            for (int isShared=1 ; isShared>=0 ; isShared--)
             {
-                if ((isShared==1) == cat.isShared())
+                for (ParticipantCategory cat : categories)
                 {
-                    for (ParticipantGroup g : m.getParticipantGroups(container, user, cat))
+                    if ((isShared==1) == cat.isShared())
                     {
-                        groupMap.put(g.getRowId(), index);
-                        // UNDONE: groupid vs categoryid???
-                        %><%=commas[0]%>{id:<%=cat.getRowId()%>, index:<%=index%>, shared:true, type:'participantGroup', label:<%=q(g.getLabel())%>}<%
-                        commas[0]=",\n";
-                        index++;
+                        for (ParticipantGroup g : m.getParticipantGroups(container, user, cat))
+                        {
+                            groupMap.put(g.getRowId(), index);
+                            // UNDONE: groupid vs categoryid???
+                            %><%=commas[0]%>{categoryId:<%=cat.getRowId()%>, id:<%=g.getRowId()%>, index:<%=index%>, shared:true, type:'participantGroup', label:<%=q(g.getLabel())%>}<%
+                            commas[0]=",\n";
+                            index++;
+                        }
                     }
                 }
             }
+            groupMap.put(-1, index);
+            // UNDONE: groupid vs categoryid???
+            %><%=commas[0]%>{categoryId:-1, id:-1, index:<%=index%>, shared:false, type:'participantGroup', label:'{no group}'}<%
+            commas[0]=",\n";
+            index++;
         }
         %>];
 <%
@@ -179,6 +195,8 @@ div.group.unhighlight
             memberSets[i] = new BitSet();
         if (hasCohorts)
         {
+            final int nocohort = cohorts.length;
+            memberSets[nocohort].flip(0,ptidMap.size()-1);
             (new SqlSelector(dbschema, "SELECT currentcohortid, participantid FROM study.participant WHERE container=?", container)).forEach(new Selector.ForEachBlock<ResultSet>()
             {
                 public void exec(ResultSet rs) throws SQLException
@@ -186,20 +204,31 @@ div.group.unhighlight
                     Integer icohortid = cohortMap.get(rs.getInt(1));
                     Integer iptid = ptidMap.get(rs.getString(2));
                     if (null!=icohortid && null!=iptid)
+                    {
                         memberSets[icohortid].set(iptid);
+                        memberSets[nocohort].clear(iptid);
+                    }
                 }
             });
         }
-        (new SqlSelector(dbschema, "SELECT groupid, participantid FROM study.participantgroupmap WHERE container=?", container)).forEach(new Selector.ForEachBlock<ResultSet>()
+        if (hasGroups)
         {
-            public void exec(ResultSet rs) throws SQLException
+            final int nogroup = memberSets.length-1;
+            memberSets[nogroup].flip(0,ptidMap.size()-1);
+            (new SqlSelector(dbschema, "SELECT groupid, participantid FROM study.participantgroupmap WHERE container=?", container)).forEach(new Selector.ForEachBlock<ResultSet>()
             {
-                Integer igroup = groupMap.get(rs.getInt(1));
-                Integer iptid = ptidMap.get(rs.getString(2));
-                if (null!=igroup && null!=iptid)
-                    memberSets[igroup].set(iptid);
-            }
-        });
+                public void exec(ResultSet rs) throws SQLException
+                {
+                    Integer igroup = groupMap.get(rs.getInt(1));
+                    Integer iptid = ptidMap.get(rs.getString(2));
+                    if (null!=igroup && null!=iptid)
+                    {
+                        memberSets[igroup].set(iptid);
+                        memberSets[nogroup].clear(iptid);
+                    }
+                }
+            });
+        }
 %>
     var _ptidGroupMap = [<%
         String comma = "\n";
@@ -452,8 +481,10 @@ div.group.unhighlight
         var part = _ptids[p];
         var html = ["<div align=center>" + part.html + "</div>"];
         for (var g=0 ; g<_groups.length ; g++)
-            if (testGroupPtid(g,p))
+        {
+            if (_groups[g].id != -1 && testGroupPtid(g,p))
                 html.push('<div style="white-space:nowrap;">' + $h(_groups[g].label) + '</div>');
+        }
         return html.join("");
     }
 
@@ -563,7 +594,7 @@ div.group.unhighlight
     <td style="padding:5px; margin:5px; border:solid 0px #eeeeee;" class="iScroll" valign=top>
         <table width=100%><tr>
             <td><div style="" >Filter&nbsp;<input id="<%=divId%>.filter" type="text" size="15" style="border:solid 1px #<%=theme.getWebPartColor()%>"></div></td>
-            <td>&nbsp;<%if (hasCohorts){%><input type=checkbox>&nbsp;by&nbsp;cohort<%}%></td>
+            <td>&nbsp;<%if (hasCohorts){%><input type=checkbox>&nbsp;by&nbsp;cohort (NYI)<%}%></td>
         </tr></table>
         <hr style="height:1px; border:0; background-color:#<%=theme.getWebPartColor()%>; color:#<%=theme.getWebPartColor()%>;">
         <div><span id="<%=divId%>.status">Loading...</span></div>
