@@ -94,6 +94,7 @@ div.group.unhighlight
 </style>
 <script>
     LABKEY.requiresExt4Sandbox(true);
+    LABKEY.requiresCss('study/DataViewsPanel.css');
     LABKEY.requiresScript("study/ParticipantFilterPanel.js");
 </script>
 <script type="text/javascript">
@@ -249,8 +250,6 @@ div.group.unhighlight
 
     function highlightPtidsInGroup(index)
     {
-        console.log("highlightPtidsInGroup(" + index + ") _highlightGroup==" + _highlightGroup);
-        console.trace();
         if (index == _highlightGroup) return;
         _highlightGroup = index;
         if (null == _highlightGroupTask)
@@ -343,7 +342,6 @@ div.group.unhighlight
                         for (var i=0 ; i<_groups.length ; i++)
                             if (_groups[i].id==r.data.id && _groups[i].type==r.data.type)
                                 g = i;
-                        console.log("itemmouseenter: label=" + r.data.label + " id=" + r.data.id + " type=" + r.data.type + " g=" + g);
                         highlightPtidsInGroup(g);
                     },
                     itemmouseleave : function()
@@ -361,6 +359,12 @@ div.group.unhighlight
                 }
             });
 
+            function scrollHorizontal(evt) {
+                Ext4.get(<%=q(listDivId)%>).scroll((evt.getWheelDeltas().y > 0) ? 'r' : 'l', 20);
+                evt.stopEvent();
+            }
+
+            Ext4.get(<%=q(listDivId)%>).on(Ext4.supports.MouseWheel ? 'mousewheel' : 'DOMMouseScroll', scrollHorizontal);
         });
     }
 
@@ -401,7 +405,7 @@ div.group.unhighlight
                 message = 'Showing all ' + count + ' ' + (count > 1 ? _pluralNoun.toLowerCase() : _singularNoun.toLowerCase()) + '.';
         }
         else {
-            if (_filterSubstring != null)
+            if (_filterSubstring && _filterSubstring.length > 0)
                 message = 'No ' + _singularNoun.toLowerCase() + ' IDs contain \"' + _filterSubstring + '\".';
             else
                 message = 'No matching ' + _pluralNoun + '.';
@@ -415,7 +419,6 @@ div.group.unhighlight
 
     function filterPtidContains(substring)
     {
-        console.log(substring);
         _filterSubstring = substring;
         if (!substring)
         {
@@ -552,20 +555,19 @@ div.group.unhighlight
 
 </script>
 
-
 <div style="">
  <table id="<%= divId %>" width="100%">
     <tr><td style="padding:5px; margin:5px; border:solid 0px #eeeeee;" width=200 valign=top>
     <div style="min-width:200px;"  id="<%=groupsDivId%>">&nbsp;</div>
     </td>
-    <td style="padding:5px; margin:5px; border:solid 0px #eeeeee;" valign=top>
+    <td style="padding:5px; margin:5px; border:solid 0px #eeeeee;" class="iScroll" valign=top>
         <table width=100%><tr>
             <td><div style="" >Filter&nbsp;<input id="<%=divId%>.filter" type="text" size="15" style="border:solid 1px #<%=theme.getWebPartColor()%>"></div></td>
             <td>&nbsp;<%if (hasCohorts){%><input type=checkbox>&nbsp;by&nbsp;cohort<%}%></td>
         </tr></table>
         <hr style="height:1px; border:0; background-color:#<%=theme.getWebPartColor()%>; color:#<%=theme.getWebPartColor()%>;">
         <div><span id="<%=divId%>.status">Loading...</span></div>
-        <div style="overflow-x:auto; min-height:<%=Math.round(1.2*(ptidsPerCol+3))%>em"  id="<%= listDivId %>"></div>
+        <div style="overflow-x:auto; min-height:<%=Math.round(1.2*(ptidsPerCol+3))%>em;" id="<%= listDivId %>"></div>
     </td></tr>
 </table>
 </div>
