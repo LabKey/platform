@@ -141,6 +141,7 @@ div.group.unhighlight
         CohortImpl[] cohorts = new CohortImpl[0];
         if (StudyManager.getInstance().showCohorts(container, user))
             cohorts = StudyManager.getInstance().getCohorts(container, user);
+        boolean hasCohorts = cohorts.length > 0;
         for (Cohort co : cohorts)
         {
             cohortMap.put(((CohortImpl)co).getRowId(), index);
@@ -153,29 +154,20 @@ div.group.unhighlight
         final HashMap<Integer,Integer> groupMap = new HashMap<Integer,Integer>();
         ParticipantGroupManager m = ParticipantGroupManager.getInstance();
         ParticipantCategory[] categories = m.getParticipantCategories(container, user);
-        for (ParticipantCategory cat : categories)
+        for (int isShared=1 ; isShared>=0 ; isShared--)
         {
-            if (cat.isShared())
+            for (ParticipantCategory cat : categories)
             {
-                for (ParticipantGroup g : m.getParticipantGroups(container, user, cat))
+                if ((isShared==1) == cat.isShared())
                 {
-                    groupMap.put(g.getRowId(), index);
-                    %><%=commas[0]%>{id:<%=g.getRowId()%>, index:<%=index%>, shared:true, type:'participantGroup', label:<%=q(g.getLabel())%>}<%
-                    commas[0]=",\n";
-                    index++;
-                }
-            }
-        }
-        for (ParticipantCategory cat : categories)
-        {
-            if (!cat.isShared())
-            {
-                for (ParticipantGroup g : m.getParticipantGroups(container, user, cat))
-                {
-                    groupMap.put(g.getRowId(), index);
-                    %><%=commas[0]%>{id:<%=g.getRowId()%>, index:<%=index%>, shared:false, type:'participantGroup', label:<%=q(g.getLabel())%>}<%
-                    commas[0]=",\n";
-                    index++;
+                    for (ParticipantGroup g : m.getParticipantGroups(container, user, cat))
+                    {
+                        groupMap.put(g.getRowId(), index);
+                        // UNDONE: groupid vs categoryid???
+                        %><%=commas[0]%>{id:<%=cat.getRowId()%>, index:<%=index%>, shared:true, type:'participantGroup', label:<%=q(g.getLabel())%>}<%
+                        commas[0]=",\n";
+                        index++;
+                    }
                 }
             }
         }
@@ -184,16 +176,19 @@ div.group.unhighlight
         final BitSet[] memberSets = new BitSet[index];
         for (int i=0 ; i<memberSets.length ; i++)
             memberSets[i] = new BitSet();
-        (new SqlSelector(dbschema, "SELECT currentcohortid, participantid FROM study.participant WHERE container=?", container)).forEach(new Selector.ForEachBlock<ResultSet>()
+        if (hasCohorts)
         {
-            public void exec(ResultSet rs) throws SQLException
+            (new SqlSelector(dbschema, "SELECT currentcohortid, participantid FROM study.participant WHERE container=?", container)).forEach(new Selector.ForEachBlock<ResultSet>()
             {
-                Integer icohortid = cohortMap.get(rs.getInt(1));
-                Integer iptid = ptidMap.get(rs.getString(2));
-                if (null!=icohortid && null!=iptid)
-                    memberSets[icohortid].set(iptid);
-            }
-        });
+                public void exec(ResultSet rs) throws SQLException
+                {
+                    Integer icohortid = cohortMap.get(rs.getInt(1));
+                    Integer iptid = ptidMap.get(rs.getString(2));
+                    if (null!=icohortid && null!=iptid)
+                        memberSets[icohortid].set(iptid);
+                }
+            });
+        }
         (new SqlSelector(dbschema, "SELECT groupid, participantid FROM study.participantgroupmap WHERE container=?", container)).forEach(new Selector.ForEachBlock<ResultSet>()
         {
             public void exec(ResultSet rs) throws SQLException
@@ -564,7 +559,10 @@ div.group.unhighlight
     <div style="min-width:200px;"  id="<%=groupsDivId%>">&nbsp;</div>
     </td>
     <td style="padding:5px; margin:5px; border:solid 0px #eeeeee;" valign=top>
-     <div style="" >Filter&nbsp;<input id="<%=divId%>.filter" type="text" size="15" style="border:solid 1px #<%=theme.getWebPartColor()%>"></div>
+        <table width=100%><tr>
+            <td><div style="" >Filter&nbsp;<input id="<%=divId%>.filter" type="text" size="15" style="border:solid 1px #<%=theme.getWebPartColor()%>"></div></td>
+            <td>&nbsp;<%if (hasCohorts){%><input type=checkbox>&nbsp;by&nbsp;cohort<%}%></td>
+        </tr></table>
         <hr style="height:1px; border:0; background-color:#<%=theme.getWebPartColor()%>; color:#<%=theme.getWebPartColor()%>;">
         <div><span id="<%=divId%>.status">Loading...</span></div>
         <div style="overflow-x:auto; min-height:<%=Math.round(1.2*(ptidsPerCol+3))%>em"  id="<%= listDivId %>"></div>
