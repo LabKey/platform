@@ -16,7 +16,6 @@
 
 package org.labkey.api.study.actions;
 
-import org.labkey.api.action.LabkeyError;
 import org.labkey.api.action.SpringActionController;
 import org.labkey.api.data.*;
 import org.labkey.api.exp.ExperimentException;
@@ -36,9 +35,9 @@ import org.labkey.api.query.ValidationException;
 import org.labkey.api.security.RequiresPermissionClass;
 import org.labkey.api.security.permissions.*;
 import org.labkey.api.study.assay.*;
+import org.labkey.api.study.assay.pipeline.AssayUploadPipelineJob;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.view.*;
-import org.labkey.api.view.template.AppBar;
 import org.springframework.context.MessageSourceResolvable;
 import org.springframework.validation.BindException;
 import org.springframework.validation.Errors;
@@ -137,16 +136,6 @@ public class UploadWizardAction<FormType extends AssayRunUploadForm<ProviderType
     /** After a run has been successfully created, either send the user to upload another, or complete the wizard */
     protected ModelAndView afterRunCreation(FormType form, ExpRun run, BindException errors) throws ServletException, ExperimentException
     {
-        List<String> copyErrors = AssayPublishService.get().autoCopyResults(_protocol, run, getViewContext());
-        if (!copyErrors.isEmpty())
-        {
-            for (String copyError : copyErrors)
-            {
-                errors.addError(new LabkeyError(copyError));
-            }
-        }
-
-
         if (form.isMultiRunUpload())
         {
             form.setSuccessfulUploadComplete(true);
@@ -633,10 +622,44 @@ public class UploadWizardAction<FormType extends AssayRunUploadForm<ProviderType
                 exp = ExperimentService.get().getExpExperiment(form.getBatchId().intValue());
             }
 
-            ExpRun run = AssayService.get().createExperimentRun(form.getName(), getViewContext().getContainer(), form.getProtocol(), getPrimaryFile(form));
-            run.setComments(form.getComments());
+            ExpRun run;
+            File primaryFile = getPrimaryFile(form);
 
-            exp = form.getProvider().getRunCreator().saveExperimentRun(form, exp, run);
+            // Temporarily hard-code to always do our normal, synchronous upload
+            boolean background = false;
+            if (!background)
+            {
+                run = AssayService.get().createExperimentRun(form.getName(), getViewContext().getContainer(), form.getProtocol(), primaryFile);
+                run.setComments(form.getComments());
+
+                exp = form.getProvider().getRunCreator().saveExperimentRun(form, exp, run, false);
+            }
+            else
+            {
+                try
+                {
+                    // Whether or not we need to save batch properties
+                    boolean forceSaveBatchProps = false;
+                    if (exp == null)
+                    {
+                        // No batch yet, so make one
+                        exp = AssayService.get().createStandardBatch(getContainer(), null, form.getProtocol());
+                        exp.save(form.getUser());
+                        // It's brand new, so we need to eventually set its properties
+                        forceSaveBatchProps = true;
+                    }
+
+                    // Queue up a pipeline job to do the actual import in the background
+                    ViewBackgroundInfo info = new ViewBackgroundInfo(getContainer(), getViewContext().getUser(), getViewContext().getActionURL());
+                    AssayUploadPipelineJob<ProviderType> pipelineJob = new AssayUploadPipelineJob<ProviderType>(form.getProvider().createRunAsyncContext(form), info, exp, forceSaveBatchProps, PipelineService.get().getPipelineRootSetting(getContainer()), primaryFile);
+                    PipelineService.get().queueJob(pipelineJob);
+                    run = null;
+                }
+                catch (IOException e)
+                {
+                    throw new ExperimentException(e);
+                }
+            }
 
             form.setBatchId(exp.getRowId());
             form.saveDefaultBatchValues();

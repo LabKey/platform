@@ -32,7 +32,7 @@ public interface AssayRunCreator<ProviderType extends AssayProvider>
     /**
      * @return the batch to which the run has been assigned
      */
-    public ExpExperiment saveExperimentRun(AssayRunUploadContext context, @Nullable ExpExperiment batch, ExpRun run)
+    public ExpExperiment saveExperimentRun(AssayRunUploadContext context, @Nullable ExpExperiment batch, ExpRun run, boolean forceSaveBatchProps)
         throws ExperimentException, ValidationException;
 
     DataValidator getDataValidator();

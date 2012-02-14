@@ -89,7 +89,7 @@ public class AssayService
          * @param container location for this batch to live
          * @param name preferred name for the batch. If null, a default name will be assigned. If the name is already in
          */
-        public ExpExperiment createStandardBatch(Container container, String name, ExpProtocol protocol);
+        public ExpExperiment createStandardBatch(Container container, @Nullable String name, ExpProtocol protocol);
 
         /** Ensures that the batch name is unique within the container. Will add unique numeric suffix until it is. */
         public ExpExperiment ensureUniqueBatchName(ExpExperiment batch, ExpProtocol protocol, User user);

@@ -75,7 +75,7 @@ public class AssayPublishService
          * Automatically copy assay data to a study if the design is set up to do so
          * @return any errors that prevented the copy
          */
-        public List<String> autoCopyResults(ExpProtocol protocol, ExpRun run, ViewContext viewContext);
+        public List<String> autoCopyResults(ExpProtocol protocol, ExpRun run, User user, Container container);
 
         /** Checks if the assay and specimen participant/visit/dates don't match based on the specimen id and target study */
         boolean hasMismatchedInfo(AssayProvider provider, ExpProtocol protocol, List<Integer> allObjects, AssaySchema schema);

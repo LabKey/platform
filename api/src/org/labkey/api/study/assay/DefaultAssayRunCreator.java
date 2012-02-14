@@ -19,6 +19,7 @@ import org.apache.commons.beanutils.ConversionException;
 import org.apache.commons.beanutils.ConvertUtils;
 import org.apache.log4j.Logger;
 import org.jetbrains.annotations.Nullable;
+import org.labkey.api.action.LabkeyError;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
@@ -87,9 +88,10 @@ public class DefaultAssayRunCreator<ProviderType extends AbstractAssayProvider> 
 
     /**
      * @param batch if not null, the run group that's already created for this batch. If null, a new one needs to be created
+     * @param forceSaveBatchProps
      * @return the run and batch that were inserted
      */
-    public ExpExperiment saveExperimentRun(AssayRunUploadContext context, @Nullable ExpExperiment batch, ExpRun run) throws ExperimentException, ValidationException
+    public ExpExperiment saveExperimentRun(AssayRunUploadContext context, @Nullable ExpExperiment batch, ExpRun run, boolean forceSaveBatchProps) throws ExperimentException, ValidationException
     {
         Map<ExpMaterial, String> inputMaterials = new HashMap<ExpMaterial, String>();
         Map<ExpData, String> inputDatas = new HashMap<ExpData, String>();
@@ -158,7 +160,7 @@ public class DefaultAssayRunCreator<ProviderType extends AbstractAssayProvider> 
         DbScope scope = ExperimentService.get().getSchema().getScope();
         try
         {
-            boolean saveBatchProps = false;
+            boolean saveBatchProps = forceSaveBatchProps;
             scope.ensureTransaction();
 
             // Save the batch first
@@ -256,7 +258,19 @@ public class DefaultAssayRunCreator<ProviderType extends AbstractAssayProvider> 
             scope.commitTransaction();
 
             AssayService.get().ensureUniqueBatchName(batch, context.getProtocol(), context.getUser());
-            
+
+            List<String> copyErrors = AssayPublishService.get().autoCopyResults(context.getProtocol(), run, context.getUser(), context.getContainer());
+            if (!copyErrors.isEmpty())
+            {
+                StringBuilder errorMessage = new StringBuilder();
+                for (String copyError : copyErrors)
+                {
+                    errorMessage.append(copyError);
+                    errorMessage.append("\n");
+                }
+                throw new ExperimentException(errorMessage.toString());
+            }
+
             return batch;
         }
         catch (SQLException e)

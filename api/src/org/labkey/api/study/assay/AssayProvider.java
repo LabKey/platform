@@ -33,6 +33,7 @@ import org.labkey.api.qc.DataTransformer;
 import org.labkey.api.qc.DataValidator;
 import org.labkey.api.security.User;
 import org.labkey.api.study.actions.AssayRunUploadForm;
+import org.labkey.api.study.assay.pipeline.AssayRunAsyncContext;
 import org.labkey.api.study.query.ResultsQueryView;
 import org.labkey.api.study.query.RunListQueryView;
 import org.labkey.api.util.Pair;
@@ -47,10 +48,10 @@ import org.springframework.web.servlet.mvc.Controller;
 
 import javax.servlet.http.HttpServletRequest;
 import java.io.File;
+import java.io.IOException;
 import java.sql.SQLException;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 
 /**
  * User: brittp
@@ -101,7 +102,7 @@ public interface AssayProvider extends Handler<ExpProtocol>
     ExpRunTable createRunTable(AssaySchema schema, ExpProtocol protocol);
 
     /** TargetStudy may be null if each row in dataKeys has a non-null AssayPublishKey#getTargetStudy(). */
-    ActionURL copyToStudy(ViewContext viewContext, ExpProtocol protocol, @Nullable Container study, Map<Integer, AssayPublishKey> dataKeys, List<String> errors);
+    ActionURL copyToStudy(User user, Container assayDataContainer, ExpProtocol protocol, @Nullable Container study, Map<Integer, AssayPublishKey> dataKeys, List<String> errors);
 
     List<ParticipantVisitResolverType> getParticipantVisitResolverTypes();
 
@@ -223,6 +224,9 @@ public interface AssayProvider extends Handler<ExpProtocol>
      * Return the helper to handle data exchange between the server and external scripts.
      */
     DataExchangeHandler createDataExchangeHandler();
+    /** Make a context that knows how to update a run that's already been stored in the database */
     AssayRunDatabaseContext createRunDatabaseContext(ExpRun run, User user, HttpServletRequest request);
+    /** Make a context that knows how to do the import in the background, on a separate thread from the final HTTP step in the wizard */
+    AssayRunAsyncContext createRunAsyncContext(AssayRunUploadContext context) throws IOException, ExperimentException;
     String getRunLSIDPrefix();
 }

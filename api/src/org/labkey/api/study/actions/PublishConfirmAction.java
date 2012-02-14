@@ -46,7 +46,6 @@ import org.labkey.api.view.NotFoundException;
 import org.labkey.api.view.RedirectException;
 import org.labkey.api.view.VBox;
 import org.labkey.api.view.ViewContext;
-import org.labkey.api.view.template.AppBar;
 import org.springframework.validation.BindException;
 import org.springframework.web.servlet.ModelAndView;
 
@@ -445,7 +444,7 @@ public class PublishConfirmAction extends BaseAssayAction<PublishConfirmAction.P
         if (errors.getErrorCount() == 0 && !publishConfirmForm.isValidate())
         {
             List<String> publishErrors = new ArrayList<String>();
-            ActionURL successURL  = provider.copyToStudy(context, _protocol, targetStudy, publishData, publishErrors);
+            ActionURL successURL  = provider.copyToStudy(context.getUser(), context.getContainer(), _protocol, targetStudy, publishData, publishErrors);
             if (publishErrors.isEmpty())
             {
                 DataRegionSelection.clearAll(getViewContext(), publishConfirmForm.getDataRegionSelectionKey());

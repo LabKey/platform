@@ -57,7 +57,6 @@ import org.labkey.api.exp.property.Domain;
 import org.labkey.api.exp.property.DomainProperty;
 import org.labkey.api.exp.property.Lookup;
 import org.labkey.api.exp.property.PropertyService;
-import org.labkey.api.exp.query.ExpExperimentTable;
 import org.labkey.api.exp.query.ExpQCFlagTable;
 import org.labkey.api.exp.query.ExpRunTable;
 import org.labkey.api.gwt.client.DefaultValueType;
@@ -83,6 +82,7 @@ import org.labkey.api.study.actions.AssayRunDetailsAction;
 import org.labkey.api.study.actions.AssayRunUploadForm;
 import org.labkey.api.study.actions.DesignerAction;
 import org.labkey.api.study.actions.UploadWizardAction;
+import org.labkey.api.study.assay.pipeline.AssayRunAsyncContext;
 import org.labkey.api.study.query.ResultsQueryView;
 import org.labkey.api.study.query.RunListQueryView;
 import org.labkey.api.util.FileUtil;
@@ -101,6 +101,7 @@ import javax.script.ScriptEngine;
 import javax.script.ScriptEngineManager;
 import javax.servlet.http.HttpServletRequest;
 import java.io.File;
+import java.io.IOException;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
@@ -177,16 +178,16 @@ public abstract class AbstractAssayProvider implements AssayProvider
         return getName();
     }
 
-    public ActionURL copyToStudy(ViewContext viewContext, ExpProtocol protocol, @Nullable Container study, Map<Integer, AssayPublishKey> dataKeys, List<String> errors)
+    public ActionURL copyToStudy(User user, Container assayDataContainer, ExpProtocol protocol, @Nullable Container study, Map<Integer, AssayPublishKey> dataKeys, List<String> errors)
     {
         try
         {
             SimpleFilter filter = new SimpleFilter();
             filter.addInClause(getTableMetadata().getResultRowIdFieldKey().toString(), dataKeys.keySet());
 
-            AssaySchema schema = AssayService.get().createSchema(viewContext.getUser(), viewContext.getContainer());
+            AssaySchema schema = AssayService.get().createSchema(user, assayDataContainer);
             ContainerFilterable dataTable = createDataTable(schema, protocol, true);
-            dataTable.setContainerFilter(new ContainerFilter.CurrentAndSubfolders(viewContext.getUser()));
+            dataTable.setContainerFilter(new ContainerFilter.CurrentAndSubfolders(user));
 
             FieldKey objectIdFK = getTableMetadata().getResultRowIdFieldKey();
             FieldKey runLSIDFK = new FieldKey(getTableMetadata().getRunFieldKeyFromResults(), ExpRunTable.Column.LSID.toString());
@@ -246,7 +247,7 @@ public abstract class AbstractAssayProvider implements AssayProvider
                     dataMaps.add(dataMap);
                 }
 
-                return AssayPublishService.get().publishAssayData(viewContext.getUser(), sourceContainer, study, protocol.getName(), protocol,
+                return AssayPublishService.get().publishAssayData(user, sourceContainer, study, protocol.getName(), protocol,
                         dataMaps, getTableMetadata().getDatasetRowIdPropertyName(), errors);
             }
             finally
@@ -425,20 +426,6 @@ public abstract class AbstractAssayProvider implements AssayProvider
             }
         }
         return prop;
-    }
-
-    public static boolean isDomainType(Domain domain, ExpProtocol protocol, String domainPrefix)
-    {
-        String domainURI;
-        if (protocol.getRowId() > 0)
-        {
-            domainURI = getDomainURIForPrefix(protocol, domainPrefix);
-        }
-        else
-        {
-            domainURI = getPresubstitutionLsid(domainPrefix);
-        }
-        return domainURI.equals(domain.getTypeURI());
     }
 
     public static String getPresubstitutionLsid(String prefix)
@@ -1288,6 +1275,12 @@ public abstract class AbstractAssayProvider implements AssayProvider
     public AssayRunDatabaseContext createRunDatabaseContext(ExpRun run, User user, HttpServletRequest request)
     {
         return new AssayRunDatabaseContext(run, user, request);
+    }
+
+    @Override
+    public AssayRunAsyncContext createRunAsyncContext(AssayRunUploadContext context) throws IOException, ExperimentException
+    {
+        return new AssayRunAsyncContext(context);
     }
 
     public void upgradeAssayDefinitions(User user, ExpProtocol protocol, double targetVersion) throws SQLException {}
