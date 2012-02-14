@@ -19,6 +19,7 @@ package org.labkey.api.security;
 import org.apache.log4j.Logger;
 import org.jetbrains.annotations.Nullable;
 import org.junit.Assert;
+import org.junit.Before;
 import org.junit.Test;
 import org.labkey.api.audit.AuditLogEvent;
 import org.labkey.api.audit.AuditLogService;
@@ -251,14 +252,24 @@ public class GroupManager
             return _user;
         }
 
-        @Test
-        public void testGroupPermissions() throws Exception
+        @Before
+        public void setUp()
         {
+
             TestContext context = TestContext.get();
             User loggedIn = context.getUser();
             assertTrue("login before running this test", null != loggedIn);
             assertFalse("login before running this test", loggedIn.isGuest());
             _user = context.getUser().cloneUser();
+        }
+        @Test
+        public void testGroupPermissions() throws Exception
+        {
+//            TestContext context = TestContext.get();
+//            User loggedIn = context.getUser();
+//            assertTrue("login before running this test", null != loggedIn);
+//            assertFalse("login before running this test", loggedIn.isGuest());
+//            _user = context.getUser().cloneUser();
 
             Container project = JunitUtil.getTestContainer().getProject();
 
@@ -297,11 +308,11 @@ public class GroupManager
         @Test
         public void testCopyGroupToContainer() throws Exception
         {
-            TestContext context = TestContext.get();
-            User loggedIn = context.getUser();
-            assertTrue("login before running this test", null != loggedIn);
-            assertFalse("login before running this test", loggedIn.isGuest());
-            _user = context.getUser().cloneUser();
+//            TestContext context = TestContext.get();
+//            User loggedIn = context.getUser();
+//            assertTrue("login before running this test", null != loggedIn);
+//            assertFalse("login before running this test", loggedIn.isGuest());
+//            _user = context.getUser().cloneUser();
 
             Container project = JunitUtil.getTestContainer().getProject();
 

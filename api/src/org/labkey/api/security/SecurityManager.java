@@ -16,12 +16,15 @@
 
 package org.labkey.api.security;
 
+import com.extjs.gxt.ui.client.widget.grid.GroupSummaryView;
 import org.apache.commons.codec.binary.Base64;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.junit.After;
 import org.junit.Assert;
+import org.junit.Before;
 import org.junit.Test;
 import org.labkey.api.audit.AuditLogEvent;
 import org.labkey.api.audit.AuditLogService;
@@ -58,6 +61,7 @@ import org.labkey.api.services.ServiceRegistry;
 import org.labkey.api.settings.LookAndFeelProperties;
 import org.labkey.api.util.ConfigurationException;
 import org.labkey.api.util.HelpTopic;
+import org.labkey.api.util.JunitUtil;
 import org.labkey.api.util.MailHelper;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.Pair;
@@ -1021,10 +1025,11 @@ public class SecurityManager
     private static boolean groupExists(Container c, String groupName, String ownerId)
     {
         return null != getGroupId(c, groupName, ownerId, false, true);
+
     }
 
 
-    public static void renameGroup(Group group, String newName, User currentUser)
+    public static Group renameGroup(Group group, String newName, User currentUser)
     {
         if (group.isSystemGroup())
             throw new IllegalArgumentException("System groups may not be renamed!");
@@ -1046,6 +1051,9 @@ public class SecurityManager
         {
             throw new RuntimeSQLException(e);
         }
+
+        return getGroup(getGroupId(c, newName));
+
     }
 
     public static void deleteGroup(Group group)
@@ -2240,6 +2248,148 @@ public class SecurityManager
 
     public static class TestCase extends Assert
     {
+
+        Group groupA = null;
+        Group groupB = null;
+        Container project = null;
+
+        @Before
+        public void setUp()
+        {
+            project = JunitUtil.getTestContainer().getProject();
+            groupA = SecurityManager.createGroup(project, "a");
+            groupB = SecurityManager.createGroup(project, "b");
+        }
+//            try{tearDown();} catch(Exception e){};
+        @After
+        public void tearDown()
+        {
+            SecurityManager.deleteGroup(groupA);
+            try{SecurityManager.deleteGroup(groupB);}catch(Exception e){}
+        }
+
+        @Test
+        public void testRenameGroup()
+        {
+//            Group g1 = SecurityManager.createGroup(project, "group 1");
+            String newName  = groupB.getName() + "new";
+            int oldGroupId = getGroupId(project, groupB.getName());
+            SecurityManager.renameGroup(groupB, newName, null);
+            assertEquals(oldGroupId, getGroupId(project, newName));
+            groupB.setName(newName);
+        }
+
+        @Test
+        public void testRenameGroupExpectError()
+        {
+            Object[][] nameErrors = getRenameGroupExpectError();
+            for(Object[] nameError : nameErrors)
+            {
+                attemptRenameGroupExpectErrors((String) nameError[0],(String) nameError[1]);
+            }
+        }
+
+        private void attemptRenameGroupExpectErrors(String newName, String expectedErrorMessage)
+        {
+
+            try
+            {
+                renameGroup(groupA, newName, null);
+            }
+            catch(IllegalArgumentException e)
+            {
+                assertEquals(expectedErrorMessage, e.getMessage());
+            }
+        }
+
+        private Object[][] getRenameGroupExpectError()
+        {
+            Object[][] ret = {{"", "Name is required (may not be blank)"},
+                    {null, "Name is required (may not be blank)"},
+                    {groupA.getName(), "Cannot rename group '" + groupA.getName() +
+                            "' to '" + groupA.getName() + "' because that name is already used by another group!"},
+                    {groupB.getName(), "Cannot rename group '" + groupA.getName() +
+                            "' to '" + groupB.getName() + "' because that name is already used by another group!"}
+
+            };
+            return ret;
+        }
+
+        @Test
+        public void testCircularGroupMembership() throws InvalidGroupMembershipException
+        {
+            LinkedList<Group> groups = new LinkedList<Group>();
+            try
+            {
+
+                int maxLoop = 20;
+                int count = 0;
+
+//                for(int i=0; i<=maxLoop; i++)
+//                {
+//                    try
+//                    {
+//                        deleteGroup(getGroupId(project, "testGroup" + i, groupA.getOwnerId(), false, true));
+//                    }
+//                    catch(Exception e){}
+//                }
+
+
+                groups.add(groupB);
+                addMember(groupA, groupB);
+                while(count++ < maxLoop)
+                {
+                    Group newGroup = createGroup(project, "testGroup" + count);
+                    addMember(groups.getLast(), newGroup);
+                    groups.add(newGroup);
+                    try
+                    {
+                        addMember(newGroup, groupA);
+                        fail("Should have thrown error when attempting to create circular group.  Chain is lenght: " + count);
+                    }
+                    catch (InvalidGroupMembershipException e)
+                    {
+                        //eat the exception, it's expected
+                    }
+                }
+            }
+            finally
+            {
+                deleteMember(groupA, groupB);
+                while(groups.size()>1)//groupB will be deleted by the tearDown
+                {
+                    deleteGroup(groups.removeLast());
+                }
+            }
+        }
+        @Test
+        public void testAddMemberToGroup() throws InvalidGroupMembershipException
+        {
+            Object[][] groupMemberResponses = getAddMemberErrorArgs();
+            for(Object[] groupMemberResponse : groupMemberResponses)
+            {
+                addMemberToGroupVerifyResponse((Group) groupMemberResponse[0],
+                                                (UserPrincipal) groupMemberResponse[1], (String) groupMemberResponse[2]);
+            }
+
+            addMember(groupA, groupB);
+            addMemberToGroupVerifyResponse(groupA, groupB, ALREADY_A_MEMBER_ERROR_MESSAGE);
+        }
+
+        private Object[][] getAddMemberErrorArgs()
+        {
+
+            Object[][] ret = {  {null, null, NULL_GROUP_ERROR_MESSAGE},
+                                {groupA, null, NULL_PRINCIPAL_ERROR_MESSAGE},
+                                {groupA, groupA, ADD_GROUP_TO_ITSELF_ERROR_MESSAGE}};
+            return ret;
+        }
+
+        private void addMemberToGroupVerifyResponse(Group group, UserPrincipal principal, String expectedResponse)
+        {
+            assertEquals(expectedResponse, getAddMemberError(group, principal));
+        }
+
         @Test
         public void testCreateUser() throws Exception
         {
