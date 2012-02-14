@@ -455,6 +455,16 @@ public class DefaultAssayRunCreator<ProviderType extends AbstractAssayProvider> 
         }
     }
 
+    public static List<ValidationError> validateColumnProperties(Map<ColumnInfo, String> properties)
+    {
+        List<ValidationError> errors = new ArrayList<ValidationError>();
+        for (Map.Entry<ColumnInfo, String> entry : properties.entrySet())
+        {      
+            validateProperty(entry.getValue(), entry.getKey().getName(), false, entry.getKey().getJavaClass(), errors);
+        }
+        return errors;
+    }
+
     public static List<ValidationError> validateProperties(Map<DomainProperty, String> properties)
     {
         List<ValidationError> errors = new ArrayList<ValidationError>();
@@ -465,31 +475,36 @@ public class DefaultAssayRunCreator<ProviderType extends AbstractAssayProvider> 
             String value = entry.getValue();
             String label = dp.getPropertyDescriptor().getNonBlankCaption();
             PropertyType type = dp.getPropertyDescriptor().getPropertyType();
-            boolean missing = (value == null || value.length() == 0);
-            if (dp.isRequired() && missing)
-            {
-                errors.add(new SimpleValidationError(label + " is required and must be of type " + ColumnInfo.getFriendlyTypeName(type.getJavaType()) + "."));
-            }
-            else if (!missing)
-            {
-                try
-                {
-                    ConvertUtils.convert(value, type.getJavaType());
-                }
-                catch (ConversionException e)
-                {
-                    String message = label + " must be of type " + ColumnInfo.getFriendlyTypeName(type.getJavaType()) + ".";
-                    message +=  "  Value \"" + value + "\" could not be converted";
-                    if (e.getCause() instanceof ArithmeticException)
-                        message +=  ": " + e.getCause().getLocalizedMessage();
-                    else
-                        message += ".";
-
-                    errors.add(new SimpleValidationError(message));
-                }
-            }
+            validateProperty(value, label, dp.isRequired(), type.getJavaType(), errors);
         }
         return errors;
+    }
+
+    private static void validateProperty(String value, String label, Boolean required, Class type, List<ValidationError> errors)
+    {
+        boolean missing = (value == null || value.length() == 0);
+        if (required && missing)
+        {
+            errors.add(new SimpleValidationError(label + " is required and must be of type " + ColumnInfo.getFriendlyTypeName(type) + "."));
+        }
+        else if (!missing)
+        {
+            try
+            {
+                ConvertUtils.convert(value, type);
+            }
+            catch (ConversionException e)
+            {
+                String message = label + " must be of type " + ColumnInfo.getFriendlyTypeName(type) + ".";
+                message +=  "  Value \"" + value + "\" could not be converted";
+                if (e.getCause() instanceof ArithmeticException)
+                    message +=  ": " + e.getCause().getLocalizedMessage();
+                else
+                    message += ".";
+
+                errors.add(new SimpleValidationError(message));
+            }
+        }
     }
 
     protected FileFilter getRelatedOutputDataFileFilter(final File primaryFile, final String baseName)

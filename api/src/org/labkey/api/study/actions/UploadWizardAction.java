@@ -467,6 +467,14 @@ public class UploadWizardAction<FormType extends AssayRunUploadForm<ProviderType
         }
     }
 
+    public static boolean validateColumnProperties(Map<ColumnInfo, String> properties, BindException errors)
+    {
+        for (ValidationError error : DefaultAssayRunCreator.validateColumnProperties(properties))
+            errors.reject(SpringActionController.ERROR_MSG, error.getMessage());
+        
+        return errors.getErrorCount() == 0;
+    }
+
     public static boolean validatePostedProperties(Map<DomainProperty, String> properties, BindException errors)
     {
         for (ValidationError error : DefaultAssayRunCreator.validateProperties(properties))
