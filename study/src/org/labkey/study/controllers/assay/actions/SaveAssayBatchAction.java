@@ -203,7 +203,7 @@ public class SaveAssayBatchAction extends AbstractAssayAPIAction<SimpleApiJsonFo
 
             rewriteProtocolApplications(protocol, provider, run, dataInputs, dataRows, materialInputs, runJsonObject, dataOutputs, materialOutputs);
 
-            AssayPublishService.get().autoCopyResults(protocol, run, getViewContext());
+            AssayPublishService.get().autoCopyResults(protocol, run, getViewContext().getUser(), getViewContext().getContainer());
         }
 
         return run;

@@ -863,7 +863,7 @@ public class AssayPublishManager implements AssayPublishService.Service
     }
 
     /** Automatically copy assay data to a study if the design is set up to do so */
-    public List<String> autoCopyResults(ExpProtocol protocol, ExpRun run, ViewContext viewContext)
+    public List<String> autoCopyResults(ExpProtocol protocol, ExpRun run, User user, Container container)
     {
         AssayProvider provider = AssayService.get().getProvider(protocol);
         if (protocol.getObjectProperties().get(AssayPublishService.AUTO_COPY_TARGET_PROPERTY_URI) != null)
@@ -879,7 +879,7 @@ public class AssayPublishManager implements AssayPublishService.Service
                     if (study != null)
                     {
                         boolean hasPermission = false;
-                        Set<Study> publishTargets = getValidPublishTargets(viewContext.getUser(), InsertPermission.class);
+                        Set<Study> publishTargets = getValidPublishTargets(user, InsertPermission.class);
                         for (Study publishTarget : publishTargets)
                         {
                             if (publishTarget.getContainer().equals(targetStudyContainer))
@@ -899,7 +899,7 @@ public class AssayPublishManager implements AssayPublishService.Service
                         FieldKey objectIdFK = provider.getTableMetadata().getResultRowIdFieldKey();
                         FieldKey runFK = provider.getTableMetadata().getRunRowIdFieldKeyFromResults();
 
-                        AssaySchema schema = AssayService.get().createSchema(viewContext.getUser(), viewContext.getContainer());
+                        AssaySchema schema = AssayService.get().createSchema(user, container);
 
                         // Do a query to get all the info we need to do the copy
                         TableInfo resultTable = provider.createDataTable(schema, protocol, false);
@@ -939,7 +939,7 @@ public class AssayPublishManager implements AssayPublishService.Service
                                 }
                             }
                             List<String> copyErrors = new ArrayList<String>();
-                            provider.copyToStudy(viewContext, protocol, targetStudyContainer, keys, copyErrors);
+                            provider.copyToStudy(user, container, protocol, targetStudyContainer, keys, copyErrors);
                             return copyErrors;
                         }
                         catch (SQLException e)
