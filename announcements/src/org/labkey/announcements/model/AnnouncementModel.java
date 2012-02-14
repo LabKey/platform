@@ -35,6 +35,7 @@ import org.labkey.api.wiki.WikiService;
 import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.Date;
 import java.util.HashSet;
 import java.util.List;
@@ -370,22 +371,17 @@ public class AnnouncementModel extends AttachmentParentEntity implements Seriali
     public Set<User> getAuthors()
     {
         if (null == _authors)
-            _authors = lookupAuthors();
-
-        return _authors;
-    }
-
-    private Set<User> lookupAuthors()
-    {
-        Set<User> responderSet = new HashSet<User>();
-        boolean isResponse = null != getParent();
-
-        // if this is a response get parent and all previous responses
-        if (isResponse)
         {
-            AnnouncementModel a = AnnouncementManager.getAnnouncement(lookupContainer(), getParent(), true);
+            AnnouncementModel a = AnnouncementManager.getAnnouncement(lookupContainer(), getParent() == null ? getEntityId() : getParent(), true);
+
+            if (a == null)
+            {
+                // We haven't been saved to the database yet, so don't stash a list of authors yet
+                return Collections.emptySet();
+            }
 
             Collection<AnnouncementModel> responses = a.getResponses();
+            Set<User> responderSet = new HashSet<User>();
 
             //add creator of each response to responder set
             for (AnnouncementModel response : responses)
@@ -395,12 +391,14 @@ public class AnnouncementModel extends AttachmentParentEntity implements Seriali
                 //add to responder set, so we know who responders are
                 responderSet.add(user);
             }
+
+            //add creator of parent to responder set
+            responderSet.add(UserManager.getUser(getCreatedBy()));
+
+            _authors = responderSet;
         }
 
-        //add creator of parent to responder set
-        responderSet.add(UserManager.getUser(getCreatedBy()));
-
-        return responderSet;
+        return _authors;
     }
 }
 

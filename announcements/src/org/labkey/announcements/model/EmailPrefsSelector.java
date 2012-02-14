@@ -19,12 +19,9 @@ package org.labkey.announcements.model;
 import org.labkey.announcements.AnnouncementsController;
 import org.labkey.api.announcements.DiscussionService;
 import org.labkey.api.data.Container;
-import org.labkey.api.data.RuntimeSQLException;
 import org.labkey.api.message.settings.MessageConfigService;
 import org.labkey.api.security.User;
 
-import javax.servlet.ServletException;
-import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashSet;
@@ -53,24 +50,17 @@ public abstract class EmailPrefsSelector
     // Initialize list of email preferences: get all settings from the database, add the default values, and remove NONE.
     private void initEmailPrefs(Container c)
     {
-        try
-        {
-            int defaultOption = AnnouncementManager.getDefaultEmailOption(c);
-            MessageConfigService.UserPreference[] epArray = AnnouncementManager.getAnnouncementConfigProvider().getPreferences(c);
-            _emailPrefs = new ArrayList<MessageConfigService.UserPreference>(epArray.length);
+        int defaultOption = AnnouncementManager.getDefaultEmailOption(c);
+        MessageConfigService.UserPreference[] epArray = AnnouncementManager.getAnnouncementConfigProvider().getPreferences(c);
+        _emailPrefs = new ArrayList<MessageConfigService.UserPreference>(epArray.length);
 
-            for (MessageConfigService.UserPreference ep : epArray)
-            {
-                if (null == ep.getEmailOptionId())
-                    ep.setEmailOptionId(defaultOption);
-
-                if (includeEmailPref(ep))
-                    _emailPrefs.add(ep);
-            }
-        }
-        catch (SQLException e)
+        for (MessageConfigService.UserPreference ep : epArray)
         {
-            throw new RuntimeSQLException(e);
+            if (null == ep.getEmailOptionId())
+                ep.setEmailOptionId(defaultOption);
+
+            if (includeEmailPref(ep))
+                _emailPrefs.add(ep);
         }
     }
 

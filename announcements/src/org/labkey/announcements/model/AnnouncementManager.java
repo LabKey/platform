@@ -196,10 +196,13 @@ public class AnnouncementManager
         return new TableSelector(_comm.getTableInfoAnnouncements(), filter, sort).getArray(AnnouncementModel.class);
     }
     
-    public static AnnouncementModel[] getAnnouncements(Container c, String parent)
+    public static AnnouncementModel[] getAnnouncements(@Nullable Container c, String parent)
     {
         SimpleFilter filter = new SimpleFilter();
-        filter.addCondition("container", c.getId());
+        if (c != null)
+        {
+            filter.addCondition("container", c.getId());
+        }
 
         if (null == parent)
             filter.addCondition("parent", null, CompareType.ISBLANK);
@@ -212,15 +215,19 @@ public class AnnouncementManager
     }
 
 
-    public static AnnouncementModel getAnnouncement(Container c, String entityId)
+    public static AnnouncementModel getAnnouncement(@Nullable Container c, String entityId)
     {
         return getAnnouncement(c, entityId, false);
     }
 
 
-    public static AnnouncementModel getAnnouncement(Container c, String entityId, boolean eager)
+    public static AnnouncementModel getAnnouncement(@Nullable Container c, String entityId, boolean eager)
     {
-        SimpleFilter filter = new SimpleFilter("Container", c.getId()).addCondition("EntityId", entityId);
+        SimpleFilter filter = new SimpleFilter("EntityId", entityId);
+        if (c != null)
+        {
+            filter.addCondition("Container", c.getId());            
+        }
         Selector selector = new TableSelector(_comm.getTableInfoAnnouncements(), filter, null);
         AnnouncementModel[] ann = selector.getArray(AnnouncementModel.class);
 
@@ -628,7 +635,7 @@ public class AnnouncementManager
         PropertyManager.saveProperties(props);
     }
 
-    public static int getDefaultEmailOption(Container c) throws SQLException
+    public static int getDefaultEmailOption(Container c)
     {
         Map<String, String> props = PropertyManager.getProperties(c.getId(), "defaultEmailSettings");
 

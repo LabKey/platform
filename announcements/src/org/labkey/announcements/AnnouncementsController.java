@@ -58,6 +58,7 @@ import org.labkey.api.data.DisplayColumn;
 import org.labkey.api.data.RenderContext;
 import org.labkey.api.data.RuntimeSQLException;
 import org.labkey.api.data.SimpleFilter;
+import org.labkey.api.data.Table;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.message.settings.MessageConfigService;
 import org.labkey.api.query.QuerySettings;
@@ -1299,7 +1300,7 @@ public class AnnouncementsController extends SpringActionController
             return null;
         }
 
-        public ModelAndView getView(AnnouncementForm form, BindException errors) throws Exception
+        public ThreadView getView(AnnouncementForm form, BindException errors) throws Exception
         {
             ThreadView threadView = new ThreadView(form, getContainer(), getActionURL(), getPermissions(), isPrint());
             threadView.setFrame(WebPartView.FrameType.PORTAL);
@@ -1318,7 +1319,7 @@ public class AnnouncementsController extends SpringActionController
         @Override
         public ModelAndView getPrintView(AnnouncementForm form, BindException errors) throws Exception
         {
-            ThreadView tv = (ThreadView)getView(form, errors);
+            ThreadView tv = getView(form, errors);
             // title is already in the thread view don't need to repeat it
             tv.setFrame(WebPartView.FrameType.NONE);
             tv.getModelBean().print = true;
@@ -1337,10 +1338,10 @@ public class AnnouncementsController extends SpringActionController
     public class ThreadBareAction extends ThreadAction
     {
         @Override
-        public ModelAndView getView(AnnouncementForm form, BindException errors) throws Exception
+        public ThreadView getView(AnnouncementForm form, BindException errors) throws Exception
         {
             getPageConfig().setTemplate(PageConfig.Template.None);
-            ThreadView tv = (ThreadView)super.getView(form, errors);
+            ThreadView tv = super.getView(form, errors);
             tv.setFrame(WebPartView.FrameType.NONE);
             tv.getModelBean().embedded = true;
             return tv;
@@ -2405,6 +2406,51 @@ public class AnnouncementsController extends SpringActionController
                     buttons.addChild("print", bean.printURL);
                 }
 
+                // Create buttons to subscribe or unsubscribe from the forum and/or individual thread
+                if (!getViewContext().getUser().isGuest())
+                {
+                    // First check if the user is subscribed to this specific thread
+                    if (ann.getMemberList().contains(getViewContext().getUser()))
+                    {
+                        // Build up a link to unsubscribe from the thread
+                        ActionURL url = new ActionURL(SubscribeThreadAction.class, c);
+                        url.addParameter("threadId", ann.getParent() == null ? ann.getEntityId() : ann.getParent());
+                        url.addParameter(ActionURL.Param.returnUrl, getViewContext().getActionURL().toString());
+                        url.addParameter("unsubscribe", true);
+                        buttons.addChild("unsubscribe", url);
+                    }
+                    else
+                    {
+                        // See if they're subscribed to the whole forum
+                        int emailOption = AnnouncementManager.getUserEmailOption(c, getViewContext().getUser());
+                        if (emailOption == AnnouncementManager.EMAIL_PREFERENCE_DEFAULT)
+                        {
+                            emailOption = AnnouncementManager.getDefaultEmailOption(c);
+                        }
+
+                        // Or if they're subscribed because they've posted to this thread already
+                        boolean forumSubscription = emailOption == AnnouncementManager.EMAIL_PREFERENCE_ALL ||
+                            (emailOption == AnnouncementManager.EMAIL_PREFERENCE_MINE && ann.getAuthors().contains(getViewContext().getUser()));
+                        
+                        if (forumSubscription)
+                        {
+                            // Give them a link to the forum level subscription UI
+                            buttons.addChild("unsubscribe", getEmailPreferencesURL(c, getViewContext().getActionURL()));
+                        }
+                        else
+                        {
+                            // Otherwise, let them subscribe to either the forum or the specific thread
+                            NavTree subscribeTree = new NavTree("subscribe");
+                            subscribeTree.addChild("forum", getEmailPreferencesURL(c, getViewContext().getActionURL()));
+                            ActionURL subscribeThreadURL = new ActionURL(SubscribeThreadAction.class, c);
+                            subscribeThreadURL.addParameter("threadId", ann.getParent() == null ? ann.getEntityId() : ann.getParent());
+                            subscribeThreadURL.addParameter(ActionURL.Param.returnUrl, getViewContext().getActionURL().toString());
+                            subscribeTree.addChild("thread", subscribeThreadURL);
+                            buttons.addChild(subscribeTree);
+                        }
+                    }
+                }
+
                 setNavMenu(buttons);
                 setIsWebPart(false);
             }
@@ -2440,6 +2486,81 @@ public class AnnouncementsController extends SpringActionController
             throw createThreadNotFoundException(c);
 
         return AnnouncementManager.getAnnouncement(c, entityId, true);
+    }
+
+    public static class SubscriptionBean extends ReturnUrlForm
+    {
+        private String _threadId;
+        private boolean _unsubscribe;
+
+        public String getThreadId()
+        {
+            return _threadId;
+        }
+
+        public void setThreadId(String threadId)
+        {
+            _threadId = threadId;
+        }
+
+        public boolean isUnsubscribe()
+        {
+            return _unsubscribe;
+        }
+
+        public void setUnsubscribe(boolean unsubscribe)
+        {
+            _unsubscribe = unsubscribe;
+        }
+    }
+
+    @RequiresLogin @RequiresPermissionClass(ReadPermission.class)
+    public class SubscribeThreadAction extends RedirectAction<SubscriptionBean>
+    {
+        @Override
+        public URLHelper getSuccessURL(SubscriptionBean subscriptionBean)
+        {
+            return subscriptionBean.getReturnActionURL(getBeginURL(getContainer()));
+        }
+
+        @Override
+        public boolean doAction(SubscriptionBean bean, BindException errors) throws Exception
+        {
+            String id = bean.getThreadId();
+            if (id == null)
+            {
+                throw new NotFoundException("No message thread specified");
+            }
+            // Don't filter by container to make it easier for client API users that are going cross-container
+            AnnouncementModel ann = AnnouncementManager.getAnnouncement(null, id, true);
+            if (ann == null)
+            {
+                throw new NotFoundException("No such message thread: " + id);
+            }
+            // Make sure they have permission to see the container for the specific message they're
+            // requesting
+            if (!ann.lookupContainer().hasPermission(getUser(), ReadPermission.class))
+            {
+                throw new UnauthorizedException();
+            }
+
+            // Remove or add the thread-level subscription from the database table
+            if (bean.isUnsubscribe())
+            {
+                Table.execute(CommSchema.getInstance().getSchema(), "DELETE FROM comm.userlist WHERE UserId = ? AND MessageId = ?", getUser().getUserId(), ann.getRowId());
+            }
+            else if (!ann.getMemberList().contains(getUser()))
+            {
+                Table.execute(CommSchema.getInstance().getSchema(), "INSERT INTO comm.userlist (UserId, MessageId) VALUES (?, ?)", getUser().getUserId(), ann.getRowId());
+            }
+            return true;
+        }
+
+        @Override
+        public void validateCommand(SubscriptionBean target, Errors errors)
+        {
+
+        }
     }
 
     
