@@ -1236,7 +1236,9 @@ public class CoreController extends SpringActionController
             props.put("id", c.getRowId());
             props.put("text", PageFlowUtil.filter(c.getName()));
             props.put("containerPath", c.getPath());
-            //props.put("leaf", !c.hasChildren());
+            props.put("expanded", false);
+//            props.put("leaf", !c.hasChildren());  // commented out because you cannot 'drop' on a leaf as an append action
+            props.put("iconCls", "x4-tree-icon-parent");
             return props;
         }
     }

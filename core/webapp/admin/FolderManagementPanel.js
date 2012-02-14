@@ -42,6 +42,7 @@ Ext4.define('LABKEY.ext.panel.FolderManagementPanel', {
 
         Ext4.applyIf(config, {
             layout : 'border',
+            draggable : true,
             frame  : false, border : false
         });
 
@@ -88,18 +89,21 @@ Ext4.define('LABKEY.ext.panel.FolderManagementPanel', {
 
 
         // define top toolbar
-        this.dockedItems = [{
-            xtype: 'toolbar',
-            dock: 'top',
-            items: [
-                {text : 'Aliases',              itemId : 'alias',   handler : function() { this.action('alias'); },   scope : this },
-                {text : 'Change Display Order', itemId : 'reorder', handler : function() { this.action('reorder'); }, scope : this },
-                {text : 'Create Subfolder',     itemId : 'create',  handler : function() { this.action('create'); },  scope : this },
-                {text : 'Delete',               itemId : 'remove',  handler : function() { this.action('remove'); },  scope : this },
-                {text : 'Move',                 itemId : 'move',    handler : function() { this.action('move'); },    scope : this },
-                {text : 'Rename',               itemId : 'rename',  handler : function() { this.action('rename'); },  scope : this }
-            ]
-        }];
+        if (!this.dockedItems) {
+            this.dockedDefaults = true;
+            this.dockedItems = [{
+                xtype: 'toolbar',
+                dock: 'top',
+                items: [
+                    {text : 'Aliases',              itemId : 'alias',   handler : function() { this.action('alias'); },   scope : this },
+                    {text : 'Change Display Order', itemId : 'reorder', handler : function() { this.action('reorder'); }, scope : this },
+                    {text : 'Create Subfolder',     itemId : 'create',  handler : function() { this.action('create'); },  scope : this },
+                    {text : 'Delete',               itemId : 'remove',  handler : function() { this.action('remove'); },  scope : this },
+                    {text : 'Move',                 itemId : 'move',    handler : function() { this.action('move'); },    scope : this },
+                    {text : 'Rename',               itemId : 'rename',  handler : function() { this.action('rename'); },  scope : this }
+                ]
+            }];
+        }
 
         this.callParent([arguments]);
     },
@@ -142,11 +146,22 @@ Ext4.define('LABKEY.ext.panel.FolderManagementPanel', {
 
     getCenterPanelItems : function() {
 
-        this.treepanel = Ext4.create('Ext.tree.Panel', {
-            store : this.initFolderStore(),
-            cls   : 'folder-management-tree', // used by selenium helper
+        var treeConfig = {
+            store       : this.initFolderStore(),
+            cls         : 'folder-management-tree', // used by selenium helper
             rootVisible : true,
-            viewConfig: {
+            multiSelect : true,
+            listeners : {
+                selectionchange : function(model, records, eOpts) {
+                    this._validateFolders(records);
+                },
+                scope  : this
+            },
+            scope : this
+        };
+
+        if (this.draggable) {
+            treeConfig.viewConfig = {
                 plugins: {
                     ptype: 'treeviewdragdrop'
                 },
@@ -156,15 +171,10 @@ Ext4.define('LABKEY.ext.panel.FolderManagementPanel', {
                     scope : this
                 },
                 scope : this
-            },
-            listeners : {
-                select : function(rowmodel, record, idx) {
-                    this._validateFolder(record);
-                },
-                scope  : this
-            },
-            scope : this
-        });
+            };
+        }
+
+        this.treepanel = Ext4.create('Ext.tree.Panel', treeConfig);
 
         // select the
         this.treepanel.on('load', function(grid, root, success){
@@ -179,11 +189,16 @@ Ext4.define('LABKEY.ext.panel.FolderManagementPanel', {
 
         if (selectedFolder && selectedFolder.length > 0) {
             if (actionType) {
-                actionType = actionType.toLowerCase();
-                if (this.actions[actionType]) {
-                    window.location = LABKEY.ActionURL.buildURL('admin', this.actions[actionType], selectedFolder[0].data.containerPath);
+                if (Ext4.isFunction(this.actions[actionType])) {
+                    Ext4.defer(this.actions[actionType], 0, this, [selectedFolder]);
                 }
-                else { console.error("'" + actionType + "' is not a valid action."); }
+                else {
+                    actionType = actionType.toLowerCase();
+                    if (this.actions[actionType]) {
+                        window.location = LABKEY.ActionURL.buildURL('admin', this.actions[actionType], selectedFolder[0].data.containerPath);
+                    }
+                    else { console.error("'" + actionType + "' is not a valid action."); }
+                }
             }
         }
         else {
@@ -192,11 +207,14 @@ Ext4.define('LABKEY.ext.panel.FolderManagementPanel', {
     },
 
     onNodeDragOver : function(node, dragPos, dragZone, overModel, e, data) {
-        var t = this.calculateTarget(data.records[0], overModel, dragPos);
-        if (t.msg) {
-            dragZone.ddel.update(t.msg);
+        for (var i=0; i < data.records.length; i++) {
+            var t = this.calculateTarget(data.records[i], overModel, dragPos);
+            if (t.msg) {
+                dragZone.ddel.update(t.msg);
+            }
+            if (t.cancel)
+                return false;
         }
-        return !t.cancel;
     },
 
     /**
@@ -210,119 +228,157 @@ Ext4.define('LABKEY.ext.panel.FolderManagementPanel', {
 
         var isMove = false;
 
-        function getOrder(dropNode, targetNode, point) {
+        function getOrder(dropNodes, targetNode, point) {
 
-            var order = "",
-                    sep = "";
+            function getOrderHelper(node, target, pt) {
 
-            if (dropNode) {
+                var order = "", sep = "";
 
-                for (var i=0; i < targetNode.parentNode.childNodes.length; i++) {
+                if (node) {
 
-                    if (targetNode.parentNode.childNodes[i] == dropNode) { continue; }
+                    for (var i=0; i < target.parentNode.childNodes.length; i++) {
 
-                    if (targetNode.parentNode.childNodes[i] == targetNode) {
-                        if (point == 'before') {
-                            order += sep + dropNode.data.text + ';' + targetNode.data.text;
+                        if (target.parentNode.childNodes[i] == node) { continue; }
+
+                        if (target.parentNode.childNodes[i] == target) {
+                            if (pt == 'before') {
+                                order += sep + node.data.text + ';' + target.data.text;
+                            }
+                            else if (pt == 'after') {
+                                order += sep + target.data.text + ';' + node.data.text;
+                            }
                         }
-                        else if (point == 'after') {
-                            order += sep + targetNode.data.text + ';' + dropNode.data.text;
-                        }
+                        else { order += sep + target.parentNode.childNodes[i].data.text; }
+                        sep = ';';
                     }
-                    else { order += sep + targetNode.parentNode.childNodes[i].data.text; }
-                    sep = ';';
                 }
+
+                return order;
             }
 
-            return order;
+            if (dropNodes.length == 1)
+                return getOrderHelper(dropNodes[0], targetNode, point);
+            else {
+                var order = "", sep = "", _order = "", _sep = "";
+                var marked = {};
+
+                for (var j=0; j < dropNodes.length; j++){
+                    if (dropNodes[j].data.text) {
+                        _order += _sep + dropNodes[j].data.text;
+                        _sep = ";";
+                        marked[dropNodes[j].data.id] = true;
+                    }
+                }
+
+                var children = targetNode.parentNode.childNodes;
+                for (j=0; j < children.length; j++) {
+                    if (children[j] == targetNode) {
+                        if (point == 'before') {
+                            order += sep + _order + ';' + targetNode.data.text;
+                        }
+                        else if (point == 'after') {
+                            order += sep + targetNode.data.text + ';' + _order;
+                        }
+                    }
+                    else if (marked[children[j].data.id]) { continue; }
+                    else {
+                        order += sep + children[j].data.text;
+                    }
+                    sep = ';'
+                }
+
+                return order;
+            }
+
         }
 
-        var _t = this.calculateTarget(data.records[0], overModel, dropPos);
-        if (_t.cancel){
-            return false;
+        // Validate move for each folder to the current target
+        for (var i=0; i < data.records.length; i++) {
+            var _t = this.calculateTarget(data.records[i], overModel, dropPos);
+            if (_t.cancel){
+                return false;
+            }
+            if (i > 0 && data.records[i-1].parentNode.data.id != data.records[i].parentNode.data.id) {
+                Ext4.Msg.alert('Note', 'When selecting multiple folders please only select folders that are directly under the same parent folder.');
+                return false;
+            }
         }
 
-
-        var s = data.records[0];
+        var s = data.records;
         var target = _t.target;
 
         if (_t.reorder) {
             this.reorderFolders(s, getOrder(s, target, dropPos), false, null);
         }
         else {
-            isMove = true;
-            var me = this;
-
-            function move() {
-
-                LABKEY.Security.moveContainer({
-                    container : s.data.containerPath,
-                    parent    : target.data.containerPath,
-                    success   : function(response) {
-                        s.data.containerPath = response.newPath;
-                        me.unmask();
-                        me.confirmation = false;
-                    },
-                    failure  : function(response, ops) {
-                        var _msg = "Failed to complete move";
-                        if (response && response.errors) {
-                            var errors = response.errors;
-                            _msg = "";
-                            for (var i=0; i < errors.length; i++) {
-                                _msg += errors[i].msg + "\n";
-                            }
-                        }
-                        me.unmask();
-                        me.confirmation = false;
-                        Ext4.Msg.show({
-                            title : 'Operation Failed',
-                            msg   : _msg,
-                            icon  : Ext4.MessageBox.ERROR,
-                            buttons: Ext4.Msg.OK
-                        });
-                    },
-                    scope : this
-                });
-            }
-
-            function startMove() {
-                me.mask("Moving Folders. This could take a few minutes...");
-                move();
-            }
 
             var d = target;
+            var exeSet = [];
+            var me = this;
 
-            s.bubble(function(ps){
-                if (ps.data.isProject){
-                    d.bubble(function(pd){
-                        if (pd.data.isProject) {
+            for (var n=0; n < s.length; n++) {
 
-                            var m = Ext4.MessageBox.buttonText;
+                exeSet.push(function(f){
 
-                            m.yes = 'Confirm Move';
-                            m.no  = 'Cancel';
+                    isMove = true;
 
-                            if (me.confirmation) startMove();
-                            else if (ps.data.id == pd.data.id) {
+                    var _s = s[f];
 
-                                var _t   = 'Move Folder';
-                                var _msg = 'You are moving folder \'' + s.data.text + '\'. Are you sure you would like to move this folder?';
+                    function move() {
 
-                                Ext4.Msg.confirm(_t, _msg, function(btn){
-                                    me.confirmation = true;
-                                    if (btn == 'yes'){ startMove(); }
-                                    else {
-                                        // Rollback
-                                        me.confirmation = false;
-                                        me.treepanel.getStore().load();
+                        LABKEY.Security.moveContainer({
+                            container : _s.data.containerPath,
+                            parent    : target.data.containerPath,
+                            success   : function(response) {
+                                _s.data.containerPath = response.newPath;
+                                me.unmask();
+
+                                successHandler();
+                            },
+                            failure  : function(response, ops) {
+                                var _msg = "Failed to complete move";
+                                if (response && response.errors) {
+                                    var errors = response.errors;
+                                    _msg = "";
+                                    for (var i=0; i < errors.length; i++) {
+                                        _msg += errors[i].msg + "\n";
                                     }
+                                }
+                                me.unmask();
+                                me.confirmation = false;
+                                Ext4.Msg.show({
+                                    title : 'Operation Failed',
+                                    msg   : _msg,
+                                    icon  : Ext4.MessageBox.ERROR,
+                                    buttons: Ext4.Msg.OK
                                 });
-                            }
-                            else {
-                                Ext4.Msg.confirm('Change Project', 'You are moving folder \'' + s.data.text + '\' from one project to another. ' +
-                                        'This will remove all permissions settings from this folder, any subfolders, and any other configurations. ' +
-                                        '<br/><b>This action cannot be undone.</b>',
-                                        function(btn){
+                            },
+                            scope : this
+                        });
+                    }
+
+                    function startMove() {
+                        me.mask("Moving Folders. This could take a few minutes...");
+                        move();
+                    }
+
+                    _s.bubble(function(ps){
+                        if (ps.data.isProject){
+                            d.bubble(function(pd){
+                                if (pd.data.isProject) {
+
+                                    var m = Ext4.MessageBox.buttonText;
+
+                                    m.yes = 'Confirm Move';
+                                    m.no  = 'Cancel';
+
+                                    if (me.confirmation) startMove();
+                                    else if (ps.data.id == pd.data.id) {
+
+                                        var _t   = 'Move Folder';
+                                        var _msg = 'You are moving folder \'' + _s.data.text + '\'. Are you sure you would like to move this folder?';
+
+                                        Ext4.Msg.confirm(_t, _msg, function(btn){
                                             me.confirmation = true;
                                             if (btn == 'yes'){ startMove(); }
                                             else {
@@ -331,13 +387,47 @@ Ext4.define('LABKEY.ext.panel.FolderManagementPanel', {
                                                 me.treepanel.getStore().load();
                                             }
                                         });
-                            }
+                                    }
+                                    else {
+                                        Ext4.Msg.confirm('Change Project', 'You are moving folder \'' + _s.data.text + '\' from one project to another. ' +
+                                                'This will remove all permissions settings from this folder, any subfolders, and any other configurations. ' +
+                                                '<br/><b>This action cannot be undone.</b>',
+                                                function(btn){
+                                                    me.confirmation = true;
+                                                    if (btn == 'yes'){ startMove(); }
+                                                    else {
+                                                        // Rollback
+                                                        me.confirmation = false;
+                                                        me.treepanel.getStore().load();
+                                                    }
+                                                });
+                                    }
+                                    return false; // stop bubble
+                                }
+                            });
                             return false; // stop bubble
                         }
                     });
-                    return false; // stop bubble
+
+                });
+            }
+
+            var c = 0;
+
+            function executeNext() {
+                var currentFn = exeSet[c];
+                c = c+1;
+                if ((c-1) < s.length) {
+                    currentFn(c-1);
                 }
-            });
+                else {
+                    this.confirmation = false;
+                }
+            }
+
+            function successHandler(data, response, opts) { Ext4.defer(executeNext, 0, this); }
+
+            Ext4.defer(executeNext, 0, this);
         }
     },
 
@@ -371,7 +461,6 @@ Ext4.define('LABKEY.ext.panel.FolderManagementPanel', {
 
         if (point) {
             if (point == 'before' || point == 'after') {
-//                console.log('Move to ' + point + ' \'' + target.data.containerPath + '\'');
 
                 // check if same parent, check if root node -- cannot elevate to project
                 if (target.parentNode && target.parentNode.raw != undefined) {
@@ -416,7 +505,11 @@ Ext4.define('LABKEY.ext.panel.FolderManagementPanel', {
             else if (point == 'append') {
                 if (target.data.containerPath == undefined) {
                     ret.msg = 'Invalid action';
-                    return {target: target, cancel: true};
+                    return {target: target, cancel: true, msg : ret.msg};
+                }
+                else if (node.parentNode.data.id == target.data.id) {
+                    ret.msg = 'A folder ' + node.data.text + ' already exists under ' + target.data.text;
+                    return {target: target, cancel: true, msg : ret.msg};
                 }
                 ret.msg = 'Move Folder ' + '/' + node.data.text + ' to ' + target.data.containerPath;
             }
@@ -432,7 +525,7 @@ Ext4.define('LABKEY.ext.panel.FolderManagementPanel', {
 
         this.mask();
         Ext4.Ajax.request({
-            url     : LABKEY.ActionURL.buildURL('admin', 'reorderFoldersApi.api', s.data.containerPath),
+            url     : LABKEY.ActionURL.buildURL('admin', 'reorderFoldersApi.api', s[0].data.containerPath),
             method  : 'POST',
             params  : params,
             success : function() {
@@ -441,7 +534,7 @@ Ext4.define('LABKEY.ext.panel.FolderManagementPanel', {
                     alphaNode.expand();
                 }
                 else{
-                    if (s.data.isProject) {
+                    if (s[0].data.isProject) {
                         this.treepanel.getStore().load();
                         // TODO: Expand the root node
                     }
@@ -485,10 +578,18 @@ Ext4.define('LABKEY.ext.panel.FolderManagementPanel', {
         }
     },
 
-    _validateFolder : function(node) {
+    _validateFolders : function(nodes) {
         var tool = this.getDockedItems('toolbar');
-        if (tool) {
-            tool[0].getComponent('move').setDisabled(node.data.isProject);
+        if (this.dockedDefaults && tool && tool[0]) {
+            if (nodes.length == 1)
+                tool[0].getComponent('move').setDisabled(nodes[0].data.isProject);
+
+            var isDisabled = (nodes.length > 1);
+            tool[0].getComponent('alias').setDisabled(isDisabled);
+            tool[0].getComponent('reorder').setDisabled(isDisabled);
+            tool[0].getComponent('create').setDisabled(isDisabled);
+            tool[0].getComponent('remove').setDisabled(isDisabled);
+            tool[0].getComponent('rename').setDisabled(isDisabled);
         }
     },
 
