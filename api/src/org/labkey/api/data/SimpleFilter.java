@@ -498,7 +498,7 @@ public class SimpleFilter implements Filter
                 if(isIncludeNull())
                     in.append(alias + " IS " + (isNegated() ? " NOT " : "") + "NULL");
                 else if (!isNegated())
-                    in.append(alias + "IN (NULL)");  // Empty list case; "WHERE column IN (NULL)" should always be false
+                    in.append(alias + " IN (NULL)");  // Empty list case; "WHERE column IN (NULL)" should always be false
 
                 return in.toString();
             }
