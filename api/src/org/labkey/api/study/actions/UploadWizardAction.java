@@ -633,8 +633,7 @@ public class UploadWizardAction<FormType extends AssayRunUploadForm<ProviderType
             ExpRun run;
             File primaryFile = getPrimaryFile(form);
 
-            // Temporarily hard-code to always do our normal, synchronous upload
-            boolean background = false;
+            boolean background = form.getProvider().isBackgroundUpload(form.getProtocol());
             if (!background)
             {
                 run = AssayService.get().createExperimentRun(form.getName(), getViewContext().getContainer(), form.getProtocol(), primaryFile);

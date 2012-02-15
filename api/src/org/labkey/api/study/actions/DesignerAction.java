@@ -85,6 +85,7 @@ public class DesignerAction extends BaseAssayAction<DesignerAction.DesignerForm>
         properties.put("providerName", provider.getName());
         properties.put("osName", System.getProperty("os.name").toLowerCase());
         properties.put("supportsEditableResults", Boolean.toString(provider.supportsEditableResults()));
+        properties.put("supportsBackgroundUpload", Boolean.toString(provider.supportsBackgroundUpload()));
         if (form.getReturnUrl() != null)
         {
             properties.put(ActionURL.Param.returnUrl.name(), form.getReturnUrl().getSource());

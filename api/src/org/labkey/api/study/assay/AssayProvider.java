@@ -209,6 +209,10 @@ public interface AssayProvider extends Handler<ExpProtocol>
     void setEditableRuns(ExpProtocol protocol, boolean editable) throws ExperimentException;
     boolean isEditableRuns(ExpProtocol protocol);
 
+    boolean supportsBackgroundUpload();
+    void setBackgroundUpload(ExpProtocol protocol, boolean background) throws ExperimentException;
+    boolean isBackgroundUpload(ExpProtocol protocol);
+
     /**
      * @return the data type that this run creates for its analyzed results
      */

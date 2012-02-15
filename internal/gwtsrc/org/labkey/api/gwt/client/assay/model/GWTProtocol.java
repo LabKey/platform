@@ -54,6 +54,7 @@ public class GWTProtocol implements IsSerializable
     private boolean _saveScriptFiles;
     private boolean _editableRuns;
     private boolean _editableResults;
+    private boolean _backgroundUpload;
 
     public GWTProtocol()
     {
@@ -228,5 +229,15 @@ public class GWTProtocol implements IsSerializable
     public void setEditableResults(boolean editableResults)
     {
         _editableResults = editableResults;
+    }
+
+    public boolean isBackgroundUpload()
+    {
+        return _backgroundUpload;
+    }
+
+    public void setBackgroundUpload(boolean backgroundUpload)
+    {
+        _backgroundUpload = backgroundUpload;
     }
 }

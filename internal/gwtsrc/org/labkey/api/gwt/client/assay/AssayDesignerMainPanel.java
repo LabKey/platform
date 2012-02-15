@@ -95,6 +95,7 @@ public class AssayDesignerMainPanel extends VerticalPanel implements Saveable<GW
     private BooleanProperty _debugScriptFiles = new BooleanProperty(false);
     private BooleanProperty _editableRuns = new BooleanProperty(false);
     private BooleanProperty _editableResults = new BooleanProperty(false);
+    private BooleanProperty _backgroundUpload = new BooleanProperty(false);
     private BoundTextBox _transformFile;
     private BoundTextBox _validationFile;
     private boolean _allowSpacesInPath;
@@ -600,6 +601,18 @@ public class AssayDesignerMainPanel extends VerticalPanel implements Saveable<GW
             table.setWidget(row++, 1, new BoundCheckBox("id_editable_results_properties", _editableResults, this));
         }
 
+        _backgroundUpload.setBool(assay.isBackgroundUpload());
+        if ("true".equals(PropertyUtil.getServerProperty("supportsBackgroundUpload")))
+        {
+            FlowPanel backgroundUploadPanel = new FlowPanel();
+            backgroundUploadPanel.add(new InlineHTML("Upload in Background"));
+            backgroundUploadPanel.add(new HelpPopup("Upload in Background", "If enabled, assay uploads will be processed as jobs in the data pipeline. " +
+                    "If there are any errors during the upload, they can be viewed from the log file for that job."));
+            table.setWidget(row, 0, backgroundUploadPanel);
+            table.getFlexCellFormatter().setStyleName(row, 0, "labkey-form-label");
+            table.setWidget(row++, 1, new BoundCheckBox("id_background_upload_properties", _backgroundUpload, this));
+        }
+
         return table;
     }
 
@@ -737,6 +750,7 @@ public class AssayDesignerMainPanel extends VerticalPanel implements Saveable<GW
             _assay.setSaveScriptFiles(_debugScriptFiles.booleanValue());
             _assay.setEditableRuns(_editableRuns.booleanValue());
             _assay.setEditableResults(_editableResults.booleanValue());
+            _assay.setBackgroundUpload(_backgroundUpload.booleanValue());
             getService().saveChanges(_assay, true, callback);
         }
     }

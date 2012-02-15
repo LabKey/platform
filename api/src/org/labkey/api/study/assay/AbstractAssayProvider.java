@@ -150,6 +150,7 @@ public abstract class AbstractAssayProvider implements AssayProvider
     public static final String SAVE_SCRIPT_FILES_PROPERTY_SUFFIX = "SaveScriptFiles";
     public static final String EDITABLE_RUNS_PROPERTY_SUFFIX = "EditableRuns";
     public static final String EDITABLE_RESULTS_PROPERTY_SUFFIX = "EditableResults";
+    public static final String BACKGROUND_UPLOAD_PROPERTY_SUFFIX = "BackgroundUpload";
 
     protected final String _protocolLSIDPrefix;
     protected final String _runLSIDPrefix;
@@ -1222,6 +1223,24 @@ public abstract class AbstractAssayProvider implements AssayProvider
     public boolean isEditableRuns(ExpProtocol protocol)
     {
         return Boolean.TRUE.equals(getBooleanProperty(protocol, EDITABLE_RUNS_PROPERTY_SUFFIX));
+    }
+
+    @Override
+    public boolean supportsBackgroundUpload()
+    {
+        return false;
+    }
+
+    @Override
+    public void setBackgroundUpload(ExpProtocol protocol, boolean background) throws ExperimentException
+    {
+        setBooleanProperty(protocol, BACKGROUND_UPLOAD_PROPERTY_SUFFIX, background);
+    }
+
+    @Override
+    public boolean isBackgroundUpload(ExpProtocol protocol)
+    {
+        return supportsBackgroundUpload() && Boolean.TRUE.equals(getBooleanProperty(protocol, BACKGROUND_UPLOAD_PROPERTY_SUFFIX));
     }
 
     @Override
