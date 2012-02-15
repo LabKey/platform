@@ -76,6 +76,7 @@ import org.labkey.api.security.permissions.UpdatePermission;
 import org.labkey.api.admin.InvalidFileException;
 import org.labkey.api.util.FileStream;
 import org.labkey.api.util.FileUtil;
+import org.labkey.api.util.HelpTopic;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.Pair;
 import org.labkey.api.util.URLHelper;
@@ -176,6 +177,12 @@ public class ListController extends SpringActionController
         return new ActionURL(BeginAction.class, c);
     }
 
+    @Override
+    public PageConfig defaultPageConfig()
+    {
+        PageConfig config = super.defaultPageConfig();
+        return config.setHelpTopic(new HelpTopic("lists"));
+    }
 
     @RequiresPermissionClass(ReadPermission.class)
     public class BeginAction extends SimpleViewAction
@@ -226,7 +233,7 @@ public class ListController extends SpringActionController
         {
             _list = null;
 
-            boolean createList = (null == form.getListId() || 0 == form.getListId());
+            boolean createList = (null == form.getListId() || 0 == form.getListId()) && form.getName() == null;
             if (!createList)
                 _list = form.getList();
 
