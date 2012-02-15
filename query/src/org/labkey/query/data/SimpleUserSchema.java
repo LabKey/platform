@@ -175,7 +175,7 @@ public class SimpleUserSchema extends UserSchema
                         wrap.setLabel("Modified By");
                 }
                 // also add FK to container field
-                else if (JdbcType.VARCHAR == col.getJdbcType() &&
+                else if ((col.getJdbcType().getJavaClass() == String.class)&&
                    colName.equalsIgnoreCase("container") &&
                    (_userSchema.getDbSchema().getScope().isLabKeyScope()))
                 {
