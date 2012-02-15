@@ -42,6 +42,7 @@ public class ViewInfo
     private User _author;
     private Date _created;
     private Date _modified;
+    private Date _refreshDate;
     private DataType _dataType;
     private String _type;
     private Boolean _editable;
@@ -72,7 +73,9 @@ public class ViewInfo
     public enum Status {
         None,
         Draft,
-        Final
+        Final,
+        Locked,
+        Unlocked,
     }
 
     public ViewInfo(String name, String type)
@@ -381,6 +384,16 @@ public class ViewInfo
         _status = status;
     }
 
+    public Date getRefreshDate()
+    {
+        return _refreshDate;
+    }
+
+    public void setRefreshDate(Date refreshDate)
+    {
+        _refreshDate = refreshDate;
+    }
+
     public JSONObject toJSON(User user)
     {
         JSONObject o = new JSONObject();
@@ -423,7 +436,9 @@ public class ViewInfo
             o.put("created", getCreated());
         if (getModified() != null)
             o.put("modified", getModified());
-
+        if (getRefreshDate() != null)
+            o.put("refreshDate", getRefreshDate());
+        
         if (getVersion() != null)
             o.put("version", getVersion());
 

@@ -26,6 +26,7 @@ import org.labkey.api.attachments.AttachmentService;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.RenderContext;
+import org.labkey.api.exp.PropertyType;
 import org.labkey.api.query.CustomViewInfo;
 import org.labkey.api.query.QueryAction;
 import org.labkey.api.query.QueryDefinition;
@@ -36,6 +37,7 @@ import org.labkey.api.query.QueryView;
 import org.labkey.api.query.UserSchema;
 import org.labkey.api.reports.Report;
 import org.labkey.api.reports.ReportService;
+import org.labkey.api.reports.model.ReportPropsManager;
 import org.labkey.api.reports.model.ViewCategory;
 import org.labkey.api.reports.model.ViewCategoryManager;
 import org.labkey.api.reports.model.ViewInfo;
@@ -68,6 +70,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.Comparator;
+import java.util.Date;
 import java.util.List;
 import java.util.Map;
 import java.util.regex.Pattern;
@@ -415,116 +418,130 @@ public class ReportUtil
 
         if (includeReports)
         {
-            for (Report r : ReportUtil.getReports(c, user, reportKey, true))
+            try
             {
-                if (!filter.accept(r, c, user))
-                    continue;
+                ReportPropsManager.get().ensureProperty(c, user, "status", "Status", PropertyType.STRING);
+                ReportPropsManager.get().ensureProperty(c, user, "author", "Author", PropertyType.INTEGER);
+                ReportPropsManager.get().ensureProperty(c, user, "refreshDate", "RefreshDate", PropertyType.DATE_TIME);
 
-                if (!StringUtils.isEmpty(r.getDescriptor().getReportName()))
+                for (Report r : ReportUtil.getReports(c, user, reportKey, true))
                 {
-                    ReportDescriptor descriptor = r.getDescriptor();
+                    if (!filter.accept(r, c, user))
+                        continue;
 
-                    User createdBy = UserManager.getUser(descriptor.getCreatedBy());
-                    User modifiedBy = UserManager.getUser(descriptor.getModifiedBy());
-                    User author = descriptor.getAuthor() != null ? UserManager.getUser(descriptor.getAuthor()) : null;
-                    boolean inherited = descriptor.isInherited(c);
-                    String query = descriptor.getProperty(ReportDescriptor.Prop.queryName);
-                    String schema = descriptor.getProperty(ReportDescriptor.Prop.schemaName);
-                    String status = descriptor.getProperty(ReportDescriptor.Prop.status);
-
-                    ViewInfo info = new ViewInfo(descriptor.getReportName(), r.getTypeDescription());
-
-                    info.setReportId(descriptor.getReportId());
-                    info.setEntityId(descriptor.getEntityId());
-                    info.setDataType(ViewInfo.DataType.reports);
-                    info.setQuery(StringUtils.defaultIfEmpty(query, "Stand-alone views"));
-
-                    if (status != null)
-                        info.setStatus(ViewInfo.Status.valueOf(status));
-
-                    if (descriptor.getCategory() != null)
+                    if (!StringUtils.isEmpty(r.getDescriptor().getReportName()))
                     {
-                        info.setCategory(descriptor.getCategory().getLabel());
-                        info.setCategoryDisplayOrder(descriptor.getCategory().getDisplayOrder());
-                    }
-                    else
-                    {
-                        ViewCategory vc = getDefaultCategory(c, schema, query);
+                        ReportDescriptor descriptor = r.getDescriptor();
 
-                        info.setCategory(vc.getLabel());
-                        info.setCategoryDisplayOrder(vc.getDisplayOrder());
-                    }
-                    info.setSchema(schema);
-                    info.setCreatedBy(createdBy);
-                    info.setCreated(descriptor.getCreated());
-                    info.setModifiedBy(modifiedBy);
-                    info.setAuthor(author);
-                    info.setModified(descriptor.getModified());
-                    info.setEditable(descriptor.canEdit(user, c));
-                    info.setInherited(inherited);
-                    info.setVersion(descriptor.getVersionString());
-                    info.setHidden(descriptor.isHidden());
-                    info.setDisplayOrder(descriptor.getDisplayOrder());
+                        User createdBy = UserManager.getUser(descriptor.getCreatedBy());
+                        User modifiedBy = UserManager.getUser(descriptor.getModifiedBy());
+                        Object authorId = ReportPropsManager.get().getPropertyValue(descriptor.getEntityId(), c, user, "author");
 
-                    /**
-                     * shared reports are only available if there is a query/schema available in the container that matches
-                     * the view's descriptor. Normally, the check happens automatically when you get reports using a non-blank key, but when
-                     * you request all reports for a container you have to do an explicit check to make sure there is a valid query
-                     * available in the container.
-                     */
-                    if (!inherited || !StringUtils.isBlank(reportKey))
-                    {
-                        ActionURL editUrl = r.getEditReportURL(context);
-                        ActionURL runUrl = r.getRunReportURL(context);
-                        ActionURL detailsUrl = PageFlowUtil.urlProvider(ReportUrls.class).urlReportDetails(c, r);
+                        User author = authorId != null ? UserManager.getUser(((Double)authorId).intValue()) : null;
+                        boolean inherited = descriptor.isInherited(c);
+                        String query = descriptor.getProperty(ReportDescriptor.Prop.queryName);
+                        String schema = descriptor.getProperty(ReportDescriptor.Prop.schemaName);
+                        String status = (String)ReportPropsManager.get().getPropertyValue(descriptor.getEntityId(), c, user, "status");
 
-                        info.setEditUrl(editUrl);
-                        info.setRunUrl(runUrl);
-                        info.setDetailsUrl(detailsUrl);
-                    }
-                    else
-                    {
-                        ActionURL runUrl = r.getRunReportURL(context);
+                        ViewInfo info = new ViewInfo(descriptor.getReportName(), r.getTypeDescription());
 
-                        if (queryExists(user, c, schema, query))
-                            info.setRunUrl(runUrl);
+                        info.setReportId(descriptor.getReportId());
+                        info.setEntityId(descriptor.getEntityId());
+                        info.setDataType(ViewInfo.DataType.reports);
+                        info.setQuery(StringUtils.defaultIfEmpty(query, "Stand-alone views"));
+
+                        if (status != null)
+                            info.setStatus(ViewInfo.Status.valueOf(status));
+
+                        if (descriptor.getCategory() != null)
+                        {
+                            info.setCategory(descriptor.getCategory().getLabel());
+                            info.setCategoryDisplayOrder(descriptor.getCategory().getDisplayOrder());
+                        }
                         else
-                            continue;
+                        {
+                            ViewCategory vc = getDefaultCategory(c, schema, query);
+
+                            info.setCategory(vc.getLabel());
+                            info.setCategoryDisplayOrder(vc.getDisplayOrder());
+                        }
+                        info.setSchema(schema);
+                        info.setCreatedBy(createdBy);
+                        info.setCreated(descriptor.getCreated());
+                        info.setRefreshDate((Date)ReportPropsManager.get().getPropertyValue(descriptor.getEntityId(), c, user, "refreshDate"));
+                        info.setModifiedBy(modifiedBy);
+                        info.setAuthor(author);
+                        info.setModified(descriptor.getModified());
+                        info.setEditable(descriptor.canEdit(user, c));
+                        info.setInherited(inherited);
+                        info.setVersion(descriptor.getVersionString());
+                        info.setHidden(descriptor.isHidden());
+                        info.setDisplayOrder(descriptor.getDisplayOrder());
+
+                        /**
+                         * shared reports are only available if there is a query/schema available in the container that matches
+                         * the view's descriptor. Normally, the check happens automatically when you get reports using a non-blank key, but when
+                         * you request all reports for a container you have to do an explicit check to make sure there is a valid query
+                         * available in the container.
+                         */
+                        if (!inherited || !StringUtils.isBlank(reportKey))
+                        {
+                            ActionURL editUrl = r.getEditReportURL(context);
+                            ActionURL runUrl = r.getRunReportURL(context);
+                            ActionURL detailsUrl = PageFlowUtil.urlProvider(ReportUrls.class).urlReportDetails(c, r);
+
+                            info.setEditUrl(editUrl);
+                            info.setRunUrl(runUrl);
+                            info.setDetailsUrl(detailsUrl);
+                        }
+                        else
+                        {
+                            ActionURL runUrl = r.getRunReportURL(context);
+
+                            if (queryExists(user, c, schema, query))
+                                info.setRunUrl(runUrl);
+                            else
+                                continue;
+                        }
+                        if (c.hasPermission(user, AdminPermission.class))
+                            info.setInfoUrl(PageFlowUtil.urlProvider(ReportUrls.class).urlReportInfo(c).addParameter("reportId", descriptor.getReportId().toString()));
+                        info.setDescription(descriptor.getReportDescription());
+                        info.setContainer(descriptor.lookupContainer());
+
+                        String security;
+                        if (descriptor.getOwner() != null)
+                            security = "private";
+                        // FIXME: see 10473: ModuleRReportDescriptor extends securable resource, but doesn't properly implement it.  File-based resources don't have a Container or Owner.
+                        else if (!(descriptor instanceof ModuleRReportDescriptor) && !SecurityManager.getPolicy(descriptor, false).isEmpty())
+                            security = "custom"; // 13571: Explicit is a bad name for custom permissions
+                        else
+                            security = "public";
+
+                        info.setPermissions(security);
+
+                        // This icon is the small icon -- not the same as thumbnail
+                        String iconPath = ReportService.get().getReportIcon(context, r.getType());
+
+                        // No way for a report to offer a specific icon based on its content, so do this hack for attachment reports  TODO: fix
+                        if ("Study.attachmentReport".equals(r.getType()))
+                        {
+                            List<Attachment> list = AttachmentService.get().getAttachments(r);
+                            String filename = list.isEmpty() ? "" : list.get(0).getName();
+                            iconPath = PageFlowUtil.urlProvider(CoreUrls.class).getAttachmentIconURL(c, filename).toString();
+                        }
+
+                        if (!StringUtils.isEmpty(iconPath))
+                            info.setIcon(iconPath);
+
+                        info.setThumbnailUrl(PageFlowUtil.urlProvider(ReportUrls.class).urlThumbnail(c, r));
+
+                        views.add(info);
                     }
-                    if (c.hasPermission(user, AdminPermission.class))
-                        info.setInfoUrl(PageFlowUtil.urlProvider(ReportUrls.class).urlReportInfo(c).addParameter("reportId", descriptor.getReportId().toString()));
-                    info.setDescription(descriptor.getReportDescription());
-                    info.setContainer(descriptor.lookupContainer());
-
-                    String security;
-                    if (descriptor.getOwner() != null)
-                        security = "private";
-                    // FIXME: see 10473: ModuleRReportDescriptor extends securable resource, but doesn't properly implement it.  File-based resources don't have a Container or Owner.
-                    else if (!(descriptor instanceof ModuleRReportDescriptor) && !SecurityManager.getPolicy(descriptor, false).isEmpty())
-                        security = "custom"; // 13571: Explicit is a bad name for custom permissions
-                    else
-                        security = "public";
-
-                    info.setPermissions(security);
-
-                    // This icon is the small icon -- not the same as thumbnail
-                    String iconPath = ReportService.get().getReportIcon(context, r.getType());
-
-                    // No way for a report to offer a specific icon based on its content, so do this hack for attachment reports  TODO: fix
-                    if ("Study.attachmentReport".equals(r.getType()))
-                    {
-                        List<Attachment> list = AttachmentService.get().getAttachments(r);
-                        String filename = list.isEmpty() ? "" : list.get(0).getName();
-                        iconPath = PageFlowUtil.urlProvider(CoreUrls.class).getAttachmentIconURL(c, filename).toString();
-                    }
-
-                    if (!StringUtils.isEmpty(iconPath))
-                        info.setIcon(iconPath);
-
-                    info.setThumbnailUrl(PageFlowUtil.urlProvider(ReportUrls.class).urlThumbnail(c, r));
-
-                    views.add(info);
                 }
+            }
+            catch (Exception e)
+            {
+                throw new RuntimeException(e);
             }
         }
 

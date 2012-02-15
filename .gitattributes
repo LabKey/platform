@@ -732,6 +732,7 @@ api/src/org/labkey/api/reports/chart/ChartRenderInfo.java -text
 api/src/org/labkey/api/reports/chart/ChartRenderer.java -text
 api/src/org/labkey/api/reports/chart/ChartRendererFactory.java -text
 api/src/org/labkey/api/reports/chart/RenderInfo.java -text
+api/src/org/labkey/api/reports/model/ReportPropsManager.java -text
 api/src/org/labkey/api/reports/model/ViewCategory.java -text
 api/src/org/labkey/api/reports/model/ViewCategoryListener.java -text
 api/src/org/labkey/api/reports/model/ViewCategoryManager.java -text
