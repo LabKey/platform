@@ -224,6 +224,7 @@ public class AssayServiceImpl extends DomainEditorServiceBase implements AssaySe
         result.setSaveScriptFiles(provider.isSaveScriptFiles(protocol));
         result.setEditableResults(provider.isEditableResults(protocol));
         result.setEditableRuns(provider.isEditableRuns(protocol));
+        result.setBackgroundUpload(provider.isBackgroundUpload(protocol));
 
         // data transform scripts
         List<File> transformScripts = provider.getValidationAndAnalysisScripts(protocol, AssayProvider.Scope.ASSAY_DEF, AssayProvider.ScriptType.TRANSFORM);
@@ -407,6 +408,7 @@ public class AssayServiceImpl extends DomainEditorServiceBase implements AssaySe
                 provider.setSaveScriptFiles(protocol, assay.isSaveScriptFiles());
                 provider.setEditableResults(protocol, assay.isEditableResults());
                 provider.setEditableRuns(protocol, assay.isEditableRuns());
+                provider.setBackgroundUpload(protocol, assay.isBackgroundUpload());
 
                 Map<String, ObjectProperty> props = new HashMap<String, ObjectProperty>(protocol.getObjectProperties());
                 String autoCopyTargetContainerId = null;

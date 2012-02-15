@@ -175,4 +175,10 @@ public class TsvAssayProvider extends AbstractTsvAssayProvider
     {
         return true;
     }
+
+    @Override
+    public boolean supportsBackgroundUpload()
+    {
+        return true;
+    }
 }
