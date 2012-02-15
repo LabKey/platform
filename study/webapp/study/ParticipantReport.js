@@ -29,6 +29,7 @@ Ext4.define('LABKEY.ext4.ParticipantReport', {
     initComponent : function() {
 
         this.customMode = false;
+        this.initialRender = true;
         this.items = [];
 
         this.previewPanel = Ext4.create('Ext.panel.Panel', {
@@ -365,9 +366,7 @@ Ext4.define('LABKEY.ext4.ParticipantReport', {
                         copy : true
                     }],
                     listeners : {
-                        drop : function() {
-                            this.generateTemplateConfig();
-                        },
+                        drop : this.generateTemplateConfig,
                         scope: this
                     },
                     scope : this
@@ -482,7 +481,7 @@ Ext4.define('LABKEY.ext4.ParticipantReport', {
 
         if (this.gridFieldStore) {
 
-            var rawData = []
+            var rawData = [];
             for (var i=0; i < config.measures.length; i++) {
                 rawData.push(Ext4.clone(config.measures[i].measure));
             }
@@ -491,7 +490,11 @@ Ext4.define('LABKEY.ext4.ParticipantReport', {
             if (!this.reportGroups && config.groups)
                 this.reportGroups = config.groups;
 
-            this.generateTemplateConfig(config);
+            if (this.initialRender && this.reportGroups)
+                this.runFilterSet(this.reportGroups);
+            else
+                this.generateTemplateConfig();
+            this.initialRender = false;
         }
 
         this.markDirty(false);
@@ -620,9 +623,11 @@ Ext4.define('LABKEY.ext4.ParticipantReport', {
             this.northPanel.hide();
     },
 
-    generateTemplateConfig : function() {
-        this.markDirty(true);
-        this.generateTask.delay(500);
+    generateTemplateConfig : function(delay) {
+        if (this._inCustomMode())
+            this.markDirty(true);
+        var d = Ext4.isNumber(delay) ? delay : 500;
+        this.generateTask.delay(d);
     },
 
     showFilter : function(selection) {
@@ -666,7 +671,7 @@ Ext4.define('LABKEY.ext4.ParticipantReport', {
                 autoShow : true,
                 relative : this.centerPanel,
                 collapsed: true,
-                expandOnShow : false,
+                expandOnShow : true,
                 scope    : this
             });
         }
@@ -677,52 +682,73 @@ Ext4.define('LABKEY.ext4.ParticipantReport', {
         this.lengthReportField.setValue('Showing 0 Results');
     },
 
+    runFilterSet : function(filterSet) {
+        var json = [];
+        if (filterSet) {
+            for (var i=0; i < filterSet.length; i++)
+                json.push(filterSet[i]);
+        }
+
+        this.resolveSubjects(json, function(subjects){
+            this.filteredSubjects = subjects;
+
+            // in this case the query resulted in no matching subjects
+            if (this.filteredSubjects.length > 0)
+                this.generateTemplateConfig(0);
+            else
+                this.empty();
+        });
+    },
+
     runFilters : function() {
         var all = this.filterPanel.allSelected();
         if (all) {
             if (this.filteredSubjects)
                 this.filteredSubjects = undefined;
-            this.generateTask.delay(0);
+            this.generateTemplateConfig(0);
         }
         else {
+            var json = [];
             var filters = this.filterPanel.getSelection(true);
 
             if (filters.length == 0)
                 return this.empty();
 
-            var json = [];
             for (var f=0; f < filters.length; f++) {
                 json.push(filters[f].data);
             }
 
-            Ext4.Ajax.request({
-                url      : LABKEY.ActionURL.buildURL('participant-group', 'getSubjectsFromGroups.api'),
-                method   : 'POST',
-                jsonData : Ext4.encode({
-                    groups : json
-                }),
-                success  : function(response){
+            this.resolveSubjects(json, function(subjects){
+                this.filteredSubjects = subjects;
 
-                    var json = Ext4.decode(response.responseText);
-
-                    if (json.subjects) {
-                        this.filteredSubjects = json.subjects;
-
-                        // in this case the query resulted in no matching subjects
-                        if (this.filteredSubjects.length > 0)
-                            this.generateTask.delay(0);
-                        else
-                            this.empty();
-                    }
-                    else
-                        console.warn('Did not receive any subjects back from getSubjectsFromGroups');
-                },
-                failure  : function(response){
-                    Ext4.Msg.alert('Failure', Ext4.decode(response.responseText));
-                },
-                scope : this
+                // in this case the query resulted in no matching subjects
+                if (this.filteredSubjects.length > 0)
+                    this.generateTemplateConfig(0);
+                else
+                    this.empty();
             });
         }
+    },
+
+    resolveSubjects : function(groups, callback, scope) {
+        Ext4.Ajax.request({
+            url      : LABKEY.ActionURL.buildURL('participant-group', 'getSubjectsFromGroups.api'),
+            method   : 'POST',
+            jsonData : Ext4.encode({
+                groups : groups
+            }),
+            success  : function(response){
+
+                var json = Ext4.decode(response.responseText);
+                var subjects = json.subjects ? json.subjects : [];
+                callback.call(scope || this, subjects);
+
+            },
+            failure  : function(response){
+                Ext4.Msg.alert('Failure', Ext4.decode(response.responseText));
+            },
+            scope : this
+        });
     },
 
     // get the grid fields in a form that the visualization getData api can understand

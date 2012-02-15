@@ -455,8 +455,8 @@ Ext4.define('LABKEY.ext4.DataViewsPanel', {
             multiSelect: true,
             region   : 'center',
             viewConfig : {
-                stripRows : true,
-                listeners : {
+                stripeRows : true,
+                listeners  : {
                     render : initToolTip,
                     scope  : this
                 },

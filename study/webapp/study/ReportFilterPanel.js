@@ -42,6 +42,70 @@ Ext4.define('LABKEY.ext4.FilterPanel', {
         if (this.fn)
             this.store.filterBy(this.fn);
 
+        function initToolTip(view) {
+
+            var _active;
+
+            function renderTip(tip) {
+                if (_active)
+                    tip.update(_active.data.label);
+            }
+
+
+            function loadRecord(tip) {
+                var r = view.getRecord(tip.triggerElement.parentNode);
+                if (r) _active = r;
+                else {
+                    /* This usually occurs when mousing over grouping headers */
+                    _active = null;
+                    return false;
+                }
+                return true;
+            }
+
+
+            view.tip = Ext4.create('Ext.tip.ToolTip', {
+                target   : view.el,
+                delegate : '.x4-label-column-cell',
+                showDelay: 1000,
+                listeners: {
+                    beforeshow : function(tip) {
+                        var loaded = loadRecord(tip);
+                        renderTip(tip);
+                        return loaded;
+                    },
+                    scope : this
+                },
+                scope : this
+            });
+        }
+
+        this.store.on('load', function() {
+
+            if (this.target) {
+                this.target.suspendEvents(); // queueing of events id depended on
+
+                if (!this.selection) {
+                    this.target.getSelectionModel().selectAll();
+                }
+                else {
+                    this.target.getSelectionModel().deselectAll();
+                    for (var s=0; s < this.selection.length; s++) {
+                        var rec = this.target.getStore().findRecord('id', this.selection[s].id);
+                        if (rec)
+                        {
+                            // Compare ID && Label if dealing with virtual groups (e.g. not in cohorts, etc)
+                            if (this.selection[s].id < 0 && (rec.data.label != this.selection[s].label))
+                                continue;
+                            this.target.getSelectionModel().select(rec, true);
+                        }
+                    }
+                }
+
+                this.target.resumeEvents();
+            }
+        }, this);
+
         this.target = Ext4.create('Ext.grid.Panel', {
             store       : this.store,
             border      : false, frame : false,
@@ -52,27 +116,15 @@ Ext4.define('LABKEY.ext4.FilterPanel', {
             columns     : this.initTargetColumns(),
             viewConfig : {
                 stripeRows : false,
-                emptyText  : 'No Cohorts Available'
+                listeners  : {
+                    render : initToolTip,
+                    scope  : this
+                }
             },
             selType     : 'checkboxmodel',
             bubbleEvents: ['select', 'selectionchange', 'itemmouseenter', 'itemmouseleave'],
             listeners   : {
                 viewready : function(grid) {
-
-                    this.target.suspendEvents(true);
-
-                    if (!this.selection) {
-                        this.target.getSelectionModel().selectAll();
-                    }
-                    else {
-                        for (var s=0; s < this.selection.length; s++) {
-                            var rec = this.target.getStore().findRecord('id', this.selection[s].id);
-                            if (rec)
-                                this.target.getSelectionModel().select(rec);
-                        }
-                    }
-
-                    this.target.resumeEvents();
                 },
                 scope     : this
             },
@@ -89,8 +141,11 @@ Ext4.define('LABKEY.ext4.FilterPanel', {
         this.columns = [];
 
         this.columns.push({
+            xtype     : 'templatecolumn',
             flex      : 1,
             dataIndex : 'label',
+            tdCls     : 'x4-label-column-cell',
+            tpl       : '<div>{label:htmlEncode}</div>',
             scope     : this
         },{
             dataIndex : 'type',
@@ -146,7 +201,8 @@ Ext4.define('LABKEY.ext4.ReportFilterPanel', {
     constructor : function(config) {
         Ext4.applyIf(config, {
             border : false, frame : false,
-            cls    : 'report-filter-panel'
+            cls    : 'report-filter-panel',
+            scroll   : 'vertical'
         });
 
         this.callParent([config]);
@@ -189,6 +245,7 @@ Ext4.define('LABKEY.ext4.ReportFilterPanel', {
             this.filterPanels.push(Ext4.create('LABKEY.ext4.FilterPanel',Ext4.apply(this.filters[f],{
                 border : false, frame : false
             })));
+            this.filterPanels[f].store.on('load', this.allSelected, this, {single: true});
         }
 
         this.selectionPanel = Ext4.create('Ext.panel.Panel', {
@@ -232,7 +289,6 @@ Ext4.define('LABKEY.ext4.ReportFilterPanel', {
     },
 
     allSelected : function() {
-
         var i= this.allowAll ? 1 : 0;
         if (this.filterPanels) {
             for (i; i < this.filterPanels.length; i++) {

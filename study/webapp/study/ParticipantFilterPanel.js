@@ -16,6 +16,7 @@ Ext4.define('LABKEY.study.ParticipantFilterPanel', {
         Ext4.applyIf(config, {
             layout    : 'fit',
             allowAll  : true,
+            cls       : 'participant-filter-panel',
             border    : false, frame : false,
             subjectNoun : {singular : 'Participant', plural : 'Participants'}
         });
@@ -63,16 +64,16 @@ Ext4.define('LABKEY.study.ParticipantFilterPanel', {
             this.filters = [{
                 store       : Ext4.create('Ext.data.Store', cohortConfig),
                 selection   : this.selection,
-                description : 'In these Cohorts:'
+                description : '<b class="filter-description">Cohorts</b>'
             },{
                 store       : Ext4.create('Ext.data.Store', groupConfig),
                 selection   : this.selection,
-                description : 'In these Groups:'
+                description : '<b class="filter-description">Groups</b>'
             }];
         }
 
         this.filterPanel = Ext4.create('LABKEY.ext4.ReportFilterPanel', {
-            layout   : 'fit',
+            flex     : 1,
             border   : false, frame : false,
             allowAll : this.allowAll,
             filters  : this.filters

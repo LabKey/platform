@@ -52,7 +52,6 @@
     ActionURL subjectUrl = new ActionURL(StudyController.ParticipantAction.class, container);
     subjectUrl.addParameter("participantId", "");
     String urlTemplate = subjectUrl.getEncodedLocalURIString();
-    int rows = bean.getRows();
     DbSchema dbschema = StudySchema.getInstance().getSchema();
     final JspWriter _out = out;
 
@@ -77,20 +76,43 @@ ul.subjectlist
 
 li.ptid a.highlight
 {
-/*    color:black; background-color: pink; */
 }
+
 li.ptid a.unhighlight
 {
     color:#dddddd;
 }
 
-div.group.highlight
-{
-    background-color:pink;
+.participant-filter-panel .filter-description {
+    font-size: smaller;
 }
-div.group.unhighlight
-{
+
+.participant-filter-panel div.x4-panel-header {
+    background-color: #E0E6EA;
+    background-image: none;
+    color: black;
 }
+
+.participant-filter-panel div.x4-panel-default,
+.participant-filter-panel div.x4-panel-header-default,
+.participant-filter-panel div.x4-panel-body-default {
+    border-color: #d3d3d3;
+    box-shadow: none;
+}
+
+.participant-filter-panel span.x4-panel-header-text-default {
+    color: black;
+}
+
+.report-filter-panel div.x4-panel-body-default:hover {
+    overflow-y: auto;
+}
+
+.participant-filter-panel .x4-grid-row-over div:hover {
+    cursor: pointer;
+}
+
+
 </style>
 <script>
     LABKEY.requiresExt4Sandbox(true);
@@ -342,7 +364,7 @@ div.group.unhighlight
             success  : function(response)
             {
                 var json = Ext4.decode(response.responseText);
-                _filterGroupMap = {}
+                _filterGroupMap = {};
                 for (var i=0; i < json.subjects.length; i++)
                     _filterGroupMap[json.subjects[i]] = true;
                 renderSubjects();
@@ -363,8 +385,13 @@ div.group.unhighlight
             var ptidPanel = Ext4.create('LABKEY.study.ParticipantFilterPanel',
             {
                 renderTo  : Ext4.get('<%=groupsDivId%>'),
-                listeners :
-                {
+                title     : 'Show',
+                border    : true,
+                width     : 280,
+                height    : 425,
+                overCls   : 'iScroll',
+                bodyStyle : 'padding: 8px',
+                listeners : {
                     itemmouseenter : function(v,r,item,idx)
                     {
                         var g=-1;
@@ -479,7 +506,7 @@ div.group.unhighlight
     function generateToolTip(p)
     {
         var part = _ptids[p];
-        var html = ["<div align=center>" + part.html + "</div>"];
+        var html = ["<div>" + part.html + "</div>"];
         for (var g=0 ; g<_groups.length ; g++)
         {
             if (_groups[g].id != -1 && testGroupPtid(g,p))
@@ -589,7 +616,7 @@ div.group.unhighlight
 <div style="">
  <table id="<%= divId %>" width="100%">
     <tr><td style="padding:5px; margin:5px; border:solid 0px #eeeeee;" width=200 valign=top>
-    <div style="min-width:200px;"  id="<%=groupsDivId%>">&nbsp;</div>
+    <div id="<%=groupsDivId%>"></div>
     </td>
     <td style="padding:5px; margin:5px; border:solid 0px #eeeeee;" class="iScroll" valign=top>
         <table width=100%><tr>
