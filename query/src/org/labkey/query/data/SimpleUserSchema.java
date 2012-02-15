@@ -44,6 +44,7 @@ import org.labkey.api.exp.property.PropertyService;
 import org.labkey.api.module.SimpleModule;
 import org.labkey.api.query.BatchValidationException;
 import org.labkey.api.query.FilteredTable;
+import org.labkey.api.query.LookupForeignKey;
 import org.labkey.api.query.QueryService;
 import org.labkey.api.query.QueryUpdateService;
 import org.labkey.api.query.UserIdQueryForeignKey;
@@ -51,6 +52,7 @@ import org.labkey.api.query.UserSchema;
 import org.labkey.api.security.User;
 import org.labkey.api.security.UserPrincipal;
 import org.labkey.api.security.permissions.Permission;
+import org.labkey.api.util.StringExpression;
 import org.labkey.api.view.NotFoundException;
 
 import java.sql.Connection;
@@ -427,6 +429,16 @@ public class SimpleUserSchema extends UserSchema
                 return null;
 
             return schema.getTable(getLookupTableName(), true);
+        }
+
+        @Override
+        public StringExpression getURL(ColumnInfo parent)
+        {
+            TableInfo table = getLookupTableInfo();
+            if (table == null)
+                return null;
+
+            return LookupForeignKey.getDetailsURL(parent, table, getLookupColumnName());
         }
     }
 }
