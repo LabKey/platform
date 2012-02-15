@@ -84,6 +84,7 @@ import org.labkey.api.reader.DataLoader;
 import org.labkey.api.reader.TabLoader;
 import org.labkey.api.reports.Report;
 import org.labkey.api.reports.ReportService;
+import org.labkey.api.reports.model.ReportPropsManager;
 import org.labkey.api.reports.model.ViewCategory;
 import org.labkey.api.reports.model.ViewCategoryManager;
 import org.labkey.api.reports.model.ViewInfo;
@@ -7040,7 +7041,7 @@ public class StudyController extends BaseStudyController
             return defaultState;
         }
 
-        private List<ViewInfo> getDatasets()
+        private List<ViewInfo> getDatasets() throws Exception
         {
             List<ViewInfo> datasets = new ArrayList<ViewInfo>();
 
@@ -7081,6 +7082,11 @@ public class StudyController extends BaseStudyController
                         view.setHidden(!ds.isShowByDefault());
                         view.setThumbnailUrl(new ActionURL(ThumbnailAction.class, getContainer()));
                         view.setModified(ds.getModified());
+                        view.setRefreshDate((Date)ReportPropsManager.get().getPropertyValue(ds.getEntityId(), getContainer(), getUser(), "refreshDate"));
+                        String status = (String)ReportPropsManager.get().getPropertyValue(ds.getEntityId(), getContainer(), getUser(), "status");
+                        if (status != null)
+                            view.setStatus(ViewInfo.Status.valueOf(status));
+
                         datasets.add(view);
                     }
                 }
@@ -7281,6 +7287,17 @@ public class StudyController extends BaseStudyController
         ViewInfo.DataType _dataType;
         int _author;
         ViewInfo.Status _status;
+        Date _refreshDate;
+
+        public Date getRefreshDate()
+        {
+            return _refreshDate;
+        }
+
+        public void setRefreshDate(Date refreshDate)
+        {
+            _refreshDate = refreshDate;
+        }
 
         public ReportIdentifier getReportId()
         {
@@ -7432,11 +7449,6 @@ public class StudyController extends BaseStudyController
                     case reports:
                         if (category != null)
                             _report.getDescriptor().setCategory(category);
-                        if (author != null)
-                            _report.getDescriptor().setAuthor(author.getUserId());
-                        if (status != null)
-                            _report.getDescriptor().setProperty(ReportDescriptor.Prop.status, status.name());
-                        
                         ReportService.get().saveReport(getViewContext(), _report.getDescriptor().getReportKey(), _report);
                         break;
                     case datasets:
@@ -7458,6 +7470,14 @@ public class StudyController extends BaseStudyController
                     default:
                         throw new UnsupportedOperationException("The specified data type is not supported yet");
                 }
+
+                // additional properties
+                if (author != null)
+                    ReportPropsManager.get().setPropertyValue(id, getContainer(), getUser(), "author", author.getUserId());
+                if (status != null)
+                    ReportPropsManager.get().setPropertyValue(id, getContainer(), getUser(), "status", status.name());
+                if (form.getRefreshDate() != null)
+                    ReportPropsManager.get().setPropertyValue(id, getContainer(), getUser(), "refreshDate", form.getRefreshDate());
 
                 scope.commitTransaction();
 

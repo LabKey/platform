@@ -186,7 +186,7 @@ public class StudyModule extends SpringModule implements SearchService.DocumentP
 
     public double getVersion()
     {
-        return 11.32;
+        return 11.33;
     }
 
     protected void init()

@@ -15,10 +15,13 @@
  */
 package org.labkey.study;
 
+import org.apache.commons.lang3.math.NumberUtils;
 import org.apache.log4j.Logger;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.DbSchema;
+import org.labkey.api.data.DeferredUpgrade;
+import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.Sort;
 import org.labkey.api.data.Table;
 import org.labkey.api.data.TableInfo;
@@ -26,9 +29,14 @@ import org.labkey.api.data.UpgradeCode;
 import org.labkey.api.data.UpgradeUtils;
 import org.labkey.api.exp.ChangePropertyDescriptorException;
 import org.labkey.api.exp.ExperimentException;
+import org.labkey.api.exp.PropertyType;
 import org.labkey.api.exp.property.Domain;
 import org.labkey.api.exp.property.DomainProperty;
 import org.labkey.api.module.ModuleContext;
+import org.labkey.api.reports.Report;
+import org.labkey.api.reports.ReportService;
+import org.labkey.api.reports.model.ReportPropsManager;
+import org.labkey.api.reports.report.ReportDescriptor;
 import org.labkey.api.security.User;
 import org.labkey.api.study.DataSet;
 import org.labkey.api.study.Study;
@@ -45,6 +53,7 @@ import javax.servlet.ServletContext;
 import javax.servlet.http.HttpServletResponse;
 import java.sql.SQLException;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.Map;
 
 /**
@@ -210,6 +219,56 @@ public class StudyUpgradeCode implements UpgradeCode
         catch (ChangePropertyDescriptorException e)
         {
             throw new UnexpectedException(e);
+        }
+    }
+
+    // invoked by study-11.32-11.33.sql
+    @SuppressWarnings({"UnusedDeclaration"})
+    @DeferredUpgrade
+    public void migrateReportProperties(ModuleContext context)
+    {
+        if (!context.isNewInstall())
+        {
+            try {
+                for (Report report : ReportService.get().getReports(new SimpleFilter()))
+                {
+                    ReportDescriptor descriptor = report.getDescriptor();
+
+                    String author = descriptor.getProperty("author");
+                    if (author != null && NumberUtils.isDigits(author))
+                    {
+                        Container c = ContainerManager.getForId(report.getContainerId());
+                        ensureProperties(c, context.getUpgradeUser());
+
+                        ReportPropsManager.get().setPropertyValue(report.getEntityId(), c, context.getUpgradeUser(), "author", NumberUtils.createInteger(author));
+                    }
+
+                    if (descriptor.getProperty("status") != null)
+                    {
+                        Container c = ContainerManager.getForId(report.getContainerId());
+                        ensureProperties(c, context.getUpgradeUser());
+
+                        ReportPropsManager.get().setPropertyValue(report.getEntityId(), c, context.getUpgradeUser(), "status", descriptor.getProperty("status"));
+                    }
+                }
+            }
+            catch (Exception e)
+            {
+                _log.error("An error occurred upgrading report properties: ", e);
+            }
+        }
+    }
+
+    private Map<Container, Boolean> _propertyMap = new HashMap<Container, Boolean>();
+
+    private void ensureProperties(Container container, User user) throws Exception
+    {
+        if (!_propertyMap.containsKey(container))
+        {
+            ReportPropsManager.get().ensureProperty(container, user, "status", "Status", PropertyType.STRING);
+            ReportPropsManager.get().ensureProperty(container, user, "author", "Author", PropertyType.INTEGER);
+
+            _propertyMap.put(container, true);
         }
     }
 }
