@@ -1433,7 +1433,7 @@ public class QueryView extends WebPartView<Object>
         }
 
         TableInfo table = getTable();
-        if(table.getAggregateRowConfig() != null)
+        if(table != null && table.getAggregateRowConfig() != null)
         {
             rgn.setAggregateRowConfig(table.getAggregateRowConfig());
         }
