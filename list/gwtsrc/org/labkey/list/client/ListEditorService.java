@@ -45,6 +45,7 @@ public interface ListEditorService extends LookupService
 
     public GWTList getList(int id);
     public GWTList createList(GWTList list) throws ListImportException;
+    public void deleteList(GWTList list);
     public List<String> getListNames(); // names in use already
     public static final int MAX_NAME_LENGTH = 64;
     public List<String> updateListDefinition(GWTList list, GWTDomain orig, GWTDomain dd) throws Exception;

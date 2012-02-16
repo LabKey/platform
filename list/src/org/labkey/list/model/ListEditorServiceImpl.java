@@ -31,6 +31,7 @@ import org.labkey.api.gwt.client.DefaultValueType;
 import org.labkey.api.gwt.client.model.GWTDomain;
 import org.labkey.api.gwt.client.model.GWTPropertyDescriptor;
 import org.labkey.api.lists.permissions.DesignListPermission;
+import org.labkey.api.security.permissions.AdminPermission;
 import org.labkey.api.view.UnauthorizedException;
 import org.labkey.api.view.ViewContext;
 import org.labkey.list.client.GWTList;
@@ -51,6 +52,38 @@ public class ListEditorServiceImpl extends DomainEditorServiceBase implements Li
     public ListEditorServiceImpl(ViewContext context)
     {
         super(context);
+    }
+
+    public void deleteList(GWTList list)
+    {
+        if (!getContainer().hasPermission(getUser(), AdminPermission.class))
+            throw new UnauthorizedException();
+        if (list.getListId() == 0)
+            throw new IllegalArgumentException();
+
+        try
+        {
+            ListDefinition definition = ListService.get().getList(getContainer(), list.getName());
+            definition.delete(getUser());
+        }
+        catch (SQLException x)
+        {
+            //NOTE: should we look for possible optimistic concurrency (ie. double-deleting)?
+
+            throw new RuntimeException(x);
+        }
+        catch (RuntimeSQLException x)
+        {
+            throw x;
+        }
+        catch (RuntimeException x)
+        {
+            throw x;
+        }
+        catch (Exception x)
+        {
+            throw new RuntimeException(x);
+        }
     }
 
     public GWTList createList(GWTList list) throws ListImportException

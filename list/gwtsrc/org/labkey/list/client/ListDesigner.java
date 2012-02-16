@@ -214,31 +214,30 @@ public class ListDesigner implements EntryPoint, Saveable<GWTList>
                     if (null != _list && !isEmpty(_list.getName()))
                     {
                         _log("Create List clicked");
-                        _service.createList(_list, new ErrorDialogAsyncCallback<GWTList>(){
-                            public void onSuccess(GWTList result)
-                            {
-                                _log("Create List onSuccess");
-                                if (_importFromFile.booleanValue())
+                        //Issue 13457: dont actually create the list until later for excel import
+                        if (_importFromFile.booleanValue())
+                        {
+                            showImporterUI();
+                        }
+                        else
+                        {
+                            _service.createList(_list, new ErrorDialogAsyncCallback<GWTList>(){
+                                public void onSuccess(GWTList result)
                                 {
-                                    //setList() goes to DesignerUI
-                                    _list = result;
-                                    showImporterUI();
-                                }
-                                else
-                                {
+                                    _log("Create List onSuccess");
                                     setReadOnly(false);
                                     setList(result);
                                 }
-                            }
 
-                            protected void reportFailure(String message, Throwable caught)
-                            {
-                                if(caught instanceof ListEditorService.ListImportException)
-                                    message = caught.getMessage();
+                                protected void reportFailure(String message, Throwable caught)
+                                {
+                                    if(caught instanceof ListEditorService.ListImportException)
+                                        message = caught.getMessage();
 
-                                Window.alert(message);
-                            }
-                        });
+                                    Window.alert(message);
+                                }
+                            });
+                        }
                     }
                 }
             }));
@@ -1088,6 +1087,29 @@ public class ListDesigner implements EntryPoint, Saveable<GWTList>
                 //if an error happens when trying to infer the list from an excel file
                 //rather than abort back to the list designer with no columns, we
                 //re-render that UI
+                //we also delete the partial list
+                if(_list.getListId() != 0)
+                {
+                    _service.deleteList(_list, new ErrorDialogAsyncCallback<Void>()
+                    {
+                        @Override
+                        public void reportFailure(String message, Throwable caught)
+                        {
+                            if(caught instanceof ListEditorService.ListImportException)
+                                message = caught.getMessage();
+
+                            Window.alert(message);
+                        }
+
+                        @Override
+                        public void onSuccess(Void v)
+                        {
+                            _log("Partial List Deleted");
+                            _list._listId(0);
+                        }
+                    });
+                }
+
                 showImporterUI();
             }
         }
@@ -1096,6 +1118,39 @@ public class ListDesigner implements EntryPoint, Saveable<GWTList>
         protected String getTypeURI()
         {
             return _list.getTypeURI();
+        }
+
+        @Override
+        protected void importData()
+        {
+            //create list if it does not exist
+            if(_list.getListId() == 0)
+            {
+                _service.createList(_list, new ErrorDialogAsyncCallback<GWTList>(){
+                    public void onSuccess(GWTList result)
+                    {
+                        _log("Create List onSuccess");
+
+                        //NOTE: setList() will reload the definition, so we do not call it
+                        _listId = result.getListId();
+                        _list = result;
+
+                        importData();
+                    }
+
+                    protected void reportFailure(String message, Throwable caught)
+                    {
+                        if(caught instanceof ListEditorService.ListImportException)
+                            message = caught.getMessage();
+
+                        Window.alert(message);
+                    }
+                });
+            }
+            else
+            {
+                super.importData();
+            }
         }
     }
 
