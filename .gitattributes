@@ -2342,6 +2342,7 @@ study/gwtsrc/gwt/client/org/labkey/study/designer/client/model/XMLUtils.java -te
 study/gwtsrc/gwt/public/org/labkey/plate/designer/TemplateDesigner.html -text
 study/gwtsrc/gwt/public/org/labkey/study/designer/Designer.html -text
 study/module.properties -text
+study/resources/queries/study/SpecimenSummary_PivotByPrimaryType.sql -text
 study/resources/schemas/dbscripts/postgresql/obsolete/study-0.00-1.11.sql -text
 study/resources/schemas/dbscripts/postgresql/obsolete/study-0.00-1.25.sql -text
 study/resources/schemas/dbscripts/postgresql/obsolete/study-0.00-1.26.sql -text
