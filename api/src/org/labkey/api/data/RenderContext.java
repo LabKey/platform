@@ -226,7 +226,11 @@ public class RenderContext extends BoundMap // extends ViewContext
 
         List<ColumnInfo> pkColumns = tinfo.getPkColumns();
 
-        //always need to select pks
+        if (null != pkColumns)
+        {
+            //always need to select pks
+            ret.addAll(pkColumns);
+        }
 
         String versionCol = tinfo.getVersionColumnName();
 
