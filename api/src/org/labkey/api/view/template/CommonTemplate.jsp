@@ -45,6 +45,7 @@
     User user = me.getViewContext().getUser();
     LookAndFeelProperties laf = LookAndFeelProperties.getInstance(c);
     ThemeFont themeFont = ThemeFont.getThemeFont(c);
+    boolean isPrint = bean.getTemplate() == PageConfig.Template.Print;
 
     if (bean.getFrameOption() != PageConfig.FrameOption.ALLOW)
         response.setHeader("X-FRAME-OPTIONS", bean.getFrameOption().name());
@@ -105,14 +106,14 @@ if (null != bean.getStyles())
 %>
 </head>
 
-<body id="bodyElement" onload="<%=h(onLoad)%>" class="<%=themeFont.getClassName()%>">
+<body id="bodyElement" onload="<%=h(onLoad)%>" class="<%=themeFont.getClassName()%><%=isPrint?" print":""%>">
 <%
 if (null != gwtModules && gwtModules.size() > 0)
 {   //Only include first js file?? %>
     <iframe id="__gwt_historyFrame" style="width:0;height:0;border:0"></iframe><%
 }
 %>
-    <table class="labkey-main <%=themeFont.getClassName()%>" cellpadding="0" cellspacing="0" <% if (bean.getTemplate() == PageConfig.Template.Print ) { %>style="padding: 5px;"<% } %>><%
+    <table class="labkey-main <%=themeFont.getClassName()%><%=isPrint?" print":""%>" cellpadding="0" cellspacing="0" <% if (isPrint) { %>style="padding: 5px;"<% } %>><%
 
 if (bean.showHeader() != PageConfig.TrueFalse.False)
 {

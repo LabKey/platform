@@ -17,6 +17,7 @@
 package org.labkey.api.action;
 
 import org.apache.commons.lang3.StringUtils;
+import org.labkey.api.view.WebPartView;
 import org.springframework.beans.PropertyValues;
 import org.springframework.validation.BindException;
 import org.springframework.validation.Errors;
@@ -80,7 +81,10 @@ public abstract class SimpleViewAction<FORM> extends BaseViewAction<FORM> implem
     public ModelAndView getPrintView(FORM form, BindException errors) throws Exception
     {
         _print = true;
-        return getView(form, errors);
+        ModelAndView print = getView(form, errors);
+        if (print instanceof WebPartView && ((WebPartView)print).getFrame() == WebPartView.FrameType.PORTAL)
+            ((WebPartView)print).setFrame(WebPartView.FrameType.TITLE);
+        return print;
     }
 
     public void validate(Object target, Errors errors)
