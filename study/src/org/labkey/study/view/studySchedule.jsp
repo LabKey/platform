@@ -25,12 +25,14 @@
 <%@ page import="org.labkey.study.model.StudyManager" %>
 <%@ page extends="org.labkey.study.view.BaseStudyPage" %>
 <%@ page import="org.labkey.api.view.Portal" %>
+<%@ page import="org.labkey.study.security.permissions.ManageStudyPermission" %>
 <%
     JspView<Portal.WebPart> me = (JspView) HttpView.currentView();
     Container c = me.getViewContext().getContainer();
     StudyImpl study = StudyManager.getInstance().getStudy(c);
     String visitLabel = StudyManager.getInstance().getVisitManager(study).getPluralLabel();
     Portal.WebPart webpart = me.getModelBean();
+    boolean canEdit  = c.hasPermission(me.getViewContext().getUser(), ManageStudyPermission.class);
     int webPartIndex = (webpart == null ? 0 : webpart.getIndex());
 %>
 
@@ -55,7 +57,8 @@
 
         var studySchedulePanel = Ext4.create('LABKEY.ext4.StudyScheduleGrid', {
             renderTo : "study-schedule-"+ <%=webPartIndex%>,
-            timepointType: "<%=study.getTimepointType()%>"
+            timepointType: "<%=study.getTimepointType()%>",
+            canEdit: <%=canEdit%>
         });
 
     }

@@ -85,6 +85,25 @@ Ext4.define('LABKEY.ext4.StudyScheduleGrid', {
             value: '1'
         });
 
+        var saveButton = {
+                xtype: 'button',
+                text: 'Save Changes',
+                handler: this.saveChanges,
+                scope: this
+            };
+
+        var addDatasetButton = {
+                xtype: 'button',
+                text: 'Add Dataset',
+                handler: this.addDatasetDialog,
+                scope: this
+            };
+        var bbarButtons = [];
+        if(this.canEdit){
+            bbarButtons.push(saveButton);
+            bbarButtons.push(addDatasetButton);
+        }
+
         this.centerPanel = Ext4.create('Ext.panel.Panel', {
             layout : 'fit',
             border : false, frame : false,
@@ -95,17 +114,7 @@ Ext4.define('LABKEY.ext4.StudyScheduleGrid', {
                 this.nextButton,
                 this.pageDisplay
             ],
-            bbar   : [{
-                xtype: 'button',
-                text: 'Save Changes',
-                handler: this.saveChanges,
-                scope: this
-            },{
-                xtype: 'button',
-                text: 'Add Dataset',
-                handler: this.addDatasetDialog,
-                scope: this
-            }]
+            bbar   : [bbarButtons]
         });
 
         this.centerPanel.on('render', this.configureGrid, this);
@@ -150,41 +159,43 @@ Ext4.define('LABKEY.ext4.StudyScheduleGrid', {
             listeners: {
                 scope: this,
                 itemclick: function(view, record, html, idx){
-                    if(view.getSelectionModel().getCurrentPosition().column < 2){
-                        if(view.getSelectionModel().getCurrentPosition().column == 1){
-                            this.expectationDatasetId = this.scheduleStore.getAt(view.getSelectionModel().getCurrentPosition().row).get('id').id;
-                            this.expectationDatasetLabel = this.scheduleStore.getAt(view.getSelectionModel().getCurrentPosition().row).get('id').label;
-                            var datasetType = this.scheduleStore.getAt(view.getSelectionModel().getCurrentPosition().row).get('id').type;
-                            if(datasetType == 'Placeholder'){
-                                this.linkDatasetDialog(this.expectationDatasetId, this.expectationDatasetLabel);
+                    if(this.canEdit){
+                        if(view.getSelectionModel().getCurrentPosition().column < 2){
+                            if(view.getSelectionModel().getCurrentPosition().column == 1){
+                                this.expectationDatasetId = this.scheduleStore.getAt(view.getSelectionModel().getCurrentPosition().row).get('id').id;
+                                this.expectationDatasetLabel = this.scheduleStore.getAt(view.getSelectionModel().getCurrentPosition().row).get('id').label;
+                                var datasetType = this.scheduleStore.getAt(view.getSelectionModel().getCurrentPosition().row).get('id').type;
+                                if(datasetType == 'Placeholder'){
+                                    this.linkDatasetDialog(this.expectationDatasetId, this.expectationDatasetLabel);
+                                }
                             }
-                        }
-                    } else {
-                        var columns;
-                        if(this.enablePagingCheckbox.getValue()){
-                            columns = this.pagedColumns;
-                        } else if(this.filterColumns){
-                            columns = this.filteredColumns;
                         } else {
-                            columns = this.schedule.timepoints;
-                        }
+                            var columns;
+                            if(this.enablePagingCheckbox.getValue()){
+                                columns = this.pagedColumns;
+                            } else if(this.filterColumns){
+                                columns = this.filteredColumns;
+                            } else {
+                                columns = this.schedule.timepoints;
+                            }
 
-                        var timepointName = columns[view.getSelectionModel().getCurrentPosition().column -2].name;
-                        var timepoint = columns[view.getSelectionModel().getCurrentPosition().column -2];
+                            var timepointName = columns[view.getSelectionModel().getCurrentPosition().column -2].name;
+                            var timepoint = columns[view.getSelectionModel().getCurrentPosition().column -2];
 
-                        // Make a copy of the object so when we set the value of required the dirty bit gets set.
-                        var timepointValue = Ext4.apply({}, record.data[timepointName]);
-                        if(record.data[timepointName] == undefined || record.data[timepointName] == ""){
-                            timepointValue = Ext4.apply({}, columns[view.getSelectionModel().getCurrentPosition().column -2]);
-                        }
+                            // Make a copy of the object so when we set the value of required the dirty bit gets set.
+                            var timepointValue = Ext4.apply({}, record.data[timepointName]);
+                            if(record.data[timepointName] == undefined || record.data[timepointName] == ""){
+                                timepointValue = Ext4.apply({}, columns[view.getSelectionModel().getCurrentPosition().column -2]);
+                            }
 
-                        if(!timepointValue.required){
-                            timepointValue.required = true;
-                        } else {
-                            delete timepointValue.required;
+                            if(!timepointValue.required){
+                                timepointValue.required = true;
+                            } else {
+                                delete timepointValue.required;
+                            }
+                            record.set(timepointName, timepointValue);
                         }
-                        record.set(timepointName, timepointValue);
-                    }
+                }
                 }
             }
         });
