@@ -518,7 +518,7 @@ li.ptid a.unhighlight
 
     function render()
     {
-        doAdjustSize();
+        doAdjustSize(); // get close
         renderGroups();
         renderSubjects();
 
@@ -583,14 +583,17 @@ li.ptid a.unhighlight
 
         // we don't want ptidDiv to change height as it filters, so set height explicitly after first layout
         ptidDiv.setHeight(ptidDiv.getHeight());
-    }
 
+        X.EventManager.onWindowResize(doAdjustSize);
+        doAdjustSize();
+    }
 
     function doAdjustSize()
     {
         // CONSIDER: register for window resize
         var listDiv = X.get(<%=q(listDivId)%>);
-        var rightAreaWidth = 0;
+        if (!listDiv) return;
+        var rightAreaWidth = 15;
         try {rightAreaWidth = X.fly(X.select(".labkey-side-panel").elements[0]).getWidth();} catch (x){}
         var padding = 35;
         var viewWidth = X.getBody().getViewSize().width;
@@ -610,7 +613,6 @@ li.ptid a.unhighlight
 
 
 (Ext4||Ext).onReady(<%=viewObject%>.render, <%=viewObject%>);
-
 </script>
 
 <div style="">
