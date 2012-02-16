@@ -45,7 +45,8 @@ public class PipelineStatusFileImpl extends Entity implements Serializable, Pipe
 
     private static HashSet<String> _emailStatuses = new HashSet<String>(Arrays.asList(
             PipelineJob.COMPLETE_STATUS,
-            PipelineJob.ERROR_STATUS
+            PipelineJob.ERROR_STATUS,
+            PipelineJob.CANCELLED_STATUS
     ));
 
     protected int _rowId;

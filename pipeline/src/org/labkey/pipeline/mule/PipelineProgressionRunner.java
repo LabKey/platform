@@ -15,7 +15,12 @@
  */
 package org.labkey.pipeline.mule;
 
+import org.labkey.api.data.RuntimeSQLException;
 import org.labkey.api.pipeline.PipelineJob;
+import org.labkey.pipeline.api.PipelineStatusFileImpl;
+import org.labkey.pipeline.api.PipelineStatusManager;
+
+import java.sql.SQLException;
 
 /**
  * <code>PipelineProgressionRunner</code> is a Mule object for advancing a
@@ -28,6 +33,19 @@ public class PipelineProgressionRunner
 {
     public void run(PipelineJob job)
     {
+        try
+        {
+            // Double check that the job hasn't been cancelled
+            PipelineStatusFileImpl statusFile = PipelineStatusManager.getJobStatusFile(job.getJobGUID());
+            if (PipelineJob.CANCELLED_STATUS.equals(statusFile.getStatus()) || PipelineJob.CANCELLING_STATUS.equals(statusFile.getStatus()))
+            {
+                return;
+            }
+        }
+        catch (SQLException e)
+        {
+            throw new RuntimeSQLException(e);
+        }
         job.runStateMachine();
     }
 }

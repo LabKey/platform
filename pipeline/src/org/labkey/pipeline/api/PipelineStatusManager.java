@@ -23,6 +23,7 @@ import org.labkey.api.pipeline.*;
 import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.DeletePermission;
 import org.labkey.api.security.permissions.UpdatePermission;
+import org.labkey.api.view.NotFoundException;
 import org.labkey.api.view.UnauthorizedException;
 import org.labkey.api.view.ViewBackgroundInfo;
 
@@ -151,8 +152,20 @@ public class PipelineStatusManager
             }
             else
             {
+                boolean cancelled = false;
+                if (PipelineJob.CANCELLING_STATUS.equals(sfExist.getStatus()) && sfSet.isActive())
+                {
+                    // Mark is as officially dead
+                    sfSet.setStatus(PipelineJob.CANCELLED_STATUS);
+                    cancelled = true;
+                }
                 sfSet.beforeUpdate(user, sfExist);
                 updateStatusFile(sfSet);
+                if (cancelled)
+                {
+                    // Signal to the caller that the job shouldn't move on to its next state
+                    throw new CancelledException();
+                }
             }
 
             if (isNotifyOnError(job) && PipelineJob.ERROR_STATUS.equals(sfSet.getStatus()) &&
@@ -438,12 +451,12 @@ public class PipelineStatusManager
         filter.addCondition("Status", PipelineJob.ERROR_STATUS, CompareType.NEQ);
         filter.addCondition("Status", PipelineJob.WAITING_FOR_FILES, CompareType.NEQ);
         filter.addCondition("Status", PipelineJob.SPLIT_STATUS, CompareType.NEQ);
-        filter.addCondition("Status", PipelineJob.INTERRUPTED_STATUS, CompareType.NEQ);
+        filter.addCondition("Status", PipelineJob.CANCELLED_STATUS, CompareType.NEQ);
         filter.addCondition("Job", null, CompareType.NONBLANK);
         return filter;
     }
 
-    public static void completeStatus(User user, int[] rowIds) throws SQLException, Container.ContainerException
+    public static void completeStatus(User user, int... rowIds) throws SQLException, Container.ContainerException
     {
         PipelineSchema.getInstance().getSchema().getScope().ensureTransaction();
         try
@@ -493,7 +506,7 @@ public class PipelineStatusManager
         }
     }
 
-    public static void deleteStatus(ViewBackgroundInfo info, int[] rowIds) throws SQLException
+    public static void deleteStatus(ViewBackgroundInfo info, int... rowIds) throws SQLException
     {
         if (rowIds.length == 0)
         {
@@ -572,6 +585,35 @@ public class PipelineStatusManager
             deleteStatus(info, rowIds);
         }
     }
+
+    public static void cancelStatus(ViewBackgroundInfo info, int... rowIds) throws SQLException
+    {
+        if (rowIds.length == 0)
+        {
+            return;
+        }
+
+        for (int rowId : rowIds)
+        {
+            PipelineStatusFileImpl statusFile = PipelineStatusManager.getStatusFile(rowId);
+            if (statusFile == null)
+            {
+                throw new NotFoundException();
+            }
+            Container jobContainer = statusFile.lookupContainer();
+            if (!jobContainer.hasPermission(info.getUser(), DeletePermission.class))
+            {
+                throw new UnauthorizedException();
+            }
+            if (statusFile.isActive())
+            {
+                statusFile.setStatus(PipelineJob.CANCELLING_STATUS);
+                PipelineStatusManager.updateStatusFile(statusFile);
+                PipelineService.get().getPipelineQueue().cancelJob(jobContainer, statusFile.getJobId());
+            }
+        }
+    }
+
     /**
     * starts a transaction for a pipeline status job.
     *
@@ -579,7 +621,6 @@ public class PipelineStatusManager
     * @param active a boolean the caller tests that says whether a transaction is already active/
     * @throws SQLException database error
     */
-
     protected static void beginTransaction(DbScope scope, boolean active) throws SQLException
     {
         if (!active)
@@ -643,5 +684,4 @@ public class PipelineStatusManager
             Table.execute(_schema.getSchema(), lockCmd, jobId) ;
         }
     }
-
 }

@@ -26,12 +26,14 @@ import org.labkey.api.query.QueryView;
 import org.labkey.api.security.RequiresPermissionClass;
 import org.labkey.api.security.RequiresSiteAdmin;
 import org.labkey.api.security.User;
+import org.labkey.api.security.permissions.DeletePermission;
 import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.security.permissions.UpdatePermission;
 import org.labkey.api.settings.AdminConsole;
 import org.labkey.api.util.*;
 import org.labkey.api.view.*;
 import org.labkey.api.view.template.PageConfig;
+import org.labkey.pipeline.PipelineController;
 import org.labkey.pipeline.api.PipelineEmailPreferences;
 import org.labkey.pipeline.api.PipelineServiceImpl;
 import org.labkey.pipeline.api.PipelineStatusFileImpl;
@@ -319,7 +321,7 @@ public class StatusController extends SpringActionController
         }
     }
 
-    public static class RowIdForm
+    public static class RowIdForm extends ReturnUrlForm
     {
         enum Params { rowId }
 
@@ -632,6 +634,15 @@ public class StatusController extends SpringActionController
     }
 
     @RequiresPermissionClass(ReadPermission.class)
+    public class CancelStatusAction extends PerformStatusActionBase
+    {
+        public void handleSelect(SelectStatusForm form) throws Exception
+        {
+            cancelStatus(getViewBackgroundInfo(), DataRegionSelection.toInts(DataRegionSelection.getSelected(getViewContext(), true)));
+        }
+    }
+
+    @RequiresPermissionClass(ReadPermission.class)
     public class CompleteStatusAction extends PerformStatusActionBase
     {
         public void handleSelect(SelectStatusForm form) throws Exception
@@ -781,7 +792,7 @@ public class StatusController extends SpringActionController
         }
     }
 
-    private DataRegion getDetails(Container c, User user, int rowId)
+    private DataRegion getDetails(Container c, User user, int rowId) throws RedirectException
     {
         DataRegion rgn = new DataRegion();
 
@@ -797,10 +808,17 @@ public class StatusController extends SpringActionController
         rgn.getDisplayColumn("Container").setVisible(false);
         rgn.getDisplayColumn("DataUrl").setVisible(false);
 
-        PipelineStatusFile sf = getStatusFile(rowId);
+        PipelineStatusFileImpl sf = getStatusFile(rowId);
         if (sf == null)
         {
             throw new NotFoundException("Could not find status file for rowId " + rowId);
+        }
+        
+        if (!sf.lookupContainer().equals(getContainer()))
+        {
+            ActionURL url = getViewContext().cloneActionURL();
+            url.setContainer(sf.lookupContainer());
+            throw new RedirectException(url);
         }
 
         ButtonBar bb = new ProviderButtonBar(sf);
@@ -812,14 +830,18 @@ public class StatusController extends SpringActionController
 
         if (c == null || c.isRoot())
         {
-            ActionButton showFolder = new ActionButton("showFolder.view?rowId=${rowId}", "Folder");
+            ActionURL url = new ActionURL(ShowFolderAction.class, c);
+            url.addParameter("rowId", rowId);
+            ActionButton showFolder = new ActionButton(url, "Folder");
             showFolder.setActionType(ActionButton.Action.LINK);
             bb.add(showFolder);
         }
 
         if (sf.getDataUrl() != null)
         {
-            ActionButton showData = new ActionButton("showData.view?rowId=${rowId}", "Data");
+            ActionURL url = new ActionURL(ShowDataAction.class, c);
+            url.addParameter("rowId", rowId);
+            ActionButton showData = new ActionButton(url, "Data");
             showData.setActionType(ActionButton.Action.LINK);
             bb.add(showData);
         }
@@ -850,11 +872,24 @@ public class StatusController extends SpringActionController
             final String escalationUsers = PipelineEmailPreferences.get().getEscalationUsers(c);
             if (!StringUtils.isEmpty(escalationUsers))
             {
-                ActionButton escalate = new ActionButton("escalateJobFailure.view?rowId=${rowId}", "Escalate Job Failure");
+                ActionURL url = new ActionURL(EscalateJobFailureAction.class, c);
+                url.addParameter("rowId", rowId);
+                ActionButton escalate = new ActionButton(url, "Escalate Job Failure");
                 escalate.setActionType(ActionButton.Action.LINK);
                 bb.add(escalate);
             }
         }
+
+        if (sf.isActive() && !PipelineJob.CANCELLING_STATUS.equals(sf.getStatus()) && getContainer().hasPermission(getUser(), DeletePermission.class))
+        {
+            ActionURL url = new ActionURL(PipelineController.CancelJobAction.class, c);
+            url.addParameter("rowId", sf.getRowId());
+            url.addParameter(ActionURL.Param.returnUrl, getViewContext().getActionURL().toString());
+            ActionButton showData = new ActionButton(url, "Cancel");
+            showData.setActionType(ActionButton.Action.LINK);
+            bb.add(showData);
+        }
+
         rgn.setButtonBar(bb, DataRegion.MODE_DETAILS);
 
         return rgn;

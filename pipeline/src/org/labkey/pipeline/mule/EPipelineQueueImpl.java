@@ -20,6 +20,7 @@ import org.labkey.api.pipeline.*;
 import org.labkey.api.data.Container;
 import org.labkey.pipeline.api.PipelineStatusFileImpl;
 import org.labkey.pipeline.api.PipelineStatusManager;
+import org.labkey.pipeline.mule.filters.JobIdJmsSelectorFilter;
 import org.labkey.pipeline.mule.filters.TaskJmsSelectorFilter;
 import org.mule.extras.client.MuleClient;
 import org.mule.umo.UMOException;
@@ -88,8 +89,55 @@ public class EPipelineQueueImpl implements PipelineQueue
 
     public boolean cancelJob(Container c, String jobId)
     {
-        // todo: implement this!
-        
+        // Check that we're configured with a JobQueue
+        Map endpoints = MuleManager.getInstance().getEndpoints();
+        UMOEndpoint ep = (UMOEndpoint) endpoints.get("JobQueue");
+        if (ep == null)
+        {
+            return false;
+        }
+
+        // Connect to the queue to see if we can grab the job before it starts running
+        Connection conn = null;
+        MessageConsumer consumer = null;
+        try
+        {
+            conn = _factoryJms.createConnection();
+            Session session = conn.createSession(false, Session.AUTO_ACKNOWLEDGE);
+
+            JobIdJmsSelectorFilter filter = new JobIdJmsSelectorFilter(jobId);
+
+            consumer = session.createConsumer(session.createQueue(ep.getEndpointURI().getAddress()), filter.getExpression());
+            conn.start();
+            // Don't block - just see if there's anything there right now
+            Message message = consumer.receiveNoWait();
+            if (message != null)
+            {
+                // We found it, which means we removed it from the queue
+                PipelineStatusFileImpl statusFile = PipelineStatusManager.getJobStatusFile(jobId);
+                if (statusFile != null)
+                {
+                    // Set it to CANCELLED because it's now dead
+                    statusFile.setStatus(PipelineJob.CANCELLED_STATUS);
+                    PipelineStatusManager.updateStatusFile(statusFile);
+                    return true;
+                }
+            }
+        }
+        catch (JMSException e)
+        {
+            _log.error("Error browsing message queue at '" + ep.getEndpointURI(), e);
+        }
+        catch (SQLException e)
+        {
+            throw new RuntimeSQLException(e);
+        }
+        finally
+        {
+            if (consumer != null) { try { consumer.close(); } catch (JMSException ignored) {} }
+            if (conn != null) { try { conn.close(); } catch (JMSException ignored) {} }
+        }
+
         return false;
     }
 

@@ -16,6 +16,7 @@
 package org.labkey.pipeline.mule;
 
 import org.apache.log4j.Logger;
+import org.labkey.api.pipeline.CancelledException;
 import org.mule.impl.DefaultComponentExceptionStrategy;
 import org.mule.impl.RequestContext;
 import org.mule.umo.UMOEvent;
@@ -69,17 +70,19 @@ public class PipelineJobExceptionStrategy extends DefaultComponentExceptionStrat
 
     private void handleJobError(Throwable t, PipelineJob job)
     {
-        String msg;
         if (t instanceof ComponentException && t.getCause() != null)
         {
-            msg = t.getCause().getMessage();
+            t = t.getCause();
         }
-        else
+
+        // CancelledExceptions can make it here, since that's required to prevent the job from moving to its
+        // next task. We don't want to log them, or set the job to ERROR when we see them
+        if (!(t instanceof CancelledException))
         {
-            msg = t.getMessage();
+            String msg = t.getMessage();
+            if (msg == null)
+                msg = t.getClass().getName();
+            job.error(msg, t);
         }
-        if (msg == null)
-            msg = t.getClass().toString();
-        job.error(msg, t);
     }
 }

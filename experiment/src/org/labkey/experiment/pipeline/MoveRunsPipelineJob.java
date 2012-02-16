@@ -46,26 +46,19 @@ public class MoveRunsPipelineJob extends PipelineJob
         File logFile = File.createTempFile("moveRun", ".log", moveRunLogsDir);
         setLogFile(logFile);
 
-        StringBuilder sb = new StringBuilder();
-        sb.append(getDescription());
-        sb.append("\n");
+        getLogger().info(getDescription());
         for (int runId : _runIds)
         {
             ExpRun run = ExperimentService.get().getExpRun(runId);
             if (run == null)
             {
-                sb.append("No run found for RunId ");
-                sb.append(runId);
+                getLogger().info("No run found for RowId " + runId);
             }
             else
             {
-                sb.append(run.getLSID());
-                sb.append(", id = ");
-                sb.append(runId);
+                getLogger().info(run.getName() + " (RowId = " + runId + ")");
             }
-            sb.append("\n");
         }
-        getLogger().info(sb.toString());
     }
 
     public String getDescription()

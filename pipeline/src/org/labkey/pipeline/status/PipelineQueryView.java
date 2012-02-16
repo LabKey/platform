@@ -124,6 +124,12 @@ public class PipelineQueryView extends QueryView
             deleteStatus.setDisplayPermission(DeletePermission.class);
             bar.add(deleteStatus);
 
+            ActionButton cancelButton = new ActionButton(StatusController.CancelStatusAction.class, "Cancel");
+            cancelButton.setRequiresSelection(true);
+            cancelButton.setActionType(ActionButton.Action.POST);
+            cancelButton.setDisplayPermission(DeletePermission.class);
+            bar.add(cancelButton);
+
             ActionButton completeStatus = new ActionButton(StatusController.CompleteStatusAction.class, "Complete");
             completeStatus.setRequiresSelection(true);
             completeStatus.setActionType(ActionButton.Action.POST);

@@ -413,8 +413,8 @@ public class PipelineEmailPreferences
                     filter.addCondition("Status", PipelineJob.COMPLETE_STATUS, CompareType.EQUAL);
                 else
                 {
-                    filter.addWhereClause("Status = ? OR Status = ? OR Status = ?",
-                            new Object[]{PipelineJob.ERROR_STATUS, PipelineJob.INTERRUPTED_STATUS, PipelineJob.CANCELLED_STATUS});
+                    filter.addWhereClause("Status IN (?, ?)",
+                            new Object[]{PipelineJob.ERROR_STATUS, PipelineJob.CANCELLED_STATUS});
                 }
 
                 if (!_c.isRoot())

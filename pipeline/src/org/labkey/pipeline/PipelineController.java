@@ -53,6 +53,8 @@ import org.labkey.pipeline.api.PipeRootImpl;
 import org.labkey.pipeline.api.PipelineEmailPreferences;
 import org.labkey.pipeline.api.PipelineRoot;
 import org.labkey.pipeline.api.PipelineServiceImpl;
+import org.labkey.pipeline.api.PipelineStatusFileImpl;
+import org.labkey.pipeline.api.PipelineStatusManager;
 import org.labkey.pipeline.importer.FolderImportJob;
 import org.labkey.pipeline.status.StatusController;
 import org.springframework.validation.BindException;
@@ -1104,36 +1106,12 @@ public class PipelineController extends SpringActionController
     }
 
     @RequiresPermissionClass(DeletePermission.class)
-    public class CancelJobAction extends SimpleRedirectAction<JobIdForm>
+    public class CancelJobAction extends SimpleRedirectAction<StatusController.RowIdForm>
     {
-        public ActionURL getRedirectURL(JobIdForm form) throws Exception
+        public ActionURL getRedirectURL(StatusController.RowIdForm form) throws Exception
         {
-            // This is not a valid URL for cancelling a job in the Enterprise
-            // Pipeline, since it redirects to the mini-pipeline queue status
-            // page.
-            if (PipelineService.get().isEnterprisePipeline())
-            {
-                throw new NotFoundException();
-            }
-
-            PipelineQueue queue = PipelineService.get().getPipelineQueue();
-            boolean success = queue.cancelJob(getJobDataContainer(), form.getJobId());
-            return urlStatus();
-        }
-    }
-
-    public static class JobIdForm
-    {
-        private String _jobId;
-
-        public String getJobId()
-        {
-            return _jobId;
-        }
-
-        public void setJobId(String jobId)
-        {
-            _jobId = jobId;
+            PipelineStatusManager.cancelStatus(getViewBackgroundInfo(), form.getRowId());
+            return form.getReturnActionURL(StatusController.urlShowList(getContainer(), true));
         }
     }
 

@@ -46,7 +46,6 @@ import java.util.concurrent.atomic.AtomicInteger;
 public class PipelineQueueImpl implements PipelineQueue
 {
     private static Logger _log = Logger.getLogger(PipelineQueueImpl.class);
-    static private int PRIORITY = Thread.NORM_PRIORITY - 1;
     private int MAX_RUNNING_JOBS = 10;
 
     List<PipelineJob> _pending = new ArrayList<PipelineJob>();
@@ -113,7 +112,7 @@ public class PipelineQueueImpl implements PipelineQueue
         boolean removed = _pending.remove(job);
         assert removed;
         _running.add(job);
-        thread.setPriority(PRIORITY);
+        thread.setPriority(Thread.NORM_PRIORITY - 1);
     }
 
 
@@ -153,7 +152,7 @@ public class PipelineQueueImpl implements PipelineQueue
                 singleThreadedJobFound = true;
             }
         }
-        for (PipelineJob job : _pending.toArray(new PipelineJob[0]))
+        for (PipelineJob job : _pending.toArray(new PipelineJob[_pending.size()]))
         {
             if (_submitted.contains(job))
                 continue;
@@ -181,27 +180,9 @@ public class PipelineQueueImpl implements PipelineQueue
         return c.getId().equals(job.getContainerId());
     }
 
-    public synchronized void cancelPendingJobs(Container c)
-    {
-        for (ListIterator<PipelineJob> it = _pending.listIterator(); it.hasNext();)
-        {
-            PipelineJob job = it.next();
-            if (inContainer(c, job))
-            {
-                if (job.cancel(false))
-                {
-                    if (job.getLogFile() != null)
-                    {
-                        job.setStatus(PipelineJob.CANCELLED_STATUS);
-                    }
-                    it.remove();
-                }
-            }
-        }
-    }
-
     public synchronized boolean cancelJob(Container c, String jobId)
     {
+        // Go through the list of queued (but not running jobs) and remove the requested job, if found
         for (ListIterator<PipelineJob> it = _pending.listIterator(); it.hasNext();)
         {
             PipelineJob job = it.next();
@@ -210,6 +191,20 @@ public class PipelineQueueImpl implements PipelineQueue
                 if (job.cancel(false))
                 {
                     it.remove();
+                    try
+                    {
+                        PipelineStatusFileImpl statusFile = PipelineStatusManager.getJobStatusFile(jobId);
+                        if (statusFile != null)
+                        {
+                            // It should already be set to CANCELLING. Set to CANCELLED to indicate that it's dead.
+                            statusFile.setStatus(PipelineJob.CANCELLED_STATUS);
+                            PipelineStatusManager.updateStatusFile(statusFile);
+                        }
+                    }
+                    catch (SQLException e)
+                    {
+                        throw new RuntimeSQLException(e);
+                    }
                     return true;
                 }
             }
@@ -288,22 +283,6 @@ public class PipelineQueueImpl implements PipelineQueue
         }
         return ret;
     }
-
-    public synchronized PipelineJob findJob(String jobGUID)
-    {
-        for (PipelineJob job : _running)
-        {
-            if (jobGUID.equals(job.getJobGUID()))
-                return job;
-        }
-        for (PipelineJob job : _pending)
-        {
-            if (jobGUID.equals(job.getJobGUID()))
-                return job;
-        }
-        return null;
-    }
-
 
     private void _logDebug(String s)
     {
