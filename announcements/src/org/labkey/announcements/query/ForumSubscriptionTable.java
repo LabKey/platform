@@ -244,7 +244,9 @@ public class ForumSubscriptionTable extends AbstractSubscriptionTable
         protected Map<String, Object> deleteRow(User user, Container container, Map<String, Object> oldRow) throws InvalidKeyException, ValidationException, QueryUpdateServiceException, SQLException
         {
             Pair<User, Container> targets = getTargets(oldRow, user, container);
-            Table.delete(CommSchema.getInstance().getTableInfoEmailPrefs(), createFilter(targets));
+            SimpleFilter filter = new SimpleFilter("UserId", targets.getKey().getUserId());
+            filter.addCondition("Container", targets.getValue().getEntityId());
+            Table.delete(CommSchema.getInstance().getTableInfoEmailPrefs(), filter);
 
             return oldRow;
         }
