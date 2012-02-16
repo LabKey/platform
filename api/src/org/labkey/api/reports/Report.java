@@ -91,7 +91,7 @@ public interface Report extends AttachmentParent, StaticThumbnailProvider
     /**
      * Generic method to allow serialization of a report.
      */
-    void serialize(VirtualFile dir, String filename) throws IOException;
+    void serialize(ContainerUser context, VirtualFile dir, String filename) throws IOException;
 
     /**
      * Serializes a report to a file(s) in the specified directory. Reports will auto-generate
@@ -99,7 +99,7 @@ public interface Report extends AttachmentParent, StaticThumbnailProvider
      *
      * @param directory - the folder to serialize the report to
      */
-    void serializeToFolder(VirtualFile directory) throws IOException;
+    void serializeToFolder(ContainerUser context, VirtualFile directory) throws IOException;
 
     /**
      * Optional method to perform report-specific processing after file based deserialization

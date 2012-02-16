@@ -53,7 +53,7 @@ public class ReportDB
             _createdBy = descriptor.getCreatedBy();
             _created = descriptor.getCreated();
             _key = key;
-            _descriptorXML = descriptor.serialize();
+            _descriptorXML = descriptor.serialize(c);
             _reportOwner = descriptor.getOwner();
             _flags = descriptor.getFlags();
             _displayOrder = descriptor.getDisplayOrder();

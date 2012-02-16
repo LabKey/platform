@@ -16,6 +16,10 @@ import org.labkey.api.exp.property.Domain;
 import org.labkey.api.exp.property.DomainProperty;
 import org.labkey.api.exp.property.PropertyService;
 import org.labkey.api.security.User;
+import org.labkey.data.xml.reportProps.PropDefDocument;
+import org.labkey.data.xml.reportProps.PropValueDocument;
+import org.labkey.data.xml.reportProps.PropertyDocument;
+import org.labkey.data.xml.reportProps.PropertyList;
 
 import java.beans.PropertyChangeEvent;
 import java.sql.SQLException;
@@ -79,15 +83,16 @@ public class ReportPropsManager implements ContainerManager.ContainerListener
         return propsMap;
     }
 
-    public void ensureProperty(Container container, User user, String name, String label, PropertyType type) throws ChangePropertyDescriptorException
+    public DomainProperty ensureProperty(Container container, User user, String name, String label, PropertyType type) throws ChangePropertyDescriptorException
     {
         Domain domain = getDomain(container);
         if (domain != null)
         {
             boolean dirty = false;
             Map<String, DomainProperty> existingProps = getPropertyMap(container);
+            DomainProperty dp = existingProps.get(name);
 
-            if (!existingProps.containsKey(name))
+            if (dp == null)
             {
                 dirty = true;
 
@@ -96,15 +101,23 @@ public class ReportPropsManager implements ContainerManager.ContainerListener
                 prop.setLabel(label);
                 prop.setType(PropertyService.get().getType(domain.getContainer(), type.getXmlName()));
                 prop.setPropertyURI(getPropertyURI(name, container));
+
+                dp = prop;
             }
 
             if (dirty)
                 domain.save(user);
+
+            return dp;
         }
+        return null;
     }
 
-    public void setPropertyValue(String entityId, Container container, User user, String propertyName, Object value) throws Exception
+    public void setPropertyValue(String entityId, Container container, String propertyName, Object value) throws Exception
     {
+        if (entityId == null || container == null)
+            return;
+
         DbScope scope = CoreSchema.getInstance().getSchema().getScope();
 
         try
@@ -139,7 +152,7 @@ public class ReportPropsManager implements ContainerManager.ContainerListener
         return "urn:uuid:" + entityId;
     }
 
-    public Object getPropertyValue(String entityId, Container container, User user, String propName) throws Exception
+    public Object getPropertyValue(String entityId, Container container, String propName) throws Exception
     {
         Map<String, DomainProperty> propMap = getPropertyMap(container);
 
@@ -216,5 +229,64 @@ public class ReportPropsManager implements ContainerManager.ContainerListener
     @Override
     public void propertyChange(PropertyChangeEvent evt)
     {
+    }
+
+    public void exportProperties(String entityId, Container container, PropertyList propertyList)
+    {
+        if (propertyList == null)
+            throw new IllegalArgumentException("PropertyList cannot be null");
+
+        for (DomainProperty dp : getProperties(container))
+        {
+            try {
+                Object value = getPropertyValue(entityId, container, dp.getName());
+
+                if (value != null)
+                {
+                    PropertyDocument.Property prop = propertyList.addNewProperty();
+
+                    PropDefDocument.PropDef propDef = prop.addNewPropDef();
+
+                    propDef.setName(dp.getName());
+                    propDef.setLabel(dp.getLabel());
+                    propDef.setType(dp.getPropertyDescriptor().getPropertyType().getTypeUri());
+
+                    PropValueDocument.PropValue propValue = prop.addNewPropValue();
+
+                    propValue.setEntityId(entityId);
+                    propValue.setValue(String.valueOf(value));
+                }
+            }
+            catch (Exception e)
+            {
+                _log.error("Error occured serializing report properties.", e);
+            }
+        }
+    }
+
+    public void importProperties(String entityId, Container container, User user, PropertyList propertyList)
+    {
+        if (propertyList == null)
+            throw new IllegalArgumentException("PropertyList cannot be null");
+
+        if (entityId == null)
+            throw new IllegalArgumentException("EntityId cannot be null");
+
+        for (PropertyDocument.Property prop : propertyList.getPropertyArray())
+        {
+            try {
+                PropDefDocument.PropDef propDef = prop.getPropDef();
+
+                PropertyType type = PropertyType.getFromURI(propDef.getType(), propDef.getType());
+                DomainProperty dp = ensureProperty(container, user, propDef.getName(), propDef.getLabel(), type);
+
+                PropValueDocument.PropValue propValue = prop.getPropValue();
+                setPropertyValue(entityId, container, dp.getName(), propValue.getValue());
+            }
+            catch (Exception e)
+            {
+                _log.error("Error occured importing report properties.", e);
+            }
+        }
     }
 }

@@ -28,6 +28,7 @@ import org.labkey.api.data.Entity;
 import org.labkey.api.module.Module;
 import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.reports.ReportService;
+import org.labkey.api.reports.model.ReportPropsManager;
 import org.labkey.api.reports.model.ViewCategory;
 import org.labkey.api.reports.model.ViewCategoryManager;
 import org.labkey.api.security.*;
@@ -36,12 +37,14 @@ import org.labkey.api.security.permissions.Permission;
 import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.security.permissions.AdminPermission;
 import org.labkey.api.security.roles.RoleManager;
+import org.labkey.api.util.GUID;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.Pair;
 import org.labkey.api.util.XmlBeansUtil;
 import org.labkey.api.util.XmlValidationException;
 import org.labkey.api.view.ViewContext;
 import org.labkey.api.writer.VirtualFile;
+import org.labkey.data.xml.reportProps.PropertyList;
 import org.labkey.query.xml.ReportDescriptorDocument;
 import org.labkey.query.xml.ReportPropertyList;
 
@@ -353,7 +356,7 @@ public class ReportDescriptor extends Entity implements SecurableResource
      * Builds an XML representation of this descriptor
      * @return
      */
-    private ReportDescriptorDocument getDescriptorDocument()
+    private ReportDescriptorDocument getDescriptorDocument(Container c)
     {
         ReportDescriptorDocument doc = ReportDescriptorDocument.Factory.newInstance();
         ReportDescriptorDocument.ReportDescriptor descriptor = doc.addNewReportDescriptor();
@@ -387,18 +390,23 @@ public class ReportDescriptor extends Entity implements SecurableResource
                 prop.setStringValue(String.valueOf(value));
             }
         }
+
+        // serialize any tags (reportPropsManager)
+        PropertyList propList = descriptor.addNewTags();
+        ReportPropsManager.get().exportProperties(getEntityId(), c, propList);
+
         return doc;
     }
 
-    public void serialize(VirtualFile dir, String filename) throws IOException
+    public void serialize(Container container, VirtualFile dir, String filename) throws IOException
     {
-        ReportDescriptorDocument doc = getDescriptorDocument();
+        ReportDescriptorDocument doc = getDescriptorDocument(container);
         dir.saveXmlBean(filename, doc);
     }
 
-    public String serialize() throws IOException
+    public String serialize(Container c) throws IOException
     {
-        ReportDescriptorDocument doc = getDescriptorDocument();
+        ReportDescriptorDocument doc = getDescriptorDocument(c);
         ByteArrayOutputStream output = new ByteArrayOutputStream();
 
         try
@@ -454,9 +462,18 @@ public class ReportDescriptor extends Entity implements SecurableResource
                     ViewCategory category = ViewCategoryManager.getInstance().ensureViewCategory(container, user, d.getCategory());
                     descriptor.setCategory(category);
                 }
+
+                PropertyList tags = d.getTags();
+                if (tags != null && tags.sizeOfPropertyArray() > 0)
+                {
+                    String entityId = descriptor.getEntityId();
+                    if (entityId == null)
+                        descriptor.setEntityId(GUID.makeGUID());
+
+                    ReportPropsManager.get().importProperties(descriptor.getEntityId(), container, user, tags);
+                }
                 return descriptor;
             }
-
             return null;
         }
         catch (XmlException e)

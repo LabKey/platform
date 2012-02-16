@@ -62,6 +62,7 @@ import org.labkey.api.view.DataView;
 import org.labkey.api.view.HttpView;
 import org.labkey.api.view.VBox;
 import org.labkey.api.view.ViewContext;
+import org.labkey.api.writer.ContainerUser;
 import org.labkey.api.writer.VirtualFile;
 
 import javax.imageio.ImageIO;
@@ -656,7 +657,7 @@ public abstract class ScriptEngineReport extends ScriptReport implements Report.
     }
 
     @Override
-    public void serializeToFolder(VirtualFile directory) throws IOException
+    public void serializeToFolder(ContainerUser ctx, VirtualFile directory) throws IOException
     {
         ReportDescriptor descriptor = getDescriptor();
 
@@ -677,7 +678,7 @@ public abstract class ScriptEngineReport extends ScriptReport implements Report.
                     writer.close();
             }
 
-            super.serializeToFolder(directory);
+            super.serializeToFolder(ctx, directory);
         }
         else
             throw new IllegalArgumentException("Cannot serialize a report that hasn't been saved yet");

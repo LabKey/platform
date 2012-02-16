@@ -435,13 +435,13 @@ public class ReportUtil
 
                         User createdBy = UserManager.getUser(descriptor.getCreatedBy());
                         User modifiedBy = UserManager.getUser(descriptor.getModifiedBy());
-                        Object authorId = ReportPropsManager.get().getPropertyValue(descriptor.getEntityId(), c, user, "author");
+                        Object authorId = ReportPropsManager.get().getPropertyValue(descriptor.getEntityId(), c, "author");
 
                         User author = authorId != null ? UserManager.getUser(((Double)authorId).intValue()) : null;
                         boolean inherited = descriptor.isInherited(c);
                         String query = descriptor.getProperty(ReportDescriptor.Prop.queryName);
                         String schema = descriptor.getProperty(ReportDescriptor.Prop.schemaName);
-                        String status = (String)ReportPropsManager.get().getPropertyValue(descriptor.getEntityId(), c, user, "status");
+                        String status = (String)ReportPropsManager.get().getPropertyValue(descriptor.getEntityId(), c, "status");
 
                         ViewInfo info = new ViewInfo(descriptor.getReportName(), r.getTypeDescription());
 
@@ -468,7 +468,7 @@ public class ReportUtil
                         info.setSchema(schema);
                         info.setCreatedBy(createdBy);
                         info.setCreated(descriptor.getCreated());
-                        info.setRefreshDate((Date)ReportPropsManager.get().getPropertyValue(descriptor.getEntityId(), c, user, "refreshDate"));
+                        info.setRefreshDate((Date)ReportPropsManager.get().getPropertyValue(descriptor.getEntityId(), c, "refreshDate"));
                         info.setModifiedBy(modifiedBy);
                         info.setAuthor(author);
                         info.setModified(descriptor.getModified());
