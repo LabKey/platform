@@ -16,11 +16,13 @@
 
 package org.labkey.api.gwt.client.ui;
 
+import com.google.gwt.event.dom.client.MouseOutEvent;
+import com.google.gwt.event.dom.client.MouseOutHandler;
+import com.google.gwt.event.dom.client.MouseOverEvent;
+import com.google.gwt.event.dom.client.MouseOverHandler;
 import com.google.gwt.user.client.DOM;
 import com.google.gwt.user.client.Element;
 import com.google.gwt.user.client.ui.InlineLabel;
-import com.google.gwt.user.client.ui.MouseListenerAdapter;
-import com.google.gwt.user.client.ui.Widget;
 import org.labkey.api.gwt.client.util.PropertyUtil;
 
 /**
@@ -45,14 +47,17 @@ public class HelpPopup extends InlineLabel
                 ";\"><sup>?</sup></span></a>";
         DOM.setInnerHTML(_element, text);
 
-        addMouseListener(new MouseListenerAdapter()
+        addMouseOverHandler(new MouseOverHandler()
         {
-            public void onMouseEnter(Widget sender)
+            public void onMouseOver(MouseOverEvent e)
             {
                 showHelpDiv(_element, _title, _body);
             }
+        });
 
-            public void onMouseLeave(Widget sender)
+        addMouseOutHandler(new MouseOutHandler()
+        {
+            public void onMouseOut(MouseOutEvent e)
             {
                 hideHelpDiv();
             }
