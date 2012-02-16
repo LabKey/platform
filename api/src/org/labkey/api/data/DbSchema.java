@@ -554,37 +554,37 @@ public class DbSchema
             }
             else if (testSchema.getSqlDialect().isPostgreSQL())
             {
-                Table.execute(testSchema, "create schema testdrop");
-                Table.execute(testSchema, "create schema testdrop2");
-                Table.execute(testSchema, "create schema testdrop3");
+                Table.execute(testSchema, "CREATE SCHEMA testdrop");
+                Table.execute(testSchema, "CREATE SCHEMA testdrop2");
+                Table.execute(testSchema, "CREATE SCHEMA testdrop3");
             }
             else
                 return;
 
-            Table.execute(testSchema, "create table testdrop.T0 (c0 int not null primary key)");
-            Table.execute(testSchema, "create table testdrop.T (c1 char(1), fk_c0 int REFERENCES testdrop.T0(c0))");
-            Table.execute(testSchema, "create index T_c1 ON testdrop.T(c1)");
-            Table.execute(testSchema, "create view testdrop.V AS SELECT c1 FROM testdrop.T");
-            String sqlCreateTempTable = "create " + testSchema.getSqlDialect().getTempTableKeyword() + " table "
-                                        + tempTableName + "(ctemp int)";
+            Table.execute(testSchema, "CREATE TABLE testdrop.T0 (c0 INT NOT NULL PRIMARY KEY)");
+            Table.execute(testSchema, "CREATE TABLE testdrop.T (c1 CHAR(1), fk_c0 INT REFERENCES testdrop.T0(c0))");
+            Table.execute(testSchema, "CREATE INDEX T_c1 ON testdrop.T(c1)");
+            Table.execute(testSchema, "CREATE VIEW testdrop.V AS SELECT c1 FROM testdrop.T");
+            String sqlCreateTempTable = "CREATE " + testSchema.getSqlDialect().getTempTableKeyword() + " TABLE "
+                                        + tempTableName + "(ctemp INT)";
             Table.execute(testSchema, sqlCreateTempTable);
 
-            Table.execute(testSchema, "create table testdrop2.T0 (c0 int primary key)");
-            Table.execute(testSchema, "create table testdrop2.T (c1 char(10), fk_c0 int REFERENCES testdrop2.T0(c0))");
-            Table.execute(testSchema, "create table testdrop3.T (c1 char(10), fk_c0 int REFERENCES testdrop2.T0(c0))");
-            Table.execute(testSchema, "create index T_c1 ON testdrop2.T(c1)");
+            Table.execute(testSchema, "CREATE TABLE testdrop2.T0 (c0 INT PRIMARY KEY)");
+            Table.execute(testSchema, "CREATE TABLE testdrop2.T (c1 CHAR(10), fk_c0 INT REFERENCES testdrop2.T0(c0))");
+            Table.execute(testSchema, "CREATE TABLE testdrop3.T (c1 CHAR(10), fk_c0 INT REFERENCES testdrop2.T0(c0))");
+            Table.execute(testSchema, "CREATE INDEX T_c1 ON testdrop2.T(c1)");
 
             testSchema = DbSchema.createFromMetaData("testdrop");
 
             //these exist; ensure they are dropped by re-creating them
             testSchema.dropIndexIfExists("T", "T_c1");
-            Table.execute(testSchema, "create index T_c1 ON testdrop.T(c1)");
+            Table.execute(testSchema, "CREATE INDEX T_c1 ON testdrop.T(c1)");
 
             testSchema.dropTableIfExists("v");
-            Table.execute(testSchema, "create view testdrop.V AS SELECT c0 FROM testdrop.T0");
+            Table.execute(testSchema, "CREATE VIEW testdrop.V AS SELECT c0 FROM testdrop.T0");
 
             testSchema.dropTableIfExists("T");
-            Table.execute(testSchema, "create table testdrop.T (c1 char(1))");
+            Table.execute(testSchema, "CREATE TABLE testdrop.T (c1 CHAR(1))");
 
             testSchema.dropTableIfExists(tempTableName);
             Table.execute(testSchema, sqlCreateTempTable);
