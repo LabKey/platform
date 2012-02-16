@@ -16,6 +16,7 @@
 
 package org.labkey.query;
 
+import org.labkey.api.data.Aggregate;
 import org.labkey.api.query.CustomView;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.resource.Resource;
@@ -111,6 +112,11 @@ public class ModuleCustomViewDef extends ResourceRef
     public String getFilterAndSortString()
     {
         return _customView.getFilterAndSortString();
+    }
+
+    public List<Aggregate> getAggregates()
+    {
+        return _customView.getAggregates();
     }
 
     public String getCustomIconUrl()

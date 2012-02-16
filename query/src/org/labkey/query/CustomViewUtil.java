@@ -36,6 +36,7 @@ import org.labkey.api.query.QueryService;
 import org.labkey.api.query.QuerySettings;
 import org.labkey.api.query.QueryView;
 import org.labkey.api.query.UserSchema;
+import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.Pair;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.ViewContext;
@@ -126,10 +127,25 @@ public class CustomViewUtil
             {
                 String fieldKey = StringUtils.trimToNull((String)aggInfo.get("fieldKey"));
                 String type = StringUtils.trimToNull((String)aggInfo.get("type"));
+
+                String label = (String)aggInfo.get("label");
+                label = StringUtils.trimToNull(label);
+
                 if (fieldKey == null || type == null)
                     continue;
 
-                url.addParameter(FILTER_PARAM_PREFIX + "." + AGGREGATE_PARAM_PREFIX + "." + fieldKey, type);
+                StringBuilder ret = new StringBuilder();
+                if(label != null)
+                {
+                    ret.append(PageFlowUtil.encode("label=" + label));
+                    ret.append(PageFlowUtil.encode("&type=" + type));
+                }
+                else
+                {
+                    ret.append(PageFlowUtil.encode(type));
+                }
+
+                url.addParameter(FILTER_PARAM_PREFIX + "." + AGGREGATE_PARAM_PREFIX + "." + fieldKey, ret.toString());
             }
         }
 
@@ -266,6 +282,7 @@ public class CustomViewUtil
                 Map<String, Object> aggInfo = new HashMap<String, Object>();
                 aggInfo.put("fieldKey", agg.getColumnName());
                 aggInfo.put("type", agg.getType().toString());
+                aggInfo.put("label", agg.getLabel());
                 allKeys.add(FieldKey.fromString(agg.getColumnName()));
                 aggInfos.add(aggInfo);
             }

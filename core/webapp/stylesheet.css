@@ -1297,6 +1297,20 @@ td.labkey-blank-cell, th.labkey-blank-cell
     border: 0;
 }
 
+/* Used for tables nested within a dataregion cell */
+.labkey-noborder,
+.labkey-noborder td,
+.labkey-noborder tr
+{
+    border: 0 !important;
+    padding-right: 0;
+    border-collapse:collapse;
+}
+
+.labkey-row-remove {
+    background-image: url(./_images/remove.gif);
+}
+
 /* Used for the little icon on the column filter headers */
 img.labkey-grid-filter-icon
 {

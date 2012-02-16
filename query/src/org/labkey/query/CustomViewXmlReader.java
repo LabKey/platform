@@ -18,6 +18,7 @@ package org.labkey.query;
 
 import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
+import org.labkey.api.data.Aggregate;
 import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.query.CustomView;
 import org.labkey.api.query.CustomViewInfo;
@@ -72,7 +73,7 @@ public class CustomViewXmlReader
     private boolean _hidden = false;
     private List<Pair<String,String>> _filters;
     private List<String> _sorts;
-    private List<Pair<String, String>> _aggregates;
+    private List<Aggregate> _aggregates;
     private String _customIconUrl;
     private ContainerFilter.Type _containerFilter;
 
@@ -113,7 +114,7 @@ public class CustomViewXmlReader
         return _filters;
     }
 
-    public List<Pair<String, String>> getAggregates()
+    public List<Aggregate> getAggregates()
     {
         return _aggregates;
     }
@@ -158,13 +159,13 @@ public class CustomViewXmlReader
 
         if (null != getAggregates())
         {
-            for (Pair<String, String> aggregate : getAggregates())
+            for (Aggregate aggregate : getAggregates())
             {
                 ret.append(sep);
                 ret.append(CustomViewInfo.FILTER_PARAM_PREFIX).append(".").append(CustomViewInfo.AGGREGATE_PARAM_PREFIX).append(".");
-                ret.append(PageFlowUtil.encode(aggregate.first));
+                ret.append(PageFlowUtil.encode(aggregate.getColumnName()));
                 ret.append("=");
-                ret.append(PageFlowUtil.encode(aggregate.second));
+                ret.append(PageFlowUtil.encode(aggregate.getValueForUrl()));
                 sep = "&";
             }
         }
@@ -347,12 +348,12 @@ public class CustomViewXmlReader
         return ret;
     }
 
-    protected static List<Pair<String, String>> loadAggregates(AggregatesType aggregates)
+    protected static List<Aggregate> loadAggregates(AggregatesType aggregates)
     {
         if (null == aggregates)
             return null;
 
-        List<Pair<String, String>> ret = new ArrayList<Pair<String, String>>();
+        List<Aggregate> ret = new ArrayList<Aggregate>();
         for (AggregateType aggregate : aggregates.getAggregateArray())
         {
             String column = StringUtils.trimToNull(aggregate.getColumn());
@@ -360,7 +361,11 @@ public class CustomViewXmlReader
             if (column == null || type == null)
                 continue;
 
-            ret.add(new Pair<String, String>(column, type));
+            Aggregate map = new Aggregate(column, Aggregate.Type.valueOf(type));
+            if(aggregate.getLabel() != null)
+                map.setLabel(aggregate.getLabel());
+
+            ret.add(map);
         }
         return ret;
     }

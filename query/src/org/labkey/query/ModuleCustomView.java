@@ -15,8 +15,10 @@
  */
 package org.labkey.query;
 
+import org.labkey.api.data.Aggregate;
 import org.labkey.api.data.Container;
 import org.labkey.api.query.CustomView;
+import org.labkey.api.query.CustomViewInfo;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.QueryDefinition;
 import org.labkey.api.query.QueryException;
@@ -96,6 +98,15 @@ public class ModuleCustomView extends ModuleCustomViewInfo implements CustomView
 
         if (null != sortParam)
             url.addParameter(dataRegionName + ".sort", sortParam);
+
+        if (null != _customViewDef.getAggregates())
+        {
+            for(Aggregate aggregate : _customViewDef.getAggregates())
+            {
+                url.addParameter(dataRegionName + "." + CustomViewInfo.AGGREGATE_PARAM_PREFIX + "." + aggregate.getColumnName(), aggregate.getValueForUrl());
+            }
+        }
+
     }
 
     public void setFilterAndSortFromURL(ActionURL url, String dataRegionName)
