@@ -174,7 +174,7 @@ public class ReportWebdavProvider implements WebdavService.Provider
 
         public InputStream getInputStream(User user) throws IOException
         {
-            byte[] buf = _report.getDescriptor().serialize().getBytes("UTF-8");
+            byte[] buf = _report.getDescriptor().serialize(_c).getBytes("UTF-8");
             return new ByteArrayInputStream(buf);
         }
 
@@ -235,7 +235,8 @@ public class ReportWebdavProvider implements WebdavService.Provider
         {
             try
             {
-                byte[] buf = _report.getDescriptor().serialize().getBytes("UTF-8");
+
+                byte[] buf = _report.getDescriptor().serialize(_c).getBytes("UTF-8");
                 return buf.length;
             }
             catch (Exception e)

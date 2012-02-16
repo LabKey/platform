@@ -240,7 +240,7 @@ public class StudyUpgradeCode implements UpgradeCode
                         Container c = ContainerManager.getForId(report.getContainerId());
                         ensureProperties(c, context.getUpgradeUser());
 
-                        ReportPropsManager.get().setPropertyValue(report.getEntityId(), c, context.getUpgradeUser(), "author", NumberUtils.createInteger(author));
+                        ReportPropsManager.get().setPropertyValue(report.getEntityId(), c, "author", NumberUtils.createInteger(author));
                     }
 
                     if (descriptor.getProperty("status") != null)
@@ -248,7 +248,7 @@ public class StudyUpgradeCode implements UpgradeCode
                         Container c = ContainerManager.getForId(report.getContainerId());
                         ensureProperties(c, context.getUpgradeUser());
 
-                        ReportPropsManager.get().setPropertyValue(report.getEntityId(), c, context.getUpgradeUser(), "status", descriptor.getProperty("status"));
+                        ReportPropsManager.get().setPropertyValue(report.getEntityId(), c, "status", descriptor.getProperty("status"));
                     }
                 }
             }

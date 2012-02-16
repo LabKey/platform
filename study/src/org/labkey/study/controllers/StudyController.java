@@ -7082,8 +7082,8 @@ public class StudyController extends BaseStudyController
                         view.setHidden(!ds.isShowByDefault());
                         view.setThumbnailUrl(new ActionURL(ThumbnailAction.class, getContainer()));
                         view.setModified(ds.getModified());
-                        view.setRefreshDate((Date)ReportPropsManager.get().getPropertyValue(ds.getEntityId(), getContainer(), getUser(), "refreshDate"));
-                        String status = (String)ReportPropsManager.get().getPropertyValue(ds.getEntityId(), getContainer(), getUser(), "status");
+                        view.setRefreshDate((Date)ReportPropsManager.get().getPropertyValue(ds.getEntityId(), getContainer(), "refreshDate"));
+                        String status = (String)ReportPropsManager.get().getPropertyValue(ds.getEntityId(), getContainer(), "status");
                         if (status != null)
                             view.setStatus(ViewInfo.Status.valueOf(status));
 
@@ -7473,11 +7473,11 @@ public class StudyController extends BaseStudyController
 
                 // additional properties
                 if (author != null)
-                    ReportPropsManager.get().setPropertyValue(id, getContainer(), getUser(), "author", author.getUserId());
+                    ReportPropsManager.get().setPropertyValue(id, getContainer(), "author", author.getUserId());
                 if (status != null)
-                    ReportPropsManager.get().setPropertyValue(id, getContainer(), getUser(), "status", status.name());
+                    ReportPropsManager.get().setPropertyValue(id, getContainer(), "status", status.name());
                 if (form.getRefreshDate() != null)
-                    ReportPropsManager.get().setPropertyValue(id, getContainer(), getUser(), "refreshDate", form.getRefreshDate());
+                    ReportPropsManager.get().setPropertyValue(id, getContainer(), "refreshDate", form.getRefreshDate());
 
                 scope.commitTransaction();
 

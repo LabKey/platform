@@ -49,7 +49,7 @@ public class ReportWriter implements ExternalStudyWriter
 
             for (Report report : reports)
             {
-                report.serializeToFolder(reportsDir);
+                report.serializeToFolder(ctx, reportsDir);
             }
         }
     }
