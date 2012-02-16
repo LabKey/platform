@@ -716,18 +716,20 @@ public class ReportsController extends SpringActionController
             if (null != form.getReportId())
                 _report = form.getReportId().getReport();
 
-            if (_report != null)
-            {
-                VBox box = new VBox(_report.getRunReportView(getViewContext()));
+            if (null == _report)
+                return null;
 
+            HttpView ret = _report.getRunReportView(getViewContext());
+
+            if (!isPrint())
+            {
+                VBox box = new VBox(ret);
                 DiscussionService.Service service = DiscussionService.get();
                 String title = "Discuss report - " + _report.getDescriptor().getReportName();
                 box.addView(service.getDisussionArea(getViewContext(), _report.getEntityId(), new ActionURL(CreateScriptReportAction.class, getContainer()), title, true, false));
-
-                return box;
+                ret = box;
             }
-            
-            return null;
+            return ret;
         }
 
         public NavTree appendNavTrail(NavTree root)

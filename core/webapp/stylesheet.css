@@ -3606,3 +3606,9 @@ ul.x-tab-strip-top li {
     background-image: none;
     background-color: #E7EFF4;
 }
+
+/* this affects how _print=true looks in the browser (see also printStyle.css) */
+body.print, table.labkey-main.print
+{
+    background-color:#ffffff;
+}

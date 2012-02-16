@@ -31,7 +31,7 @@ div.pagebreak
     page-break-before: always;
 }
 
-body
+body, table.labkey-main
 {
     color:#ffffff;
 }
