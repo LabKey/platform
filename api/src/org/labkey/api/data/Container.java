@@ -765,7 +765,7 @@ public class Container implements Serializable, Comparable<Container>, Securable
             if(init)
                 appendWorkbookModulesToParent();
 
-            return getParent().getActiveModules();
+            return getParent().getActiveModules(init);
         }
 
         if (_activeModules == null)

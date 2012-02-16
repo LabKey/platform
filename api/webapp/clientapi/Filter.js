@@ -56,7 +56,7 @@ LABKEY.Filter = new function()
         var separator = '';
         for (var i = 0; i < values.length; i++)
         {
-            var value = LABKEY.ext.FormHelper.validate(values[i].trim(), type, colName);
+            var value = LABKEY.ext.FormHelper.validate(type, values[i].trim(), colName);
             if (value == undefined)
                 return undefined;
 
