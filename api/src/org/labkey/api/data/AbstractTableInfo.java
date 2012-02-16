@@ -26,6 +26,7 @@ import org.labkey.api.data.dialect.SqlDialect;
 import org.labkey.api.exp.property.Domain;
 import org.labkey.api.exp.property.DomainKind;
 import org.labkey.api.module.Module;
+import org.labkey.api.query.AggregateRowConfig;
 import org.labkey.api.query.BatchValidationException;
 import org.labkey.api.query.DetailsURL;
 import org.labkey.api.query.FieldKey;
@@ -53,6 +54,7 @@ import org.labkey.api.util.StringExpression;
 import org.labkey.api.util.UnexpectedException;
 import org.labkey.api.view.ActionURL;
 import org.labkey.data.xml.ColumnType;
+import org.labkey.data.xml.PositionTypeEnum;
 import org.labkey.data.xml.TableType;
 
 import javax.script.ScriptException;
@@ -88,6 +90,8 @@ abstract public class AbstractTableInfo implements TableInfo, ContainerContext
     protected DetailsURL _deleteURL;
     protected DetailsURL _importURL;
     protected ButtonBarConfig _buttonBarConfig;
+    protected AggregateRowConfig _aggregateRowConfig;
+
     private List<DetailsURL> _detailsURLs = new ArrayList<DetailsURL>(1);
 
     @NotNull
@@ -547,6 +551,16 @@ abstract public class AbstractTableInfo implements TableInfo, ContainerContext
         return _buttonBarConfig;
     }
 
+    public AggregateRowConfig getAggregateRowConfig()
+    {
+        return _aggregateRowConfig;
+    }
+
+    public void setAggregateRowConfig(AggregateRowConfig config)
+    {
+        _aggregateRowConfig = config;
+    }
+
     public void setDefaultVisibleColumns(Iterable<FieldKey> list)
     {
         _defaultVisibleColumns = list;
@@ -730,6 +744,26 @@ abstract public class AbstractTableInfo implements TableInfo, ContainerContext
 
         if (xmlTable.getButtonBarOptions() != null)
             _buttonBarConfig = new ButtonBarConfig(xmlTable.getButtonBarOptions());
+
+        if(xmlTable.getAggregateRowOptions() != null && xmlTable.getAggregateRowOptions().getPosition() != null)
+        {
+            setAggregateRowConfig(xmlTable);
+        }
+    }
+
+    private void setAggregateRowConfig(TableType xmlTable)
+    {
+        _aggregateRowConfig = new AggregateRowConfig(false, false);
+
+        PositionTypeEnum.Enum position = xmlTable.getAggregateRowOptions().getPosition();
+        if(position.equals(PositionTypeEnum.BOTH) || position.equals(PositionTypeEnum.TOP))
+        {
+            _aggregateRowConfig.setAggregateRowFirst(true);
+        }
+        if(position.equals(PositionTypeEnum.BOTH) || position.equals(PositionTypeEnum.BOTTOM))
+        {
+            _aggregateRowConfig.setAggregateRowLast(true);
+        }
     }
 
     /**

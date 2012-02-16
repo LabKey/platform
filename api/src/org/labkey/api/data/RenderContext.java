@@ -274,7 +274,7 @@ public class RenderContext extends BoundMap // extends ViewContext
         return _rs;
     }
 
-    public Map<String, Aggregate.Result> getAggregates(List<DisplayColumn> displayColumns, TableInfo tinfo, String dataRegionName, List<Aggregate> aggregatesIn, Map<String,Object> parameters, boolean async) throws SQLException, IOException
+    public Map<String, List<Aggregate.Result>> getAggregates(List<DisplayColumn> displayColumns, TableInfo tinfo, String dataRegionName, List<Aggregate> aggregatesIn, Map<String,Object> parameters, boolean async) throws SQLException, IOException
     {
         if (aggregatesIn == null || aggregatesIn.isEmpty())
             return Collections.emptyMap();

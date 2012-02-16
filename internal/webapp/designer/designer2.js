@@ -901,6 +901,8 @@ LABKEY.DataRegion.ColumnsTab = Ext.extend(LABKEY.DataRegion.Tab, {
             remoteSort: true
         });
 
+        this.aggregateStore = this.createAggregateStore();
+
         // Load aggregates from the customView.aggregates Array.
         // We use the columnStore to track aggregates since aggregates and columns are 1-to-1 at this time.
         // By adding the aggregate to the columnStore the columnsList can render it.
@@ -914,19 +916,12 @@ LABKEY.DataRegion.ColumnsTab = Ext.extend(LABKEY.DataRegion.Tab, {
                 var columnRecord = this.columnStore.getById(agg.fieldKey);
                 if (!columnRecord)
                     continue;
-                columnRecord.set('aggregate',agg.type);
+
+                this.aggregateStore.add(new this.aggregateStore.recordType(agg));
             }
         }
 
-//        this.aggregateStore = new Ext.data.JsonStore({
-//            fields: ['fieldKey', 'aggregate'],
-//            root: 'aggregates',
-//            // only one aggregate per column for now
-//            idProperty: 'fieldKey',
-//            data: this.customView,
-//            remoteSort: true
-//        });
-
+        var aggregateStore = this.aggregateStore;
         config = Ext.applyIf({
             title: "Columns",
             cls: "test-columns-tab",
@@ -960,8 +955,8 @@ LABKEY.DataRegion.ColumnsTab = Ext.extend(LABKEY.DataRegion.Tab, {
                             '  <tr>',
                             '    <td class="labkey-grab"></td>',
                             '    <td><div class="item-caption">{[this.getFieldCaption(values)]}</div></td>',
-                            '    <td><div class="item-aggregate">{[values.aggregate || ""]}</div></td>',
-                            '    <td width="15px" valign="top"><div class="labkey-tool labkey-tool-gear" title="Edit Title"></div></td>',
+                            '    <td><div class="item-aggregate">{[this.getAggegateCaption(values)]}</div></td>',
+                            '    <td width="15px" valign="top"><div class="labkey-tool labkey-tool-gear" title="Edit"></div></td>',
                             '    <td width="15px" valign="top"><span class="labkey-tool labkey-tool-close" title="Remove column"></span></td>',
                             '  </tr>',
                             '</table>',
@@ -981,6 +976,24 @@ LABKEY.DataRegion.ColumnsTab = Ext.extend(LABKEY.DataRegion.Tab, {
                                     return Ext.util.Format.htmlEncode(fieldMeta.data.name);
                                 }
                                 return Ext.util.Format.htmlEncode(values.name) + " <span class='labkey-error'>(not found)</span>";
+                            },
+
+                            getAggegateCaption : function (values) {
+                                var fieldKey = values.fieldKey;
+                                var fieldMeta = fieldMetaStore.getById(fieldKey.toUpperCase());
+                                var labels = [];
+                                aggregateStore.each(function(rec){
+                                    if(rec.get('fieldKey') == fieldKey){
+                                        labels.push(rec.get('type'));
+                                    }
+                                }, this);
+                                labels = Ext.unique(labels);
+
+                                if(labels.length){
+                                    return Ext.util.Format.htmlEncode(labels.join(','));
+                                }
+
+                                return "";
                             }
                         }
                     )
@@ -992,6 +1005,13 @@ LABKEY.DataRegion.ColumnsTab = Ext.extend(LABKEY.DataRegion.Tab, {
     },
 
     getList : function () { return this.columnsList; },
+
+    createAggregateStore: function(){
+        return new Ext.data.ArrayStore({
+            fields: ['fieldKey', 'type', 'label'],
+            remoteSort: true
+        });
+    },
 
     onToolGear : function (index, item, e) {
         var columnRecord = this.columnStore.getAt(index);
@@ -1012,8 +1032,39 @@ LABKEY.DataRegion.ColumnsTab = Ext.extend(LABKEY.DataRegion.Tab, {
             for (var key in LABKEY.AggregateTypes)
                 aggOptions.push([key, key]);
 
+            var fieldMetaStore = this.fieldMetaStore;
+            var aggregateStoreCopy = this.createAggregateStore(); //NOTE: we deliberately create a separate store to use with this window.
+            var aggregateStore = this.aggregateStore;
+            var columnsList = this.columnsList;
+            var itemDeleter = new Ext.grid.RowSelectionModel({
+                width: 30,
+
+                sortable: false,
+                dataIndex: 0, // this is needed, otherwise there will be an error
+
+                menuDisabled: true,
+                fixed: true,
+                id: 'deleter',
+
+                initEvents: function(){
+                    Ext.grid.RowSelectionModel.prototype.initEvents.call(this);
+                    this.grid.on('cellclick', function(grid, rowIndex, columnIndex, e){
+                        if(columnIndex==grid.getColumnModel().getIndexById('deleter')) {
+                            var record = grid.getStore().getAt(rowIndex);
+                            grid.getStore().remove(record);
+                            //grid.getView().refresh();
+                        }
+                    });
+                },
+
+                renderer: function(v, p, record, rowIndex){
+                    return '<div class="labkey-tool labkey-tool-close" style="width: 15px; height: 16px;"></div>';
+                }
+            });
+
+
             var win = new Ext.Window({
-                autoCreate: true,
+                //autoCreate: true,
                 title: "Edit column properties",
                 resizable: false,
                 constrain: true,
@@ -1025,47 +1076,122 @@ LABKEY.DataRegion.ColumnsTab = Ext.extend(LABKEY.DataRegion.Tab, {
                 shim: true,
                 buttonAlign: "center",
                 width: 350,
-                height: 200,
+                //height: 200,
+                autoHeight: true,
                 minHeight: 100,
-                plain: true,
+                //plain: true,
                 footer: true,
                 closable: true,
                 closeAction: 'hide',
-                layout: 'fit',
-                items: new Ext.form.FormPanel({
-                    labelWidth: 75,
-                    plain: true,
+                //layout: 'fit',
+                items: {
+                    xtype: 'form',
                     border: false,
+                    labelAlign: 'top',
+                    bodyStyle: 'padding: 5px;',
+                    defaults: {
+                        width: 330
+                    },
                     items: [{
                         xtype: "textfield",
                         fieldLabel: "Title",
                         name: "title",
                         ref: "../titleField",
-                        allowBlank: true,
-                        width: 'auto'
+                        allowBlank: true
+                        //width: 'auto'
                     },{
-                        xtype: "combo",
-                        fieldLabel: "Aggregate",
-                        name: "aggregate",
-                        ref: "../aggregateField",
-                        width: 'auto',
-                        store: aggOptions,
-                        mode: 'local',
-                        triggerAction: 'all',
-                        typeAhead: false,
-                        disableKeyFilter: true
+                        xtype: 'editorgrid',
+                        fieldLabel: 'Aggregates',
+                        editable: true,
+                        autoHeight: true,
+                        store: aggregateStoreCopy,
+                        viewConfig: {
+                            scrollOffset: 1,
+                            rowOverCls: 'x-view-selected'
+                        },
+                        autoExpandColumn: 'label',
+                        selModel: itemDeleter,
+                        colModel: new Ext.grid.ColumnModel({
+                            columns: [{
+                                header: 'Type',
+                                dataIndex: 'type',
+                                width: 60,
+                                editor: {
+                                    xtype: "combo",
+                                    fieldLabel: "Aggregate",
+                                    name: "aggregate",
+                                    ref: "aggregateField",
+                                    //width: 'auto',
+                                    store: aggOptions,
+                                    mode: 'local',
+                                    triggerAction: 'all',
+                                    typeAhead: false,
+                                    disableKeyFilter: true
+                                }
+                            },{
+                                header: 'Label',
+                                dataIndex: 'label',
+                                id: 'label',
+                                //width: 200,
+                                editor: {
+                                    fieldLabel: "Label",
+                                    name: "label",
+                                    ref: "aggregateLabelField"
+                                }
+                            }, itemDeleter
+                            ]
+                        }),
+                        buttons: [{
+                            text: 'Add Aggregate',
+                            handler: function(btn){
+                                var store = btn.findParentByType('grid').store;
+                                store.add(new store.recordType({fieldKey: win.columnRecord.get('fieldKey')}))
+                            }
+                        }]
                     }]
-                }),
+                },
                 buttons: [{
                     text: "OK",
                     handler: function () {
                         var title = win.titleField.getValue();
                         title = title ? title.trim() : "";
-                        win.columnRecord.set("title", title || undefined);
+                        win.columnRecord.set("title", Ext.isEmpty(title) ? title : undefined);
 
-                        var aggregate = win.aggregateField.getValue();
-                        win.columnRecord.set("aggregate", aggregate);
+                        var error;
+                        var fieldKey = win.columnRecord.get('fieldKey');
+                        var aggregateStoreCopy = win.findByType('grid')[0].store;
 
+                        //validate the records
+                        aggregateStoreCopy.each(function(rec){
+                            if(!rec.get('type') && !rec.get('label')){
+                                aggregateStoreCopy.remove(rec);
+                            }
+                            else if (!rec.get('type')){
+                                error = true;
+                                alert('Aggregate is missing a type');
+                                return false;
+                            }
+                        }, this);
+
+                        if(error)
+                            return;
+
+                        //remove existing records matching this field
+                        aggregateStore.each(function(rec){
+                            if(rec.get('fieldKey') == fieldKey)
+                                aggregateStore.remove(rec);
+                        }, this);
+
+                        //then add to store
+                        aggregateStoreCopy.each(function(rec){
+                            aggregateStore.add(new aggregateStore.recordType({
+                                fieldKey: rec.get('fieldKey'),
+                                type: rec.get('type'),
+                                label: rec.get('label')
+                            }));
+                        }, this);
+
+                        columnsList.refresh();
                         win.hide();
                     }
                 },{
@@ -1078,7 +1204,23 @@ LABKEY.DataRegion.ColumnsTab = Ext.extend(LABKEY.DataRegion.Tab, {
                 this.columnRecord = columnRecord;
                 this.setTitle("Edit column properties for '" + this.columnRecord.get("fieldKey") + "'");
                 this.titleField.setValue(this.columnRecord.get("title"));
-                this.aggregateField.setValue(this.columnRecord.get("aggregate"));
+
+                //NOTE: we make a copy of the data so we can avoid commiting updates until the user clicks OK
+                aggregateStoreCopy.removeAll();
+                aggregateStore.each(function(rec){
+                    if(rec.get('fieldKey') == this.columnRecord.get('fieldKey')){
+                        aggregateStoreCopy.add(new aggregateStoreCopy.recordType({
+                            fieldKey: rec.get('fieldKey'),
+                            label: rec.get('label'),
+                            type: rec.get('type')
+                        }));
+                    }
+                }, this);
+
+
+                //columnsList
+                this.columnRecord.store.fireEvent('datachanged', this.columnRecord.store)
+
             };
             win.render(document.body);
             this._editPropsWin = win;
@@ -1131,12 +1273,13 @@ LABKEY.DataRegion.ColumnsTab = Ext.extend(LABKEY.DataRegion.Tab, {
 
         // move the aggregates out of the 'columns' list and into a separate 'aggregates' list
         edited.aggregates = [];
+        this.aggregateStore.each(function(rec){
+            edited.aggregates.push({fieldKey: rec.get('fieldKey'), type: rec.get('type'), label: rec.get('label')});
+        }, this);
+
         for (var i = 0; i < edited.columns.length; i++)
         {
-            var col = edited.columns[i];
-            if (col.aggregate)
-                edited.aggregates.push({fieldKey: col.fieldKey, type: col.aggregate});
-            delete col.aggregate;
+            delete edited.columns[i].aggregate;
         }
     }
 

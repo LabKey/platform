@@ -1112,13 +1112,13 @@ public class Table
         return selectForDisplay(table, select, parameters, filter, sort, rowCount, offset, true, false);
     }
 
-    public static Map<String, Aggregate.Result>selectAggregatesForDisplay(TableInfo table, List<Aggregate> aggregates,
+    public static Map<String, List<Aggregate.Result>>selectAggregatesForDisplay(TableInfo table, List<Aggregate> aggregates,
             Collection<ColumnInfo> select, @Nullable Map<String, Object> parameters, Filter filter, boolean cache) throws SQLException
     {
         return selectAggregatesForDisplay(table, aggregates, select, parameters, filter, cache, null);
     }
 
-    private static Map<String, Aggregate.Result> selectAggregatesForDisplay(TableInfo table, List<Aggregate> aggregates,
+    private static Map<String, List<Aggregate.Result>> selectAggregatesForDisplay(TableInfo table, List<Aggregate> aggregates,
             Collection<ColumnInfo> select, Map<String, Object> parameters, Filter filter, boolean cache, @Nullable AsyncQueryRequest asyncRequest)
             throws SQLException
     {
@@ -1146,7 +1146,7 @@ public class Table
             }
         }
 
-        Map<String, Aggregate.Result> results = new HashMap<String, Aggregate.Result>();
+        Map<String, List<Aggregate.Result>> results = new HashMap<String, List<Aggregate.Result>>();
 
         // if we didn't find any columns, then skip the SQL call completely
         if (first)
@@ -1162,7 +1162,12 @@ public class Table
             if (!next)
                 throw new IllegalStateException("Expected a non-empty resultset from aggregate query.");
             for (Aggregate agg : aggregates)
-                results.put(agg.getColumnName(), agg.getResult(rs));
+            {
+                if(!results.containsKey(agg.getColumnName()))
+                    results.put(agg.getColumnName(), new ArrayList<Aggregate.Result>());
+
+                results.get(agg.getColumnName()).add(agg.getResult(rs));
+            }
             return results;
         }
         finally
@@ -1171,13 +1176,13 @@ public class Table
         }
     }
 
-    public static Map<String, Aggregate.Result> selectAggregatesForDisplayAsync(final TableInfo table, final List<Aggregate> aggregates,
+    public static Map<String, List<Aggregate.Result>> selectAggregatesForDisplayAsync(final TableInfo table, final List<Aggregate> aggregates,
             final Collection<ColumnInfo> select, final @Nullable Map<String,Object> parameters, final Filter filter, final boolean cache, HttpServletResponse response)
             throws SQLException, IOException
     {
-        final AsyncQueryRequest<Map<String, Aggregate.Result>> asyncRequest = new AsyncQueryRequest<Map<String, Aggregate.Result>>(response);
-        return asyncRequest.waitForResult(new Callable<Map<String, Aggregate.Result>>() {
-            public Map<String, Aggregate.Result> call() throws Exception
+        final AsyncQueryRequest<Map<String, List<Aggregate.Result>>> asyncRequest = new AsyncQueryRequest<Map<String, List<Aggregate.Result>>>(response);
+        return asyncRequest.waitForResult(new Callable<Map<String, List<Aggregate.Result>>>() {
+            public Map<String, List<Aggregate.Result>> call() throws Exception
             {
                 return selectAggregatesForDisplay(table, aggregates, select, parameters, filter, cache, asyncRequest);
             }

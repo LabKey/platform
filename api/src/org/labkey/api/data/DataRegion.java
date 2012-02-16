@@ -26,12 +26,15 @@ import org.labkey.api.collections.BoundMap;
 import org.labkey.api.collections.ResultSetRowMapFactory;
 import org.labkey.api.collections.RowMap;
 import org.labkey.api.collections.Sets;
+import org.labkey.api.query.AggregateRowConfig;
 import org.labkey.api.query.CustomView;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.QueryService;
 import org.labkey.api.query.QuerySettings;
 import org.labkey.api.security.HasPermission;
 import org.labkey.api.security.User;
+import org.labkey.api.security.permissions.AdminPermission;
+import org.labkey.api.security.permissions.DeletePermission;
 import org.labkey.api.security.permissions.InsertPermission;
 import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.security.permissions.UpdatePermission;
@@ -60,9 +63,8 @@ public class DataRegion extends AbstractDataRegion
     private static final Logger _log = Logger.getLogger(DataRegion.class);
     private List<DisplayColumn> _displayColumns = new ArrayList<DisplayColumn>();
     private List<DisplayColumnGroup> _groups = new ArrayList<DisplayColumnGroup>();
-    private Map<String, Aggregate.Result> _aggregateResults = null;
-    private boolean _aggregateRowFirst = false;
-    private boolean _aggregateRowLast = true;
+    private Map<String, List<Aggregate.Result>> _aggregateResults = null;
+    private AggregateRowConfig _aggregateRowConfig = new AggregateRowConfig(false, true);
     private TableInfo _table = null;
     private boolean _showRecordSelectors = false;
     protected boolean _showSelectMessage = true;
@@ -629,10 +631,10 @@ public class DataRegion extends AbstractDataRegion
 
             newAggregates.add(Aggregate.createCountStar());
             _aggregateResults = ctx.getAggregates(_displayColumns, getTable(), getName(), newAggregates, getQueryParameters(), isAllowAsync());
-            Aggregate.Result result = _aggregateResults.remove(Aggregate.STAR);
+            List<Aggregate.Result> result = _aggregateResults.remove(Aggregate.STAR);
 
-            if (result != null)
-                _totalRows = (Long)result.getValue();
+            if (result.size() > 0)
+                _totalRows = (Long)(result.get(0)).getValue();
         }
         else
         {
@@ -853,7 +855,7 @@ public class DataRegion extends AbstractDataRegion
         {
             renderGridHeaderColumns(ctx, out, showRecordSelectors, renderers);
 
-            if (_aggregateRowFirst)
+            if (_aggregateRowConfig.getAggregateRowFirst())
                 renderAggregatesTableRow(ctx, out, showRecordSelectors, renderers);
 
             int rows = renderTableContents(ctx, out, showRecordSelectors, renderers);
@@ -862,7 +864,7 @@ public class DataRegion extends AbstractDataRegion
                 renderNoRowsMessage(ctx, out, colCount);
             }
 
-            if (_aggregateRowLast)
+            if (_aggregateRowConfig.getAggregateRowLast())
                 renderAggregatesTableRow(ctx, out, showRecordSelectors, renderers);
 
         }
@@ -973,6 +975,15 @@ public class DataRegion extends AbstractDataRegion
             // module custom views have no container
             customViewJSON.put("containerPath", view.getContainer() != null ? view.getContainer().getPath() : "");
         }
+
+        //permissions
+        JSONObject permissionJSON = new JSONObject();
+        permissionJSON.put("insert", getTable().hasPermission(ctx.getViewContext().getUser(), InsertPermission.class));
+        permissionJSON.put("update", getTable().hasPermission(ctx.getViewContext().getUser(), UpdatePermission.class));
+        permissionJSON.put("delete", getTable().hasPermission(ctx.getViewContext().getUser(), DeletePermission.class));
+        permissionJSON.put("admin", getTable().hasPermission(ctx.getViewContext().getUser(), AdminPermission.class));
+        dataRegionJSON.put("permissions", permissionJSON);
+
         dataRegionJSON.put("complete", _complete);
         dataRegionJSON.put("offset", getOffset());
         dataRegionJSON.put("maxRows", getMaxRows());
@@ -1231,21 +1242,26 @@ public class DataRegion extends AbstractDataRegion
         {
             // determine if all our aggregates are the same type.  If so, we don't have to
             // clutter our aggregate table row by outputting the type repeatedly (bug 1755):
-            Iterator<Aggregate.Result> it = _aggregateResults.values().iterator();
-            Aggregate.Type singleAggregateType = it.next().getAggregate().getType();
-            while (it.hasNext() && singleAggregateType != null)
+
+            //we also find the set of distinct aggregate labels and output 1 row per label
+            Iterator<Map.Entry<String, List<Aggregate.Result>>> it = _aggregateResults.entrySet().iterator();
+            Set<String> aggregateLabels = new HashSet<String>();
+
+            while (it.hasNext())
             {
-                Aggregate.Result result = it.next();
-                if (singleAggregateType != result.getAggregate().getType())
-                    singleAggregateType = null;
+                Map.Entry<String, List<Aggregate.Result>> result = it.next();
+                for(Aggregate.Result r : result.getValue())
+                {
+                    aggregateLabels.add(r.getAggregate().getDisplayString());
+                }
             }
 
             out.write("<tr class=\"labkey-col-total labkey-row\">");
             if (showRecordSelectors)
             {
-                out.write("<td class='labkey-selectors'>");
-                if (singleAggregateType != null)
-                    out.write(singleAggregateType.getFriendlyName() + ":");
+                out.write("<td nowrap class='labkey-selectors'>");
+                if (aggregateLabels.size() == 1)
+                    out.write(aggregateLabels.toArray()[0] + ":");
                 else
                     out.write("&nbsp;");
                 out.write("</td>");
@@ -1256,7 +1272,7 @@ public class DataRegion extends AbstractDataRegion
             {
                 if (renderer.isVisible(ctx))
                 {
-                    out.write("<td");
+                    out.write("<td nowrap ");
                     if (renderer.getTextAlign() != null)
                         out.write(" align='" + renderer.getTextAlign() + "'");
                     out.write(">");
@@ -1265,16 +1281,16 @@ public class DataRegion extends AbstractDataRegion
                     // an aggregate col itself.  This way, the agg type always shows up far-left.
                     if (first)
                     {
-                        if (!showRecordSelectors && singleAggregateType != null)
+                        if (!showRecordSelectors && aggregateLabels.size() == 1)
                         {
-                            out.write(singleAggregateType.getFriendlyName());
+                            out.write(aggregateLabels.toArray()[0].toString());
                             out.write(":&nbsp;");
                         }
                         first = false;
                     }
                     ColumnInfo col = renderer.getColumnInfo();
 
-                    Aggregate.Result result = null;
+                    List<Aggregate.Result> result = null;
                     if (col != null)
                     {
                         result = _aggregateResults.get(renderer.getColumnInfo().getName());
@@ -1283,16 +1299,28 @@ public class DataRegion extends AbstractDataRegion
                     }
                     if (result != null)
                     {
-                        Format formatter = renderer.getFormat();
-                        if (singleAggregateType == null)
+                        out.write("<table class='labkey-noborder'>");
+                        String delim = "";
+                        for(Aggregate.Result r : result)
                         {
-                            out.write(result.getAggregate().getType().getFriendlyName());
-                            out.write(":&nbsp;");
+                            out.write(delim);
+                            Format formatter = renderer.getFormat();
+                            if (aggregateLabels.size() > 1)
+                            {
+                                out.write("<tr><td>" + r.getAggregate().getDisplayString());
+                                out.write(":&nbsp;</td>");
+                            }
+                            out.write("<td>");
+                            if (formatter != null)
+                                out.write(formatter.format(r.getValue()));
+                            else
+                                out.write(r.getValue().toString());
+                            out.write("</td></tr>");
+
+                            delim = "";
                         }
-                        if (formatter != null)
-                            out.write(formatter.format(result.getValue()));
-                        else
-                            out.write(result.getValue().toString());
+
+                        out.write("</table>");
                     }
                     else
                         out.write("&nbsp;");
@@ -1301,7 +1329,6 @@ public class DataRegion extends AbstractDataRegion
             }
             out.write("</tr>");
         }
-
     }
 
     protected void renderFormEnd(RenderContext ctx, Writer out) throws IOException
@@ -2327,13 +2354,12 @@ public class DataRegion extends AbstractDataRegion
         return _shadeAlternatingRows;
     }
 
-    public void setAggregateRowPosition(boolean aggregateRowFirst, boolean aggregateRowLast)
+    public void setAggregateRowConfig(AggregateRowConfig config)
     {
-        _aggregateRowFirst = aggregateRowFirst;
-        _aggregateRowLast = aggregateRowLast;
+        _aggregateRowConfig = config;
     }
 
-    public Map<String, Aggregate.Result> getAggregateResults()
+    public Map<String, List<Aggregate.Result>> getAggregateResults()
     {
         return _aggregateResults;
     }
@@ -2394,7 +2420,6 @@ public class DataRegion extends AbstractDataRegion
     {
         return _buttonBarPosition;
     }
-
 
     public boolean isAllowAsync()
     {

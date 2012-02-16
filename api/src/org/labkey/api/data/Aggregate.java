@@ -21,12 +21,16 @@ import org.jetbrains.annotations.NotNull;
 import org.labkey.api.data.dialect.SqlDialect;
 import org.labkey.api.query.CustomViewInfo;
 import org.labkey.api.query.FieldKey;
+import org.labkey.api.util.PageFlowUtil;
+import org.labkey.api.util.Pair;
 import org.labkey.api.util.URLHelper;
 import org.springframework.beans.PropertyValue;
 import org.springframework.beans.PropertyValues;
 
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
@@ -90,6 +94,7 @@ public class Aggregate
     private String _columnName;
     private Type _type;
     private String _aggregateColumnName = null;
+    private String _label;
 
     private Aggregate()
     {
@@ -102,8 +107,14 @@ public class Aggregate
 
     public Aggregate(String columnAlias, Aggregate.Type type)
     {
+        this(columnAlias, type, null);
+    }
+
+    public Aggregate(String columnAlias, Aggregate.Type type, String label)
+    {
         _columnName = columnAlias;
         _type = type;
+        _label = label;
     }
 
     public static Aggregate createCountStar()
@@ -148,6 +159,21 @@ public class Aggregate
         return _type;
     }
 
+    public String getLabel()
+    {
+        return _label;
+    }
+
+    public void setLabel(String label)
+    {
+        _label = label;
+    }
+
+    public String getDisplayString()
+    {
+        return _label != null ? _label : getType().getFriendlyName();
+    }
+
     public Result getResult(ResultSet rs) throws SQLException
     {
         assert _aggregateColumnName != null;
@@ -182,19 +208,72 @@ public class Aggregate
                 FieldKey fieldKey = FieldKey.fromString(val.getName().substring(prefix.length()));
                 String columnName = StringUtils.join(fieldKey.getParts(), "/");
 
-                Aggregate.Type type;
-                try
+                List<String> values = new ArrayList<String>();
+
+                if (val.getValue() instanceof String)
+                    values.add((String) val.getValue());
+                else
+                    for(String s : (String[])val.getValue())
+                        values.add(s);
+
+                for(String s : values)
                 {
-                    type = Aggregate.Type.valueOf(((String)val.getValue()).toUpperCase());
+                    Aggregate a = decodeAggregate(columnName, s);
+                    if(a != null)
+                        aggregates.add(a);
                 }
-                catch (IllegalArgumentException e)
-                {
-                    throw new IllegalArgumentException("'" + val.getValue() + "' is not a valid aggregate type.");
-                }
-                aggregates.add(new Aggregate(columnName, type));
             }
         }
 
         return aggregates;
+    }
+
+    private static Aggregate decodeAggregate(String columnName, String value)
+    {
+        try
+        {
+            value = PageFlowUtil.decode(value);
+
+            Map<String, String> properties = new HashMap<String, String>();
+            //allow aggregates either in the basic form, ie. query.agg.columnName=MAX, or more complex, ie:
+            //query.agg.columnName=type%3BMAX
+            if(!value.contains("="))
+            {
+                properties.put("type", value);
+            }
+            else
+            {
+                Pair<String, String>[] values = PageFlowUtil.fromQueryString(PageFlowUtil.decode(value));
+                for (Pair<String, String> entry : values)
+                {
+                    properties.put(entry.getKey().toLowerCase(), entry.getValue());
+                }
+            }
+
+            Aggregate.Type type = Aggregate.Type.valueOf(properties.get("type").toUpperCase());
+            Aggregate a = new Aggregate(columnName, type);
+
+            if(properties.containsKey("label"))
+                a.setLabel(properties.get("label"));
+
+            return a;
+        }
+        catch (IllegalArgumentException e)
+        {
+            throw new IllegalArgumentException("'" + value + "' is not a valid aggregate type.");
+        }
+    }
+
+    public String getValueForUrl()
+    {
+        if(getLabel() == null)
+            return getType().name();
+
+        StringBuilder ret = new StringBuilder();
+
+        ret.append(PageFlowUtil.encode("label=" + getLabel()));
+        ret.append(PageFlowUtil.encode("&type=" + getType().name()));
+
+        return ret.toString();
     }
 }

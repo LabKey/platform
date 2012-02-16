@@ -22,6 +22,7 @@ import org.labkey.api.collections.NamedObjectList;
 import org.labkey.api.data.dialect.SqlDialect;
 import org.labkey.api.exp.property.Domain;
 import org.labkey.api.exp.property.DomainKind;
+import org.labkey.api.query.AggregateRowConfig;
 import org.labkey.api.query.BatchValidationException;
 import org.labkey.api.query.DetailsURL;
 import org.labkey.api.query.FieldKey;
@@ -118,6 +119,8 @@ public interface TableInfo extends HasPermission
     void setDefaultVisibleColumns(Iterable<FieldKey> keys);
 
     ButtonBarConfig getButtonBarConfig();
+
+    AggregateRowConfig getAggregateRowConfig();
 
     String getSequence();
 

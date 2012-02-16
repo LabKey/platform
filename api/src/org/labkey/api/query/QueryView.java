@@ -86,6 +86,7 @@ public class QueryView extends WebPartView<Object>
     public static final String DATAREGIONNAME_DEFAULT = "query";
     protected DataRegion.ButtonBarPosition _buttonBarPosition = DataRegion.ButtonBarPosition.BOTH;
     private ButtonBarConfig _buttonBarConfig = null;
+    private AggregateRowConfig _aggregateRowConfig = null;
     private boolean _showDetailsColumn = true;
     private boolean _showUpdateColumn = true;
 
@@ -1429,6 +1430,12 @@ public class QueryView extends WebPartView<Object>
             // Then any overriding button bar config (from javascript) is applied:
             if (_buttonBarConfig != null)
                 rgn.addButtonBarConfig(_buttonBarConfig);
+        }
+
+        TableInfo table = getTable();
+        if(table.getAggregateRowConfig() != null)
+        {
+            rgn.setAggregateRowConfig(table.getAggregateRowConfig());
         }
     }
 

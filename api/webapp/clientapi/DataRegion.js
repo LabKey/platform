@@ -208,6 +208,31 @@ LABKEY.DataRegion = Ext.extend(Ext.Component,
     },
 
     /**
+     * Get the parameterized query values for this query.  These parameters
+     * are named by the query itself.
+     * @param {booelan} lowercase If true, all parameter names will be converted to lowercase
+     * returns params An Object of key/val pairs.
+     */
+    getParameters : function (lowercase)
+    {
+        var results = {};
+
+        var paramValPairs = this.getParamValPairs(null, null);
+        var re = new RegExp('^' + Ext.escapeRe(this.name) + '\.param\.', 'i');
+        var name;
+        Ext.each(paramValPairs, function(pair){
+            if(pair[0].match(re)){
+                name = pair[0].replace(re, '');
+                if(lowercase)
+                    name = name.toLowerCase();
+                results[name] = pair[1];
+            }
+        }, this);
+
+        return results;
+    },
+
+    /**
      * Changes the current row offset for paged content
      * @param newoffset row index that should be at the top of the grid
      */

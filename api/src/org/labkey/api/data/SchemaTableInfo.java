@@ -29,6 +29,7 @@ import org.labkey.api.etl.DataIteratorBuilder;
 import org.labkey.api.etl.TableInsertDataIterator;
 import org.labkey.api.exp.property.Domain;
 import org.labkey.api.exp.property.DomainKind;
+import org.labkey.api.query.AggregateRowConfig;
 import org.labkey.api.query.BatchValidationException;
 import org.labkey.api.query.DetailsURL;
 import org.labkey.api.query.FieldKey;
@@ -87,6 +88,7 @@ public class SchemaTableInfo implements TableInfo, UpdateableTableInfo
     private DetailsURL _updateURL;
     private DetailsURL _detailsURL;
     private ButtonBarConfig _buttonBarConfig;
+    protected AggregateRowConfig _aggregateRowConfig;
     private boolean _hidden;
 
     // Column-related
@@ -159,6 +161,15 @@ public class SchemaTableInfo implements TableInfo, UpdateableTableInfo
         return _parentSchema;
     }
 
+    public AggregateRowConfig getAggregateRowConfig()
+    {
+        return _aggregateRowConfig;
+    }
+
+    public void setAggregateRowConfig(AggregateRowConfig config)
+    {
+        _aggregateRowConfig = config;
+    }
 
     /** getSchema().getSqlDialect() */
     public SqlDialect getSqlDialect()
