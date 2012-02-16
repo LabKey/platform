@@ -256,7 +256,10 @@ abstract public class PipelineProvider
             @Override
             public boolean isVisible(PipelineStatusFile statusFile)
             {
-                return PipelineJob.ERROR_STATUS.equals(statusFile.getStatus()) && statusFile.getJobStore() != null;
+                // We can retry if the job is in ERROR or CANCELLED and we still have the serialized job info
+                return (PipelineJob.ERROR_STATUS.equals(statusFile.getStatus()) ||
+                        PipelineJob.CANCELLED_STATUS.equals(statusFile.getStatus())) &&
+                        statusFile.getJobStore() != null;
             }
         });
         return actions;
@@ -273,7 +276,7 @@ abstract public class PipelineProvider
             throws HandlerException
     {
         if (!PipelineProvider.CAPTION_RETRY_BUTTON.equals(name) ||
-                !PipelineJob.ERROR_STATUS.equals(sf.getStatus()))
+                (!PipelineJob.ERROR_STATUS.equals(sf.getStatus()) && !PipelineJob.CANCELLED_STATUS.equals(sf.getStatus())))
             return null;
 
         try

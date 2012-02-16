@@ -119,6 +119,16 @@ abstract public class PipelineJob extends Job implements Serializable
         error
         {
             public boolean isActive() { return false; }
+        },
+        /** Job is in the process of being cancelled, but may still be running or queued at the moment */
+        cancelling
+        {
+            public boolean isActive() { return true; }
+        },
+        /** Terminal state, indicating that a user cancelled the job before it completed or errored */
+        cancelled
+        {
+            public boolean isActive() { return false; }
         };
 
         public abstract boolean isActive();
@@ -153,9 +163,9 @@ abstract public class PipelineJob extends Job implements Serializable
     public static final String WAITING_STATUS = TaskStatus.waiting.toString().toUpperCase();
     public static final String COMPLETE_STATUS = TaskStatus.complete.toString().toUpperCase();
     public static final String ERROR_STATUS = TaskStatus.error.toString().toUpperCase();
-    public static final String CANCELLED_STATUS = "CANCELLED";
+    public static final String CANCELLED_STATUS = TaskStatus.cancelled.toString().toUpperCase();
+    public static final String CANCELLING_STATUS = TaskStatus.cancelling.toString().toUpperCase();
     public static final String WAITING_FOR_FILES = "WAITING FOR FILES";
-    public static final String INTERRUPTED_STATUS = "INTERRUPTED";
     public static final String SPLIT_STATUS = "SPLIT WAITING";
 
     /*
@@ -449,6 +459,10 @@ abstract public class PipelineJob extends Job implements Serializable
                 setActiveTaskStatus(TaskStatus.error);
             }
             return statusSet;
+        }
+        catch (CancelledException e)
+        {
+            throw e;
         }
         catch (RuntimeException e)
         {
@@ -843,6 +857,10 @@ abstract public class PipelineJob extends Job implements Serializable
                 }
             }
             while (runStateMachine());
+        }
+        catch (CancelledException e)
+        {
+            // Don't need to do anything, job has already been set to CANCELLED
         }
         catch (RuntimeException e)
         {
