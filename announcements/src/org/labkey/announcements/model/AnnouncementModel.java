@@ -50,7 +50,6 @@ public class AnnouncementModel extends AttachmentParentEntity implements Seriali
     private int _rowId = 0;
 //    private AnnouncementModel _parentAnnouncement = null;
     private String _parentId = null;
-    private boolean _broadcast;
     private WikiRendererType _rendererType;
     private List<User> _memberList = null;
     private String _body = null;
@@ -174,17 +173,6 @@ public class AnnouncementModel extends AttachmentParentEntity implements Seriali
     public void setParent(String parentId)
     {
         _parentId = parentId;
-    }
-
-    public boolean isBroadcast()
-    {
-        return _broadcast;
-    }
-
-    @SuppressWarnings({"UnusedDeclaration"})
-    public void setBroadcast(boolean broadcast)
-    {
-        _broadcast = broadcast;
     }
 
     public String getCreatedByName(User currentUser)

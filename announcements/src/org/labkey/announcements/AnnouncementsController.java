@@ -1137,7 +1137,6 @@ public class AnnouncementsController extends SpringActionController
 
         public static class InsertBean
         {
-            public boolean allowBroadcast = false;
             public DiscussionService.Settings settings;
             public String assignedToSelect;
             public String statusSelect;
@@ -1160,7 +1159,6 @@ public class AnnouncementsController extends SpringActionController
             super("/org/labkey/announcements/insert.jsp", new InsertBean(), form, cancelURL, title, errors, null, reshow, fromDiscussion);
 
             InsertBean bean = getModelBean();
-            bean.allowBroadcast = !bean.settings.isSecure() && form.getUser().isAdministrator();
             bean.allowMultipleDiscussions = allowMultipleDiscussions;
         }
     }

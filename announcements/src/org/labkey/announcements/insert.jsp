@@ -19,12 +19,10 @@
 <%@ page import="org.labkey.announcements.AnnouncementsController.BaseInsertView.InsertBean"%>
 <%@ page import="org.labkey.api.announcements.DiscussionService" %>
 <%@ page import="org.labkey.api.data.Container" %>
-<%@ page import="org.labkey.api.util.Formats" %>
 <%@ page import="org.labkey.api.util.PageFlowUtil" %>
 <%@ page import="org.labkey.api.util.URLHelper" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.api.wiki.WikiRendererType" %>
-<%@ page import="org.labkey.announcements.model.AnnouncementManager" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
     HttpView<InsertBean> me = (HttpView<InsertBean>) HttpView.currentView();
@@ -100,19 +98,6 @@ Ext.onReady(function(){
         %></select></td></tr><%
     }
 
-    if (bean.allowBroadcast)
-    {
-  %>
-    <tr>
-        <td class="labkey-form-label">Admin Broadcast</td>
-        <td><input type="checkbox" name="broadcast"></td>
-        <td>
-            Email this message to all site users who have not explicitly opted-out (site admins only).
-            If checked, this email will be sent to <%=Formats.commaf0.format(AnnouncementManager.getBroadcastEmailAddresses(c).size())%> users.
-        </td>
-    </tr>
-  <%
-    }
   %>
     <tr>
         <td class="labkey-form-label">Attachments</td>

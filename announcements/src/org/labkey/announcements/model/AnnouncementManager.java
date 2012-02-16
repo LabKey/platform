@@ -65,7 +65,6 @@ import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.JspView;
 import org.labkey.api.view.NavTree;
 import org.labkey.api.view.NotFoundException;
-import org.labkey.api.view.UnauthorizedException;
 import org.labkey.api.view.WebPartView;
 import org.labkey.api.webdav.ActionResource;
 import org.labkey.api.webdav.WebdavResource;
@@ -106,7 +105,6 @@ public class AnnouncementManager
     public static final int EMAIL_PREFERENCE_NONE = 0;
     public static final int EMAIL_PREFERENCE_ALL = 1;
     public static final int EMAIL_PREFERENCE_MINE = 2;    //Only threads I've posted to or where I'm on the member list
-    public static final int EMAIL_PREFERENCE_BROADCAST = 3;
     public static final int EMAIL_PREFERENCE_MASK = 255;
 
     public static final int EMAIL_NOTIFICATION_TYPE_DIGEST = 256; // If this bit is set, send daily digest instead of individual email for each post
@@ -375,56 +373,40 @@ public class AnnouncementManager
         MailHelper.BulkEmailer emailer = new MailHelper.BulkEmailer();
         emailer.setUser(user);
 
-        if (a.isBroadcast())
+        // Send a notification email to everyone on the member list.  This email will include a link that removes the user from the member list.
+        IndividualEmailPrefsSelector sel = new IndividualEmailPrefsSelector(c);
+
+        Set<User> users = sel.getNotificationUsers(a);
+
+        if (!users.isEmpty())
         {
-            // Allow broadcast only if message board is not secure and user is site administrator
-            if (settings.isSecure() || !user.isAdministrator())
+            List<User> memberList = getMemberList(a);
+
+            for (User userToEmail : users)
             {
-                throw new UnauthorizedException();
-            }
-
-            Collection<String> emails = getBroadcastEmailAddresses(c);
-            MailHelper.ViewMessage m = getMessage(c, settings, null, parent, a, isResponse, null, currentRendererType, EmailNotificationPage.Reason.broadcast);
-            m.setHeader("References", references);
-            emailer.addMessage(emails, m);
-        }
-        else
-        {
-            // Send a notification email to everyone on the member list.  This email will include a link that removes the user from the member list.
-            IndividualEmailPrefsSelector sel = new IndividualEmailPrefsSelector(c);
-
-            Set<User> users = sel.getNotificationUsers(a);
-
-            if (!users.isEmpty())
-            {
-                List<User> memberList = getMemberList(a);
-
-                for (User userToEmail : users)
+                // Make sure the user hasn't lost their permission to read in this container since they were
+                // subscribed
+                if (c.hasPermission(userToEmail, ReadPermission.class))
                 {
-                    // Make sure the user hasn't lost their permission to read in this container since they were
-                    // subscribed
-                    if (c.hasPermission(userToEmail, ReadPermission.class))
+                    MailHelper.ViewMessage m;
+                    Permissions perm = AnnouncementsController.getPermissions(c, userToEmail, settings);
+
+                    if (memberList.contains(userToEmail))
                     {
-                        MailHelper.ViewMessage m;
-                        Permissions perm = AnnouncementsController.getPermissions(c, userToEmail, settings);
-
-                        if (memberList.contains(userToEmail))
-                        {
-                            ActionURL removeMeURL = new ActionURL(AnnouncementsController.RemoveFromMemberListAction.class, c);
-                            removeMeURL.addParameter("userId", String.valueOf(userToEmail.getUserId()));
-                            removeMeURL.addParameter("messageId", String.valueOf(parent.getRowId()));
-                            m = getMessage(c, settings, perm, parent, a, isResponse, removeMeURL.getURIString(), currentRendererType, EmailNotificationPage.Reason.memberList);
-                        }
-                        else
-                        {
-                            ActionURL changeEmailURL = AnnouncementsController.getEmailPreferencesURL(c, AnnouncementsController.getBeginURL(c));
-                            m = getMessage(c, settings, perm, parent, a, isResponse, changeEmailURL.getURIString(), currentRendererType, EmailNotificationPage.Reason.signedUp);
-                        }
-
-                        m.setHeader("References", references);
-                        m.setHeader("Message-ID", messageId);
-                        emailer.addMessage(userToEmail.getEmail(), m);
+                        ActionURL removeMeURL = new ActionURL(AnnouncementsController.RemoveFromMemberListAction.class, c);
+                        removeMeURL.addParameter("userId", String.valueOf(userToEmail.getUserId()));
+                        removeMeURL.addParameter("messageId", String.valueOf(parent.getRowId()));
+                        m = getMessage(c, settings, perm, parent, a, isResponse, removeMeURL.getURIString(), currentRendererType, EmailNotificationPage.Reason.memberList);
                     }
+                    else
+                    {
+                        ActionURL changeEmailURL = AnnouncementsController.getEmailPreferencesURL(c, AnnouncementsController.getBeginURL(c));
+                        m = getMessage(c, settings, perm, parent, a, isResponse, changeEmailURL.getURIString(), currentRendererType, EmailNotificationPage.Reason.signedUp);
+                    }
+
+                    m.setHeader("References", references);
+                    m.setHeader("Message-ID", messageId);
+                    emailer.addMessage(userToEmail.getEmail(), m);
                 }
             }
         }
@@ -432,7 +414,7 @@ public class AnnouncementManager
         emailer.start();
     }
 
-    private static MailHelper.ViewMessage getMessage(Container c, DiscussionService.Settings settings, Permissions perm, AnnouncementModel parent, AnnouncementModel a, boolean isResponse, String removeUrl, WikiRendererType currentRendererType, EmailNotificationPage.Reason reason) throws MessagingException
+    private static MailHelper.ViewMessage getMessage(Container c, DiscussionService.Settings settings, @NotNull Permissions perm, AnnouncementModel parent, AnnouncementModel a, boolean isResponse, String removeUrl, WikiRendererType currentRendererType, EmailNotificationPage.Reason reason) throws MessagingException
     {
         MailHelper.ViewMessage m = MailHelper.createMultipartViewMessage(LookAndFeelProperties.getInstance(c).getSystemEmailAddress(), null);
         m.setSubject(StringUtils.trimToEmpty(isResponse ? "RE: " + parent.getTitle() : a.getTitle()));
@@ -458,7 +440,7 @@ public class AnnouncementManager
         }
     }
 
-    private static EmailNotificationPage createEmailNotificationTemplate(String templateName, boolean includeBody, Container c, DiscussionService.Settings settings, Permissions perm, AnnouncementModel parent,
+    private static EmailNotificationPage createEmailNotificationTemplate(String templateName, boolean includeBody, Container c, DiscussionService.Settings settings, @NotNull Permissions perm, AnnouncementModel parent,
             AnnouncementModel a, String removeUrl, WikiRendererType currentRendererType, EmailNotificationPage.Reason reason)
     {
         EmailNotificationPage page = (EmailNotificationPage) JspLoader.createPage(AnnouncementsController.class, templateName);
@@ -472,7 +454,7 @@ public class AnnouncementManager
         page.siteURL = ActionURL.getBaseServerURL();
         page.announcementModel = a;
         page.reason = reason;
-        page.includeGroups = (null != perm && perm.includeGroups());  // perm will be null for broadcast since we send a single message to everyone
+        page.includeGroups = perm.includeGroups();
 
         // for plain text email messages, we don't ever want to include the body since we can't translate HTML into
         // plain text

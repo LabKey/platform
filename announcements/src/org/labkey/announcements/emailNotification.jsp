@@ -71,10 +71,6 @@
     <tr><td>You have received this email because <%
         switch(reason)
         {
-            case broadcast:
-    %>a site administrator sent this notification to all users of <a href="<%=siteURL%>"><%=siteURL%></a>.<%
-            break;
-
             case signedUp:
     %>you are signed up to receive notifications about new posts to <a href="<%=boardURL%>"><%= PageFlowUtil.filter(boardPath) %></a> at <a href="<%=siteURL%>"><%=siteURL%></a>.
 If you no longer wish to receive these notifications you can <a href="<%=removeUrl%>">change your email preferences</a>.<%

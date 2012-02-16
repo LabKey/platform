@@ -35,5 +35,5 @@ abstract public class EmailNotificationPage extends JspBase
     public Reason reason;
     public boolean includeGroups;
 
-    public static enum Reason { broadcast, signedUp, memberList }
+    public static enum Reason { signedUp, memberList }
 }
