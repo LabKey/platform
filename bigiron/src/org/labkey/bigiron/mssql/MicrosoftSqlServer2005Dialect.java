@@ -500,12 +500,17 @@ public class MicrosoftSqlServer2005Dialect extends SqlDialect
         return "CREATE DATABASE " + dbName;
     }
 
-    // Do nothing
-
     @Override
     public String getCreateSchemaSql(String schemaName)
     {
-        return "EXEC sp_addapprole '" + schemaName + "', 'password'";
+        // Now using the SQL2005 syntax for creating SCHEMAs... though fn_dropIfExists should work on old-style owners
+        // (e.g., EXEC sp_addapprole 'foo', 'password')
+
+        if (!AliasManager.isLegalName(schemaName) || isReserved(schemaName))
+            throw new IllegalArgumentException("Not a legal schema name: " + schemaName);
+
+        //Quoted schema names are bad news
+        return "CREATE SCHEMA " + schemaName;
     }
 
     @Override
@@ -525,7 +530,7 @@ public class MicrosoftSqlServer2005Dialect extends SqlDialect
     @Override
     public String getDateTimeToDateCast(String expression)
     {
-        return "convert(datetime, convert(varchar, (" + expression + "), 101))";
+        return "CONVERT(DATETIME, CONVERT(VARCHAR, (" + expression + "), 101))";
     }
 
     @Override
@@ -734,7 +739,6 @@ public class MicrosoftSqlServer2005Dialect extends SqlDialect
                 assert null == pkColumn : "no more than one primary key defined";
                 pkColumn = prop.getName();
             }
-
         }
 
         statements.add(String.format("CREATE TABLE %s (%s)", makeTableIdentifier(change), StringUtils.join(createTableSqlParts, ",\n")));
@@ -784,6 +788,7 @@ public class MicrosoftSqlServer2005Dialect extends SqlDialect
     private String getDropColumnsStatement(TableChange change)
     {
         List<String> sqlParts = new ArrayList<String>();
+
         for (PropertyStorageSpec prop : change.getColumns())
         {
             sqlParts.add(makeLegalIdentifier(prop.getName()));
