@@ -16,6 +16,7 @@
 package org.labkey.query.sql;
 
 import org.apache.commons.beanutils.ConvertUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.NotNull;
 import org.labkey.api.collections.CaseInsensitiveMapWrapper;
 import org.labkey.api.collections.NamedObjectList;
@@ -253,11 +254,13 @@ public class QueryPivot extends QueryRelation
             }
             rs = Table.executeQuery(getSchema().getDbSchema(), sqlPivotValues);
             JdbcType type = JdbcType.valueOf(rs.getMetaData().getColumnType(1));
+            int columnCount = rs.getMetaData().getColumnCount();
             while (rs.next())
             {
                 Object value = rs.getObject(1);
                 IConstant wrap = wrapConstant(value, type, rs.wasNull());
-                String name = toName(wrap);
+                String name = columnCount > 1 ? toName(rs.getString(2)) : toName(wrap);
+                // CONSIDER: error on name collision
                 _pivotValues.put(name, wrap);
             }
         }
@@ -278,6 +281,11 @@ public class QueryPivot extends QueryRelation
         if (v instanceof String)
             return (String)v;
         return ConvertUtils.convert(v);
+    }
+
+    String toName(String s)
+    {
+        return StringUtils.defaultString(s, "NULL");
     }
 
 
