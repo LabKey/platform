@@ -27,12 +27,14 @@ import org.labkey.api.files.FileContentService;
 import org.labkey.api.files.MissingRootDirectoryException;
 import org.labkey.api.pipeline.*;
 import org.labkey.api.pipeline.view.SetupForm;
+import org.labkey.api.query.QueryView;
 import org.labkey.api.security.User;
 import org.labkey.api.services.ServiceRegistry;
 import org.labkey.api.view.*;
 import org.labkey.pipeline.PipelineController;
 import org.labkey.pipeline.mule.EPipelineQueueImpl;
 import org.labkey.pipeline.mule.ResumableDescriptor;
+import org.labkey.pipeline.status.PipelineQueryView;
 import org.mule.MuleManager;
 import org.mule.umo.UMODescriptor;
 import org.mule.umo.UMOException;
@@ -297,6 +299,11 @@ public class PipelineServiceImpl extends PipelineService
     public String getPipelineProperty(Container container, String name) throws SQLException
     {
         return PipelineManager.getPipelineProperty(container, name);
+    }
+
+    public QueryView getPipelineQueryView(ViewContext context)
+    {
+        return new PipelineQueryView(context, null, null, false);
     }
 
     public HttpView getSetupView(SetupForm form)

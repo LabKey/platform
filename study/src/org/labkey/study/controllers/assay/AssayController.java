@@ -46,6 +46,7 @@ import org.labkey.api.portal.ProjectUrls;
 import org.labkey.api.qc.DataExchangeHandler;
 import org.labkey.api.query.QueryParam;
 import org.labkey.api.query.QueryService;
+import org.labkey.api.query.QueryView;
 import org.labkey.api.query.UserSchema;
 import org.labkey.api.security.RequiresPermissionClass;
 import org.labkey.api.security.User;
@@ -53,6 +54,7 @@ import org.labkey.api.security.permissions.InsertPermission;
 import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.study.actions.*;
 import org.labkey.api.study.assay.AbstractAssayProvider;
+import org.labkey.api.study.assay.AbstractAssayView;
 import org.labkey.api.study.assay.AssayFileWriter;
 import org.labkey.api.study.assay.AssayProvider;
 import org.labkey.api.study.assay.AssayRunsView;
@@ -832,6 +834,16 @@ public class AssayController extends SpringActionController
             return result;
         }
 
+        public ActionURL getShowUploadJobsURL(Container container, ExpProtocol protocol, ContainerFilter containerFilter)
+        {
+            ActionURL result = getProtocolURL(container, protocol, ShowUploadJobsAction.class);
+            if (containerFilter != null && containerFilter != ContainerFilter.EVERYTHING)
+            {
+                result.addParameter("StatusFiles." + QueryParam.containerFilterName, containerFilter.getType().name());
+            }
+            return result;
+        }
+
         public ActionURL getChooseCopyDestinationURL(ExpProtocol protocol, Container container)
         {
             return getProtocolURL(container, protocol, ChooseCopyDestinationAction.class);
@@ -890,4 +902,30 @@ public class AssayController extends SpringActionController
             return new AssayImportServiceImpl(getViewContext());
         }
     }
+
+    @RequiresPermissionClass(ReadPermission.class)
+    public class ShowUploadJobsAction extends BaseAssayAction<ProtocolIdForm>
+    {
+        private ExpProtocol _protocol;
+
+        @Override
+        public ModelAndView getView(ProtocolIdForm form, BindException errors) throws Exception
+        {
+            _protocol = form.getProtocol();
+
+            AbstractAssayView result = new AbstractAssayView();
+            QueryView view = PipelineService.get().getPipelineQueryView(getViewContext());
+            view.setTitle("Data Pipeline");
+            result.setupViews(view, false, form.getProvider(), form.getProtocol());
+
+            return result;
+        }
+
+        @Override
+        public NavTree appendNavTrail(NavTree root)
+        {
+            NavTree result = super.appendNavTrail(root);
+            return result.addChild(_protocol.getName() + " Upload Jobs");
+        }
+    }    
 }
