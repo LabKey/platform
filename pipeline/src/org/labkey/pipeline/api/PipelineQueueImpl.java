@@ -26,6 +26,7 @@ import org.labkey.api.pipeline.PipelineJobData;
 import org.labkey.api.pipeline.PipelineJobService;
 import org.labkey.api.pipeline.PipelineQueue;
 import org.labkey.api.pipeline.PipelineService;
+import org.labkey.api.pipeline.PipelineStatusFile;
 import org.labkey.api.util.GUID;
 import org.labkey.api.util.JobRunner;
 import org.labkey.api.view.ActionURL;
@@ -180,31 +181,20 @@ public class PipelineQueueImpl implements PipelineQueue
         return c.getId().equals(job.getContainerId());
     }
 
-    public synchronized boolean cancelJob(Container c, String jobId)
+    public synchronized boolean cancelJob(Container c, PipelineStatusFile statusFile)
     {
         // Go through the list of queued (but not running jobs) and remove the requested job, if found
         for (ListIterator<PipelineJob> it = _pending.listIterator(); it.hasNext();)
         {
             PipelineJob job = it.next();
-            if (job.getJobGUID().equals(jobId) && inContainer(c, job))
+            if (job.getJobGUID().equals(statusFile.getJobId()) && inContainer(c, job))
             {
                 if (job.cancel(false))
                 {
                     it.remove();
-                    try
-                    {
-                        PipelineStatusFileImpl statusFile = PipelineStatusManager.getJobStatusFile(jobId);
-                        if (statusFile != null)
-                        {
-                            // It should already be set to CANCELLING. Set to CANCELLED to indicate that it's dead.
-                            statusFile.setStatus(PipelineJob.CANCELLED_STATUS);
-                            PipelineStatusManager.updateStatusFile(statusFile);
-                        }
-                    }
-                    catch (SQLException e)
-                    {
-                        throw new RuntimeSQLException(e);
-                    }
+                    // It should already be set to CANCELLING. Set to CANCELLED to indicate that it's dead.
+                    statusFile.setStatus(PipelineJob.CANCELLED_STATUS);
+                    statusFile.save();
                     return true;
                 }
             }
@@ -212,7 +202,7 @@ public class PipelineQueueImpl implements PipelineQueue
         for (ListIterator<PipelineJob> it = _running.listIterator(); it.hasNext();)
         {
             PipelineJob job = it.next();
-            if (job.getJobGUID().equals(jobId) && inContainer(c, job))
+            if (job.getJobGUID().equals(statusFile.getJobId()) && inContainer(c, job))
             {
                 if (job.interrupt())
                 {

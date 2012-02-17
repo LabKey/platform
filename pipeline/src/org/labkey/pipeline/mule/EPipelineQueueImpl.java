@@ -18,8 +18,10 @@ package org.labkey.pipeline.mule;
 import org.labkey.api.data.RuntimeSQLException;
 import org.labkey.api.pipeline.*;
 import org.labkey.api.data.Container;
+import org.labkey.pipeline.api.PipelineJobServiceImpl;
 import org.labkey.pipeline.api.PipelineStatusFileImpl;
 import org.labkey.pipeline.api.PipelineStatusManager;
+import org.labkey.pipeline.api.properties.GlobusClientPropertiesImpl;
 import org.labkey.pipeline.mule.filters.JobIdJmsSelectorFilter;
 import org.labkey.pipeline.mule.filters.TaskJmsSelectorFilter;
 import org.mule.extras.client.MuleClient;
@@ -87,7 +89,52 @@ public class EPipelineQueueImpl implements PipelineQueue
         return _factoryJms;
     }
 
-    public boolean cancelJob(Container c, String jobId)
+    public boolean cancelJob(Container c, PipelineStatusFile statusFile)
+    {
+        // Connect to the queue to see if we can grab the job before it starts running
+        if (removeFromJMSQueue(statusFile)) return true;
+        // If we can't find it on the queue, see if it's been submitted to Globus
+        if (cancelGlobusJob(statusFile)) return true;
+
+        return false;
+    }
+
+    /** @return true if we found it on a Globus server and killed it, thus cancelling the job */
+    private boolean cancelGlobusJob(PipelineStatusFile statusFile)
+    {
+        String jobStore = statusFile.getJobStore();
+        if (jobStore == null)
+        {
+            return false;
+        }
+        final PipelineJob job = PipelineJobService.get().getJobStore().fromXML(jobStore);
+        TaskFactory taskFactory = job.getActiveTaskFactory();
+        for (GlobusClientPropertiesImpl globus : PipelineJobServiceImpl.get().getGlobusClientPropertiesList())
+        {
+            String name = globus.getLocation() == null ? "cluster" : globus.getLocation();
+            // Check if it's running through Globus
+            if (taskFactory.getExecutionLocation().equals(name))
+            {
+                try
+                {
+                    // It is running through Globus - kill it
+                    GlobusJobWrapper wrapper = new GlobusJobWrapper(job, false, false);
+                    wrapper.cancel();
+                    return true;
+                }
+                catch (Exception e)
+                {
+                    _log.error("Error attempting to cancel job " + statusFile.getFilePath(), e);
+                    return false;
+                }
+            }
+        }
+        return false;
+    }
+
+
+    /** @return true if we found it on the queue and removed it, thus cancelling the job */
+    private boolean removeFromJMSQueue(PipelineStatusFile statusFile)
     {
         // Check that we're configured with a JobQueue
         Map endpoints = MuleManager.getInstance().getEndpoints();
@@ -97,7 +144,6 @@ public class EPipelineQueueImpl implements PipelineQueue
             return false;
         }
 
-        // Connect to the queue to see if we can grab the job before it starts running
         Connection conn = null;
         MessageConsumer consumer = null;
         try
@@ -105,7 +151,7 @@ public class EPipelineQueueImpl implements PipelineQueue
             conn = _factoryJms.createConnection();
             Session session = conn.createSession(false, Session.AUTO_ACKNOWLEDGE);
 
-            JobIdJmsSelectorFilter filter = new JobIdJmsSelectorFilter(jobId);
+            JobIdJmsSelectorFilter filter = new JobIdJmsSelectorFilter(statusFile.getJobId());
 
             consumer = session.createConsumer(session.createQueue(ep.getEndpointURI().getAddress()), filter.getExpression());
             conn.start();
@@ -114,30 +160,20 @@ public class EPipelineQueueImpl implements PipelineQueue
             if (message != null)
             {
                 // We found it, which means we removed it from the queue
-                PipelineStatusFileImpl statusFile = PipelineStatusManager.getJobStatusFile(jobId);
-                if (statusFile != null)
-                {
-                    // Set it to CANCELLED because it's now dead
-                    statusFile.setStatus(PipelineJob.CANCELLED_STATUS);
-                    PipelineStatusManager.updateStatusFile(statusFile);
-                    return true;
-                }
+                // Set it to CANCELLED because it's now dead
+                statusFile.setStatus(PipelineJob.CANCELLED_STATUS);
+                statusFile.save();
             }
         }
         catch (JMSException e)
         {
             _log.error("Error browsing message queue at '" + ep.getEndpointURI(), e);
         }
-        catch (SQLException e)
-        {
-            throw new RuntimeSQLException(e);
-        }
         finally
         {
             if (consumer != null) { try { consumer.close(); } catch (JMSException ignored) {} }
             if (conn != null) { try { conn.close(); } catch (JMSException ignored) {} }
         }
-
         return false;
     }
 
@@ -176,13 +212,7 @@ public class EPipelineQueueImpl implements PipelineQueue
         }
         finally
         {
-            if (conn != null)
-            {
-                try
-                {   conn.close(); }
-                catch (JMSException e)
-                {}
-            }
+            if (conn != null) { try { conn.close(); } catch (JMSException ignored) {} }
         }
         return result;
     }

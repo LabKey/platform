@@ -15,45 +15,17 @@
  */
 package org.labkey.pipeline.mule;
 
-import junit.framework.Assert;
-import org.apache.axis.message.addressing.EndpointReferenceType;
-import org.apache.axis.types.NonNegativeInteger;
 import org.apache.log4j.Logger;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import org.globus.axis.util.Util;
 import org.globus.exec.client.GramJob;
-import org.globus.exec.generated.JobDescriptionType;
-import org.globus.exec.generated.NameValuePairType;
-import org.globus.exec.generated.JobTypeEnumeration;
-import org.globus.exec.utils.ManagedJobConstants;
-import org.globus.exec.utils.client.ManagedJobFactoryClientHelper;
-import org.globus.gsi.GSIConstants;
-import org.globus.gsi.GlobusCredential;
-import org.globus.gsi.X509ExtensionSet;
-import org.globus.gsi.bc.BouncyCastleCertProcessingFactory;
-import org.globus.gsi.gssapi.GlobusGSSCredentialImpl;
-import org.globus.gsi.proxy.ext.ProxyCertInfo;
-import org.globus.gsi.proxy.ext.ProxyCertInfoExtension;
-import org.globus.gsi.proxy.ext.ProxyPolicy;
-import org.globus.wsrf.NotificationConsumerManager;
-import org.globus.wsrf.impl.notification.ServerNotificationConsumerManager;
-import org.globus.wsrf.impl.security.authorization.Authorization;
-import org.globus.wsrf.impl.security.descriptor.GSITransportAuthMethod;
-import org.globus.wsrf.impl.security.descriptor.ResourceSecurityDescriptor;
-import org.ietf.jgss.GSSCredential;
-import org.junit.Test;
 import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.pipeline.*;
-import org.labkey.api.pipeline.cmd.CommandTaskFactorySettings;
 import org.labkey.api.settings.AppProps;
 import org.labkey.api.util.NetworkDrive;
 import org.labkey.api.util.HelpTopic;
 import org.labkey.api.util.JobRunner;
 import org.labkey.api.util.DateUtil;
-import org.labkey.api.util.Pair;
-import org.labkey.pipeline.analysis.CommandTaskImpl;
-import org.labkey.pipeline.api.PipelineJobServiceImpl;
-import org.labkey.pipeline.api.properties.GlobusClientPropertiesImpl;
 import org.labkey.pipeline.mule.filters.TaskJmsSelectorFilter;
 import org.labkey.pipeline.api.PipelineStatusFileImpl;
 import org.labkey.pipeline.api.PipelineStatusManager;
@@ -64,25 +36,16 @@ import org.mule.umo.endpoint.UMOEndpoint;
 import org.mule.umo.lifecycle.Callable;
 import org.mule.impl.RequestContext;
 
-import javax.xml.namespace.QName;
 import javax.naming.*;
 import java.io.*;
-import java.net.MalformedURLException;
-import java.net.URI;
-import java.net.URISyntaxException;
-import java.net.URL;
-import java.security.InvalidKeyException;
 import java.security.Security;
 import java.security.GeneralSecurityException;
 import java.security.cert.X509Certificate;
 import java.security.cert.CertificateNotYetValidException;
 import java.security.cert.CertificateExpiredException;
 import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
-import java.util.Calendar;
 import java.util.Map;
 
 public class PipelineJobRunnerGlobus implements Callable, ResumableDescriptor
@@ -148,23 +111,11 @@ public class PipelineJobRunnerGlobus implements Callable, ResumableDescriptor
                                     {
                                         job = PipelineJobService.get().getJobStore().fromXML(sf.getJobStore());
 
-                                        final File serializedJobFile = PipelineJob.getSerializedFile(job.getLogFile());
-                                        if (!NetworkDrive.exists(serializedJobFile))
-                                        {
-                                            // If the file doesn't exist, the web server must have died after it pulled the job from the queue
-                                            // but before it could write the file to disk
-                                            job.writeToFile(serializedJobFile);
-                                        }
-
-                                        // Create the job object and try to submit it. If it was already submitted Globus will remember
-                                        // the previous submission because they'll have the same URI and it won't resubmit
-                                        GramJob gramJob = createGramJob(job, serializedJobFile).getKey();
-                                        gramJob.submit(gramJob.getEndpoint(), false, false, getJobURI(job));
-
+                                        GlobusJobWrapper wrapper = new GlobusJobWrapper(job, false, true);
                                         // Refresh to see what state Globus thinks the job is in. If the job is running or is finished,
                                         // the GlobusListener will be notified just like normal, so it can handle the updates or release
                                         // the associated resources
-                                        gramJob.refreshStatus();
+                                        wrapper.refreshStatus();
                                     }
                                     catch (Exception e)
                                     {
@@ -189,34 +140,25 @@ public class PipelineJobRunnerGlobus implements Callable, ResumableDescriptor
         }
     }
 
-    public static String getJobURI(PipelineJob job)
-    {
-        return "uuid:" + job.getJobGUID() + "/" + job.getActiveTaskId();
-    }
-
     public Object onCall(UMOEventContext eventContext) throws Exception
     {
         boolean submitted = false;
         String xmlJob = eventContext.getMessageAsString();
-        final PipelineJob job = PipelineJobService.get().getJobStore().fromXML(xmlJob);
+        PipelineJob job = PipelineJobService.get().getJobStore().fromXML(xmlJob);
 
         try
         {
-            // Write the file to disk
-            final File serializedJobFile = PipelineJob.getSerializedFile(job.getLogFile());
+            GlobusJobWrapper wrapper = new GlobusJobWrapper(job, true, true);
+            GramJob gramJob = wrapper.getGramJob();
+            PipelineJobService.GlobusClientProperties settings = wrapper.getSettings();
 
-            job.writeToFile(serializedJobFile);
-            
-            Pair<GramJob, PipelineJobService.GlobusClientProperties> p = createGramJob(job, serializedJobFile);
-            GramJob gramJob = p.getKey();
-
-            String globusEndpoint = p.getValue().getGlobusEndpoint();
+            String globusEndpoint = settings.getGlobusEndpoint();
             if (globusEndpoint == null || "".equals(globusEndpoint))
                 throw new IllegalArgumentException("GlobusClientProperties must specify a server to run tasks on a cluster. Check configuration.");
 
             StringBuilder sb = new StringBuilder();
             sb.append("Submitting job to Globus ");
-            sb.append(p.getValue().getJobFactoryType());
+            sb.append(settings.getJobFactoryType());
             if (gramJob.getDescription().getQueue() != null)
             {
                 sb.append(" with queue ");
@@ -238,7 +180,7 @@ public class PipelineJobRunnerGlobus implements Callable, ResumableDescriptor
                 job.getLogger().warn(warning);
             }
 
-            gramJob.submit(gramJob.getEndpoint(), false, false, getJobURI(job));
+            wrapper.submit();
             sb.append("Job submitted to Globus.");
             submitted = true;
         }
@@ -373,195 +315,11 @@ public class PipelineJobRunnerGlobus implements Callable, ResumableDescriptor
                 }
             }
         }
-        catch (NamingException e)
+        catch (NamingException ignored)
         {
         }
         errors.append(" ");
         errors.append(name);
-    }
-
-    private String getGlobusLocation(TaskFactory taskFactory, Map<String, String> parameters, List<GlobusClientPropertiesImpl> allGlobusSettings)
-    {
-        GlobusSettings factorySettings = taskFactory.getGlobusSettings();
-        JobGlobusSettings jobSettings = new JobGlobusSettings(taskFactory.getGroupParameterName(), parameters);
-        PipelineJobService.GlobusClientProperties matchingQueueSettings = null;
-        String jobQueue = jobSettings.getQueue();
-        String jobLocation = jobSettings.getLocation();
-        if (jobQueue != null)
-        {
-            for (int i = 0; i < allGlobusSettings.size(); i++)
-            {
-                GlobusClientPropertiesImpl globusSettings = allGlobusSettings.get(i);
-                if (globusSettings.getAvailableQueues().contains(jobSettings.getQueue()) && (jobLocation == null || jobLocation.equalsIgnoreCase(globusSettings.getLocation())))
-                {
-                    if (i == 0)
-                    {
-                        // If there's a matching queue on the default Globus server, use it without checking any of the
-                        // other servers
-                        return globusSettings.getLocation();
-                    }
-                    
-                    if (matchingQueueSettings != null)
-                    {
-                        throw new IllegalArgumentException("Multiple Globus locations define queue " + jobSettings.getQueue());
-                    }
-                    matchingQueueSettings = globusSettings;
-                }
-            }
-            if (matchingQueueSettings != null)
-            {
-                return matchingQueueSettings.getLocation();
-            }
-
-            // No matching queue found, use the default Globus location and assume that the user has specified a queue
-            // that exists there
-        }
-        return factorySettings.mergeOverrides(jobSettings).getLocation();
-    }
-
-    private Pair<GramJob, PipelineJobService.GlobusClientProperties> createGramJob(PipelineJob job, File serializedJobFile) throws Exception
-    {
-        List<GlobusClientPropertiesImpl> allGlobusSettings = PipelineJobServiceImpl.get().getGlobusClientPropertiesList();
-
-        if (allGlobusSettings.isEmpty())
-        {
-            throw new IllegalStateException("No Globus configuration registered");
-        }
-
-        PipelineJobService.GlobusClientProperties settings = getGlobusSettings(job.getActiveTaskFactory(), job.getParameters(), allGlobusSettings);
-
-        JobDescriptionType jobDescription = createJobDescription(job, serializedJobFile, settings);
-
-        NotificationConsumerManager notifConsumerManager = new ServerNotificationConsumerManager()
-        {
-            public URL getURL()
-            {
-                try
-                {
-                    URL result = new URL(AppProps.getInstance().getBaseServerUrl() + AppProps.getInstance().getContextPath() + "/services/");
-                    int port = result.getPort();
-                    if (port == -1)
-                    {
-                        if (result.getProtocol().toLowerCase().equals("http"))
-                        {
-                            port = 80;
-                        }
-                        else if (result.getProtocol().toLowerCase().equals("https"))
-                        {
-                            port = 443;
-                        }
-                        else
-                        {
-                            throw new IllegalArgumentException("Unrecognized protocol: " + result.getProtocol() + ", only http and https are supported");
-                        }
-                    }
-
-                    return new URL(result.getProtocol(), result.getHost(), port, result.getFile());
-                }
-                catch (MalformedURLException e)
-                {
-                    throw new RuntimeException(e);
-                }
-            }
-        };
-
-        notifConsumerManager.startListening();
-        List<QName> topicPath = new ArrayList<QName>();
-        topicPath.add(ManagedJobConstants.RP_STATE);
-
-        ResourceSecurityDescriptor resourceSecDesc = new ResourceSecurityDescriptor();
-        resourceSecDesc.setAuthz(Authorization.AUTHZ_NONE);
-
-        List<GSITransportAuthMethod> authMethods = new ArrayList<GSITransportAuthMethod>();
-        resourceSecDesc.setAuthMethods(authMethods);
-
-        GramJob gramJob;
-        if (jobDescription == null)
-        {
-            gramJob = new GramJob();
-        }
-        else
-        {
-            gramJob = new GramJob(jobDescription);
-        }
-        // Tell it where to talk to the Globus server
-        URL factoryUrl = ManagedJobFactoryClientHelper.getServiceURL(settings.getGlobusEndpoint()).getURL();
-        EndpointReferenceType factoryEndpoint = ManagedJobFactoryClientHelper.getFactoryEndpoint(factoryUrl, settings.getJobFactoryType());
-        gramJob.setEndpoint(factoryEndpoint);
-
-        EndpointReferenceType notificationConsumerEndpoint = notifConsumerManager.createNotificationConsumer(topicPath, gramJob, resourceSecDesc);
-
-        int proxyType = GSIConstants.GSI_4_IMPERSONATION_PROXY;
-
-        BouncyCastleCertProcessingFactory factory = BouncyCastleCertProcessingFactory.getDefault();
-
-        ProxyPolicy policy = new ProxyPolicy(ProxyPolicy.IMPERSONATION);
-        ProxyCertInfo proxyCertInfo = new ProxyCertInfo(policy);
-        X509ExtensionSet extSet = new X509ExtensionSet();
-        // RFC compliant OID
-        extSet.add(new ProxyCertInfoExtension(proxyCertInfo));
-
-        PipeRoot pipeRoot = PipelineService.get().findPipelineRoot(job.getContainer());
-        GlobusKeyPair keyPair = pipeRoot.getGlobusKeyPair();
-        if (keyPair == null)
-        {
-            throw new InvalidKeyException("No Globus SSL Key Pair configured, ask an administrator to set this up for your folder's pipeline root");
-        }
-        keyPair.validateMatch();
-
-        // Create a proxy cert that lasts as long as the original cert
-        GlobusCredential cred = factory.createCredential(keyPair.getCertificates(), keyPair.getPrivateKey(), 512, 0, proxyType, extSet);
-
-        GlobusGSSCredentialImpl credentials = new GlobusGSSCredentialImpl(cred, GSSCredential.INITIATE_AND_ACCEPT);
-
-        if (settings.getTerminationTime() != null)
-        {
-            Calendar cal = Calendar.getInstance();
-            cal.add(Calendar.MINUTE, settings.getTerminationTime().intValue());
-            gramJob.setTerminationTime(cal.getTime());
-        }
-        
-        gramJob.setCredentials(credentials);
-
-        gramJob.setNotificationConsumerEPR(notificationConsumerEndpoint);
-        gramJob.addListener(new GlobusListener(job, notifConsumerManager));
-        return new Pair<GramJob, PipelineJobService.GlobusClientProperties>(gramJob, settings);
-    }
-
-    private PipelineJobService.GlobusClientProperties getGlobusSettings(TaskFactory taskFactory, Map<String, String> parameters, List<GlobusClientPropertiesImpl> allGlobusSettings)
-    {
-        String location = getGlobusLocation(taskFactory, parameters, allGlobusSettings);
-        GlobusClientPropertiesImpl settings = null;
-        if (location == null)
-        {
-            settings = allGlobusSettings.get(0);
-        }
-        else
-        {
-            for (GlobusClientPropertiesImpl possibleSettings : allGlobusSettings)
-            {
-                if (possibleSettings.getLocation().equalsIgnoreCase(location))
-                {
-                    settings = possibleSettings;
-                    break;
-                }
-            }
-        }
-        if (settings == null)
-        {
-            throw new IllegalArgumentException("Could not find Globus settings for location " + location);
-        }
-
-        settings = settings.mergeOverrides(taskFactory.getGlobusSettings());
-        settings = settings.mergeOverrides(new JobGlobusSettings(taskFactory.getGroupParameterName(), parameters));
-        settings.setLocation(location);
-        return settings;
-    }
-
-    private String getClusterPath(String localPath)
-    {
-        // This PathMapper considers "local" from a cluster node's point of view.
-        return PipelineJobService.get().getClusterPathMapper().remoteToLocal(localPath);
     }
 
     public static void updateStatus(PipelineJob job, PipelineJob.TaskStatus status) throws UMOException, IOException
@@ -580,15 +338,16 @@ public class PipelineJobRunnerGlobus implements Callable, ResumableDescriptor
                 // so that we can't read or write to it anymore, meaning that we can't delete it again or copy its
                 // contents to the main job log. So, we wait a bit for it to be flushed and then try deleting it.
                 // We'll have to wait and see if it's reliably done after ten seconds or not.
+                job.getLogger().info("Waiting to get log files...");
                 Thread.sleep(10000);
             }
             catch (InterruptedException ignored) {}
 
-            appendAndDeleteLogFile(job, OutputType.out);
-            appendAndDeleteLogFile(job, OutputType.err);
+            appendAndDeleteLogFile(job, GlobusJobWrapper.OutputType.out);
+            appendAndDeleteLogFile(job, GlobusJobWrapper.OutputType.err);
 
             // Clean up the serialized job file if Globus is done trying to run it
-            File serializedFile = PipelineJob.getSerializedFile(job.getLogFile());
+            File serializedFile = GlobusJobWrapper.getSerializedFile(job.getLogFile());
             if (NetworkDrive.exists(serializedFile))
             {
                 job = PipelineJob.readFromFile(serializedFile);
@@ -609,7 +368,7 @@ public class PipelineJobRunnerGlobus implements Callable, ResumableDescriptor
         }
     }
 
-    private static void appendAndDeleteLogFile(PipelineJob job, OutputType outputType)
+    private static void appendAndDeleteLogFile(PipelineJob job, GlobusJobWrapper.OutputType outputType)
     {
         File f = getOutputFile(job.getLogFile(), outputType);
         if (NetworkDrive.exists(f))
@@ -637,7 +396,7 @@ public class PipelineJobRunnerGlobus implements Callable, ResumableDescriptor
                 }
                 finally
                 {
-                    if (fIn != null) { try { fIn.close(); } catch (IOException e) {} }
+                    if (fIn != null) { try { fIn.close(); } catch (IOException ignored) {} }
                 }
             }
 
@@ -646,25 +405,7 @@ public class PipelineJobRunnerGlobus implements Callable, ResumableDescriptor
         }
     }
 
-    private enum OutputType { out, err }
-
-    /** Transform an output file path to something that's useful on the cluster node */
-    private String getClusterOutputPath(File statusFile, OutputType outputType)
-    {
-        try
-        {
-            File f = getOutputFile(statusFile, outputType);
-            String clusterURI = getClusterPath(f.toURI().toString());
-            File clusterFile = new File(new URI(clusterURI));
-            return clusterFile.toString().replace('\\', '/');
-        }
-        catch (URISyntaxException e)
-        {
-            throw new RuntimeException("This shouldn't happen", e);
-        }
-    }
-
-    private static File getOutputFile(File statusFile, OutputType outputType)
+    public static File getOutputFile(File statusFile, GlobusJobWrapper.OutputType outputType)
     {
         if (statusFile == null)
         {
@@ -678,173 +419,5 @@ public class PipelineJobRunnerGlobus implements Callable, ResumableDescriptor
             name = name.substring(0, index);
         }
         return new File(statusFile.getParentFile(), name + ".cluster." + outputType);
-    }
-
-    private JobDescriptionType createJobDescription(PipelineJob job, File serializedJobFile, PipelineJobService.GlobusClientProperties settings)
-        throws Exception
-    {
-        // Set up the job description
-        JobDescriptionType jobDescription = new JobDescriptionType();
-        jobDescription.setJobType(JobTypeEnumeration.single);
-        
-        // Create the output files with the right permissions
-//        FileUtils.touch(getOutputFile(job.getLogFile(), OutputType.out));
-//        FileUtils.touch(getOutputFile(job.getLogFile(), OutputType.err));
-
-        jobDescription.setStdout(getClusterOutputPath(job.getLogFile(), OutputType.out));
-        jobDescription.setStderr(getClusterOutputPath(job.getLogFile(), OutputType.err));
-        
-        if (settings.getQueue() != null)
-        {
-            jobDescription.setQueue(settings.getQueue());
-        }
-        if (settings.getMaxCPUTime() != null)
-        {
-            jobDescription.setMaxCpuTime(settings.getMaxCPUTime());
-        }
-        if (settings.getMaxMemory() != null)
-        {
-            jobDescription.setMaxMemory(new NonNegativeInteger(settings.getMaxMemory().toString()));
-        }
-        if (settings.getMaxTime() != null)
-        {
-            jobDescription.setMaxTime(settings.getMaxTime());
-        }
-        if (settings.getMaxWallTime() != null)
-        {
-            jobDescription.setMaxWallTime(settings.getMaxWallTime());
-        }
-
-        String javaHome = settings.getJavaHome();
-        String labKeyDir = settings.getLabKeyDir();
-
-        jobDescription.setEnvironment(new NameValuePairType[] { new NameValuePairType("JAVA_HOME", javaHome) });
-
-        jobDescription.setExecutable(javaHome + "/bin/java");
-        String[] jobArgs =
-            {
-//                "-Xdebug",
-//                "-Xrunjdwp:transport=dt_socket,server=y,suspend=y,address=5005",
-                "-cp",
-                labKeyDir + "/labkeyBootstrap.jar",
-                "org.labkey.bootstrap.ClusterBootstrap",
-                "-modulesdir=" + labKeyDir + "/modules",
-                "-webappdir=" + labKeyDir + "/labkeywebapp",
-                "-configdir=" + labKeyDir + "/config",
-                getClusterPath(serializedJobFile.getAbsoluteFile().toURI().toString())
-            };
-        jobDescription.setArgument(jobArgs);
-        return jobDescription;
-    }
-
-    public static class TestCase extends Assert
-    {
-        private GlobusClientPropertiesImpl getDefaultGlobusSettings()
-        {
-            GlobusClientPropertiesImpl result = new GlobusClientPropertiesImpl();
-            result.setLocation("location1");
-            result.setAvailableQueues(Arrays.asList("default", "location1-A", "duplicateQueue"));
-            return result;
-        }
-
-        private GlobusClientPropertiesImpl getGlobusSettings2()
-        {
-            GlobusClientPropertiesImpl result = new GlobusClientPropertiesImpl();
-            result.setLocation("location2");
-            result.setAvailableQueues(Arrays.asList("location2-A", "location2-B", "duplicateQueue", "duplicateQueue2"));
-            return result;
-        }
-
-        private GlobusClientPropertiesImpl getGlobusSettings3()
-        {
-            GlobusClientPropertiesImpl result = new GlobusClientPropertiesImpl();
-            result.setLocation("location3");
-            result.setAvailableQueues(Arrays.asList("location3-A", "duplicateQueue2"));
-            return result;
-        }
-
-        @Test
-        public void testLocation() throws Exception
-        {
-            CommandTaskFactorySettings settings = new CommandTaskFactorySettings("UnitTestCommand");
-            settings.setGroupParameterName("UnitTestGroup");
-            settings.setLocation("location1");
-            CommandTaskImpl.Factory factory = new CommandTaskImpl.Factory().cloneAndConfigure(settings);
-
-            List<GlobusClientPropertiesImpl> globusSettings = Collections.singletonList(getGlobusSettings2());
-
-            PipelineJobRunnerGlobus runner = new PipelineJobRunnerGlobus();
-            assertEquals("location", "location1", runner.getGlobusLocation(factory, Collections.<String, String>emptyMap(), globusSettings));
-            assertEquals("location", "otherLocation", runner.getGlobusLocation(factory, Collections.singletonMap("UnitTestGroup, globus location", "otherLocation"), globusSettings));
-        }
-
-        @Test
-        public void testQueue() throws Exception
-        {
-            CommandTaskFactorySettings settings = new CommandTaskFactorySettings("UnitTestCommand");
-            settings.setGroupParameterName("UnitTestGroup");
-            settings.setLocation("location1");
-            CommandTaskImpl.Factory factory = new CommandTaskImpl.Factory().cloneAndConfigure(settings);
-
-            PipelineJobRunnerGlobus runner = new PipelineJobRunnerGlobus();
-            
-            List<GlobusClientPropertiesImpl> singleGlobusSettings = Collections.singletonList(getDefaultGlobusSettings());
-            PipelineJobService.GlobusClientProperties taskSettings = runner.getGlobusSettings(factory, Collections.<String, String>emptyMap(), singleGlobusSettings);
-            assertEquals("location", "location1", taskSettings.getLocation());
-            assertEquals("location", "default", taskSettings.getQueue());
-
-            // Setting nothing should get the default location and queue
-            List<GlobusClientPropertiesImpl> tripleGlobusSettings = Arrays.asList(getDefaultGlobusSettings(), getGlobusSettings2(), getGlobusSettings3());
-            PipelineJobService.GlobusClientProperties taskSettings2 = runner.getGlobusSettings(factory, Collections.<String, String>emptyMap(), tripleGlobusSettings);
-            assertEquals("location", "location1", taskSettings2.getLocation());
-            assertEquals("location", "default", taskSettings2.getQueue());
-
-            // Request a queue that has been configured for the default location
-            PipelineJobService.GlobusClientProperties taskSettings3 = runner.getGlobusSettings(factory, Collections.singletonMap("UnitTestGroup, globus queue", "location1-A"), tripleGlobusSettings);
-            assertEquals("location", "location1", taskSettings3.getLocation());
-            assertEquals("location", "location1-A", taskSettings3.getQueue());
-
-            // Request a queue that has been configured for another location/Globus server
-            PipelineJobService.GlobusClientProperties taskSettings4 = runner.getGlobusSettings(factory, Collections.singletonMap("UnitTestGroup, globus queue", "location2-A"), tripleGlobusSettings);
-            assertEquals("location", "location2", taskSettings4.getLocation());
-            assertEquals("location", "location2-A", taskSettings4.getQueue());
-
-            // A queue that hasn't been configured should be assumed to be on the default location/Globus server
-            PipelineJobService.GlobusClientProperties taskSettings5 = runner.getGlobusSettings(factory, Collections.singletonMap("UnitTestGroup, globus queue", "unknownQueue"), tripleGlobusSettings);
-            assertEquals("location", "location1", taskSettings5.getLocation());
-            assertEquals("location", "unknownQueue", taskSettings5.getQueue());
-
-            // A duplicate queue name assumed to be on the default location/Globus server
-            PipelineJobService.GlobusClientProperties taskSettings6 = runner.getGlobusSettings(factory, Collections.singletonMap("UnitTestGroup, globus queue", "duplicateQueue"), tripleGlobusSettings);
-            assertEquals("location", "location1", taskSettings6.getLocation());
-            assertEquals("location", "duplicateQueue", taskSettings6.getQueue());
-
-            try
-            {
-                runner.getGlobusSettings(factory, Collections.singletonMap("UnitTestGroup, globus queue", "duplicateQueue2"), tripleGlobusSettings);
-                fail("Ambiguous queue name should result in exception");
-            }
-            catch (IllegalArgumentException ignored) {}
-
-            // Requesting a duplicate queue name is fine if you also specify the location
-            Map<String, String> params7 = new HashMap<String, String>();
-            params7.put("UnitTestGroup, globus queue", "duplicateQueue2");
-            params7.put("UnitTestGroup, globus location", "location2");
-            PipelineJobService.GlobusClientProperties taskSettings7 = runner.getGlobusSettings(factory, params7, tripleGlobusSettings);
-            assertEquals("location", "location2", taskSettings7.getLocation());
-            assertEquals("location", "duplicateQueue2", taskSettings7.getQueue());
-
-            Map<String, String> params8 = new HashMap<String, String>();
-            params8.put("UnitTestGroup, globus queue", "duplicateQueue2");
-            params8.put("UnitTestGroup, globus location", "location3");
-            PipelineJobService.GlobusClientProperties taskSettings8 = runner.getGlobusSettings(factory, params8, tripleGlobusSettings);
-            assertEquals("location", "location3", taskSettings8.getLocation());
-            assertEquals("location", "duplicateQueue2", taskSettings8.getQueue());
-
-            // Setting to non-default location should get the default queue for that server
-            PipelineJobService.GlobusClientProperties taskSettings9 = runner.getGlobusSettings(factory, Collections.singletonMap("UnitTestGroup, globus location", "location3"), tripleGlobusSettings);
-            assertEquals("location", "location3", taskSettings9.getLocation());
-            assertEquals("location", "location3-A", taskSettings9.getQueue());
-        }
     }
 }

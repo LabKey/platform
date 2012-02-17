@@ -609,7 +609,7 @@ public class PipelineStatusManager
             {
                 statusFile.setStatus(PipelineJob.CANCELLING_STATUS);
                 PipelineStatusManager.updateStatusFile(statusFile);
-                PipelineService.get().getPipelineQueue().cancelJob(jobContainer, statusFile.getJobId());
+                PipelineService.get().getPipelineQueue().cancelJob(jobContainer, statusFile);
             }
         }
     }

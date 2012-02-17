@@ -24,6 +24,7 @@ import org.labkey.api.pipeline.PipelineJob;
 import org.mule.umo.UMOException;
 import org.oasis.wsrf.faults.BaseFaultType;
 import org.oasis.wsrf.faults.BaseFaultTypeDescription;
+import org.oasis.wsrf.lifetime.ResourceNotDestroyedFaultType;
 
 import java.io.IOException;
 
@@ -69,7 +70,11 @@ public class GlobusListener implements GramJobListener
                 FaultType fault = gramJob.getFault();
                 if (fault != null)
                 {
-                    logFault(fault, _job);
+                    boolean cancelled = logFault(fault, _job, true);
+                    if (cancelled && newStatus == PipelineJob.TaskStatus.error)
+                    {
+                        newStatus = PipelineJob.TaskStatus.cancelled;
+                    }
                 }
                 PipelineJobRunnerGlobus.updateStatus(_job, newStatus);
             }
@@ -101,6 +106,10 @@ public class GlobusListener implements GramJobListener
                         _notifConsumerManager.removeNotificationConsumer(gramJob.getNotificationConsumerEPR());
                         _notifConsumerManager.stopListening();
                     }
+                    catch (ResourceNotDestroyedFaultType e)
+                    {
+                        _job.warn("Failed to unbind GRAM job, job may have been cancelled");
+                    }
                     catch (Throwable e)
                     {
                         _job.warn("Exception trying to unbind GRAM job", e);
@@ -116,30 +125,41 @@ public class GlobusListener implements GramJobListener
         }
     }
 
-    private void logFault(BaseFaultType fault, PipelineJob job)
+    /** @return true if the fault indicates that job had been cancelled */
+    private boolean logFault(BaseFaultType fault, PipelineJob job, boolean parentFault)
     {
+        boolean cancelled = false;
         if (fault instanceof FaultType && ((FaultType)fault).getCommand() != null)
         {
-            job.error("Fault received from Globus on \"" + ((FaultType)fault).getCommand() + "\" command");
+            job.info("Fault received from Globus on \"" + ((FaultType)fault).getCommand() + "\" command");
         }
-        else
+        else if (parentFault)
         {
-            job.error("Fault received from Globus");
+            job.info("Fault received from Globus");
         }
         if (fault.getDescription() != null)
         {
             for (BaseFaultTypeDescription description : fault.getDescription())
             {
-                job.error(description.get_value());
+                String message = description.get_value();
+                if (!FaultType.class.getName().equals(message))
+                {
+                    if (message != null && message.contains("canceled by the user"))
+                    {
+                        cancelled = true;
+                    }
+                    job.info(description.get_value());
+                }
             }
         }
         if (fault.getFaultCause() != null)
         {
             for (BaseFaultType cause : fault.getFaultCause())
             {
-                logFault(cause, job);
+                cancelled |= logFault(cause, job, false);
             }
         }
+        return cancelled;
     }
 
 }

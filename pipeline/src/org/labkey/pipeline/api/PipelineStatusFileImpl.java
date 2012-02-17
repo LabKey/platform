@@ -246,6 +246,23 @@ public class PipelineStatusFileImpl extends Entity implements Serializable, Pipe
         return PipelineJobService.get().getJobStore().fromXML(_jobStore);
     }
 
+    @Override
+    public void save()
+    {
+        if (getRowId() == 0)
+        {
+            throw new IllegalStateException("Cannot be used to insert rows");
+        }
+        try
+        {
+            PipelineStatusManager.updateStatusFile(this);
+        }
+        catch (SQLException e)
+        {
+            throw new RuntimeSQLException(e);
+        }
+    }
+
     public String getActiveTaskId()
     {
         return _activeTaskId;

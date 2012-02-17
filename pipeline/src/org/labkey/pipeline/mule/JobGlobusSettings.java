@@ -19,9 +19,10 @@ import org.labkey.api.pipeline.AbstractGlobusSettings;
 
 import java.util.Map;
 
-/*
-* User: jeckels
-* Date: Jul 17, 2008
+/**
+ * Search protocol-level settings for targeting Globus servers and queues.
+ * User: jeckels
+ * Date: Jul 17, 2008
 */
 public class JobGlobusSettings extends AbstractGlobusSettings
 {

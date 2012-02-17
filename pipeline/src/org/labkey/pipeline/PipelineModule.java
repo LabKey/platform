@@ -54,7 +54,7 @@ import org.labkey.pipeline.api.properties.ApplicationPropertiesSiteSettings;
 import org.labkey.pipeline.api.properties.GlobusClientPropertiesImpl;
 import org.labkey.pipeline.mule.EPipelineContextListener;
 import org.labkey.pipeline.mule.EPipelineQueueImpl;
-import org.labkey.pipeline.mule.PipelineJobRunnerGlobus;
+import org.labkey.pipeline.mule.GlobusJobWrapper;
 import org.labkey.pipeline.mule.RemoteServerStartup;
 import org.labkey.pipeline.mule.filters.TaskJmsSelectorFilter;
 import org.labkey.pipeline.status.StatusController;
@@ -188,7 +188,7 @@ public class PipelineModule extends SpringModule implements ContainerManager.Con
     {
         return new HashSet<Class>(Arrays.asList(
             PipelineQueueImpl.TestCase.class, PathMapperImpl.TestCase.class, GlobusClientPropertiesImpl.TestCase.class,
-            PipelineJobRunnerGlobus.TestCase.class));
+            GlobusJobWrapper.TestCase.class));
     }
 
     @Override

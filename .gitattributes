@@ -1602,6 +1602,7 @@ pipeline/src/org/labkey/pipeline/importer/FolderImportTask.java -text
 pipeline/src/org/labkey/pipeline/importer/FolderJobSupport.java -text
 pipeline/src/org/labkey/pipeline/mule/EPipelineContextListener.java -text
 pipeline/src/org/labkey/pipeline/mule/EPipelineQueueImpl.java -text
+pipeline/src/org/labkey/pipeline/mule/GlobusJobWrapper.java -text
 pipeline/src/org/labkey/pipeline/mule/GlobusListener.java -text
 pipeline/src/org/labkey/pipeline/mule/JMSStatusWriter.java -text
 pipeline/src/org/labkey/pipeline/mule/JobGlobusSettings.java -text
