@@ -67,14 +67,14 @@ public class ReaderView extends WebPartView
     {
         try
         {
-            if (_prefix != null)
+            if (getPrefix() != null)
             {
-                out.write(_prefix);
+                out.write(getPrefix());
             }
             String line;
-            while ((line = _reader.readLine()) != null)
+            while ((line = getReader().readLine()) != null)
             {
-                if (_htmlEncode)
+                if (isHtmlEncode())
                 {
                     out.println(PageFlowUtil.filter(line));
                 }
@@ -83,14 +83,34 @@ public class ReaderView extends WebPartView
                     out.println(line);
                 }
             }
-            if (_suffix != null)
+            if (getSuffix() != null)
             {
-                out.write(_suffix);
+                out.write(getSuffix());
             }
         }
         finally
         {
-            try { _reader.close(); } catch (IOException ignored) {}
+            try { getReader().close(); } catch (IOException ignored) {}
         }
+    }
+
+    public BufferedReader getReader()
+    {
+        return _reader;
+    }
+
+    public boolean isHtmlEncode()
+    {
+        return _htmlEncode;
+    }
+
+    public String getPrefix()
+    {
+        return _prefix;
+    }
+
+    public String getSuffix()
+    {
+        return _suffix;
     }
 }
