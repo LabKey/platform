@@ -47,6 +47,7 @@ Ext4.define('LABKEY.ext4.DataViewsPanel', {
             {name : 'inherited',            type : 'boolean'},
             {name : 'modified',             type : 'date'},
             {name : 'modifiedBy'},
+            {name : 'refreshDate',              type : 'date'},
             {name : 'name'},
             {name : 'permissions'},
             {name : 'reportId'},
@@ -352,6 +353,9 @@ Ext4.define('LABKEY.ext4.DataViewsPanel', {
                 '<tpl if="data.status != undefined && data.status.length">' +
                 '<tr><td>Status:</td><td>{data.status}</td></tr>' +
                 '</tpl>' +
+                '<tpl if="data.refreshDate != undefined && data.refreshDate.length">' +
+                '<tr><td valign="top">Refresh Date:</td><td>{data.refreshDate}</td></tr>' +
+                '</tpl>' +
                 '<tpl if="data.description != undefined && data.description.length">' +
                 '<tr><td valign="top">Description:</td><td>{data.description}</td></tr>' +
                 '</tpl>' +
@@ -498,17 +502,24 @@ Ext4.define('LABKEY.ext4.DataViewsPanel', {
 
     initGridColumns : function(visibleColumns) {
 
-        var typeTpl =
+        var refreshTpl = '<tpl>{refreshDate:date}</tpl>';
+        var detailsTpl =
                 '<tpl if="detailsUrl">' +
                     '<a data-qtip="Click to navigate to the Detail View" href="{detailsUrl}">' +
-                '</tpl>' +
-                '<tpl if="icon == undefined || icon == \'\'">{type}</tpl><tpl if="icon != undefined && icon != \'\'">' +
-                    '<img height="16px" width="16px" src="{icon}" alt="{type}">' + // must set height/width explicitly for layout engine to work properly
-                '</tpl>' +
-                '<tpl if="detailsUrl">' +
-                    '</a>' +
+                        '<img data-qtip="Details" height="16px" width="16px" src="' + LABKEY.ActionURL.getContextPath() + '/reports/details.png" alt="Details...">' +
+                   '</a>' +
                 '</tpl>';
 
+        var nameTpl =
+                '<div height="16px" width="100%">' +
+                    '<tpl if="icon == undefined || icon == \'\'">' +
+                        '&nbsp;&nbsp;&nbsp;' +
+                    '</tpl>' +
+                    '<tpl if="icon != undefined && icon != \'\'">' +
+                        '<img height="16px" width="16px" src="{icon}" alt="{type}">' +
+                    '</tpl>' +
+                    '<a href="{runUrl}"> {name:htmlEncode}</a>' +
+                '</div>';
 
         var _columns = [];
 
@@ -534,7 +545,7 @@ Ext4.define('LABKEY.ext4.DataViewsPanel', {
             sortable : true,
             dataIndex: 'name',
             tdCls    : 'x4-name-column-cell',
-            tpl      : '<div height="16px" width="100%"><a href="{runUrl}">{name:htmlEncode}</a></div>',
+            tpl      :  nameTpl,
             scope    : this
         },{
             text     : 'Category',
@@ -554,7 +565,34 @@ Ext4.define('LABKEY.ext4.DataViewsPanel', {
                 sortable : true,
                 dataIndex: 'type',
                 tdCls    : 'type-column',
-                tpl      : typeTpl,
+                tpl      : '<tpl>{type}</tpl>',
+                scope    : this
+            });
+        }
+
+        if (visibleColumns['Details'] && visibleColumns['Details'].checked)
+        {
+            _columns.push({
+                xtype    : 'templatecolumn',
+                text     : 'Details',
+                width    : 100,
+                sortable : true,
+                dataIndex: 'detailsUrl',
+                tdCls    : 'type-column',
+                tpl      : detailsTpl,
+                scope    : this
+            });
+        }
+
+        if(visibleColumns['Refresh Date'] && visibleColumns['Refresh Date'].checked){
+             _columns.push({
+                xtype    : 'templatecolumn',
+                text     : 'Refresh Date',
+                width    : 100,
+                sortable : true,
+                dataIndex: 'refreshDate',
+                tdCls    : 'type-column',
+                tpl      : refreshTpl,
                 scope    : this
             });
         }
@@ -562,11 +600,17 @@ Ext4.define('LABKEY.ext4.DataViewsPanel', {
         if (visibleColumns['Status'] && visibleColumns['Status'].checked)
         {
             var statusTpl = '<tpl if="status == \'Draft\'">' +
-                                '<img data-qtip="Draft" height="16px" width="16px" src="' + LABKEY.ActionURL.getContextPath() + '/reports/icon_draft.png" alt="Draft">' +
-                                '</tpl>' +
-                            '<tpl if="status == \'Final\'">' +
-                                '<img data-qtip="Final" height="16px" width="16px" src="' + LABKEY.ActionURL.getContextPath() + '/reports/icon_final.png" alt="Final">' +
-                                '</tpl>';
+                    '<img data-qtip="Draft" height="16px" width="16px" src="' + LABKEY.ActionURL.getContextPath() + '/reports/icon_draft.png" alt="Draft">' +
+                    '</tpl>' +
+                    '<tpl if="status == \'Final\'">' +
+                    '<img data-qtip="Final" height="16px" width="16px" src="' + LABKEY.ActionURL.getContextPath() + '/reports/icon_final.png" alt="Final">' +
+                    '</tpl>' +
+                    '<tpl if="status == \'Locked\'">' +
+                    '<img data-qtip="Locked" height="16px" width="16px" src="' + LABKEY.ActionURL.getContextPath() + '/reports/icon_locked.png" alt="Locked">' +
+                    '</tpl>' +
+                    '<tpl if="status == \'Unlocked\'">' +
+                    '<img data-qtip="Unlocked" height="16px" width="16px" src="' + LABKEY.ActionURL.getContextPath() + '/reports/icon_unlocked.png" alt="Unlocked">' +
+                    '</tpl>';
 
             _columns.push({
                 xtype    : 'templatecolumn',
@@ -867,7 +911,7 @@ Ext4.define('LABKEY.ext4.DataViewsPanel', {
         {
             for (var col in data.visibleColumns) {
                 var prop = data.visibleColumns[col];
-                cbColumns.push({boxLabel : col, name : col, checked : prop.checked, uncheckedValue : '0', handler : function(){this.updateConfig = true;}, scope : this});
+                cbColumns.push({boxLabel : col, name : col, checked : prop.checked, uncheckedValue : '0', width: 150, handler : function(){this.updateConfig = true;}, scope : this});
             }
         }
 
@@ -1035,14 +1079,17 @@ Ext4.define('LABKEY.ext4.DataViewsPanel', {
         // hidden items
         formItems.push({
             xtype : 'hidden',
+            style : 'display:none;',
             name  : 'reportId',
             value : record.data.reportId
         },{
             xtype : 'hidden',
+            style : 'display:none;',
             name  : 'entityId',
             value : record.data.entityId
         },{
             xtype : 'hidden',
+            style : 'display:none;',
             name  : 'dataType',
             value : record.data.dataType
         });
@@ -1071,14 +1118,41 @@ Ext4.define('LABKEY.ext4.DataViewsPanel', {
                 displayField   : 'displayName',
                 valueField     : 'userId',
                 emptyText      : 'Unknown'
-            },{
-                xtype      : 'radiogroup',
-                fieldLabel : 'Status',
-                items      : [{boxLabel : 'None',  name : 'status', checked : record.data.status == 'None', inputValue : 'None'},
-                    {boxLabel : 'Draft',   name : 'status', checked : record.data.status == 'Draft',  inputValue : 'Draft'},
-                    {boxLabel : 'Final',   name : 'status', checked : record.data.status == 'Final',  inputValue : 'Final'}]
             });
         }
+
+        var statusStore = Ext4.create('Ext.data.Store', {
+            fields: ['value', 'label'],
+            data : [
+                {value: 'None', label: 'None'},
+                {value: 'Draft', label: 'Draft'},
+                {value: 'Final', label: 'Final'},
+                {value: 'Locked', label: 'Locked'},
+                {value: 'Unlocked', label: 'Unlocked'}
+            ]
+        });
+
+        formItems.push({
+                xtype       : 'combo',
+                fieldLabel  : 'Status',
+                name        : 'status',
+                store       : statusStore,
+                editable    : false,
+                value       : record.data.status,
+                queryMode      : 'local',
+                displayField   : 'label',
+                valueField     : 'value',
+                emptyText      : 'Status'
+            });
+
+        formItems.push({
+                xtype       : 'datefield',
+                fieldLabel  : 'Refresh Date',
+                name        : 'refreshDate',
+                altFormats  : LABKEY.Utils.getDateAltFormats(),
+                blankText   : 'Date of last refresh',
+                editable    : false
+            });
 
         formItems.push({
             xtype       : 'combo',
@@ -1137,7 +1211,7 @@ Ext4.define('LABKEY.ext4.DataViewsPanel', {
 
         var editWindow = Ext4.create('Ext.window.Window', {
             width  : 450,
-            height : hasAuthorField ? 475 : 425,
+            height : hasAuthorField ? 510 : 350,
             layout : 'fit',
             draggable : false,
             modal  : true,

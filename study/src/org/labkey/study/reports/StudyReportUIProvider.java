@@ -29,7 +29,6 @@ import org.labkey.api.reports.report.view.RReportBean;
 import org.labkey.api.reports.report.view.ReportUtil;
 import org.labkey.api.security.permissions.AdminPermission;
 import org.labkey.api.study.Study;
-import org.labkey.api.study.StudyService;
 import org.labkey.api.study.reports.CrosstabReport;
 import org.labkey.api.util.URLHelper;
 import org.labkey.api.view.ActionURL;
@@ -190,6 +189,8 @@ public class StudyReportUIProvider extends DefaultReportUIProvider
             return context.getContextPath() + "/reports/xls.gif";
         if (ParticipantReport.TYPE.equals(reportType))
             return context.getContextPath() + "/reports/grid.gif";
+        if (StudyCrosstabReport.TYPE.equals(reportType))
+            return context.getContextPath() + "/reports/crosstab.png";
 
         return super.getReportIcon(context, reportType);
     }

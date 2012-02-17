@@ -6960,11 +6960,13 @@ public class StudyController extends BaseStudyController
             // visible columns
             Map<String, Map<String, Boolean>> columns = new LinkedHashMap<String, Map<String, Boolean>>();
 
-            columns.put("Type", Collections.singletonMap("checked", getCheckedState("Type", props, true)));
+            columns.put("Type", Collections.singletonMap("checked", getCheckedState("Type", props, false)));
             columns.put("Author", Collections.singletonMap("checked", getCheckedState("Author", props, false)));
             columns.put("Modified", Collections.singletonMap("checked", getCheckedState("Modified", props, false)));
             columns.put("Status", Collections.singletonMap("checked", getCheckedState("Status", props, false)));
             columns.put("Access", Collections.singletonMap("checked", getCheckedState("Access", props, true)));
+            columns.put("Details", Collections.singletonMap("checked", getCheckedState("Details", props, true)));
+            columns.put("Refresh Date", Collections.singletonMap("checked", getCheckedState("Refresh Date", props, false)));
 
             response.put("visibleColumns", columns);
 

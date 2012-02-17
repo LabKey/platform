@@ -32,7 +32,7 @@ Ext4.define('LABKEY.ext4.StudyScheduleGrid', {
     initCenterPanel : function() {
         this.cohortsStore = Ext4.create('Ext.data.Store', {
             fields: ['label'],
-            data: [{label: 'all'}]
+            data: [{label: 'All'}, {label: 'Unassigned'}]
         });
 
         this.cohortsCombo = Ext4.create('Ext.form.field.ComboBox', {
@@ -43,7 +43,7 @@ Ext4.define('LABKEY.ext4.StudyScheduleGrid', {
             allowBlank: false,
             editable: false,
             forceSelection: true,
-            value: 'all',
+            value: 'All',
             store: this.cohortsStore,
             queryMode: 'local',
             displayField: 'label',
@@ -380,7 +380,34 @@ Ext4.define('LABKEY.ext4.StudyScheduleGrid', {
     filterCohort : function(combo, newValue){
         this.filteredColumns = [];
 
-        if(newValue != 'all'){
+        if(newValue == 'All'){
+            this.filterColumns = false;
+            if(this.enablePagingCheckbox.getValue() == true){
+                //if paging then call changePage(0) and reset value of page counter
+                this.pageDisplay.setValue(1);
+                this.changePage(0);
+            } else {
+                //else initGrid with all columns
+                this.initGrid(this.initColumns(this.schedule.timepoints), this.scheduleStore);
+            }
+        } else if(newValue =="Unassigned"){
+            this.filterColumns = true;
+            //filter timepoints, call initGrid with filtered list.
+            for(var i = 0; i < this.schedule.timepoints.length; i++){
+                if(!this.schedule.timepoints[i].cohort){
+                    this.filteredColumns.push(this.schedule.timepoints[i]);
+                }
+            }
+
+            if(this.enablePagingCheckbox.getValue() == true){
+                //if paging then call changePage(0) and reset value of page counter
+                this.pageDisplay.setValue(1);
+                this.changePage(0);
+            } else {
+                //else initGrid with all columns
+                this.initGrid(this.initColumns(this.filteredColumns), this.scheduleStore);
+            }
+        } else {
             this.filterColumns = true;
             //filter timepoints, call initGrid with filtered list.
             for(var i = 0; i < this.schedule.timepoints.length; i++){
@@ -396,16 +423,6 @@ Ext4.define('LABKEY.ext4.StudyScheduleGrid', {
             } else {
                 //else initGrid with all columns
                 this.initGrid(this.initColumns(this.filteredColumns), this.scheduleStore);
-            }
-        } else {
-            this.filterColumns = false;
-            if(this.enablePagingCheckbox.getValue() == true){
-                //if paging then call changePage(0) and reset value of page counter
-                this.pageDisplay.setValue(1);
-                this.changePage(0);
-            } else {
-                //else initGrid with all columns
-                this.initGrid(this.initColumns(this.schedule.timepoints), this.scheduleStore);
             }
         }
     },
@@ -583,7 +600,13 @@ Ext4.define('LABKEY.ext4.StudyScheduleGrid', {
             xtype: 'textfield',
             fieldLabel: 'Name',
             labelWidth: 65,
-            width: 340
+            width: 340,
+            listeners: {
+                scope: this,
+                afterrender: function(){
+                    this.datasetNameField.focus(true, 125);
+                }
+            }
         });
 
         datasetPanelItems.push(this.datasetNameField, this.categoriesCombo);
@@ -629,14 +652,14 @@ Ext4.define('LABKEY.ext4.StudyScheduleGrid', {
         });
 
         datasetPanelItems.push(this.addDatasetRadioGroup);
-        
+
         this.datasetPanel = Ext4.create('Ext.form.Panel', {
             border: false,
-                title: '',
-                defaults: {
-                    margin: '10 0 0 25'
-                },
-                items: [ datasetPanelItems ]
+            title: '',
+            defaults: {
+                margin: '10 0 0 25'
+            },
+            items: [ datasetPanelItems ]
         });
 
         var bbarItems = [{xtype: 'tbfill'}];
@@ -662,6 +685,7 @@ Ext4.define('LABKEY.ext4.StudyScheduleGrid', {
             title: 'New Dataset',
             height: 225,
             width: 400,
+            modal: true,
             layout: 'fit',
             bbar: bbarItems,
             items: [this.datasetPanel]
@@ -676,9 +700,11 @@ Ext4.define('LABKEY.ext4.StudyScheduleGrid', {
 
         for(var i = 0; i < this.schedule.data.length; i++){
             var record = {};
-            record.label = this.schedule.data[i].dataset.label;
-            record.id = this.schedule.data[i].dataset.id
-            datasets.push(record);
+            if(this.schedule.data[i].dataset.type != 'Placeholder'){
+                record.label = this.schedule.data[i].dataset.label;
+                record.id = this.schedule.data[i].dataset.id
+                datasets.push(record);
+            }
         }
 
         var datasetStore = Ext4.create('Ext.data.Store', {
@@ -687,9 +713,8 @@ Ext4.define('LABKEY.ext4.StudyScheduleGrid', {
         });
 
         this.datasetCombo = Ext4.create('Ext.form.field.ComboBox', {
-            hidden: true,
-            fieldLabel: 'Expectation',
-            width: 320,
+            disabled: true,
+            width: 220,
             allowBlank: false,
             editable: false,
             forceSelection: true,
@@ -698,7 +723,7 @@ Ext4.define('LABKEY.ext4.StudyScheduleGrid', {
             queryMode: 'local',
             displayField: 'label',
             valueField: 'id',
-            margin: '10 0 0 45',
+            margin: '10 0 0 85',
             listeners      : {
                 render     : function(combo) {
                     var store = combo.getStore();
@@ -719,50 +744,35 @@ Ext4.define('LABKEY.ext4.StudyScheduleGrid', {
             inputValue:'linkManually'
         };
 
-        this.addDatasetGroup = Ext4.create('Ext.form.RadioGroup', {
-            xtype: 'radiogroup',
-            columns: 1,
-            vertical: true,
-            margin: '10 0 0 45',
-            items: [importRadio, manualRadio]
-        });
-
         var existingRadio = {
             boxLabel: 'Link to existing dataset',
-            name:'link',
-            inputValue:'existing'
-        };
-
-        var newRadio = {
-            boxLabel: 'Define new dataset',
-            name:'link',
-            inputValue:'new',
-            checked: 'true'
+            name: 'deftype',
+            inputValue: 'linkToTarget'
         };
 
         this.linkDatasetGroup = Ext4.create('Ext.form.RadioGroup', {
-            xtype: 'radiogroup',
-            margin: '10 0 0 25',
-            items: [newRadio, existingRadio],
+            columns: 1,
+            vertical: true,
+            margin: '10 0 0 45',
+            items: [importRadio, manualRadio, existingRadio],
             listeners: {
-                change: function(group, newVal){
-                    if(newVal.link == 'existing'){
-                        this.datasetCombo.setVisible(true);
-                        this.addDatasetGroup.setVisible(false);
+                scope: this,
+                change: function(rgroup, newValue){
+                    if(newValue.deftype == 'linkToTarget'){
+                        this.datasetCombo.setDisabled(false);
                     } else {
-                        this.datasetCombo.setVisible(false);
-                        this.addDatasetGroup.setVisible(true);
+                        this.datasetCombo.setDisabled(true);
                     }
-                },
-                scope: this
+                }
             }
         });
 
         this.linkDatasetWindow = Ext4.create('Ext.window.Window', {
-            title: 'Link Dataset',
-            height: 200,
+            title: 'Define Dataset',
+            height: 225,
             width: 400,
             layout: 'fit',
+            modal: true,
             scope: this,
             bbar: [{
                 xtype: 'tbfill'
@@ -789,10 +799,9 @@ Ext4.define('LABKEY.ext4.StudyScheduleGrid', {
                 },
                 items: [{
                     xtype: 'displayfield',
-                    fieldLabel: 'Dataset Name',
-                    value: datasetLabel,
+                    value: "Define " + datasetLabel,
                     width: 340
-                },this.linkDatasetGroup, this.addDatasetGroup, this.datasetCombo]
+                },this.linkDatasetGroup, this.datasetCombo]
             }]
         });
 
@@ -813,14 +822,12 @@ Ext4.define('LABKEY.ext4.StudyScheduleGrid', {
 
     linkDatasetHandler : function(){
         var json = {};
-        if(this.linkDatasetGroup.getValue().link == "new"){
-            //new dataset.
-            json.type = this.addDatasetGroup.getValue().deftype;
+        json.type = this.linkDatasetGroup.getValue().deftype;
+        
+        if(json.type == 'linkToTarget'){
+            json.targetDataset = this.datasetCombo.getValue();
             json.expectationDataset = this.expectationDatasetId;
         } else {
-            //existing dataset.
-            json.type = 'linkToTarget';
-            json.targetDataset = this.datasetCombo.getValue();
             json.expectationDataset = this.expectationDatasetId;
         }
 

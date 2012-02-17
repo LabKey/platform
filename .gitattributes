@@ -2178,11 +2178,15 @@ query/webapp/query/queryDesigner.js -text
 query/webapp/query/sql.gif -text
 query/webapp/query/validateQueries.js -text
 query/webapp/reports/chart.gif -text
+query/webapp/reports/crosstab.png -text
+query/webapp/reports/details.png -text
 query/webapp/reports/grid.gif -text
 query/webapp/reports/grid_shared.gif -text
 query/webapp/reports/icon_draft.png -text
 query/webapp/reports/icon_final.png -text
+query/webapp/reports/icon_locked.png -text
 query/webapp/reports/icon_query_view.png -text
+query/webapp/reports/icon_unlocked.png -text
 query/webapp/reports/js.png -text
 query/webapp/reports/link_data.png -text
 query/webapp/reports/manageViews.js -text
