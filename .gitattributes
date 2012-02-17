@@ -1640,6 +1640,7 @@ pipeline/src/org/labkey/pipeline/setup.jsp -text
 pipeline/src/org/labkey/pipeline/status/DescriptionDisplayColumn.java -text
 pipeline/src/org/labkey/pipeline/status/FileDisplayColumn.java -text
 pipeline/src/org/labkey/pipeline/status/JobDisplayColumn.java -text
+pipeline/src/org/labkey/pipeline/status/JobStatusLogView.java -text
 pipeline/src/org/labkey/pipeline/status/PipelineQueryView.java -text
 pipeline/src/org/labkey/pipeline/status/ProviderButtonBar.java -text
 pipeline/src/org/labkey/pipeline/status/StatusController.java -text

@@ -286,7 +286,7 @@ public class StatusController extends SpringActionController
                 {
                     try
                     {
-                        WebPartView logFileView = new ReaderView(new FileInputStream(f), true, "<pre>", "</pre>");
+                        WebPartView logFileView = new JobStatusLogView(new FileInputStream(f), true, "<pre>", "</pre>");
                         logFileView.setTitle(f.getName());
                         result.addView(logFileView);
                     }
