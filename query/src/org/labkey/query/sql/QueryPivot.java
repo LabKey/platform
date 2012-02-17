@@ -31,6 +31,7 @@ import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.dialect.SqlDialect;
 import org.labkey.api.query.AliasManager;
 import org.labkey.api.query.FieldKey;
+import org.labkey.api.query.QueryException;
 import org.labkey.api.query.QueryParseException;
 import org.labkey.api.query.QueryService;
 import org.labkey.api.util.ResultSetUtil;
@@ -158,7 +159,7 @@ public class QueryPivot extends QueryRelation
         else if (inList instanceof QSelect)
         {
             // simple in list
-            _pivotValues = new CaseInsensitiveMapWrapper<IConstant>(new LinkedHashMap<String,IConstant>());
+            CaseInsensitiveMapWrapper<IConstant> pivotValues = new CaseInsensitiveMapWrapper<IConstant>(new LinkedHashMap<String,IConstant>());
             for (QNode node : inList.childList())
             {
                 IConstant constant;
@@ -177,11 +178,12 @@ public class QueryPivot extends QueryRelation
                     name = toName(constant);
 
                 // TODO check duplicate values as well as duplicate names
-                if (_pivotValues.containsKey(name))
+                if (pivotValues.containsKey(name))
                     parseError("Duplicate pivot column name: " + name, node);
                 else
-                    _pivotValues.put(name, constant);
+                    pivotValues.put(name, constant);
             }
+            _pivotValues = pivotValues;
         }
     }
 
@@ -242,7 +244,6 @@ public class QueryPivot extends QueryRelation
             else
             {
                 // implicit sub query
-
                 // CONSIDER: _from.clone() and then simplify the select
                 // execute query
                 sqlPivotValues = new SQLFragment();
@@ -397,10 +398,14 @@ public class QueryPivot extends QueryRelation
             try
             {
                 pivotValues = getPivotValues();
+                // UNDONE: _from.getSql() has side-effect that seems to be important for declareFields()
+                _from.getSql();
             }
             catch (SQLException x)
             {
                 assert(!getParseErrors().isEmpty());
+                if (getParseErrors().isEmpty())
+                    getParseErrors().add(new QueryException(getSqlDialect().sanitizeException(x), x));
                 pivotValues = Collections.EMPTY_MAP;
             }
 
