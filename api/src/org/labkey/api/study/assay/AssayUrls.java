@@ -52,6 +52,8 @@ public interface AssayUrls extends UrlProvider
     ActionURL getAssayResultsURL(Container container, ExpProtocol protocol, int... runIds);
     ActionURL getAssayResultsURL(Container container, ExpProtocol protocol, ContainerFilter containerFilter, int... runIds);
 
+    ActionURL getShowUploadJobsURL(Container container, ExpProtocol protocol, ContainerFilter containerFilter);
+
     ActionURL getChooseCopyDestinationURL(ExpProtocol protocol, Container container);
 
     ActionURL getDeleteDesignURL(ExpProtocol protocol);

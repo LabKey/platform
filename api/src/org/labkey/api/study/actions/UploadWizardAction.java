@@ -150,7 +150,14 @@ public class UploadWizardAction<FormType extends AssayRunUploadForm<ProviderType
     /** @return the URL to send the user to after they've exited with wizard by successfully uploading their final run in the batch */
     protected ActionURL getUploadWizardCompleteURL(FormType form, ExpRun run)
     {
-        return getSummaryLink(_protocol);
+        if (form.getProvider().isBackgroundUpload(_protocol))
+        {
+            return PageFlowUtil.urlProvider(AssayUrls.class).getShowUploadJobsURL(getContainer(), _protocol, null); 
+        }
+        else
+        {
+            return getSummaryLink(_protocol);
+        }
     }
 
     protected InsertView createInsertView(TableInfo baseTable, String lsidCol, DomainProperty[] properties, boolean errorReshow, String uploadStepName, FormType form, BindException errors)

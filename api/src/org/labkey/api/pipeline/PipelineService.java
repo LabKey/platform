@@ -19,6 +19,7 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.Container;
 import org.labkey.api.pipeline.view.SetupForm;
+import org.labkey.api.query.QueryView;
 import org.labkey.api.security.User;
 import org.labkey.api.view.HttpView;
 import org.labkey.api.view.ViewContext;
@@ -85,6 +86,8 @@ abstract public class PipelineService
     abstract public void setPipelineProperty(Container container, String name, String value) throws SQLException;
 
     abstract public String getPipelineProperty(Container container, String name) throws SQLException;
+
+    abstract public QueryView getPipelineQueryView(ViewContext context);
 
     abstract public HttpView getSetupView(SetupForm form);
 

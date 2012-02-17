@@ -1309,6 +1309,11 @@ public abstract class AbstractAssayProvider implements AssayProvider
     {
         List<NavTree> result = new ArrayList<NavTree>();
         result.add(new NavTree("view results", PageFlowUtil.addLastFilterParameter(PageFlowUtil.urlProvider(AssayUrls.class).getAssayResultsURL(viewContext.getContainer(), protocol, containerFilter))));
+        if (isBackgroundUpload(protocol))
+        {
+            ActionURL url = PageFlowUtil.urlProvider(AssayUrls.class).getShowUploadJobsURL(viewContext.getContainer(), protocol, containerFilter);
+            result.add(new NavTree("view upload jobs", PageFlowUtil.addLastFilterParameter(url)));
+        }
         return result;
     }
 

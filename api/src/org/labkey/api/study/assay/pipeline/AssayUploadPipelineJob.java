@@ -8,8 +8,9 @@ import org.labkey.api.exp.api.ExperimentService;
 import org.labkey.api.pipeline.PipeRoot;
 import org.labkey.api.pipeline.PipelineJob;
 import org.labkey.api.study.assay.AssayProvider;
-import org.labkey.api.study.assay.AssayRunUploadContext;
 import org.labkey.api.study.assay.AssayService;
+import org.labkey.api.study.assay.AssayUrls;
+import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.URLHelper;
 import org.labkey.api.view.ViewBackgroundInfo;
 
@@ -28,6 +29,7 @@ public class AssayUploadPipelineJob<ProviderType extends AssayProvider> extends 
     private AssayRunAsyncContext _context;
     private File _primaryFile;
     private boolean _forceSaveBatchProps;
+    private ExpRun _run;
 
     /**
      * @param forceSaveBatchProps whether we need to save the batch properties, or if it's already been handled
@@ -51,24 +53,36 @@ public class AssayUploadPipelineJob<ProviderType extends AssayProvider> extends 
     @Override
     public URLHelper getStatusHref()
     {
+        if (_run != null)
+        {
+            return PageFlowUtil.urlProvider(AssayUrls.class).getAssayResultsURL(_run.getContainer(), _run.getProtocol(), _run.getRowId());
+        }
         return null;
     }
 
     @Override
     public String getDescription()
     {
-        return "Assay upload";
+        String description = "Assay upload";
+        if (_run != null)
+        {
+            description = _run.getName();
+        }
+        return description;
     }
 
     @Override
     public void run()
     {
         // Create the basic run
-        ExpRun run = AssayService.get().createExperimentRun(_context.getName(), getContainer(), _context.getProtocol(), _primaryFile);
-        run.setComments(_context.getComments());
+        _run = AssayService.get().createExperimentRun(_context.getName(), getContainer(), _context.getProtocol(), _primaryFile);
+        _run.setComments(_context.getComments());
 
         try
         {
+            setStatus("RUNNING");
+            getLogger().info("Starting assay upload");
+
             // Find a batch for the run
             ExpExperiment batch = ExperimentService.get().getExpExperiment(_batchId);
             if (batch == null)
@@ -82,8 +96,9 @@ public class AssayUploadPipelineJob<ProviderType extends AssayProvider> extends 
             }
 
             // Do all the real work of the import
-            _context.getProvider().getRunCreator().saveExperimentRun(_context, batch, run, _forceSaveBatchProps);
+            _context.getProvider().getRunCreator().saveExperimentRun(_context, batch, _run, _forceSaveBatchProps);
             setStatus(COMPLETE_STATUS);
+            getLogger().info("Finished assay upload");
         }
         catch (Exception e)
         {
