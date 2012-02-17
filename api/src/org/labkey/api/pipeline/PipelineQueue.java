@@ -35,10 +35,10 @@ public interface PipelineQueue
      * queue or running.
      *
      * @param c Filter for jobs started from this container.  Use null for any job.
-     * @param jobId The GUID assigned to the job of interest
+     * @param statusFile The status object for the job
      * @return True if the job was successfully cancelled
      */
-    boolean cancelJob(Container c, String jobId);
+    boolean cancelJob(Container c, PipelineStatusFile statusFile);
 
     /**
      * This method is used to restore lost jobs, when the LabKey Server or a remote

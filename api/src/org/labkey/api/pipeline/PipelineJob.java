@@ -355,25 +355,6 @@ abstract public class PipelineJob extends Job implements Serializable
         return _logFile;
     }
 
-    public static File getSerializedFile(File statusFile)
-    {
-        if (statusFile == null)
-        {
-            return null;
-        }
-
-        String name = statusFile.getName();
-
-        // Assume the status file's extension has a single period (e.g. .status or .log),
-        // and remove that extension.
-        int index = name.lastIndexOf('.');
-        if (index != -1)
-        {
-            name = name.substring(0, index);
-        }
-        return new File(statusFile.getParentFile(), name + ".job.xml");
-    }
-
     public static PipelineJob readFromFile(File file) throws IOException
     {
         InputStream fIn = null;
@@ -434,7 +415,7 @@ abstract public class PipelineJob extends Job implements Serializable
         TaskFactory factory = getActiveTaskFactory();
         TaskStatus status = getActiveTaskStatus();
 
-        if (factory != null && !TaskStatus.error.equals(status))
+        if (factory != null && !TaskStatus.error.equals(status) && !TaskStatus.cancelled.equals(status))
             return setStatus(factory.getStatusName() + " " + status.toString().toUpperCase(), null);
         else
             return setStatus(status.toString().toUpperCase(), null);

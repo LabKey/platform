@@ -110,5 +110,7 @@ public interface PipelineStatusFile
     String getJobStore();
 
     PipelineJob createJobInstance();
+
+    void save();
 }
 
