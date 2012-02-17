@@ -17,6 +17,7 @@ package org.labkey.study.importer;
 
 import org.labkey.api.data.ConditionalFormat;
 import org.labkey.api.study.DataSet;
+import org.labkey.data.xml.reportProps.PropertyList;
 import org.labkey.study.model.DataSetDefinition;
 
 import java.util.List;
@@ -62,5 +63,6 @@ public interface SchemaReader
         public String category;
         public boolean demographicData;
         public String type = DataSet.TYPE_STANDARD;
+        public PropertyList tags;
     }
 }

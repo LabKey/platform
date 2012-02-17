@@ -90,6 +90,7 @@ import org.labkey.api.query.snapshot.QuerySnapshotDefinition;
 import org.labkey.api.reader.ColumnDescriptor;
 import org.labkey.api.reader.DataLoader;
 import org.labkey.api.reader.MapLoader;
+import org.labkey.api.reports.model.ReportPropsManager;
 import org.labkey.api.reports.model.ViewCategory;
 import org.labkey.api.reports.model.ViewCategoryListener;
 import org.labkey.api.reports.model.ViewCategoryManager;
@@ -2571,6 +2572,11 @@ public class StudyManager
                         def.setKeyManagementType(info.keyManagementType);
                         def.setDemographicData(info.demographicData);
                         manager.updateDataSetDefinition(user, def);
+                    }
+
+                    if (info.tags != null)
+                    {
+                        ReportPropsManager.get().importProperties(def.getEntityId(), study.getContainer(), user, info.tags);
                     }
                 }
             }

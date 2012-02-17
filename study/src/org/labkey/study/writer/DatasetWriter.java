@@ -25,10 +25,12 @@ import org.labkey.api.data.TableInfo;
 import org.labkey.api.query.AliasedColumn;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.QueryService;
+import org.labkey.api.reports.model.ReportPropsManager;
 import org.labkey.api.study.Cohort;
 import org.labkey.api.admin.ImportException;
 import org.labkey.api.study.StudyService;
 import org.labkey.api.writer.VirtualFile;
+import org.labkey.data.xml.reportProps.PropertyList;
 import org.labkey.study.model.DataSetDefinition;
 import org.labkey.study.model.StudyImpl;
 import org.labkey.study.model.StudyManager;
@@ -120,6 +122,10 @@ public class DatasetWriter implements InternalStudyWriter
                 datasetXml.setDemographicData(true);
 
             datasetXml.setType(def.getType());
+
+            // serialize any dataset properties (reportPropsManager)
+            PropertyList propList = datasetXml.addNewTags();
+            ReportPropsManager.get().exportProperties(def.getEntityId(), ctx.getContainer(), propList);
         }
 
         if (categories.isEmpty())

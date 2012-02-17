@@ -22,6 +22,7 @@ import org.labkey.api.reader.TabLoader;
 import org.labkey.api.study.DataSet;
 import org.labkey.api.study.Study;
 import org.labkey.api.writer.VirtualFile;
+import org.labkey.data.xml.reportProps.PropertyList;
 import org.labkey.study.model.DataSetDefinition;
 import org.springframework.validation.BindException;
 
@@ -203,6 +204,11 @@ public class SchemaTsvReader implements SchemaReader
                     }
                 }
 
+                // tags
+                PropertyList tags = null != extraProps ? extraProps.getTags() : null;
+                if (tags != null)
+                    info.tags = tags;
+                
                 _importMaps.add(props);
             }
 

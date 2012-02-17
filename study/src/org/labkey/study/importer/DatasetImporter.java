@@ -26,6 +26,7 @@ import org.labkey.api.data.Container;
 import org.labkey.api.util.XmlBeansUtil;
 import org.labkey.api.util.XmlValidationException;
 import org.labkey.api.writer.VirtualFile;
+import org.labkey.data.xml.reportProps.PropertyList;
 import org.labkey.study.model.DatasetReorderer;
 import org.labkey.study.model.StudyImpl;
 import org.labkey.study.model.StudyManager;
@@ -198,7 +199,7 @@ public class DatasetImporter implements InternalStudyImporter
         for (DatasetsDocument.Datasets.Datasets2.Dataset dataset : datasets)
         {
             DatasetImportProperties props = new DatasetImportProperties(dataset.getId(), dataset.getCategory(), dataset.getCohort(),
-                    dataset.getShowByDefault(), dataset.getDemographicData(), dataset.getType());
+                    dataset.getShowByDefault(), dataset.getDemographicData(), dataset.getType(), dataset.getTags());
             extraProps.put(dataset.getName(), props);
         }
 
@@ -215,8 +216,10 @@ public class DatasetImporter implements InternalStudyImporter
         private final boolean _showByDefault;
         private final boolean _demographicData;
         private final String _type;
+        private final PropertyList _tags;
 
-        private DatasetImportProperties(int id, String category, String cohort, boolean showByDefault, boolean demographicData, String type)
+        private DatasetImportProperties(int id, String category, String cohort, boolean showByDefault,
+                                        boolean demographicData, String type, PropertyList tags)
         {
             _id = id;
             _category = category;
@@ -224,6 +227,7 @@ public class DatasetImporter implements InternalStudyImporter
             _showByDefault = showByDefault;
             _demographicData = demographicData;
             _type = type;
+            _tags = tags;
         }
 
         public int getId()
@@ -254,6 +258,11 @@ public class DatasetImporter implements InternalStudyImporter
         public String getType()
         {
             return _type;
+        }
+
+        public PropertyList getTags()
+        {
+            return _tags;
         }
     }
 }
