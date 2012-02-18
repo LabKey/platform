@@ -112,6 +112,10 @@ li.ptid a.unhighlight
     cursor: pointer;
 }
 
+.participant-filter-panel .x4-grid-cell-inner {
+    padding: 3px 3px;
+}
+
 
 </style>
 <script>
@@ -122,10 +126,9 @@ li.ptid a.unhighlight
 <script type="text/javascript">
 <%=viewObject%> = (function()
 {
-    var X = Ext4 || Ext;
+    var X = Ext4;
     var $h = X.util.Format.htmlEncode;
     var first = true;
-
 
     var _urlTemplate = '<%= urlTemplate %>';
     var _subjectColName = '<%= colName %>';
@@ -134,10 +137,9 @@ li.ptid a.unhighlight
     var _divId = '<%= divId %>';
 
     // filters
-    var _filterSubstring = null;
-    var _filterSubstringMap = null;
-//    var _filterGroup = -1;
-    var _filterGroupMap = null;
+    var _filterSubstring;
+    var _filterSubstringMap;
+    var _filterGroupMap;
 
 
 
@@ -312,7 +314,7 @@ li.ptid a.unhighlight
     {
         var list = X.DomQuery.select("LI.ptid",_divId);
         <%-- note removeClass() and addClass() are pretty expensive when used on a lot of elements --%>
-        Ext4.Array.each(list, function(li){
+        X.Array.each(list, function(li){
             var a = li.firstChild;
             if (_highlightGroup == -1)
                 a.className = '';
@@ -355,22 +357,22 @@ li.ptid a.unhighlight
 
     function filter(selected)
     {
-        Ext4.Ajax.request({
+        X.Ajax.request({
             url      : LABKEY.ActionURL.buildURL('participant-group', 'getSubjectsFromGroups.api'),
             method   : 'POST',
-            jsonData : Ext4.encode({
+            jsonData : X.encode({
                 groups : selected
             }),
             success  : function(response)
             {
-                var json = Ext4.decode(response.responseText);
+                var json = X.decode(response.responseText);
                 _filterGroupMap = {};
                 for (var i=0; i < json.subjects.length; i++)
                     _filterGroupMap[json.subjects[i]] = true;
                 renderSubjects();
             },
             failure  : function(response){
-                Ext4.Msg.alert('Failure', Ext4.decode(response.responseText));
+                X.Msg.alert('Failure', X.decode(response.responseText));
             },
             scope : this
         });
@@ -378,50 +380,47 @@ li.ptid a.unhighlight
 
     function renderGroups()
     {
-        Ext4.onReady(function()
+        var filterTask = new X.util.DelayedTask(filter);
+
+        var ptidPanel = X.create('LABKEY.study.ParticipantFilterPanel',
         {
-            var filterTask = new Ext4.util.DelayedTask(filter);
-
-            var ptidPanel = Ext4.create('LABKEY.study.ParticipantFilterPanel',
-            {
-                renderTo  : Ext4.get('<%=groupsDivId%>'),
-                title     : 'Show',
-                border    : true,
-                width     : 280,
-                height    : 425,
-                overCls   : 'iScroll',
-                bodyStyle : 'padding: 8px',
-                listeners : {
-                    itemmouseenter : function(v,r,item,idx)
-                    {
-                        var g=-1;
-                        for (var i=0 ; i<_groups.length ; i++)
-                            if (_groups[i].id==r.data.id && _groups[i].type==r.data.type)
-                                g = i;
-                        highlightPtidsInGroup(g);
-                    },
-                    itemmouseleave : function()
-                    {
-                        highlightPtidsInGroup(-1);
-                    },
-                    selectionchange : function(model, selected)
-                    {
-                        var json = [], filters = ptidPanel.getFilterPanel().getSelection(true);
-                        for (var f=0; f < filters.length; f++) {
-                            json.push(filters[f].data);
-                        }
-                        filterTask.delay(400, null, null, [json]);
+            renderTo  : X.get('<%=groupsDivId%>'),
+            title     : 'Show',
+            border    : true,
+            width     : 260,
+            height    : 425,
+            overCls   : 'iScroll',
+            bodyStyle : 'padding: 8px',
+            listeners : {
+                itemmouseenter : function(v,r,item,idx)
+                {
+                    var g=-1;
+                    for (var i=0 ; i<_groups.length ; i++)
+                        if (_groups[i].id==r.data.id && _groups[i].type==r.data.type)
+                            g = i;
+                    highlightPtidsInGroup(g);
+                },
+                itemmouseleave : function()
+                {
+                    highlightPtidsInGroup(-1);
+                },
+                selectionchange : function(model, selected)
+                {
+                    var json = [], filters = ptidPanel.getFilterPanel().getSelection(true);
+                    for (var f=0; f < filters.length; f++) {
+                        json.push(filters[f].data);
                     }
+                    filterTask.delay(400, null, null, [json]);
                 }
-            });
-
-            function scrollHorizontal(evt) {
-                Ext4.get(<%=q(listDivId)%>).scroll((evt.getWheelDeltas().y > 0) ? 'r' : 'l', 20);
-                evt.stopEvent();
             }
-
-            Ext4.get(<%=q(listDivId)%>).on(Ext4.supports.MouseWheel ? 'mousewheel' : 'DOMMouseScroll', scrollHorizontal);
         });
+
+        function scrollHorizontal(evt) {
+            X.get(<%=q(listDivId)%>).scroll((evt.getWheelDeltas().y > 0) ? 'r' : 'l', 20);
+            evt.stopEvent();
+        }
+
+        X.get(<%=q(listDivId)%>).on(X.supports.MouseWheel ? 'mousewheel' : 'DOMMouseScroll', scrollHorizontal);
     }
 
 
@@ -495,14 +494,6 @@ li.ptid a.unhighlight
     }
 
 
-//    function filterGroup(g)
-//    {
-//        _filterGroup = g;
-//        _filterGroupMap = g<0 ? null : _ptidGroupMap[g];
-//        renderSubjects();
-//    }
-
-
     function generateToolTip(p)
     {
         var part = _ptids[p];
@@ -524,11 +515,10 @@ li.ptid a.unhighlight
 
         X.create('Ext.tip.ToolTip',
         {
-            target: <%=q(listDivId)%>,
-            delegate: "LI.ptid",
-            trackMouse: true,
-//            renderTo: Ext.getBody(),
-            listeners:
+            target     : <%=q(listDivId)%>,
+            delegate   : "LI.ptid",
+            trackMouse : true,
+            listeners  :
             {
                 beforeshow: function(tip)
                 {
@@ -603,33 +593,30 @@ li.ptid a.unhighlight
         listDiv.setWidth(width);
     }
 
-
-    var ret =
-    {
-        render : render
-    };
-    return ret;
+    return { render : render };
 })();
 
 
-(Ext4||Ext).onReady(<%=viewObject%>.render, <%=viewObject%>);
+Ext4.onReady(<%=viewObject%>.render, <%=viewObject%>);
 </script>
 
 <div style="">
- <table id="<%= divId %>" width="100%">
-    <tr><td style="padding:5px; margin:5px; border:solid 0px #eeeeee;" width=200 valign=top>
-    <div id="<%=groupsDivId%>"></div>
-    </td>
-    <td style="padding:5px; margin:5px; border:solid 0px #eeeeee;" class="iScroll" valign=top>
-        <table width=100%><tr>
-            <td><div style="" >Filter&nbsp;<input id="<%=divId%>.filter" type="text" size="15" style="border:solid 1px #<%=theme.getWebPartColor()%>"></div></td>
-            <td>&nbsp;<%if (hasCohorts){%><input type=checkbox>&nbsp;by&nbsp;cohort (NYI)<%}%></td>
-        </tr></table>
-        <hr style="height:1px; border:0; background-color:#<%=theme.getWebPartColor()%>; color:#<%=theme.getWebPartColor()%>;">
-        <div><span id="<%=divId%>.status">Loading...</span></div>
-        <div style="overflow-x:auto; min-height:<%=Math.round(1.2*(ptidsPerCol+3))%>em;" id="<%= listDivId %>"></div>
-    </td></tr>
-</table>
+    <table id="<%= divId %>" width="100%">
+        <tr>
+            <td style="padding: 5px; margin: 5px;" valign=top>
+                <div id="<%=groupsDivId%>"></div>
+            </td>
+            <td style="padding: 5px; margin: 5px;" valign=top class="iScroll">
+                <table width="100%"><tr>
+                    <td><div style="" >Filter&nbsp;<input id="<%=divId%>.filter" type="text" size="15" style="border:solid 1px #<%=theme.getWebPartColor()%>"></div></td>
+                    <td>&nbsp;<%if (hasCohorts){%><input type=checkbox>&nbsp;by&nbsp;cohort (NYI)<%}%></td>
+                </tr></table>
+                <hr style="height:1px; border:0; background-color:#<%=theme.getWebPartColor()%>; color:#<%=theme.getWebPartColor()%>;">
+                <div><span id="<%=divId%>.status">Loading...</span></div>
+                <div style="overflow-x:auto; min-height:<%=Math.round(1.2*(ptidsPerCol+3))%>em;" id="<%= listDivId %>"></div>
+            </td>
+        </tr>
+    </table>
 </div>
 
 

@@ -974,14 +974,14 @@ public class StudyController extends BaseStudyController
                 {
                     // discuss the report
                     String title = "Discuss report - " + report.getDescriptor().getReportName();
-                    HttpView discussion = service.getDisussionArea(getViewContext(), report.getEntityId(), (ActionURL) getViewContext().get("actionURL"), title, true, false);
+                    HttpView discussion = service.getDisussionArea(getViewContext(), report.getEntityId(), getViewContext().getActionURL(), title, true, false);
                     view.addView(discussion);
                 }
                 else
                 {
                     // discuss the dataset
                     String title = "Discuss dataset - " + def.getName();
-                    HttpView discussion = service.getDisussionArea(getViewContext(), def.getEntityId(), (ActionURL) getViewContext().get("actionURL"), title, true, false);
+                    HttpView discussion = service.getDisussionArea(getViewContext(), def.getEntityId(), getViewContext().getActionURL(), title, true, false);
                     view.addView(discussion);
                 }
             }
