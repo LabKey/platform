@@ -497,6 +497,8 @@ Ext4.define('LABKEY.ext4.DataViewsPanel', {
             scope     : this
         });
 
+        this.gridPanel.getStore().on('groupchange', this.onGroupChange, this);
+
         this.centerPanel.add(this.gridPanel);
     },
 
@@ -548,6 +550,7 @@ Ext4.define('LABKEY.ext4.DataViewsPanel', {
             tpl      :  nameTpl,
             scope    : this
         },{
+            id       : 'category-column-' + this.webpartId,
             text     : 'Category',
             flex     : 1,
             sortable : true,
@@ -756,6 +759,26 @@ Ext4.define('LABKEY.ext4.DataViewsPanel', {
 //                return 1;
 //            });
 //        }
+    },
+
+    onGroupChange : function(store, groupers) {
+
+        // 13878: Reverting to default in data browser -- make sure category column is visible if it is not being grouped by
+        if (groupers.items && groupers.items.length == 1) {
+
+            var catColumn = Ext4.getCmp('category-column-' + this.webpartId);
+
+            if (catColumn) {
+                if (groupers.items[0].property == catColumn.dataIndex) {
+                    catColumn.hide();
+                }
+                else {
+                    if (!catColumn.isVisible())
+                        catColumn.show();
+                }
+            }
+
+        }
     },
 
     /**
