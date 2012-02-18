@@ -14,6 +14,8 @@ import java.io.PrintWriter;
  */
 public class JobStatusLogView extends ReaderView
 {
+    boolean _highlightingError = false;
+
     public JobStatusLogView(InputStream in, boolean htmlEncodeContent, @Nullable String prefix, @Nullable String suffix)
     {
 
@@ -21,56 +23,24 @@ public class JobStatusLogView extends ReaderView
     }
 
     @Override
-    protected void renderView(Object model, PrintWriter out) throws Exception
+    public void outputLine(PrintWriter out, String line)
     {
-        try
+        String[] tokens = line.split(" ");
+        // for a normal log file INFO, ERROR, etc. line, the type will be the 5th token
+        if (tokens.length > 4)
         {
-            if (getPrefix() != null)
+            String type = tokens[4];
+            if (!_highlightingError && type.equals("ERROR:"))
             {
-                out.write(getPrefix());
+                _highlightingError = true;
+                out.write("<font class=\"labkey-error\">");
             }
-            String line;
-            boolean highlightError = false;
-            while ((line = getReader().readLine()) != null)
+            else if (_highlightingError && (type.equals("INFO") || type.equals("DEBUG:") || type.equals("WARN")))
             {
-                String[] tokens = line.split(" ");
-                // for a normal long file INFO, ERROR, etc. line, the type will be the 5th token
-                if (tokens.length > 5)
-                {
-                    String type = tokens[4];
-                    if (!highlightError && type.equals("ERROR:"))
-                    {
-                        highlightError = true;
-                        out.write("<BR/><font class=\"labkey-error\">");
-                    }
-                    else if (highlightError && (type.equals("INFO") || type.equals("DEBUG:") || type.equals("WARN")))
-                    {
-                        highlightError = false;
-                        out.write("</font><BR/>");
-                    }
-                }
-
-                if (isHtmlEncode())
-                {
-                    out.println(PageFlowUtil.filter(line));
-                }
-                else
-                {
-                    out.println(line);
-                }
-            }
-            if (highlightError)
-            {
+                _highlightingError = false;
                 out.write("</font>");
             }
-            if (getSuffix() != null)
-            {
-                out.write(getSuffix());
-            }
         }
-        finally
-        {
-            try { getReader().close(); } catch (IOException ignored) {}
-        }
+        super.outputLine(out, line);
     }
 }
