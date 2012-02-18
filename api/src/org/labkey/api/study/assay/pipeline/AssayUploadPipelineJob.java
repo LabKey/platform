@@ -102,7 +102,7 @@ public class AssayUploadPipelineJob<ProviderType extends AssayProvider> extends 
         }
         catch (Exception e)
         {
-            getLogger().error("Error", e);
+            getLogger().error("Error\n", e);
             setStatus(ERROR_STATUS, e.getMessage());
         }
     }

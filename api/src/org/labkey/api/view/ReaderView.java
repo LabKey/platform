@@ -74,14 +74,7 @@ public class ReaderView extends WebPartView
             String line;
             while ((line = getReader().readLine()) != null)
             {
-                if (isHtmlEncode())
-                {
-                    out.println(PageFlowUtil.filter(line));
-                }
-                else
-                {
-                    out.println(line);
-                }
+                outputLine(out, line);
             }
             if (getSuffix() != null)
             {
@@ -91,6 +84,18 @@ public class ReaderView extends WebPartView
         finally
         {
             try { getReader().close(); } catch (IOException ignored) {}
+        }
+    }
+
+    public void outputLine(PrintWriter out, String line)
+    {
+        if (isHtmlEncode())
+        {
+            out.println(PageFlowUtil.filter(line));
+        }
+        else
+        {
+            out.println(line);
         }
     }
 
