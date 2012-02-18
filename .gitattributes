@@ -4495,6 +4495,9 @@ internal/src/org/labkey/api/message/settings/AbstractConfigTypeProvider.java -te
 internal/src/org/labkey/api/message/settings/MessageConfigService.java -text
 internal/src/org/labkey/api/pipeline/PipelineRootContainerTree.java -text
 internal/src/org/labkey/api/query/ComparisonCrosstabView.java -text
+internal/src/org/labkey/api/query/SimpleQueryUpdateService.java -text
+internal/src/org/labkey/api/query/SimpleTableDomainKind.java -text
+internal/src/org/labkey/api/query/SimpleUserSchema.java -text
 internal/src/org/labkey/api/query/TempQuerySettings.java -text
 internal/src/org/labkey/api/script/ExternalScriptable.java -text
 internal/src/org/labkey/api/script/RhinoCompiledScript.java -text
