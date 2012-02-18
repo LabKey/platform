@@ -978,10 +978,14 @@ public class DataRegion extends AbstractDataRegion
 
         //permissions
         JSONObject permissionJSON = new JSONObject();
-        permissionJSON.put("insert", getTable().hasPermission(ctx.getViewContext().getUser(), InsertPermission.class));
-        permissionJSON.put("update", getTable().hasPermission(ctx.getViewContext().getUser(), UpdatePermission.class));
-        permissionJSON.put("delete", getTable().hasPermission(ctx.getViewContext().getUser(), DeletePermission.class));
-        permissionJSON.put("admin", getTable().hasPermission(ctx.getViewContext().getUser(), AdminPermission.class));
+        TableInfo table = getTable();
+        if(table != null)
+        {
+            permissionJSON.put("insert", table.hasPermission(ctx.getViewContext().getUser(), InsertPermission.class));
+            permissionJSON.put("update", table.hasPermission(ctx.getViewContext().getUser(), UpdatePermission.class));
+            permissionJSON.put("delete", table.hasPermission(ctx.getViewContext().getUser(), DeletePermission.class));
+            permissionJSON.put("admin", table.hasPermission(ctx.getViewContext().getUser(), AdminPermission.class));
+        }
         dataRegionJSON.put("permissions", permissionJSON);
 
         dataRegionJSON.put("complete", _complete);
