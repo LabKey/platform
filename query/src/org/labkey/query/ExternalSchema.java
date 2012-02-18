@@ -26,11 +26,11 @@ import org.labkey.api.data.DbSchema;
 import org.labkey.api.data.DbScope;
 import org.labkey.api.data.SchemaTableInfo;
 import org.labkey.api.data.TableInfo;
+import org.labkey.api.query.SimpleUserSchema;
 import org.labkey.api.security.User;
 import org.labkey.data.xml.TableType;
 import org.labkey.data.xml.TablesDocument;
 import org.labkey.query.data.ExternalSchemaTable;
-import org.labkey.query.data.SimpleUserSchema;
 import org.labkey.query.persist.ExternalSchemaDef;
 
 import java.util.Collection;

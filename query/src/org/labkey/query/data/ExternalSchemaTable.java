@@ -18,6 +18,8 @@ package org.labkey.query.data;
 
 import org.labkey.api.data.*;
 import org.labkey.api.query.QueryUpdateService;
+import org.labkey.api.query.SimpleQueryUpdateService;
+import org.labkey.api.query.SimpleUserSchema;
 import org.labkey.api.security.UserPrincipal;
 import org.labkey.api.security.permissions.Permission;
 import org.labkey.api.security.permissions.ReadPermission;
