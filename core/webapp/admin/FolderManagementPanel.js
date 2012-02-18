@@ -482,6 +482,13 @@ Ext4.define('LABKEY.ext.panel.FolderManagementPanel', {
                     }
                     else
                     {
+                        for (var c=0; c < target.parentNode.childNodes.length; c++) {
+                            if (target.parentNode.childNodes[c].data.text == node.data.text) {
+                                ret.msg = 'A folder /' + node.data.text + ' already exists under /' + target.parentNode.data.text;
+                                return {target : target, cancel : true, msg : ret.msg};
+                            }
+                        }
+
                         ret.msg = 'Move Folder ' + '/' + node.data.text + ' to ' + target.parentNode.data.containerPath;
                         ret.target = target.parentNode; // dont want to reorder, want to 'move' so focus on parent
                     }
@@ -508,9 +515,17 @@ Ext4.define('LABKEY.ext.panel.FolderManagementPanel', {
                     return {target: target, cancel: true, msg : ret.msg};
                 }
                 else if (node.parentNode.data.id == target.data.id) {
-                    ret.msg = 'A folder ' + node.data.text + ' already exists under ' + target.data.text;
+                    ret.msg = 'A folder /' + node.data.text + ' already exists under /' + target.data.text;
                     return {target: target, cancel: true, msg : ret.msg};
                 }
+
+                for (var c=0; c < target.childNodes.length; c++) {
+                    if (target.childNodes[c].data.text == node.data.text) {
+                        ret.msg = 'A folder /' + node.data.text + ' already exists under /' + target.data.text;
+                        return {target : target, cancel : true, msg : ret.msg};
+                    }
+                }
+
                 ret.msg = 'Move Folder ' + '/' + node.data.text + ' to ' + target.data.containerPath;
             }
         }

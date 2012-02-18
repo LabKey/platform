@@ -23,6 +23,9 @@
 <%@ page import="org.labkey.api.view.ViewContext" %>
 <%@ page import="org.labkey.core.admin.AdminController.ManageFoldersForm" %>
 <%@ page import="org.labkey.core.admin.AdminController.MoveFolderTreeView" %>
+<%@ page import="org.springframework.validation.Errors" %>
+<%@ page import="org.springframework.validation.ObjectError" %>
+<%@ page import="java.util.List" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
     MoveFolderTreeView me = (MoveFolderTreeView) HttpView.currentView();
@@ -34,7 +37,6 @@
     String name = form.getName();
     if (null == name)
         name = c.getName();
-    String containerType = (c.isProject() ? "project" : "folder");
 %>
 <style type="text/css">
     .x-tree-node-leaf .x-tree-node-icon{
@@ -49,6 +51,20 @@
         padding-bottom: 8px;
     }
 </style>
+<%
+    Errors errors = me.getErrors();
+    if (null != errors && 0 != errors.getErrorCount())
+    {
+%>
+        <table><%
+        for (ObjectError e : (List<ObjectError>) errors.getAllErrors())
+        {
+            %><tr><td colspan=3><font class="labkey-error"><%=h(ctx.getMessage(e))%></font></td></tr><%
+        }%>
+        </table>
+<%
+    }
+%>
 <table class="button-bar">
     <tr>
         <td><%=PageFlowUtil.generateButton("Confirm Move", "#", "action('confirmmove');", "id=\"confirm-move-btn\" style=\"display: none;\"")%></td>
