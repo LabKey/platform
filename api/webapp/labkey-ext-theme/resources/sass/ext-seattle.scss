@@ -1,3 +1,9 @@
+// 1. Create theme using 'x4-' prefix
+// 2. Get it working on Chrome/FF/IE9
+// 3. Once complete, rename prefix to 'x-'
+// 4. Slice images
+// 5. Reset prefix to 'x4-'
+
 // We are currently using the Ext sandbox so we change the prefix to not conflict with other Ext versions on the page
 $prefix: 'x4-';
 $scope-reset-css: true;
