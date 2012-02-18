@@ -227,6 +227,8 @@ LABKEY.ext4.Store = Ext4.define('LABKEY.ext4.Store', {
     //private
     //NOTE: the purpose of this is to provide a way to modify the server-supplied metadata and supplement with a client-supplied object
     onMetaDataLoad: function(meta){
+        this.model.prototype.idProperty = this.proxy.reader.idProperty;
+
         if(meta.fields && meta.fields.length){
             var fields = [];
             Ext4.each(meta.fields, function(f){
@@ -297,6 +299,10 @@ LABKEY.ext4.Store = Ext4.define('LABKEY.ext4.Store', {
         if(!this.updatable){
             alert('This store is not updatable');
             return;
+        }
+
+        if(!this.syncNeeded()){
+            this.fireEvent('synccomplete', this);
         }
         return this.callParent(arguments);
     },
@@ -411,6 +417,107 @@ LABKEY.ext4.Store = Ext4.define('LABKEY.ext4.Store', {
         }
     },
 
+    onProxyWrite: function(operation) {
+        var me = this,
+            success = operation.wasSuccessful(),
+            records = operation.getRecords();
+
+        switch (operation.action) {
+            case 'saveRows':
+                me.onSaveRows(operation, success);
+                break;
+            default:
+                console.log('something other than saveRows happened: ' + operation.action)
+        }
+
+        if (success) {
+            me.fireEvent('write', me, operation);
+            me.fireEvent('datachanged', me);
+        }
+        //this is a callback that would have been passed to the 'create', 'update' or 'destroy' function and is optional
+        Ext4.callback(operation.callback, operation.scope || me, [records, operation, success]);
+
+        //NOTE: this was created to give a single event to follow, regardless of success
+        this.fireEvent('synccomplete', this, operation, success);
+    },
+
+    //private
+    processResponse : function(rows){
+        var idCol = this.proxy.reader.getIdProperty();
+        var row;
+        var record;
+        var index;
+        for(var idx = 0; idx < rows.length; ++idx)
+        {
+            row = rows[idx];
+
+            if(!row || !row.values)
+                return;
+
+            //find the record using the id sent to the server
+            record = (this.snapshot || this.data).map[row.oldKeys[idCol]];
+
+            if(!record)
+                return;
+
+            //apply values from the result row to the sent record
+            for(var col in record.data)
+            {
+                //since the sent record might contain columns form a related table,
+                //ensure that a value was actually returned for that column before trying to set it
+                if(undefined !== row.values[col]){
+                    var x = record.fields.get(col);
+                    record.set(col, record.fields.get(col).convert(row.values[col], row.values));
+                }
+
+                //clear any displayValue there might be in the extended info
+                if(record.json && record.json[col])
+                    delete record.json[col].displayValue;
+            }
+
+            //if the id changed, fixup the keys and map of the store's base collection
+            //HACK: this is using private data members of the base Store class. Unfortunately
+            //Ext Store does not have a public API for updating the key value of a record
+            //after it has been added to the store. This might break in future versions of Ext.
+            if(record.internalId != row.values[idCol])
+            {
+                record.internalId = row.values[idCol];
+                index = this.data.indexOf(record);
+                if (index > -1) {
+                    this.data.removeAt(index);
+                    this.data.insert(index, record);
+                }
+            }
+
+            //reset transitory flags and commit the record to let
+            //bound controls know that it's now clean
+            delete record.saveOperationInProgress;
+
+            record.phantom = false;
+            record.commit();
+        }
+    },
+
+    //private
+    getJson : function(response) {
+        return (response && undefined != response.getResponseHeader && undefined != response.getResponseHeader('Content-Type')
+                && response.getResponseHeader('Content-Type').indexOf('application/json') >= 0)
+                ? Ext.util.JSON.decode(response.responseText)
+                : null;
+    },
+
+    //private
+    onSaveRows: function(operation, success){
+        var json = this.getJson(operation.response);
+        if(!json || !json.result)
+            return;
+
+        for(var commandIdx = 0; commandIdx < json.result.length; ++commandIdx)
+        {
+            this.processResponse(json.result[commandIdx].rows);
+        }
+    },
+
     //private
     onProxyException : function(proxy, response, operation, eOpts) {
         var loadError = {message: response.statusText};
@@ -428,7 +535,7 @@ LABKEY.ext4.Store = Ext4.define('LABKEY.ext4.Store', {
 
         this.loadError = loadError;
 
-        this.fireEvent('syncexception', response, operation);
+        this.fireEvent('syncexception', this, response, operation);
     },
 
     validateRecords: function(errors){
@@ -461,6 +568,12 @@ LABKEY.ext4.Store = Ext4.define('LABKEY.ext4.Store', {
                 delete record.raw[field].mvValue;
             }
         }
+    },
+
+    syncNeeded: function(){
+        return this.getNewRecords().length > 0 ||
+            this.getUpdatedRecords().length > 0 ||
+            this.getRemovedRecords().length > 0
     },
 
     /**
@@ -571,6 +684,7 @@ Ext4.define('LABKEY.ext4.ExtendedJsonReader', {
     readRecords: function(data) {
         if(data.metaData){
             this.idProperty = data.metaData.id; //NOTE: normalize which field holds the PK.
+            this.model.prototype.idProperty = this.idProperty;
 
             Ext4.each(data.metaData.fields, function(meta){
                 if(meta.jsonType == 'int' || meta.jsonType=='float' || meta.jsonType=='boolean')
@@ -581,6 +695,23 @@ Ext4.define('LABKEY.ext4.ExtendedJsonReader', {
         }
 
         return this.callParent([data]);
+    },
+
+    onMetaChange : function(meta) {
+        var fields = meta.fields,
+            newModel;
+
+        Ext.apply(this, meta);
+
+        if (fields) {
+            newModel = Ext4.define("Ext.data.reader.Json-Model" + Ext4.id(), {
+                extend: 'Ext.data.Model',
+                fields: fields
+            });
+            this.setModel(newModel, true);
+        } else {
+            this.buildExtractors(true);
+        }
     },
 
     //NOTE: because our 9.1 API format returns results as objects, we transform them here
@@ -785,10 +916,15 @@ Ext4.define('LABKEY.ext4.AjaxProxy', {
                 var oldKeys = {};
                 oldKeys[this.reader.getIdProperty()] = record.internalId;
 
-                command.rows.push({
-                    values: this.getRowData(record),
-                    oldKeys : oldKeys
-                });
+                if(command.command == 'delete'){
+                    command.rows.push(this.getRowData(record));
+                }
+                else {
+                    command.rows.push({
+                        values: this.getRowData(record),
+                        oldKeys : oldKeys
+                    });
+                }
             }, this);
 
             return command;
