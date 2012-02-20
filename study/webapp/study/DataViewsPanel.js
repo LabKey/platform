@@ -514,11 +514,8 @@ Ext4.define('LABKEY.ext4.DataViewsPanel', {
 
         var nameTpl =
                 '<div height="16px" width="100%">' +
-                    '<tpl if="icon == undefined || icon == \'\'">' +
-                        '&nbsp;&nbsp;&nbsp;' +
-                    '</tpl>' +
                     '<tpl if="icon != undefined && icon != \'\'">' +
-                        '<img height="16px" width="16px" src="{icon}" alt="{type}">' +
+                        '<img height="16px" width="16px" src="{icon}" alt="{type}" style="vertical-align: bottom;">' +
                     '</tpl>' +
                     '<a href="{runUrl}"> {name:htmlEncode}</a>' +
                 '</div>';
