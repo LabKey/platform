@@ -29,10 +29,19 @@ import org.labkey.api.gwt.client.util.BooleanProperty;
  */
 public class BoundCheckBox extends CheckBox
 {
-    public BoundCheckBox(String id, final BooleanProperty property, final DirtyCallback dirtyCallback)
+    public BoundCheckBox(String id, BooleanProperty property, DirtyCallback dirtyCallback)
+    {
+        this(id, null, property, dirtyCallback);
+    }
+
+    public BoundCheckBox(String id, String name, final BooleanProperty property, final DirtyCallback dirtyCallback)
     {
         super("", true);
         DOM.setElementAttribute(getElement(), "id", id);
+        if (name != null)
+        {
+            setName(name);
+        }
 
         setValue(property.booleanValue());
         

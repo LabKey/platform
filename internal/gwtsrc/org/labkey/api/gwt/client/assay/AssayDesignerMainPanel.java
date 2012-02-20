@@ -117,6 +117,7 @@ public class AssayDesignerMainPanel extends VerticalPanel implements Saveable<GW
 
         _autoCopyCheckBox = new CheckBox();
         _autoCopyCheckBox.getElement().setId("auto-copy-checkbox");
+        _autoCopyCheckBox.setName("autoCopy");
         _autoCopyCheckBox.setEnabled(false);
 
         _allowSpacesInPath = !PropertyUtil.getServerProperty("osName").contains("linux");
@@ -558,7 +559,7 @@ public class AssayDesignerMainPanel extends VerticalPanel implements Saveable<GW
 
             // add a checkbox to enter debug mode
             _debugScriptFiles.setBool(assay.isSaveScriptFiles());
-            BoundCheckBox debugScriptFilesCheckBox = new BoundCheckBox("id_debug_script", _debugScriptFiles, this);
+            BoundCheckBox debugScriptFilesCheckBox = new BoundCheckBox("id_debug_script", "debugScript", _debugScriptFiles, this);
             debugScriptFilesCheckBox.addValueChangeHandler(new ValueChangeHandler<Boolean>(){
                 public void onValueChange(ValueChangeEvent<Boolean> event)
                 {
@@ -586,7 +587,7 @@ public class AssayDesignerMainPanel extends VerticalPanel implements Saveable<GW
                 "These changes will be audited."));
         table.setWidget(row, 0, editableRunPanel);
         table.getFlexCellFormatter().setStyleName(row, 0, "labkey-form-label");
-        table.setWidget(row++, 1, new BoundCheckBox("id_editable_run_properties", _editableRuns, this));
+        table.setWidget(row++, 1, new BoundCheckBox("id_editable_run_properties", "editableRunProperties", _editableRuns, this));
 
         _editableResults.setBool(assay.isEditableRuns());
         if ("true".equals(PropertyUtil.getServerProperty("supportsEditableResults")))
@@ -598,7 +599,7 @@ public class AssayDesignerMainPanel extends VerticalPanel implements Saveable<GW
                     "These changes will be audited. New result rows cannot be added to existing runs."));
             table.setWidget(row, 0, editableResultsPanel);
             table.getFlexCellFormatter().setStyleName(row, 0, "labkey-form-label");
-            table.setWidget(row++, 1, new BoundCheckBox("id_editable_results_properties", _editableResults, this));
+            table.setWidget(row++, 1, new BoundCheckBox("id_editable_results_properties", "editableResultProperties", _editableResults, this));
         }
 
         _backgroundUpload.setBool(assay.isBackgroundUpload());
@@ -610,7 +611,7 @@ public class AssayDesignerMainPanel extends VerticalPanel implements Saveable<GW
                     "If there are any errors during the upload, they can be viewed from the log file for that job."));
             table.setWidget(row, 0, backgroundUploadPanel);
             table.getFlexCellFormatter().setStyleName(row, 0, "labkey-form-label");
-            table.setWidget(row++, 1, new BoundCheckBox("id_background_upload_properties", _backgroundUpload, this));
+            table.setWidget(row++, 1, new BoundCheckBox("id_background_upload_properties", "backgroundUpload", _backgroundUpload, this));
         }
 
         return table;
