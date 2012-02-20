@@ -47,14 +47,14 @@ public interface FolderType
      * Configure the container with whatever active modules and web parts are required for this folder type.
      * Convention is to NOT remove web parts already in the folder.
      */
-    public void configureContainer(Container c);
+    public void configureContainer(Container c, User user);
 
     /**
      * This FolderType is being *removed* as the owner of the container. Clean up anything that you
      * might want. Typically this involves turning off the *permanent* bit for the web parts this
      * FolderType may have set.
      */
-    public void unconfigureContainer(Container c);
+    public void unconfigureContainer(Container c, User user);
 
     /**
      * Name of this folder type. Used internally to track the folder type. Must be consistent across versions.

@@ -272,15 +272,15 @@ public class ContainerManager
     }
 
 
-    public static void setFolderType(Container c, FolderType folderType) throws SQLException
+    public static void setFolderType(Container c, FolderType folderType, User user) throws SQLException
     {
         FolderType oldType = c.getFolderType();
 
         if (folderType.equals(oldType))
             return;
 
-        oldType.unconfigureContainer(c);
-        folderType.configureContainer(c);
+        oldType.unconfigureContainer(c, user);
+        folderType.configureContainer(c, user);
         PropertyManager.PropertyMap props = PropertyManager.getWritableProperties(c.getId(), FOLDER_TYPE_PROPERTY_SET_NAME, true);
         props.put(FOLDER_TYPE_PROPERTY_NAME, folderType.getName());
         PropertyManager.saveProperties(props);
@@ -1873,7 +1873,7 @@ public class ContainerManager
             assertEquals(newFolderFromCache.getFolderType(), FolderType.NONE);
 
             FolderType randomType = getRandomFolderType();
-            newFolder.setFolderType(randomType);
+            newFolder.setFolderType(randomType, TestContext.get().getUser());
 
             newFolderFromCache = getForId(newFolder.getId());
             assertEquals(newFolderFromCache.getFolderType(), randomType);

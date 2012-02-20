@@ -64,6 +64,8 @@ public class StudyService
         @Nullable
         public Study getStudy(Container container);
 
+        public Study createStudy(Container container, User user, String name, TimepointType timepointType) throws Exception;
+
         /**
          * Finds a study by either Container id or study label.
          * @param studyReference Container instance, GUID instance, or String representing container id, container path, or study label.

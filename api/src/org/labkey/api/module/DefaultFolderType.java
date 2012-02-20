@@ -104,7 +104,7 @@ public class DefaultFolderType implements FolderType
         return Collections.singletonList(tab);
     }
 
-    public void configureContainer(Container c)
+    public void configureContainer(Container c, User user)
     {
         List<Portal.WebPart> required = getRequiredWebParts();
         List<Portal.WebPart> defaultParts = getPreferredWebParts();
@@ -200,7 +200,7 @@ public class DefaultFolderType implements FolderType
     }
 
 
-    public void unconfigureContainer(Container c)
+    public void unconfigureContainer(Container c, User user)
     {
         List<WebPart> parts = Portal.getParts(c);
 

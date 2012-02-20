@@ -638,15 +638,15 @@ public class Container implements Serializable, Comparable<Container>, Securable
 
     public void setFolderType(FolderType folderType, Set<Module> ensureModules) throws SQLException
     {
-        setFolderType(folderType);
+        setFolderType(folderType, ModuleLoader.getInstance().getUpgradeUser());
         Set<Module> modules = new HashSet<Module>(folderType.getActiveModules());
         modules.addAll(ensureModules);
         setActiveModules(modules);
     }
 
-    public void setFolderType(FolderType folderType) throws SQLException
+    public void setFolderType(FolderType folderType, User user) throws SQLException
     {
-        ContainerManager.setFolderType(this, folderType);
+        ContainerManager.setFolderType(this, folderType, user);
 
         if(isWorkbook())
             appendWorkbookModulesToParent();

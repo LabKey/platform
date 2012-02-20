@@ -44,8 +44,8 @@ import java.util.Set;
 public class CustomFolderType implements FolderType
 {
     public CustomFolderType(){}
-    public void configureContainer(Container c) {  }
-    public void unconfigureContainer(Container c) {  }
+    public void configureContainer(Container c, User user) {  }
+    public void unconfigureContainer(Container c, User user) {  }
     public String getName() { return "None"; }
     protected boolean forceAssayUploadIntoWorkbooks = false;
 
