@@ -2912,6 +2912,18 @@ li.x-menu-item-active a.x-menu-item {
     text-transform: uppercase;
 }
 
+/* 13193 : Fix text alignment for buttons */
+.ext-gecko .x-btn button {
+    padding-left: 2px;
+    padding-right: 2px;
+}
+
+.ext-webkit .x-btn button {
+    padding-left: 2px;
+    padding-right: 2px;
+    padding-top: 2px;
+}
+
 .x-btn-with-menu .x-btn-center em {
     background:transparent url(./gtheme/img/btn-arrow.gif) no-repeat scroll right 0;
 }
