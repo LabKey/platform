@@ -26,7 +26,14 @@
 <%
     ViewContext context = getViewContext();
     boolean canEdit = context.getContainer().hasPermission(context.getUser(), AdminPermission.class);
+    boolean emptyStudy = getStudy().isEmptyStudy();
+    String timepointType = getStudy().getTimepointType().toString();
     String cancelLink = context.getActionURL().getParameter("returnURL");
+    String startDate = null;
+    if (timepointType == "DATE")
+    {
+        startDate = getStudy().getStartDate().toString();
+    }
     if (cancelLink == null || cancelLink.length() == 0)
         cancelLink = new ActionURL(StudyController.ManageStudyAction.class, context.getContainer()).toString();
 %>
@@ -50,6 +57,8 @@
 var canEdit = <%=canEdit?"true":"false"%>;
 var editableFormPanel = canEdit;
 var studyPropertiesFormPanel = null;
+var emptyStudy = <%=emptyStudy?"true":"false"%>;
+var timepointType = "<%=timepointType%>";
 
 function removeProtocolDocument(name, xid)
 {
@@ -207,7 +216,7 @@ function submitButtonHandler()
     var form = studyPropertiesFormPanel.getForm();
     if (form.isValid())
     {
-        <%-- This works except for the file attachment
+        /* This works except for the file attachment
         var rows = studyPropertiesFormPanel.getFormValues();
         LABKEY.Query.updateRows(
         {
@@ -217,7 +226,7 @@ function submitButtonHandler()
             success : onSaveSuccess_updateRows,
             failure : onSaveFailure_updateRows
         });
-        --%>
+        */
         form.fileUpload = true;
         form.submit(
         {
@@ -280,7 +289,11 @@ function renderFormPanel(data, editable)
 
     if (editable)
     {
-        buttons.push({text:"Submit", handler: submitButtonHandler});
+        buttons.push({
+            text:"Submit",
+            handler: submitButtonHandler,
+            scope: this
+        });
         buttons.push({text: "Cancel", handler: cancelButtonHandler});
     }
     else if (<%=canEdit ? "true" : "false"%>)
@@ -314,6 +327,51 @@ function renderFormPanel(data, editable)
         })
     });
 
+    var timepointTypeRadioGroup = new Ext.form.RadioGroup({
+        fieldLabel: "Timepoint Type",
+        disabled: !emptyStudy,
+        items: [{
+            xtype: 'radio',
+            disabled: !emptyStudy,
+            boxLabel: 'VISIT',
+            inputValue: 'VISIT',
+            name: 'TimepointType',
+            checked: timepointType == 'VISIT'
+        },{
+            xtype: 'radio',
+            disabled: !emptyStudy,
+            boxLabel: 'DATE',
+            inputValue: 'DATE',
+            name: 'TimepointType',
+            checked: timepointType == 'DATE'
+        }],
+//        listeners: {
+//            change: function(group, checkedRadio){
+//                if(checkedRadio.inputValue == "DATE"){
+//                    startDateField.setDisabled(false);
+//                    startDateField.setVisible(true);
+//                } else {
+//                    startDateField.setDisabled(true);
+//                    startDateField.setVisible(false);
+//                }
+//            }
+//        }
+    });
+
+//    We should eventually get the startDateField working. Currently it doesn't send the correct date format
+//    back to the server, due to some issues with posting files to the server at the same time.
+
+//    var startDateField = new Ext.form.DateField({
+//        fieldLabel: "Start Date",
+//        name: "StartDate",
+//        editable: false,
+//        allowBlank: false,
+        <%--value: "<%=startDate%>",--%>
+//        altFormats: LABKEY.Utils.getDateAltFormats(),
+//        disabled: timepointType == "VISIT",
+//        hidden: timepointType == "VISIT"
+//    });
+
     // fields we've handled (whether or now we're showing them)
     var handledFields = {};
     var items = [];
@@ -331,9 +389,11 @@ function renderFormPanel(data, editable)
     handledFields[renderTypeCombo.hiddenName] = true;
     items.push({fieldLabel:'Protocol Documents', width:500, xtype:'panel', contentEl:'attachmentsDiv'});
     // the original form didn't include these, but we can decide later
+    items.push(timepointTypeRadioGroup);
+    handledFields['TimepointType'] = true;
+//    items.push(startDateField);
     handledFields['StartDate'] = true;
     handledFields['Container'] = true;
-    handledFields['TimepointType'] = true;
 
     // Now let's add all the other fields
     var cm = data.columnModel;

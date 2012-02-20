@@ -855,7 +855,7 @@ public class CoreController extends SpringActionController
                 FolderType folderType = ModuleLoader.getInstance().getFolderType(folderTypeName);
                 if (folderType != null)
                 {
-                    newContainer.setFolderType(folderType);
+                    newContainer.setFolderType(folderType, getUser());
                 }
             }
 

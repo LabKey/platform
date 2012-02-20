@@ -460,7 +460,7 @@ public class CreateAncillaryStudyAction extends MutatingApiAction<EmphasisStudyD
         StudyManager.getInstance().createStudy(getViewContext().getUser(), study);
 
         FolderType folderType = ModuleLoader.getInstance().getFolderType(StudyFolderType.NAME);
-        _dstContainer.setFolderType(folderType);
+        _dstContainer.setFolderType(folderType, ModuleLoader.getInstance().getUpgradeUser());
 
         
 

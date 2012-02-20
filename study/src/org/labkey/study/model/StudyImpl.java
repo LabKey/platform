@@ -674,6 +674,20 @@ public class StudyImpl extends ExtensibleStudyEntity<StudyImpl> implements Study
         return StudyManager.getInstance().getStudy(sourceContainer);
     }
 
+    public boolean isEmptyStudy()
+    {
+        List<DataSetDefinition> datasets = getDataSets();
+        Visit visits[] = getVisits(Visit.Order.DISPLAY);
+        if (visits.length < 1 && datasets.size() < 1)
+        {
+           return true;
+        }
+        else
+        {
+            return false;
+        }
+    }
+
     public void removeProtocolDocument(String name, User user)
     {
         AttachmentService.get().deleteAttachment(getProtocolDocumentAttachmentParent(), name, user);

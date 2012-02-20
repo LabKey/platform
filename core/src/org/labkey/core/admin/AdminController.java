@@ -3885,7 +3885,7 @@ public class AdminController extends SpringActionController
                     }
 
                     Container c = ContainerManager.createContainer(parent, folderName, null, null, false, getUser());
-                    c.setFolderType(type);
+                    c.setFolderType(type, getUser());
 
                     if (null == StringUtils.trimToNull(form.getFolderType()) || FolderType.NONE.getName().equals(form.getFolderType()))
                     {

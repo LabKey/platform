@@ -137,8 +137,8 @@ public class WikiModule extends DefaultModule implements SearchService.DocumentP
         FolderType collaborationType = ModuleLoader.getInstance().getFolderType(CollaborationFolderType.TYPE_NAME);
         try
         {
-            supportContainer.setFolderType(collaborationType);
-            homeContainer.setFolderType(collaborationType);
+            supportContainer.setFolderType(collaborationType, moduleContext.getUpgradeUser());
+            homeContainer.setFolderType(collaborationType, moduleContext.getUpgradeUser());
         }
         catch (SQLException e)
         {

@@ -33,16 +33,19 @@ import org.labkey.api.query.QueryService;
 import org.labkey.api.security.SecurableResource;
 import org.labkey.api.security.SecurityManager;
 import org.labkey.api.security.User;
+import org.labkey.api.security.permissions.AdminPermission;
 import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.security.roles.Role;
 import org.labkey.api.security.roles.RoleManager;
 import org.labkey.api.study.DataSet;
 import org.labkey.api.study.Study;
 import org.labkey.api.study.StudyService;
+import org.labkey.api.study.TimepointType;
 import org.labkey.api.util.GUID;
 import org.labkey.api.util.UnexpectedException;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.DataView;
+import org.labkey.api.view.UnauthorizedException;
 import org.labkey.study.controllers.StudyController;
 import org.labkey.study.dataset.DatasetAuditViewFactory;
 import org.labkey.study.model.*;
@@ -67,6 +70,27 @@ public class StudyServiceImpl implements StudyService.Service
     public Study getStudy(Container container)
     {
         return StudyManager.getInstance().getStudy(container);
+    }
+
+    @Override
+    public Study createStudy(Container container, User user, String name, TimepointType timepointType) throws SQLException
+    {
+        // Needed for study creation from VISC module. We might want to remove this when we don't need the old study design tool.
+        
+        if (container.hasPermission(user, AdminPermission.class))
+        {
+            StudyImpl study = new StudyImpl(container, name);
+
+            study.setTimepointType(timepointType);
+            study.setSubjectColumnName("ParticipantId");
+            study.setSubjectNounSingular("Participant");
+            study.setSubjectNounPlural("Participants");
+            study.setStartDate(new Date());
+
+            return StudyManager.getInstance().createStudy(user, study);
+        }
+        else
+            throw new UnauthorizedException();
     }
 
     public String getStudyName(Container container)
