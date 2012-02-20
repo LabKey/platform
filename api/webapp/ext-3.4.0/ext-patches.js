@@ -31,6 +31,9 @@ Ext.apply(Ext, {
     }
 });
 
+// See change to Ext.lib.Event._unload in ext-base-debug.js -- could not be added to ext-patches since that is too late
+// only added to debug, not to ext-all.js
+
 // Adding 'tooltip' property to menu items
 // http://www.sencha.com/forum/showthread.php?77656-How-to-put-a-tooltip-on-a-menuitem&p=374038#post374038
 Ext.override(Ext.menu.Item, {

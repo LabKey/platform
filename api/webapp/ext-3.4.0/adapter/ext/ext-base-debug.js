@@ -1743,7 +1743,8 @@ Ext.TaskMgr = new Ext.util.TaskRunner();(function(){
                 }
             };
 
-            Ext.EventManager._unload();
+            // Help test framework not throw JS errors in quick unload events
+            if (Ext.EventManager) Ext.EventManager._unload();
 
             doRemove(win, UNLOAD, EU._unload);
         }
