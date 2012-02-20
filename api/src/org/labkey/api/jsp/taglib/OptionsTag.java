@@ -21,6 +21,7 @@ import org.apache.commons.lang3.ObjectUtils;
 import javax.servlet.jsp.JspException;
 import javax.servlet.jsp.JspWriter;
 import java.io.IOException;
+import java.util.Collection;
 import java.util.Map;
 import java.util.Set;
 
@@ -29,6 +30,15 @@ public class OptionsTag extends SimpleTagBase
     Map<?, String> _map;
     Set<String> _set;
     Object _value;
+
+    public boolean isSelected(Object test)
+    {
+        if (_value instanceof Collection)
+            return ((Collection)_value).contains(test);
+        else
+            return ObjectUtils.equals(test, _value);
+    }
+
     public void doTag() throws JspException, IOException
     {
         JspWriter out = getOut();
@@ -39,7 +49,7 @@ public class OptionsTag extends SimpleTagBase
                 out.write("\n<option value=\"");
                 out.write(h(option.getKey()));
                 out.write("\"");
-                if (ObjectUtils.equals(option.getKey(), _value))
+                if (isSelected(option.getKey()))
                 {
                     out.write(" selected");
                 }
@@ -55,7 +65,7 @@ public class OptionsTag extends SimpleTagBase
                 out.write("\n<option value=\"");
                 out.write(h(value));
                 out.write("\"");
-                if (ObjectUtils.equals(value, _value))
+                if (isSelected(value))
                 {
                     out.write(" selected");
                 }
