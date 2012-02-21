@@ -157,12 +157,14 @@ public class PipelineJobRunnerGlobus implements Callable, ResumableDescriptor
                 throw new IllegalArgumentException("GlobusClientProperties must specify a server to run tasks on a cluster. Check configuration.");
 
             StringBuilder sb = new StringBuilder();
-            sb.append("Submitting job to Globus ");
-            sb.append(settings.getJobFactoryType());
+            sb.append("Submitting job to Globus location '");
+            sb.append(settings.getLocation() == null ? "cluster" : settings.getLocation());
+            sb.append("'");
             if (gramJob.getDescription().getQueue() != null)
             {
-                sb.append(" with queue ");
+                sb.append(" with queue '");
                 sb.append(gramJob.getDescription().getQueue());
+                sb.append("'");
             }
             sb.append(": ");
             sb.append(gramJob.getDescription().getExecutable());
