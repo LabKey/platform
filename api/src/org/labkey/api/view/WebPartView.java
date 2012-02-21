@@ -491,7 +491,6 @@ public abstract class WebPartView<ModelBean> extends HttpView<ModelBean>
                         out.print(_helpPopup);
                     }
 
-                    out.print("</th>\n<th class=\"labkey-wp-title-right\">");
                     NavTree[] links = getPortalLinks().getChildren();
                     String sep = "";
 
@@ -509,6 +508,8 @@ public abstract class WebPartView<ModelBean> extends HttpView<ModelBean>
                     
                     if(getLocation() != null && getLocation().equals(WebPartFactory.LOCATION_RIGHT))
                     {
+                        out.print("</th>\n<th class=\"labkey-wp-title-right\">");
+
                         // Collapse all items into one drop-down
                         // Render the navigation menu
                         if (nMenu == null)
@@ -531,6 +532,7 @@ public abstract class WebPartView<ModelBean> extends HttpView<ModelBean>
                     }
                     else if (!isWebPart())
                     {
+                        out.print("</th>\n<th class=\"labkey-wp-title-right\">");
                         // Purposely don't render custom links to avoid duplicates
 
                         // Render Navigation Links
@@ -564,6 +566,13 @@ public abstract class WebPartView<ModelBean> extends HttpView<ModelBean>
                     }
                     else
                     {
+                        out.print("&nbsp;");
+
+                        if (nMenu != null && nMenu.hasChildren())
+                        {
+                            renderMenu(nMenu, out, contextPath + "/_images/partmenu.png");
+                        }
+
                         // Render specific parts first (e.g. wiki edit)
                         if (_customMenus != null)
                         {
@@ -608,12 +617,8 @@ public abstract class WebPartView<ModelBean> extends HttpView<ModelBean>
                                 }
                             }
                         }
-                        
-                        if (nMenu != null && nMenu.hasChildren())
-                        {
-                            out.print(sep);
-                            renderMenu(nMenu, out, contextPath + "/_images/partmenu.png");
-                        }
+
+                        out.print("</th>\n<th class=\"labkey-wp-title-right\">");
 
                         for (NavTree link : links)
                         {
@@ -642,9 +647,11 @@ public abstract class WebPartView<ModelBean> extends HttpView<ModelBean>
                                 out.print("</a>");
                             out.print("</span>");
                         }
-                        out.println("</th>");
-                        out.println("</tr>");
                     }
+
+                    out.println("</th>");
+                    out.println("</tr>");
+
                 }
 
 
