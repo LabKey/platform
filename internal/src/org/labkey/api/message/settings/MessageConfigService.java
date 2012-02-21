@@ -42,9 +42,9 @@ public class MessageConfigService
 
     public interface I
     {
-        public void savePreference(User currentUser, Container c, User projectUser, ConfigTypeProvider provider, int preference) throws Exception;
+        public void savePreference(User currentUser, Container c, User projectUser, ConfigTypeProvider provider, int preference, String srcIdentifier);
 
-        public UserPreference getPreference(Container c, User user, ConfigTypeProvider provider) throws Exception;
+        public UserPreference getPreference(Container c, User user, ConfigTypeProvider provider, String srcIdentifier);
 
         /**
          * Returns preference settings for all users who have read access to the specified container
@@ -52,8 +52,8 @@ public class MessageConfigService
          */
         public UserPreference[] getPreferences(Container c, ConfigTypeProvider provider);
 
-        public NotificationOption getOption(int optionId) throws Exception;
-        public NotificationOption[] getOptions(ConfigTypeProvider provider) throws Exception;
+        public NotificationOption getOption(int optionId);
+        public NotificationOption[] getOptions(ConfigTypeProvider provider);
 
         public void registerConfigType(ConfigTypeProvider provider);
         public ConfigTypeProvider[] getConfigTypes();
@@ -70,16 +70,16 @@ public class MessageConfigService
      */
     public interface ConfigTypeProvider
     {
-        public void savePreference(User currentUser, Container c, User projectUser, int preference) throws Exception;
-        public UserPreference getPreference(Container c, User user) throws Exception;
+        public void savePreference(User currentUser, Container c, User projectUser, int preference, String srcIdentifier);
+        public UserPreference getPreference(Container c, User user, String srcIdentifier);
 
         /**
          * Returns preference settings for all users who have read access to the specified container.
          */
         public UserPreference[] getPreferences(Container c);
 
-        public NotificationOption getOption(int optionId) throws Exception;
-        public NotificationOption[] getOptions() throws Exception;
+        public NotificationOption getOption(int optionId);
+        public NotificationOption[] getOptions();
 
         /**
          * Uniquely identifies the provider type
@@ -126,6 +126,7 @@ public class MessageConfigService
         public boolean isProjectMember();
         public User getUser();
         public String getType();
+        public String getSrcIdentifier();
     }
 
     /**

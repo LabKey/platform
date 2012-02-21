@@ -27,15 +27,15 @@ import org.labkey.api.security.User;
 public abstract class AbstractConfigTypeProvider implements MessageConfigService.ConfigTypeProvider
 {
     @Override
-    public void savePreference(User currentUser, Container c, User projectUser, int preference) throws Exception
+    public void savePreference(User currentUser, Container c, User projectUser, int preference, String srcIdentifier)
     {
-        MessageConfigService.getInstance().savePreference(currentUser, c, projectUser, this, preference);
+        MessageConfigService.getInstance().savePreference(currentUser, c, projectUser, this, preference, srcIdentifier);
     }
 
     @Override
-    public MessageConfigService.UserPreference getPreference(Container c, User user) throws Exception
+    public MessageConfigService.UserPreference getPreference(Container c, User user, String srcIdentifier)
     {
-        return MessageConfigService.getInstance().getPreference(c, user, this);
+        return MessageConfigService.getInstance().getPreference(c, user, this, srcIdentifier);
     }
 
     @Override
@@ -45,13 +45,13 @@ public abstract class AbstractConfigTypeProvider implements MessageConfigService
     }
 
     @Override
-    public MessageConfigService.NotificationOption getOption(int optionId) throws Exception
+    public MessageConfigService.NotificationOption getOption(int optionId)
     {
         return MessageConfigService.getInstance().getOption(optionId);
     }
 
     @Override
-    public MessageConfigService.NotificationOption[] getOptions() throws Exception
+    public MessageConfigService.NotificationOption[] getOptions()
     {
         return MessageConfigService.getInstance().getOptions(this);
     }
