@@ -1165,7 +1165,8 @@ groupByLoop:
             ret.appendComment(comment);
             if (null != _queryText)
             {
-                for (String s : _queryText.split("\n"))
+                // Handle any combination of line endings - \n (Unix), \r (Mac), \r\n (Windows), \n\r (nobody)
+                for (String s : _queryText.split("(\n\r?)|(\r\n?)"))
                     if (null != StringUtils.trimToNull(s))
                         ret.appendComment("|         " + s);
             }
