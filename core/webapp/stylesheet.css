@@ -2113,6 +2113,7 @@ th.labkey-wp-title-right, td.labkey-wp-title-right {
 	*padding-bottom: 1px;
 }
 
+th.labkey-wp-title-left img,
 th.labkey-wp-title-right img {
 	margin-bottom: -6px;
 }
