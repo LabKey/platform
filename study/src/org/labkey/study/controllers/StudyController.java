@@ -956,6 +956,20 @@ public class StudyController extends BaseStudyController
             HtmlView script = new HtmlView("<script type=\"text/javascript\">LABKEY.requiresScript('study/ParticipantGroup.js');</script>");
             VBox view = new VBox(script, header, queryView);
 
+            String status = (String)ReportPropsManager.get().getPropertyValue(def.getEntityId(), getContainer(), "status");
+            if (status != null)
+            {
+                HtmlView scriptLock = new HtmlView("<script type=\"text/javascript\">Ext.onReady(function(){" +
+                        "var dom = Ext.DomQuery.selectNode('td[class=labkey-proj]');" +
+                        "if (dom) {" +
+                            "var el = Ext.Element.fly(dom); " +
+                            "if (el) " +
+                                "el.addClass('labkey-dataset-status-" + PageFlowUtil.filter(status.toLowerCase()) + "');" +
+                        "}" +
+                    "});</script>");
+                view.addView(scriptLock);
+            }
+
             Report report = queryView.getSettings().getReportView();
             if (report != null && !ReportManager.get().canReadReport(getUser(), getContainer(), report))
             {
