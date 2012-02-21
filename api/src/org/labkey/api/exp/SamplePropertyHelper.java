@@ -143,6 +143,11 @@ public abstract class SamplePropertyHelper<ObjectType>
         return _groups;
     }
 
+    public DomainProperty[] getDomainProperties()
+    {
+        return _domainProperties;
+    }
+
     public Map<String, Map<DomainProperty, String>> getPostedPropertyValues(HttpServletRequest request) throws ExperimentException
     {
         Map<String, Map<DomainProperty, String>> result = new HashMap<String, Map<DomainProperty, String>>();

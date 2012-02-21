@@ -16,6 +16,7 @@ import org.labkey.api.exp.property.Domain;
 import org.labkey.api.exp.property.DomainProperty;
 import org.labkey.api.exp.property.PropertyService;
 import org.labkey.api.security.User;
+import org.labkey.api.util.Pair;
 import org.labkey.data.xml.reportProps.PropDefDocument;
 import org.labkey.data.xml.reportProps.PropValueDocument;
 import org.labkey.data.xml.reportProps.PropertyDocument;
@@ -231,36 +232,45 @@ public class ReportPropsManager implements ContainerManager.ContainerListener
     {
     }
 
+    public List<Pair<DomainProperty, Object>> getProperties(String entityId, Container container) throws Exception
+    {
+        List<Pair<DomainProperty, Object>> properties = new ArrayList<Pair<DomainProperty, Object>>();
+
+        for (DomainProperty dp : getProperties(container))
+        {
+            Object value = getPropertyValue(entityId, container, dp.getName());
+
+            if (value != null)
+                properties.add(new Pair<DomainProperty, Object>(dp, value));
+        }
+        return properties;
+    }
+
     public void exportProperties(String entityId, Container container, PropertyList propertyList)
     {
         if (propertyList == null)
             throw new IllegalArgumentException("PropertyList cannot be null");
 
-        for (DomainProperty dp : getProperties(container))
-        {
-            try {
-                Object value = getPropertyValue(entityId, container, dp.getName());
-
-                if (value != null)
-                {
-                    PropertyDocument.Property prop = propertyList.addNewProperty();
-
-                    PropDefDocument.PropDef propDef = prop.addNewPropDef();
-
-                    propDef.setName(dp.getName());
-                    propDef.setLabel(dp.getLabel());
-                    propDef.setType(dp.getPropertyDescriptor().getPropertyType().getTypeUri());
-
-                    PropValueDocument.PropValue propValue = prop.addNewPropValue();
-
-                    propValue.setEntityId(entityId);
-                    propValue.setValue(String.valueOf(value));
-                }
-            }
-            catch (Exception e)
+        try {
+            for (Pair<DomainProperty, Object> tag : getProperties(entityId, container))
             {
-                _log.error("Error occured serializing report properties.", e);
+                PropertyDocument.Property prop = propertyList.addNewProperty();
+
+                PropDefDocument.PropDef propDef = prop.addNewPropDef();
+
+                propDef.setName(tag.getKey().getName());
+                propDef.setLabel(tag.getKey().getLabel());
+                propDef.setType(tag.getKey().getPropertyDescriptor().getPropertyType().getTypeUri());
+
+                PropValueDocument.PropValue propValue = prop.addNewPropValue();
+
+                propValue.setEntityId(entityId);
+                propValue.setValue(String.valueOf(tag.getValue()));
             }
+        }
+        catch (Exception e)
+        {
+            _log.error("Error occured serializing report properties.", e);
         }
     }
 

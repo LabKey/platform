@@ -16,6 +16,7 @@
 
 package org.labkey.api.data;
 
+import org.jetbrains.annotations.Nullable;
 import org.labkey.api.security.User;
 import org.labkey.api.util.GUID;
 import org.labkey.api.util.MemTracker;
@@ -152,6 +153,7 @@ public class Entity implements java.io.Serializable, Ownable
         this.containerId = new GUID(containerId);
     }
 
+    @Nullable
     public String getEntityId()
     {
         return null==entityId ? null : entityId.toString();
