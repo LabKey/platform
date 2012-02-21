@@ -3624,3 +3624,10 @@ body.print, table.labkey-main.print
 {
     background-color:#ffffff;
 }
+
+/* Ext 4 styling */
+.x4-reset .x4-message-box .x4-window-body,
+.x4-reset .x4-toolbar-footer {
+    background-color: #ffffff;
+    margin-top: 0px;
+}
