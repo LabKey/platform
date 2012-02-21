@@ -182,8 +182,10 @@ LABKEY.ext4.Store = Ext4.define('LABKEY.ext4.Store', {
                 baseParams["query.param." + n] = config.parameters[n];
         }
 
-        if (config.containerFilter)
-            baseParams['query.containerFilterName'] = config.containerFilter;
+        if (config.containerFilter){
+            //baseParams['query.containerFilterName'] = config.containerFilter;
+            baseParams['containerFilter'] = config.containerFilter;
+        }
 
         if(config.ignoreFilter)
             baseParams['query.ignoreFilter'] = 1;
@@ -354,6 +356,35 @@ LABKEY.ext4.Store = Ext4.define('LABKEY.ext4.Store', {
     hasLoaded: function(){
         //NOTE: rawData is the JSON returned by the server.  if present, this store has loaded at least once
         return this.proxy && this.proxy.reader && this.proxy.reader.rawData !== undefined;
+    },
+
+    /**
+     * Returns the case-normalized fieldName.  The fact that field names are not normally case-sensitive, but javascript is case-sensitive can cause prolems.  This method is designed to allow you to convert a string into the casing used by the store.
+     * @param {String} fieldName The name of the field to test
+     * @returns {String} The normalized field name or null if not found
+     */
+    getCanonicalFieldName: function(fieldName){
+        var fields = this.getFields();
+        if(fields.get(fieldName)){
+            return fieldName;
+        }
+
+        var name;
+
+        var properties = ['name', 'fieldLabel', 'fieldKeyPath'];
+        Ext4.each(properties, function(prop){
+            fields.each(function(field){
+                if(field[prop].toLowerCase() == fieldName.toLowerCase()){
+                    name = field.name;
+                    return false;
+                }
+            });
+
+            if(name)
+                return false;  //abort the loop
+        }, this);
+
+        return name;
     },
 
     //private

@@ -73,6 +73,9 @@ public class ContainerDisplayColumn extends DataColumn
 
         _c = getContainer(ctx);
 
+        if(_c == null)
+            return null;
+
         return _showPath ? _c.getPath() : result;
     }
 
@@ -84,7 +87,11 @@ public class ContainerDisplayColumn extends DataColumn
 
         if (_c == null)
         {
-            return "<deleted>";
+            String id = (String)ctx.get(getEntityIdFieldKey());
+            if(id != null)
+                return "<deleted>";
+            else
+                return "<could not resolve container>";
         }
         return _showPath ? _c.getPath() : _c.getTitle();
     }

@@ -464,7 +464,8 @@ LABKEY.ext.MetaHelper = {
             col.hidden = true;
         }
 
-        col.format = meta.format;
+        //NOTE: java formats differ from ext
+//        col.format = meta.format;
 
         switch(meta.jsonType){
             //TODO: Ext has xtypes for these column types.  In Ext3 they did not prove terribly useful, but we should revisit in Ext4;
@@ -546,7 +547,8 @@ LABKEY.ext.MetaHelper = {
                 {
                     case "date":
                         var date = new Date(data);
-                        var format = meta.format;
+                        //NOTE: java formats differ from ext
+                        var format;// = meta.format;
                         if(!format){
                             if (date.getHours() == 0 && date.getMinutes() == 0 && date.getSeconds() == 0)
                                 format = "Y-m-d";

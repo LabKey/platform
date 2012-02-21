@@ -153,7 +153,7 @@ Ext4.define('LABKEY.ext4.GridPanel', {
 
             if(!col.hidden && !meta.fixedWidthColumn){
                 col.flex = (col.width / flexWidth);
-                delete col.width;
+                col.width = null;
             }
         }, this);
         return columns;
