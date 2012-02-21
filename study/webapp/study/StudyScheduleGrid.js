@@ -67,67 +67,94 @@ Ext4.define('LABKEY.ext4.StudyScheduleGrid', {
             }
         });
 
+        var tbarItems = [this.cohortsCombo];
+        tbarItems.push('->');
+        
         this.enablePagingCheckbox = Ext4.create('Ext.form.field.Checkbox', {
-            fieldLabel: "Enable Paging",
+            fieldLabel: "Paging",
+            checked: true,
+            labelWidth: 50,
             value: false,
             scope: this,
             handler: this.enablePaging
         });
 
-        this.nextButton = Ext4.create('Ext.button.Button', {
-            text: 'Next',
-            disabled: true,
-            hidden: true,
-            scope: this,
-            handler: this.nextPage
-        });
+        tbarItems.push(this.enablePagingCheckbox);
 
-        this.prevButton = Ext4.create('Ext.button.Button', {
-            text: 'Previous',
-            disabled: true,
-            hidden: true,
+        var prevConfig = {
+            text: '<',
+//            disabled: true,
+//            hidden: true,
             scope: this,
             handler: this.previousPage
-        });
+        };
 
-        this.pageDisplay = Ext4.create('Ext.form.field.Display', {
-            fieldLabel: "Page",
-            disabled: true,
-            hidden: true,
+        this.topPrevButton = Ext4.create('Ext.button.Button', prevConfig);
+
+        tbarItems.push(this.topPrevButton);
+
+        var displayConfig = {
+//            disabled: true,
+//            hidden: true,
             labelWidth: 40,
             value: '1'
-        });
+        };
+
+        this.pageDisplay = Ext4.create('Ext.form.field.Display', displayConfig);
+
+        tbarItems.push(this.pageDisplay);
+
+        var nextConfig = {
+            text: '>',
+//            disabled: true,
+//            hidden: true,
+            scope: this,
+            handler: this.nextPage
+        };
+
+        this.topNextButton = Ext4.create('Ext.button.Button', nextConfig);
+
+        tbarItems.push(this.topNextButton);
+
+        var bbarItems = [];
 
         var saveButton = {
-                xtype: 'button',
-                text: 'Save Changes',
-                handler: this.saveChanges,
-                scope: this
-            };
+            xtype: 'button',
+            text: 'Save Changes',
+            handler: this.saveChanges,
+            scope: this
+        };
 
         var addDatasetButton = {
-                xtype: 'button',
-                text: 'Add Dataset',
-                handler: this.getCategories,
-                scope: this
-            };
-        var bbarButtons = [];
+            xtype: 'button',
+            text: 'Add Dataset',
+            handler: this.getCategories,
+            scope: this
+        };
+
         if(this.canEdit){
-            bbarButtons.push(saveButton);
-            bbarButtons.push(addDatasetButton);
+            bbarItems.push(saveButton);
+            bbarItems.push(addDatasetButton);
+            bbarItems.push('->');
         }
+
+        this.bottomPrevButton = Ext4.create('Ext.button.Button', prevConfig);
+
+        bbarItems.push(this.bottomPrevButton);
+
+        this.bottomPageDisplay = Ext4.create('Ext.form.field.Display', displayConfig);
+
+        bbarItems.push(this.bottomPageDisplay);
+
+        this.bottomNextButton = Ext4.create('Ext.button.Button', nextConfig);
+
+        bbarItems.push(this.bottomNextButton);
 
         this.centerPanel = Ext4.create('Ext.panel.Panel', {
             layout : 'fit',
             border : false, frame : false,
-            tbar   : [
-                this.cohortsCombo,
-                this.enablePagingCheckbox,
-                this.prevButton,
-                this.nextButton,
-                this.pageDisplay
-            ],
-            bbar   : [bbarButtons]
+            tbar   : [tbarItems],
+            bbar   : [bbarItems]
         });
 
         this.centerPanel.on('render', this.configureGrid, this);
@@ -145,7 +172,12 @@ Ext4.define('LABKEY.ext4.StudyScheduleGrid', {
         var handler = function(json) {
             this.schedule = json.schedule;
             this.centerPanel.getEl().unmask();
-            this.initGrid(this.initColumns(this.schedule.timepoints), this.initScheduleStore(this.schedule, this.initFields()));
+            if(this.schedule.timepoints.length > 5){
+                var cols = this.schedule.timepoints.slice(0, 5);
+                this.initGrid(this.initColumns(cols), this.initScheduleStore(this.schedule, this.initFields()));
+            } else {
+                this.initGrid(this.initColumns(this.schedule.timepoints), this.initScheduleStore(this.schedule, this.initFields()));
+            }
         };
 
         this.centerPanel.getEl().mask('Initializing...');
@@ -442,19 +474,25 @@ Ext4.define('LABKEY.ext4.StudyScheduleGrid', {
 
     enablePaging : function(checkbox, checked){
         if(checked){
-            this.prevButton.setVisible(true);
-            this.nextButton.setVisible(true);
+            this.topPrevButton.setVisible(true);
+            this.bottomPrevButton.setVisible(true);
+            this.topNextButton.setVisible(true);
+            this.bottomNextButton.setVisible(true);
             this.pageDisplay.setVisible(true);
+            this.bottomPageDisplay.setVisible(true);
             //Change the column model to use a paged set of columns.
 
             this.pagedColumns = []; // Current set of columns in the 'page'.
 
             var value = this.pageDisplay.getValue();
             if(value > 1){
-                this.prevButton.setDisabled(false);
+                this.topPrevButton.setDisabled(false);
+                this.bottomPrevButton.setDisabled(false);
             }
-            this.nextButton.setDisabled(false);
+            this.topNextButton.setDisabled(false);
+            this.bottomNextButton.setDisabled(false);
             this.pageDisplay.setDisabled(false);
+            this.bottomPageDisplay.setDisabled(false);
             this.changePage(0);
         } else {
             if(this.filterColumns){
@@ -465,13 +503,26 @@ Ext4.define('LABKEY.ext4.StudyScheduleGrid', {
                 // use the unfiltered set of columns.
                 this.initGrid(this.initColumns(this.schedule.timepoints), this.scheduleStore);
             }
-            this.prevButton.setDisabled(true);
-            this.nextButton.setDisabled(true);
+            this.topPrevButton.setDisabled(true);
+            this.bottomPrevButton.setDisabled(true);
+
+            this.topNextButton.setDisabled(true);
+            this.bottomNextButton.setDisabled(true);
+
             this.pageDisplay.setDisabled(true);
-            this.prevButton.setVisible(false);
-            this.nextButton.setVisible(false);
+            this.bottomPageDisplay.setDisabled(true);
+
+            this.topPrevButton.setVisible(false);
+            this.bottomPrevButton.setVisible(false);
+
+            this.topNextButton.setVisible(false);
+            this.bottomNextButton.setVisible(false);
+
             this.pageDisplay.setVisible(false);
+            this.bottomPageDisplay.setVisible(false);
+            
             this.pageDisplay.setValue(1);
+            this.bottomPageDisplay.setValue(1);
         }
     },
 
@@ -479,8 +530,10 @@ Ext4.define('LABKEY.ext4.StudyScheduleGrid', {
         var val = this.pageDisplay.getValue();
         val++;
         this.pageDisplay.setValue(val);
-        if(val > 1 && this.prevButton.disabled){
-            this.prevButton.setDisabled(false);
+        this.bottomPageDisplay.setValue(val);
+        if(val > 1 && this.topPrevButton.disabled){
+            this.topPrevButton.setDisabled(false);
+            this.bottomPrevButton.setDisabled(false);
         }
         this.changePage(--val);
     },
@@ -489,8 +542,10 @@ Ext4.define('LABKEY.ext4.StudyScheduleGrid', {
         var val = this.pageDisplay.getValue();
         val--;
         this.pageDisplay.setValue(val);
+        this.bottomPageDisplay.setValue(val);
         if(val == 1){
-            this.prevButton.setDisabled(true);
+            this.topPrevButton.setDisabled(true);
+            this.bottomPrevButton.setDisabled(true);
         }
         this.changePage(--val);
     },
@@ -511,10 +566,12 @@ Ext4.define('LABKEY.ext4.StudyScheduleGrid', {
         var firstColumn = page * pageSize;
         var lastColumn = (firstColumn + 4) < (columns.length - 1) ? firstColumn + 4 : columns.length -1;
         if(lastColumn == columns.length -1){
-            this.nextButton.setDisabled(true);
+            this.topNextButton.setDisabled(true);
+            this.bottomNextButton.setDisabled(true);
         } else {
-            if(this.nextButton.disabled){
-                this.nextButton.setDisabled(false);
+            if(this.topNextButton.disabled){
+                this.topNextButton.setDisabled(false);
+                this.bottomNextButton.setDisabled(false);
             }
         }
 

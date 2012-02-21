@@ -109,13 +109,13 @@
         <td>This study defines <%= getDataSets().size() %> Datasets</td>
         <td><%= textLink("Manage Datasets", ManageTypesAction.class) %></td>
     </tr>
-    <%--<% if (study.getTimepointType() != TimepointType.CONTINUOUS) { %>--%>
-    <%--<tr>--%>
-        <%--<th align="left"><%= visitLabel %></th>--%>
-        <%--<td>This study defines <%= getVisits(Visit.Order.DISPLAY).length %> <%=visitLabel%></td>--%>
-        <%--<td><%= textLink("Manage " + visitLabel, ManageVisitsAction.class) %></td>--%>
-    <%--</tr>--%>
-    <%--<% } %>--%>
+    <% if (study.getTimepointType() != TimepointType.CONTINUOUS) { %>
+    <tr>
+        <th align="left"><%= visitLabel %></th>
+        <td>This study defines <%= getVisits(Visit.Order.DISPLAY).length %> <%=visitLabel%></td>
+        <td><%= textLink("Manage " + visitLabel, ManageVisitsAction.class) %></td>
+    </tr>
+    <% } %>
      <tr>
         <th align="left">Study Schedule</th>
          <td>This study defines <%= getDataSets().size() %> Datasets
