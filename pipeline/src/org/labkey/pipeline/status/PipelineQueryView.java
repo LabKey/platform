@@ -27,6 +27,7 @@ import org.labkey.api.security.permissions.DeletePermission;
 import org.labkey.api.security.permissions.InsertPermission;
 import org.labkey.api.security.permissions.UpdatePermission;
 import org.labkey.api.util.PageFlowUtil;
+import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.DataView;
 import org.labkey.api.view.ViewContext;
 import org.labkey.pipeline.PipelineController;
@@ -112,7 +113,9 @@ public class PipelineQueryView extends QueryView
 
         if (!_minimal)
         {
-            ActionButton retryStatus = new ActionButton("runAction.view?action=" + PipelineProvider.CAPTION_RETRY_BUTTON, PipelineProvider.CAPTION_RETRY_BUTTON);
+            ActionURL retryURL = new ActionURL(StatusController.RunActionAction.class, getContainer());
+            retryURL.addParameter("action", PipelineProvider.CAPTION_RETRY_BUTTON);
+            ActionButton retryStatus = new ActionButton(retryURL, PipelineProvider.CAPTION_RETRY_BUTTON);
             retryStatus.setRequiresSelection(true);
             retryStatus.setActionType(ActionButton.Action.POST);
             retryStatus.setDisplayPermission(UpdatePermission.class);

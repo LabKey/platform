@@ -83,6 +83,33 @@ public class PipelineQuerySchema extends UserSchema
                 }
             });
 
+            table.getColumn("Description").setDisplayColumnFactory(new DisplayColumnFactory()
+            {
+                @Override
+                public DisplayColumn createRenderer(ColumnInfo colInfo)
+                {
+                    return new DataColumn(colInfo)
+                    {
+                        @Override
+                        public void addQueryFieldKeys(Set<FieldKey> keys)
+                        {
+                            super.addQueryFieldKeys(keys);
+                            keys.add(getURLFieldKey());
+                        }
+
+                        private FieldKey getURLFieldKey()
+                        {
+                            return new FieldKey(getBoundColumn().getFieldKey().getParent(), "DataUrl");
+                        }
+
+                        @Override
+                        public String renderURL(RenderContext ctx)
+                        {
+                            return ctx.get(getURLFieldKey(), String.class);
+                        }
+                    };
+                }
+            });
             table.getColumn("CreatedBy").setFk(new UserIdQueryForeignKey(getUser(), getContainer()));
             table.getColumn("ModifiedBy").setFk(new UserIdQueryForeignKey(getUser(), getContainer()));
             table.getColumn("JobParent").setFk(new LookupForeignKey("Job", "Description")
