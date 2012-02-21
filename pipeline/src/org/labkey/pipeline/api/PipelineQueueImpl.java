@@ -183,6 +183,16 @@ public class PipelineQueueImpl implements PipelineQueue
 
     public synchronized boolean cancelJob(Container c, PipelineStatusFile statusFile)
     {
+        if (statusFile.getJobStore() != null)
+        {
+            PipelineJob job = PipelineJobService.get().getJobStore().fromXML(statusFile.getJobStore());
+            if (job != null)
+            {
+                job.getLogger().info("Attempting to cancel");
+                PipelineJob.logStartStopInfo("Attempting to cancel job ID " + job.getJobGUID() + ", " + statusFile.getFilePath());
+            }
+        }
+
         // Go through the list of queued (but not running jobs) and remove the requested job, if found
         for (ListIterator<PipelineJob> it = _pending.listIterator(); it.hasNext();)
         {
@@ -192,6 +202,8 @@ public class PipelineQueueImpl implements PipelineQueue
                 if (job.cancel(false))
                 {
                     it.remove();
+                    job.getLogger().info("Cancelling job by removing from job queue.");
+                    PipelineJob.logStartStopInfo("Cancelling job by removing from job queue. Job ID: " + job.getJobGUID() + ", " + statusFile.getFilePath());
                     // It should already be set to CANCELLING. Set to CANCELLED to indicate that it's dead.
                     statusFile.setStatus(PipelineJob.CANCELLED_STATUS);
                     statusFile.save();
@@ -204,6 +216,8 @@ public class PipelineQueueImpl implements PipelineQueue
             PipelineJob job = it.next();
             if (job.getJobGUID().equals(statusFile.getJobId()) && inContainer(c, job))
             {
+                job.getLogger().info("Interrupting job by sending interrupt request.");
+                PipelineJob.logStartStopInfo("Interrupting job by sending interrupt request. Job ID: " + job.getJobGUID() + ", " + statusFile.getFilePath());
                 if (job.interrupt())
                 {
                     return true;

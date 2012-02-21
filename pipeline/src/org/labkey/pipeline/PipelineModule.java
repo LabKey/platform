@@ -17,6 +17,7 @@ package org.labkey.pipeline;
 
 import org.apache.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
+import org.labkey.api.pipeline.CancelledException;
 import org.labkey.api.pipeline.PipelineJobService;
 import org.labkey.pipeline.importer.FolderImportProvider;
 import org.labkey.api.data.Container;
@@ -251,6 +252,7 @@ public class PipelineModule extends SpringModule implements ContainerManager.Con
                         _log.error("Unable to restart job", e);
                         moveJobToError(sf);
                     }
+                    catch (CancelledException ignored) { /* Job has already seen set to CANCELLED */ }
                 }
             }
             catch (SQLException e)
