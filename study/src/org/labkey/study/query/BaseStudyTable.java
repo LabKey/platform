@@ -180,7 +180,8 @@ public abstract class BaseStudyTable extends FilteredTable
         return addColumn(typeColumn);
     }
 
-    protected void addSpecimenVisitColumn(TimepointType timepointType)
+
+    protected ColumnInfo addSpecimenVisitColumn(TimepointType timepointType)
     {
         ColumnInfo visitColumn = null;
         ColumnInfo visitDescriptionColumn = addWrapColumn(_rootTable.getColumn("VisitDescription"));
@@ -210,7 +211,9 @@ public abstract class BaseStudyTable extends FilteredTable
         visitFK.addJoin(getColumn("Container"), "Folder");
         visitColumn.setFk(visitFK);
         visitColumn.setKeyField(true);
+        return visitColumn;
     }
+
 
     private static class DateVisitColumn extends ExprColumn
     {

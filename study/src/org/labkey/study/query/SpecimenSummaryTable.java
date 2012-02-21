@@ -52,25 +52,29 @@ import java.util.TreeMap;
 
 public class SpecimenSummaryTable extends BaseStudyTable
 {
+    final ColumnInfo _participantidColumn;
+    final ColumnInfo _sequencenumColumn;
+    final ColumnInfo _participantvisitColumn;
+
     public SpecimenSummaryTable(StudyQuerySchema schema)
     {
         super(schema, StudySchema.getInstance().getTableInfoSpecimenSummary(), true);
-        addWrapParticipantColumn("PTID").setKeyField(true);
+        _participantidColumn = addWrapParticipantColumn("PTID");
         addWrapColumn(_rootTable.getColumn("Container")).setFk(new ContainerForeignKey(schema));
 
-        addSpecimenVisitColumn(_schema.getStudy().getTimepointType());
+        _sequencenumColumn = addSpecimenVisitColumn(_schema.getStudy().getTimepointType());
 
-        ColumnInfo pvColumn = new AliasedColumn(this, StudyService.get().getSubjectVisitColumnName(schema.getContainer()),
+        _participantvisitColumn = new AliasedColumn(this, StudyService.get().getSubjectVisitColumnName(schema.getContainer()),
                 _rootTable.getColumn("ParticipantSequenceKey"));//addWrapColumn(baseColumn);
-        pvColumn.setFk(new LookupForeignKey("ParticipantSequenceKey")
+        _participantvisitColumn.setFk(new LookupForeignKey("ParticipantSequenceKey")
         {
             public TableInfo getLookupTableInfo()
             {
                 return new ParticipantVisitTable(_schema);
             }
         });
-        pvColumn.setIsUnselectable(true);
-        addColumn(pvColumn);
+        _participantvisitColumn.setIsUnselectable(true);
+        addColumn(_participantvisitColumn);
 
         addWrapColumn(_rootTable.getColumn("TotalVolume"));
         addWrapColumn(_rootTable.getColumn("AvailableVolume"));
@@ -125,7 +129,7 @@ public class SpecimenSummaryTable extends BaseStudyTable
             }
         });
         addColumn(specimenComment);
-        
+
         // use sql aggregates to 'OR' together the conflict bits of the vials associated with this specimen hash:
         SQLFragment sqlFragConflicts = new SQLFragment("(SELECT CASE WHEN COUNT(QualityControlFlag) = 0 OR " +
                 "SUM(CAST(QualityControlFlag AS INT)) = 0 THEN ? ELSE ? END FROM " +
@@ -146,6 +150,25 @@ public class SpecimenSummaryTable extends BaseStudyTable
     {
         return "PTID";
     }
+
+
+    @Override
+    protected ColumnInfo resolveColumn(String name)
+    {
+        name = name.toLowerCase();
+        if (name.equals("participantid") || name.equals("ptid") || name.equals(StudyService.get().getSubjectColumnName(_schema.getContainer()).toLowerCase()))
+            return _participantidColumn;
+
+        if (name.equals("sequencenum") || name.equals(StudyService.get().getSubjectVisitColumnName(_schema.getContainer()).toLowerCase()))
+            return _sequencenumColumn;
+
+        // DatasetTableImpl also has participantsequencekey?
+        if (name.equals("participantvisit"))
+            return _participantvisitColumn;
+
+        return null;
+    }
+
 
     public static class CommentDisplayColumn extends DataColumn
     {

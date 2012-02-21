@@ -381,6 +381,12 @@ public class QueryPivot extends QueryRelation
         }
 
         @Override
+        public ForeignKey getFk()
+        {
+            return _s.getFk();
+        }
+
+        @Override
         void copyColumnAttributesTo(ColumnInfo to)
         {
             _s.copyColumnAttributesTo(to);

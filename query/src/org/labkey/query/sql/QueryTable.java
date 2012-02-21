@@ -251,6 +251,12 @@ public class QueryTable extends QueryRelation
         }
 
         @Override
+        public ForeignKey getFk()
+        {
+            return _col.getFk();
+        }
+
+        @Override
         void declareJoins(String parentAlias, Map<String, SQLFragment> map)
         {
             _col.declareJoins(parentAlias, map);

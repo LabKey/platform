@@ -1,5 +1,6 @@
 package org.labkey.visualization.sql;
 
+import org.apache.commons.lang3.StringUtils;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.TableInfo;
@@ -257,6 +258,16 @@ public class StudyVisualizationProvider extends VisualizationProvider
                         {
                             queries.put(entry.getKey(), entry.getValue());
                         }
+                    }
+                }
+                for (String name : schema.getTableAndQueryNames(true))
+                {
+                    if (!StringUtils.startsWithIgnoreCase(name, "SpecimenSummary_PivotBy"))
+                        continue;
+                    Pair<QueryDefinition, TableInfo> entry = getTableAndQueryDef(context, schema, name, ColumnMatchType.All_VISIBLE, false);
+                    if (entry != null)
+                    {
+                        queries.put(entry.getKey(), entry.getValue());
                     }
                 }
             }

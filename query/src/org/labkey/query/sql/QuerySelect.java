@@ -22,6 +22,7 @@ import org.labkey.api.collections.Sets;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.data.DbSchema;
+import org.labkey.api.data.ForeignKey;
 import org.labkey.api.data.JdbcType;
 import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.TableInfo;
@@ -1512,6 +1513,17 @@ groupByLoop:
         }
 
 
+        @Override
+        public ForeignKey getFk()
+        {
+            QExpr expr = getResolvedField();
+            if (expr instanceof QField)
+                return ((QField)expr).getRelationColumn().getFk();
+            return null;
+        }
+
+
+        @Override
         void copyColumnAttributesTo(ColumnInfo to)
         {
             QExpr expr = getResolvedField();

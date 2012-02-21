@@ -169,7 +169,8 @@ public class QueryLookupWrapper extends QueryRelation
         // parent is a lookup (extended FK)
         // parent is a lookup (underlying FK)
 
-        return getLookupColumn(parent, ((PassThroughColumn)parent)._columnFK, name);
+        ColumnType.Fk fk = parent instanceof PassThroughColumn ? ((PassThroughColumn)parent)._columnFK : null;
+        return getLookupColumn(parent, fk, name);
     }
 
 
@@ -197,7 +198,7 @@ public class QueryLookupWrapper extends QueryRelation
 
         if (parentRelCol.getFk() == null)
             return null;
-        
+
         setHasLookup();
 
         QueryLookupColumn lc = createQueryLookupColumn(k, parentRelCol, parentRelCol.getFk());
@@ -300,7 +301,7 @@ public class QueryLookupWrapper extends QueryRelation
 
         PassThroughColumn(FieldKey key, RelationColumn c)
         {
-            super(QueryLookupWrapper.this, key, _aliasManager.decideAlias(key.getName()));
+            super(QueryLookupWrapper.this, key, _aliasManager.decideAlias(c.getAlias()));
             _wrapped = c;
 
             // extra metadata only for selected columns
@@ -312,16 +313,20 @@ public class QueryLookupWrapper extends QueryRelation
         public ForeignKey getFk()
         {
             if (null != _fk)
-                return _fk;
-            if (null == _columnFK)
-                return null;
-            _fk = AbstractTableInfo.makeForeignKey(_schema, _columnFK);
-            if (_fk == null)
             {
-                //noinspection ThrowableInstanceNeverThrown
-                _table._query.getParseErrors().add(new QueryParseException("Could not resolve ForeignKey on column '" + getFieldKey().getName() + "'", null, 0, 0));
+                return _fk;
             }
-            return _fk;
+            if (null != _columnFK)
+            {
+                _fk = AbstractTableInfo.makeForeignKey(_schema, _columnFK);
+                if (_fk == null)
+                {
+                    //noinspection ThrowableInstanceNeverThrown
+                    _table._query.getParseErrors().add(new QueryParseException("Could not resolve ForeignKey on column '" + getFieldKey().getName() + "'", null, 0, 0));
+                }
+                return _fk;
+            }
+            return this._wrapped.getFk();
         }
 
         public JdbcType getJdbcType()
@@ -352,34 +357,45 @@ public class QueryLookupWrapper extends QueryRelation
 
     public QueryLookupColumn createQueryLookupColumn(FieldKey key, RelationColumn parent, @NotNull ForeignKey fk)
     {
-        SQLTableInfo qti =  new SQLTableInfo(parent.getTable()._schema.getDbSchema());
-        qti.setName(parent.getTable().getAlias());
-        ColumnInfo fkCol = new RelationColumnInfo(qti, parent);
-
+        ColumnInfo fkCol;
+        if (!(parent instanceof QueryLookupColumn))
+        {
+            SQLTableInfo qti =  new SQLTableInfo(parent.getTable()._schema.getDbSchema());
+            qti.setName(parent.getTable().getAlias());
+            fkCol = new RelationColumnInfo(qti, parent);
+        }
+        else
+        {
+            fkCol = ((QueryLookupColumn)parent)._lkCol;
+        }
         ColumnInfo lkCol = fk.createLookupColumn(fkCol, key.getName());
         if (null == lkCol)
             return null;
         return new QueryLookupColumn(key, parent, fk, lkCol);
-    }    
+    }
 
 
     // almost the same as TableColumn
     class QueryLookupColumn extends _WrapperColumn
     {
-        RelationColumn _foreignKey;
+        final RelationColumn _foreignKey;
         final ForeignKey _fk;
-
-        TableInfo _lookupTable;
-        ColumnInfo _lkCol;
+        final ColumnInfo _lkCol;
 
         protected QueryLookupColumn(FieldKey key, RelationColumn parent, @NotNull ForeignKey fk, ColumnInfo lkCol)
         {
-            super(parent.getTable(), key, parent.getAlias() + "$" + AliasManager.makeLegalName(key.getName(), getDialect(parent)));
+            super(parent.getTable(), key, _aliasManager.decideAlias((parent.getAlias() + "$" + key.getName()).toLowerCase()));
+            lkCol.setAlias(getAlias());
             _foreignKey = parent;
             _fk = fk;
             _lkCol = lkCol;
         }
 
+        @Override
+        public ForeignKey getFk()
+        {
+            return _lkCol.getFk();
+        }
 
         public JdbcType getJdbcType()
         {
@@ -396,11 +412,6 @@ public class QueryLookupWrapper extends QueryRelation
             _lkCol.declareJoins(parentAlias, map);
         }
 
-        TableInfo getLookupTable()
-        {
-            return _fk.getLookupTableInfo();
-        }
-        
         SQLFragment getInternalSql()
         {
             return _lkCol.getValueSql(_source.getAlias());
