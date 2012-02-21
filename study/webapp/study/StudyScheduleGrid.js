@@ -16,6 +16,19 @@ Ext4.define('LABKEY.ext4.StudyScheduleGrid', {
             frame  : false, border : false
         });
 
+        Ext4.define('Dataset.Browser.Category', {
+            extend : 'Ext.data.Model',
+            fields : [
+                {name : 'created',      type : 'date'},
+                {name : 'createdBy'                  },
+                {name : 'displayOrder', type : 'int' },
+                {name : 'label'                      },
+                {name : 'modfied',      type : 'date'},
+                {name : 'modifiedBy'                 },
+                {name : 'rowid',        type : 'int' }
+            ]
+        });
+
         this.callParent([config]);
     },
 
@@ -95,7 +108,7 @@ Ext4.define('LABKEY.ext4.StudyScheduleGrid', {
         var addDatasetButton = {
                 xtype: 'button',
                 text: 'Add Dataset',
-                handler: this.addDatasetDialog,
+                handler: this.getCategories,
                 scope: this
             };
         var bbarButtons = [];
@@ -520,30 +533,15 @@ Ext4.define('LABKEY.ext4.StudyScheduleGrid', {
     },
 
     initializeCategoriesStore : function(){
-        Ext4.define('Dataset.Browser.Category', {
-            extend : 'Ext.data.Model',
-            fields : [
-                {name : 'created',      type : 'date'},
-                {name : 'createdBy'                  },
-                {name : 'displayOrder', type : 'int' },
-                {name : 'label'                      },
-                {name : 'modfied',      type : 'date'},
-                {name : 'modifiedBy'                 },
-                {name : 'rowid',        type : 'int' }
-            ]
-        });
 
         var config = {
             pageSize: 100,
             model   : 'Dataset.Browser.Category',
             autoLoad: true,
             autoSync: false,
+            data: this.categories,
             proxy   : {
-                type   : 'ajax',
-                api    : {
-                    create  : LABKEY.ActionURL.buildURL('study', 'saveCategories.api'),
-                    read    : LABKEY.ActionURL.buildURL('study', 'getCategories.api')
-                },
+                type   : 'memory',
                 extraParams : {
                     // These parameters are required for specific webpart filtering
                     pageId : this.pageId,
@@ -552,11 +550,6 @@ Ext4.define('LABKEY.ext4.StudyScheduleGrid', {
                 reader : {
                     type : 'json',
                     root : 'categories'
-                },
-                writer: {
-                    type : 'json',
-                    root : 'categories',
-                    allowSingle : false
                 }
             },
             listeners : {
@@ -567,6 +560,26 @@ Ext4.define('LABKEY.ext4.StudyScheduleGrid', {
         };
 
         return Ext4.create('Ext.data.Store', config);
+    },
+
+    getCategories : function(){
+         Ext4.Ajax.request({
+            url     : LABKEY.ActionURL.buildURL('study', 'getCategories.api'),
+            method  : 'GET',
+            success : function(response){
+                this.categories = Ext4.decode(response.responseText);
+                this.addDatasetDialog();
+            },
+            failure : function(response){
+                var resp = Ext4.decode(response.responseText);
+                if(resp && resp.exception){
+                    Ext4.Msg.alert('Failure', resp.exception);
+                } else {
+                    Ext4.Msg.alert('Failure', 'Unable to retrieve categories.');
+                }
+            },
+            scope   : this
+        });
     },
 
     addDatasetDialog : function(){
@@ -580,10 +593,10 @@ Ext4.define('LABKEY.ext4.StudyScheduleGrid', {
             typeAhead   : true,
             hideTrigger : true,
             readOnly    : false,
-            typeAheadDelay : 75,
+            typeAheadDelay : 10,
             minChars       : 0,
             autoSelect     : false,
-            queryMode      : 'remote',
+            queryMode      : 'local',
             displayField   : 'label',
             valueField     : 'label',
             emptyText      : 'Uncategorized',
