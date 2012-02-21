@@ -189,7 +189,7 @@ public class LookupColumn extends ColumnInfo
     public String getTableAlias(String baseAlias)
     {
         String alias = baseAlias + (baseAlias.endsWith("$")?"":"$") + _foreignKey.getAlias() + "$";
-        alias = AliasManager.truncate(alias, 64);
+        alias = AliasManager.truncate(alias, 63);
         return alias;
     }
 
