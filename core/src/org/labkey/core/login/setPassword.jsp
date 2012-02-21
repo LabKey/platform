@@ -52,13 +52,11 @@
     </div><%
     }
 
-    boolean firstPasswordInput = true;
     for (NamedObject input : bean.passwordInputs)
     { %>
     <div style="padding-top: 1em;">
         <label for="<%=input.getObject()%>"><%=h(input.getName())%></label>
-        <% if (firstPasswordInput) {
-            firstPasswordInput= false; %>
+        <% if (LoginController.PASSWORD1_TEXT_FIELD_NAME.equals(input.getObject())) { %>
             <span style="font-size: smaller;">(<%=DbLoginManager.getPasswordRule().getSummaryRuleHTML()%>)</span>
         <% } %>
 

@@ -766,6 +766,8 @@ public class LoginController extends SpringActionController
         }
     }
 
+    public static final String PASSWORD1_TEXT_FIELD_NAME = "password";
+    public static final String PASSWORD2_TEXT_FIELD_NAME = "password2";
 
     private abstract class AbstractSetPasswordAction extends FormViewAction<SetPasswordForm>
     {
@@ -987,8 +989,8 @@ public class LoginController extends SpringActionController
         protected NamedObjectList getPasswordInputs(SetPasswordForm form)
         {
             NamedObjectList list = new NamedObjectList();
-            list.put(new SimpleNamedObject("Password", "password"));
-            list.put(new SimpleNamedObject("Confirm Password", "password2"));
+            list.put(new SimpleNamedObject("Password", PASSWORD1_TEXT_FIELD_NAME));
+            list.put(new SimpleNamedObject("Confirm Password", PASSWORD2_TEXT_FIELD_NAME));
 
             return list;
         }
@@ -1051,8 +1053,8 @@ public class LoginController extends SpringActionController
         protected NamedObjectList getPasswordInputs(SetPasswordForm form)
         {
             NamedObjectList list = new NamedObjectList();
-            list.put(new SimpleNamedObject("Password", "password"));
-            list.put(new SimpleNamedObject("Retype Password", "password2"));
+            list.put(new SimpleNamedObject("Password", PASSWORD1_TEXT_FIELD_NAME));
+            list.put(new SimpleNamedObject("Retype Password", PASSWORD2_TEXT_FIELD_NAME));
 
             return list;
         }
@@ -1185,6 +1187,7 @@ public class LoginController extends SpringActionController
 
 
     @RequiresNoPermission
+    @RequiresLogin
     @AllowedDuringUpgrade
     // @CSRF don't need CSRF for actions that require a password
     public class ChangePasswordAction extends AbstractSetPasswordAction
@@ -1221,8 +1224,8 @@ public class LoginController extends SpringActionController
         {
             NamedObjectList list = new NamedObjectList();
             list.put(new SimpleNamedObject("Old Password", "oldPassword"));
-            list.put(new SimpleNamedObject("New Password", "password"));
-            list.put(new SimpleNamedObject("Retype New Password", "password2"));
+            list.put(new SimpleNamedObject("New Password", PASSWORD1_TEXT_FIELD_NAME));
+            list.put(new SimpleNamedObject("Retype New Password", PASSWORD2_TEXT_FIELD_NAME));
 
             return list;
         }
