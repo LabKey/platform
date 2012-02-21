@@ -114,16 +114,7 @@ public class AnnouncementListener implements ContainerManager.ContainerListener,
                 List<Container> containerList = new ArrayList<Container>(cProject.getChildren());
                 //add project container to list
                 containerList.add(cProject);
-                try
-                {
-
-                    MessageConfigManager.deleteUserEmailPref(user, containerList);
-                }
-                catch (SQLException e)
-                {
-                    //is this the preferred way to handle any such errors?
-                    _log.error(e);
-                }
+                MessageConfigManager.deleteUserEmailPref(user, containerList);
             }
         }
     }

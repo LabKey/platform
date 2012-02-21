@@ -19,6 +19,7 @@ import org.jetbrains.annotations.NotNull;
 import org.labkey.api.announcements.CommSchema;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.CoreSchema;
+import org.labkey.api.data.RuntimeSQLException;
 import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.Sort;
@@ -46,9 +47,9 @@ public class MessageConfigManager
     public static final int EMAIL_FORMAT_HTML = 1;
     public static final int PAGE_TYPE_MESSAGE = 0;
 
-    public static EmailPref getUserEmailPrefRecord(Container c, User user, String type) throws SQLException
+    public static EmailPref getUserEmailPrefRecord(Container c, User user, String type, String srcIdentifier)
     {
-        EmailPref[] prefs = _getUserEmailPrefRecord(c, user, type);
+        EmailPref[] prefs = _getUserEmailPrefRecord(c, user, type, srcIdentifier);
 
         if (prefs != null)
             return prefs[0];
@@ -56,28 +57,41 @@ public class MessageConfigManager
             return null;
     }
 
-    private static EmailPref[] _getUserEmailPrefRecord(Container c, User user, String type) throws SQLException
+    private static EmailPref[] _getUserEmailPrefRecord(Container c, User user, String type, String srcIdentifier)
     {
-        SimpleFilter filter = new SimpleFilter();
-        filter.addCondition("Container", c.getId());
-        filter.addCondition("UserId", user.getUserId());
+        if (srcIdentifier == null)
+        {
+            throw new IllegalArgumentException("srcIdentifier must not be null");
+        }
 
-        if (type != null)
-            filter.addCondition("Type", type);
+        try
+        {
+            SimpleFilter filter = new SimpleFilter();
+            filter.addCondition("Container", c.getId());
+            filter.addCondition("UserId", user.getUserId());
+            filter.addCondition("SrcIdentifier", srcIdentifier);
 
-        //return records only for those users who have explicitly set a preference for this container.
-        EmailPref[] emailPrefs = Table.select(
-                _comm.getTableInfoEmailPrefs(),
-                Table.ALL_COLUMNS,
-                filter,
-                null,
-                EmailPref.class
-                );
+            if (type != null)
+                filter.addCondition("Type", type);
 
-        if (emailPrefs.length == 0)
-            return null;
-        else
-            return emailPrefs;
+            //return records only for those users who have explicitly set a preference for this container.
+            EmailPref[] emailPrefs = Table.select(
+                    _comm.getTableInfoEmailPrefs(),
+                    Table.ALL_COLUMNS,
+                    filter,
+                    null,
+                    EmailPref.class
+                    );
+
+            if (emailPrefs.length == 0)
+                return null;
+            else
+                return emailPrefs;
+        }
+        catch (SQLException e)
+        {
+            throw new RuntimeSQLException(e);
+        }
     }
 
     public static EmailPref[] getUserEmailPrefs(Container c, String type)
@@ -85,10 +99,11 @@ public class MessageConfigManager
         SQLFragment sql = new SQLFragment();
         List<EmailPref> prefs = new ArrayList<EmailPref>();
 
-        sql.append("SELECT u.userId, email, firstName, lastName, displayName, emailOptionId, emailFormatId, type, lastModifiedBy, container FROM ");
+        sql.append("SELECT u.userId, email, firstName, lastName, displayName, emailOptionId, emailFormatId, type, lastModifiedBy, container, COALESCE(srcIdentifier, ?) AS srcIdentifier FROM ");
         sql.append(CoreSchema.getInstance().getTableInfoUsers(), "u").append(" LEFT JOIN ");
         sql.append(_comm.getTableInfoEmailPrefs(), "prefs").append(" ON u.userId = prefs.userId ");
         sql.append("AND type = ? AND container = ?");
+        sql.add(c);
         sql.add(type);
         sql.add(c);
 
@@ -102,90 +117,137 @@ public class MessageConfigManager
         return prefs.toArray(new EmailPref[prefs.size()]);
     }
 
-    public static void saveEmailPreference(User currentUser, Container c, User projectUser, String type, int emailPreference) throws SQLException
+    public static void saveEmailPreference(User currentUser, Container c, User projectUser, String type, int emailPreference, String srcIdentifier)
     {
         //determine whether user has record in EmailPrefs table.
-        EmailPref emailPref = getUserEmailPrefRecord(c, projectUser, type);
+        EmailPref emailPref = getUserEmailPrefRecord(c, projectUser, type, srcIdentifier);
 
-        //insert new if user preference record does not yet exist
-        if (null == emailPref && emailPreference != EMAIL_PREFERENCE_DEFAULT)
+        // Pull the container level user preference too if it's different
+        EmailPref containerEmailPref = srcIdentifier.equals(c.getId()) ? null : getUserEmailPrefRecord(c, projectUser, type, c.getId());
+
+        try
         {
-            emailPref = new EmailPref();
-            emailPref.setContainer(c.getId());
-            emailPref.setUserId(projectUser.getUserId());
-            emailPref.setEmailFormatId(EMAIL_FORMAT_HTML);
-            emailPref.setEmailOptionId(emailPreference);
-            emailPref.setPageTypeId(PAGE_TYPE_MESSAGE);
-            emailPref.setLastModifiedBy(currentUser.getUserId());
-            emailPref.setType(type);
-            Table.insert(currentUser, _comm.getTableInfoEmailPrefs(), emailPref);
-        }
-        else
-        {
-            if (emailPreference == EMAIL_PREFERENCE_DEFAULT)
+            //insert new if user preference record does not yet exist, and if it's a duplicate of an existing container level preference
+            if (null == emailPref && emailPreference != EMAIL_PREFERENCE_DEFAULT && !matches(containerEmailPref, emailPreference))
             {
-                //if preference has been set back to default, delete user's email pref record
-                SimpleFilter filter = new SimpleFilter();
-                filter.addCondition("UserId", projectUser.getUserId());
-                filter.addCondition("Type", type);
-                Table.delete(_comm.getTableInfoEmailPrefs(), filter);
+                emailPref = new EmailPref();
+                emailPref.setContainer(c.getId());
+                emailPref.setUserId(projectUser.getUserId());
+                emailPref.setEmailFormatId(EMAIL_FORMAT_HTML);
+                emailPref.setEmailOptionId(emailPreference);
+                emailPref.setPageTypeId(PAGE_TYPE_MESSAGE);
+                emailPref.setLastModifiedBy(currentUser.getUserId());
+                emailPref.setType(type);
+                emailPref.setSrcIdentifier(srcIdentifier);
+                Table.insert(currentUser, _comm.getTableInfoEmailPrefs(), emailPref);
             }
             else
             {
-                //otherwise update if it already exists
-                emailPref.setEmailOptionId(emailPreference);
-                emailPref.setLastModifiedBy(currentUser.getUserId());
-                Table.update(currentUser, _comm.getTableInfoEmailPrefs(), emailPref,
-                        new Object[]{c.getId(), projectUser.getUserId(), type});
+                if (emailPreference == EMAIL_PREFERENCE_DEFAULT || matches(containerEmailPref, emailPreference))
+                {
+                    //if preference has been set back to default (either the default for the container, or the user's container
+                    // level preference, delete user's email pref record
+                    SimpleFilter filter = new SimpleFilter();
+                    filter.addCondition("UserId", projectUser.getUserId());
+                    filter.addCondition("Container", c.getId());
+                    filter.addCondition("Type", type);
+                    filter.addCondition("SrcIdentifier", srcIdentifier);
+                    Table.delete(_comm.getTableInfoEmailPrefs(), filter);
+                }
+                else if (!matches(containerEmailPref, emailPreference))
+                {
+                    //otherwise update if it already exists
+                    emailPref.setEmailOptionId(emailPreference);
+                    emailPref.setLastModifiedBy(currentUser.getUserId());
+                    Table.update(currentUser, _comm.getTableInfoEmailPrefs(), emailPref,
+                            new Object[]{c.getId(), projectUser.getUserId(), type, srcIdentifier});
+                }
             }
         }
+        catch (SQLException e)
+        {
+            throw new RuntimeSQLException(e);
+        }
+    }
+
+    /** Check if the subscription option is the same as an existing row */
+    private static boolean matches(EmailPref emailPref, int emailPreference)
+    {
+        if (emailPref == null)
+        {
+            // No preference to compare against, so no match
+            return false;
+        }
+        // Simple check to see if the email option is the same
+        return emailPref.getEmailOptionId() != null && emailPreference == emailPref.getEmailOptionId().intValue();
     }
 
     //delete all user records regardless of container
-    public static void deleteUserEmailPref(User user, List<Container> containerList) throws SQLException
+    public static void deleteUserEmailPref(User user, List<Container> containerList)
     {
-        if (containerList == null)
+        try
         {
-            Table.delete(_comm.getTableInfoEmailPrefs(),
-                    new SimpleFilter("UserId", user.getUserId()));
-        }
-        else
-        {
-            SimpleFilter filter = new SimpleFilter();
-            filter.addCondition("UserId", user.getUserId());
-            StringBuilder whereClause = new StringBuilder("Container IN (");
-            for (int i = 0; i < containerList.size(); i++)
+            if (containerList == null)
             {
-                Container c = containerList.get(i);
-                whereClause.append("'");
-                whereClause.append(c.getId());
-                whereClause.append("'");
-                if (i < containerList.size() - 1)
-                    whereClause.append(", ");
+                Table.delete(_comm.getTableInfoEmailPrefs(),
+                        new SimpleFilter("UserId", user.getUserId()));
             }
-            whereClause.append(")");
-            filter.addWhereClause(whereClause.toString(), null);
+            else
+            {
+                SimpleFilter filter = new SimpleFilter();
+                filter.addCondition("UserId", user.getUserId());
+                StringBuilder whereClause = new StringBuilder("Container IN (");
+                for (int i = 0; i < containerList.size(); i++)
+                {
+                    Container c = containerList.get(i);
+                    whereClause.append("'");
+                    whereClause.append(c.getId());
+                    whereClause.append("'");
+                    if (i < containerList.size() - 1)
+                        whereClause.append(", ");
+                }
+                whereClause.append(")");
+                filter.addWhereClause(whereClause.toString(), null);
 
-            Table.delete(_comm.getTableInfoEmailPrefs(), filter);
+                Table.delete(_comm.getTableInfoEmailPrefs(), filter);
+            }
+        }
+        catch (SQLException e)
+        {
+            throw new RuntimeSQLException(e);
         }
     }
 
-    public static EmailOption[] getEmailOptions(@NotNull String type) throws SQLException
+    public static EmailOption[] getEmailOptions(@NotNull String type)
     {
-        SimpleFilter filter = new SimpleFilter("Type", type);
-        return Table.select(_comm.getTableInfoEmailOptions(), Table.ALL_COLUMNS, filter, new Sort("EmailOptionId"), EmailOption.class);
+        try
+        {
+            SimpleFilter filter = new SimpleFilter("Type", type);
+            return Table.select(_comm.getTableInfoEmailOptions(), Table.ALL_COLUMNS, filter, new Sort("EmailOptionId"), EmailOption.class);
+        }
+        catch (SQLException e)
+        {
+            throw new RuntimeSQLException(e);
+        }
     }
 
-    public static EmailOption getEmailOption(int optionId) throws SQLException
+    public static EmailOption getEmailOption(int optionId)
     {
-        SimpleFilter filter = new SimpleFilter("EmailOptionId", optionId);
-        EmailOption[] options = Table.select(_comm.getTableInfoEmailOptions(), Table.ALL_COLUMNS, filter, null, EmailOption.class);
+        try
+        {
+            SimpleFilter filter = new SimpleFilter("EmailOptionId", optionId);
+            EmailOption[] options = Table.select(_comm.getTableInfoEmailOptions(), Table.ALL_COLUMNS, filter, null, EmailOption.class);
 
-        assert (options.length <= 1);
-        if (options.length == 0)
-            return null;
-        else
-            return options[0];
+            assert (options.length <= 1);
+            if (options.length == 0)
+                return null;
+            else
+                return options[0];
+        }
+        catch (SQLException e)
+        {
+            throw new RuntimeSQLException(e);
+        }
     }
 
     public static class EmailPref implements MessageConfigService.UserPreference
@@ -201,6 +263,7 @@ public class MessageConfigManager
         String _emailOption;
         Integer _lastModifiedBy;
         String _lastModifiedByName;
+        String _srcIdentifier;
         String _type;
 
         boolean _projectMember;
@@ -350,6 +413,16 @@ public class MessageConfigManager
         public void setType(String type)
         {
             _type = type;
+        }
+
+        public String getSrcIdentifier()
+        {
+            return _srcIdentifier;
+        }
+
+        public void setSrcIdentifier(String srcIdentifier)
+        {
+            _srcIdentifier = srcIdentifier;
         }
     }
 

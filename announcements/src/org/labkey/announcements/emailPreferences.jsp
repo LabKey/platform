@@ -34,6 +34,7 @@
     <b>Daily Digest</b> - send one email each day that summarizes all posts<br>
 
     <br><input type=hidden name="srcUrl" value="<%=h(srcURL)%>"/>
+    <br><input type=hidden name="srcIdentifier" value="<%=h(srcIdentifier)%>"/>
     <%=generateSubmitButton("Update")%>
     <%=generateButton((message == null ? "Cancel" : "Done"), srcURL)%>
 </form>

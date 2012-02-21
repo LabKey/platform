@@ -213,14 +213,11 @@ public class DiscussionServiceImpl implements DiscussionService.Service
             discussionBox = new ThreadWrapper(currentURL, "Discussion");
         String discussionAreaId = ((ThreadWrapper)discussionBox).getId();
 
-        ModelAndView pickerView = new PickerView(c, discussionAreaId, adjustedCurrentURL, newDiscussionTitle, announcementModels, null != discussionBox, allowMultipleDiscussions);
+        ModelAndView pickerView = new PickerView(c, discussionAreaId, adjustedCurrentURL, newDiscussionTitle, announcementModels, true, allowMultipleDiscussions, objectId);
         DiscussionService.DiscussionView view = new DiscussionService.DiscussionView(pickerView);
 
-        if (null != discussionBox)
-        {
-            view.addView(discussionBox);
-            view.setFocusId(focusId);
-        }
+        view.addView(discussionBox);
+        view.setFocusId(focusId);
 
         return view;
     }
@@ -369,14 +366,14 @@ public class DiscussionServiceImpl implements DiscussionService.Service
         final public boolean allowMultipleDiscussions;
         final public String title;
 
-        PickerView(Container c, String discussionAreaId, URLHelper pageURL, String title, AnnouncementModel[] announcementModels, boolean isDiscussionVisible, boolean allowMultipleDiscussions)
+        PickerView(Container c, String discussionAreaId, URLHelper pageURL, String title, AnnouncementModel[] announcementModels, boolean isDiscussionVisible, boolean allowMultipleDiscussions, String objectId)
         {
             super("/org/labkey/announcements/discussionMenu.jsp");
             setFrame(FrameType.NONE);
             this.discussionAreaId = discussionAreaId;
             this.pageURL = pageURL.clone();
             this.title = title;
-            this.emailPreferencesURL = AnnouncementsController.getEmailPreferencesURL(c, pageURL);
+            this.emailPreferencesURL = AnnouncementsController.getEmailPreferencesURL(c, pageURL, objectId);
             this.adminEmailURL = AnnouncementsController.getAdminEmailURL(c, pageURL);
             this.customizeURL = AnnouncementsController.getCustomizeURL(c, pageURL);
             this.announcementModels = announcementModels;

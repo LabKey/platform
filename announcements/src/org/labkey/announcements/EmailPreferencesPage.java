@@ -22,6 +22,7 @@ abstract public class EmailPreferencesPage extends JspBase
 {
     public String message;
     public int emailPreference;
+    public String srcIdentifier;
     public String srcURL;
     public String conversationName;
     public boolean hasMemberList;

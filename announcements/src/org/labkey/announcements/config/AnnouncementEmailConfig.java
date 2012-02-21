@@ -75,21 +75,22 @@ public class AnnouncementEmailConfig extends AbstractConfigTypeProvider implemen
     public boolean handlePost(ViewContext context, BindException errors) throws Exception
     {
         Object selectedOption = context.get("selectedEmailOption");
+        // Only supports container-level subscriptions for this bulk UI
+        String srcIdentifier = context.getContainer().getId();
 
         if (selectedOption != null)
         {
             int newOption = NumberUtils.toInt((String)selectedOption);
             for (String selected : DataRegionSelection.getSelected(context, true))
             {
-
                 User projectUser = UserManager.getUser(Integer.parseInt(selected));
-                int currentEmailOption = AnnouncementManager.getUserEmailOption(context.getContainer(), projectUser);
+                int currentEmailOption = AnnouncementManager.getUserEmailOption(context.getContainer(), projectUser, srcIdentifier);
 
                 //has this projectUser's option changed? if so, update
                 //creating new record in EmailPrefs table if there isn't one, or deleting if set back to folder default
                 if (currentEmailOption != newOption)
                 {
-                    AnnouncementManager.saveEmailPreference(context.getUser(), context.getContainer(), projectUser, newOption);
+                    AnnouncementManager.saveEmailPreference(context.getUser(), context.getContainer(), projectUser, newOption, srcIdentifier);
                 }
             }
             return true;

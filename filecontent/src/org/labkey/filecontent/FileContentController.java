@@ -1351,7 +1351,7 @@ public class FileContentController extends SpringActionController
             ApiSimpleResponse response =  new ApiSimpleResponse();
 
             MessageConfigService.ConfigTypeProvider provider = MessageConfigService.getInstance().getConfigType(FileEmailConfig.TYPE);
-            MessageConfigService.UserPreference pref = provider.getPreference(getContainer(), getUser());
+            MessageConfigService.UserPreference pref = provider.getPreference(getContainer(), getUser(), getContainer().getId());
 
             String prefWithDefault = EmailService.get().getEmailPref(getUser(), getContainer(),
                     new FileContentEmailPref(), new FileContentDefaultEmailPref());
@@ -1373,7 +1373,7 @@ public class FileContentController extends SpringActionController
             ApiSimpleResponse response =  new ApiSimpleResponse();
 
             MessageConfigService.ConfigTypeProvider provider = MessageConfigService.getInstance().getConfigType(FileEmailConfig.TYPE);
-            provider.savePreference(getUser(), getContainer(), getUser(), form.getEmailPref());
+            provider.savePreference(getUser(), getContainer(), getUser(), form.getEmailPref(), getContainer().getId());
             response.put("success", true);
 
             return response;

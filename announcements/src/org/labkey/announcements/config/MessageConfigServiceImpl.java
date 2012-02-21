@@ -33,15 +33,15 @@ public class MessageConfigServiceImpl implements MessageConfigService.I
     private final Map<String, MessageConfigService.ConfigTypeProvider> _providers = new ConcurrentSkipListMap<String, MessageConfigService.ConfigTypeProvider>();
 
     @Override
-    public void savePreference(User currentUser, Container c, User projectUser, MessageConfigService.ConfigTypeProvider provider, int preference) throws Exception
+    public void savePreference(User currentUser, Container c, User projectUser, MessageConfigService.ConfigTypeProvider provider, int preference, String srcIdentifier)
     {
-        MessageConfigManager.saveEmailPreference(currentUser, c, projectUser, provider.getType(), preference);
+        MessageConfigManager.saveEmailPreference(currentUser, c, projectUser, provider.getType(), preference, srcIdentifier);
     }
 
     @Override
-    public MessageConfigService.UserPreference getPreference(Container c, User user, MessageConfigService.ConfigTypeProvider provider) throws Exception
+    public MessageConfigService.UserPreference getPreference(Container c, User user, MessageConfigService.ConfigTypeProvider provider, String srcIdentifier)
     {
-        return MessageConfigManager.getUserEmailPrefRecord(c, user, provider.getType());
+        return MessageConfigManager.getUserEmailPrefRecord(c, user, provider.getType(), srcIdentifier);
     }
 
     @Override
@@ -51,13 +51,13 @@ public class MessageConfigServiceImpl implements MessageConfigService.I
     }
 
     @Override
-    public MessageConfigService.NotificationOption getOption(int optionId) throws Exception
+    public MessageConfigService.NotificationOption getOption(int optionId)
     {
         return MessageConfigManager.getEmailOption(optionId);
     }
 
     @Override
-    public MessageConfigService.NotificationOption[] getOptions(MessageConfigService.ConfigTypeProvider provider) throws Exception
+    public MessageConfigService.NotificationOption[] getOptions(MessageConfigService.ConfigTypeProvider provider)
     {
         return MessageConfigManager.getEmailOptions(provider.getType());
     }

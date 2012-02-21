@@ -47,6 +47,8 @@ import java.util.Map;
 /**
  * Table of users and their associated messaging preferences. This may not be the best place for this table
  * its here because it contains all of the columns of the users table plus columns for messaging preferences.
+ *
+ * Only exposes folder-level user settings, not subforum subscriptions.
  */
 public class UsersMsgPrefTable extends FilteredTable
 {
@@ -149,6 +151,8 @@ public class UsersMsgPrefTable extends FilteredTable
             joinSql.append(" LEFT JOIN ").append(_emailPrefsTable, tableAlias);
             joinSql.append(" ON ").append(tableAlias).append(".UserId = ").append(parentAlias).append(".UserId");
             joinSql.append(" AND ").append(tableAlias).append(".Container = ").append("'").append(_container.getId()).append("'");
+            // Filter to only show container-level subscriptions, not subforums
+            joinSql.append(" AND ").append(tableAlias).append(".SrcIdentifier = ").append("'").append(_container.getId()).append("'");
             joinSql.append(" AND ").append(tableAlias).append(".Type = ").append("'").append(_type).append("'");
             joinSql.append(" LEFT JOIN ").append(_emailOptionsTable, tableOptionsAlias);
             joinSql.append(" ON ").append(tableAlias).append(".EmailOptionId = ").append(tableOptionsAlias).append(".EmailOptionId");

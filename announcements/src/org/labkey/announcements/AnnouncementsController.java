@@ -1434,9 +1434,11 @@ public class AnnouncementsController extends SpringActionController
     }
 
 
-    public static ActionURL getEmailPreferencesURL(Container c, URLHelper srcUrl)
+    public static ActionURL getEmailPreferencesURL(Container c, URLHelper srcUrl, String srcIdentifier)
     {
-        return new ActionURL(EmailPreferencesAction.class, c).addParameter("srcUrl", srcUrl.getLocalURIString());
+        ActionURL result = new ActionURL(EmailPreferencesAction.class, c);
+        result.addParameter("srcIdentifier", srcIdentifier);
+        return result.addParameter("srcUrl", srcUrl.getLocalURIString());
     }
 
 
@@ -1457,11 +1459,7 @@ public class AnnouncementsController extends SpringActionController
             User user = getUser();
             List<User> projectUsers = SecurityManager.getProjectUsers(c, false);
 
-            int emailOption = AnnouncementManager.getUserEmailOption(c, user);
-            if (emailOption == AnnouncementManager.EMAIL_PREFERENCE_DEFAULT)
-            {
-                emailOption = AnnouncementManager.getDefaultEmailOption(c);
-            }
+            int emailOption = getEmailOptionIncludingInherited(c, user, form.getSrcIdentifier());
 
             form.setEmailOption(emailOption);
 
@@ -1474,6 +1472,7 @@ public class AnnouncementsController extends SpringActionController
 
             Settings settings = getSettings();
             page.emailPreference = form.getEmailPreference();
+            page.srcIdentifier = form.getSrcIdentifier();
             page.notificationType = form.getNotificationType();
             page.srcURL = form.getSrcUrl();
             page.message = _message;
@@ -1486,7 +1485,7 @@ public class AnnouncementsController extends SpringActionController
 
         public boolean handlePost(EmailOptionsForm form, BindException errors) throws Exception
         {
-            AnnouncementManager.saveEmailPreference(getUser(), getContainer(), form.getEmailOption());
+            AnnouncementManager.saveEmailPreference(getUser(), getContainer(), form.getEmailOption(), form.getSrcIdentifier());
 
             _message = "Setting changed successfully.";
 
@@ -1506,6 +1505,24 @@ public class AnnouncementsController extends SpringActionController
         }
     }
 
+    /** Resolve the effective subscription level for the object. If not explicitly set, check for a user subscription
+     * at the container level, and then fall back to the container default. */
+    private static int getEmailOptionIncludingInherited(Container c, User user, String srcIdentifier)
+    {
+        int emailOption = AnnouncementManager.getUserEmailOption(c, user, srcIdentifier);
+        if (emailOption == AnnouncementManager.EMAIL_PREFERENCE_DEFAULT)
+        {
+            if (!srcIdentifier.equals(c.getId()))
+            {
+                emailOption = AnnouncementManager.getUserEmailOption(c, user, c.getId());
+            }
+            if (emailOption == AnnouncementManager.EMAIL_PREFERENCE_DEFAULT)
+            {
+                emailOption = AnnouncementManager.getDefaultEmailOption(c);
+            }
+        }
+        return emailOption;
+    }
 
     @RequiresPermissionClass(AdminPermission.class)
     public class SetDefaultEmailOptionsAction extends RedirectAction<EmailDefaultSettingsForm>
@@ -1565,6 +1582,7 @@ public class AnnouncementsController extends SpringActionController
             Set<String> selections = DataRegionSelection.getSelected(getViewContext(), form.getDataRegionSelectionKey(), true, true);
             ApiSimpleResponse resp = new ApiSimpleResponse();
             MessageConfigService.ConfigTypeProvider provider = form.getProvider();
+            String srcIdentifier = getContainer().getId();
 
             if (!selections.isEmpty() && provider != null)
             {
@@ -1573,7 +1591,7 @@ public class AnnouncementsController extends SpringActionController
                 {
 
                     User projectUser = UserManager.getUser(Integer.parseInt(user));
-                    MessageConfigService.UserPreference pref = provider.getPreference(getContainer(), projectUser);
+                    MessageConfigService.UserPreference pref = provider.getPreference(getContainer(), projectUser, srcIdentifier);
 
                     int currentEmailOption = pref != null ? pref.getEmailOptionId() : -1;
 
@@ -1581,7 +1599,7 @@ public class AnnouncementsController extends SpringActionController
                     //creating new record in EmailPrefs table if there isn't one, or deleting if set back to folder default
                     if (currentEmailOption != newOption)
                     {
-                        provider.savePreference(getUser(), getContainer(), projectUser, newOption);
+                        provider.savePreference(getUser(), getContainer(), projectUser, newOption, srcIdentifier);
                     }
                 }
                 resp.put("success", true);
@@ -1882,6 +1900,7 @@ public class AnnouncementsController extends SpringActionController
     {
         private int _emailPreference = AnnouncementManager.EMAIL_PREFERENCE_NONE;
         private int _notificationType = 0;
+        private String _srcIdentifier;
         private String _srcUrl = null;
 
         // Email option is a single int that contains the conversation preference AND a bit for digest vs. individual
@@ -1931,6 +1950,16 @@ public class AnnouncementsController extends SpringActionController
         {
             _srcUrl = srcUrl;
         }
+
+        public String getSrcIdentifier()
+        {
+            return _srcIdentifier;
+        }
+
+        public void setSrcIdentifier(String srcIdentifier)
+        {
+            _srcIdentifier = srcIdentifier;
+        }
     }
 
 
@@ -1972,7 +2001,7 @@ public class AnnouncementsController extends SpringActionController
             this.settings = settings;
             filterText = getFilterText(settings, displayAll, isFiltered, rowLimit);
             customizeURL = c.hasPermission(user, AdminPermission.class) ? getCustomizeURL(c, url) : null;
-            emailPrefsURL = user.isGuest() ? null : getEmailPreferencesURL(c, url);
+            emailPrefsURL   = user.isGuest() ? null : getEmailPreferencesURL(c, url, c.getId());
             emailManageURL = c.hasPermission(user, AdminPermission.class) ? getAdminEmailURL(c, url) : null;
             insertURL = perm.allowInsert() ? getInsertURL(c, url) : null;
             includeGroups = perm.includeGroups();
@@ -2420,26 +2449,23 @@ public class AnnouncementsController extends SpringActionController
                     else
                     {
                         // See if they're subscribed to the whole forum
-                        int emailOption = AnnouncementManager.getUserEmailOption(c, getViewContext().getUser());
-                        if (emailOption == AnnouncementManager.EMAIL_PREFERENCE_DEFAULT)
-                        {
-                            emailOption = AnnouncementManager.getDefaultEmailOption(c);
-                        }
+                        int emailOption = getEmailOptionIncludingInherited(c, getViewContext().getUser(), ann.lookupSrcIdentifer());
 
                         // Or if they're subscribed because they've posted to this thread already
-                        boolean forumSubscription = emailOption == AnnouncementManager.EMAIL_PREFERENCE_ALL ||
-                            (emailOption == AnnouncementManager.EMAIL_PREFERENCE_MINE && ann.getAuthors().contains(getViewContext().getUser()));
+                        // Remember the emailOption is a bitmask, so don't use simple equality checks
+                        boolean forumSubscription = (emailOption & AnnouncementManager.EMAIL_PREFERENCE_ALL) != 0 ||
+                            ((emailOption & AnnouncementManager.EMAIL_PREFERENCE_MINE) != 0 && ann.getAuthors().contains(getViewContext().getUser()));
                         
                         if (forumSubscription)
                         {
                             // Give them a link to the forum level subscription UI
-                            buttons.addChild("unsubscribe", getEmailPreferencesURL(c, getViewContext().getActionURL()));
+                            buttons.addChild("unsubscribe", getEmailPreferencesURL(c, getViewContext().getActionURL(), ann.lookupSrcIdentifer()));
                         }
                         else
                         {
                             // Otherwise, let them subscribe to either the forum or the specific thread
                             NavTree subscribeTree = new NavTree("subscribe");
-                            subscribeTree.addChild("forum", getEmailPreferencesURL(c, getViewContext().getActionURL()));
+                            subscribeTree.addChild("forum", getEmailPreferencesURL(c, getViewContext().getActionURL(), ann.lookupSrcIdentifer()));
                             ActionURL subscribeThreadURL = new ActionURL(SubscribeThreadAction.class, c);
                             subscribeThreadURL.addParameter("threadId", ann.getParent() == null ? ann.getEntityId() : ann.getParent());
                             subscribeThreadURL.addParameter(ActionURL.Param.returnUrl, getViewContext().getActionURL().toString());

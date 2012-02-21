@@ -263,13 +263,15 @@
     </ns:columns>
   </ns:table>
   <ns:table tableName="EmailFormats" tableDbType="TABLE">
+    <ns:description>Contains one row per email format option (HTML/plain text)</ns:description>
     <ns:columns>
       <ns:column columnName="EmailFormatId"/>
       <ns:column columnName="EmailFormat"/>
     </ns:columns>
   </ns:table>
   <ns:table tableName="EmailOptions" tableDbType="TABLE">
-    <ns:columns>
+    <ns:description>Contains one row per subscription type, such as all messages in a given forum, no email at all, etc and daily digest options</ns:description>
+      <ns:columns>
       <ns:column columnName="EmailOptionId"/>
       <ns:column columnName="EmailOption"/>
       <ns:column columnName="Type"/>
@@ -282,6 +284,7 @@
     </ns:columns>
   </ns:table>
   <ns:table tableName="EmailPrefs" tableDbType="TABLE">
+    <ns:description>Contains one row per user-specific subscription</ns:description>
     <ns:columns>
       <ns:column columnName="Container"/>
       <ns:column columnName="UserId"/>
@@ -290,9 +293,11 @@
       <ns:column columnName="EmailFormatId"/>
       <ns:column columnName="PageTypeId"/>
       <ns:column columnName="LastModifiedBy"/>
+      <ns:column columnName="SrcIdentifier"/>
     </ns:columns>
   </ns:table>
   <ns:table tableName="UserList" tableDbType="TABLE">
+      <ns:description>Contains one row per user-specific thread-level subscription.</ns:description>
     <ns:columns>
       <ns:column columnName="MessageId"/>
       <ns:column columnName="UserId"/>

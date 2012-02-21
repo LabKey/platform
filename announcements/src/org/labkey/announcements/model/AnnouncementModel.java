@@ -388,5 +388,19 @@ public class AnnouncementModel extends AttachmentParentEntity implements Seriali
 
         return _authors;
     }
+
+    /** Find the srcIdentifier for this thread. It's only stored at the parent level, so look there if needed */
+    public String lookupSrcIdentifer()
+    {
+        if (getParent() == null)
+        {
+            return getDiscussionSrcIdentifier();
+        }
+        else
+        {
+            AnnouncementModel parent = AnnouncementManager.getAnnouncement(lookupContainer(), getParent());
+            return parent.getDiscussionSrcIdentifier();
+        }
+    }
 }
 

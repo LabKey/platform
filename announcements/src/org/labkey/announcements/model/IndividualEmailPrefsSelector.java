@@ -20,7 +20,9 @@ import org.labkey.api.data.Container;
 import org.labkey.api.message.settings.MessageConfigService;
 import org.labkey.api.security.User;
 
+import java.util.ArrayList;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Set;
 
 /**
@@ -47,7 +49,31 @@ public class IndividualEmailPrefsSelector extends EmailPrefsSelector
     {
         Set<User> authorized = new HashSet<User>(_emailPrefs.size());
 
+        String srcIdentifier = ann.lookupSrcIdentifer();
+
+        List<MessageConfigService.UserPreference> relevantPrefs = new ArrayList<MessageConfigService.UserPreference>(_emailPrefs.size());
+        Set<User> directlySubscribedUsers = new HashSet<User>();
+        // First look through for users that have subscriptions for this srcIdentfier directly
         for (MessageConfigService.UserPreference ep : _emailPrefs)
+        {
+            if (ep.getSrcIdentifier().equals(srcIdentifier))
+            {
+                // Remember the permission, and the user
+                relevantPrefs.add(ep);
+                directlySubscribedUsers.add(ep.getUser());
+            }
+        }
+
+        for (MessageConfigService.UserPreference ep : _emailPrefs)
+        {
+            // Then look for users that didn't have a direct subscription, but have one set at the container level
+            if (ep.getSrcIdentifier().equals(ann.getContainerId()) && !ep.getSrcIdentifier().equals(srcIdentifier) && !directlySubscribedUsers.contains(ep.getUser()))
+            {
+                relevantPrefs.add(ep);
+            }
+        }
+
+        for (MessageConfigService.UserPreference ep : relevantPrefs)
             if (shouldSend(ann, ep))
                 authorized.add(ep.getUser());
 

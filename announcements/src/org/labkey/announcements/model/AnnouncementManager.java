@@ -257,21 +257,14 @@ public class AnnouncementManager
         return getAnnouncement(c, rowId, INCLUDE_NOTHING);
     }
 
-    public static void saveEmailPreference(User user, Container c, int emailPreference) throws SQLException
+    public static void saveEmailPreference(User user, Container c, int emailPreference, String srcIdentifier) throws SQLException
     {
-        saveEmailPreference(user, c, user, emailPreference);
+        saveEmailPreference(user, c, user, emailPreference, srcIdentifier);
     }
 
-    public static synchronized void saveEmailPreference(User currentUser, Container c, User projectUser, int emailPreference) throws SQLException
+    public static synchronized void saveEmailPreference(User currentUser, Container c, User projectUser, int emailPreference, String srcIdentifier)
     {
-        try
-        {
-            getAnnouncementConfigProvider().savePreference(currentUser, c, projectUser, emailPreference);
-        }
-        catch (Exception e)
-        {
-            throw new SQLException(e);
-        }
+        getAnnouncementConfigProvider().savePreference(currentUser, c, projectUser, emailPreference, srcIdentifier);
     }
 
 
@@ -321,6 +314,11 @@ public class AnnouncementManager
 
     public static AnnouncementModel insertAnnouncement(Container c, User user, AnnouncementModel insert, List<AttachmentFile> files) throws SQLException, IOException, MessagingException
     {
+        // If no srcIdentifier is set and this is a parent message, set its source to the container
+        if (insert.getDiscussionSrcIdentifier() == null && insert.getParent() == null)
+        {
+            insert.setDiscussionSrcIdentifier(c.getEntityId().toString());
+        }
         insert.beforeInsert(user, c.getId());
         AnnouncementModel ann = Table.insert(user, _comm.getTableInfoAnnouncements(), insert);
 
@@ -400,7 +398,7 @@ public class AnnouncementManager
                     }
                     else
                     {
-                        ActionURL changeEmailURL = AnnouncementsController.getEmailPreferencesURL(c, AnnouncementsController.getBeginURL(c));
+                        ActionURL changeEmailURL = AnnouncementsController.getEmailPreferencesURL(c, AnnouncementsController.getBeginURL(c), a.lookupSrcIdentifer());
                         m = getMessage(c, settings, perm, parent, a, isResponse, changeEmailURL.getURIString(), currentRendererType, EmailNotificationPage.Reason.signedUp);
                     }
 
@@ -575,22 +573,15 @@ public class AnnouncementManager
         Table.delete(_comm.getTableInfoMemberList(), new SimpleFilter("UserId", user.getUserId()).addCondition("MessageId", messageId));
     }
 
-    public static int getUserEmailOption(Container c, User user)
+    public static int getUserEmailOption(Container c, User user, String srcIdentifier)
     {
-        try
-        {
-            MessageConfigService.UserPreference emailPref = getAnnouncementConfigProvider().getPreference(c, user);
+        MessageConfigService.UserPreference emailPref = getAnnouncementConfigProvider().getPreference(c, user, srcIdentifier);
 
-            //user has not yet defined email preference; return project default
-            if (emailPref == null)
-                return EMAIL_PREFERENCE_DEFAULT;
-            else
-                return emailPref.getEmailOptionId();
-        }
-        catch (Exception e)
-        {
-            throw new RuntimeException(e);
-        }
+        //user has not yet defined email preference; return project default
+        if (emailPref == null)
+            return EMAIL_PREFERENCE_DEFAULT;
+        else
+            return emailPref.getEmailOptionId();
     }
 
     public static long getMessageCount(Container c) throws SQLException
@@ -598,19 +589,12 @@ public class AnnouncementManager
         return Table.executeSingleton(_comm.getSchema(), "SELECT COUNT(*) FROM " + _comm.getTableInfoAnnouncements() + " WHERE Container = ?", new Object[]{c.getId()}, Long.class);
     }
 
-    public static MessageConfigService.NotificationOption[] getEmailOptions() throws SQLException
+    public static MessageConfigService.NotificationOption[] getEmailOptions()
     {
-        try
-        {
-            return getAnnouncementConfigProvider().getOptions();
-        }
-        catch (Exception e)
-        {
-            throw new SQLException(e);
-        }
+        return getAnnouncementConfigProvider().getOptions();
     }
 
-    public static void saveDefaultEmailOption(Container c, int emailOption) throws SQLException
+    public static void saveDefaultEmailOption(Container c, int emailOption)
     {
         Map<String, String> props = PropertyManager.getWritableProperties(c.getId(), "defaultEmailSettings", true);
         props.put("defaultEmailOption", Integer.toString(emailOption));

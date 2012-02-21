@@ -27,7 +27,6 @@ import org.labkey.api.data.Table;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.query.AbstractQueryUpdateService;
 import org.labkey.api.query.DuplicateKeyException;
-import org.labkey.api.query.FilteredTable;
 import org.labkey.api.query.InvalidKeyException;
 import org.labkey.api.query.LookupForeignKey;
 import org.labkey.api.query.QueryUpdateService;
@@ -37,11 +36,8 @@ import org.labkey.api.query.ValidationException;
 import org.labkey.api.security.User;
 import org.labkey.api.security.UserManager;
 import org.labkey.api.security.UserPrincipal;
-import org.labkey.api.security.permissions.AdminPermission;
 import org.labkey.api.security.permissions.Permission;
 import org.labkey.api.security.permissions.ReadPermission;
-import org.labkey.api.util.Pair;
-import org.labkey.api.view.UnauthorizedException;
 
 import java.sql.SQLException;
 import java.util.HashMap;
@@ -89,6 +85,8 @@ public class ForumSubscriptionTable extends AbstractSubscriptionTable
         addColumn(emailFormatColumn);
 
         addCondition(getRealTable().getColumn("Type"), "messages");
+
+        addWrapColumn(getRealTable().getColumn("SrcIdentifier"));
     }
 
     @Override
@@ -118,14 +116,67 @@ public class ForumSubscriptionTable extends AbstractSubscriptionTable
         return new ForumSubscriptionUpdateService(this);
     }
 
+    private static class SubscriptionTarget
+    {
+        @NotNull private User _user;
+        @NotNull private Container _container;
+        @NotNull private String _srcIdentifier;
+
+        private SubscriptionTarget(@NotNull User user, @NotNull Container container, @NotNull String srcIdentifier)
+        {
+            _user = user;
+            _container = container;
+            _srcIdentifier = srcIdentifier;
+        }
+
+        @NotNull
+        public User getUser()
+        {
+            return _user;
+        }
+
+        @NotNull
+        public Container getContainer()
+        {
+            return _container;
+        }
+
+        @NotNull
+        public String getSrcIdentifier()
+        {
+            return _srcIdentifier;
+        }
+
+        public SimpleFilter createUserSchemaFilter()
+        {
+            return createFilter("User", "Folder");
+        }
+
+        public SimpleFilter createDbSchemaFilter()
+        {
+            SimpleFilter result = createFilter("UserId", "Container");
+            result.addCondition("Type", "messages");
+            return result;
+        }
+
+        private SimpleFilter createFilter(String userColumnName, String containerColumnName)
+        {
+            SimpleFilter filter = new SimpleFilter(userColumnName, getUser().getUserId());
+            filter.addCondition(containerColumnName, getContainer().getEntityId());
+            filter.addCondition("SrcIdentifier", _srcIdentifier);
+            return filter;
+        }
+    }
+
     private class ForumSubscriptionUpdateService extends AbstractQueryUpdateService
     {
+
         protected ForumSubscriptionUpdateService(TableInfo queryTable)
         {
             super(queryTable);
         }
 
-        private Pair<User, Container> getTargets(Map<String, Object> row, User user, Container container) throws InvalidKeyException
+        private SubscriptionTarget getTargets(Map<String, Object> row, User user, Container container) throws InvalidKeyException
         {
             // Assume that if no User is specified, we should apply it to the current user
             User targetUser = user;
@@ -160,22 +211,19 @@ public class ForumSubscriptionTable extends AbstractSubscriptionTable
 
             ensurePermission(user, targetUser, targetContainer);
 
-            return new Pair<User, Container>(targetUser, targetContainer);
+            Object srcIdentifier = row.get("SrcIdentifier");
+            if (srcIdentifier == null || "".equals(srcIdentifier))
+            {
+                srcIdentifier = targetContainer.getId();
+            }
+
+            return new SubscriptionTarget(targetUser, targetContainer, srcIdentifier.toString());
         }
 
         @Override
         protected Map<String, Object> getRow(User user, Container container, Map<String, Object> keys) throws InvalidKeyException, QueryUpdateServiceException, SQLException
         {
-            Pair<User, Container> targets = getTargets(keys, user, container);
-            SimpleFilter filter = createFilter(targets);
-            return Table.selectObject(ForumSubscriptionTable.this, filter, Map.class);
-        }
-
-        private SimpleFilter createFilter(Pair<User, Container> targets)
-        {
-            SimpleFilter filter = new SimpleFilter("User", targets.getKey().getUserId());
-            filter.addCondition("Folder", targets.getValue().getEntityId());
-            return filter;
+            return Table.selectObject(ForumSubscriptionTable.this, getTargets(keys, user, container).createUserSchemaFilter(), Map.class);
         }
 
         @Override
@@ -183,11 +231,11 @@ public class ForumSubscriptionTable extends AbstractSubscriptionTable
         {
             try
             {
-                Pair<User, Container> targets = getTargets(row, user, container);
+                SubscriptionTarget targets = getTargets(row, user, container);
 
                 if (getRow(user, container, row) != null)
                 {
-                    throw new DuplicateKeyException("There is already a row for " + targets.getKey() + " in " + targets.getValue().getPath());
+                    throw new DuplicateKeyException("There is already a row for " + targets.getUser() + " in " + targets.getContainer().getPath() + " with SrcIdentifier " + targets.getSrcIdentifier());
                 }
 
                 Map<String, Object> insertMap = createDatabaseMap(user, row, targets);
@@ -204,11 +252,12 @@ public class ForumSubscriptionTable extends AbstractSubscriptionTable
         }
 
         /** Translate to the real database column names */
-        private Map<String, Object> createDatabaseMap(User user, Map<String, Object> row, Pair<User, Container> targets)
+        private Map<String, Object> createDatabaseMap(User user, Map<String, Object> row, SubscriptionTarget targets)
         {
             Map<String, Object> insertMap = new HashMap<String, Object>();
-            insertMap.put("UserId", targets.getKey().getUserId());
-            insertMap.put("Container", targets.getValue().getEntityId());
+            insertMap.put("UserId", targets.getUser().getUserId());
+            insertMap.put("Container", targets.getContainer().getEntityId());
+            insertMap.put("SrcIdentifier", targets.getSrcIdentifier());
             insertMap.put("LastModifiedBy", user.getUserId());
             if (row.containsKey("EmailOption"))
             {
@@ -228,12 +277,13 @@ public class ForumSubscriptionTable extends AbstractSubscriptionTable
             Map<String, Object> existingRow = getRow(user, container, oldRow);
             if (existingRow != null)
             {
-                Pair<User, Container> oldTargets = getTargets(oldRow, user, container);
-                Pair<User, Container> newTargets = getTargets(row, user, container);
+                SubscriptionTarget oldTargets = getTargets(oldRow, user, container);
+                SubscriptionTarget newTargets = getTargets(row, user, container);
                 Map<String, Object> pks = new CaseInsensitiveHashMap<Object>();
-                pks.put("UserId", oldTargets.getKey().getUserId());
-                pks.put("Container", oldTargets.getValue().getEntityId());
+                pks.put("UserId", oldTargets.getUser().getUserId());
+                pks.put("Container", oldTargets.getContainer().getEntityId());
                 pks.put("Type", "messages");
+                pks.put("SrcIdentifier", oldTargets.getSrcIdentifier());
                 Table.update(user, CommSchema.getInstance().getTableInfoEmailPrefs(), createDatabaseMap(user, row, newTargets), pks);
             }
 
@@ -243,10 +293,8 @@ public class ForumSubscriptionTable extends AbstractSubscriptionTable
         @Override
         protected Map<String, Object> deleteRow(User user, Container container, Map<String, Object> oldRow) throws InvalidKeyException, ValidationException, QueryUpdateServiceException, SQLException
         {
-            Pair<User, Container> targets = getTargets(oldRow, user, container);
-            SimpleFilter filter = new SimpleFilter("UserId", targets.getKey().getUserId());
-            filter.addCondition("Container", targets.getValue().getEntityId());
-            Table.delete(CommSchema.getInstance().getTableInfoEmailPrefs(), filter);
+            SubscriptionTarget targets = getTargets(oldRow, user, container);
+            Table.delete(CommSchema.getInstance().getTableInfoEmailPrefs(), targets.createDbSchemaFilter());
 
             return oldRow;
         }
