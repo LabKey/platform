@@ -1,8 +1,11 @@
 // 1. Create theme using 'x4-' prefix
 // 2. Get it working on Chrome/FF/IE9
-// 3. Once complete, rename prefix to 'x-'
+// 3. Once complete, rename prefix to 'x-' and recompile scss
 // 4. Slice images
-// 5. Reset prefix to 'x4-'
+//      a. Example command from the /labkey-ext-theme directory is:
+//          sencha slice theme -d ..\ext-4.0.7 -c resources\css\ext-seattle.css -v
+//      b. Copy all files generated to /ext-4.0.7/resources/themes/images/default
+// 5. Reset prefix to 'x4-' and recompile scss
 
 // We are currently using the Ext sandbox so we change the prefix to not conflict with other Ext versions on the page
 $prefix: 'x4-';
@@ -17,6 +20,7 @@ $base-color: #126495;
 $font-family: Verdana, Arial, Helvetica, sans serif;
 
 //panel
+$panel-base-color: #DFE8F6; // #d3d3d3; //#DFE8F6;
 $panel-header-background-color: $base-color;
 $panel-header-color: #fff;
 $panel-body-background-color: #fff;
@@ -90,6 +94,7 @@ $button-toolbar-background-gradient-color-stops-disabled: null;
 //window
 $window-background-color: $base-color;
 $window-header-color: #fff;
+$window-body-background-color: #fff;
 
 //grids
 $grid-row-cell-selected-background-color: #C5C5C5 !default;
@@ -99,6 +104,16 @@ $toolbar-background-color: #eeeeee;
 
 //qtips
 $tip-base-color: #eeeeee;
+
+// combo box drop down
+$boundlist-item-over-background-color: #e0e0e0; //adjust-color($base-color, $hue: 3.188deg, $saturation: 0.542%, $lightness: 60%) !default;
+
+// date picker
+$datepicker-base-color: #C0D4ED;
+
+// darken load mask
+$loadmask-opacity: 0.25 !default;
+$loadmask-backgorund: #000 !default;
 
 @import 'ext4/default/all';
 
