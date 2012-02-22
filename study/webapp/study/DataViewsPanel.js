@@ -1041,7 +1041,7 @@ Ext4.define('LABKEY.ext4.DataViewsPanel', {
                                 this.north.hide();
 
                                 // Modify Title
-                                var titleEl = Ext.query('th[class=labkey-wp-title-left]:first', 'webpart_' + this.webpartId);
+                                var titleEl = Ext4.query('span[class=labkey-wp-title-text]:first', 'webpart_' + this.webpartId);
                                 if (titleEl && (titleEl.length >= 1))
                                 {
                                     titleEl[0].innerHTML = LABKEY.Utils.encodeHtml(form.findField('webpart.title').getValue());
