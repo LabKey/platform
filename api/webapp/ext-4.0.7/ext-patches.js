@@ -13,6 +13,26 @@ Ext4.define('Ext.selection.RowModelFixed', {
     }
 });
 
+// Following above fix for RowModel -- commented out call to view.onCellFocus
+// LabKey Issue : 14050: Study schedule - Weird scrolling behavior with large number of datasets
+// NOTE: Still not fixed as of Ext 4.0.7
+Ext4.define('Ext.selection.CellModelFixed', {
+    extend : 'Ext.selection.CellModel',
+    alias  : 'selection.cellmodelfixed',
+
+    onCellSelect : function(position) {
+        var me = this,
+                store = me.view.getStore(),
+                record = store.getAt(position.row);
+
+        me.doSelect(record);
+        me.primaryView.onCellSelect(position);
+        // TODO: Remove temporary cellFocus call here.
+//        me.primaryView.onCellFocus(position);
+        me.fireEvent('select', me, record, position.row, position.column);
+    }
+});
+
 // Allows the modal mask (e.g. on windows, messages, etc) to be seen when using sandbox
 // Ext issue    : http://www.sencha.com/forum/showthread.php?145608-4.0.5-Window-modal-broken-in-sandbox
 // NOTE: Still not fixed as of Ext 4.0.7
