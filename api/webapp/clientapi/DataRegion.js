@@ -3684,13 +3684,9 @@ LABKEY.ext.RemoteCheckboxGroup = Ext.extend(Ext.form.CheckboxGroup,
             listeners: {
                 scope: this,
                 change: function(self, val){
-                    console.log('change');
-                    console.log(arguments)
                     this.fireEvent('change', this, this.getValue());
                 },
                 check: function(self, val){
-                    console.log('check');
-                    console.log(arguments)
                     this.fireEvent('change', this, this.getValue());
                 },
                 afterrender: function(field){
