@@ -36,14 +36,6 @@
     int webPartIndex = (webpart == null ? 0 : webpart.getIndex());
 %>
 
-<div>
-    <% if (study.getTimepointType() != TimepointType.CONTINUOUS) { %>
-    <%= textLink("Manage " + visitLabel, StudyController.ManageVisitsAction.class) %>
-    <% } %>
-    <%= textLink("Manage Datasets", StudyController.ManageTypesAction.class) %>
-    <br />
-</div>
-
 <div id='study-schedule-<%=webPartIndex%>' class="study-schedule-container"></div>
 
 <script type="text/javascript">

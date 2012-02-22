@@ -461,6 +461,21 @@ public class StudyModule extends SpringModule implements SearchService.DocumentP
             JspView<Portal.WebPart> view = new JspView<Portal.WebPart>("/org/labkey/study/view/studySchedule.jsp", webPart);
             view.setTitle("Study Schedule");
             view.setFrame(WebPartView.FrameType.PORTAL);
+            Container c = portalCtx.getContainer();
+            String timepointMenuName = null;
+            if (StudyManager.getInstance().getStudy(c) != null && StudyManager.getInstance().getStudy(c).getTimepointType().equals("DATE"))
+            {
+                timepointMenuName = "Manage Timepoints";
+            }
+            else
+            {
+                timepointMenuName = "Manage Visits";
+            }
+            NavTree menu = new NavTree();
+            menu.addChild("Manage Datasets", new ActionURL(StudyController.ManageTypesAction.class, c));
+            menu.addChild(timepointMenuName, new ActionURL(StudyController.ManageVisitsAction.class, c));
+            view.setNavMenu(menu);
+            
             return view;
         }
     }

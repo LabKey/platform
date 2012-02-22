@@ -45,18 +45,18 @@ Ext4.define('LABKEY.ext4.StudyScheduleGrid', {
     initCenterPanel : function() {
         this.cohortsStore = Ext4.create('Ext.data.Store', {
             fields: ['label'],
-            data: [{label: 'All'}, {label: 'Unassigned'}]
+            data: [{label: 'All Cohorts'}, {label: 'Unassigned'}]
         });
 
         this.cohortsCombo = Ext4.create('Ext.form.field.ComboBox', {
             hidden: true,
-            fieldLabel: 'Cohort',
             labelWidth: 50,
             width: 250,
+            margin: '0 0 3 0',
             allowBlank: false,
             editable: false,
             forceSelection: true,
-            value: 'All',
+            value: 'All Cohorts',
             store: this.cohortsStore,
             queryMode: 'local',
             displayField: 'label',
@@ -94,20 +94,16 @@ Ext4.define('LABKEY.ext4.StudyScheduleGrid', {
         tbarItems.push(this.topPrevButton);
 
         var displayConfig = {
-//            disabled: true,
-//            hidden: true,
             labelWidth: 40,
             value: '1'
         };
 
-        this.pageDisplay = Ext4.create('Ext.form.field.Display', displayConfig);
+        this.topPageDisplay = Ext4.create('Ext.form.field.Display', displayConfig);
 
-        tbarItems.push(this.pageDisplay);
+        tbarItems.push(this.topPageDisplay);
 
         var nextConfig = {
             text: '>',
-//            disabled: true,
-//            hidden: true,
             scope: this,
             handler: this.nextPage
         };
@@ -150,11 +146,38 @@ Ext4.define('LABKEY.ext4.StudyScheduleGrid', {
 
         bbarItems.push(this.bottomNextButton);
 
+        var bottomPanel = Ext4.create('Ext.Panel', {
+            height: 25,
+            border: false,
+            flex: 1,
+            layout: {
+                type: 'hbox',
+                align: 'stretch'
+            },
+            items: [{
+                xtype: 'panel',
+                border: false, frame : false,
+                width : 220,
+                defaults : {
+                    style : 'margin-left: 4px; margin-right: 4px; margin-top: 3px;'
+                },
+                items: [saveButton, addDatasetButton]
+            }, {
+                xtype: 'toolbar',
+                style: {
+                    border: 0,
+                    padding: 0
+                },
+                flex: 1,
+                items: ['->', this.bottomPrevButton, this.bottomPageDisplay, this.bottomNextButton]
+            }]
+        });
+
         this.centerPanel = Ext4.create('Ext.panel.Panel', {
             layout : 'fit',
             border : false, frame : false,
             tbar   : [tbarItems],
-            bbar   : [bbarItems]
+            bbar   : [bottomPanel]
         });
 
         this.centerPanel.on('render', this.configureGrid, this);
@@ -425,11 +448,11 @@ Ext4.define('LABKEY.ext4.StudyScheduleGrid', {
     filterCohort : function(combo, newValue){
         this.filteredColumns = [];
 
-        if(newValue == 'All'){
+        if(newValue == 'All Cohorts'){
             this.filterColumns = false;
             if(this.enablePagingCheckbox.getValue() == true){
                 //if paging then call changePage(0) and reset value of page counter
-                this.pageDisplay.setValue(1);
+                this.topPageDisplay.setValue(1);
                 this.changePage(0);
             } else {
                 //else initGrid with all columns
@@ -446,7 +469,7 @@ Ext4.define('LABKEY.ext4.StudyScheduleGrid', {
 
             if(this.enablePagingCheckbox.getValue() == true){
                 //if paging then call changePage(0) and reset value of page counter
-                this.pageDisplay.setValue(1);
+                this.topPageDisplay.setValue(1);
                 this.changePage(0);
             } else {
                 //else initGrid with all columns
@@ -463,7 +486,7 @@ Ext4.define('LABKEY.ext4.StudyScheduleGrid', {
 
             if(this.enablePagingCheckbox.getValue() == true){
                 //if paging then call changePage(0) and reset value of page counter
-                this.pageDisplay.setValue(1);
+                this.topPageDisplay.setValue(1);
                 this.changePage(0);
             } else {
                 //else initGrid with all columns
@@ -478,20 +501,20 @@ Ext4.define('LABKEY.ext4.StudyScheduleGrid', {
             this.bottomPrevButton.setVisible(true);
             this.topNextButton.setVisible(true);
             this.bottomNextButton.setVisible(true);
-            this.pageDisplay.setVisible(true);
+            this.topPageDisplay.setVisible(true);
             this.bottomPageDisplay.setVisible(true);
             //Change the column model to use a paged set of columns.
 
             this.pagedColumns = []; // Current set of columns in the 'page'.
 
-            var value = this.pageDisplay.getValue();
+            var value = this.topPageDisplay.getValue();
             if(value > 1){
                 this.topPrevButton.setDisabled(false);
                 this.bottomPrevButton.setDisabled(false);
             }
             this.topNextButton.setDisabled(false);
             this.bottomNextButton.setDisabled(false);
-            this.pageDisplay.setDisabled(false);
+            this.topPageDisplay.setDisabled(false);
             this.bottomPageDisplay.setDisabled(false);
             this.changePage(0);
         } else {
@@ -509,7 +532,7 @@ Ext4.define('LABKEY.ext4.StudyScheduleGrid', {
             this.topNextButton.setDisabled(true);
             this.bottomNextButton.setDisabled(true);
 
-            this.pageDisplay.setDisabled(true);
+            this.topPageDisplay.setDisabled(true);
             this.bottomPageDisplay.setDisabled(true);
 
             this.topPrevButton.setVisible(false);
@@ -518,18 +541,18 @@ Ext4.define('LABKEY.ext4.StudyScheduleGrid', {
             this.topNextButton.setVisible(false);
             this.bottomNextButton.setVisible(false);
 
-            this.pageDisplay.setVisible(false);
+            this.topPageDisplay.setVisible(false);
             this.bottomPageDisplay.setVisible(false);
             
-            this.pageDisplay.setValue(1);
+            this.topPageDisplay.setValue(1);
             this.bottomPageDisplay.setValue(1);
         }
     },
 
     nextPage : function() {
-        var val = this.pageDisplay.getValue();
+        var val = this.topPageDisplay.getValue();
         val++;
-        this.pageDisplay.setValue(val);
+        this.topPageDisplay.setValue(val);
         this.bottomPageDisplay.setValue(val);
         if(val > 1 && this.topPrevButton.disabled){
             this.topPrevButton.setDisabled(false);
@@ -539,9 +562,9 @@ Ext4.define('LABKEY.ext4.StudyScheduleGrid', {
     },
 
     previousPage : function() {
-        var val = this.pageDisplay.getValue();
+        var val = this.topPageDisplay.getValue();
         val--;
-        this.pageDisplay.setValue(val);
+        this.topPageDisplay.setValue(val);
         this.bottomPageDisplay.setValue(val);
         if(val == 1){
             this.topPrevButton.setDisabled(true);

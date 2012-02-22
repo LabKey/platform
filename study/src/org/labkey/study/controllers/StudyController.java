@@ -4658,6 +4658,7 @@ public class StudyController extends BaseStudyController
                 data.category = def.getCategory();
                 data.cohort = def.getCohortId();
                 data.visible = def.isShowByDefault();
+                data.status = (String)ReportPropsManager.get().getPropertyValue(def.getEntityId(), getContainer(), "status");
                 bean.put(def.getDataSetId(), data);
             }
 
@@ -4735,6 +4736,7 @@ public class StudyController extends BaseStudyController
             Set<Integer> visible = new HashSet<Integer>(visibleIds.length);
             for (int id : visibleIds)
                   visible.add(id);
+            String[] statuses = form.getStatuses();
             for (int i = 0; i < allIds.length; i++)
             {
                 DataSetDefinition def = StudyManager.getInstance().getDataSetDefinition(getStudy(), allIds[i]);
@@ -4756,6 +4758,7 @@ public class StudyController extends BaseStudyController
                     def.setLabel(label);
                     StudyManager.getInstance().updateDataSetDefinition(getUser(), def);
                 }
+                ReportPropsManager.get().setPropertyValue(def.getEntityId(), getContainer(), "status", statuses[i]);
             }
 
             return true;
@@ -4773,6 +4776,7 @@ public class StudyController extends BaseStudyController
         public String label;
         public String category;
         public Integer cohort; // null for none
+        public String status;
         public boolean visible;
     }
 
@@ -5540,6 +5544,7 @@ public class StudyController extends BaseStudyController
     {
         private int[] _ids;
         private int[] _visible;
+        private String[] _statuses;
 
         public int[] getIds()
         {
@@ -5559,6 +5564,16 @@ public class StudyController extends BaseStudyController
         public void setVisible(int[] visible)
         {
             _visible = visible;
+        }
+
+        public String[] getStatuses()
+        {
+            return _statuses;
+        }
+
+        public void setStatuses(String[] statuses)
+        {
+            _statuses = statuses;
         }
     }
 

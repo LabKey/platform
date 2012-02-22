@@ -57,6 +57,7 @@
             <th align="left">Label</th>
             <th align="left">Category</th>
             <th align="left">Cohort</th>
+            <th align="left">Status</th>
             <th align="left">Visible</th>
         </tr>
     <%
@@ -101,6 +102,15 @@
                     <%
                     }
                 %>
+            </td>
+            <td>
+                <select name="statuses">
+                    <option value="" <%=data.status == null || data.status.equals("None") ? "selected=\"selected\"" : "" %>>None</option>
+                    <option value="Draft" <%=data.status != null && data.status.equals("Draft") ? "selected=\"selected\"" : "" %>>Draft</option>
+                    <option value="Final" <%=data.status != null && data.status.equals("Final") ? "selected=\"selected\"" : "" %>>Final</option>
+                    <option value="Locked" <%=data.status != null && data.status.equals("Locked") ? "selected=\"selected\"" : "" %>>Locked</option>
+                    <option value="Unlocked" <%=data.status != null && data.status.equals("Unlocked") ? "selected=\"selected\"" : "" %>>Unlocked</option>
+                </select>
             </td>
             <td align="center">
                 <input type="checkbox" name="visible" <%= data.visible ? "Checked" : "" %> value="<%= id %>">
