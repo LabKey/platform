@@ -18,6 +18,7 @@ package org.labkey.api.study;
 
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.labkey.api.admin.FolderImporter;
 import org.labkey.api.data.Container;
 import org.labkey.api.security.SecurableResource;
 import org.labkey.api.security.User;
@@ -188,6 +189,8 @@ public class StudyService
         boolean isValidSubjectNounSingular(Container container, String subjectNounSingular);
 
         DataSet.KeyType getDatasetKeyType(Container container, String datasetName);
+
+        FolderImporter getMissingValueImporter();
     }
 
     public static void register(Service serviceImpl)
