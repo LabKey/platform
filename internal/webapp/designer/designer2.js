@@ -1155,7 +1155,7 @@ LABKEY.DataRegion.ColumnsTab = Ext.extend(LABKEY.DataRegion.Tab, {
                     handler: function () {
                         var title = win.titleField.getValue();
                         title = title ? title.trim() : "";
-                        win.columnRecord.set("title", Ext.isEmpty(title) ? title : undefined);
+                        win.columnRecord.set("title", !Ext.isEmpty(title) ? title : undefined);
 
                         var error;
                         var fieldKey = win.columnRecord.get('fieldKey');
