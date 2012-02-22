@@ -815,7 +815,7 @@ Ext4.define('LABKEY.ext4.ParticipantReport', {
                     // Modify Title (hack: hardcode the webpart id since this is really not a webpart, just
                     // using a webpart frame, will need to start passing in the real id if this ever
                     // becomes a true webpart
-                    var titleEl = Ext4.query('th[class=labkey-wp-title-left]:first', 'webpart_-1');
+                    var titleEl = Ext4.query('span[class=labkey-wp-title-text]:first', 'webpart_-1');
                     if (titleEl && (titleEl.length >= 1))
                     {
                         titleEl[0].innerHTML = LABKEY.Utils.encodeHtml(data.name);
