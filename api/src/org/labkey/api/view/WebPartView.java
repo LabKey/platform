@@ -474,7 +474,11 @@ public abstract class WebPartView<ModelBean> extends HttpView<ModelBean>
                         out.printf(" <a href=\"%s\" onclick=\"return toggleLink(document.getElementById(%s), %s);\">",
                                 filter(expandCollapseUrl.getLocalURIString()), PageFlowUtil.jsString(expandCollapseGifId), "true");
                         if (showTitle())
+                        {
+                            out.print("<span class=\"labkey-wp-title-text\">");
                             out.print(PageFlowUtil.filter(title));
+                            out.print("</span>");
+                        }
                         out.print("</a>");
                     }
                     else
@@ -482,7 +486,11 @@ public abstract class WebPartView<ModelBean> extends HttpView<ModelBean>
                         if (null != href)
                             out.print("<a href=\"" + PageFlowUtil.filter(href) + "\">");
                         if (showTitle())
+                        {
+                            out.print("<span class=\"labkey-wp-title-text\">");
                             out.print(PageFlowUtil.filter(title));
+                            out.print("</span>");
+                        }
                         if (null != href)
                             out.print("</a>");
                     }
