@@ -216,13 +216,18 @@ Ext4.define('LABKEY.ext4.StudyScheduleGrid', {
             items: columnItems
         };
 
+        var _h = -1;
+        if (this.gridPanel) {
+            _h = this.centerPanel.getHeight();
+        }
+
         this.gridPanel = Ext4.create('Ext.grid.Panel', {
             store       : store,
             border      : false,
             autoScroll  : true,
             columnLines : false,
             columns     : columns,
-            selType     : 'cellmodel',
+            selType     : 'cellmodelfixed',
             enableColumnMove: false,
             listeners: {
                 scope: this,
@@ -268,6 +273,9 @@ Ext4.define('LABKEY.ext4.StudyScheduleGrid', {
             }
         });
 
+        if (_h > 0) {
+            this.centerPanel.setHeight(_h);
+        }
         this.centerPanel.removeAll();
         this.centerPanel.add(this.gridPanel);
 
