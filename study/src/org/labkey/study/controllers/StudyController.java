@@ -951,6 +951,8 @@ public class StudyController extends BaseStudyController
                 sb.append("<br/><span><b>Cohort :</b> ").append(filter(_cohortFilter.getDescription(getContainer(), getUser()))).append("</span>");
             if (qcStateSet != null)
                 sb.append("<br/><span><b>QC States:</b> ").append(filter(qcStateSet.getLabel())).append("</span>");
+            if (ReportPropsManager.get().getPropertyValue(def.getEntityId(), getContainer(), "refreshDate") != null)
+                sb.append("<br/><span><b>Refresh Date:</b> ").append(ReportPropsManager.get().getPropertyValue(def.getEntityId(), getContainer(), "refreshDate"));
             HtmlView header = new HtmlView(sb.toString());
 
             HtmlView script = new HtmlView("<script type=\"text/javascript\">LABKEY.requiresScript('study/ParticipantGroup.js');</script>");

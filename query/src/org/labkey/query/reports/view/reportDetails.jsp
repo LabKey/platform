@@ -27,6 +27,7 @@
 <%@ page import="org.labkey.api.view.ActionURL" %>
 <%@ page import="org.labkey.api.util.PageFlowUtil" %>
 <%@ page import="org.labkey.api.reports.report.ReportUrls" %>
+<%@ page import="org.labkey.api.reports.model.ReportPropsManager" %>
 <%
     JspView<ReportDesignBean> me = (JspView<ReportDesignBean>) HttpView.currentView();
     ReportDesignBean bean = me.getModelBean();
@@ -40,6 +41,7 @@
     Integer createdBy = reportDescriptor.getCreatedBy();
     Date createdDate = reportDescriptor.getCreated();
     Date modifiedDate = reportDescriptor.getModified();
+    Date refreshDate = (Date) ReportPropsManager.get().getPropertyValue(reportDescriptor.getEntityId(), bean.getContainer(), "refreshDate");
     ActionURL reportURL = bean.getReport().getRunReportURL(context);
     ActionURL thumbnailUrl = PageFlowUtil.urlProvider(ReportUrls.class).urlThumbnail(bean.getContainer(), bean.getReport());
     String type = bean.getReport().getTypeDescription();
@@ -121,6 +123,15 @@
         </td>
         <td>
             <%=h(modifiedDate)%>
+        </td>
+    </tr>
+
+    <tr>
+        <td class="labkey-form-label">
+            Refresh Date:
+        </td>
+        <td>
+            <%=h(refreshDate)%>
         </td>
     </tr>
 
