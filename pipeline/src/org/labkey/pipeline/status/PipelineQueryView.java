@@ -130,13 +130,15 @@ public class PipelineQueryView extends QueryView
                 bar.add(retryStatus);
             }
 
-            ActionButton deleteStatus = new ActionButton(StatusController.DeleteStatusAction.class, "Delete");
+            ActionURL deleteURL = new ActionURL(StatusController.DeleteStatusAction.class, getContainer());
+            ActionButton deleteStatus = new ActionButton(deleteURL, "Delete");
             deleteStatus.setRequiresSelection(true);
             deleteStatus.setActionType(ActionButton.Action.POST);
             deleteStatus.setDisplayPermission(DeletePermission.class);
             bar.add(deleteStatus);
 
-            ActionButton cancelButton = new ActionButton(StatusController.CancelStatusAction.class, "Cancel");
+            ActionURL cancelURL = new ActionURL(StatusController.CancelStatusAction.class, getContainer());
+            ActionButton cancelButton = new ActionButton(cancelURL, "Cancel");
             cancelButton.setRequiresSelection(true);
             cancelButton.setActionType(ActionButton.Action.POST);
             cancelButton.setDisplayPermission(DeletePermission.class);
