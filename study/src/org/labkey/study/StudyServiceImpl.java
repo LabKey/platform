@@ -20,6 +20,7 @@ import org.apache.commons.beanutils.ConversionException;
 import org.apache.commons.beanutils.ConvertUtils;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.labkey.api.admin.FolderImporter;
 import org.labkey.api.audit.AuditLogEvent;
 import org.labkey.api.audit.AuditLogService;
 import org.labkey.api.collections.ArrayListMap;
@@ -48,6 +49,7 @@ import org.labkey.api.view.DataView;
 import org.labkey.api.view.UnauthorizedException;
 import org.labkey.study.controllers.StudyController;
 import org.labkey.study.dataset.DatasetAuditViewFactory;
+import org.labkey.study.importer.MissingValueImporter;
 import org.labkey.study.model.*;
 import org.labkey.study.query.DataSetTableImpl;
 import org.labkey.study.query.StudyQuerySchema;
@@ -774,5 +776,10 @@ public class StudyServiceImpl implements StudyService.Service
             return DataSet.KeyType.SUBJECT;
         }
         return null;
+    }
+
+    public FolderImporter getMissingValueImporter()
+    {
+        return new MissingValueImporter.Factory().create();
     }
 }

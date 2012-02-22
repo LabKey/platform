@@ -19,7 +19,6 @@ import org.labkey.api.admin.FolderImporter;
 import org.labkey.api.admin.FolderSerializationRegistry;
 import org.labkey.api.pipeline.*;
 import org.labkey.api.services.ServiceRegistry;
-import org.labkey.api.study.StudyService;
 import org.labkey.api.util.FileType;
 import org.labkey.api.writer.FileSystemFile;
 import org.labkey.api.writer.VirtualFile;
@@ -30,9 +29,9 @@ import java.util.*;
 * User: cnathe
 * Date: Jan 19, 2012
 */
-public class FolderImportTask extends PipelineJob.Task<FolderImportTask.Factory>
+public class FolderImportFinalTask extends PipelineJob.Task<FolderImportFinalTask.Factory>
 {
-    private FolderImportTask(Factory factory, PipelineJob job)
+    private FolderImportFinalTask(Factory factory, PipelineJob job)
     {
         super(factory, job);
     }
@@ -45,10 +44,6 @@ public class FolderImportTask extends PipelineJob.Task<FolderImportTask.Factory>
         try
         {
             VirtualFile vf = new FileSystemFile(support.getRoot());
-
-//            // TODO: import MVIs from the folder.xml
-//            FolderImporter mvImporter = StudyService.get().getMissingValueImporter();
-//            mvImporter.process(support.getImportContext(), vf);
 
             FolderSerializationRegistry registry = ServiceRegistry.get().getService(FolderSerializationRegistry.class);
             Collection<FolderImporter> importers = registry.getRegisteredFolderImporters();
@@ -89,12 +84,12 @@ public class FolderImportTask extends PipelineJob.Task<FolderImportTask.Factory>
     {
         public Factory()
         {
-            super(FolderImportTask.class);
+            super(FolderImportFinalTask.class);
         }
 
         public PipelineJob.Task createTask(PipelineJob job)
         {
-            return new FolderImportTask(this, job);
+            return new FolderImportFinalTask(this, job);
         }
 
         public List<FileType> getInputTypes()
@@ -109,7 +104,7 @@ public class FolderImportTask extends PipelineJob.Task<FolderImportTask.Factory>
 
         public String getStatusName()
         {
-            return "FOLDER IMPORT";
+            return "IMPORT FOLDER";
         }
 
         public boolean isJobComplete(PipelineJob job)

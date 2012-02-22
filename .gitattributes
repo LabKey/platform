@@ -1598,9 +1598,10 @@ pipeline/src/org/labkey/pipeline/cluster/NoOpPipelineStatusWriter.java -text
 pipeline/src/org/labkey/pipeline/emailNotificationSetup.jsp -text
 pipeline/src/org/labkey/pipeline/importFolder.jsp -text
 pipeline/src/org/labkey/pipeline/importer/FolderImportContext.java -text
+pipeline/src/org/labkey/pipeline/importer/FolderImportFinalTask.java -text
+pipeline/src/org/labkey/pipeline/importer/FolderImportInitialTask.java -text
 pipeline/src/org/labkey/pipeline/importer/FolderImportJob.java -text
 pipeline/src/org/labkey/pipeline/importer/FolderImportProvider.java -text
-pipeline/src/org/labkey/pipeline/importer/FolderImportTask.java -text
 pipeline/src/org/labkey/pipeline/importer/FolderJobSupport.java -text
 pipeline/src/org/labkey/pipeline/mule/EPipelineContextListener.java -text
 pipeline/src/org/labkey/pipeline/mule/EPipelineQueueImpl.java -text

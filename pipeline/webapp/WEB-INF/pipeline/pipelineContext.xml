@@ -21,7 +21,8 @@
     <bean id="corePipelineRegistry" class="org.labkey.api.pipeline.TaskPipelineRegistrar">
         <property name="factoryImpls">
             <list>
-                <bean class="org.labkey.pipeline.importer.FolderImportTask$Factory"/>
+                <bean class="org.labkey.pipeline.importer.FolderImportInitialTask$Factory"/>
+                <bean class="org.labkey.pipeline.importer.FolderImportFinalTask$Factory"/>
             </list>
         </property>
 
@@ -33,7 +34,10 @@
                     <property name="taskProgressionSpec">
                         <list>
                             <bean id="initialTask" class="org.labkey.api.pipeline.TaskId">
-                                <constructor-arg><value type="java.lang.Class">org.labkey.pipeline.importer.FolderImportTask</value></constructor-arg>
+                                <constructor-arg><value type="java.lang.Class">org.labkey.pipeline.importer.FolderImportInitialTask</value></constructor-arg>
+                            </bean>
+                            <bean id="finalTask" class="org.labkey.api.pipeline.TaskId">
+                                <constructor-arg><value type="java.lang.Class">org.labkey.pipeline.importer.FolderImportFinalTask</value></constructor-arg>
                             </bean>
                         </list>
                     </property>

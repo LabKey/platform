@@ -15,12 +15,14 @@
  */
 package org.labkey.study.importer;
 
+import org.apache.xmlbeans.XmlObject;
 import org.labkey.api.admin.*;
 import org.labkey.api.admin.ImportContext;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.MvUtil;
 import org.labkey.api.pipeline.PipelineJobWarning;
 import org.labkey.api.writer.VirtualFile;
+import org.labkey.folder.xml.FolderDocument;
 import org.labkey.study.xml.MissingValueIndicatorsType;
 import org.labkey.study.xml.StudyDocument;
 
@@ -33,7 +35,7 @@ import java.util.Map;
  * Date: May 16, 2009
  * Time: 9:20:22 PM
  */
-public class MissingValueImporter implements FolderImporter<StudyDocument.Study>
+public class MissingValueImporter implements FolderImporter
 {
     @Override
     public String getDescription()
@@ -42,14 +44,21 @@ public class MissingValueImporter implements FolderImporter<StudyDocument.Study>
     }
 
     @Override
-    public void process(ImportContext<StudyDocument.Study> ctx, VirtualFile root) throws Exception
+    public void process(ImportContext ctx, VirtualFile root) throws Exception
     {
-        Container c = ctx.getContainer();
-        MissingValueIndicatorsType mvXml = ctx.getXml().getMissingValueIndicators();
+        // This conversion of the xml object to either a Study doc or a Folder doc is temparary until the
+        // study archive is merged with the folder archive. For now, we need to support importing the
+        // MissingValueIndicators from either document type.
+        XmlObject xml = ctx.getXml();
+        MissingValueIndicatorsType mvXml = null;
+        if (xml instanceof StudyDocument.Study)
+            mvXml = ((StudyDocument.Study)xml).getMissingValueIndicators();
+        else if (xml instanceof FolderDocument.Folder)
+            mvXml = ((FolderDocument.Folder)xml).getMissingValueIndicators();
 
         if (null != mvXml)
         {
-            ctx.getLogger().info("Loading missing value indicators");
+            ctx.getLogger().info("Loading " + getDescription());
             MissingValueIndicatorsType.MissingValueIndicator[] mvs = mvXml.getMissingValueIndicatorArray();
 
             // Create a map that looks just like the map returned by MvUtil.getIndicatorsAndLabels()
@@ -58,7 +67,7 @@ public class MissingValueImporter implements FolderImporter<StudyDocument.Study>
             for (MissingValueIndicatorsType.MissingValueIndicator mv : mvs)
                 newMvMap.put(mv.getIndicator(), mv.getLabel());
 
-            Map<String, String> oldMvMap = MvUtil.getIndicatorsAndLabels(c);
+            Map<String, String> oldMvMap = MvUtil.getIndicatorsAndLabels(ctx.getContainer());
 
             // Only save the imported missing value indicators if they don't match the current settings exactly; this makes
             // it possible to share the same MV indicators across a folder tree, without an import breaking inheritance.
@@ -66,13 +75,13 @@ public class MissingValueImporter implements FolderImporter<StudyDocument.Study>
             {
                 String[] mvIndicators = newMvMap.keySet().toArray(new String[mvs.length]);
                 String[] mvLabels = newMvMap.values().toArray(new String[mvs.length]);
-                MvUtil.assignMvIndicators(c, mvIndicators, mvLabels);
+                MvUtil.assignMvIndicators(ctx.getContainer(), mvIndicators, mvLabels);
             }
         }
     }
 
     @Override
-    public Collection<PipelineJobWarning> postProcess(ImportContext<StudyDocument.Study> ctx, VirtualFile root) throws Exception
+    public Collection<PipelineJobWarning> postProcess(ImportContext ctx, VirtualFile root) throws Exception
     {
         return null;
     }
