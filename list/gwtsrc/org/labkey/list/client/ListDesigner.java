@@ -1068,7 +1068,10 @@ public class ListDesigner implements EntryPoint, Saveable<GWTList>
             loc.append("/list");
             for (String part : PropertyUtil.getContainerPath().split("/"))
             {
-                loc.append("/").append(URL.encodeComponent(part));
+                if(!"".equals(part))
+                {
+                    loc.append("/").append(URL.encodePathSegment(part));
+                }
             }
             loc.append("/grid.view?listId=").append(_list.getListId());
             WindowUtil.setLocation(loc.toString());
