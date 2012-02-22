@@ -18,6 +18,7 @@ package org.labkey.api.admin;
 import org.apache.xmlbeans.XmlObject;
 import org.labkey.api.pipeline.PipelineJobWarning;
 import org.jetbrains.annotations.Nullable;
+import org.labkey.api.writer.VirtualFile;
 
 import java.io.File;
 import java.util.Collection;
@@ -31,7 +32,7 @@ public interface FolderImporter<DocumentRoot extends XmlObject>
 {
     /** Brief description of the types of objects this class imports */
     String getDescription();
-    void process(ImportContext<DocumentRoot> ctx, File root) throws Exception;
+    void process(ImportContext<DocumentRoot> ctx, VirtualFile root) throws Exception;
     @Nullable
-    Collection<PipelineJobWarning> postProcess(ImportContext<DocumentRoot> ctx, File root) throws Exception;
+    Collection<PipelineJobWarning> postProcess(ImportContext<DocumentRoot> ctx, VirtualFile root) throws Exception;
 }
