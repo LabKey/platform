@@ -15,6 +15,7 @@
  */
 package org.labkey.core.admin.importer;
 
+import org.apache.xmlbeans.XmlObject;
 import org.labkey.api.admin.FolderImporter;
 import org.labkey.api.admin.FolderImporterFactory;
 import org.labkey.api.admin.ImportContext;
@@ -27,10 +28,12 @@ import org.labkey.api.util.XmlValidationException;
 import org.labkey.api.view.FolderTab;
 import org.labkey.api.view.Portal;
 import org.labkey.api.view.WebPartFactory;
+import org.labkey.api.writer.VirtualFile;
 import org.labkey.folder.xml.FolderDocument;
 import org.labkey.folder.xml.PagesDocument;
 
 import java.io.File;
+import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
@@ -58,7 +61,7 @@ public class PageImporterFactory implements FolderImporterFactory
         }
 
         @Override
-        public void process(ImportContext<FolderDocument.Folder> ctx, File root) throws Exception
+        public void process(ImportContext<FolderDocument.Folder> ctx, VirtualFile root) throws Exception
         {
             FolderDocument.Folder.Pages pagesXml = ctx.getXml().getPages();
 
@@ -66,16 +69,19 @@ public class PageImporterFactory implements FolderImporterFactory
             {
                 PagesDocument pagesDocXml;
                 String pagesFileName = pagesXml.getFile();
-                File pagesXmlFile = new File(root, pagesFileName);
-                if (!pagesXmlFile.exists())
-                {
-                    throw new ImportException("Could not find expected file: " + pagesXmlFile);
-                }
 
                 try
                 {
-                    pagesDocXml = PagesDocument.Factory.parse(pagesXmlFile);
-                    XmlBeansUtil.validateXmlDocument(pagesDocXml);
+                    XmlObject xml = root.getXmlBean(pagesFileName);
+                    if (xml instanceof PagesDocument)
+                    {
+                        pagesDocXml = (PagesDocument)xml;
+                        XmlBeansUtil.validateXmlDocument(pagesDocXml);
+                    }
+                    else
+                    {
+                        throw new ImportException("Could not find expected file: " + pagesFileName);
+                    }
                 }
                 catch (XmlValidationException e)
                 {
@@ -137,7 +143,7 @@ public class PageImporterFactory implements FolderImporterFactory
         }
 
         @Override
-        public Collection<PipelineJobWarning> postProcess(ImportContext<FolderDocument.Folder> ctx, File root) throws Exception
+        public Collection<PipelineJobWarning> postProcess(ImportContext<FolderDocument.Folder> ctx, VirtualFile root) throws Exception
         {
             return null;
         }

@@ -229,7 +229,7 @@ public class CreateAncillaryStudyAction extends MutatingApiAction<EmphasisStudyD
             ImportContext importContext = new ImportContext(user, newStudy.getContainer(), studyDoc, Logger.getLogger(StudyWriter.class));
 
             // missing values and qc states
-            new MissingValueImporter().process(importContext, vf, errors);
+            new MissingValueImporter().process(importContext, vf);
             new QcStatesImporter().process(importContext, vf, errors);
 
             // dataset definitions

@@ -20,6 +20,7 @@ import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.util.XmlBeansUtil;
 import org.labkey.api.writer.VirtualFile;
 import org.labkey.study.model.StudyImpl;
+import org.labkey.study.xml.MissingValueIndicatorsType;
 import org.labkey.study.xml.SecurityType;
 import org.labkey.study.xml.StudyDocument;
 import org.labkey.study.xml.TimepointType;
@@ -77,11 +78,10 @@ class StudyXmlWriter implements InternalStudyWriter
 
         // Export the MV indicators -- always write these, even if they're blank
         Map<String, String> mvMap = MvUtil.getIndicatorsAndLabels(study.getContainer());
-        StudyDocument.Study.MissingValueIndicators mvXml = studyXml.addNewMissingValueIndicators();
-
+        MissingValueIndicatorsType mvXml = studyXml.addNewMissingValueIndicators();
         for (Map.Entry<String, String> mv : mvMap.entrySet())
         {
-            StudyDocument.Study.MissingValueIndicators.MissingValueIndicator indXml = mvXml.addNewMissingValueIndicator();
+            MissingValueIndicatorsType.MissingValueIndicator indXml = mvXml.addNewMissingValueIndicator();
             indXml.setIndicator(mv.getKey());
             indXml.setLabel(mv.getValue());
         }

@@ -16,17 +16,16 @@
 package org.labkey.query;
 
 import org.apache.xmlbeans.XmlObject;
+import org.labkey.api.admin.FolderWriter;
+import org.labkey.api.admin.FolderWriterFactory;
 import org.labkey.api.admin.ImportContext;
 import org.labkey.api.data.Container;
 import org.labkey.api.query.QueryDefinition;
 import org.labkey.api.query.QueryService;
-import org.labkey.api.study.ExternalStudyWriter;
-import org.labkey.api.study.ExternalStudyWriterFactory;
-import org.labkey.api.study.Study;
 import org.labkey.api.writer.VirtualFile;
 import org.labkey.data.xml.query.QueryDocument;
 import org.labkey.data.xml.query.QueryType;
-import org.labkey.study.xml.StudyDocument;
+import org.labkey.folder.xml.FolderDocument;
 
 import java.io.PrintWriter;
 import java.util.List;
@@ -36,7 +35,7 @@ import java.util.List;
  * Date: Apr 16, 2009
  * Time: 4:49:55 PM
  */
-public class QueryWriter implements ExternalStudyWriter
+public class QueryWriter implements FolderWriter
 {
     public static final String FILE_EXTENSION = ".sql";
     public static final String META_FILE_EXTENSION =  ".query.xml";
@@ -48,7 +47,8 @@ public class QueryWriter implements ExternalStudyWriter
         return "Queries";
     }
 
-    public void write(Study study, ImportContext<StudyDocument.Study> ctx, VirtualFile root) throws Exception
+    @Override
+    public void write(Container object, ImportContext<FolderDocument.Folder> ctx, VirtualFile root) throws Exception
     {
         Container c = ctx.getContainer();
         List<QueryDefinition> queries = QueryService.get().getQueryDefs(ctx.getUser(), c);
@@ -87,9 +87,9 @@ public class QueryWriter implements ExternalStudyWriter
         }
     }
 
-    public static class Factory implements ExternalStudyWriterFactory
+    public static class Factory implements FolderWriterFactory
     {
-        public ExternalStudyWriter create()
+        public FolderWriter create()
         {
             return new QueryWriter();
         }

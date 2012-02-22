@@ -28,10 +28,11 @@ import org.labkey.api.security.User;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.XmlBeansUtil;
 import org.labkey.api.util.XmlValidationException;
+import org.labkey.api.writer.VirtualFile;
 import org.labkey.data.xml.query.QueryDocument;
 import org.labkey.data.xml.query.QueryType;
+import org.labkey.folder.xml.FolderDocument;
 import org.labkey.query.persist.QueryManager;
-import org.labkey.study.xml.StudyDocument;
 
 import javax.servlet.ServletException;
 import java.io.File;
@@ -45,14 +46,14 @@ import java.util.*;
  * Date: May 16, 2009
  * Time: 2:21:56 PM
  */
-public class QueryImporter implements FolderImporter<StudyDocument.Study>
+public class QueryImporter implements FolderImporter<FolderDocument.Folder>
 {
     public String getDescription()
     {
         return "queries";
     }
 
-    public void process(ImportContext<StudyDocument.Study> ctx, File root) throws ServletException, XmlException, IOException, SQLException, ImportException
+    public void process(ImportContext<FolderDocument.Folder> ctx, VirtualFile root) throws ServletException, XmlException, IOException, SQLException, ImportException
     {
         File queriesDir = ctx.getDir("queries");
         if (null != queriesDir)
@@ -127,7 +128,7 @@ public class QueryImporter implements FolderImporter<StudyDocument.Study>
         }
     }
 
-    public Collection<PipelineJobWarning> postProcess(ImportContext<StudyDocument.Study> ctx, File root) throws Exception
+    public Collection<PipelineJobWarning> postProcess(ImportContext<FolderDocument.Folder> ctx, VirtualFile root) throws Exception
     {
         List<PipelineJobWarning> warnings = new ArrayList<PipelineJobWarning>();
 

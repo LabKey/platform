@@ -16,6 +16,7 @@
 
 package org.labkey.list;
 
+import org.labkey.api.admin.FolderSerializationRegistry;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.module.DefaultModule;
@@ -23,12 +24,12 @@ import org.labkey.api.module.ModuleContext;
 import org.labkey.api.search.SearchService;
 import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.AdminPermission;
+import org.labkey.api.study.StudySerializationRegistry;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.WebPartFactory;
 import org.labkey.api.exp.list.ListService;
 import org.labkey.api.exp.property.PropertyService;
 import org.labkey.api.audit.AuditLogService;
-import org.labkey.api.study.StudySerializationRegistry;
 import org.labkey.api.services.ServiceRegistry;
 import org.labkey.list.view.ListController;
 import org.labkey.list.view.SingleListWebPartFactory;
@@ -36,7 +37,6 @@ import org.labkey.list.view.ListWebPart;
 import org.labkey.list.model.*;
 
 import java.util.Collection;
-import java.util.Collections;
 import java.util.List;
 import java.util.ArrayList;
 
@@ -80,10 +80,19 @@ public class ListModule extends DefaultModule
         // add a container listener so we'll know when our container is deleted:
         ContainerManager.addContainerListener(new ListContainerListener());
         AuditLogService.get().addAuditViewFactory(ListAuditViewFactory.getInstance());
-        StudySerializationRegistry registry = ServiceRegistry.get().getService(StudySerializationRegistry.class);
 
-        if (null != registry)
-            registry.addFactories(new StudyListWriter.Factory(), new StudyListImporter.Factory());
+        FolderSerializationRegistry folderRegistry = ServiceRegistry.get().getService(FolderSerializationRegistry.class);
+        if (null != folderRegistry)
+        {
+            folderRegistry.addFactories(new FolderListWriter.Factory(), new FolderListImporter.Factory());
+        }
+
+        // support importing lists from the study archive for backwards compatibility
+        StudySerializationRegistry studyRegistry = ServiceRegistry.get().getService(StudySerializationRegistry.class);
+        if (null != studyRegistry)
+        {
+            studyRegistry.addImportFactory(new FolderListImporter.Factory());
+        }                  
 
         if (null != ServiceRegistry.get(SearchService.class))
         {

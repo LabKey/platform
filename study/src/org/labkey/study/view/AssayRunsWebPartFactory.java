@@ -87,9 +87,17 @@ public class AssayRunsWebPartFactory extends AssayBaseWebPartFactory
         if (deserializedPropertyMap.containsKey("assayName"))
         {
             List<ExpProtocol> protocols = AssayService.get().getAssayProtocols(ctx.getContainer()); 
-            if (protocols.size() == 1)
+            if (protocols.size() > 0)
             {
-                deserializedPropertyMap.put("viewProtocolId", String.valueOf(protocols.get(0).getRowId()));
+                for (ExpProtocol protocol : protocols)
+                {
+                    String name = deserializedPropertyMap.get("assayName");
+                    if (protocol.getName().equals(name))
+                    {
+                        deserializedPropertyMap.put("viewProtocolId", String.valueOf(protocol.getRowId()));
+                        break;
+                    }
+                }
             }
             deserializedPropertyMap.remove("assayName");
         }

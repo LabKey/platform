@@ -15,8 +15,6 @@
  */
 package org.labkey.pipeline.importer;
 
-import org.springframework.validation.BindException;
-
 import java.io.File;
 
 /**

@@ -141,7 +141,7 @@ public class StudyImportInitialTask extends PipelineJob.Task<StudyImportInitialT
 
             VirtualFile vf = new FileSystemFile(support.getRoot());
 
-            new MissingValueImporter().process(ctx, vf, support.getSpringErrors());
+            new MissingValueImporter().process(ctx, vf);
             new QcStatesImporter().process(ctx, vf, support.getSpringErrors());
 
             new VisitImporter().process(ctx, vf, support.getSpringErrors());

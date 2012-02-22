@@ -17,6 +17,7 @@
 package org.labkey.query;
 
 import org.jetbrains.annotations.NotNull;
+import org.labkey.api.admin.FolderSerializationRegistry;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.DbSchema;
@@ -149,13 +150,21 @@ public class QueryModule extends DefaultModule
 
         ServiceRegistry.get().registerService(ScriptEngineManager.class, new LabkeyScriptEngineManager());
 
-        StudySerializationRegistry registry = ServiceRegistry.get().getService(StudySerializationRegistry.class);
-
-        if (null != registry)
+        FolderSerializationRegistry folderRegistry = ServiceRegistry.get().getService(FolderSerializationRegistry.class);
+        if (null != folderRegistry)
         {
-            registry.addFactories(new QueryWriter.Factory(), new QueryImporter.Factory());
-            registry.addFactories(new CustomViewWriter.Factory(), new CustomViewImporter.Factory());
-            registry.addFactories(new ReportWriter.Factory(), new ReportImporter.Factory());
+            folderRegistry.addFactories(new QueryWriter.Factory(), new QueryImporter.Factory());
+            folderRegistry.addFactories(new CustomViewWriter.Factory(), new CustomViewImporter.Factory());
+            folderRegistry.addFactories(new ReportWriter.Factory(), new ReportImporter.Factory());
+        }
+
+        // support importing Queries, Custom Views, and Reports from the study archive for backwards compatibility
+        StudySerializationRegistry studyRegistry = ServiceRegistry.get().getService(StudySerializationRegistry.class);
+        if (null != studyRegistry)
+        {
+            studyRegistry.addImportFactory(new QueryImporter.Factory());
+            studyRegistry.addImportFactory(new CustomViewImporter.Factory());
+            studyRegistry.addImportFactory(new ReportImporter.Factory());
         }
 
         SystemMaintenance.addTask(new SchemaReloadMaintenanceTask());

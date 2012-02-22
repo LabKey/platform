@@ -77,7 +77,7 @@ public class StudyImportFinalTask extends PipelineJob.Task<StudyImportFinalTask.
             {
                 job.info("Importing " + importer.getDescription());
                 job.setStatus("IMPORT " + importer.getDescription());
-                importer.process(support.getImportContext(), support.getRoot());
+                importer.process(support.getImportContext(), vf);
                 job.info("Done importing " + importer.getDescription());
             }
             try
@@ -90,7 +90,7 @@ public class StudyImportFinalTask extends PipelineJob.Task<StudyImportFinalTask.
                 {
                     job.info("Post-processing " + importer.getDescription());
                     job.setStatus("POST-PROCESS " + importer.getDescription());
-                    Collection<PipelineJobWarning> importerWarnings = importer.postProcess(support.getImportContext(), support.getRoot());
+                    Collection<PipelineJobWarning> importerWarnings = importer.postProcess(support.getImportContext(), vf);
                     if (null != importerWarnings)
                         warnings.addAll(importerWarnings);
                     job.info("Done post-processing " + importer.getDescription());

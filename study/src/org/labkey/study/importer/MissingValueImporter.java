@@ -15,12 +15,16 @@
  */
 package org.labkey.study.importer;
 
+import org.labkey.api.admin.*;
+import org.labkey.api.admin.ImportContext;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.MvUtil;
+import org.labkey.api.pipeline.PipelineJobWarning;
 import org.labkey.api.writer.VirtualFile;
+import org.labkey.study.xml.MissingValueIndicatorsType;
 import org.labkey.study.xml.StudyDocument;
-import org.springframework.validation.BindException;
 
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -29,29 +33,29 @@ import java.util.Map;
  * Date: May 16, 2009
  * Time: 9:20:22 PM
  */
-public class MissingValueImporter implements InternalStudyImporter
+public class MissingValueImporter implements FolderImporter<StudyDocument.Study>
 {
     @Override
     public String getDescription()
     {
-        return "Missing Value Importer";
+        return "missing value indicators";
     }
 
     @Override
-    public void process(ImportContext ctx, VirtualFile root, BindException errors) throws Exception
+    public void process(ImportContext<StudyDocument.Study> ctx, VirtualFile root) throws Exception
     {
         Container c = ctx.getContainer();
-        StudyDocument.Study.MissingValueIndicators mvXml = ctx.getXml().getMissingValueIndicators();
+        MissingValueIndicatorsType mvXml = ctx.getXml().getMissingValueIndicators();
 
         if (null != mvXml)
         {
             ctx.getLogger().info("Loading missing value indicators");
-            StudyDocument.Study.MissingValueIndicators.MissingValueIndicator[] mvs = mvXml.getMissingValueIndicatorArray();
+            MissingValueIndicatorsType.MissingValueIndicator[] mvs = mvXml.getMissingValueIndicatorArray();
 
             // Create a map that looks just like the map returned by MvUtil.getIndicatorsAndLabels()
             Map<String, String> newMvMap = new HashMap<String, String>(mvs.length);
 
-            for (StudyDocument.Study.MissingValueIndicators.MissingValueIndicator mv : mvs)
+            for (MissingValueIndicatorsType.MissingValueIndicator mv : mvs)
                 newMvMap.put(mv.getIndicator(), mv.getLabel());
 
             Map<String, String> oldMvMap = MvUtil.getIndicatorsAndLabels(c);
@@ -64,6 +68,21 @@ public class MissingValueImporter implements InternalStudyImporter
                 String[] mvLabels = newMvMap.values().toArray(new String[mvs.length]);
                 MvUtil.assignMvIndicators(c, mvIndicators, mvLabels);
             }
+        }
+    }
+
+    @Override
+    public Collection<PipelineJobWarning> postProcess(ImportContext<StudyDocument.Study> ctx, VirtualFile root) throws Exception
+    {
+        return null;
+    }
+
+    public static class Factory implements FolderImporterFactory
+    {
+        @Override
+        public FolderImporter create()
+        {
+            return new MissingValueImporter();
         }
     }
 }

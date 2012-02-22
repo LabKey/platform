@@ -41,8 +41,6 @@
         </tr>
         <%
             Collection<Writer> writers = new LinkedList<Writer>(StudySerializationRegistryImpl.get().getInternalStudyWriters());
-            writers.addAll(StudySerializationRegistryImpl.get().getRegisteredStudyWriters());
-
             for (Writer writer : writers)
             {
                 String text = writer.getSelectionText();

@@ -19,6 +19,7 @@ import org.labkey.api.admin.FolderImporter;
 import org.labkey.api.admin.FolderSerializationRegistry;
 import org.labkey.api.pipeline.*;
 import org.labkey.api.services.ServiceRegistry;
+import org.labkey.api.study.StudyService;
 import org.labkey.api.util.FileType;
 import org.labkey.api.writer.FileSystemFile;
 import org.labkey.api.writer.VirtualFile;
@@ -43,13 +44,19 @@ public class FolderImportTask extends PipelineJob.Task<FolderImportTask.Factory>
 
         try
         {
+            VirtualFile vf = new FileSystemFile(support.getRoot());
+
+//            // TODO: import MVIs from the folder.xml
+//            FolderImporter mvImporter = StudyService.get().getMissingValueImporter();
+//            mvImporter.process(support.getImportContext(), vf);
+
             FolderSerializationRegistry registry = ServiceRegistry.get().getService(FolderSerializationRegistry.class);
             Collection<FolderImporter> importers = registry.getRegisteredFolderImporters();
             for (FolderImporter importer : importers)
             {
                 job.info("Importing " + importer.getDescription());
                 job.setStatus("IMPORT " + importer.getDescription());
-                importer.process(support.getImportContext(), support.getRoot());
+                importer.process(support.getImportContext(), vf);
                 job.info("Done importing " + importer.getDescription());
             }
 
@@ -58,7 +65,7 @@ public class FolderImportTask extends PipelineJob.Task<FolderImportTask.Factory>
             {
                 job.info("Post-processing " + importer.getDescription());
                 job.setStatus("POST-PROCESS " + importer.getDescription());
-                Collection<PipelineJobWarning> importerWarnings = importer.postProcess(support.getImportContext(), support.getRoot());
+                Collection<PipelineJobWarning> importerWarnings = importer.postProcess(support.getImportContext(), vf);
                 if (null != importerWarnings)
                     warnings.addAll(importerWarnings);
                 job.info("Done post-processing " + importer.getDescription());

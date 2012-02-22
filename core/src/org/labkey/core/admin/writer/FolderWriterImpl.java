@@ -41,8 +41,7 @@ public class FolderWriterImpl implements InternalFolderWriter
 
         Set<String> dataTypes = ctx.getDataTypes();
 
-        // Call all the external writers (those defined outside the module) first -- this ensures that folder.xml
-        // is the last writer called.
+        // Call all the writers first -- this ensures that folder.xml is the last writer called.
         for (org.labkey.api.admin.FolderWriter writer : FolderSerializationRegistryImpl.get().getRegisteredFolderWriters())
         {
             String text = writer.getSelectionText();

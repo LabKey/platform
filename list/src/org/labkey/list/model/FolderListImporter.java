@@ -21,7 +21,8 @@ import org.labkey.api.admin.FolderImporter;
 import org.labkey.api.admin.FolderImporterFactory;
 import org.labkey.api.admin.ImportContext;
 import org.labkey.api.pipeline.PipelineJobWarning;
-import org.labkey.study.xml.StudyDocument;
+import org.labkey.api.writer.VirtualFile;
+import org.labkey.folder.xml.FolderDocument;
 
 import java.io.File;
 import java.util.Collection;
@@ -33,14 +34,14 @@ import java.util.List;
 * Date: Aug 27, 2009
 * Time: 2:12:01 PM
 */
-public class StudyListImporter implements FolderImporter<StudyDocument.Study>
+public class FolderListImporter implements FolderImporter<FolderDocument.Folder>
 {
     public String getDescription()
     {
         return "lists";
     }
 
-    public void process(ImportContext<StudyDocument.Study> ctx, File root) throws Exception
+    public void process(ImportContext<FolderDocument.Folder> ctx, VirtualFile root) throws Exception
     {
         File listsDir = ctx.getDir("lists");
 
@@ -49,14 +50,14 @@ public class StudyListImporter implements FolderImporter<StudyDocument.Study>
             ListImporter importer = new ListImporter();
             Logger log = ctx.getLogger();
             List<String> errors = new LinkedList<String>();
-            importer.process(root, listsDir, ctx.getContainer(), ctx.getUser(), errors, log);
+            importer.process(listsDir, ctx.getContainer(), ctx.getUser(), errors, log);
 
             for (String error : errors)
                 log.error(error);
         }
     }
 
-    public Collection<PipelineJobWarning> postProcess(ImportContext<StudyDocument.Study> ctx, File root) throws Exception
+    public Collection<PipelineJobWarning> postProcess(ImportContext<FolderDocument.Folder> ctx, VirtualFile root) throws Exception
     {
         //nothing for now
         return null;
@@ -66,7 +67,7 @@ public class StudyListImporter implements FolderImporter<StudyDocument.Study>
     {
         public FolderImporter create()
         {
-            return new StudyListImporter();
+            return new FolderListImporter();
         }
     }
 }

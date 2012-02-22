@@ -28,6 +28,7 @@ import org.labkey.api.pipeline.PipelineJobWarning;
 import org.labkey.api.util.HString;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.wiki.WikiRendererType;
+import org.labkey.api.writer.VirtualFile;
 import org.labkey.data.xml.wiki.WikiType;
 import org.labkey.data.xml.wiki.WikisDocument;
 import org.labkey.data.xml.wiki.WikisType;
@@ -69,7 +70,7 @@ public class WikiImporterFactory implements FolderImporterFactory
         }
 
         @Override
-        public void process(ImportContext<FolderDocument.Folder> ctx, File root) throws Exception
+        public void process(ImportContext<FolderDocument.Folder> ctx, VirtualFile root) throws Exception
         {
             File wikisDir = ctx.getDir("wikis");
             if (wikisDir != null)
@@ -211,7 +212,7 @@ public class WikiImporterFactory implements FolderImporterFactory
         }
 
         @Override
-        public Collection<PipelineJobWarning> postProcess(ImportContext<FolderDocument.Folder> ctx, File root) throws Exception
+        public Collection<PipelineJobWarning> postProcess(ImportContext<FolderDocument.Folder> ctx, VirtualFile root) throws Exception
         {
             return Collections.emptySet();
         }

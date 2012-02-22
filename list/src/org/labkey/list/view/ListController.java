@@ -1137,7 +1137,7 @@ public class ListController extends SpringActionController
 
                     try
                     {
-                        li.process(dir, dir, getContainer(), getUser(), errorList, Logger.getLogger(ListController.class));
+                        li.process(dir, getContainer(), getUser(), errorList, Logger.getLogger(ListController.class));
 
                         for (String error : errorList)
                             errors.reject(ERROR_MSG, error);

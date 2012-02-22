@@ -62,8 +62,7 @@ public class WikiWriterFactory implements FolderWriterFactory
         public void write(Container container, ImportContext<FolderDocument.Folder> ctx, VirtualFile vf) throws Exception
         {
             // Set up the pointer in the folder.xml file
-            FolderDocument.Folder.Wikis wikisXML = ctx.getXml().addNewWikis();
-            wikisXML.setDir(DIRECTORY_NAME);
+            ctx.getXml().addNewWikis().setDir(DIRECTORY_NAME);
 
             // Just dump the @wiki WebDav tree to the output
             VirtualFile wikiDir = vf.getDir(DIRECTORY_NAME);

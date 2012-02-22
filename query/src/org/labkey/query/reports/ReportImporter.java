@@ -23,7 +23,8 @@ import org.labkey.api.admin.InvalidFileException;
 import org.labkey.api.reports.ReportService;
 import org.labkey.api.pipeline.PipelineJobWarning;
 import org.labkey.api.util.XmlValidationException;
-import org.labkey.study.xml.StudyDocument;
+import org.labkey.api.writer.VirtualFile;
+import org.labkey.folder.xml.FolderDocument;
 
 import java.io.File;
 import java.io.FilenameFilter;
@@ -36,14 +37,14 @@ import java.util.Collection;
  * Date: May 16, 2009
  * Time: 2:33:52 PM
  */
-public class ReportImporter implements FolderImporter<StudyDocument.Study>
+public class ReportImporter implements FolderImporter<FolderDocument.Folder>
 {
     public String getDescription()
     {
         return "reports";
     }
 
-    public void process(ImportContext<StudyDocument.Study> ctx, File root) throws IOException, SQLException, ImportException
+    public void process(ImportContext<FolderDocument.Folder> ctx, VirtualFile root) throws IOException, SQLException, ImportException
     {
         File reportsDir = ctx.getDir("reports");
         if (null != reportsDir)
@@ -71,7 +72,7 @@ public class ReportImporter implements FolderImporter<StudyDocument.Study>
         }
     }
 
-    public Collection<PipelineJobWarning> postProcess(ImportContext<StudyDocument.Study> ctx, File root) throws Exception
+    public Collection<PipelineJobWarning> postProcess(ImportContext<FolderDocument.Folder> ctx, VirtualFile root) throws Exception
     {
         //nothing for now
         return null;

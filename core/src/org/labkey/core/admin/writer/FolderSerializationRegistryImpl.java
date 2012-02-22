@@ -43,7 +43,7 @@ public class FolderSerializationRegistryImpl implements FolderSerializationRegis
         return INSTANCE;
     }
 
-    // These writers are defined and registered by other modules.  They have no knowledge of folder internals, other
+    // These writers can be defined and registered by other modules.  They have no knowledge of folder internals, other
     // than being able to write elements into folder.xml.
     public Collection<FolderWriter> getRegisteredFolderWriters()
     {
@@ -56,7 +56,7 @@ public class FolderSerializationRegistryImpl implements FolderSerializationRegis
         return writers;
     }
 
-    // These importers are defined and registered by other modules.  They have no knowledge of folder internals, other
+    // These importers can be defined and registered by other modules.  They have no knowledge of folder internals, other
     // than being able to read elements from folder.xml.
     public Collection<FolderImporter> getRegisteredFolderImporters()
     {

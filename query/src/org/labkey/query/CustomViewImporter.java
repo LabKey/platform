@@ -22,7 +22,8 @@ import org.labkey.api.admin.ImportException;
 import org.labkey.api.query.QueryService;
 import org.labkey.api.pipeline.PipelineJobWarning;
 import org.labkey.api.util.XmlValidationException;
-import org.labkey.study.xml.StudyDocument;
+import org.labkey.api.writer.VirtualFile;
+import org.labkey.folder.xml.FolderDocument;
 
 import java.io.File;
 import java.io.IOException;
@@ -34,14 +35,14 @@ import java.util.Collection;
  * Date: May 16, 2009
  * Time: 2:33:52 PM
  */
-public class CustomViewImporter implements FolderImporter<StudyDocument.Study>
+public class CustomViewImporter implements FolderImporter<FolderDocument.Folder>
 {
     public String getDescription()
     {
         return "custom views";
     }
 
-    public void process(ImportContext<StudyDocument.Study> ctx, File root) throws IOException, SQLException, ImportException, XmlValidationException
+    public void process(ImportContext<FolderDocument.Folder> ctx, VirtualFile root) throws IOException, SQLException, ImportException, XmlValidationException
     {
         File viewDir = ctx.getDir("views");
 
@@ -53,7 +54,7 @@ public class CustomViewImporter implements FolderImporter<StudyDocument.Study>
         }
     }
 
-    public Collection<PipelineJobWarning> postProcess(ImportContext<StudyDocument.Study> ctx, File root) throws Exception
+    public Collection<PipelineJobWarning> postProcess(ImportContext<FolderDocument.Folder> ctx, VirtualFile root) throws Exception
     {
         //nothing for now
         return null;        

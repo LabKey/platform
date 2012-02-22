@@ -1309,6 +1309,8 @@ list/module.properties -text
 list/src/org/labkey/list/ListContainerListener.java -text
 list/src/org/labkey/list/ListModule.java -text
 list/src/org/labkey/list/model/FileNameUniquifier.java -text
+list/src/org/labkey/list/model/FolderListImporter.java -text
+list/src/org/labkey/list/model/FolderListWriter.java -text
 list/src/org/labkey/list/model/ListAuditViewFactory.java -text
 list/src/org/labkey/list/model/ListDef.java -text
 list/src/org/labkey/list/model/ListDefinitionImpl.java -text
@@ -1323,8 +1325,6 @@ list/src/org/labkey/list/model/ListSchema.java -text
 list/src/org/labkey/list/model/ListServiceImpl.java -text
 list/src/org/labkey/list/model/ListTable.java -text
 list/src/org/labkey/list/model/ListWriter.java -text
-list/src/org/labkey/list/model/StudyListImporter.java -text
-list/src/org/labkey/list/model/StudyListWriter.java -text
 list/src/org/labkey/list/view/AttachmentDisplayColumn.java -text
 list/src/org/labkey/list/view/ListController.java -text
 list/src/org/labkey/list/view/ListDefinitionForm.java -text

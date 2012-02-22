@@ -36,6 +36,7 @@ import org.labkey.api.admin.InvalidFileException;
 import org.labkey.api.util.FileUtil;
 import org.labkey.api.util.XmlBeansUtil;
 import org.labkey.api.util.XmlValidationException;
+import org.labkey.api.writer.VirtualFile;
 import org.labkey.data.xml.ColumnType;
 import org.labkey.data.xml.TableType;
 import org.labkey.data.xml.TablesDocument;
@@ -58,7 +59,7 @@ public class ListImporter
 {
     private static final String TYPE_NAME_COLUMN = "ListName";
 
-    public void process(File root, File listsDir, Container c, User user, List<String> errors, Logger log) throws Exception
+    public void process(File listsDir, Container c, User user, List<String> errors, Logger log) throws Exception
     {
         File schemaFile = new File(listsDir, "lists.xml");
 
@@ -72,11 +73,11 @@ public class ListImporter
         catch (XmlValidationException xve)
         {
             // Note: different constructor than the one below
-            throw new InvalidFileException(root, schemaFile, xve);
+            throw new InvalidFileException(schemaFile.getName(), xve);
         }
         catch (Exception e)
         {
-            throw new InvalidFileException(root, schemaFile, e);
+            throw new InvalidFileException(schemaFile.getName(), e);
         }
 
         TablesDocument.Tables tablesXml = tablesDoc.getTables();

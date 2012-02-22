@@ -15,6 +15,8 @@
  */
 package org.labkey.query;
 
+import org.labkey.api.admin.FolderWriter;
+import org.labkey.api.admin.FolderWriterFactory;
 import org.labkey.api.admin.ImportContext;
 import org.labkey.api.admin.ImportException;
 import org.labkey.api.data.Container;
@@ -23,9 +25,8 @@ import org.labkey.api.query.DefaultSchema;
 import org.labkey.api.query.QueryService;
 import org.labkey.api.query.UserSchema;
 import org.labkey.api.security.User;
-import org.labkey.api.study.*;
 import org.labkey.api.writer.VirtualFile;
-import org.labkey.study.xml.StudyDocument;
+import org.labkey.folder.xml.FolderDocument;
 
 import java.util.List;
 import java.util.Set;
@@ -35,7 +36,7 @@ import java.util.Set;
  * Date: May 23, 2009
  * Time: 8:25:19 AM
  */
-public class CustomViewWriter implements ExternalStudyWriter
+public class CustomViewWriter implements FolderWriter
 {
     private static final String DEFAULT_DIRECTORY = "views";  // TODO: qviews?
     private VirtualFile _viewDir = null;
@@ -45,7 +46,8 @@ public class CustomViewWriter implements ExternalStudyWriter
         return "Custom Views";
     }
 
-    public void write(Study study, ImportContext<StudyDocument.Study> ctx, VirtualFile root) throws Exception
+    @Override
+    public void write(Container object, ImportContext<FolderDocument.Folder> ctx, VirtualFile root) throws Exception
     {
         Container c = ctx.getContainer();
         User user = ctx.getUser();
@@ -80,7 +82,7 @@ public class CustomViewWriter implements ExternalStudyWriter
     }
 
     // Create the <views> element
-    private VirtualFile ensureViewDirectory(ImportContext<StudyDocument.Study> ctx, VirtualFile root) throws ImportException
+    private VirtualFile ensureViewDirectory(ImportContext<FolderDocument.Folder> ctx, VirtualFile root) throws ImportException
     {
         if (null == _viewDir)
         {
@@ -90,9 +92,9 @@ public class CustomViewWriter implements ExternalStudyWriter
         return _viewDir;
     }
 
-    public static class Factory implements ExternalStudyWriterFactory
+    public static class Factory implements FolderWriterFactory
     {
-        public ExternalStudyWriter create()
+        public FolderWriter create()
         {
             return new CustomViewWriter();
         }

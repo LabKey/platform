@@ -16,10 +16,14 @@
 package org.labkey.core.admin.writer;
 
 import org.labkey.api.data.Container;
+import org.labkey.api.data.MvUtil;
 import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.util.XmlBeansUtil;
 import org.labkey.api.writer.VirtualFile;
 import org.labkey.folder.xml.FolderDocument;
+import org.labkey.study.xml.MissingValueIndicatorsType;
+
+import java.util.Map;
 
 /**
  * User: cnathe
@@ -44,6 +48,16 @@ public class FolderXmlWriter implements InternalFolderWriter
 
         folderXml.setArchiveVersion(ModuleLoader.getInstance().getCoreModule().getVersion());
         folderXml.setLabel(c.getName()); // TODO: change to setName
+
+        // Export the MV indicators -- always write these, even if they're blank
+        Map<String, String> mvMap = MvUtil.getIndicatorsAndLabels(c);
+        MissingValueIndicatorsType mvXml = folderXml.addNewMissingValueIndicators();
+        for (Map.Entry<String, String> mv : mvMap.entrySet())
+        {
+            MissingValueIndicatorsType.MissingValueIndicator indXml = mvXml.addNewMissingValueIndicator();
+            indXml.setIndicator(mv.getKey());
+            indXml.setLabel(mv.getValue());
+        }
 
         // Save the folder.xml file.  This gets called last, after all other writers have populated the other sections.
         vf.saveXmlBean("folder.xml", ctx.getDocument());

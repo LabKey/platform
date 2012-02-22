@@ -17,6 +17,8 @@ package org.labkey.study.writer;
 
 import org.labkey.api.admin.FolderImporter;
 import org.labkey.api.admin.FolderImporterFactory;
+import org.labkey.api.admin.FolderWriter;
+import org.labkey.api.admin.FolderWriterFactory;
 import org.labkey.api.study.*;
 
 import java.util.Arrays;
@@ -27,7 +29,7 @@ import java.util.concurrent.CopyOnWriteArrayList;
 public class StudySerializationRegistryImpl implements StudySerializationRegistry
 {
     private static final StudySerializationRegistryImpl INSTANCE = new StudySerializationRegistryImpl();
-    private static final Collection<ExternalStudyWriterFactory> WRITER_FACTORIES = new CopyOnWriteArrayList<ExternalStudyWriterFactory>();
+    private static final Collection<FolderWriterFactory> WRITER_FACTORIES = new CopyOnWriteArrayList<FolderWriterFactory>();
     private static final Collection<FolderImporterFactory> IMPORTER_FACTORIES = new CopyOnWriteArrayList<FolderImporterFactory>();
 
     private StudySerializationRegistryImpl()
@@ -41,12 +43,12 @@ public class StudySerializationRegistryImpl implements StudySerializationRegistr
 
     // These writers are defined and registered by other modules.  They have no knowledge of study internals, other
     // than being able to write elements into study.xml.
-    public Collection<ExternalStudyWriter> getRegisteredStudyWriters()
+    public Collection<FolderWriter> getRegisteredStudyWriters()
     {
         // New up the writers every time since these classes can be stateful
-        Collection<ExternalStudyWriter> writers = new LinkedList<ExternalStudyWriter>();
+        Collection<FolderWriter> writers = new LinkedList<FolderWriter>();
 
-        for (ExternalStudyWriterFactory factory : WRITER_FACTORIES)
+        for (FolderWriterFactory factory : WRITER_FACTORIES)
             writers.add(factory.create());
 
         return writers;
@@ -65,9 +67,14 @@ public class StudySerializationRegistryImpl implements StudySerializationRegistr
         return importers;
     }
 
-    public void addFactories(ExternalStudyWriterFactory writerFactory, FolderImporterFactory importerFactory)
+    public void addFactories(FolderWriterFactory writerFactory, FolderImporterFactory importerFactory)
     {
         WRITER_FACTORIES.add(writerFactory);
+        IMPORTER_FACTORIES.add(importerFactory);
+    }
+
+    public void addImportFactory(FolderImporterFactory importerFactory)
+    {
         IMPORTER_FACTORIES.add(importerFactory);
     }
 

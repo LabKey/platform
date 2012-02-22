@@ -15,20 +15,22 @@
  */
 package org.labkey.query.reports;
 
+import org.labkey.api.admin.FolderWriter;
+import org.labkey.api.admin.FolderWriterFactory;
 import org.labkey.api.admin.ImportContext;
+import org.labkey.api.data.Container;
 import org.labkey.api.reports.Report;
 import org.labkey.api.reports.ReportService;
-import org.labkey.api.study.*;
 import org.labkey.api.writer.VirtualFile;
-import org.labkey.study.xml.ExportDirType;
-import org.labkey.study.xml.StudyDocument;
+import org.labkey.folder.xml.FolderDocument;
+import org.labkey.folder.xml.ExportDirType;
 
 /**
  * User: adam
  * Date: Apr 16, 2009
  * Time: 4:39:43 PM
  */
-public class ReportWriter implements ExternalStudyWriter
+public class ReportWriter implements FolderWriter
 {
     private static final String DEFAULT_DIRECTORY = "reports";
 
@@ -37,7 +39,8 @@ public class ReportWriter implements ExternalStudyWriter
         return "Reports";
     }
 
-    public void write(Study study, ImportContext<StudyDocument.Study> ctx, VirtualFile vf) throws Exception
+    @Override
+    public void write(Container object, ImportContext<FolderDocument.Folder> ctx, VirtualFile vf) throws Exception
     {
         Report[] reports = ReportService.get().getReports(ctx.getUser(), ctx.getContainer());
 
@@ -54,9 +57,9 @@ public class ReportWriter implements ExternalStudyWriter
         }
     }
     
-    public static class Factory implements ExternalStudyWriterFactory
+    public static class Factory implements FolderWriterFactory
     {
-        public ExternalStudyWriter create()
+        public FolderWriter create()
         {
             return new ReportWriter();
         }
