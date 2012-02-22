@@ -3077,7 +3077,7 @@ LABKEY.FilterDialog = Ext.extend(Ext.Window, {
             //allowBlank    : false,
             width         : 250,
             blankText     : 'You must enter a value.',
-            validateOnBlur: false,
+            validateOnBlur: true,
             disabled      : idx !== 0,
             value         : null,
             listeners     : {
@@ -3107,10 +3107,10 @@ LABKEY.FilterDialog = Ext.extend(Ext.Window, {
             config.altFormats = LABKEY.Utils.getDateAltFormats();
 
         if(idx === 0){
-            config.listeners.afterrender = function(cmp){
+            this.on('afterlayout', function(){
                 if(this.focusTask)
                     Ext.TaskMgr.start(this.focusTask);
-            }
+            }, this);
         }
         return config;
 
@@ -3684,9 +3684,13 @@ LABKEY.ext.RemoteCheckboxGroup = Ext.extend(Ext.form.CheckboxGroup,
             listeners: {
                 scope: this,
                 change: function(self, val){
+                    console.log('change');
+                    console.log(arguments)
                     this.fireEvent('change', this, this.getValue());
                 },
                 check: function(self, val){
+                    console.log('check');
+                    console.log(arguments)
                     this.fireEvent('change', this, this.getValue());
                 },
                 afterrender: function(field){
