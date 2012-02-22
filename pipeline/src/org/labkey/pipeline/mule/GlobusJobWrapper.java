@@ -288,7 +288,7 @@ public class GlobusJobWrapper
 
         if (settings.getQueue() != null)
         {
-            jobDescription.setQueue(settings.getQueue());
+            jobDescription.setQueue(settings.getQueue().trim());
         }
         if (settings.getMaxCPUTime() != null)
         {

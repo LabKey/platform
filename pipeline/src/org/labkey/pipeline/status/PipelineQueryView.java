@@ -42,13 +42,13 @@ public class PipelineQueryView extends QueryView
 {
     private final ViewContext _context;
     private final Class<? extends ApiAction> _apiAction;
-    private final boolean _minimal;
+    private final PipelineService.PipelineButtonOption _buttonOption;
 
-    public PipelineQueryView(ViewContext context, BindException errors, Class<? extends ApiAction> apiAction, boolean minimal)
+    public PipelineQueryView(ViewContext context, BindException errors, Class<? extends ApiAction> apiAction, PipelineService.PipelineButtonOption buttonOption)
     {
         super(new PipelineQuerySchema(context.getUser(), context.getContainer()), null, errors);
+        _buttonOption = buttonOption;
         setSettings(createSettings(context));
-        _minimal = minimal;
         getSettings().setAllowChooseQuery(false);
         _context = context;
         _apiAction = apiAction;
@@ -56,7 +56,7 @@ public class PipelineQueryView extends QueryView
         setShadeAlternatingRows(true);
         setShowBorders(true);
 
-        setButtonBarPosition(minimal ? DataRegion.ButtonBarPosition.TOP : DataRegion.ButtonBarPosition.BOTH);
+        setButtonBarPosition(_buttonOption == PipelineService.PipelineButtonOption.Minimal ? DataRegion.ButtonBarPosition.TOP : DataRegion.ButtonBarPosition.BOTH);
     }
 
     private QuerySettings createSettings(ViewContext context)
@@ -77,7 +77,7 @@ public class PipelineQueryView extends QueryView
     {
         DataView view = super.createDataView();
 
-        if (_minimal)
+        if (_buttonOption == PipelineService.PipelineButtonOption.Minimal)
         {
             SimpleFilter filter = new SimpleFilter();
             filter.addCondition("Status", PipelineJob.COMPLETE_STATUS, CompareType.NEQ);
@@ -95,31 +95,40 @@ public class PipelineQueryView extends QueryView
     @Override
     protected void populateButtonBar(DataView view, ButtonBar bar, boolean exportAsWebPage)
     {
-        if (getContainer().hasPermission(getUser(), InsertPermission.class) && PipelineService.get().hasValidPipelineRoot(getContainer()))
+        if (_buttonOption != PipelineService.PipelineButtonOption.Assay)
         {
-            ActionButton button = new ActionButton(PipelineController.BrowseAction.class, "Process and Import Data");
-            button.setActionType(ActionButton.Action.LINK);
-            button.setURL(PageFlowUtil.urlProvider(PipelineUrls.class).urlBrowse(getContainer(), PipelineController.RefererValues.pipeline.toString()));
-            bar.add(button);
+            if (getContainer().hasPermission(getUser(), InsertPermission.class) && PipelineService.get().hasValidPipelineRoot(getContainer()))
+            {
+                ActionButton button = new ActionButton(PipelineController.BrowseAction.class, "Process and Import Data");
+                button.setActionType(ActionButton.Action.LINK);
+                button.setURL(PageFlowUtil.urlProvider(PipelineUrls.class).urlBrowse(getContainer(), PipelineController.RefererValues.pipeline.toString()));
+                bar.add(button);
+            }
+
+            if (PipelineService.get().canModifyPipelineRoot(getUser(), getContainer()))
+            {
+                ActionButton button = new ActionButton(PipelineController.SetupAction.class, "Setup");
+                button.setActionType(ActionButton.Action.LINK);
+                button.setURL(PipelineController.urlSetup(getContainer(), PipelineController.RefererValues.pipeline.toString()));
+                bar.add(button);
+            }
         }
 
-        if (PipelineService.get().canModifyPipelineRoot(getUser(), getContainer()))
+        if (_buttonOption != PipelineService.PipelineButtonOption.Minimal)
         {
-            ActionButton button = new ActionButton(PipelineController.SetupAction.class, "Setup");
-            button.setActionType(ActionButton.Action.LINK);
-            button.setURL(PipelineController.urlSetup(getContainer(), PipelineController.RefererValues.pipeline.toString()));
-            bar.add(button);
-        }
+            // Add the view, export, etc buttons
+            super.populateButtonBar(view, bar, exportAsWebPage);
 
-        if (!_minimal)
-        {
-            ActionURL retryURL = new ActionURL(StatusController.RunActionAction.class, getContainer());
-            retryURL.addParameter("action", PipelineProvider.CAPTION_RETRY_BUTTON);
-            ActionButton retryStatus = new ActionButton(retryURL, PipelineProvider.CAPTION_RETRY_BUTTON);
-            retryStatus.setRequiresSelection(true);
-            retryStatus.setActionType(ActionButton.Action.POST);
-            retryStatus.setDisplayPermission(UpdatePermission.class);
-            bar.add(retryStatus);
+            if (_buttonOption != PipelineService.PipelineButtonOption.Assay)
+            {
+                ActionURL retryURL = new ActionURL(StatusController.RunActionAction.class, getContainer());
+                retryURL.addParameter("action", PipelineProvider.CAPTION_RETRY_BUTTON);
+                ActionButton retryStatus = new ActionButton(retryURL, PipelineProvider.CAPTION_RETRY_BUTTON);
+                retryStatus.setRequiresSelection(true);
+                retryStatus.setActionType(ActionButton.Action.POST);
+                retryStatus.setDisplayPermission(UpdatePermission.class);
+                bar.add(retryStatus);
+            }
 
             ActionButton deleteStatus = new ActionButton(StatusController.DeleteStatusAction.class, "Delete");
             deleteStatus.setRequiresSelection(true);
@@ -133,11 +142,14 @@ public class PipelineQueryView extends QueryView
             cancelButton.setDisplayPermission(DeletePermission.class);
             bar.add(cancelButton);
 
-            ActionButton completeStatus = new ActionButton(StatusController.CompleteStatusAction.class, "Complete");
-            completeStatus.setRequiresSelection(true);
-            completeStatus.setActionType(ActionButton.Action.POST);
-            completeStatus.setDisplayPermission(UpdatePermission.class);
-            bar.add(completeStatus);
+            if (_buttonOption != PipelineService.PipelineButtonOption.Assay)
+            {
+                ActionButton completeStatus = new ActionButton(StatusController.CompleteStatusAction.class, "Complete");
+                completeStatus.setRequiresSelection(true);
+                completeStatus.setActionType(ActionButton.Action.POST);
+                completeStatus.setDisplayPermission(UpdatePermission.class);
+                bar.add(completeStatus);
+            }
 
             // Display the "Show Queue" button, if this is not the Enterprise Pipeline,
             // the user is an administrator, and this is the pipeline administration page.
@@ -147,9 +159,6 @@ public class PipelineQueryView extends QueryView
                 ActionButton showQueue = new ActionButton(PipelineController.urlStatus(getContainer(), true), "Show Queue");
                 bar.add(showQueue);
             }
-
-            // Add the view, export, etc buttons
-            super.populateButtonBar(view, bar, exportAsWebPage);
         }
     }
 }

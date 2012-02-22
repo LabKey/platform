@@ -301,9 +301,9 @@ public class PipelineServiceImpl extends PipelineService
         return PipelineManager.getPipelineProperty(container, name);
     }
 
-    public QueryView getPipelineQueryView(ViewContext context)
+    public QueryView getPipelineQueryView(ViewContext context, PipelineButtonOption buttonOption)
     {
-        return new PipelineQueryView(context, null, null, false);
+        return new PipelineQueryView(context, null, null, buttonOption);
     }
 
     public HttpView getSetupView(SetupForm form)

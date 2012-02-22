@@ -914,7 +914,7 @@ public class AssayController extends SpringActionController
             _protocol = form.getProtocol();
 
             AbstractAssayView result = new AbstractAssayView();
-            QueryView view = PipelineService.get().getPipelineQueryView(getViewContext());
+            QueryView view = PipelineService.get().getPipelineQueryView(getViewContext(), PipelineService.PipelineButtonOption.Assay);
             view.setTitle("Data Pipeline");
             result.setupViews(view, false, form.getProvider(), form.getProtocol());
 

@@ -108,7 +108,10 @@ public class GlobusListener implements GramJobListener
                     }
                     catch (ResourceNotDestroyedFaultType e)
                     {
-                        _job.warn("Failed to unbind GRAM job, job may have been cancelled");
+                        if (newStatus != PipelineJob.TaskStatus.cancelled)
+                        {
+                            _job.warn("Failed to unbind GRAM job");
+                        }
                     }
                     catch (Throwable e)
                     {
@@ -129,13 +132,11 @@ public class GlobusListener implements GramJobListener
     private boolean logFault(BaseFaultType fault, PipelineJob job, boolean parentFault)
     {
         boolean cancelled = false;
+        boolean loggedFault = false;
         if (fault instanceof FaultType && ((FaultType)fault).getCommand() != null)
         {
             job.info("Fault received from Globus on \"" + ((FaultType)fault).getCommand() + "\" command");
-        }
-        else if (parentFault)
-        {
-            job.info("Fault received from Globus");
+            loggedFault = true;
         }
         if (fault.getDescription() != null)
         {
@@ -151,6 +152,10 @@ public class GlobusListener implements GramJobListener
                     job.info(description.get_value());
                 }
             }
+        }
+        if (parentFault && !cancelled && !loggedFault)
+        {
+            job.info("Fault received from Globus");
         }
         if (fault.getFaultCause() != null)
         {

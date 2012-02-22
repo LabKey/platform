@@ -138,7 +138,7 @@ public class StatusController extends SpringActionController
 
             setHelpTopic(getHelpTopic("pipeline"));
 
-            QueryView gridView = new PipelineQueryView(getViewContext(), errors, ShowListRegionAction.class, false);
+            QueryView gridView = new PipelineQueryView(getViewContext(), errors, ShowListRegionAction.class, PipelineService.PipelineButtonOption.Standard);
             gridView.setTitle("Data Pipeline");
 
             if (!c.isRoot())
@@ -209,7 +209,7 @@ public class StatusController extends SpringActionController
         {
             Container c = getContainerCheckAdmin();
             
-            QueryView gridView = new PipelineQueryView(getViewContext(), errors, null, false);
+            QueryView gridView = new PipelineQueryView(getViewContext(), errors, null, PipelineService.PipelineButtonOption.Standard);
             if (c.isRoot())
                 gridView.disableContainerFilterSelection();
             gridView.render(getViewContext().getRequest(), getViewContext().getResponse());
@@ -222,7 +222,7 @@ public class StatusController extends SpringActionController
     {
         public ApiResponse execute(Object o, BindException errors) throws Exception
         {
-            PipelineQueryView gridView = new PipelineQueryView(getViewContext(), errors, null, true);
+            PipelineQueryView gridView = new PipelineQueryView(getViewContext(), errors, null, PipelineService.PipelineButtonOption.Minimal);
             gridView.render(getViewContext().getRequest(), getViewContext().getResponse());
             return null;
         }
