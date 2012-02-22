@@ -87,7 +87,10 @@ abstract public class PipelineService
 
     abstract public String getPipelineProperty(Container container, String name) throws SQLException;
 
-    abstract public QueryView getPipelineQueryView(ViewContext context);
+    /** Configurations for the pipeline job webpart ButtonBar */
+    public enum PipelineButtonOption { Minimal, Assay, Standard }
+
+    abstract public QueryView getPipelineQueryView(ViewContext context, PipelineButtonOption buttonOption);
 
     abstract public HttpView getSetupView(SetupForm form);
 

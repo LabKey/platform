@@ -665,8 +665,17 @@ public class UploadWizardAction<FormType extends AssayRunUploadForm<ProviderType
 
                     // Queue up a pipeline job to do the actual import in the background
                     ViewBackgroundInfo info = new ViewBackgroundInfo(getContainer(), getViewContext().getUser(), getViewContext().getActionURL());
-                    AssayUploadPipelineJob<ProviderType> pipelineJob = new AssayUploadPipelineJob<ProviderType>(form.getProvider().createRunAsyncContext(form), info, exp, forceSaveBatchProps, PipelineService.get().getPipelineRootSetting(getContainer()), primaryFile);
-                    PipelineService.get().queueJob(pipelineJob);
+                    final AssayUploadPipelineJob<ProviderType> pipelineJob = new AssayUploadPipelineJob<ProviderType>(form.getProvider().createRunAsyncContext(form), info, exp, forceSaveBatchProps, PipelineService.get().getPipelineRootSetting(getContainer()), primaryFile);
+                    // Don't queue the job until the transaction is committed, since otherwise the thread
+                    // that's running the job might start before it can access the job's row in the database. 
+                    ExperimentService.get().getSchema().getScope().addCommitTask(new Runnable()
+                    {
+                        @Override
+                        public void run()
+                        {
+                            PipelineService.get().queueJob(pipelineJob);
+                        }
+                    });
                     run = null;
                 }
                 catch (IOException e)

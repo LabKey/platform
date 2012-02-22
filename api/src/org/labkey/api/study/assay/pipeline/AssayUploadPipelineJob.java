@@ -63,12 +63,16 @@ public class AssayUploadPipelineJob<ProviderType extends AssayProvider> extends 
     @Override
     public String getDescription()
     {
-        String description = "Assay upload";
-        if (_run != null)
+        // Generate a description that matches what the run's name/ID will be
+        if (_context.getName() != null)
         {
-            description = _run.getName();
+            return _context.getName();
         }
-        return description;
+        if (_primaryFile != null)
+        {
+            return _primaryFile.getName();
+        }
+        return "Assay upload";
     }
 
     @Override
