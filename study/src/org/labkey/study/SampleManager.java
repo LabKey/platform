@@ -2204,7 +2204,8 @@ public class SampleManager
             while (rs.next())
             {
                 SummaryByVisitType summary = new SummaryByVisitType();
-                summary.setSequenceNum(rs.getDouble("SequenceNum"));
+                if (rs.getObject("SequenceNum") != null)
+                    summary.setSequenceNum(rs.getDouble("SequenceNum"));
                 summary.setTotalVolume(rs.getDouble("TotalVolume"));
                 Double vialCount = rs.getDouble("VialCount");
                 summary.setVialCount(vialCount.longValue());
