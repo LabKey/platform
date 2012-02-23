@@ -73,7 +73,7 @@ public class StudyPropertiesUpdateService extends AbstractQueryUpdateService
         for (Map.Entry<String,Object> entry : row.entrySet())
         {
             ColumnInfo c = table.getColumn(entry.getKey());
-            if (null != c && c.isUserEditable())
+            if (null != c && c.isUserEditable() || (null != c && c.getName().equals("TimepointType") && study.isEmptyStudy()))
                 updateRow.put(entry.getKey(), entry.getValue());
         }
 
