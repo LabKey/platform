@@ -196,8 +196,8 @@ Ext4.define('LABKEY.ext4.StudyScheduleGrid', {
             this.schedule = json.schedule;
             this.centerPanel.getEl().unmask();
             if(this.schedule.timepoints.length > 5){
-                var cols = this.schedule.timepoints.slice(0, 5);
-                this.initGrid(this.initColumns(cols), this.initScheduleStore(this.schedule, this.initFields()));
+                this.pagedColumns = this.schedule.timepoints.slice(0, 5);
+                this.initGrid(this.initColumns(this.pagedColumns), this.initScheduleStore(this.schedule, this.initFields()));
             } else {
                 this.initGrid(this.initColumns(this.schedule.timepoints), this.initScheduleStore(this.schedule, this.initFields()));
             }

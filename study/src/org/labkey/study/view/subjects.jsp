@@ -536,6 +536,7 @@ li.ptid a.unhighlight
 
         var inp = X.get('<%=divId%>.filter');
         inp.on('keyup', function(a){filterPtidContains(a.target.value);}, null, {buffer:200});
+        inp.on('change', function(a){filterPtidContains(a.target.value);}, null, {buffer:200});
 
         /* ptids events */
 
