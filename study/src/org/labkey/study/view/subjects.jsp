@@ -590,7 +590,7 @@ li.ptid a.unhighlight
         var viewWidth = X.getBody().getViewSize().width;
         var right = viewWidth - padding - rightAreaWidth;
         var x = listDiv.getXY()[0];
-        var width = Math.max(400, right-x);
+        var width = Math.max(140, (LABKEY.Utils.getComponentWidth()-260));
         listDiv.setWidth(width);
     }
 
@@ -602,7 +602,7 @@ Ext4.onReady(<%=viewObject%>.render, <%=viewObject%>);
 </script>
 
 <div style="">
-    <table id="<%= divId %>" width="100%">
+    <table id="<%= divId %>">
         <tr>
             <td style="padding: 5px; margin: 5px;" valign=top>
                 <div id="<%=groupsDivId%>"></div>
@@ -610,7 +610,7 @@ Ext4.onReady(<%=viewObject%>.render, <%=viewObject%>);
             <td style="padding: 5px; margin: 5px;" valign=top class="iScroll">
                 <table width="100%"><tr>
                     <td><div style="" >Filter&nbsp;<input id="<%=divId%>.filter" type="text" size="15" style="border:solid 1px #<%=theme.getWebPartColor()%>"></div></td>
-                    <td>&nbsp;<%if (hasCohorts){%><input type=checkbox>&nbsp;by&nbsp;cohort (NYI)<%}%></td>
+                    <%--<td>&nbsp;<%if (hasCohorts){%><input type=checkbox>&nbsp;by&nbsp;cohort (NYI)<%}%></td>--%>
                 </tr></table>
                 <hr style="height:1px; border:0; background-color:#<%=theme.getWebPartColor()%>; color:#<%=theme.getWebPartColor()%>;">
                 <div><span id="<%=divId%>.status">Loading...</span></div>
