@@ -371,7 +371,7 @@ LABKEY.ext4.Store = Ext4.define('LABKEY.ext4.Store', {
 
         var name;
 
-        var properties = ['name', 'fieldLabel', 'fieldKeyPath'];
+        var properties = ['name', 'fieldKeyPath'];
         Ext4.each(properties, function(prop){
             fields.each(function(field){
                 if(field[prop].toLowerCase() == fieldName.toLowerCase()){
