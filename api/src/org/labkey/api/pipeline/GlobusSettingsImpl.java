@@ -96,6 +96,10 @@ public class GlobusSettingsImpl extends AbstractGlobusSettings
 
     public void setLocation(String location)
     {
+        if (TaskFactory.WEBSERVER.equalsIgnoreCase(location))
+        {
+            throw new IllegalArgumentException("The location name \"" + TaskFactory.WEBSERVER + "\" is reserved and cannot be used as a Globus location name.");
+        }
         _location = location;
     }
 }
