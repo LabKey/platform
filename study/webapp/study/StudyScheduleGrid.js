@@ -68,8 +68,7 @@ Ext4.define('LABKEY.ext4.StudyScheduleGrid', {
         });
 
         var tbarItems = [this.cohortsCombo];
-        tbarItems.push('->');
-        
+
         this.enablePagingCheckbox = Ext4.create('Ext.form.field.Checkbox', {
             fieldLabel: "Paging",
             checked: true,
@@ -79,12 +78,12 @@ Ext4.define('LABKEY.ext4.StudyScheduleGrid', {
             handler: this.enablePaging
         });
 
+        tbarItems.push({ xtype: 'tbspacer', width: 435 });
         tbarItems.push(this.enablePagingCheckbox);
+        tbarItems.push('->');
 
         var prevConfig = {
             text: '<',
-//            disabled: true,
-//            hidden: true,
             scope: this,
             handler: this.previousPage
         };
@@ -338,14 +337,12 @@ Ext4.define('LABKEY.ext4.StudyScheduleGrid', {
 
         var columnItems = [{
             xtype     : 'templatecolumn',
-//            locked    : true,
             text      : 'Datasets',
             dataIndex : 'dataset',
             width     : 275,
             tpl       : '<div data-qtip="{dataset}">{dataset}</div>'
         },{
             text      : 'Data',
-//            locked    : true,
             dataIndex : 'id',
             width     : 50,
             tdCls     : 'type-column',
