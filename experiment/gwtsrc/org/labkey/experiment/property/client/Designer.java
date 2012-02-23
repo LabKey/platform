@@ -196,6 +196,11 @@ public class Designer implements EntryPoint, Saveable<GWTDomain>
         });
     }
 
+    public String getCurrentURL()
+    {
+        return PropertyUtil.getCurrentURL();
+    }
+
     public void save()
     {
         save(null);

@@ -84,6 +84,12 @@ public class ListDesigner implements EntryPoint, Saveable<GWTList>
             _listSaveable = listSaveable;
         }
 
+        @Override
+        public String getCurrentURL()
+        {
+            return PropertyUtil.getCurrentURL();
+        }
+
         public void save()
         {
             _listSaveable.save();
@@ -534,6 +540,12 @@ public class ListDesigner implements EntryPoint, Saveable<GWTList>
             url += "?listId=" + _listId  + "&edit=1";
         }
         return url;        
+    }
+
+    @Override
+    public String getCurrentURL()
+    {
+        return PropertyUtil.getCurrentURL();
     }
 
     public void save()

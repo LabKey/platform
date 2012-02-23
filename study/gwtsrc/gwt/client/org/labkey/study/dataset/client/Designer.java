@@ -81,6 +81,11 @@ public class Designer implements EntryPoint, Saveable<GWTDataset>
             _datasetSaveable = datasetSaveable;
         }
 
+        public String getCurrentURL()
+        {
+            return PropertyUtil.getCurrentURL();
+        }
+
         public void save()
         {
             _datasetSaveable.save();
@@ -285,6 +290,11 @@ public class Designer implements EntryPoint, Saveable<GWTDataset>
         };
 
         getService().updateDatasetDefinition(_dataset, _domain, _propTable.getUpdates(), callback);
+    }
+
+    public String getCurrentURL()
+    {
+        return PropertyUtil.getCurrentURL();
     }
 
     public void save()

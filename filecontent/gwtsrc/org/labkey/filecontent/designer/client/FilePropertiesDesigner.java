@@ -57,6 +57,12 @@ public class FilePropertiesDesigner implements EntryPoint, Saveable<GWTDomain>
             _domainSavable = domainsSaveable;
         }
 
+        @Override
+        public String getCurrentURL()
+        {
+            return PropertyUtil.getCurrentURL();
+        }
+
         public void save()
         {
             _domainSavable.save();
@@ -143,6 +149,12 @@ public class FilePropertiesDesigner implements EntryPoint, Saveable<GWTDomain>
             ServiceUtil.configureEndpoint(_service, "filePropertiesService");
         }
         return _service;
+    }
+
+    @Override
+    public String getCurrentURL()
+    {
+        return PropertyUtil.getCurrentURL();
     }
 
     @Override

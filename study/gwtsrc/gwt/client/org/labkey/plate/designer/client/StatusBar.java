@@ -104,6 +104,11 @@ public class StatusBar extends HorizontalPanel implements Saveable<Object>
         });
     }
 
+    public String getCurrentURL()
+    {
+        return PropertyUtil.getCurrentURL();
+    }
+
     public void save()
     {
         save(null);

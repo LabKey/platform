@@ -186,6 +186,11 @@ public class MetadataEditor implements EntryPoint, Saveable<GWTTableInfo>
         return _editor.isDirty();
     }
 
+    public String getCurrentURL()
+    {
+        return PropertyUtil.getCurrentURL();
+    }
+
     public void save()
     {
         _saveMessage.setText("");
