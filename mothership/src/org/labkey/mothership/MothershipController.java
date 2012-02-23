@@ -31,6 +31,7 @@ import org.jfree.data.time.TimeSeries;
 import org.jfree.data.time.TimeSeriesCollection;
 import org.jfree.data.xy.XYDataset;
 import org.labkey.api.action.FormHandlerAction;
+import org.labkey.api.action.ReturnUrlForm;
 import org.labkey.api.action.SimpleViewAction;
 import org.labkey.api.action.SpringActionController;
 import org.labkey.api.data.*;
@@ -45,6 +46,7 @@ import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.security.permissions.UpdatePermission;
 import org.labkey.api.util.MothershipReport;
 import org.labkey.api.util.PageFlowUtil;
+import org.labkey.api.util.URLHelper;
 import org.labkey.api.view.*;
 import org.labkey.mothership.query.MothershipSchema;
 import org.springframework.validation.BindException;
@@ -1213,6 +1215,94 @@ public class MothershipController extends SpringActionController
         public void setSqlState(String sqlState)
         {
             _sqlState = sqlState;
+        }
+    }
+
+    public static class BulkUpdateForm extends ReturnUrlForm
+    {
+        private Integer _userId;
+        private boolean _ignore = false;
+
+        public Integer getUserId()
+        {
+            return _userId;
+        }
+
+        public void setUserId(Integer userId)
+        {
+            _userId = userId;
+        }
+
+        public boolean isIgnore()
+        {
+            return _ignore;
+        }
+
+        public void setIgnore(boolean ignore)
+        {
+            _ignore = ignore;
+        }
+    }
+
+    @RequiresPermissionClass(UpdatePermission.class)
+    public class BulkUpdateAction extends FormHandlerAction<BulkUpdateForm>
+    {
+        @Override
+        public void validateCommand(BulkUpdateForm form, Errors errors)
+        {
+        }
+
+        @Override
+        public boolean handlePost(BulkUpdateForm form, BindException errors) throws Exception
+        {
+            Set<String> keys = DataRegionSelection.getSelected(getViewContext(), true);
+
+            User user = null;
+            if (form.getUserId() != null)
+            {
+                user = UserManager.getUser(form.getUserId().intValue());
+                if (!MothershipManager.get().getAssignedToList(getContainer()).contains(user))
+                {
+                    throw new NotFoundException("User not available to assign to: " + form.getUserId());
+                }
+            }
+            else if (!form.isIgnore())
+            {
+                throw new IllegalStateException("Neither userId nor ignore were set");
+            }
+
+            for (String key : keys)
+            {
+                try
+                {
+                    int rowId = Integer.parseInt(key);
+                    ExceptionStackTrace exceptionStackTrace = MothershipManager.get().getExceptionStackTrace(rowId, getContainer());
+                    if (exceptionStackTrace != null)
+                    {
+                        if (user != null)
+                        {
+                            exceptionStackTrace.setAssignedTo(user.getUserId());
+                        }
+                        else
+                        {
+                            exceptionStackTrace.setBugNumber(-1);
+                        }
+                    }
+                    MothershipManager.get().updateExceptionStackTrace(exceptionStackTrace, getUser());
+                }
+                catch (NumberFormatException e)
+                {
+                    throw new NotFoundException("Could not find exception stack trace with id " + key);
+                }
+            }
+
+            return true;
+        }
+
+        @Override
+        public URLHelper getSuccessURL(BulkUpdateForm form)
+        {
+            return form.getReturnActionURL(new ActionURL(BeginAction.class, getContainer()));
         }
     }
 

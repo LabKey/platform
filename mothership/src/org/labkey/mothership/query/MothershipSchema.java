@@ -35,15 +35,19 @@ import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.FilteredTable;
 import org.labkey.api.query.LookupForeignKey;
 import org.labkey.api.query.QuerySchema;
+import org.labkey.api.query.QuerySettings;
+import org.labkey.api.query.QueryView;
 import org.labkey.api.query.UserSchema;
 import org.labkey.api.security.User;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.StringExpressionFactory;
 import org.labkey.api.view.ActionURL;
+import org.labkey.api.view.ViewContext;
 import org.labkey.mothership.MothershipController;
 import org.labkey.mothership.MothershipManager;
 import org.labkey.mothership.MothershipModule;
 import org.labkey.mothership.StackTraceDisplayColumn;
+import org.springframework.validation.BindException;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -525,5 +529,16 @@ public class MothershipSchema extends UserSchema
         result.setDefaultVisibleColumns(defaultCols);
 
         return result;
+    }
+
+    @Override
+    public QueryView createView(ViewContext context, QuerySettings settings, BindException errors)
+    {
+        if (EXCEPTION_STACK_TRACE_TABLE_NAME.equals(settings.getQueryName()))
+        {
+            return new ExceptionStackTraceQueryView(this, settings, errors);
+
+        }
+        return super.createView(context, settings, errors);
     }
 }

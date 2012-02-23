@@ -19,13 +19,16 @@ package org.labkey.mothership;
 import org.jetbrains.annotations.NotNull;
 import org.labkey.api.data.*;
 import org.labkey.api.data.dialect.SqlDialect;
-import org.labkey.api.security.User;
+import org.labkey.api.security.*;
 
 import java.net.InetAddress;
 import java.net.UnknownHostException;
 import java.sql.SQLException;
+import java.util.ArrayList;
 import java.util.Calendar;
+import java.util.Collections;
 import java.util.Date;
+import java.util.List;
 import java.util.Map;
 
 /**
@@ -494,5 +497,21 @@ public class MothershipManager
         {
             throw new RuntimeSQLException(e);
         }
+    }
+
+    public List<User> getAssignedToList(Container container)
+    {
+        List<User> projectUsers = org.labkey.api.security.SecurityManager.getProjectUsers(container.getProject());
+        List<User> list = new ArrayList<User>();
+        // Filter list to only show active users
+        for (User user : projectUsers)
+        {
+            if (user.isActive())
+            {
+                list.add(user);
+            }
+        }
+        Collections.sort(list, new UserDisplayNameComparator());
+        return list;
     }
 }
