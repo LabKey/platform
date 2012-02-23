@@ -366,7 +366,11 @@ public class PipelineJobServiceImpl extends PipelineJobService
 
     public void setGlobusClientPropertiesList(List<GlobusClientPropertiesImpl> globusClientProperties)
     {
-        _globusClientProperties.addAll(globusClientProperties);
+        for (GlobusClientPropertiesImpl newProperties : globusClientProperties)
+        {
+            validateUniqueLocation(newProperties);
+            _globusClientProperties.add(newProperties);
+        }
         for (GlobusClientProperties globusClientProperty : globusClientProperties)
         {
             PathMapper mapper = globusClientProperty.getPathMapper();
@@ -376,6 +380,22 @@ public class PipelineJobServiceImpl extends PipelineJobService
                 {
                     _clusterPathMapper.getPathMap().put(entry.getKey(), entry.getValue());
                 }
+            }
+        }
+    }
+
+    private void validateUniqueLocation(GlobusClientPropertiesImpl newProperties)
+    {
+        String location = newProperties.getLocation();
+        if (location == null)
+        {
+            throw new IllegalArgumentException("No location property specified for Globus server " + newProperties.getGlobusEndpoint());
+        }
+        for (GlobusClientPropertiesImpl existingProperties : _globusClientProperties)
+        {
+            if (existingProperties.getLocation().equalsIgnoreCase(location))
+            {
+                throw new IllegalArgumentException("Duplicate location property specified for Globus server " + newProperties.getLocation());
             }
         }
     }

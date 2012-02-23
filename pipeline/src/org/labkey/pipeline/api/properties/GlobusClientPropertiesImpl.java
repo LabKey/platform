@@ -22,6 +22,7 @@ import org.labkey.api.pipeline.GlobusSettings;
 import org.labkey.api.pipeline.PipelineJobService;
 import org.labkey.api.pipeline.GlobusSettingsImpl;
 import org.labkey.api.pipeline.file.PathMapper;
+import org.labkey.pipeline.mule.filters.TaskGlobusJmsSelectorFilter;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -39,6 +40,16 @@ public class GlobusClientPropertiesImpl extends GlobusSettingsImpl implements Pi
     private String _jobFactoryType;
     private PathMapper _pathMapper;
     private List<String> _availableQueues = new ArrayList<String>();
+
+    public GlobusClientPropertiesImpl()
+    {
+        this(TaskGlobusJmsSelectorFilter.DEFALUT_GLOBUS_LOCATION);
+    }
+
+    public GlobusClientPropertiesImpl(String location)
+    {
+        setLocation(location);
+    }
 
     public String getJavaHome()
     {
@@ -159,7 +170,7 @@ public class GlobusClientPropertiesImpl extends GlobusSettingsImpl implements Pi
     @Override
     protected GlobusClientPropertiesImpl createMergeResult()
     {
-        return new GlobusClientPropertiesImpl();
+        return new GlobusClientPropertiesImpl(null);
     }
 
     public static class TestCase extends Assert

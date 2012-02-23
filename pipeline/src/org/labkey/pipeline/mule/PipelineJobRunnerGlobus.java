@@ -158,7 +158,7 @@ public class PipelineJobRunnerGlobus implements Callable, ResumableDescriptor
 
             StringBuilder sb = new StringBuilder();
             sb.append("Submitting job to Globus location '");
-            sb.append(settings.getLocation() == null ? "cluster" : settings.getLocation());
+            sb.append(settings.getLocation());
             sb.append("'");
             if (gramJob.getDescription().getQueue() != null)
             {

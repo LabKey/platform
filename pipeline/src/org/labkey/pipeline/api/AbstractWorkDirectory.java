@@ -90,6 +90,10 @@ public abstract class AbstractWorkDirectory implements WorkDirectory
          */
         public void setOutputPermissions(String outputPermissions)
         {
+            if (System.getProperty("os.name").toLowerCase().startsWith("windows"))
+            {
+                throw new IllegalArgumentException("outputPermission property not supported on Windows");
+            }
             _outputPermissions = outputPermissions;
         }
     }

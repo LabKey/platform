@@ -116,7 +116,7 @@ public class EPipelineQueueImpl implements PipelineQueue
         TaskFactory taskFactory = job.getActiveTaskFactory();
         for (GlobusClientPropertiesImpl globus : PipelineJobServiceImpl.get().getGlobusClientPropertiesList())
         {
-            String name = globus.getLocation() == null ? "cluster" : globus.getLocation();
+            String name = globus.getLocation();
             // Check if it's running through Globus
             if (taskFactory.getExecutionLocation().equals(name))
             {

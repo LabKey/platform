@@ -60,7 +60,7 @@ public class PipelineGWTServiceImpl extends BaseRemoteService implements Pipelin
             for (GlobusClientPropertiesImpl globus : PipelineJobServiceImpl.get().getGlobusClientPropertiesList())
             {
                 globusProperties.put(globus.getLocation(), globus);
-                String name = globus.getLocation() == null ? "cluster" : globus.getLocation();
+                String name = globus.getLocation();
                 locations.put(name, new GWTPipelineLocation(name, globus.getAvailableQueues()));
             }
 
