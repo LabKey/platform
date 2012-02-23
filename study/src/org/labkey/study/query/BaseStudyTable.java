@@ -25,7 +25,6 @@ import org.labkey.api.data.DisplayColumnFactory;
 import org.labkey.api.data.JdbcType;
 import org.labkey.api.data.RenderContext;
 import org.labkey.api.data.SQLFragment;
-import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.query.AliasedColumn;
 import org.labkey.api.query.ExprColumn;
@@ -46,11 +45,8 @@ import org.labkey.study.model.StudyManager;
 import java.io.IOException;
 import java.io.Writer;
 import java.util.ArrayList;
-import java.util.Collections;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 
 public abstract class BaseStudyTable extends FilteredTable
 {
@@ -184,7 +180,13 @@ public abstract class BaseStudyTable extends FilteredTable
     protected ColumnInfo addSpecimenVisitColumn(TimepointType timepointType)
     {
         ColumnInfo visitColumn = null;
+        String lookupPkColumnName = "RowId";
         ColumnInfo visitDescriptionColumn = addWrapColumn(_rootTable.getColumn("VisitDescription"));
+
+        // add the sequenceNum column so we have it for later queries
+        ColumnInfo sequenceNumColumn = addColumn(new AliasedColumn(this, "SequenceNum", _rootTable.getColumn("VisitValue")));
+        sequenceNumColumn.setHidden(true);
+
         if (timepointType == TimepointType.DATE || timepointType == TimepointType.CONTINUOUS)
         {
             //consider:  use SequenceNumMin for visit-based studies too (in visit-based studies VisitValue == SequenceNumMin)
@@ -192,14 +194,16 @@ public abstract class BaseStudyTable extends FilteredTable
             // instead of sequencenum when label is null
             visitColumn = addColumn(new DateVisitColumn(this));
             visitColumn.setLabel("Timepoint");
+
+            lookupPkColumnName = "SequenceNumMin";
             visitDescriptionColumn.setHidden(true);
         }
         else if (timepointType == TimepointType.VISIT)
         {
-            visitColumn = addColumn(new AliasedColumn(this, "Visit", _rootTable.getColumn("VisitValue")));
+            visitColumn = addColumn(new ParticipantVisitColumn(this));
         }
 
-        LookupForeignKey visitFK = new LookupForeignKey(null, (String) null, "SequenceNumMin", null)
+        LookupForeignKey visitFK = new LookupForeignKey(null, (String) null, lookupPkColumnName, null)
         {
             public TableInfo getLookupTableInfo()
             {
@@ -212,6 +216,27 @@ public abstract class BaseStudyTable extends FilteredTable
         visitColumn.setFk(visitFK);
         visitColumn.setKeyField(true);
         return visitColumn;
+    }
+
+    private static class ParticipantVisitColumn extends ExprColumn
+    {
+        public ParticipantVisitColumn(TableInfo parent)
+        {
+            super(parent, "Visit", new SQLFragment(ExprColumn.STR_TABLE_ALIAS + "$PV" + ".VisitRowId"), JdbcType.INTEGER);
+        }
+
+        @Override
+        public void declareJoins(String parentAlias, Map<String, SQLFragment> map)
+        {
+            String pvAlias = parentAlias + "$PV";
+            SQLFragment join = new SQLFragment();
+
+            join.append(" LEFT OUTER JOIN ").append(StudySchema.getInstance().getTableInfoParticipantVisit(), pvAlias).append(" ON\n");
+            join.append(parentAlias).append(".ParticipantSequenceKey = ").append(pvAlias).append(".ParticipantSequenceKey AND\n");
+            join.append(parentAlias).append(".Container = ").append(pvAlias).append(".Container");
+
+            map.put(pvAlias, join);
+        }
     }
 
 
