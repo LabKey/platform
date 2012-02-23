@@ -19,6 +19,7 @@
 <%@ page import="java.io.PrintWriter" %>
 <%@ page import="java.io.StringWriter" %>
 <%@ page import="java.util.Map" %>
+<%@ page import="org.springframework.beans.PropertyBatchUpdateException" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
     Map<String,Throwable> moduleFailures = ModuleLoader.getInstance().getModuleFailures();
@@ -30,11 +31,32 @@
 <%
     for(Map.Entry<String,Throwable> entry : moduleFailures.entrySet())
     {
-
+        Throwable throwable = entry.getValue();
+        String message = throwable.getMessage();
+        while (throwable.getCause() != null)
+        {
+            throwable = throwable.getCause();
+            if (throwable.getMessage() != null)
+            {
+                message = throwable.getMessage();
+            }
+        }
+        if (throwable instanceof org.springframework.beans.PropertyBatchUpdateException)
+        {
+            org.springframework.beans.PropertyBatchUpdateException batchException = (org.springframework.beans.PropertyBatchUpdateException)throwable;
+            if (batchException.getMostSpecificCause() != null && batchException.getMostSpecificCause().getMessage() != null)
+            {
+                message = batchException.getMostSpecificCause().getMessage();
+            }
+        }
 %>
         <tr>
-            <td valign="top"><pre><%=entry.getKey()%></pre></td>
-            <td valign="top"><pre><%
+            <td valign="top"><strong><pre><%=entry.getKey()%></pre></strong></td>
+            <td valign="top"><% if (message != null) { %>
+                <strong class="labkey-error"><pre><%= h(message) %></pre></strong>
+                <pre>Full details:</pre>
+                <% } %>
+                <pre><%
 
                 StringWriter writer = new StringWriter();
                 entry.getValue().printStackTrace(new PrintWriter(writer));
