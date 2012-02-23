@@ -4383,6 +4383,7 @@ internal/gwtsrc/org/labkey/api/gwt/client/ui/HelpPopup.java -text
 internal/gwtsrc/org/labkey/api/gwt/client/ui/ImageButton.java -text
 internal/gwtsrc/org/labkey/api/gwt/client/ui/ImportSchemaWizard.java -text
 internal/gwtsrc/org/labkey/api/gwt/client/ui/InferSchemaWizard.java -text
+internal/gwtsrc/org/labkey/api/gwt/client/ui/LabKeyLinkHTML.java -text
 internal/gwtsrc/org/labkey/api/gwt/client/ui/LinkButton.java -text
 internal/gwtsrc/org/labkey/api/gwt/client/ui/LookupEditor.java -text
 internal/gwtsrc/org/labkey/api/gwt/client/ui/LookupEditorPanel.java -text

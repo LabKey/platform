@@ -24,6 +24,14 @@ package org.labkey.api.gwt.client.ui;
  */
 public interface Saveable<ObjectType>
 {
+    /**
+     * @return the URL that should be considered the current URL. This is useful for apps that both create
+     * new objects and edit existing objects. The new URL typically doesn't have a RowId or other identifier,
+     * but the edit does. Thus, to return to the "same" page after saving a new object, you need to add
+     * the RowId or otherwise change it.
+     */
+    String getCurrentURL();
+
     public interface SaveListener<ObjectType>
     {
         void saveSuccessful(ObjectType result, String designerUrl);

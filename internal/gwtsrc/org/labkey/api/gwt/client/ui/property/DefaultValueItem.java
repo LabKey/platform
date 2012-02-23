@@ -15,6 +15,7 @@
  */
 package org.labkey.api.gwt.client.ui.property;
 
+import com.google.gwt.dom.client.Style;
 import com.google.gwt.event.dom.client.ClickEvent;
 import com.google.gwt.event.dom.client.ClickHandler;
 import com.google.gwt.http.client.URL;
@@ -24,6 +25,7 @@ import org.labkey.api.gwt.client.DefaultValueType;
 import org.labkey.api.gwt.client.model.GWTDomain;
 import org.labkey.api.gwt.client.model.GWTPropertyDescriptor;
 import org.labkey.api.gwt.client.ui.HelpPopup;
+import org.labkey.api.gwt.client.ui.LabKeyLinkHTML;
 import org.labkey.api.gwt.client.ui.PropertyPane;
 import org.labkey.api.gwt.client.ui.Saveable;
 import org.labkey.api.gwt.client.ui.WindowUtil;
@@ -41,10 +43,8 @@ public class DefaultValueItem<DomainType extends GWTDomain<FieldType>, FieldType
     private Saveable<GWTDomain> _owner;
     private HelpPopup _helpPopup = new HelpPopup("Default Value Types", "");
     private GWTDomain _domain;
-    private HTML _setDefaultValueLink;
+    private LabKeyLinkHTML _setDefaultValueLink;
     private static final String SETVALUE_LINK_NOTSUPPORTED = "<span class='labkey-disabled'><i>Not supported for file/attachment fields.</i></span>";
-    private static final String SETVALUE_LINK_DISABLED = "[set&nbsp;value]";
-    private static final String SETVALUE_LINK_DEFAULT_ENABLED = "[<a href=\"javascript:void(0)\">set&nbsp;value</a>]";
     private FlexTable _defaultTypeTable;
     private FlexTable _defaultValueTable;
     private InlineHTML _defaultTypeLabel;
@@ -106,24 +106,29 @@ public class DefaultValueItem<DomainType extends GWTDomain<FieldType>, FieldType
             if (!isEnabled())
                 return;
 
-            if (_owner.isDirty() && Window.confirm("You must save your changes before setting default values.  Save changes?"))
+            if (_owner.isDirty())
             {
-                _owner.save(new Saveable.SaveListener<GWTDomain>()
+                // Unsaved changes. Prompt user
+                if (Window.confirm("You must save your changes before setting default values.  Save changes?"))
                 {
-                    public void saveSuccessful(GWTDomain domain, String designerUrl)
+                    // Only save and redirect if they say yes.
+                    _owner.save(new Saveable.SaveListener<GWTDomain>()
                     {
-                        String actionURL = domain.getDefaultValuesURL();
-                        String queryString = "returnUrl=" + URL.encodeComponent(designerUrl) + "&domainId=" + domain.getDomainId();
-                        boolean hasQueryString = actionURL.indexOf('?') > 0;
-                        final String url = actionURL + (hasQueryString ? "&" : "?") + queryString;
-                        WindowUtil.setLocation(url);
-                    }
-                });
+                        public void saveSuccessful(GWTDomain domain, String designerUrl)
+                        {
+                            String actionURL = domain.getDefaultValuesURL();
+                            String queryString = "returnUrl=" + URL.encodeComponent(designerUrl) + "&domainId=" + domain.getDomainId();
+                            boolean hasQueryString = actionURL.indexOf('?') > 0;
+                            final String url = actionURL + (hasQueryString ? "&" : "?") + queryString;
+                            WindowUtil.setLocation(url);
+                        }
+                    });
+                }
             }
             else
             {
                 String actionURL = _domain.getDefaultValuesURL();
-                String currentURL = PropertyUtil.getCurrentURL();
+                String currentURL = _owner.getCurrentURL();
                 String queryString = "returnUrl=" + URL.encodeComponent(currentURL) + "&domainId=" +  _propertyPane.getDomainId();
                 boolean hasQueryString = actionURL.indexOf('?') > 0;
                 final String url = actionURL + (hasQueryString ? "&" : "?") + queryString;
@@ -140,7 +145,7 @@ public class DefaultValueItem<DomainType extends GWTDomain<FieldType>, FieldType
         labelPanel.add(_helpPopup);
         flexTable.setWidget(row, LABEL_COLUMN, labelPanel);
 
-        _setDefaultValueLink = new HTML(SETVALUE_LINK_DEFAULT_ENABLED);
+        _setDefaultValueLink = new LabKeyLinkHTML("set&nbsp;value");
         _setDefaultValueLink.addClickHandler(new SetDefaultValue_ClickHandler());
 
         _defaultTypeTable = new FlexTable();
@@ -153,6 +158,7 @@ public class DefaultValueItem<DomainType extends GWTDomain<FieldType>, FieldType
 
         _defaultValueTable = new FlexTable();
         _defaultValueTable.setWidget(0, 0, _currentDefault);
+        _defaultValueTable.getFlexCellFormatter().getElement(0, 0).getStyle().setPaddingRight(1.5, Style.Unit.EM);
         _defaultValueTable.setWidget(0, 1, _setDefaultValueLink);
 
         _defaultValueLabel = new InlineHTML("Default&nbsp;Value");
@@ -181,16 +187,18 @@ public class DefaultValueItem<DomainType extends GWTDomain<FieldType>, FieldType
     {
         boolean enabled = isEnabled();
         _defaultValueTypes.setEnabled(enabled);
-        _setDefaultValueLink.setHTML(enabled ? SETVALUE_LINK_DEFAULT_ENABLED : SETVALUE_LINK_DISABLED);
+        _setDefaultValueLink.setVisible(enabled);
 
         if (getCanEnable())
         {
+            _setDefaultValueLink.setLabKeyLinkHTML("set&nbsp;value");
             removeClass(_defaultValueLabel, "labkey-disabled");
             removeClass(_defaultTypeLabel, "labkey-disabled");
         }
         else
         {
             _setDefaultValueLink.setHTML(SETVALUE_LINK_NOTSUPPORTED);
+            _setDefaultValueLink.setVisible(true);
             addClass(_defaultValueLabel, "labkey-disabled");
             addClass(_defaultTypeLabel, "labkey-disabled");
         }

@@ -99,10 +99,13 @@ public class AssayDesignerMainPanel extends VerticalPanel implements Saveable<GW
     private BoundTextBox _transformFile;
     private BoundTextBox _validationFile;
     private boolean _allowSpacesInPath;
+    private String _designerURL;
 
     public AssayDesignerMainPanel(RootPanel rootPanel)
     {
         _rootPanel = rootPanel;
+
+        _designerURL = Window.Location.getHref();
 
         String protocolIdStr = PropertyUtil.getServerProperty("protocolId");
         _protocolId = protocolIdStr != null ? new Integer(Integer.parseInt(protocolIdStr)) : null;
@@ -296,6 +299,11 @@ public class AssayDesignerMainPanel extends VerticalPanel implements Saveable<GW
         {
             _protocolSavable = protocolSavable;
             _domain = domain;
+        }
+
+        public String getCurrentURL()
+        {
+            return _designerURL;
         }
 
         public void save()
@@ -691,6 +699,11 @@ public class AssayDesignerMainPanel extends VerticalPanel implements Saveable<GW
             return true;
     }
 
+    public String getCurrentURL()
+    {
+        return _designerURL;
+    }
+
     public void save()
     {
         save(null);
@@ -713,12 +726,18 @@ public class AssayDesignerMainPanel extends VerticalPanel implements Saveable<GW
                 _assay = result;
                 _copy = false;
                 show(_assay);
+                if (_designerURL.indexOf("&rowId=") == -1)
+                {
+                    if (_designerURL.indexOf("?") == -1)
+                    {
+                        _designerURL = _designerURL + "?";
+                    }
+                    _designerURL = _designerURL + "&rowId=" + result.getProtocolId();
+                }
+
                 if (listener != null)
                 {
-                    String designerURL = PropertyUtil.getRelativeURL("designer", "assay");
-                    designerURL += "?providerName=" + URL.encodeComponent(_providerName);
-                    designerURL += "&rowId=" + result.getProtocolId();
-                    listener.saveSuccessful(result, designerURL);
+                    listener.saveSuccessful(result, _designerURL);
                 }
             }
         });
