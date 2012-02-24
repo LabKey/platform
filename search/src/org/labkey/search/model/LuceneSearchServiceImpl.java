@@ -50,6 +50,7 @@ import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.RuntimeSQLException;
 import org.labkey.api.data.dialect.SqlDialect;
+import org.labkey.api.search.SearchScope;
 import org.labkey.api.search.SearchService;
 import org.labkey.api.search.SearchUtils;
 import org.labkey.api.search.SearchUtils.*;
@@ -561,18 +562,7 @@ public class LuceneSearchServiceImpl extends AbstractSearchService
     }
 
 
-    /**
-     * parse the document of the resource, not that parse() and accept() should agree on what is parsable
-     * 
-     * @param r
-     * @param fs
-     * @param is
-     * @param handler
-     * @param metadata
-     * @throws IOException
-     * @throws SAXException
-     * @throws TikaException
-     */
+    // parse the document of the resource, not that parse() and accept() should agree on what is parsable
     void parse(WebdavResource r, FileStream fs, InputStream is, ContentHandler handler, Metadata metadata) throws IOException, SAXException, TikaException
     {
         if (!is.markSupported())
@@ -914,7 +904,8 @@ public class LuceneSearchServiceImpl extends AbstractSearchService
         return new SearchWebPart(includeSubfolders, textBoxWidth, includeHelpLink, isWebpart);
     }
 
-    public SearchResult search(String queryString, @Nullable List<SearchCategory> categories, User user, Container root, Container currentContainer, boolean recursive, int offset, int limit) throws IOException
+    @Override
+    public SearchResult search(String queryString, @Nullable List<SearchCategory> categories, User user, Container current, SearchScope scope, int offset, int limit) throws IOException
     {
         InvocationTimer<SEARCH_PHASE> iTimer = TIMER.getInvocationTimer();
 
@@ -927,7 +918,7 @@ public class LuceneSearchServiceImpl extends AbstractSearchService
             iTimer.setPhase(SEARCH_PHASE.determineParticipantId);
             // Boost "subject" results if this is a participant id
             if (isParticipantId(user, StringUtils.strip(queryString, " +-")))
-                categories = this.getCategory("subject");
+                categories = getCategories("subject");
         }
 
         iTimer.setPhase(SEARCH_PHASE.createQuery);
@@ -1017,7 +1008,7 @@ public class LuceneSearchServiceImpl extends AbstractSearchService
         try
         {
             iTimer.setPhase(SEARCH_PHASE.buildSecurityFilter);
-            Filter securityFilter = user==User.getSearchUser() ? null : new SecurityFilter(user, root, currentContainer, recursive);
+            Filter securityFilter = user==User.getSearchUser() ? null : new SecurityFilter(user, scope.getRoot(current), current, scope.isRecursive());
 
             iTimer.setPhase(SEARCH_PHASE.search);
             searcher = _index.getSearcher();

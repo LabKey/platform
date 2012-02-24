@@ -179,7 +179,7 @@ public class CrawlerTest extends junit.framework.TestCase
 
         public synchronized boolean updatePath(Path path, Date lastIndexed, Date nextCrawl, boolean create)
         {
-            collections.put(path, new Pair<Date,Date>(lastIndexed,nextCrawl));
+            collections.put(path, new Pair<Date, Date>(lastIndexed, nextCrawl));
             return true;
         }
 

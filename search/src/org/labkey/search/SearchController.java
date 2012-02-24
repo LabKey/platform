@@ -33,6 +33,8 @@ import org.labkey.api.admin.AdminUrls;
 import org.labkey.api.audit.AuditLogService;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
+import org.labkey.api.search.SearchResultTemplate;
+import org.labkey.api.search.SearchScope;
 import org.labkey.api.search.SearchService;
 import org.labkey.api.search.SearchUrls;
 import org.labkey.api.security.AdminConsoleAction;
@@ -93,7 +95,7 @@ public class SearchController extends SpringActionController
     public static class SearchUrlsImpl implements SearchUrls
     {
         @Override
-        public ActionURL getSearchURL(Container c, String query)
+        public ActionURL getSearchURL(Container c, @Nullable String query)
         {
             return SearchController.getSearchURL(c, query);
         }
@@ -101,7 +103,13 @@ public class SearchController extends SpringActionController
         @Override
         public ActionURL getSearchURL(String query, String category)
         {
-            return SearchController.getSearchURL(ContainerManager.getRoot(), query, category);
+            return SearchController.getSearchURL(ContainerManager.getRoot(), query, category, null);
+        }
+
+        @Override
+        public ActionURL getSearchURL(Container c, @Nullable String query, @NotNull String template)
+        {
+            return SearchController.getSearchURL(c, query, null, template);
         }
     }
 
@@ -667,7 +675,7 @@ public class SearchController extends SpringActionController
             {
                 //UNDONE: paging, rowlimit etc
                 int limit = form.getLimit() < 0 ? 1000 : form.getLimit();
-                SearchService.SearchResult result = ss.search(query, null, getViewContext().getUser(), ContainerManager.getRoot(), getContainer(), form.getIncludeSubfolders(),
+                SearchService.SearchResult result = ss.search(query, null, getViewContext().getUser(), getContainer(), form.getSearchScope(),
                         form.getOffset(), limit);
                 List<SearchService.SearchHit> hits = result.hits;
                 totalHits = result.totalHits;
@@ -758,18 +766,23 @@ public class SearchController extends SpringActionController
         return getSearchURL(getContainer());
     }
 
-    private static ActionURL getSearchURL(Container c, String queryString)
+    private static ActionURL getSearchURL(Container c, @Nullable String queryString)
     {
-        return getSearchURL(c, queryString, null);
+        return getSearchURL(c, queryString, null, null);
     }
 
-    private static ActionURL getSearchURL(Container c, String queryString, @Nullable String category)
+    private static ActionURL getSearchURL(Container c, @Nullable String queryString, @Nullable String category, @Nullable String template)
     {
         ActionURL url = getSearchURL(c);
-        url.addParameter("q", queryString);
+
+        if (null != queryString)
+            url.addParameter("q", queryString);
 
         if (null != category)
             url.addParameter("category", category);
+
+        if (null != template)
+            url.addParameter("template", template);
 
         return url;
     }
@@ -781,8 +794,8 @@ public class SearchController extends SpringActionController
         ActionURL getSecondarySearchURL(Container c, String queryString); // TODO: Need other params? (category, scope)
         String getPrimaryDescription(Container c);
         String getSecondaryDescription(Container c);
-        SearchService.SearchResult getPrimarySearchResult(String queryString, @Nullable String category, User user, Container searchRoot, Container currentContainer, boolean recursive, int offset, int limit) throws IOException;
-        SearchService.SearchResult getSecondarySearchResult(String queryString, @Nullable String category, User user, Container root, Container currentContainer, boolean recursive, int offset, int limit) throws IOException;
+        SearchService.SearchResult getPrimarySearchResult(String queryString, @Nullable String category, User user, Container currentContainer, SearchScope scope, int offset, int limit) throws IOException;
+        SearchService.SearchResult getSecondarySearchResult(String queryString, @Nullable String category, User user, Container currentContainer, SearchScope scope, int offset, int limit) throws IOException;
         boolean hasSecondaryPermissions(User user);
         boolean includeAdvancedUI();
         boolean includeNavigationLinks();
@@ -822,13 +835,13 @@ public class SearchController extends SpringActionController
         }
 
         @Override
-        public SearchService.SearchResult getPrimarySearchResult(String queryString, @Nullable String category, User user, Container searchRoot, Container currentContainer, boolean recursive, int offset, int limit) throws IOException
+        public SearchService.SearchResult getPrimarySearchResult(String queryString, @Nullable String category, User user, Container currentContainer, SearchScope scope, int offset, int limit) throws IOException
         {
-            return _ss.search(queryString, _ss.getCategory(category), user, searchRoot, currentContainer, recursive, offset, limit);
+            return _ss.search(queryString, _ss.getCategories(category), user, currentContainer, scope, offset, limit);
         }
 
         @Override
-        public SearchService.SearchResult getSecondarySearchResult(String queryString, @Nullable String category, User user, Container root, Container currentContainer, boolean recursive, int offset, int limit) throws IOException
+        public SearchService.SearchResult getSecondarySearchResult(String queryString, @Nullable String category, User user, Container currentContainer, SearchScope scope, int offset, int limit) throws IOException
         {
             return _ss.searchExternal(queryString, offset, limit);
         }
@@ -857,38 +870,21 @@ public class SearchController extends SpringActionController
     public class SearchAction extends AbstractSearchAction
     {
         private String _category = null;
-        private SearchForm.SearchScope _scope = null;
+        private SearchScope _scope = null;
+        private SearchForm _form = null;
 
         public ModelAndView getView(SearchForm form, BindException errors) throws Exception
         {
             _category = form.getCategory();
             _scope = form.getSearchScope();
+            _form = form;
 
             return super.getView(form, errors, false);
         }
 
         public NavTree appendNavTrail(NavTree root)
         {
-            String title = "Search";
-            switch (_scope)
-            {
-                case All:
-                    title += " site";
-                    break;
-                case Project:
-                    title += " project '" + getContainer().getProject().getName() + "'";
-                    break;
-                case Folder:
-                    title += " folder '";
-                    if ("".equals(getContainer().getName()))
-                        title += "root'";
-                    else
-                        title += getContainer().getName() + "'";
-                    break;
-            }
-            if (null != _category)
-                title += " for " + _category.replaceAll(" ", "s, ") + "s";
-            return root.addChild(title);
+            return _form.getSearchResultTemplate().appendNavTrail(root, getViewContext(), _scope, _category);
         }
     }
 
@@ -974,15 +970,15 @@ public class SearchController extends SpringActionController
         }
 
         @Override
-        public SearchService.SearchResult getPrimarySearchResult(String queryString, @Nullable String category, User user, Container searchRoot, Container currentContainer, boolean recursive, int offset, int limit) throws IOException
+        public SearchService.SearchResult getPrimarySearchResult(String queryString, @Nullable String category, User user, Container currentContainer, SearchScope scope, int offset, int limit) throws IOException
         {
             return _ss.searchExternal(queryString, offset, limit);
         }
 
         @Override
-        public SearchService.SearchResult getSecondarySearchResult(String queryString, @Nullable String category, User user, Container root, Container currentContainer, boolean recursive, int offset, int limit) throws IOException
+        public SearchService.SearchResult getSecondarySearchResult(String queryString, @Nullable String category, User user, Container currentContainer, SearchScope scope, int offset, int limit) throws IOException
         {
-            return _ss.search(queryString, _ss.getCategory(category), user, root, currentContainer, recursive, offset, limit);
+            return _ss.search(queryString, _ss.getCategories(category), user, currentContainer, scope, offset, limit);
         }
 
         @Override
@@ -1033,17 +1029,17 @@ public class SearchController extends SpringActionController
         private String[] _query;
         private String _sort;
         private boolean _print = false;
-        private String _container = null;
         private int _offset = 0;
         private int _limit = 1000;
         private String _category = null;
-        private boolean _includeSubfolders = true;
         private String _comment = null;
         private int _textBoxWidth = 50; // default size
         private boolean _includeHelpLink = true;
         private boolean _webpart = false;
         private boolean _showAdvanced = false;
         private SearchConfiguration _config = new InternalSearchConfiguration();    // Assume internal search (for webparts, etc.)
+        private String _template = null;
+        private SearchScope _scope = SearchScope.All;
 
         public void setConfiguration(SearchConfiguration config)
         {
@@ -1054,8 +1050,6 @@ public class SearchController extends SpringActionController
         {
             return _config;
         }
-
-        public static enum SearchScope {All, Project, Folder}
 
         public String[] getQ()
         {
@@ -1115,50 +1109,26 @@ public class SearchController extends SpringActionController
             _limit = o;
         }
 
-        public String getContainer()
+        public String getScope()
         {
-            return _container;
+            return _scope.name();
         }
 
-        public @NotNull Container getSearchContainer()
+        public void setScope(String scope)
         {
-            Container c = null;
-
-            if (null != getContainer())
-                c = ContainerManager.getForId(getContainer());
-
-            if (null == c)
-                c = ContainerManager.getRoot();
-
-            return c;
+            try
+            {
+                _scope = SearchScope.valueOf(scope);
+            }
+            catch (IllegalArgumentException e)
+            {
+                _scope = SearchScope.All;
+            }
         }
 
         public SearchScope getSearchScope()
         {
-            Container searchContainer = getSearchContainer();
-
-            if (searchContainer.isRoot() && getIncludeSubfolders())
-                return SearchScope.All;
-
-            if (searchContainer.isProject() && getIncludeSubfolders())
-                return SearchScope.Project;
-
-            return SearchScope.Folder;
-        }
-
-        public void setContainer(String container)
-        {
-            _container = container;
-        }
-
-        public void setIncludeSubfolders(boolean b)
-        {
-            _includeSubfolders = b;
-        }
-
-        public boolean getIncludeSubfolders()
-        {
-            return null == _container || _includeSubfolders;
+            return _scope;
         }
 
         public String getCategory()
@@ -1219,6 +1189,22 @@ public class SearchController extends SpringActionController
         public void setShowAdvanced(boolean showAdvanced)
         {
             _showAdvanced = showAdvanced;
+        }
+
+        public String getTemplate()
+        {
+            return _template;
+        }
+
+        public void setTemplate(String template)
+        {
+            _template = template;
+        }
+
+        public SearchResultTemplate getSearchResultTemplate()
+        {
+            SearchService ss = ServiceRegistry.get().getService(SearchService.class);
+            return ss.getSearchResultTemplate(getTemplate());
         }
     }
 

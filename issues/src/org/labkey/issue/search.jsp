@@ -34,6 +34,7 @@
 <%@ page import="java.util.HashMap" %>
 <%@ page import="java.util.List" %>
 <%@ page import="java.util.Map" %>
+<%@ page import="org.labkey.api.search.SearchScope" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
@@ -84,7 +85,7 @@
 
         try
         {
-            SearchService.SearchResult result = ss.search(q, Arrays.asList(IssueManager.searchCategory), user, c, c, false, 0, SearchService.DEFAULT_PAGE_SIZE);
+            SearchService.SearchResult result = ss.search(q, Arrays.asList(IssueManager.searchCategory), user, c, SearchScope.Folder, 0, SearchService.DEFAULT_PAGE_SIZE);
             List<SearchService.SearchHit> hits = result.hits;
 
             %><div id="searchResults" style="max-width:800px;"><%

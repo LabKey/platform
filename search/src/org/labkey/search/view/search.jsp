@@ -16,13 +16,16 @@
  */
 %>
 <%@ page import="org.apache.commons.lang3.StringUtils" %>
+<%@ page import="org.jetbrains.annotations.NotNull" %>
 <%@ page import="org.jetbrains.annotations.Nullable" %>
 <%@ page import="org.json.JSONArray" %>
 <%@ page import="org.json.JSONObject" %>
 <%@ page import="org.labkey.api.data.Container" %>
-<%@ page import="org.labkey.api.data.ContainerManager" %>                 
+<%@ page import="org.labkey.api.data.ContainerManager" %>
 <%@ page import="org.labkey.api.portal.ProjectUrls" %>
 <%@ page import="org.labkey.api.search.SearchMisconfiguredException" %>
+<%@ page import="org.labkey.api.search.SearchResultTemplate" %>
+<%@ page import="org.labkey.api.search.SearchScope" %>
 <%@ page import="org.labkey.api.search.SearchService" %>
 <%@ page import="org.labkey.api.search.SearchUtils" %>
 <%@ page import="org.labkey.api.search.SearchUtils.HtmlParseException" %>
@@ -39,9 +42,7 @@
 <%@ page import="org.labkey.api.view.ViewContext" %>
 <%@ page import="org.labkey.api.webdav.WebdavResource" %>
 <%@ page import="org.labkey.search.SearchController" %>
-<%@ page import="org.labkey.search.SearchController.IndexAction" %>
 <%@ page import="org.labkey.search.SearchController.SearchForm" %>
-<%@ page import="org.labkey.search.SearchController.SearchForm.SearchScope" %>
 <%@ page import="java.io.IOException" %>
 <%@ page import="java.util.ArrayList" %>
 <%@ page import="java.util.Arrays" %>
@@ -70,70 +71,64 @@
     SearchService ss = ServiceRegistry.get().getService(SearchService.class);
     boolean wideView = true;
     List<String> q = new ArrayList<String>(Arrays.asList(form.getQ()));
+    SearchResultTemplate template = form.getSearchResultTemplate();
+    SearchScope scope = (null == template.getSearchScope() ? form.getSearchScope() : template.getSearchScope());
 
     SearchController.SearchConfiguration searchConfig = form.getConfig();
+    boolean showAdvancedUI = !form.isWebPart() && searchConfig.includeAdvancedUI() && template.includeAdvanceUI();
 
-    if (!form.isWebPart() && searchConfig.includeAdvancedUI())
+    if (showAdvancedUI)
     { %>
-<form class="labkey-search-form" style="padding-bottom: 0px" id="searchForm" name="search" onsubmit="resubmit(); return true;" action="<%=h(searchConfig.getPostURL(c))%>">
+<form class="labkey-search-form" style="padding-bottom: 0" id="searchForm" name="search" onsubmit="resubmit(); return true;" action="<%=h(searchConfig.getPostURL(c))%>">
  <% }
     else
     { %>
-<form class="labkey-search-form" style="padding-bottom: 0px" id="searchForm" name="search" action="<%=h(searchConfig.getPostURL(c))%>">
+<form class="labkey-search-form" style="padding-bottom: 0" id="searchForm" name="search" action="<%=h(searchConfig.getPostURL(c))%>">
 <%  } %>
-    <table><tr><td><%
+    <table><tr>
+        <td><%
     if (form.isPrint())
     {
         %><input type="hidden" name="_print" value=1><%
     }
 
     %>
-    <input type="hidden" name="_dc" value="<%=Math.round(1000*Math.random())%>">
-    <input type="text" size="<%=form.getTextBoxWidth()%>" id="query" name="q" value="<%=h(StringUtils.trim(StringUtils.join(q, " ")))%>"></td>
-    <td><div style="margin: 2px 0; float: left;"><%=generateSubmitButton("Search")%></div><%
+        <input type="hidden" name="_dc" value="<%=Math.round(1000 * Math.random())%>">
+        <input type="text" size="<%=form.getTextBoxWidth()%>" id="query" name="q" value="<%=h(StringUtils.trim(StringUtils.join(q, " ")))%>"></td>
+        <td><div style="margin: 2px 0; float: left;"><%=generateSubmitButton("Search")%></div><%
 
     if (form.getIncludeHelpLink())
     {
         %>&nbsp;&nbsp;&nbsp;<%=textLink("help", SearchUtils.getHelpURL())%><%
     }
         
-    String category = form.getCategory();
+    String categories = (null == template.getCategories() ? form.getCategory() : template.getCategories());
     String queryString = form.getQueryString();
 
-    if (!form.isWebPart() && searchConfig.includeAdvancedUI())
+    if (showAdvancedUI)
     {
         %>
         <input type="hidden" id="hidden-category" name="category">
-        <input type="hidden" id="hidden-showAdv" name="showAdvanced" value="true" >
-        <%
+        <input type="hidden" id="hidden-showAdv" name="showAdvanced" value="true" ><%
     }
 
-    if (c.isProject()){ %>
-        <input type="hidden" id="hidden-container" name="container" value="<%=projectInfo(c, false)%>">
-    <% }
-    else
+    if (null == template.getSearchScope())
     {
-    %>
-        <input type="hidden" id="hidden-container" name="container" value="<%=projectInfo(c, true)%>">
-    <%
+        %>
+        <input type="hidden" id="hidden-scope" name="scope" value="<%=form.getSearchScope()%>"><%
     }
 
-    if (form.getIncludeSubfolders())
+    if (null != form.getTemplate())
     {
-    %>
-        <input type="hidden" id="hidden-include-folders" name="includeSubfolders" value="1" >
-    <% }
-    else
-    {
-    %>
-        <input type="hidden" id="hidden-include-folders" name="includeSubfolders" value="0" > 
-    <%
-    } %>
+        %>
+        <input type="hidden" id="hidden-template" name="template" value="<%=form.getTemplate()%>"><%
+    }   %>
+
         </td></tr>
     </table>
 </form>
 <%
-    if (!form.isWebPart() && searchConfig.includeAdvancedUI())
+    if (showAdvancedUI)
     {
 %>
 <table width=100% cellpadding="0" cellspacing="0" style="padding-left: 10px;">
@@ -153,6 +148,11 @@
 <%
     }
 
+    String extraHtml = template.getExtraHtml(ctx);
+
+    if (null != extraHtml)
+        out.print(extraHtml);
+
     if (null != StringUtils.trimToNull(queryString))
     {
         %><table cellspacing=0 cellpadding=0 style="margin-top:10px;">
@@ -166,7 +166,7 @@
 
         try
         {
-            SearchService.SearchResult result = searchConfig.getPrimarySearchResult(queryString, category, user, form.getSearchContainer(), c, form.getIncludeSubfolders(), offset, hitsPerPage);
+            SearchService.SearchResult result = searchConfig.getPrimarySearchResult(template.reviseQuery(ctx, queryString), categories, user, c, scope, offset, hitsPerPage);
 
             int primaryHits = result.totalHits;
             int pageCount = (int)Math.ceil((double)primaryHits / hitsPerPage);
@@ -178,7 +178,7 @@
                if (searchConfig.hasSecondaryPermissions(user))
                {
                    includesSecondarySearch = true;
-                   SearchService.SearchResult secondaryResult = searchConfig.getSecondarySearchResult(queryString, category, user, form.getSearchContainer(), c, form.getIncludeSubfolders(), offset, hitsPerPage);
+                   SearchService.SearchResult secondaryResult = searchConfig.getSecondarySearchResult(queryString, categories, user, c, scope, offset, hitsPerPage);
 
                    %>
                <tr><td align=left colspan="2"><%
@@ -187,7 +187,7 @@
                    <a href="<%=h(searchConfig.getSecondarySearchURL(c, queryString))%>"><%
                    }
 
-                   out.print(getResultsSummary(secondaryResult.totalHits, searchConfig.getSecondaryDescription(c), "click to view"));
+                   out.print(getResultsSummary(secondaryResult.totalHits, searchConfig.getSecondaryDescription(c), template.getResultName(), "click to view"));
 
                    if (secondaryResult.totalHits > 0)
                    { %>
@@ -196,7 +196,7 @@
                </td></tr><%
                }
                %>
-               <tr><td align=left><%=getResultsSummary(primaryHits, includesSecondarySearch ? searchConfig.getPrimaryDescription(c) : null, includesSecondarySearch ? "shown below" : null)%></td><%
+               <tr><td align=left><%=getResultsSummary(primaryHits, includesSecondarySearch ? searchConfig.getPrimaryDescription(c) : null, template.getResultName(), includesSecondarySearch ? "shown below" : null)%></td><%
 
             if (hitsPerPage < primaryHits)
             {
@@ -204,7 +204,7 @@
             }
             else if (primaryHits > 0)
             {
-                %><td align=right>Displaying all results</td><%
+                %><td align=right>Displaying all <%=h(template.getResultName())%>s</td><%
             }
             %></tr></table><br>
             <%
@@ -217,7 +217,8 @@
                 String summary = StringUtils.trimToNull(hit.summary);
                 %>
 
-<a class="labkey-search-title" href="<%=h(href)%>"><%=h(hit.displayTitle)%></a><div style='margin-left:10px; width:600;'><%
+                <a class="labkey-search-title" href="<%=h(href)%>"><%=h(hit.displayTitle)%></a><div style='margin-left:10px; width:600px;'><%
+
                 if (null != summary)
                 {
                     %><%=h(summary, false)%><br><%
@@ -272,9 +273,9 @@
 
             %></div></td><%
 
-            if (null == category && wideView && searchConfig.includeNavigationLinks() && form.getSearchScope() != SearchScope.Folder)
+            if (null == categories && wideView && searchConfig.includeNavigationLinks() && scope != SearchScope.Folder)
             {
-                result = ss.search(queryString, Arrays.asList(SearchService.navigationCategory), user, form.getSearchContainer(), c, true, offset, hitsPerPage);
+                result = ss.search(queryString, Arrays.asList(SearchService.navigationCategory), user, c, scope, offset, hitsPerPage);
 
                 if (result.hits.size() > 0)
                 {
@@ -381,7 +382,6 @@ List<NavTree> parseNavTrail(String s)
     }
 }
 
-
 SearchService ss = ServiceRegistry.get(SearchService.class);
 
 Collection<NavTree> getActions(SearchService.SearchHit hit)
@@ -396,14 +396,12 @@ Collection<NavTree> getActions(SearchService.SearchHit hit)
     return nav.isEmpty() ? null : nav;
 }
 
-
 Path files = new Path("@files");
 Path pipeline = new Path("@pipeline");
 Path dav = new Path("_webdav");
 
 NavTree getDocumentContext(Container c, SearchService.SearchHit hit)
 {
-
     if (null == c)
     {
         if (null == hit.url)
@@ -447,7 +445,7 @@ NavTree getDocumentContext(Container c, SearchService.SearchHit hit)
 }
 
 
-String getResultsSummary(int totalHits, @Nullable String description, @Nullable String nonZeroInstruction)
+String getResultsSummary(int totalHits, @Nullable String description, @NotNull String resultName, @Nullable String nonZeroInstruction)
 {
     StringBuilder sb = new StringBuilder("Found ");
     sb.append(Formats.commaf0.format(totalHits));
@@ -458,7 +456,7 @@ String getResultsSummary(int totalHits, @Nullable String description, @Nullable 
         sb.append(h(description));
     }
 
-    sb.append(" result");
+    sb.append(" ").append(h(resultName));
 
     if (totalHits != 1)
         sb.append("s");
@@ -507,23 +505,9 @@ String normalizeHref(Container c, Path contextPath, String href)
     return href;
 }
 
-String projectInfo(Container c, boolean returnID)
-{
-    if (returnID)
-    {
-        return c.getId();
-    }
-
-    if (c.getProject() != null)
-    {
-        return c.getProject().getId();
-    }
-    return "";
-}
-
 %>
 <%
-    if (!form.isWebPart() && searchConfig.includeAdvancedUI())
+    if (showAdvancedUI)
     {
 %>
 <style type="text/css">
@@ -538,7 +522,6 @@ String projectInfo(Container c, boolean returnID)
         params['q'] = document.getElementById('query').value;
 
         checkOptions('adv-category', 'category');
-        checkRadio('adv-scope', 'container');
 
         if (!seen && document.getElementById('hidden-showAdv'))
         {
@@ -546,43 +529,9 @@ String projectInfo(Container c, boolean returnID)
         }
     }
 
-    function checkRadio(el, param)
-    {
-        var rad = Ext.getCmp(el);
-        params[param] = "";
-
-        var incEl = document.getElementById('hidden-include-folders');
-        var conEl = document.getElementById('hidden-container');
-
-        if (rad && rad.getValue() && rad.getValue().value)
-        {
-            params[param] = rad.getValue().value;
-            conEl.value = params[param];
-
-            if (incEl)
-            {
-                if (rad.getValue().id === "cb_folder")
-                {
-                    incEl.value = "0";
-                }
-                else if (rad.getValue().id === "cb_project" || rad.getValue().id === "cb_folder_subfolder")
-                {
-                    incEl.value = "1";
-                }
-            }
-        }
-        else
-        {
-            if (conEl)
-                conEl.disabled = "disabled";
-            if (incEl)
-                incEl.disabled = "disabled";
-        }
-    }
-
     function checkOptions(el, param)
     {
-        var cat = Ext.getCmp(el)
+        var cat = Ext.getCmp(el);
         if (cat)
         {
             cat = cat.getValue();
@@ -615,7 +564,7 @@ String projectInfo(Container c, boolean returnID)
     {
         var header = {
             layout: 'form',
-            html : <%=PageFlowUtil.jsString("<span>Categories" + helpPopup("Categories", "Choosing one or more categories will refine your search to only those data types. For example, if you select 'Files' you will see only files and attachments in your results.") + "</span>")%>
+            html : <%=PageFlowUtil.jsString("<span>Categories" + helpPopup("Categories", "Choosing one or more categories will refine your search to only those data types. For example, if you select 'Files' you will see only files and attachments in your " + h(template.getResultName()) + ".") + "</span>")%>
         };
 
         var categories = {
@@ -634,7 +583,7 @@ String projectInfo(Container c, boolean returnID)
                             if (cats)
                             {
                                 cats = cats.split('+');
-                                for(var i = 0; i < cats.length; i++)
+                                for (var i = 0; i < cats.length; i++)
                                 {
                                     if (cats[i] == chkbox.value)
                                     {
@@ -680,78 +629,51 @@ String projectInfo(Container c, boolean returnID)
                 xtype     : 'radiogroup',
                 columns   : 1,
                 autoHeight: true,
+                listeners: {
+                    afterrender : function(group)
+                    {
+                        // Check the option button associated with the current scope
+                        var scope = params['scope'];
+
+                        if (!(scope in {"Project":1, "Folder":1, "FolderAndSubfolders":1}))
+                        {
+                            scope = 'All';
+                        }
+
+                        group.setValue("cb_" + scope, true);
+                    },
+                    change : function(group, chkbox)
+                    {
+                        var scopeEl = document.getElementById('hidden-scope');
+
+                        if (chkbox.id == 'cb_All')
+                        {
+                            scopeEl.disabled = true;
+                        }
+                        else
+                        {
+                            scopeEl.disabled = false;
+                            scopeEl.value = chkbox.id.substring(3);
+                        }
+                    }
+                },
                 items : [{
                     boxLabel: 'Site',
-                    id      : 'cb_site',
                     name    : 'scope',
-                    listeners : {
-                        check : function(chkbox, checked)
-                        {
-                            if (checked)
-                            {
-                                delete params["includeSubfolders"];
-                            }
-                        },
-                        afterrender : function(chkbox)
-                        {
-                            if (!(params['container']))
-                            {
-                                chkbox.setValue(true);
-                            }
-                            else if (params['container'] == "")
-                            {
-                                chkbox.setValue(true);
-                            }
-                        }
-                    }
+                    id      : 'cb_<%=SearchScope.All.name()%>'
                 },{
                     boxLabel: 'Project',
-                    value   : "<%=h(projectInfo(c, false))%>",
-                    id      : 'cb_project',
+                    disabled: <%=c.equals(ContainerManager.getRoot())%>,
                     name    : 'scope',
-                    listeners : {
-                        afterrender : function(chkbox)
-                        {
-                            if ((params['container'] === chkbox.value) && (LABKEY.ActionURL.getParameter('includeSubfolders') === "1"))
-                            {
-                                if (params['container'] != "")
-                                {
-                                    chkbox.setValue(true);
-                                }
-                            }
-
-                            if ("<%=h(projectInfo(c, false))%>" == "")
-                            {
-                                chkbox.disable();
-                            }
-                        }
-                    }
+                    id      : 'cb_<%=SearchScope.Project.name()%>'
                 },{
                     boxLabel: 'Current Folder',
-                    id      : 'cb_folder',
-                    value   : "<%=h(projectInfo(c, true))%>",
                     name    : 'scope',
-                    listeners : {
-                        afterrender: function(chkbox) {
-                            if ((params['container'] === chkbox.value && ((LABKEY.ActionURL.getParameter('includeSubfolders') === "0") || (!LABKEY.ActionURL.getParameter('includeSubfolders')))) || ((params['container'] === chkbox.value)&&(<%=h(!c.isProject())%>)))
-                            {
-                                chkbox.setValue(true);
-                            }
-                        }
-                    }
+                    id      : 'cb_<%=SearchScope.Folder.name()%>'
                 },{
                     boxLabel: 'Current Folder & SubFolders',
-                    id      : 'cb_folder_subfolder',
-                    value   : "<%=h(projectInfo(c, true))%>",
                     name    : 'scope',
-                    listeners : {
-                        afterrender: function(chkbox) {
-                            if (params['container'] === chkbox.value && (LABKEY.ActionURL.getParameter('includeSubfolders') === "1") && <%=h(!c.isProject())%>)
-                            {
-                                chkbox.setValue(true);
-                            }
-                        }
-                    }
+                    id      : 'cb_<%=SearchScope.FolderAndSubfolders.name()%>'
                 }]
             }
         };

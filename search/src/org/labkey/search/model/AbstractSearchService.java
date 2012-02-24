@@ -34,6 +34,7 @@ import org.labkey.api.data.dialect.SqlDialect;
 import org.labkey.api.iterator.CloseableIterator;
 import org.labkey.api.reader.ColumnDescriptor;
 import org.labkey.api.reader.Loader;
+import org.labkey.api.search.SearchResultTemplate;
 import org.labkey.api.search.SearchService;
 import org.labkey.api.security.SecurableResource;
 import org.labkey.api.security.User;
@@ -55,6 +56,7 @@ import org.labkey.api.view.ActionURL;
 import org.labkey.api.webdav.ActionResource;
 import org.labkey.api.webdav.WebdavResource;
 import org.labkey.api.webdav.WebdavService;
+import org.labkey.search.view.DefaultSearchResultTemplate;
 
 import javax.servlet.ServletContextEvent;
 import java.io.IOException;
@@ -575,6 +577,29 @@ public abstract class AbstractSearchService implements SearchService, ShutdownLi
         return res.resolve(resourceIdentifier.substring(i+1));
     }
 
+
+    private final List<SearchResultTemplate> _templates = new CopyOnWriteArrayList<SearchResultTemplate>();
+    private final SearchResultTemplate _defaultTemplate = new DefaultSearchResultTemplate();
+
+    @Override
+    public void addSearchResultTemplate(@NotNull SearchResultTemplate template)
+    {
+        _templates.add(template);
+    }
+
+    @Override
+    public SearchResultTemplate getSearchResultTemplate(@Nullable String name)
+    {
+        if (null != name)
+        {
+            for (SearchResultTemplate template : _templates)
+                if (StringUtils.equalsIgnoreCase(name, template.getName()))
+                    return template;
+        }
+
+        // Template was null or unrecognized, so return the default
+        return _defaultTemplate;
+    }
 
     final Object _runningLock = new Object();
     boolean _threadsInitialized = false;
@@ -1118,7 +1143,7 @@ public abstract class AbstractSearchService implements SearchService, ShutdownLi
         }
     }
 
-    public List<SearchCategory> getCategory(String categories)
+    public List<SearchCategory> getCategories(String categories)
     {
         if (categories == null)
             return null;

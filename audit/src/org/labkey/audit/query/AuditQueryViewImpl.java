@@ -16,6 +16,7 @@
 
 package org.labkey.audit.query;
 
+import org.jetbrains.annotations.Nullable;
 import org.labkey.api.audit.query.AuditDisplayColumnFactory;
 import org.labkey.api.audit.query.AuditLogQueryView;
 import org.labkey.api.data.DisplayColumn;
@@ -39,7 +40,7 @@ public class AuditQueryViewImpl extends AuditLogQueryView
 {
     protected Map<Integer, DisplayColumn> _indexedColumns = new HashMap<Integer, DisplayColumn>();
 
-    public AuditQueryViewImpl(UserSchema schema, QuerySettings settings, SimpleFilter filter)
+    public AuditQueryViewImpl(UserSchema schema, QuerySettings settings, @Nullable SimpleFilter filter)
     {
         super(schema, settings, filter);
         getSettings().setAllowChooseQuery(false);
@@ -80,6 +81,7 @@ public class AuditQueryViewImpl extends AuditLogQueryView
                 filter = _filter;
             view.getRenderContext().setBaseFilter(filter);
         }
+
         if (_sort != null)
         {
             Sort sort = view.getRenderContext().getBaseSort();

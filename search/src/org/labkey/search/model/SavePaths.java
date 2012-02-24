@@ -15,13 +15,19 @@
  */
 package org.labkey.search.model;
 
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
-import org.labkey.api.data.*;
+import org.labkey.api.data.CachedResultSet;
+import org.labkey.api.data.DbSchema;
+import org.labkey.api.data.RuntimeSQLException;
+import org.labkey.api.data.SQLFragment;
+import org.labkey.api.data.Table;
+import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.dialect.SqlDialect;
 import org.labkey.api.search.SearchService;
 import org.labkey.api.security.User;
 import org.labkey.api.services.ServiceRegistry;
-import org.labkey.api.util.DateUtil;
 import org.labkey.api.util.Pair;
 import org.labkey.api.util.Path;
 import org.labkey.api.util.ResultSetUtil;
@@ -29,18 +35,20 @@ import org.labkey.api.util.ResultSetUtil;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Timestamp;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.LinkedHashMap;
+import java.util.Map;
 
 /**
- * Created by IntelliJ IDEA.
  * User: matthewb
  * Date: Dec 12, 2009
  * Time: 9:38:46 AM
  */
 public class SavePaths implements DavCrawler.SavePaths
 {
-    static java.util.Date _futureDate = new Date(DateUtil.parseDateTime("3000-01-01"));
-
     final private long _startupTime = System.currentTimeMillis();
     
 
@@ -60,7 +68,7 @@ public class SavePaths implements DavCrawler.SavePaths
     // FOLDER/RESOURCES
     //
 
-    private boolean _update(Path path, java.util.Date last, java.util.Date next) throws SQLException
+    private boolean _update(Path path, @Nullable java.util.Date last, @Nullable java.util.Date next) throws SQLException
     {
         String pathStr = toPathString(path);
         if (null == last) last = nullDate;
@@ -318,7 +326,7 @@ public class SavePaths implements DavCrawler.SavePaths
                 String path = rs.getString(1);
                 java.sql.Timestamp lastCrawl = rs.getTimestamp(2);
                 java.sql.Timestamp nextCrawl = rs.getTimestamp(3);
-                map.put(Path.parse(path),new Pair(lastCrawl,nextCrawl));
+                map.put(Path.parse(path), new Pair<Date, Date>(lastCrawl, nextCrawl));
                 paths.add(path);
             }
             rs.close();
@@ -399,7 +407,7 @@ public class SavePaths implements DavCrawler.SavePaths
 
     String datetime = null;
 
-    public boolean updateFile(Path path, Date lastIndexed, Date modified)
+    public boolean updateFile(@NotNull Path path, @NotNull Date lastIndexed, Date modified)
     {
         try
         {

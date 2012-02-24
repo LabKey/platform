@@ -16,7 +16,9 @@
 package org.labkey.search.model;
 
 import org.apache.log4j.Logger;
+import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.Container;
+import org.labkey.api.search.SearchScope;
 import org.labkey.api.security.User;
 import org.labkey.api.view.WebPartView;
 import org.labkey.api.webdav.WebdavResource;
@@ -26,7 +28,6 @@ import java.util.List;
 import java.util.Map;
 
 /**
- * Created by IntelliJ IDEA.
  * User: matthewb
  * Date: Nov 16, 2009
  * Time: 11:45:44 AM
@@ -51,7 +52,8 @@ public class SolrSearchServiceImpl extends AbstractSearchService
 //        }
     }
 
-    public SearchResult search(String queryString, List<SearchCategory> categories, User user, Container root, Container currentContainer, boolean recursive, int offset, int limit) throws IOException
+    @Override
+    public SearchResult search(String queryString, @Nullable List<SearchCategory> categories, User user, Container current, SearchScope scope, int offset, int limit) throws IOException
     {
         return null;
     }

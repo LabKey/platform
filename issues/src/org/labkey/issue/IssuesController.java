@@ -18,10 +18,12 @@ package org.labkey.issue;
 
 import org.apache.commons.collections15.BeanMap;
 import org.apache.commons.lang3.BooleanUtils;
+import org.apache.commons.lang3.ObjectUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.math.NumberUtils;
 import org.apache.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import org.json.JSONArray;
 import org.json.JSONObject;
 import org.junit.Assert;
@@ -33,6 +35,7 @@ import org.labkey.api.action.ApiSimpleResponse;
 import org.labkey.api.action.FormHandlerAction;
 import org.labkey.api.action.FormViewAction;
 import org.labkey.api.action.LabkeyError;
+import org.labkey.api.action.SimpleRedirectAction;
 import org.labkey.api.action.SimpleViewAction;
 import org.labkey.api.action.SpringActionController;
 import org.labkey.api.attachments.AttachmentFile;
@@ -59,6 +62,9 @@ import org.labkey.api.query.QueryService;
 import org.labkey.api.query.QuerySettings;
 import org.labkey.api.query.QueryView;
 import org.labkey.api.query.UserSchema;
+import org.labkey.api.search.SearchResultTemplate;
+import org.labkey.api.search.SearchScope;
+import org.labkey.api.search.SearchUrls;
 import org.labkey.api.security.Group;
 import org.labkey.api.security.RequiresPermissionClass;
 import org.labkey.api.security.SecurityManager;
@@ -1820,32 +1826,145 @@ public class IssuesController extends SpringActionController
     }
 
 
-    @RequiresPermissionClass(ReadPermission.class)
-    public class SearchAction extends SimpleViewAction
+    public static class IssueSearchResultTemplate implements SearchResultTemplate
     {
-        private String _status;
+        public static final String NAME = "issue";
 
-        public ModelAndView getView(Object o, BindException errors) throws Exception
+        @Override
+        public String getName()
         {
-            Container c = getContainer();
-            Object q = getProperty("q", "");
-            String searchTerm = (q instanceof String) ? (String)q : StringUtils.join((String[])q," ");
-
-            _status = (String)getProperty("status");
-
-            getPageConfig().setHelpTopic(new HelpTopic("luceneSearch"));
-
-            return new SearchResultsView(c, searchTerm, _status, isPrint());
+            return NAME;
         }
 
-        public NavTree appendNavTrail(NavTree root)
+        @Override
+        public String getCategories()
         {
-            String title = "Search " + (null != _status ? _status + " " : "") + "Issues";
-            return new ListAction(getViewContext()).appendNavTrail(root).addChild(title);
+            return "issue";
+        }
+
+        @Override
+        public SearchScope getSearchScope()
+        {
+            return SearchScope.Folder;
+        }
+
+        @NotNull
+        @Override
+        public String getResultName()
+        {
+            return "issue";
+        }
+
+        @Override
+        public boolean includeAdvanceUI()
+        {
+            return false;
+        }
+
+        @Override
+        public String getExtraHtml(ViewContext ctx)
+        {
+            String q = ctx.getActionURL().getParameter("q");
+            String status = ctx.getActionURL().getParameter("status");
+
+            if (0 < q.length())
+            {
+                ActionURL statusResearchURL = ctx.cloneActionURL().deleteParameter("status");
+                statusResearchURL.addParameter("_dc", (int)Math.round(1000 * Math.random()));
+
+                StringBuilder html = new StringBuilder("<table width=100% cellpadding=\"0\" cellspacing=\"0\"><tr>\n");
+                html.append("<td class=\"labkey-search-filter\">&nbsp;");
+
+                appendStatus(html, null, status, "All", false, statusResearchURL);
+                appendStatus(html, "Open", status, "Open", true, statusResearchURL);
+                appendStatus(html, "Resolved", status, "Resolved", true, statusResearchURL);
+                appendStatus(html, "Closed", status, "Closed", true, statusResearchURL);
+
+                html.append("</td></tr></table>");
+                return html.toString();
+            }
+            else
+            {
+                return null;
+            }
+        }
+
+        public String reviseQuery(ViewContext ctx, String q)
+        {
+            String status = ctx.getActionURL().getParameter("status");
+
+            if (null != status)
+                return "+(" + q + ") +status:" + status;
+            else
+                return q;
+        }
+
+        private void appendStatus(StringBuilder sb, @Nullable String status, @Nullable String currentStatus, @NotNull String label, boolean addParam, ActionURL statusResearchURL)
+        {
+            sb.append("<span>");
+
+            if (!ObjectUtils.equals(status, currentStatus))
+            {
+                sb.append("<a href=\"");
+
+                if (addParam)
+                    statusResearchURL = statusResearchURL.clone().addParameter("status", status);
+
+                sb.append(PageFlowUtil.filter(statusResearchURL));
+                sb.append("\">");
+                sb.append(label);
+                sb.append("</a>");
+            }
+            else
+            {
+                sb.append(label);
+            }
+
+            sb.append("</span>&nbsp;");
+        }
+
+        @Override
+        public NavTree appendNavTrail(NavTree root, ViewContext ctx, @NotNull SearchScope scope, @Nullable String category)
+        {
+            String status = ctx.getActionURL().getParameter("status");
+            root.addChild("Issues List", issueURL(ctx.getContainer(), ListAction.class).addParameter(DataRegion.LAST_FILTER_PARAM, "true"));
+            root.addChild("Search " + (null != status ? status + " " : "") + "Issues");
+
+            return root;
         }
     }
 
 
+    // SearchForm and SearchAction are left for backward compatibility (e.g., firefox search plugins)
+    public static class SearchForm
+    {
+        private String _q = null;
+
+        public String getQ()
+        {
+            return _q;
+        }
+
+        @SuppressWarnings({"UnusedDeclaration"})
+        public void setQ(String q)
+        {
+            _q = q;
+        }
+    }
+
+    @SuppressWarnings({"UnusedDeclaration"})
+    @RequiresPermissionClass(ReadPermission.class)
+    public class SearchAction extends SimpleRedirectAction<SearchForm>
+    {
+        @Override
+        public URLHelper getRedirectURL(SearchForm form) throws Exception
+        {
+            return PageFlowUtil.urlProvider(SearchUrls.class).getSearchURL(getContainer(), form.getQ(), IssueSearchResultTemplate.NAME);
+        }
+    }
+
+
+    // TODO: Delete after refactoring is complete
     public static class SearchResultsView extends JspView<SearchResultsView>
     {
         public Container _c;

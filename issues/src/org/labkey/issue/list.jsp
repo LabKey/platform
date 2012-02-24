@@ -17,11 +17,12 @@
 %>
 <%@ page import="org.labkey.api.security.permissions.InsertPermission"%>
 <%@ page import="org.labkey.api.util.PageFlowUtil"%>
+<%@ page import="org.labkey.api.view.ActionURL"%>
 <%@ page import="org.labkey.api.view.HttpView"%>
-<%@ page import="org.labkey.api.view.ViewContext"%>
-<%@ page import="org.labkey.issue.model.IssueManager" %>
+<%@ page import="org.labkey.api.view.ViewContext" %>
 <%@ page import="org.labkey.issue.IssuesController" %>
-<%@ page import="org.labkey.api.view.ActionURL" %>
+<%@ page import="org.labkey.issue.model.IssueManager" %>
+<%@ page import="org.labkey.api.search.SearchUrls" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
     ViewContext context = HttpView.getRootContext();
@@ -48,9 +49,13 @@
     %><input type="text" size="5" name="issueId"/>
         <%=PageFlowUtil.generateSubmitButton("Jump to " + names.singularName, "", "align=\"top\" vspace=\"2\"")%></form></td>
     <td width=100%>&nbsp;</td>
-    <td align="right" nowrap><form action="<%= new ActionURL(IssuesController.SearchAction.class, context.getContainer()) %>" method="get">
-        <input type="text" size="30" name="q" value="">
-        <%=PageFlowUtil.generateSubmitButton("Search", "", "align=\"top\" vspace=\"2\"")%></form></td>
+    <td align="right" nowrap>
+        <form action="<%=h(urlProvider(SearchUrls.class).getSearchURL(context.getContainer(), null))%>" method="get">
+            <input type="text" size="30" name="q" value="">
+            <input type="hidden" name="template" value="<%=h(IssuesController.IssueSearchResultTemplate.NAME)%>">
+            <%=PageFlowUtil.generateSubmitButton("Search", "", "align=\"top\" vspace=\"2\"")%>
+        </form>
+    </td>
 </tr></table>
 
 <%

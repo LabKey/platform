@@ -196,17 +196,19 @@ public class DavCrawler implements ShutdownListener
      * start a background process to watch directories
      * optionally add a path at the same time
      */
-    public void addPathToCrawl(Path start, Date nextCrawl)
+    public void addPathToCrawl(@Nullable Path start, Date nextCrawl)
     {
-        _log.debug("START CONTINUOUS " + start.toString());
-
         if (null != start)
+        {
+            _log.debug("START CONTINUOUS " + start.toString());
             _paths.updatePath(start, null, nextCrawl, true);
+        }
+
         pingCrawler();
     }
 
 
-    LinkedList<Pair<String,Date>> _recent = new LinkedList<Pair<String,Date>>();
+    LinkedList<Pair<String, Date>> _recent = new LinkedList<Pair<String, Date>>();
 
     
     class IndexDirectoryJob implements Runnable

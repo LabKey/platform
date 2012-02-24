@@ -17,6 +17,7 @@
 package org.labkey.audit;
 
 import org.apache.log4j.Logger;
+import org.jetbrains.annotations.Nullable;
 import org.labkey.api.audit.AuditLogEvent;
 import org.labkey.api.audit.AuditLogService;
 import org.labkey.api.audit.query.AuditLogQueryView;
@@ -304,7 +305,7 @@ public class AuditLogImpl implements AuditLogService.I, StartupListener
         return createQueryView(context, filter, AuditQuerySchema.AUDIT_TABLE_NAME);
     }
 
-    public AuditLogQueryView createQueryView(ViewContext context, SimpleFilter filter, String viewFactoryName)
+    public AuditLogQueryView createQueryView(ViewContext context, @Nullable SimpleFilter filter, String viewFactoryName)
     {
         AuditQuerySchema schema = new AuditQuerySchema(context.getUser(), context.getContainer());
         QuerySettings settings = schema.getSettings(context, AuditQuerySchema.AUDIT_TABLE_NAME, viewFactoryName);

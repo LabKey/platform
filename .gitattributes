@@ -2258,6 +2258,7 @@ search/src/org/labkey/search/umls/SemanticType.java -text
 search/src/org/labkey/search/umls/UmlsController.java -text
 search/src/org/labkey/search/umls/concept.jsp -text
 search/src/org/labkey/search/umls/index.jsp -text
+search/src/org/labkey/search/view/DefaultSearchResultTemplate.java -text
 search/src/org/labkey/search/view/SearchWebPart.java -text
 search/src/org/labkey/search/view/SearchWebPartFactory.java -text
 search/src/org/labkey/search/view/customizeSearchWebPart.jsp -text

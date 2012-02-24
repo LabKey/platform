@@ -109,11 +109,13 @@ public class IssuesModule extends DefaultModule implements SearchService.Documen
         UserManager.addUserListener(new IssueUserListener());
 
         SearchService ss = ServiceRegistry.get().getService(SearchService.class);
+
         if (null != ss)
         {
             ss.addSearchCategory(IssueManager.searchCategory);
             ss.addResourceResolver("issue",IssueManager.getSearchResolver());
             ss.addDocumentProvider(this);
+            ss.addSearchResultTemplate(new IssuesController.IssueSearchResultTemplate());
         }
     }
 

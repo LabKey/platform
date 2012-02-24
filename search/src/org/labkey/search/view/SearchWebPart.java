@@ -35,13 +35,13 @@ public class SearchWebPart extends JspView<SearchController.SearchForm>
     private static SearchController.SearchForm getForm(boolean includeSubfolders, int textBoxWidth, boolean includeHelpLink, boolean isWebpart)
     {
         SearchForm form = new SearchForm();
-        form.setIncludeSubfolders(includeSubfolders);
         form.setTextBoxWidth(textBoxWidth);
         form.setIncludeHelpLink(includeHelpLink);
         form.setWebPart(isWebpart);
 
-        // Always set to the current container -- this mimics the old search webpart.  TODO: Customize should allow picking scope.
-        form.setContainer(getContextContainer().getId());
+        // This mimics the old search webpart.  TODO: Customize should allow picking scope.
+        form.setScope(includeSubfolders ? "FolderAndSubfolders" : "Folder");
+
         return form;
     }
 }

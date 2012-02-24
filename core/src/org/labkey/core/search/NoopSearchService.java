@@ -19,6 +19,8 @@ import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.DbSchema;
+import org.labkey.api.search.SearchResultTemplate;
+import org.labkey.api.search.SearchScope;
 import org.labkey.api.search.SearchService;
 import org.labkey.api.security.SecurableResource;
 import org.labkey.api.security.User;
@@ -53,7 +55,6 @@ public class NoopSearchService implements SearchService
     {
         public void addRunnable(@NotNull Runnable r, @NotNull PRIORITY pri)
         {
-            NoopSearchService.this.addRunnable(r, pri);
         }
 
         public void addResource(@NotNull SearchCategory category, ActionURL url, PRIORITY pri)
@@ -154,11 +155,6 @@ public class NoopSearchService implements SearchService
     };
 
 
-    protected void addRunnable(@NotNull Runnable r, @NotNull PRIORITY pri)
-    {
-    }
-
-
     public WebPartView getSearchView(boolean includeSubfolders, int textBoxWidth, boolean includeHelpLink, boolean isWebpart)
     {
         return null;
@@ -206,7 +202,19 @@ public class NoopSearchService implements SearchService
         return null;
     }
 
-    public SearchResult search(String queryString, List<SearchCategory> categories, User user, Container root, Container currentContainer, boolean recursive, int offset, int limit) throws IOException
+    @Override
+    public void addSearchResultTemplate(@NotNull SearchResultTemplate template)
+    {
+    }
+
+    @Override
+    public SearchResultTemplate getSearchResultTemplate(@Nullable String name)
+    {
+        return null;
+    }
+
+    @Override
+    public SearchResult search(String queryString, @Nullable List<SearchCategory> categories, User user, Container current, SearchScope scope, int offset, int limit) throws IOException
     {
         return null;
     }
@@ -235,10 +243,6 @@ public class NoopSearchService implements SearchService
         return null;
     }
 
-    public void addResource(@Nullable IndexTask task, @NotNull SearchCategory category, ActionURL url, PRIORITY pri)
-    {
-    }
-
     public void addSearchCategory(SearchCategory category)
     {
 
@@ -247,10 +251,6 @@ public class NoopSearchService implements SearchService
     public List<IndexTask> getTasks()
     {
         return Collections.emptyList();
-    }
-
-    public void addTask(IndexTask task)
-    {
     }
 
     public boolean isBusy()
@@ -346,7 +346,7 @@ public class NoopSearchService implements SearchService
     {
     }
 
-    public List<SearchCategory> getCategory(String category)
+    public List<SearchCategory> getCategories(String categories)
     {
         return null;
     }
