@@ -2666,6 +2666,10 @@ div.clear:after, div.bd:after {
     cursor: pointer;
 }
 
+.x-form-field-wrap .x-form-trigger {
+    right: 0px;
+}
+
 .labkey-query-source
 {
     font-family: monospace;
