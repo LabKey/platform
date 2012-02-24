@@ -1016,6 +1016,8 @@ LABKEY.DataRegion.ColumnsTab = Ext.extend(LABKEY.DataRegion.Tab, {
     onToolGear : function (index, item, e) {
         var columnRecord = this.columnStore.getAt(index);
         var fieldKey = columnRecord.data.fieldKey;
+        var metadataRecord = this.fieldMetaStore.getById(fieldKey.toUpperCase());
+
         /*
         Ext.Msg.prompt('Set column caption',
                 "Set caption for column '" + fieldKey + "'",
@@ -1028,10 +1030,6 @@ LABKEY.DataRegion.ColumnsTab = Ext.extend(LABKEY.DataRegion.Tab, {
 
         if (!this._editPropsWin)
         {
-            var aggOptions = [["", "[None]"]];
-            for (var key in LABKEY.AggregateTypes)
-                aggOptions.push([key, key]);
-
             var fieldMetaStore = this.fieldMetaStore;
             var aggregateStoreCopy = this.createAggregateStore(); //NOTE: we deliberately create a separate store to use with this window.
             var aggregateStore = this.aggregateStore;
@@ -1062,6 +1060,10 @@ LABKEY.DataRegion.ColumnsTab = Ext.extend(LABKEY.DataRegion.Tab, {
                 }
             });
 
+            var aggregateOptionStore = new Ext.data.ArrayStore({
+                fields: ['name', 'value'],
+                data: []
+            });
 
             var win = new Ext.Window({
                 //autoCreate: true,
@@ -1122,7 +1124,9 @@ LABKEY.DataRegion.ColumnsTab = Ext.extend(LABKEY.DataRegion.Tab, {
                                     name: "aggregate",
                                     ref: "aggregateField",
                                     //width: 'auto',
-                                    store: aggOptions,
+                                    displayField: 'name',
+                                    valueField: 'value',
+                                    store: aggregateOptionStore,
                                     mode: 'local',
                                     triggerAction: 'all',
                                     typeAhead: false,
@@ -1199,10 +1203,12 @@ LABKEY.DataRegion.ColumnsTab = Ext.extend(LABKEY.DataRegion.Tab, {
                     handler: function () { win.hide(); }
                 }]
             });
-            win.initEditForm = function (columnRecord)
+            win.initEditForm = function (columnRecord, metadataRecord)
             {
                 this.columnRecord = columnRecord;
-                this.setTitle("Edit column properties for '" + this.columnRecord.get("fieldKey") + "'");
+                this.metadataRecord = metadataRecord;
+
+                this.setTitle("Edit column properties for '" + Ext.util.Format.htmlEncode(this.columnRecord.get("fieldKey")) + "'");
                 this.titleField.setValue(this.columnRecord.get("title"));
 
                 //NOTE: we make a copy of the data so we can avoid commiting updates until the user clicks OK
@@ -1218,6 +1224,12 @@ LABKEY.DataRegion.ColumnsTab = Ext.extend(LABKEY.DataRegion.Tab, {
                 }, this);
 
 
+                aggregateOptionStore.removeAll();
+                aggregateOptionStore.add(new aggregateOptionStore.recordType({value: "", name: "[None]"}));
+                Ext.each(LABKEY.Query.getAggregatesForType(metadataRecord.get('jsonType')), function(key){
+                    aggregateOptionStore.add(new aggregateOptionStore.recordType({value: key.toUpperCase(), name: key.toUpperCase()}));
+                }, this);
+
                 //columnsList
                 this.columnRecord.store.fireEvent('datachanged', this.columnRecord.store)
 
@@ -1226,7 +1238,7 @@ LABKEY.DataRegion.ColumnsTab = Ext.extend(LABKEY.DataRegion.Tab, {
             this._editPropsWin = win;
         }
 
-        this._editPropsWin.initEditForm(columnRecord);
+        this._editPropsWin.initEditForm(columnRecord, metadataRecord);
         this._editPropsWin.show();
     },
 

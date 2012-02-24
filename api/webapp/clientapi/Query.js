@@ -721,6 +721,37 @@ LABKEY.Query = new function()
         },
 
         /**
+        * Return an array of the allowable aggregates for the supplied data type.
+        * @param {String} jsonType The type of data.  This should match the jsonType property of LABKEY.
+        * @returns {Array} An array of strings
+        */
+
+        getAggregatesForType: function(jsonType)
+        {
+            jsonType = jsonType.toLowerCase();
+
+            var aggregates = [
+                LABKEY.AggregateTypes.COUNT
+            ];
+
+            switch(jsonType){
+                case 'boolean':
+                case 'int':
+                case 'float':
+                case 'date':
+                    aggregates.push(LABKEY.AggregateTypes.SUM);
+                    aggregates.push(LABKEY.AggregateTypes.AVG);
+                    aggregates.push(LABKEY.AggregateTypes.MIN);
+                    aggregates.push(LABKEY.AggregateTypes.MAX);
+                    break;
+                case 'string':
+                    break;
+            }
+
+            return aggregates;
+        },
+
+        /**
          * Returns the set of schemas available in the specified container.
          * @param config An object that contains the following configuration parameters
          * @param {function} config.success The function to call when the function finishes successfully.
