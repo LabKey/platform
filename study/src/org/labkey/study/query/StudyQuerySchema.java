@@ -128,6 +128,8 @@ public class StudyQuerySchema extends UserSchema
             ret.add(StudyService.get().getSubjectGroupTableName(getContainer()));
             ret.add(StudyService.get().getSubjectGroupMapTableName(getContainer()));
 
+            // specimen report pivots
+            ret.add(SpecimenReportQuery.PIVOT_BY_PRIMARY_TYPE);
 
             // Add only datasets that the user can read
             User user = getUser();
@@ -332,6 +334,10 @@ public class StudyQuerySchema extends UserSchema
         {
             FilteredTable ret = new VialRequestTable(this);
             return ret;
+        }
+        if (SpecimenReportQuery.PIVOT_BY_PRIMARY_TYPE.equalsIgnoreCase(name))
+        {
+            return SpecimenReportQuery.getPivotByPrimaryType(getContainer(), getUser());
         }
 
         //might be a dataset--try getting by name first, then by label
