@@ -16,6 +16,7 @@
 
 package org.labkey.announcements.model;
 
+import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.SimpleFilter;
 
 /**
@@ -26,7 +27,7 @@ import org.labkey.api.data.SimpleFilter;
 public interface Permissions
 {
     public boolean allowResponse(AnnouncementModel ann);
-    public boolean allowRead(AnnouncementModel ann);
+    public boolean allowRead(@Nullable AnnouncementModel ann);
     public boolean allowInsert();
     public boolean allowUpdate(AnnouncementModel ann);
     public boolean allowDeleteMessage(AnnouncementModel ann);

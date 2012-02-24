@@ -19,10 +19,13 @@ package org.labkey.announcements;
 import org.apache.commons.beanutils.ConversionException;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.time.DateUtils;
+import org.jetbrains.annotations.Nullable;
 import org.labkey.announcements.config.AnnouncementEmailConfig;
 import org.labkey.announcements.model.AnnouncementManager;
 import org.labkey.announcements.model.AnnouncementModel;
+import org.labkey.announcements.model.DailyDigestEmailPrefsSelector;
 import org.labkey.announcements.model.DiscussionServiceImpl;
+import org.labkey.announcements.model.IndividualEmailPrefsSelector;
 import org.labkey.announcements.model.NormalMessageBoardPermissions;
 import org.labkey.announcements.model.Permissions;
 import org.labkey.announcements.model.SecureMessageBoardPermissions;
@@ -1073,7 +1076,7 @@ public class AnnouncementsController extends SpringActionController
 
     public abstract static class BaseInsertView extends JspView<BaseInsertView.InsertBean>
     {
-        public BaseInsertView(String page, InsertBean bean, AnnouncementForm form, URLHelper cancelURL, String title, BindException errors, AnnouncementModel latestPost, boolean reshow, boolean fromDiscussion)
+        public BaseInsertView(String page, InsertBean bean, AnnouncementForm form, URLHelper cancelURL, String title, BindException errors, @Nullable AnnouncementModel latestPost, boolean reshow, boolean fromDiscussion)
         {
             super(page, bean, errors);
             setTitle(title);
@@ -1133,6 +1136,15 @@ public class AnnouncementsController extends SpringActionController
             bean.form = form;
             bean.cancelURL = cancelURL;
             bean.fromDiscussion = fromDiscussion;
+
+            // If default email option is "all messages" (or "all messages daily digest") then gently warn
+            // that a bunch of users are about to be emailed.
+            int defaultEmailOption = AnnouncementManager.getDefaultEmailOption(c);
+
+            if (AnnouncementManager.EMAIL_PREFERENCE_ALL == (defaultEmailOption & AnnouncementManager.EMAIL_PREFERENCE_MASK))
+            {
+                bean.emailUsers = new IndividualEmailPrefsSelector(c).getNotificationUsers(null).size() + new DailyDigestEmailPrefsSelector(c).getNotificationUsers(null).size();
+            }
         }
 
         public static class InsertBean
@@ -1148,6 +1160,7 @@ public class AnnouncementsController extends SpringActionController
             public AnnouncementModel parentAnnouncementModel;   // Used by RespondView only... move to subclass?
             public boolean fromDiscussion;
             public boolean allowMultipleDiscussions = true;
+            public Integer emailUsers = null;
         }
     }
 

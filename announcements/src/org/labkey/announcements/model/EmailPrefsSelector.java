@@ -16,6 +16,7 @@
 
 package org.labkey.announcements.model;
 
+import org.jetbrains.annotations.Nullable;
 import org.labkey.announcements.AnnouncementsController;
 import org.labkey.api.announcements.DiscussionService;
 import org.labkey.api.data.Container;
@@ -84,7 +85,7 @@ public abstract class EmailPrefsSelector
     }
 
 
-    protected boolean shouldSend(AnnouncementModel ann, MessageConfigService.UserPreference ep)
+    protected boolean shouldSend(@Nullable AnnouncementModel ann, MessageConfigService.UserPreference ep)
     {
         int emailPreference = ep.getEmailOptionId() & AnnouncementManager.EMAIL_PREFERENCE_MASK;
 
@@ -98,6 +99,9 @@ public abstract class EmailPrefsSelector
 
         if (AnnouncementManager.EMAIL_PREFERENCE_MINE == emailPreference)
         {
+            if (null == ann)
+                return false;
+
             Set<User> authors = ann.getAuthors();
 
             if (!authors.contains(user))
@@ -113,5 +117,43 @@ public abstract class EmailPrefsSelector
         Permissions perm = AnnouncementsController.getPermissions(_c, user, settings);
 
         return perm.allowRead(ann);
+    }
+
+
+    public Set<User> getNotificationUsers(AnnouncementModel ann)
+    {
+        Set<User> authorized = new HashSet<User>(_emailPrefs.size());
+
+        String srcIdentifier = ann.lookupSrcIdentifer();
+
+        List<MessageConfigService.UserPreference> relevantPrefs = new ArrayList<MessageConfigService.UserPreference>(_emailPrefs.size());
+        Set<User> directlySubscribedUsers = new HashSet<User>();
+        // First look through for users that have subscriptions for this srcIdentfier directly
+        for (MessageConfigService.UserPreference ep : _emailPrefs)
+        {
+            if (ep.getSrcIdentifier().equals(srcIdentifier))
+            {
+                // Remember the permission, and the user
+                relevantPrefs.add(ep);
+                directlySubscribedUsers.add(ep.getUser());
+            }
+        }
+
+        for (MessageConfigService.UserPreference ep : _emailPrefs)
+        {
+            // Then look for users that didn't have a direct subscription, but have one set at the container level
+            if (ep.getSrcIdentifier().equals(ann.getContainerId()) && !ep.getSrcIdentifier().equals(srcIdentifier) && !directlySubscribedUsers.contains(ep.getUser()))
+            {
+                relevantPrefs.add(ep);
+            }
+        }
+
+        for (MessageConfigService.UserPreference ep : relevantPrefs)
+            if (shouldSend(ann, ep))
+                authorized.add(ep.getUser());
+
+        authorized.addAll(AnnouncementManager.getAnnouncement(ann.lookupContainer(), ann.getEntityId(), true).getMemberList());
+
+        return authorized;
     }
 }

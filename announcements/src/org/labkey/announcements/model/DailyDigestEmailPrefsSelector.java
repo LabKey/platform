@@ -32,7 +32,7 @@ public class DailyDigestEmailPrefsSelector extends EmailPrefsSelector
 {
     Map<User, MessageConfigService.UserPreference> _epMap;
 
-    protected DailyDigestEmailPrefsSelector(Container c)
+    public DailyDigestEmailPrefsSelector(Container c)
     {
         super(c);
 

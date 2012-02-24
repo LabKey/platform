@@ -148,22 +148,6 @@ public class AnnouncementManager
         return new Pair<AnnouncementModel[], Boolean>(recent, limited);
     }
 
-    public static Collection<String> getBroadcastEmailAddresses(Container c)
-    {
-        // Get all site users' email addresses
-        Collection<String> emails = UserManager.getActiveUserEmails();
-
-        //FIX: 9742 -- need to exclude users who have set their pref to none
-        OptOutEmailPrefsSelector selector = new OptOutEmailPrefsSelector(c);
-        Collection<User> optOutUsers = selector.getUsers();
-
-        for (User user : optOutUsers)
-            emails.remove(user.getEmail());
-
-        return emails;
-    }
-
-
     // marker for non fully loaded announcementModel
     public static class BareAnnouncementModel extends AnnouncementModel
     {
@@ -178,9 +162,7 @@ public class AnnouncementManager
         return new TableSelector(_comm.getTableInfoThreads(), filter, sort).getArray(BareAnnouncementModel.class);
     }
 
-    /**
-     * Return a list of announcementModels from a set of containers sorted by date created (newest first).
-     */
+    // Return a list of announcementModels from a set of containers sorted by date created (newest first).
     public static AnnouncementModel[] getAnnouncements(Container... containers)
     {
         List<String> ids = new ArrayList<String>();
@@ -667,7 +649,7 @@ public class AnnouncementManager
 
     public static void indexMessages(SearchService.IndexTask task, Container c, Date modifiedSince)
     {
-        indexMessages(task,c.getId(),modifiedSince,null);
+        indexMessages(task, c.getId(), modifiedSince, null);
     }
 
 

@@ -16,12 +16,13 @@
  */
 %>
 <%@ page import="org.labkey.announcements.AnnouncementsController"%>
-<%@ page import="org.labkey.announcements.AnnouncementsController.*" %>
+<%@ page import="org.labkey.announcements.AnnouncementsController.AnnouncementForm" %>
+<%@ page import="org.labkey.announcements.AnnouncementsController.BaseInsertView" %>
+<%@ page import="org.labkey.api.announcements.DiscussionService" %>
 <%@ page import="org.labkey.api.data.Container" %>
 <%@ page import="org.labkey.api.util.PageFlowUtil" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.api.wiki.WikiRendererType" %>
-<%@ page import="org.labkey.api.announcements.DiscussionService" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
     HttpView<BaseInsertView.InsertBean> me = (HttpView<BaseInsertView.InsertBean>) HttpView.currentView();
@@ -135,7 +136,13 @@ if (settings.hasFormatPicker())
                 </tbody>
             </table>
         </td>
-    </tr>
+    </tr><%
+        if (null != bean.emailUsers)
+        {
+    %>
+    <tr><td colspan="3" style="padding-top: 8px;color:green;">An email notification of this post will be sent to <%=bean.emailUsers%> people.</td></tr><%
+        }
+    %>
 </table>
 <br>&nbsp;<%=PageFlowUtil.generateSubmitButton("Submit", null, "id=submitButton", true, true)%>&nbsp;<%
 if (null != bean.cancelURL)

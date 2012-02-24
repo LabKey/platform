@@ -119,7 +119,6 @@ announcements/src/org/labkey/announcements/model/EmailPrefsSelector.java -text
 announcements/src/org/labkey/announcements/model/IndividualEmailPrefsSelector.java -text
 announcements/src/org/labkey/announcements/model/MessageConfigManager.java -text
 announcements/src/org/labkey/announcements/model/NormalMessageBoardPermissions.java -text
-announcements/src/org/labkey/announcements/model/OptOutEmailPrefsSelector.java -text
 announcements/src/org/labkey/announcements/model/Permissions.java -text
 announcements/src/org/labkey/announcements/model/SecureMessageBoardPermissions.java -text
 announcements/src/org/labkey/announcements/model/SecureMessageBoardReadPermission.java -text

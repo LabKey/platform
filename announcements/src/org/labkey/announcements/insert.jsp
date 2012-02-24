@@ -71,13 +71,13 @@ Ext.onReady(function(){
         %><tr><td class='labkey-form-label'>Members</td><td><%=bean.memberList%></td><td width="100%"><i><%
         if (settings.isSecure())
         {
-            %> This <%=settings.getConversationName().toLowerCase()%> is private; only editors and the users on this list can view it.  These users will also<%
+            %> This <%=h(settings.getConversationName().toLowerCase())%> is private; only editors and the users on this list can view it.  These users will also<%
         }
         else
         {
             %> The users on the member list<%
         }
-        %> receive email notifications of new posts to this <%=settings.getConversationName().toLowerCase()%>.<br><br>Enter one or more email addresses, each on its own line.</i></td></tr><%
+        %> receive email notifications of new posts to this <%=h(settings.getConversationName().toLowerCase())%>.<br><br>Enter one or more email addresses, each on its own line.</i></td></tr><%
     }
     if (settings.hasExpires())
     {
@@ -109,7 +109,13 @@ Ext.onReady(function(){
                 </tbody>
             </table>
         </td>
-    </tr>
+    </tr><%
+        if (null != bean.emailUsers)
+        {
+    %>
+    <tr><td colspan="3" style="padding-top: 8px;color:green;">An email notification of this post will be sent to <%=bean.emailUsers%> people.</td></tr><%
+        }
+    %>
 </table>
 <br>&nbsp;<%=PageFlowUtil.generateSubmitButton("Submit", null, "id=submitButton", true, true)%>&nbsp;<%
 if (null != cancelURL)

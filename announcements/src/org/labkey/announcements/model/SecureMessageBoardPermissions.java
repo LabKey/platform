@@ -16,6 +16,7 @@
 
 package org.labkey.announcements.model;
 
+import org.jetbrains.annotations.Nullable;
 import org.labkey.api.announcements.DiscussionService;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.SimpleFilter;
@@ -35,7 +36,7 @@ public class SecureMessageBoardPermissions extends NormalMessageBoardPermissions
         super(c, user, settings);
     }
 
-    public boolean allowRead(AnnouncementModel ann)
+    public boolean allowRead(@Nullable AnnouncementModel ann)
     {
         if (_user == User.getSearchUser())
             return true;
@@ -45,7 +46,7 @@ public class SecureMessageBoardPermissions extends NormalMessageBoardPermissions
             return true;
 
         // If not an editor, message board must have a member list, user must be on it, and user must have read permissions
-        return _settings.hasMemberList() && hasPermission(ReadPermission.class) && ann.getMemberList().contains(_user);
+        return null != ann && _settings.hasMemberList() && hasPermission(ReadPermission.class) && ann.getMemberList().contains(_user);
     }
 
     public boolean allowDeleteMessage(AnnouncementModel ann)

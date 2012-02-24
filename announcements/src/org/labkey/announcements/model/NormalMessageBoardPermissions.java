@@ -16,6 +16,7 @@
 
 package org.labkey.announcements.model;
 
+import org.jetbrains.annotations.Nullable;
 import org.labkey.api.announcements.CommSchema;
 import org.labkey.api.announcements.DiscussionService;
 import org.labkey.api.announcements.permissions.DeleteMessagePermission;
@@ -47,7 +48,7 @@ public class NormalMessageBoardPermissions implements Permissions
         _settings = settings;
     }
 
-    public boolean allowRead(AnnouncementModel ann)
+    public boolean allowRead(@Nullable AnnouncementModel ann)
     {
         if (_user == User.getSearchUser())
             return true;
