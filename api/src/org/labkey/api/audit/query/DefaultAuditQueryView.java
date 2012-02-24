@@ -16,6 +16,7 @@
 
 package org.labkey.api.audit.query;
 
+import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.DisplayColumn;
 import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.query.QuerySettings;
@@ -30,7 +31,7 @@ import java.io.PrintWriter;
  */
 public class DefaultAuditQueryView extends AuditLogQueryView
 {
-    public DefaultAuditQueryView(UserSchema schema, QuerySettings settings, SimpleFilter filter)
+    public DefaultAuditQueryView(UserSchema schema, QuerySettings settings, @Nullable SimpleFilter filter)
     {
         super(schema, settings, filter);
     }

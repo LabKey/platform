@@ -16,6 +16,8 @@
 
 package org.labkey.api.search;
 
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import org.labkey.api.action.UrlProvider;
 import org.labkey.api.data.Container;
 import org.labkey.api.view.ActionURL;
@@ -27,6 +29,7 @@ import org.labkey.api.view.ActionURL;
 */
 public interface SearchUrls extends UrlProvider
 {
-    public ActionURL getSearchURL(Container c, String query);
+    public ActionURL getSearchURL(Container c, @Nullable String query);
     public ActionURL getSearchURL(String query, String category);
+    public ActionURL getSearchURL(Container c, @Nullable String query, @NotNull String template);
 }

@@ -16,6 +16,7 @@
 
 package org.labkey.api.audit;
 
+import org.jetbrains.annotations.Nullable;
 import org.labkey.api.audit.query.AuditLogQueryView;
 import org.labkey.api.audit.query.DefaultAuditQueryView;
 import org.labkey.api.audit.query.DefaultAuditSchema;
@@ -82,7 +83,7 @@ public class DefaultAuditProvider implements AuditLogService.I, AuditLogService.
         return new AuditLogEvent();
     }
 
-    public AuditLogQueryView createQueryView(ViewContext context, SimpleFilter filter)
+    public AuditLogQueryView createQueryView(ViewContext context, @Nullable SimpleFilter filter)
     {
         UserSchema schema = createSchema(context.getUser(), context.getContainer());
         QuerySettings settings = schema.getSettings(context, getTableName(), getTableName());
@@ -90,7 +91,7 @@ public class DefaultAuditProvider implements AuditLogService.I, AuditLogService.
         return new DefaultAuditQueryView(schema, settings, filter);
     }
 
-    public AuditLogQueryView createQueryView(ViewContext context, SimpleFilter filter, String propertyURI)
+    public AuditLogQueryView createQueryView(ViewContext context, @Nullable SimpleFilter filter, String propertyURI)
     {
         return createQueryView(context, filter);
     }

@@ -16,6 +16,7 @@
 
 package org.labkey.api.audit;
 
+import org.jetbrains.annotations.Nullable;
 import org.labkey.api.audit.query.AuditLogQueryView;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.SimpleFilter;
@@ -27,7 +28,6 @@ import org.labkey.api.query.QueryView;
 import org.labkey.api.query.UserSchema;
 import org.labkey.api.security.User;
 import org.labkey.api.services.ServiceRegistry;
-import org.labkey.api.view.DataView;
 import org.labkey.api.view.ViewContext;
 
 import java.util.List;
@@ -94,14 +94,14 @@ public class AuditLogService
         public List<AuditLogEvent> getEvents(SimpleFilter filter, Sort sort);
         public AuditLogEvent getEvent(int rowId);
 
-        public AuditLogQueryView createQueryView(ViewContext context, SimpleFilter filter);
+        public AuditLogQueryView createQueryView(ViewContext context, @Nullable SimpleFilter filter);
 
         /**
          * Creates a query view specific to the audit view factory specified by the eventType parameter.
          * The audit view factory is able to customize the table info of the underlying query view.
          * @see org.labkey.api.audit.AuditLogService.AuditViewFactory
          */
-        public AuditLogQueryView createQueryView(ViewContext context, SimpleFilter filter, String eventType);
+        public AuditLogQueryView createQueryView(ViewContext context, @Nullable SimpleFilter filter, String eventType);
 
         public String getTableName();
         public TableInfo getTable(ViewContext context, String name);

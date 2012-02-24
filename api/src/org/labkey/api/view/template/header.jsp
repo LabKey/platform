@@ -78,7 +78,7 @@ if ("true".equals(request.getParameter("testFont"))) {
           <form id="headerSearchForm" action="<%=h(urlProvider(SearchUrls.class).getSearchURL(c, null).toHString())%>" method="GET" style="margin:0; <%=showSearchForm?"":"display:none;"%>">
             <table cellspacing=0 cellpadding=0 class="labkey-main-search">
               <tr>
-                <td><input id="headerSearchContainer" name="container" type="hidden" value=""><input id="headerSearchInput" name="q" type="text"></td>
+                <td><input id="headerSearchInput" name="q" type="text"></td>
                 <td><img src="<%=contextPath%>/_images/search.png" onclick="return submit_onClick();"></td>
               </tr>
             </table>
@@ -182,14 +182,13 @@ Ext.onReady(function()
     var inputEl = Ext.get('headerSearchInput');
     var parentEl = inputEl.parent();
     inputEl.remove();
-    hdrSearch = new Ext.form.TextField({id:'headerSearchInput',name:'q',emptyText:'Search',cls:'labkey-main-search', focusClass:'labkey-main-search'});
+    hdrSearch = new Ext.form.TextField({id:'headerSearchInput', name:'q', emptyText:'Search', cls:'labkey-main-search', focusClass:'labkey-main-search'});
     hdrSearch.render(parentEl);
     var handler = function(item)
     {
         var form = Ext.get('headerSearchForm');
         form.dom.action = item.action;
         form.dom.target = item.target || '_self';
-        Ext.get('headerSearchContainer').dom.value = item.containerId;
         if (hdrSearch.el.hasClass(hdrSearch.emptyClass) && hdrSearch.el.dom.value == hdrSearch.emptyText)
             hdrSearch.setRawValue(item.emptyText);
         else

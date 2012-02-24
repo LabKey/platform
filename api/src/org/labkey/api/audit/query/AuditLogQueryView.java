@@ -16,6 +16,7 @@
 
 package org.labkey.api.audit.query;
 
+import org.jetbrains.annotations.Nullable;
 import org.labkey.api.audit.AuditLogService;
 import org.labkey.api.data.DataRegion;
 import org.labkey.api.data.DisplayColumn;
@@ -40,11 +41,11 @@ public abstract class AuditLogQueryView extends QueryView
 {
     protected List<String> _columns = new ArrayList<String>();
     protected List<DisplayColumn> _displayColumns = new ArrayList<DisplayColumn>();
-    protected SimpleFilter _filter;
-    protected Sort _sort;
+    protected @Nullable SimpleFilter _filter;
+    protected @Nullable Sort _sort;
     protected Map<String, AuditDisplayColumnFactory> _displayColFactory = new HashMap<String, AuditDisplayColumnFactory>();
 
-    public AuditLogQueryView(UserSchema schema, QuerySettings settings, SimpleFilter filter)
+    public AuditLogQueryView(UserSchema schema, QuerySettings settings, @Nullable SimpleFilter filter)
     {
         super(schema, settings);
         _filter = filter;
@@ -70,12 +71,12 @@ public abstract class AuditLogQueryView extends QueryView
             _columns.add(name.toLowerCase());
     }
 
-    public void setFilter(SimpleFilter filter)
+    public void setFilter(@Nullable SimpleFilter filter)
     {
         _filter = filter;
     }
     
-    public void setSort(Sort sort)
+    public void setSort(@Nullable Sort sort)
     {
         _sort = sort;
     }

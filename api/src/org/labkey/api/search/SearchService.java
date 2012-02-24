@@ -209,7 +209,7 @@ public interface SearchService
 
     public WebPartView getSearchView(boolean includeSubfolders, int textBoxWidth, boolean includeHelpLink, boolean isWebpart);
 
-    public SearchResult search(String queryString, @Nullable List<SearchCategory> categories, User user, Container root, Container currentContainer, boolean recursive, int offset, int limit) throws IOException;
+    public SearchResult search(String queryString, @Nullable List<SearchCategory> categories, User user, Container current, SearchScope scope, int offset, int limit) throws IOException;
 
     // Search the external index.
     public SearchResult searchExternal(String queryString, int offset, int limit) throws IOException;
@@ -283,10 +283,12 @@ public interface SearchService
     //
     
     public void addSearchCategory(SearchCategory category);
-    public List<SearchCategory> getCategory(String category);
+    public List<SearchCategory> getCategories(String categories);
     public void addResourceResolver(@NotNull String prefix, @NotNull ResourceResolver resolver);
     public WebdavResource resolveResource(@NotNull String resourceIdentifier);
-    
+
+    public void addSearchResultTemplate(@NotNull SearchResultTemplate template);
+    public @Nullable SearchResultTemplate getSearchResultTemplate(@Nullable String name);
 
     public interface DocumentProvider
     {
