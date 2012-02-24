@@ -220,10 +220,19 @@ public class DataRegionSelection
     {
         QueryView view = new QueryView(form, null);
         TableInfo table = view.getTable();
-        ResultSet rs = view.getResultSet();
+        ResultSet rs = null;
+        try
+        {
+            rs = view.getResultSet();
 
-        List<String> selection = createSelectionList(rs, table);
-        return setSelected(context, key, selection, true);
+            List<String> selection = createSelectionList(rs, table);
+            return setSelected(context, key, selection, true);
+        }
+        finally
+        {
+            if (rs != null) { try { rs.close(); } catch (SQLException ignored) {} }
+        }
+
     }
 
     private static List<String> createSelectionList(ResultSet rs, TableInfo table)

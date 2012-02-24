@@ -500,7 +500,7 @@ public abstract class SpringActionController implements Controller, HasViewConte
 
             if (view == null)
             {
-                throw new ServletException("Could not resolve view with name '" + mv.getViewName() + " in controller " + this.getClass().getName());
+                throw new ServletException("Could not resolve view with name '" + mv.getViewName() + "' in controller " + this.getClass().getName());
             }
         }
         else
