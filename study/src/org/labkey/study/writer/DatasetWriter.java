@@ -15,13 +15,17 @@
  */
 package org.labkey.study.writer;
 
+import com.sun.corba.se.impl.encoding.CodeSetConversion;
 import org.apache.log4j.Logger;
 import org.labkey.api.data.ColumnInfo;
+import org.labkey.api.data.CompareType;
 import org.labkey.api.data.ContainerForeignKey;
 import org.labkey.api.data.Results;
+import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.Sort;
 import org.labkey.api.data.TSVGridWriter;
 import org.labkey.api.data.TableInfo;
+import org.labkey.api.exp.api.ExpProtocol;
 import org.labkey.api.query.AliasedColumn;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.QueryService;
@@ -29,6 +33,8 @@ import org.labkey.api.reports.model.ReportPropsManager;
 import org.labkey.api.study.Cohort;
 import org.labkey.api.admin.ImportException;
 import org.labkey.api.study.StudyService;
+import org.labkey.api.study.assay.AssayProvider;
+import org.labkey.api.study.assay.AssayService;
 import org.labkey.api.writer.VirtualFile;
 import org.labkey.data.xml.reportProps.PropertyList;
 import org.labkey.study.model.DataSetDefinition;
@@ -184,7 +190,25 @@ public class DatasetWriter implements InternalStudyWriter
             Collection<ColumnInfo> columns = getColumnsToExport(ti, def, false);
             // Sort the data rows by PTID & sequence, #11261
             Sort sort = new Sort(StudyService.get().getSubjectColumnName(ctx.getContainer()) + ", SequenceNum");
-            Results rs = QueryService.get().select(ti, columns, null, sort);
+
+            SimpleFilter filter = new SimpleFilter();
+            if (def.isAssayData())
+            {
+                // Try to find the protocol and provider
+                ExpProtocol protocol = def.getAssayProtocol();
+                if (protocol != null)
+                {
+                    AssayProvider provider = AssayService.get().getProvider(protocol);
+                    if (provider != null)
+                    {
+                        // Assuming they're still around, filter out rows where the source assay run has been deleted,
+                        // thus orphaning the dataset row and pulling out all of its real data
+                        filter.addCondition(provider.getTableMetadata().getRunFieldKeyFromResults().toString(), null, CompareType.NONBLANK);
+                    }
+                }
+            }
+            
+            Results rs = QueryService.get().select(ti, columns, filter, sort);
             TSVGridWriter tsvWriter = new TSVGridWriter(rs);
             tsvWriter.setApplyFormats(false);
             tsvWriter.setColumnHeaderType(TSVGridWriter.ColumnHeaderType.queryColumnName);
