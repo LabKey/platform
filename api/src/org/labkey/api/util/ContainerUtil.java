@@ -16,6 +16,7 @@
 
 package org.labkey.api.util;
 
+import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.CoreSchema;
 import org.labkey.api.data.DatabaseTableType;
 import org.labkey.api.data.Table;
@@ -47,7 +48,7 @@ public class ContainerUtil
     }
 
 
-    public static int purgeTable(TableInfo tinfo, Container c, String key) throws SQLException
+    public static int purgeTable(TableInfo tinfo, Container c, @Nullable String key) throws SQLException
     {
         assert tinfo.getTableType() != DatabaseTableType.NOT_IN_DB;
 

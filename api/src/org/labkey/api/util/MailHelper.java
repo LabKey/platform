@@ -191,7 +191,7 @@ public class MailHelper
         }
     }
 
-    private static void addAuditEvent(User user, Container c, Message m) throws MessagingException
+    private static void addAuditEvent(@Nullable User user, @Nullable Container c, Message m) throws MessagingException
     {
         AuditLogEvent event = new AuditLogEvent();
 
