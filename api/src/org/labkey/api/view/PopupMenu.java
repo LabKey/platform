@@ -138,7 +138,7 @@ public class PopupMenu extends DisplayElement
         out.append("<script type=\"text/javascript\">\n");
         out.append("Ext.onReady(function() {\n");
         out.append(renderUnregScript(getId(dataRegionName)));
-        out.append("        new Ext.menu.Menu(");
+        out.append("        var m = new Ext.menu.Menu(");
         out.append(renderMenuModel(_navTree.getChildList(), getId(dataRegionName)));
         out.append("         );});\n</script>");
     }
