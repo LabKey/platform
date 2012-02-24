@@ -332,11 +332,11 @@ Ext4.define('LABKEY.ext.panel.FolderManagementPanel', {
                             success   : function(response) {
                                 _s.data.containerPath = response.newPath;
                                 me.unmask();
-
+                                me.confirmation = false;
                                 successHandler();
                             },
                             failure  : function(response, ops) {
-                                var _msg = "Failed to complete move";
+                                var _msg = "Failed to complete move. This folder may have already been moved or deleted.";
                                 if (response && response.errors) {
                                     var errors = response.errors;
                                     _msg = "";
@@ -352,6 +352,7 @@ Ext4.define('LABKEY.ext.panel.FolderManagementPanel', {
                                     icon  : Ext4.MessageBox.ERROR,
                                     buttons: Ext4.Msg.OK
                                 });
+                                me.treepanel.getStore().load();
                             },
                             scope : this
                         });
@@ -510,8 +511,8 @@ Ext4.define('LABKEY.ext.panel.FolderManagementPanel', {
                 ret.cancel = true;
             }
             else if (point == 'append') {
-                if (target.data.containerPath == undefined) {
-                    ret.msg = 'Invalid action';
+                if (target.data.root) {
+                    ret.msg = 'Not a valid destination';
                     return {target: target, cancel: true, msg : ret.msg};
                 }
                 else if (node.parentNode.data.id == target.data.id) {
