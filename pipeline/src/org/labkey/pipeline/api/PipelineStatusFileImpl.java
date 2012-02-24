@@ -183,6 +183,13 @@ public class PipelineStatusFileImpl extends Entity implements Serializable, Pipe
         return !_inactiveStatuses.contains(_status);
     }
 
+    public boolean isCancellable()
+    {
+        return (isActive() && !PipelineJob.CANCELLING_STATUS.equals(_status)) ||
+                PipelineJob.WAITING_FOR_FILES.equals(_status) ||
+                PipelineJob.SPLIT_STATUS.equals(_status);
+    }
+
     public boolean isEmailStatus()
     {
         return _jobParent == null && _emailStatuses.contains(_status);

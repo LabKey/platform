@@ -16,6 +16,7 @@
 package org.labkey.pipeline.api;
 
 import org.apache.commons.io.filefilter.FileFilterUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.labkey.api.pipeline.PipelineJob;
 import org.labkey.api.pipeline.RecordedAction;
 import org.labkey.api.pipeline.WorkDirectory;
@@ -45,6 +46,8 @@ import java.util.Map;
 */
 public abstract class AbstractWorkDirectory implements WorkDirectory
 {
+    private static final Logger LOG = Logger.getLogger(AbstractWorkDirectory.class);
+
     protected static final String WORK_DIR_SUFFIX = ".work";
     protected static final FileType FT_WORK_DIR = new FileType(WORK_DIR_SUFFIX);
     protected static final FileType FT_COPY = new FileType(".copy");
@@ -53,7 +56,7 @@ public abstract class AbstractWorkDirectory implements WorkDirectory
     protected FileAnalysisJobSupport _support;
     protected final WorkDirFactory _factory;
     protected File _dir;
-    protected Logger _log;
+    protected Logger _jobLog;
     protected HashMap<File, File> _copiedInputs = new HashMap<File, File>();
 
     protected CopyingResource _copyingResource;
@@ -90,11 +93,15 @@ public abstract class AbstractWorkDirectory implements WorkDirectory
          */
         public void setOutputPermissions(String outputPermissions)
         {
-            if (System.getProperty("os.name").toLowerCase().startsWith("windows"))
+            outputPermissions = StringUtils.trimToNull(outputPermissions);
+            if (System.getProperty("os.name").toLowerCase().startsWith("windows") && outputPermissions != null )
             {
-                throw new IllegalArgumentException("outputPermission property not supported on Windows");
+                LOG.warn("outputPermissions for WorkDirectories are not supported on Windows");
             }
-            _outputPermissions = outputPermissions;
+            else
+            {
+                _outputPermissions = outputPermissions;
+            }
         }
     }
 
@@ -103,7 +110,7 @@ public abstract class AbstractWorkDirectory implements WorkDirectory
         _support = support;
         _factory = factory;
         _dir = dir;
-        _log = log;
+        _jobLog = log;
 
         if (_dir.exists())
         {
@@ -251,7 +258,7 @@ public abstract class AbstractWorkDirectory implements WorkDirectory
         try
         {
             resource = ensureCopyingLock();
-            _log.info("Copying " + source + " to " + target);
+            _jobLog.info("Copying " + source + " to " + target);
             if (source.isDirectory())
             {
                 FileUtils.copyDirectory(source, target);
@@ -370,13 +377,13 @@ public abstract class AbstractWorkDirectory implements WorkDirectory
                 // If the destination exists, rename it out of the way while we try to
                 // replace it. Rename within the same directory is always an atomic action.
                 fileReplace = FT_MOVE.newFile(fileDest.getParentFile(), fileDest.getName());
-                _log.info("Moving " + fileDest + " to " + fileReplace);
+                _jobLog.info("Moving " + fileDest + " to " + fileReplace);
                 if (!fileDest.renameTo(fileReplace))
                 {
                     throw new IOException("Failed to move file " + fileDest + " to " + fileReplace);
                 }
             }
-            _log.info("Moving " + fileWork + " to " + fileDest);
+            _jobLog.info("Moving " + fileWork + " to " + fileDest);
             boolean directory = fileWork.isDirectory();
             if (fileWork.renameTo(fileDest))
                 fileWork = null;
@@ -422,7 +429,7 @@ public abstract class AbstractWorkDirectory implements WorkDirectory
                 File fileRemove = fileReplace;
                 fileReplace = null;    // Output file is successfully in place.
 
-                _log.info("Removing " + fileRemove);
+                _jobLog.info("Removing " + fileRemove);
                 fileRemove.delete();
             }
             if (fileWork != null)

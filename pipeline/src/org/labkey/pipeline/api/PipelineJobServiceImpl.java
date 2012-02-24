@@ -395,7 +395,7 @@ public class PipelineJobServiceImpl extends PipelineJobService
         {
             if (existingProperties.getLocation().equalsIgnoreCase(location))
             {
-                throw new IllegalArgumentException("Duplicate location property specified for Globus server " + newProperties.getLocation());
+                throw new IllegalArgumentException("Duplicate location property value '" + newProperties.getLocation() + "' specified for Globus server in pipelineConfig.xml. The default location value is 'cluster', and each Globus server must have a unique location property value.");
             }
         }
     }

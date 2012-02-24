@@ -148,6 +148,7 @@ public class GlobusClientPropertiesImpl extends GlobusSettingsImpl implements Pi
         if (overrides instanceof GlobusClientPropertiesImpl)
         {
             GlobusClientPropertiesImpl overrides2 = (GlobusClientPropertiesImpl)overrides;
+            result.setLocation(overrides2.getLocation() == null ? getLocation() : overrides2.getLocation());
             result.setGlobusServer(overrides2.getGlobusServer() == null ? getGlobusServer() : overrides2.getGlobusServer());
             result.setJavaHome(overrides2.getJavaHome() == null ? getJavaHome() : overrides2.getJavaHome());
             result.setLabKeyDir(overrides2.getLabKeyDir() == null ? getLabKeyDir() : overrides2.getLabKeyDir());

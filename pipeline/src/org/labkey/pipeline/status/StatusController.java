@@ -880,7 +880,7 @@ public class StatusController extends SpringActionController
             }
         }
 
-        if (sf.isActive() && !PipelineJob.CANCELLING_STATUS.equals(sf.getStatus()) && getContainer().hasPermission(getUser(), DeletePermission.class))
+        if (sf.isCancellable() && getContainer().hasPermission(getUser(), DeletePermission.class))
         {
             ActionURL url = new ActionURL(PipelineController.CancelJobAction.class, c);
             url.addParameter("rowId", sf.getRowId());

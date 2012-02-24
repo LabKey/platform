@@ -199,16 +199,14 @@ public class PipelineQueueImpl implements PipelineQueue
             PipelineJob job = it.next();
             if (job.getJobGUID().equals(statusFile.getJobId()) && inContainer(c, job))
             {
-                if (job.cancel(false))
-                {
-                    it.remove();
-                    job.getLogger().info("Cancelling job by removing from job queue.");
-                    PipelineJob.logStartStopInfo("Cancelling job by removing from job queue. Job ID: " + job.getJobGUID() + ", " + statusFile.getFilePath());
-                    // It should already be set to CANCELLING. Set to CANCELLED to indicate that it's dead.
-                    statusFile.setStatus(PipelineJob.CANCELLED_STATUS);
-                    statusFile.save();
-                    return true;
-                }
+                job.cancel(false);
+                it.remove();
+                job.getLogger().info("Cancelling job by removing from job queue.");
+                PipelineJob.logStartStopInfo("Cancelling job by removing from job queue. Job ID: " + job.getJobGUID() + ", " + statusFile.getFilePath());
+                // It should already be set to CANCELLING. Set to CANCELLED to indicate that it's dead.
+                statusFile.setStatus(PipelineJob.CANCELLED_STATUS);
+                statusFile.save();
+                return true;
             }
         }
         for (ListIterator<PipelineJob> it = _running.listIterator(); it.hasNext();)

@@ -600,17 +600,41 @@ public class PipelineStatusManager
             {
                 throw new NotFoundException();
             }
-            Container jobContainer = statusFile.lookupContainer();
-            if (!jobContainer.hasPermission(info.getUser(), DeletePermission.class))
+            cancelStatus(info, statusFile);
+        }
+    }
+
+    private static void cancelStatus(ViewBackgroundInfo info, PipelineStatusFileImpl statusFile)
+            throws SQLException
+    {
+        Container jobContainer = statusFile.lookupContainer();
+        if (!jobContainer.hasPermission(info.getUser(), DeletePermission.class))
+        {
+            throw new UnauthorizedException();
+        }
+        if (statusFile.isCancellable())
+        {
+            PipelineStatusFileImpl[] children = PipelineStatusManager.getSplitStatusFiles(statusFile.getJobId(), statusFile.lookupContainer());
+            for (PipelineStatusFileImpl child : children)
             {
-                throw new UnauthorizedException();
+                if (child.isCancellable())
+                {
+                    cancelStatus(info, child);
+                }
             }
-            if (statusFile.isActive())
+
+            String newStatus;
+            if (PipelineJob.SPLIT_STATUS.equals(statusFile.getStatus()) || PipelineJob.WAITING_FOR_FILES.equals(statusFile.getStatus()))
             {
-                statusFile.setStatus(PipelineJob.CANCELLING_STATUS);
-                PipelineStatusManager.updateStatusFile(statusFile);
-                PipelineService.get().getPipelineQueue().cancelJob(jobContainer, statusFile);
+                newStatus = PipelineJob.CANCELLED_STATUS;
             }
+            else
+            {
+                newStatus = PipelineJob.CANCELLING_STATUS;
+            }
+            statusFile.setStatus(newStatus);
+            PipelineStatusManager.updateStatusFile(statusFile);
+            PipelineService.get().getPipelineQueue().cancelJob(jobContainer, statusFile);
         }
     }
 

@@ -256,7 +256,10 @@ public class GlobusJobWrapper
 
         settings = settings.mergeOverrides(taskFactory.getGlobusSettings());
         settings = settings.mergeOverrides(new JobGlobusSettings(taskFactory.getGroupParameterName(), parameters));
-        settings.setLocation(location);
+        if (location != null)
+        {
+            settings.setLocation(location);
+        }
         return settings;
     }
 
