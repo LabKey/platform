@@ -2636,7 +2636,8 @@ LABKEY.FilterDialog = Ext.extend(Ext.Window, {
         // run for a max of 2000ms but will get stopped when the component receives focus
         this.focusTask = this.focusTask || {interval:150, run: function(){
             var field = this.find('itemId', 'inputField0')[0];
-            field.focus(null,50);
+            if (field)
+                field.focus(null,50);
 
             Ext.TaskMgr.stop(this.focusTask);
         }, scope: this, duration: 2000};
