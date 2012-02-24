@@ -408,6 +408,7 @@ public class CoreController extends SpringActionController
 
     @RequiresNoPermission
     @IgnoresTermsOfUse
+    @AllowedDuringUpgrade
     public class CustomStylesheetAction extends BaseStylesheetAction
     {
         Content getContent(HttpServletRequest request, HttpServletResponse response) throws Exception
