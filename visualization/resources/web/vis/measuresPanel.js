@@ -25,6 +25,10 @@ LABKEY.vis.MeasuresDialog = Ext.extend(Ext.Window, {
             multiSelect : false
         });
 
+        Ext.applyIf(this, config, {
+            forceQuery : false
+        });
+
         LABKEY.vis.MeasuresDialog.superclass.constructor.call(this, config);
     },
 
@@ -43,6 +47,7 @@ LABKEY.vis.MeasuresDialog = Ext.extend(Ext.Window, {
             filter      : this.filter,
             allColumns  : this.allColumns,
             multiSelect : this.multiSelect,
+            forceQuery  : this.forceQuery,
             listeners: {
                 scope: this,
                 'measureChanged': function (axisId, data) {
@@ -118,36 +123,9 @@ LABKEY.vis.MeasuresPanel = Ext.extend(Ext.Panel, {
         }, this);
 
         // load the store the first time after this component has rendered
-        this.on('afterrender', function(cmp){
-            var filter = this.filter || LABKEY.Visualization.Filter.create({schemaName: 'study'});
-
-            if (this.selectedMeasure)
-            {
-                filter = LABKEY.Visualization.Filter.create({schemaName: this.selectedMeasure.schemaName,
-                        queryName: this.selectedMeasure.queryName});
-            }
-
-            // if the measure store data is not already loaded, get it. otherwise, use the cached data object
-            if (!this.measuresStoreData)
-            {
-                Ext.Ajax.request({
-                    url : LABKEY.ActionURL.buildURL('visualization', 'getMeasures', LABKEY.ActionURL.getContainer(),
-                            {filters: [filter], dateMeasures: this.isDateAxis, allColumns : this.allColumns}),
-                    method:'GET',
-                    success : function(response){
-                        this.measuresStoreData = Ext.util.JSON.decode(response.responseText);
-                        this.fireEvent('measuresStoreLoaded', this.measuresStoreData);
-                        this.measuresStore.loadData(this.measuresStoreData);
-                    },
-                    failure: function(info, response, options) {LABKEY.Utils.displayAjaxErrorResponse(response, options);},
-                    scope: this
-                });
-            }
-            else
-            {
-                this.measuresStore.loadData(this.measuresStoreData);
-            }
-        }, this);
+        this.on('afterrender', this.onAfterRender, this);
+        if (this.forceQuery)
+            this.onAfterRender(this);
 
         // Show the mask after the component size has been determined, as long as the
         // data is still loading:
@@ -157,6 +135,45 @@ LABKEY.vis.MeasuresPanel = Ext.extend(Ext.Panel, {
         });
 
         LABKEY.vis.MeasuresPanel.superclass.initComponent.call(this);
+    },
+
+    onAfterRender : function(cmp) {
+        var filter = this.filter || LABKEY.Visualization.Filter.create({schemaName: 'study'});
+
+        if (this.selectedMeasure)
+        {
+            filter = LABKEY.Visualization.Filter.create({schemaName: this.selectedMeasure.schemaName,
+                queryName: this.selectedMeasure.queryName});
+        }
+
+        // if the measure store data is not already loaded, get it. otherwise, use the cached data object
+        if (!this.measuresStoreData)
+        {
+            if (!this.isLoading) {
+                this.isLoading = true;
+                Ext.Ajax.request({
+                    url : LABKEY.ActionURL.buildURL('visualization', 'getMeasures', LABKEY.ActionURL.getContainer(),
+                            {filters: [filter], dateMeasures: this.isDateAxis, allColumns : this.allColumns}),
+                    method:'GET',
+                    success : function(response){
+                        this.isLoading = false;
+                        this.measuresStoreData = Ext.util.JSON.decode(response.responseText);
+                        this.fireEvent('measuresStoreLoaded', this.measuresStoreData);
+                        this.measuresStore.loadData(this.measuresStoreData);
+                    },
+                    failure: function(info, response, options) {
+                        this.isLoading = false;
+                        LABKEY.Utils.displayAjaxErrorResponse(response, options);
+                    },
+                    scope: this
+                });
+            }
+        }
+        else
+        {
+            if (this.rendered)
+                this.measuresStore.loadData(this.measuresStoreData);
+        }
     },
 
     createMeasuresListPanel : function() {
@@ -175,7 +192,8 @@ LABKEY.vis.MeasuresPanel = Ext.extend(Ext.Panel, {
             }
         });
         this.measuresStore.on('load', function(){
-            this.getEl().unmask();
+            if (this.rendered)
+                this.getEl().unmask();
         }, this);
         this.measuresStore.on('exception', function(proxy, type, action, options, resp){
             LABKEY.Utils.displayAjaxErrorResponse(resp, options);

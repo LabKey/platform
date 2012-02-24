@@ -18,8 +18,10 @@ package org.labkey.study.reports;
 import org.labkey.api.reports.report.AbstractReport;
 import org.labkey.api.reports.report.ReportUrls;
 import org.labkey.api.settings.AppProps;
+import org.labkey.api.study.StudyService;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.UniqueID;
+import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.HttpView;
 import org.labkey.api.view.JspView;
 import org.labkey.api.view.NavTree;
@@ -70,6 +72,7 @@ public class ParticipantReport extends AbstractReport
             view.addCustomMenu(edit);
 
             NavTree menu = new NavTree();
+            menu.addChild("New " + StudyService.get().getSubjectNounSingular(context.getContainer()) + " Report", new ActionURL(ReportsController.ParticipantReportAction.class, context.getContainer()));
             menu.addChild("Manage Views", PageFlowUtil.urlProvider(ReportUrls.class).urlManageViews(context.getContainer()));
             view.setNavMenu(menu);
         }

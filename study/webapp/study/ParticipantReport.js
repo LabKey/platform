@@ -373,17 +373,22 @@ Ext4.define('LABKEY.ext4.ParticipantReport', {
                 }
             });
 
-            this.measuresHandler = function() {
-                var callback = function(recs){
-                    var rawData = [];
-                    for (var i=0; i < recs.length; i++) {
-                        rawData.push(Ext4.clone(recs[i].data));
-                    }
-                    this.enableUI(true);    // enable the UI if it is currently disabled
-                    this.gridFieldStore.loadRawData({measures : rawData}, true);
-                    this.generateTemplateConfig();
-                };
-                this.selectMeasures(callback, this);
+            this.measuresHandler = function(doShow) {
+                if (doShow !== false)
+                    doShow = true;
+                var fn;
+                if (doShow) {
+                    fn = function(recs){
+                        var rawData = [];
+                        for (var i=0; i < recs.length; i++) {
+                            rawData.push(Ext4.clone(recs[i].data));
+                        }
+                        this.enableUI(true);    // enable the UI if it is currently disabled
+                        this.gridFieldStore.loadRawData({measures : rawData}, true);
+                        this.generateTemplateConfig();
+                    };
+                }
+                this.selectMeasures(fn, doShow, this);
             };
 
             this.designerPanel = Ext4.create('Ext.panel.Panel', {
@@ -419,7 +424,7 @@ Ext4.define('LABKEY.ext4.ParticipantReport', {
             });
 */
 
-            if (this.isNew())
+            if (this.isNew()) {
                 this.northPanel.add({
                     xtype   : 'panel',
                     flex    : 1,
@@ -432,7 +437,12 @@ Ext4.define('LABKEY.ext4.ParticipantReport', {
                     border  : false, frame : false,
                     items   : [
                         {
-                            xtype : 'displayfield', width: 300, value : 'To get started, choose some Measures:'
+                            xtype  : 'box',
+                            width  : 275,
+                            autoEl : {
+                                tag : 'div',
+                                html: 'To get started, choose some Measures:'
+                            }
                         },{
                             xtype   : 'button',
                             text    :'Choose Measures',
@@ -441,6 +451,8 @@ Ext4.define('LABKEY.ext4.ParticipantReport', {
                         }
                     ]
                 });
+                this.measuresHandler(false);
+            }
             else
                 this.northPanel.add(this.formPanel, this.designerPanel);
 
@@ -572,6 +584,9 @@ Ext4.define('LABKEY.ext4.ParticipantReport', {
 
             Ext4.get(config.renderTo).update('');
             this.templateReport = Ext4.create('LABKEY.TemplateReport', config);
+            this.templateReport.on('afterdatatransform', function(th, reportData) {
+                this.lengthReportField.setValue('<i>Showing ' + reportData.pages.length + ' Results</i>');
+            }, this);
             this.templateReport.loadData(qr);
 
             this.on('resize', this.showFilter, this);
@@ -605,9 +620,9 @@ Ext4.define('LABKEY.ext4.ParticipantReport', {
             this.storedTemplateConfig.editable = this.allowCustomize;
         }
 
-        if (this.filterWindow && this.filterWindow.isVisible()) {
-            this.filterWindow.collapse();
-        }
+//        if (this.filterWindow && this.filterWindow.isVisible()) {
+//            this.filterWindow.collapse();
+//        }
 
         // if the north panel hasn't been fully populated, initialize the dataset store, else
         // just show the panel
@@ -809,25 +824,37 @@ Ext4.define('LABKEY.ext4.ParticipantReport', {
             method  : 'POST',
             jsonData: data,
             success : function(resp){
-                Ext4.Msg.alert('Success', 'Report : ' + data.name + ' saved successfully', function(){
-                    var o = Ext4.decode(resp.responseText);
+                console.log('new message');
+                // if you want to stay on page, you need to refresh anyway to update attachments
+                var msgbox = Ext4.create('Ext.window.Window', {
+                    title    : 'Saved',
+                    html     : '<div style="margin-left: auto; margin-right: auto;"><span class="labkey-message">Report Saved successfully</span></div>',
+                    modal    : false,
+                    closable : false,
+                    width    : 300,
+                    height   : 100
+                });
+                msgbox.show();
+                msgbox.getEl().fadeOut({duration : 2250, callback : function(){
+                    msgbox.hide();
+                }});
 
-                    // Modify Title (hack: hardcode the webpart id since this is really not a webpart, just
-                    // using a webpart frame, will need to start passing in the real id if this ever
-                    // becomes a true webpart
-                    var titleEl = Ext4.query('span[class=labkey-wp-title-text]:first', 'webpart_-1');
-                    if (titleEl && (titleEl.length >= 1))
-                    {
-                        titleEl[0].innerHTML = LABKEY.Utils.encodeHtml(data.name);
-                    }
+                var o = Ext4.decode(resp.responseText);
 
-                    this.reportId = o.reportId;
-                    this.loadReport(this.reportId);
-                    //this.reportName.setReadOnly(true);
-                    //this.saveAsButton.setVisible(true);
-                    this.customize();
+                // Modify Title (hack: hardcode the webpart id since this is really not a webpart, just
+                // using a webpart frame, will need to start passing in the real id if this ever
+                // becomes a true webpart
+                var titleEl = Ext4.query('span[class=labkey-wp-title-text]:first', 'webpart_-1');
+                if (titleEl && (titleEl.length >= 1))
+                {
+                    titleEl[0].innerHTML = LABKEY.Utils.encodeHtml(data.name);
+                }
 
-                }, this);
+                this.reportId = o.reportId;
+                this.loadReport(this.reportId);
+                //this.reportName.setReadOnly(true);
+                //this.saveAsButton.setVisible(true);
+                this.customize();
             },
             failure : function(resp){
                 Ext4.Msg.alert('Failure', Ext4.decode(resp.responseText).exception);
@@ -860,16 +887,20 @@ Ext4.define('LABKEY.ext4.ParticipantReport', {
     },
 
     // show the select measures dialog
-    selectMeasures : function(handler, scope) {
+    selectMeasures : function(handler, show, scope) {
         if (!this.measuresDialog) {
             this.measuresDialog = new LABKEY.vis.MeasuresDialog({
                 multiSelect : true,
                 closeAction :'hide',
                 filter : LABKEY.Visualization.Filter.create({schemaName: 'study', queryType: LABKEY.Visualization.Filter.QueryType.BUILT_IN}),
-                allColumns : true
+                allColumns : true,
+                forceQuery : true,
+                modal : false
             });
         }
-        this.measuresDialog.addListener('measuresSelected', function(recs){handler.call(scope || this, recs);}, this, {single : true});
+        this.measuresDialog.addListener('measuresSelected', function(recs) {
+            if (handler) handler.call(scope || this, recs);
+        }, this, {single : true});
 
         // competing windows
         if (this.filterWindow) {
@@ -877,7 +908,8 @@ Ext4.define('LABKEY.ext4.ParticipantReport', {
             this.measuresDialog.on('hide', function() { this.filterWindow.show(); }, this, {single: true});
         }
 
-        this.measuresDialog.show();
+        if (show)
+            this.measuresDialog.show();
     },
 
     isNew : function() {

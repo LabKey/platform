@@ -2032,6 +2032,7 @@ public class ReportsController extends BaseStudyController
                 view.addCustomMenu(edit);
 
                 NavTree menu = new NavTree();
+                menu.addChild("New " + StudyService.get().getSubjectNounSingular(getContainer()) + " Report", new ActionURL(this.getClass(), getContainer()));
                 menu.addChild("Manage Views", PageFlowUtil.urlProvider(ReportUrls.class).urlManageViews(getContainer()));
                 view.setNavMenu(menu);
             }
