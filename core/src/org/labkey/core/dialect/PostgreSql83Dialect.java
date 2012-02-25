@@ -1137,8 +1137,8 @@ class PostgreSql83Dialect extends SqlDialect
         @Override
         public boolean isAutoIncrement() throws SQLException
         {
-            String typeName = getSqlTypeName();
-            return typeName.equalsIgnoreCase("serial") || typeName.equalsIgnoreCase("bigserial");
+            String isAutoIncrement = _rsCols.getString("IS_AUTOINCREMENT");
+            return "YES".equalsIgnoreCase(isAutoIncrement);
         }
 
         @Override

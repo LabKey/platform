@@ -921,28 +921,39 @@ public class QueryController extends SpringActionController
             url.addParameter("schemaName", _schemaName);
             HttpView scopeInfo = new ScopeView("Scope and Schema Information", scope, _schemaName, url);
 
-            Connection con = scope.getConnection();
-            SqlDialect dialect = scope.getSqlDialect();
-            DatabaseMetaData dbmd = con.getMetaData();
+            ModelAndView metaDataView;
+            ModelAndView pkView;
+            Connection con = null;
 
-            ResultSet columnsRs;
+            try
+            {
+                con = scope.getConnection();
+                SqlDialect dialect = scope.getSqlDialect();
+                DatabaseMetaData dbmd = con.getMetaData();
 
-            if (dialect.treatCatalogsAsSchemas())
-                columnsRs = dbmd.getColumns(_schemaName, null, _tableName, null);
-            else
-                columnsRs = dbmd.getColumns(null, _schemaName, _tableName, null);
+                ResultSet columnsRs;
 
-            ModelAndView metaDataView = new ResultSetView(new CachedResultSet(columnsRs, dialect.shouldCacheMetaData(), 0), "Table Meta Data");
+                if (dialect.treatCatalogsAsSchemas())
+                    columnsRs = dbmd.getColumns(_schemaName, null, _tableName, null);
+                else
+                    columnsRs = dbmd.getColumns(null, _schemaName, _tableName, null);
 
-            ResultSet pksRs;
+                metaDataView = new ResultSetView(new CachedResultSet(columnsRs, dialect.shouldCacheMetaData(), Table.ALL_ROWS), "Table Meta Data");
 
-            if (dialect.treatCatalogsAsSchemas())
-                pksRs = dbmd.getPrimaryKeys(_schemaName, null, _tableName);
-            else
-                pksRs = dbmd.getPrimaryKeys(null, _schemaName, _tableName);
+                ResultSet pksRs;
 
-            ModelAndView pkView = new ResultSetView(new CachedResultSet(pksRs, dialect.shouldCacheMetaData(), 0), "Primary Key Meta Data");
-            scope.releaseConnection(con);
+                if (dialect.treatCatalogsAsSchemas())
+                    pksRs = dbmd.getPrimaryKeys(_schemaName, null, _tableName);
+                else
+                    pksRs = dbmd.getPrimaryKeys(null, _schemaName, _tableName);
+
+                pkView = new ResultSetView(new CachedResultSet(pksRs, dialect.shouldCacheMetaData(), Table.ALL_ROWS), "Primary Key Meta Data");
+            }
+            finally
+            {
+                if (null != con)
+                    scope.releaseConnection(con);
+            }
 
             return new VBox(scopeInfo, metaDataView, pkView);
         }
@@ -970,20 +981,30 @@ public class QueryController extends SpringActionController
 
             HttpView scopeInfo = new ScopeView("Scope Information", scope);
 
-            Connection con = scope.getConnection();
-            DatabaseMetaData dma = con.getMetaData();
-            ResultSet rs;
+            ModelAndView tableInfo;
+            Connection con = null;
 
-            if (dialect.treatCatalogsAsSchemas())
-                rs = dma.getTables(_schemaName, null, null, null);
-            else
-                rs = dma.getTables(null, _schemaName, null, null);
+            try
+            {
+                con = scope.getConnection();
+                DatabaseMetaData dma = con.getMetaData();
+                ResultSet rs;
 
-            ActionURL url = new ActionURL(RawTableMetaDataAction.class, getContainer());
-            url.addParameter("schemaName", _schemaName);
-            String tableLink = url.getEncodedLocalURIString() + "&query.queryName=";
-            ModelAndView tableInfo = new ResultSetView(new CachedResultSet(rs, dialect.shouldCacheMetaData(), 0), "Tables", 3, tableLink);
-            scope.releaseConnection(con);
+                if (dialect.treatCatalogsAsSchemas())
+                    rs = dma.getTables(_schemaName, null, null, null);
+                else
+                    rs = dma.getTables(null, _schemaName, null, null);
+
+                ActionURL url = new ActionURL(RawTableMetaDataAction.class, getContainer());
+                url.addParameter("schemaName", _schemaName);
+                String tableLink = url.getEncodedLocalURIString() + "&query.queryName=";
+                tableInfo = new ResultSetView(new CachedResultSet(rs, dialect.shouldCacheMetaData(), Table.ALL_ROWS), "Tables", 3, tableLink);
+            }
+            finally
+            {
+                if (null != con)
+                    scope.releaseConnection(con);
+            }
 
             return new VBox(scopeInfo, tableInfo);
         }
@@ -1057,50 +1078,56 @@ public class QueryController extends SpringActionController
         {
             out.println("<table>");
 
-            ResultSetMetaData md = _rs.getMetaData();
-            int columnCount = md.getColumnCount();
-
-            out.print("  <tr>");
-
-            for (int i = 1; i <= columnCount; i++)
+            try
             {
-                out.print("<th>");
-                out.print(PageFlowUtil.filter(md.getColumnName(i)));
-                out.print("</th>");
-            }
+                ResultSetMetaData md = _rs.getMetaData();
+                int columnCount = md.getColumnCount();
 
-            out.println("</tr>\n");
-
-            while (_rs.next())
-            {
                 out.print("  <tr>");
 
                 for (int i = 1; i <= columnCount; i++)
                 {
-                    Object val = _rs.getObject(i);
-
-                    out.print("<td>");
-
-                    if (null != _link && _linkColumn == i)
-                    {
-                        out.print("<a href=\"");
-                        out.print(PageFlowUtil.filter(_link + val.toString()));
-                        out.print("\">");
-                    }
-
-                    out.print(null == val ? "&nbsp;" : PageFlowUtil.filter(val));
-
-                    if (null != _link && _linkColumn == i)
-                        out.print("</a>");
-
-                    out.print("</td>");
+                    out.print("<th>");
+                    out.print(PageFlowUtil.filter(md.getColumnName(i)));
+                    out.print("</th>");
                 }
 
                 out.println("</tr>\n");
+
+                while (_rs.next())
+                {
+                    out.print("  <tr>");
+
+                    for (int i = 1; i <= columnCount; i++)
+                    {
+                        Object val = _rs.getObject(i);
+
+                        out.print("<td>");
+
+                        if (null != _link && _linkColumn == i)
+                        {
+                            out.print("<a href=\"");
+                            out.print(PageFlowUtil.filter(_link + val.toString()));
+                            out.print("\">");
+                        }
+
+                        out.print(null == val ? "&nbsp;" : PageFlowUtil.filter(val));
+
+                        if (null != _link && _linkColumn == i)
+                            out.print("</a>");
+
+                        out.print("</td>");
+                    }
+
+                    out.println("</tr>\n");
+                }
+            }
+            finally
+            {
+                ResultSetUtil.close(_rs);
             }
 
             out.println("</table>\n");
-            _rs.close();
         }
     }
 

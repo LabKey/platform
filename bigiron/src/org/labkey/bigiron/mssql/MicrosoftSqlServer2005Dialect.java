@@ -874,7 +874,8 @@ public class MicrosoftSqlServer2005Dialect extends SqlDialect
         @Override
         public boolean isAutoIncrement() throws SQLException
         {
-            return getSqlTypeName().equalsIgnoreCase("int identity");
+            // Address both "int identity" and "bigint identity", #14136
+            return StringUtils.endsWithIgnoreCase(getSqlTypeName(), "identity");
         }
     }
 
