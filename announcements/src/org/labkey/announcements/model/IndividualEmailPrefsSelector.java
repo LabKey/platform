@@ -18,12 +18,6 @@ package org.labkey.announcements.model;
 
 import org.labkey.api.data.Container;
 import org.labkey.api.message.settings.MessageConfigService;
-import org.labkey.api.security.User;
-
-import java.util.ArrayList;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
 
 /**
  * User: adam

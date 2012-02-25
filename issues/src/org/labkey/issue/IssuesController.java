@@ -1845,7 +1845,7 @@ public class IssuesController extends SpringActionController
         @Override
         public SearchScope getSearchScope()
         {
-            return SearchScope.Folder;
+            return SearchScope.FolderAndSubfolders;
         }
 
         @NotNull
