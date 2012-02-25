@@ -1169,7 +1169,7 @@ Ext4.define('LABKEY.ext4.DataViewsPanel', {
                 xtype       : 'datefield',
                 fieldLabel  : 'Refresh Date',
                 name        : 'refreshDate',
-                altFormats  : LABKEY.Utils.getDateAltFormats(),
+                value       : record.data.refreshDate != null ? new Date(record.data.refreshDate) : '',
                 blankText   : 'Date of last refresh',
                 editable    : false
             });

@@ -130,6 +130,7 @@ import org.labkey.study.reports.StudyReportUIProvider;
 import org.labkey.study.samples.SampleSearchWebPart;
 import org.labkey.study.samples.SamplesWebPart;
 import org.labkey.study.samples.SpecimenCommentAuditViewFactory;
+import org.labkey.study.security.permissions.ManageStudyPermission;
 import org.labkey.study.security.roles.AssayDesignerRole;
 import org.labkey.study.security.roles.SpecimenCoordinatorRole;
 import org.labkey.study.security.roles.SpecimenRequesterRole;
@@ -471,11 +472,15 @@ public class StudyModule extends SpringModule implements SearchService.DocumentP
             {
                 timepointMenuName = "Manage Visits";
             }
-            NavTree menu = new NavTree();
-            menu.addChild("Manage Datasets", new ActionURL(StudyController.ManageTypesAction.class, c));
-            menu.addChild(timepointMenuName, new ActionURL(StudyController.ManageVisitsAction.class, c));
-            view.setNavMenu(menu);
-            
+
+            if(c.hasPermission(portalCtx.getUser(), ManageStudyPermission.class))
+            {
+                NavTree menu = new NavTree();
+                menu.addChild("Manage Datasets", new ActionURL(StudyController.ManageTypesAction.class, c));
+                menu.addChild(timepointMenuName, new ActionURL(StudyController.ManageVisitsAction.class, c));
+                view.setNavMenu(menu);
+            }
+
             return view;
         }
     }

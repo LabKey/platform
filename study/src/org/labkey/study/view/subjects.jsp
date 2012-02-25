@@ -590,7 +590,7 @@ li.ptid a.unhighlight
         var viewWidth = X.getBody().getViewSize().width;
         var right = viewWidth - padding - rightAreaWidth;
         var x = listDiv.getXY()[0];
-        var width = Math.max(140, (LABKEY.Utils.getComponentWidth()-260));
+        var width = Math.max(400, right-x);
         listDiv.setWidth(width);
     }
 
