@@ -1964,26 +1964,6 @@ public class IssuesController extends SpringActionController
     }
 
 
-    // TODO: Delete after refactoring is complete
-    public static class SearchResultsView extends JspView<SearchResultsView>
-    {
-        public Container _c;
-        public String _query;
-        public boolean _print;
-        public String _status;
-        
-        SearchResultsView(Container c, String query, String status, boolean isPrint)
-        {
-            super(IssuesController.class, "search.jsp", null);
-            _c = c;
-            _query = query;
-            _status = status;
-            _print = isPrint;
-            setModelBean(this);
-        }
-    }
-
-
     @RequiresPermissionClass(ReadPermission.class)
     public class GetIssueAction extends ApiAction<IssueIdForm>
     {

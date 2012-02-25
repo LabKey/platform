@@ -1277,8 +1277,6 @@ issues/src/org/labkey/issue/query/IssuesQuerySchema.java -text
 issues/src/org/labkey/issue/query/IssuesQueryView.java -text
 issues/src/org/labkey/issue/query/IssuesTable.java -text
 issues/src/org/labkey/issue/rss.jsp -text
-issues/src/org/labkey/issue/search.jsp -text
-issues/src/org/labkey/issue/searchExt.jsp -text
 issues/src/org/labkey/issue/summaryWebpart.jsp -text
 issues/src/org/labkey/issue/updateEmail.jsp -text
 issues/src/org/labkey/issue/updateView.jsp -text
