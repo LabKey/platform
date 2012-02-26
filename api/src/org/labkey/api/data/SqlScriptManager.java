@@ -17,6 +17,7 @@
 package org.labkey.api.data;
 
 import org.apache.log4j.Logger;
+import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.SqlScriptRunner.SqlScript;
 import org.labkey.api.data.SqlScriptRunner.SqlScriptException;
 import org.labkey.api.data.SqlScriptRunner.SqlScriptProvider;
@@ -83,13 +84,13 @@ public class SqlScriptManager
     }
 
 
-    private static void insert(User user, SqlScript script) throws SQLException
+    private static void insert(@Nullable User user, SqlScript script) throws SQLException
     {
         insert(user, script.getProvider(), script.getDescription());
     }
 
 
-    private static void insert(User user, SqlScriptProvider provider, String fileName) throws SQLException
+    private static void insert(@Nullable User user, SqlScriptProvider provider, String fileName) throws SQLException
     {
         SqlScriptBean ss = new SqlScriptBean(provider.getProviderName(), fileName);
 
@@ -97,14 +98,14 @@ public class SqlScriptManager
     }
 
 
-    private static void update(User user, SqlScript script) throws SQLException
+    private static void update(@Nullable User user, SqlScript script) throws SQLException
     {
         Object[] pk = new Object[]{script.getProvider().getProviderName(), script.getDescription()};
 
         Table.update(user, _core.getTableInfoSqlScripts(), new HashMap(), pk);  // Update user and modified date
     }
 
-    static void runScript(User user, SqlScript script, ModuleContext moduleContext) throws SqlScriptException, SQLException
+    static void runScript(@Nullable User user, SqlScript script, ModuleContext moduleContext) throws SqlScriptException, SQLException
     {
         DbSchema schema = DbSchema.get(script.getSchemaName());
         SqlDialect dialect = schema.getSqlDialect();

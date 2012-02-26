@@ -2550,10 +2550,11 @@ public class Table
 
     public static class TestDataIterator extends AbstractDataIterator
     {
-        String guid = GUID.makeGUID();
-        Date date = new Date();
+        final String guid = GUID.makeGUID();
+        final Date date = new Date();
 
-        Object[][] _data = new Object[][]
+        // TODO: guid values are ignored, since guidCallable gets used instead
+        final Object[][] _data = new Object[][]
         {
             new Object[] {1, "One", 101, true, date, guid},
             new Object[] {2, "Two", 102, true, date, guid},
@@ -2622,7 +2623,7 @@ public class Table
         @Test
         public void test() throws Exception
         {
-            TableInfo testTable = DbSchema.get("test").getTable("TestTable");
+            TableInfo testTable = TestSchema.getInstance().getTableInfoTestTable();
 
             BatchValidationException errors = new BatchValidationException();
             TestDataIterator extract = new TestDataIterator();
@@ -2639,7 +2640,7 @@ public class Table
 
             assertFalse(errors.hasErrors());
             
-            Table.execute(testTable.getSchema(), "delete from test.testtable where entityid = '" + extract.guid + "'");
+            Table.execute(testTable.getSchema(), "DELETE FROM test.testtable WHERE EntityId = '" + extract.guid + "'");
         }
     }
 }

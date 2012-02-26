@@ -35,7 +35,7 @@ public class ExpSchema extends AbstractExpSchema
         {
             public TableInfo createTable(ExpSchema expSchema, String queryName)
             {
-                ExpRunTable ret = ExperimentService.get().createRunTable(TableType.Runs.toString(), expSchema);
+                ExpRunTable ret = ExperimentService.get().createRunTable(Runs.toString(), expSchema);
                 return expSchema.setupTable(ret);
             }
         },
@@ -43,7 +43,7 @@ public class ExpSchema extends AbstractExpSchema
         {
             public TableInfo createTable(ExpSchema expSchema, String queryName)
             {
-                ExpDataTable ret = ExperimentService.get().createDataTable(TableType.Data.toString(), expSchema);
+                ExpDataTable ret = ExperimentService.get().createDataTable(Data.toString(), expSchema);
                 return expSchema.setupTable(ret);
             }
         },
@@ -51,7 +51,7 @@ public class ExpSchema extends AbstractExpSchema
         {
             public TableInfo createTable(ExpSchema expSchema, String queryName)
             {
-                ExpDataInputTable ret = ExperimentService.get().createDataInputTable(TableType.DataInputs.toString(), expSchema);
+                ExpDataInputTable ret = ExperimentService.get().createDataInputTable(DataInputs.toString(), expSchema);
                 return expSchema.setupTable(ret);
             }
         },
@@ -66,7 +66,7 @@ public class ExpSchema extends AbstractExpSchema
         {
             public TableInfo createTable(ExpSchema expSchema, String queryName)
             {
-                ExpMaterialInputTable ret = ExperimentService.get().createMaterialInputTable(TableType.MaterialInputs.toString(), expSchema);
+                ExpMaterialInputTable ret = ExperimentService.get().createMaterialInputTable(MaterialInputs.toString(), expSchema);
                 return expSchema.setupTable(ret);
             }
         },
@@ -98,7 +98,7 @@ public class ExpSchema extends AbstractExpSchema
         {
             public TableInfo createTable(ExpSchema expSchema, String queryName)
             {
-                ExpRunGroupMapTable ret = ExperimentService.get().createRunGroupMapTable(TableType.RunGroupMap.toString(), expSchema);
+                ExpRunGroupMapTable ret = ExperimentService.get().createRunGroupMapTable(RunGroupMap.toString(), expSchema);
                 return expSchema.setupTable(ret);
             }
         },
@@ -145,6 +145,7 @@ public class ExpSchema extends AbstractExpSchema
     }
 
     static private Set<String> tableNames = new LinkedHashSet<String>();
+
     static
     {
         for (TableType type : TableType.values())
@@ -153,7 +154,6 @@ public class ExpSchema extends AbstractExpSchema
         }
         tableNames = Collections.unmodifiableSet(tableNames);
     }
-
 
     public static final String SCHEMA_NAME = "exp";
     public static final String SCHEMA_DESCR = "Contains data about experiment runs, data files, materials, sample sets, etc.";

@@ -28,7 +28,6 @@ import java.util.ArrayList;
 import java.util.Arrays;
 
 /**
- * Created by IntelliJ IDEA.
  * User: matthewb
  * Date: 2011-05-31
  * Time: 5:11 PM
@@ -154,5 +153,4 @@ public class CachingDataIterator extends AbstractDataIterator implements Scrolla
             assertFalse(scrollable.next());
         }
     }
-
 }

@@ -28,9 +28,9 @@ import org.labkey.api.query.ValidationException;
 public abstract class AbstractDataIterator implements DataIterator
 {
     private String _debugName = "";
-    BatchValidationException _errors;
-    ValidationException _globalError = null;
-    ValidationException _rowError = null;
+    private ValidationException _globalError = null;
+    protected BatchValidationException _errors;
+    protected ValidationException _rowError = null;
 
     protected AbstractDataIterator(BatchValidationException errors)
     {

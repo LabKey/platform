@@ -40,7 +40,7 @@ public class MvUtil
 
     // Sentinel for the cache: if a container has no mv indicators set, we use this to indicate,
     // as null means a cache miss.
-    private static final Map<String,String> NO_VALUES = Collections.unmodifiableMap(new HashMap<String,String>());
+    private static final Map<String, String> NO_VALUES = Collections.unmodifiableMap(new HashMap<String, String>());
 
     private MvUtil() {}
 
@@ -67,7 +67,7 @@ public class MvUtil
 
     public static String getMvLabel(String mvIndicator, Container c)
     {
-        Map<String,String> map = getIndicatorsAndLabels(c);
+        Map<String, String> map = getIndicatorsAndLabels(c);
         String label = map.get(mvIndicator);
         if (label != null)
             return label;
@@ -83,7 +83,7 @@ public class MvUtil
         return getIndicatorsAndLabelsWithContainer(c).getKey();
     }
 
-    public static Map<String,String> getIndicatorsAndLabels(Container c)
+    public static Map<String, String> getIndicatorsAndLabels(Container c)
     {
         return getIndicatorsAndLabelsWithContainer(c).getValue();
     }
@@ -91,7 +91,7 @@ public class MvUtil
     /**
      * Return the Container in which these indicators are defined, along with the indicators.
      */
-    public static Pair<Container,Map<String,String>> getIndicatorsAndLabelsWithContainer(Container c)
+    public static Pair<Container, Map<String, String>> getIndicatorsAndLabelsWithContainer(Container c)
     {
         String cacheKey = getCacheKey(c);
 
@@ -108,7 +108,7 @@ public class MvUtil
             else
             {
                 getCache().put(cacheKey, result);
-                return new Pair<Container,Map<String,String>>(c, Collections.unmodifiableMap(Collections.unmodifiableMap(result)));
+                return new Pair<Container, Map<String, String>>(c, Collections.unmodifiableMap(Collections.unmodifiableMap(result)));
             }
         }
         if (result == NO_VALUES)
@@ -118,7 +118,7 @@ public class MvUtil
             return getIndicatorsAndLabelsWithContainer(c.getParent());
         }
 
-        return new Pair<Container,Map<String,String>>(c, result);
+        return new Pair<Container, Map<String, String>>(c, result);
     }
 
     /**
@@ -129,7 +129,6 @@ public class MvUtil
     public static void inheritMvIndicators(Container c) throws SQLException
     {
         deleteMvIndicators(c);
-        clearCache(c);
     }
 
     private static void deleteMvIndicators(Container c) throws SQLException
@@ -137,6 +136,7 @@ public class MvUtil
         TableInfo mvTable = CoreSchema.getInstance().getTableInfoMvIndicators();
         String sql = "DELETE FROM " + mvTable + " WHERE container = ?";
         Table.execute(CoreSchema.getInstance().getSchema(), sql, c.getId());
+        clearCache(c);
     }
 
     /**
@@ -150,9 +150,9 @@ public class MvUtil
         deleteMvIndicators(c);
         TableInfo mvTable = CoreSchema.getInstance().getTableInfoMvIndicators();
         // Need a map to use for each row
-        Map<String,String> toInsert = new HashMap<String,String>();
+        Map<String, String> toInsert = new HashMap<String, String>();
         toInsert.put("container", c.getId());
-        for (int i=0; i<indicators.length; i++)
+        for (int i = 0; i < indicators.length; i++)
         {
             toInsert.put("mvIndicator", indicators[i]);
             toInsert.put("label", labels[i]);
@@ -161,9 +161,9 @@ public class MvUtil
         clearCache(c);
     }
 
-    private static Map<String,String> getFromDb(Container c)
+    private static Map<String, String> getFromDb(Container c)
     {
-        Map<String,String> indicatorsAndLabels = new CaseInsensitiveHashMap<String>();
+        Map<String, String> indicatorsAndLabels = new CaseInsensitiveHashMap<String>();
         try
         {
             TableInfo mvTable = CoreSchema.getInstance().getTableInfoMvIndicators();
@@ -174,7 +174,7 @@ public class MvUtil
             Map[] selectResults = Table.select(mvTable, selectColumns, filter, null, Map.class);
 
             //noinspection unchecked
-            for (Map<String,String> m : selectResults)
+            for (Map<String, String> m : selectResults)
             {
                 indicatorsAndLabels.put(m.get("mvindicator"), m.get("label"));
             }
@@ -197,9 +197,9 @@ public class MvUtil
         return CacheManager.getSharedCache();
     }
 
-    public static void containerDeleted(Container c)
+    public static void containerDeleted(Container c) throws SQLException
     {
-        clearCache(c);
+        deleteMvIndicators(c);
     }
 
     public static void clearCache(Container c)
@@ -215,7 +215,7 @@ public class MvUtil
      */
     public static Map<String, String> getDefaultMvIndicators()
     {
-        Map<String,String> mvMap = new HashMap<String,String>();
+        Map<String, String> mvMap = new HashMap<String, String>();
         mvMap.put("Q", "Data currently under quality control review.");
         mvMap.put("N", "Required field marked by site as 'data not available'.");
 

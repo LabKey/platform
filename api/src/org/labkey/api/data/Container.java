@@ -495,8 +495,7 @@ public class Container implements Serializable, Comparable<Container>, Securable
 
     protected SecurableResource findSecurableResourceInContainer(String resourceId, User user, SecurableResource parent)
     {
-        SecurableResource resource = null;
-        for(SecurableResource child : parent.getChildResources(user))
+        for (SecurableResource child : parent.getChildResources(user))
         {
             if (child instanceof Container)
                 continue;
@@ -504,7 +503,8 @@ public class Container implements Serializable, Comparable<Container>, Securable
             if (child.getResourceId().equals(resourceId))
                 return child;
 
-            resource = findSecurableResourceInContainer(resourceId, user, child);
+            SecurableResource resource = findSecurableResourceInContainer(resourceId, user, child);
+
             if (null != resource)
                 return resource;
         }
@@ -783,7 +783,7 @@ public class Container implements Serializable, Comparable<Container>, Securable
             //get set of all modules
             List<Module> allModules = ModuleLoader.getInstance().getModules();
             //get active web parts for this container
-            Portal.WebPart[] activeWebparts = Portal.getPartsOld(this);
+            List<Portal.WebPart> activeWebparts = Portal.getParts(this);
 
             // store active modules, checking first that the container still exists -- junit test creates and deletes
             // containers quickly and this check helps keep the search indexer from creating orphaned property sets.

@@ -290,6 +290,7 @@ public abstract class DefaultModule implements Module, ApplicationContextAware
         return viewsDir.exists() && viewsDir.isDirectory() ? viewsDir.listFiles(org.labkey.api.module.SimpleWebPartFactory.webPartFileFilter) : new File[0];
     }
 
+    @Override
     public final Collection<WebPartFactory> getWebPartFactories()
     {
         if (null == _webPartFactories || isWebPartFactorySetStale())
@@ -310,28 +311,33 @@ public abstract class DefaultModule implements Module, ApplicationContextAware
         return _webPartFactories;
     }
 
+    @Override
     public void destroy()
     {
     }
 
 
+    @Override
     public Collection<String> getSummary(Container c)
     {
         return Collections.emptyList();
     }
 
 
+    @Override
     public final Map<String, Class<? extends Controller>> getPageFlowNameToClass()
     {
         return _pageFlowNameToClass;
     }
 
 
+    @Override
     public final Map<Class<? extends Controller>, String> getPageFlowClassToName()
     {
         return _pageFlowClassToName;
     }
 
+    @Override
     public ActionURL getTabURL(Container c, User user)
     {
         Map<String, Class<? extends Controller>> map = getPageFlowNameToClass();
@@ -343,6 +349,7 @@ public abstract class DefaultModule implements Module, ApplicationContextAware
             return null;
     }
 
+    @Override
     public TabDisplayMode getTabDisplayMode()
     {
         return Module.TabDisplayMode.DISPLAY_USER_PREFERENCE;
@@ -368,7 +375,7 @@ public abstract class DefaultModule implements Module, ApplicationContextAware
     {
         boolean foundPart = false;
 
-        for (Portal.WebPart part : Portal.getPartsOld(c))
+        for (Portal.WebPart part : Portal.getParts(c))
         {
             if (name.equals(part.getName()))
             {
@@ -408,6 +415,7 @@ public abstract class DefaultModule implements Module, ApplicationContextAware
         return Collections.emptySet();
     }
 
+    @Override
     public String getName()
     {
         return _name;
@@ -782,16 +790,19 @@ public abstract class DefaultModule implements Module, ApplicationContextAware
         return _queryReportsDir;
     }
 
+    @Override
     public Set<ModuleResourceLoader> getResourceLoaders()
     {
         return Collections.emptySet();
     }
 
+    @Override
     public Resolver getModuleResolver()
     {
         return _resolver;
     }
 
+    @Override
     public Resource getModuleResource(Path path)
     {
         Resource r = _resolver.lookup(path);
@@ -840,6 +851,7 @@ public abstract class DefaultModule implements Module, ApplicationContextAware
     }
 
 
+    @Override
     public void dispatch(HttpServletRequest request, HttpServletResponse response, ActionURL url)
             throws ServletException, IOException
     {
@@ -1015,6 +1027,7 @@ public abstract class DefaultModule implements Module, ApplicationContextAware
     }
 
 
+    @Override
     public @Nullable Collection<String> getJarFilenames()
     {
         if (!AppProps.getInstance().isDevMode())

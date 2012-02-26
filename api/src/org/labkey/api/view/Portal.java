@@ -273,20 +273,6 @@ public class Portal
         }
     }
 
-
-    @Deprecated   // Use list-returning methods below
-    public static WebPart[] getPartsOld(Container c)
-    {
-        return getPartsOld(c, DEFAULT_PORTAL_PAGE_ID);
-    }
-
-    @Deprecated   // Use list-returning methods below
-    public static WebPart[] getPartsOld(Container c, String pageId)
-    {
-        ArrayList<WebPart> parts = getParts(c, pageId);
-        return parts.toArray(new WebPart[parts.size()]);
-    }
-
     public static ArrayList<WebPart> getParts(Container c)
     {
         return getParts(c, DEFAULT_PORTAL_PAGE_ID);
@@ -316,35 +302,27 @@ public class Portal
         WebPartCache.remove(part.getContainer(), part.getPageId());
     }
 
-    /**
-     * Add a web part to the container at the end of the list
-     */
+    // Add a web part to the container at the end of the list
     public static WebPart addPart(Container c, WebPartFactory desc, String location) throws SQLException
     {
         return addPart(c, desc, location, -1);
     }
 
-    /**
-     * Add a web part to a particular page at the end of the list
-     */
+    // Add a web part to a particular page at the end of the list
     public static WebPart addPart(Container c, String pageId, WebPartFactory desc, String location)
             throws SQLException
     {
         return addPart(c, pageId, desc, location, -1, null);
     }
 
-    /**
-     * Add a web part to the container at the end of the list, with properties
-     */
+    // Add a web part to the container at the end of the list, with properties
     public static WebPart addPart(Container c, WebPartFactory desc, String location, Map<String, String> properties)
             throws SQLException
     {
         return addPart(c, desc, location, -1, properties);
     }
 
-    /**
-     * Add a web part to the container at the specified index
-     */
+    // Add a web part to the container at the specified index
     public static WebPart addPart(Container c, WebPartFactory desc, String location, int partIndex)
             throws SQLException
     {
@@ -356,9 +334,7 @@ public class Portal
         return addPart(c, DEFAULT_PORTAL_PAGE_ID, desc, location, partIndex, properties);
     }
 
-    /**
-     * Add a web part to the container at the specified index, with properties
-     */
+    // Add a web part to the container at the specified index, with properties
     public static WebPart addPart(Container c, String pageId, WebPartFactory desc, String location, int partIndex, @Nullable Map<String, String> properties)
     {
         Collection<WebPart> parts = getParts(c, pageId);
@@ -564,27 +540,25 @@ public class Portal
         ((VBox) region).addView(view);
     }
 
-    public static void populatePortalView(ViewContext context, String id, HttpView template)
-            throws Exception
+    public static void populatePortalView(ViewContext context, String id, HttpView template) throws Exception
     {
         populatePortalView(context, id, template, context.getContainer().hasPermission(context.getUser(), AdminPermission.class));
     }
 
-    public static void populatePortalView(ViewContext context, String id, HttpView template, boolean canCustomize)
-            throws Exception
+    public static void populatePortalView(ViewContext context, String id, HttpView template, boolean canCustomize) throws Exception
     {
         String contextPath = context.getContextPath();
-        WebPart[] parts = getPartsOld(context.getContainer(), id);
+        List<WebPart> parts = getParts(context.getContainer(), id);
 
         // Initialize content for non-default portal pages that are folder tabs
-        if (parts.length == 0 && !DEFAULT_PORTAL_PAGE_ID.equalsIgnoreCase(id))
+        if (parts.isEmpty() && !DEFAULT_PORTAL_PAGE_ID.equalsIgnoreCase(id))
         {
             for (FolderTab folderTab : context.getContainer().getFolderType().getDefaultTabs())
             {
                 if (folderTab instanceof FolderTab.PortalPage && id.equalsIgnoreCase(folderTab.getName()))
                 {
                     folderTab.initializeContent(context.getContainer());
-                    parts = getPartsOld(context.getContainer(), id);
+                    parts = getParts(context.getContainer(), id);
                 }
             }
         }

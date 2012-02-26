@@ -30,6 +30,7 @@ import org.labkey.api.resource.Resource;
 import org.labkey.api.resource.ResourceRef;
 import org.labkey.api.security.SecurityManager;
 import org.labkey.api.settings.AppProps;
+import org.labkey.api.util.JunitUtil;
 import org.labkey.api.util.ResultSetUtil;
 import org.labkey.api.util.TestContext;
 import org.labkey.data.xml.TableType;
@@ -443,9 +444,9 @@ public class DbSchema
             Map<String, Object> m = new HashMap<String, Object>();
             m.put("DatetimeNotNull", new Date());
             m.put("BitNotNull", Boolean.TRUE);
-            m.put("Text", "Added by Test Suite");
+            m.put("Text", "Added by Transaction Test Suite");
             m.put("IntNotNull", 0);
-            m.put("Container", ContainerManager.getHomeContainer().getId());
+            m.put("Container", JunitUtil.getTestContainer());
 
             Integer rowId;
             testSchema.getScope().beginTransaction();
@@ -476,6 +477,7 @@ public class DbSchema
 
             assertTrue("Rollback did not appear to work.", (Integer) m.get("IntNotNull") == 0);
 
+            Table.delete(testTable, rowId);
         }
 
         @Test
@@ -492,30 +494,31 @@ public class DbSchema
             Map<String, Object> m = new HashMap<String, Object>();
             m.put("DatetimeNotNull", new Date());
             m.put("BitNotNull", Boolean.TRUE);
-            m.put("Text", "Added by Test Suite");
+            m.put("Text", "Added by Caching Test Suite");
             m.put("IntNotNull", 0);
-            m.put("Container", ContainerManager.getHomeContainer().getId());
+            m.put("Container", JunitUtil.getTestContainer());
             m = Table.insert(ctx.getUser(), testTable, m);
-            Integer rowId = ((Integer) m.get("RowId"));
+            Integer rowId1 = ((Integer) m.get("RowId"));
 
-            String key = "RowId" + rowId;
+            String key = "RowId" + rowId1;
             DbCache.put(testTable, key, m);
             Map m2 = (Map) DbCache.get(testTable, key);
             assertEquals(m, m2);
 
             //Does cache get cleared on delete
-            Table.delete(testTable, rowId);
+            Table.delete(testTable, rowId1);
             m2 = (Map) DbCache.get(testTable, key);
             assertNull(m2);
 
             //Does cache get cleared on insert
             m.remove("RowId");
             m = Table.insert(ctx.getUser(), testTable, m);
-            rowId = ((Integer) m.get("RowId"));
-            key = "RowId" + rowId;
+            int rowId2 = ((Integer) m.get("RowId"));
+            key = "RowId" + rowId2;
             DbCache.put(testTable, key, m);
             m.remove("RowId");
-            Table.insert(ctx.getUser(), testTable, m);
+            m = Table.insert(ctx.getUser(), testTable, m);
+            int rowId3 = ((Integer) m.get("RowId"));
             m2 = (Map) DbCache.get(testTable, key);
             assertNull(m2);
 
@@ -523,12 +526,16 @@ public class DbSchema
             m.remove("RowId");
             testSchema.getScope().beginTransaction();
             m = Table.insert(ctx.getUser(), testTable, m);
-            rowId = ((Integer) m.get("RowId"));
-            String key2 = "RowId" + rowId;
+            int rowId4 = ((Integer) m.get("RowId"));
+            String key2 = "RowId" + rowId4;
             DbCache.put(testTable, key2, m);
             testSchema.getScope().closeConnection();
             m2 = (Map) DbCache.get(testTable, key2);
             assertNull(m2);
+
+            // Clean up
+            Table.delete(testTable, rowId2);
+            Table.delete(testTable, rowId3);
         }
 
         @Test
@@ -589,16 +596,16 @@ public class DbSchema
             testSchema.dropTableIfExists(tempTableName);
             Table.execute(testSchema, sqlCreateTempTable);
 
-            testSchema.getSqlDialect().dropSchema(testSchema,"testdrop");
+            testSchema.getSqlDialect().dropSchema(testSchema, "testdrop");
 
             // these don't exist
-            testSchema.dropIndexIfExists("T",  "T_notexist") ;
+            testSchema.dropIndexIfExists("T", "T_notexist") ;
             testSchema.dropTableIfExists("V1");
             testSchema.dropTableIfExists("Tnot");
-            testSchema.getSqlDialect().dropSchema(testSchema,"testdrop");
+            testSchema.getSqlDialect().dropSchema(testSchema, "testdrop");
 
-            testSchema.getSqlDialect().dropSchema(testSchema,"testdrop2");
-            testSchema.getSqlDialect().dropSchema(testSchema,"testdrop3");
+            testSchema.getSqlDialect().dropSchema(testSchema, "testdrop2");
+            testSchema.getSqlDialect().dropSchema(testSchema, "testdrop3");
         }
     }
 
@@ -649,12 +656,12 @@ public class DbSchema
                     sbSql.append( " WHERE C.EntityId IS NULL ");
 
                     // special handling of MS2 soft deletes
-                    if (null!=t.getColumn("Deleted"))
+                    if (null != t.getColumn("Deleted"))
                     {
                         sbSql.append( " AND Deleted = ? ");
                         sbSql.add(Boolean.FALSE);
                     }
-                    else if (t.getSchema().getName().equals("ms2") && null!=t.getColumn("Run"))
+                    else if (t.getSchema().getName().equals("ms2") && null != t.getColumn("Run"))
                     {
                         sbSql.append( " AND Run IN (SELECT Run FROM " + MS2Service.get().getRunsTableName() +
                                 " WHERE Deleted = ? ) ");

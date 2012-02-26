@@ -27,6 +27,7 @@ import org.labkey.api.security.roles.RoleManager;
 import org.labkey.api.util.JunitUtil;
 import org.labkey.api.util.TestContext;
 import org.labkey.api.view.HttpView;
+import org.labkey.api.view.ViewContext;
 import org.springframework.validation.BindException;
 import org.springframework.validation.FieldError;
 
@@ -96,13 +97,16 @@ public class TableViewFormTestCase extends Assert
     @Test
     public void testDbOperations() throws SQLException, ServletException
     {
-        TestForm tf = new TestForm();
-        tf.setViewContext(HttpView.currentContext());
-
         Container test = JunitUtil.getTestContainer();
         MutableSecurityPolicy policy = new MutableSecurityPolicy(test);
         policy.addRoleAssignment(SecurityManager.getGroup(Group.groupAdministrators), RoleManager.getRole(ProjectAdminRole.class));
         SecurityManager.savePolicy(policy);
+
+        ViewContext ctx = new ViewContext(HttpView.currentContext());
+        ctx.setContainer(test);
+
+        TestForm tf = new TestForm();
+        tf.setViewContext(ctx);
 
         tf.set("datetimeNotNull", "6/20/2004");
         tf.set("bitNotNull", "1");
@@ -122,22 +126,15 @@ public class TableViewFormTestCase extends Assert
         tf.getStrings().remove("rowId");
         tf.doInsert();
         Assert.assertEquals("Date time roundtrip: ", createdDate.getTime(), ((Date) tf.getTypedValue("datetimeNotNull")).getTime());
+        tf.doDelete();
 
         tf.setPkVal(firstPk);
         tf.refreshFromDb();
         Assert.assertEquals("reselect", tf.getTypedValue("text"), "First test record");
 
         tf.doDelete();
-        boolean wasDeleted = false;
-        try
-        {
-            tf.refreshFromDb();
-        }
-        catch (Exception x)
-        {
-            wasDeleted = true;
-        }
-        Assert.assertTrue("deleted", true);
+        tf.forceReselect();
+        Assert.assertTrue("deleted", 1 == tf.getTypedValues().size());
     }
 
     public static class TestForm extends TableViewForm

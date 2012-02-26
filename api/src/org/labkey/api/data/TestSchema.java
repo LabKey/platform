@@ -18,20 +18,16 @@ package org.labkey.api.data;
 import org.labkey.api.data.dialect.SqlDialect;
 
 /**
- * Created by IntelliJ IDEA.
  * User: arauch
  * Date: Sep 24, 2005
  * Time: 10:46:35 PM
  */
 public class TestSchema
 {
-    private static TestSchema instance = null;
+    private static TestSchema instance = new TestSchema();
 
     public static TestSchema getInstance()
     {
-        if (null == instance)
-            instance = new TestSchema();
-
         return instance;
     }
 

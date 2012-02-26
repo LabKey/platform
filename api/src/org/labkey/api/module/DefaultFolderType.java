@@ -19,25 +19,28 @@ package org.labkey.api.module;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.Container;
-import org.labkey.api.data.RuntimeSQLException;
+import org.labkey.api.exp.list.ListService;
+import org.labkey.api.reports.report.ReportUrls;
 import org.labkey.api.security.User;
 import org.labkey.api.study.StudyUrls;
+import org.labkey.api.study.assay.AssayUrls;
 import org.labkey.api.util.HelpTopic;
+import org.labkey.api.util.PageFlowUtil;
+import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.FolderTab;
+import org.labkey.api.view.NavTree;
 import org.labkey.api.view.Portal;
 import org.labkey.api.view.Portal.WebPart;
 import org.labkey.api.view.ViewContext;
-import org.labkey.api.view.ActionURL;
-import org.labkey.api.view.NavTree;
 import org.labkey.api.view.template.AppBar;
-import org.labkey.api.study.assay.AssayUrls;
-import org.labkey.api.exp.list.ListService;
-import org.labkey.api.util.PageFlowUtil;
-import org.labkey.api.reports.report.ReportUrls;
 import org.labkey.api.view.template.PageConfig;
 
-import java.sql.SQLException;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
 
 /**
  * User: Mark Igra
@@ -115,9 +118,9 @@ public class DefaultFolderType implements FolderType
                 part.setPermanent(true);
 
         ArrayList<Portal.WebPart> all = new ArrayList<Portal.WebPart>();
+        List<Portal.WebPart> existingParts = Portal.getParts(c);
 
-        Portal.WebPart[] existingParts = Portal.getPartsOld(c);
-        if (null == existingParts || existingParts.length == 0)
+        if (null == existingParts || existingParts.isEmpty())
         {
             if (null != required)
                 all.addAll(required);
@@ -127,7 +130,7 @@ public class DefaultFolderType implements FolderType
         else
         {
             //Order will be required,preferred,optional
-            all.addAll(Arrays.asList(existingParts));
+            all.addAll(existingParts);
             for (WebPart p : all)
                 p.setIndex(2);
 

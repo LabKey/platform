@@ -71,7 +71,7 @@ public class SqlScriptRunner
 
 
     // Throws SQLException only if getRunScripts() fails -- script failures are handled more gracefully
-    public static void runScripts(Module module, User user, List<SqlScript> scripts) throws SQLException, SqlScriptException
+    public static void runScripts(Module module, @Nullable User user, List<SqlScript> scripts) throws SQLException, SqlScriptException
     {
         _log.info("Running " + scripts.toString());
 
@@ -105,7 +105,7 @@ public class SqlScriptRunner
 
 
     // Returns all the existing scripts matching schemaName that have not been run
-    public static List<SqlScript> getNewScripts(SqlScriptProvider provider, String schemaName) throws SQLException
+    public static List<SqlScript> getNewScripts(SqlScriptProvider provider, @Nullable String schemaName) throws SQLException
     {
         List<SqlScript> allScripts;
 
@@ -129,7 +129,7 @@ public class SqlScriptRunner
     }
 
 
-    public static List<SqlScript> getRecommendedScripts(SqlScriptProvider provider, String schemaName, double from, double to) throws SQLException
+    public static List<SqlScript> getRecommendedScripts(SqlScriptProvider provider, @Nullable String schemaName, double from, double to) throws SQLException
     {
         List<SqlScript> newScripts = getNewScripts(provider, schemaName);
         MultiMap<String, SqlScript> mm = new MultiHashMap<String, SqlScript>();

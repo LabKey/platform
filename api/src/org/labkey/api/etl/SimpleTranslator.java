@@ -69,7 +69,7 @@ import java.util.concurrent.Callable;
 public class SimpleTranslator extends AbstractDataIterator implements DataIterator, ScrollableDataIterator
 {
     DataIterator _data;
-    protected final ArrayList<Pair<ColumnInfo,Callable>> _outputColumns = new ArrayList<Pair<ColumnInfo,Callable>>()
+    protected final ArrayList<Pair<ColumnInfo, Callable>> _outputColumns = new ArrayList<Pair<ColumnInfo, Callable>>()
     {
         @Override
         public boolean add(Pair<ColumnInfo, Callable> columnInfoCallablePair)
@@ -90,7 +90,7 @@ public class SimpleTranslator extends AbstractDataIterator implements DataIterat
     {
         super(errors);
         _data = source;
-        _outputColumns.add(new Pair(new ColumnInfo(source.getColumnInfo(0)), new PassthroughColumn(0)));
+        _outputColumns.add(new Pair<ColumnInfo, Callable>(new ColumnInfo(source.getColumnInfo(0)), new PassthroughColumn(0)));
     }
 
     protected DataIterator getInput()
@@ -133,7 +133,7 @@ public class SimpleTranslator extends AbstractDataIterator implements DataIterat
     }
 
 
-    protected Object addConversionException(String fieldName, Object value, JdbcType target, Exception x)
+    protected Object addConversionException(String fieldName, @Nullable Object value, @Nullable JdbcType target, Exception x)
     {
         String msg;
         if (null != value && null != target)
@@ -512,7 +512,7 @@ public class SimpleTranslator extends AbstractDataIterator implements DataIterat
     {
         ColumnInfo col = new ColumnInfo(_outputColumns.get(aliasIndex).getKey());
         col.setName(name);
-        // don't want duplicate property id's usually
+        // don't want duplicate property ids usually
         col.setPropertyURI(null);
         return addColumn(col, new AliasColumn(aliasIndex));
     }
@@ -600,8 +600,8 @@ public class SimpleTranslator extends AbstractDataIterator implements DataIterat
      */
     public void addBuiltInColumns(@Nullable Container c, @NotNull User user, @NotNull TableInfo target, boolean allowPassThrough)
     {
-        final String containerId = null==c ? null : c.getId();
-        final Integer userId = null==user ? 0 : user.getUserId();
+        final String containerId = null == c ? null : c.getId();
+        final Integer userId = null == user ? 0 : user.getUserId();
 
         Callable containerCallable = new Callable(){public Object call() {return containerId;}};
         Callable userCallable = new Callable(){public Object call() {return userId;}};
