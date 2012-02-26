@@ -59,7 +59,7 @@ public class Issue extends Entity implements Serializable, Cloneable
     protected Date resolved;
     protected HString resolution;
     protected Integer duplicate;
-    protected List<Integer> duplicates;
+    protected Collection<Integer> duplicates;
 
     protected Integer closedBy;
     protected Date closed;
@@ -351,12 +351,12 @@ public class Issue extends Entity implements Serializable, Cloneable
         this.duplicate = duplicate;
     }
 
-    public List<Integer> getDuplicates()
+    public Collection<Integer> getDuplicates()
     {
         return duplicates != null ? duplicates : Collections.<Integer>emptyList();
     }
 
-    public void setDuplicates(List<Integer> dups)
+    public void setDuplicates(Collection<Integer> dups)
     {
         if (dups != null)
             duplicates = dups;

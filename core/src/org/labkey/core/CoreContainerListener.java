@@ -22,8 +22,12 @@ import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.PropertyManager;
 import org.labkey.api.data.MvUtil;
+import org.labkey.api.data.SimpleFilter;
+import org.labkey.api.data.Table;
+import org.labkey.api.data.TestSchema;
 import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.security.User;
+import org.labkey.api.util.ExceptionUtil;
 
 import java.beans.PropertyChangeEvent;
 import java.sql.SQLException;
@@ -49,6 +53,10 @@ public class CoreContainerListener implements ContainerManager.ContainerListener
         {
             PropertyManager.purgeObjectProperties(c.getId());
             MvUtil.containerDeleted(c);
+
+            // Delete any rows in test.TestTable associated with this container
+            Table.delete(TestSchema.getInstance().getTableInfoTestTable(), new SimpleFilter("Container", c));
+
             // Let containerManager delete ACLs, we want that to happen last
 
             String message = c.getContainerNoun(true) + " " + c.getName() + " was deleted";
@@ -57,6 +65,7 @@ public class CoreContainerListener implements ContainerManager.ContainerListener
         catch (SQLException e)
         {
             _log.error("Failed to delete Properties for container '" + c.getPath() + "'.", e);
+            ExceptionUtil.logExceptionToMothership(null, e);
         }
     }
 

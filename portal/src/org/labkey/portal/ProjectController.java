@@ -18,6 +18,7 @@ package org.labkey.portal;
 
 import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
+import org.jetbrains.annotations.Nullable;
 import org.labkey.api.action.ApiAction;
 import org.labkey.api.action.ApiResponse;
 import org.labkey.api.action.ApiSimpleResponse;
@@ -109,7 +110,7 @@ public class ProjectController extends SpringActionController
             return getBeginURL(container, null);
         }
 
-        public ActionURL getBeginURL(Container container, String pageId)
+        public ActionURL getBeginURL(Container container, @Nullable String pageId)
         {
             ActionURL url = new ActionURL(BeginAction.class, container);
             if (pageId != null)
@@ -649,9 +650,9 @@ public class ProjectController extends SpringActionController
 
     private boolean handleDeleteWebPart(Container c, String pageId, int index)
     {
-        Portal.WebPart[] parts = Portal.getPartsOld(c, pageId);
+        List<Portal.WebPart> parts = Portal.getParts(c, pageId);
         //Changed on us..
-        if (null == parts || parts.length == 0)
+        if (null == parts || parts.isEmpty())
             return true;
 
         ArrayList<Portal.WebPart> newParts = new ArrayList<Portal.WebPart>();
@@ -665,44 +666,44 @@ public class ProjectController extends SpringActionController
 
     private boolean handleMoveWebPart(String pageId, int index, int direction)
     {
-        Portal.WebPart[] parts = Portal.getPartsOld(getContainer(), pageId);
+        List<Portal.WebPart> parts = Portal.getParts(getContainer(), pageId);
         if (null == parts)
             return true;
 
         //Find the portlet. Theoretically index should be 1-based & consecutive, but
         //code defensively.
         int i;
-        for (i = 0; i < parts.length; i++)
-            if (parts[i].getIndex() == index)
+        for (i = 0; i < parts.size(); i++)
+            if (parts.get(i).getIndex() == index)
                 break;
 
-        if (i == parts.length)
+        if (i == parts.size())
             return true;
 
-        Portal.WebPart part = parts[i];
+        Portal.WebPart part = parts.get(i);
         String location = part.getLocation();
         if (direction == Portal.MOVE_UP)
         {
             for (int j = i - 1; j >= 0; j--)
             {
-                if (location.equals(parts[j].getLocation()))
+                if (location.equals(parts.get(j).getLocation()))
                 {
-                    int newIndex = parts[j].getIndex();
+                    int newIndex = parts.get(j).getIndex();
                     part.setIndex(newIndex);
-                    parts[j].setIndex(index);
+                    parts.get(j).setIndex(index);
                     break;
                 }
             }
         }
         else
         {
-            for (int j = i + 1; j < parts.length; j++)
+            for (int j = i + 1; j < parts.size(); j++)
             {
-                if (location.equals(parts[j].getLocation()))
+                if (location.equals(parts.get(j).getLocation()))
                 {
-                    int newIndex = parts[j].getIndex();
+                    int newIndex = parts.get(j).getIndex();
                     part.setIndex(newIndex);
-                    parts[j].setIndex(index);
+                    parts.get(j).setIndex(index);
                     break;
                 }
             }

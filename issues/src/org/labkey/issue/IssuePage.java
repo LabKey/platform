@@ -507,7 +507,7 @@ public class IssuePage implements DataRegionSelection.DataSelectionKeyForm
         return sb.toString();
     }
 
-    public String renderDuplicates(ViewContext context, List<Integer> dups)
+    public String renderDuplicates(ViewContext context, Collection<Integer> dups)
     {
         StringBuilder sb = new StringBuilder();
         for (Integer dup : dups)

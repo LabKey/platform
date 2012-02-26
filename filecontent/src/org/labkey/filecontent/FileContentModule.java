@@ -16,9 +16,9 @@
 
 package org.labkey.filecontent;
 
-import org.apache.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.labkey.api.data.Container;
+import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.DbSchema;
 import org.labkey.api.exp.property.PropertyService;
 import org.labkey.api.files.FileContentService;
@@ -44,8 +44,6 @@ import java.util.Set;
 
 public class FileContentModule extends DefaultModule
 {
-    private static final Logger _log = Logger.getLogger(FileContentModule.class);
-
     public String getName()
     {
         return "FileContent";
@@ -53,7 +51,7 @@ public class FileContentModule extends DefaultModule
 
     public double getVersion()
     {
-        return 11.30;
+        return 11.31;
     }
 
     protected void init()
@@ -92,6 +90,7 @@ public class FileContentModule extends DefaultModule
 
         // initialize message config provider
         MessageConfigService.getInstance().registerConfigType(new FileEmailConfig());
+        ContainerManager.addContainerListener(new FileContentContainerListener());
     }
 
     @Override

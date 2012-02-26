@@ -16,8 +16,8 @@
 
 package org.labkey.experiment.api;
 
+import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.ColumnInfo;
-import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.data.DataColumn;
 import org.labkey.api.data.DataRegion;
@@ -237,7 +237,7 @@ public class ExpMaterialTableImpl extends ExpTableImpl<ExpMaterialTable.Column> 
         populate(null, false);
     }
 
-    public void populate(ExpSampleSet ss, boolean filter)
+    public void populate(@Nullable ExpSampleSet ss, boolean filter)
     {
         if (ss != null)
         {

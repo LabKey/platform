@@ -39,6 +39,7 @@ import org.labkey.api.data.SqlExecutor;
 import org.labkey.api.data.SqlSelector;
 import org.labkey.api.data.Table;
 import org.labkey.api.data.TableInfo;
+import org.labkey.api.data.TableSelector;
 import org.labkey.api.issues.IssuesSchema;
 import org.labkey.api.search.SearchService;
 import org.labkey.api.security.Group;
@@ -72,7 +73,6 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Timestamp;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Comparator;
@@ -139,19 +139,15 @@ public class IssueManager
                 return null;
             Issue issue = issues[0];
 
-            Issue.Comment[] comments = Table.select(
-                    _issuesSchema.getTableInfoComments(),
-                    Table.ALL_COLUMNS,
+            Collection<Issue.Comment> comments = new TableSelector(_issuesSchema.getTableInfoComments(),
                     new SimpleFilter("issueId", issue.getIssueId()),
-                    new Sort("CommentId"), Issue.Comment.class);
-            issue.setComments(new ArrayList<Issue.Comment>(Arrays.asList(comments)));
+                    new Sort("CommentId")).getCollection(Issue.Comment.class);
+            issue.setComments(new ArrayList<Issue.Comment>(comments));
 
-            Integer[] dups = Table.executeArray(
-                    _issuesSchema.getTableInfoIssues(),
-                    "IssueId",
+            Collection<Integer> dups = new TableSelector(_issuesSchema.getTableInfoIssues().getColumn("IssueId"),
                     new SimpleFilter("Duplicate", issueId),
-                    new Sort("IssueId"), Integer.class);
-            issue.setDuplicates(new ArrayList<Integer>(Arrays.asList(dups)));
+                    new Sort("IssueId")).getCollection(Integer.class);
+            issue.setDuplicates(dups);
             return issue;
         }
         catch (SQLException x)

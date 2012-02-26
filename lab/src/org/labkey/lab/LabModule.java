@@ -16,6 +16,7 @@
 
 package org.labkey.lab;
 
+import org.jetbrains.annotations.NotNull;
 import org.labkey.api.audit.AuditLogService;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
@@ -39,28 +40,32 @@ import java.util.Set;
 
 public class LabModule extends DefaultModule
 {
+    @Override
     public String getName()
     {
         return "Lab";
     }
 
+    @Override
     public double getVersion()
     {
         return 11.30;
     }
 
+    @Override
     public boolean hasScripts()
     {
         return false;
     }
 
+    @Override
     protected Collection<WebPartFactory> createWebPartFactories()
     {
         return new ArrayList<WebPartFactory>(Arrays.asList(new AlwaysAvailableWebPartFactory("Lab History", WebPartFactory.LOCATION_BODY, false, false)
             {
                 public WebPartView getWebPartView(final ViewContext portalCtx, Portal.WebPart webPart) throws Exception
                 {
-                    JspView view = new JspView("/org/labkey/lab/history.jsp", webPart);
+                    JspView view = new JspView<Portal.WebPart>("/org/labkey/lab/history.jsp", webPart);
                     view.setTitle("Lab History");
                     return view;
                 }
@@ -68,11 +73,13 @@ public class LabModule extends DefaultModule
         );
     }
 
+    @Override
     protected void init()
     {
         addController("lab", LabController.class);
     }
 
+    @Override
     public void startup(ModuleContext moduleContext)
     {
         // add a container listener so we'll know when our container is deleted:
@@ -88,12 +95,14 @@ public class LabModule extends DefaultModule
         return Collections.emptyList();
     }
 
+    @NotNull
     @Override
     public Set<String> getSchemaNames()
     {
         return Collections.singleton("lab");
     }
 
+    @NotNull
     @Override
     public Set<DbSchema> getSchemasToTest()
     {

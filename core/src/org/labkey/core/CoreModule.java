@@ -184,6 +184,7 @@ import java.util.Set;
  */
 public class CoreModule extends SpringModule implements SearchService.DocumentProvider
 {
+    @Override
     public String getName()
     {
         return CORE_MODULE_NAME;
@@ -191,9 +192,10 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
 
     public static final String WEB_PART_NAME = "Projects";
 
+    @Override
     public double getVersion()
     {
-        return 11.31;
+        return 11.32;
     }
 
     @Override
@@ -339,7 +341,7 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
                 {
                     public WebPartView getWebPartView(ViewContext portalCtx, Portal.WebPart webPart) throws Exception
                     {
-                        JspView view = new JspView("/org/labkey/core/project/projects.jsp", webPart);
+                        JspView<Portal.WebPart> view = new JspView<Portal.WebPart>("/org/labkey/core/project/projects.jsp", webPart);
 
                         String title = webPart.getPropertyMap().containsKey("title") ? webPart.getPropertyMap().get("title") : "Projects";
                         view.setTitle(title);
@@ -565,6 +567,7 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
     @NotNull
     public Set<Class> getJUnitTests()
     {
+        @SuppressWarnings({"unchecked"})
         Set<Class> testClasses = new HashSet<Class>(Arrays.asList(
                 Table.TestCase.class,
                 Table.DataIteratorTestCase.class,
@@ -651,6 +654,7 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
             );
     }
 
+    @Override
     public List<String> getAttributions()
     {
         return Arrays.asList(
@@ -694,6 +698,7 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
         return resources;
     }
 
+    @Override
     public void enumerateDocuments(SearchService.IndexTask task, @NotNull Container c, Date since)
     {
         if (null == task)
@@ -701,7 +706,9 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
 
         if (c.isRoot())
             return;
+
         Container p = c.getProject();
+        assert null != p;
         String displayTitle;
         String searchTitle;
         String body;
@@ -754,6 +761,7 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
     }
 
     
+    @Override
     public void indexDeleted() throws SQLException
     {
         Table.execute(CoreSchema.getInstance().getSchema(), new SQLFragment(

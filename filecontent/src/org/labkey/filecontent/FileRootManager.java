@@ -60,7 +60,8 @@ public class FileRootManager
         if (c == null)
             throw new IllegalArgumentException("getFileRoot: Container cannot be null");
         
-        try {
+        try
+        {
             String cacheKey = getCacheKey(c);
             FileRoot root = (FileRoot) DbCache.get(getTinfoFileRoots(), cacheKey);
 
@@ -87,9 +88,10 @@ public class FileRootManager
         }
     }
 
-    public void deleteFileRoot(User user, Container c)
+    public void deleteFileRoot(Container c)
     {
-        try {
+        try
+        {
             SimpleFilter filter = new SimpleFilter("Container", c.getId());
             Table.delete(getTinfoFileRoots(), filter);
 

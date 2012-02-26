@@ -20,16 +20,16 @@ EXEC sp_addapprole 'filecontent', 'password';
 
 CREATE TABLE filecontent.FileRoots
 (
-   RowId INT IDENTITY(1,1),
-   Container ENTITYID NOT NULL,
-   Path NVARCHAR(255),
-   Type NVARCHAR(50),
-   Properties TEXT,
+    RowId INT IDENTITY(1, 1),
+    Container ENTITYID NOT NULL,
+    Path NVARCHAR(255),
+    Type NVARCHAR(50),
+    Properties TEXT,
 
-   Enabled BIT NOT NULL DEFAULT 1,
-   UseDefault BIT NOT NULL DEFAULT 0,
+    Enabled BIT NOT NULL DEFAULT 1,
+    UseDefault BIT NOT NULL DEFAULT 0,
 
-   CONSTRAINT PK_FileRoots PRIMARY KEY (RowId)
+    CONSTRAINT PK_FileRoots PRIMARY KEY (RowId)
 );
 
 INSERT INTO filecontent.FileRoots (Container, Path, Type)
@@ -41,6 +41,6 @@ INSERT INTO filecontent.FileRoots (Container, Path, Type)
 
 DELETE FROM prop.Properties
     WHERE prop.Properties.[Set] IN
-      (SELECT [Set] FROM prop.PropertySets WHERE prop.PropertySets.Category = 'staticFile');
+        (SELECT [Set] FROM prop.PropertySets WHERE prop.PropertySets.Category = 'staticFile');
 
 DELETE FROM prop.PropertySets WHERE prop.PropertySets.Category = 'staticFile';
