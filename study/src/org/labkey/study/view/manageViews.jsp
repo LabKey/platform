@@ -102,11 +102,15 @@
              */
             getButtons : function() {
                 var buttons = StudyViewsPanel.superclass.getButtons.call(this);
-                buttons.push({
+                var btnCfg = {
                     text:'Customize <%= h(StudyService.get().getSubjectNounSingular(study.getContainer())) %> View',
                     disabled: <%= !showCustomizeParticipant %>,
                     listeners:{click:function(button, event) {window.location = '<%=customizeParticipantURL%>';}}
-                });
+                };
+                if (this.searchField)
+                    buttons.splice(buttons.length-2, 0, btnCfg);
+                else
+                    buttons.push(btnCfg);
                 return buttons;
             },
 

@@ -234,7 +234,47 @@ LABKEY.ViewsPanel.prototype = {
             buttons.splice(0,0,queryBtn,'-');
         }
 
+        var searchTask = new Ext.util.DelayedTask(this.search, this);
+
+        this.searchField = new Ext.form.TextField({
+            name      : 'viewsearch',
+            emptyText : 'Search',
+            enableKeyEvents : true,
+            listeners : {
+                keydown : function(cmp, e) {
+                    searchTask.delay(350);
+                },
+                scope  : this
+            }
+        });
+
+        buttons.push('->');
+        buttons.push(this.searchField);
+
         return buttons;
+    },
+
+    search : function() {
+
+        this.grid.getStore().filterBy(function(rec, id){
+            var searchVal = this.searchField.getValue();
+            var answer    = true;
+
+            if (rec.data && searchVal && searchVal != "") {
+                var t = new RegExp(Ext.escapeRe(searchVal), 'i');
+                var s = '';
+                if (rec.data.name)
+                    s += rec.data.name;
+                if (rec.data.query)
+                    s += rec.data.query;
+                if (rec.data.type)
+                    s += rec.data.type;
+                answer = t.test(s);
+            }
+
+            return answer;
+        }, this);
+
     },
 
     redirectToUrl : function(cmp, evt) {

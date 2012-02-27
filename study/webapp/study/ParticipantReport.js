@@ -650,16 +650,19 @@ Ext4.define('LABKEY.ext4.ParticipantReport', {
         var me = this, panel;
 
         if (!this.filterPanel) {
-
-            panel = Ext4.create('LABKEY.study.ParticipantFilterPanel', {
-                selection : selection,
+            var pConfig = {
                 listeners : {
                     selectionchange : function(){
                         this.filterTask.delay(400);
                     },
                     scope : this
                 }
-            });
+            };
+
+            if (!this.isNew())
+                pConfig.selection = selection;
+
+            panel = Ext4.create('LABKEY.study.ParticipantFilterPanel', pConfig);
             this.filterPanel = panel.getFilterPanel();
 
         }
@@ -680,6 +683,7 @@ Ext4.define('LABKEY.ext4.ParticipantReport', {
         if (this.filterWindow)
             this.filterWindow.calculatePosition();
         else {
+            console.log('filter panel initializing...');
             this.filterWindow = Ext4.create('LABKEY.ext4.ReportFilterWindow', {
                 title    : 'Filter Report',
                 items    : [panel],
