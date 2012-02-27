@@ -230,7 +230,7 @@ Ext4.define('LABKEY.ext4.StudyScheduleGrid', {
             enableColumnMove: false,
             listeners: {
                 scope: this,
-                itemclick: function(view, record, html, idx){
+                itemmousedown: function(view, record, html, idx){
                     if(this.canEdit){
                         if(view.getSelectionModel().getCurrentPosition().column < 2){
                             if(view.getSelectionModel().getCurrentPosition().column == 1){
@@ -814,6 +814,7 @@ Ext4.define('LABKEY.ext4.StudyScheduleGrid', {
             disabled: true,
             width: 220,
             allowBlank: false,
+            cls : 'existing-dataset-combo',             // test marker
             editable: false,
             forceSelection: true,
             value: 'asdf',
