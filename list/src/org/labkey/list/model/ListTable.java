@@ -25,7 +25,7 @@ import org.labkey.api.data.DisplayColumn;
 import org.labkey.api.data.DisplayColumnFactory;
 import org.labkey.api.data.MVDisplayColumnFactory;
 import org.labkey.api.data.Parameter;
-import org.labkey.api.data.Table;
+import org.labkey.api.data.StatementUtils;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.UpdateableTableInfo;
 import org.labkey.api.etl.DataIteratorBuilder;
@@ -302,7 +302,7 @@ public class ListTable extends FilteredTable implements UpdateableTableInfo
     @Override
     public Parameter.ParameterMap insertStatement(Connection conn, User user) throws SQLException
     {
-        return Table.insertStatement(conn, this, getContainer(), user, false, true);
+        return StatementUtils.insertStatement(conn, this, getContainer(), user, false, true);
     }
 
 
