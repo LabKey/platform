@@ -22,4 +22,6 @@ package org.labkey.api.admin;
 public interface FolderImporterFactory
 {
     FolderImporter create();
+    /* add semi-ordering of folder importers as some need to occur after others (i.e. pages/webparts should be deserialized after reports/queries have been imported) */
+    boolean isFinalImporter();
 }
