@@ -31,7 +31,7 @@ import org.labkey.api.data.JdbcType;
 import org.labkey.api.data.MultiValuedForeignKey;
 import org.labkey.api.data.Parameter;
 import org.labkey.api.data.SchemaTableInfo;
-import org.labkey.api.data.Table;
+import org.labkey.api.data.StatementUtils;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.UpdateableTableInfo;
 import org.labkey.api.etl.DataIteratorBuilder;
@@ -383,7 +383,7 @@ public class SimpleUserSchema extends UserSchema
         @Override
         public Parameter.ParameterMap insertStatement(Connection conn, User user) throws SQLException
         {
-            return Table.insertStatement(conn, getRealTable(), null, user, false, true);
+            return StatementUtils.insertStatement(conn, getRealTable(), null, user, false, true);
         }
 
         @Override

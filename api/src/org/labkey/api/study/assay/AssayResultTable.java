@@ -27,7 +27,7 @@ import org.labkey.api.data.JdbcType;
 import org.labkey.api.data.OORDisplayColumnFactory;
 import org.labkey.api.data.Parameter;
 import org.labkey.api.data.SQLFragment;
-import org.labkey.api.data.Table;
+import org.labkey.api.data.StatementUtils;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.UpdateableTableInfo;
 import org.labkey.api.etl.DataIteratorBuilder;
@@ -57,7 +57,6 @@ import org.labkey.api.security.permissions.UpdatePermission;
 import java.sql.Connection;
 import java.sql.SQLException;
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.List;
 import java.util.Set;
 
@@ -396,7 +395,7 @@ public class AssayResultTable extends FilteredTable implements UpdateableTableIn
     @Override
     public Parameter.ParameterMap insertStatement(Connection conn, User user) throws SQLException
     {
-        return Table.insertStatement(conn, this, getContainer(), user, false, true);
+        return StatementUtils.insertStatement(conn, this, getContainer(), user, false, true);
     }
 
     @Override

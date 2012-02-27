@@ -18,9 +18,8 @@ package org.labkey.api.etl;
 
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.DbScope;
-import org.labkey.api.data.Parameter;
 import org.labkey.api.data.RuntimeSQLException;
-import org.labkey.api.data.Table;
+import org.labkey.api.data.StatementUtils;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.UpdateableTableInfo;
 import org.labkey.api.query.BatchValidationException;
@@ -72,7 +71,7 @@ public class TableInsertDataIterator extends StatementDataIterator implements Da
         {
             _scope = ((UpdateableTableInfo)_table).getSchemaTableInfo().getSchema().getScope();
             _conn = _scope.getConnection();
-            _stmt = Table.insertStatement(_conn, _table, null, null, true, false);
+            _stmt = StatementUtils.insertStatement(_conn, _table, null, null, true, false);
             super.init();
         }
         catch (SQLException x)
