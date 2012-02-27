@@ -388,9 +388,18 @@ public class DbScope
 
     Integer spidUnknown = -1;
 
-    protected Connection _getConnection(Logger log) throws SQLException
+    protected Connection _getConnection(@Nullable Logger log) throws SQLException
     {
-        Connection conn = _dataSource.getConnection();
+        Connection conn;
+
+        try
+        {
+            conn = _dataSource.getConnection();
+        }
+        catch (SQLException e)
+        {
+            throw new ConfigurationException("Can't create a database connection to " + _dataSource.toString(), e);
+        }
 
         //
         // Handle one time per-connection setup

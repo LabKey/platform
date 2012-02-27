@@ -17,6 +17,7 @@
 package org.labkey.api.data;
 
 import org.apache.log4j.Logger;
+import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.dialect.SqlDialect;
 import org.labkey.api.util.DateUtil;
 import org.labkey.api.util.MemTracker;
@@ -59,7 +60,7 @@ public class ConnectionWrapper implements java.sql.Connection
     private static boolean _explicitLogger = _logDefault.getLevel() != null || _logDefault.getParent() != null  && _logDefault.getParent().getName().equals("org.labkey.api.data");
     private Logger _log;
 
-    protected ConnectionWrapper(Connection conn, SqlDialect dialect, Integer spid, Logger log) throws SQLException
+    protected ConnectionWrapper(Connection conn, SqlDialect dialect, Integer spid, @Nullable Logger log) throws SQLException
     {
         _connection = conn;
         _spid = spid;

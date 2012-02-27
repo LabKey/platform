@@ -18,8 +18,6 @@ package org.labkey.api.util;
 
 import org.jetbrains.annotations.Nullable;
 
-import javax.servlet.ServletException;
-
 /*
 * User: adam
 * Date: Aug 13, 2009
@@ -29,7 +27,7 @@ import javax.servlet.ServletException;
 // Use this to report configuration issues with server, database, smtp, pipeline, etc.  These exceptions should represent
 // common configuration mistakes that administrators have made in the past (NOT code problems), since these exceptions are not
 // reported to mothership.  The message text encourages administrators to contact LabKey for assistance.
-public class ConfigurationException extends ServletException implements SkipMothershipLogging, ErrorRendererProperties
+public class ConfigurationException extends RuntimeException implements SkipMothershipLogging, ErrorRendererProperties
 {
     private final String _advice;
 

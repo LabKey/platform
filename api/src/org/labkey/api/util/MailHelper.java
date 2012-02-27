@@ -54,10 +54,12 @@ public class MailHelper
         setSession(null);
     }
 
-    public static void setSession(Session session)
+    public static void setSession(@Nullable Session session)
     {
         if (session != null)
+        {
             _session = session;
+        }
         else
         {
             try
@@ -168,7 +170,7 @@ public class MailHelper
      * @param user for auditing purposes, the user who originated the message
      * @param c    for auditing purposes, the container in which this message originated
      */
-    public static void send(Message m, User user, Container c) throws ConfigurationException, RuntimeException
+    public static void send(Message m, @Nullable User user, Container c)
     {
         try
         {
