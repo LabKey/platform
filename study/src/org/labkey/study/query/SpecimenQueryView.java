@@ -62,6 +62,8 @@ public class SpecimenQueryView extends BaseStudyQueryView
         REQUESTS,
         DEFAULT
     }
+    private boolean _requireSequenceNum;
+
     private static class SpecimenDataRegion extends DataRegion
     {
         private Map<String, ColumnInfo> _requiredColumns = new HashMap<String, ColumnInfo>();
@@ -294,12 +296,14 @@ public class SpecimenQueryView extends BaseStudyQueryView
     }
 
     protected SpecimenQueryView(ViewContext context, UserSchema schema, QuerySettings settings,
-                            SimpleFilter filter, Sort sort, ViewType viewType, boolean participantVisitFiltered, CohortFilter cohortFilter)
+                            SimpleFilter filter, Sort sort, ViewType viewType, boolean participantVisitFiltered,
+                            CohortFilter cohortFilter, boolean requireSequenceNum)
     {
         super(context, schema, settings, filter, sort);
         _viewType = viewType;
         _cohortFilter = cohortFilter;
         _participantVisitFiltered = participantVisitFiltered;
+        _requireSequenceNum = requireSequenceNum;
 
         setViewItemFilter(new ReportService.ItemFilter() {
             public boolean accept(String type, String label)
@@ -313,20 +317,20 @@ public class SpecimenQueryView extends BaseStudyQueryView
     public static SpecimenQueryView createView(ViewContext context, ViewType viewType)
     {
         SimpleFilter filter = new SimpleFilter();
-        return createView(context, filter, createDefaultSort(viewType), viewType, false, null);
+        return createView(context, filter, createDefaultSort(viewType), viewType, false, null, false);
     }
 
     public static SpecimenQueryView createView(ViewContext context, ViewType viewType, CohortFilter cohortFilter)
     {
         SimpleFilter filter = new SimpleFilter();
-        return createView(context, filter, createDefaultSort(viewType), viewType, false, cohortFilter);
+        return createView(context, filter, createDefaultSort(viewType), viewType, false, cohortFilter, false);
     }
 
     public static SpecimenQueryView createView(ViewContext context, Specimen[] samples, ViewType viewType)
     {
         SimpleFilter filter = new SimpleFilter();
         addFilterClause(filter, samples, viewType);
-        return createView(context, filter, createDefaultSort(viewType), viewType, false, null);
+        return createView(context, filter, createDefaultSort(viewType), viewType, false, null, false);
     }
 
     public static SpecimenQueryView createView(ViewContext context, ParticipantDataset[] participantDatasets, ViewType viewType)
@@ -334,7 +338,7 @@ public class SpecimenQueryView extends BaseStudyQueryView
         SimpleFilter filter = new SimpleFilter();
         Study study = StudyManager.getInstance().getStudy(context.getContainer());
         addFilterClause(study, filter, participantDatasets);
-        return createView(context, filter, createDefaultSort(viewType), viewType, true, null);
+        return createView(context, filter, createDefaultSort(viewType), viewType, true, null, true);
     }
 
     public enum PARAMS
@@ -395,7 +399,7 @@ public class SpecimenQueryView extends BaseStudyQueryView
     }
 
     private static SpecimenQueryView createView(ViewContext context, SimpleFilter filter, Sort sort, ViewType viewType,
-                                                boolean participantVisitFiltered, CohortFilter cohortFilter)
+                                                boolean participantVisitFiltered, CohortFilter cohortFilter, boolean requireSequenceNum)
     {
         StudyImpl study = StudyManager.getInstance().getStudy(context.getContainer());
         StudyQuerySchema schema = new StudyQuerySchema(study, context.getUser(), true);
@@ -412,7 +416,7 @@ public class SpecimenQueryView extends BaseStudyQueryView
         addOnlyPreviouslyRequestedFilter(context, filter);
         addEnrollmentSiteRequestFilter(context, filter);
         addRequestFilter(context, filter);
-        return new SpecimenQueryView(context, schema, qs, filter, sort, viewType, participantVisitFiltered, cohortFilter);
+        return new SpecimenQueryView(context, schema, qs, filter, sort, viewType, participantVisitFiltered, cohortFilter, requireSequenceNum);
     }
 
     public Map<String, Integer> getSampleCounts(RenderContext ctx)
@@ -507,7 +511,7 @@ public class SpecimenQueryView extends BaseStudyQueryView
                 whereClause.append("(");
                 if (visitBased && pd.getSequenceNum() != null)
                 {
-                    whereClause.append("Visit = ? AND ");
+                    whereClause.append("SequenceNum = ? AND ");
                     params.add(pd.getSequenceNum());
                 }
                 else if (pd.getVisitDate() != null)
@@ -725,6 +729,14 @@ public class SpecimenQueryView extends BaseStudyQueryView
                 // Only add this column if we're using advanced specimen management
                 cols.add(0, new SpecimenRequestDisplayColumn(this, getTable(), zeroVialIndicator, oneVialIndicator,
                     SampleManager.getInstance().isSpecimenShoppingCartEnabled(getContainer()) && _showRecordSelectors));
+            }
+
+            // this column is normally hidden but we need it on the select for any specimen filters
+            if (_requireSequenceNum)
+            {
+                ColumnInfo seqNumCol = getTable().getColumn("SequenceNum");
+                if (seqNumCol != null)
+                    cols.add(seqNumCol.getRenderer());
             }
         }
         catch (SQLException e)
