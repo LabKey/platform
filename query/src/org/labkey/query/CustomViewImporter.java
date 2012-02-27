@@ -66,5 +66,11 @@ public class CustomViewImporter implements FolderImporter<FolderDocument.Folder>
         {
             return new CustomViewImporter();
         }
+
+        @Override
+        public boolean isFinalImporter()
+        {
+            return false;
+        }
     }
 }

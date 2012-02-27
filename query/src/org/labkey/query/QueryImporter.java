@@ -171,5 +171,11 @@ public class QueryImporter implements FolderImporter<FolderDocument.Folder>
         {
             return new QueryImporter();
         }
+
+        @Override
+        public boolean isFinalImporter()
+        {
+            return false;
+        }
     }
 }

@@ -93,5 +93,11 @@ public class MissingValueImporter implements FolderImporter
         {
             return new MissingValueImporter();
         }
+
+        @Override
+        public boolean isFinalImporter()
+        {
+            return false;
+        }
     }
 }

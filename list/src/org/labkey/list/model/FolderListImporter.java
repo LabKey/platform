@@ -69,5 +69,11 @@ public class FolderListImporter implements FolderImporter<FolderDocument.Folder>
         {
             return new FolderListImporter();
         }
+
+        @Override
+        public boolean isFinalImporter()
+        {
+            return false;
+        }
     }
 }

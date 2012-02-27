@@ -84,5 +84,11 @@ public class ReportImporter implements FolderImporter<FolderDocument.Folder>
         {
             return new ReportImporter();
         }
+
+        @Override
+        public boolean isFinalImporter()
+        {
+            return false;
+        }
     }
 }

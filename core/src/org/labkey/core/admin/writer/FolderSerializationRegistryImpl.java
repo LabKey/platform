@@ -57,14 +57,31 @@ public class FolderSerializationRegistryImpl implements FolderSerializationRegis
     }
 
     // These importers can be defined and registered by other modules.  They have no knowledge of folder internals, other
-    // than being able to read elements from folder.xml.
-    public Collection<FolderImporter> getRegisteredFolderImporters()
+    // than being able to read elements from folder.xml. The initial importers are those that do not require other importers
+    // to be called first.
+    public Collection<FolderImporter> getRegisteredInitialFolderImporters()
     {
-        // New up the writers every time since these classes can be stateful
+        // New up the importers every time since these classes can be stateful
         Collection<FolderImporter> importers = new LinkedList<FolderImporter>();
 
         for (FolderImporterFactory factory : IMPORTER_FACTORIES)
-            importers.add(factory.create());
+            if (!factory.isFinalImporter())
+                importers.add(factory.create());
+
+        return importers;
+    }
+
+    // These importers can be defined and registered by other modules.  They have no knowledge of folder internals, other
+    // than being able to read elements from folder.xml. The final importers are those that should be called after other
+    // importers have completed (i.e. pages/webparts should be deserialized after reports/queries have been imported
+    public Collection<FolderImporter> getRegisteredFinalFolderImporters()
+    {
+        // New up the importers every time since these classes can be stateful
+        Collection<FolderImporter> importers = new LinkedList<FolderImporter>();
+
+        for (FolderImporterFactory factory : IMPORTER_FACTORIES)
+            if (factory.isFinalImporter())
+                importers.add(factory.create());
 
         return importers;
     }

@@ -61,6 +61,12 @@ public class WikiImporterFactory implements FolderImporterFactory
         return new WikiImporter();
     }
 
+    @Override
+    public boolean isFinalImporter()
+    {
+        return false;
+    }
+
     private class WikiImporter implements FolderImporter<FolderDocument.Folder>
     {
         @Override

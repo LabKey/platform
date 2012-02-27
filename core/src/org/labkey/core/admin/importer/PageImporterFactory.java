@@ -52,6 +52,12 @@ public class PageImporterFactory implements FolderImporterFactory
         return new PageImporter();
     }
 
+    @Override
+    public boolean isFinalImporter()
+    {
+        return true;
+    }
+
     public class PageImporter implements FolderImporter<FolderDocument.Folder>
     {
         @Override
