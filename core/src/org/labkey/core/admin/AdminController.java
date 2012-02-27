@@ -4534,7 +4534,7 @@ public class AdminController extends SpringActionController
                 {
                     MailHelper.send(msg, getUser(), getContainer());
                 }
-                catch(ConfigurationException e)
+                catch (ConfigurationException e)
                 {
                     form.setException(e);
                 }

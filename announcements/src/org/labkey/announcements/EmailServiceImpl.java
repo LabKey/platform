@@ -16,6 +16,7 @@
 package org.labkey.announcements;
 
 import org.apache.log4j.Logger;
+import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.PropertyManager;
 import org.labkey.api.notification.EmailMessage;
@@ -77,7 +78,7 @@ public class EmailServiceImpl implements EmailService.I
     }
 
     @Override
-    public EmailMessage createMessage(String from, String[] to, String subject, String message)
+    public EmailMessage createMessage(String from, String[] to, String subject, @Nullable String message)
     {
         EmailMessage msg = new EmailMessageImpl(from, to, subject);
 
@@ -97,7 +98,7 @@ public class EmailServiceImpl implements EmailService.I
     }
 
     @Override
-    public String getEmailPref(User user, Container container, EmailPref pref, EmailPref defaultPref)
+    public String getEmailPref(User user, Container container, EmailPref pref, @Nullable EmailPref defaultPref)
     {
         String defaultValue = pref.getDefaultValue();
 
@@ -109,6 +110,7 @@ public class EmailServiceImpl implements EmailService.I
             else
                 defaultValue = defaultPref.getDefaultValue();
         }
+
         Map<String, String> props = PropertyManager.getProperties(user.getUserId(), container.getId(), EmailService.EMAIL_PREF_CATEGORY);
         String value = defaultValue;
 
@@ -242,6 +244,7 @@ public class EmailServiceImpl implements EmailService.I
                 for (Map.Entry<String, String> entry : _headers.entrySet())
                     msg.setHeader(entry.getKey(), entry.getValue());
             }
+
             msg.setSubject(_subject);
 
             if (!_contentMap.isEmpty())
@@ -268,6 +271,7 @@ public class EmailServiceImpl implements EmailService.I
                         msg.setContent(entry.getValue(), entry.getKey().getMimeType());
                 }
             }
+
             return msg;
         }
     }
