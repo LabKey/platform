@@ -697,9 +697,8 @@ public class WikiController extends SpringActionController
 
             JspView v = new JspView<PrintAllBean>("/org/labkey/wiki/view/wikiPrintAll.jsp", new PrintAllBean(wikiTrees));
             v.setFrame(WebPartView.FrameType.NONE);
-
             getPageConfig().setTemplate(PageConfig.Template.Print);
-            getPageConfig().setNoIndex();
+
             return v;
         }
         
