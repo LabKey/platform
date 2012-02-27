@@ -19,6 +19,8 @@
 <%@ page import="org.apache.commons.lang3.StringUtils" %>
 <%@ page import="org.labkey.api.analytics.AnalyticsService" %>
 <%@ page import="org.labkey.api.data.Container" %>
+<%@ page import="org.labkey.api.data.ContainerManager" %>
+<%@ page import="org.labkey.api.security.User" %>
 <%@ page import="org.labkey.api.settings.LookAndFeelProperties" %>
 <%@ page import="org.labkey.api.util.PageFlowUtil" %>
 <%@ page import="org.labkey.api.view.ActionURL" %>
@@ -30,8 +32,6 @@
 <%@ page import="org.labkey.api.view.template.PageConfig" %>
 <%@ page import="org.labkey.api.view.template.PrintTemplate" %>
 <%@ page import="java.util.Set" %>
-<%@ page import="org.labkey.api.data.ContainerManager" %>
-<%@ page import="org.labkey.api.security.User" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %><%
     PrintTemplate me = (PrintTemplate) HttpView.currentView();
     PageConfig bean = me.getModelBean();
@@ -64,14 +64,18 @@
 %>
 <!DOCTYPE html>
 <html>
-<head>
-    <% if (null != gwtModules && gwtModules.size() > 0 && -1 != userAgent.indexOf("MSIE 9."))
+<head><%
+        if (null != gwtModules && gwtModules.size() > 0 && -1 != userAgent.indexOf("MSIE 9."))
         {
-        %><meta http-equiv="X-UA-Compatible" content="IE=8" /><%
+        %>
+    <meta http-equiv="X-UA-Compatible" content="IE=8" /><%
         }
-    %>
-    <%if (bean.getFrameOption() == PageConfig.FrameOption.DENY) {%> <script type="text/javascript">if (top != self) top.location.replace(self.location.href);</script><%}%>
-    <title><%= h(bean.getTitle()) %></title>
+
+        if (bean.getFrameOption() == PageConfig.FrameOption.DENY)
+        { %>
+    <script type="text/javascript">if (top != self) top.location.replace(self.location.href);</script><%
+        } %>
+    <title><%=h(bean.getTitle()) %></title>
     <!-- <%=h(url.getURIString())%> -->
     <!-- <base href="<%=h(base.getURIString())%>" /> -->
 <%= bean.getMetaTags(url) %>

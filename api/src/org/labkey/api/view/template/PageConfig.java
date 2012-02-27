@@ -341,7 +341,7 @@ public class PageConfig
         {
             for (Map.Entry<String, Collection<String>>  e : _meta.entrySet())
             {
-                sb.append("<meta name=\"").append(PageFlowUtil.filter(e.getKey())).append("\" content=\"");
+                sb.append("    <meta name=\"").append(PageFlowUtil.filter(e.getKey())).append("\" content=\"");
                 sb.append(PageFlowUtil.filter(StringUtils.join(e.getValue(), ", ")));
                 sb.append("\">\n");
             }

@@ -833,7 +833,7 @@ public class PageFlowUtil
             this(s, null, System.currentTimeMillis());
         }
 
-        public Content(String s, byte[] e, long m)
+        public Content(String s, @Nullable byte[] e, long m)
         {
             content = s;
             encoded = e;
@@ -1657,11 +1657,6 @@ public class PageFlowUtil
     {
         StringBuilder sb = getFaviconIncludes(c);
         sb.append(getStylesheetIncludes(c, userAgent));
-
-        // TODO: Add an actual setting for this... or better yet, a way for individual sites to add custom <head> HTML, similar to custom stylesheets
-        if (AppProps.getInstance().isDevMode())
-            sb.append(getSearchIncludes());
-
         sb.append(getLabkeyJS());
         sb.append(getJavaScriptIncludes());
         return sb.toString();
@@ -1941,6 +1936,7 @@ public class PageFlowUtil
     }
 
 
+    // TODO: Delete after moving these tags to labkey.org <head>
     public static String getSearchIncludes()
     {
         String contextPath = AppProps.getInstance().getContextPath();
