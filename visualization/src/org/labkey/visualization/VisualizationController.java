@@ -46,6 +46,7 @@ import org.labkey.api.query.DefaultSchema;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.QueryDefinition;
 import org.labkey.api.query.QueryException;
+import org.labkey.api.query.QueryParseException;
 import org.labkey.api.query.QuerySchema;
 import org.labkey.api.query.QueryService;
 import org.labkey.api.query.QuerySettings;
@@ -97,6 +98,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Iterator;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 
@@ -380,6 +382,26 @@ public class VisualizationController extends SpringActionController
         }
     }
 
+
+    private static boolean isDemographicQueryDefinition(QueryDefinition q)
+    {
+        if (!StringUtils.equalsIgnoreCase("study", q.getSchemaName()) || !q.isTableQueryDefinition())
+            return false;
+
+        try
+        {
+            TableInfo t = q.getTable(null, false);
+            if (!(t instanceof DataSetTable))
+                return false;
+            return ((DataSetTable)t).getDataSet().isDemographicData();
+        }
+        catch (QueryException qe)
+        {
+            return false;
+        }
+    }
+
+
     @RequiresPermissionClass(ReadPermission.class)
     public class GetMeasuresAction<Form extends MeasuresForm> extends ApiAction<Form>
     {
@@ -449,11 +471,13 @@ public class VisualizationController extends SpringActionController
             for (Map.Entry<ColumnInfo, QueryDefinition> entry : cols.entrySet())
             {
                 QueryDefinition query = entry.getValue();
+                boolean isDemographic = isDemographicQueryDefinition(query);
                 // add measure properties
                 Map<String, Object> props = getColumnProps(entry.getKey(), query);
                 props.put("schemaName", query.getSchema().getName());
                 props.put("queryName", query.getName());
                 props.put("isUserDefined", !query.isTableQueryDefinition());
+                props.put("isDemographic", isDemographic);
                 props.put("id", count++);
 
                 measuresJSON.add(props);
