@@ -33,6 +33,7 @@
     String escalationUsers = StringUtils.defaultString(org.labkey.pipeline.api.PipelineEmailPreferences.get().getEscalationUsers(c));
     String[] users = escalationUsers.split(";");
     ActionURL cancelUrl = new ActionURL(StatusController.DetailsAction.class, c);
+    ActionURL escalateURL = new ActionURL(StatusController.EscalateAction.class, c);
 
     String defaultSubject = "Re: failure for pipeline job: " + bean.getDescription();
 %>
@@ -50,7 +51,7 @@
 </script>
 
 &nbsp;&nbsp;
-<form action="escalate.view" method="post">
+<form action="<%= h(escalateURL.getURIString())%>" method="post">
     <input type="hidden" name="detailsUrl" value="<%=cancelUrl.getURIString()%>"/>
     <table width="100%">
         <tr class="labkey-wp-header"><th colspan=2><b>Escalate Pipeline Job Failure</b></th></tr>

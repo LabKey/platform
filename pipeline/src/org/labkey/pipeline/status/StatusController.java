@@ -124,12 +124,12 @@ public class StatusController extends SpringActionController
         return url;
     }
 
-    abstract public class ShowListBaseAction<FORM> extends FormViewAction<FORM>
+    abstract public class ShowListBaseAction<FORM extends ReturnUrlForm> extends FormViewAction<FORM>
     {
         public ActionURL getSuccessURL(FORM form)
         {
             // Success leads to a reshow of this page with lastfilter=true
-            return urlShowList(getContainer(), true);
+            return form.getReturnActionURL(urlShowList(getContainer(), true));
         }
 
         public ModelAndView getView(FORM form, boolean reshow, BindException errors) throws Exception
@@ -189,14 +189,14 @@ public class StatusController extends SpringActionController
     }
 
     @RequiresPermissionClass(ReadPermission.class)
-    public class ShowListAction extends ShowListBaseAction
+    public class ShowListAction extends ShowListBaseAction<ReturnUrlForm>
     {
-        public void validateCommand(Object target, Errors errors)
+        public void validateCommand(ReturnUrlForm target, Errors errors)
         {
             // Direct posts do nothing
         }
 
-        public boolean handlePost(Object o, BindException errors) throws Exception
+        public boolean handlePost(ReturnUrlForm o, BindException errors) throws Exception
         {
             return true;    // Direct posts do nothing
         }
@@ -567,7 +567,7 @@ public class StatusController extends SpringActionController
         abstract public void handleSelect(FORM form) throws Exception;
     }
 
-    public static class SelectStatusForm
+    public static class SelectStatusForm extends ReturnUrlForm
     {
         private int[] _rowIds;
 
@@ -733,7 +733,7 @@ public class StatusController extends SpringActionController
         }
     }
 
-    public static class EscalateMessageForm
+    public static class EscalateMessageForm extends ReturnUrlForm
     {
         private String _escalateUser;
         private boolean _escalateAll;

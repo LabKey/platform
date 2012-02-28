@@ -146,6 +146,25 @@ public class PipelineJobRunnerGlobus implements Callable, ResumableDescriptor
         String xmlJob = eventContext.getMessageAsString();
         PipelineJob job = PipelineJobService.get().getJobStore().fromXML(xmlJob);
 
+        PipelineStatusFileImpl statusFile = PipelineStatusManager.getStatusFile(job.getLogFile().toString());
+        if (statusFile == null)
+        {
+            job.error("Could not find job in database");
+            return null;
+        }
+        if (PipelineJob.CANCELLING_STATUS.equals(statusFile.getStatus()))
+        {
+            job.info("Job has been cancelled, aborting Globus submit");
+            statusFile.setStatus(PipelineJob.CANCELLED_STATUS);
+            PipelineStatusManager.updateStatusFile(statusFile);
+            return null;
+        }
+        if (PipelineJob.CANCELLED_STATUS.equals(statusFile.getStatus()))
+        {
+            job.info("Job has been cancelled, aborting Globus submit");
+            return null;
+        }
+
         try
         {
             GlobusJobWrapper wrapper = new GlobusJobWrapper(job, true, true);
@@ -340,8 +359,9 @@ public class PipelineJobRunnerGlobus implements Callable, ResumableDescriptor
                 // so that we can't read or write to it anymore, meaning that we can't delete it again or copy its
                 // contents to the main job log. So, we wait a bit for it to be flushed and then try deleting it.
                 // We'll have to wait and see if it's reliably done after ten seconds or not.
-                job.getLogger().info("Waiting to get log files...");
+                job.getLogger().info("Waiting 10 seconds to get log files...");
                 Thread.sleep(10000);
+                job.getLogger().info("Retrieving log files");
             }
             catch (InterruptedException ignored) {}
 

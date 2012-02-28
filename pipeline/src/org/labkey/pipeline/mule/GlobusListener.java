@@ -76,6 +76,10 @@ public class GlobusListener implements GramJobListener
                         newStatus = PipelineJob.TaskStatus.cancelled;
                     }
                 }
+                else if (gramJob.getState() == StateEnumeration.Failed)
+                {
+                    _job.error("Received error callback from Globus, but no information on the cause of the fault");
+                }
                 PipelineJobRunnerGlobus.updateStatus(_job, newStatus);
             }
             catch (UMOException e)
