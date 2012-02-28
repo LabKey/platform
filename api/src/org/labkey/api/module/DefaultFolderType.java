@@ -402,7 +402,7 @@ public class DefaultFolderType implements FolderType
     {
         for (FolderTab tab : getDefaultTabs())
         {
-            if (tab.getName().equalsIgnoreCase(caption))
+            if (tab.getName().equalsIgnoreCase(caption) || tab.getLegacyNames().contains(caption))
             {
                 return tab;
             }

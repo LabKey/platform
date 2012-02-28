@@ -21,7 +21,9 @@ import org.labkey.api.portal.ProjectUrls;
 import org.labkey.api.util.PageFlowUtil;
 
 import java.util.Collection;
+import java.util.Collections;
 import java.util.List;
+import java.util.Set;
 
 /**
 * User: brittp
@@ -120,5 +122,10 @@ public abstract class FolderTab
     public String getCaption(ViewContext viewContext)
     {
         return _caption;
+    }
+
+    public Set<String> getLegacyNames()
+    {
+        return Collections.emptySet();
     }
 }
