@@ -1,4 +1,7 @@
 <view xmlns="http://labkey.org/data/xml/view"
        title="Import Data"
         >
+        <permissions>
+            <permission name="insert" />
+        </permissions>
 </view>
