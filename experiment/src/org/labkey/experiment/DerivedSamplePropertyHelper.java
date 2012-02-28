@@ -90,8 +90,13 @@ public class DerivedSamplePropertyHelper extends SamplePropertyHelper<String>
 
             if (_lsids.containsValue(lsid) || ExperimentService.get().getExpMaterial(lsid) != null)
             {
-                throw new DuplicateMaterialException("Duplicate material name: " + name,
-                        UploadWizardAction.getInputName(getNamePDs().get(0), getSampleNames().get(index)));
+                // Default to not showing on a particular column
+                String colName = "main";
+                if (!getNamePDs().isEmpty() && getSampleNames().size() > index)
+                {
+                    colName = UploadWizardAction.getInputName(getNamePDs().get(0), getSampleNames().get(index));
+                }
+                throw new DuplicateMaterialException("Duplicate material name: " + name, colName);
             }
             _lsids.put(index, lsid);
         }

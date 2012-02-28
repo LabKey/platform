@@ -62,14 +62,14 @@
     <% } %>
     
     <li style="margin-bottom: 10px;">
+        <a href="<%= h(ContainerManager.getHomeContainer().getStartURL(viewContext.getUser())) %>">Go directly to the server's Home page</a>
+    </li>
+
+    <li style="margin-bottom: 10px;">
         <a href="<%= h(whatsNew.getHelpTopicLink()) %>" target="_blank">Learn what's new in this version of LabKey Server</a>
     </li>
 
     <li style="margin-bottom: 10px;">
         <a href="<%= h(releaseNotes.getHelpTopicLink()) %>" target="_blank">Read the full release notes for this version of LabKey Server</a>
-    </li>
-
-    <li style="margin-bottom: 10px;">
-        <a href="<%= h(ContainerManager.getHomeContainer().getStartURL(viewContext.getUser())) %>">Go directly to the server's Home page</a>
     </li>
 </ul>

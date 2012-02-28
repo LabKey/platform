@@ -1480,28 +1480,31 @@ public class ExperimentServiceImpl implements ExperimentService.Interface
             {
                 getExpSchema().getScope().ensureTransaction();
 
-                SimpleFilter containerFilter = new SimpleFilter("RunId", runId);
-                Table.delete(getTinfoAssayQCFlag(), containerFilter);
-
                 ExpRunImpl run = getExpRun(runId);
-                ExpProtocol protocol = run.getProtocol();
-                ProtocolImplementation protocolImpl = null;
-                if (protocol != null)
-                    protocolImpl = protocol.getImplementation();
-
-                // Grab these to delete after we've deleted the Data rows
-                ExpDataImpl[] datasToDelete = getAllDataOwnedByRun(runId);
-
-                deleteRun(runId, datasToDelete, user);
-
-                for (ExpData data : datasToDelete)
+                if (run != null)
                 {
-                    ExperimentDataHandler handler = data.findDataHandler();
-                    handler.deleteData(data, container, user);
-                }
+                    SimpleFilter containerFilter = new SimpleFilter("RunId", runId);
+                    Table.delete(getTinfoAssayQCFlag(), containerFilter);
 
-                if (protocolImpl != null)
-                    protocolImpl.onRunDeleted(container, user);
+                    ExpProtocol protocol = run.getProtocol();
+                    ProtocolImplementation protocolImpl = null;
+                    if (protocol != null)
+                        protocolImpl = protocol.getImplementation();
+
+                    // Grab these to delete after we've deleted the Data rows
+                    ExpDataImpl[] datasToDelete = getAllDataOwnedByRun(runId);
+
+                    deleteRun(runId, datasToDelete, user);
+
+                    for (ExpData data : datasToDelete)
+                    {
+                        ExperimentDataHandler handler = data.findDataHandler();
+                        handler.deleteData(data, container, user);
+                    }
+
+                    if (protocolImpl != null)
+                        protocolImpl.onRunDeleted(container, user);
+                }
 
                 getExpSchema().getScope().commitTransaction();
             }

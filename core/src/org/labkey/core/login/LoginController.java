@@ -1187,7 +1187,6 @@ public class LoginController extends SpringActionController
 
 
     @RequiresNoPermission
-    @RequiresLogin
     @AllowedDuringUpgrade
     // @CSRF don't need CSRF for actions that require a password
     public class ChangePasswordAction extends AbstractSetPasswordAction
