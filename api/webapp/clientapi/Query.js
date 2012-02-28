@@ -1613,6 +1613,28 @@ LABKEY.Query = new function()
 /**#@+
 * @memberOf LABKEY.Query.FieldMetaData#
 * @field
+* @name extFormat
+* @description The format string that can be passed to Ext components.  This is currently only supported for dates.
+* @type    String
+*/
+
+/**#@+
+* @memberOf LABKEY.Query.FieldMetaData#
+* @field
+* @name extFormatFn
+* @description A function that can be used to produce the formatted string for this field.  This is currently supported for dates and numeric values.
+* Note: this function is returned as a string, so you will need to evaluate it to convert it to a function.  See example below.
+* @example <pre name="code" class="xml">
+* var formatFn = eval(meta.extFormatFn);
+* var formattedValue = formatFn(data);
+* </pre></code>
+*
+* @type    String
+*/
+
+/**#@+
+* @memberOf LABKEY.Query.FieldMetaData#
+* @field
 * @name caption
 * @description The caption to be shown for this field, typically in a column header, which may differ from its name
 * @type    String

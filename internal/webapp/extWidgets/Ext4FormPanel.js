@@ -94,7 +94,7 @@ Ext4.define('LABKEY.ext4.FormPanel', {
             ]
         });
 
-        this.mon(this.store, 'syncexception', this.onCommitException, this);
+        this.mon(this.store, 'exception', this.onCommitException, this);
 
         if(!this.store.hasLoaded())
             this.mon(this.store, 'load', this.loadQuery, this, {single: true});
@@ -368,7 +368,7 @@ LABKEY.ext4.FORMBUTTONS = {
                 }
 
                 panel.store.on('write', onSuccess, this, {single: true});
-                panel.store.on('syncexception', function(error){panel.store.un(onSuccess)}, this, {single: true});
+                panel.store.on('exception', function(error){panel.store.un(onSuccess)}, this, {single: true});
                 panel.store.sync();
             }
         }, config);

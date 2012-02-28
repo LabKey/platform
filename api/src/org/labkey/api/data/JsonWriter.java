@@ -140,12 +140,21 @@ public class JsonWriter
             {
                 props.put("format", cinfo.getFormat());
                 String extFormat = null;
+                String extFormatFn = null;
                 if (cinfo.getJdbcType().isDateOrTime())
-                    extFormat = ExtUtil.toExtDateFormatFn(cinfo.getFormat());
+                {
+                    extFormat = cinfo.getFormat();
+                    extFormatFn = ExtUtil.toExtDateFormatFn(extFormat);
+                }
                 else if (cinfo.getJdbcType().isNumeric())
-                    extFormat = ExtUtil.toExtNumberFormatFn(cinfo.getFormat());
-                if (null != extFormat)
-                    props.put("extFormatFn", extFormat);
+                {
+                    extFormat = cinfo.getFormat();
+                    extFormatFn = ExtUtil.toExtNumberFormatFn(extFormat);
+                }
+                if (null != extFormatFn)
+                    props.put("extFormatFn", extFormatFn);
+                if (null != extFormatFn)
+                    props.put("extFormat", extFormat);
             }
             if (cinfo.getExcelFormatString() != null)
             {

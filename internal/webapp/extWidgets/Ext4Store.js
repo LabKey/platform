@@ -165,7 +165,7 @@ LABKEY.ext4.Store = Ext4.define('LABKEY.ext4.Store', {
          * @param {Object} metadata The metadata object that will be supplied to the Ext.data.Model.
          */
 
-        this.addEvents('beforemetachange', 'syncexception', 'synccomplete');
+        this.addEvents('beforemetachange', 'exception', 'synccomplete');
     },
     //private
     generateBaseParams: function(config){
@@ -291,6 +291,8 @@ LABKEY.ext4.Store = Ext4.define('LABKEY.ext4.Store', {
     //private
     load: function(){
         this.generateBaseParams();
+
+        this.proxy.on('exception', this.onProxyException, this, {single: true});
         return this.callParent(arguments);
     },
 
@@ -305,7 +307,10 @@ LABKEY.ext4.Store = Ext4.define('LABKEY.ext4.Store', {
 
         if(!this.syncNeeded()){
             this.fireEvent('synccomplete', this);
+            return;
         }
+
+        this.proxy.on('exception', this.onProxyException, this, {single: true});
         return this.callParent(arguments);
     },
 
@@ -552,21 +557,36 @@ LABKEY.ext4.Store = Ext4.define('LABKEY.ext4.Store', {
     //private
     onProxyException : function(proxy, response, operation, eOpts) {
         var loadError = {message: response.statusText};
-        if(response && response.getResponseHeader
-                && Ext4.Array.indexOf(response.getResponseHeader("Content-Type"), "application/json") >= 0)
-        {
-            var errorJson = Ext4.JSON.decode(response.responseText);
-            if(errorJson && errorJson.exception)
-                loadError.message = errorJson.exception;
+        var json = this.getJson(response);
 
-            response.errors = errorJson;
+        if(json){
+            if(json && json.exception)
+                loadError.message = json.exception;
 
-            this.validateRecords(errorJson);
+            response.errors = json;
+
+            this.validateRecords(json);
         }
 
         this.loadError = loadError;
 
-        this.fireEvent('syncexception', this, response, operation);
+        var message = (json && json.exception) ? json.exception : response.statusText;
+
+        var messageBody;
+        switch(operation.action){
+            case 'read':
+                messageBody = 'Could not load records due to the following error:';
+                break;
+            case 'saveRows':
+                messageBody = 'Could not save records due to the following error:';
+                break;
+            default:
+                messageBody = 'There was an error:';
+        }
+        if(false !== this.fireEvent("exception", this, message, response, operation)){
+            Ext4.Msg.alert("Error", messageBody+"<br>" + message);
+            console.log(response);
+        }
     },
 
     validateRecords: function(errors){
@@ -720,6 +740,17 @@ Ext4.define('LABKEY.ext4.ExtendedJsonReader', {
             Ext4.each(data.metaData.fields, function(meta){
                 if(meta.jsonType == 'int' || meta.jsonType=='float' || meta.jsonType=='boolean')
                     meta.useNull = true;  //prevents Ext from assigning 0's to field when record created
+
+                //convert string into function
+                if(meta.extFormatFn){
+                    try {
+                        meta.extFormatFn = eval(meta.extFormatFn);
+                    }
+                    catch (ex)
+                    {
+                    }
+
+                }
             });
 
             this.fireEvent('metadataload', data.metaData); //NOTE: provide an event the store can consume in order to modify the server-supplied metadata
@@ -819,8 +850,8 @@ Ext4.define('LABKEY.ext4.AjaxProxy', {
                 saveRows: "POST"
             }
         });
-
-        this.callParent([config]);
+        this.addEvents('exception');
+        this.callParent(arguments);
     },
     saveRows: function(operation, callback, scope){
         var request = operation.request;

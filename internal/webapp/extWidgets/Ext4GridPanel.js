@@ -59,7 +59,7 @@ Ext4.define('LABKEY.ext4.GridPanel', {
             }});
         }
 
-        this.mon(this.store, 'syncexception', this.onCommitException, this);
+        this.mon(this.store, 'exception', this.onCommitException, this);
         this.addEvents('beforesubmit', 'fieldconfiguration', 'recordchange', 'fieldvaluechange');
     }
 
@@ -135,6 +135,17 @@ Ext4.define('LABKEY.ext4.GridPanel', {
 
             if(meta.isAutoExpandColumn && !col.hidden){
                 this.autoExpandColumn = idx;
+            }
+
+            //listen for changes in underlying data in lookup store
+            if(meta.lookup && meta.lookups !== false){
+                var lookupStore = LABKEY.ext.MetaHelper.getLookupStore(meta);
+                if(lookupStore){
+                    this.mon(lookupStore, 'load', function(store){
+                        //this.store.fireEvent('datachanged', this.store);
+                        this.getView().refresh();
+                    }, this, {delay: 100});
+                }
             }
 
             if(this.hideNonEditableColumns && !col.editable)
