@@ -103,8 +103,6 @@ public class LuceneSearchServiceImpl extends AbstractSearchService
 
     static final Version LUCENE_VERSION = Version.LUCENE_30;
 
-    private final Analyzer _analyzer = ExternalAnalyzer.SnowballAnalyzer.getAnalyzer();
-
     // Changes to _index are rare (only when admin changes the index path), but we want any changes to be visible to
     // other threads immediately.
     private volatile WritableIndex _index;
@@ -121,7 +119,7 @@ public class LuceneSearchServiceImpl extends AbstractSearchService
         try
         {
             File indexDir = SearchPropertyManager.getPrimaryIndexDirectory();
-            _index = new WritableIndexImpl(indexDir, _analyzer);
+            _index = new WritableIndexImpl(indexDir, getAnalyzer());
             setConfigurationError(null);  // Clear out any previous error
         }
         catch (Throwable t)
@@ -932,7 +930,7 @@ public class LuceneSearchServiceImpl extends AbstractSearchService
 
         try
         {
-            QueryParser queryParser = new MultiFieldQueryParser(LUCENE_VERSION, standardFields, _analyzer, boosts);
+            QueryParser queryParser = new MultiFieldQueryParser(LUCENE_VERSION, standardFields, getAnalyzer(), boosts);
             query = queryParser.parse(queryString);
         }
         catch (ParseException x)
@@ -1232,5 +1230,11 @@ public class LuceneSearchServiceImpl extends AbstractSearchService
         }
 
         return Collections.emptyList();
+    }
+
+
+    protected Analyzer getAnalyzer()
+    {
+        return ExternalAnalyzer.SnowballAnalyzer.getAnalyzer();
     }
 }
