@@ -111,7 +111,7 @@ Ext4.define('LABKEY.ext4.StudyScheduleGrid', {
 
         tbarItems.push(this.topNextButton);
 
-        var bbarItems = [];
+
 
         var saveButton = {
             xtype: 'button',
@@ -127,23 +127,16 @@ Ext4.define('LABKEY.ext4.StudyScheduleGrid', {
             scope: this
         };
 
+        var bbarButtons = [];
+
         if(this.canEdit){
-            bbarItems.push(saveButton);
-            bbarItems.push(addDatasetButton);
-            bbarItems.push('->');
+            bbarButtons.push(saveButton);
+            bbarButtons.push(addDatasetButton);
         }
 
         this.bottomPrevButton = Ext4.create('Ext.button.Button', prevConfig);
-
-        bbarItems.push(this.bottomPrevButton);
-
         this.bottomPageDisplay = Ext4.create('Ext.form.field.Display', displayConfig);
-
-        bbarItems.push(this.bottomPageDisplay);
-
         this.bottomNextButton = Ext4.create('Ext.button.Button', nextConfig);
-
-        bbarItems.push(this.bottomNextButton);
 
         var bottomPanel = Ext4.create('Ext.Panel', {
             height: 25,
@@ -160,7 +153,7 @@ Ext4.define('LABKEY.ext4.StudyScheduleGrid', {
                 defaults : {
                     style : 'margin-left: 4px; margin-right: 4px; margin-top: 3px;'
                 },
-                items: [saveButton, addDatasetButton]
+                items: [bbarButtons]
             }, {
                 xtype: 'toolbar',
                 style: {
