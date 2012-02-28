@@ -16,21 +16,17 @@
 package org.labkey.lab;
 
 import org.labkey.api.portal.ProjectUrls;
-import org.labkey.api.security.permissions.AdminPermission;
-import org.labkey.api.study.Study;
-import org.labkey.api.study.StudyService;
-import org.labkey.api.study.StudyUrls;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.FolderTab;
 import org.labkey.api.view.Portal;
 import org.labkey.api.view.ViewContext;
 import org.labkey.api.view.WebPartFactory;
-import org.springframework.web.servlet.mvc.Controller;
 
-import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
+import java.util.Set;
 
 /**
  * User: migra
@@ -64,11 +60,11 @@ public class LabFolderTabs
 
     }
 
-    public static class ExperimentsPage extends FolderTab.PortalPage
+    public static class WorkbooksPage extends FolderTab.PortalPage
     {
-        public static final String PAGE_ID = "lab.Experiments";
+        public static final String PAGE_ID = "lab.Workbooks";
 
-        protected ExperimentsPage(String caption)
+        protected WorkbooksPage(String caption)
         {
             super(PAGE_ID, caption);
         }
@@ -84,6 +80,12 @@ public class LabFolderTabs
         {
             List<Portal.WebPart> parts = Arrays.asList(Portal.getPortalPart("Workbooks").createWebPart());
             return parts;
+        }
+
+        @Override
+        public Set<String> getLegacyNames()
+        {
+            return Collections.singleton("lab.Experiments");
         }
     }
 

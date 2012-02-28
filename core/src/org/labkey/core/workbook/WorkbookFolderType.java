@@ -40,8 +40,8 @@ public class WorkbookFolderType extends DefaultFolderType
                 null,
                 Arrays.asList(
                         Portal.getPortalPart("Workbook Description").createWebPart(),
-                        createFileWebPart(),
-                        Portal.getPortalPart("Experiment Runs").createWebPart()
+                        Portal.getPortalPart("Experiment Runs").createWebPart(),
+                        createFileWebPart()
                 ),
                 getDefaultModuleSet(ModuleLoader.getInstance().getCoreModule(), getModule("Experiment")),
                 ModuleLoader.getInstance().getCoreModule());
@@ -58,6 +58,7 @@ public class WorkbookFolderType extends DefaultFolderType
     {
         Portal.WebPart result = Portal.getPortalPart("Files").createWebPart(HttpView.BODY);
         result.setProperty("fileSet", FileContentService.PIPELINE_LINK);
+        result.setProperty("webpart.title", "Files");
         return result;
     }
 }
