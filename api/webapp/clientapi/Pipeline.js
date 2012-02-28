@@ -147,6 +147,7 @@ LABKEY.Pipeline = new function(){
          * @param {String} config.taskId Identifier for the pipeline.
          * @param {String} config.path relative path from the folder's pipeline root
          * @param {String[]} config.files names of the file within the subdirectory described by the path property
+         * @param {Integer[]} config.fileIds data IDs of files be to used as inputs for this pipeline.  these correspond to the rowIds from the table ext.data.  they do not need to be located within the file path provided.  the user does need read access to the container associated with each file.
          * @param {String} config.protocolName name of the analysis protocol
          * @param {String} [config.protocolDescription] description of the analysis protocol
          * @param {String|Element} [config.xmlParameters] XML representation of the protocol description. Not allowed
@@ -178,6 +179,7 @@ LABKEY.Pipeline = new function(){
             params.protocolName = config.protocolName;
             params.protocolDescription = config.protocolDescription;
             params.file = config.files;
+            params.fileIds = config.fileIds;
             params.saveProtocol = config.saveProtocol == undefined || config.saveProtocol;
             if (config.xmlParameters)
             {

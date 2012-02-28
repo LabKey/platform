@@ -16,6 +16,9 @@
 package org.labkey.api.pipeline.browse;
 
 import org.labkey.api.data.Container;
+import org.labkey.api.exp.api.ExpData;
+import org.labkey.api.exp.api.ExperimentService;
+import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.view.NotFoundException;
 import org.labkey.api.view.ViewForm;
 import org.labkey.api.util.NetworkDrive;
@@ -35,6 +38,7 @@ public class PipelinePathForm extends ViewForm
 {
     private String _path;
     private String[] _file = new String[0];
+    private int[] _fileIds = new int[0];
 
     public String getPath()
     {
@@ -68,9 +72,20 @@ public class PipelinePathForm extends ViewForm
         _file = file;
     }
 
+    public int[] getFileIds()
+    {
+        return _fileIds;
+    }
+
+    public void setFileIds(int[] fileIds)
+    {
+        _fileIds = fileIds;
+    }
+
     /**
-     * Ensures that the files are all in the same directory, which is under the container's pipeline root,
+     * For the string filesnames provided, ensures that the files are all in the same directory, which is under the container's pipeline root,
      * and that they all exist on disk, though they could be directories, not files.
+     * For ExpData IDs provided, ensures the files exists and the user has read permission on the associated container.  The files do not need to be located in the same directory.
      * Throws NotFoundException if no files are specified, invalid files are specified, there's no pipeline root, etc.
      */
     public List<File> getValidatedFiles(Container c)
@@ -86,7 +101,7 @@ public class PipelinePathForm extends ViewForm
         if (dir == null || !dir.exists())
             throw new NotFoundException("Could not find path " + getPath());
 
-        if (getFile() == null || getFile().length == 0)
+        if ((getFile() == null || getFile().length == 0) && (getFileIds() == null || getFileIds().length == 0))
         {
             throw new NotFoundException("No files specified");
         }
@@ -101,6 +116,28 @@ public class PipelinePathForm extends ViewForm
             }
             result.add(f);
         }
+
+        ExperimentService.Interface es = ExperimentService.get();
+        for (int fileId : _fileIds)
+        {
+            ExpData data = es.getExpData(fileId);
+            if(data == null)
+            {
+                throw new NotFoundException("Could not find file associated with Data Id: '" + fileId);
+            }
+
+            if(!data.getContainer().hasPermission(getUser(), ReadPermission.class))
+            {
+                throw new NotFoundException("Insufficient permissions for file '" + data.getFile());
+            }
+
+            if (!allowNonExistentFiles && !NetworkDrive.exists(data.getFile()))
+            {
+                throw new NotFoundException("Could not find file '" + data.getFile());
+            }
+            result.add(data.getFile());
+        }
+
         return result;
     }
 
