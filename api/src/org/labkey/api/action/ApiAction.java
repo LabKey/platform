@@ -167,6 +167,10 @@ public abstract class ApiAction<FORM> extends BaseViewAction<FORM>
         {
             createResponseWriter().write(e);
         }
+        catch (ApiUsageException e)
+        {
+            createResponseWriter().write(e);
+        }
         catch (UnauthorizedException e)
         {
             e.setUseBasicAuthentication(_useBasicAuthentication);

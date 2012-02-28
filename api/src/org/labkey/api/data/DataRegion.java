@@ -1100,9 +1100,9 @@ public class DataRegion extends AbstractDataRegion
 
     protected boolean isSmallResultSet()
     {
-        if (_totalRows != null && _totalRows < 10)
+        if (_totalRows != null && _totalRows < 5)
             return true;
-        if (_complete && getOffset() == 0 && _rowCount != null && _rowCount.intValue() < 10)
+        if (_complete && getOffset() == 0 && _rowCount != null && _rowCount.intValue() < 5)
             return true;
         return false;
     }

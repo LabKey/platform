@@ -206,6 +206,12 @@ public class DetailsURL extends StringExpressionFactory.FieldKeyStringExpression
     public String eval(Map context)
     {
         String query = super.eval(context);
+        if (query == null)
+        {
+            // Bail out if the context is missing one of the substitutions. Better to have no URL than a URL that's
+            // missing parameters
+            return null;
+        }
         Container c = getContainer(context);
         if (null != c)
             _parsedUrl.setContainer(c);

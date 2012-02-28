@@ -42,6 +42,6 @@ public class ApiUsageException extends RuntimeException implements SkipMothershi
 
     public ApiUsageException(Throwable cause)
     {
-        super(cause);
+        super(cause.getMessage() == null ? cause.toString() : cause.getMessage(), cause);
     }
 }

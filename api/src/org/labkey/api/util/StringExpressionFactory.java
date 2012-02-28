@@ -17,6 +17,7 @@ package org.labkey.api.util;
 
 import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
+import org.jetbrains.annotations.Nullable;
 import org.junit.Assert;
 import org.junit.Test;
 import org.labkey.api.cache.Cache;
@@ -195,7 +196,8 @@ public class StringExpressionFactory
 
     protected static abstract class StringPart implements Cloneable
     {
-        abstract String getValue(Map map);
+        /** @return null if the value cannot be resolved given the map */
+        @Nullable abstract String getValue(Map map);
         final String valueOf(Object o)
         {
             return o == null ? "" : String.valueOf(o);
@@ -312,7 +314,16 @@ public class StringExpressionFactory
             
             StringBuilder builder = new StringBuilder();
             for (StringPart part : parts)
-                builder.append(part.getValue(context));
+            {
+                String value = part.getValue(context);
+                if (value == null)
+                {
+                    // Bail out if the context is missing one of the substitutions. Better to have no URL than
+                    // a URL that's missing parameters
+                    return null;
+                }
+                builder.append(value);
+            }
             return builder.toString();
         }
 
@@ -434,7 +445,12 @@ public class StringExpressionFactory
                 if (map.containsKey(lookupKey))
                     LOG.debug("No string substitution found for FieldKey '" + key.encode() + "', but found String '" + lookupKey + "'.");
             }
-
+            if (!map.containsKey(lookupKey))
+            {
+                // If we don't have the value at all, return null instead of the empty string to communicate that we
+                // don't have the info required to evaluate this expression
+                return null;
+            }
             Object value = map.get(lookupKey);
             return PageFlowUtil.encodePath(valueOf(value));
         }
