@@ -549,6 +549,9 @@ Ext4.define('LABKEY.ext4.ParticipantReport', {
             if (qr.measureToColumn[this.subjectVisitColumn + '/Visit/Label'])
                 config.gridFields.push(qr.measureToColumn[this.subjectVisitColumn + '/Visit/Label']);
             
+            if (qr.measureToColumn[this.subjectVisitColumn + '/VisitDate'])
+                config.gridFields.push(qr.measureToColumn[this.subjectVisitColumn + '/VisitDate']);
+
             for (i=0; i < this.gridFieldStore.getCount(); i++) {
                 var mappedColName = qr.measureToColumn[this.gridFieldStore.getAt(i).data.name];
                 if (mappedColName)
@@ -562,9 +565,11 @@ Ext4.define('LABKEY.ext4.ParticipantReport', {
             for (var m in qr.measureToColumn) {
                 if (qr.measureToColumn.hasOwnProperty(m)) {
 
-                    // special case visit label
+                    // special case visit label and date
                     if (this.subjectVisitColumn + '/Visit/Label' == m)
                         columnToMeasure[qr.measureToColumn[m]] = 'Visit'
+                    else if (this.subjectVisitColumn + '/VisitDate' == m)
+                        columnToMeasure[qr.measureToColumn[m]] = 'Visit Date'
                     else
                         columnToMeasure[qr.measureToColumn[m]] = m;
                 }
@@ -854,6 +859,12 @@ Ext4.define('LABKEY.ext4.ParticipantReport', {
                     titleEl[0].innerHTML = LABKEY.Utils.encodeHtml(data.name);
                 }
 
+                var navTitle = Ext4.query('table[class=labkey-nav-trail] span[class=labkey-nav-page-header]')
+                if (navTitle && (navTitle.length >= 1))
+                {
+                    navTitle[0].innerHTML = LABKEY.Utils.encodeHtml(data.name);
+                }
+                
                 this.reportId = o.reportId;
                 this.loadReport(this.reportId);
                 //this.reportName.setReadOnly(true);
