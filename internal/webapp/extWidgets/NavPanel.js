@@ -153,7 +153,7 @@ Ext4.define('LABKEY.ext.NavPanel', {
                 },{
                     xtype: 'labkey-linkbutton',
                     text: 'Import Data',
-                    hidden: item.showImport===false,
+                    hidden: item.showImport===false  || !LABKEY.Security.currentUser.canInsert,
                     assayId: item.id,
                     useSimpleImport: item.simpleImport,
                     urlParams: {rowId: item.id, srcURL: LABKEY.ActionURL.buildURL('project', 'begin')},
@@ -214,7 +214,7 @@ Ext4.define('LABKEY.ext.NavPanel', {
                 },{
                     xtype: 'labkey-linkbutton',
                     text: 'Import Data',
-                    hidden: item.showImport===false,
+                    hidden: item.showImport===false || !LABKEY.Security.currentUser.canInsert,
                     useSimpleImport: item.simpleImport,
                     assayId: item.id,
                     urlParams: {schemaName: item.schemaName, queryName: item.queryName, srcURL: LABKEY.ActionURL.buildURL('project', 'begin')},
@@ -256,7 +256,7 @@ Ext4.define('LABKEY.ext.NavPanel', {
                 },{
                     xtype: 'labkey-linkbutton',
                     text: 'Import Data',
-                    hidden: item.showImport===false,
+                    hidden: item.showImport===false || !LABKEY.Security.currentUser.canInsert,
                     assayId: item.id,
                     urlParams: {schemaName: item.schemaName, queryName: item.queryName, name: item.queryName, importMoreSamples: true},
                     handler: function(btn){
@@ -288,7 +288,7 @@ Ext4.define('LABKEY.ext.NavPanel', {
                 },{
                     xtype: 'labkey-linkbutton',
                     text: 'Import Data',
-                    hidden: item.showImport===false,
+                    hidden: item.showImport===false || !LABKEY.Security.currentUser.canInsert,
                     useSimpleImport: item.simpleImport,
                     handler: function(btn){
                         if(btn.useSimpleImport)

@@ -26,6 +26,12 @@ Ext4.define('LABKEY.ext.AssayUploadPanel', {
     initComponent: function(){
         Ext4.QuickTips.init();
 
+        if(!LABKEY.Security.currentUser.canInsert){
+            alert('You do not have permissions to upload data');
+            window.location = LABKEY.ActionURL.buildURL('project', 'start');
+            return;
+        }
+
         //we use query metadata instead of assay metadata b/c query metadata incorporates the .query.xml file
         this.domains = {};
 
@@ -85,6 +91,7 @@ Ext4.define('LABKEY.ext.AssayUploadPanel', {
             buttons: [{
                 text: 'Upload'
                 ,width: 50
+                ,hidden: !LABKEY.Security.currentUser.canInsert
                 ,handler: this.formSubmit
                 ,scope: this
                 ,formBind: true
@@ -526,11 +533,22 @@ Ext4.define('LABKEY.ext.AssayUploadPanel', {
         }
         else {
             if (this.uploadType == 'text'){
+                var text = this.down('#fileContent').getValue() || '';
+                if(text.replace(/\s/g, '') == ''){
+                    alert('You must enter either cut/paste from a spreadsheet or choose a file to import');
+                    Ext4.Msg.hide();
+                    return;
+                }
                 this.form.baseParams = {fileName: fields.Name+'.tsv'};
                 this.form.fileUpload = false;
             }
             else {
-                    this.form.fileUpload = true;            
+                this.form.fileUpload = true;
+                if(!this.down('#upload-run-field').getValue()){
+                    alert('You must enter either a file or cut/paste from a spreadsheet');
+                    Ext4.Msg.hide();
+                    return;
+                }
             }
 
             this.form.submit();
