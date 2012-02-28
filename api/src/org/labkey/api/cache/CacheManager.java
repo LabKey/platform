@@ -20,7 +20,12 @@ import org.apache.log4j.Logger;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.cache.ehcache.EhCacheProvider;
 
+import javax.management.InstanceNotFoundException;
+import javax.management.MBeanServer;
+import javax.management.ObjectName;
+import java.lang.management.ManagementFactory;
 import java.util.ArrayList;
+import java.util.Hashtable;
 import java.util.LinkedList;
 import java.util.List;
 
@@ -55,8 +60,29 @@ public class CacheManager
 
     private static <K, V> TrackingCache<K, V> createCache(int limit, long defaultTimeToLive, String debugName)
     {
-        TrackingCache<K, V> cache = new CacheWrapper<K, V>(PROVIDER.<K, V>getSimpleCache(debugName, limit, defaultTimeToLive, false), debugName, null);
+        CacheWrapper<K, V> cache = new CacheWrapper<K, V>(PROVIDER.<K, V>getSimpleCache(debugName, limit, defaultTimeToLive, false), debugName, null);
         addToKnownCaches(cache);  // Permanent cache -- hold onto it
+        try
+        {
+            MBeanServer mbs = ManagementFactory.getPlatformMBeanServer();
+            Hashtable<String,String> t = new Hashtable<String,String>();
+            t.put("type","Cache");
+            t.put("name",debugName.replace(':','-'));
+            ObjectName name = new ObjectName("LabKey",t);
+            try
+            {
+                mbs.unregisterMBean(name);
+            }
+            catch (InstanceNotFoundException x)
+            {
+                /* */
+            }
+            mbs.registerMBean(cache.createDynamicMBean(), name);
+        }
+        catch (Exception x)
+        {
+            Logger.getLogger(CacheManager.class).error(x);
+        }
         return cache;
     }
 
