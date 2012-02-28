@@ -90,6 +90,13 @@ public class TriggerDataBuilderHelper
             _errors = errors;
         }
 
+        @Override
+        public boolean isScrollable()
+        {
+            // DON'T FIRE TRIGGERS TWICE!
+            return false;
+        }
+
         BatchValidationException getErrors()
         {
             return _errors;
