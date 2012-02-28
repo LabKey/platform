@@ -21,7 +21,10 @@ import org.labkey.api.exp.property.PropertyService;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.QueryUpdateService;
 import org.labkey.api.security.User;
+import org.labkey.api.security.UserPrincipal;
 import org.labkey.api.security.permissions.AdminPermission;
+import org.labkey.api.security.permissions.Permission;
+import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.study.StudySchema;
 import org.labkey.study.model.CohortImpl;
 import org.labkey.study.model.StudyManager;
@@ -87,5 +90,13 @@ public class CohortTable extends BaseStudyTable
         if (!getContainer().hasPermission(user, AdminPermission.class))
             return null;
         return new CohortUpdateService(this);
+    }
+
+    @Override
+    public boolean hasPermission(UserPrincipal user, Class<? extends Permission> perm)
+    {
+        if (!(user instanceof User) || !StudyManager.getInstance().showCohorts(_schema.getContainer(), (User)user))
+            return false;
+        return canReadOrIsAdminPermission(user, perm);
     }
 }

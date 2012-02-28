@@ -31,6 +31,11 @@ import org.labkey.api.query.ExprColumn;
 import org.labkey.api.query.FilteredTable;
 import org.labkey.api.query.LookupForeignKey;
 import org.labkey.api.query.QueryForeignKey;
+import org.labkey.api.query.QueryUpdateService;
+import org.labkey.api.security.UserPrincipal;
+import org.labkey.api.security.permissions.AdminPermission;
+import org.labkey.api.security.permissions.Permission;
+import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.study.Study;
 import org.labkey.api.study.StudyService;
 import org.labkey.api.study.TimepointType;
@@ -536,5 +541,26 @@ public abstract class BaseStudyTable extends FilteredTable
             sb.append(lineSeparator);
         }
         return sb.toString();
+    }
+
+
+    /* NOTE getUpdateService() and hasPermission() should usually be overridden together */
+
+    @Override
+    public QueryUpdateService getUpdateService()
+    {
+        return null;
+    }
+
+    @Override
+    public boolean hasPermission(UserPrincipal user, Class<? extends Permission> perm)
+    {
+        return false;
+    }
+
+    protected boolean canReadOrIsAdminPermission(UserPrincipal user, Class<? extends Permission> perm)
+    {
+        return ReadPermission.class == perm && _schema.getContainer().hasPermission(user, perm) ||
+                _schema.getContainer().hasPermission(user, AdminPermission.class);
     }
 }
