@@ -139,87 +139,98 @@ public class AnalysisController extends SpringActionController
     {
         protected ApiResponse execute(AnalyzeForm form, PipeRoot root, File dirData, AbstractFileAnalysisProtocolFactory factory) throws IOException, PipelineProtocol.PipelineValidationException
         {
-            TaskPipeline taskPipeline = getTaskPipeline(form.getTaskId());
-            if (form.getProtocolName() == null)
+            try
             {
-                throw new IllegalArgumentException("Must specify a protocol name");
-            }
-
-            AbstractFileAnalysisProtocol protocol = getProtocol(root, dirData, factory, form.getProtocolName());
-            if (protocol == null)
-            {
-                String xml;
-                if (form.getConfigureXml() != null)
+                TaskPipeline taskPipeline = getTaskPipeline(form.getTaskId());
+                if (form.getProtocolName() == null)
                 {
-                    if (form.getConfigureJson() != null)
+                    throw new IllegalArgumentException("Must specify a protocol name");
+                }
+
+                AbstractFileAnalysisProtocol protocol = getProtocol(root, dirData, factory, form.getProtocolName());
+                if (protocol == null)
+                {
+                    String xml;
+                    if (form.getConfigureXml() != null)
                     {
-                        throw new IllegalArgumentException("The parameters should be defined as XML or JSON, not both");
+                        if (form.getConfigureJson() != null)
+                        {
+                            throw new IllegalArgumentException("The parameters should be defined as XML or JSON, not both");
+                        }
+                        xml = form.getConfigureXml();
                     }
-                    xml = form.getConfigureXml();
+                    else
+                    {
+                        if (form.getConfigureJson() == null)
+                        {
+                            throw new IllegalArgumentException("Parameters must be defined, either as XML or JSON");
+                        }
+                        ParamParser parser = PipelineJobService.get().createParamParser();
+                        JSONObject o = new JSONObject(form.getConfigureJson());
+                        Map<String, String> params = new HashMap<String, String>();
+                        for (Map.Entry<String, Object> entry : o.entrySet())
+                        {
+                            params.put(entry.getKey(), entry.getValue() == null ? null : entry.getValue().toString());
+                        }
+                        xml = parser.getXMLFromMap(params);
+                    }
+
+                    protocol = getProtocolFactory(taskPipeline).createProtocolInstance(
+                            form.getProtocolName(),
+                            form.getProtocolDescription(),
+                            xml);
+
+                    protocol.setEmail(getUser().getEmail());
+                    protocol.validateToSave(root);
+                    if (form.isSaveProtocol())
+                    {
+                        protocol.saveDefinition(root);
+                        PipelineService.get().rememberLastProtocolSetting(protocol.getFactory(),
+                                getContainer(), getUser(), protocol.getName());
+                    }
                 }
                 else
                 {
-                    if (form.getConfigureJson() == null)
+                    if(form.getConfigureXml() != null || form.getConfigureJson() != null)
                     {
-                        throw new IllegalArgumentException("Parameters must be defined, either as XML or JSON");
+                        throw new IllegalArgumentException("Cannot redefine an existing protocol");
                     }
-                    ParamParser parser = PipelineJobService.get().createParamParser();
-                    JSONObject o = new JSONObject(form.getConfigureJson());
-                    Map<String, String> params = new HashMap<String, String>();
-                    for (Map.Entry<String, Object> entry : o.entrySet())
-                    {
-                        params.put(entry.getKey(), entry.getValue() == null ? null : entry.getValue().toString());
-                    }
-                    xml = parser.getXMLFromMap(params);
-                }
-
-                protocol = getProtocolFactory(taskPipeline).createProtocolInstance(
-                        form.getProtocolName(),
-                        form.getProtocolDescription(),
-                        xml);
-
-                protocol.setEmail(getUser().getEmail());
-                protocol.validateToSave(root);
-                if (form.isSaveProtocol())
-                {
-                    protocol.saveDefinition(root);
                     PipelineService.get().rememberLastProtocolSetting(protocol.getFactory(),
                             getContainer(), getUser(), protocol.getName());
                 }
-            }
-            else
-            {
-                if(form.getConfigureXml() != null || form.getConfigureJson() != null)
+
+                protocol.getFactory().ensureDefaultParameters(root);
+
+                File fileParameters = protocol.getParametersFile(dirData, root);
+                // Make sure configure.xml file exists for the job when it runs.
+                if (!fileParameters.exists())
                 {
-                    throw new IllegalArgumentException("Cannot redefine an existing protocol");
+                    protocol.setEmail(getUser().getEmail());
+                    protocol.saveInstance(fileParameters, getContainer());
                 }
-                PipelineService.get().rememberLastProtocolSetting(protocol.getFactory(),
-                        getContainer(), getUser(), protocol.getName());
+
+                List<File> filesInputList = form.getValidatedFiles(getContainer());
+
+                if (form.isActiveJobs())
+                {
+                    throw new IllegalArgumentException("Active jobs already exist for this protocol.");
+                }
+
+                AbstractFileAnalysisJob job =
+                        protocol.createPipelineJob(getViewBackgroundInfo(), root, filesInputList, fileParameters);
+
+                PipelineService.get().queueJob(job);
+
+                return new ApiSimpleResponse("status", "success");
             }
-
-            protocol.getFactory().ensureDefaultParameters(root);
-
-            File fileParameters = protocol.getParametersFile(dirData, root);
-            // Make sure configure.xml file exists for the job when it runs.
-            if (!fileParameters.exists())
+            catch (IOException e)
             {
-                protocol.setEmail(getUser().getEmail());
-                protocol.saveInstance(fileParameters, getContainer());
+                throw new ApiUsageException(e);
             }
-
-            List<File> filesInputList = form.getValidatedFiles(getContainer());
-
-            if (form.isActiveJobs())
+            catch (PipelineProtocol.PipelineValidationException e)
             {
-                throw new IllegalArgumentException("Active jobs already exist for this protocol.");
+                throw new ApiUsageException(e);
             }
-
-            AbstractFileAnalysisJob job =
-                    protocol.createPipelineJob(getViewBackgroundInfo(), root, filesInputList, fileParameters);
-
-            PipelineService.get().queueJob(job);
-
-            return new ApiSimpleResponse("status", "success");
         }
     }
 
