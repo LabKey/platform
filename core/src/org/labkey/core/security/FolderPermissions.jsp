@@ -155,8 +155,7 @@ Ext.onReady(function(){
     items.push(
         {
             activeItem : isRoot ? 1 :   0,
-            autoScroll : autoScroll,
-            autoHeight : !autoScroll,
+            autoHeight : false,
             border:true,
             defaults: {style : {padding:'5px'}},
             id : 'folderPermissionsTabPanel',
@@ -223,7 +222,7 @@ Ext.onReady(function(){
 --%>
     <div id="permissionsFrame" class="extContainer x-hide-display"></div>
     <script type="text/javascript">
-    tabItems.push({contentEl:'permissionsFrame', title:'Permissions', autoHeight:true});
+    tabItems.push({contentEl:'permissionsFrame', title:'Permissions', autoScroll:autoScroll, autoHeight: !autoScroll});
     Ext.onReady(function()
     {
         policyEditor = new PolicyEditor({cache:securityCache, border:false, isSiteAdmin:isSiteAdmin, isProjectAdmin:isProjectAdmin,
@@ -372,7 +371,7 @@ Ext.onReady(function(){
         me.include(view,out);
         %></div>
         <script type="text/javascript">
-            tabItems.push({contentEl:<%=PageFlowUtil.jsString(id)%>, title:<%=PageFlowUtil.jsString(view.getTitle())%>, autoHeight:true});
+            tabItems.push({contentEl:<%=PageFlowUtil.jsString(id)%>, title:<%=PageFlowUtil.jsString(view.getTitle())%>, autoScroll:autoScroll, autoHeight: !autoScroll});
         </script>
         <%
     }
