@@ -570,21 +570,32 @@ LABKEY.ext4.Store = Ext4.define('LABKEY.ext4.Store', {
 
         this.loadError = loadError;
 
+        //TODO: is this the right behavior?
+        if(json.status === 0){
+            return;
+        }
+
         var message = (json && json.exception) ? json.exception : response.statusText;
 
         var messageBody;
         switch(operation.action){
             case 'read':
-                messageBody = 'Could not load records due to the following error:';
+                messageBody = 'Could not load records';
                 break;
             case 'saveRows':
-                messageBody = 'Could not save records due to the following error:';
+                messageBody = 'Could not save records';
                 break;
             default:
-                messageBody = 'There was an error:';
+                messageBody = 'There was an error';
         }
-        if(false !== this.fireEvent("exception", this, message, response, operation)){
-            Ext4.Msg.alert("Error", messageBody+"<br>" + message);
+
+        if(message)
+            messageBody += ' due to the following error:' + +"<br>" + message;
+        else
+            messageBody += ' due to an unexpected error';
+
+        if(false !== this.fireEvent("exception", this, messageBody, response, operation)){
+            Ext4.Msg.alert("Error", messageBody);
             console.log(response);
         }
     },
