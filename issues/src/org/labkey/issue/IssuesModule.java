@@ -31,6 +31,7 @@ import org.labkey.api.security.SecurityManager;
 import org.labkey.api.security.User;
 import org.labkey.api.security.UserManager;
 import org.labkey.api.services.ServiceRegistry;
+import org.labkey.api.settings.AppProps;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.emailTemplate.EmailTemplateService;
 import org.labkey.api.view.ActionURL;
@@ -93,6 +94,8 @@ public class IssuesModule extends DefaultModule implements SearchService.Documen
                 return result;
             }
         });
+        if (System.getProperty("labkey.experimental.issuesactivity") != null)
+            result.add(new IssuesActivityWebPartFactory());
         return result;
     }
 

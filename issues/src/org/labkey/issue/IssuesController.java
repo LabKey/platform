@@ -41,22 +41,31 @@ import org.labkey.api.action.SpringActionController;
 import org.labkey.api.attachments.AttachmentFile;
 import org.labkey.api.attachments.AttachmentParent;
 import org.labkey.api.attachments.AttachmentService;
+import org.labkey.api.collections.CaseInsensitiveHashSet;
 import org.labkey.api.data.AttachmentParentEntity;
 import org.labkey.api.data.BeanViewForm;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
+import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.DataRegion;
 import org.labkey.api.data.DataRegionSelection;
 import org.labkey.api.data.DbScope;
 import org.labkey.api.data.ObjectFactory;
 import org.labkey.api.data.RenderContext;
+import org.labkey.api.data.RuntimeSQLException;
+import org.labkey.api.data.SQLFragment;
+import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.Sort;
+import org.labkey.api.data.Table;
+import org.labkey.api.data.TableSelector;
 import org.labkey.api.data.TSVGridWriter;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.dialect.SqlDialect;
 import org.labkey.api.issues.IssuesSchema;
 import org.labkey.api.issues.IssuesUrls;
+import org.labkey.api.query.ExprColumn;
+import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.QueryForm;
 import org.labkey.api.query.QueryService;
 import org.labkey.api.query.QuerySettings;
@@ -112,6 +121,7 @@ import org.labkey.api.wiki.WikiService;
 import org.labkey.issue.model.Issue;
 import org.labkey.issue.model.IssueManager;
 import org.labkey.issue.query.IssuesQuerySchema;
+import org.labkey.issue.query.IssuesTable;
 import org.springframework.validation.BindException;
 import org.springframework.validation.Errors;
 import org.springframework.validation.MapBindingResult;
@@ -128,7 +138,9 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -1766,6 +1778,63 @@ public class IssuesController extends SpringActionController
         }
     }
 
+    public static List<Issue.Comment> getRecentComments(Container container, User user, int limit)
+    {
+        // Defaults to the 20 most recent comments
+        if (limit == 0)
+            limit = 20;
+
+        List<Issue.Comment> result = new ArrayList<Issue.Comment>(limit);
+        ResultSet rs = null;
+        try
+        {
+            SimpleFilter filter = new SimpleFilter();
+            ContainerFilter containerFilter = new ContainerFilter.CurrentAndSubfolders(user);
+            SQLFragment containerColumn = new SQLFragment();
+            containerColumn.append("IssueId_Container");
+            filter.addCondition(containerFilter.createFilterClause(IssuesSchema.getInstance().getSchema(), containerColumn.toString(), container));
+
+            Sort sort = new Sort("-Created");
+
+            // Selecting comments as maps so we can get the issue id -- it's not on the Comment entity.
+            List<FieldKey> fields = new ArrayList<FieldKey>(IssuesSchema.getInstance().getTableInfoComments().getDefaultVisibleColumns());
+            fields.add(FieldKey.fromParts("IssueId", "Container"));
+
+            Map<FieldKey, ColumnInfo> columnMap = QueryService.get().getColumns(IssuesSchema.getInstance().getTableInfoComments(), fields);
+
+            TableSelector selector = new TableSelector(IssuesSchema.getInstance().getTableInfoComments(), columnMap.values(), filter, sort);
+            selector.setRowCount(limit);
+            Collection<Map> comments = selector.getCollection(Map.class);
+
+            ObjectFactory<Issue.Comment> commentFactory = ObjectFactory.Registry.getFactory(Issue.Comment.class);
+
+            Map<Integer, Issue> issuesIds = new HashMap<Integer, Issue>();
+            for (Map<String, Object> comment : comments)
+            {
+                Integer issueId = (Integer)comment.get("issueid");
+                if (issueId == null)
+                    continue;
+
+                Issue issue = issuesIds.get(issueId);
+                if (issue == null)
+                {
+                    issue = Table.selectObject(IssuesSchema.getInstance().getTableInfoIssues(), issueId, Issue.class);
+                    issuesIds.put(issueId, issue);
+                }
+
+                Issue.Comment c = commentFactory.fromMap(comment);
+                c.setIssue(issue);
+                result.add(c);
+            }
+
+            return result;
+        }
+        finally
+        {
+            ResultSetUtil.close(rs);
+        }
+    }
+
 
     @RequiresPermissionClass(AdminPermission.class)
     public class PurgeAction extends SimpleViewAction
@@ -2475,7 +2544,7 @@ public class IssuesController extends SpringActionController
             //set specified web part title
             Object title = context.get("title");
             if (title == null)
-                title = IssueManager.getEntryTypeNames(getViewContext().getContainer()).pluralName + " Summary";
+                title = IssueManager.getEntryTypeNames(c).pluralName + " Summary";
             setTitle(title.toString());
 
             User u = context.getUser();
