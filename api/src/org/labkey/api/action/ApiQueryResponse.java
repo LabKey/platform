@@ -21,6 +21,7 @@ import org.labkey.api.data.*;
 import org.labkey.api.exp.PropertyColumn;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.QueryView;
+import org.labkey.api.util.DateUtil;
 import org.labkey.api.view.ViewContext;
 
 import java.sql.ResultSet;
@@ -44,7 +45,6 @@ public class ApiQueryResponse implements ApiResponse, ApiStreamResponse
     private long _rowCount = 0;
     private RenderContext _ctx = null;
     private ViewContext _viewContext;
-    private SimpleDateFormat _dateFormat = new SimpleDateFormat(JSONObject.JAVASCRIPT_DATE_FORMAT);
     private boolean _schemaEditable = false;
     private boolean _includeLookupInfo = true;
     private String _schemaName = null;
@@ -367,7 +367,7 @@ public class ApiQueryResponse implements ApiResponse, ApiStreamResponse
 
     protected Object ensureJSONDate(Object value)
     {
-        return value instanceof Date ? _dateFormat.format(value) : value;
+        return value instanceof Date ? DateUtil.formatJsonDateTime((Date)value) : value;
     }
 
 
