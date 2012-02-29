@@ -684,7 +684,8 @@ public class DavController extends SpringActionController
         }
 
         /** @param includeNames if non-null, the set of children to include in the zip. If null, all are included */
-        private void addResource(WebdavResource resource, ZipOutputStream out, User user, WebdavResource rootResource, int depth, Set<String> includeNames) throws IOException
+        private void addResource(WebdavResource resource, ZipOutputStream out, User user, WebdavResource rootResource, int depth, Set<String> includeNames)
+                throws IOException, DavException
         {
             if (!resource.canRead(user))
                 return;
@@ -714,7 +715,7 @@ public class DavController extends SpringActionController
                 InputStream in = null;
                 try
                 {
-                    in = resource.getInputStream(user);
+                    in = getResourceInputStream(resource,user);
                     FileUtil.copyData(in, out);
                 }
                 finally
@@ -1595,7 +1596,11 @@ public class DavController extends SpringActionController
                             String md5sum = null;
                             try
                             {
-                                md5sum = FileUtil.md5sum(resource.getInputStream(getUser()));
+                                md5sum = FileUtil.md5sum(getResourceInputStream(resource,getUser()));
+                            }
+                            catch (DavException x)
+                            {
+                                /* */
                             }
                             catch (IOException x)
                             {
@@ -2960,7 +2965,7 @@ public class DavController extends SpringActionController
             }
 
             if (null == is)
-                is = resource.getInputStream(getUser());
+                is = getResourceInputStream(resource,getUser());
             if (ostream != null)
                 copy(is, ostream);
             else if (writer != null)
@@ -2988,7 +2993,7 @@ public class DavController extends SpringActionController
                     getResponse().setContentType(contentType);
 
                 if (content)
-                    copy(resource.getInputStream(getUser()), ostream, range.start, range.end);
+                    copy(getResourceInputStream(resource, getUser()), ostream, range.start, range.end);
             }
             else
             {
@@ -3042,11 +3047,11 @@ public class DavController extends SpringActionController
     }
 
 
-    protected void copy(WebdavResource resource, OutputStream ostream, Iterator ranges, String contentType) throws IOException
+    protected void copy(WebdavResource resource, OutputStream ostream, Iterator ranges, String contentType) throws IOException, DavException
     {
         while (ranges.hasNext())
         {
-            InputStream resourceInputStream = resource.getInputStream(getUser());
+            InputStream resourceInputStream = getResourceInputStream(resource,getUser());
             assert track(resourceInputStream);
             InputStream istream = new BufferedInputStream(resourceInputStream, 16*1024);
             assert track(istream);
@@ -4540,6 +4545,21 @@ public class DavController extends SpringActionController
         if (isLocked(getRequest()))
             throw new DavException(WebdavStatus.SC_LOCKED);
     }
+
+
+    /** Converts FileNotFound into SC_NOT_FOUND */
+    private InputStream getResourceInputStream(WebdavResource r, User user) throws IOException, DavException
+    {
+        try
+        {
+            return r.getInputStream(user);
+        }
+        catch (FileNotFoundException fnfe)
+        {
+            throw new DavException(WebdavStatus.SC_NOT_FOUND, r.getPath().toString(), fnfe);
+        }
+    }
+
 
 
     Map<Closeable,Throwable> closables = new IdentityHashMap<Closeable,Throwable>();
