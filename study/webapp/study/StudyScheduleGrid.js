@@ -78,12 +78,13 @@ Ext4.define('LABKEY.ext4.StudyScheduleGrid', {
             handler: this.enablePaging
         });
 
-        tbarItems.push({ xtype: 'tbspacer', width: 435 });
+        tbarItems.push({ xtype: 'tbspacer', width: 420 });
         tbarItems.push(this.enablePagingCheckbox);
         tbarItems.push('->');
 
         var prevConfig = {
-            text: '<',
+            disabled: true,
+            text: '<span class="button-prev"><img src="' + LABKEY.ActionURL.getContextPath()+'/reports/paging_arrow_prev.gif' + '" /></span>',
             scope: this,
             handler: this.previousPage
         };
@@ -102,7 +103,7 @@ Ext4.define('LABKEY.ext4.StudyScheduleGrid', {
         tbarItems.push(this.topPageDisplay);
 
         var nextConfig = {
-            text: '>',
+            text: '<span class="button-next"><img src="' + LABKEY.ActionURL.getContextPath()+'/reports/paging_arrow_next.gif' + '" /></span>',
             scope: this,
             handler: this.nextPage
         };
@@ -244,12 +245,12 @@ Ext4.define('LABKEY.ext4.StudyScheduleGrid', {
                                 columns = this.schedule.timepoints;
                             }
 
-                            var timepointName = columns[view.getSelectionModel().getCurrentPosition().column -2].name;
                             var timepoint = columns[view.getSelectionModel().getCurrentPosition().column -2];
+                            var timepointId = timepoint.id;
 
                             // Make a copy of the object so when we set the value of required the dirty bit gets set.
-                            var timepointValue = Ext4.apply({}, record.data[timepointName]);
-                            if(record.data[timepointName] == undefined || record.data[timepointName] == ""){
+                            var timepointValue = Ext4.apply({}, record.data[timepointId]);
+                            if(record.data[timepointId] == undefined || record.data[timepointId] == ""){
                                 timepointValue = Ext4.apply({}, columns[view.getSelectionModel().getCurrentPosition().column -2]);
                             }
 
@@ -258,7 +259,7 @@ Ext4.define('LABKEY.ext4.StudyScheduleGrid', {
                             } else {
                                 delete timepointValue.required;
                             }
-                            record.set(timepointName, timepointValue);
+                            record.set(timepointId, timepointValue);
                         }
                 }
                 }
@@ -295,8 +296,8 @@ Ext4.define('LABKEY.ext4.StudyScheduleGrid', {
 
         for(var i = 0; i < this.schedule.timepoints.length; i++){
             fields.push({
-                name: this.schedule.timepoints[i].name,
-                mapping: this.schedule.timepoints[i].name
+                name: this.schedule.timepoints[i].id,
+                mapping: this.schedule.timepoints[i].id
             });
 
             //Here we also update the cohortStore so we can filter by cohort.
@@ -378,7 +379,7 @@ Ext4.define('LABKEY.ext4.StudyScheduleGrid', {
 
             var newCol = {
                 text: header,
-                dataIndex: visibleColumns[i].name,
+                dataIndex: visibleColumns[i].id,
                 renderer: visitRenderer
             };
             columnItems.push(newCol);
@@ -851,13 +852,21 @@ Ext4.define('LABKEY.ext4.StudyScheduleGrid', {
                 scope: this,
                 change: function(rgroup, newValue){
                     if(newValue.deftype == 'linkToTarget'){
+                        this.linkDoneButton.setText('Done');
                         this.datasetCombo.setDisabled(false);
                     } else {
+                        this.linkDoneButton.setText('Next');
                         this.datasetCombo.setDisabled(true);
                     }
                 }
             }
         });
+
+        this.linkDoneButton = Ext4.create('Ext.Button', {
+                text: 'Next',
+                handler: this.linkDatasetHandler,
+                scope: this
+            });
 
         this.linkDatasetWindow = Ext4.create('Ext.window.Window', {
             title: 'Define Dataset',
@@ -876,12 +885,7 @@ Ext4.define('LABKEY.ext4.StudyScheduleGrid', {
                     this.linkDatasetWindow.close();
                 },
                 scope: this
-            }, {
-                xtype: 'button',
-                text: 'Done',
-                handler: this.linkDatasetHandler,
-                scope: this
-            }],
+            }, this.linkDoneButton],
             items: [{
                 xtype: 'form',
                 border: false,
