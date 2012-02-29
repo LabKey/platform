@@ -1769,7 +1769,9 @@ var PolicyEditor = Ext.extend(Ext.Panel, {
         }
         if (!inh && !this.policy)
         {
-            this.policy = this.inheritedPolicy.copy();
+            var copy = this.inheritedPolicy.copy();
+            this._removeInvalidRoles(copy, this.roles);
+            this.policy = copy;
         }
         this._redraw();
     },
@@ -1929,11 +1931,31 @@ var PolicyEditor = Ext.extend(Ext.Panel, {
             S.deletePolicy({resourceId:this.resource.id, successCallback:success, errorCallback:this.saveFail, scope:scope});
         else
         {
+            this._removeInvalidRoles(policy, this.roles);
             if (overwrite)
                 policy.setModified(null);
             S.savePolicy({policy:policy, successCallback:success, errorCallback:this.saveFail, scope:scope});
         }
     },
+
+
+    _removeInvalidRoles : function(policy, roles)
+    {
+        var i;
+        var validUniqueRoles = {};
+        for (i=0 ; i<roles.length; i++)
+            validUniqueRoles[roles[i].uniqueName] = true;
+        var a = [], from = policy.policy.assignments;
+        for (i=0 ; i<from.length ; i++)
+        {
+            if (validUniqueRoles[from[i].role])
+                a.push(from[i]);
+            else
+                policy._dirty = true;
+        }
+        policy.policy.assignments = a;
+    },
+
 
     saveSuccess : function()
     {
