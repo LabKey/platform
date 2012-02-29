@@ -20,6 +20,7 @@ import org.apache.xmlbeans.XmlObject;
 import org.apache.xmlbeans.XmlOptions;
 import org.labkey.api.admin.ImportException;
 import org.labkey.api.util.FileUtil;
+import org.labkey.api.util.MinorConfigurationException;
 import org.labkey.api.util.XmlBeansUtil;
 import org.labkey.api.util.XmlValidationException;
 
@@ -108,10 +109,10 @@ public class FileSystemFile extends AbstractVirtualFile
             dir.mkdir();
 
         if (!dir.isDirectory())
-            throw new IllegalStateException(dir.getAbsolutePath() + " is not a directory.");
+            throw new MinorConfigurationException(dir.getAbsolutePath() + " is not a directory.");
 
         if (!dir.canWrite())
-            throw new IllegalStateException("Can't write to " + dir.getAbsolutePath());
+            throw new MinorConfigurationException("Can't write to " + dir.getAbsolutePath());
     }
 
     @Override
@@ -121,7 +122,8 @@ public class FileSystemFile extends AbstractVirtualFile
 
         if (file.exists())
         {
-            try {
+            try
+            {
                 return XmlObject.Factory.parse(file, XmlBeansUtil.getDefaultParseOptions());
             }
             catch (XmlException e)

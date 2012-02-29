@@ -21,10 +21,15 @@ import org.apache.commons.collections15.multimap.MultiHashMap;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.data.BeanObjectFactory;
+import org.labkey.api.data.CompareType;
 import org.labkey.api.data.Container;
+import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.DbSchema;
 import org.labkey.api.data.RuntimeSQLException;
+import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.SimpleFilter;
+import org.labkey.api.data.SqlExecutor;
+import org.labkey.api.data.SqlSelector;
 import org.labkey.api.data.Table;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.dialect.SqlDialect;
@@ -102,6 +107,35 @@ public class Portal
         catch (SQLException e)
         {
             throw new RuntimeSQLException(e);
+        }
+    }
+
+    // Clear the properties of all webparts whose name contains nameSearchText and whose properties contain propertiesSearchText
+    public static void clearWebPartProperties(String nameSearchText, String propertiesSearchText)
+    {
+        SimpleFilter filter = new SimpleFilter();
+        filter.addCondition("Name", nameSearchText, CompareType.CONTAINS);
+        filter.addCondition("Properties", propertiesSearchText, CompareType.CONTAINS);
+
+        // Select all containers that are affected
+        SQLFragment where = filter.getSQLFragment(Portal.getSqlDialect());
+        SQLFragment selectContainers = new SQLFragment("SELECT DISTINCT Container FROM ").append(Portal.getTableInfoPortalWebParts().getSelectName()).append(" ").append(where);
+        Collection<String> containersToClear = new SqlSelector(Portal.getSchema(), selectContainers).getCollection(String.class);
+
+        // Clear the properties
+        SQLFragment update = new SQLFragment("UPDATE ");
+        update.append(Portal.getTableInfoPortalWebParts().getSelectName());
+        update.append(" SET Properties = NULL ");
+        update.append(where);
+        new SqlExecutor(Portal.getSchema(), update).execute();
+
+        // Now clear the webpart cache for all affected containers, #13937
+        for (String cid : containersToClear)
+        {
+            Container c = ContainerManager.getForId(cid);
+
+            if (null != c)
+                WebPartCache.remove(c);
         }
     }
 
