@@ -19,6 +19,7 @@ import org.apache.commons.beanutils.ConversionException;
 import org.apache.commons.beanutils.ConvertUtils;
 import org.apache.commons.lang3.time.DateUtils;
 import org.apache.commons.lang3.time.FastDateFormat;
+import org.json.JSONObject;
 import org.junit.Assert;
 import org.junit.Test;
 
@@ -1327,6 +1328,32 @@ Parse:
             assertEquals(parseDateTime("2010-01-30 23:59:00"), subtractDuration(start,"1m"));
             assertEquals(parseDateTime("2010-01-30 23:59:00"), subtractDuration(start,"PT1m"));
             assertEquals(parseDateTime("2010-01-30 23:59:59"), subtractDuration(start,"1s"));
+        }
+
+        @Test
+        public void testJSON()
+        {
+            Date datetimeExpected = java.sql.Timestamp.valueOf("2001-02-03 04:05:06");
+            long msExpected = java.sql.Timestamp.valueOf("2001-02-03 04:05:06").getTime();
+            for (Locale l : DateFormat.getAvailableLocales())
+            {
+                SimpleDateFormat f = new SimpleDateFormat(JSONObject.JAVASCRIPT_DATE_FORMAT, l);
+                String s = f.format(datetimeExpected);
+                try
+                {
+                    assertEquals("locale test failed: " + l.getDisplayName(), msExpected, f.parse(s).getTime());
+//                    long ms = parseDateTime(s);
+//                    assertEquals("locale test failed: " + l.getDisplayName(), msExpected, ms);
+                }
+                catch (ParseException x)
+                {
+                    fail(" locale test failed: " + l.getDisplayName());
+                }
+                catch (ConversionException x)
+                {
+                    fail(" locale test failed: " + l.getDisplayName());
+                }
+            }
         }
     }
 }
