@@ -384,8 +384,9 @@ public class WikiManager implements WikiService
             Table.execute(comm.getSchema(), "UPDATE " + comm.getTableInfoPages() + " SET PageVersionId = NULL WHERE Container = ?", params);
             Table.execute(comm.getSchema(), "DELETE FROM " + comm.getTableInfoPageVersions() + " WHERE PageEntityId IN (SELECT EntityId FROM " + comm.getTableInfoPages() + " WHERE Container = ?)", params);
 
-            //delete stored web part information for this container (e.g., page to display in wiki web part)
-            Table.execute(Portal.getSchema(), "UPDATE " + Portal.getTableInfoPortalWebParts() + " SET Properties = NULL WHERE (Name LIKE '%Wiki%') AND Properties LIKE '%" + c.getId() + "%'");
+            // Clear all wiki webpart properties that refer to this container. This includes wiki and wiki TOC
+            // webparts in this and potentially other containers. #13937
+            Portal.clearWebPartProperties("Wiki", c.getId());
 
             ContainerUtil.purgeTable(comm.getTableInfoPages(), c, null);
 
