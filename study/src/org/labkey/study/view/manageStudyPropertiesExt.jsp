@@ -414,13 +414,14 @@ function renderFormPanel(data, editable)
 
     studyPropertiesFormPanel = new LABKEY.ext.FormPanel(
     {
-        selectRowsResults:data,
-        padding : 10,
-        defaults : { width:500, disabled : !editableFormPanel, disabledClass:'noop' },
-        labelWidth:150,   <%-- don't wrap even on Large font theme --%>
-        buttonAlign:'left',
-        buttons: buttons,
-        items:items
+        selectRowsResults : data,
+        labelSeparator    : '',
+        padding           : 10,
+        defaults          : { width:500, disabled : !editableFormPanel, disabledClass:'noop' },
+        labelWidth        : 150,   <%-- don't wrap even on Large font theme --%>
+        buttonAlign       : 'left',
+        buttons           : buttons,
+        items             : items
     });
     studyPropertiesFormPanel.render('formDiv');
 }

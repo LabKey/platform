@@ -3190,6 +3190,11 @@ body .x-grid3 .x-grid3-row-alt {
 
 /* FORM */
 
+/* 14162: Schema editor - folder drop down is now wider than the browser window */
+.x-combo-list {
+    position: absolute;
+}
+
 .x-combo-list .x-combo-selected { border:none !important;}
 .x-combo-list-item { border:none; }
 .x-check-group {
