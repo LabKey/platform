@@ -118,24 +118,27 @@ public class PipelinePathForm extends ViewForm
         }
 
         ExperimentService.Interface es = ExperimentService.get();
-        for (int fileId : _fileIds)
+        if (_fileIds != null)
         {
-            ExpData data = es.getExpData(fileId);
-            if(data == null)
+            for (int fileId : _fileIds)
             {
-                throw new NotFoundException("Could not find file associated with Data Id: '" + fileId);
-            }
+                ExpData data = es.getExpData(fileId);
+                if(data == null)
+                {
+                    throw new NotFoundException("Could not find file associated with Data Id: '" + fileId);
+                }
 
-            if(!data.getContainer().hasPermission(getUser(), ReadPermission.class))
-            {
-                throw new NotFoundException("Insufficient permissions for file '" + data.getFile());
-            }
+                if(!data.getContainer().hasPermission(getUser(), ReadPermission.class))
+                {
+                    throw new NotFoundException("Insufficient permissions for file '" + data.getFile());
+                }
 
-            if (!allowNonExistentFiles && !NetworkDrive.exists(data.getFile()))
-            {
-                throw new NotFoundException("Could not find file '" + data.getFile());
+                if (!allowNonExistentFiles && !NetworkDrive.exists(data.getFile()))
+                {
+                    throw new NotFoundException("Could not find file '" + data.getFile());
+                }
+                result.add(data.getFile());
             }
-            result.add(data.getFile());
         }
 
         return result;
