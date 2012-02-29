@@ -16,21 +16,39 @@
 
 package org.labkey.study.designer;
 
+import gwt.client.org.labkey.study.designer.client.model.GWTTimepoint;
 import org.apache.log4j.Logger;
 import org.labkey.api.data.Container;
+import org.labkey.api.exp.OntologyManager;
 import org.labkey.api.gwt.server.BaseRemoteService;
+import org.labkey.api.reports.model.ViewCategory;
+import org.labkey.api.reports.model.ViewCategoryManager;
+import org.labkey.api.security.permissions.AdminPermission;
 import org.labkey.api.security.permissions.UpdatePermission;
+import org.labkey.api.study.DataSet;
+import org.labkey.api.study.Study;
+import org.labkey.api.study.StudyService;
+import org.labkey.api.study.TimepointType;
+import org.labkey.api.study.Visit;
 import org.labkey.api.util.ExceptionUtil;
 import org.labkey.api.util.UnexpectedException;
+import org.labkey.api.view.UnauthorizedException;
 import org.labkey.api.view.ViewContext;
+import org.labkey.study.assay.AssayPublishManager;
 import org.labkey.study.controllers.designer.DesignerController;
 import gwt.client.org.labkey.study.designer.client.StudyDefinitionService;
 import gwt.client.org.labkey.study.designer.client.model.GWTAssayDefinition;
 import gwt.client.org.labkey.study.designer.client.model.GWTStudyDefinition;
 import gwt.client.org.labkey.study.designer.client.model.GWTStudyDesignVersion;
+import org.labkey.study.model.DataSetDefinition;
+import org.labkey.study.model.StudyImpl;
+import org.labkey.study.model.StudyManager;
+import org.labkey.study.model.VisitImpl;
 import org.labkey.study.xml.StudyDesignDocument;
 
 import java.sql.SQLException;
+import java.util.Collections;
+import java.util.List;
 
 /**
  * Created by IntelliJ IDEA.
@@ -160,4 +178,101 @@ public class StudyDefinitionServiceImpl extends BaseRemoteService implements Stu
         }
     }
 
+    public GWTStudyDefinition ensureDatasetPlaceholders(GWTStudyDefinition studyDefinition)
+    {
+        if (!getContainer().hasPermission(getUser(), AdminPermission.class))
+            throw new UnauthorizedException("Only admins can create dataset definitions.");
+
+        StudyImpl study = StudyManager.getInstance().getStudy(getContainer());
+        if (null == study)
+            throw new IllegalStateException("No study found in this folder.");
+
+        int categoryId;
+        ViewCategory category = ViewCategoryManager.getInstance().ensureViewCategory(getContainer(), getUser(), "Assays");
+        categoryId = category.getRowId();
+
+        try
+        {
+            for (GWTAssayDefinition assayDefinition : studyDefinition.getAssaySchedule().getAssays())
+            {
+                int dsId = StudyService.get().getDatasetId(getContainer(), assayDefinition.getName());
+                if (dsId == -1)
+                {
+                    DataSetDefinition datasetDefinition = AssayPublishManager.getInstance().createAssayDataset(getUser(), study, assayDefinition.getName(),
+                            null, null, false, DataSet.TYPE_PLACEHOLDER, categoryId, null);
+                    if (datasetDefinition != null)
+                    {
+                        String domainURI = datasetDefinition.getTypeURI();
+                        OntologyManager.ensureDomainDescriptor(domainURI, assayDefinition.getName(), getContainer());
+                        datasetDefinition.provisionTable();
+                    }
+                }
+
+            }
+        }
+        catch (SQLException e)
+        {
+            throw UnexpectedException.wrap(e);
+        }
+
+        return studyDefinition;
+    }
+
+    public GWTStudyDefinition createTimepoints(GWTStudyDefinition studyDefinition)
+    {
+        if (!getContainer().hasPermission(getUser(), AdminPermission.class))
+            throw new UnauthorizedException("Only admins can create timepoints.");
+
+        StudyImpl study = StudyManager.getInstance().getStudy(getContainer());
+        if (null == study)
+            throw new IllegalStateException("No study found in this folder.");
+
+        if(study.getVisits(Visit.Order.DISPLAY).length > 0)
+            throw new IllegalStateException("There are already timepoints in this study.");
+
+        if (studyDefinition.getAssaySchedule().getTimepoints().size() == 0)
+            return studyDefinition;
+
+        try
+        {
+            //Make sure we're a date type study
+            study = study.createMutable();
+            study.setTimepointType(TimepointType.DATE);
+            StudyManager.getInstance().updateStudy(getUser(), study);
+
+            List<GWTTimepoint> timepoints = studyDefinition.getAssaySchedule().getTimepoints();
+            Collections.sort(timepoints);
+            if (timepoints.get(0).getDays() > 0)
+                timepoints.add(0, new GWTTimepoint("Study Start", 0, GWTTimepoint.DAYS));
+
+            //We try to create timepoints that make sense. A week is day-3 to day +3 unless that would overlap
+            double previousDay = timepoints.get(0).getDays() - 1.0;
+            for (int timepointIndex = 0; timepointIndex < timepoints.size(); timepointIndex++)
+            {
+                GWTTimepoint timepoint = timepoints.get(timepointIndex);
+                double startDay = timepoints.get(timepointIndex).getDays();
+                double endDay = startDay;
+                double nextDay = timepointIndex + 1 == timepoints.size() ? Double.MAX_VALUE : timepoints.get(timepointIndex + 1).getDays();
+                if (timepoint.getUnit().equals(GWTTimepoint.WEEKS))
+                {
+                    startDay = Math.max(previousDay + 1, startDay - 3);
+                    endDay = Math.min(nextDay - 1, endDay + 3);
+                }
+                else if (timepoint.getUnit().equals(GWTTimepoint.MONTHS))
+                {
+                    startDay = Math.max(previousDay + 1, startDay - 15);
+                    endDay = Math.min(nextDay - 1, endDay + 15);
+                }
+                VisitImpl visit = new VisitImpl(getContainer(), startDay, endDay, timepoint.toString(), Visit.Type.REQUIRED_BY_TERMINATION);
+                StudyManager.getInstance().createVisit(study, getUser(), visit);
+                previousDay = endDay;
+            }
+        }
+        catch(SQLException e)
+        {
+            throw UnexpectedException.wrap(e);
+        }
+
+        return  studyDefinition;
+    }
 }

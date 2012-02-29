@@ -38,4 +38,9 @@ public interface StudyDefinitionServiceAsync
     void getVersions(int studyId, AsyncCallback<GWTStudyDesignVersion[]> async);
 
     void getTemplate(AsyncCallback<GWTStudyDefinition> async);
+
+    void ensureDatasetPlaceholders(GWTStudyDefinition def, AsyncCallback<GWTStudyDefinition> callback);
+
+    void createTimepoints(GWTStudyDefinition def, AsyncCallback<GWTStudyDefinition> callback);
+
 }

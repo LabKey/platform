@@ -167,7 +167,13 @@ public class GWTTimepoint implements Comparable, IsSerializable
         public String toString() {
             return name;
         }
-        
+
+        @Override
+        public boolean equals(Object that)
+        {
+            return that != null && that instanceof Unit && this.name.equals(((Unit) that).name);
+        }
+
         public String name;
         public int daysPerUnit;
     }

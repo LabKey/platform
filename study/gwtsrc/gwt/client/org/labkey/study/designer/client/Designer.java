@@ -236,6 +236,55 @@ public class Designer implements EntryPoint
             saveStatus = new Label("");
             buttonPanel.add(saveStatus);
         }
+
+
+        if (null != panelName && "assays".equals(panelName.toLowerCase()) && "true".equals(PropertyUtil.getServerProperty("canAdmin")))
+        {
+            if (definition.getAssaySchedule().getAssays().size() > 0)
+            {
+                Widget createPlaceholderDatasetsButton = new ImageButton("Create Assay Datasets", new ClickHandler()
+                {
+                    public void onClick(ClickEvent event)
+                    {
+                        getService().ensureDatasetPlaceholders(definition, new ErrorDialogAsyncCallback<GWTStudyDefinition>()
+                            {
+                                public void onSuccess(GWTStudyDefinition def)
+                                {
+                                    Window.alert("Placeholder datasets created. Use Manage/Study Schedule to define datasets or link to assay data.");
+                                }
+                            });
+                    }
+                });
+                createPlaceholderDatasetsButton.setTitle("Create placeholder datasets, with no data, matching these assay names. Placeholders can be linked to assay data using Manage/Study Schedule.");
+                buttonPanel.add(createPlaceholderDatasetsButton);
+            }
+
+            final ImageButton createTimepointButton = new ImageButton("Create Study Timepoints");
+            createTimepointButton.setTitle("Create timepoints for date based study. Enabled if no timepoints currently exist.");
+            createTimepointButton.setEnabled("true".equals(PropertyUtil.getServerProperty("canCreateTimepoints")));
+            createTimepointButton.addClickHandler(new ClickHandler()
+            {
+                public void onClick(ClickEvent event)
+                {
+                    if (definition.getAssaySchedule().getTimepoints().size() == 0)
+                    {
+                        Window.alert("No timepoints are defined in the assay schedule.");
+                        return;
+                    }
+
+                    getService().createTimepoints(definition, new ErrorDialogAsyncCallback<GWTStudyDefinition>()
+                    {
+                        public void onSuccess(GWTStudyDefinition def)
+                        {
+                            Window.alert(def.getAssaySchedule().getTimepoints().size() +  " timepoints created.");
+                            createTimepointButton.setEnabled(false);
+                        }
+                    });
+                }
+            });
+            buttonPanel.add(createTimepointButton);
+        }
+
         StudyApplication.getRootPanel().clear();
         StudyApplication.getRootPanel().add(mainPanel);
         setDirty(false);

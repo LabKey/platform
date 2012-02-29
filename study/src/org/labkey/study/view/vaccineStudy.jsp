@@ -29,6 +29,10 @@
 <%@ page import="org.labkey.study.view.VaccineStudyWebPart" %>
 <%@ page import="java.util.HashMap" %>
 <%@ page import="java.util.Map" %>
+<%@ page import="org.labkey.api.security.permissions.AdminPermission" %>
+<%@ page import="org.labkey.study.model.StudyImpl" %>
+<%@ page import="org.labkey.study.model.StudyManager" %>
+<%@ page import="org.labkey.api.study.Visit" %>
 <%@ page extends="org.labkey.api.jsp.JspBase"%>
 
 <%
@@ -50,6 +54,11 @@
     params.put("canEdit",  Boolean.toString(canEdit));
     //Can't create repository from web part
     params.put("canCreateRepository", Boolean.FALSE.toString());
+
+    StudyImpl study = StudyManager.getInstance().getStudy(getViewContext().getContainer());
+    params.put("canAdmin", Boolean.toString(getViewContext().hasPermission(AdminPermission.class) && null != study));
+    params.put("canCreateTimepoints", Boolean.toString(getViewContext().hasPermission(AdminPermission.class) && null != study && (study.getVisits(Visit.Order.CHRONOLOGICAL).length < 1)));
+
     params.put("panel", bean.getPanel());  //bean.getPanel());
     if (null != bean.getFinishURL())
         params.put("finishURL", bean.getFinishURL());

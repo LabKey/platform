@@ -33,4 +33,6 @@ public interface StudyDefinitionService extends RemoteService
     public GWTStudyDefinition getRevision(int studyId, int revision);
     public GWTStudyDesignVersion[] getVersions(int studyId);
     public GWTStudyDefinition getTemplate();
+    public GWTStudyDefinition ensureDatasetPlaceholders(GWTStudyDefinition def);
+    public GWTStudyDefinition createTimepoints(GWTStudyDefinition def);
 }
