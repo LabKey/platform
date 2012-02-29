@@ -44,23 +44,26 @@
 <%
     JspView<SubjectsWebPart.SubjectsBean> me = (JspView<SubjectsWebPart.SubjectsBean>) HttpView.currentView();
     SubjectsWebPart.SubjectsBean bean = me.getModelBean();
-    Container container = bean.getViewContext().getContainer();
-    User user = bean.getViewContext().getUser();
-    String singularNoun = StudyService.get().getSubjectNounSingular(container);
-    String pluralNoun = StudyService.get().getSubjectNounPlural(container);
-    String colName = StudyService.get().getSubjectColumnName(container);
+
+    Container container  = bean.getViewContext().getContainer();
+    User user            = bean.getViewContext().getUser();
+
+    String singularNoun  = StudyService.get().getSubjectNounSingular(container);
+    String pluralNoun    = StudyService.get().getSubjectNounPlural(container);
+    String colName       = StudyService.get().getSubjectColumnName(container);
+
     ActionURL subjectUrl = new ActionURL(StudyController.ParticipantAction.class, container);
     subjectUrl.addParameter("participantId", "");
-    String urlTemplate = subjectUrl.getEncodedLocalURIString();
-    DbSchema dbschema = StudySchema.getInstance().getSchema();
+    String urlTemplate   = subjectUrl.getEncodedLocalURIString();
+    DbSchema dbschema    = StudySchema.getInstance().getSchema();
     final JspWriter _out = out;
 
-    String divId = "participantsDiv" + getRequestScopedUID();
-    String listDivId = "listDiv" + getRequestScopedUID();
-    String groupsDivId = "groupsDiv" + getRequestScopedUID();
+    String divId        = "participantsDiv" + getRequestScopedUID();
+    String listDivId    = "listDiv" + getRequestScopedUID();
+    String groupsDivId  = "groupsDiv" + getRequestScopedUID();
 
     String viewObject = "subjectHandler" + bean.getIndex();
-    WebTheme theme = WebThemeManager.getTheme(container);
+    WebTheme theme    = WebThemeManager.getTheme(container);
 %>
 <style type="text/css">
 ul.subjectlist li
@@ -120,8 +123,10 @@ li.ptid a.unhighlight
 </style>
 <script>
     LABKEY.requiresExt4Sandbox(true);
+<% if (bean.getWide()) { %>
     LABKEY.requiresCss('study/DataViewsPanel.css');
     LABKEY.requiresScript("study/ParticipantFilterPanel.js");
+<% } %>
 </script>
 <script type="text/javascript">
 <%=viewObject%> = (function()
@@ -272,6 +277,9 @@ li.ptid a.unhighlight
         }
     %>];
     <% int ptidsPerCol = Math.min(Math.max(20,groupMap.size()), Math.max(6, ptidMap .size()/6));%>
+    <% if (!bean.getWide()) {
+        ptidsPerCol = ptidMap.size()/2;
+    } %>
     var _ptidPerCol = <%=ptidsPerCol%>;
 
     var h, i, ptid;
@@ -382,6 +390,7 @@ li.ptid a.unhighlight
     {
         var filterTask = new X.util.DelayedTask(filter);
 
+        <% if (bean.getWide()) { %>
         var ptidPanel = X.create('LABKEY.study.ParticipantFilterPanel',
         {
             renderTo  : X.get('<%=groupsDivId%>'),
@@ -415,6 +424,7 @@ li.ptid a.unhighlight
                 }
             }
         });
+        <% } %>
 
         function scrollHorizontal(evt) {
             X.get(<%=q(listDivId)%>).scroll((evt.getWheelDeltas().y > 0) ? 'r' : 'l', 20);
@@ -591,7 +601,7 @@ li.ptid a.unhighlight
         var viewWidth = X.getBody().getViewSize().width;
         var right = viewWidth - padding - rightAreaWidth;
         var x = listDiv.getXY()[0];
-        var width = Math.max(400, right-x);
+        var width = Math.max(<%=bean.getWide() ? 400 : 200%>, right-x);
         listDiv.setWidth(width);
     }
 

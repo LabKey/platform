@@ -31,6 +31,7 @@ public class SubjectsWebPart extends JspView<SubjectsWebPart.SubjectsBean>
         private int _rows = 5;
         private int _cols = 5;
         private int _index;
+        private boolean _wide;
 
         public ViewContext getViewContext()
         {
@@ -71,6 +72,16 @@ public class SubjectsWebPart extends JspView<SubjectsWebPart.SubjectsBean>
         {
             return _index;
         }
+
+        public void setWide(boolean wide)
+        {
+            _wide = wide;
+        }
+
+        public boolean getWide()
+        {
+            return _wide;
+        }
     }
 
     public SubjectsWebPart(boolean wide, int index)
@@ -80,6 +91,7 @@ public class SubjectsWebPart extends JspView<SubjectsWebPart.SubjectsBean>
         getModelBean().setRows(wide ? 5 : 10);
         getModelBean().setCols(wide ? 6 : 2);
         getModelBean().setIndex(index);
+        getModelBean().setWide(wide);
         String title = StudyModule.getWebPartSubjectNoun(getContextContainer()) + " List";
         setTitle(title);
     }
