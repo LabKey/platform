@@ -619,6 +619,8 @@ validNum:       {
     {
         try
         {
+            if (s.endsWith("Z"))
+                s = s.substring(0, s.length()-1);
             int len = s.length();
             long ms;
             if (len <= 10)
@@ -675,7 +677,7 @@ validNum:       {
         {
             ;
         }
-        throw new ConversionException(s);
+        return parseJsonDateTime(s);
     }
 
 
@@ -837,6 +839,26 @@ validNum:       {
             return null;
         else
             return FastDateFormat.getInstance(pattern).format(date);
+    }
+
+
+    static FastDateFormat jsonDateFormat = FastDateFormat.getInstance(JSONObject.JAVASCRIPT_DATE_FORMAT);
+
+    public static String formatJsonDateTime(Date date)
+    {
+        return jsonDateFormat.format(date);
+    }
+
+    public static long parseJsonDateTime(String s)
+    {
+        try
+        {
+            return new SimpleDateFormat(JSONObject.JAVASCRIPT_DATE_FORMAT).parse(s).getTime();
+        }
+        catch (ParseException x)
+        {
+            throw new ConversionException(x);
+        }
     }
 
 
@@ -1335,15 +1357,17 @@ Parse:
         {
             Date datetimeExpected = java.sql.Timestamp.valueOf("2001-02-03 04:05:06");
             long msExpected = java.sql.Timestamp.valueOf("2001-02-03 04:05:06").getTime();
+
+            assertEquals(msExpected, parseJsonDateTime(formatJsonDateTime(datetimeExpected)));
+            assertEquals(msExpected, parseDateTime(formatJsonDateTime(datetimeExpected)));
+
             for (Locale l : DateFormat.getAvailableLocales())
             {
-                SimpleDateFormat f = new SimpleDateFormat(JSONObject.JAVASCRIPT_DATE_FORMAT, l);
-                String s = f.format(datetimeExpected);
                 try
                 {
-                    assertEquals("locale test failed: " + l.getDisplayName(), msExpected, f.parse(s).getTime());
-//                    long ms = parseDateTime(s);
-//                    assertEquals("locale test failed: " + l.getDisplayName(), msExpected, ms);
+                    SimpleDateFormat f = new SimpleDateFormat(JSONObject.JAVASCRIPT_DATE_FORMAT, l);
+                    String s = f.format(datetimeExpected);
+                    assertEquals(l.getDisplayName(), msExpected, f.parse(s).getTime());
                 }
                 catch (ParseException x)
                 {
