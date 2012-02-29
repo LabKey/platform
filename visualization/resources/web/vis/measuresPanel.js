@@ -182,8 +182,16 @@ LABKEY.vis.MeasuresPanel = Ext.extend(Ext.Panel, {
         this.measuresStore = new Ext.data.Store({
             autoLoad: false,
             reader: new Ext.data.JsonReader({
-                root:'measures', idProperty:'id'},
-                [{name: 'id'}, {name:'name'},{name:'label'},{name:'description'}, {name:'isUserDefined'}, {name:'queryName'}, {name:'schemaName'}, {name:'type'}]
+                root:'measures', idProperty:'id'},[
+                    {name   : 'id'},
+                    {name   : 'name'},
+                    {name   : 'label'},
+                    {name   : 'description'},
+                    {name   : 'isUserDefined'},
+                    {name   : 'isDemographic'}, 
+                    {name   : 'queryName'},
+                    {name   : 'schemaName'},
+                    {name   :'type'}]
             ),
             remoteSort: false,
             sortInfo: {

@@ -10,6 +10,62 @@ Ext4.define('LABKEY.ext4.ParticipantReport', {
 
     extend : 'Ext.panel.Panel',
 
+    REPORT_PAGE_TEMPLATE : {
+        template : [
+            '<table class="report" cellspacing=0>',
+            '<tpl for="pages">',
+                '{[this.resetGrid(),""]}',
+        // PAGE TEMPLATE
+                '<tr><td class="break-spacer">&nbsp;<br>&nbsp;</td></tr>',
+                '<tr><td colspan="{[this.data.fields.length]}">',
+                    '<div style="border:solid 1px #eeeeee; padding:5px; margin:10px;">',
+                    '<table>',
+                        '<tr><td colspan=2 style="padding:5px; font-weight:bold; font-size:1.3em; text-align:center;">{[ this.getHtml(values.headerValue) ]}</td></tr>',
+        // note nested <tpl>, this will make values==datavalue and parent==field
+                        '<tpl for="this.data.pageFields"><tpl for="parent.first.asArray[values.index]">',
+                            '<tr><td align=right>{[this.getCaptionHtml(parent)]}:&nbsp;</td><td align=left style="{parent.style}">{[this.getHtml(values)]}</td></tr>',
+                        '</tpl></tpl>',
+                    '</table>',
+                    '</div>',
+                '</td></tr>',
+        // GRID TEMPLATE
+                '<tr>',
+                    '<tpl for="this.data.gridFields">',
+                        '<th style="padding-right: 10px;" class="labkey-column-header">{[this.getCaptionHtml(values)]}</th>',
+                    '</tpl>',
+                '</tr>',
+                '<tpl for="rows">',
+                    '<tr class="{[this.getGridRowClass()]}">',
+        // again nested tpl
+                    '<tpl for="this.data.gridFields"><tpl for="parent.asArray[values.index]">',
+                        '{[ this.getGridCellHtml(values) ]}',
+                    '</tpl></tpl>',
+                    '</tr>',
+                '</tpl>',
+            '</tpl>',
+            '</table>',
+            '{[((new Date()).valueOf() - this.start)/1000.0]}'
+        ],
+        on : {
+            dataload : function(rpt, data)
+            {
+            },
+            afterdatatransform : function(rpt, data)
+            {
+                // set headerValue field for each page
+                var index = data.pageFields[0].index;
+                for (var p=0 ; p<data.pages.length ; p++)
+                {
+                    var page = data.pages[p];
+                    page.headerValue = page.first.asArray[index];
+                    // tack on our own default url
+                    if (!page.headerValue.url)
+                        page.headerValue.url = LABKEY.ActionURL.buildURL('study', 'participant.view', null, {participantId : page.headerValue.value});
+                }
+            }
+        }
+    },
+
     constructor : function(config) {
 
         Ext4.QuickTips.init();
@@ -279,6 +335,7 @@ Ext4.define('LABKEY.ext4.ParticipantReport', {
                     {name : 'label'},
                     {name : 'description'},
                     {name : 'isUserDefined',    type : 'boolean'},
+                    {name : 'isDemographic',    type : 'boolean'},
                     {name : 'queryName'},
                     {name : 'schemaName'},
                     {name : 'type'}
@@ -560,7 +617,7 @@ Ext4.define('LABKEY.ext4.ParticipantReport', {
             pageBreakInfo : [],
             gridFields : [],
             rowBreakInfo : [],
-            reportTemplate : SIMPLE_PAGE_TEMPLATE
+            reportTemplate : this.REPORT_PAGE_TEMPLATE
         };
 
         this.lengthReportField.setValue('<i>Showing ' + qr.rows.length + ' Results</i>');
@@ -594,9 +651,16 @@ Ext4.define('LABKEY.ext4.ParticipantReport', {
                 config.gridFields.push(qr.measureToColumn[this.subjectVisitColumn + '/VisitDate']);
 
             for (i=0; i < this.gridFieldStore.getCount(); i++) {
-                var mappedColName = qr.measureToColumn[this.gridFieldStore.getAt(i).data.name];
-                if (mappedColName)
-                    config.gridFields.push(mappedColName);
+                var item = this.gridFieldStore.getAt(i);
+                var mappedColName = qr.measureToColumn[item.data.name];
+                if (mappedColName) {
+
+                    // map any demographic data to the pagefields else push them into the grid fields
+                    if (item.data.isDemographic)
+                        config.pageFields.push(mappedColName);
+                    else
+                        config.gridFields.push(mappedColName);
+                }
             }
 
             // finally fix up the column names so that they don't display the long made-up names, the label

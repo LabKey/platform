@@ -42,6 +42,9 @@
 <%@ page import="org.labkey.study.security.permissions.ManageRequestSettingsPermission" %>
 <%@ page import="org.labkey.study.model.ParticipantGroupManager" %>
 <%@ page import="org.labkey.study.model.ParticipantCategory" %>
+<%@ page import="org.labkey.api.data.ContainerManager" %>
+<%@ page import="java.util.Map" %>
+<%@ page import="java.util.HashMap" %>
 <%@ page extends="org.labkey.study.view.BaseStudyPage" %>
 <%
     JspView<StudyPropertiesQueryView> me = (JspView<StudyPropertiesQueryView>) HttpView.currentView();
@@ -66,6 +69,17 @@
         intervalLabel = "This study is set for manual reloading";
     else
         intervalLabel = "This study is scheduled to check for reload " + (StudyReload.ReloadInterval.Never != currentInterval ? currentInterval.getDescription() : "every " + study.getReloadInterval() + " seconds");
+
+    Map<String, Container> folders = new HashMap<String, Container>();
+    for (Container child : ContainerManager.getChildren(c))
+        folders.put(child.getName(), child);
+
+    String ancillaryStudyName = "New Study";
+    int i = 1;
+    while (folders.containsKey(ancillaryStudyName))
+    {
+        ancillaryStudyName = "New Study " + i++;
+    }
 %>
 <table>
     <%
@@ -279,6 +293,7 @@
     {
         function init(){
             var wizard = new LABKEY.study.CreateStudyWizard({
+                studyName : <%=q(ancillaryStudyName)%>,
                 subject: {
                     nounSingular: <%=q(study.getSubjectNounSingular())%>,
                     nounPlural: <%=q(study.getSubjectNounPlural())%>,

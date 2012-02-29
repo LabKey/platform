@@ -2206,6 +2206,7 @@ query/webapp/reports/output_scatterplot.jpg -text
 query/webapp/reports/output_text.jpg -text
 query/webapp/reports/paging_arrow_next.gif -text
 query/webapp/reports/paging_arrow_prev.gif -text
+query/webapp/reports/participantReport.png -text
 query/webapp/reports/r.gif -text
 query/webapp/reports/rowExpander.js -text
 query/webapp/reports/xls.gif -text
@@ -2971,6 +2972,7 @@ study/src/org/labkey/study/reports/StudyRReport.java -text
 study/src/org/labkey/study/reports/StudyReportUIProvider.java -text
 study/src/org/labkey/study/reports/StudyRunChartReportView.java -text
 study/src/org/labkey/study/reports/configureExportExcel.jsp -text
+study/src/org/labkey/study/reports/participantThumbnail.gif -text
 study/src/org/labkey/study/requirements/DefaultActor.java -text
 study/src/org/labkey/study/requirements/DefaultRequirement.java -text
 study/src/org/labkey/study/requirements/DefaultRequirementProvider.java -text

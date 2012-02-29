@@ -19,6 +19,7 @@ import org.labkey.api.reports.report.AbstractReport;
 import org.labkey.api.reports.report.ReportUrls;
 import org.labkey.api.settings.AppProps;
 import org.labkey.api.study.StudyService;
+import org.labkey.api.thumbnail.Thumbnail;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.UniqueID;
 import org.labkey.api.view.ActionURL;
@@ -28,6 +29,8 @@ import org.labkey.api.view.NavTree;
 import org.labkey.api.view.ViewContext;
 import org.labkey.api.view.WebPartView;
 import org.labkey.study.controllers.reports.ReportsController;
+
+import java.io.InputStream;
 
 /**
  * Created by IntelliJ IDEA.
@@ -78,5 +81,18 @@ public class ParticipantReport extends AbstractReport
         }
 
         return view;
+    }
+
+    @Override
+    public Thumbnail getStaticThumbnail()
+    {
+        InputStream is = ParticipantReport.class.getResourceAsStream("participantThumbnail.gif");
+        return new Thumbnail(is, "image/gif");
+    }
+
+    @Override
+    public String getStaticThumbnailCacheKey()
+    {
+        return "Reports:ParticipantReportStatic";
     }
 }

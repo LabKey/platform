@@ -154,7 +154,7 @@ LABKEY.study.CreateStudyWizard = Ext.extend(Ext.util.Observable, {
 
         var items = [];
 
-        this.info.name = 'New Study';
+        this.info.name = this.studyName;
         this.info.dstPath = LABKEY.ActionURL.getContainer() + '/' + this.info.name;
 
         var txt = Ext.DomHelper.markup({tag:'div', cls:'labkey-nav-page-header', html: 'General Setup'}) +
