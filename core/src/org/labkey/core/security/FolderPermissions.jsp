@@ -255,14 +255,14 @@ Ext.onReady(function(){
     function makeGroupsPanel(project,canEdit,ct)
     {
         var formId = 'newGroupForm' + (project?'':'Site');
-        var groupsList = new GroupPicker({cache:securityCache, width:350, style: 'padding-top: 10px; background: transparent;', border:false, autoHeight:true, projectId:project});
+        var groupsList = new GroupPicker({cache:securityCache, width:460, style: 'padding-top: 10px; background: transparent;', border:false, autoHeight:true, projectId:project});
         groupsList.on("select", function(list,group){
             showPopup(group, groupsList);
         });
 
         var items = [];
         if (canEdit) {
-            items.push({border:false, style : 'float: left; padding-right: 5px;', html:'<input id="' + (formId + '$input')+ '" placeholder="New group name" type="text" size="30" name="name">'});
+            items.push({border:false, style : 'float: left; padding-right: 5px;', html:'<input id="' + (formId + '$input')+ '" placeholder="New group name" type="text" size="50" name="name">'});
             items.push(new Ext.Button({text: 'Create New Group', id: formId + '$submit'}));
         }
         items.push(groupsList);
@@ -282,7 +282,7 @@ Ext.onReady(function(){
                 var sz = tabPanel.body.getSize();
                 this.setSize(sz.width-20,sz.height-20);
                 var btm = sz.height + tabPanel.body.getX();
-                groupsList.setSize(350,btm-groupsList.el.getX());
+                groupsList.setSize(460,btm-groupsList.el.getX());
                 this.doLayout();
             }
         };

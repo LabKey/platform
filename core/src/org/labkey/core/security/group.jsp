@@ -28,6 +28,7 @@
 <%@ page import="org.labkey.api.security.Group" %>
 <%@ page import="org.labkey.api.data.ContainerManager" %>
 <%@ page import="org.labkey.api.security.PrincipalType" %>
+<%@ page import="org.labkey.api.security.User" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%
@@ -35,6 +36,11 @@
     Container c = getViewContext().getContainer();
 %>
 
+<style type="text/css">
+    .lowlight {
+        color: #999999
+    }
+</style>
 <script type="text/javascript">
     LABKEY.requiresScript('completion.js');
 
@@ -177,7 +183,15 @@ else
         }
         else
         {
-            %><%= h(memberName) %>&nbsp;<%
+            User u = (User)member;
+            if (!u.isActive()) // issue 13849
+            {
+                %><span class="lowlight" ext:qtitle="User Inactive" ext:qtip="This user account has been disabled."><%= h(memberName) %></span>&nbsp;<%
+            }
+            else
+            {
+                %><%= h(memberName) %>&nbsp;<%
+            }
         }
 
         if (bean.redundantMembers.containsKey(member))

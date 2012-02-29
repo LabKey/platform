@@ -277,12 +277,14 @@ var SecurityCache = Ext.extend(Ext.util.Observable,{
     },
 
     // recursive, returns objects
-    getEffectiveMembers : function(principal, users, set)
+    getEffectiveUsers : function(principal, users, set)
     {
         users = users || [];
         set = set || {};
-        if (principal == this.groupUsers || principal == this.groupGuests)
+        if (principal == this.groupUsers)
             return users;
+        if (principal == this.groupGuests)
+            return [{UserId:0, Name:'Guest', Type:'u'}];
         if (!this.mapPrincipalToGroups)
             this._computeMembershipMaps();
         var ids = this.mapGroupToMembers[principal] || [];
@@ -299,7 +301,7 @@ var SecurityCache = Ext.extend(Ext.util.Observable,{
             if (user.Type == 'u')
                 users.push(user);
             else
-                this.getEffectiveMembers(user.UserId, users, set);
+                this.getEffectiveUsers(user.UserId, users, set);
         }
         return users;
     },
@@ -1290,21 +1292,26 @@ var GroupPicker = Ext.extend(Ext.Panel,{
             reserveScrollOffset: true,
             columns: [{
                 header: 'Group',
-                width: .50,
+                width: .43,
                 dataIndex: 'name',
                 tpl:'<div class="{extraClass}" style="cursor:pointer;">{name}</div>'
             },{
-                header: 'Member Groups',
-                width: .25,
+                header: '<span ext:qtip="Direct group memberships for the group">Member Groups</span>',
+                width: .20,
                 dataIndex: 'countGroups',
                 align:'right'
             },{
-                header: 'Member Users',
-                width: .25,
+                header: '<span ext:qtip="Direct user memberships for the group">Member Users</span>',
+                width: .20,
                 dataIndex: 'countUsers',
                 align:'right'
-            }
-            ]
+            },
+            {
+                header: '<span ext:qtip="Recursive count of unique users in the group and all member groups">Total Users</span>',
+                width: .17,
+                dataIndex: 'countTotalUsers',
+                align:'right'
+            }]
         });
         this.view.on('click', this.onViewClick, this);
     },
@@ -1338,10 +1345,11 @@ var GroupPicker = Ext.extend(Ext.Panel,{
             var name = r.data.Name;
             var countAllMembers = this.cache.getMembersOf(r.data.UserId).length;
             var countMemberGroups = this.cache.getMemberGroups(r.data.UserId).length;
+            var countTotalUsers = this.cache.getEffectiveUsers(r.data.UserId).length;
             var extraCls = this.extraClass(r.data);
-            data.push([name,(countAllMembers-countMemberGroups),countMemberGroups,r.data.Type,extraCls,r.data.UserId]);
+            data.push([name,(countAllMembers-countMemberGroups),countMemberGroups,countTotalUsers,r.data.Type,extraCls,r.data.UserId]);
         }, this);
-        this.store = new Ext.data.ArrayStore({data:data, fields:['name','countUsers','countGroups','type','extraClass','id']});
+        this.store = new Ext.data.ArrayStore({data:data, fields:['name','countUsers','countGroups','countTotalUsers','type','extraClass','id']});
     },
 
     onViewClick : function(view,index,item,e)

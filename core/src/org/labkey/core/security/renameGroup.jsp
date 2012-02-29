@@ -30,6 +30,8 @@
 
 <script type="text/javascript">
 
+Ext.QuickTips.init();    
+
 var renameForm;
 
 function SubmitButton_onClick()
@@ -59,7 +61,7 @@ Ext.onReady(function(){
         errorEl:'errorDiv',
         url:'renameGroup.post',
         items:[
-            {name:'newName', xtype:'textfield', fieldLabel:"New Name", allowBlank:false, validator:validGroupName},
+            {name:'newName', xtype:'textfield', fieldLabel:"New Name", allowBlank:false, validator:validGroupName, width:300},
             {name:'id', xtype:'hidden', value:<%=group.getUserId()%>}],
         buttons:[{text:'Submit', handler:SubmitButton_onClick}],
         buttonAlign:'left'
