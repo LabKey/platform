@@ -927,10 +927,12 @@ public class LuceneSearchServiceImpl extends AbstractSearchService
         iTimer.setPhase(SEARCH_PHASE.createQuery);
 
         Query query;
+        Analyzer analyzer = null;
 
         try
         {
-            QueryParser queryParser = new MultiFieldQueryParser(LUCENE_VERSION, standardFields, getAnalyzer(), boosts);
+            analyzer = getAnalyzer();
+            QueryParser queryParser = new MultiFieldQueryParser(LUCENE_VERSION, standardFields, analyzer, boosts);
             query = queryParser.parse(queryString);
         }
         catch (ParseException x)
@@ -974,6 +976,11 @@ public class LuceneSearchServiceImpl extends AbstractSearchService
         catch (IllegalArgumentException x)
         {
             throw new IOException(SearchUtils.getStandardPrefix(queryString) + x.getMessage());
+        }
+        finally
+        {
+            if (null != analyzer)
+                analyzer.close();
         }
 
         if (null != categories)
