@@ -526,10 +526,10 @@ public abstract class WebPartView<ModelBean> extends HttpView<ModelBean>
                         // Portal
                         if (links.length > 0)
                         {
-                            NavTree portal = new NavTree("Layout");
+//                            NavTree portal = new NavTree("Layout");
                             for (NavTree link : links)
-                                portal.addChild(link);
-                            nMenu.addChild(portal);
+                                nMenu.addChild(link);
+//                            nMenu.addChild(portal);
                         }
 
                         if (nMenu.hasChildren())
