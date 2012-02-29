@@ -388,7 +388,10 @@ LABKEY.ViewsPanel.prototype = {
             method: "GET",
             scope: this,
             success: function(response, options){doConfigViewOptions(Ext.util.JSON.decode(response.responseText), options, this.baseQuery);},
-            failure: function(){Ext.Msg.alert("Configure View types", "Unable to get view type information");}});
+            failure: LABKEY.Utils.getCallbackWrapper(function(json, response, options) {
+                Ext.Msg.alert("Configure View Types", "Unable to get view types: " + json.exception);
+            }, null, true)
+        });
     }
 };
 
@@ -438,6 +441,11 @@ function deleteSelections(grid)
 
         for (var i=0; i < selections.length; i++)
         {
+            if (!selections[i].data.editable)
+            {
+                Ext.Msg.alert("Delete Views", "You are trying to delete a view that is not editable.");
+                return;
+            }
             if (selections[i].data.inherited)
             {
                 Ext.Msg.alert("Delete Views", "You are trying to delete a view that is shared from another container. A shared view can be deleted only in the container that it was created in.");
@@ -494,7 +502,9 @@ function doDeleteViews(msg, params, grid)
                         method: "POST",
                         scope: this,
                         success: function(){grid.store.load();},
-                        failure: function(){Ext.Msg.alert("Delete Views", "Deletion Failed");}
+                        failure: LABKEY.Utils.getCallbackWrapper(function(json, response, options) {
+                            Ext.Msg.alert("Delete Views", "Deletion Failed: " + json.exception);
+                        }, null, true)
                     });
                 }},
             id: 'delete_views'
