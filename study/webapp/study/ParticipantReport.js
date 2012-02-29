@@ -132,18 +132,8 @@ Ext4.define('LABKEY.ext4.ParticipantReport', {
                     },{
                         text    : 'Print',
                         handler : function(b) {
-                            if (this.isDirty()) {
-                                Ext4.Msg.show({
-                                    title   : 'Save Before Print',
-                                    msg     : 'Please save this report before printing.',
-                                    buttons : Ext4.MessageBox.OK,
-                                    scope   : this
-                                });
-                            }
-                            else if (!this.isNew()) {
-                                this.fitToReport();
-                                window.print();
-                            }
+                            this.fitToReport();
+                            window.print();
                         },
                         scope   : this
                     },{

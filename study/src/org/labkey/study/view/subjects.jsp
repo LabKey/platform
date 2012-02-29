@@ -597,11 +597,11 @@ li.ptid a.unhighlight
         if (!listDiv) return;
         var rightAreaWidth = 15;
         try {rightAreaWidth = X.fly(X.select(".labkey-side-panel").elements[0]).getWidth();} catch (x){}
-        var padding = 35;
+        var padding = 60;
         var viewWidth = X.getBody().getViewSize().width;
         var right = viewWidth - padding - rightAreaWidth;
         var x = listDiv.getXY()[0];
-        var width = Math.max(<%=bean.getWide() ? 400 : 200%>, right-x);
+        var width = Math.max(<%=bean.getWide() ? 400 : 200%>, (right-x));
         listDiv.setWidth(width);
     }
 
@@ -615,11 +615,13 @@ Ext4.onReady(<%=viewObject%>.render, <%=viewObject%>);
 <div style="">
     <table id="<%= divId %>">
         <tr>
-            <td style="padding: 5px; margin: 5px;" valign=top>
+            <% if (bean.getWide()) { %>
+            <td style="margin: 5px;" valign=top>
                 <div id="<%=groupsDivId%>"></div>
             </td>
-            <td style="padding: 5px; margin: 5px;" valign=top class="iScroll">
-                <table width="100%"><tr>
+            <% } %>
+            <td style="margin: 5px;" valign=top class="iScroll">
+                <table><tr>
                     <td><div style="" >Filter&nbsp;<input id="<%=divId%>.filter" type="text" size="15" style="border:solid 1px #<%=theme.getWebPartColor()%>"></div></td>
                     <%--<td>&nbsp;<%if (hasCohorts){%><input type=checkbox>&nbsp;by&nbsp;cohort (NYI)<%}%></td>--%>
                 </tr></table>
