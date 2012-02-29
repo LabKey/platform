@@ -15,6 +15,7 @@
  */
 package org.labkey.api.reader;
 
+import org.apache.commons.beanutils.ConversionException;
 import org.apache.poi.hssf.OldExcelFormatException;
 import org.apache.poi.openxml4j.exceptions.InvalidFormatException;
 import org.apache.poi.ss.format.CellFormat;
@@ -93,7 +94,6 @@ public class ExcelFactory
 
     public static Workbook createFromArray(JSONArray sheetsArray, ExcelWriter.ExcelDocumentType docType) throws IOException
     {
-        SimpleDateFormat dateFormat = new SimpleDateFormat(JSONObject.JAVASCRIPT_DATE_FORMAT);
         Workbook workbook = docType.createWorkbook();
 
         Map<String, CellStyle> customStyles = new HashMap<String, CellStyle>();
@@ -150,7 +150,7 @@ public class ExcelFactory
                         try
                         {
                             // JSON has no date literal syntax so try to parse all Strings as dates
-                            Date d = dateFormat.parse((String)value);
+                            Date d = new Date(org.labkey.api.util.DateUtil.parseDateTime((String) value));
                             try
                             {
                                 if (metadataObject != null && metadataObject.has("formatString"))
@@ -171,7 +171,7 @@ public class ExcelFactory
                                 cell.setCellValue(e.getMessage());
                             }
                         }
-                        catch (ParseException e)
+                        catch (ConversionException e)
                         {
                             // Not a date
                             cell.setCellValue((String)value);

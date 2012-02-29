@@ -73,7 +73,7 @@ public class SecurityPolicy implements HasPermission
     public SecurityPolicy(@NotNull SecurableResource resource, @NotNull SecurityPolicy otherPolicy)
     {
         this(resource);
-        for(RoleAssignment assignment : otherPolicy.getAssignments())
+        for (RoleAssignment assignment : otherPolicy.getAssignments())
         {
             RoleAssignment newAssignment = new RoleAssignment();
             newAssignment.setResourceId(resource.getResourceId());
@@ -92,7 +92,8 @@ public class SecurityPolicy implements HasPermission
         _resourceId = otherPolicy._resourceId;
         _resourceClass = otherPolicy._resourceClass;
         _containerId = otherPolicy._containerId;
-        for(RoleAssignment assignment : otherPolicy.getAssignments())
+        _modified = otherPolicy._modified;
+        for (RoleAssignment assignment : otherPolicy.getAssignments())
         {
             RoleAssignment newAssignment = new RoleAssignment();
             newAssignment.setResourceId(_resourceId);
@@ -245,6 +246,7 @@ public class SecurityPolicy implements HasPermission
         return false;
     }
 
+
     protected Set<Class<? extends Permission>> getPermissions(@NotNull int[] principals, @Nullable Set<Role> contextualRoles)
     {
         Set<Class<? extends Permission>> perms = new HashSet<Class<? extends Permission>>();
@@ -256,23 +258,23 @@ public class SecurityPolicy implements HasPermission
         RoleAssignment assignment = assignmentIter.hasNext() ? assignmentIter.next() : null;
         int principalsIdx = 0;
 
-        while(null != assignment && principalsIdx < principals.length)
+        while (null != assignment && principalsIdx < principals.length)
         {
-            if(assignment.getUserId() == principals[principalsIdx])
+            if (assignment.getUserId() == principals[principalsIdx])
             {
-                if(null != assignment.getRole())
+                if (null != assignment.getRole())
                     perms.addAll(assignment.getRole().getPermissions());
 
                 assignment = assignmentIter.hasNext() ? assignmentIter.next() : null;
             }
-            else if(assignment.getUserId() < principals[principalsIdx])
+            else if (assignment.getUserId() < principals[principalsIdx])
                 assignment = assignmentIter.hasNext() ? assignmentIter.next() : null;
             else
                 ++principalsIdx;
         }
 
         //apply contextual roles if any
-        if(null != contextualRoles)
+        if (null != contextualRoles)
         {
             for(Role role : contextualRoles)
             {
@@ -282,6 +284,7 @@ public class SecurityPolicy implements HasPermission
 
         return perms;
     }
+
 
     @NotNull
     protected Set<Role> getRoles(@NotNull int[] principals)
@@ -323,15 +326,15 @@ public class SecurityPolicy implements HasPermission
     {
         int perms = 0;
         Set<Class<? extends Permission>> permClasses = getPermissions(principal);
-        if(permClasses.contains(ReadPermission.class))
+        if (permClasses.contains(ReadPermission.class))
             perms |= ACL.PERM_READ;
-        if(permClasses.contains(InsertPermission.class))
+        if (permClasses.contains(InsertPermission.class))
             perms |= ACL.PERM_INSERT;
-        if(permClasses.contains(UpdatePermission.class))
+        if (permClasses.contains(UpdatePermission.class))
             perms |= ACL.PERM_UPDATE;
-        if(permClasses.contains(DeletePermission.class))
+        if (permClasses.contains(DeletePermission.class))
             perms |= ACL.PERM_DELETE;
-        if(permClasses.contains(AdminPermission.class))
+        if (permClasses.contains(AdminPermission.class))
             perms |= ACL.PERM_ADMIN;
 
         return perms;

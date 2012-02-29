@@ -20,6 +20,7 @@ import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.settings.AppProps;
 import org.labkey.api.settings.LookAndFeelProperties;
+import org.labkey.api.util.DateUtil;
 import org.labkey.api.view.template.PageConfig;
 import org.labkey.api.view.WebPartView;
 import org.jetbrains.annotations.Nullable;
@@ -55,8 +56,7 @@ public abstract class ExportScriptModel
 
     public String getCreatedOn()
     {
-        SimpleDateFormat fmt = new SimpleDateFormat(JSONObject.JAVASCRIPT_DATE_FORMAT);
-        return fmt.format(new Date());
+        return DateUtil.formatJsonDateTime(new Date());
     }
 
     public String getBaseUrl()

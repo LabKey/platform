@@ -3,6 +3,7 @@ package org.labkey.api.mbean;
 import org.apache.log4j.Logger;
 
 import javax.management.DynamicMBean;
+import javax.management.InstanceNotFoundException;
 import javax.management.MBeanServer;
 import javax.management.MalformedObjectNameException;
 import javax.management.ObjectName;
@@ -38,28 +39,42 @@ public class LabKeyManagement
 
     public static void register(DynamicMBean bean, String type, String name)
     {
+        ObjectName oname=null;
         try
         {
-            MBeanServer mbs = ManagementFactory.getPlatformMBeanServer();
-            mbs.registerMBean(bean, createName(type,name));
+            oname = createName(type,name);
         }
         catch (Exception x)
         {
-            Logger.getLogger(LabKeyManagement.class).error(x);
+            Logger.getLogger(LabKeyManagement.class).error("error registering mbean : " + String.valueOf(name), x);
         }
+        register(bean, oname);
     }
 
+
+    static final Object _lock = new Object();
 
     public static void register(DynamicMBean bean, ObjectName name)
     {
         try
         {
-            MBeanServer mbs = ManagementFactory.getPlatformMBeanServer();
-            mbs.registerMBean(bean, name);
+            synchronized (_lock)
+            {
+                MBeanServer mbs = ManagementFactory.getPlatformMBeanServer();
+                try
+                {
+                    mbs.unregisterMBean(name);
+                }
+                catch (InstanceNotFoundException x)
+                {
+                    /* */
+                }
+                mbs.registerMBean(bean, name);
+            }
         }
         catch (Exception x)
         {
-            Logger.getLogger(LabKeyManagement.class).error(x);
+            Logger.getLogger(LabKeyManagement.class).error("error registering mbean : " + String.valueOf(name), x);
         }
     }
 }

@@ -15,6 +15,7 @@
  */
 package org.labkey.api.security;
 
+import org.apache.commons.beanutils.ConversionException;
 import org.jetbrains.annotations.NotNull;
 import org.labkey.api.security.roles.Role;
 import org.labkey.api.security.roles.RoleManager;
@@ -61,7 +62,7 @@ public class MutableSecurityPolicy extends SecurityPolicy
 
     public void addRoleAssignment(@NotNull UserPrincipal principal, @NotNull Role role)
     {
-        if(role.getExcludedPrincipals().contains(principal))
+        if (role.getExcludedPrincipals().contains(principal))
             throw new IllegalArgumentException("The principal " + principal.getName() + " may not be assigned the role " + role.getName() + "!");
         
         RoleAssignment assignment = new RoleAssignment(getResourceId(), principal, role);
@@ -90,7 +91,15 @@ public class MutableSecurityPolicy extends SecurityPolicy
     {
         MutableSecurityPolicy policy = new MutableSecurityPolicy(resource);
         String modified = (String)map.get("modified");
-        policy._modified = (modified == null || modified.length() == 0) ? null : new Date(DateUtil.parseDateTime(modified));
+
+        try
+        {
+            policy._modified = (modified == null || modified.length() == 0) ? null : new Date(DateUtil.parseDateTime(modified));
+        }
+        catch (ConversionException x)
+        {
+            /* */
+        }
 
         //ensure that if there is a property called 'assignments', that it is indeed a list
         if(map.containsKey("assignments"))

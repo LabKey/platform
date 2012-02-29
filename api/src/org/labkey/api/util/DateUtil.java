@@ -803,6 +803,14 @@ validNum:       {
     }
 
 
+    public static String getJsonDateTimeFormatString()
+    {
+        return "d MMM yyyy HH:mm:ss";
+        // MAB: I think this would be better, shouldn't use text month in json format
+        // return "yyyy/MM/dd HH:mm:ss";
+    }
+
+
     // Format current date using standard pattern
     public static String formatDate()
     {
@@ -842,7 +850,7 @@ validNum:       {
     }
 
 
-    static FastDateFormat jsonDateFormat = FastDateFormat.getInstance(JSONObject.JAVASCRIPT_DATE_FORMAT);
+    static FastDateFormat jsonDateFormat = FastDateFormat.getInstance(getJsonDateTimeFormatString());
 
     public static String formatJsonDateTime(Date date)
     {
@@ -853,7 +861,7 @@ validNum:       {
     {
         try
         {
-            return new SimpleDateFormat(JSONObject.JAVASCRIPT_DATE_FORMAT).parse(s).getTime();
+            return new SimpleDateFormat(getJsonDateTimeFormatString()).parse(s).getTime();
         }
         catch (ParseException x)
         {
@@ -1365,7 +1373,7 @@ Parse:
             {
                 try
                 {
-                    SimpleDateFormat f = new SimpleDateFormat(JSONObject.JAVASCRIPT_DATE_FORMAT, l);
+                    SimpleDateFormat f = new SimpleDateFormat(getJsonDateTimeFormatString(), l);
                     String s = f.format(datetimeExpected);
                     assertEquals(l.getDisplayName(), msExpected, f.parse(s).getTime());
                 }
