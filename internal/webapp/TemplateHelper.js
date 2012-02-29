@@ -273,7 +273,14 @@ X.define('LABKEY.TemplateReport',
                  * @param {LABKEY.TemplateReport}
                  * @param transformed data see transformForReportLayout
                  */
-                'afterdatatransform'
+                'afterdatatransform',
+
+                /**
+                 * @event onpostprocess
+                 * Fires after data is rendered
+                 * @param {LABKEY.TemplateReport}
+                 */
+                'afterrender'
             );
 
 
@@ -599,6 +606,7 @@ X.define('LABKEY.TemplateReport',
         this.template = new Ext4.XTemplate(tplConfig.template, tplConfig);
         this.template.data = this.reportData;
         this.template.overwrite(this.el, this.reportData);
+        this.fireEvent('afterrender', this);
     },
 
     // returns data applied to the template in markup form without rendering it to the dom

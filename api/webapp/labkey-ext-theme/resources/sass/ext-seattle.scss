@@ -30,6 +30,7 @@ $panel-header-background-gradient: color-stops($base-color, $base-color);
 
 
 //buttons
+$button-text-transform: uppercase !default;
 $button-default-color: $base-color;
 $button-default-color-over: #000;
 $button-default-color-focus: #000;

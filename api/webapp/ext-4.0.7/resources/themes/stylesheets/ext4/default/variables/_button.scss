@@ -1,12 +1,15 @@
 $button-arrow-size: 12px !default;
 $button-split-size: 14px !default;
 $button-icon-spacing: 4px !default;
+$button-text-transform: none !default;
+$button-font-size: ceil($font-size * .9) !default; //11px
 
 $button-small-border-radius: 3px !default;
 $button-small-border-width: 1px !default;
 $button-small-padding: 2px !default;
 $button-small-text-padding: 4px;
-$button-small-font-size: ceil($font-size * .9) !default; //11px
+$button-small-text-transform: $button-text-transform;
+$button-small-font-size: $button-font-size;
 $button-small-font-size-over: $button-small-font-size !default;
 $button-small-font-size-focus: $button-small-font-size-over;
 $button-small-font-size-pressed: $button-small-font-size !default;
@@ -27,7 +30,8 @@ $button-medium-border-radius: 3px !default;
 $button-medium-border-width: 1px !default;
 $button-medium-padding: 3px !default;
 $button-medium-text-padding: 3px;
-$button-medium-font-size: ceil($font-size * .9) !default; //11px
+$button-medium-text-transform: $button-text-transform;
+$button-medium-font-size: $button-font-size;
 $button-medium-font-size-over: $button-medium-font-size !default;
 $button-medium-font-size-focus: $button-medium-font-size-over;
 $button-medium-font-size-pressed: $button-medium-font-size !default;
@@ -48,7 +52,8 @@ $button-large-border-radius: 3px !default;
 $button-large-border-width: 1px !default;
 $button-large-padding: 3px !default;
 $button-large-text-padding: 3px;
-$button-large-font-size: ceil($font-size * .9) !default; //11px
+$button-large-text-transform: $button-text-transform;
+$button-large-font-size: $button-font-size;
 $button-large-font-size-over: $button-large-font-size !default;
 $button-large-font-size-focus: $button-large-font-size-over;
 $button-large-font-size-pressed: $button-large-font-size !default;
