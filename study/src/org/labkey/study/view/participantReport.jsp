@@ -37,6 +37,28 @@
 
     String renderId = "participant-report-div-" + UniqueID.getRequestScopedUID(HttpView.currentRequest());
 %>
+<style type="text/css" media="print">
+    #participant-report-div-3 {
+        position : absolute;
+        left : 0;
+        top : 0;
+        width : 100%;
+    }
+
+    #headerpanel,
+    div.labkey-app-bar,
+    #discussionMenuToggle,
+    .labkey-wp-title-left,
+    .labkey-wp-title-right,
+    .report-toolbar
+    {
+        display: none;
+    }
+
+    table.labkey-wp {
+        border: none !important;
+    }
+</style>
 <script type="text/javascript">
     LABKEY.requiresClientAPI(); // required for LABKEY.Visualization
     LABKEY.requiresExt4Sandbox(true);
@@ -49,7 +71,7 @@
 
     Ext4.onReady(function(){
         var panel = Ext4.create('LABKEY.ext4.ParticipantReport', {
-            height          : 600, // TODO: figure out dynamic height
+            height          : 600,
             subjectColumn   : <%=q(org.labkey.api.study.StudyService.get().getSubjectColumnName(me.getViewContext().getContainer()))%>,
             subjectVisitColumn: <%=q(org.labkey.api.study.StudyService.get().getSubjectVisitColumnName(me.getViewContext().getContainer()))%>,
             subjectNoun     : {singular : <%=PageFlowUtil.jsString(s.getSubjectNounSingular())%>, plural : <%=PageFlowUtil.jsString(s.getSubjectNounPlural())%>},

@@ -1392,7 +1392,7 @@ Ext4.define('LABKEY.ext4.DataViewsPanel', {
             },
             items   : [grid],
             buttons : [{
-                text    : 'Create New Category',
+                text    : 'New Category',
                 handler : function(btn) {
                     var r = Ext4.ModelManager.create({
                         label        : 'New Category',

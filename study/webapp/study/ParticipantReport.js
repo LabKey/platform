@@ -15,12 +15,14 @@ Ext4.define('LABKEY.ext4.ParticipantReport', {
         Ext4.QuickTips.init();
 
         Ext4.applyIf(config, {
-            layout : 'border',
-            frame  : false,
-            border : false,
-            editable : false,
+            layout    : 'border',
+            frame     : false,
+            border    : false,
+            editable  : false,
+            printMode : LABKEY.ActionURL.getParameter('_print') != undefined,
+            fitted    : false,
             allowCustomize : false,
-            subjectNoun : {singular : 'Subject', plural : 'Subjects'}
+            subjectNoun    : {singular : 'Participant', plural : 'Participants'}
         });
 
         this.callParent([config]);
@@ -33,8 +35,9 @@ Ext4.define('LABKEY.ext4.ParticipantReport', {
         this.items = [];
 
         this.previewPanel = Ext4.create('Ext.panel.Panel', {
-            bodyPadding : 20,
-            autoScroll  : true,
+            bodyStyle : 'padding: 0 20px;',
+            autoScroll  : !this.printMode,
+            region : 'center',
             border : false, frame : false,
             html   : '<span style="width: 400px; display: block; margin-left: auto; margin-right: auto">' +
                     ((!this.reportId && !this.allowCustomize) ? 'Unable to initialize report. Please provide a Report Identifier.' : 'Preview Area') +
@@ -54,20 +57,62 @@ Ext4.define('LABKEY.ext4.ParticipantReport', {
             value : '<i>Showing 1000 Results</i>'
         });
 
-        this.centerPanel = Ext4.create('Ext.panel.Panel', {
-            border   : false, frame : false,
-            layout   : 'fit',
-            disabled : this.isNew(),
-            region   : 'center',
-            tbar     :  [{
-                text    : 'Export',
-                menu    : [{
-                    text    : 'To Excel',
-                    handler : function(){this.exportToXls();},
-                    scope   : this}]
-            },'->',this.lengthReportField],
-            items    : [this.previewPanel, this.exportForm]
-        });
+        if (!this.printMode) {
+            this.centerPanel = Ext4.create('Ext.panel.Panel', {
+                border   : false, frame : false,
+                layout   : 'fit',
+                disabled : this.isNew(),
+                region   : 'center',
+                dockedItems : [{
+                    xtype : 'toolbar',
+                    dock  : 'top',
+                    cls   : 'report-toolbar',
+                    items : [{
+                        text    : 'Export',
+                        menu    : [{
+                            text    : 'To Excel',
+                            handler : function(){this.exportToXls();},
+                            scope   : this}]
+                    },{
+                        text    : 'Print',
+                        handler : function(b) {
+                            if (this.isDirty()) {
+                                Ext4.Msg.show({
+                                    title   : 'Save Before Print',
+                                    msg     : 'Please save this report before printing.',
+                                    buttons : Ext4.MessageBox.OK,
+                                    scope   : this
+                                });
+                            }
+                            else if (!this.isNew()) {
+                                this.fitToReport();
+                                window.print();
+                            }
+                        },
+                        scope   : this
+                    },{
+                        text    : this.fitted ? 'Collapse' : 'Expand',
+                        handler : function(btn) {
+                            if (this.fitted) {
+                                btn.setText('Expand');
+                                this.fitted = false;
+                                this.setHeight(600);
+                            }
+                            else {
+                                btn.setText('Collapse');
+                                this.fitToReport();
+                            }
+                        },
+                        scope   : this
+                    },'->',this.lengthReportField]
+                }],
+                items    : [this.previewPanel, this.exportForm]
+            });
+        }
+        else {
+            this.centerPanel = this.previewPanel;
+        }
+
         this.items.push(this.centerPanel);
 
         if (this.allowCustomize) {
@@ -155,10 +200,8 @@ Ext4.define('LABKEY.ext4.ParticipantReport', {
                         this.unmask();
                         this.renderData(Ext4.decode(response.responseText));
                     },
-                    failure : function(response){
-                        Ext4.Msg.alert('Failure', Ext4.decode(response.responseText).exception);
-                    },
-                    scope : this
+                    failure : this.onFailure,
+                    scope   : this
                 });
             }
             else {
@@ -471,10 +514,8 @@ Ext4.define('LABKEY.ext4.ParticipantReport', {
                 this.saveAsButton.setVisible(true);
                 this.loadSavedConfig(Ext4.decode(response.responseText).reportConfig);
             },
-            failure : function(response){
-                Ext4.Msg.alert('Failure', Ext4.decode(response.responseText).exception);
-            },
-            scope : this
+            failure : this.onFailure,
+            scope   : this
         });
     },
 
@@ -592,11 +633,40 @@ Ext4.define('LABKEY.ext4.ParticipantReport', {
             this.templateReport.on('afterdatatransform', function(th, reportData) {
                 this.lengthReportField.setValue('<i>Showing ' + reportData.pages.length + ' Results</i>');
             }, this);
+
+            if (this.printMode) {
+                this.templateReport.on('afterrender', this.goToPrint, this);
+            }
+            else if (this.fitted) {
+                this.templateReport.on('afterrender', this.fitToReport, this);
+            }
+
             this.templateReport.loadData(qr);
 
-            this.on('resize', this.showFilter, this);
+            if (!this.printMode) {
+                this.on('resize', this.showFilter, this);
+                this.showFilter(this.reportGroups ? this.reportGroups : []);
+            }
+        }
+    },
 
-            this.showFilter(this.reportGroups ? this.reportGroups : []);
+    fitToReport : function() {
+        this.fitted = true;
+        if (this.templateReport) {
+            var _h = this.templateReport.getHeight();
+            if (_h > 600) {
+                this.setHeight(_h + 100 + (this._inCustomMode() ? 400 : 0));
+            }
+            else {
+                this.setHeight(600);
+            }
+        }
+    },
+
+    goToPrint : function() {
+        if (this.printMode) {
+            this.fitToReport();
+            window.print();
         }
     },
 
@@ -624,15 +694,13 @@ Ext4.define('LABKEY.ext4.ParticipantReport', {
             this.storedTemplateConfig = this.getCurrentReportConfig();
             this.storedTemplateConfig.editable = this.allowCustomize;
         }
-
-//        if (this.filterWindow && this.filterWindow.isVisible()) {
-//            this.filterWindow.collapse();
-//        }
-
         // if the north panel hasn't been fully populated, initialize the dataset store, else
         // just show the panel
         this.northPanel.show();
         this.customMode = true;
+
+        if (this.fitted)
+            this.fitToReport();
     },
 
     onDisableCustomMode : function() {
@@ -641,6 +709,9 @@ Ext4.define('LABKEY.ext4.ParticipantReport', {
 
         if (this.northPanel)
             this.northPanel.hide();
+
+        if (this.fitted)
+            this.fitToReport();
     },
 
     generateTemplateConfig : function(delay) {
@@ -688,7 +759,6 @@ Ext4.define('LABKEY.ext4.ParticipantReport', {
         if (this.filterWindow)
             this.filterWindow.calculatePosition();
         else {
-            console.log('filter panel initializing...');
             this.filterWindow = Ext4.create('LABKEY.ext4.ReportFilterWindow', {
                 title    : 'Filter Report',
                 items    : [panel],
@@ -768,15 +838,16 @@ Ext4.define('LABKEY.ext4.ParticipantReport', {
                 callback.call(scope || this, subjects);
 
             },
-            failure  : function(response){
-                Ext4.Msg.alert('Failure', Ext4.decode(response.responseText));
-            },
-            scope : this
+            failure  : this.onFailure,
+            scope    : this
         });
     },
 
+    onFailure : function(resp) {
+        Ext4.Msg.alert('Failure', Ext4.decode(resp.responseText).exception);
+    },
+
     // get the grid fields in a form that the visualization getData api can understand
-    //
     getMeasures : function() {
 
         var measures = [];
@@ -833,7 +904,6 @@ Ext4.define('LABKEY.ext4.ParticipantReport', {
             method  : 'POST',
             jsonData: data,
             success : function(resp){
-                console.log('new message');
                 // if you want to stay on page, you need to refresh anyway to update attachments
                 var msgbox = Ext4.create('Ext.window.Window', {
                     title    : 'Saved',
@@ -859,7 +929,7 @@ Ext4.define('LABKEY.ext4.ParticipantReport', {
                     titleEl[0].innerHTML = LABKEY.Utils.encodeHtml(data.name);
                 }
 
-                var navTitle = Ext4.query('table[class=labkey-nav-trail] span[class=labkey-nav-page-header]')
+                var navTitle = Ext4.query('table[class=labkey-nav-trail] span[class=labkey-nav-page-header]');
                 if (navTitle && (navTitle.length >= 1))
                 {
                     navTitle[0].innerHTML = LABKEY.Utils.encodeHtml(data.name);
@@ -867,14 +937,10 @@ Ext4.define('LABKEY.ext4.ParticipantReport', {
                 
                 this.reportId = o.reportId;
                 this.loadReport(this.reportId);
-                //this.reportName.setReadOnly(true);
-                //this.saveAsButton.setVisible(true);
                 this.customize();
             },
-            failure : function(resp){
-                Ext4.Msg.alert('Failure', Ext4.decode(resp.responseText).exception);
-            },
-            scope : this
+            failure : this.onFailure,
+            scope   : this
         });
     },
 
@@ -889,11 +955,9 @@ Ext4.define('LABKEY.ext4.ParticipantReport', {
             this.exportForm.mon('actioncomplete', function(){this.dirty = dirty;}, this, {single : true});
             this.exportForm.getForm().setValues({htmlFragment : markup, 'X-LABKEY-CSRF' : LABKEY.CSRF});
             this.exportForm.submit({
-                scope: this,
-                url    : LABKEY.ActionURL.buildURL('experiment', 'convertHtmlToExcel'),
-                failure: function(response, opts){
-                    Ext4.Msg.alert('Failure', Ext4.decode(response.responseText).exception);
-                }
+                url     : LABKEY.ActionURL.buildURL('experiment', 'convertHtmlToExcel'),
+                failure : this.onFailure,
+                scope   : this
             });
 
             var task = new Ext4.util.DelayedTask(function(){this.dirty = dirty;}, this);
@@ -1019,8 +1083,12 @@ Ext4.define('LABKEY.ext4.ParticipantReport', {
         this.dirty = dirty;
     },
 
+    isDirty : function() {
+        return this.dirty;
+    },
+
     beforeUnload : function() {
-        if (this.dirty) {
+        if (this.isDirty()) {
             return 'please save your changes';
         }
     },
