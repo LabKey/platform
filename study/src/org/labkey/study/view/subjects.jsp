@@ -220,7 +220,7 @@ li.ptid a.unhighlight
         if (hasCohorts)
         {
             final int nocohort = cohorts.length;
-            memberSets[nocohort].flip(0,ptidMap.size()-1);
+            memberSets[nocohort].flip(0,ptidMap.size());
             (new SqlSelector(dbschema, "SELECT currentcohortid, participantid FROM study.participant WHERE container=?", container)).forEach(new Selector.ForEachBlock<ResultSet>()
             {
                 public void exec(ResultSet rs) throws SQLException
@@ -238,7 +238,7 @@ li.ptid a.unhighlight
         if (hasGroups)
         {
             final int nogroup = memberSets.length-1;
-            memberSets[nogroup].flip(0,ptidMap.size()-1);
+            memberSets[nogroup].flip(0,ptidMap.size());
             (new SqlSelector(dbschema, "SELECT groupid, participantid FROM study.participantgroupmap WHERE container=?", container)).forEach(new Selector.ForEachBlock<ResultSet>()
             {
                 public void exec(ResultSet rs) throws SQLException
@@ -388,7 +388,8 @@ li.ptid a.unhighlight
             title     : 'Show',
             border    : true,
             width     : 260,
-            height    : 425,
+            autoHeight: true,
+            minHeight : 200,
             overCls   : 'iScroll',
             bodyStyle : 'padding: 8px',
             listeners : {
