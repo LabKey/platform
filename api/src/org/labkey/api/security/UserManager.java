@@ -63,6 +63,8 @@ public class UserManager
 
     public static final String USER_AUDIT_EVENT = "UserAuditEvent";
 
+    public static final int VALID_GROUP_NAME_LENGTH = 64;
+
     //
     // UserListener
     //
@@ -399,6 +401,8 @@ public class UserManager
                 // see renameGroup.jsp if you change this
                 if (!StringUtils.containsNone(name, "@./\\-&~_"))
                     return "Group name should not contain punctuation.";
+                if (name.length() > VALID_GROUP_NAME_LENGTH) // issue 14147
+                    return "Name value is too long, maximum length is " + VALID_GROUP_NAME_LENGTH + " characters.";
                 break;
 
             // MODULE MANAGED

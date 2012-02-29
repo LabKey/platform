@@ -1419,8 +1419,8 @@ public class SecurityManager
                 if (null == g)
                     continue;
 
-                // Only groups in this project
-                if (g.isProjectGroup() && g.getContainer().equals(proj.getId()))
+                // Only groups in this project and site groups (issue 12026)
+                if ((g.isProjectGroup() && g.getContainer().equals(proj.getId())) || !g.isProjectGroup())
                 {
                     groupList.append(sep);
                     groupList.append(g.getName());
