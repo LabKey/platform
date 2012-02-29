@@ -28,6 +28,7 @@ import org.labkey.api.audit.AuditLogService;
 import org.labkey.api.collections.CaseInsensitiveHashSet;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
+import org.labkey.api.data.RuntimeSQLException;
 import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.exp.LsidManager;
@@ -70,6 +71,7 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.MalformedURLException;
+import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -421,6 +423,13 @@ public class FileSystemResource extends AbstractWebdavResource
         return _length;
     }
 
+    public boolean canRead(User user)
+    {
+        if (!super.canRead(user))
+            return false;
+        File f = getFile();
+        return null==f || f.canRead();
+    }
 
     public boolean canWrite(User user)
     {
@@ -452,7 +461,7 @@ public class FileSystemResource extends AbstractWebdavResource
 
     public boolean canList(User user)
     {
-        return canRead(user) || (null != _folder && _folder.canList(user));
+        return super.canRead(user) || (null != _folder && _folder.canList(user));
     }    
 
     private boolean hasFileSystem()
@@ -672,6 +681,14 @@ public class FileSystemResource extends AbstractWebdavResource
                 catch (MalformedURLException e)
                 {
                     throw new UnexpectedException(e);
+                }
+                catch (SQLException x)
+                {
+                    throw new RuntimeSQLException(x);
+                }
+                catch (RuntimeException re)
+                {
+                    throw re;
                 }
                 catch (Exception e)
                 {
