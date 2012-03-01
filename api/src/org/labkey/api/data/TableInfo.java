@@ -365,4 +365,8 @@ public interface TableInfo extends HasPermission
      * We should probably kill DbCache, but let's fix this for now (https://www.labkey.org/issues/home/Developer/issues/details.view?issueId=10508)
      */
     public Path getNotificationKey();
+
+    /* for internal use by ColumnInfo.getFormat() */
+    public String getDefaultDateFormat();
+    public String getDefaultNumberFormat();
 }

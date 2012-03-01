@@ -434,25 +434,42 @@ public class ColumnInfo extends ColumnRenderProperties implements SqlColumn
         return label;
     }
 
+
+    String _cachedFormat = null;
+
     @Override
-    public String getFormat()
+    public synchronized String getFormat()
     {
-        if (isDateTimeType())
-            return getDateFormatString();
-        else
-            return format;
+        if (_cachedFormat == null)
+        {
+            _cachedFormat = format;
+            if (null == _cachedFormat)
+            {
+                if (isDateTimeType())
+                    _cachedFormat = getParentTable().getDefaultDateFormat();
+                else if (isNumericType())
+                    _cachedFormat = getParentTable().getDefaultNumberFormat();
+            }
+            if (isDateTimeType())
+                _cachedFormat = convertSpecialDateFormatString(_cachedFormat);
+            if (null == _cachedFormat)
+                _cachedFormat = "";
+        }
+        return _cachedFormat.isEmpty() ? null : _cachedFormat;
     }
 
-    private String getDateFormatString()
+
+    private static String convertSpecialDateFormatString(String f)
     {
-        if (null == format || "Date".equalsIgnoreCase(format))
+        if (null == f || "Date".equalsIgnoreCase(f))
             return DateUtil.getStandardDateFormatString();
 
-        if ("DateTime".equalsIgnoreCase(format))
+        if ("DateTime".equalsIgnoreCase(f))
             return DateUtil.getStandardDateTimeFormatString();
 
-        return format;
+        return f;
     }
+
 
     public boolean isFormatStringSet()
     {

@@ -138,22 +138,23 @@ public class JsonWriter
             }
             if (cinfo.getFormat() != null)
             {
-                props.put("format", cinfo.getFormat());
+                String format = cinfo.getFormat();
+                props.put("format", format);
                 String extFormat = null;
                 String extFormatFn = null;
                 if (cinfo.getJdbcType().isDateOrTime())
                 {
-                    extFormat = cinfo.getFormat();
-                    extFormatFn = ExtUtil.toExtDateFormatFn(extFormat);
+                    extFormat = ExtUtil.toExtDateFormat(format);
+                    extFormatFn = ExtUtil.toExtDateFormatFn(format);
                 }
                 else if (cinfo.getJdbcType().isNumeric())
                 {
-                    extFormat = cinfo.getFormat();
-                    extFormatFn = ExtUtil.toExtNumberFormatFn(extFormat);
+                    extFormat = ExtUtil.toExtNumberFormat(format);
+                    extFormatFn = ExtUtil.toExtNumberFormatFn(format);
                 }
                 if (null != extFormatFn)
                     props.put("extFormatFn", extFormatFn);
-                if (null != extFormatFn)
+                if (null != extFormat)
                     props.put("extFormat", extFormat);
             }
             if (cinfo.getExcelFormatString() != null)

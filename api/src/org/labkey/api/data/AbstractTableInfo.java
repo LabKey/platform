@@ -1054,4 +1054,16 @@ abstract public class AbstractTableInfo implements TableInfo, ContainerContext
     {
         return null;
     }
+
+    @Override
+    public String getDefaultDateFormat()
+    {
+        return null;
+    }
+
+    @Override
+    public String getDefaultNumberFormat()
+    {
+        return null;
+    }
 }
