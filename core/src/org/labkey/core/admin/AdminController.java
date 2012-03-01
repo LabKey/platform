@@ -3056,7 +3056,7 @@ public class AdminController extends SpringActionController
                     appProps.setExceptionReportingLevel(ExceptionReportingLevel.MEDIUM);
                     appProps.setUsageReportingLevel(UsageReportingLevel.MEDIUM);
                 }
-                else
+                else if (!form.isAllowReporting())
                 {
                     appProps.setExceptionReportingLevel(ExceptionReportingLevel.NONE);
                     appProps.setUsageReportingLevel(UsageReportingLevel.NONE);
