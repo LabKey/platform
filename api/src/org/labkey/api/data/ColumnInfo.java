@@ -443,7 +443,7 @@ public class ColumnInfo extends ColumnRenderProperties implements SqlColumn
         if (_cachedFormat == null)
         {
             _cachedFormat = format;
-            if (null == _cachedFormat)
+            if (null == _cachedFormat && null != getParentTable())
             {
                 if (isDateTimeType())
                     _cachedFormat = getParentTable().getDefaultDateFormat();
