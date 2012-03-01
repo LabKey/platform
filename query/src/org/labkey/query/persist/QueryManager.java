@@ -190,7 +190,7 @@ public class QueryManager
         if (!inheritable)
             return views;
 
-        Container containerCur = container.getParent();
+        Container containerCur = container == null ? null : container.getParent();
         while (containerCur != null && !containerCur.isRoot())
         {
             views.addAll(Arrays.asList(getCstmViews(containerCur, schemaName, queryName, null, user, true)));
