@@ -594,4 +594,22 @@ public class DataSetTableImpl extends FilteredTable implements DataSetTable
             return def.canWrite(user);
         return false;
     }
+
+    @Override
+    public Container getContainer()
+    {
+        return _dsd.getContainer();
+    }
+
+    @Override
+    public String getDefaultDateFormat()
+    {
+        return StudyManager.getInstance().getDefaultDateFormatString(getContainer());
+    }
+
+    @Override
+    public String getDefaultNumberFormat()
+    {
+        return StudyManager.getInstance().getDefaultNumberFormatString(getContainer());
+    }
 }
