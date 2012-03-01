@@ -129,12 +129,12 @@
                             <%="siteDefault".equals(bean.getPipelineRootOption()) ? " checked" : ""%>
                                    onclick="updatePipelineSelection();">
 <%                      if (hasInheritedOverride) { %>
-                            <label for="pipeOptionSiteDefault" class="labkey-disabled">Use a default based on the site-level root</label>
-                            <%=PageFlowUtil.helpPopup("Pipeline root", "Setting a default pipeline root for this folder is not supported because a pipeline " +
-                                    "override has been set in a parent folder.")%><%
+                            <label for="pipeOptionSiteDefault" class="labkey-disabled">Use a default based on the site-level root</label><%=
+                            PageFlowUtil.helpPopup("Pipeline root", "Setting a default pipeline root for this folder is not supported because a pipeline " +
+                                    "override has been set in a parent folder.")%><span class="labkey-disabled">: <%=h(projectDefaultRoot)%></span><%
                         } else { %>
-                            <label for="pipeOptionSiteDefault">Use a default based on the site-level root</label><%
-                        } %>: <%=h(projectDefaultRoot)%>
+                            <label for="pipeOptionSiteDefault">Use a default based on the site-level root</label>: <%=h(projectDefaultRoot)%><%
+                        } %>
                         </td>
                     </tr>
                     <tr></tr>
