@@ -81,8 +81,9 @@ LABKEY.QCFlagToggleWindow = Ext.extend(Ext.Window, {
             store:  new LABKEY.ext.Store({
                 schemaName: this.schemaName,
                 queryName: this.queryName,
+                containerFilter: LABKEY.Query.containerFilter.allFolders,
                 filterArray: filters,
-                columns: "RowId, FlagType, Description, Comment, Enabled",
+                columns: "RowId, FlagType, Description, Comment, Enabled, Run/Folder/Path",
                 sort: "FlagType, RowId",
                 autoLoad: true,
                 listeners: {
@@ -166,6 +167,7 @@ LABKEY.QCFlagToggleWindow = Ext.extend(Ext.Window, {
     saveQCFlagChanges: function() {
         var modifiedRecords = this.flagsGrid.getStore().getModifiedRecords();
         var updateRows = [];
+        var containerPath = LABKEY.container.path;
         for (var i = 0; i < modifiedRecords.length; i++)
         {
             var record = modifiedRecords[i];
@@ -174,12 +176,14 @@ LABKEY.QCFlagToggleWindow = Ext.extend(Ext.Window, {
                 Enabled: record.get("Enabled"),
                 Comment: record.get("Comment")
             });
+            containerPath = record.get("Run/Folder/Path");
         }
 
         this.getEl().mask("Saving updates...", "x-mask-loading");
         LABKEY.Query.updateRows({
             schemaName: this.schemaName,
             queryName: this.queryName,
+            containerPath: containerPath,
             rows: updateRows,
             success: function(){
                 this.fireEvent('saveSuccess');
