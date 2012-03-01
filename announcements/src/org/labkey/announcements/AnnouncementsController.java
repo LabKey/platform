@@ -1143,7 +1143,7 @@ public class AnnouncementsController extends SpringActionController
 
             if (AnnouncementManager.EMAIL_PREFERENCE_ALL == (defaultEmailOption & AnnouncementManager.EMAIL_PREFERENCE_MASK))
             {
-                bean.emailUsers = new IndividualEmailPrefsSelector(c).getNotificationUsers(null).size() + new DailyDigestEmailPrefsSelector(c).getNotificationUsers(null).size();
+                bean.emailUsers = new IndividualEmailPrefsSelector(c).getNotificationUsers(latestPost).size() + new DailyDigestEmailPrefsSelector(c).getNotificationUsers(latestPost).size();
             }
         }
 

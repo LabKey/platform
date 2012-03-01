@@ -120,29 +120,31 @@ public abstract class EmailPrefsSelector
     }
 
 
-    public Set<User> getNotificationUsers(AnnouncementModel ann)
+    public Set<User> getNotificationUsers(@Nullable AnnouncementModel ann)
     {
         Set<User> authorized = new HashSet<User>(_emailPrefs.size());
-
-        String srcIdentifier = ann.lookupSrcIdentifer();
-
         List<MessageConfigService.UserPreference> relevantPrefs = new ArrayList<MessageConfigService.UserPreference>(_emailPrefs.size());
         Set<User> directlySubscribedUsers = new HashSet<User>();
-        // First look through for users that have subscriptions for this srcIdentfier directly
-        for (MessageConfigService.UserPreference ep : _emailPrefs)
+        String srcIdentifier = null != ann ? ann.lookupSrcIdentifer() : null;
+
+        if (null != ann)
         {
-            if (ep.getSrcIdentifier().equals(srcIdentifier))
+            // First look through for users that have subscriptions for this srcIdentfier directly
+            for (MessageConfigService.UserPreference ep : _emailPrefs)
             {
-                // Remember the permission, and the user
-                relevantPrefs.add(ep);
-                directlySubscribedUsers.add(ep.getUser());
+                if (ep.getSrcIdentifier().equals(srcIdentifier))
+                {
+                    // Remember the permission, and the user
+                    relevantPrefs.add(ep);
+                    directlySubscribedUsers.add(ep.getUser());
+                }
             }
         }
 
         for (MessageConfigService.UserPreference ep : _emailPrefs)
         {
-            // Then look for users that didn't have a direct subscription, but have one set at the container level
-            if (ep.getSrcIdentifier().equals(ann.getContainerId()) && !ep.getSrcIdentifier().equals(srcIdentifier) && !directlySubscribedUsers.contains(ep.getUser()))
+            // Then look for users who didn't have a direct subscription, but have one set at the container level
+            if (ep.getSrcIdentifier().equals(_c.getId()) && !ep.getSrcIdentifier().equals(srcIdentifier) && !directlySubscribedUsers.contains(ep.getUser()))
             {
                 relevantPrefs.add(ep);
             }
@@ -152,7 +154,8 @@ public abstract class EmailPrefsSelector
             if (shouldSend(ann, ep))
                 authorized.add(ep.getUser());
 
-        authorized.addAll(AnnouncementManager.getAnnouncement(ann.lookupContainer(), ann.getEntityId(), true).getMemberList());
+        if (null != ann)
+            authorized.addAll(AnnouncementManager.getAnnouncement(ann.lookupContainer(), ann.getEntityId(), true).getMemberList());
 
         return authorized;
     }
