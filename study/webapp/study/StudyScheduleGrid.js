@@ -52,7 +52,7 @@ Ext4.define('LABKEY.ext4.StudyScheduleGrid', {
             hidden: true,
             labelWidth: 50,
             width: 250,
-            margin: '0 0 3 0',
+            margin: '0 0 0 8',
             allowBlank: false,
             editable: false,
             forceSelection: true,
@@ -67,7 +67,41 @@ Ext4.define('LABKEY.ext4.StudyScheduleGrid', {
             }
         });
 
-        var tbarItems = [this.cohortsCombo];
+        var prevConfig = {
+            disabled: true,
+            width: 25,
+            icon: LABKEY.ActionURL.getContextPath()+'/reports/paging_arrow_prev.gif',
+            cls: 'button-prev',
+            scope: this,
+            handler: this.previousPage
+        };
+
+        var displayConfig = {
+            width: 12,
+            value: '1'
+        };
+
+         var nextConfig = {
+             disabled: true,
+             cls: 'button-next',
+             icon: LABKEY.ActionURL.getContextPath()+'/reports/paging_arrow_next.gif',
+             scope: this,
+             handler: this.nextPage
+         };
+
+        var saveButtonConfig = {
+            xtype: 'button',
+            text: 'Save Changes',
+            handler: this.saveChanges,
+            scope: this
+        };
+
+        var addDatasetButtonConfig = {
+            xtype: 'button',
+            text: 'Add Dataset',
+            handler: this.getCategories,
+            scope: this
+        };
 
         this.enablePagingCheckbox = Ext4.create('Ext.form.field.Checkbox', {
             fieldLabel: "Paging",
@@ -78,66 +112,56 @@ Ext4.define('LABKEY.ext4.StudyScheduleGrid', {
             handler: this.enablePaging
         });
 
-        tbarItems.push({ xtype: 'tbspacer', width: 420 });
-        tbarItems.push(this.enablePagingCheckbox);
-        tbarItems.push('->');
-
-        var prevConfig = {
-            disabled: true,
-            text: '<span class="button-prev"><img src="' + LABKEY.ActionURL.getContextPath()+'/reports/paging_arrow_prev.gif' + '" /></span>',
-            scope: this,
-            handler: this.previousPage
-        };
-
         this.topPrevButton = Ext4.create('Ext.button.Button', prevConfig);
-
-        tbarItems.push(this.topPrevButton);
-
-        var displayConfig = {
-            labelWidth: 40,
-            value: '1'
-        };
-
         this.topPageDisplay = Ext4.create('Ext.form.field.Display', displayConfig);
-
-        tbarItems.push(this.topPageDisplay);
-
-        var nextConfig = {
-            text: '<span class="button-next"><img src="' + LABKEY.ActionURL.getContextPath()+'/reports/paging_arrow_next.gif' + '" /></span>',
-            scope: this,
-            handler: this.nextPage
-        };
-
         this.topNextButton = Ext4.create('Ext.button.Button', nextConfig);
-
-        tbarItems.push(this.topNextButton);
-
-
-
-        var saveButton = {
-            xtype: 'button',
-            text: 'Save Changes',
-            handler: this.saveChanges,
-            scope: this
-        };
-
-        var addDatasetButton = {
-            xtype: 'button',
-            text: 'Add Dataset',
-            handler: this.getCategories,
-            scope: this
-        };
-
-        var bbarButtons = [];
-
-        if(this.canEdit){
-            bbarButtons.push(saveButton);
-            bbarButtons.push(addDatasetButton);
-        }
 
         this.bottomPrevButton = Ext4.create('Ext.button.Button', prevConfig);
         this.bottomPageDisplay = Ext4.create('Ext.form.field.Display', displayConfig);
         this.bottomNextButton = Ext4.create('Ext.button.Button', nextConfig);
+
+        var bbarButtons = [];
+        var tbarPanelItems = [];
+        if(this.canEdit){
+            bbarButtons.push(saveButtonConfig);
+            bbarButtons.push(addDatasetButtonConfig);   
+
+            tbarPanelItems.push(saveButtonConfig);
+            tbarPanelItems.push(addDatasetButtonConfig);
+        }
+
+        tbarPanelItems.push(this.cohortsCombo);
+
+        var topPanel = Ext4.create('Ext.Panel', {
+            height: 25,
+            border: false,
+            flex: 1,
+            layout: {
+                type: 'hbox',
+                align: 'stretch'
+            },
+            items: [{
+                xtype: 'panel',
+                border: false, frame : false,
+                width : 655,
+                layout: {
+                    type: 'hbox',
+                    align: 'stretch'
+                },
+                defaults : {
+                    style : 'margin-left: 4px; margin-right: 4px; margin-bottom: 3px;'
+                },
+                items: [tbarPanelItems]
+            }, {
+                xtype: 'toolbar',
+                style: {
+                    border: 0,
+                    padding: 0
+                },
+                flex: 1,
+                items: [this.enablePagingCheckbox, '->', this.topPrevButton, this.topPageDisplay, this.topNextButton]
+            }]
+        });
 
         var bottomPanel = Ext4.create('Ext.Panel', {
             height: 25,
@@ -150,7 +174,7 @@ Ext4.define('LABKEY.ext4.StudyScheduleGrid', {
             items: [{
                 xtype: 'panel',
                 border: false, frame : false,
-                width : 220,
+                width : 250,
                 defaults : {
                     style : 'margin-left: 4px; margin-right: 4px; margin-top: 3px;'
                 },
@@ -169,7 +193,7 @@ Ext4.define('LABKEY.ext4.StudyScheduleGrid', {
         this.centerPanel = Ext4.create('Ext.panel.Panel', {
             layout : 'fit',
             border : false, frame : false,
-            tbar   : [tbarItems],
+            tbar   : [topPanel],
             bbar   : [bottomPanel]
         });
 
@@ -208,11 +232,6 @@ Ext4.define('LABKEY.ext4.StudyScheduleGrid', {
             },
             items: columnItems
         };
-
-        var _h = -1;
-        if (this.gridPanel) {
-            _h = this.centerPanel.getHeight();
-        }
 
         this.gridPanel = Ext4.create('Ext.grid.Panel', {
             store       : store,
@@ -261,26 +280,28 @@ Ext4.define('LABKEY.ext4.StudyScheduleGrid', {
                             }
                             record.set(timepointId, timepointValue);
                         }
-                }
+                    }
                 }
             }
         });
 
-        if (_h > 0) {
-            this.centerPanel.setHeight(_h);
-        }
         this.centerPanel.removeAll();
         this.centerPanel.add(this.gridPanel);
 
         // This is not approved -- just points out how horrendous layout is
         // 275 (datasets) + 50 (data) + (100 x # of timepoints)
         var calcWidth = 325 + ((columnItems.length - 2) * 100);
-        if(calcWidth < 530){
-            calcWidth = 565;
+        if(calcWidth < 825){
+            calcWidth = 825;
         }
         this.setWidth(calcWidth);
         this.centerPanel.setWidth(calcWidth);
         this.cohortsCombo.setVisible(true);
+        if(this.schedule.timepoints.length > 5 && this.topPageDisplay.getValue() == 1 && this.topNextButton.disabled == true){
+            //enable next buttons if we have more than one page.
+            this.topNextButton.setDisabled(false);
+            this.bottomNextButton.setDisabled(false);
+        }
     },
 
     initFields : function(){

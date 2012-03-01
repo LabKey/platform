@@ -33,6 +33,7 @@
         <th>ID</th>
         <th>Label</th>
         <th>Category</th>
+        <th>Type</th>
         <th>Number of data rows</th>
     </tr>
 
@@ -41,7 +42,7 @@
 
     ActionURL cancelURL = new ActionURL(StudyController.ManageTypesAction.class, study.getContainer());
 
-    for (DataSet def : study.getDataSets())
+    for (DataSet def : study.getDataSetsByType(new String[]{DataSet.TYPE_STANDARD, DataSet.TYPE_PLACEHOLDER}))
     {
         ActionURL detailsURL = new ActionURL(StudyController.DefaultDatasetReportAction.class, study.getContainer());
         detailsURL.addParameter("datasetId", def.getDataSetId());
@@ -53,6 +54,7 @@
         <td><a href="<%=detailsLink%>"><%=def.getDataSetId()%></a></td>
         <td><a href="<%=detailsLink%>"><%= h(def.getLabel()) %></a></td>
         <td><%= def.getCategory() != null ? h(def.getCategory()) : "&nbsp;" %></td>
+        <td><%= def.getType() %></td>
         <td align="right"><%=StudyManager.getInstance().getNumDatasetRows(HttpView.currentContext().getUser(), def)%></td>
     </tr>
     <%

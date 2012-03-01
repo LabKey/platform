@@ -1231,7 +1231,7 @@ Ext4.define('LABKEY.ext4.DataViewsPanel', {
 
         var editWindow = Ext4.create('Ext.window.Window', {
             width  : 450,
-            height : hasAuthorField ? 510 : 350,
+            height : hasAuthorField ? 510 : 425,
             layout : 'fit',
             draggable : false,
             modal  : true,
