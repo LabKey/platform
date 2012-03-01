@@ -49,6 +49,13 @@ public class VBox extends WebPartView
         _views.add(v);
     }
 
+    public void addView(ModelAndView v, int index)
+    {
+        if (null == v)
+            return;
+        _views.add(index, v);
+    }
+
     public List<ModelAndView> getViews()
     {
         ArrayList<ModelAndView> ret = new ArrayList<ModelAndView>(_views.size());

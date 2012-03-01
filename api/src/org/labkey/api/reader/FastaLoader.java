@@ -82,7 +82,7 @@ public abstract class FastaLoader<T> implements Iterable<T>
                     if (null != _reader)
                         _reader.close();
 
-                    throw new IllegalArgumentException("FASTA file did not start with >");
+                    throw new IllegalArgumentException("Invalid FASTA file. The file did not start with \">\".");
                 }
             }
             catch (IOException x)
