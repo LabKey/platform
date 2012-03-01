@@ -96,7 +96,7 @@ public class ExternalSchemaTable extends SimpleUserSchema.SimpleTable implements
         if (DatabaseTableType.TABLE != table.getTableType())
             return null;
         if (null == table.getPkColumnNames() || table.getPkColumnNames().size() == 0)
-            throw new RuntimeException("The table '" + getName() + "' does not have a primary key defined, and thus cannot be updated reliably. Please define a primary key for this table before attempting an update.");
+            return null;
 
         return new SimpleQueryUpdateService(this, table);
     }
