@@ -571,7 +571,7 @@ LABKEY.ext4.Store = Ext4.define('LABKEY.ext4.Store', {
         this.loadError = loadError;
 
         //TODO: is this the right behavior?
-        if(json.status === 0){
+        if(response && response.status === 0){
             return;
         }
 
@@ -590,7 +590,7 @@ LABKEY.ext4.Store = Ext4.define('LABKEY.ext4.Store', {
         }
 
         if(message)
-            messageBody += ' due to the following error:' + +"<br>" + message;
+            messageBody += ' due to the following error:' + "<br>" + message;
         else
             messageBody += ' due to an unexpected error';
 
