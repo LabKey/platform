@@ -590,6 +590,8 @@ Ext4.define('LABKEY.ext.panel.FolderManagementPanel', {
         var target = this.treepanel.getView().getTreeStore().getRootNode().findChild('id', id, true);
         if (target)
         {
+            if (!target.isLeaf())
+                target.expand();
             this.treepanel.selectPath(target.getPath());
         }
     },

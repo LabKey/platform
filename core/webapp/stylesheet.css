@@ -2042,30 +2042,6 @@ tr.labkey-wp-header
 	border: 0;
 }
 
-
-/* .labkey-wp-header a:link, .labkey-wp-header a:visited
-{
-    color:#126495;
-    text-decoration:none;
-    cursor:pointer;
-}
-
-.labkey-wp-header a:hover
-{
-    color:#000000;
-    cursor:pointer;
-} */
-
-.labkey-wp-header img
-{
-   /* opacity: 0.6;
-    filter: alpha(opacity=60);
-    -moz-opacity: 0.6;
-    padding-top: 0;
-    vertical-align: top;
-	margin-left: 2px; */
-}
-
 .labkey-warning-messages
 {
     border: 1px solid #C8B560;
@@ -2666,7 +2642,7 @@ div.clear:after, div.bd:after {
     cursor: pointer;
 }
 
-.x-form-field-wrap .x-form-trigger {
+.x-form-field-wrap div.x-form-trigger {
     right: 0px;
 }
 
