@@ -427,7 +427,16 @@ public class DataColumn extends DisplayColumn
         {
             if (_displayColumn != _boundColumn)
             {
-                sb.append(PageFlowUtil.filter("<" + _boundColumn.getValue(ctx) + ">"));
+                Object boundValue = _boundColumn.getValue(ctx);
+                // In many entry paths we've already checked for null, but not all (for example, MVDisplayColumn)
+                if (boundValue == null)
+                {
+                    sb.append("&nbsp;");
+                }
+                else
+                {
+                    sb.append(PageFlowUtil.filter("<" + boundValue + ">"));
+                }
             }
         }
         else
