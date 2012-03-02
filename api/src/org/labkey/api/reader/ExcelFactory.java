@@ -206,6 +206,40 @@ public class ExcelFactory
     }
 
     /**
+     * @param colIndex zero-based column index
+     * @param rowIndex zero-based row index
+     * @param sheetName name of the sheet (optional)
+     */
+    public static String getCellLocationDescription(int colIndex, int rowIndex, @Nullable String sheetName)
+    {
+        String cellLocation = getCellColumnDescription(colIndex) + (rowIndex + 1);
+        if (sheetName != null)
+        {
+            return cellLocation + " in sheet '" + sheetName + "'";
+        }
+        return cellLocation;
+    }
+
+    /**
+     * @param colIndex zero-based column index
+     * http://stackoverflow.com/questions/22708/how-do-i-find-the-excel-column-name-that-corresponds-to-a-given-integer
+     */
+    private static String getCellColumnDescription(int colIndex)
+    {
+        // Convert to one-based index
+        colIndex++;
+        
+        String name = "";
+        while (colIndex > 0)
+        {
+            colIndex--;
+            name = (char)('A' + colIndex % 26) + name;
+            colIndex /= 26;
+        }
+        return name;
+    }
+
+    /**
      * Helper to safely convert cell values to a string equivalent
      *
      */
@@ -544,6 +578,21 @@ public class ExcelFactory
         public void testParseXLSX() throws Exception
         {
             validateSimpleExcel("SimpleExcelFile.xlsx");
+        }
+
+        @Test
+        public void testColumnDescription()
+        {
+            assertEquals("A", getCellColumnDescription(0));
+            assertEquals("Z", getCellColumnDescription(25));
+            assertEquals("AA", getCellColumnDescription(26));
+            assertEquals("AB", getCellColumnDescription(27));
+            assertEquals("ZZ", getCellColumnDescription(701));
+            assertEquals("AAA", getCellColumnDescription(702));
+            assertEquals("ABC", getCellColumnDescription(730));
+            assertEquals("ABC", getCellColumnDescription(730));
+            assertEquals("IRS", getCellColumnDescription(6570));
+            assertEquals("SIR", getCellColumnDescription(13095));
         }
 
         private void validateSimpleExcel(String filename) throws Exception
