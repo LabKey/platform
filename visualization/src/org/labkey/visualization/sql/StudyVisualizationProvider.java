@@ -175,6 +175,22 @@ public class StudyVisualizationProvider extends VisualizationProvider
                 }
             }
         }
+        else if (type == ColumnMatchType.All_VISIBLE)
+        {
+            List<ColumnInfo> colsToRemove = new ArrayList<ColumnInfo>();
+            String subjectColName = StudyService.get().getSubjectColumnName(container);
+            String visitColName = StudyService.get().getSubjectVisitColumnName(container);
+
+            // for studies we want to exclude the subject and visit columns
+            for (ColumnInfo col : matches.keySet())
+            {
+                if (subjectColName.equalsIgnoreCase(col.getName()) || visitColName.equalsIgnoreCase(col.getName()))
+                    colsToRemove.add(col);
+            }
+
+            for (ColumnInfo col : colsToRemove)
+                matches.remove(col);
+        }
         return matches;
     }
 

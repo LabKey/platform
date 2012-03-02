@@ -17,9 +17,12 @@ package org.labkey.study.controllers;
 
 import org.apache.log4j.Logger;
 import org.apache.xmlbeans.XmlObject;
+import org.labkey.api.action.ApiJsonWriter;
 import org.labkey.api.action.ApiResponse;
+import org.labkey.api.action.ApiResponseWriter;
 import org.labkey.api.action.ApiSimpleResponse;
 import org.labkey.api.action.MutatingApiAction;
+import org.labkey.api.action.NullSafeBindException;
 import org.labkey.api.action.SpringActionController;
 import org.labkey.api.attachments.AttachmentFile;
 import org.labkey.api.data.Container;
@@ -33,6 +36,7 @@ import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.portal.ProjectUrls;
 import org.labkey.api.query.QueryDefinition;
 import org.labkey.api.query.QueryService;
+import org.labkey.api.query.ValidationException;
 import org.labkey.api.query.snapshot.QuerySnapshotDefinition;
 import org.labkey.api.query.snapshot.QuerySnapshotService;
 import org.labkey.api.security.RequiresPermissionClass;
@@ -77,6 +81,7 @@ import org.springframework.validation.BindException;
 import org.springframework.validation.Errors;
 import org.springframework.validation.ObjectError;
 
+import javax.servlet.http.HttpServletResponse;
 import java.io.BufferedInputStream;
 import java.io.ByteArrayInputStream;
 import java.io.File;
@@ -174,10 +179,23 @@ public class CreateAncillaryStudyAction extends MutatingApiAction<EmphasisStudyD
                 String redirect = PageFlowUtil.urlProvider(ProjectUrls.class).getStartURL(_dstContainer).getLocalURIString();
 
                 resp.put("redirect", redirect);
-                resp.put("success", true);
             }
-            scope.commitTransaction();
-            success = true;
+
+            if (errors.hasErrors())
+            {
+                StringBuilder sb = new StringBuilder();
+                for (ObjectError error : (List<ObjectError>)errors.getAllErrors())
+                {
+                    sb.append(error.getDefaultMessage()).append('\n');
+                }
+                throw new RuntimeException(sb.toString());
+            }
+            else
+            {
+                resp.put("success", true);
+                scope.commitTransaction();
+                success = true;
+            }
         }
         finally
         {
@@ -267,6 +285,7 @@ public class CreateAncillaryStudyAction extends MutatingApiAction<EmphasisStudyD
 
         for (DataSetDefinition def : _datasets)
         {
+            BindException datasetErrors = new NullSafeBindException(def, "dataset");
             StudyQuerySchema schema = new StudyQuerySchema(getSourceStudy(), user, true);
             TableInfo table = def.getTableInfo(user);
             QueryDefinition queryDef = QueryService.get().createQueryDefForTable(schema, table.getName());
@@ -283,9 +302,18 @@ public class CreateAncillaryStudyAction extends MutatingApiAction<EmphasisStudyD
 
                 if (svc != null)
                 {
-                    svc.createSnapshot(getViewContext(), qsDef, errors);
-                    if (errors.hasErrors())
-                        throw new RuntimeException("Error copying the dataset data : " + errors.getMessage());
+                    svc.createSnapshot(getViewContext(), qsDef, datasetErrors);
+                    if (datasetErrors.hasErrors())
+                    {
+                        StringBuilder sb = new StringBuilder();
+                        for (ObjectError error : (List<ObjectError>)datasetErrors.getAllErrors())
+                            sb.append(error.getDefaultMessage()).append('\n');
+
+                        errors.reject(SpringActionController.ERROR_MSG,
+                                String.format("Unable to create dataset '%s' : %s", def.getName(), sb.toString()));
+
+                        return;
+                    }
                 }
             }
         }

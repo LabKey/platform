@@ -45,6 +45,7 @@
 <%@ page import="org.labkey.api.data.ContainerManager" %>
 <%@ page import="java.util.Map" %>
 <%@ page import="java.util.HashMap" %>
+<%@ page import="org.labkey.api.study.DataSet" %>
 <%@ page extends="org.labkey.study.view.BaseStudyPage" %>
 <%
     JspView<StudyPropertiesQueryView> me = (JspView<StudyPropertiesQueryView>) HttpView.currentView();
@@ -80,6 +81,8 @@
     {
         ancillaryStudyName = "New Study " + i++;
     }
+
+    int numDatasets = study.getDataSetsByType(new String[]{org.labkey.api.study.DataSet.TYPE_STANDARD, org.labkey.api.study.DataSet.TYPE_PLACEHOLDER}).size();
 %>
 <table>
     <%
@@ -120,7 +123,7 @@
     </tr>
     <tr>
         <th align="left">Datasets</th>
-        <td>This study defines <%= getDataSets().size() %> Datasets</td>
+        <td>This study defines <%= numDatasets %> Datasets</td>
         <td><%= textLink("Manage Datasets", ManageTypesAction.class) %></td>
     </tr>
     <% if (study.getTimepointType() != TimepointType.CONTINUOUS) { %>
@@ -132,7 +135,7 @@
     <% } %>
      <tr>
         <th align="left">Study Schedule</th>
-         <td>This study defines <%= getDataSets().size() %> Datasets
+         <td>This study defines <%= numDatasets %> Datasets
              <% if (study.getTimepointType() != TimepointType.CONTINUOUS) { %>
              and <%= getVisits(Visit.Order.DISPLAY).length %> <%=visitLabel%>
              <% } %>
