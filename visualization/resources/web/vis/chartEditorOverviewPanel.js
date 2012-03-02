@@ -280,7 +280,7 @@ LABKEY.vis.ChartEditorOverviewPanel = Ext.extend(Ext.Panel, {
 
                         Ext.getCmp('measure-selection-button').setDisabled(false);
                     },
-                    'measuresStoreLoaded': function (data) {
+                    'beforeMeasuresStoreLoad': function (mp, data) {
                         // store the measure store JSON object for later use
                         this.measuresStoreData = data;
                         this.fireEvent('initialMeasuresStoreLoaded', data);
