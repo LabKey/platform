@@ -30,6 +30,7 @@ import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.UpdateableTableInfo;
 import org.labkey.api.etl.DataIteratorBuilder;
 import org.labkey.api.etl.TableInsertDataIterator;
+import org.labkey.api.exp.OntologyManager;
 import org.labkey.api.exp.PropertyColumn;
 import org.labkey.api.exp.PropertyType;
 import org.labkey.api.exp.list.ListDefinition;
@@ -60,9 +61,9 @@ public class ListTable extends FilteredTable implements UpdateableTableInfo
         {
             case Integer:
             case AutoIncrementInteger:
-                return ListManager.get().getTinfoIndexInteger();
+                return OntologyManager.getTinfoIndexInteger();
             case Varchar:
-                return ListManager.get().getTinfoIndexVarchar();
+                return OntologyManager.getTinfoIndexVarchar();
             default:
                 return null;
         }

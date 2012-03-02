@@ -138,8 +138,8 @@ public class ListImportHelper implements OntologyManager.ImportHelper
 
     public void updateStatistics(int currentRow) throws SQLException
     {
-        SqlDialect dialect = ListManager.get().getTinfoIndexInteger().getSqlDialect();
-        dialect.updateStatistics(ListManager.get().getTinfoIndexInteger());
-        dialect.updateStatistics(ListManager.get().getTinfoIndexVarchar());
+        SqlDialect dialect = OntologyManager.getTinfoIndexInteger().getSqlDialect();
+        dialect.updateStatistics(OntologyManager.getTinfoIndexInteger());
+        dialect.updateStatistics(OntologyManager.getTinfoIndexVarchar());
     }
 }

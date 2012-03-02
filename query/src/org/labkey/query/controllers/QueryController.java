@@ -2106,9 +2106,13 @@ public class QueryController extends SpringActionController
                     StringExpression updateExpr = _schema.urlExpr(QueryAction.updateQueryRow, _form.getQueryDef());
                     if (updateExpr != null)
                     {
-                        ActionURL updateUrl = new ActionURL(updateExpr.eval(tableForm.getTypedValues()));
-                        ActionButton editButton = new ActionButton("Edit", updateUrl);
-                        bb.add(editButton);
+                        String url = updateExpr.eval(tableForm.getTypedValues());
+                        if (url != null)
+                        {
+                            ActionURL updateUrl = new ActionURL(url);
+                            ActionButton editButton = new ActionButton("Edit", updateUrl);
+                            bb.add(editButton);
+                        }
                     }
                 }
 

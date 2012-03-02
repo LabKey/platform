@@ -16,6 +16,7 @@
 
 package org.labkey.experiment.api.property;
 
+import org.jetbrains.annotations.NotNull;
 import org.labkey.api.data.*;
 import org.labkey.api.exp.ChangePropertyDescriptorException;
 import org.labkey.api.exp.DomainDescriptor;
@@ -474,6 +475,7 @@ public class DomainPropertyImpl implements DomainProperty
         DomainPropertyManager.get().saveConditionalFormats(user, getPropertyDescriptor(), ensureConditionalFormats());
     }
 
+    @NotNull
     public List<PropertyValidatorImpl> getValidators()
     {
         return Collections.unmodifiableList(ensureValidators());

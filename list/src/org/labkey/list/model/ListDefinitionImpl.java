@@ -726,9 +726,9 @@ public class ListDefinitionImpl implements ListDefinition
         {
             case Integer:
             case AutoIncrementInteger:
-                return ListManager.get().getTinfoIndexInteger();
+                return OntologyManager.getTinfoIndexInteger();
             case Varchar:
-                return ListManager.get().getTinfoIndexVarchar();
+                return OntologyManager.getTinfoIndexVarchar();
             default:
                 throw new IllegalStateException();
         }

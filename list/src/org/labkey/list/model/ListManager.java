@@ -61,16 +61,6 @@ public class ListManager implements SearchService.DocumentProvider
         return getSchema().getTable("list");
     }
 
-    public TableInfo getTinfoIndexInteger()
-    {
-        return getSchema().getTable("indexInteger");
-    }
-
-    public TableInfo getTinfoIndexVarchar()
-    {
-        return getSchema().getTable("indexVarchar");
-    }
-
     public ListDef[] getLists(Container container)
     {
         ListDef.Key key = new ListDef.Key(container);

@@ -148,7 +148,7 @@ public class PropertyServiceImpl implements PropertyService.Interface
         return null;
     }
 
-    public IPropertyValidator[] getPropertyValidators(PropertyDescriptor desc)
+    public List<IPropertyValidator> getPropertyValidators(PropertyDescriptor desc)
     {
         List<IPropertyValidator> validators = new ArrayList<IPropertyValidator>();
 
@@ -156,7 +156,7 @@ public class PropertyServiceImpl implements PropertyService.Interface
         {
             validators.add(new PropertyValidatorImpl(v));            
         }
-        return validators.toArray(new IPropertyValidator[validators.size()]);
+        return validators;
     }
 
     public void deleteValidatorsAndFormats(int descriptorId) throws SQLException
