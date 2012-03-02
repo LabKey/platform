@@ -32,8 +32,11 @@ LABKEY.Visualization = new function() {
             params['filters'] = config.filters;
         }
 
-        if (config.dateMeasures)
+        if (config.dateMeasures !== undefined)
             params.dateMeasures = config.dateMeasures;
+
+        if (config.allColumns !== undefined)
+            params.allColumns = config.allColumns;
         
         return params;
     }
