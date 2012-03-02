@@ -709,6 +709,8 @@ abstract public class PipelineJob extends Job implements Serializable
                 return false;
             
             case running:
+            case cancelled:
+            case cancelling:
             default:
                 return false;   // Do not run the active task.
         }
@@ -846,7 +848,8 @@ abstract public class PipelineJob extends Job implements Serializable
         }
         catch (CancelledException e)
         {
-            // Don't need to do anything, job has already been set to CANCELLED
+            _activeTaskStatus = TaskStatus.cancelled;
+            // Don't need to do anything else, job has already been set to CANCELLED
         }
         catch (RuntimeException e)
         {
