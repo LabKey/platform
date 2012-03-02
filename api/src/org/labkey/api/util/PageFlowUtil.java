@@ -2224,6 +2224,9 @@ public class PageFlowUtil
         // Pingdom
         if (userAgent.contains("pingdom.com_bot"))
             return true;
+        // a bot
+        if (userAgent.contains("rpt-httpclient"))
+            return true;
 
         // just about every bot contains "bot", "crawler" or "spider"
         // including yandexbot, ahrefsbot, mj12bot, ezooms.bot, gigabot, voilabot, exabot
