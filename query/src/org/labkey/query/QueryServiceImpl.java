@@ -808,14 +808,14 @@ public class QueryServiceImpl extends QueryService
     }
 
     @NotNull
-    public Map<FieldKey, ColumnInfo> getColumns(TableInfo table, Collection<FieldKey> fields)
+    public Map<FieldKey, ColumnInfo> getColumns(@NotNull TableInfo table, Collection<FieldKey> fields)
     {
         return getColumns(table, fields, Collections.<ColumnInfo>emptySet());
     }
 
 
     @NotNull
-    public LinkedHashMap<FieldKey, ColumnInfo> getColumns(TableInfo table, Collection<FieldKey> fields, Collection<ColumnInfo> existingColumns)
+    public LinkedHashMap<FieldKey, ColumnInfo> getColumns(@NotNull TableInfo table, @NotNull Collection<FieldKey> fields, @NotNull Collection<ColumnInfo> existingColumns)
     {
         assert Table.checkAllColumns(table, existingColumns, "QueryServiceImpl.getColumns() existingColums");
 

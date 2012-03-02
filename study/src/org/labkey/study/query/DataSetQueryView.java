@@ -159,10 +159,12 @@ public class DataSetQueryView extends QueryView
     public DataView createDataView()
     {
         DataView view = super.createDataView();
+        TableInfo table = view.getTable();
 
         view.getDataRegion().setShadeAlternatingRows(true);
         view.getDataRegion().setShowBorders(true);
         view.getDataRegion().setRecordSelectorValueColumns("lsid");
+
         if (null != _visit)
         {
             SimpleFilter filter = (SimpleFilter) view.getRenderContext().getBaseFilter();
@@ -181,7 +183,7 @@ public class DataSetQueryView extends QueryView
                 filter = new SimpleFilter();
                 view.getRenderContext().setBaseFilter(filter);
             }
-            _cohortFilter.addFilterCondition(view.getDataRegion().getTable(), getContainer(), filter);
+            _cohortFilter.addFilterCondition(table, getContainer(), filter);
         }
         if (null != _qcStateSet)
         {
@@ -192,13 +194,13 @@ public class DataSetQueryView extends QueryView
                 view.getRenderContext().setBaseFilter(filter);
             }
             FieldKey qcStateKey = FieldKey.fromParts(DataSetTableImpl.QCSTATE_ID_COLNAME, "rowid");
-            Map<FieldKey, ColumnInfo> qcStateColumnMap = QueryService.get().getColumns(view.getDataRegion().getTable(), Collections.singleton(qcStateKey));
+            Map<FieldKey, ColumnInfo> qcStateColumnMap = QueryService.get().getColumns(table, Collections.singleton(qcStateKey));
             ColumnInfo qcStateColumn = qcStateColumnMap.get(qcStateKey);
             filter.addClause(new SimpleFilter.SQLClause(_qcStateSet.getStateInClause(qcStateColumn.getAlias()), null, qcStateColumn.getName()));
         }
 
         StudyManager.getInstance().applyDefaultFormats(getContainer(), view.getDataRegion().getDisplayColumns());
-        ColumnInfo sourceLsidCol = view.getTable().getColumn("SourceLsid");
+        ColumnInfo sourceLsidCol = table.getColumn("SourceLsid");
         DisplayColumn sourceLsidDisplayCol = view.getDataRegion().getDisplayColumn("SourceLsid");
         if (sourceLsidCol != null)
         {

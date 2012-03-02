@@ -747,6 +747,8 @@ public class ExperimentServiceImpl implements ExperimentService.Interface
 
     public String generateLSID(Container container, Class<? extends ExpObject> clazz, String name)
     {
+        if (clazz == ExpSampleSet.class && name.equals(DEFAULT_MATERIAL_SOURCE_NAME) && ContainerManager.getSharedContainer().equals(container))
+            return getDefaultSampleSetLsid();
         return generateLSID(container, getNamespacePrefix(clazz), name);
     }
 
@@ -1436,7 +1438,7 @@ public class ExperimentServiceImpl implements ExperimentService.Interface
 
     public Lsid getSampleSetLsid(String sourceName, Container container)
     {
-        return new Lsid("SampleSet", "Folder-" + String.valueOf(container.getRowId()), sourceName);
+        return new Lsid(generateLSID(container, ExpSampleSet.class, sourceName));
     }
 
     public void dropRunsFromExperiment(String expLSID, int... selectedRunIds) throws SQLException
