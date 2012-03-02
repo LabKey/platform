@@ -16,6 +16,7 @@
 
 package org.labkey.experiment.xar;
 
+import org.apache.commons.codec.binary.Hex;
 import org.labkey.api.data.Container;
 import org.labkey.api.exp.XarFormatException;
 import org.labkey.api.exp.XarSource;
@@ -24,6 +25,9 @@ import org.labkey.api.exp.xar.Replacer;
 import org.labkey.api.exp.api.ExperimentService;
 import org.labkey.api.exp.api.ExpData;
 import org.labkey.api.util.PageFlowUtil;
+
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
 
 /**
  * User: jeckels
@@ -64,7 +68,25 @@ public class AutoFileLSIDReplacer implements Replacer
             }
             else
             {
-                return "urn:lsid:" + XarContext.LSID_AUTHORITY_SUBSTITUTION + ":${LSIDNamespace.Prefix}.Folder-" + XarContext.CONTAINER_ID_SUBSTITUTION + "-${XarFileId}:" + PageFlowUtil.encode(_dataFileURL);
+                String objectId = _dataFileURL;
+                // Bug 13692 - LSIDs are limited to 300 characters total, so don't let the path part get too long
+                // If it's long enough to potentially cause a problem, use a hash of the relative path instead
+                // It's not human readable, but all that we're really required to do is generate a unique LSID
+                // for this path
+                if (objectId.length() > 150)
+                {
+                    try
+                    {
+                        MessageDigest digest = MessageDigest.getInstance("SHA-1");
+                        digest.update(objectId.getBytes());
+                        objectId = "HASH-" + Hex.encodeHexString(digest.digest());
+                    }
+                    catch (NoSuchAlgorithmException ignored)
+                    {
+                        // Fall back and use the original string
+                    }
+                }
+                return "urn:lsid:" + XarContext.LSID_AUTHORITY_SUBSTITUTION + ":${LSIDNamespace.Prefix}.Folder-" + XarContext.CONTAINER_ID_SUBSTITUTION + "-${XarFileId}:" + PageFlowUtil.encode(objectId);
             }
         }
         return null;
