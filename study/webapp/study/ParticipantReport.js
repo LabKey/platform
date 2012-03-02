@@ -441,6 +441,8 @@ Ext4.define('LABKEY.ext4.ParticipantReport', {
                         listeners : {
                             click : function(col, grid, idx) {
                                 this.gridFieldStore.removeAt(idx);
+                                if (this.measuresDialog)
+                                    this.onMeasuresStoreLoaded(this.measuresDialog.measurePanel);
                                 this.generateTemplateConfig();
                             },
                             scope : this
@@ -474,7 +476,7 @@ Ext4.define('LABKEY.ext4.ParticipantReport', {
                             rawData.push(Ext4.clone(recs[i].data));
                         }
                         this.enableUI(true);    // enable the UI if it is currently disabled
-                        this.gridFieldStore.loadRawData({measures : rawData}, true);
+                        this.gridFieldStore.loadRawData({measures : rawData}, false);
                         this.generateTemplateConfig();
                     };
                 }
@@ -898,7 +900,7 @@ Ext4.define('LABKEY.ext4.ParticipantReport', {
     },
 
     onFailure : function(resp) {
-        Ext4.Msg.alert('Failure', Ext4.decode(resp.responseText).exception);
+        Ext4.Msg.alert('Failure', Ext4.decode(resp.responseText));
     },
 
     // get the grid fields in a form that the visualization getData api can understand
@@ -1028,13 +1030,17 @@ Ext4.define('LABKEY.ext4.ParticipantReport', {
                 filter : LABKEY.Visualization.Filter.create({schemaName: 'study', queryType: LABKEY.Visualization.Filter.QueryType.BUILT_IN}),
                 allColumns : true,
                 forceQuery : true,
-                modal : false
+                listeners : {
+                    'measuresStoreLoaded' : this.onMeasuresStoreLoaded,
+                    scope : this
+                },
+                modal : false,
+                scope : this
             });
         }
         this.measuresDialog.addListener('measuresSelected', function(recs) {
             if (handler) handler.call(scope || this, recs);
         }, this, {single : true});
-
         // competing windows
         if (this.filterWindow) {
             this.filterWindow.hide();
@@ -1057,6 +1063,24 @@ Ext4.define('LABKEY.ext4.ParticipantReport', {
             this.northPanel.add(this.formPanel, this.designerPanel);
             this.centerPanel.enable();
             this.saveButton.enable();
+        }
+    },
+
+    onMeasuresStoreLoaded : function(mp) {
+        if (this.gridFieldStore && mp.view) {
+            var idArray = [];
+            var s = mp.view.getStore();
+            Ext4.each(this.gridFieldStore.getRange(), function(item) {
+                idArray.push(s.findBy(function(rec){
+                    return (
+                            item.data.schemaName == rec.data.schemaName &&
+                            item.data.queryName  == rec.data.queryName &&
+                            item.data.name       == rec.data.name
+                            );
+                }, this));
+            }, this);
+            if (mp.getSelectionModel().grid) // might not be initialized yet
+                mp.getSelectionModel().selectRows(idArray);
         }
     },
 

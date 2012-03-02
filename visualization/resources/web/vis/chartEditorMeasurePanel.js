@@ -534,7 +534,7 @@ LABKEY.vis.ChartEditorMeasurePanel = Ext.extend(Ext.FormPanel, {
 
                         Ext.getCmp(this.measureSelectionBtnId).setDisabled(false);
                     },
-                    'measuresStoreLoaded': function (data) {
+                    'beforeMeasuresStoreLoad': function (mp, data) {
                         // store the measure store JSON object for later use
                         this.measuresStoreData = data;
                     }

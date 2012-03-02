@@ -48,6 +48,7 @@ LABKEY.vis.MeasuresDialog = Ext.extend(Ext.Window, {
             allColumns  : this.allColumns,
             multiSelect : this.multiSelect,
             forceQuery  : this.forceQuery,
+            bubbleEvents: ['beforeMeasuresStoreLoad', 'measuresStoreLoaded'],
             listeners: {
                 scope: this,
                 'measureChanged': function (axisId, data) {
@@ -86,8 +87,9 @@ LABKEY.vis.MeasuresPanel = Ext.extend(Ext.Panel, {
         this.tbarActions = [];
         this.axisMap = {};              // map of name to axis info
         this.addEvents(
-            'measuresStoreLoaded',
-            'measureChanged'
+                'beforeMeasuresStoreLoad',
+                'measuresStoreLoaded',
+                'measureChanged'
         );
         Ext.apply(this, config, {isDateAxis : false, allColumns : false});
 
@@ -105,22 +107,7 @@ LABKEY.vis.MeasuresPanel = Ext.extend(Ext.Panel, {
             this.createMeasuresListPanel()
         ];
 
-        var loaded = false;
-
-        // Keep track of whether the store has been loaded so we know whether we need to
-        // mask the popup:
-        this.measuresStore.on('load', function(){
-            loaded = true;
-            //Prefilter list
-            var datasetName = LABKEY.ActionURL.getParameter("queryName");
-            if (datasetName)
-            {
-                this.searchBox.setValue(LABKEY.ActionURL.getParameter("queryName"));
-                this.searchBox.focus(true, 100);
-                this.filterMeasures(datasetName);
-            }
-
-        }, this);
+        this.loaded = false;
 
         // load the store the first time after this component has rendered
         this.on('afterrender', this.onAfterRender, this);
@@ -130,7 +117,7 @@ LABKEY.vis.MeasuresPanel = Ext.extend(Ext.Panel, {
         // Show the mask after the component size has been determined, as long as the
         // data is still loading:
         this.on('afterlayout', function() {
-            if (!loaded)
+            if (!this.loaded)
                 this.getEl().mask("loading measures...", "x-mask-loading");
         });
 
@@ -151,21 +138,21 @@ LABKEY.vis.MeasuresPanel = Ext.extend(Ext.Panel, {
         {
             if (!this.isLoading) {
                 this.isLoading = true;
-                Ext.Ajax.request({
-                    url : LABKEY.ActionURL.buildURL('visualization', 'getMeasures', LABKEY.ActionURL.getContainer(),
-                            {filters: [filter], dateMeasures: this.isDateAxis, allColumns : this.allColumns}),
-                    method:'GET',
-                    success : function(response){
+                LABKEY.Visualization.getMeasures({
+                    filters      : [filter],
+                    dateMeasures : this.isDateAxis,
+                    allColumns   : this.allColumns,
+                    success      : function(measures, response){
                         this.isLoading = false;
                         this.measuresStoreData = Ext.util.JSON.decode(response.responseText);
-                        this.fireEvent('measuresStoreLoaded', this.measuresStoreData);
+                        this.fireEvent('beforeMeasuresStoreLoad', this, this.measuresStoreData);
                         this.measuresStore.loadData(this.measuresStoreData);
                     },
-                    failure: function(info, response, options) {
+                    failure      : function(info, response, options) {
                         this.isLoading = false;
                         LABKEY.Utils.displayAjaxErrorResponse(response, options);
                     },
-                    scope: this
+                    scope : this
                 });
             }
         }
@@ -197,16 +184,32 @@ LABKEY.vis.MeasuresPanel = Ext.extend(Ext.Panel, {
             sortInfo: {
                 field: 'queryName',
                 direction: 'ASC'
+            },
+            listeners : {
+                load : function() {
+
+                    this.loaded = true;
+                    //Prefilter list
+                    var datasetName = LABKEY.ActionURL.getParameter("queryName");
+                    if (datasetName)
+                    {
+                        this.searchBox.setValue(LABKEY.ActionURL.getParameter("queryName"));
+                        this.searchBox.focus(true, 100);
+                        this.filterMeasures(datasetName);
+                    }
+
+                    if (this.rendered)
+                        this.getEl().unmask();
+
+                    this.fireEvent('measuresStoreLoaded', this);
+                },
+                exception : function(proxy, type, action, options, resp) {
+                    LABKEY.Utils.displayAjaxErrorResponse(resp, options);
+                    this.getEl().unmask();
+                },
+                scope : this
             }
         });
-        this.measuresStore.on('load', function(){
-            if (this.rendered)
-                this.getEl().unmask();
-        }, this);
-        this.measuresStore.on('exception', function(proxy, type, action, options, resp){
-            LABKEY.Utils.displayAjaxErrorResponse(resp, options);
-            this.getEl().unmask();
-        }, this);
 
         if (this.multiSelect) {
 
@@ -217,6 +220,7 @@ LABKEY.vis.MeasuresPanel = Ext.extend(Ext.Panel, {
                 stripeRows : true,
                 selModel : this.selModel,
                 viewConfig : {forceFit: true},
+                bubbleEvents : ['viewready'],
                 columns: [
                     this.selModel,
                     {header:'Dataset', dataIndex:'queryName'},
@@ -389,6 +393,10 @@ LABKEY.vis.MeasuresPanel = Ext.extend(Ext.Panel, {
         });
 
         return panel;
+    },
+
+    getSelectionModel : function() {
+        return this.selModel;
     },
 
     getSelectedRecords : function() {

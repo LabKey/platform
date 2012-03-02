@@ -772,7 +772,7 @@ Ext4.define('LABKEY.ext4.StudyScheduleGrid', {
             defaults: {
                 margin: '10 0 0 25'
             },
-            items: [ datasetPanelItems ]
+            items: datasetPanelItems
         });
 
         var bbarItems = [{xtype: 'tbfill'}];
@@ -795,13 +795,15 @@ Ext4.define('LABKEY.ext4.StudyScheduleGrid', {
         bbarItems.push(this.cancelDatasetButton, this.addDatasetButton);
 
         this.addDatasetWindow = Ext4.create('Ext.window.Window', {
-            title: 'New Dataset',
-            height: 225,
-            width: 400,
-            modal: true,
-            layout: 'fit',
-            bbar: bbarItems,
-            items: [this.datasetPanel]
+            title   : 'New Dataset',
+            height  : 225,
+            width   : 400,
+            modal   : true,
+            layout  : 'fit',
+            bodyStyle : 'border: none',
+            bodyBorder : false,
+            buttons : bbarItems,
+            items   : [this.datasetPanel]
         });
         
         this.addDatasetWindow.show();
@@ -894,11 +896,10 @@ Ext4.define('LABKEY.ext4.StudyScheduleGrid', {
             height: 225,
             width: 400,
             layout: 'fit',
+            bodyStyle : 'border: none;',
             modal: true,
             scope: this,
-            bbar: [{
-                xtype: 'tbfill'
-            },{
+            buttons : [{
                 xtype: 'button',
                 align: 'right',
                 text: 'Cancel',
@@ -916,13 +917,13 @@ Ext4.define('LABKEY.ext4.StudyScheduleGrid', {
                 },
                 items: [{
                     xtype: 'displayfield',
-                    value: "Define " + datasetLabel,
+                    value: "Define " + Ext4.htmlEncode(datasetLabel),
                     width: 340
                 },this.linkDatasetGroup, this.datasetCombo]
             }]
         });
 
-        this.linkDatasetWindow.show()
+        this.linkDatasetWindow.show();
     },
 
     addDatasetHandler : function(btn){
