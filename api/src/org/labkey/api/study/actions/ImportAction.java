@@ -103,7 +103,7 @@ public class ImportAction extends BaseAssayAction<ImportAction.ImportForm>
         if (!files.isEmpty())
         {
             // for 11.1 we will constrain importing of assay designs to a single file
-            assert(files.size() == 1);
+            assert(files.size() == 1) : "Expected exactly one file, but found " + files.size();
 
             File srcFile = files.get(0);
 //            HttpSession session = getViewContext().getSession();

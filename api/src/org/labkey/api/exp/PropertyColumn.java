@@ -17,11 +17,13 @@ package org.labkey.api.exp;
 
 import org.labkey.api.data.*;
 import org.labkey.api.data.dialect.SqlDialect;
+import org.labkey.api.exp.property.IPropertyValidator;
 import org.labkey.api.exp.property.PropertyService;
 import org.labkey.api.query.PdLookupForeignKey;
 import org.labkey.api.security.User;
 import org.labkey.api.study.assay.FileLinkDisplayColumn;
 
+import java.util.List;
 import java.util.Map;
 
 
@@ -256,5 +258,11 @@ public class PropertyColumn extends LookupColumn
             return String.class;
         }
         return _pd.getPropertyType().getJavaType();
+    }
+
+    @Override
+    public List<? extends IPropertyValidator> getValidators()
+    {
+        return PropertyService.get().getPropertyValidators(_pd);
     }
 }

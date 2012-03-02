@@ -16,6 +16,7 @@
 
 package org.labkey.api.exp.property;
 
+import org.jetbrains.annotations.NotNull;
 import org.labkey.api.data.ConditionalFormat;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ImportAliasable;
@@ -84,6 +85,7 @@ public interface DomainProperty extends ImportAliasable
     List<ConditionalFormat> getConditionalFormats();
     void setConditionalFormats(List<ConditionalFormat> formats);
 
+    @NotNull
     List<? extends IPropertyValidator> getValidators();
     void addValidator(IPropertyValidator validator);
     void removeValidator(IPropertyValidator validator);

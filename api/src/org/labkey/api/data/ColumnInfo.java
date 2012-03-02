@@ -16,6 +16,7 @@
 
 package org.labkey.api.data;
 
+import com.sun.istack.internal.NotNull;
 import org.apache.commons.beanutils.ConversionException;
 import org.apache.commons.beanutils.ConvertUtils;
 import org.apache.commons.lang3.StringUtils;
@@ -24,6 +25,7 @@ import org.labkey.api.collections.CaseInsensitiveHashSet;
 import org.labkey.api.collections.NamedObjectList;
 import org.labkey.api.data.dialect.ColumnMetaDataReader;
 import org.labkey.api.data.dialect.SqlDialect;
+import org.labkey.api.exp.property.IPropertyValidator;
 import org.labkey.api.gwt.client.DefaultValueType;
 import org.labkey.api.query.AliasManager;
 import org.labkey.api.query.FieldKey;
@@ -45,6 +47,7 @@ import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -111,6 +114,7 @@ public class ColumnInfo extends ColumnRenderProperties implements SqlColumn
     private String propertyURI = null;
     private String conceptURI = null;
     private List<ConditionalFormat> conditionalFormats = new ArrayList<ConditionalFormat>();
+    private List<? extends IPropertyValidator> validators = Collections.emptyList();
 
     private DisplayColumnFactory _displayColumnFactory = DEFAULT_FACTORY;
     private boolean _lockName = false;
@@ -304,6 +308,7 @@ public class ColumnInfo extends ColumnRenderProperties implements SqlColumn
         setShownInInsertView(col.isShownInInsertView());
         setShownInUpdateView(col.isShownInUpdateView());
         setConditionalFormats(col.getConditionalFormats());
+        validators = col.getValidators();
         // Intentionally do not use set/get methods for dimension and measure, since the set/get methods
         // hide the fact that these values can be null internally.  It's important to preserve the notion
         // of unset values on the new columninfo.
@@ -1551,5 +1556,11 @@ public class ColumnInfo extends ColumnRenderProperties implements SqlColumn
     public void setConditionalFormats(List<ConditionalFormat> conditionalFormats)
     {
         this.conditionalFormats = conditionalFormats;
+    }
+
+    @NotNull
+    public List<? extends IPropertyValidator> getValidators()
+    {
+        return validators;
     }
 }

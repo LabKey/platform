@@ -681,15 +681,8 @@ public class DataColumn extends DisplayColumn
                 {
                     sb.append("Description: ").append(_boundColumn.getDescription()).append("\n");
                 }
-                if (_boundColumn.getPropertyURI() != null)
-                {
-                    PropertyDescriptor pd = OntologyManager.getPropertyDescriptor(_boundColumn.getPropertyURI(), ctx.getContainer());
-                    if (pd != null)
-                    {
-                        for (IPropertyValidator validator : PropertyService.get().getPropertyValidators(pd))
-                            sb.append("Validator: ").append(validator).append("\n");
-                    }
-                }
+                for (IPropertyValidator validator : _boundColumn.getValidators())
+                    sb.append("Validator: ").append(validator).append("\n");
                 if (renderRequiredIndicators() && !_boundColumn.isNullable())
                 {
                     out.write(" *");

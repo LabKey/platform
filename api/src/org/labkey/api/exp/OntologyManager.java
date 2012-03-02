@@ -167,13 +167,13 @@ public class OntologyManager
 			objInsert.setOwnerObjectId(ownerObjectId);
 
             List<ValidationError> errors = new ArrayList<ValidationError>();
-            Map<Integer, IPropertyValidator[]> validatorMap = new HashMap<Integer, IPropertyValidator[]>();
+            Map<Integer, List<? extends IPropertyValidator>> validatorMap = new HashMap<Integer, List<? extends IPropertyValidator>>();
 
             // cache all the property validators for this upload
             for (PropertyDescriptor pd : descriptors)
             {
-                IPropertyValidator[] validators = PropertyService.get().getPropertyValidators(pd);
-                if (validators.length > 0)
+                List<? extends IPropertyValidator> validators = PropertyService.get().getPropertyValidators(pd);
+                if (!validators.isEmpty())
                     validatorMap.put(pd.getPropertyId(), validators);
             }
 
@@ -355,15 +355,15 @@ public class OntologyManager
             }
             List<ValidationError> errors = new ArrayList<ValidationError>();
 
-            Map<String, IPropertyValidator[]> validatorMap = new HashMap<String, IPropertyValidator[]>();
+            Map<String, List<? extends IPropertyValidator>> validatorMap = new HashMap<String, List<? extends IPropertyValidator>>();
             Map<String, DomainProperty> propertiesMap = new HashMap<String, DomainProperty>();
 
             // cache all the property validators for this upload
             for (DomainProperty dp : properties)
             {
                 propertiesMap.put(dp.getPropertyURI(), dp);
-                IPropertyValidator[] validators = PropertyService.get().getPropertyValidators(dp.getPropertyDescriptor());
-                if (validators.length > 0)
+                List<? extends IPropertyValidator> validators = dp.getValidators();
+                if (!validators.isEmpty())
                     validatorMap.put(dp.getPropertyURI(), validators);
             }
 
@@ -498,7 +498,7 @@ public class OntologyManager
 	}
     
 
-    public static boolean validateProperty(IPropertyValidator[] validators, PropertyDescriptor prop, Object value,
+    public static boolean validateProperty(List<? extends IPropertyValidator> validators, PropertyDescriptor prop, Object value,
             List<ValidationError> errors, ValidatorContext validatorCache)
     {
         boolean ret = true;
@@ -1012,6 +1012,10 @@ public class OntologyManager
             // Owned objects should be in same container, so this should work
 			String deleteObjPropSql = "DELETE FROM " + getTinfoObjectProperty() + " WHERE  ObjectId IN (SELECT ObjectId FROM " + getTinfoObject() + " WHERE Container = ?)";
 			Table.execute(getExpSchema(), deleteObjPropSql, containerid);
+			String deleteIndexIntegerSql = "DELETE FROM " + getTinfoIndexInteger() + " WHERE  ObjectId IN (SELECT ObjectId FROM " + getTinfoObject() + " WHERE Container = ?)";
+			Table.execute(getExpSchema(), deleteIndexIntegerSql, containerid);
+			String deleteIndexVarcharSql = "DELETE FROM " + getTinfoIndexVarchar() + " WHERE  ObjectId IN (SELECT ObjectId FROM " + getTinfoObject() + " WHERE Container = ?)";
+			Table.execute(getExpSchema(), deleteIndexVarcharSql, containerid);
 			String deleteObjSql = "DELETE FROM " + getTinfoObject() + " WHERE Container = ?";
 			Table.execute(getExpSchema(), deleteObjSql, containerid);
 
@@ -1835,7 +1839,7 @@ public class OntologyManager
                                                                     proj.getId(),
                                                                     _sharedContainer.getId()},
                                                                     PropertyDescriptor.class);
-            if (null != pdArray && pdArray.length > 0)
+            if (pdArray.length > 0)
 			{
                 pd = pdArray[0];
 
@@ -3242,6 +3246,16 @@ public class OntologyManager
     public static TableInfo getTinfoObjectProperty()
     {
         return getExpSchema().getTable("ObjectProperty");
+    }
+
+    public static TableInfo getTinfoIndexInteger()
+    {
+        return getExpSchema().getTable("IndexInteger");
+    }
+
+    public static TableInfo getTinfoIndexVarchar()
+    {
+        return getExpSchema().getTable("IndexVarchar");
     }
 
     public static TableInfo getTinfoPropertyDescriptor()

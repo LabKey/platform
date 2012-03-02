@@ -240,7 +240,7 @@ public class StandardETL implements DataIteratorBuilder
                 validate.addRequired(indexConvert, true);
 
             if (null != pair.dp)
-                validate.addPropertyValidator(indexConvert, pair.dp.getPropertyDescriptor());
+                validate.addPropertyValidator(indexConvert, pair.dp);
         }
 
         DataIterator last = validate.hasValidators() ? validate : convert;

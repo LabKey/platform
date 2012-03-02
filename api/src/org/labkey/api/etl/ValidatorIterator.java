@@ -23,8 +23,8 @@ import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
 import org.labkey.api.exp.MvFieldWrapper;
 import org.labkey.api.exp.PropertyDescriptor;
+import org.labkey.api.exp.property.DomainProperty;
 import org.labkey.api.exp.property.IPropertyValidator;
-import org.labkey.api.exp.property.PropertyService;
 import org.labkey.api.exp.property.ValidatorContext;
 import org.labkey.api.exp.property.ValidatorKind;
 import org.labkey.api.query.BatchValidationException;
@@ -187,14 +187,12 @@ checkRequired:
     }
 
 
-    public void addPropertyValidator(int i, PropertyDescriptor pd)
+    public void addPropertyValidator(int i, DomainProperty prop)
     {
-        IPropertyValidator[] validators = PropertyService.get().getPropertyValidators(pd);
-        if (null == validators || 0 == validators.length)
-            return;
+        List<? extends IPropertyValidator> validators = prop.getValidators();
         for (IPropertyValidator pv : validators)
         {
-            ValidatorKindWrapper v = new ValidatorKindWrapper(i, pd, pv);
+            ValidatorKindWrapper v = new ValidatorKindWrapper(i, prop.getPropertyDescriptor(), pv);
             addValidator(i, v);
         }
     }
