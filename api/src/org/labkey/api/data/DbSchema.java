@@ -628,20 +628,20 @@ public class DbSchema
                 {
                     sbSql.append( " INSERT INTO "+ tempTableName );
                     sbSql.append(" SELECT " + String.valueOf(++row) + " AS rowId, '" + t.getSelectName() + "' AS TableName, ");
-                    List<String> pkColumnNames = t.getPkColumnNames();
+                    List<ColumnInfo> pkColumns = t.getPkColumns();
 
-                    if (pkColumnNames.size() == 1)
+                    if (pkColumns.size() == 1)
                     {
-                        String pkColumnName = pkColumnNames.get(0);
-                        sbSql.append(" '" + pkColumnName);
+                        ColumnInfo pkColumn = pkColumns.get(0);
+                        sbSql.append(" '" + pkColumn.getSelectName());
                         sbSql.append("' AS FirstPKColName, ");
-                        sbSql.append(" CAST( " + t.getSelectName() + "." + pkColumnName + " AS VARCHAR(100)) "
+                        sbSql.append(" CAST( " + t.getSelectName() + "." + pkColumn.getSelectName() + " AS VARCHAR(100)) "
                                 + " AS FirstPKValue ,");
                     }
                     else
                     {
                         String tmp = "unknown PK";
-                        if (pkColumnNames.size() > 1)
+                        if (pkColumns.size() > 1)
                             tmp = "multiCol PK ";
                         if(t.getName().equals("ACLs"))
                             tmp = "objectid ";
@@ -732,14 +732,13 @@ public class DbSchema
 
                 Set<Module> modulesOfOrphans = new HashSet<Module>();
 
-                rs1 = Table.executeQuery(coreSchema," SELECT TableName, OrphanedContainer, ModuleName FROM " + tempTableName
-                        + " WHERE OrphanedContainer IS NOT NULL GROUP BY TableName, OrphanedContainer, ModuleName" +
-                        " ;", new Object[]{});
+                rs1 = Table.executeQuery(coreSchema, "SELECT TableName, OrphanedContainer, ModuleName FROM " + tempTableName
+                        + " WHERE OrphanedContainer IS NOT NULL GROUP BY TableName, OrphanedContainer, ModuleName", new Object[]{});
 
                 while (rs1.next())
                 {
                     modulesOfOrphans.add(ModuleLoader.getInstance().getModule(rs1.getString(3)));
-                    String sql = "UPDATE " + rs1.getString(1) +" SET Container = ? WHERE Container = ? ";
+                    String sql = "UPDATE " + rs1.getString(1) + " SET Container = ? WHERE Container = ?";
 
                     try
                     {

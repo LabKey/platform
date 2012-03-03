@@ -16,7 +16,6 @@
 
 package org.labkey.api.security;
 
-import com.extjs.gxt.ui.client.widget.grid.GroupSummaryView;
 import org.apache.commons.codec.binary.Base64;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
