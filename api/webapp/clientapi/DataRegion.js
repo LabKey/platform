@@ -3705,7 +3705,7 @@ LABKEY.ext.RemoteCheckboxGroup = Ext.extend(Ext.form.CheckboxGroup,
                         xtype: 'tooltip',
                         target: id,
                         items: [{
-                            html: '<a>Click to select only: ' + field.boxLabel + '</a>',
+                            html: '<a>Click here to select only: ' + field.boxLabel + '</a>',
                             itemId: 'link',
                             border: false
                         }],
@@ -3721,7 +3721,7 @@ LABKEY.ext.RemoteCheckboxGroup = Ext.extend(Ext.form.CheckboxGroup,
                         hideDelay: 800,
                         trackMouse: false,
                         dismissDelay: 2000,
-                        mouseOffset: [1,1]
+                        mouseOffset: [0,-20]
                     }) ;
                 }
             }
