@@ -31,7 +31,7 @@
 <script>
 (function (){
 var dataRegionName = <%=q(bean.dataRegionName)%>;
-var divId = <%=q(bean.dataRegionName + "ParameterDiv")%>;
+var divId = <%=q("dataregion_" + bean.dataRegionName)%>;
 var decl = [
     <%
     Collection<QueryService.ParameterDecl> decls = bean.params;
@@ -56,8 +56,10 @@ var decl = [
 var formpanel;
 function submitHandler()
 {
-    debugger;
     var values = formpanel.getForm().getValues();
+    formpanel.destroy();
+    delete formpanel;
+
     var dataRegion = LABKEY.DataRegions[dataRegionName];
     if (dataRegion)
     {
@@ -95,4 +97,5 @@ Ext.onReady(function()
 });
 })();
 </script>
-<div id=<%=PageFlowUtil.qh(bean.dataRegionName + "ParameterDiv")%>></div>
+<%-- NOTE: div id must match DataRegion.js expected <table> element so it can be removed in DataRegion.destroy() --%>
+<div id=<%=PageFlowUtil.qh("dataregion_" + bean.dataRegionName)%>></div>

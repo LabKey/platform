@@ -502,6 +502,8 @@ LABKEY.QueryWebPart = Ext.extend(Ext.util.Observable,
                 if (targetElem)
                 {
                     this.unmask();
+                    if (dr)
+                        dr.destroy();
                     targetElem.update(response.responseText, true); //execute scripts
 
                     //get the data region and subscribe to events

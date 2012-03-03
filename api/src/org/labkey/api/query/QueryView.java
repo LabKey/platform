@@ -1185,7 +1185,7 @@ public class QueryView extends WebPartView<Object>
 
             item = new NavTree(label, (String)null);
             item.setScript(getChangeViewScript(label));
-            item.setId(getBaseMenuId() + ":Views:" + PageFlowUtil.filter(label));
+            item.setId(getBaseMenuId() + ":Views:view-" + PageFlowUtil.filter(label));
             if (label.equals(currentView))
                 item.setStrong(true);
 

@@ -177,8 +177,35 @@ LABKEY.DataRegion = Ext.extend(Ext.Component,
             }
         }
 
-        this.rendered = true; // prevent Ext.Component.render() from doing anything
         LABKEY.DataRegion.superclass.constructor.call(this, config);
+    },
+
+    // private
+    beforeDestroy : function ()
+    {
+        if (this.headerLock())
+        {
+            Ext.EventManager.un(window, 'load', this._resizeContainer, this);
+            Ext.EventManager.un(window, 'resize', this._resizeContainer, this);
+            Ext.EventManager.un(window, 'scroll', this._scrollContainer, this);
+            Ext.EventManager.un(document, 'DOMNodeInserted', this._resizeContainer, this);
+            this.resizeTask.cancel();
+            delete this.resizeTask;
+        }
+
+        if (this.msgbox)
+        {
+            this.msgbox.destroy();
+            delete this.msgbox;
+        }
+
+        if (this.customizeView)
+        {
+            this.customizeView.destroy();
+            delete this.customizeView;
+        }
+
+        LABKEY.DataRegion.superclass.beforeDestroy.call(this);
     },
 
     /**
@@ -986,6 +1013,9 @@ LABKEY.DataRegion = Ext.extend(Ext.Component,
         if (this.headerLock()) {
             this._initHeaderLock();
         }
+
+        this.rendered = true; // prevent Ext.Component.render() from doing anything
+        this.el = this.form && Ext.get(this.form) || this.table;
     },
 
     headerLock : function() {
@@ -2289,6 +2319,11 @@ LABKEY.MessageArea = Ext.extend(Ext.util.Observable, {
             'rendermsg',
             'clearmsg'
         );
+    },
+
+    // private
+    destroy : function () {
+        this.purgeListeners();
     },
 
     addMessage : function(msg, part) {
