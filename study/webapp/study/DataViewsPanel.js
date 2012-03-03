@@ -504,7 +504,6 @@ Ext4.define('LABKEY.ext4.DataViewsPanel', {
 
     initGridColumns : function(visibleColumns) {
 
-        var refreshTpl = '<tpl>{refreshDate:date}</tpl>';
         var detailsTpl =
                 '<tpl if="detailsUrl">' +
                     '<a data-qtip="Click to navigate to the Detail View" href="{detailsUrl}">' +
@@ -586,15 +585,13 @@ Ext4.define('LABKEY.ext4.DataViewsPanel', {
 
         if(visibleColumns['Refresh Date'] && visibleColumns['Refresh Date'].checked){
              _columns.push({
-                xtype    : 'templatecolumn',
-                text     : 'Refresh Date',
-                width    : 100,
-                sortable : true,
-                dataIndex: 'refreshDate',
-                tdCls    : 'type-column',
-                tpl      : refreshTpl,
-                scope    : this
-            });
+                 text     : 'Refresh Date',
+                 width    : 100,
+                 sortable : true,
+                 dataIndex: 'refreshDate',
+                 renderer : Ext.util.Format.dateRenderer('Y-m-d'),
+                 scope    : this
+             });
         }
 
         if (visibleColumns['Status'] && visibleColumns['Status'].checked)

@@ -88,6 +88,12 @@ if (permissions.contains(UpdatePermission.class))
 <%  if (dataset.getType().equals(org.labkey.api.study.DataSet.TYPE_STANDARD)) { %>
         &nbsp;<%=generateButton("Edit Definition", editTypeURL)%>
 <%  }
+    else if(dataset.getType().equals(org.labkey.api.study.DataSet.TYPE_PLACEHOLDER))
+    {
+%>
+        <a class="labkey-button" href="#" onclick="showLinkDialog()"><span>Link or Define Dataset</span></a>
+<%
+    }
 }
 if (!pipelineSet)
 {
@@ -173,3 +179,165 @@ if (!pipelineSet)
 %></table>
 <% WebPartView.endTitleFrame(out); %>
 <% } %>
+
+<script type="text/javascript">
+    LABKEY.requiresExt4Sandbox(true);
+</script>
+
+<script type="text/javascript">
+    function showLinkDialog(){
+        Ext4.onReady(function(){
+            var datasets = [
+<%
+        for (DataSet def : study.getDataSetsByType(new String[]{DataSet.TYPE_STANDARD, DataSet.TYPE_PLACEHOLDER}))
+        {
+%>
+                {label: "<%=def.getLabel()%>", id: <%=def.getDataSetId()%>},
+<%
+        }
+%>
+            ]
+
+            var datasetStore = Ext4.create('Ext.data.Store', {
+                fields: ['label', 'id'],
+                data: datasets
+            });
+
+            var datasetCombo = Ext4.create('Ext.form.field.ComboBox', {
+                disabled: true,
+                width: 220,
+                allowBlank: false,
+                cls : 'existing-dataset-combo',             // test marker
+                editable: false,
+                forceSelection: true,
+                value: 'asdf',
+                store: datasetStore,
+                queryMode: 'local',
+                displayField: 'label',
+                valueField: 'id',
+                margin: '10 0 0 85',
+                listeners      : {
+                    render     : function(combo) {
+                        var store = combo.getStore();
+                        combo.setValue(store.getAt(0));
+                    }
+                }
+            });
+
+            var importRadio = {
+                boxLabel: 'Import data from file',
+                name: 'deftype',
+                inputValue: 'linkImport',
+                checked: 'true'
+            };
+            var manualRadio = {
+                boxLabel: 'Define dataset manually',
+                name:'deftype',
+                inputValue:'linkManually'
+            };
+
+            var existingRadio = {
+                boxLabel: 'Link to existing dataset',
+                name: 'deftype',
+                inputValue: 'linkToTarget'
+            };
+
+            var linkDatasetGroup = Ext4.create('Ext.form.RadioGroup', {
+                columns: 1,
+                vertical: true,
+                margin: '10 0 0 45',
+                items: [importRadio, manualRadio, existingRadio],
+                listeners: {
+                    scope: this,
+                    change: function(rgroup, newValue){
+                        if(newValue.deftype == 'linkToTarget'){
+                            linkDoneButton.setText('Done');
+                            datasetCombo.setDisabled(false);
+                        } else {
+                            linkDoneButton.setText('Next');
+                            datasetCombo.setDisabled(true);
+                        }
+                    }
+                }
+            });
+
+            var linkDoneButton = Ext4.create('Ext.Button', {
+                text: 'Next',
+                handler: linkDatasetHandler,
+                scope: this
+            });
+            
+            var dialogConfig = {
+                title: 'Link or Define Dataset',
+                height: 225,
+                width: 400,
+                layout: 'fit',
+                bodyStyle : 'border: none;',
+                modal: true,
+                scope: this,
+                buttons : [{
+                    xtype: 'button',
+                    align: 'right',
+                    text: 'Cancel',
+                    handler: function(){
+                        linkDatasetWindow.close();
+                    },
+                    scope: this
+                }, linkDoneButton],
+                items: [{
+                    xtype: 'form',
+                    border: false,
+                    title: '',
+                    defaults: {
+                        margin: '10 0 0 25'
+                    },
+                    items: [{
+                        xtype: 'displayfield',
+                        value: "Define <%=h(dataset.getLabel())%>",
+                        width: 340
+                    },linkDatasetGroup, datasetCombo]
+                }]
+            };
+
+            function linkDatasetHandler(){
+                var json = {};
+                json.type = linkDatasetGroup.getValue().deftype;
+                json.expectationDataset = <%= dataset.getDataSetId() %>;
+
+                if(json.type == 'linkToTarget'){
+                    json.targetDataset = datasetCombo.getValue();
+                }
+
+                Ext4.Ajax.request({
+                    url     : LABKEY.ActionURL.buildURL('study', 'defineDataset.view'),
+                    method  : 'POST',
+                    jsonData : json,
+                    success : function(response){
+                        var resp = Ext4.decode(response.responseText);
+                        if(json.type == 'placeHolder' || json.type == 'linkToTarget'){
+                            // If placeHolder or linkToTarget, navigate to new page.
+                                linkDatasetWindow.close();
+                                window.location = LABKEY.ActionURL.buildURL('study', 'datasetDetails.view', null, {id: json.targetDataset});
+                        } else {
+                            // If manual/import navigate to manual/import page.
+                            window.location = resp.redirectUrl;
+                        }
+                    },
+                    failure : function(response){
+                        var resp = Ext4.decode(response.responseText);
+                        if(resp && resp.exception){
+                            Ext4.Msg.alert('Failure', resp.exception);
+                        } else {
+                            Ext4.Msg.alert('Failure', 'An unknown failure has ocurred');
+                        }
+                    },
+                    scope   : this
+                });
+            }
+
+            var linkDatasetWindow = Ext4.create('Ext.window.Window', dialogConfig);
+
+            linkDatasetWindow.show();
+        });
+    }
+</script>

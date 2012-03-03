@@ -941,12 +941,10 @@ Ext4.define('LABKEY.ext4.StudyScheduleGrid', {
     linkDatasetHandler : function(){
         var json = {};
         json.type = this.linkDatasetGroup.getValue().deftype;
-        
+        json.expectationDataset = this.expectationDatasetId;
+
         if(json.type == 'linkToTarget'){
             json.targetDataset = this.datasetCombo.getValue();
-            json.expectationDataset = this.expectationDatasetId;
-        } else {
-            json.expectationDataset = this.expectationDatasetId;
         }
 
         this.addOrLinkDataset(json);

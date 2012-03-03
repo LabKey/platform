@@ -30,29 +30,45 @@
     JspView<Portal.WebPart> me = (JspView) HttpView.currentView();
     Container c = me.getViewContext().getContainer();
     StudyImpl study = StudyManager.getInstance().getStudy(c);
-    String visitLabel = StudyManager.getInstance().getVisitManager(study).getPluralLabel();
     Portal.WebPart webpart = me.getModelBean();
     boolean canEdit  = c.hasPermission(me.getViewContext().getUser(), ManageStudyPermission.class);
     int webPartIndex = (webpart == null ? 0 : webpart.getIndex());
-%>
-
-<div id='study-schedule-<%=webPartIndex%>' class="study-schedule-container"></div>
-
-<script type="text/javascript">
-    LABKEY.requiresExt4Sandbox(true);
-    LABKEY.requiresCss("study/StudySchedule.css");
-    LABKEY.requiresScript("study/StudyScheduleGrid.js");
-</script>
-
-<script type="text/javascript">
-    function callRender() {
-
-        var studySchedulePanel = Ext4.create('LABKEY.ext4.StudyScheduleGrid', {
-            renderTo : "study-schedule-"+ <%=webPartIndex%>,
-            timepointType: "<%=study.getTimepointType()%>",
-            canEdit: <%=canEdit%>
-        });
-
+    boolean nullStudy = (study == null);
+    String timepointType = null;
+    if (!nullStudy)
+    {
+        timepointType = study.getTimepointType().toString();
     }
-    Ext4.onReady(callRender);
-</script>
+%>
+<%
+    if (!nullStudy)
+    {
+%>
+        <div id='study-schedule-<%=webPartIndex%>' class="study-schedule-container"></div>
+        <script type="text/javascript">
+            LABKEY.requiresExt4Sandbox(true);
+            LABKEY.requiresCss("study/StudySchedule.css");
+            LABKEY.requiresScript("study/StudyScheduleGrid.js");
+        </script>
+
+        <script type="text/javascript">
+            function callRender() {
+                var studySchedulePanel = Ext4.create('LABKEY.ext4.StudyScheduleGrid', {
+                    renderTo : "study-schedule-"+ <%=webPartIndex%>,
+                    timepointType: "<%=timepointType%>",
+                    canEdit: <%=canEdit%>
+                });
+            }
+            Ext4.onReady(callRender);
+        </script>
+<%
+    }
+    else
+    {
+%>
+        <div id='study-schedule-<%=webPartIndex%>' class="study-schedule-container">
+            <p>The folder must contain a study in order to display a study schedule.</p>
+        </div>
+<%
+    }
+%>
