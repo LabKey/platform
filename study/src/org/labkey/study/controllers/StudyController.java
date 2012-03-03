@@ -475,6 +475,10 @@ public class StudyController extends BaseStudyController
                     "timepointType", ""+study.getTimepointType(),
                     ActionURL.Param.returnUrl.name(), new ActionURL(DatasetDetailsAction.class, getContainer()).addParameter("id", form.getDatasetId()).toString());
 
+            String cancelUrl = getViewContext().getActionURL().getParameter(ActionURL.Param.cancelUrl.name());
+            if (cancelUrl != null)
+                props.put(ActionURL.Param.cancelUrl.name(), cancelUrl);
+
             HtmlView text = new HtmlView("Modify the properties and schema (form fields/properties) for this dataset.");
             HttpView view = new StudyGWTView(Designer.class, props);
 
@@ -3028,15 +3032,18 @@ public class StudyController extends BaseStudyController
             try
             {
                 Results r = queryView.getResults(ShowRows.PAGINATED);
-                rs = r.getResultSet();
-                ColumnInfo ptidColumnInfo = r.getFieldMap().get(ptidKey);
-                int ptidIndex = (null != ptidColumnInfo) ? rs.findColumn(ptidColumnInfo.getAlias()) : 0;
-                while (rs.next() && ptidIndex > 0)
+                if (r != null)
                 {
-                    String ptid = rs.getString(ptidIndex);
-                    participantSet.add(ptid);
+                    rs = r.getResultSet();
+                    ColumnInfo ptidColumnInfo = r.getFieldMap().get(ptidKey);
+                    int ptidIndex = (null != ptidColumnInfo) ? rs.findColumn(ptidColumnInfo.getAlias()) : 0;
+                    while (rs.next() && ptidIndex > 0)
+                    {
+                        String ptid = rs.getString(ptidIndex);
+                        participantSet.add(ptid);
+                    }
+                    return new ArrayList<String>(participantSet);
                 }
-                return new ArrayList<String>(participantSet);
             }
             catch (RuntimeSQLException x)
             {
@@ -7489,14 +7496,24 @@ public class StudyController extends BaseStudyController
                         if (study != null)
                         {
                             DataSetDefinition dsDef = StudyManager.getInstance().getDataSetDefinitionByEntityId(study, id);
+                            boolean dirty = false;
                             if (dsDef != null)
                             {
                                 dsDef = dsDef.createMutable();
                                 if (category != null)
+                                {
+                                    dirty = dsDef.getCategoryId() == null || (category.getRowId() != dsDef.getCategoryId());
                                     dsDef.setCategoryId(category.getRowId());
-                                dsDef.setDescription(StringUtils.trimToNull(form.getDescription()));
+                                }
+                                String newDescription = StringUtils.trimToNull(form.getDescription());
+                                dirty = dirty || !StringUtils.equals(dsDef.getDescription(), newDescription);
+                                dsDef.setDescription(newDescription);
+
+                                dirty = dirty || (dsDef.isShowByDefault() == form.isHidden());
                                 dsDef.setShowByDefault(!form.isHidden());
-                                dsDef.save(getUser());
+
+                                if (dirty)
+                                    dsDef.save(getUser());
                             }
                         }
                         break;
@@ -7720,11 +7737,15 @@ public class StudyController extends BaseStudyController
                             def.setType(DataSet.TYPE_STANDARD);
                             def.save(getUser());
 
+                            // add a cancel url to rollback either the manual link or import from file link
+                            ActionURL cancelURL = new ActionURL(CancelDefineDatasetAction.class, getContainer()).addParameter("expectationDataset", form.getExpectationDataset());
+
                             if (form.getType() == DefineDatasetForm.Type.linkManually)
                                 redirect = new ActionURL(EditTypeAction.class, getContainer()). addParameter(DataSetDefinition.DATASETKEY, form.getExpectationDataset());
                             else
                                 redirect = new ActionURL(DatasetController.DefineAndImportDatasetAction.class, getContainer()).addParameter(DataSetDefinition.DATASETKEY, form.getExpectationDataset());
 
+                            redirect.addParameter(ActionURL.Param.cancelUrl.name(), cancelURL.getLocalURIString());
                             response.put("redirectUrl", redirect.getLocalURIString());
                         }
                         else
@@ -7747,6 +7768,39 @@ public class StudyController extends BaseStudyController
             }
 
             return response;
+        }
+    }
+
+    @RequiresPermissionClass(AdminPermission.class)
+    public class CancelDefineDatasetAction extends SimpleViewAction<Object>
+    {
+        @Override
+        public ModelAndView getView(Object form, BindException errors) throws Exception
+        {
+            // switch the dataset back to a placeholder type
+            Study study = getStudy(false, getContainer());
+            if (study != null)
+            {
+                String expectationDataset = getViewContext().getActionURL().getParameter("expectationDataset");
+                if (NumberUtils.isDigits(expectationDataset))
+                {
+                    DataSetDefinition def = StudyManager.getInstance().getDataSetDefinition(study, NumberUtils.toInt(expectationDataset));
+                    if (def != null)
+                    {
+                        def = def.createMutable();
+
+                        def.setType(DataSet.TYPE_PLACEHOLDER);
+                        def.save(getUser());
+                    }
+                }
+            }
+            throw new RedirectException(new ActionURL(StudyScheduleAction.class, getContainer()));
+        }
+
+        @Override
+        public NavTree appendNavTrail(NavTree root)
+        {
+            return null;
         }
     }
 

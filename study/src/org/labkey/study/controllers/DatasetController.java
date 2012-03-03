@@ -497,9 +497,14 @@ public class DatasetController extends BaseStudyController
             props.put("subjectColumnName", getStudy().getSubjectColumnName());
 
             // Cancel should delete the dataset
-            ActionURL cancelURL = new ActionURL(
-                StudyController.DeleteDatasetAction.class, getContainer()).addParameter("id", form.getDatasetId());
-            props.put(ActionURL.Param.cancelUrl.name(), cancelURL.getLocalURIString());
+            String cancelUrl = getViewContext().getActionURL().getParameter(ActionURL.Param.cancelUrl.name());
+            if (cancelUrl == null)
+            {
+                ActionURL url = new ActionURL(
+                    StudyController.DeleteDatasetAction.class, getContainer()).addParameter("id", form.getDatasetId());
+                cancelUrl = url.getLocalURIString();
+            }
+            props.put(ActionURL.Param.cancelUrl.name(), cancelUrl);
 
             ActionURL successURL = new ActionURL(
                 StudyController.DatasetAction.class, getContainer()).addParameter("datasetId", form.getDatasetId());
