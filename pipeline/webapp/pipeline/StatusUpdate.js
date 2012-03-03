@@ -108,6 +108,9 @@ LABKEY.pipeline.StatusUpdate = function(controller, action)
                 var newText = Ext.util.Format.stripTags(Ext.util.Format.stripScripts(response.responseText));
                 if (_lastUpdate != newText)
                 {
+                    var dr = LABKEY.DataRegions["StatusFiles"];
+                    if (dr)
+                        dr.destroy();
                     el.update(response.responseText, true);
                     _lastUpdate = newText;
                     LABKEY.DataRegions["StatusFiles"]._initElements();
