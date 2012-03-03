@@ -88,6 +88,7 @@ public class DomainImporter
     private boolean cancelRequested = false;
     private boolean _hideFileUpload;
     private boolean _hideButtons;
+    private ImageButton _cancelButton;
 
     public DomainImporter(DomainImporterServiceAsync service, List<String> columnsToMap, Set<String> baseColumnNames)
     {
@@ -140,6 +141,19 @@ public class DomainImporter
 
         mainPanel = new VerticalPanel();
         mainPanel.add(form);
+
+        if (PropertyUtil.getCancelURL() != null)
+        {
+            _cancelButton = new ImageButton("Cancel", new ClickHandler()
+            {
+                public void onClick(ClickEvent e)
+                {
+                    handleCancel();
+                }
+            });
+
+            mainPanel.add(_cancelButton);
+        }
     }
 
     /**
@@ -548,6 +562,8 @@ public class DomainImporter
 
         public void onSuccess(List<InferencedColumn> result)
         {
+            if (_cancelButton != null)
+                mainPanel.remove(_cancelButton);
             displayInferredColumns(result);
         }
     }
