@@ -37,6 +37,7 @@ import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.security.permissions.UpdatePermission;
 import org.labkey.api.util.NetworkDrive;
 import org.labkey.api.util.URIUtil;
+import org.labkey.api.view.NotFoundException;
 import org.labkey.api.view.UnauthorizedException;
 
 import java.io.File;
@@ -186,6 +187,9 @@ public class PipeRootImpl implements PipeRoot
 
     public File resolvePath(String path)
     {
+        if (null == path)
+            throw new NotFoundException("Must specify a file path");
+
         // Check if the file already exists on disk
         for (File root : getRootPaths())
         {
