@@ -1982,6 +1982,8 @@ LABKEY.DataRegion.saveCustomizeViewPrompt = function (config)
             },{
                 xtype: "compositefield",
                 ref: "nameCompositeField",
+                // Let the saveCustomView_name field display the error message otherwise it will render as "saveCustomView_name: error message"
+                combineErrors: false,
                 items: [{
                     xtype: "radio",
                     fieldLabel: "",
@@ -2007,10 +2009,16 @@ LABKEY.DataRegion.saveCustomizeViewPrompt = function (config)
                     name: "saveCustomView_name",
                     tooltip: "Name of the custom view",
                     tooltipType: "title",
+                    msgTarget: "side",
                     allowBlank: false,
                     emptyText: "Name is required",
                     maxLength: 50,
                     autoCreate: {tag: 'input', type: 'text', size: '50'},
+                    validator: function (value) {
+                        if ("default" === value.trim())
+                            return "The view name 'default' is not allowed";
+                        return true;
+                    },
                     selectOnFocus: true,
                     value: newViewName,
                     disabled: hidden || (canEdit && !viewName)
