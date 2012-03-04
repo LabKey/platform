@@ -63,6 +63,7 @@ import org.labkey.api.data.DbSchema;
 import org.labkey.api.data.DbScope;
 import org.labkey.api.data.DisplayColumn;
 import org.labkey.api.data.ExcelWriter;
+import org.labkey.api.data.SchemaTableInfo;
 import org.labkey.api.data.ShowRows;
 import org.labkey.api.data.Table;
 import org.labkey.api.data.TableInfo;
@@ -891,7 +892,7 @@ public class QueryController extends SpringActionController
         }
     }
 
-    @RequiresPermissionClass(ReadPermission.class)
+    @RequiresSiteAdmin
     public class RawTableMetaDataAction extends QueryViewAction
     {
         private String _schemaName;
@@ -915,7 +916,15 @@ public class QueryController extends SpringActionController
             DbSchema schema = ti.getSchema();
             DbScope scope = schema.getScope();
             _schemaName = schema.getName();
-            _tableName = ti.getName();
+
+            // Try to get the underlying schema table and use the meta data name, #12015
+            if (ti instanceof FilteredTable)
+                ti = ((FilteredTable) ti).getRealTable();
+
+            if (ti instanceof SchemaTableInfo)
+                _tableName = ((SchemaTableInfo) ti).getMetaDataName();
+            else
+                _tableName = ti.getSelectName();
 
             ActionURL url = new ActionURL(RawSchemaMetaDataAction.class, getContainer());
             url.addParameter("schemaName", _schemaName);
@@ -967,7 +976,7 @@ public class QueryController extends SpringActionController
     }
 
 
-    @RequiresPermissionClass(ReadPermission.class)
+    @RequiresSiteAdmin
     public class RawSchemaMetaDataAction extends SimpleViewAction
     {
         private String _schemaName;
@@ -998,7 +1007,15 @@ public class QueryController extends SpringActionController
                 ActionURL url = new ActionURL(RawTableMetaDataAction.class, getContainer());
                 url.addParameter("schemaName", _schemaName);
                 String tableLink = url.getEncodedLocalURIString() + "&query.queryName=";
-                tableInfo = new ResultSetView(new CachedResultSet(rs, dialect.shouldCacheMetaData(), Table.ALL_ROWS), "Tables", 3, tableLink);
+                tableInfo = new ResultSetView(new CachedResultSet(rs, dialect.shouldCacheMetaData(), Table.ALL_ROWS), "Tables", 3, tableLink) {
+                    @Override
+                    protected boolean shouldLink(ResultSet rs) throws SQLException
+                    {
+                        // Only link to tables and views (not indexes or sequences)
+                        String type = rs.getString(4);
+                        return "TABLE".equalsIgnoreCase(type) || "VIEW".equalsIgnoreCase(type);
+                    }
+                };
             }
             finally
             {
@@ -1104,7 +1121,7 @@ public class QueryController extends SpringActionController
 
                         out.print("<td>");
 
-                        if (null != _link && _linkColumn == i)
+                        if (null != _link && _linkColumn == i && shouldLink(_rs))
                         {
                             out.print("<a href=\"");
                             out.print(PageFlowUtil.filter(_link + val.toString()));
@@ -1128,6 +1145,11 @@ public class QueryController extends SpringActionController
             }
 
             out.println("</table>\n");
+        }
+
+        protected boolean shouldLink(ResultSet rs) throws SQLException
+        {
+            return true;
         }
     }
 
