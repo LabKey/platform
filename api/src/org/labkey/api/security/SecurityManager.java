@@ -2229,12 +2229,12 @@ public class SecurityManager
         {
             Table.execute(
                     core.getSchema(),
-                    "DELETE FROM " + core.getTableInfoRoleAssignments() + " WHERE ResourceId IN(SELECT ResourceId FROM " +
-                    core.getTableInfoPolicies() + " WHERE Container=?)",
+                    "DELETE FROM " + core.getTableInfoRoleAssignments() + " WHERE ResourceId IN (SELECT ResourceId FROM " +
+                    core.getTableInfoPolicies() + " WHERE Container = ?)",
                     c.getId());
             Table.execute(
                     core.getSchema(),
-                    "DELETE FROM " + core.getTableInfoPolicies() + " WHERE Container=?",
+                    "DELETE FROM " + core.getTableInfoPolicies() + " WHERE Container = ?",
                     c.getId());
             DbCache.clear(core.getTableInfoRoleAssignments());
         }
@@ -2247,7 +2247,6 @@ public class SecurityManager
 
     public static class TestCase extends Assert
     {
-
         Group groupA = null;
         Group groupB = null;
         Container project = null;
@@ -2460,29 +2459,29 @@ public class SecurityManager
         }
 
 
-//        @Test
-//        public void testEmailValidation()
-//        {
-//            testEmail("this@that.com", true);
-//            testEmail("foo@fhcrc.org", true);
-//            testEmail("dots.dots@dots.co.uk", true);
-//            testEmail("funny_chars#that%are^allowed&in*email!addresses@that.com", true);
-//
-//            String displayName = "Personal Name";
-//            ValidEmail email = testEmail(displayName + " <personal@name.com>", true);
-//            assertTrue("Display name: expected '" + displayName + "' but was '" + email.getPersonal() + "'", displayName.equals(email.getPersonal()));
-//
-//            String defaultDomain = ValidEmail.getDefaultDomain();
-//            // If default domain is defined this should succeed; if it's not defined, this should fail.
-//            testEmail("foo", defaultDomain != null && defaultDomain.length() > 0);
-//
-//            testEmail("~()@bar.com", false);
-//            testEmail("this@that.com@con", false);
-//            testEmail(null, false);
-//            testEmail("", false);
-//            testEmail("<@bar.com", false);
-//            testEmail(displayName + " <personal>", false);  // Can't combine personal name with default domain
-//        }
+        @Test
+        public void testEmailValidation()
+        {
+            testEmail("this@that.com", true);
+            testEmail("foo@fhcrc.org", true);
+            testEmail("dots.dots@dots.co.uk", true);
+            testEmail("funny_chars#that%are^allowed&in*email!addresses@that.com", true);
+
+            String displayName = "Personal Name";
+            ValidEmail email = testEmail(displayName + " <personal@name.com>", true);
+            assertTrue("Display name: expected '" + displayName + "' but was '" + email.getPersonal() + "'", displayName.equals(email.getPersonal()));
+
+            String defaultDomain = ValidEmail.getDefaultDomain();
+            // If default domain is defined this should succeed; if it's not defined, this should fail.
+            testEmail("foo", defaultDomain != null && defaultDomain.length() > 0);
+
+            testEmail("~()@bar.com", false);
+            testEmail("this@that.com@con", false);
+            testEmail(null, false);
+            testEmail("", false);
+            testEmail("<@bar.com", false);
+            testEmail(displayName + " <personal>", false);  // Can't combine personal name with default domain
+        }
 
 
         private ValidEmail testEmail(String rawEmail, boolean valid)
