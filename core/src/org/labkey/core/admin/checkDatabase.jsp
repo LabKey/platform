@@ -1,6 +1,6 @@
 <%
 /*
- * Copyright (c) 2007-2011 LabKey Corporation
+ * Copyright (c) 2007-2012 LabKey Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -44,8 +44,7 @@
         <tr><td>&nbsp;</td><td></td></tr>
         <tr><td>Get schema xml doc:&nbsp;</td>
             <td>
-
-                <select id="dbSchema" name="dbSchema" style="width:250"><%
+                <select id="dbSchema" name="dbSchema" style="width:250px"><%
                     for (Module m : bean.getModules())
                     {
                         Set<String> schemaNames = m.getSchemaNames();

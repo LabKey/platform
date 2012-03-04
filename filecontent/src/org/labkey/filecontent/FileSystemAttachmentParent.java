@@ -17,6 +17,7 @@
 package org.labkey.filecontent;
 
 import org.apache.commons.io.IOUtils;
+import org.jetbrains.annotations.Nullable;
 import org.labkey.api.attachments.AttachmentDirectory;
 import org.labkey.api.attachments.AttachmentFile;
 import org.labkey.api.attachments.AttachmentService;
@@ -170,9 +171,10 @@ public class FileSystemAttachmentParent implements AttachmentDirectory
         }
     }
 
-    public void deleteAttachment(User user, String name)
+    public void deleteAttachment(User user, @Nullable String name)
     {
-        try {
+        try
+        {
             File parentDir = getFileSystemDirectory();
             if (parentDir != null && parentDir.exists())
             {

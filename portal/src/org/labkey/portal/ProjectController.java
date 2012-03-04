@@ -575,7 +575,7 @@ public class ProjectController extends SpringActionController
         @Override
         public ApiResponse execute(CustomizePortletApiForm customizePortletForm, BindException errors) throws Exception
         {
-            Portal.WebPart webPart = Portal.getPart(customizePortletForm.getWebPartId());
+            Portal.WebPart webPart = Portal.getPart(getContainer(), customizePortletForm.getWebPartId());
             if (webPart != null && handleDeleteWebPart(getViewContext().getContainer(), webPart.getPageId(), webPart.getIndex()))
                 return getWebPartLayoutApiResponse(customizePortletForm.getPageId());
             else
@@ -590,7 +590,7 @@ public class ProjectController extends SpringActionController
         @Override
         public ApiResponse execute(CustomizePortletApiForm movePortletForm, BindException errors) throws Exception
         {
-            Portal.WebPart webPart = Portal.getPart(movePortletForm.getWebPartId());
+            Portal.WebPart webPart = Portal.getPart(getContainer(), movePortletForm.getWebPartId());
             if (webPart != null && handleMoveWebPart(webPart.getPageId(), webPart.getIndex(), movePortletForm.getDirection()))
                 return getWebPartLayoutApiResponse(webPart.getPageId());
             else
@@ -836,7 +836,7 @@ public class ProjectController extends SpringActionController
         @Override
         public ApiResponse execute(CustomizePortletApiForm form, BindException errors) throws Exception
         {
-            Portal.WebPart webPart = Portal.getPart(form.getWebPartId());
+            Portal.WebPart webPart = Portal.getPart(getContainer(), form.getWebPartId());
 
             if (webPart != null)
             {

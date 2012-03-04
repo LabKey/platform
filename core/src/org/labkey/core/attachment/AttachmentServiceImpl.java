@@ -409,7 +409,7 @@ public class AttachmentServiceImpl implements AttachmentService.Service, Contain
         SearchService ss = ServiceRegistry.get(SearchService.class);
 
         for (Attachment att : atts)
-            ss.deleteResource(makeDocId(parent,att.getName()));
+            ss.deleteResource(makeDocId(parent, att.getName()));
 
         Table.execute(coreTables().getSchema(), sqlCascadeDelete(), parent.getEntityId());
         if (parent instanceof AttachmentDirectory)
@@ -1366,13 +1366,11 @@ public class AttachmentServiceImpl implements AttachmentService.Service, Contain
 
     public static class TestCase extends Assert
     {
-
         private static final String _testDirName = "/_jUnitAttachment";
 
         @Test
         public void testDirectories() throws IOException, SQLException, AttachmentService.DuplicateFilenameException
         {
-
             User user = TestContext.get().getUser();
             assertTrue(null != user);
 
@@ -1507,8 +1505,6 @@ public class AttachmentServiceImpl implements AttachmentService.Service, Contain
             service.deleteAttachment(root, file2.getName(), user);
             attachments = service.getAttachments(root);
             assertTrue(originalCount == attachments.size());
-
-
         }
     }
 }
