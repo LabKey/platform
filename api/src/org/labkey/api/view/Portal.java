@@ -32,6 +32,7 @@ import org.labkey.api.data.SqlExecutor;
 import org.labkey.api.data.SqlSelector;
 import org.labkey.api.data.Table;
 import org.labkey.api.data.TableInfo;
+import org.labkey.api.data.TableSelector;
 import org.labkey.api.data.dialect.SqlDialect;
 import org.labkey.api.module.Module;
 import org.labkey.api.module.ModuleLoader;
@@ -317,10 +318,10 @@ public class Portal
         return WebPartCache.getWebParts(c, pageId);
     }
 
-    // TODO: Use WebPartCache... but we need folder & pageId to do that. Fortunately, this is used infrequently now (see #13267).
-    public static WebPart getPart(int webPartRowId)
+    // TODO: Should use WebPartCache... but we need pageId to do that. Fortunately, this is used infrequently now (see #13267).
+    public static WebPart getPart(Container c, int webPartRowId)
     {
-        return Table.selectObject(getTableInfoPortalWebParts(), webPartRowId, WebPart.class);
+        return new TableSelector(getTableInfoPortalWebParts(), new SimpleFilter("Container", c), null).getObject(webPartRowId, WebPart.class);
     }
 
     @Nullable

@@ -16,6 +16,7 @@
 
 package org.labkey.api.attachments;
 
+import org.jetbrains.annotations.Nullable;
 import org.labkey.api.files.MissingRootDirectoryException;
 import org.labkey.api.security.User;
 
@@ -34,5 +35,5 @@ public interface AttachmentDirectory extends AttachmentParent
     public File getFileSystemDirectory() throws MissingRootDirectoryException;
 
     public void addAttachment(User user, AttachmentFile attachment) throws IOException;
-    public void deleteAttachment(User user, String name);
+    public void deleteAttachment(User user, @Nullable String name);
 }
