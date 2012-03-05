@@ -21,19 +21,9 @@ package org.labkey.study.samples.report;
  */
 public class SpecimenCountSummary implements SpecimenReportCellData
 {
-    private Double _sequenceNum;
     private Long _vialCount;
     private Double _totalVolume;
-
-    public Double getSequenceNum()
-    {
-        return _sequenceNum;
-    }
-
-    public void setSequenceNum(Double sequenceNum)
-    {
-        _sequenceNum = sequenceNum;
-    }
+    private Integer _visit;
 
     public Long getVialCount()
     {
@@ -53,5 +43,15 @@ public class SpecimenCountSummary implements SpecimenReportCellData
     public void setTotalVolume(Double totalVolume)
     {
         _totalVolume = totalVolume;
+    }
+
+    public Integer getVisit()
+    {
+        return _visit;
+    }
+
+    public void setVisit(Integer visit)
+    {
+        _visit = visit;
     }
 }

@@ -51,7 +51,7 @@ public abstract class SpecimenVisitReport<CELLDATA extends SpecimenReportCellDat
     private boolean _viewParticipantCount = false;
     private boolean _viewVolume = false;
     private boolean _viewPtidList = false;
-    private Map<Double, Double> _nonEmptyColumns = new HashMap<Double, Double>();
+    private Map<Integer, Integer> _nonEmptyColumns = new HashMap<Integer, Integer>();
 
     public SpecimenVisitReport(String titlePrefix, VisitImpl[] visits, SimpleFilter filter, SpecimenVisitReportParameters parameters)
     {
@@ -105,7 +105,7 @@ public abstract class SpecimenVisitReport<CELLDATA extends SpecimenReportCellDat
                 List<VisitImpl> visits = new ArrayList<VisitImpl>();
                 for (VisitImpl visit : _visits)
                 {
-                    if (_nonEmptyColumns.containsKey(visit.getSequenceNumMin()))
+                    if (_nonEmptyColumns.containsKey(visit.getRowId()))
                         visits.add(visit);
                 }
                 _nonEmptyVisits = visits.toArray(new VisitImpl[visits.size()]);
@@ -114,10 +114,10 @@ public abstract class SpecimenVisitReport<CELLDATA extends SpecimenReportCellDat
         }
     }
 
-    protected void setVisitAsNonEmpty(Double sequenceNum)
+    protected void setVisitAsNonEmpty(Integer visit)
     {
-        if (!_nonEmptyColumns.containsKey(sequenceNum))
-            _nonEmptyColumns.put(sequenceNum, sequenceNum);
+        if (!_nonEmptyColumns.containsKey(visit))
+            _nonEmptyColumns.put(visit, visit);
     }
 
     protected abstract String getCellHtml(VisitImpl visit, CELLDATA summary);
@@ -242,7 +242,7 @@ public abstract class SpecimenVisitReport<CELLDATA extends SpecimenReportCellDat
     public class Row
     {
         private final SpecimenReportTitle[] _titleHierarchy;
-        private Map<Double, CELLDATA> _visitData = new HashMap<Double, CELLDATA>();
+        private Map<Integer, CELLDATA> _visitData = new HashMap<Integer, CELLDATA>();
 
         public Row(String[] stringHierarchy)
         {
@@ -256,13 +256,13 @@ public abstract class SpecimenVisitReport<CELLDATA extends SpecimenReportCellDat
 
         public String getCellHtml(VisitImpl visit)
         {
-            CELLDATA summary = _visitData.get(visit.getSequenceNumMin());
+            CELLDATA summary = _visitData.get(visit.getRowId());
             return SpecimenVisitReport.this.getCellHtml(visit, summary);
         }
 
         public String[] getCellExcelText(VisitImpl visit)
         {
-            CELLDATA summary = _visitData.get(visit.getSequenceNumMin());
+            CELLDATA summary = _visitData.get(visit.getRowId());
             return SpecimenVisitReport.this.getCellExcelText(visit, summary);
         }
 
@@ -285,7 +285,7 @@ public abstract class SpecimenVisitReport<CELLDATA extends SpecimenReportCellDat
 
         public void add(CELLDATA summary)
         {
-            _visitData.put(summary.getSequenceNum(), summary);
+            _visitData.put(summary.getVisit(), summary);
         }
     }
 

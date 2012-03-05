@@ -1863,13 +1863,13 @@ public class SampleManager
             SQLFragment visitIdSQL = new SQLFragment("SELECT DISTINCT Visit from (" + specimenSql.getSQL() + ") SimpleSpecimenQuery");
             visitIdSQL.addAll(specimenSql.getParamsArray());
 
-            List<Double> visitIds = new ArrayList<Double>();
+            List<Integer> visitIds = new ArrayList<Integer>();
             ResultSet rs = null;
             try
             {
                 rs = Table.executeQuery(StudySchema.getInstance().getSchema(), visitIdSQL);
                 while (rs.next())
-                    visitIds.add(rs.getDouble(1));
+                    visitIds.add(rs.getInt(1));
             }
             finally
             {
@@ -1877,7 +1877,7 @@ public class SampleManager
             }
 
             SimpleFilter filter = new SimpleFilter("Container", container.getId());
-            filter.addInClause("SequenceNumMin", visitIds);
+            filter.addInClause("RowId", visitIds);
             if (cohort != null)
                 filter.addWhereClause("CohortId IS NULL OR CohortId = ?", new Object[] { cohort.getRowId() });
             return Table.select(StudySchema.getInstance().getTableInfoVisit(), Table.ALL_COLUMNS, filter, new Sort("DisplayOrder,SequenceNumMin"), VisitImpl.class);
@@ -2119,7 +2119,6 @@ public class SampleManager
         // columns are required in case there's a saved filter on a column outside the primary table:
         columns.add(FieldKey.fromParts("Container"));
         columns.add(FieldKey.fromParts("Visit"));
-        columns.add(FieldKey.fromParts("SequenceNum"));
         columns.add(FieldKey.fromParts("LockedInRequest"));
         columns.add(FieldKey.fromParts("GlobalUniqueId"));
         columns.add(FieldKey.fromParts(StudyService.get().getSubjectColumnName(container)));
@@ -2183,18 +2182,18 @@ public class SampleManager
         SpecimenDetailQueryHelper viewSqlHelper = getSpecimenDetailQueryHelper(container, user, baseView, specimenDetailFilter, level);
 
         String perPtidSpecimenSQL = "\t-- Inner SELECT gets the number of vials per participant/visit/type:\n" +
-            "\tSELECT InnerView.Container, InnerView.SequenceNum, " + viewSqlHelper.getTypeGroupingColumns() + ",\n" +
+            "\tSELECT InnerView.Container, InnerView.Visit, " + viewSqlHelper.getTypeGroupingColumns() + ",\n" +
             "\tInnerView." + StudyService.get().getSubjectColumnName(container) + ", COUNT(*) AS VialCount, SUM(InnerView.Volume) AS PtidVolume \n" +
             "FROM (\n" + viewSqlHelper.getViewSql().getSQL() + "\n) InnerView\n" +
             "\tGROUP BY InnerView.Container, InnerView." + StudyService.get().getSubjectColumnName(container) +
-                ", InnerView.SequenceNum, " + viewSqlHelper.getTypeGroupingColumns() + "\n";
+                ", InnerView.Visit, " + viewSqlHelper.getTypeGroupingColumns() + "\n";
 
         StringBuilder sql = new StringBuilder("-- Outer grouping allows us to count participants AND sum vial counts:\n" +
-            "SELECT VialData.SequenceNum AS SequenceNum, " + viewSqlHelper.getTypeGroupingColumns() + ", COUNT(*) as ParticipantCount, \n" +
+            "SELECT VialData.Visit AS Visit, " + viewSqlHelper.getTypeGroupingColumns() + ", COUNT(*) as ParticipantCount, \n" +
             "SUM(VialData.VialCount) AS VialCount, SUM(VialData.PtidVolume) AS TotalVolume FROM \n" +
             "(\n" + perPtidSpecimenSQL + ") AS VialData\n" +
-            "GROUP BY SequenceNum, " + viewSqlHelper.getTypeGroupingColumns() + "\n" +
-            "ORDER BY " + viewSqlHelper.getTypeGroupingColumns() + ", SequenceNum");
+            "GROUP BY Visit, " + viewSqlHelper.getTypeGroupingColumns() + "\n" +
+            "ORDER BY " + viewSqlHelper.getTypeGroupingColumns() + ", Visit");
 
         ResultSet rs = null;
         List<SummaryByVisitType> ret;
@@ -2205,8 +2204,8 @@ public class SampleManager
             while (rs.next())
             {
                 SummaryByVisitType summary = new SummaryByVisitType();
-                if (rs.getObject("SequenceNum") != null)
-                    summary.setSequenceNum(rs.getDouble("SequenceNum"));
+                if (rs.getObject("Visit") != null)
+                    summary.setVisit(rs.getInt("Visit"));
                 summary.setTotalVolume(rs.getDouble("TotalVolume"));
                 Double vialCount = rs.getDouble("VialCount");
                 summary.setVialCount(vialCount.longValue());
@@ -2241,13 +2240,13 @@ public class SampleManager
 
         if (includeParticipantGroups)
             setSummaryParticipantGroups(perPtidSpecimenSQL, viewSqlHelper.getViewSql().getParamsArray(),
-                    viewSqlHelper.getAliasToTypePropertyMap(), summaries, StudyService.get().getSubjectColumnName(container), "SequenceNum");
+                    viewSqlHelper.getAliasToTypePropertyMap(), summaries, StudyService.get().getSubjectColumnName(container), "Visit");
         return summaries;
     }
 
-    private String getPtidListKey(Double visitValue, String primaryType, String derivativeType, String additiveType)
+    private String getPtidListKey(Integer visit, String primaryType, String derivativeType, String additiveType)
     {
-        return visitValue + "/" + primaryType + "/" +
+        return visit + "/" + primaryType + "/" +
             (derivativeType != null ? derivativeType : "all") +
             (additiveType != null ? additiveType : "all");
     }
@@ -2398,15 +2397,15 @@ public class SampleManager
                 break;
         }
 
-        String ptidSpecimenSQL = "SELECT SpecimenQuery.SequenceNum AS SequenceNum, SpecimenQuery." + subjectCol + " AS ParticipantId,\n" +
+        String ptidSpecimenSQL = "SELECT SpecimenQuery.Visit AS Visit, SpecimenQuery." + subjectCol + " AS ParticipantId,\n" +
                 "COUNT(*) AS VialCount, study.Cohort.Label AS Cohort, SUM(SpecimenQuery.Volume) AS TotalVolume\n" +
                 "FROM (" + sqlHelper.getViewSql().getSQL() + ") AS SpecimenQuery\n" +
                 "LEFT OUTER JOIN study.Participant ON\n" +
                 "\tSpecimenQuery." + subjectCol + " = study.Participant.ParticipantId AND\n" +
                 "\tSpecimenQuery.Container = study.Participant.Container\n" +
                 cohortJoinClause +
-                "GROUP BY study.Cohort.Label, SpecimenQuery." + subjectCol + ", SpecimenQuery.SequenceNum\n" +
-                "ORDER BY study.Cohort.Label, SpecimenQuery." + subjectCol + ", SpecimenQuery.SequenceNum";
+                "GROUP BY study.Cohort.Label, SpecimenQuery." + subjectCol + ", Visit\n" +
+                "ORDER BY study.Cohort.Label, SpecimenQuery." + subjectCol + ", Visit";
 
         return Table.executeQuery(StudySchema.getInstance().getSchema(),
                 ptidSpecimenSQL, sqlHelper.getViewSql().getParamsArray(), SummaryByVisitParticipant.class);
@@ -2429,7 +2428,7 @@ public class SampleManager
                 "Specimen." + subjectCol + ",\n" +
                 "Request.DestinationSiteId,\n" +
                 "Site.Label AS SiteLabel,\n" +
-                "Visit AS SequenceNum,\n" +
+                "Visit AS Visit,\n" +
                  sqlHelper.getTypeGroupingColumns() + ", COUNT(*) AS VialCount, SUM(Volume) AS TotalVolume\n" +
                 "FROM (" + sqlHelper.getViewSql().getSQL() + ") AS Specimen\n" +
                 "JOIN study.SampleRequestSpecimen AS RequestSpecimen ON \n" +
@@ -2464,7 +2463,7 @@ public class SampleManager
                 RequestSummaryByVisitType summary = new RequestSummaryByVisitType();
                 summary.setDestinationSiteId(rs.getInt("DestinationSiteId"));
                 summary.setSiteLabel(rs.getString("SiteLabel"));
-                summary.setSequenceNum(rs.getDouble("SequenceNum"));
+                summary.setVisit(rs.getInt("Visit"));
                 summary.setTotalVolume(rs.getDouble("TotalVolume"));
                 Double vialCount = rs.getDouble("VialCount");
                 summary.setVialCount(vialCount.longValue());
@@ -2496,7 +2495,7 @@ public class SampleManager
         RequestSummaryByVisitType[] summaries = ret.toArray(new RequestSummaryByVisitType[ret.size()]);
 
         if (includeParticipantGroups)
-            setSummaryParticipantGroups(sql, params, null, summaries, subjectCol, "SequenceNum");
+            setSummaryParticipantGroups(sql, params, null, summaries, subjectCol, "Visit");
         return summaries;
     }
 
@@ -2665,7 +2664,7 @@ public class SampleManager
             while (rs.next())
             {
                 String ptid = rs.getString(ptidColumnName);
-                Double visitValue = rs.getDouble(visitValueColumnName);
+                Integer visit = rs.getInt(visitValueColumnName);
                 String primaryType = null;
                 String derivative = null;
                 String additive = null;
@@ -2684,7 +2683,7 @@ public class SampleManager
                             break;
                     }
                 }
-                String key = getPtidListKey(visitValue, primaryType, derivative, additive);
+                String key = getPtidListKey(visit, primaryType, derivative, additive);
 
                 Set<String> ptids = cellToPtidSet.get(key);
                 if (ptids == null)
@@ -2697,8 +2696,8 @@ public class SampleManager
 
             for (SummaryByVisitType summary : summaries)
             {
-                Double visitValue = summary.getSequenceNum();
-                String key = getPtidListKey(visitValue, summary.getPrimaryType(), summary.getDerivative(), summary.getAdditive());
+                Integer visit = summary.getVisit();
+                String key = getPtidListKey(visit, summary.getPrimaryType(), summary.getDerivative(), summary.getAdditive());
                 Set<String> ptids = cellToPtidSet.get(key);
                 summary.setParticipantIds(ptids);
             }

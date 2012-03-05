@@ -65,7 +65,7 @@ public class RequestParticipantReport extends SpecimenVisitReport<SampleManager.
                     row = new Row(titleHierarchy);
                     rows.put(key, row);
                 }
-                setVisitAsNonEmpty(count.getSequenceNum());
+                setVisitAsNonEmpty(count.getVisit());
                 row.add(count);
             }
             return rows.values();

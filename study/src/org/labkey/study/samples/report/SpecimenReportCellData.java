@@ -21,7 +21,7 @@ package org.labkey.study.samples.report;
  */
 public interface SpecimenReportCellData
 {
-    Double getSequenceNum();
     Long getVialCount();
     Double getTotalVolume();
+    Integer getVisit();
 }

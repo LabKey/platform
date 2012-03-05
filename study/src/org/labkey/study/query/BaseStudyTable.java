@@ -185,22 +185,16 @@ public abstract class BaseStudyTable extends FilteredTable
     protected ColumnInfo addSpecimenVisitColumn(TimepointType timepointType)
     {
         ColumnInfo visitColumn = null;
-        String lookupPkColumnName = "RowId";
         ColumnInfo visitDescriptionColumn = addWrapColumn(_rootTable.getColumn("VisitDescription"));
-
-        // add the sequenceNum column so we have it for later queries
-        ColumnInfo sequenceNumColumn = addColumn(new AliasedColumn(this, "SequenceNum", _rootTable.getColumn("VisitValue")));
-        sequenceNumColumn.setHidden(true);
 
         if (timepointType == TimepointType.DATE || timepointType == TimepointType.CONTINUOUS)
         {
             //consider:  use SequenceNumMin for visit-based studies too (in visit-based studies VisitValue == SequenceNumMin)
             // could change to visitrowid but that changes datatype and displays rowid
             // instead of sequencenum when label is null
-            visitColumn = addColumn(new DateVisitColumn(this));
+            visitColumn = addColumn(new ParticipantVisitColumn(this));
             visitColumn.setLabel("Timepoint");
 
-            lookupPkColumnName = "SequenceNumMin";
             visitDescriptionColumn.setHidden(true);
         }
         else if (timepointType == TimepointType.VISIT)
@@ -208,7 +202,7 @@ public abstract class BaseStudyTable extends FilteredTable
             visitColumn = addColumn(new ParticipantVisitColumn(this));
         }
 
-        LookupForeignKey visitFK = new LookupForeignKey(null, (String) null, lookupPkColumnName, null)
+        LookupForeignKey visitFK = new LookupForeignKey(null, (String) null, "RowId", null)
         {
             public TableInfo getLookupTableInfo()
             {
@@ -245,6 +239,7 @@ public abstract class BaseStudyTable extends FilteredTable
     }
 
 
+/*
     private static class DateVisitColumn extends ExprColumn
     {
         private static final String DATE_VISIT_JOIN_ALIAS = "DateVisitJoin";
@@ -267,6 +262,7 @@ public abstract class BaseStudyTable extends FilteredTable
             map.put(DATE_VISIT_JOIN_ALIAS, join);
         }
     }
+*/
 
     protected void addVialCommentsColumn(final boolean joinBackToSpecimens)
     {
