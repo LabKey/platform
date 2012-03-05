@@ -53,7 +53,7 @@ public class CSRFUtil
                 try
                 {
                     Cookie c = new Cookie(csrfName, csrf);
-                    c.setPath(request.getContextPath());
+                    c.setPath(StringUtils.defaultIfEmpty(request.getContextPath(),"/"));
                     response.addCookie(c);
                 }
                 catch (Exception x)
