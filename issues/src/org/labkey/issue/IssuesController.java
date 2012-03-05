@@ -1934,10 +1934,10 @@ public class IssuesController extends SpringActionController
         public String getExtraHtml(ViewContext ctx)
         {
             String q = ctx.getActionURL().getParameter("q");
-            String status = ctx.getActionURL().getParameter("status");
 
-            if (0 < q.length())
+            if (StringUtils.isNotBlank(q))
             {
+                String status = ctx.getActionURL().getParameter("status");
                 ActionURL statusResearchURL = ctx.cloneActionURL().deleteParameter("status");
                 statusResearchURL.addParameter("_dc", (int)Math.round(1000 * Math.random()));
 
