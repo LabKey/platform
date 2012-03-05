@@ -281,32 +281,60 @@ LABKEY.Utils = new function()
          * manageFolders, etc).
          * NOTE: This method is safe to use for both Ext 3 and Ext 4 containers.
          * @param extContainer - (Required) outer container which is the target to be resized
-         * @param width - (Required) width of the viewport. In many cases, the window width.
-         * @param height - (Required) height of the viewport. In many cases, the window height.
+         * @param width - (Required) width of the viewport. In many cases, the window width. If a negative width is passed than
+         *                           the width will not be set.
+         * @param height - (Required) height of the viewport. In many cases, the window height. If a negative height is passed than
+         *                           the height will not be set.
          * @param paddingX - distance from the right edge of the viewport. Defaults to 30.
          * @param paddingY - distance from the bottom edge of the viewport. Defaults to 30.
          */
-        resizeToViewport : function(extContainer, width, height, paddingX, paddingY)
+        resizeToViewport : function(extContainer, width, height, paddingX, paddingY, offsetX, offsetY)
         {
             if (!extContainer || !extContainer.rendered)
                 return;
 
+            if (width < 0 && height < 0)
+                return;
+
             var padding = [];
+            offsetX = offsetX || 35;
+            offsetY = offsetY || 30;
+
             if (paddingX !== undefined && paddingX != null)
                 padding.push(paddingX);
             else
-                padding.push(35);
+            {
+
+                var bp = Ext.get('bodypanel');
+                if (bp) {
+                    var t  = Ext.query('table.labkey-proj');
+                    if (t && t.length > 0) {
+                        t = Ext.get(t[0]);
+                        padding.push((t.getWidth()-(bp.getWidth())) + offsetX);
+                    }
+                    else
+                        padding.push(offsetX);
+                }
+                else
+                    padding.push(offsetX);
+            }
             if (paddingY !== undefined && paddingY != null)
                 padding.push(paddingY);
             else
-                padding.push(30);
+                padding.push(offsetY);
 
             var xy = extContainer.el.getXY();
             var size = {
                 width  : Math.max(100,width-xy[0]-padding[0]),
                 height : Math.max(100,height-xy[1]-padding[1])
             };
-            extContainer.setSize(size);
+
+            if (width < 0)
+                extContainer.setHeight(size.height);
+            else if (height < 0)
+                extContainer.setWidth(size.width);
+            else
+                extContainer.setSize(size);
             extContainer.doLayout();
         },
 
