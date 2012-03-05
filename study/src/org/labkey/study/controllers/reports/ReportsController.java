@@ -2019,6 +2019,7 @@ public class ReportsController extends BaseStudyController
         public ModelAndView getView(ParticipantReportForm form, BindException errors) throws Exception
         {
             form.setComponentId("participant-report-panel-" + UniqueID.getRequestScopedUID(getRequest()));
+            form.setExpanded(!(getViewContext().get("reportWebPart") != null));
 
             JspView<ParticipantReportForm> view = new JspView<ParticipantReportForm>("/org/labkey/study/view/participantReport.jsp", form);
 
