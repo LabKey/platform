@@ -61,6 +61,7 @@ import org.labkey.api.settings.AppProps;
 import org.labkey.api.settings.LookAndFeelProperties;
 import org.labkey.api.settings.WriteableAppProps;
 import org.labkey.api.settings.WriteableLookAndFeelProperties;
+import org.labkey.api.util.ConfigurationException;
 import org.labkey.api.util.HelpTopic;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.Pair;
@@ -1416,6 +1417,13 @@ public class LoginController extends SpringActionController
                     }
                     sbReset.append("An email has been sent to you with instructions for how to reset your password. ");
                     UserManager.addToUserHistory(UserManager.getUser(_email), _email + " reset the password.");
+                }
+                catch (ConfigurationException e)
+                {
+                    sbReset.append("Failed to send password reset email at this time due to a server configuration problem. <br>");
+                    sbReset.append("Please contact your administrator at <a href=mailto:\"" + LookAndFeelProperties.getInstance(getContainer()).getSystemEmailAddress()
+                            + "\">" + LookAndFeelProperties.getInstance(getContainer()).getSystemEmailAddress() + "</a>");
+                    UserManager.addToUserHistory(UserManager.getUser(_email), _email + " reset the password, but sending the email failed.");
                 }
                 catch (MessagingException e)
                 {

@@ -71,6 +71,7 @@ import org.labkey.api.security.roles.Role;
 import org.labkey.api.security.roles.RoleManager;
 import org.labkey.api.security.roles.SiteAdminRole;
 import org.labkey.api.util.CSRFUtil;
+import org.labkey.api.util.ConfigurationException;
 import org.labkey.api.util.DotRunner;
 import org.labkey.api.util.FileUtil;
 import org.labkey.api.util.GUID;
@@ -1680,6 +1681,12 @@ public class SecurityController extends SpringActionController
                         sbReset.append("Email sent. ");
                         sbReset.append("Click ").append(href).append(" to see the email.");
                         UserManager.addToUserHistory(UserManager.getUser(email), user.getEmail() + " " + pastVerb + " the password.");
+                    }
+                    catch (ConfigurationException e)
+                    {
+                        sbReset.append("Failed to send email due to: <pre>").append(e.getMessage()).append("</pre>");
+                        appendMailHelpText(sbReset, url);
+                        UserManager.addToUserHistory(UserManager.getUser(email), user.getEmail() + " " + pastVerb + " the password, but sending the email failed.");
                     }
                     catch (MessagingException e)
                     {
