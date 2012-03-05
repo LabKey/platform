@@ -16,16 +16,14 @@
     */
 %>
 
-<%@ page import="org.labkey.study.controllers.StudyController" %>
-<%@ page import="org.labkey.api.study.TimepointType" %>
-<%@ page import="org.labkey.study.model.StudyImpl" %>
 <%@ page import="org.labkey.api.data.Container" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.api.view.JspView" %>
-<%@ page import="org.labkey.study.model.StudyManager" %>
-<%@ page extends="org.labkey.study.view.BaseStudyPage" %>
 <%@ page import="org.labkey.api.view.Portal" %>
+<%@ page import="org.labkey.study.model.StudyImpl" %>
+<%@ page import="org.labkey.study.model.StudyManager" %>
 <%@ page import="org.labkey.study.security.permissions.ManageStudyPermission" %>
+<%@ page extends="org.labkey.study.view.BaseStudyPage" %>
 <%
     JspView<Portal.WebPart> me = (JspView) HttpView.currentView();
     Container c = me.getViewContext().getContainer();
@@ -54,9 +52,9 @@
         <script type="text/javascript">
             function callRender() {
                 var studySchedulePanel = Ext4.create('LABKEY.ext4.StudyScheduleGrid', {
-                    renderTo : "study-schedule-"+ <%=webPartIndex%>,
-                    timepointType: "<%=timepointType%>",
-                    canEdit: <%=canEdit%>
+                    renderTo      : "study-schedule-"+ <%=webPartIndex%>,
+                    timepointType : "<%=timepointType%>",
+                    canEdit       : <%=canEdit%>
                 });
             }
             Ext4.onReady(callRender);

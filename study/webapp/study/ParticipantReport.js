@@ -133,6 +133,8 @@ Ext4.define('LABKEY.ext4.ParticipantReport', {
                         text    : 'Print',
                         handler : function(b) {
                             this.fitToReport();
+                            if (this.filterWindow)
+                                this.filterWindow.hide();
                             window.print();
                         },
                         scope   : this
@@ -800,15 +802,16 @@ Ext4.define('LABKEY.ext4.ParticipantReport', {
         }
 
         // This is an example of using it in the toolbar
-//        this.centerPanel.getDockedItems('toolbar')[0].add(
+//        this.centerPanel.getDockedItems('toolbar')[0].insert((this.centerPanel.getDockedItems('toolbar')[0].items.length-1),
 //                Ext4.create('Ext.Button', {
 //                    text : 'Filter Report',
-//                    style: 'margin-right: 200px',
 //                    menu : Ext4.create('Ext.menu.Menu', {
 //                        height : 400,
-//                        plain  : true,
-//                        items  : [this.filterPanel]
-//                    })
+//                        layout : 'fit',
+//                        items  : [panel],
+//                        scope  : this
+//                    }),
+//                    scope : this
 //                })
 //        );
 
@@ -818,12 +821,27 @@ Ext4.define('LABKEY.ext4.ParticipantReport', {
             this.filterWindow = Ext4.create('LABKEY.ext4.ReportFilterWindow', {
                 title    : 'Filter Report',
                 items    : [panel],
-                autoShow : true,
+                bodyStyle: 'overflow-y: auto; overflow-x: hidden;',
+//                autoShow : true,
                 relative : this.centerPanel,
                 collapsed: true,
-                expandOnShow : true,
+//                expandOnShow : true,
                 scope    : this
             });
+            if (!this.fitted) {
+                  this.centerPanel.getDockedItems('toolbar')[0].insert((this.centerPanel.getDockedItems('toolbar')[0].items.length-2),
+                          Ext4.create('Ext.Button', {
+                              text : 'Filter Report',
+                              handler : function(b) {
+                                  this.filterWindow.show();
+                                  b.hide();
+                              },
+                              scope: this
+                          })
+                  );
+            }
+            else
+                this.filterWindow.show();
         }
     },
 
@@ -1034,7 +1052,7 @@ Ext4.define('LABKEY.ext4.ParticipantReport', {
                     'measuresStoreLoaded' : this.onMeasuresStoreLoaded,
                     scope : this
                 },
-                modal : false,
+                modal : true,
                 scope : this
             });
         }

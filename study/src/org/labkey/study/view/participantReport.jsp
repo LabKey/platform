@@ -38,13 +38,6 @@
     String renderId = "participant-report-div-" + UniqueID.getRequestScopedUID(HttpView.currentRequest());
 %>
 <style type="text/css" media="print">
-    #participant-report-div-3 {
-        position : absolute;
-        left : 0;
-        top : 0;
-        width : 100%;
-    }
-
     #headerpanel,
     div.labkey-app-bar,
     #discussionMenuToggle,
@@ -79,8 +72,15 @@
             id              : '<%= bean.getComponentId() %>',
             reportId        : <%=q(reportId)%>,
             allowCustomize  : true,
+            fitted          : <%=bean.isExpanded()%>,
             openCustomize   : true
         });
+
+        var _resize = function(w,h) {
+            LABKEY.Utils.resizeToViewport(panel, w, -1); // don't fit to height
+        }
+
+        Ext4.EventManager.onWindowResize(_resize);
     });
 
     function customizeParticipantReport(elementId) {

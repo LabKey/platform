@@ -65,6 +65,7 @@ public class ParticipantReport extends AbstractReport
 
         JspView<ReportsController.ParticipantReportForm> view = new JspView<ReportsController.ParticipantReportForm>("/org/labkey/study/view/participantReport.jsp", form);
 
+        form.setExpanded(!(context.get("reportWebPart") != null));
         view.setTitle(getDescriptor().getReportName());
         view.setFrame(WebPartView.FrameType.PORTAL);
 

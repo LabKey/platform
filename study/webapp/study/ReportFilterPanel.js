@@ -82,7 +82,7 @@ Ext4.define('LABKEY.ext4.FilterPanel', {
 
         this.store.on('load', function() {
 
-            if (this.target) {
+            function selectionHandler() {
                 this.target.suspendEvents(); // queueing of events id depended on
 
                 if (!this.selection) {
@@ -104,6 +104,15 @@ Ext4.define('LABKEY.ext4.FilterPanel', {
 
                 this.target.resumeEvents();
             }
+
+            // allows for proper selection even if render is delayed
+            if (this.target) {
+                if (this.target.rendered)
+                    selectionHandler.call(this);
+                else {
+                    this.target.on('afterrender', selectionHandler, this, {single: true});
+                }
+            }
         }, this);
 
         this.target = Ext4.create('Ext.grid.Panel', {
@@ -123,11 +132,6 @@ Ext4.define('LABKEY.ext4.FilterPanel', {
             },
             selType     : 'checkboxmodel',
             bubbleEvents: ['select', 'selectionchange', 'itemmouseenter', 'itemmouseleave'],
-            listeners   : {
-                viewready : function(grid) {
-                },
-                scope     : this
-            },
             scope       : this
         });
 
@@ -371,6 +375,7 @@ Ext4.define('LABKEY.ext4.ReportFilterWindow', {
         }
 
         // elements topleft to targets topright
-        this.alignTo(this.relative, 'tl-tr', [-300,27]);
+        if (this.el)
+            this.alignTo(this.relative, 'tl-tr', [-300,27]);
     }
 });

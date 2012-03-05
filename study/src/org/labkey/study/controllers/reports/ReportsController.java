@@ -2177,7 +2177,18 @@ public class ReportsController extends BaseStudyController
         private ReportIdentifier _reportId;
         private String _componentId;
         private boolean _public;
+        private boolean _expanded;
         private String _groups;
+
+        public boolean isExpanded()
+        {
+            return _expanded;
+        }
+
+        public void setExpanded(boolean expanded)
+        {
+            _expanded = expanded;
+        }
 
         public String getComponentId()
         {
