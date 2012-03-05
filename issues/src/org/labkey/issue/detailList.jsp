@@ -30,17 +30,17 @@
 <%@ page import="org.labkey.api.util.HString" %>
 <%@ page import="org.labkey.issue.model.IssueManager" %>
 <%@ page import="org.labkey.api.security.User" %>
+<%@ page import="org.labkey.api.data.ContainerManager" %>
+<%@ page import="org.labkey.api.security.permissions.ReadPermission" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
     JspView<IssuePage> me = (JspView<IssuePage>) HttpView.currentView();
     ViewContext context = me.getViewContext();
     IssuePage bean = me.getModelBean();
 
-    final List<Issue> issueList = bean.getIssueList();
+    Set<String> issueIds = bean.getIssueIds();
     final Container c = context.getContainer();
     final User user = context.getUser();
-    Issue issue = null;
-    String issueId = null;
     IssueManager.EntryTypeNames names = IssueManager.getEntryTypeNames(c);
 
     ActionURL printLink = context.cloneActionURL().replaceParameter("_print", "1");
@@ -58,13 +58,16 @@
 </form>
 
 <%
-    for (ListIterator<Issue> iterator = issueList.listIterator(); iterator.hasNext(); )
+    for (String issueId : issueIds )
     {
-        issue = iterator.next();
-        issueId = Integer.toString(issue.getIssueId());
+        Issue issue = IssueManager.getIssue(null, Integer.parseInt(issueId));
+        boolean hasReadPermission = ContainerManager.getForId(issue.getContainerId()).hasPermission(getViewContext().getUser(), ReadPermission.class);
+
+        if(!hasReadPermission)
+            continue;
 %>
 <table width=640>
-    <tr><td colspan="3"><%=issueId + " : " + h(issue.getTitle())%></td></tr>
+    <tr><td colspan="3"><h3><%=issueId + " : " + h(issue.getTitle())%></h3></td></tr>
     <tr>
         <td valign="top" width="34%"><table>
             <tr><td class="labkey-form-label">Status</td><td><%=h(issue.getStatus())%></td></tr>
@@ -126,8 +129,8 @@
 <%
         }
 %>
-<p>&nbsp;</p>
-<p>&nbsp;</p>
+<br>
+<br>
 <%
     }
 %>

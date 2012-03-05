@@ -60,6 +60,7 @@ public class IssuePage implements DataRegionSelection.DataSelectionKeyForm
     private Issue _issue;
     private Issue _prevIssue;
     private List<Issue> _issueList = Collections.emptyList();
+    private Set<String> _issueIds = Collections.emptySet();
     private IssueManager.CustomColumnConfiguration _ccc;
     private Set<String> _editable = Collections.emptySet();
     private String _callbackURL;
@@ -104,6 +105,16 @@ public class IssuePage implements DataRegionSelection.DataSelectionKeyForm
     public List<Issue> getIssueList()
     {
         return _issueList;
+    }
+
+    public void setIssueIds(Set<String> issueIds)
+    {
+        _issueIds = issueIds;
+    }
+
+    public Set<String> getIssueIds()
+    {
+        return _issueIds;
     }
 
     public void setIssueList(List<Issue> issueList)

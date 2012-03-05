@@ -449,16 +449,8 @@ public class IssuesController extends SpringActionController
             }
 
             Set<String> issueIds = DataRegionSelection.getSelected(getViewContext(), false);
-            ArrayList<Issue> issueList = new ArrayList<Issue>();
 
-            if (!issueIds.isEmpty())
-            {
-                for (String issueId : issueIds)
-                {
-                    issueList.add(getIssue(Integer.parseInt(issueId), false));
-                }
-            }
-            else
+            if (issueIds.isEmpty())
             {
                 ResultSet rs = null;
 
@@ -469,7 +461,7 @@ public class IssuesController extends SpringActionController
 
                     while (rs.next())
                     {
-                        issueList.add(getIssue(rs.getInt(issueColumnIndex), false));
+                        issueIds.add(rs.getString(issueColumnIndex));
                     }
                 }
                 finally
@@ -481,7 +473,7 @@ public class IssuesController extends SpringActionController
             IssuePage page = new IssuePage();
             JspView v = new JspView<IssuePage>(IssuesController.class, "detailList.jsp", page);
 
-            page.setIssueList(issueList);
+            page.setIssueIds(issueIds);
             page.setCustomColumnConfiguration(getCustomColumnConfiguration());
             page.setRequiredFields(IssueManager.getRequiredIssueFields(getContainer()));
             page.setDataRegionSelectionKey(listForm.getQuerySettings().getSelectionKey());
