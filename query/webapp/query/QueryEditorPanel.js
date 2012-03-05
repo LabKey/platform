@@ -730,13 +730,30 @@ LABKEY.query.QueryEditorPanel = Ext.extend(Ext.Panel, {
             if (cmd)
             {
                 // First highlight the line
-                _editor.eal.execCommand(_editor.editorId, 'resync_highlight', true);
+                cmd(_editor.editorId, 'resync_highlight', true);
                 if (error && error.line)
                     cmd(_editor.editorId, 'go_to_line', error.line.toString());
 
+                // calculate string position offset -- 12703
+                var val    = _editor.eal.getValue(_editor.editorId);
+                var valArr = val.split('\n');
+                var _s = -1;
+                if (error && error.line && error.line > 1) {
+                    _s = valArr[error.line-1].search(error.errorStr);
+
+                    // calculate string position offset
+                    if (_s >= 0) {
+                        var offset = 0;
+                        Ext.each(valArr.slice(0,error.line-1), function(line){
+                            offset += line.length + 1; // + 1 for \n
+                        });
+                        _s += offset;
+                    }
+                }
+                else
+                    _s = val.search(error.errorStr);
+
                 // Highlight selected text
-                var val = _editor.eal.getValue(_editor.editorId);
-                var _s = val.search(error.errorStr);
                 if (_s >= 0 && error.errorStr) {
                     var end = _s + error.errorStr.length;
                     _editor.eal.setSelectionRange(_editor.editorId, _s, end);
