@@ -18,6 +18,7 @@ package org.labkey.api.data;
 
 import org.apache.commons.beanutils.ConvertUtils;
 import org.apache.log4j.Logger;
+import org.labkey.api.action.LabkeyError;
 import org.labkey.api.collections.BoundMap;
 import org.labkey.api.collections.NullPreventingSet;
 import org.labkey.api.query.CustomView;
@@ -673,7 +674,14 @@ public class RenderContext extends BoundMap // extends ViewContext
         for (Object m : list)
         {
             sb.append(br);
-            sb.append(PageFlowUtil.filter(getViewContext().getMessage((MessageSourceResolvable)m)));
+            if (m instanceof LabkeyError)
+            {
+                sb.append(((LabkeyError)m).renderToHTML(getViewContext()));
+            }
+            else
+            {
+                sb.append(PageFlowUtil.filter(getViewContext().getMessage((MessageSourceResolvable)m), true));
+            }
             br = "<br>";
         }
         if (sb.length() > 0)

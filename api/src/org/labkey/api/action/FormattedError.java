@@ -15,7 +15,10 @@
  */
 package org.labkey.api.action;
 
+import org.labkey.api.view.ViewContext;
+
 /**
+ * An error that has already been HTML encoded and may contain HTML formatting tags.
  * Created by IntelliJ IDEA.
  * User: Matthew
  * Date: Feb 5, 2009
@@ -26,5 +29,12 @@ public class FormattedError extends LabkeyError
     public FormattedError(String message)
     {
         super(message);
+    }
+
+    /** Don't need to HTML encode */
+    @Override
+    public String renderToHTML(ViewContext context)
+    {
+        return context.getMessage(this);
     }
 }

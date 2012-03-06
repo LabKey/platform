@@ -18,7 +18,6 @@ package org.labkey.api.reports;
 import org.labkey.api.util.ExceptionUtil;
 import org.labkey.api.util.FileUtil;
 import org.labkey.api.reports.report.r.ParamReplacementSvc;
-import org.apache.commons.lang3.StringUtils;
 
 import javax.script.*;
 import java.io.*;
@@ -43,6 +42,7 @@ public class ExternalScriptEngine extends AbstractScriptEngine
     public static final String PARAM_REPLACEMENT_MAP = "external.script.engine.replacementMap";
     public static final String PARAM_SCRIPT = "scriptFile";
     public static final String SCRIPT_PATH = "scriptPath";
+    public static final String SCRIPT_NAME_REPLACEMENT = "${scriptName}";
     /** The location of the post-replacement script file */
     public static final String REWRITTEN_SCRIPT_FILE = "rewrittenScriptFile";
 
@@ -132,7 +132,7 @@ public class ExternalScriptEngine extends AbstractScriptEngine
             int exitCode = runProcess(context, pb, output);
             if (exitCode != 0)
             {
-                throw new ScriptException(StringUtils.defaultIfEmpty(output.toString(), "An unknown error occurred running the script (exit code: " + exitCode + ")"));
+                throw new ScriptException("An error occurred when running the script (exit code: " + exitCode + ").\n" + output.toString());
             }
             else
                 return output.toString();
@@ -334,6 +334,16 @@ public class ExternalScriptEngine extends AbstractScriptEngine
             String fileName = _def.getOutputFileName();
             if (fileName != null)
             {
+                // Replace the ${scriptName} substitution with the actual name of the script file (minus extension)
+                if (context.getAttribute(REWRITTEN_SCRIPT_FILE) instanceof File)
+                {
+                    File scriptFile = (File)context.getAttribute(REWRITTEN_SCRIPT_FILE);
+                    int index = scriptFile.getName().lastIndexOf(".");
+                    if (index != -1)
+                    {
+                        fileName = fileName.replace(SCRIPT_NAME_REPLACEMENT, scriptFile.getName().substring(0, index));
+                    }
+                }
                 File file = new File(getWorkingDir(context), fileName);
                 if (file.exists())
                 {
