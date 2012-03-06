@@ -112,22 +112,24 @@ Ext4.define('LABKEY.ext4.StudyScheduleGrid', {
             handler: this.enablePaging
         });
 
-        this.topPrevButton = Ext4.create('Ext.button.Button', prevConfig);
+        this.topPrevButton = Ext4.create('Ext.Button', prevConfig);
         this.topPageDisplay = Ext4.create('Ext.form.field.Display', displayConfig);
-        this.topNextButton = Ext4.create('Ext.button.Button', nextConfig);
+        this.topNextButton = Ext4.create('Ext.Button', nextConfig);
 
-        this.bottomPrevButton = Ext4.create('Ext.button.Button', prevConfig);
+        this.bottomPrevButton = Ext4.create('Ext.Button', prevConfig);
         this.bottomPageDisplay = Ext4.create('Ext.form.field.Display', displayConfig);
-        this.bottomNextButton = Ext4.create('Ext.button.Button', nextConfig);
+        this.bottomNextButton = Ext4.create('Ext.Button', nextConfig);
 
         var bbarButtons = [];
         var tbarPanelItems = [];
         if(this.canEdit){
-            bbarButtons.push(saveButtonConfig);
-            bbarButtons.push(addDatasetButtonConfig);   
+            this.topSaveButton = Ext4.create('Ext.Button', saveButtonConfig); // We create this so we have something to point to when animating the save success dialog.
+            this.topAddDatasetButton = Ext4.create('Ext.Button', addDatasetButtonConfig); // Create this or the bottom add dataset button gets shifted upwards by about 2px.
+            tbarPanelItems.push(this.topSaveButton);
+            tbarPanelItems.push(this.topAddDatasetButton);
 
-            tbarPanelItems.push(saveButtonConfig);
-            tbarPanelItems.push(addDatasetButtonConfig);
+            bbarButtons.push(saveButtonConfig);
+            bbarButtons.push(addDatasetButtonConfig);
         }
 
         tbarPanelItems.push(this.cohortsCombo);
@@ -435,6 +437,27 @@ Ext4.define('LABKEY.ext4.StudyScheduleGrid', {
                     allowSingle : false
                 }
 
+            },
+            listeners: {
+                scope: this,
+                beforesync: function(){
+                    // Mask grid.
+                    this.centerPanel.setLoading("Saving...");
+                },
+                write: function(){
+                    //Get rid of mask, indicate saved.
+                    this.centerPanel.setLoading(false);
+                    Ext4.MessageBox.show({
+                        title: 'Success',
+                        msg: 'Changes saved sucessfully.',
+                        width: 200,
+                        closable: false,
+                        animateTarget: this.topSaveButton
+                    });
+                    new Ext4.util.DelayedTask(function(){
+                        Ext4.MessageBox.hide();
+                    }).delay(1500);
+                }
             }
         };
 
