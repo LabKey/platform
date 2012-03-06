@@ -20,6 +20,8 @@
 <%@ page import="org.labkey.api.reports.report.RReport"%>
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.api.view.ViewContext" %>
+<%@ page import="org.labkey.api.reports.ExternalScriptEngine" %>
+<%@ page import="org.labkey.api.util.PageFlowUtil" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 
@@ -82,7 +84,7 @@
                 name:'R Scripting Engine',
                 extensions: R_EXTENSIONS,
                 exeCommand:'<%=RReport.DEFAULT_R_CMD%>',
-                outputFileName: 'script.Rout',
+                outputFileName: <%= org.labkey.api.util.PageFlowUtil.jsString(ExternalScriptEngine.SCRIPT_NAME_REPLACEMENT + ".Rout") %>,
                 external: true,
                 <% if (!StringUtils.isEmpty(RReport.getDefaultRPath())) { %>
                     exePath: '<%=RReport.getDefaultRPath()%>',
@@ -307,7 +309,7 @@
                 name: 'outputFileName',
                 id: 'editEngine_outputFileName',
                 value: record.outputFileName,
-                tooltip: {text:'If the console output is written to a file, the name should be specified here', title:'Output File Name'},
+                tooltip: {text:'If the console output is written to a file, the name should be specified here. The substitution syntax \\${scriptName} will be replaced with the name (minus the extension) of the script being executed.', title:'Output File Name'},
                 disabled:!record.external,
                 listeners: {render: setFormFieldTooltip}
             },{
