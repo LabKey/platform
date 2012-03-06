@@ -108,6 +108,7 @@ public class ExceptionStackTrace
                     if (!line.trim().startsWith("at sun.reflect.")
                             && !(line.trim().startsWith("..."))
                             && !(line.trim().startsWith("at script") && line.contains("run(script") && line.contains(".groovy:"))
+                            && !line.trim().startsWith("Position: ")    // Postgres stack traces can include a third line that indicates the position of the error in the SQL
                             && !line.trim().startsWith("Detail:")    // Postgres stack traces can include a second details line
                             && !line.trim().startsWith("Detalhe:"))  // which is oddly sometimes prefixed by "Detalhe:" instead of "Detail:"
                     {
@@ -194,6 +195,144 @@ public class ExceptionStackTrace
                     "\tat sun.reflect.GeneratedMethodAccessor105.invoke(Unknown Source)\n" +
                     "\tat sun.reflect.DelegatingMethodAccessorImpl.invoke(DelegatingMethodAccessorImpl.java:25)\n" +
                     "\tat java.lang.reflect.Method.invoke(Method.java:585)");
+
+            stackTrace1.hashStackTrace();
+            stackTrace2.hashStackTrace();
+            assertEquals(stackTrace1.getStackTraceHash(), stackTrace2.getStackTraceHash());
+        }
+
+        @Test
+        public void testPostgresPositionCombining()
+        {
+            ExceptionStackTrace stackTrace1 = new ExceptionStackTrace();
+            stackTrace1.setStackTrace("org.postgresql.util.PSQLException: ERROR: function rowidin(unknown) does not exist\n" +
+                    "  Hint: No function matches the given name and argument types. You might need to add explicit type casts.\n" +
+                    "  Position: 2473\n" +
+                    "\tat org.postgresql.core.v3.QueryExecutorImpl.receiveErrorResponse(QueryExecutorImpl.java:2103)\n" +
+                    "\tat org.postgresql.core.v3.QueryExecutorImpl.processResults(QueryExecutorImpl.java:1836)\n" +
+                    "\tat org.postgresql.core.v3.QueryExecutorImpl.execute(QueryExecutorImpl.java:257)\n" +
+                    "\tat org.postgresql.jdbc2.AbstractJdbc2Statement.execute(AbstractJdbc2Statement.java:512)\n" +
+                    "\tat org.postgresql.jdbc2.AbstractJdbc2Statement.executeWithFlags(AbstractJdbc2Statement.java:388)\n" +
+                    "\tat org.postgresql.jdbc2.AbstractJdbc2Statement.executeQuery(AbstractJdbc2Statement.java:273)\n" +
+                    "\tat org.apache.tomcat.dbcp.dbcp.DelegatingPreparedStatement.executeQuery(DelegatingPreparedStatement.java:96)\n" +
+                    "\tat org.apache.tomcat.dbcp.dbcp.DelegatingPreparedStatement.executeQuery(DelegatingPreparedStatement.java:96)\n" +
+                    "\tat org.labkey.api.data.dialect.StatementWrapper.executeQuery(StatementWrapper.java:570)\n" +
+                    "\tat org.labkey.api.data.Table._executeQuery(Table.java:153)\n" +
+                    "\tat org.labkey.api.data.Table.executeQuery(Table.java:324)\n" +
+                    "\tat org.labkey.api.data.Table.selectForDisplay(Table.java:1219)\n" +
+                    "\tat org.labkey.api.data.Table.selectForDisplay(Table.java:1191)\n" +
+                    "\tat org.labkey.ms2.peptideview.NestedRenderContext.selectForDisplay(NestedRenderContext.java:224)\n" +
+                    "\tat org.labkey.api.data.RenderContext.getResultSet(RenderContext.java:277)\n" +
+                    "\tat org.labkey.api.data.DataRegion.getResultSet(DataRegion.java:604)\n" +
+                    "\tat org.labkey.api.data.DataRegion.getResultSet(DataRegion.java:587)\n" +
+                    "\tat org.labkey.api.query.QueryView.getExcelWriter(QueryView.java:1697)\n" +
+                    "\tat org.labkey.api.query.QueryView.exportToExcel(QueryView.java:1757)\n" +
+                    "\tat org.labkey.api.query.QueryView.exportToExcel(QueryView.java:1742)\n" +
+                    "\tat org.labkey.api.query.QueryView.exportToExcel(QueryView.java:1737)\n" +
+                    "\tat org.labkey.ms2.peptideview.AbstractQueryMS2RunView$AbstractMS2QueryView.exportToExcel(AbstractQueryMS2RunView.java:227)\n" +
+                    "\tat org.labkey.ms2.peptideview.AbstractQueryMS2RunView.exportToExcel(AbstractQueryMS2RunView.java:149)\n" +
+                    "\tat org.labkey.ms2.MS2Controller.exportPeptides(MS2Controller.java:3641)\n" +
+                    "\tat org.labkey.ms2.MS2Controller.access$8500(MS2Controller.java:188)\n" +
+                    "\tat org.labkey.ms2.MS2Controller$ExportSelectedPeptidesAction.export(MS2Controller.java:3596)\n" +
+                    "\tat org.labkey.ms2.MS2Controller$ExportSelectedPeptidesAction.export(MS2Controller.java:3591)\n" +
+                    "\tat org.labkey.api.action.ExportAction.getView(ExportAction.java:41)\n" +
+                    "\tat org.labkey.api.action.SimpleViewAction.handleRequest(SimpleViewAction.java:61)\n" +
+                    "\tat org.labkey.api.action.BaseViewAction.handleRequestInternal(BaseViewAction.java:173)\n" +
+                    "\tat org.springframework.web.servlet.mvc.AbstractController.handleRequest(AbstractController.java:153)\n" +
+                    "\tat org.labkey.api.action.SpringActionController.handleRequest(SpringActionController.java:345)\n" +
+                    "\tat org.labkey.api.module.DefaultModule.dispatch(DefaultModule.java:890)\n" +
+                    "\tat org.labkey.api.view.ViewServlet.service(ViewServlet.java:157)\n" +
+                    "\tat javax.servlet.http.HttpServlet.service(HttpServlet.java:717)\n" +
+                    "\tat org.apache.catalina.core.ApplicationFilterChain.internalDoFilter(ApplicationFilterChain.java:290)\n" +
+                    "\tat org.apache.catalina.core.ApplicationFilterChain.doFilter(ApplicationFilterChain.java:206)\n" +
+                    "\tat org.labkey.api.data.TransactionFilter.doFilter(TransactionFilter.java:36)\n" +
+                    "\tat org.apache.catalina.core.ApplicationFilterChain.internalDoFilter(ApplicationFilterChain.java:235)\n" +
+                    "\tat org.apache.catalina.core.ApplicationFilterChain.doFilter(ApplicationFilterChain.java:206)\n" +
+                    "\tat org.labkey.core.filters.SetCharacterEncodingFilter.doFilter(SetCharacterEncodingFilter.java:118)\n" +
+                    "\tat org.apache.catalina.core.ApplicationFilterChain.internalDoFilter(ApplicationFilterChain.java:235)\n" +
+                    "\tat org.apache.catalina.core.ApplicationFilterChain.doFilter(ApplicationFilterChain.java:206)\n" +
+                    "\tat org.labkey.api.module.ModuleLoader.doFilter(ModuleLoader.java:694)\n" +
+                    "\tat org.apache.catalina.core.ApplicationFilterChain.internalDoFilter(ApplicationFilterChain.java:235)\n" +
+                    "\tat org.apache.catalina.core.ApplicationFilterChain.doFilter(ApplicationFilterChain.java:206)\n" +
+                    "\tat org.labkey.api.security.AuthFilter.doFilter(AuthFilter.java:147)\n" +
+                    "\tat org.apache.catalina.core.ApplicationFilterChain.internalDoFilter(ApplicationFilterChain.java:235)\n" +
+                    "\tat org.apache.catalina.core.ApplicationFilterChain.doFilter(ApplicationFilterChain.java:206)\n" +
+                    "\tat org.apache.catalina.core.StandardWrapperValve.invoke(StandardWrapperValve.java:233)\n" +
+                    "\tat org.apache.catalina.core.StandardContextValve.invoke(StandardContextValve.java:191)\n" +
+                    "\tat org.apache.catalina.core.StandardHostValve.invoke(StandardHostValve.java:127)\n" +
+                    "\tat org.apache.catalina.valves.ErrorReportValve.invoke(ErrorReportValve.java:102)\n" +
+                    "\tat org.apache.catalina.valves.AccessLogValve.invoke(AccessLogValve.java:554)\n" +
+                    "\tat org.apache.catalina.core.StandardEngineValve.invoke(StandardEngineValve.java:109)\n" +
+                    "\tat org.apache.catalina.connector.CoyoteAdapter.service(CoyoteAdapter.java:298)\n" +
+                    "\tat org.apache.coyote.http11.Http11Processor.process(Http11Processor.java:859)\n" +
+                    "\tat org.apache.coyote.http11.Http11Protocol$Http11ConnectionHandler.process(Http11Protocol.java:588)\n" +
+                    "\tat org.apache.tomcat.util.net.JIoEndpoint$Worker.run(JIoEndpoint.java:489)\n" +
+                    "\tat java.lang.Thread.run(Thread.java:662)");
+
+            ExceptionStackTrace stackTrace2 = new ExceptionStackTrace();
+            stackTrace2.setStackTrace("org.postgresql.util.PSQLException: ERROR: function rowidin(unknown) does not exist\n" +
+                    "  Hint: No function matches the given name and argument types. You might need to add explicit type casts.\n" +
+                    "  Position: 2426\n" +
+                    "\tat org.postgresql.core.v3.QueryExecutorImpl.receiveErrorResponse(QueryExecutorImpl.java:2103)\n" +
+                    "\tat org.postgresql.core.v3.QueryExecutorImpl.processResults(QueryExecutorImpl.java:1836)\n" +
+                    "\tat org.postgresql.core.v3.QueryExecutorImpl.execute(QueryExecutorImpl.java:257)\n" +
+                    "\tat org.postgresql.jdbc2.AbstractJdbc2Statement.execute(AbstractJdbc2Statement.java:512)\n" +
+                    "\tat org.postgresql.jdbc2.AbstractJdbc2Statement.executeWithFlags(AbstractJdbc2Statement.java:388)\n" +
+                    "\tat org.postgresql.jdbc2.AbstractJdbc2Statement.executeQuery(AbstractJdbc2Statement.java:273)\n" +
+                    "\tat org.apache.tomcat.dbcp.dbcp.DelegatingPreparedStatement.executeQuery(DelegatingPreparedStatement.java:96)\n" +
+                    "\tat org.apache.tomcat.dbcp.dbcp.DelegatingPreparedStatement.executeQuery(DelegatingPreparedStatement.java:96)\n" +
+                    "\tat org.labkey.api.data.dialect.StatementWrapper.executeQuery(StatementWrapper.java:570)\n" +
+                    "\tat org.labkey.api.data.Table._executeQuery(Table.java:153)\n" +
+                    "\tat org.labkey.api.data.Table.executeQuery(Table.java:324)\n" +
+                    "\tat org.labkey.api.data.Table.selectForDisplay(Table.java:1219)\n" +
+                    "\tat org.labkey.api.data.Table.selectForDisplay(Table.java:1191)\n" +
+                    "\tat org.labkey.ms2.peptideview.NestedRenderContext.selectForDisplay(NestedRenderContext.java:224)\n" +
+                    "\tat org.labkey.api.data.RenderContext.getResultSet(RenderContext.java:277)\n" +
+                    "\tat org.labkey.api.data.DataRegion.getResultSet(DataRegion.java:604)\n" +
+                    "\tat org.labkey.api.data.DataRegion.getResultSet(DataRegion.java:587)\n" +
+                    "\tat org.labkey.api.query.QueryView.getExcelWriter(QueryView.java:1697)\n" +
+                    "\tat org.labkey.api.query.QueryView.exportToExcel(QueryView.java:1757)\n" +
+                    "\tat org.labkey.api.query.QueryView.exportToExcel(QueryView.java:1742)\n" +
+                    "\tat org.labkey.api.query.QueryView.exportToExcel(QueryView.java:1737)\n" +
+                    "\tat org.labkey.ms2.peptideview.AbstractQueryMS2RunView$AbstractMS2QueryView.exportToExcel(AbstractQueryMS2RunView.java:227)\n" +
+                    "\tat org.labkey.ms2.peptideview.AbstractQueryMS2RunView.exportToExcel(AbstractQueryMS2RunView.java:149)\n" +
+                    "\tat org.labkey.ms2.MS2Controller.exportPeptides(MS2Controller.java:3641)\n" +
+                    "\tat org.labkey.ms2.MS2Controller.access$8500(MS2Controller.java:188)\n" +
+                    "\tat org.labkey.ms2.MS2Controller$ExportSelectedPeptidesAction.export(MS2Controller.java:3596)\n" +
+                    "\tat org.labkey.ms2.MS2Controller$ExportSelectedPeptidesAction.export(MS2Controller.java:3591)\n" +
+                    "\tat org.labkey.api.action.ExportAction.getView(ExportAction.java:41)\n" +
+                    "\tat org.labkey.api.action.SimpleViewAction.handleRequest(SimpleViewAction.java:61)\n" +
+                    "\tat org.labkey.api.action.BaseViewAction.handleRequestInternal(BaseViewAction.java:173)\n" +
+                    "\tat org.springframework.web.servlet.mvc.AbstractController.handleRequest(AbstractController.java:153)\n" +
+                    "\tat org.labkey.api.action.SpringActionController.handleRequest(SpringActionController.java:345)\n" +
+                    "\tat org.labkey.api.module.DefaultModule.dispatch(DefaultModule.java:890)\n" +
+                    "\tat org.labkey.api.view.ViewServlet.service(ViewServlet.java:157)\n" +
+                    "\tat javax.servlet.http.HttpServlet.service(HttpServlet.java:717)\n" +
+                    "\tat org.apache.catalina.core.ApplicationFilterChain.internalDoFilter(ApplicationFilterChain.java:290)\n" +
+                    "\tat org.apache.catalina.core.ApplicationFilterChain.doFilter(ApplicationFilterChain.java:206)\n" +
+                    "\tat org.labkey.api.data.TransactionFilter.doFilter(TransactionFilter.java:36)\n" +
+                    "\tat org.apache.catalina.core.ApplicationFilterChain.internalDoFilter(ApplicationFilterChain.java:235)\n" +
+                    "\tat org.apache.catalina.core.ApplicationFilterChain.doFilter(ApplicationFilterChain.java:206)\n" +
+                    "\tat org.labkey.core.filters.SetCharacterEncodingFilter.doFilter(SetCharacterEncodingFilter.java:118)\n" +
+                    "\tat org.apache.catalina.core.ApplicationFilterChain.internalDoFilter(ApplicationFilterChain.java:235)\n" +
+                    "\tat org.apache.catalina.core.ApplicationFilterChain.doFilter(ApplicationFilterChain.java:206)\n" +
+                    "\tat org.labkey.api.module.ModuleLoader.doFilter(ModuleLoader.java:694)\n" +
+                    "\tat org.apache.catalina.core.ApplicationFilterChain.internalDoFilter(ApplicationFilterChain.java:235)\n" +
+                    "\tat org.apache.catalina.core.ApplicationFilterChain.doFilter(ApplicationFilterChain.java:206)\n" +
+                    "\tat org.labkey.api.security.AuthFilter.doFilter(AuthFilter.java:147)\n" +
+                    "\tat org.apache.catalina.core.ApplicationFilterChain.internalDoFilter(ApplicationFilterChain.java:235)\n" +
+                    "\tat org.apache.catalina.core.ApplicationFilterChain.doFilter(ApplicationFilterChain.java:206)\n" +
+                    "\tat org.apache.catalina.core.StandardWrapperValve.invoke(StandardWrapperValve.java:233)\n" +
+                    "\tat org.apache.catalina.core.StandardContextValve.invoke(StandardContextValve.java:191)\n" +
+                    "\tat org.apache.catalina.core.StandardHostValve.invoke(StandardHostValve.java:127)\n" +
+                    "\tat org.apache.catalina.valves.ErrorReportValve.invoke(ErrorReportValve.java:102)\n" +
+                    "\tat org.apache.catalina.valves.AccessLogValve.invoke(AccessLogValve.java:554)\n" +
+                    "\tat org.apache.catalina.core.StandardEngineValve.invoke(StandardEngineValve.java:109)\n" +
+                    "\tat org.apache.catalina.connector.CoyoteAdapter.service(CoyoteAdapter.java:298)\n" +
+                    "\tat org.apache.coyote.http11.Http11Processor.process(Http11Processor.java:859)\n" +
+                    "\tat org.apache.coyote.http11.Http11Protocol$Http11ConnectionHandler.process(Http11Protocol.java:588)\n" +
+                    "\tat org.apache.tomcat.util.net.JIoEndpoint$Worker.run(JIoEndpoint.java:489)\n" +
+                    "\tat java.lang.Thread.run(Thread.java:662)");
 
             stackTrace1.hashStackTrace();
             stackTrace2.hashStackTrace();
